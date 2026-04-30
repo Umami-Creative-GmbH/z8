@@ -5,8 +5,15 @@ import { forwardRef, useImperativeHandle, useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_TEMPLATE_REGISTRY } from "@/lib/email/template-registry";
 
-const { resetEmailTemplateMock, saveEmailTemplateMock, sendEmailTemplateTestMock, toastErrorMock } =
+const {
+	insertIntoBodyMock,
+	resetEmailTemplateMock,
+	saveEmailTemplateMock,
+	sendEmailTemplateTestMock,
+	toastErrorMock,
+} =
 	vi.hoisted(() => ({
+		insertIntoBodyMock: vi.fn(),
 		resetEmailTemplateMock: vi.fn(),
 		saveEmailTemplateMock: vi.fn(),
 		sendEmailTemplateTestMock: vi.fn(),
@@ -24,21 +31,38 @@ vi.mock("./email-template-editor", () => ({
 		(
 			props: {
 				definition: { label: string };
+				variables?: Array<{ name: string; label: string; example: string }>;
 				subject: string;
 				html: string;
 				onSubjectChange: (value: string) => void;
+				onInsertVariable?: (name: string) => void;
 			},
 			ref,
 		) => {
 			const initialLabel = useRef(props.definition.label);
 			useImperativeHandle(ref, () => ({
 				insertIntoSubject: (value: string) => props.onSubjectChange(`${props.subject}${value}`),
+				insertIntoBody: insertIntoBodyMock,
 				focusSubject: vi.fn(),
 			}));
 
 			return (
 				<div>
 					<div>Email editor</div>
+					<div data-testid="editor-layout" className="body-editor-with-variables">
+						<div>Email body editor</div>
+						<div>
+							{props.variables?.map((variable) => (
+								<button
+									key={variable.name}
+									type="button"
+									onClick={() => props.onInsertVariable?.(variable.name)}
+								>
+									Insert {variable.label}
+								</button>
+							))}
+						</div>
+					</div>
 					<div data-testid="editor-template">{initialLabel.current}</div>
 					<div data-testid="editor-html">{props.html}</div>
 					<label htmlFor="mock-subject">Subject</label>
@@ -93,6 +117,10 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(screen.getAllByText("Email verification").length).toBeGreaterThan(0);
 		expect(screen.getByText("Password reset")).toBeTruthy();
 		expect(screen.getByText("Email editor")).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Use custom template" })).toBeTruthy();
+		expect(screen.getByText("Custom template")).toBeTruthy();
+		expect(screen.getByText("System default")).toBeTruthy();
+		expect(screen.queryByText("Enabled")).toBeNull();
 	});
 
 	it("prevents saving untouched default starter content", async () => {
@@ -127,15 +155,14 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(screen.getByTestId("editor-template").textContent).toBe("Password reset");
 	});
 
-	it("inserts variables into the subject draft", () => {
+	it("inserts variables into the email body instead of the subject draft", () => {
 		render(<EmailTemplateSettingsClient templates={templates} />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Insert User name" }));
 
-		expect(screen.getByLabelText("Subject")).toHaveProperty(
-			"value",
-			"Verify your email address{{userName}}",
-		);
+		expect(insertIntoBodyMock).toHaveBeenCalledWith("{{userName}}");
+		expect(screen.getByLabelText("Subject")).toHaveProperty("value", "Verify your email address");
+		expect(screen.getByTestId("editor-layout").className).toContain("body-editor-with-variables");
 	});
 
 	it("prevents saving a first custom template when only the subject changed", () => {

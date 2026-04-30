@@ -25,23 +25,23 @@ export function VariablePalette({ variables, onInsert }: VariablePaletteProps) {
 				<Badge variant="outline">Fallback safe</Badge>
 			</div>
 
-			<div className="mt-4 grid gap-2 sm:grid-cols-2">
+			<div className="mt-4 grid gap-2" data-testid="email-template-variable-list">
 				{variables.map((variable) => (
 					<Button
 						key={variable.name}
 						type="button"
 						variant="outline"
-						className="h-auto min-h-11 justify-start px-3 py-2 text-left"
+						className="h-auto min-h-11 w-full min-w-0 justify-start whitespace-normal px-3 py-2 text-left"
 						onClick={() => onInsert(variable.name)}
 						aria-label={`Insert ${variable.label}`}
 					>
-						<span className="min-w-0">
-							<span className="block font-mono text-xs">
+						<span className="min-w-0 max-w-full">
+							<span className="block break-all font-mono text-xs">
 								{"{{"}
 								{variable.name}
 								{"}}"}
 							</span>
-							<span className="block truncate text-muted-foreground text-xs">
+							<span className="block break-all text-muted-foreground text-xs">
 								{variable.example}
 							</span>
 						</span>

@@ -1,234 +1,284 @@
 {
-  "common": {
-    "actions": "Azioni",
-    "active": "Attivo",
-    "add": "Aggiungi",
-    "all": "Tutti",
-    "approve": "Approva",
-    "assign": "Assegna",
-    "back": "Indietro",
-    "background-image-alt": "Immagine di sfondo - Foto di Ally Griffin su Unsplash",
-    "cancel": "Annulla",
-    "clear": "Cancella",
-    "clearSearch": "Cancella ricerca",
-    "clearSelection": "Pulisci",
-    "close": "Chiudi",
-    "confirm": "Conferma",
-    "continue": "Continua",
-    "copy": "Copia",
-    "create": "Crea",
-    "days": {
-      "friday": "Venerdì",
-      "label": "giorni",
-      "monday": "Lunedì",
-      "saturday": "Sabato",
-      "sunday": "Domenica",
-      "thursday": "Giovedì",
-      "tuesday": "Martedì",
-      "wednesday": "Mercoledì"
-    },
-    "delete": "Elimina",
-    "deleting": "Eliminazione...",
-    "deselectAll": "Deseleziona tutto",
-    "details": "Dettagli",
-    "dismiss": "Ignora",
-    "download": "Scarica",
-    "duplicate": "Duplica",
-    "edit": "Modifica",
-    "enabled": "Abilitato",
-    "error": "Errore",
-    "error-occurred": "Si è verificato un errore",
-    "gender": {
-      "female": "Femmina",
-      "male": "Maschio",
-      "other": "Altro"
-    },
-    "goToDashboard": "Vai alla Dashboard",
-    "inactive": "Inattivo",
-    "loading": "Caricamento...",
-    "loadMore": "Carica altro",
-    "months": {
-      "april": "Aprile",
-      "august": "Agosto",
-      "december": "Dicembre",
-      "february": "Febbraio",
-      "january": "Gennaio",
-      "july": "Luglio",
-      "june": "Giugno",
-      "march": "Marzo",
-      "may": "Maggio",
-      "november": "Novembre",
-      "october": "Ottobre",
-      "september": "Settembre"
-    },
-    "more": "altro",
-    "moreActions": "Altre azioni",
-    "moveDown": "Sposta giù",
-    "moveUp": "Sposta su",
-    "name": "Nome",
-    "new": "Nuovo",
-    "next": "Avanti",
-    "notApplicable": "N/D",
-    "not-available": "Non disponibile",
-    "openMenu": "Apri menu",
-    "optional": "opzionale",
-    "or": "O",
-    "previous": "Precedente",
-    "recovering": "Ripristino in corso...",
-    "refresh": "Aggiorna",
-    "reject": "Rifiuta",
-    "rejecting": "Rifiuto in corso…",
-    "remove": "Rimuovi",
-    "removing": "Rimozione...",
-    "reset": "Reimposta",
-    "retry": "Riprova",
-    "save": "Salva",
-    "saveChanges": "Salva modifiche",
-    "saving": "Salvataggio...",
-    "selectAll": "Seleziona tutto",
-    "selected": "selezionato",
-    "select-language": "Seleziona lingua",
-    "set": "set",
-    "sets": "set",
-    "skip": "Salta",
-    "status": "Stato",
-    "submitting": "Invio in corso…",
-    "to": "a",
-    "today": "Oggi",
-    "unexpectedError": "Si è verificato un errore imprevisto",
-    "unknown": "Sconosciuto",
-    "unknownEmployee": "Dipendente sconosciuto",
-    "unknownTeam": "Team sconosciuto",
-    "unnamed": "Senza nome",
-    "uploading": "Caricamento...",
-    "validate": "Convalida",
-    "validationError": "Errore di convalida",
-    "weekdays": {
-      "fr": "Ve",
-      "fri": "Ven",
-      "mo": "Lu",
-      "mon": "Lun",
-      "sa": "Sa",
-      "sat": "Sab",
-      "su": "Do",
-      "sun": "Dom",
-      "th": "Gi",
-      "thu": "Gio",
-      "tu": "Ma",
-      "tue": "Mar",
-      "we": "Me",
-      "wed": "Mer"
-    }
-  },
-  "errors": {
-    "failedToLoad": "Impossibile caricare i dati",
-    "noEmployee": {
-      "contactAdmin": "Contatta amministratore",
-      "createOrg": "Crea organizzazione",
-      "description": "Hai bisogno di un profilo dipendente per ${feature}. Crea un'organizzazione o contatta il tuo amministratore.",
-      "emailBody": "Ciao,\n\nho bisogno di configurare un profilo dipendente per accedere alle funzionalità della piattaforma. Potresti aiutarmi con questo?\n\nGrazie!",
-      "emailSubject": "Configurazione profilo dipendente richiesta",
-      "helpText": "Se sei stato invitato in un'organizzazione, chiedi al tuo amministratore di configurare il tuo profilo dipendente.",
-      "title": "Profilo dipendente richiesto"
-    },
-    "noOrganization": {
-      "createOrg": "Crea organizzazione",
-      "description": "Non fai ancora parte di nessuna organizzazione. Creane una per iniziare o attendi un invito.",
-      "title": "Nessuna organizzazione trovata",
-      "waiting": "In attesa di un invito?",
-      "waitingDesc": "Il tuo amministratore ti invierà un'email di invito. Controlla la tua casella di posta e la cartella spam."
-    },
-    "unexpected": {
-      "digest": "Riferimento: {digest}"
-    }
-  },
-  "generic": {
-    "done": "Fatto",
-    "submit": "Invia"
-  },
-  "header": {
-    "clock-in": "Timbra ingresso",
-    "clock-out": "Timbra uscita",
-    "request-absence": "Richiedi assenza"
-  },
-  "info": {
-    "back-to-login": "Torna al login"
-  },
-  "nav": {
-    "absences": "Assenze",
-    "approvals": "Approvazioni",
-    "calendar": "Calendario",
-    "compliance": "Conformità",
-    "dashboard": "Dashboard",
-    "get-help": "Ottieni Aiuto",
-    "my-requests": "Le mie richieste",
-    "reports": "Rapporti",
-    "scheduling": "Pianificazione",
-    "settings": "Impostazioni",
-    "team": "Team",
-    "team-label": "Team",
-    "time-tracking": "Rilevazione Tempo",
-    "travel-expenses": "Spese di viaggio"
-  },
-  "table": {
-    "clearFilters": "Cancella filtri",
-    "clearSort": "Rimuovi ordinamento",
-    "description": "Visualizzazione dei visitatori totali degli ultimi 6 mesi. Questo è solo un testo casuale per testare il layout. Si estende su più righe e dovrebbe andare a capo.",
-    "goToFirstPage": "Vai alla prima pagina",
-    "goToLastPage": "Vai all'ultima pagina",
-    "goToNextPage": "Vai alla pagina successiva",
-    "goToPreviousPage": "Vai alla pagina precedente",
-    "header": "Intestazione",
-    "limit": "Limite",
-    "noResults": "Nessun risultato.",
-    "pageOfPages": "Pagina {current} di {total}",
-    "reviewer": "Revisore",
-    "rowsPerPage": "Righe per pagina",
-    "searchPlaceholder": "Cerca...",
-    "selectedOfTotal": "{selected} di {total} riga/e selezionata/e",
-    "select-reviewer": "Seleziona un revisore",
-    "select-status": "Seleziona uno stato",
-    "select-type": "Seleziona un tipo",
-    "showing-visitors": "Visualizzazione visitatori totali per gli ultimi 6 mesi",
-    "sortAscending": "Crescente",
-    "sortDescending": "Decrescente",
-    "status": "Stato",
-    "status-options": {
-      "done": "Fatto",
-      "in-progress": "In Corso",
-      "not-started": "Non Iniziato"
-    },
-    "target": "Obiettivo",
-    "totalRows": "{total} riga/righe",
-    "trending-up": "In crescita del 5,2% questo mese",
-    "type": "Tipo",
-    "type-options": {
-      "capabilities": "Capacità",
-      "cover-page": "Copertina",
-      "design": "Design",
-      "executive-summary": "Riepilogo Esecutivo",
-      "focus-documents": "Documenti di Focus",
-      "narrative": "Narrativa",
-      "table-of-contents": "Sommario",
-      "technical-approach": "Approccio Tecnico"
-    }
-  },
-  "user": {
-    "language": "Lingua",
-    "logging-out": "Disconnessione...",
-    "log-out": "Disconnetti",
-    "profile": "Profilo",
-    "theme": "Tema",
-    "theme-dark": "Scuro",
-    "theme-light": "Chiaro",
-    "theme-system": "Sistema",
-    "time-settings": "Impostazioni orario"
-  },
-  "validation": {
-    "first-name-required": "Il nome è obbligatorio",
-    "invalid-email": "Indirizzo email non valido",
-    "invalid-password": "Password non valida",
-    "last-name-required": "Il cognome è obbligatorio",
-    "password-required": "La password è obbligatoria"
-  }
+	"common": {
+		"actions": "Azioni",
+		"active": "Attivo",
+		"add": "Aggiungi",
+		"all": "Tutti",
+		"approve": "Approva",
+		"assign": "Assegna",
+		"back": "Indietro",
+		"background-image-alt": "Immagine di sfondo - Foto di Ally Griffin su Unsplash",
+		"cancel": "Annulla",
+		"clear": "Cancella",
+		"clearSearch": "Cancella ricerca",
+		"clearSelection": "Pulisci",
+		"close": "Chiudi",
+		"confirm": "Conferma",
+		"continue": "Continua",
+		"copy": "Copia",
+		"create": "Crea",
+		"days": {
+			"friday": "Venerdì",
+			"label": "giorni",
+			"monday": "Lunedì",
+			"saturday": "Sabato",
+			"sunday": "Domenica",
+			"thursday": "Giovedì",
+			"tuesday": "Martedì",
+			"wednesday": "Mercoledì"
+		},
+		"delete": "Elimina",
+		"deleting": "Eliminazione...",
+		"deselectAll": "Deseleziona tutto",
+		"details": "Dettagli",
+		"dismiss": "Ignora",
+		"download": "Scarica",
+		"duplicate": "Duplica",
+		"edit": "Modifica",
+		"enabled": "Abilitato",
+		"error": "Errore",
+		"error-occurred": "Si è verificato un errore",
+		"gender": {
+			"female": "Femmina",
+			"male": "Maschio",
+			"other": "Altro"
+		},
+		"goToDashboard": "Vai alla Dashboard",
+		"inactive": "Inattivo",
+		"loading": "Caricamento...",
+		"loadMore": "Carica altro",
+		"months": {
+			"april": "Aprile",
+			"august": "Agosto",
+			"december": "Dicembre",
+			"february": "Febbraio",
+			"january": "Gennaio",
+			"july": "Luglio",
+			"june": "Giugno",
+			"march": "Marzo",
+			"may": "Maggio",
+			"november": "Novembre",
+			"october": "Ottobre",
+			"september": "Settembre"
+		},
+		"more": "altro",
+		"moreActions": "Altre azioni",
+		"moveDown": "Sposta giù",
+		"moveUp": "Sposta su",
+		"name": "Nome",
+		"new": "Nuovo",
+		"next": "Avanti",
+		"notApplicable": "N/D",
+		"not-available": "Non disponibile",
+		"openMenu": "Apri menu",
+		"optional": "opzionale",
+		"or": "O",
+		"previous": "Precedente",
+		"recovering": "Ripristino in corso...",
+		"refresh": "Aggiorna",
+		"reject": "Rifiuta",
+		"rejecting": "Rifiuto in corso…",
+		"remove": "Rimuovi",
+		"removing": "Rimozione...",
+		"reset": "Reimposta",
+		"retry": "Riprova",
+		"save": "Salva",
+		"saveChanges": "Salva modifiche",
+		"saving": "Salvataggio...",
+		"selectAll": "Seleziona tutto",
+		"selected": "selezionato",
+		"select-language": "Seleziona lingua",
+		"set": "set",
+		"sets": "set",
+		"skip": "Salta",
+		"status": "Stato",
+		"submitting": "Invio in corso…",
+		"to": "a",
+		"today": "Oggi",
+		"unexpectedError": "Si è verificato un errore imprevisto",
+		"unknown": "Sconosciuto",
+		"unknownEmployee": "Dipendente sconosciuto",
+		"unknownTeam": "Team sconosciuto",
+		"unnamed": "Senza nome",
+		"uploading": "Caricamento...",
+		"validate": "Convalida",
+		"validationError": "Errore di convalida",
+		"weekdays": {
+			"fr": "Ve",
+			"fri": "Ven",
+			"mo": "Lu",
+			"mon": "Lun",
+			"sa": "Sa",
+			"sat": "Sab",
+			"su": "Do",
+			"sun": "Dom",
+			"th": "Gi",
+			"thu": "Gio",
+			"tu": "Ma",
+			"tue": "Mar",
+			"we": "Me",
+			"wed": "Mer"
+		}
+	},
+	"errors": {
+		"failedToLoad": "Impossibile caricare i dati",
+		"noEmployee": {
+			"contactAdmin": "Contatta amministratore",
+			"createOrg": "Crea organizzazione",
+			"description": "Hai bisogno di un profilo dipendente per ${feature}. Crea un'organizzazione o contatta il tuo amministratore.",
+			"emailBody": "Ciao,\n\nho bisogno di configurare un profilo dipendente per accedere alle funzionalità della piattaforma. Potresti aiutarmi con questo?\n\nGrazie!",
+			"emailSubject": "Configurazione profilo dipendente richiesta",
+			"helpText": "Se sei stato invitato in un'organizzazione, chiedi al tuo amministratore di configurare il tuo profilo dipendente.",
+			"title": "Profilo dipendente richiesto"
+		},
+		"noOrganization": {
+			"createOrg": "Crea organizzazione",
+			"description": "Non fai ancora parte di nessuna organizzazione. Creane una per iniziare o attendi un invito.",
+			"title": "Nessuna organizzazione trovata",
+			"waiting": "In attesa di un invito?",
+			"waitingDesc": "Il tuo amministratore ti invierà un'email di invito. Controlla la tua casella di posta e la cartella spam."
+		},
+		"unexpected": {
+			"digest": "Riferimento: {digest}"
+		}
+	},
+	"generic": {
+		"done": "Fatto",
+		"submit": "Invia"
+	},
+	"header": {
+		"clock-in": "Timbra ingresso",
+		"clock-out": "Timbra uscita",
+		"request-absence": "Richiedi assenza"
+	},
+	"info": {
+		"back-to-login": "Torna al login"
+	},
+	"nav": {
+		"absences": "Assenze",
+		"approvals": "Approvazioni",
+		"calendar": "Calendario",
+		"compliance": "Conformità",
+		"dashboard": "Dashboard",
+		"get-help": "Ottieni Aiuto",
+		"my-requests": "Le mie richieste",
+		"reports": "Rapporti",
+		"scheduling": "Pianificazione",
+		"settings": "Impostazioni",
+		"team": "Team",
+		"team-label": "Team",
+		"time-tracking": "Rilevazione Tempo",
+		"travel-expenses": "Spese di viaggio"
+	},
+	"table": {
+		"clearFilters": "Cancella filtri",
+		"clearSort": "Rimuovi ordinamento",
+		"description": "Visualizzazione dei visitatori totali degli ultimi 6 mesi. Questo è solo un testo casuale per testare il layout. Si estende su più righe e dovrebbe andare a capo.",
+		"goToFirstPage": "Vai alla prima pagina",
+		"goToLastPage": "Vai all'ultima pagina",
+		"goToNextPage": "Vai alla pagina successiva",
+		"goToPreviousPage": "Vai alla pagina precedente",
+		"header": "Intestazione",
+		"limit": "Limite",
+		"noResults": "Nessun risultato.",
+		"pageOfPages": "Pagina {current} di {total}",
+		"reviewer": "Revisore",
+		"rowsPerPage": "Righe per pagina",
+		"searchPlaceholder": "Cerca...",
+		"selectedOfTotal": "{selected} di {total} riga/e selezionata/e",
+		"select-reviewer": "Seleziona un revisore",
+		"select-status": "Seleziona uno stato",
+		"select-type": "Seleziona un tipo",
+		"showing-visitors": "Visualizzazione visitatori totali per gli ultimi 6 mesi",
+		"sortAscending": "Crescente",
+		"sortDescending": "Decrescente",
+		"status": "Stato",
+		"status-options": {
+			"done": "Fatto",
+			"in-progress": "In Corso",
+			"not-started": "Non Iniziato"
+		},
+		"target": "Obiettivo",
+		"totalRows": "{total} riga/righe",
+		"trending-up": "In crescita del 5,2% questo mese",
+		"type": "Tipo",
+		"type-options": {
+			"capabilities": "Capacità",
+			"cover-page": "Copertina",
+			"design": "Design",
+			"executive-summary": "Riepilogo Esecutivo",
+			"focus-documents": "Documenti di Focus",
+			"narrative": "Narrativa",
+			"table-of-contents": "Sommario",
+			"technical-approach": "Approccio Tecnico"
+		}
+	},
+	"tour": {
+		"absences": {
+			"description": "Controlla saldi, richieste e approvazioni delle assenze in un unico punto.",
+			"title": "Gestire le assenze"
+		},
+		"approvals": {
+			"description": "Esamina registrazioni orarie e richieste di assenza in sospeso del tuo team.",
+			"title": "Gestire le approvazioni"
+		},
+		"calendar": {
+			"description": "Usa il calendario per vedere turni, assenze e disponibilità del team.",
+			"title": "Consultare il calendario"
+		},
+		"dashboard": {
+			"description": "Segui la giornata corrente, i riepiloghi importanti e le attività in sospeso.",
+			"title": "Iniziare dalla dashboard"
+		},
+		"notifications": {
+			"description": "Apri le notifiche per approvazioni, aggiornamenti e promemoria importanti.",
+			"title": "Restare informato"
+		},
+		"reports": {
+			"description": "Crea report ed esportazioni per paghe, conformità e revisioni operative.",
+			"title": "Usare i report"
+		},
+		"requestAbsence": {
+			"description": "Invia richieste di ferie, malattia o altre assenze da qui.",
+			"title": "Richiedere un'assenza"
+		},
+		"settings": {
+			"description": "Configura regole aziendali, team, dipendenti e criteri di rilevazione oraria.",
+			"title": "Configurare le impostazioni"
+		},
+		"sidebar": {
+			"description": "Usa la barra laterale per passare tra orari, pianificazione, report e impostazioni.",
+			"title": "Navigare in Z8"
+		},
+		"teamSection": {
+			"description": "Gli strumenti del team aiutano i manager a coordinare approvazioni, turni e dati dipendenti.",
+			"title": "Lavorare con il team"
+		},
+		"timeClock": {
+			"description": "Timbra entrate e uscite rapidamente per registrare la giornata con precisione.",
+			"title": "Registrare il tempo"
+		},
+		"timeTracking": {
+			"description": "Rivedi e correggi le registrazioni orarie prima di approvarle o esportarle.",
+			"title": "Monitorare le ore di lavoro"
+		}
+	},
+	"user": {
+		"language": "Lingua",
+		"logging-out": "Disconnessione...",
+		"log-out": "Disconnetti",
+		"profile": "Profilo",
+		"theme": "Tema",
+		"theme-dark": "Scuro",
+		"theme-light": "Chiaro",
+		"theme-system": "Sistema",
+		"time-settings": "Impostazioni orario"
+	},
+	"validation": {
+		"first-name-required": "Il nome è obbligatorio",
+		"invalid-email": "Indirizzo email non valido",
+		"invalid-password": "Password non valida",
+		"last-name-required": "Il cognome è obbligatorio",
+		"password-required": "La password è obbligatoria"
+	}
 }

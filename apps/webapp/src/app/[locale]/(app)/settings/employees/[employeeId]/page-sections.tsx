@@ -354,13 +354,15 @@ function AccessSwitchField({
 	return (
 		<form.Field name={name}>
 			{(field) => (
-				<div className="flex items-center justify-between rounded-lg border p-3">
-					<div className="space-y-0.5">
-						<TFormLabel>{label}</TFormLabel>
-						<TFormDescription>{description}</TFormDescription>
+				<TFormItem>
+					<div className="flex items-center justify-between rounded-lg border p-3">
+						<div className="space-y-0.5">
+							<TFormLabel>{label}</TFormLabel>
+							<TFormDescription>{description}</TFormDescription>
+						</div>
+						<Switch checked={field.state.value ?? true} onCheckedChange={field.handleChange} disabled={isUpdating} aria-label={ariaLabel} />
 					</div>
-					<Switch checked={field.state.value ?? true} onCheckedChange={field.handleChange} disabled={isUpdating} aria-label={ariaLabel} />
-				</div>
+				</TFormItem>
 			)}
 		</form.Field>
 	);

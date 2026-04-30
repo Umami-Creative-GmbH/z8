@@ -14,40 +14,40 @@
 // Must match the NAMESPACE_MAP in scripts/split-translations.mjs
 const NAMESPACE_PREFIXES = {
 	// common namespace
-	common: 'common',
-	generic: 'common',
-	nav: 'common',
-	header: 'common',
-	user: 'common',
-	table: 'common',
-	tour: 'common',
-	validation: 'common',
-	errors: 'common',
-	info: 'common',
-	meta: 'common',
+	common: "common",
+	generic: "common",
+	nav: "common",
+	header: "common",
+	user: "common",
+	table: "common",
+	tour: "common",
+	validation: "common",
+	errors: "common",
+	info: "common",
+	meta: "common",
 	// auth namespace
-	auth: 'auth',
-	profile: 'auth',
-	sessions: 'auth',
+	auth: "auth",
+	profile: "auth",
+	sessions: "auth",
 	// dashboard namespace
-	dashboard: 'dashboard',
+	dashboard: "dashboard",
 	// calendar namespace
-	absences: 'calendar',
-	calendar: 'calendar',
+	absences: "calendar",
+	calendar: "calendar",
 	// timeTracking namespace
-	timeTracking: 'timeTracking',
-	wellness: 'timeTracking',
+	timeTracking: "timeTracking",
+	wellness: "timeTracking",
 	// reports namespace
-	reports: 'reports',
+	reports: "reports",
 	// settings namespace
-	settings: 'settings',
-	organization: 'settings',
-	vacation: 'settings',
-	team: 'settings',
+	settings: "settings",
+	organization: "settings",
+	vacation: "settings",
+	team: "settings",
 	// onboarding namespace
-	onboarding: 'onboarding',
+	onboarding: "onboarding",
 	// bot namespace
-	bot: 'bot',
+	bot: "bot",
 };
 
 /**
@@ -57,7 +57,7 @@ const NAMESPACE_PREFIXES = {
  */
 function inferNamespace(keyName) {
 	// Get the top-level prefix (first segment before the dot)
-	const firstDot = keyName.indexOf('.');
+	const firstDot = keyName.indexOf(".");
 	const prefix = firstDot > 0 ? keyName.substring(0, firstDot) : keyName;
 	return NAMESPACE_PREFIXES[prefix];
 }
@@ -69,7 +69,7 @@ function inferNamespace(keyName) {
  * @returns {boolean} - True if the key is dynamic
  */
 function isDynamicKey(keyName) {
-	return keyName.includes('${') || keyName.includes('}');
+	return keyName.includes("${") || keyName.includes("}");
 }
 
 export default function extractor(code, fileName) {
@@ -104,7 +104,10 @@ export default function extractor(code, fileName) {
 	}
 
 	// Also check for T component import
-	const hasTComponent = /import\s+\{[^}]*\bT\b[^}]*\}\s+from\s+["'](@\/tolgee\/server|@tolgee\/(react|next|web)(\/server)?)["']/.test(code);
+	const hasTComponent =
+		/import\s+\{[^}]*\bT\b[^}]*\}\s+from\s+["'](@\/tolgee\/server|@tolgee\/(react|next|web)(\/server)?)["']/.test(
+			code,
+		);
 
 	if (!hasValidTSource && !hasTComponent) {
 		// No valid translation imports, skip this file
@@ -129,7 +132,7 @@ export default function extractor(code, fileName) {
 function getLineNumber(code, position) {
 	let line = 1;
 	for (let i = 0; i < position && i < code.length; i++) {
-		if (code[i] === '\n') line++;
+		if (code[i] === "\n") line++;
 	}
 	return line;
 }
@@ -140,18 +143,18 @@ function getLineNumber(code, position) {
  */
 function extractString(str, startIndex) {
 	const quoteChar = str[startIndex];
-	if (quoteChar !== '"' && quoteChar !== "'" && quoteChar !== '`') {
+	if (quoteChar !== '"' && quoteChar !== "'" && quoteChar !== "`") {
 		return null;
 	}
 
-	let value = '';
+	let value = "";
 	let i = startIndex + 1;
 
 	while (i < str.length) {
 		const char = str[i];
 
 		// Handle escape sequences
-		if (char === '\\' && i + 1 < str.length) {
+		if (char === "\\" && i + 1 < str.length) {
 			value += str[i + 1];
 			i += 2;
 			continue;
@@ -205,27 +208,27 @@ function extractTCalls(code) {
 		let namespace = undefined;
 
 		// Check for comma (second argument)
-		if (code[pos] === ',') {
+		if (code[pos] === ",") {
 			pos++;
 			// Skip whitespace
 			while (pos < code.length && /\s/.test(code[pos])) pos++;
 
 			// Check if it's a string (simple default) or object
-			if (code[pos] === '"' || code[pos] === "'" || code[pos] === '`') {
+			if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
 				const defaultResult = extractString(code, pos);
 				if (defaultResult) {
 					defaultValue = defaultResult.value;
 					pos = defaultResult.endIndex + 1;
 				}
-			} else if (code[pos] === '{') {
+			} else if (code[pos] === "{") {
 				// Parse object argument for defaultValue and ns
 				const objectStart = pos;
 				let braceCount = 1;
 				pos++;
 				while (pos < code.length && braceCount > 0) {
-					if (code[pos] === '{') braceCount++;
-					else if (code[pos] === '}') braceCount--;
-					else if (code[pos] === '"' || code[pos] === "'" || code[pos] === '`') {
+					if (code[pos] === "{") braceCount++;
+					else if (code[pos] === "}") braceCount--;
+					else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
 						// Skip over strings inside the object to avoid counting braces in strings
 						const strResult = extractString(code, pos);
 						if (strResult) {
@@ -260,11 +263,11 @@ function extractTCalls(code) {
 
 		// Handle namespace:key format
 		let finalKeyName = keyName;
-		if (keyName.includes(':') && !keyName.startsWith('http')) {
-			const colonIndex = keyName.indexOf(':');
+		if (keyName.includes(":") && !keyName.startsWith("http")) {
+			const colonIndex = keyName.indexOf(":");
 			// Only treat as namespace if it looks like a namespace (no dots before colon)
 			const beforeColon = keyName.substring(0, colonIndex);
-			if (!beforeColon.includes('.')) {
+			if (!beforeColon.includes(".")) {
 				namespace = namespace || beforeColon;
 				finalKeyName = keyName.substring(colonIndex + 1);
 			}
@@ -318,10 +321,10 @@ function extractTComponents(code) {
 		let namespace = undefined;
 
 		// Handle namespace:key format
-		if (keyName.includes(':') && !keyName.startsWith('http')) {
-			const colonIndex = keyName.indexOf(':');
+		if (keyName.includes(":") && !keyName.startsWith("http")) {
+			const colonIndex = keyName.indexOf(":");
 			const beforeColon = keyName.substring(0, colonIndex);
-			if (!beforeColon.includes('.')) {
+			if (!beforeColon.includes(".")) {
 				namespace = beforeColon;
 				keyName = keyName.substring(colonIndex + 1);
 			}
@@ -382,7 +385,8 @@ function extractKeyMappingObjects(code) {
 
 	// Match objects that are likely i18n key maps
 	// Look for: variable assignment followed by object with string values
-	const objectPattern = /(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\{([\s\S]*?)\};/g;
+	const objectPattern =
+		/(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\{([\s\S]*?)\};/g;
 
 	let match;
 	while ((match = objectPattern.exec(code)) !== null) {
@@ -390,14 +394,15 @@ function extractKeyMappingObjects(code) {
 		const lineNumber = getLineNumber(code, match.index);
 
 		// Pattern 1: Nested objects with { key: "...", default: "..." }
-		const nestedPattern = /(\w+)\s*:\s*\{\s*key\s*:\s*["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']\s*,\s*default\s*:\s*["']([^"']+)["']\s*\}/g;
+		const nestedPattern =
+			/(\w+)\s*:\s*\{\s*key\s*:\s*["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']\s*,\s*default\s*:\s*["']([^"']+)["']\s*\}/g;
 
 		let nestedMatch;
 		while ((nestedMatch = nestedPattern.exec(objectContent)) !== null) {
 			const keyValue = nestedMatch[2];
 			const defaultValue = nestedMatch[3];
 
-			if (keyValue.includes('.') && !isDynamicKey(keyValue)) {
+			if (keyValue.includes(".") && !isDynamicKey(keyValue)) {
 				results.push({
 					keyName: keyValue,
 					defaultValue,
@@ -415,12 +420,12 @@ function extractKeyMappingObjects(code) {
 			const keyValue = valueMatch[2];
 
 			// Skip if this looks like it's part of a nested object (key: or default:)
-			if (valueMatch[1] === 'key' || valueMatch[1] === 'default') continue;
+			if (valueMatch[1] === "key" || valueMatch[1] === "default") continue;
 
 			// Only include if it looks like a translation key (has at least one dot) and is not dynamic
-			if (keyValue.includes('.') && !isDynamicKey(keyValue)) {
+			if (keyValue.includes(".") && !isDynamicKey(keyValue)) {
 				// Check if we already added this from nested pattern
-				const alreadyAdded = results.some(r => r.keyName === keyValue && r.line === lineNumber);
+				const alreadyAdded = results.some((r) => r.keyName === keyValue && r.line === lineNumber);
 				if (!alreadyAdded) {
 					results.push({
 						keyName: keyValue,
@@ -435,7 +440,8 @@ function extractKeyMappingObjects(code) {
 
 	// Also look for arrays of translation keys
 	// Pattern: const KEYS = ["some.key", "another.key"]
-	const arrayPattern = /(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/g;
+	const arrayPattern =
+		/(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/g;
 
 	while ((match = arrayPattern.exec(code)) !== null) {
 		const arrayContent = match[2];
@@ -448,7 +454,7 @@ function extractKeyMappingObjects(code) {
 		while ((stringMatch = stringPattern.exec(arrayContent)) !== null) {
 			const keyValue = stringMatch[1];
 
-			if (keyValue.includes('.') && !isDynamicKey(keyValue)) {
+			if (keyValue.includes(".") && !isDynamicKey(keyValue)) {
 				results.push({
 					keyName: keyValue,
 					defaultValue: undefined,
@@ -478,16 +484,48 @@ function extractKeyProperties(code) {
 		const keyValue = match[2];
 
 		// Must have at least one dot to be a translation key
-		if (!keyValue.includes('.') || isDynamicKey(keyValue)) continue;
+		if (!keyValue.includes(".") || isDynamicKey(keyValue)) continue;
 
 		const namespace = inferNamespace(keyValue);
+		const defaultValue = extractAdjacentDefaultValue(code, match.index, match[1]);
 
 		results.push({
 			keyName: keyValue,
+			defaultValue,
 			namespace,
 			line: getLineNumber(code, match.index),
 		});
 	}
 
 	return results;
+}
+
+function extractAdjacentDefaultValue(code, keyPosition, keyPropertyName) {
+	const objectStart = code.lastIndexOf("{", keyPosition);
+	if (objectStart < 0) return undefined;
+
+	let pos = objectStart + 1;
+	let braceCount = 1;
+	while (pos < code.length && braceCount > 0) {
+		if (code[pos] === "{") braceCount++;
+		else if (code[pos] === "}") braceCount--;
+		else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
+			const strResult = extractString(code, pos);
+			if (strResult) {
+				pos = strResult.endIndex;
+			}
+		}
+		pos++;
+	}
+
+	if (braceCount !== 0) return undefined;
+
+	const objectContent = code.slice(objectStart, pos);
+	const fallbackPropertyName = `${keyPropertyName.slice(0, -3)}Default`;
+	const fallbackMatch = objectContent.match(new RegExp(`${fallbackPropertyName}\\s*:\\s*["']`));
+	if (!fallbackMatch) return undefined;
+
+	const fallbackStart = objectContent.indexOf(fallbackMatch[0]) + fallbackMatch[0].length - 1;
+	const fallbackResult = extractString(objectContent, fallbackStart);
+	return fallbackResult?.value;
 }

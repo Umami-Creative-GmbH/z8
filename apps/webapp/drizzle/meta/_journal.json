@@ -64,6 +64,13 @@
       "when": 1777400000000,
       "tag": "0008_demo_data_feature_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777552700826,
+      "tag": "0009_organization_email_template",
+      "breakpoints": true
     }
   ]
 }
