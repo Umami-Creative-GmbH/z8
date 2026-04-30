@@ -93,7 +93,6 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 						sizes="50vw"
 						src={authImage}
 					/>
-					<div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.82),rgba(37,99,235,0.35),rgba(2,6,23,0.72))]" />
 				</aside>
 			</div>
 		</DomainAuthProvider>
