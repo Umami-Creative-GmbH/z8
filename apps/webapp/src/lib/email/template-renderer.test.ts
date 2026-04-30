@@ -102,6 +102,27 @@ describe("renderOrganizationEmailTemplate", () => {
 		expect(result.usedOverride).toBe(true);
 	});
 
+	it("sanitizes unsafe urls produced by interpolated placeholder data", async () => {
+		getEnabledOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Reset password for {{userName}}",
+			html: '<a href="{{resetUrl}}">Open</a>',
+			plainText: null,
+		});
+
+		const result = await renderOrganizationEmailTemplate({
+			organizationId: "org_123",
+			templateKey: "password-reset",
+			data: {
+				...passwordResetData,
+				resetUrl: "javascript:alert(1)",
+			},
+		});
+
+		expect(result.html).toBe("<a>Open</a>");
+		expect(result.html).not.toContain("javascript:");
+		expect(result.usedOverride).toBe(true);
+	});
+
 	it("falls back to the default template when override lookup fails", async () => {
 		const error = new Error("database unavailable");
 		getEnabledOrganizationEmailTemplateMock.mockRejectedValue(error);

@@ -72,7 +72,7 @@ export async function renderOrganizationEmailTemplate({
 
 	return {
 		subject: interpolateTemplate(override.subject, data),
-		html: interpolateTemplate(sanitizeEmailHtml(override.html), data),
+		html: sanitizeEmailHtml(interpolateTemplate(override.html, data)),
 		plainText: override.plainText ? interpolateTemplate(override.plainText, data) : undefined,
 		usedOverride: true,
 	};
