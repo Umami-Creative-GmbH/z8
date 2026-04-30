@@ -164,6 +164,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "organization",
 	},
 	{
+		id: "email-templates",
+		titleKey: "settings.emailTemplates.title",
+		titleDefault: "Email Templates",
+		descriptionKey: "settings.emailTemplates.description",
+		descriptionDefault: "Customize the emails your organization sends",
+		href: "/settings/email-templates",
+		icon: "mail",
+		minimumTier: "orgAdmin",
+		group: "organization",
+	},
+	{
 		id: "teams",
 		titleKey: "settings.teams.title",
 		titleDefault: "Teams",

@@ -59,6 +59,16 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("shows email templates only for org admins", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.some((entry) => entry.id === "email-templates")).toBe(true);
+		expect(managerEntries.some((entry) => entry.id === "email-templates")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "email-templates")).toBe(false);
+	});
+
 	it("derives visible groups from the remaining visible entries", () => {
 		const entries = getVisibleSettings("manager", false);
 		const groups = getVisibleGroups(entries);
