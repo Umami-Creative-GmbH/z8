@@ -1,17 +1,14 @@
 "use client";
 
 import "@react-email/editor/themes/default.css";
+import type { EmailEditorRef } from "@react-email/editor";
 import dynamic from "next/dynamic";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
-
-type ReactEmailEditorRef = {
-	getEmail: () => Promise<{ html: string; text: string }>;
-	getJSON: () => Record<string, unknown>;
-};
+import type { EmailTemplateDefinition, EmailTemplateVariableDefinition } from "@/lib/email/template-registry";
+import { VariablePalette } from "./variable-palette";
 
 const ReactEmailEditor = dynamic(
 	() => import("@react-email/editor").then((module) => module.EmailEditor),
@@ -35,11 +32,14 @@ interface EmailTemplateEditorProps {
 	onHtmlChange: (value: string) => void;
 	onPlainTextChange: (value: string) => void;
 	onEditorDocumentChange: (value: Record<string, unknown>) => void;
+	variables: EmailTemplateVariableDefinition[];
+	onInsertVariable: (name: string) => void;
 	onSubjectFocus?: () => void;
 }
 
 export interface EmailTemplateEditorHandle {
 	focusSubject: () => void;
+	insertIntoBody: (value: string) => void;
 	insertIntoSubject: (value: string) => void;
 }
 
@@ -55,15 +55,21 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 			onHtmlChange,
 			onPlainTextChange,
 			onEditorDocumentChange,
+			variables,
+			onInsertVariable,
 			onSubjectFocus,
 		},
 		ref,
 	) {
+		const bodyEditorRef = useRef<EmailEditorRef>(null);
 		const subjectRef = useRef<HTMLInputElement>(null);
 		const updateVersionRef = useRef(0);
 
 		useImperativeHandle(ref, () => ({
 			focusSubject: () => subjectRef.current?.focus(),
+			insertIntoBody: (value) => {
+				bodyEditorRef.current?.editor?.chain().focus().insertContent(value).run();
+			},
 			insertIntoSubject: (value) => {
 				const input = subjectRef.current;
 				const start = input?.selectionStart ?? subject.length;
@@ -91,38 +97,44 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 					/>
 				</div>
 
-				<div className="grid gap-2">
-					<p id="email-template-body-label" className="font-medium text-sm leading-none">
-						Email body
-					</p>
-					<p id="email-template-body-description" className="text-muted-foreground text-xs">
-						Compose the rich HTML email sent for this system event.
-					</p>
-					<div
-						role="group"
-						aria-labelledby="email-template-body-label"
-						aria-describedby="email-template-body-description"
-						className="rounded-xl border bg-background p-2"
-					>
-						<ReactEmailEditor
-							content={editorDocument}
-							placeholder="Write the operational email body..."
-							className="min-h-64"
-							onUpdate={async (editorRef: ReactEmailEditorRef) => {
-								const updateVersion = updateVersionRef.current + 1;
-								updateVersionRef.current = updateVersion;
-								const [email, json] = await Promise.all([
-									editorRef.getEmail(),
-									Promise.resolve(editorRef.getJSON()),
-								]);
-								if (updateVersion !== updateVersionRef.current) {
-									return;
-								}
-								onHtmlChange(email.html);
-								onPlainTextChange(email.text);
-								onEditorDocumentChange(json);
-							}}
-						/>
+				<div className="grid gap-3">
+					<div className="space-y-1">
+						<p id="email-template-body-label" className="font-medium text-sm leading-none">
+							Email body
+						</p>
+						<p id="email-template-body-description" className="text-muted-foreground text-xs">
+							Compose the rich HTML email sent for this system event.
+						</p>
+					</div>
+					<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+						<div
+							role="group"
+							aria-labelledby="email-template-body-label"
+							aria-describedby="email-template-body-description"
+							className="rounded-xl border bg-background p-2"
+						>
+							<ReactEmailEditor
+								ref={bodyEditorRef}
+								content={editorDocument}
+								placeholder="Write the operational email body..."
+								className="min-h-64 [&_.ProseMirror]:min-h-64 [&_.ProseMirror]:!bg-background [&_.ProseMirror]:p-3 [&_.ProseMirror]:text-foreground [&_.ProseMirror]:caret-foreground [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:!bg-card"
+								onUpdate={async (editorRef: EmailEditorRef) => {
+									const updateVersion = updateVersionRef.current + 1;
+									updateVersionRef.current = updateVersion;
+									const [email, json] = await Promise.all([
+										editorRef.getEmail(),
+										Promise.resolve(editorRef.getJSON()),
+									]);
+									if (updateVersion !== updateVersionRef.current) {
+										return;
+									}
+									onHtmlChange(email.html);
+									onPlainTextChange(email.text);
+									onEditorDocumentChange(json as Record<string, unknown>);
+								}}
+							/>
+						</div>
+						<VariablePalette variables={variables} onInsert={onInsertVariable} />
 					</div>
 				</div>
 

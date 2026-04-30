@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import Image from "next/image";
 import Script from "next/script";
 import { connection } from "next/server";
+import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,11 +17,7 @@ export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
-export default async function AuthLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Get domain from proxy headers
@@ -70,17 +68,32 @@ export default async function AuthLayout({
 					dangerouslySetInnerHTML={{ __html: cookieConsentScript }}
 				/>
 			)}
-			<div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
-				<div className="w-full md:max-w-3xl">
-					<div className="mb-4 flex justify-end gap-2">
+			<div className="grid min-h-svh bg-background lg:grid-cols-2">
+				<section className="flex h-svh flex-col overflow-y-auto px-6 py-6 sm:px-8 lg:px-10">
+					<div className="flex items-center justify-end gap-2">
 						<ThemeToggle />
 						<LanguageSwitcher />
 					</div>
-					{children}
-					<div className="mt-6">
+
+					<main className="flex flex-1 items-center justify-center py-10">
+						<div className="w-full max-w-3xl">{children}</div>
+					</main>
+
+					<div className="pt-2">
 						<InfoFooter />
 					</div>
-				</div>
+				</section>
+
+				<aside className="fixed top-0 right-0 hidden h-svh w-1/2 overflow-hidden bg-muted lg:block">
+					<Image
+						alt=""
+						className="absolute inset-0 h-full w-full object-cover"
+						fill
+						priority
+						sizes="50vw"
+						src={authImage}
+					/>
+				</aside>
 			</div>
 		</DomainAuthProvider>
 	);

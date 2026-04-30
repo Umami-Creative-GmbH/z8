@@ -17,7 +17,6 @@ import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
 import { useRouter } from "@/navigation";
 import { EmailTemplateEditor, type EmailTemplateEditorHandle } from "./email-template-editor";
 import { EmailTemplateList } from "./email-template-list";
-import { VariablePalette } from "./variable-palette";
 
 export interface EmailTemplateOverride {
 	subject: string;
@@ -181,7 +180,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 
 	const handleInsertVariable = (name: string) => {
 		const token = `{{${name}}}`;
-		editorRef.current?.insertIntoSubject(token);
+		editorRef.current?.insertIntoBody(token);
 	};
 
 	if (!selectedTemplate || !draft) {
@@ -238,19 +237,20 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 								</p>
 							</div>
 							<label className="flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 text-sm">
+								<span className="text-muted-foreground">System default</span>
 								<Switch
 									checked={draft.isEnabled}
 									onCheckedChange={(isEnabled) => updateDraft({ isEnabled })}
-									aria-label="Enable template"
+									aria-label="Use custom template"
 								/>
-								Enabled
+								<span className="font-medium">Custom template</span>
 							</label>
 						</CardHeader>
 						<CardContent className="space-y-6">
 							<div className="rounded-xl border bg-muted/25 p-4 text-sm">
 								<p className="font-medium">Default fallback</p>
 								<p className="mt-1 text-muted-foreground">
-									If this template is reset or disabled, Z8 uses the system copy and subject:{" "}
+									If this template uses the system default, Z8 sends the system copy and subject:{" "}
 									<span className="font-medium text-foreground">
 										{selectedTemplate.definition.defaultSubject}
 									</span>
@@ -265,16 +265,13 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 								html={draft.html}
 								plainText={draft.plainText}
 								editorDocument={draft.editorDocument}
+								variables={selectedTemplate.definition.variables}
 								onSubjectChange={(subject) => updateDraft({ subject })}
 								onHtmlChange={(html) => updateDraft({ html })}
 								onPlainTextChange={(plainText) => updateDraft({ plainText })}
 								onEditorDocumentChange={(editorDocument) => updateDraft({ editorDocument })}
+								onInsertVariable={handleInsertVariable}
 								onSubjectFocus={() => undefined}
-							/>
-
-							<VariablePalette
-								variables={selectedTemplate.definition.variables}
-								onInsert={handleInsertVariable}
 							/>
 
 							<div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">

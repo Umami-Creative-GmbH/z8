@@ -69,9 +69,12 @@ function TFormItem({ className, ...props }: React.ComponentProps<"div">) {
  */
 function useTFormItem() {
 	const context = React.useContext(TFormItemContext);
+	const fallbackId = React.useId();
+
 	if (!context.id) {
-		throw new Error("useTFormItem must be used within <TFormItem>");
+		return { id: fallbackId };
 	}
+
 	return context;
 }
 

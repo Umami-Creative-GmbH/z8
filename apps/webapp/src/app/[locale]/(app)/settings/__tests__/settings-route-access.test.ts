@@ -271,6 +271,19 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('redirect("/settings/employees")')).toBe(true);
 	});
 
+	it("wraps employee app access switch fields in a TanStack form item", () => {
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/page-sections.tsx"), "utf8"),
+		);
+		const accessSwitchFieldSource = source.slice(
+			source.indexOf("function AccessSwitchField"),
+			source.indexOf("function TextField"),
+		);
+
+		expect(accessSwitchFieldSource).toContain("<TFormItem>");
+		expect(accessSwitchFieldSource).toContain("</TFormItem>");
+	});
+
 	it("uses shared scoped access helpers instead of admin-only checks for employee and skill actions", () => {
 		const employeeMutationsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "employees/employee-mutations.actions.ts"), "utf8"),
@@ -287,6 +300,16 @@ describe("org-admin settings route access", () => {
 		expect(rateMutationsSource.includes("requireAdmin(currentEmployee")).toBe(false);
 		expect(rateMutationsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(true);
 		expect(skillsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
+	});
+
+	it("does not re-export type-only skill shapes from the server actions module", () => {
+		const skillsActionsSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
+		);
+
+		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*EmployeeSkillWithDetails/);
+		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillValidationResult/);
+		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillWithRelations/);
 	});
 
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {

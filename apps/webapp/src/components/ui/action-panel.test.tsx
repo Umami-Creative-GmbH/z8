@@ -86,6 +86,25 @@ describe("ActionPanel", () => {
 		expect(screen.getByRole("dialog", { name: "Wide panel" }).className).toContain("lg:max-w-3xl");
 	});
 
+	it("uses animated sheet transitions", () => {
+		render(
+			<ActionPanel open>
+				<ActionPanelContent>
+					<ActionPanelTitle>Animated panel</ActionPanelTitle>
+				</ActionPanelContent>
+			</ActionPanel>,
+		);
+
+		const dialogClassName = screen.getByRole("dialog", { name: "Animated panel" }).className;
+
+		expect(dialogClassName).toContain("motion-safe:data-[state=open]:animate-in");
+		expect(dialogClassName).toContain("motion-safe:data-[state=closed]:animate-out");
+		expect(dialogClassName).toContain("data-[state=open]:slide-in-from-right-full");
+		expect(dialogClassName).toContain("data-[state=closed]:slide-out-to-right-full");
+		expect(dialogClassName).toContain("data-[state=open]:duration-300");
+		expect(dialogClassName).toContain("data-[state=closed]:duration-200");
+	});
+
 	it("can hide the close button", () => {
 		render(
 			<ActionPanel open>

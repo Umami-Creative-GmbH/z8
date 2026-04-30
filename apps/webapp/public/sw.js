@@ -277,10 +277,11 @@ async function handleStaticAssetRequest(request) {
  * Check if a path is a static asset
  */
 function isStaticAsset(pathname) {
-	return (
-		pathname.startsWith("/_next/static/") ||
-		pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|css|js)$/)
-	);
+	if (pathname.startsWith("/_next/")) {
+		return false;
+	}
+
+	return !!pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|css|js)$/);
 }
 
 // =============================================================================
