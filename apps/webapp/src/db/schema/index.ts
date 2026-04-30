@@ -30,6 +30,7 @@ export * from "./custom-role";
 export * from "./customer";
 // Discord integration
 export * from "./discord-integration";
+export * from "./email-template";
 export * from "./employment-history";
 export * from "./enterprise";
 // Enums

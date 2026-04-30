@@ -1047,6 +1047,10 @@
       "details": "Detalles del empleado",
       "title": "Empleados"
     },
+    "emailTemplates": {
+      "description": "Personalice los correos electrónicos que envía su organización",
+      "title": "Plantillas de correo electrónico"
+    },
     "enterprise": {
       "domains": {
         "description": "Configure el dominio de inicio de sesión personalizado, la imagen de marca y los proveedores de SSO de su organización.",

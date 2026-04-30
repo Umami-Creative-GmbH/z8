@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm";
 import { dataExport, db, employee, organization } from "@/db";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
-import { renderExportFailed, renderExportReady } from "@/lib/email/render";
+import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/data-fetchers";
 import {
 	cleanupExpiredExports,
@@ -24,6 +24,10 @@ import {
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ExportProcessorJob");
+
+function maskEmailAddress(email: string): string {
+	return `${email.slice(0, 3)}***`;
+}
 
 export interface ExportJobResult {
 	success: boolean;
@@ -106,22 +110,31 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 			minute: "2-digit",
 		});
 
-		const html = await renderExportReady({
-			recipientName: requester.name,
-			organizationName: requester.organizationName,
-			categories: categoryNames,
-			fileSize: formatFileSize(exportRecord.fileSizeBytes),
-			downloadUrl,
-			expiresAt,
+		const rendered = await renderOrganizationEmailTemplate({
+			organizationId: exportRecord.organizationId,
+			templateKey: "export-ready",
+			data: {
+				recipientName: requester.name,
+				organizationName: requester.organizationName,
+				categories: categoryNames,
+				fileSize: formatFileSize(exportRecord.fileSizeBytes),
+				downloadUrl,
+				expiresAt,
+			},
+			subjectOverride: `Your data export is ready - ${requester.organizationName}`,
 		});
 
 		await sendEmail({
 			to: requester.email,
-			subject: `Your data export is ready - ${requester.organizationName}`,
-			html,
+			subject: rendered.subject,
+			html: rendered.html,
+			organizationId: exportRecord.organizationId,
 		});
 
-		logger.info({ exportId: exportRecord.id, email: requester.email }, "Sent export success email");
+		logger.info(
+			{ exportId: exportRecord.id, email: maskEmailAddress(requester.email) },
+			"Sent export success email",
+		);
 	} catch (error) {
 		logger.error({ exportId: exportRecord.id, error }, "Failed to send success email");
 	}
@@ -143,21 +156,30 @@ async function sendFailureEmail(exportRecord: ExportRecord): Promise<void> {
 		// Build retry URL (settings page)
 		const retryUrl = `${getDefaultAppBaseUrl()}/settings/export`;
 
-		const html = await renderExportFailed({
-			recipientName: requester.name,
-			organizationName: requester.organizationName,
-			categories: categoryNames,
-			errorMessage: exportRecord.errorMessage || "Unknown error",
-			retryUrl,
+		const rendered = await renderOrganizationEmailTemplate({
+			organizationId: exportRecord.organizationId,
+			templateKey: "export-failed",
+			data: {
+				recipientName: requester.name,
+				organizationName: requester.organizationName,
+				categories: categoryNames,
+				errorMessage: exportRecord.errorMessage || "Unknown error",
+				retryUrl,
+			},
+			subjectOverride: `Data export failed - ${requester.organizationName}`,
 		});
 
 		await sendEmail({
 			to: requester.email,
-			subject: `Data export failed - ${requester.organizationName}`,
-			html,
+			subject: rendered.subject,
+			html: rendered.html,
+			organizationId: exportRecord.organizationId,
 		});
 
-		logger.info({ exportId: exportRecord.id, email: requester.email }, "Sent export failure email");
+		logger.info(
+			{ exportId: exportRecord.id, email: maskEmailAddress(requester.email) },
+			"Sent export failure email",
+		);
 	} catch (error) {
 		logger.error({ exportId: exportRecord.id, error }, "Failed to send failure email");
 	}
