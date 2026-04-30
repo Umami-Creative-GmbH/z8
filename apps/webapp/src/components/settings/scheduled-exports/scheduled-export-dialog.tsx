@@ -12,13 +12,14 @@ import {
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Progress } from "@/components/ui/progress";
 import { StepSchedule } from "./steps/step-schedule";
 import { StepReport } from "./steps/step-report";
@@ -244,38 +245,49 @@ export function ScheduledExportDialog({
 	const progress = ((currentStep + 1) / STEPS.length) * 100;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent
-				className="max-w-2xl max-h-[90vh] overflow-y-auto"
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent
 				aria-describedby="wizard-description"
+				size="wide"
 			>
-				<DialogHeader>
-					<DialogTitle>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.scheduledExports.dialog.editTitle", "Edit Scheduled Export")
 							: t("settings.scheduledExports.dialog.createTitle", "New Scheduled Export")}
-					</DialogTitle>
-					<DialogDescription id="wizard-description">
+					</ActionPanelTitle>
+					<ActionPanelDescription id="wizard-description">
 						{STEPS[currentStep].description}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				{/* Progress indicator */}
-				<div className="space-y-2" role="progressbar" aria-valuenow={currentStep + 1} aria-valuemin={1} aria-valuemax={STEPS.length}>
-					<Progress value={progress} className="h-2" aria-label={t("settings.scheduledExports.dialog.progress", "Wizard progress")} />
-					<div className="flex justify-between text-xs text-muted-foreground">
-						<span>
-							{t("settings.scheduledExports.dialog.stepOf", "Step {current} of {total}", {
-								current: currentStep + 1,
-								total: STEPS.length,
-							})}
-						</span>
-						<span>{STEPS[currentStep].name}</span>
+				<ActionPanelBody className="space-y-4">
+					{/* Progress indicator */}
+					<div
+						className="space-y-2"
+						role="progressbar"
+						aria-valuenow={currentStep + 1}
+						aria-valuemin={1}
+						aria-valuemax={STEPS.length}
+					>
+						<Progress
+							value={progress}
+							className="h-2"
+							aria-label={t("settings.scheduledExports.dialog.progress", "Wizard progress")}
+						/>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<span>
+								{t("settings.scheduledExports.dialog.stepOf", "Step {current} of {total}", {
+									current: currentStep + 1,
+									total: STEPS.length,
+								})}
+							</span>
+							<span>{STEPS[currentStep].name}</span>
+						</div>
 					</div>
-				</div>
 
-				{/* Step content */}
-				<div className="py-4 min-h-[300px]">
+					{/* Step content */}
+					<div className="min-h-[300px]">
 					{currentStep === 0 && <StepSchedule form={form} />}
 					{currentStep === 1 && (
 						<StepReport form={form} payrollConfigs={payrollConfigs} />
@@ -291,9 +303,10 @@ export function ScheduledExportDialog({
 							payrollConfigs={payrollConfigs}
 						/>
 					)}
-				</div>
+					</div>
+				</ActionPanelBody>
 
-				<DialogFooter className="flex justify-between sm:justify-between">
+				<ActionPanelFooter className="flex justify-between sm:justify-between">
 					<Button
 						type="button"
 						variant="outline"
@@ -346,8 +359,8 @@ export function ScheduledExportDialog({
 							</Button>
 						)}
 					</div>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -5,15 +5,16 @@ import { useTranslate } from "@tolgee/react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
@@ -128,19 +129,19 @@ export function SplitWorkPeriodDialog({
 	}, [metadata.notes, onOpenChange]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
 					<div className="flex items-center gap-2">
 						<IconScissors className="size-5" />
-						<DialogTitle>{t("calendar.split.title", "Split Work Period")}</DialogTitle>
+						<ActionPanelTitle>{t("calendar.split.title", "Split Work Period")}</ActionPanelTitle>
 					</div>
-					<DialogDescription>
+					<ActionPanelDescription>
 						{t("calendar.split.description", "Divide this work period into two separate sessions.")}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Current work period info */}
 					<div className="rounded-lg bg-muted p-3">
 						<div className="text-sm font-medium">
@@ -221,9 +222,9 @@ export function SplitWorkPeriodDialog({
 							</div>
 						</div>
 					)}
-				</div>
+				</ActionPanelBody>
 
-				<DialogFooter className="gap-2 sm:gap-0">
+				<ActionPanelFooter className="gap-2 sm:gap-0">
 					<Button variant="outline" onClick={handleClose} disabled={isSaving}>
 						<IconX className="size-4 mr-1" />
 						{t("common.cancel", "Cancel")}
@@ -236,8 +237,8 @@ export function SplitWorkPeriodDialog({
 						)}
 						{t("calendar.split.confirm", "Split Work Period")}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

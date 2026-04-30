@@ -12,6 +12,10 @@ import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ManagerNotifications");
 
+function maskEmailAddress(email: string): string {
+	return `${email.slice(0, 3)}***`;
+}
+
 interface ManagerAssignmentNotificationParams {
 	employeeName: string;
 	employeeEmail: string;
@@ -72,14 +76,17 @@ export async function sendManagerAssignedNotification(
 
 		logger.info(
 			{
-				employeeEmail: params.employeeEmail,
-				managerEmail: params.managerEmail,
+				employeeEmail: maskEmailAddress(params.employeeEmail),
+				managerEmail: maskEmailAddress(params.managerEmail),
 				isPrimary: params.isPrimary,
 			},
 			"Manager assignment notifications sent successfully",
 		);
 	} catch (error) {
-		logger.error({ error, params }, "Failed to send manager assignment notification");
+		logger.error(
+			{ error, isPrimary: params.isPrimary },
+			"Failed to send manager assignment notification",
+		);
 		// Don't throw - notifications are non-critical
 	}
 }
@@ -171,13 +178,13 @@ export async function sendManagerRemovedNotification(
 
 		logger.info(
 			{
-				employeeEmail: params.employeeEmail,
-				managerEmail: params.managerEmail,
+				employeeEmail: maskEmailAddress(params.employeeEmail),
+				managerEmail: maskEmailAddress(params.managerEmail),
 			},
 			"Manager removal notifications sent successfully",
 		);
 	} catch (error) {
-		logger.error({ error, params }, "Failed to send manager removal notification");
+		logger.error({ error }, "Failed to send manager removal notification");
 		// Don't throw - notifications are non-critical
 	}
 }

@@ -1,27 +1,27 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
+	type CreateAssignmentInput,
 	createChangePolicyAssignment,
 	getChangePolicies,
 	getEmployeesForAssignment,
 	getTeamsForAssignment,
-	type CreateAssignmentInput,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
@@ -29,13 +29,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	TFormControl,
-	TFormDescription,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentDialogProps {
@@ -186,19 +180,19 @@ export function ChangePolicyAssignmentDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>{getTitle()}</DialogTitle>
-					<DialogDescription>{getDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
+					<ActionPanelBody className="flex items-center justify-center">
 						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-					</div>
+					</ActionPanelBody>
 				) : policies?.length === 0 ? (
-					<div className="py-8 text-center text-muted-foreground">
+					<ActionPanelBody className="text-center text-muted-foreground">
 						<p>{t("settings.changePolicies.noPoliciesForAssignment", "No policies available")}</p>
 						<p className="text-sm mt-1">
 							{t(
@@ -206,122 +200,124 @@ export function ChangePolicyAssignmentDialog({
 								"Create a policy first before assigning it.",
 							)}
 						</p>
-					</div>
+					</ActionPanelBody>
 				) : (
 					<form
 						onSubmit={(e) => {
 							e.preventDefault();
 							form.handleSubmit();
 						}}
-						className="space-y-4"
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						{/* Policy Selection */}
-						<form.Field name="policyId">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel required>
-										{t("settings.changePolicies.selectPolicy", "Select Policy")}
-									</TFormLabel>
-									<TFormControl>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => field.handleChange(value)}
-										>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.changePolicies.selectPolicyPlaceholder",
-														"Choose a policy...",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{policies?.map((policy) => (
-													<SelectItem key={policy.id} value={policy.id}>
-														{policy.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
+						<ActionPanelBody className="space-y-4">
+							{/* Policy Selection */}
+							<form.Field name="policyId">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel required>
+											{t("settings.changePolicies.selectPolicy", "Select Policy")}
+										</TFormLabel>
+										<TFormControl>
+											<Select
+												value={field.state.value}
+												onValueChange={(value) => field.handleChange(value)}
+											>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.changePolicies.selectPolicyPlaceholder",
+															"Choose a policy...",
+														)}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{policies?.map((policy) => (
+														<SelectItem key={policy.id} value={policy.id}>
+															{policy.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							{/* Team Selection (only for team assignments) */}
+							{assignmentType === "team" && (
+								<form.Field name="teamId">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel required>
+												{t("settings.changePolicies.selectTeam", "Select Team")}
+											</TFormLabel>
+											<TFormControl>
+												<Select
+													value={field.state.value}
+													onValueChange={(value) => field.handleChange(value)}
+												>
+													<SelectTrigger>
+														<SelectValue
+															placeholder={t(
+																"settings.changePolicies.selectTeamPlaceholder",
+																"Choose a team...",
+															)}
+														/>
+													</SelectTrigger>
+													<SelectContent>
+														{teams?.map((team) => (
+															<SelectItem key={team.id} value={team.id}>
+																{team.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
 							)}
-						</form.Field>
 
-						{/* Team Selection (only for team assignments) */}
-						{assignmentType === "team" && (
-							<form.Field name="teamId">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel required>
-											{t("settings.changePolicies.selectTeam", "Select Team")}
-										</TFormLabel>
-										<TFormControl>
-											<Select
-												value={field.state.value}
-												onValueChange={(value) => field.handleChange(value)}
-											>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t(
-															"settings.changePolicies.selectTeamPlaceholder",
-															"Choose a team...",
-														)}
-													/>
-												</SelectTrigger>
-												<SelectContent>
-													{teams?.map((team) => (
-														<SelectItem key={team.id} value={team.id}>
-															{team.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-						)}
+							{/* Employee Selection (only for employee assignments) */}
+							{assignmentType === "employee" && (
+								<form.Field name="employeeId">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel required>
+												{t("settings.changePolicies.selectEmployee", "Select Employee")}
+											</TFormLabel>
+											<TFormControl>
+												<Select
+													value={field.state.value}
+													onValueChange={(value) => field.handleChange(value)}
+												>
+													<SelectTrigger>
+														<SelectValue
+															placeholder={t(
+																"settings.changePolicies.selectEmployeePlaceholder",
+																"Choose an employee...",
+															)}
+														/>
+													</SelectTrigger>
+													<SelectContent>
+														{employees?.map((emp) => (
+															<SelectItem key={emp.id} value={emp.id}>
+																{getEmployeeDisplayName(emp)}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</TFormControl>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+							)}
+						</ActionPanelBody>
 
-						{/* Employee Selection (only for employee assignments) */}
-						{assignmentType === "employee" && (
-							<form.Field name="employeeId">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel required>
-											{t("settings.changePolicies.selectEmployee", "Select Employee")}
-										</TFormLabel>
-										<TFormControl>
-											<Select
-												value={field.state.value}
-												onValueChange={(value) => field.handleChange(value)}
-											>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t(
-															"settings.changePolicies.selectEmployeePlaceholder",
-															"Choose an employee...",
-														)}
-													/>
-												</SelectTrigger>
-												<SelectContent>
-													{employees?.map((emp) => (
-														<SelectItem key={emp.id} value={emp.id}>
-															{getEmployeeDisplayName(emp)}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</form.Field>
-						)}
-
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -345,10 +341,10 @@ export function ChangePolicyAssignmentDialog({
 									</Button>
 								)}
 							</form.Subscribe>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -5,6 +5,16 @@ const migration0004 = readFileSync(
 	new URL("../../../drizzle/0004_hard_bill_hollister.sql", import.meta.url),
 	"utf8"
 );
+const migration0008 = readFileSync(
+	new URL("../../../drizzle/0008_demo_data_feature_flag.sql", import.meta.url),
+	"utf8",
+);
+const migrationJournal = JSON.parse(
+	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
+) as { entries: Array<{ tag: string }> };
+const migration0008Snapshot = JSON.parse(
+	readFileSync(new URL("../../../drizzle/meta/0008_snapshot.json", import.meta.url), "utf8"),
+) as { tables: { "public.organization": { columns: Record<string, { default?: boolean }> } } };
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -17,5 +27,13 @@ describe("drizzle follow-up migrations", () => {
 			'ALTER TABLE "sso_provider" ALTER COLUMN "user_id" SET NOT NULL;',
 			'ALTER TABLE "two_factor" ADD COLUMN "verified" boolean DEFAULT true;',
 		]);
+	});
+
+	it("registers the demo data feature flag migration", () => {
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0008_demo_data_feature_flag")).toBe(true);
+		expect(migration0008).toContain('ADD COLUMN "demo_data_enabled" boolean DEFAULT true');
+		expect(
+			migration0008Snapshot.tables["public.organization"].columns.demo_data_enabled?.default,
+		).toBe(true);
 	});
 });

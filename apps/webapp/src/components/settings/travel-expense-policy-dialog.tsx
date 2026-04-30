@@ -14,13 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -120,7 +121,9 @@ export function TravelExpensePolicyDialog({
 		defaultValues: defaultValues(editingPolicy),
 		onSubmit: async ({ value }) => {
 			if (!value.effectiveFrom) {
-				toast.error(t("settings.travelExpenses.effectiveFromRequired", "Effective from is required"));
+				toast.error(
+					t("settings.travelExpenses.effectiveFromRequired", "Effective from is required"),
+				);
 				return;
 			}
 
@@ -169,42 +172,85 @@ export function TravelExpensePolicyDialog({
 	const isPending = mutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[520px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.travelExpenses.editPolicy", "Edit Travel Expense Policy")
 							: t("settings.travelExpenses.createPolicy", "Create Travel Expense Policy")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.travelExpenses.dialogDescription",
 							"Set effective dates and default reimbursement rates for mileage and per diem claims.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(event) => {
 						event.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid grid-cols-2 gap-3">
-						<form.Field name="effectiveFrom">
+					<ActionPanelBody className="space-y-4">
+						<div className="grid grid-cols-2 gap-3">
+							<form.Field name="effectiveFrom">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel required>
+											{t("settings.travelExpenses.effectiveFrom", "Effective From")}
+										</TFormLabel>
+										<TFormControl>
+											<DatePicker
+												name="effectiveFrom"
+												value={field.state.value}
+												onChange={field.handleChange}
+												onBlur={field.handleBlur}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Field name="effectiveTo">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel>
+											{t("settings.travelExpenses.effectiveTo", "Effective To")}
+										</TFormLabel>
+										<TFormControl>
+											<DatePicker
+												name="effectiveTo"
+												value={field.state.value}
+												onChange={field.handleChange}
+												onBlur={field.handleBlur}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						</div>
+
+						<form.Field name="currency">
 							{(field) => (
 								<TFormItem>
 									<TFormLabel required>
-										{t("settings.travelExpenses.effectiveFrom", "Effective From")}
+										{t("settings.travelExpenses.currency", "Currency")}
 									</TFormLabel>
 									<TFormControl>
-										<DatePicker
-											name="effectiveFrom"
+										<Input
+											name="currency"
+											autoComplete="off"
+											maxLength={3}
 											value={field.state.value}
-											onChange={field.handleChange}
+											onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
 											onBlur={field.handleBlur}
+											placeholder="EUR"
 										/>
 									</TFormControl>
 									<TFormMessage field={field} />
@@ -212,120 +258,79 @@ export function TravelExpensePolicyDialog({
 							)}
 						</form.Field>
 
-						<form.Field name="effectiveTo">
+						<div className="grid grid-cols-2 gap-3">
+							<form.Field name="mileageRatePerKm">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel>
+											{t("settings.travelExpenses.mileageRate", "Mileage Rate per km")}
+										</TFormLabel>
+										<TFormControl>
+											<Input
+												name="mileageRatePerKm"
+												autoComplete="off"
+												type="number"
+												step="0.01"
+												min="0"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												onBlur={field.handleBlur}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Field name="perDiemRatePerDay">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel>
+											{t("settings.travelExpenses.perDiemRate", "Per Diem Rate per day")}
+										</TFormLabel>
+										<TFormControl>
+											<Input
+												name="perDiemRatePerDay"
+												autoComplete="off"
+												type="number"
+												step="0.01"
+												min="0"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												onBlur={field.handleBlur}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						</div>
+
+						<form.Field name="isActive">
 							{(field) => (
-								<TFormItem>
-									<TFormLabel>
-										{t("settings.travelExpenses.effectiveTo", "Effective To")}
-									</TFormLabel>
-									<TFormControl>
-										<DatePicker
-											name="effectiveTo"
-											value={field.state.value}
-											onChange={field.handleChange}
-											onBlur={field.handleBlur}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-					</div>
-
-					<form.Field name="currency">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel required>{t("settings.travelExpenses.currency", "Currency")}</TFormLabel>
-							<TFormControl>
-								<Input
-									name="currency"
-									autoComplete="off"
-									maxLength={3}
-										value={field.state.value}
-										onChange={(event) =>
-											field.handleChange(event.target.value.toUpperCase())
-										}
-										onBlur={field.handleBlur}
-										placeholder="EUR"
+								<div className="flex items-center justify-between rounded-lg border p-4">
+									<div className="space-y-0.5">
+										<Label htmlFor="is-active" className="text-base">
+											{t("settings.travelExpenses.activeLabel", "Active Policy")}
+										</Label>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.travelExpenses.activeDescription",
+												"When enabled, this policy becomes the active default for new claims.",
+											)}
+										</p>
+									</div>
+									<Switch
+										id="is-active"
+										checked={field.state.value}
+										onCheckedChange={field.handleChange}
 									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					<div className="grid grid-cols-2 gap-3">
-						<form.Field name="mileageRatePerKm">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel>
-										{t("settings.travelExpenses.mileageRate", "Mileage Rate per km")}
-									</TFormLabel>
-									<TFormControl>
-										<Input
-											name="mileageRatePerKm"
-											autoComplete="off"
-											type="number"
-											step="0.01"
-											min="0"
-											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
-											onBlur={field.handleBlur}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Field name="perDiemRatePerDay">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel>
-										{t("settings.travelExpenses.perDiemRate", "Per Diem Rate per day")}
-									</TFormLabel>
-									<TFormControl>
-										<Input
-											name="perDiemRatePerDay"
-											autoComplete="off"
-											type="number"
-											step="0.01"
-											min="0"
-											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
-											onBlur={field.handleBlur}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-					</div>
-
-					<form.Field name="isActive">
-						{(field) => (
-							<div className="flex items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
-									<Label htmlFor="is-active" className="text-base">
-										{t("settings.travelExpenses.activeLabel", "Active Policy")}
-									</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.travelExpenses.activeDescription",
-											"When enabled, this policy becomes the active default for new claims.",
-										)}
-									</p>
 								</div>
-								<Switch
-									id="is-active"
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-								/>
-							</div>
-						)}
-					</form.Field>
+							)}
+						</form.Field>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -336,13 +341,11 @@ export function TravelExpensePolicyDialog({
 						</Button>
 						<Button type="submit" disabled={isPending}>
 							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-							{isEditing
-								? t("common.saveChanges", "Save Changes")
-								: t("common.create", "Create")}
+							{isEditing ? t("common.saveChanges", "Save Changes") : t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -17,6 +17,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"travel-expenses/page.tsx",
 	"enterprise/domains/page.tsx",
 	"enterprise/email/page.tsx",
+	"email-templates/page.tsx",
 	"enterprise/api-keys/page.tsx",
 	"enterprise/audit-log/page.tsx",
 	"telegram/page.tsx",
@@ -55,6 +56,7 @@ describe("org-admin settings route access", () => {
 			"/settings/travel-expenses",
 			"/settings/enterprise/domains",
 			"/settings/enterprise/email",
+			"/settings/email-templates",
 			"/settings/enterprise/api-keys",
 			"/settings/enterprise/audit-log",
 			"/settings/telegram",
@@ -104,6 +106,16 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/surcharges")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/calendar")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/billing")).toBe(false);
+	});
+
+	it("guards direct demo route and mutations with the demo data feature helper", () => {
+		const pageSource = stripComments(readFileSync(join(SETTINGS_ROOT, "demo/page.tsx"), "utf8"));
+		const actionsSource = stripComments(readFileSync(join(SETTINGS_ROOT, "demo/actions.ts"), "utf8"));
+
+		expect(pageSource.includes("assertDemoDataEnabledForOrganization(")).toBe(true);
+		expect(pageSource.includes("notFound(")).toBe(true);
+		expect(actionsSource.includes("canUseDemoData(")).toBe(true);
+		expect(actionsSource).not.toMatch(/Effect\.promise\(\(\) => isOrgAdminCasl\(/);
 	});
 
 	it("lets the calendar route use scoped settings access while keeping mutations org-admin only", () => {
@@ -432,6 +444,18 @@ describe("org-admin settings route access", () => {
 
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
 		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
+	});
+
+	it("keeps the demo data feature flag out of direct Better Auth organization input", () => {
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
+		);
+		const demoDataField = source.slice(
+			source.indexOf("demoDataEnabled:"),
+			source.indexOf("timezone:", source.indexOf("demoDataEnabled:")),
+		);
+
+		expect(demoDataField).toContain("input: false");
 	});
 
 	it("narrows manager employee editing away from org-admin-only form controls", () => {

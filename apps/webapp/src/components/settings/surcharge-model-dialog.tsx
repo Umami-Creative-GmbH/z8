@@ -12,13 +12,14 @@ import {
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -176,21 +177,21 @@ export function SurchargeModelDialog({
 	const isPending = createMutation.isPending || updateMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.surcharges.editModel", "Edit Surcharge Model")
 							: t("settings.surcharges.createModel", "Create Surcharge Model")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.surcharges.modelDescription",
 							"Define surcharge rules for overtime, night work, weekends, and holidays.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -198,10 +199,11 @@ export function SurchargeModelDialog({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
-					className="space-y-6"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Basic Info */}
-					<div className="grid gap-4">
+					<ActionPanelBody className="space-y-6">
+						{/* Basic Info */}
+						<div className="grid gap-4">
 						<form.Field name="name">
 							{(field) => (
 								<TFormItem>
@@ -245,10 +247,10 @@ export function SurchargeModelDialog({
 								</TFormItem>
 							)}
 						</form.Field>
-					</div>
+						</div>
 
-					{/* Surcharge Rules */}
-					<div className="space-y-4">
+						{/* Surcharge Rules */}
+						<div className="space-y-4">
 						<div className="flex items-center justify-between">
 							<h3 className="text-sm font-medium">
 								{t("settings.surcharges.rules", "Surcharge Rules")}
@@ -302,10 +304,10 @@ export function SurchargeModelDialog({
 								</div>
 							)}
 						</form.Field>
-					</div>
+						</div>
 
-					{/* Active Status */}
-					<form.Field name="isActive">
+						{/* Active Status */}
+						<form.Field name="isActive">
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
@@ -320,9 +322,10 @@ export function SurchargeModelDialog({
 								<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 							</div>
 						)}
-					</form.Field>
+						</form.Field>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -336,9 +339,9 @@ export function SurchargeModelDialog({
 								</Button>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

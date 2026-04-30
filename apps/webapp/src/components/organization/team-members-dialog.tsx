@@ -5,14 +5,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
@@ -111,17 +113,17 @@ export function TeamMembersDialog({
 		(removeMutation.isPending && removeMutation.variables?.employeeId === id);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[600px]">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle className="flex items-center gap-2">
 						<IconUsers className="h-5 w-5" />
 						{team.name} - Team Members
-					</DialogTitle>
-					<DialogDescription>Manage who belongs to this team</DialogDescription>
-				</DialogHeader>
+					</ActionPanelTitle>
+					<ActionPanelDescription>Manage who belongs to this team</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="space-y-6">
+				<ActionPanelBody className="space-y-6">
 					{/* Add Member Section */}
 					{canManageMembers && availableEmployees.length > 0 && (
 						<div className="space-y-3">
@@ -228,14 +230,14 @@ export function TeamMembersDialog({
 							</ScrollArea>
 						)}
 					</div>
-				</div>
+				</ActionPanelBody>
 
-				<div className="flex justify-end">
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						Close
 					</Button>
-				</div>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

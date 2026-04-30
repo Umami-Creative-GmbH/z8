@@ -29,6 +29,7 @@ export async function GET() {
 					shiftsEnabled: true,
 					projectsEnabled: true,
 					surchargesEnabled: true,
+					demoDataEnabled: true,
 					timezone: true,
 					deletedAt: true,
 				},
@@ -40,6 +41,7 @@ export async function GET() {
 					shiftsEnabled: org.shiftsEnabled ?? false,
 					projectsEnabled: org.projectsEnabled ?? false,
 					surchargesEnabled: org.surchargesEnabled ?? false,
+					demoDataEnabled: org.demoDataEnabled ?? true,
 					timezone: org.timezone ?? "UTC",
 					deletedAt: org.deletedAt?.toISOString() ?? null,
 				};

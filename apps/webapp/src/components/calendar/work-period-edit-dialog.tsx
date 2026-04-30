@@ -8,15 +8,16 @@ import {
 	updateWorkPeriodNotes,
 	updateWorkPeriodProject,
 } from "@/app/[locale]/(app)/time-tracking/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 import { getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
@@ -151,16 +152,16 @@ export function WorkPeriodEditDialog({
 	}, [event.id, onNotesUpdated, state.selectedProjectId, t]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="compact">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						<WorkPeriodHeader event={event} status={approvalStatus} t={t} />
-					</DialogTitle>
-					<DialogDescription />
-				</DialogHeader>
+					</ActionPanelTitle>
+					<ActionPanelDescription />
+				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					<ApprovalStatusBanner status={approvalStatus} t={t} />
 					<WorkPeriodSummaryBlock event={event} metadata={metadata} t={t} />
 					<WorkPeriodDurationSection metadata={metadata} t={t} />
@@ -188,9 +189,9 @@ export function WorkPeriodEditDialog({
 						onSave={handleSaveNotes}
 						t={t}
 					/>
-				</div>
+				</ActionPanelBody>
 
-				<DialogFooter className="flex-col gap-2 sm:flex-row">
+				<ActionPanelFooter className="flex-col gap-2 sm:flex-row">
 					<div className="flex w-full gap-2 sm:w-auto">
 						<Button
 							variant="outline"
@@ -213,8 +214,8 @@ export function WorkPeriodEditDialog({
 							{t("calendar.edit.convertToBreak", "Convert to Break")}
 						</Button>
 					</div>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

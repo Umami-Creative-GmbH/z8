@@ -1,8 +1,8 @@
 "use client";
 
 import { IconLoader2, IconPalette } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -10,15 +10,16 @@ import {
 	createOrganizationCategory,
 	updateOrganizationCategory,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -161,31 +162,32 @@ export function WorkCategoryDialog({
 	const isMutating = createMutation.isPending || updateMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.workCategories.editCategory", "Edit Category")
 							: t("settings.workCategories.createCategory", "Create Category")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t("settings.workCategories.editCategoryDescription", "Update the category details")
 							: t(
 									"settings.workCategories.createCategoryDescription",
 									"Create a new work category that can be assigned to multiple sets",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						{/* Name and Color */}
 						<div className="flex gap-2">
 							<form.Field name="color">
@@ -265,9 +267,9 @@ export function WorkCategoryDialog({
 								)}
 							</p>
 						</div>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -283,10 +285,10 @@ export function WorkCategoryDialog({
 								t("common.create", "Create")
 							)}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 

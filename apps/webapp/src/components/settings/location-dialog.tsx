@@ -10,15 +10,16 @@ import {
 	type LocationListItem,
 	updateLocation,
 } from "@/app/[locale]/(app)/settings/locations/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -72,7 +73,10 @@ export function LocationDialog({
 					postalCode: value.postalCode || undefined,
 					country: value.country || undefined,
 					isActive: value.isActive,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.locations.updated", "Location updated"));
@@ -90,7 +94,10 @@ export function LocationDialog({
 					city: value.city || undefined,
 					postalCode: value.postalCode || undefined,
 					country: value.country || undefined,
-				}).then((response) => response, () => null);
+				}).then(
+					(response) => response,
+					() => null,
+				);
 
 				if (result?.success) {
 					toast.success(t("settings.locations.created", "Location created"));
@@ -107,31 +114,32 @@ export function LocationDialog({
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.locations.dialog.editTitle", "Edit Location")
 							: t("settings.locations.dialog.createTitle", "Create Location")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t("settings.locations.dialog.editDescription", "Update location details")
 							: t(
 									"settings.locations.dialog.createDescription",
 									"Create a new location for your organization",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Name */}
 						<form.Field name="name">
 							{(field) => (
@@ -252,9 +260,9 @@ export function LocationDialog({
 								)}
 							</form.Field>
 						)}
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -269,9 +277,9 @@ export function LocationDialog({
 								? t("settings.locations.dialog.save", "Save Changes")
 								: t("settings.locations.dialog.create", "Create Location")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

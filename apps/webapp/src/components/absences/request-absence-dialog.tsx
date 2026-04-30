@@ -9,14 +9,15 @@ import { requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import {
 	Select,
 	SelectContent,
@@ -175,34 +176,35 @@ export function RequestAbsenceDialog({
 		}
 	}, [open, form]);
 
-	// In controlled mode without a trigger, don't render DialogTrigger
+	// In controlled mode without a trigger, don't render ActionPanelTrigger
 	const showTrigger = !isControlled || trigger;
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<ActionPanel open={open} onOpenChange={setOpen}>
 			{showTrigger && (
-				<DialogTrigger asChild>
+				<ActionPanelTrigger asChild>
 					{trigger || <Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
-				</DialogTrigger>
+				</ActionPanelTrigger>
 			)}
-			<DialogContent className="sm:max-w-[500px]">
+			<ActionPanelContent>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<DialogHeader>
-						<DialogTitle>{t("absences.form.title", "Request Absence")}</DialogTitle>
-						<DialogDescription>
+					<ActionPanelHeader>
+						<ActionPanelTitle>{t("absences.form.title", "Request Absence")}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"absences.form.description",
 								"Submit a request for time off. Your manager will be notified for approval.",
 							)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Category Select */}
 						<form.Field name="categoryId">
 							{(field) => (
@@ -247,7 +249,9 @@ export function RequestAbsenceDialog({
 
 						{/* Start Date and Period */}
 						<div className="grid gap-2">
-							<div className="font-medium text-sm">{t("absences.form.startDate", "Start Date *")}</div>
+							<div className="font-medium text-sm">
+								{t("absences.form.startDate", "Start Date *")}
+							</div>
 							<div className="grid grid-cols-2 gap-2">
 								<form.Field name="startDate">
 									{(field) => (
@@ -438,7 +442,7 @@ export function RequestAbsenceDialog({
 								</TFormItem>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
 					{/* Footer with submit button that uses form.Subscribe for dirty/submitting state */}
 					<form.Subscribe
@@ -470,7 +474,7 @@ export function RequestAbsenceDialog({
 								values.endPeriod === "am";
 
 							return (
-								<DialogFooter>
+								<ActionPanelFooter>
 									<Button
 										type="button"
 										variant="outline"
@@ -486,12 +490,12 @@ export function RequestAbsenceDialog({
 										{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 										{t("absences.form.submitRequest", "Submit Request")}
 									</Button>
-								</DialogFooter>
+								</ActionPanelFooter>
 							);
 						}}
 					</form.Subscribe>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

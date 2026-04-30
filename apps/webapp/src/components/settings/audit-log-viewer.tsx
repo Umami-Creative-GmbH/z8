@@ -16,18 +16,19 @@ import {
 	exportAuditLogsAction,
 	getAuditLogsAction,
 } from "@/app/[locale]/(app)/settings/audit-log/actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -355,78 +356,80 @@ export function AuditLogViewer() {
 												{log.ipAddress || "-"}
 											</TableCell>
 											<TableCell>
-												<Dialog>
-													<DialogTrigger asChild>
+												<ActionPanel>
+													<ActionPanelTrigger asChild>
 														<Button variant="ghost" size="sm">
 															<IconEye className="size-4" />
 														</Button>
-													</DialogTrigger>
-													<DialogContent className="max-w-2xl">
-														<DialogHeader>
-															<DialogTitle>Audit Log Details</DialogTitle>
-															<DialogDescription>
+													</ActionPanelTrigger>
+													<ActionPanelContent size="wide">
+														<ActionPanelHeader>
+															<ActionPanelTitle>Audit Log Details</ActionPanelTitle>
+															<ActionPanelDescription>
 																Full details of this audit log entry
-															</DialogDescription>
-														</DialogHeader>
-														<div className="space-y-4">
-															<div className="grid grid-cols-2 gap-4">
-																<div>
-																	<label className="text-sm font-medium">Action</label>
-																	<p className="text-sm">{formatAction(log.action)}</p>
+															</ActionPanelDescription>
+														</ActionPanelHeader>
+														<ActionPanelBody>
+															<div className="space-y-4">
+																<div className="grid grid-cols-2 gap-4">
+																	<div>
+																		<div className="text-sm font-medium">Action</div>
+																		<p className="text-sm">{formatAction(log.action)}</p>
+																	</div>
+																	<div>
+																		<div className="text-sm font-medium">Timestamp</div>
+																		<p className="text-sm">
+																			{DateTime.fromJSDate(log.timestamp).toLocaleString(
+																				DateTime.DATETIME_FULL,
+																			)}
+																		</p>
+																	</div>
+																	<div>
+																		<div className="text-sm font-medium">User</div>
+																		<p className="text-sm">
+																			{log.performedByName} ({log.performedByEmail})
+																		</p>
+																	</div>
+																	<div>
+																		<div className="text-sm font-medium">Entity</div>
+																		<p className="text-sm">
+																			{log.entityType}: {log.entityId}
+																		</p>
+																	</div>
+																	<div>
+																		<div className="text-sm font-medium">IP Address</div>
+																		<p className="text-sm font-mono">{log.ipAddress || "-"}</p>
+																	</div>
+																	<div>
+																		<div className="text-sm font-medium">User Agent</div>
+																		<p
+																			className="text-sm truncate"
+																			title={log.userAgent || undefined}
+																		>
+																			{log.userAgent || "-"}
+																		</p>
+																	</div>
 																</div>
-																<div>
-																	<label className="text-sm font-medium">Timestamp</label>
-																	<p className="text-sm">
-																		{DateTime.fromJSDate(log.timestamp).toLocaleString(
-																			DateTime.DATETIME_FULL,
-																		)}
-																	</p>
-																</div>
-																<div>
-																	<label className="text-sm font-medium">User</label>
-																	<p className="text-sm">
-																		{log.performedByName} ({log.performedByEmail})
-																	</p>
-																</div>
-																<div>
-																	<label className="text-sm font-medium">Entity</label>
-																	<p className="text-sm">
-																		{log.entityType}: {log.entityId}
-																	</p>
-																</div>
-																<div>
-																	<label className="text-sm font-medium">IP Address</label>
-																	<p className="text-sm font-mono">{log.ipAddress || "-"}</p>
-																</div>
-																<div>
-																	<label className="text-sm font-medium">User Agent</label>
-																	<p
-																		className="text-sm truncate"
-																		title={log.userAgent || undefined}
-																	>
-																		{log.userAgent || "-"}
-																	</p>
-																</div>
+																{log.changes && (
+																	<div>
+																		<div className="text-sm font-medium">Changes</div>
+																		<pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-[200px]">
+																			{JSON.stringify(log.changes, null, 2)}
+																		</pre>
+																	</div>
+																)}
+																{log.metadata && (
+																	<div>
+																		<div className="text-sm font-medium">Metadata</div>
+																		<pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-[200px]">
+																			{JSON.stringify(log.metadata, null, 2)}
+																		</pre>
+																	</div>
+																)}
 															</div>
-															{log.changes && (
-																<div>
-																	<label className="text-sm font-medium">Changes</label>
-																	<pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-[200px]">
-																		{JSON.stringify(log.changes, null, 2)}
-																	</pre>
-																</div>
-															)}
-															{log.metadata && (
-																<div>
-																	<label className="text-sm font-medium">Metadata</label>
-																	<pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-[200px]">
-																		{JSON.stringify(log.metadata, null, 2)}
-																	</pre>
-																</div>
-															)}
-														</div>
-													</DialogContent>
-												</Dialog>
+														</ActionPanelBody>
+													</ActionPanelContent>
+												</ActionPanel>
 											</TableCell>
 										</TableRow>
 									))}

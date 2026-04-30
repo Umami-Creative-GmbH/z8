@@ -9,15 +9,16 @@ import {
 	createCoverageRule,
 	updateCoverageRule,
 } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -173,21 +174,21 @@ export function CoverageRuleDialog({
 	const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.coverageRules.editRule", "Edit Coverage Rule")
 							: t("settings.coverageRules.createRule", "Create Coverage Rule")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.coverageRules.ruleDialogDescription",
 							"Define the minimum staffing requirement for a specific location, day, and time block.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
@@ -195,8 +196,9 @@ export function CoverageRuleDialog({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Subarea Select */}
 						<form.Field name="subareaId">
 							{(field) => (
@@ -305,9 +307,9 @@ export function CoverageRuleDialog({
 								</div>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -323,9 +325,9 @@ export function CoverageRuleDialog({
 									? t("common.save", "Save")
 									: t("common.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

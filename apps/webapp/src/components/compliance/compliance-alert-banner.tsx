@@ -6,15 +6,6 @@ import type { ComplianceAlert } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "../ui/dialog";
 
 interface ComplianceAlertBannerProps {
 	alerts: ComplianceAlert[];
@@ -26,22 +17,26 @@ interface ComplianceAlertBannerProps {
 const severityConfig = {
 	info: {
 		icon: Info,
-		className: "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100",
+		className:
+			"border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100",
 		iconClassName: "text-blue-600 dark:text-blue-400",
 	},
 	warning: {
 		icon: AlertTriangle,
-		className: "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100",
+		className:
+			"border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100",
 		iconClassName: "text-amber-600 dark:text-amber-400",
 	},
 	critical: {
 		icon: AlertTriangle,
-		className: "border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-100",
+		className:
+			"border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-100",
 		iconClassName: "text-orange-600 dark:text-orange-400",
 	},
 	violation: {
 		icon: XCircle,
-		className: "border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100",
+		className:
+			"border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100",
 		iconClassName: "text-red-600 dark:text-red-400",
 	},
 } as const;
@@ -158,9 +153,7 @@ export function RestPeriodBlocker({
 	const hoursRemaining = Math.floor(minutesUntilAllowed / 60);
 	const minsRemaining = minutesUntilAllowed % 60;
 	const timeStr =
-		hoursRemaining > 0
-			? `${hoursRemaining}h ${minsRemaining}m`
-			: `${minsRemaining} minutes`;
+		hoursRemaining > 0 ? `${hoursRemaining}h ${minsRemaining}m` : `${minsRemaining} minutes`;
 
 	// Use Intl.DateTimeFormat for hydration-safe time formatting
 	const formattedNextAllowed = new Intl.DateTimeFormat(undefined, {
@@ -171,9 +164,7 @@ export function RestPeriodBlocker({
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
 			<Clock className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
-			<AlertTitle>
-				{t("compliance.restPeriodRequired", "Rest Period Required")}
-			</AlertTitle>
+			<AlertTitle>{t("compliance.restPeriodRequired", "Rest Period Required")}</AlertTitle>
 			<AlertDescription className="space-y-3">
 				<p>
 					{t(

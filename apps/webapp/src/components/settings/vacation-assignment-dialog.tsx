@@ -13,15 +13,16 @@ import {
 	getVacationPolicies,
 } from "@/app/[locale]/(app)/settings/vacation/assignment-actions";
 import { EmployeeSingleSelect } from "@/components/employee-select";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -201,146 +202,148 @@ export function VacationAssignmentDialog({
 	const isLoading = policiesLoading || teamsLoading;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>{getDialogTitle()}</DialogTitle>
-					<DialogDescription>{getDialogDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
 						<Skeleton className="h-10 w-full" />
-					</div>
+					</ActionPanelBody>
 				) : (
 					<form
 						onSubmit={(e) => {
 							e.preventDefault();
 							form.handleSubmit();
 						}}
-						className="space-y-4"
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						{/* Policy Selection */}
-						<form.Field name="policyId">
-							{(field) => (
-								<div className="space-y-2">
-									<Label>{t("settings.vacation.assignments.policy", "Vacation Policy")}</Label>
-									<Select value={field.state.value} onValueChange={field.handleChange}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"settings.vacation.assignments.selectPolicy",
-													"Select a policy",
-												)}
-											/>
-										</SelectTrigger>
-										<SelectContent>
-											{policies?.length === 0 ? (
-												<div className="p-2 text-sm text-muted-foreground text-center">
-													{t(
-														"settings.vacation.assignments.noPolicies",
-														"No vacation policies available. Create one first.",
-													)}
-												</div>
-											) : (
-												policies?.map((policy) => (
-													<SelectItem key={policy.id} value={policy.id}>
-														<div className="flex items-center gap-2">
-															<span>{formatPolicy(policy)}</span>
-															{policy.isCompanyDefault && (
-																<span className="text-xs bg-primary text-primary-foreground px-1 rounded">
-																	{t("settings.vacation.default", "Default")}
-																</span>
-															)}
-															{policy.allowCarryover && (
-																<span className="text-xs bg-secondary px-1 rounded">
-																	{t("settings.vacation.carryover", "Carryover")}
-																</span>
-															)}
-														</div>
-													</SelectItem>
-												))
-											)}
-										</SelectContent>
-									</Select>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.vacation.assignments.policyDescription",
-											"The vacation policy to assign",
-										)}
-									</p>
-									{validationErrors.policyId && (
-										<p className="text-sm text-destructive">{validationErrors.policyId}</p>
-									)}
-								</div>
-							)}
-						</form.Field>
-
-						{/* Team Selection (for team assignment) */}
-						{assignmentType === "team" && (
-							<form.Field name="teamId">
+						<ActionPanelBody className="space-y-4">
+							{/* Policy Selection */}
+							<form.Field name="policyId">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("settings.vacation.assignments.team", "Team")}</Label>
+										<Label>{t("settings.vacation.assignments.policy", "Vacation Policy")}</Label>
 										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t(
-														"settings.vacation.assignments.selectTeam",
-														"Select a team",
+														"settings.vacation.assignments.selectPolicy",
+														"Select a policy",
 													)}
 												/>
 											</SelectTrigger>
 											<SelectContent>
-												{teams?.map((team) => (
-													<SelectItem key={team.id} value={team.id}>
-														{team.name}
-													</SelectItem>
-												))}
+												{policies?.length === 0 ? (
+													<div className="p-2 text-sm text-muted-foreground text-center">
+														{t(
+															"settings.vacation.assignments.noPolicies",
+															"No vacation policies available. Create one first.",
+														)}
+													</div>
+												) : (
+													policies?.map((policy) => (
+														<SelectItem key={policy.id} value={policy.id}>
+															<div className="flex items-center gap-2">
+																<span>{formatPolicy(policy)}</span>
+																{policy.isCompanyDefault && (
+																	<span className="text-xs bg-primary text-primary-foreground px-1 rounded">
+																		{t("settings.vacation.default", "Default")}
+																	</span>
+																)}
+																{policy.allowCarryover && (
+																	<span className="text-xs bg-secondary px-1 rounded">
+																		{t("settings.vacation.carryover", "Carryover")}
+																	</span>
+																)}
+															</div>
+														</SelectItem>
+													))
+												)}
 											</SelectContent>
 										</Select>
 										<p className="text-sm text-muted-foreground">
 											{t(
-												"settings.vacation.assignments.teamNote",
-												"This policy will apply to all employees in this team",
+												"settings.vacation.assignments.policyDescription",
+												"The vacation policy to assign",
 											)}
 										</p>
-										{validationErrors.teamId && (
-											<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+										{validationErrors.policyId && (
+											<p className="text-sm text-destructive">{validationErrors.policyId}</p>
 										)}
 									</div>
 								)}
 							</form.Field>
-						)}
 
-						{/* Employee Selection (for employee assignment) */}
-						{assignmentType === "employee" && (
-							<form.Field name="employeeId">
-								{(field) => (
-									<div className="space-y-2">
-										<EmployeeSingleSelect
-											value={field.state.value || null}
-											onChange={(val) => field.handleChange(val || "")}
-											label={t("settings.vacation.assignments.employee", "Employee")}
-											placeholder={t(
-												"settings.vacation.assignments.selectEmployee",
-												"Select an employee",
+							{/* Team Selection (for team assignment) */}
+							{assignmentType === "team" && (
+								<form.Field name="teamId">
+									{(field) => (
+										<div className="space-y-2">
+											<Label>{t("settings.vacation.assignments.team", "Team")}</Label>
+											<Select value={field.state.value} onValueChange={field.handleChange}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.vacation.assignments.selectTeam",
+															"Select a team",
+														)}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{teams?.map((team) => (
+														<SelectItem key={team.id} value={team.id}>
+															{team.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.vacation.assignments.teamNote",
+													"This policy will apply to all employees in this team",
+												)}
+											</p>
+											{validationErrors.teamId && (
+												<p className="text-sm text-destructive">{validationErrors.teamId}</p>
 											)}
-											error={validationErrors.employeeId}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"settings.vacation.assignments.employeeNote",
-												"This policy will override team and company defaults for this employee",
-											)}
-										</p>
-									</div>
-								)}
-							</form.Field>
-						)}
+										</div>
+									)}
+								</form.Field>
+							)}
 
-						<DialogFooter>
+							{/* Employee Selection (for employee assignment) */}
+							{assignmentType === "employee" && (
+								<form.Field name="employeeId">
+									{(field) => (
+										<div className="space-y-2">
+											<EmployeeSingleSelect
+												value={field.state.value || null}
+												onChange={(val) => field.handleChange(val || "")}
+												label={t("settings.vacation.assignments.employee", "Employee")}
+												placeholder={t(
+													"settings.vacation.assignments.selectEmployee",
+													"Select an employee",
+												)}
+												error={validationErrors.employeeId}
+											/>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.vacation.assignments.employeeNote",
+													"This policy will override team and company defaults for this employee",
+												)}
+											</p>
+										</div>
+									)}
+								</form.Field>
+							)}
+						</ActionPanelBody>
+
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -353,10 +356,10 @@ export function VacationAssignmentDialog({
 								{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

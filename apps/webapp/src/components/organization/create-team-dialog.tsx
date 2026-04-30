@@ -5,15 +5,16 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createTeam } from "@/app/[locale]/(app)/settings/teams/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,37 +66,41 @@ export function CreateTeamDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Create Team</DialogTitle>
-					<DialogDescription>Create a new team to organize your employees</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Create Team</ActionPanelTitle>
+					<ActionPanelDescription>
+						Create a new team to organize your employees
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="name">Team Name</Label>
-						<Input
-							id="name"
-							value={formData.name}
-							onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-							placeholder="Engineering, Sales, Marketing..."
-							required
-						/>
-					</div>
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Team Name</Label>
+							<Input
+								id="name"
+								value={formData.name}
+								onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+								placeholder="Engineering, Sales, Marketing..."
+								required
+							/>
+						</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="description">Description (Optional)</Label>
-						<Textarea
-							id="description"
-							value={formData.description}
-							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-							placeholder="A brief description of this team"
-							rows={3}
-						/>
-					</div>
+						<div className="space-y-2">
+							<Label htmlFor="description">Description (Optional)</Label>
+							<Textarea
+								id="description"
+								value={formData.description}
+								onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+								placeholder="A brief description of this team"
+								rows={3}
+							/>
+						</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -108,9 +113,9 @@ export function CreateTeamDialog({
 							{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Create Team
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

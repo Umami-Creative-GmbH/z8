@@ -17,17 +17,18 @@ import {
 	getWorkPolicyViolations,
 	type WorkPolicyViolationWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import {
 	Select,
 	SelectContent,
@@ -455,22 +456,22 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 				</div>
 			)}
 
-			{/* Acknowledge Dialog */}
-			<Dialog open={acknowledgeDialogOpen} onOpenChange={setAcknowledgeDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>
+			{/* Acknowledge ActionPanel */}
+			<ActionPanel open={acknowledgeDialogOpen} onOpenChange={setAcknowledgeDialogOpen}>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>
 							{t("settings.workPolicies.acknowledgeViolation", "Acknowledge Violation")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"settings.workPolicies.acknowledgeDescription",
 								"Add an optional note explaining how this violation was addressed.",
 							)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
-					<div className="space-y-4">
+					<ActionPanelBody className="space-y-4">
 						{selectedViolation && (
 							<div className="rounded-lg border p-4 bg-muted/30">
 								<div className="grid grid-cols-2 gap-2 text-sm">
@@ -522,9 +523,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 								rows={3}
 							/>
 						</div>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => setAcknowledgeDialogOpen(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -534,9 +535,9 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 							)}
 							{t("settings.workPolicies.acknowledge", "Acknowledge")}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

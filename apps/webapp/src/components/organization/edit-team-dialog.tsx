@@ -4,15 +4,16 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,37 +62,39 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 	if (!team) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Edit Team</DialogTitle>
-					<DialogDescription>Update team name and description</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Edit Team</ActionPanelTitle>
+					<ActionPanelDescription>Update team name and description</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<form key={team.id} onSubmit={handleSubmit} className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="name">Team Name</Label>
-						<Input
-							id="name"
-							name="name"
-							defaultValue={team.name}
-							placeholder="Engineering, Sales, Marketing..."
-							required
-						/>
-					</div>
+				<form key={team.id} onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Team Name</Label>
+							<Input
+								id="name"
+								name="name"
+								defaultValue={team.name}
+								placeholder="Engineering, Sales, Marketing..."
+								required
+							/>
+						</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="description">Description (Optional)</Label>
-						<Textarea
-							id="description"
-							name="description"
-							defaultValue={team.description || ""}
-							placeholder="A brief description of this team"
-							rows={3}
-						/>
-					</div>
+						<div className="space-y-2">
+							<Label htmlFor="description">Description (Optional)</Label>
+							<Textarea
+								id="description"
+								name="description"
+								defaultValue={team.description || ""}
+								placeholder="A brief description of this team"
+								rows={3}
+							/>
+						</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -104,9 +107,9 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 							{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Save Changes
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

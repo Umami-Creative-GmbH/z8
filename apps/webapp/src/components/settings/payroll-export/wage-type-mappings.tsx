@@ -5,13 +5,23 @@ import { useTranslate } from "@tolgee/react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+	type DatevConfigResult,
 	deleteMappingAction,
 	getAbsenceCategoriesAction,
 	getMappingsAction,
 	getWorkCategoriesAction,
 	saveMappingAction,
-	type DatevConfigResult,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -25,22 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -59,12 +54,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WageTypeMapping } from "@/lib/payroll-export/types";
 
 interface WageTypeMappingsProps {
@@ -178,12 +168,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 				toast.success(t("settings.payrollExport.mappings.deleteSuccess", "Mapping deleted"));
 				loadData();
 			} else {
-				toast.error(
-					t("settings.payrollExport.mappings.deleteError", "Failed to delete mapping"),
-					{
-						description: result.error,
-					},
-				);
+				toast.error(t("settings.payrollExport.mappings.deleteError", "Failed to delete mapping"), {
+					description: result.error,
+				});
 			}
 		});
 	};
@@ -216,9 +203,12 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 	};
 
 	const getSourceTypeLabel = (mapping: WageTypeMapping): string => {
-		if (mapping.workCategoryId) return t("settings.payrollExport.mappings.type.workCategory", "Work Category");
-		if (mapping.absenceCategoryId) return t("settings.payrollExport.mappings.type.absenceCategory", "Absence");
-		if (mapping.specialCategory) return t("settings.payrollExport.mappings.type.special", "Special");
+		if (mapping.workCategoryId)
+			return t("settings.payrollExport.mappings.type.workCategory", "Work Category");
+		if (mapping.absenceCategoryId)
+			return t("settings.payrollExport.mappings.type.absenceCategory", "Absence");
+		if (mapping.specialCategory)
+			return t("settings.payrollExport.mappings.type.special", "Special");
 		return "-";
 	};
 
@@ -229,7 +219,10 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 			{ id: "overtime", name: t("settings.payrollExport.specialCategory.overtime", "Overtime") },
 			{
 				id: "holiday_compensation",
-				name: t("settings.payrollExport.specialCategory.holidayCompensation", "Holiday Compensation"),
+				name: t(
+					"settings.payrollExport.specialCategory.holidayCompensation",
+					"Holiday Compensation",
+				),
 			},
 			{
 				id: "overtime_reduction",
@@ -267,32 +260,32 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 						)}
 					</CardDescription>
 				</div>
-				<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-					<DialogTrigger asChild>
-						<Button onClick={resetForm} aria-label={t("settings.payrollExport.mappings.addMapping", "Add Mapping")}>
+				<ActionPanel open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+					<ActionPanelTrigger asChild>
+						<Button
+							onClick={resetForm}
+							aria-label={t("settings.payrollExport.mappings.addMapping", "Add Mapping")}
+						>
 							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 							{t("settings.payrollExport.mappings.addMapping", "Add Mapping")}
 						</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>
+					</ActionPanelTrigger>
+					<ActionPanelContent>
+						<ActionPanelHeader>
+							<ActionPanelTitle>
 								{t("settings.payrollExport.mappings.addMappingTitle", "Add Wage Type Mapping")}
-							</DialogTitle>
-							<DialogDescription>
+							</ActionPanelTitle>
+							<ActionPanelDescription>
 								{t(
 									"settings.payrollExport.mappings.addMappingDescription",
 									"Map a category to payroll wage type codes for each format",
 								)}
-							</DialogDescription>
-						</DialogHeader>
-						<div className="space-y-4 py-4">
+							</ActionPanelDescription>
+						</ActionPanelHeader>
+						<ActionPanelBody className="space-y-4">
 							<div className="space-y-2">
 								<Label>{t("settings.payrollExport.mappings.sourceType", "Source Type")}</Label>
-								<Select
-									value={sourceType}
-									onValueChange={(v) => setSourceType(v as SourceType)}
-								>
+								<Select value={sourceType} onValueChange={(v) => setSourceType(v as SourceType)}>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
@@ -301,7 +294,10 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											{t("settings.payrollExport.mappings.type.workCategory", "Work Category")}
 										</SelectItem>
 										<SelectItem value="absence_category">
-											{t("settings.payrollExport.mappings.type.absenceCategory", "Absence Category")}
+											{t(
+												"settings.payrollExport.mappings.type.absenceCategory",
+												"Absence Category",
+											)}
 										</SelectItem>
 										<SelectItem value="special">
 											{t("settings.payrollExport.mappings.type.special", "Special Category")}
@@ -315,10 +311,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 									<Label>
 										{t("settings.payrollExport.mappings.workCategory", "Work Category")}
 									</Label>
-									<Select
-										value={selectedWorkCategory}
-										onValueChange={setSelectedWorkCategory}
-									>
+									<Select value={selectedWorkCategory} onValueChange={setSelectedWorkCategory}>
 										<SelectTrigger>
 											<SelectValue
 												placeholder={t(
@@ -406,7 +399,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 							{/* DATEV Wage Type */}
 							<div className="space-y-2 rounded-lg border p-3">
 								<div className="flex items-center gap-2">
-									<Badge variant="outline" className="font-mono text-xs">DATEV</Badge>
+									<Badge variant="outline" className="font-mono text-xs">
+										DATEV
+									</Badge>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									<div className="space-y-1">
@@ -437,7 +432,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 							{/* Lexware Wage Type */}
 							<div className="space-y-2 rounded-lg border p-3">
 								<div className="flex items-center gap-2">
-									<Badge variant="outline" className="font-mono text-xs">Lexware</Badge>
+									<Badge variant="outline" className="font-mono text-xs">
+										Lexware
+									</Badge>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									<div className="space-y-1">
@@ -468,7 +465,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 							{/* Sage Wage Type */}
 							<div className="space-y-2 rounded-lg border p-3">
 								<div className="flex items-center gap-2">
-									<Badge variant="outline" className="font-mono text-xs">Sage</Badge>
+									<Badge variant="outline" className="font-mono text-xs">
+										Sage
+									</Badge>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									<div className="space-y-1">
@@ -495,8 +494,8 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 									</div>
 								</div>
 							</div>
-						</div>
-						<DialogFooter>
+						</ActionPanelBody>
+						<ActionPanelFooter>
 							<Button variant="outline" onClick={() => setIsDialogOpen(false)}>
 								{t("common.cancel", "Cancel")}
 							</Button>
@@ -520,9 +519,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 									t("common.save", "Save")
 								)}
 							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+						</ActionPanelFooter>
+					</ActionPanelContent>
+				</ActionPanel>
 			</CardHeader>
 			<CardContent>
 				{isPending && mappings.length === 0 ? (
@@ -538,21 +537,15 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>
-										{t("settings.payrollExport.mappings.table.type", "Type")}
-									</TableHead>
+									<TableHead>{t("settings.payrollExport.mappings.table.type", "Type")}</TableHead>
 									<TableHead>
 										{t("settings.payrollExport.mappings.table.category", "Category")}
 									</TableHead>
-									<TableHead>
-										{t("settings.payrollExport.mappings.table.datev", "DATEV")}
-									</TableHead>
+									<TableHead>{t("settings.payrollExport.mappings.table.datev", "DATEV")}</TableHead>
 									<TableHead>
 										{t("settings.payrollExport.mappings.table.lexware", "Lexware")}
 									</TableHead>
-									<TableHead>
-										{t("settings.payrollExport.mappings.table.sage", "Sage")}
-									</TableHead>
+									<TableHead>{t("settings.payrollExport.mappings.table.sage", "Sage")}</TableHead>
 									<TableHead className="w-[100px]" />
 								</TableRow>
 							</TableHeader>
@@ -567,7 +560,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											{mapping.datevWageTypeCode ? (
 												<Tooltip>
 													<TooltipTrigger asChild>
-														<span className="font-mono cursor-help">{mapping.datevWageTypeCode}</span>
+														<span className="font-mono cursor-help">
+															{mapping.datevWageTypeCode}
+														</span>
 													</TooltipTrigger>
 													<TooltipContent>
 														{mapping.datevWageTypeName || mapping.datevWageTypeCode}
@@ -581,7 +576,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											{mapping.lexwareWageTypeCode ? (
 												<Tooltip>
 													<TooltipTrigger asChild>
-														<span className="font-mono cursor-help">{mapping.lexwareWageTypeCode}</span>
+														<span className="font-mono cursor-help">
+															{mapping.lexwareWageTypeCode}
+														</span>
 													</TooltipTrigger>
 													<TooltipContent>
 														{mapping.lexwareWageTypeName || mapping.lexwareWageTypeCode}
@@ -595,7 +592,9 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											{mapping.sageWageTypeCode ? (
 												<Tooltip>
 													<TooltipTrigger asChild>
-														<span className="font-mono cursor-help">{mapping.sageWageTypeCode}</span>
+														<span className="font-mono cursor-help">
+															{mapping.sageWageTypeCode}
+														</span>
 													</TooltipTrigger>
 													<TooltipContent>
 														{mapping.sageWageTypeName || mapping.sageWageTypeCode}
@@ -606,43 +605,43 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 											)}
 										</TableCell>
 										<TableCell>
-										<AlertDialog>
-											<AlertDialogTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="text-destructive"
-													aria-label={t("settings.payrollExport.mappings.deleteMapping", "Delete mapping")}
-												>
-													<IconTrash className="h-4 w-4" />
-												</Button>
-											</AlertDialogTrigger>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle>
-														{t(
-															"settings.payrollExport.mappings.deleteTitle",
-															"Delete Mapping",
+											<AlertDialog>
+												<AlertDialogTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="text-destructive"
+														aria-label={t(
+															"settings.payrollExport.mappings.deleteMapping",
+															"Delete mapping",
 														)}
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														{t(
-															"settings.payrollExport.mappings.deleteDescription",
-															"Are you sure you want to delete this wage type mapping?",
-														)}
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-													<AlertDialogAction
-														onClick={() => handleDeleteMapping(mapping.id)}
-														className="bg-destructive text-destructive-foreground"
 													>
-														{t("common.delete", "Delete")}
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
+														<IconTrash className="h-4 w-4" />
+													</Button>
+												</AlertDialogTrigger>
+												<AlertDialogContent>
+													<AlertDialogHeader>
+														<AlertDialogTitle>
+															{t("settings.payrollExport.mappings.deleteTitle", "Delete Mapping")}
+														</AlertDialogTitle>
+														<AlertDialogDescription>
+															{t(
+																"settings.payrollExport.mappings.deleteDescription",
+																"Are you sure you want to delete this wage type mapping?",
+															)}
+														</AlertDialogDescription>
+													</AlertDialogHeader>
+													<AlertDialogFooter>
+														<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+														<AlertDialogAction
+															onClick={() => handleDeleteMapping(mapping.id)}
+															className="bg-destructive text-destructive-foreground"
+														>
+															{t("common.delete", "Delete")}
+														</AlertDialogAction>
+													</AlertDialogFooter>
+												</AlertDialogContent>
+											</AlertDialog>
 										</TableCell>
 									</TableRow>
 								))}

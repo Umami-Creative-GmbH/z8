@@ -12,15 +12,16 @@ import { WorkCategorySelector } from "@/components/time-tracking/work-category-s
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelClose,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import {
 	fieldHasError,
@@ -172,30 +173,31 @@ export function ManualTimeEntryDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger asChild>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelTrigger asChild>
 				<Button variant="outline" size="sm">
 					<IconPlus className="size-4" />
 					{t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
 				</Button>
-			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>{t("timeTracking.manualEntry.title", "Add Manual Time Entry")}</DialogTitle>
-					<DialogDescription>
+			</ActionPanelTrigger>
+			<ActionPanelContent size="compact">
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("timeTracking.manualEntry.title", "Add Manual Time Entry")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"timeTracking.manualEntry.description",
 							"Create a time entry for a past date. Approval may be required based on your organization's change policy.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						<p className="text-xs text-muted-foreground">
 							{t(
 								"timeTracking.correction.timezoneNote",
@@ -319,14 +321,14 @@ export function ManualTimeEntryDialog({
 								/>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter className="gap-2 sm:gap-0">
-						<DialogClose asChild>
+					<ActionPanelFooter className="gap-2 sm:gap-0">
+						<ActionPanelClose asChild>
 							<Button type="button" variant="outline">
 								{t("common.cancel", "Cancel")}
 							</Button>
-						</DialogClose>
+						</ActionPanelClose>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
 								<Button type="submit" disabled={isSubmitting}>
@@ -341,9 +343,9 @@ export function ManualTimeEntryDialog({
 								</Button>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

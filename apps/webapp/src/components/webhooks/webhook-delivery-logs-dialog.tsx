@@ -8,12 +8,13 @@ import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/webhooks/a
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import {
 	Table,
 	TableBody,
@@ -112,18 +113,18 @@ export function WebhookDeliveryLogsDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{t("webhooks.logs.title", "Delivery Logs")} - {webhookName}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t("webhooks.logs.description", "Recent webhook delivery attempts and their results.")}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="flex-1 overflow-auto">
+				<ActionPanelBody>
 					{isLoading && deliveries.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<IconLoader2
@@ -235,7 +236,7 @@ export function WebhookDeliveryLogsDialog({
 							</TableBody>
 						</Table>
 					)}
-				</div>
+				</ActionPanelBody>
 
 				{/* Pagination */}
 				{total > limit && (
@@ -267,7 +268,7 @@ export function WebhookDeliveryLogsDialog({
 						</div>
 					</div>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

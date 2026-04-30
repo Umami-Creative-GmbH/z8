@@ -20,13 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -458,23 +459,24 @@ export function HolidayImportDialog({
 	).length;
 
 	return (
-		<Dialog open={open} onOpenChange={handleDialogOpenChange}>
-			<DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={handleDialogOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle className="flex items-center gap-2">
 						<IconDownload className="h-5 w-5" />
 						{t("settings.holidays.import.title", "Import Holiday Preset")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.holidays.import.description",
 							"Create a reusable holiday preset that can be assigned to teams or employees",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
+				<ActionPanelBody className="space-y-4">
 				{/* Step indicator */}
-				<div className="flex items-center justify-center gap-2 py-2">
+				<div className="flex items-center justify-center gap-2">
 					<div
 						className={cn(
 							"flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
@@ -504,7 +506,7 @@ export function HolidayImportDialog({
 				</div>
 
 				{/* Step content */}
-				<div className="flex-1 overflow-y-auto py-4">
+				<div>
 					{step === 1 && (
 						<div className="space-y-4">
 							<h3 className="font-medium">
@@ -796,8 +798,9 @@ export function HolidayImportDialog({
 						</div>
 					)}
 				</div>
+				</ActionPanelBody>
 
-				<DialogFooter className="flex-shrink-0">
+				<ActionPanelFooter className="flex-shrink-0">
 					{step > 1 && (
 						<Button
 							variant="outline"
@@ -847,8 +850,8 @@ export function HolidayImportDialog({
 							{t("settings.holidays.import.createPresetButton", "Create Preset")}
 						</Button>
 					)}
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

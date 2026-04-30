@@ -1,0 +1,53 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { EmailTemplateVariableDefinition } from "@/lib/email/template-registry";
+
+interface VariablePaletteProps {
+	variables: EmailTemplateVariableDefinition[];
+	onInsert: (name: string) => void;
+}
+
+export function VariablePalette({ variables, onInsert }: VariablePaletteProps) {
+	return (
+		<section
+			className="rounded-xl border bg-muted/25 p-4"
+			aria-labelledby="email-template-variables"
+		>
+			<div className="flex items-start justify-between gap-3">
+				<div className="space-y-1">
+					<h2 id="email-template-variables" className="font-semibold text-sm">
+						Allowed variables
+					</h2>
+					<p className="text-muted-foreground text-xs leading-5">
+						Insert only approved placeholders. Values are replaced when the email is sent.
+					</p>
+				</div>
+				<Badge variant="outline">Fallback safe</Badge>
+			</div>
+
+			<div className="mt-4 grid gap-2 sm:grid-cols-2">
+				{variables.map((variable) => (
+					<Button
+						key={variable.name}
+						type="button"
+						variant="outline"
+						className="h-auto min-h-11 justify-start px-3 py-2 text-left"
+						onClick={() => onInsert(variable.name)}
+						aria-label={`Insert ${variable.label}`}
+					>
+						<span className="min-w-0">
+							<span className="block font-mono text-xs">
+								{"{{"}
+								{variable.name}
+								{"}}"}
+							</span>
+							<span className="block truncate text-muted-foreground text-xs">
+								{variable.example}
+							</span>
+						</span>
+					</Button>
+				))}
+			</div>
+		</section>
+	);
+}

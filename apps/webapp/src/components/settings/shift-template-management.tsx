@@ -22,17 +22,28 @@ import {
 	updateShiftTemplate,
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -149,7 +160,6 @@ export function ShiftTemplateManagement({
 }: ShiftTemplateManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const getColorName = useColorName();
 	const formatTime = useFormatTime();
 	const calculateDuration = useCalculateDuration();
 	const manageableSubareaIdSet = manageableSubareaIds ? new Set(manageableSubareaIds) : null;
@@ -425,7 +435,7 @@ export function ShiftTemplateManagement({
 				</CardContent>
 			</Card>
 
-			{/* Create/Edit Dialog */}
+			{/* Create/Edit ActionPanel */}
 			<ShiftTemplateDialog
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
@@ -442,47 +452,49 @@ export function ShiftTemplateManagement({
 				isSubmitting={createMutation.isPending || updateMutation.isPending}
 			/>
 
-			{/* Delete Confirmation Dialog */}
-			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>
+			{/* Delete Confirmation AlertDialog */}
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
 							{t("settings.shiftTemplates.deleteConfirm.title", "Delete Template")}
-						</DialogTitle>
-						<DialogDescription>
+						</AlertDialogTitle>
+						<AlertDialogDescription>
 							{t(
 								"settings.shiftTemplates.deleteConfirm.description",
 								'Are you sure you want to delete "{name}"? This action cannot be undone.',
 								{ name: templateToDelete?.name },
 							)}
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={() => templateToDelete && deleteMutation.mutate(templateToDelete.id)}
-							disabled={deleteMutation.isPending}
-						>
-							{deleteMutation.isPending ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-									{t("common.deleting", "Deleting…")}
-								</>
-							) : (
-								t("common.delete", "Delete")
-							)}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+						</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={() => templateToDelete && deleteMutation.mutate(templateToDelete.id)}
+								disabled={deleteMutation.isPending}
+							>
+								{deleteMutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										{t("common.deleting", "Deleting…")}
+									</>
+								) : (
+									t("common.delete", "Delete")
+								)}
+							</Button>
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
 
-// Dialog component for creating/editing templates
+// ActionPanel component for creating/editing templates
 interface ShiftTemplateDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -561,7 +573,7 @@ function ShiftTemplateDialog({
 	};
 
 	return (
-		<Dialog
+		<ActionPanel
 			open={open}
 			onOpenChange={(isOpen) => {
 				if (isOpen) {
@@ -570,59 +582,42 @@ function ShiftTemplateDialog({
 				onOpenChange(isOpen);
 			}}
 		>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{template
 							? t("settings.shiftTemplates.edit.title", "Edit Template")
 							: t("settings.shiftTemplates.create.title", "Create Template")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{template
 							? t("settings.shiftTemplates.edit.description", "Update the shift template details")
 							: t(
 									"settings.shiftTemplates.create.description",
 									"Create a new shift template for quick scheduling",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					{/* Name */}
-					<form.Field name="name">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="name">{t("settings.shiftTemplates.form.name", "Name")}</Label>
-								<Input
-									id="name"
-									placeholder={t(
-										"settings.shiftTemplates.form.namePlaceholder",
-										"e.g., Morning Shift…",
-									)}
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-							</div>
-						)}
-					</form.Field>
-
-					{/* Time inputs */}
-					<div className="grid grid-cols-2 gap-4">
-						<form.Field name="startTime">
+					<ActionPanelBody className="space-y-4">
+						{/* Name */}
+						<form.Field name="name">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="startTime">
-										{t("settings.shiftTemplates.form.startTime", "Start Time")}
-									</Label>
-									<TimeInput
-										id="startTime"
+									<Label htmlFor="name">{t("settings.shiftTemplates.form.name", "Name")}</Label>
+									<Input
+										id="name"
+										placeholder={t(
+											"settings.shiftTemplates.form.namePlaceholder",
+											"e.g., Morning Shift…",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -631,151 +626,170 @@ function ShiftTemplateDialog({
 							)}
 						</form.Field>
 
-						<form.Field name="endTime">
-							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="endTime">
-										{t("settings.shiftTemplates.form.endTime", "End Time")}
-									</Label>
-									<TimeInput
-										id="endTime"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</div>
-							)}
-						</form.Field>
-					</div>
-
-					{/* Color picker */}
-					<form.Field name="color">
-						{(field) => (
-							<div className="space-y-2">
-								<Label className="flex items-center gap-2">
-									<Palette className="h-4 w-4" aria-hidden="true" />
-									{t("settings.shiftTemplates.form.color", "Color")}
-								</Label>
-								<div
-									className="flex flex-wrap gap-2"
-									role="radiogroup"
-									aria-label={t("settings.shiftTemplates.form.colorSelection", "Color selection")}
-								>
-									{PRESET_COLORS.map((color) => (
-										<button
-											key={color.value}
-											type="button"
-											role="radio"
-											aria-checked={field.state.value === color.value}
-											aria-label={getColorName(color.key)}
-											onClick={() => field.handleChange(color.value)}
-											className={cn(
-												"h-8 w-8 rounded-full transition-transform hover:scale-110",
-												field.state.value === color.value && "ring-2 ring-offset-2 ring-primary",
-											)}
-											style={{ backgroundColor: color.value }}
+						{/* Time inputs */}
+						<div className="grid grid-cols-2 gap-4">
+							<form.Field name="startTime">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="startTime">
+											{t("settings.shiftTemplates.form.startTime", "Start Time")}
+										</Label>
+										<TimeInput
+											id="startTime"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
 										/>
-									))}
-								</div>
-							</div>
-						)}
-					</form.Field>
+									</div>
+								)}
+							</form.Field>
 
-					{/* Default Subarea (Optional) */}
-					<form.Field name="subareaId">
-						{(field) => (
-							<div className="space-y-2">
-								<Label className="flex items-center gap-2">
-									<MapPin className="h-4 w-4" aria-hidden="true" />
-									{t("settings.shiftTemplates.form.defaultSubarea", "Default Subarea")}
-									<span className="text-xs text-muted-foreground">
-										({t("common.optional", "Optional")})
-									</span>
-								</Label>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value === "none" ? "" : value)}
-								>
-									<SelectTrigger>
-										<SelectValue
-											placeholder={t(
-												"settings.shiftTemplates.form.selectSubarea",
-												"Select a subarea…",
-											)}
-										>
-											{field.state.value
-												? getSubareaDisplay(field.state.value)
-												: t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
-										</SelectValue>
-									</SelectTrigger>
-									<SelectContent>
-										{!requireScopedSubareaSelection ? (
-											<SelectItem value="none">
-												{t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
-											</SelectItem>
-										) : null}
-										{locations.flatMap((location) =>
-											location.subareas
-												.filter((s) => s.isActive)
-												.map((subarea) => (
-													<SelectItem key={subarea.id} value={subarea.id}>
-														{t(
-															"settings.shiftTemplates.form.subareaFormat",
-															"{location} – {subarea}",
-															{
-																location: location.name,
-																subarea: subarea.name,
-															},
-														)}
-													</SelectItem>
-												)),
-										)}
-									</SelectContent>
-								</Select>
-								<p className="text-xs text-muted-foreground">
-									{t(
-										"settings.shiftTemplates.form.subareaHelp",
-										"When using this template, shifts will be pre-assigned to this subarea.",
-									)}
-								</p>
-							</div>
-						)}
-					</form.Field>
+							<form.Field name="endTime">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="endTime">
+											{t("settings.shiftTemplates.form.endTime", "End Time")}
+										</Label>
+										<TimeInput
+											id="endTime"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+									</div>
+								)}
+							</form.Field>
+						</div>
 
-					{/* Preview */}
-					<form.Subscribe selector={(state) => state.values}>
-						{(values) => (
-							<div className="rounded-lg border p-3 bg-muted/50">
-								<p className="text-xs text-muted-foreground mb-2">
-									{t("settings.shiftTemplates.form.preview", "Preview")}
-								</p>
-								<div className="flex items-center gap-3">
+						{/* Color picker */}
+						<form.Field name="color">
+							{(field) => (
+								<div className="space-y-2">
+									<Label className="flex items-center gap-2">
+										<Palette className="h-4 w-4" aria-hidden="true" />
+										{t("settings.shiftTemplates.form.color", "Color")}
+									</Label>
 									<div
-										className="h-4 w-4 rounded-full shrink-0"
-										style={{ backgroundColor: values.color || "#3b82f6" }}
-										aria-hidden="true"
-									/>
-									<div>
-										<p className="font-medium text-sm">
-											{values.name || t("settings.shiftTemplates.form.untitled", "Untitled")}
-										</p>
-										<p className="text-xs text-muted-foreground">
-											{formatTime(values.startTime)} – {formatTime(values.endTime)} (
-											{calculateDuration(values.startTime, values.endTime)})
-										</p>
-										{values.subareaId && (
-											<p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-												<MapPin className="h-3 w-3" aria-hidden="true" />
-												{getSubareaDisplay(values.subareaId)}
-											</p>
-										)}
+										className="flex flex-wrap gap-2"
+										role="radiogroup"
+										aria-label={t("settings.shiftTemplates.form.colorSelection", "Color selection")}
+									>
+										{PRESET_COLORS.map((color) => (
+											<button
+												key={color.value}
+												type="button"
+												role="radio"
+												aria-checked={field.state.value === color.value}
+												aria-label={getColorName(color.key)}
+												onClick={() => field.handleChange(color.value)}
+												className={cn(
+													"h-8 w-8 rounded-full transition-transform hover:scale-110",
+													field.state.value === color.value && "ring-2 ring-offset-2 ring-primary",
+												)}
+												style={{ backgroundColor: color.value }}
+											/>
+										))}
 									</div>
 								</div>
-							</div>
-						)}
-					</form.Subscribe>
+							)}
+						</form.Field>
 
-					<DialogFooter>
+						{/* Default Subarea (Optional) */}
+						<form.Field name="subareaId">
+							{(field) => (
+								<div className="space-y-2">
+									<Label className="flex items-center gap-2">
+										<MapPin className="h-4 w-4" aria-hidden="true" />
+										{t("settings.shiftTemplates.form.defaultSubarea", "Default Subarea")}
+										<span className="text-xs text-muted-foreground">
+											({t("common.optional", "Optional")})
+										</span>
+									</Label>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value === "none" ? "" : value)}
+									>
+										<SelectTrigger>
+											<SelectValue
+												placeholder={t(
+													"settings.shiftTemplates.form.selectSubarea",
+													"Select a subarea…",
+												)}
+											>
+												{field.state.value
+													? getSubareaDisplay(field.state.value)
+													: t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
+											</SelectValue>
+										</SelectTrigger>
+										<SelectContent>
+											{!requireScopedSubareaSelection ? (
+												<SelectItem value="none">
+													{t("settings.shiftTemplates.form.noSubarea", "No default subarea")}
+												</SelectItem>
+											) : null}
+											{locations.flatMap((location) =>
+												location.subareas
+													.filter((s) => s.isActive)
+													.map((subarea) => (
+														<SelectItem key={subarea.id} value={subarea.id}>
+															{t(
+																"settings.shiftTemplates.form.subareaFormat",
+																"{location} – {subarea}",
+																{
+																	location: location.name,
+																	subarea: subarea.name,
+																},
+															)}
+														</SelectItem>
+													)),
+											)}
+										</SelectContent>
+									</Select>
+									<p className="text-xs text-muted-foreground">
+										{t(
+											"settings.shiftTemplates.form.subareaHelp",
+											"When using this template, shifts will be pre-assigned to this subarea.",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+
+						{/* Preview */}
+						<form.Subscribe selector={(state) => state.values}>
+							{(values) => (
+								<div className="rounded-lg border p-3 bg-muted/50">
+									<p className="text-xs text-muted-foreground mb-2">
+										{t("settings.shiftTemplates.form.preview", "Preview")}
+									</p>
+									<div className="flex items-center gap-3">
+										<div
+											className="h-4 w-4 rounded-full shrink-0"
+											style={{ backgroundColor: values.color || "#3b82f6" }}
+											aria-hidden="true"
+										/>
+										<div>
+											<p className="font-medium text-sm">
+												{values.name || t("settings.shiftTemplates.form.untitled", "Untitled")}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{formatTime(values.startTime)} – {formatTime(values.endTime)} (
+												{calculateDuration(values.startTime, values.endTime)})
+											</p>
+											{values.subareaId && (
+												<p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+													<MapPin className="h-3 w-3" aria-hidden="true" />
+													{getSubareaDisplay(values.subareaId)}
+												</p>
+											)}
+										</div>
+									</div>
+								</div>
+							)}
+						</form.Subscribe>
+					</ActionPanelBody>
+
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -796,9 +810,9 @@ function ShiftTemplateDialog({
 								t("common.create", "Create")
 							)}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

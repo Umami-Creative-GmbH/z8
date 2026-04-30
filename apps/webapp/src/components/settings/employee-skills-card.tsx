@@ -1,9 +1,5 @@
 "use client";
 
-import { useForm } from "@tanstack/react-form";
-import { useStore } from "@tanstack/react-store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
 import {
 	IconAlertTriangle,
 	IconAward,
@@ -17,29 +13,30 @@ import {
 	IconTools,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import {
+	assignSkillToEmployee,
+	removeSkillFromEmployee,
+} from "@/app/[locale]/(app)/settings/skills/actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -49,22 +46,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-	assignSkillToEmployee,
-	removeSkillFromEmployee,
-} from "@/app/[locale]/(app)/settings/skills/actions";
-import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
-import {
-	useEmployeeSkills,
-	useOrganizationSkills,
-} from "@/lib/query/use-skills";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/query/keys";
+import { useEmployeeSkills, useOrganizationSkills } from "@/lib/query/use-skills";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 
@@ -149,7 +133,10 @@ export function EmployeeSkillsCard({
 					<div>
 						<CardTitle>{t("settings.skills.employeeSkills", "Skills & Qualifications")}</CardTitle>
 						<CardDescription>
-							{t("settings.skills.employeeSkillsDescription", "Certifications and skills assigned to this employee")}
+							{t(
+								"settings.skills.employeeSkillsDescription",
+								"Certifications and skills assigned to this employee",
+							)}
 						</CardDescription>
 					</div>
 					{canManageSkills && (
@@ -163,7 +150,10 @@ export function EmployeeSkillsCard({
 			<CardContent>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+						<IconLoader2
+							className="h-6 w-6 animate-spin text-muted-foreground"
+							aria-hidden="true"
+						/>
 					</div>
 				) : skills.length === 0 ? (
 					<div className="py-8 text-center text-muted-foreground">
@@ -190,7 +180,9 @@ export function EmployeeSkillsCard({
 									} ${expiringSoon && !expired ? "border-yellow-500/50 bg-yellow-500/5" : ""}`}
 								>
 									<div className="flex items-start gap-3">
-										<div className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+										<div
+											className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}
+										>
 											<CategoryIcon className="h-5 w-5" aria-hidden="true" />
 										</div>
 										<div className="space-y-1">
@@ -210,16 +202,18 @@ export function EmployeeSkillsCard({
 												)}
 											</div>
 											{employeeSkill.expiresAt && (
-												<p className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+												<p
+													className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}
+												>
 													{expired
 														? t("settings.skills.expiredOn", "Expired on {{date}}", {
 																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED
+																	DateTime.DATE_MED,
 																),
 															})
 														: t("settings.skills.expiresOn", "Expires {{date}}", {
 																date: DateTime.fromJSDate(employeeSkill.expiresAt).toLocaleString(
-																	DateTime.DATE_MED
+																	DateTime.DATE_MED,
 																),
 															})}
 												</p>
@@ -237,7 +231,9 @@ export function EmployeeSkillsCard({
 														variant="ghost"
 														size="icon"
 														className="h-8 w-8"
-														onClick={() => handleRemove(employeeSkill.skillId, employeeSkill.skill.name)}
+														onClick={() =>
+															handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
+														}
 														disabled={removeMutation.isPending}
 														aria-label={t("common.remove", "Remove")}
 													>
@@ -255,7 +251,7 @@ export function EmployeeSkillsCard({
 				)}
 			</CardContent>
 
-			{/* Assign Skill Dialog */}
+			{/* Assign Skill ActionPanel */}
 			{canManageSkills ? (
 				<AssignSkillDialog
 					employeeId={employeeId}
@@ -271,7 +267,7 @@ export function EmployeeSkillsCard({
 }
 
 // ============================================
-// Assign Skill Dialog
+// Assign Skill ActionPanel
 // ============================================
 
 interface AssignSkillDialogProps {
@@ -355,22 +351,26 @@ function AssignSkillDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[450px]">
-				<DialogHeader>
-					<DialogTitle>{t("settings.skills.assignSkill", "Assign Skill")}</DialogTitle>
-					<DialogDescription>
-						{t("settings.skills.assignSkillDescription", "Add a skill or certification to this employee")}
-					</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.skills.assignSkill", "Assign Skill")}</ActionPanelTitle>
+					<ActionPanelDescription>
+						{t(
+							"settings.skills.assignSkillDescription",
+							"Add a skill or certification to this employee",
+						)}
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						{/* Skill Selection */}
 						<form.Field name="skillId">
 							{(field) => (
@@ -385,16 +385,15 @@ function AssignSkillDialog({
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.skills.noAvailableSkills",
-												"All skills have been assigned or no skills are defined"
+												"All skills have been assigned or no skills are defined",
 											)}
 										</p>
 									) : (
-										<Select
-											value={field.state.value}
-											onValueChange={field.handleChange}
-										>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
 											<SelectTrigger id="assign-skill">
-												<SelectValue placeholder={t("settings.skills.selectSkill", "Select a skill")} />
+												<SelectValue
+													placeholder={t("settings.skills.selectSkill", "Select a skill")}
+												/>
 											</SelectTrigger>
 											<SelectContent>
 												{availableSkills.map((skill) => {
@@ -439,7 +438,7 @@ function AssignSkillDialog({
 										<p className="text-xs text-muted-foreground">
 											{t(
 												"settings.skills.expiryRequiredHint",
-												"This certification requires an expiry date"
+												"This certification requires an expiry date",
 											)}
 										</p>
 									)}
@@ -459,16 +458,16 @@ function AssignSkillDialog({
 										onBlur={field.handleBlur}
 										placeholder={t(
 											"settings.skills.notesPlaceholder",
-											"e.g., Certificate number, training date…"
+											"e.g., Certificate number, training date…",
 										)}
 										rows={2}
 									/>
 								</div>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -479,14 +478,18 @@ function AssignSkillDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={assignMutation.isPending || !selectedSkillId || availableSkills.length === 0}
+							disabled={
+								assignMutation.isPending || !selectedSkillId || availableSkills.length === 0
+							}
 						>
-							{assignMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+							{assignMutation.isPending && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+							)}
 							{t("settings.skills.assign", "Assign")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

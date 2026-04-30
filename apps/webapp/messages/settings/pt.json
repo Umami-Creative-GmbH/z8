@@ -1047,6 +1047,10 @@
       "details": "Detalhes do funcionário",
       "title": "Colaboradores"
     },
+    "emailTemplates": {
+      "description": "Personalize os e-mails que sua organização envia",
+      "title": "Modelos de e-mail"
+    },
     "enterprise": {
       "domains": {
         "description": "Configure o domínio de login personalizado, a marca e os provedores de SSO da sua organização.",

@@ -2,16 +2,17 @@
 
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 
 interface PublishComplianceDialogProps {
@@ -34,31 +35,33 @@ export function PublishComplianceDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle className="flex items-center gap-2">
 						<IconAlertTriangle className="h-5 w-5 text-amber-600" aria-hidden="true" />
 						Compliance Acknowledgment Required
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						Publishing will proceed, but this schedule has compliance warnings that must be
 						acknowledged first.
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="rounded-md border border-amber-300/70 bg-amber-50/60 p-3">
-					<p className="text-sm font-medium text-amber-900">
-						{summary.totalFindings} total finding{summary.totalFindings === 1 ? "" : "s"}
-					</p>
-					<div className="mt-2 flex flex-wrap gap-2">
-						<Badge variant="outline">Rest time: {summary.byType.restTime}</Badge>
-						<Badge variant="outline">Max hours: {summary.byType.maxHours}</Badge>
-						<Badge variant="outline">Overtime: {summary.byType.overtime}</Badge>
+				<ActionPanelBody>
+					<div className="rounded-md border border-amber-300/70 bg-amber-50/60 p-3">
+						<p className="text-sm font-medium text-amber-900">
+							{summary.totalFindings} total finding{summary.totalFindings === 1 ? "" : "s"}
+						</p>
+						<div className="mt-2 flex flex-wrap gap-2">
+							<Badge variant="outline">Rest time: {summary.byType.restTime}</Badge>
+							<Badge variant="outline">Max hours: {summary.byType.maxHours}</Badge>
+							<Badge variant="outline">Overtime: {summary.byType.overtime}</Badge>
+						</div>
 					</div>
-				</div>
+				</ActionPanelBody>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button
 						type="button"
 						variant="outline"
@@ -77,8 +80,8 @@ export function PublishComplianceDialog({
 							"Acknowledge and Publish"
 						)}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

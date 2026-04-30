@@ -12,17 +12,28 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { z } from "zod";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -86,7 +97,8 @@ export function TeamInfoCard(props: {
 	onCancelEdit: () => void;
 	onSubmit: () => void;
 }) {
-	const { team, isEditing, canManageSettings, loading, form, onStartEdit, onCancelEdit, onSubmit } = props;
+	const { team, isEditing, canManageSettings, loading, form, onStartEdit, onCancelEdit, onSubmit } =
+		props;
 
 	return (
 		<Card>
@@ -106,7 +118,10 @@ export function TeamInfoCard(props: {
 						<form.Field
 							name="name"
 							validators={{
-								onChange: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
+								onChange: z
+									.string()
+									.min(1, "Team name is required")
+									.max(100, "Team name is too long"),
 							}}
 						>
 							{(field: any) => (
@@ -144,12 +159,22 @@ export function TeamInfoCard(props: {
 						</form.Field>
 
 						<div className="flex justify-end gap-2">
-							<Button type="button" variant="outline" size="sm" onClick={onCancelEdit} disabled={loading}>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={onCancelEdit}
+								disabled={loading}
+							>
 								<IconX className="mr-2 size-4" />
 								Cancel
 							</Button>
 							<Button type="button" size="sm" disabled={loading} onClick={onSubmit}>
-								{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : <IconCheck className="mr-2 size-4" />}
+								{loading ? (
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+								) : (
+									<IconCheck className="mr-2 size-4" />
+								)}
 								Save
 							</Button>
 						</div>
@@ -217,14 +242,24 @@ export function TeamMembersCard(props: {
 				) : (
 					<div className="space-y-2">
 						{team.employees.map((employee: any) => (
-							<div key={employee.id} className="flex items-center justify-between rounded-lg border p-3">
+							<div
+								key={employee.id}
+								className="flex items-center justify-between rounded-lg border p-3"
+							>
 								<div className="flex items-center gap-3">
-									<UserAvatar image={employee.user.image} seed={employee.id} name={employee.user.name} size="md" />
+									<UserAvatar
+										image={employee.user.image}
+										seed={employee.id}
+										name={employee.user.name}
+										size="md"
+									/>
 									<div>
 										<div className="font-medium">{employee.user.name}</div>
 										<div className="text-sm text-muted-foreground">{employee.user.email}</div>
 									</div>
-									{employee.position ? <Badge variant="secondary">{employee.position}</Badge> : null}
+									{employee.position ? (
+										<Badge variant="secondary">{employee.position}</Badge>
+									) : null}
 								</div>
 								{canManageMembers ? (
 									<Button variant="ghost" size="sm" onClick={() => onRemoveMember(employee.id)}>
@@ -249,16 +284,24 @@ export function AddMemberDialog(props: {
 	onAddMember: () => void;
 	loading: boolean;
 }) {
-	const { open, onOpenChange, availableEmployees, selectedEmployee, onSelectedEmployeeChange, onAddMember, loading } = props;
+	const {
+		open,
+		onOpenChange,
+		availableEmployees,
+		selectedEmployee,
+		onSelectedEmployeeChange,
+		onAddMember,
+		loading,
+	} = props;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Add Team Member</DialogTitle>
-					<DialogDescription>Select an employee to add to this team</DialogDescription>
-				</DialogHeader>
-				<div className="space-y-4 py-4">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Add Team Member</ActionPanelTitle>
+					<ActionPanelDescription>Select an employee to add to this team</ActionPanelDescription>
+				</ActionPanelHeader>
+				<ActionPanelBody className="space-y-4">
 					<Select value={selectedEmployee} onValueChange={onSelectedEmployeeChange}>
 						<SelectTrigger>
 							<SelectValue placeholder="Select employee" />
@@ -274,8 +317,8 @@ export function AddMemberDialog(props: {
 							))}
 						</SelectContent>
 					</Select>
-				</div>
-				<DialogFooter>
+				</ActionPanelBody>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
 					</Button>
@@ -283,9 +326,9 @@ export function AddMemberDialog(props: {
 						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
 						Add Member
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
@@ -298,25 +341,35 @@ export function RemoveMemberDialog(props: {
 	const { open, onOpenChange, onConfirm, loading } = props;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Remove Team Member</DialogTitle>
-					<DialogDescription>
-						Are you sure you want to remove this employee from the team? They will still have access to the organization.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter>
-					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+					<AlertDialogDescription>
+						Are you sure you want to remove this employee from the team? They will still have access
+						to the organization.
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
-					</Button>
-					<Button variant="destructive" onClick={onConfirm} disabled={loading}>
-						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
-						Remove
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+					</AlertDialogCancel>
+					<AlertDialogAction asChild>
+						<Button
+							variant="destructive"
+							onClick={(event) => {
+								event.preventDefault();
+								onConfirm();
+							}}
+							disabled={loading}
+						>
+							{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
+							Remove
+						</Button>
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }
 
@@ -329,24 +382,34 @@ export function DeleteTeamDialog(props: {
 	const { open, onOpenChange, onConfirm, loading } = props;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Delete Team</DialogTitle>
-					<DialogDescription>
-						Are you sure you want to delete this team? This action cannot be undone. Team members will not be deleted.
-					</DialogDescription>
-				</DialogHeader>
-				<DialogFooter>
-					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Delete Team</AlertDialogTitle>
+					<AlertDialogDescription>
+						Are you sure you want to delete this team? This action cannot be undone. Team members
+						will not be deleted.
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel onClick={() => onOpenChange(false)} disabled={loading}>
 						Cancel
-					</Button>
-					<Button variant="destructive" onClick={onConfirm} disabled={loading}>
-						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
-						Delete Team
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+					</AlertDialogCancel>
+					<AlertDialogAction asChild>
+						<Button
+							variant="destructive"
+							onClick={(event) => {
+								event.preventDefault();
+								onConfirm();
+							}}
+							disabled={loading}
+						>
+							{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
+							Delete Team
+						</Button>
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

@@ -61,6 +61,7 @@ export interface EmailJobData {
 	subject: string;
 	template: string;
 	data: Record<string, unknown>;
+	organizationId?: string;
 }
 
 export interface CleanupJobData {

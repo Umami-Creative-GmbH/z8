@@ -6,17 +6,28 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -83,7 +94,7 @@ export default function UsersPage() {
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Dialog states
+	// ActionPanel states
 	const [banDialogUser, setBanDialogUser] = useState<PlatformUser | null>(null);
 	const [banReason, setBanReason] = useState("");
 	const [banExpiry, setBanExpiry] = useState("");
@@ -155,7 +166,11 @@ export default function UsersPage() {
 		startTransition(async () => {
 			const result = await banUserAction(banDialogUser.id, banReason, banExpiry || null);
 			if (result.success) {
-				toast.success(t("admin.users.toasts.banned", "User {email} has been banned", { email: banDialogUser.email }));
+				toast.success(
+					t("admin.users.toasts.banned", "User {email} has been banned", {
+						email: banDialogUser.email,
+					}),
+				);
 				setBanDialogUser(null);
 				setBanReason("");
 				setBanExpiry("");
@@ -171,7 +186,9 @@ export default function UsersPage() {
 		startTransition(async () => {
 			const result = await unbanUserAction(user.id);
 			if (result.success) {
-				toast.success(t("admin.users.toasts.unbanned", "User {email} has been unbanned", { email: user.email }));
+				toast.success(
+					t("admin.users.toasts.unbanned", "User {email} has been unbanned", { email: user.email }),
+				);
 				queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			} else {
 				toast.error(result.error);
@@ -212,7 +229,11 @@ export default function UsersPage() {
 		startTransition(async () => {
 			const result = await revokeAllUserSessionsAction(sessionsDialogUser.id);
 			if (result.success) {
-				toast.success(t("admin.users.toasts.sessionsRevoked", "Revoked {count} sessions", { count: result.data }));
+				toast.success(
+					t("admin.users.toasts.sessionsRevoked", "Revoked {count} sessions", {
+						count: result.data,
+					}),
+				);
 				setSessions([]);
 			} else {
 				toast.error(result.error);
@@ -326,7 +347,9 @@ export default function UsersPage() {
 											<TableCell>
 												{user.banned ? (
 													<div>
-														<Badge variant="destructive">{t("admin.users.badges.banned", "Banned")}</Badge>
+														<Badge variant="destructive">
+															{t("admin.users.badges.banned", "Banned")}
+														</Badge>
 														{user.banExpires && (
 															<div className="text-xs text-muted-foreground mt-1">
 																{t("admin.users.badges.banExpiresUntil", "Until {date}", {
@@ -363,7 +386,11 @@ export default function UsersPage() {
 															size="sm"
 															onClick={() => handleUnban(user)}
 															disabled={isPending}
-															aria-label={t("admin.users.toasts.unbanned", "User {email} has been unbanned", { email: user.email })}
+															aria-label={t(
+																"admin.users.toasts.unbanned",
+																"User {email} has been unbanned",
+																{ email: user.email },
+															)}
 														>
 															<IconCheck className="size-4" aria-hidden="true" />
 														</Button>
@@ -426,27 +453,34 @@ export default function UsersPage() {
 				</div>
 			)}
 
-			{/* Ban Dialog */}
-			<Dialog open={!!banDialogUser} onOpenChange={() => setBanDialogUser(null)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("admin.users.banDialog.title", "Ban User")}</DialogTitle>
-						<DialogDescription>
-							{t("admin.users.banDialog.description", "Ban {email} from accessing the platform.", { email: banDialogUser?.email ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+			{/* Ban confirmation */}
+			<AlertDialog open={!!banDialogUser} onOpenChange={() => setBanDialogUser(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>{t("admin.users.banDialog.title", "Ban User")}</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t("admin.users.banDialog.description", "Ban {email} from accessing the platform.", {
+								email: banDialogUser?.email ?? "",
+							})}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
 							<Label htmlFor="reason">{t("admin.users.banDialog.reason", "Reason")}</Label>
 							<Textarea
 								id="reason"
-								placeholder={t("admin.users.banDialog.reasonPlaceholder", "Enter the reason for banning this user…")}
+								placeholder={t(
+									"admin.users.banDialog.reasonPlaceholder",
+									"Enter the reason for banning this user…",
+								)}
 								value={banReason}
 								onChange={(e) => setBanReason(e.target.value)}
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="expiry">{t("admin.users.banDialog.expiry", "Expiry Date (optional)")}</Label>
+							<Label htmlFor="expiry">
+								{t("admin.users.banDialog.expiry", "Expiry Date (optional)")}
+							</Label>
 							<Input
 								id="expiry"
 								type="datetime-local"
@@ -458,27 +492,40 @@ export default function UsersPage() {
 							</p>
 						</div>
 					</div>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setBanDialogUser(null)}>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setBanDialogUser(null)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button variant="destructive" onClick={handleBan} disabled={!banReason || isPending}>
-							{t("admin.users.banDialog.confirmButton", "Ban User")}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+						</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={(event) => {
+									event.preventDefault();
+									handleBan();
+								}}
+								disabled={!banReason || isPending}
+							>
+								{t("admin.users.banDialog.confirmButton", "Ban User")}
+							</Button>
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
-			{/* Sessions Dialog */}
-			<Dialog open={!!sessionsDialogUser} onOpenChange={() => setSessionsDialogUser(null)}>
-				<DialogContent className="max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>{t("admin.users.sessionsDialog.title", "User Sessions")}</DialogTitle>
-						<DialogDescription>
-							{t("admin.users.sessionsDialog.description", "Active sessions for {email}", { email: sessionsDialogUser?.email ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
-					<div className="py-4">
+			{/* Sessions ActionPanel */}
+			<ActionPanel open={!!sessionsDialogUser} onOpenChange={() => setSessionsDialogUser(null)}>
+				<ActionPanelContent size="wide">
+					<ActionPanelHeader>
+						<ActionPanelTitle>
+							{t("admin.users.sessionsDialog.title", "User Sessions")}
+						</ActionPanelTitle>
+						<ActionPanelDescription>
+							{t("admin.users.sessionsDialog.description", "Active sessions for {email}", {
+								email: sessionsDialogUser?.email ?? "",
+							})}
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelBody className="py-4">
 						{sessionsLoading ? (
 							<div className="space-y-2">
 								{SESSION_LOADING_KEYS.map((key) => (
@@ -503,8 +550,9 @@ export default function UsersPage() {
 													: t("admin.users.sessionsDialog.unknownDevice", "Unknown device")}
 											</div>
 											<div className="text-xs text-muted-foreground">
-												{session.ipAddress ?? t("admin.users.sessionsDialog.unknownIp", "Unknown IP")} • Created{" "}
-												{DateTime.fromJSDate(session.createdAt).toRelative()}
+												{session.ipAddress ??
+													t("admin.users.sessionsDialog.unknownIp", "Unknown IP")}{" "}
+												• Created {DateTime.fromJSDate(session.createdAt).toRelative()}
 											</div>
 										</div>
 										<Button
@@ -520,8 +568,8 @@ export default function UsersPage() {
 								))}
 							</div>
 						)}
-					</div>
-					<DialogFooter>
+					</ActionPanelBody>
+					<ActionPanelFooter>
 						<Button variant="outline" onClick={() => setSessionsDialogUser(null)}>
 							{t("common.close", "Close")}
 						</Button>
@@ -530,9 +578,9 @@ export default function UsersPage() {
 								{t("admin.users.sessionsDialog.revokeAll", "Revoke All Sessions")}
 							</Button>
 						)}
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

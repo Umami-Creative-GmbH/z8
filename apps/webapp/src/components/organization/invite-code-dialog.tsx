@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -190,16 +191,15 @@ export function InviteCodeDialog({
 	const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
-				<form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-					<DialogHeader>
-						<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+						<ActionPanelTitle>
 							{isEditing
 								? t("settings.inviteCodes.editCode", "Edit Invite Code")
 								: t("settings.inviteCodes.createCode", "Create Invite Code")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{isEditing
 								? t(
 										"settings.inviteCodes.editDescription",
@@ -209,10 +209,11 @@ export function InviteCodeDialog({
 										"settings.inviteCodes.createDescription",
 										"Create a new invite code for users to join your organization",
 									)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+				</ActionPanelHeader>
 
-					<div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
+				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<ActionPanelBody className="grid gap-4">
 						{/* Code */}
 						<div className="grid gap-2">
 							<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
@@ -383,9 +384,9 @@ export function InviteCodeDialog({
 								</Select>
 							</div>
 						)}
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -393,9 +394,9 @@ export function InviteCodeDialog({
 							{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("settings.inviteCodes.create", "Create")}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

@@ -5,12 +5,13 @@ import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { queryKeys } from "@/lib/query/keys";
 import { ShiftDialogFooterActions, ShiftDialogSections } from "./shift-dialog-sections";
 import { useShiftDialogData } from "./use-shift-dialog-data";
@@ -131,32 +132,34 @@ export function ShiftDialog({
 	const isPending = upsertMutation.isPending || deleteMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>{description}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{title}</ActionPanelTitle>
+					<ActionPanelDescription>{description}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<ShiftDialogSections
-						form={form}
-						formValues={formValues}
-						isManager={isManager}
-						templates={templates}
-						locations={locations}
-						employees={employees}
-						skillValidation={skillValidation}
-						isValidatingSkills={isValidatingSkills}
-						isEditing={isEditing}
-						shift={shift}
-					/>
+					<ActionPanelBody className="space-y-4">
+						<ShiftDialogSections
+							form={form}
+							formValues={formValues}
+							isManager={isManager}
+							templates={templates}
+							locations={locations}
+							employees={employees}
+							skillValidation={skillValidation}
+							isValidatingSkills={isValidatingSkills}
+							isEditing={isEditing}
+							shift={shift}
+						/>
+					</ActionPanelBody>
 
 					<ShiftDialogFooterActions
 						key={`${open ? "open" : "closed"}-${shift?.id ?? "new"}`}
@@ -169,7 +172,7 @@ export function ShiftDialog({
 						onCancel={() => onOpenChange(false)}
 					/>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

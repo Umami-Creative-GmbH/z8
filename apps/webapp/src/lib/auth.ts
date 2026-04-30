@@ -19,11 +19,7 @@ import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-mem
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
-import {
-	renderEmailVerification,
-	renderOrganizationInvitation,
-	renderPasswordReset,
-} from "./email/render";
+import { renderOrganizationEmailTemplate } from "./email/template-renderer";
 import { createLogger } from "./logger";
 import { secondaryStorage } from "./valkey";
 
@@ -42,7 +38,9 @@ function getAuthSecrets() {
 	}
 
 	if (resolved.usedBuildTimeFallback) {
-		logger.warn("BETTER_AUTH_SECRET is unavailable during build; using a build-only auth secret fallback.");
+		logger.warn(
+			"BETTER_AUTH_SECRET is unavailable during build; using a build-only auth secret fallback.",
+		);
 	}
 
 	return resolved.secrets;
@@ -299,15 +297,20 @@ export const auth = betterAuth({
 		sendResetPassword: async ({ user, url }, _request) => {
 			const { organizationId, correctedUrl } = await getOrganizationEmailContext(user.id, url);
 
-			const html = await renderPasswordReset({
-				userName: user.name,
-				resetUrl: correctedUrl,
+			const rendered = await renderOrganizationEmailTemplate({
+				organizationId,
+				templateKey: "password-reset",
+				data: {
+					userName: user.name,
+					resetUrl: correctedUrl,
+				},
+				subjectOverride: "Reset your password",
 			});
 
 			await sendEmail({
 				to: user.email,
-				subject: "Reset your password",
-				html,
+				subject: rendered.subject,
+				html: rendered.html,
 				actionUrl: correctedUrl,
 				organizationId,
 			});
@@ -321,16 +324,21 @@ export const auth = betterAuth({
 				url,
 			);
 
-			const html = await renderEmailVerification({
-				userName: user.name,
-				verificationUrl: correctedUrl,
-				appUrl,
+			const rendered = await renderOrganizationEmailTemplate({
+				organizationId,
+				templateKey: "email-verification",
+				data: {
+					userName: user.name,
+					verificationUrl: correctedUrl,
+					appUrl,
+				},
+				subjectOverride: "Verify your email address",
 			});
 
 			await sendEmail({
 				to: user.email,
-				subject: "Verify your email address",
-				html,
+				subject: rendered.subject,
+				html: rendered.html,
 				actionUrl: correctedUrl,
 				organizationId,
 			});
@@ -431,6 +439,12 @@ export const auth = betterAuth({
 							defaultValue: false,
 							input: true,
 						},
+						demoDataEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: true,
+							input: false,
+						},
 						timezone: {
 							type: "string",
 							required: false,
@@ -490,18 +504,23 @@ export const auth = betterAuth({
 				const appUrl = await getOrganizationBaseUrl(data.organization.id);
 				const invitationUrl = `${appUrl}/accept-invitation/${data.invitation.id}`;
 
-				const html = await renderOrganizationInvitation({
-					email: data.email,
-					organizationName: data.organization.name,
-					inviterName: data.inviter.user.name,
-					role: data.role,
-					invitationUrl,
+				const rendered = await renderOrganizationEmailTemplate({
+					organizationId: data.organization.id,
+					templateKey: "organization-invitation",
+					data: {
+						email: data.email,
+						organizationName: data.organization.name,
+						inviterName: data.inviter.user.name,
+						role: data.role,
+						invitationUrl,
+					},
+					subjectOverride: `You've been invited to join ${data.organization.name}`,
 				});
 
 				await sendEmail({
 					to: data.email,
-					subject: `You've been invited to join ${data.organization.name}`,
-					html,
+					subject: rendered.subject,
+					html: rendered.html,
 					actionUrl: invitationUrl,
 					organizationId: data.organization.id, // Use org-specific email config
 				});

@@ -3,10 +3,16 @@
 import { IconLoader2, IconShield, IconUserCog } from "@tabler/icons-react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { PermissionEditor } from "@/components/settings/permission-editor";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -174,23 +180,25 @@ export function PermissionEditorDialog(props: {
 		props;
 
 	return (
-		<Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>Edit Permissions - {selectedEmployee?.user.name}</DialogTitle>
-				</DialogHeader>
-				{selectedEmployee && currentEmployee ? (
-					<PermissionEditor
-						employeeId={selectedEmployee.id}
-						employeeName={selectedEmployee.user.name}
-						organizationId={currentEmployee.organizationId}
-						currentPermissions={currentPermissions[selectedEmployee.id]}
-						availableTeams={teams}
-						onSuccess={onSuccess}
-						onCancel={onClose}
-					/>
-				) : null}
-			</DialogContent>
-		</Dialog>
+		<ActionPanel open={!!selectedEmployee} onOpenChange={(open) => !open && onClose()}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>Edit Permissions - {selectedEmployee?.user.name}</ActionPanelTitle>
+				</ActionPanelHeader>
+				<ActionPanelBody>
+					{selectedEmployee && currentEmployee ? (
+						<PermissionEditor
+							employeeId={selectedEmployee.id}
+							employeeName={selectedEmployee.user.name}
+							organizationId={currentEmployee.organizationId}
+							currentPermissions={currentPermissions[selectedEmployee.id]}
+							availableTeams={teams}
+							onSuccess={onSuccess}
+							onCancel={onClose}
+						/>
+					) : null}
+				</ActionPanelBody>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

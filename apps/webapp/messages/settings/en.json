@@ -1047,6 +1047,10 @@
       "details": "Employee Details",
       "title": "Employees"
     },
+    "emailTemplates": {
+      "description": "Customize the emails your organization sends",
+      "title": "Email Templates"
+    },
     "enterprise": {
       "domains": {
         "description": "Configure your organization's custom login domain, branding, and SSO providers.",

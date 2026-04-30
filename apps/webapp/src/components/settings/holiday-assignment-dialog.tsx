@@ -14,15 +14,16 @@ import {
 	getEmployeesForAssignment,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -234,164 +235,166 @@ export function HolidayAssignmentDialog({
 	const isLoading = holidaysLoading || teamsLoading || employeesLoading;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>{getDialogTitle()}</DialogTitle>
-					<DialogDescription>{getDialogDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getDialogTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				{isLoading ? (
-					<div className="space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						<Skeleton className="h-10 w-full" />
 						{assignmentType !== "organization" && <Skeleton className="h-10 w-full" />}
-					</div>
+					</ActionPanelBody>
 				) : (
 					<form
 						onSubmit={(e) => {
 							e.preventDefault();
 							form.handleSubmit();
 						}}
-						className="space-y-4"
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						{/* Holiday Selection */}
-						<form.Field name="holidayId">
-							{(field) => (
-								<div className="space-y-2">
-									<Label>{t("settings.holidays.assignments.holiday", "Custom Holiday")}</Label>
-									<Select value={field.state.value} onValueChange={field.handleChange}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"settings.holidays.assignments.selectHoliday",
-													"Select a holiday",
+						<ActionPanelBody className="space-y-4">
+							{/* Holiday Selection */}
+							<form.Field name="holidayId">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("settings.holidays.assignments.holiday", "Custom Holiday")}</Label>
+										<Select value={field.state.value} onValueChange={field.handleChange}>
+											<SelectTrigger>
+												<SelectValue
+													placeholder={t(
+														"settings.holidays.assignments.selectHoliday",
+														"Select a holiday",
+													)}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{holidays?.length === 0 ? (
+													<div className="p-2 text-sm text-muted-foreground text-center">
+														{t(
+															"settings.holidays.assignments.noHolidays",
+															"No custom holidays available. Create one first.",
+														)}
+													</div>
+												) : (
+													holidays?.map((holiday) => (
+														<SelectItem key={holiday.id} value={holiday.id}>
+															<div className="flex items-center gap-2">
+																<span>{holiday.name}</span>
+																<span className="text-muted-foreground text-xs">
+																	({formatDateRange(holiday.startDate, holiday.endDate)})
+																</span>
+																{holiday.recurrenceType === "yearly" && (
+																	<span className="text-xs bg-secondary px-1 rounded">
+																		{t("settings.holidays.recurrence.yearly", "Yearly")}
+																	</span>
+																)}
+															</div>
+														</SelectItem>
+													))
 												)}
-											/>
-										</SelectTrigger>
-										<SelectContent>
-											{holidays?.length === 0 ? (
-												<div className="p-2 text-sm text-muted-foreground text-center">
-													{t(
-														"settings.holidays.assignments.noHolidays",
-														"No custom holidays available. Create one first.",
-													)}
-												</div>
-											) : (
-												holidays?.map((holiday) => (
-													<SelectItem key={holiday.id} value={holiday.id}>
-														<div className="flex items-center gap-2">
-															<span>{holiday.name}</span>
-															<span className="text-muted-foreground text-xs">
-																({formatDateRange(holiday.startDate, holiday.endDate)})
-															</span>
-															{holiday.recurrenceType === "yearly" && (
-																<span className="text-xs bg-secondary px-1 rounded">
-																	{t("settings.holidays.recurrence.yearly", "Yearly")}
-																</span>
-															)}
-														</div>
-													</SelectItem>
-												))
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.holidays.assignments.holidayDescription",
+												"The custom holiday to assign",
 											)}
-										</SelectContent>
-									</Select>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"settings.holidays.assignments.holidayDescription",
-											"The custom holiday to assign",
+										</p>
+										{validationErrors.holidayId && (
+											<p className="text-sm text-destructive">{validationErrors.holidayId}</p>
 										)}
-									</p>
-									{validationErrors.holidayId && (
-										<p className="text-sm text-destructive">{validationErrors.holidayId}</p>
+									</div>
+								)}
+							</form.Field>
+
+							{/* Team Selection (for team assignment) */}
+							{assignmentType === "team" && (
+								<form.Field name="teamId">
+									{(field) => (
+										<div className="space-y-2">
+											<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
+											<Select value={field.state.value} onValueChange={field.handleChange}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.holidays.assignments.selectTeam",
+															"Select a team",
+														)}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{teams?.map((team) => (
+														<SelectItem key={team.id} value={team.id}>
+															{team.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.holidays.assignments.teamHolidayNote",
+													"This holiday will apply only to employees in this team",
+												)}
+											</p>
+											{validationErrors.teamId && (
+												<p className="text-sm text-destructive">{validationErrors.teamId}</p>
+											)}
+										</div>
 									)}
-								</div>
+								</form.Field>
 							)}
-						</form.Field>
 
-						{/* Team Selection (for team assignment) */}
-						{assignmentType === "team" && (
-							<form.Field name="teamId">
-								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.holidays.assignments.team", "Team")}</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.holidays.assignments.selectTeam",
-														"Select a team",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{teams?.map((team) => (
-													<SelectItem key={team.id} value={team.id}>
-														{team.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"settings.holidays.assignments.teamHolidayNote",
-												"This holiday will apply only to employees in this team",
-											)}
-										</p>
-										{validationErrors.teamId && (
-											<p className="text-sm text-destructive">{validationErrors.teamId}</p>
-										)}
-									</div>
-								)}
-							</form.Field>
-						)}
-
-						{/* Employee Selection (for employee assignment) */}
-						{assignmentType === "employee" && (
-							<form.Field name="employeeId">
-								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.holidays.assignments.employee", "Employee")}</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.holidays.assignments.selectEmployee",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{employees?.map((emp) => (
-													<SelectItem key={emp.id} value={emp.id}>
-														<div className="flex flex-col">
-															<span>
-																{emp.firstName} {emp.lastName}
-															</span>
-															{emp.position && (
-																<span className="text-xs text-muted-foreground">
-																	{emp.position}
+							{/* Employee Selection (for employee assignment) */}
+							{assignmentType === "employee" && (
+								<form.Field name="employeeId">
+									{(field) => (
+										<div className="space-y-2">
+											<Label>{t("settings.holidays.assignments.employee", "Employee")}</Label>
+											<Select value={field.state.value} onValueChange={field.handleChange}>
+												<SelectTrigger>
+													<SelectValue
+														placeholder={t(
+															"settings.holidays.assignments.selectEmployee",
+															"Select an employee",
+														)}
+													/>
+												</SelectTrigger>
+												<SelectContent>
+													{employees?.map((emp) => (
+														<SelectItem key={emp.id} value={emp.id}>
+															<div className="flex flex-col">
+																<span>
+																	{emp.firstName} {emp.lastName}
 																</span>
-															)}
-														</div>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"settings.holidays.assignments.employeeHolidayNote",
-												"This holiday will apply only to this employee",
+																{emp.position && (
+																	<span className="text-xs text-muted-foreground">
+																		{emp.position}
+																	</span>
+																)}
+															</div>
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.holidays.assignments.employeeHolidayNote",
+													"This holiday will apply only to this employee",
+												)}
+											</p>
+											{validationErrors.employeeId && (
+												<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
 											)}
-										</p>
-										{validationErrors.employeeId && (
-											<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
-										)}
-									</div>
-								)}
-							</form.Field>
-						)}
+										</div>
+									)}
+								</form.Field>
+							)}
+						</ActionPanelBody>
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -404,10 +407,10 @@ export function HolidayAssignmentDialog({
 								{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

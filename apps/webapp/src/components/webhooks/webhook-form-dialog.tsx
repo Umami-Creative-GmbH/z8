@@ -13,13 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -225,27 +226,28 @@ export function WebhookFormDialog({
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>
+			<ActionPanel open={open} onOpenChange={onOpenChange}>
+				<ActionPanelContent size="wide">
+					<ActionPanelHeader>
+						<ActionPanelTitle>
 							{isEditing
 								? t("webhooks.form.edit-title", "Edit Webhook")
 								: t("webhooks.form.create-title", "Create Webhook")}
-						</DialogTitle>
-						<DialogDescription>
+						</ActionPanelTitle>
+						<ActionPanelDescription>
 							{isEditing
 								? t("webhooks.form.edit-description", "Update the webhook endpoint configuration.")
 								: t(
 										"webhooks.form.create-description",
 										"Configure a new webhook endpoint to receive event notifications.",
 									)}
-						</DialogDescription>
-					</DialogHeader>
+						</ActionPanelDescription>
+					</ActionPanelHeader>
 
-					<form onSubmit={handleSubmit} className="space-y-6">
-						{/* Basic Info */}
-						<div className="space-y-4">
+					<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+						<ActionPanelBody className="space-y-6">
+							{/* Basic Info */}
+							<div className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="webhook-name">{t("webhooks.form.name", "Name")}</Label>
 								<Input
@@ -291,10 +293,10 @@ export function WebhookFormDialog({
 									rows={2}
 								/>
 							</div>
-						</div>
+							</div>
 
-						{/* Event Selection */}
-						<div className="space-y-3">
+							{/* Event Selection */}
+							<div className="space-y-3">
 							<div className="flex items-center justify-between">
 								<Label>{t("webhooks.form.events", "Events to receive")}</Label>
 								<Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
@@ -369,9 +371,10 @@ export function WebhookFormDialog({
 									count: selectedEvents.size,
 								})}
 							</p>
-						</div>
+							</div>
+						</ActionPanelBody>
 
-						<DialogFooter>
+						<ActionPanelFooter>
 							<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 								{t("common.cancel", "Cancel")}
 							</Button>
@@ -381,10 +384,10 @@ export function WebhookFormDialog({
 								)}
 								{isEditing ? t("common.save", "Save") : t("webhooks.form.create", "Create Webhook")}
 							</Button>
-						</DialogFooter>
+						</ActionPanelFooter>
 					</form>
-				</DialogContent>
-			</Dialog>
+				</ActionPanelContent>
+			</ActionPanel>
 
 			<WebhookSecretDialog
 				secret={newSecret}

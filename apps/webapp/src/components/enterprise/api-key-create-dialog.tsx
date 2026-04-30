@@ -5,16 +5,18 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { createApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,13 +26,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { createApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	API_KEY_SCOPES,
-	EXPIRATION_OPTIONS,
-	SCOPE_LABELS,
 	type ApiKeyScope,
 	type CreateApiKeyResponse,
+	EXPIRATION_OPTIONS,
+	SCOPE_LABELS,
 } from "@/lib/validations/api-key";
 
 interface ApiKeyCreateDialogProps {
@@ -99,19 +100,19 @@ export function ApiKeyCreateDialog({
 	const isValid = name.length >= 3 && selectedScopes.length > 0;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle>{t("settings.apiKeys.createTitle", "Create API Key")}</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>{t("settings.apiKeys.createTitle", "Create API Key")}</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.apiKeys.createDescription",
 							"Create a new API key for programmatic access. The key will only be shown once.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Name */}
 					<div className="space-y-2">
 						<Label htmlFor="name">{t("settings.apiKeys.form.name", "Name")} *</Label>
@@ -202,9 +203,9 @@ export function ApiKeyCreateDialog({
 							</div>
 						)}
 					</div>
-				</div>
+				</ActionPanelBody>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
@@ -215,8 +216,8 @@ export function ApiKeyCreateDialog({
 						{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 						{t("settings.apiKeys.form.create", "Create Key")}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

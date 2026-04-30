@@ -9,13 +9,14 @@ import { createTravelExpenseDraft } from "@/app/[locale]/(app)/travel-expenses/a
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -169,31 +170,29 @@ export function TravelExpenseClaimDialog({
 	}, [open, form]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[560px]">
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Create Travel Expense Claim</ActionPanelTitle>
+					<ActionPanelDescription>
+						Create a new draft claim for your recent travel expenses.
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					onSubmit={(event) => {
 						event.preventDefault();
 						form.handleSubmit();
 					}}
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<DialogHeader>
-						<DialogTitle>Create Travel Expense Claim</DialogTitle>
-						<DialogDescription>
-							Create a new draft claim for your recent travel expenses.
-						</DialogDescription>
-					</DialogHeader>
-
-					<div className="grid gap-4 py-4">
+					<ActionPanelBody className="grid gap-4">
 						<form.Field name="type">
 							{(field) => (
 								<TFormItem>
 									<TFormLabel required>Claim Type</TFormLabel>
 									<Select
 										value={field.state.value}
-										onValueChange={(value) =>
-											field.handleChange(value as TravelExpenseClaimType)
-										}
+										onValueChange={(value) => field.handleChange(value as TravelExpenseClaimType)}
 									>
 										<TFormControl>
 											<SelectTrigger>
@@ -224,51 +223,54 @@ export function TravelExpenseClaimDialog({
 						<div className="grid grid-cols-2 gap-3">
 							<form.Field name="tripStart">
 								{(field) => (
-								<TFormItem>
-									<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.tripStart}>
-										Trip Start
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripStart}>
-										<DatePicker
-											name="tripStart"
-											ref={tripStartRef}
-											value={field.state.value}
-											onChange={(value) => {
-												setSubmitErrors((current) => ({ ...current, tripStart: undefined }));
-												field.handleChange(value);
-											}}
-											onBlur={field.handleBlur}
+									<TFormItem>
+										<TFormLabel
 											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field}>{submitErrors.tripStart}</TFormMessage>
-								</TFormItem>
-							)}
-						</form.Field>
+											hasError={fieldHasError(field) || !!submitErrors.tripStart}
+										>
+											Trip Start
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripStart}>
+											<DatePicker
+												name="tripStart"
+												ref={tripStartRef}
+												value={field.state.value}
+												onChange={(value) => {
+													setSubmitErrors((current) => ({ ...current, tripStart: undefined }));
+													field.handleChange(value);
+												}}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field}>{submitErrors.tripStart}</TFormMessage>
+									</TFormItem>
+								)}
+							</form.Field>
 
 							<form.Field name="tripEnd">
 								{(field) => (
-								<TFormItem>
-									<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
-										Trip End
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
-										<DatePicker
-											name="tripEnd"
-											ref={tripEndRef}
-											value={field.state.value}
-											onChange={(value) => {
-												setSubmitErrors((current) => ({ ...current, tripEnd: undefined }));
-												field.handleChange(value);
-											}}
-											onBlur={field.handleBlur}
-											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field}>{submitErrors.tripEnd}</TFormMessage>
-								</TFormItem>
-							)}
-						</form.Field>
+									<TFormItem>
+										<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
+											Trip End
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
+											<DatePicker
+												name="tripEnd"
+												ref={tripEndRef}
+												value={field.state.value}
+												onChange={(value) => {
+													setSubmitErrors((current) => ({ ...current, tripEnd: undefined }));
+													field.handleChange(value);
+												}}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field}>{submitErrors.tripEnd}</TFormMessage>
+									</TFormItem>
+								)}
+							</form.Field>
 						</div>
 
 						<div className="grid grid-cols-2 gap-3">
@@ -276,12 +278,12 @@ export function TravelExpenseClaimDialog({
 								{(field) => (
 									<TFormItem>
 										<TFormLabel>Destination City</TFormLabel>
-									<TFormControl>
-										<Input
-											name="destinationCity"
-											autoComplete="address-level2"
-											placeholder="Berlin"
-											value={field.state.value}
+										<TFormControl>
+											<Input
+												name="destinationCity"
+												autoComplete="address-level2"
+												placeholder="Berlin"
+												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
 											/>
@@ -294,12 +296,12 @@ export function TravelExpenseClaimDialog({
 								{(field) => (
 									<TFormItem>
 										<TFormLabel>Destination Country</TFormLabel>
-									<TFormControl>
-										<Input
-											name="destinationCountry"
-											autoComplete="country-name"
-											placeholder="Germany"
-											value={field.state.value}
+										<TFormControl>
+											<Input
+												name="destinationCountry"
+												autoComplete="country-name"
+												placeholder="Germany"
+												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
 											/>
@@ -312,46 +314,44 @@ export function TravelExpenseClaimDialog({
 						<div className="grid grid-cols-2 gap-3">
 							<form.Field name="amount">
 								{(field) => (
-								<TFormItem>
-									<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.amount}>
-										Amount
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field) || !!submitErrors.amount}>
-										<Input
-											name="amount"
-											autoComplete="off"
-											type="number"
-											ref={amountRef}
-											step="0.01"
-											min="0"
-											value={field.state.value}
-											onChange={(event) => {
-												setSubmitErrors((current) => ({ ...current, amount: undefined }));
-												field.handleChange(event.target.value);
-											}}
-											onBlur={field.handleBlur}
-											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field}>{submitErrors.amount}</TFormMessage>
-								</TFormItem>
-							)}
-						</form.Field>
+									<TFormItem>
+										<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.amount}>
+											Amount
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field) || !!submitErrors.amount}>
+											<Input
+												name="amount"
+												autoComplete="off"
+												type="number"
+												ref={amountRef}
+												step="0.01"
+												min="0"
+												value={field.state.value}
+												onChange={(event) => {
+													setSubmitErrors((current) => ({ ...current, amount: undefined }));
+													field.handleChange(event.target.value);
+												}}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field}>{submitErrors.amount}</TFormMessage>
+									</TFormItem>
+								)}
+							</form.Field>
 
 							<form.Field name="currency">
 								{(field) => (
 									<TFormItem>
 										<TFormLabel required>Currency</TFormLabel>
-									<TFormControl>
-										<Input
-											name="currency"
-											autoComplete="off"
-											placeholder="EUR"
+										<TFormControl>
+											<Input
+												name="currency"
+												autoComplete="off"
+												placeholder="EUR"
 												maxLength={3}
 												value={field.state.value}
-												onChange={(event) =>
-													field.handleChange(event.target.value.toUpperCase())
-												}
+												onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
 												onBlur={field.handleBlur}
 												required
 											/>
@@ -380,11 +380,11 @@ export function TravelExpenseClaimDialog({
 								</TFormItem>
 							)}
 						</form.Field>
-					</div>
+					</ActionPanelBody>
 
 					<form.Subscribe selector={(state) => state.isSubmitting}>
 						{(isSubmitting) => (
-							<DialogFooter>
+							<ActionPanelFooter>
 								<Button
 									type="button"
 									variant="outline"
@@ -397,11 +397,11 @@ export function TravelExpenseClaimDialog({
 									{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
 									Create Draft
 								</Button>
-							</DialogFooter>
+							</ActionPanelFooter>
 						)}
 					</form.Subscribe>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

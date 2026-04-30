@@ -3,16 +3,17 @@
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 
 interface Domain {
 	id: string;
@@ -64,16 +65,16 @@ export function DomainVerificationDialog({
 		domain.verificationTokenExpiresAt && new Date() > new Date(domain.verificationTokenExpiresAt);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>Verify Domain Ownership</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>Verify Domain Ownership</ActionPanelTitle>
+					<ActionPanelDescription>
 						Add a DNS TXT record to verify ownership of {domain.domain}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="space-y-4">
+				<ActionPanelBody className="space-y-4">
 					{isExpired && (
 						<Alert variant="destructive">
 							<AlertTitle>Token Expired</AlertTitle>
@@ -140,9 +141,9 @@ export function DomainVerificationDialog({
 							</p>
 						)}
 					</div>
-				</div>
+				</ActionPanelBody>
 
-				<DialogFooter className="flex-col sm:flex-row gap-2">
+				<ActionPanelFooter className="flex-col sm:flex-row gap-2">
 					<Button variant="outline" onClick={handleRegenerateToken} disabled={isRegenerating}>
 						<IconRefresh className="mr-2 h-4 w-4" />
 						{isRegenerating ? "Regenerating..." : "Regenerate Token"}
@@ -150,8 +151,8 @@ export function DomainVerificationDialog({
 					<Button onClick={() => onVerify(domain.id)} disabled={isVerifying || !!isExpired}>
 						{isVerifying ? "Verifying..." : "Verify Domain"}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

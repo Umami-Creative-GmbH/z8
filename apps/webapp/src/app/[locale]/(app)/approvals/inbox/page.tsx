@@ -5,16 +5,17 @@ import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type {
@@ -401,7 +402,7 @@ export default function ApprovalInboxPage() {
 				onActioned={handleApprovalActioned}
 			/>
 
-			<Dialog
+			<ActionPanel
 				open={bulkRejectOpen}
 				onOpenChange={(open) => {
 					setBulkRejectOpen(open);
@@ -410,17 +411,17 @@ export default function ApprovalInboxPage() {
 					}
 				}}
 			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("approvals.rejectSelected", "Reject Selected")}</DialogTitle>
-						<DialogDescription>
+				<ActionPanelContent>
+					<ActionPanelHeader>
+						<ActionPanelTitle>{t("approvals.rejectSelected", "Reject Selected")}</ActionPanelTitle>
+						<ActionPanelDescription>
 							{t(
 								"approvals.bulkRejectDescription",
 								"Provide a reason that will be applied to each selected request.",
 							)}
-						</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-2">
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelBody className="space-y-2">
 						<label className="text-sm font-medium" htmlFor="bulk-reject-reason">
 							{t("approvals.rejectionReason", "Reason for rejection")}
 						</label>
@@ -434,8 +435,8 @@ export default function ApprovalInboxPage() {
 							)}
 							rows={4}
 						/>
-					</div>
-					<DialogFooter>
+					</ActionPanelBody>
+					<ActionPanelFooter>
 						<Button
 							variant="outline"
 							onClick={() => {
@@ -457,9 +458,9 @@ export default function ApprovalInboxPage() {
 							<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
 							{t("approvals.confirmReject", "Confirm Rejection")}
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>
 		</div>
 	);
 }

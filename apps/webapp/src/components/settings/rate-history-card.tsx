@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
 	IconCalendar,
 	IconCircleDot,
@@ -10,22 +9,23 @@ import {
 	IconPlus,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
 import { toast } from "sonner";
+import type { RateHistoryEntry } from "@/app/[locale]/(app)/settings/employees/rate-actions";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+	ActionPanelTrigger,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	fieldHasError,
 	TFormControl,
@@ -34,9 +34,9 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
-import type { RateHistoryEntry } from "@/app/[locale]/(app)/settings/employees/rate-actions";
-import type { CreateRateHistory } from "@/lib/validations/employee";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { CreateRateHistory } from "@/lib/validations/employee";
 import { HourlyRateInput } from "./hourly-rate-input";
 
 interface RateHistoryCardProps {
@@ -70,7 +70,10 @@ export function RateHistoryCard({
 				currency: currentRate?.currency || "EUR",
 				effectiveFrom: new Date(value.effectiveFrom),
 				reason: value.reason || null,
-			}).then((response) => response, () => null);
+			}).then(
+				(response) => response,
+				() => null,
+			);
 
 			if (!result) {
 				toast.error("An unexpected error occurred");
@@ -116,88 +119,90 @@ export function RateHistoryCard({
 					<CardDescription>Hourly rate changes over time</CardDescription>
 				</div>
 				{isAdmin && (
-					<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-						<DialogTrigger asChild>
+					<ActionPanel open={dialogOpen} onOpenChange={setDialogOpen}>
+						<ActionPanelTrigger asChild>
 							<Button size="sm">
 								<IconPlus className="mr-2 size-4" />
 								Change Rate
 							</Button>
-						</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Update Hourly Rate</DialogTitle>
-								<DialogDescription>
+						</ActionPanelTrigger>
+						<ActionPanelContent>
+							<ActionPanelHeader>
+								<ActionPanelTitle>Update Hourly Rate</ActionPanelTitle>
+								<ActionPanelDescription>
 									Create a new rate entry. The current rate will be closed automatically.
-								</DialogDescription>
-							</DialogHeader>
+								</ActionPanelDescription>
+							</ActionPanelHeader>
 							<form
 								onSubmit={(e) => {
 									e.preventDefault();
 									e.stopPropagation();
 									form.handleSubmit();
 								}}
-								className="space-y-4"
+								className="flex min-h-0 flex-1 flex-col"
 							>
-								<form.Field name="hourlyRate">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)}>New Hourly Rate</TFormLabel>
-											<TFormControl hasError={fieldHasError(field)}>
-												<HourlyRateInput
-													value={field.state.value}
-													onChange={field.handleChange}
-													onBlur={field.handleBlur}
-													hasError={fieldHasError(field)}
-													placeholder={currentRate?.hourlyRate || "0.00"}
-												/>
-											</TFormControl>
-											{currentRate && (
-												<TFormDescription>
-													Current rate:{" "}
-													{formatCurrency(currentRate.hourlyRate, currentRate.currency)}
-												</TFormDescription>
-											)}
-											<TFormMessage field={field} />
-										</TFormItem>
-									)}
-								</form.Field>
+								<ActionPanelBody className="space-y-4">
+									<form.Field name="hourlyRate">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={fieldHasError(field)}>New Hourly Rate</TFormLabel>
+												<TFormControl hasError={fieldHasError(field)}>
+													<HourlyRateInput
+														value={field.state.value}
+														onChange={field.handleChange}
+														onBlur={field.handleBlur}
+														hasError={fieldHasError(field)}
+														placeholder={currentRate?.hourlyRate || "0.00"}
+													/>
+												</TFormControl>
+												{currentRate && (
+													<TFormDescription>
+														Current rate:{" "}
+														{formatCurrency(currentRate.hourlyRate, currentRate.currency)}
+													</TFormDescription>
+												)}
+												<TFormMessage field={field} />
+											</TFormItem>
+										)}
+									</form.Field>
 
-								<form.Field name="effectiveFrom">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)}>Effective From</TFormLabel>
-											<TFormControl hasError={fieldHasError(field)}>
-												<DatePicker
-													value={field.state.value}
-													onChange={field.handleChange}
-													onBlur={field.handleBlur}
-												/>
-											</TFormControl>
-											<TFormDescription>When the new rate takes effect</TFormDescription>
-											<TFormMessage field={field} />
-										</TFormItem>
-									)}
-								</form.Field>
+									<form.Field name="effectiveFrom">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={fieldHasError(field)}>Effective From</TFormLabel>
+												<TFormControl hasError={fieldHasError(field)}>
+													<DatePicker
+														value={field.state.value}
+														onChange={field.handleChange}
+														onBlur={field.handleBlur}
+													/>
+												</TFormControl>
+												<TFormDescription>When the new rate takes effect</TFormDescription>
+												<TFormMessage field={field} />
+											</TFormItem>
+										)}
+									</form.Field>
 
-								<form.Field name="reason">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)}>Reason (Optional)</TFormLabel>
-											<TFormControl hasError={fieldHasError(field)}>
-												<Textarea
-													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-													placeholder="e.g., Annual review, Promotion, etc."
-													rows={2}
-												/>
-											</TFormControl>
-											<TFormMessage field={field} />
-										</TFormItem>
-									)}
-								</form.Field>
+									<form.Field name="reason">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={fieldHasError(field)}>Reason (Optional)</TFormLabel>
+												<TFormControl hasError={fieldHasError(field)}>
+													<Textarea
+														value={field.state.value}
+														onChange={(e) => field.handleChange(e.target.value)}
+														onBlur={field.handleBlur}
+														placeholder="e.g., Annual review, Promotion, etc."
+														rows={2}
+													/>
+												</TFormControl>
+												<TFormMessage field={field} />
+											</TFormItem>
+										)}
+									</form.Field>
+								</ActionPanelBody>
 
-								<DialogFooter>
+								<ActionPanelFooter>
 									<Button
 										type="button"
 										variant="outline"
@@ -210,10 +215,10 @@ export function RateHistoryCard({
 										{isAddingRate && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 										Update Rate
 									</Button>
-								</DialogFooter>
+								</ActionPanelFooter>
 							</form>
-						</DialogContent>
-					</Dialog>
+						</ActionPanelContent>
+					</ActionPanel>
 				)}
 			</CardHeader>
 			<CardContent>
@@ -228,7 +233,7 @@ export function RateHistoryCard({
 						{/* Timeline line */}
 						<div className="absolute bottom-0 left-[11px] top-0 w-px bg-border" />
 
-						{rateHistory.map((entry, index) => {
+						{rateHistory.map((entry, _index) => {
 							const isCurrent = !entry.effectiveTo;
 
 							return (

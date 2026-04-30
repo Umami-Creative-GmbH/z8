@@ -17,13 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -283,15 +284,15 @@ export function WorkCategorySetDialog({
 	const unselectedCategories = orgCategories.filter((c) => !selectedCategoryIds.includes(c.id));
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{isEditing
 							? t("settings.workCategories.editSet", "Edit Category Set")
 							: t("settings.workCategories.createSet", "Create Category Set")}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{isEditing
 							? t(
 									"settings.workCategories.editSetDescription",
@@ -301,14 +302,14 @@ export function WorkCategorySetDialog({
 									"settings.workCategories.createSetDescription",
 									"Create a new category set and select which categories to include",
 								)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 
 				<form
 					onSubmit={handleSubmit}
-					className="flex-1 overflow-hidden flex flex-col"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<div className="flex-1 overflow-y-auto space-y-4 py-4">
+					<ActionPanelBody className="space-y-4">
 						{/* Set Name */}
 						<div className="space-y-2 px-1">
 							<Label htmlFor="set-name">{t("settings.workCategories.setName", "Name")}</Label>
@@ -500,9 +501,9 @@ export function WorkCategorySetDialog({
 								</div>
 							)}
 						</div>
-					</div>
+					</ActionPanelBody>
 
-					<DialogFooter className="pt-4 border-t">
+					<ActionPanelFooter className="pt-4 border-t">
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -518,9 +519,9 @@ export function WorkCategorySetDialog({
 								t("common.create", "Create")
 							)}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

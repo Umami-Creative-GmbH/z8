@@ -1,6 +1,12 @@
 "use client";
 
-import { IconBriefcase, IconCalendarTime, IconLoader2, IconPercentage } from "@tabler/icons-react";
+import {
+	IconBriefcase,
+	IconCalendarTime,
+	IconDatabase,
+	IconLoader2,
+	IconPercentage,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -16,6 +22,7 @@ interface OrganizationFeaturesCardProps {
 	shiftsEnabled: boolean;
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
+	demoDataEnabled: boolean;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
@@ -24,6 +31,7 @@ export function OrganizationFeaturesCard({
 	shiftsEnabled,
 	projectsEnabled,
 	surchargesEnabled,
+	demoDataEnabled,
 	currentMemberRole,
 }: OrganizationFeaturesCardProps) {
 	const { t } = useTranslate();
@@ -32,6 +40,7 @@ export function OrganizationFeaturesCard({
 	const [isShiftsEnabled, setIsShiftsEnabled] = useState(shiftsEnabled);
 	const [isProjectsEnabled, setIsProjectsEnabled] = useState(projectsEnabled);
 	const [isSurchargesEnabled, setIsSurchargesEnabled] = useState(surchargesEnabled);
+	const [isDemoDataEnabled, setIsDemoDataEnabled] = useState(demoDataEnabled);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";
@@ -114,6 +123,32 @@ export function OrganizationFeaturesCard({
 			// Revert optimistic update
 			setIsSurchargesEnabled(!enabled);
 			setOrgSettings({ surchargesEnabled: !enabled });
+			toast.error(
+				result.error || t("organization.features.update-failed", "Failed to update feature"),
+			);
+		}
+	};
+
+	const handleToggleDemoData = async (enabled: boolean) => {
+		if (!canEdit) return;
+
+		setIsDemoDataEnabled(enabled);
+		setOrgSettings({ demoDataEnabled: enabled });
+
+		const result = await toggleOrganizationFeature(organizationId, "demoDataEnabled", enabled);
+
+		if (result.success) {
+			toast.success(
+				enabled
+					? t("organization.features.demo-data-enabled", "Demo Data enabled")
+					: t("organization.features.demo-data-disabled", "Demo Data disabled"),
+			);
+			startTransition(() => {
+				router.refresh();
+			});
+		} else {
+			setIsDemoDataEnabled(!enabled);
+			setOrgSettings({ demoDataEnabled: !enabled });
 			toast.error(
 				result.error || t("organization.features.update-failed", "Failed to update feature"),
 			);
@@ -227,6 +262,39 @@ export function OrganizationFeaturesCard({
 							onCheckedChange={handleToggleSurcharges}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-surcharges", "Toggle surcharges")}
+						/>
+					</div>
+				</div>
+
+				{/* Demo Data Feature */}
+				<div className="flex items-center justify-between">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+							<IconDatabase className="h-5 w-5 text-primary" />
+						</div>
+						<div className="space-y-1">
+							<Label
+								htmlFor="demo-data-toggle"
+								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+							>
+								{t("organization.features.demo-data", "Demo Data")}
+							</Label>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"organization.features.demo-data-description",
+									"Allow admins to generate and clear sample organization data for testing.",
+								)}
+							</p>
+						</div>
+					</div>
+					<div className="flex items-center gap-2">
+						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						<Switch
+							id="demo-data-toggle"
+							checked={isDemoDataEnabled}
+							onCheckedChange={handleToggleDemoData}
+							disabled={!canEdit || isPending}
+							aria-label={t("organization.features.toggle-demo-data", "Toggle demo data")}
 						/>
 					</div>
 				</div>

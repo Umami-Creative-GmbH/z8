@@ -784,7 +784,7 @@ export async function updateOrganizationDetails(
  */
 export async function toggleOrganizationFeature(
 	organizationId: string,
-	feature: "shiftsEnabled" | "projectsEnabled" | "surchargesEnabled",
+	feature: "shiftsEnabled" | "projectsEnabled" | "surchargesEnabled" | "demoDataEnabled",
 	enabled: boolean,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");

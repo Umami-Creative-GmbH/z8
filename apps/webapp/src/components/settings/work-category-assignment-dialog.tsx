@@ -11,15 +11,16 @@ import {
 	getTeamsForAssignment,
 	getWorkCategorySets,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -160,7 +161,7 @@ export function WorkCategoryAssignmentDialog({
 		createMutation.mutate();
 	};
 
-	const isLoading = setsLoading || teamsLoading || employeesLoading;
+	const _isLoading = setsLoading || teamsLoading || employeesLoading;
 
 	// Validation
 	const isValid =
@@ -202,14 +203,14 @@ export function WorkCategoryAssignmentDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>{getTitle()}</DialogTitle>
-					<DialogDescription>{getDescription()}</DialogDescription>
-				</DialogHeader>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent size="compact">
+				<ActionPanelHeader>
+					<ActionPanelTitle>{getTitle()}</ActionPanelTitle>
+					<ActionPanelDescription>{getDescription()}</ActionPanelDescription>
+				</ActionPanelHeader>
 
-				<div className="space-y-4 py-4">
+				<ActionPanelBody className="space-y-4">
 					{/* Category Set Selection */}
 					<div className="space-y-2">
 						<Label>{t("settings.workCategories.selectSet", "Category Set")}</Label>
@@ -315,9 +316,9 @@ export function WorkCategoryAssignmentDialog({
 							)}
 						</div>
 					)}
-				</div>
+				</ActionPanelBody>
 
-				<DialogFooter>
+				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => handleOpenChange(false)}>
 						{t("common.cancel", "Cancel")}
 					</Button>
@@ -331,8 +332,8 @@ export function WorkCategoryAssignmentDialog({
 							t("common.assign", "Assign")
 						)}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ActionPanelFooter>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

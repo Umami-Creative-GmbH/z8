@@ -6,10 +6,10 @@ import { type ComponentProps, useState } from "react";
 import { z } from "zod";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/skill-warning-alert";
+import { ActionPanelFooter } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -327,7 +327,7 @@ export function ShiftDialogFooterActions({
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	return (
-		<DialogFooter className="gap-2 sm:gap-0">
+		<ActionPanelFooter className="gap-2 sm:gap-0">
 			{isEditing && isManager && (
 				<Button
 					type="button"
@@ -377,6 +377,6 @@ export function ShiftDialogFooterActions({
 					)}
 				</Button>
 			)}
-		</DialogFooter>
+		</ActionPanelFooter>
 	);
 }

@@ -7,15 +7,16 @@ import {
 	type OIDCProviderInput,
 	registerSSOProviderAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -73,183 +74,185 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-lg">
-				<DialogHeader>
-					<DialogTitle>Add SSO Provider</DialogTitle>
-					<DialogDescription>
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>Add SSO Provider</ActionPanelTitle>
+					<ActionPanelDescription>
 						Configure an OIDC identity provider for enterprise single sign-on.
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 				>
-					<form.Field
-						name="providerId"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Provider ID is required";
-								if (!PROVIDER_ID_REGEX.test(value)) {
-									return "Provider ID must contain only lowercase letters, numbers, and hyphens";
-								}
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="providerId">Provider ID</Label>
-								<Input
-									id="providerId"
-									placeholder="acme-okta"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-								<p className="text-sm text-muted-foreground">
-									A unique identifier for this provider (lowercase, no spaces)
-								</p>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+					<ActionPanelBody className="space-y-4">
+						<form.Field
+							name="providerId"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Provider ID is required";
+									if (!PROVIDER_ID_REGEX.test(value)) {
+										return "Provider ID must contain only lowercase letters, numbers, and hyphens";
+									}
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="providerId">Provider ID</Label>
+									<Input
+										id="providerId"
+										placeholder="acme-okta"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										A unique identifier for this provider (lowercase, no spaces)
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
 
-					<form.Field
-						name="issuer"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Issuer URL is required";
-								try {
-									new URL(value);
-								} catch {
-									return "Please enter a valid URL";
-								}
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="issuer">Issuer URL</Label>
-								<Input
-									id="issuer"
-									type="url"
-									placeholder="https://example.okta.com"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-								<p className="text-sm text-muted-foreground">
-									The OIDC issuer URL from your identity provider
-								</p>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+						<form.Field
+							name="issuer"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Issuer URL is required";
+									try {
+										new URL(value);
+									} catch {
+										return "Please enter a valid URL";
+									}
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="issuer">Issuer URL</Label>
+									<Input
+										id="issuer"
+										type="url"
+										placeholder="https://example.okta.com"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										The OIDC issuer URL from your identity provider
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
 
-					<form.Field
-						name="domain"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Domain is required";
-								if (!DOMAIN_REGEX.test(value)) {
-									return "Please enter a valid domain (e.g., example.com)";
-								}
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="domain">Email Domain</Label>
-								<Input
-									id="domain"
-									placeholder="example.com"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-								<p className="text-sm text-muted-foreground">
-									Users with this email domain will be able to use SSO
-								</p>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+						<form.Field
+							name="domain"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Domain is required";
+									if (!DOMAIN_REGEX.test(value)) {
+										return "Please enter a valid domain (e.g., example.com)";
+									}
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="domain">Email Domain</Label>
+									<Input
+										id="domain"
+										placeholder="example.com"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										Users with this email domain will be able to use SSO
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
 
-					<form.Field
-						name="clientId"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Client ID is required";
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="clientId">Client ID</Label>
-								<Input
-									id="clientId"
-									placeholder="Your OIDC client ID"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+						<form.Field
+							name="clientId"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Client ID is required";
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="clientId">Client ID</Label>
+									<Input
+										id="clientId"
+										placeholder="Your OIDC client ID"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
 
-					<form.Field
-						name="clientSecret"
-						validators={{
-							onChange: ({ value }) => {
-								if (!value) return "Client Secret is required";
-								return undefined;
-							},
-						}}
-					>
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor="clientSecret">Client Secret</Label>
-								<Input
-									id="clientSecret"
-									type="password"
-									placeholder="Your OIDC client secret"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-									onBlur={field.handleBlur}
-								/>
-								{field.state.meta.errors.length > 0 && (
-									<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-								)}
-							</div>
-						)}
-					</form.Field>
+						<form.Field
+							name="clientSecret"
+							validators={{
+								onChange: ({ value }) => {
+									if (!value) return "Client Secret is required";
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="clientSecret">Client Secret</Label>
+									<Input
+										id="clientSecret"
+										type="password"
+										placeholder="Your OIDC client secret"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					</ActionPanelBody>
 
-					<DialogFooter>
+					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting ? "Adding..." : "Add Provider"}
 						</Button>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

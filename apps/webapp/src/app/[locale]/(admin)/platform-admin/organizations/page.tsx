@@ -15,18 +15,20 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -92,7 +94,7 @@ export default function OrganizationsPage() {
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-	// Dialog states
+	// Confirmation states
 	const [suspendDialogOrg, setSuspendDialogOrg] = useState<PlatformOrganization | null>(null);
 	const [suspendReason, setSuspendReason] = useState("");
 	const [deleteDialogOrg, setDeleteDialogOrg] = useState<PlatformOrganization | null>(null);
@@ -164,7 +166,11 @@ export default function OrganizationsPage() {
 		startTransition(async () => {
 			const result = await suspendOrganizationAction(suspendDialogOrg.id, suspendReason);
 			if (result.success) {
-				toast.success(t("admin.organizations.toasts.suspended", "Organization \"{name}\" has been suspended", { name: suspendDialogOrg.name }));
+				toast.success(
+					t("admin.organizations.toasts.suspended", 'Organization "{name}" has been suspended', {
+						name: suspendDialogOrg.name,
+					}),
+				);
 				setSuspendDialogOrg(null);
 				setSuspendReason("");
 				queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
@@ -179,7 +185,13 @@ export default function OrganizationsPage() {
 		startTransition(async () => {
 			const result = await unsuspendOrganizationAction(org.id);
 			if (result.success) {
-				toast.success(t("admin.organizations.toasts.unsuspended", "Organization \"{name}\" has been unsuspended", { name: org.name }));
+				toast.success(
+					t(
+						"admin.organizations.toasts.unsuspended",
+						'Organization "{name}" has been unsuspended',
+						{ name: org.name },
+					),
+				);
 				queryClient.invalidateQueries({ queryKey: ["admin-organizations"] });
 			} else {
 				toast.error(result.error);
@@ -200,8 +212,16 @@ export default function OrganizationsPage() {
 			if (result.success) {
 				toast.success(
 					deleteImmediate
-						? t("admin.organizations.toasts.deletedImmediate", "Organization \"{name}\" has been scheduled for immediate deletion", { name: deleteDialogOrg.name })
-						: t("admin.organizations.toasts.deletedGracePeriod", "Organization \"{name}\" has been scheduled for deletion in 5 days", { name: deleteDialogOrg.name }),
+						? t(
+								"admin.organizations.toasts.deletedImmediate",
+								'Organization "{name}" has been scheduled for immediate deletion',
+								{ name: deleteDialogOrg.name },
+							)
+						: t(
+								"admin.organizations.toasts.deletedGracePeriod",
+								'Organization "{name}" has been scheduled for deletion in 5 days',
+								{ name: deleteDialogOrg.name },
+							),
 				);
 				setDeleteDialogOrg(null);
 				setDeleteImmediate(false);
@@ -224,7 +244,10 @@ export default function OrganizationsPage() {
 					{t("admin.organizations.title", "Organization Management")}
 				</h1>
 				<p className="text-muted-foreground">
-					{t("admin.organizations.description", "View and manage all organizations on the platform")}
+					{t(
+						"admin.organizations.description",
+						"View and manage all organizations on the platform",
+					)}
 				</p>
 			</div>
 
@@ -254,8 +277,12 @@ export default function OrganizationsPage() {
 					<SelectContent>
 						<SelectItem value="all">{t("admin.organizations.filters.all", "All")}</SelectItem>
 						<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
-						<SelectItem value="suspended">{t("admin.organizations.filters.suspended", "Suspended")}</SelectItem>
-						<SelectItem value="deleted">{t("admin.organizations.filters.deleted", "Deleted")}</SelectItem>
+						<SelectItem value="suspended">
+							{t("admin.organizations.filters.suspended", "Suspended")}
+						</SelectItem>
+						<SelectItem value="deleted">
+							{t("admin.organizations.filters.deleted", "Deleted")}
+						</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -273,7 +300,9 @@ export default function OrganizationsPage() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("admin.organizations.table.organization", "Organization")}</TableHead>
+									<TableHead>
+										{t("admin.organizations.table.organization", "Organization")}
+									</TableHead>
 									<TableHead>{t("admin.organizations.table.employees", "Employees")}</TableHead>
 									<TableHead>{t("admin.organizations.table.members", "Members")}</TableHead>
 									<TableHead>{t("common.status", "Status")}</TableHead>
@@ -285,7 +314,10 @@ export default function OrganizationsPage() {
 								{organizations.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={6} className="text-center text-muted-foreground">
-											{t("admin.organizations.table.noOrganizationsFound", "No organizations found")}
+											{t(
+												"admin.organizations.table.noOrganizationsFound",
+												"No organizations found",
+											)}
 										</TableCell>
 									</TableRow>
 								) : (
@@ -365,7 +397,11 @@ export default function OrganizationsPage() {
 																	size="sm"
 																	onClick={() => handleUnsuspend(org)}
 																	disabled={isPending}
-																	aria-label={t("admin.organizations.toasts.unsuspended", "Organization \"{name}\" has been unsuspended", { name: org.name })}
+																	aria-label={t(
+																		"admin.organizations.toasts.unsuspended",
+																		'Organization "{name}" has been unsuspended',
+																		{ name: org.name },
+																	)}
 																>
 																	<IconPlayerPlay className="size-4" aria-hidden="true" />
 																</Button>
@@ -374,7 +410,10 @@ export default function OrganizationsPage() {
 																	variant="ghost"
 																	size="sm"
 																	onClick={() => setSuspendDialogOrg(org)}
-																	aria-label={t("admin.organizations.suspendDialog.title", "Suspend Organization")}
+																	aria-label={t(
+																		"admin.organizations.suspendDialog.title",
+																		"Suspend Organization",
+																	)}
 																>
 																	<IconPlayerPause className="size-4" aria-hidden="true" />
 																</Button>
@@ -383,7 +422,10 @@ export default function OrganizationsPage() {
 																variant="ghost"
 																size="sm"
 																onClick={() => setDeleteDialogOrg(org)}
-																aria-label={t("admin.organizations.deleteDialog.title", "Delete Organization")}
+																aria-label={t(
+																	"admin.organizations.deleteDialog.title",
+																	"Delete Organization",
+																)}
 															>
 																<IconTrash className="size-4" aria-hidden="true" />
 															</Button>
@@ -404,11 +446,15 @@ export default function OrganizationsPage() {
 			{totalPages > 1 && (
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-sm text-muted-foreground">
-						{t("admin.organizations.pagination.showing", "Showing {from} to {to} of {total} organizations", {
-							from: (page - 1) * PAGE_SIZE + 1,
-							to: Math.min(page * PAGE_SIZE, total),
-							total,
-						})}
+						{t(
+							"admin.organizations.pagination.showing",
+							"Showing {from} to {to} of {total} organizations",
+							{
+								from: (page - 1) * PAGE_SIZE + 1,
+								to: Math.min(page * PAGE_SIZE, total),
+								total,
+							},
+						)}
 					</p>
 					<div className="flex gap-2">
 						<Button
@@ -437,43 +483,56 @@ export default function OrganizationsPage() {
 				</div>
 			)}
 
-			{/* Suspend Dialog */}
-			<Dialog open={!!suspendDialogOrg} onOpenChange={() => setSuspendDialogOrg(null)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("admin.organizations.suspendDialog.title", "Suspend Organization")}</DialogTitle>
-						<DialogDescription>
-							{t("admin.organizations.suspendDialog.description", "Suspend \"{name}\" and put it in read-only mode. Members will be able to view data but not create or edit anything.", { name: suspendDialogOrg?.name ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+			{/* Suspend confirmation */}
+			<AlertDialog open={!!suspendDialogOrg} onOpenChange={() => setSuspendDialogOrg(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t("admin.organizations.suspendDialog.title", "Suspend Organization")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"admin.organizations.suspendDialog.description",
+								'Suspend "{name}" and put it in read-only mode. Members will be able to view data but not create or edit anything.',
+								{ name: suspendDialogOrg?.name ?? "" },
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
-							<Label htmlFor="suspendReason">{t("admin.organizations.suspendDialog.reason", "Reason")}</Label>
+							<Label htmlFor="suspendReason">
+								{t("admin.organizations.suspendDialog.reason", "Reason")}
+							</Label>
 							<Textarea
 								id="suspendReason"
-								placeholder={t("admin.organizations.suspendDialog.reasonPlaceholder", "Enter the reason for suspending this organization…")}
+								placeholder={t(
+									"admin.organizations.suspendDialog.reasonPlaceholder",
+									"Enter the reason for suspending this organization…",
+								)}
 								value={suspendReason}
 								onChange={(e) => setSuspendReason(e.target.value)}
 							/>
 						</div>
 					</div>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setSuspendDialogOrg(null)}>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setSuspendDialogOrg(null)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="default"
-							onClick={handleSuspend}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(event) => {
+								event.preventDefault();
+								handleSuspend();
+							}}
 							disabled={!suspendReason || isPending}
 						>
 							{t("admin.organizations.suspendDialog.confirmButton", "Suspend Organization")}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
-			{/* Delete Dialog */}
-			<Dialog
+			{/* Delete confirmation */}
+			<AlertDialog
 				open={!!deleteDialogOrg}
 				onOpenChange={() => {
 					setDeleteDialogOrg(null);
@@ -482,13 +541,19 @@ export default function OrganizationsPage() {
 					setDeleteConfirmName("");
 				}}
 			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>{t("admin.organizations.deleteDialog.title", "Delete Organization")}</DialogTitle>
-						<DialogDescription>
-							{t("admin.organizations.deleteDialog.description", "This action will delete \"{name}\" and all associated data. This cannot be undone.", { name: deleteDialogOrg?.name ?? "" })}
-						</DialogDescription>
-					</DialogHeader>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t("admin.organizations.deleteDialog.title", "Delete Organization")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"admin.organizations.deleteDialog.description",
+								'This action will delete "{name}" and all associated data. This cannot be undone.',
+								{ name: deleteDialogOrg?.name ?? "" },
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
 					<div className="space-y-4 py-4">
 						<div className="flex items-center space-x-2">
 							<Checkbox
@@ -497,7 +562,10 @@ export default function OrganizationsPage() {
 								onCheckedChange={(checked) => setDeleteImmediate(checked as boolean)}
 							/>
 							<Label htmlFor="immediate" className="text-sm font-normal">
-								{t("admin.organizations.deleteDialog.immediateDelete", "Delete immediately (skip 5-day grace period)")}
+								{t(
+									"admin.organizations.deleteDialog.immediateDelete",
+									"Delete immediately (skip 5-day grace period)",
+								)}
 							</Label>
 						</div>
 						<div className="flex items-center space-x-2">
@@ -507,35 +575,48 @@ export default function OrganizationsPage() {
 								onCheckedChange={(checked) => setDeleteSkipNotification(checked as boolean)}
 							/>
 							<Label htmlFor="skipNotification" className="text-sm font-normal">
-								{t("admin.organizations.deleteDialog.skipNotification", "Skip deletion notification to org members")}
+								{t(
+									"admin.organizations.deleteDialog.skipNotification",
+									"Skip deletion notification to org members",
+								)}
 							</Label>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="confirmName">
-								{t("admin.organizations.deleteDialog.confirmLabel", "Type \"{name}\" to confirm", { name: deleteDialogOrg?.name ?? "" })}
+								{t("admin.organizations.deleteDialog.confirmLabel", 'Type "{name}" to confirm', {
+									name: deleteDialogOrg?.name ?? "",
+								})}
 							</Label>
 							<Input
 								id="confirmName"
 								value={deleteConfirmName}
 								onChange={(e) => setDeleteConfirmName(e.target.value)}
-								placeholder={t("admin.organizations.deleteDialog.confirmPlaceholder", "Organization name")}
+								placeholder={t(
+									"admin.organizations.deleteDialog.confirmPlaceholder",
+									"Organization name",
+								)}
 							/>
 						</div>
 					</div>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setDeleteDialogOrg(null)}>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setDeleteDialogOrg(null)}>
 							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleDelete}
-							disabled={deleteConfirmName !== deleteDialogOrg?.name || isPending}
-						>
-							{t("admin.organizations.deleteDialog.confirmButton", "Delete Organization")}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+						</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								variant="destructive"
+								onClick={(event) => {
+									event.preventDefault();
+									handleDelete();
+								}}
+								disabled={deleteConfirmName !== deleteDialogOrg?.name || isPending}
+							>
+								{t("admin.organizations.deleteDialog.confirmButton", "Delete Organization")}
+							</Button>
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

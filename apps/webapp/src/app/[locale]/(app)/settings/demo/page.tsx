@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getTranslate } from "@/tolgee/server";
@@ -5,17 +6,23 @@ import { DemoDataWizard } from "@/components/settings/demo-data-wizard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getOrganizationEmployees } from "./actions";
+import { assertDemoDataEnabledForOrganization, getOrganizationEmployees } from "./actions";
 
 async function DemoSettingsContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-	const [t, { organizationId }] = await Promise.all([
+	const [, t, { organizationId }] = await Promise.all([
+		connection(), // Mark as fully dynamic for cacheComponents mode
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);
+	const [demoDataEnabled, employeesResult] = await Promise.all([
+		assertDemoDataEnabledForOrganization(organizationId),
+		getOrganizationEmployees(organizationId),
+	]);
 
-	// Get employees for the multi-select
-	const employeesResult = await getOrganizationEmployees(organizationId);
+	if (!demoDataEnabled) {
+		notFound();
+	}
+
 	const employees = employeesResult.success ? employeesResult.data : [];
 
 	return (
