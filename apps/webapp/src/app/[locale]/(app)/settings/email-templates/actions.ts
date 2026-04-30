@@ -1,3 +1,5 @@
+"use server";
+
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -10,96 +12,34 @@ import {
 	getEmailTemplateDefinition,
 } from "@/lib/email/template-registry";
 import {
-	interpolateTemplate,
-	sanitizeEmailHtml,
-	validateTemplateContent,
-} from "@/lib/email/template-validation";
+	type EmailTemplateActionResult,
+	type SaveEmailTemplateInput,
+	validateEmailTemplateInput,
+} from "@/lib/email/template-settings";
+import { interpolateTemplate, sanitizeEmailHtml } from "@/lib/email/template-validation";
 
 const EMAIL_TEMPLATE_SETTINGS_PATH = "/settings/email-templates";
 
-export interface SaveEmailTemplateInput {
-	templateKey: EmailTemplateKey;
-	subject: string;
-	html: string;
-	editorDocument: unknown;
-	plainText?: string;
-	isEnabled: boolean;
-}
-
-export interface EmailTemplateActionResult {
-	success: boolean;
-	errors?: string[];
-}
-
-export interface EmailTemplateValidationResult {
-	success: boolean;
-	errors: string[];
-}
-
 type EmailTemplateListEntry = Omit<EmailTemplateDefinition, "renderDefault"> & {
 	override: typeof organizationEmailTemplate.$inferSelect | null;
+	defaultPreviewHtml: string;
+	defaultPreviewPlainText: string;
 };
 
-export function validateEmailTemplateInput(
-	input: SaveEmailTemplateInput,
-): EmailTemplateValidationResult {
-	const errors: string[] = [];
-	let definition: EmailTemplateDefinition | null = null;
-
-	try {
-		definition = getEmailTemplateDefinition(input.templateKey);
-	} catch {
-		errors.push("Unknown email template");
-	}
-
-	if (typeof input.subject !== "string") {
-		errors.push("Subject must be a string");
-	}
-
-	if (typeof input.html !== "string") {
-		errors.push("HTML body must be a string");
-	}
-
-	if (
-		typeof input.editorDocument !== "object" ||
-		input.editorDocument === null ||
-		Array.isArray(input.editorDocument)
-	) {
-		errors.push("Editor document must be an object");
-	}
-
-	if (input.plainText !== undefined && typeof input.plainText !== "string") {
-		errors.push("Plain text body must be a string");
-	}
-
-	if (typeof input.isEnabled !== "boolean") {
-		errors.push("Enabled state must be a boolean");
-	}
-
-	if (
-		definition &&
-		typeof input.subject === "string" &&
-		typeof input.html === "string" &&
-		(input.plainText === undefined || typeof input.plainText === "string")
-	) {
-		const contentValidation = validateTemplateContent({
-			subject: input.subject,
-			html: input.plainText ? `${input.html}\n${input.plainText}` : input.html,
-			allowedVariables: definition.variables,
-		});
-
-		errors.push(...contentValidation.errors);
-	}
-
-	return {
-		success: errors.length === 0,
-		errors,
-	};
+function htmlToPlainText(html: string): string {
+	return html
+		.replace(/<style[\s\S]*?<\/style>/gi, " ")
+		.replace(/<script[\s\S]*?<\/script>/gi, " ")
+		.replace(/<[^>]+>/g, " ")
+		.replace(/&nbsp;/g, " ")
+		.replace(/&amp;/g, "&")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/\s+/g, " ")
+		.trim();
 }
 
 export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
-	"use server";
-
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 	const overrides = await db.query.organizationEmailTemplate.findMany({
 		where: and(eq(organizationEmailTemplate.organizationId, organizationId)),
@@ -108,17 +48,24 @@ export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
 		overrides.map((override) => [override.templateKey, override]),
 	);
 
-	return EMAIL_TEMPLATE_REGISTRY.map(({ renderDefault: _renderDefault, ...definition }) => ({
-		...definition,
-		override: overridesByTemplateKey.get(definition.key) ?? null,
-	}));
+	return Promise.all(
+		EMAIL_TEMPLATE_REGISTRY.map(async ({ renderDefault, ...definition }) => {
+			const renderPreview = renderDefault as (data: Record<string, unknown>) => Promise<string>;
+			const defaultPreviewHtml = await renderPreview(definition.previewData);
+
+			return {
+				...definition,
+				defaultPreviewHtml,
+				defaultPreviewPlainText: htmlToPlainText(defaultPreviewHtml),
+				override: overridesByTemplateKey.get(definition.key) ?? null,
+			};
+		}),
+	);
 }
 
 export async function saveEmailTemplate(
 	input: SaveEmailTemplateInput,
 ): Promise<EmailTemplateActionResult> {
-	"use server";
-
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateEmailTemplateInput(input);
 
@@ -165,8 +112,6 @@ export async function saveEmailTemplate(
 export async function resetEmailTemplate(
 	templateKey: EmailTemplateKey,
 ): Promise<EmailTemplateActionResult> {
-	"use server";
-
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 
 	try {
@@ -192,8 +137,6 @@ export async function resetEmailTemplate(
 export async function sendEmailTemplateTest(
 	input: SaveEmailTemplateInput,
 ): Promise<EmailTemplateActionResult> {
-	"use server";
-
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateEmailTemplateInput(input);
 

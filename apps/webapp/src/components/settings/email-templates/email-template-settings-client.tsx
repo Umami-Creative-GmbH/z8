@@ -29,7 +29,10 @@ export interface EmailTemplateOverride {
 
 interface EmailTemplateSettingsClientProps {
 	templates: Array<{
-		definition: Omit<EmailTemplateDefinition, "renderDefault">;
+		definition: Omit<EmailTemplateDefinition, "renderDefault"> & {
+			defaultPreviewHtml: string;
+			defaultPreviewPlainText: string;
+		};
 		override: EmailTemplateOverride | null;
 	}>;
 }
@@ -47,11 +50,13 @@ const createDraft = ({
 	override,
 }: EmailTemplateSettingsClientProps["templates"][number]): Draft => ({
 	subject: override?.subject ?? definition.defaultSubject,
-	html: override?.html ?? `<p>${definition.description}</p>`,
-	plainText: override?.plainText ?? definition.description,
+	html: override?.html ?? definition.defaultPreviewHtml,
+	plainText: override?.plainText ?? definition.defaultPreviewPlainText,
 	editorDocument: override?.editorDocument ?? {
 		type: "doc",
-		content: [{ type: "paragraph", content: [{ type: "text", text: definition.description }] }],
+		content: [
+			{ type: "paragraph", content: [{ type: "text", text: definition.defaultPreviewPlainText }] },
+		],
 	},
 	isEnabled: override?.isEnabled ?? true,
 });
@@ -240,6 +245,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 							</div>
 
 							<EmailTemplateEditor
+								key={selectedTemplate.definition.key}
 								ref={editorRef}
 								definition={selectedTemplate.definition}
 								subject={draft.subject}
@@ -251,7 +257,6 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 								onPlainTextChange={(plainText) => updateDraft({ plainText })}
 								onEditorDocumentChange={(editorDocument) => updateDraft({ editorDocument })}
 								onSubjectFocus={() => undefined}
-								onBodyFocus={() => undefined}
 							/>
 
 							<VariablePalette

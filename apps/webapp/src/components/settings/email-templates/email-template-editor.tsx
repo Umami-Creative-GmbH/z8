@@ -1,5 +1,6 @@
 "use client";
 
+import "@react-email/editor/themes/default.css";
 import dynamic from "next/dynamic";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,6 @@ interface EmailTemplateEditorProps {
 	onPlainTextChange: (value: string) => void;
 	onEditorDocumentChange: (value: Record<string, unknown>) => void;
 	onSubjectFocus?: () => void;
-	onBodyFocus?: () => void;
 }
 
 export interface EmailTemplateEditorHandle {
@@ -56,11 +56,11 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 			onPlainTextChange,
 			onEditorDocumentChange,
 			onSubjectFocus,
-			onBodyFocus,
 		},
 		ref,
 	) {
 		const subjectRef = useRef<HTMLInputElement>(null);
+		const updateVersionRef = useRef(0);
 
 		useImperativeHandle(ref, () => ({
 			focusSubject: () => subjectRef.current?.focus(),
@@ -92,17 +92,32 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 				</div>
 
 				<div className="grid gap-2">
-					<Label htmlFor="email-template-body">Email body</Label>
-					<div id="email-template-body" className="rounded-xl border bg-background p-2">
+					<p id="email-template-body-label" className="font-medium text-sm leading-none">
+						Email body
+					</p>
+					<p id="email-template-body-description" className="text-muted-foreground text-xs">
+						Compose the rich HTML email sent for this system event.
+					</p>
+					<div
+						role="group"
+						aria-labelledby="email-template-body-label"
+						aria-describedby="email-template-body-description"
+						className="rounded-xl border bg-background p-2"
+					>
 						<ReactEmailEditor
 							content={editorDocument}
 							placeholder="Write the operational email body..."
 							className="min-h-64"
 							onUpdate={async (editorRef: ReactEmailEditorRef) => {
+								const updateVersion = updateVersionRef.current + 1;
+								updateVersionRef.current = updateVersion;
 								const [email, json] = await Promise.all([
 									editorRef.getEmail(),
 									Promise.resolve(editorRef.getJSON()),
 								]);
+								if (updateVersion !== updateVersionRef.current) {
+									return;
+								}
 								onHtmlChange(email.html);
 								onPlainTextChange(email.text);
 								onEditorDocumentChange(json);
@@ -117,7 +132,6 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 						id="email-template-html-fallback"
 						value={html}
 						onChange={(event) => onHtmlChange(event.target.value)}
-						onFocus={onBodyFocus}
 						className="min-h-24 font-mono text-xs"
 					/>
 					<p className="text-muted-foreground text-xs">

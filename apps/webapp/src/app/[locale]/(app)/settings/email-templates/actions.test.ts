@@ -60,12 +60,12 @@ vi.mock("@/lib/email/email-service", () => ({
 	sendEmail: mocks.sendEmail,
 }));
 
+import { validateEmailTemplateInput } from "@/lib/email/template-settings";
 import {
 	listEmailTemplates,
 	resetEmailTemplate,
 	saveEmailTemplate,
 	sendEmailTemplateTest,
-	validateEmailTemplateInput,
 } from "./actions";
 
 describe("email template settings actions", () => {
@@ -155,6 +155,12 @@ describe("email template settings actions", () => {
 			templateKey: "password-reset",
 			subject: "Override",
 		});
+		expect(templates.find((entry) => entry.key === "password-reset")?.defaultPreviewHtml).toContain(
+			"https://app.z8-time.app/reset-password?token=preview",
+		);
+		expect(
+			templates.find((entry) => entry.key === "password-reset")?.defaultPreviewPlainText,
+		).toContain("https://app.z8-time.app/reset-password?token=preview");
 	});
 
 	it("saves sanitized templates scoped to the active organization", async () => {
