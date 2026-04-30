@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import Image from "next/image";
 import Script from "next/script";
 import { connection } from "next/server";
+import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -10,9 +12,6 @@ import { type DomainAuthContext, getDomainConfig } from "@/lib/domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-
-const AUTH_IMAGE_URL =
-	"https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80";
 
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
@@ -86,26 +85,15 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 				</section>
 
 				<aside className="relative hidden overflow-hidden bg-muted lg:block">
-					<img
+					<Image
 						alt=""
 						className="absolute inset-0 h-full w-full object-cover"
-						decoding="async"
-						src={AUTH_IMAGE_URL}
+						fill
+						priority
+						sizes="50vw"
+						src={authImage}
 					/>
 					<div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.82),rgba(37,99,235,0.35),rgba(2,6,23,0.72))]" />
-					<div className="absolute inset-x-0 bottom-0 p-10 text-white">
-						<div className="max-w-md space-y-3">
-							<p className="font-medium text-sm uppercase tracking-[0.24em] text-white/70">
-								Z8 Workforce Management
-							</p>
-							<p className="text-balance font-semibold text-3xl leading-tight">
-								Precise time tracking for teams that need dependable operations.
-							</p>
-							<p className="text-balance text-sm leading-6 text-white/72">
-								Clock time, manage absences, and keep audit-ready records from one calm workspace.
-							</p>
-						</div>
-					</div>
 				</aside>
 			</div>
 		</DomainAuthProvider>
