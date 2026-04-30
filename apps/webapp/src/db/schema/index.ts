@@ -31,6 +31,7 @@ export * from "./customer";
 // Discord integration
 export * from "./discord-integration";
 export * from "./employment-history";
+export * from "./email-template";
 export * from "./enterprise";
 // Enums
 export * from "./enums";
