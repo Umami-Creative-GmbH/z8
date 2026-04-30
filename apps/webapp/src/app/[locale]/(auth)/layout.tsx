@@ -11,15 +11,14 @@ import { getCookieConsentScript } from "@/lib/platform-settings";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
+const AUTH_IMAGE_URL =
+	"https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80";
+
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
-export default async function AuthLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Get domain from proxy headers
@@ -70,17 +69,44 @@ export default async function AuthLayout({
 					dangerouslySetInnerHTML={{ __html: cookieConsentScript }}
 				/>
 			)}
-			<div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
-				<div className="w-full md:max-w-3xl">
-					<div className="mb-4 flex justify-end gap-2">
+			<div className="grid min-h-svh bg-background lg:grid-cols-2">
+				<section className="flex min-h-svh flex-col px-6 py-6 sm:px-8 lg:px-10">
+					<div className="flex items-center justify-end gap-2">
 						<ThemeToggle />
 						<LanguageSwitcher />
 					</div>
-					{children}
-					<div className="mt-6">
+
+					<main className="flex flex-1 items-center justify-center py-10">
+						<div className="w-full max-w-md">{children}</div>
+					</main>
+
+					<div className="pt-2">
 						<InfoFooter />
 					</div>
-				</div>
+				</section>
+
+				<aside className="relative hidden overflow-hidden bg-muted lg:block">
+					<img
+						alt=""
+						className="absolute inset-0 h-full w-full object-cover"
+						decoding="async"
+						src={AUTH_IMAGE_URL}
+					/>
+					<div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.82),rgba(37,99,235,0.35),rgba(2,6,23,0.72))]" />
+					<div className="absolute inset-x-0 bottom-0 p-10 text-white">
+						<div className="max-w-md space-y-3">
+							<p className="font-medium text-sm uppercase tracking-[0.24em] text-white/70">
+								Z8 Workforce Management
+							</p>
+							<p className="text-balance font-semibold text-3xl leading-tight">
+								Precise time tracking for teams that need dependable operations.
+							</p>
+							<p className="text-balance text-sm leading-6 text-white/72">
+								Clock time, manage absences, and keep audit-ready records from one calm workspace.
+							</p>
+						</div>
+					</div>
+				</aside>
 			</div>
 		</DomainAuthProvider>
 	);
