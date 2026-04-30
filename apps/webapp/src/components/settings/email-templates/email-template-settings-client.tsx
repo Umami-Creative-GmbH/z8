@@ -61,15 +61,13 @@ const createDraft = ({
 	isEnabled: override?.isEnabled ?? true,
 });
 
-const isUntouchedDefaultStarter = (
+const hasUnchangedDefaultStarterBody = (
 	template: EmailTemplateSettingsClientProps["templates"][number],
 	draft: Draft,
 ) =>
 	!template.override &&
-	draft.subject === template.definition.defaultSubject &&
 	draft.html === template.definition.starterDraftHtml &&
-	draft.plainText === template.definition.starterDraftPlainText &&
-	draft.isEnabled;
+	draft.plainText === template.definition.starterDraftPlainText;
 
 export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettingsClientProps) {
 	const { t } = useTranslate();
@@ -121,8 +119,8 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 	};
 
 	const handleSave = () => {
-		if (selectedTemplate && draft && isUntouchedDefaultStarter(selectedTemplate, draft)) {
-			toast.error("Edit this template before saving a custom override.");
+		if (selectedTemplate && draft && hasUnchangedDefaultStarterBody(selectedTemplate, draft)) {
+			toast.error("Edit the email body before saving a first custom template.");
 			return;
 		}
 

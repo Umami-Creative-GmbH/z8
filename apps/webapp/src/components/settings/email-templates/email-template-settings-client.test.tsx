@@ -103,7 +103,7 @@ describe("EmailTemplateSettingsClient", () => {
 
 		expect(saveEmailTemplateMock).not.toHaveBeenCalled();
 		expect(toastErrorMock).toHaveBeenCalledWith(
-			"Edit this template before saving a custom override.",
+			"Edit the email body before saving a first custom template.",
 		);
 	});
 
@@ -138,7 +138,7 @@ describe("EmailTemplateSettingsClient", () => {
 		);
 	});
 
-	it("saves a default template after the subject is edited", async () => {
+	it("prevents saving a first custom template when only the subject changed", () => {
 		saveEmailTemplateMock.mockResolvedValue({ success: true });
 		render(<EmailTemplateSettingsClient templates={templates} />);
 
@@ -147,11 +147,40 @@ describe("EmailTemplateSettingsClient", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
+		expect(saveEmailTemplateMock).not.toHaveBeenCalled();
+		expect(toastErrorMock).toHaveBeenCalledWith(
+			"Edit the email body before saving a first custom template.",
+		);
+	});
+
+	it("allows subject-only edits for an existing override", async () => {
+		saveEmailTemplateMock.mockResolvedValue({ success: true });
+		const overriddenTemplates = templates.map((template) =>
+			template.definition.key === "email-verification"
+				? {
+						...template,
+						override: {
+							subject: "Existing custom subject",
+							html: "<p>Existing custom body</p>",
+							plainText: "Existing custom body",
+							editorDocument: { type: "doc" },
+							isEnabled: true,
+						},
+					}
+				: template,
+		);
+		render(<EmailTemplateSettingsClient templates={overriddenTemplates} />);
+
+		fireEvent.change(screen.getByLabelText("Subject"), {
+			target: { value: "Updated custom subject" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
 		await waitFor(() => {
 			expect(saveEmailTemplateMock).toHaveBeenCalledWith(
 				expect.objectContaining({
-					subject: "Custom verify {{userName}}",
-					html: "<p>{{userName}}</p>",
+					subject: "Updated custom subject",
+					html: "<p>Existing custom body</p>",
 				}),
 			);
 		});
