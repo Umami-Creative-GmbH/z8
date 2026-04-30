@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { redirect } from "next/navigation";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import Verify2FAPage from "./page";
 
 const getSession = vi.hoisted(() => vi.fn());
