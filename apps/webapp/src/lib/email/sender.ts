@@ -4,11 +4,11 @@
  * Re-exports email sending functionality for use by background workers.
  */
 
-import { sendEmail as sendEmailInternal } from "./email-service";
-import { renderOrganizationEmailTemplate } from "./template-renderer";
 import { EMAIL_TEMPLATE_KEYS, type EmailTemplateKey } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { EmailJobData } from "@/lib/queue";
+import { sendEmail as sendEmailInternal } from "./email-service";
+import { renderOrganizationEmailTemplate } from "./template-renderer";
 
 const logger = createLogger("EmailSender");
 
@@ -18,6 +18,10 @@ function isEmailTemplateKey(value: string): value is EmailTemplateKey {
 	return EMAIL_TEMPLATE_KEYS.includes(value as EmailTemplateKey);
 }
 
+function maskEmailAddress(email: string): string {
+	return `${email.slice(0, 3)}***`;
+}
+
 /**
  * Send email from worker queue job
  *
@@ -25,10 +29,13 @@ function isEmailTemplateKey(value: string): value is EmailTemplateKey {
  * then sending via the email service.
  */
 export async function sendEmail(data: EmailJobData): Promise<void> {
-	logger.info(
-		{ to: data.to, template: data.template, subject: data.subject },
-		"Sending email from worker",
-	);
+	const logMetadata = {
+		to: maskEmailAddress(data.to),
+		template: data.template,
+		organizationId: data.organizationId,
+	};
+
+	logger.info(logMetadata, "Sending email from worker");
 
 	if (!isEmailTemplateKey(data.template)) {
 		throw new Error(`Unknown email template: ${data.template}`);
@@ -48,5 +55,5 @@ export async function sendEmail(data: EmailJobData): Promise<void> {
 		organizationId: data.organizationId,
 	});
 
-	logger.info({ to: data.to }, "Email sent successfully");
+	logger.info(logMetadata, "Email sent successfully");
 }

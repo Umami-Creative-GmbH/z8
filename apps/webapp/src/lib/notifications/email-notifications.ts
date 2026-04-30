@@ -6,8 +6,8 @@
 
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import type { EmailTemplateKey } from "@/db/schema";
 import { user } from "@/db/auth-schema";
+import type { EmailTemplateKey } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
@@ -61,7 +61,7 @@ async function getUserName(userId: string): Promise<string> {
  * Send email notification based on notification type
  */
 export async function sendEmailNotification(params: EmailNotificationParams): Promise<boolean> {
-	const { userId, type, metadata, organizationId } = params;
+	const { userId, type, title, metadata, organizationId } = params;
 
 	try {
 		const email = await getUserEmail(userId);
@@ -75,12 +75,14 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 		let templateKey: EmailTemplateKey | null = null;
 		let templateData: Record<string, unknown> | null = null;
+		let subjectOverride = title;
 
 		// Generate email content based on notification type
 		switch (type) {
 			case "absence_request_submitted":
 				if (metadata) {
 					templateKey = "absence-request-submitted";
+					subjectOverride = "Absence Request Submitted";
 					templateData = {
 						employeeName: userName,
 						startDate: String(metadata.startDate || ""),
@@ -96,6 +98,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			case "absence_request_approved":
 				if (metadata) {
 					templateKey = "absence-request-approved";
+					subjectOverride = "Absence Request Approved";
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -111,6 +114,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			case "absence_request_rejected":
 				if (metadata) {
 					templateKey = "absence-request-rejected";
+					subjectOverride = "Absence Request Rejected";
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -128,6 +132,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 				// This is for managers - use pending approval template
 				if (metadata) {
 					templateKey = "absence-request-pending-approval";
+					subjectOverride = "New Absence Request Pending Approval";
 					templateData = {
 						managerName: userName,
 						employeeName: String(metadata.employeeName || ""),
@@ -145,6 +150,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 				// This is for managers
 				if (metadata) {
 					templateKey = "time-correction-pending-approval";
+					subjectOverride = "New Time Correction Pending Approval";
 					templateData = {
 						managerName: userName,
 						employeeName: String(metadata.employeeName || ""),
@@ -162,6 +168,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			case "time_correction_approved":
 				if (metadata) {
 					templateKey = "time-correction-approved";
+					subjectOverride = "Time Correction Approved";
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -176,6 +183,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			case "time_correction_rejected":
 				if (metadata) {
 					templateKey = "time-correction-rejected";
+					subjectOverride = "Time Correction Rejected";
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -191,6 +199,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			case "team_member_added":
 				if (metadata) {
 					templateKey = "team-member-added";
+					subjectOverride = `You've been added to ${metadata.teamName}`;
 					templateData = {
 						memberName: userName,
 						teamName: String(metadata.teamName || ""),
@@ -204,6 +213,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			case "team_member_removed":
 				if (metadata) {
 					templateKey = "team-member-removed";
+					subjectOverride = `You've been removed from ${metadata.teamName}`;
 					templateData = {
 						memberName: userName,
 						teamName: String(metadata.teamName || ""),
@@ -215,6 +225,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 			case "password_changed":
 				templateKey = "security-alert";
+				subjectOverride = "Security Alert: Password Changed";
 				templateData = {
 					userName,
 					eventType: "password_changed",
@@ -228,6 +239,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 			case "two_factor_enabled":
 				templateKey = "security-alert";
+				subjectOverride = "Security Alert: Two-Factor Authentication Enabled";
 				templateData = {
 					userName,
 					eventType: "two_factor_enabled",
@@ -241,6 +253,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 			case "two_factor_disabled":
 				templateKey = "security-alert";
+				subjectOverride = "Security Alert: Two-Factor Authentication Disabled";
 				templateData = {
 					userName,
 					eventType: "two_factor_disabled",
@@ -276,6 +289,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 			organizationId,
 			templateKey,
 			data: templateData,
+			subjectOverride,
 		});
 
 		const result = await sendEmail({

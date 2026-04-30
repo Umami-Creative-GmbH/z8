@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendEmail as sendEmailInternal } from "./email-service";
-import { renderOrganizationEmailTemplate } from "./template-renderer";
 import { sendEmail } from "./sender";
+import { renderOrganizationEmailTemplate } from "./template-renderer";
 
 const infoMock = vi.hoisted(() => vi.fn());
 
@@ -65,6 +65,49 @@ describe("email sender", () => {
 			html: "<p>Organization reset body</p>",
 			organizationId: "org_123",
 		});
+	});
+
+	it("logs safe queued email metadata without full recipients or subjects", async () => {
+		renderOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Security Alert: Password Changed",
+			html: "<p>Security body</p>",
+			usedOverride: false,
+		});
+		sendEmailInternalMock.mockResolvedValue({ success: true, messageId: "msg_123" });
+
+		await sendEmail({
+			type: "email",
+			to: "alex@example.com",
+			subject: "Security Alert: Password Changed",
+			template: "security-alert",
+			organizationId: "org_123",
+			data: {
+				userName: "Alex",
+				eventType: "password_changed",
+				timestamp: "2026-04-30 10:00",
+				securitySettingsUrl: "https://app.z8-time.app/settings/security",
+				appUrl: "https://app.z8-time.app",
+			},
+		});
+
+		expect(infoMock).toHaveBeenNthCalledWith(
+			1,
+			{ to: "ale***", template: "security-alert", organizationId: "org_123" },
+			"Sending email from worker",
+		);
+		expect(infoMock).toHaveBeenNthCalledWith(
+			2,
+			{ to: "ale***", template: "security-alert", organizationId: "org_123" },
+			"Email sent successfully",
+		);
+		expect(infoMock.mock.calls).not.toContainEqual(
+			expect.arrayContaining([expect.objectContaining({ to: "alex@example.com" })]),
+		);
+		expect(infoMock.mock.calls).not.toContainEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ subject: "Security Alert: Password Changed" }),
+			]),
+		);
 	});
 
 	it("rejects queued emails with unknown templates", async () => {

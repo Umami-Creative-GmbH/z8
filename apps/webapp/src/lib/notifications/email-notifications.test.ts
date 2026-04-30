@@ -3,21 +3,15 @@ import { sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { sendEmailNotification } from "./email-notifications";
 
-const {
-	debugMock,
-	errorMock,
-	infoMock,
-	warnMock,
-	findUserMock,
-	getOrganizationBaseUrlMock,
-} = vi.hoisted(() => ({
-	debugMock: vi.fn(),
-	errorMock: vi.fn(),
-	infoMock: vi.fn(),
-	warnMock: vi.fn(),
-	findUserMock: vi.fn(),
-	getOrganizationBaseUrlMock: vi.fn(),
-}));
+const { debugMock, errorMock, infoMock, warnMock, findUserMock, getOrganizationBaseUrlMock } =
+	vi.hoisted(() => ({
+		debugMock: vi.fn(),
+		errorMock: vi.fn(),
+		infoMock: vi.fn(),
+		warnMock: vi.fn(),
+		findUserMock: vi.fn(),
+		getOrganizationBaseUrlMock: vi.fn(),
+	}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -110,12 +104,48 @@ describe("sendEmailNotification", () => {
 				days: 2,
 				appUrl: "https://org.example.com",
 			},
+			subjectOverride: "Absence Request Approved",
 		});
 		expect(sendEmailMock).toHaveBeenCalledWith({
 			to: "alex@example.com",
 			subject: "Custom absence subject",
 			html: "<p>Custom absence body</p>",
 			organizationId: "org_123",
+		});
+	});
+
+	it("preserves dynamic team member notification subjects as template subject overrides", async () => {
+		renderOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "You've been added to Support",
+			html: "<p>Custom team body</p>",
+			usedOverride: false,
+		});
+
+		const result = await sendEmailNotification({
+			userId: "user_123",
+			type: "team_member_added",
+			title: "Original team title",
+			message: "Original message",
+			organizationId: "org_123",
+			metadata: {
+				teamId: "team_123",
+				teamName: "Support",
+				addedByName: "Morgan",
+			},
+		});
+
+		expect(result).toBe(true);
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith({
+			organizationId: "org_123",
+			templateKey: "team-member-added",
+			data: {
+				memberName: "Alex",
+				teamName: "Support",
+				addedByName: "Morgan",
+				teamUrl: "https://org.example.com/settings/teams/team_123",
+				appUrl: "https://org.example.com",
+			},
+			subjectOverride: "You've been added to Support",
 		});
 	});
 });
