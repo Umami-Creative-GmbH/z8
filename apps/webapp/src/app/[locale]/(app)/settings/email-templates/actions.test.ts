@@ -122,6 +122,28 @@ describe("email template settings actions", () => {
 		expect(result.errors).toContain("Editor document must be an object");
 	});
 
+	it("returns validation errors for malformed runtime input", () => {
+		const result = validateEmailTemplateInput({
+			templateKey: "not-a-template",
+			subject: 123,
+			editorDocument: null,
+			plainText: false,
+			isEnabled: "yes",
+		} as never);
+
+		expect(result.success).toBe(false);
+		expect(result.errors).toEqual(
+			expect.arrayContaining([
+				"Unknown email template",
+				"Subject must be a string",
+				"HTML body must be a string",
+				"Editor document must be an object",
+				"Plain text body must be a string",
+				"Enabled state must be a boolean",
+			]),
+		);
+	});
+
 	it("lists registry entries with active organization overrides only", async () => {
 		mocks.templates = [{ templateKey: "password-reset", subject: "Override" }];
 
@@ -201,5 +223,20 @@ describe("email template settings actions", () => {
 			subject: "Reset Alex Morgan",
 			html: '<a href="https://app.z8-time.app/reset-password?token=preview">Reset password</a>',
 		});
+	});
+
+	it("returns a generic error when test email sending fails", async () => {
+		mocks.sendEmail.mockResolvedValue({ success: false, error: "SMTP password rejected" });
+
+		const result = await sendEmailTemplateTest({
+			templateKey: "password-reset",
+			subject: "Reset {{userName}}",
+			html: "<p>{{resetUrl}}</p>",
+			editorDocument: { root: { type: "email" } },
+			isEnabled: true,
+		});
+
+		expect(result).toEqual({ success: false, errors: ["Failed to send test email"] });
+		expect(JSON.stringify(result)).not.toContain("SMTP password rejected");
 	});
 });

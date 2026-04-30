@@ -1,13 +1,13 @@
-import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { organizationEmailTemplate, type EmailTemplateKey } from "@/db/schema";
+import { type EmailTemplateKey, organizationEmailTemplate } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { sendEmail } from "@/lib/email/email-service";
 import {
 	EMAIL_TEMPLATE_REGISTRY,
-	getEmailTemplateDefinition,
 	type EmailTemplateDefinition,
+	getEmailTemplateDefinition,
 } from "@/lib/email/template-registry";
 import {
 	interpolateTemplate,
@@ -44,12 +44,20 @@ export function validateEmailTemplateInput(
 	input: SaveEmailTemplateInput,
 ): EmailTemplateValidationResult {
 	const errors: string[] = [];
-	let definition: EmailTemplateDefinition;
+	let definition: EmailTemplateDefinition | null = null;
 
 	try {
 		definition = getEmailTemplateDefinition(input.templateKey);
 	} catch {
-		return { success: false, errors: ["Unknown email template"] };
+		errors.push("Unknown email template");
+	}
+
+	if (typeof input.subject !== "string") {
+		errors.push("Subject must be a string");
+	}
+
+	if (typeof input.html !== "string") {
+		errors.push("HTML body must be a string");
 	}
 
 	if (
@@ -60,13 +68,28 @@ export function validateEmailTemplateInput(
 		errors.push("Editor document must be an object");
 	}
 
-	const contentValidation = validateTemplateContent({
-		subject: input.subject,
-		html: input.plainText ? `${input.html}\n${input.plainText}` : input.html,
-		allowedVariables: definition.variables,
-	});
+	if (input.plainText !== undefined && typeof input.plainText !== "string") {
+		errors.push("Plain text body must be a string");
+	}
 
-	errors.push(...contentValidation.errors);
+	if (typeof input.isEnabled !== "boolean") {
+		errors.push("Enabled state must be a boolean");
+	}
+
+	if (
+		definition &&
+		typeof input.subject === "string" &&
+		typeof input.html === "string" &&
+		(input.plainText === undefined || typeof input.plainText === "string")
+	) {
+		const contentValidation = validateTemplateContent({
+			subject: input.subject,
+			html: input.plainText ? `${input.html}\n${input.plainText}` : input.html,
+			allowedVariables: definition.variables,
+		});
+
+		errors.push(...contentValidation.errors);
+	}
 
 	return {
 		success: errors.length === 0,
@@ -184,7 +207,7 @@ export async function sendEmailTemplateTest(
 		return { success: false, errors: ["HTML body is required"] };
 	}
 
-	await sendEmail({
+	const result = await sendEmail({
 		to: authContext.user.email,
 		organizationId,
 		subject: interpolateTemplate(
@@ -196,6 +219,10 @@ export async function sendEmailTemplateTest(
 			getEmailTemplateDefinition(input.templateKey).previewData,
 		),
 	});
+
+	if (!result.success) {
+		return { success: false, errors: ["Failed to send test email"] };
+	}
 
 	return { success: true };
 }
