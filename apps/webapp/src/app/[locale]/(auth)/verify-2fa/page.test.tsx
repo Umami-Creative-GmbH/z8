@@ -1,8 +1,11 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { redirect } from "next/navigation";
 import Verify2FAPage from "./page";
+
+const getSession = vi.hoisted(() => vi.fn());
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(async () => new Headers()),
@@ -23,20 +26,35 @@ vi.mock("@/components/two-factor-verification-form", () => ({
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
-			getSession: vi.fn(async () => ({
-				user: { twoFactorEnabled: true },
-			})),
+			getSession,
 		},
 	},
 }));
 
 describe("Verify2FAPage", () => {
-	it("uses the shared auth layout without adding a nested viewport wrapper", async () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("renders the verification form for a pending 2FA flow without a full session", async () => {
+		getSession.mockResolvedValueOnce(null);
+
 		render(await Verify2FAPage());
 
 		const form = screen.getByTestId("two-factor-form");
 
+		expect(redirect).not.toHaveBeenCalled();
 		expect(form.parentElement?.className).not.toContain("min-h-screen");
 		expect(form.parentElement?.className).not.toContain("justify-center");
+	});
+
+	it("redirects a fully authenticated session home", async () => {
+		getSession.mockResolvedValueOnce({
+			user: { twoFactorEnabled: true },
+		});
+
+		await Verify2FAPage();
+
+		expect(redirect).toHaveBeenCalledWith("/");
 	});
 });
