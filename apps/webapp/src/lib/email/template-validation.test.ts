@@ -54,9 +54,9 @@ describe("email template validation", () => {
 	});
 
 	it("interpolates arrays as comma-separated escaped values", () => {
-		expect(interpolateTemplate("Categories: {{categories}}", { categories: ["A", "B<script>"] })).toBe(
-			"Categories: A, B&lt;script&gt;",
-		);
+		expect(
+			interpolateTemplate("Categories: {{categories}}", { categories: ["A", "B<script>"] }),
+		).toBe("Categories: A, B&lt;script&gt;");
 	});
 
 	it("removes executable html before storage or send", () => {
@@ -65,5 +65,31 @@ describe("email template validation", () => {
 				'<p onclick="alert(1)">Hi</p><script>alert(1)</script><img src="x" onerror="alert(1)">',
 			),
 		).toBe('<p>Hi</p><img src="x">');
+	});
+
+	it("removes encoded javascript urls", () => {
+		expect(sanitizeEmailHtml('<a href="java&#115;cript:alert(1)">Open</a>')).toBe("<a>Open</a>");
+	});
+
+	it("removes mixed-case and whitespace javascript urls", () => {
+		expect(sanitizeEmailHtml('<a href=" JaVaScRiPt:alert(1)">Open</a>')).toBe("<a>Open</a>");
+	});
+
+	it("removes srcdoc iframe content", () => {
+		expect(
+			sanitizeEmailHtml('<iframe srcdoc="<script>alert(1)</script>"></iframe><p>Safe</p>'),
+		).toBe("<p>Safe</p>");
+	});
+
+	it("removes svg executable surfaces", () => {
+		expect(
+			sanitizeEmailHtml('<svg><a onload="alert(1)" href="javascript:alert(1)">x</a></svg>'),
+		).toBe("");
+	});
+
+	it("removes style url executable content", () => {
+		expect(sanitizeEmailHtml('<p style="background-image: url(javascript:alert(1))">Hi</p>')).toBe(
+			"<p>Hi</p>",
+		);
 	});
 });
