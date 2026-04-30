@@ -24,9 +24,5 @@ export default async function Verify2FAPage() {
 		redirect("/");
 	}
 
-	return (
-		<div className="flex min-h-screen items-center justify-center p-4">
-			<TwoFactorVerificationForm />
-		</div>
-	);
+	return <TwoFactorVerificationForm />;
 }
