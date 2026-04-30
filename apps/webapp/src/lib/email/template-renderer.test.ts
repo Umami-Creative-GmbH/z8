@@ -83,6 +83,44 @@ describe("renderOrganizationEmailTemplate", () => {
 		expect(result.usedOverride).toBe(true);
 	});
 
+	it("sanitizes unsafe static html in an enabled organization override", async () => {
+		getEnabledOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Reset password for {{userName}}",
+			html: '<p onclick="alert(1)">Use {{resetUrl}}</p><script>alert(1)</script>',
+			plainText: null,
+		});
+
+		const result = await renderOrganizationEmailTemplate({
+			organizationId: "org_123",
+			templateKey: "password-reset",
+			data: passwordResetData,
+		});
+
+		expect(result.html).toBe("<p>Use https://app.z8-time.app/reset-password?token=test</p>");
+		expect(result.html).not.toContain("onclick");
+		expect(result.html).not.toContain("script");
+		expect(result.usedOverride).toBe(true);
+	});
+
+	it("falls back to the default template when override lookup fails", async () => {
+		const error = new Error("database unavailable");
+		getEnabledOrganizationEmailTemplateMock.mockRejectedValue(error);
+
+		const result = await renderOrganizationEmailTemplate({
+			organizationId: "org_123",
+			templateKey: "password-reset",
+			data: passwordResetData,
+		});
+
+		expect(result.subject).toBe("Reset your password");
+		expect(result.html).toContain("Alex");
+		expect(result.usedOverride).toBe(false);
+		expect(warnMock).toHaveBeenCalledWith(
+			{ error, organizationId: "org_123", templateKey: "password-reset" },
+			"Failed to load organization email template override, falling back to default",
+		);
+	});
+
 	it("falls back to the default subject and html when an override references an unknown variable", async () => {
 		getEnabledOrganizationEmailTemplateMock.mockResolvedValue({
 			subject: "Reset {{secret}}",

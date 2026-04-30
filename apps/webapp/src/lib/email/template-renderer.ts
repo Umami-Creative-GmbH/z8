@@ -2,7 +2,11 @@ import type { EmailTemplateKey } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { getEnabledOrganizationEmailTemplate } from "./template-overrides";
 import { getEmailTemplateDefinition } from "./template-registry";
-import { interpolateTemplate, validateTemplateContent } from "./template-validation";
+import {
+	interpolateTemplate,
+	sanitizeEmailHtml,
+	validateTemplateContent,
+} from "./template-validation";
 
 const logger = createLogger("EmailTemplateRenderer");
 
@@ -37,7 +41,16 @@ export async function renderOrganizationEmailTemplate({
 		return defaultTemplate();
 	}
 
-	const override = await getEnabledOrganizationEmailTemplate(organizationId, templateKey);
+	let override;
+	try {
+		override = await getEnabledOrganizationEmailTemplate(organizationId, templateKey);
+	} catch (error) {
+		logger.warn(
+			{ error, organizationId, templateKey },
+			"Failed to load organization email template override, falling back to default",
+		);
+		return defaultTemplate();
+	}
 
 	if (!override) {
 		return defaultTemplate();
@@ -59,7 +72,7 @@ export async function renderOrganizationEmailTemplate({
 
 	return {
 		subject: interpolateTemplate(override.subject, data),
-		html: interpolateTemplate(override.html, data),
+		html: interpolateTemplate(sanitizeEmailHtml(override.html), data),
 		plainText: override.plainText ? interpolateTemplate(override.plainText, data) : undefined,
 		usedOverride: true,
 	};
