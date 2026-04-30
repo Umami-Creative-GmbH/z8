@@ -30,8 +30,8 @@ export interface EmailTemplateOverride {
 interface EmailTemplateSettingsClientProps {
 	templates: Array<{
 		definition: Omit<EmailTemplateDefinition, "renderDefault"> & {
-			defaultPreviewHtml: string;
-			defaultPreviewPlainText: string;
+			starterDraftHtml: string;
+			starterDraftPlainText: string;
 		};
 		override: EmailTemplateOverride | null;
 	}>;
@@ -50,16 +50,26 @@ const createDraft = ({
 	override,
 }: EmailTemplateSettingsClientProps["templates"][number]): Draft => ({
 	subject: override?.subject ?? definition.defaultSubject,
-	html: override?.html ?? definition.defaultPreviewHtml,
-	plainText: override?.plainText ?? definition.defaultPreviewPlainText,
+	html: override?.html ?? definition.starterDraftHtml,
+	plainText: override?.plainText ?? definition.starterDraftPlainText,
 	editorDocument: override?.editorDocument ?? {
 		type: "doc",
 		content: [
-			{ type: "paragraph", content: [{ type: "text", text: definition.defaultPreviewPlainText }] },
+			{ type: "paragraph", content: [{ type: "text", text: definition.starterDraftPlainText }] },
 		],
 	},
 	isEnabled: override?.isEnabled ?? true,
 });
+
+const isUntouchedDefaultStarter = (
+	template: EmailTemplateSettingsClientProps["templates"][number],
+	draft: Draft,
+) =>
+	!template.override &&
+	draft.subject === template.definition.defaultSubject &&
+	draft.html === template.definition.starterDraftHtml &&
+	draft.plainText === template.definition.starterDraftPlainText &&
+	draft.isEnabled;
 
 export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettingsClientProps) {
 	const { t } = useTranslate();
@@ -111,6 +121,11 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 	};
 
 	const handleSave = () => {
+		if (selectedTemplate && draft && isUntouchedDefaultStarter(selectedTemplate, draft)) {
+			toast.error("Edit this template before saving a custom override.");
+			return;
+		}
+
 		const input = actionInput();
 		if (!input) {
 			return;

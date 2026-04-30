@@ -22,21 +22,21 @@ const EMAIL_TEMPLATE_SETTINGS_PATH = "/settings/email-templates";
 
 type EmailTemplateListEntry = Omit<EmailTemplateDefinition, "renderDefault"> & {
 	override: typeof organizationEmailTemplate.$inferSelect | null;
-	defaultPreviewHtml: string;
-	defaultPreviewPlainText: string;
+	starterDraftHtml: string;
+	starterDraftPlainText: string;
 };
 
-function htmlToPlainText(html: string): string {
-	return html
-		.replace(/<style[\s\S]*?<\/style>/gi, " ")
-		.replace(/<script[\s\S]*?<\/script>/gi, " ")
-		.replace(/<[^>]+>/g, " ")
-		.replace(/&nbsp;/g, " ")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/\s+/g, " ")
-		.trim();
+function createStarterDraft(definition: Omit<EmailTemplateDefinition, "renderDefault">) {
+	const variableRows = definition.variables
+		.map((variable) => `<li><strong>${variable.label}</strong>: {{${variable.name}}}</li>`)
+		.join("");
+	const starterDraftHtml = `<p>${definition.description}</p><ul>${variableRows}</ul>`;
+	const starterDraftPlainText = [
+		definition.description,
+		...definition.variables.map((variable) => `${variable.label}: {{${variable.name}}}`),
+	].join("\n");
+
+	return { starterDraftHtml, starterDraftPlainText };
 }
 
 export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
@@ -48,19 +48,11 @@ export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
 		overrides.map((override) => [override.templateKey, override]),
 	);
 
-	return Promise.all(
-		EMAIL_TEMPLATE_REGISTRY.map(async ({ renderDefault, ...definition }) => {
-			const renderPreview = renderDefault as (data: Record<string, unknown>) => Promise<string>;
-			const defaultPreviewHtml = await renderPreview(definition.previewData);
-
-			return {
-				...definition,
-				defaultPreviewHtml,
-				defaultPreviewPlainText: htmlToPlainText(defaultPreviewHtml),
-				override: overridesByTemplateKey.get(definition.key) ?? null,
-			};
-		}),
-	);
+	return EMAIL_TEMPLATE_REGISTRY.map(({ renderDefault: _renderDefault, ...definition }) => ({
+		...definition,
+		...createStarterDraft(definition),
+		override: overridesByTemplateKey.get(definition.key) ?? null,
+	}));
 }
 
 export async function saveEmailTemplate(
