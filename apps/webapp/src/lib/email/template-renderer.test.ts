@@ -123,6 +123,28 @@ describe("renderOrganizationEmailTemplate", () => {
 		expect(result.usedOverride).toBe(true);
 	});
 
+	it("falls back to the default template when sanitized override html is empty", async () => {
+		getEnabledOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Reset password for {{userName}}",
+			html: "<script>alert(1)</script>",
+			plainText: null,
+		});
+
+		const result = await renderOrganizationEmailTemplate({
+			organizationId: "org_123",
+			templateKey: "password-reset",
+			data: passwordResetData,
+		});
+
+		expect(result.subject).toBe("Reset your password");
+		expect(result.html).toContain("Alex");
+		expect(result.usedOverride).toBe(false);
+		expect(warnMock).toHaveBeenCalledWith(
+			{ organizationId: "org_123", templateKey: "password-reset" },
+			"Organization email template override rendered empty HTML, falling back to default",
+		);
+	});
+
 	it("falls back to the default template when override lookup fails", async () => {
 		const error = new Error("database unavailable");
 		getEnabledOrganizationEmailTemplateMock.mockRejectedValue(error);

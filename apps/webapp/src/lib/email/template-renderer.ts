@@ -70,9 +70,19 @@ export async function renderOrganizationEmailTemplate({
 		return defaultTemplate();
 	}
 
+	const html = sanitizeEmailHtml(interpolateTemplate(override.html, data));
+
+	if (!html.trim()) {
+		logger.warn(
+			{ organizationId, templateKey },
+			"Organization email template override rendered empty HTML, falling back to default",
+		);
+		return defaultTemplate();
+	}
+
 	return {
 		subject: interpolateTemplate(override.subject, data),
-		html: sanitizeEmailHtml(interpolateTemplate(override.html, data)),
+		html,
 		plainText: override.plainText ? interpolateTemplate(override.plainText, data) : undefined,
 		usedOverride: true,
 	};
