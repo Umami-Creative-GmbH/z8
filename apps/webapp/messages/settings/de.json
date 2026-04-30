@@ -1047,6 +1047,10 @@
       "details": "Mitarbeiterdetails",
       "title": "Mitarbeiter"
     },
+    "emailTemplates": {
+      "description": "Passen Sie die E-Mails an, die Ihre Organisation versendet",
+      "title": "E-Mail-Vorlagen"
+    },
     "enterprise": {
       "domains": {
         "description": "Konfigurieren Sie die benutzerdefinierte Login-Domain, das Branding und die SSO-Anbieter Ihrer Organisation.",

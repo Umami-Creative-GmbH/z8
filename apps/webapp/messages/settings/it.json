@@ -1047,6 +1047,10 @@
       "details": "Dettagli dipendente",
       "title": "Dipendenti"
     },
+    "emailTemplates": {
+      "description": "Personalizza le email inviate dalla tua organizzazione",
+      "title": "Modelli email"
+    },
     "enterprise": {
       "domains": {
         "description": "Configura il dominio di accesso personalizzato, il branding e i provider SSO della tua organizzazione.",
