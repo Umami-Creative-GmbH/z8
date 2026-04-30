@@ -69,7 +69,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 				/>
 			)}
 			<div className="grid min-h-svh bg-background lg:grid-cols-2">
-				<section className="flex min-h-svh flex-col px-6 py-6 sm:px-8 lg:px-10">
+				<section className="flex h-svh flex-col overflow-y-auto px-6 py-6 sm:px-8 lg:px-10">
 					<div className="flex items-center justify-end gap-2">
 						<ThemeToggle />
 						<LanguageSwitcher />
@@ -84,7 +84,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 					</div>
 				</section>
 
-				<aside className="relative hidden overflow-hidden bg-muted lg:block">
+				<aside className="fixed top-0 right-0 hidden h-svh w-1/2 overflow-hidden bg-muted lg:block">
 					<Image
 						alt=""
 						className="absolute inset-0 h-full w-full object-cover"
