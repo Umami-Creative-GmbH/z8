@@ -26,9 +26,10 @@ export type EmailTemplateCategory =
 	| "exports";
 
 export interface EmailTemplateVariableDefinition {
-	key: string;
+	name: string;
 	label: string;
 	description: string;
+	example: string;
 }
 
 export interface EmailTemplateDefinition<
@@ -47,11 +48,61 @@ export interface EmailTemplateDefinition<
 const appUrl = "https://app.z8-time.app";
 const approvalUrl = `${appUrl}/approvals`;
 
+const variableExamples: Record<string, string> = {
+	absenceType: "Vacation",
+	addedByName: "Jordan Lee",
+	appUrl,
+	approvalUrl,
+	approverName: "Jordan Lee",
+	categories: "Time entries, Absences",
+	correctedClockIn: "09:00",
+	correctedClockOut: "17:30",
+	date: "May 12, 2026",
+	days: "3",
+	downloadUrl: `${appUrl}/exports/preview/download`,
+	email: "alex@example.com",
+	employeeName: "Alex Morgan",
+	endDate: "May 14, 2026",
+	errorMessage: "The export could not be completed because one data source timed out.",
+	eventType: "password_changed",
+	expiresAt: "May 7, 2026 at 08:45 UTC",
+	fileSize: "2.4 MB",
+	invitationUrl: `${appUrl}/invitations/preview`,
+	inviterName: "Jordan Lee",
+	ipAddress: "203.0.113.42",
+	managerName: "Jordan Lee",
+	memberName: "Alex Morgan",
+	notes: "Family trip planned in advance.",
+	organizationName: "Acme Operations",
+	originalClockIn: "09:30",
+	originalClockOut: "17:00",
+	reason: "Forgot to clock in after arriving on time.",
+	recipientName: "Alex Morgan",
+	rejectionReason: "Coverage is required for a scheduled audit.",
+	removedByName: "Jordan Lee",
+	resetUrl: `${appUrl}/reset-password?token=preview`,
+	retryUrl: `${appUrl}/exports/new`,
+	role: "Manager",
+	securitySettingsUrl: `${appUrl}/settings/security`,
+	startDate: "May 12, 2026",
+	teamName: "Operations",
+	teamUrl: `${appUrl}/teams/operations`,
+	timestamp: "April 30, 2026 at 08:45 UTC",
+	userAgent: "Firefox on Linux",
+	userName: "Alex Morgan",
+	verificationUrl: `${appUrl}/verify-email?token=preview`,
+};
+
 const variable = (
-	key: string,
+	name: string,
 	label: string,
 	description: string,
-): EmailTemplateVariableDefinition => ({ key, label, description });
+): EmailTemplateVariableDefinition => ({
+	name,
+	label,
+	description,
+	example: variableExamples[name] ?? "Example value",
+});
 
 export const EMAIL_TEMPLATE_REGISTRY = [
 	{

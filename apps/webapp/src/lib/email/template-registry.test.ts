@@ -15,6 +15,13 @@ describe("EMAIL_TEMPLATE_REGISTRY", () => {
 			expect(definition.variables.length).toBeGreaterThan(0);
 			expect(definition.previewData).toEqual(expect.any(Object));
 
+			for (const variable of definition.variables) {
+				expect(variable.name).not.toHaveLength(0);
+				expect(variable.label).not.toHaveLength(0);
+				expect(variable.description).not.toHaveLength(0);
+				expect(variable.example).not.toHaveLength(0);
+			}
+
 			await expect(definition.renderDefault(definition.previewData as never)).resolves.toContain(
 				"<",
 			);
