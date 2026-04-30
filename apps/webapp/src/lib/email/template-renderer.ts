@@ -45,7 +45,7 @@ export async function renderOrganizationEmailTemplate({
 
 	const validation = validateTemplateContent({
 		subject: override.subject,
-		html: override.html,
+		html: override.plainText ? `${override.html}\n${override.plainText}` : override.html,
 		allowedVariables: definition.variables,
 	});
 
