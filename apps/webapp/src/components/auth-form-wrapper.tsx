@@ -30,7 +30,7 @@ export function AuthFormWrapper({
 		: undefined;
 
 	return (
-		<div className={cn("w-full", className)} style={customStyles} {...props}>
+		<div className={cn("mx-auto w-full max-w-md", className)} style={customStyles} {...props}>
 			<Card className="w-full border-border/70 bg-card/95 shadow-xl shadow-black/5 dark:shadow-black/30">
 				<CardContent className="p-6 sm:p-8">
 					<form className="w-full" method="post" {...formProps}>

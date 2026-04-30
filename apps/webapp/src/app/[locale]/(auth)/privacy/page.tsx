@@ -36,7 +36,7 @@ export default async function PrivacyPage({ params }: Props) {
 	const content = privacyContent[locale as keyof typeof privacyContent] ?? privacyContent.en;
 
 	return (
-		<div className="flex h-full flex-col">
+		<div className="flex max-h-[calc(100svh-12rem)] min-h-[min(42rem,calc(100svh-12rem))] flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 p-6 shadow-xl shadow-black/5 sm:p-8 dark:shadow-black/30">
 			<InfoHeader titleDefault="Privacy Policy" titleKey="info.privacy-policy" locale={locale} />
 			<InfoContent content={content} />
 		</div>

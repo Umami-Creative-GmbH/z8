@@ -113,7 +113,7 @@ export function TwoFactorVerificationForm() {
 	};
 
 	return (
-		<Card className="w-full max-w-md">
+		<Card className="mx-auto w-full max-w-md">
 			<CardHeader>
 				<CardTitle>{t("auth.2fa.title", "Two-Factor Authentication")}</CardTitle>
 				<CardDescription>
