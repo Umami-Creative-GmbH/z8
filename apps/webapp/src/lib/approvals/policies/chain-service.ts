@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, ConflictError, ValidationError } from "@/lib/effect/errors";
+import { logApprovalPolicyEvent } from "../infrastructure/audit-logger";
 import type { ApprovalDbService } from "../server/types";
 import { resolveApproverFromDirectory } from "./approver-resolution";
 import { findMatchingPolicy } from "./matcher";
@@ -399,6 +400,20 @@ export function progressApprovalChainIfLinked(
 				),
 			);
 			yield* _(
+				logApprovalPolicyEvent(dbService, {
+					organizationId: stage.organizationId,
+					eventName: "approval_chain.stage_rejected",
+					chainId: stage.chainInstanceId,
+					stageId: stage.id,
+					entityType: chainRecord.entityType,
+					entityId: chainRecord.entityId,
+					actorEmployeeId: input.actorEmployeeId,
+					previousStatus: "pending",
+					newStatus: "rejected",
+					createdAt: new Date(),
+				}),
+			);
+			yield* _(
 				dbService.query("rejectApprovalChain", () =>
 					updateRows(
 						dbService,
@@ -410,6 +425,19 @@ export function progressApprovalChainIfLinked(
 						),
 					),
 				),
+			);
+			yield* _(
+				logApprovalPolicyEvent(dbService, {
+					organizationId: chainRecord.organizationId,
+					eventName: "approval_chain.rejected",
+					chainId: chainRecord.id,
+					entityType: chainRecord.entityType,
+					entityId: chainRecord.entityId,
+					actorEmployeeId: input.actorEmployeeId,
+					previousStatus: "pending",
+					newStatus: "rejected",
+					createdAt: new Date(),
+				}),
 			);
 
 			return { kind: "chain_rejected", rejected: true } as const;
@@ -433,6 +461,20 @@ export function progressApprovalChainIfLinked(
 					),
 				),
 			),
+		);
+		yield* _(
+			logApprovalPolicyEvent(dbService, {
+				organizationId: stage.organizationId,
+				eventName: "approval_chain.stage_approved",
+				chainId: stage.chainInstanceId,
+				stageId: stage.id,
+				entityType: chainRecord.entityType,
+				entityId: chainRecord.entityId,
+				actorEmployeeId: input.actorEmployeeId,
+				previousStatus: "pending",
+				newStatus: "approved",
+				createdAt: new Date(),
+			}),
 		);
 
 		const nextStage = yield* _(
@@ -461,6 +503,19 @@ export function progressApprovalChainIfLinked(
 						),
 					),
 				),
+			);
+			yield* _(
+				logApprovalPolicyEvent(dbService, {
+					organizationId: chainRecord.organizationId,
+					eventName: "approval_chain.approved",
+					chainId: chainRecord.id,
+					entityType: chainRecord.entityType,
+					entityId: chainRecord.entityId,
+					actorEmployeeId: input.actorEmployeeId,
+					previousStatus: "pending",
+					newStatus: "approved",
+					createdAt: new Date(),
+				}),
 			);
 
 			return { kind: "chain_completed", completed: true } as const;
@@ -510,6 +565,20 @@ export function progressApprovalChainIfLinked(
 			),
 		);
 		yield* _(
+			logApprovalPolicyEvent(dbService, {
+				organizationId: next.organizationId,
+				eventName: "approval_chain.stage_request_created",
+				chainId: next.chainInstanceId,
+				stageId: next.id,
+				entityType: chainRecord.entityType,
+				entityId: chainRecord.entityId,
+				actorEmployeeId: input.actorEmployeeId,
+				previousStatus: "cancelled",
+				newStatus: "pending",
+				createdAt: new Date(),
+			}),
+		);
+		yield* _(
 			dbService.query("advanceApprovalChain", () =>
 				updateRows(
 					dbService,
@@ -540,6 +609,17 @@ export function resolvePolicyAndCreateApproval(
 				dbService.query("createDefaultApprovalRequest", () =>
 					insertApprovalRequest(dbService, { ...input, context: loaded.context }, input.defaultApproverId),
 				),
+			);
+			yield* _(
+				logApprovalPolicyEvent(dbService, {
+					organizationId: loaded.context.organizationId,
+					eventName: "approval_policy.no_match_fallback",
+					entityType: loaded.context.entityType,
+					entityId: loaded.context.entityId,
+					actorEmployeeId: loaded.context.requesterEmployeeId,
+					newStatus: "pending",
+					createdAt: new Date(),
+				}),
 			);
 
 			return { kind: "default_created", approvalRequestId } as const;
@@ -596,6 +676,31 @@ export function resolvePolicyAndCreateApproval(
 				})
 				.returning({ id: approvalChainInstance.id });
 			const chainInstanceId = insertedId(chainRows, loaded.context.entityId);
+			await Effect.runPromise(
+				logApprovalPolicyEvent(writeDbService, {
+					organizationId: loaded.context.organizationId,
+					eventName: "approval_policy.matched",
+					policyId: matchedPolicy.id,
+					chainId: chainInstanceId,
+					entityType: loaded.context.entityType,
+					entityId: loaded.context.entityId,
+					actorEmployeeId: loaded.context.requesterEmployeeId,
+					createdAt: new Date(),
+				}),
+			);
+			await Effect.runPromise(
+				logApprovalPolicyEvent(writeDbService, {
+					organizationId: loaded.context.organizationId,
+					eventName: "approval_chain.created",
+					policyId: matchedPolicy.id,
+					chainId: chainInstanceId,
+					entityType: loaded.context.entityType,
+					entityId: loaded.context.entityId,
+					actorEmployeeId: loaded.context.requesterEmployeeId,
+					newStatus: "pending",
+					createdAt: new Date(),
+				}),
+			);
 			const approvalRequestId = await insertApprovalRequest(
 				writeDbService,
 				{ ...input, context: loaded.context },
@@ -616,17 +721,38 @@ export function resolvePolicyAndCreateApproval(
 					status: isCurrentStage ? "pending" : "cancelled",
 					updatedAt: currentTimestamp(),
 				});
+
+				if (isCurrentStage) {
+					await Effect.runPromise(
+						logApprovalPolicyEvent(writeDbService, {
+							organizationId: loaded.context.organizationId,
+							eventName: "approval_chain.stage_request_created",
+							policyId: matchedPolicy.id,
+							chainId: chainInstanceId,
+							stageId: resolvedStage.stage.id,
+							entityType: loaded.context.entityType,
+							entityId: loaded.context.entityId,
+							actorEmployeeId: loaded.context.requesterEmployeeId,
+							newStatus: "pending",
+							createdAt: new Date(),
+						}),
+					);
+				}
 			}
 
 			return { chainInstanceId, approvalRequestId };
 		};
 
 		const result = yield* _(
-			dbService.query("createApprovalChain", async () => {
+				dbService.query("createApprovalChain", async () => {
 				if (supportsTransactions(dbService)) {
 					return await dbService.db.transaction(async (tx) => {
+						const transactionalDb = Object.assign(Object.create(tx as object), {
+							query: dbService.db.query,
+						}) as ApprovalDbService["db"];
+
 						return await createChainRows({
-							db: tx as ApprovalDbService["db"],
+							db: transactionalDb,
 							query: dbService.query,
 						});
 					});

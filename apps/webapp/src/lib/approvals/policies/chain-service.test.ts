@@ -87,10 +87,12 @@ function createChainProgressionDbService(params: {
 	chain?: Record<string, unknown> | null;
 }) {
 	const insertedApprovals: Record<string, unknown>[] = [];
+	const auditEvents: Record<string, unknown>[] = [];
 	const updates: Array<{ table: unknown; values: Record<string, unknown> }> = [];
 	const dbService = {
 		db: {
 			query: {
+				auditLog: {},
 				approvalChainStageInstance: {
 					findFirst: vi
 						.fn()
@@ -103,7 +105,11 @@ function createChainProgressionDbService(params: {
 			},
 			insert: vi.fn((table: unknown) => ({
 				values: vi.fn((values: Record<string, unknown>) => {
-					insertedApprovals.push(values);
+					if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+						auditEvents.push(values);
+					} else {
+						insertedApprovals.push(values);
+					}
 					return { returning: vi.fn().mockResolvedValue([{ id: "approval-next" }]) };
 				}),
 			})),
@@ -119,7 +125,11 @@ function createChainProgressionDbService(params: {
 		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 	} as unknown as ApprovalDbService;
 
-	return { dbService, insertedApprovals, updates };
+	return { dbService, insertedApprovals, auditEvents, updates };
+}
+
+function expectAuditEvents(auditEvents: Record<string, unknown>[], eventNames: string[]) {
+	expect(auditEvents.map((event) => event.action)).toEqual(eventNames);
 }
 
 describe("progressApprovalChainIfLinked", () => {
@@ -237,17 +247,156 @@ describe("progressApprovalChainIfLinked", () => {
 			]),
 		);
 	});
+
+	it("records stage approved and chain approved audit events", async () => {
+		const { dbService, auditEvents } = createChainProgressionDbService({
+			chain,
+			currentStage: {
+				id: "stage-instance-2",
+				organizationId: "org-1",
+				chainInstanceId: "chain-1",
+				stepOrder: 2,
+				status: "pending",
+			},
+			nextStage: null,
+		});
+
+		await Effect.runPromise(
+			progressApprovalChainIfLinked(dbService, {
+				approvalRequestId: "approval-2",
+				actorEmployeeId: "emp-admin",
+				action: "approve",
+			}),
+		);
+
+		expectAuditEvents(auditEvents, ["approval_chain.stage_approved", "approval_chain.approved"]);
+		expect(auditEvents).toEqual([
+			expect.objectContaining({
+				organizationId: "org-1",
+				entityType: "absence_entry",
+				entityId: "absence-1",
+				employeeId: "emp-admin",
+			}),
+			expect.objectContaining({
+				organizationId: "org-1",
+				entityType: "absence_entry",
+				entityId: "absence-1",
+				employeeId: "emp-admin",
+			}),
+		]);
+	});
+
+	it("records stage rejected and chain rejected audit events", async () => {
+		const { dbService, auditEvents } = createChainProgressionDbService({
+			chain,
+			currentStage: {
+				id: "stage-instance-1",
+				organizationId: "org-1",
+				chainInstanceId: "chain-1",
+				stepOrder: 1,
+				status: "pending",
+			},
+		});
+
+		await Effect.runPromise(
+			progressApprovalChainIfLinked(dbService, {
+				approvalRequestId: "approval-1",
+				actorEmployeeId: "emp-manager",
+				action: "reject",
+			}),
+		);
+
+		expectAuditEvents(auditEvents, ["approval_chain.stage_rejected", "approval_chain.rejected"]);
+	});
 });
 
 describe("resolvePolicyAndCreateApproval", () => {
+	function createPolicyResolutionDbService(params: { policies: Record<string, unknown>[] }) {
+		const txInserts: Record<string, unknown>[] = [];
+		const outerInserts: Record<string, unknown>[] = [];
+		const auditEvents: Record<string, unknown>[] = [];
+		const captureInsert = (values: Record<string, unknown>) => {
+			if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+				auditEvents.push(values);
+			} else {
+				txInserts.push(values);
+			}
+			return { returning: vi.fn().mockResolvedValue([{ id: `tx-${txInserts.length}` }]) };
+		};
+		const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
+			return await callback({
+				insert: vi.fn(() => ({
+					values: vi.fn(captureInsert),
+				})),
+			});
+		});
+		const dbService = {
+			db: {
+				query: {
+					auditLog: {},
+					approvalPolicy: { findMany: vi.fn().mockResolvedValue(params.policies) },
+					employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+					employee: {
+						findMany: vi.fn().mockResolvedValue([
+							{ id: "emp-requester", organizationId: "org-1", isActive: true, role: "employee" },
+							{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
+						]),
+					},
+					employeeManagers: {
+						findMany: vi.fn().mockResolvedValue([
+							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
+						]),
+					},
+				},
+				insert: vi.fn(() => ({
+					values: vi.fn((values: Record<string, unknown>) => {
+						if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+							auditEvents.push(values);
+						} else {
+							outerInserts.push(values);
+						}
+						return { returning: vi.fn().mockResolvedValue([{ id: `outer-${outerInserts.length}` }]) };
+					}),
+				})),
+				transaction,
+			},
+			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+
+		return { dbService, txInserts, outerInserts, auditEvents, transaction };
+	}
+
+	const dbPolicy = {
+		id: "policy-1",
+		organizationId: "org-1",
+		name: "Absence chain",
+		isActive: true,
+		priority: 1,
+		conditions: [{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" }],
+		stages: [
+			{
+				id: "stage-1",
+				stepOrder: 1,
+				label: "Manager",
+				approverType: "direct_manager",
+				approverEmployeeId: null,
+			},
+		],
+	};
+
 	it("creates matched policy chains inside a database transaction when available", async () => {
 		const txInserts: Record<string, unknown>[] = [];
+		const auditEvents: Record<string, unknown>[] = [];
 		const outerInserts: Record<string, unknown>[] = [];
 		const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
 			return await callback({
 				insert: vi.fn(() => ({
 					values: vi.fn((values: Record<string, unknown>) => {
-						txInserts.push(values);
+						if (values.action && typeof values.action === "string" && values.action.startsWith("approval_")) {
+							auditEvents.push(values);
+						} else {
+							txInserts.push(values);
+						}
 						return { returning: vi.fn().mockResolvedValue([{ id: `tx-${txInserts.length}` }]) };
 					}),
 				})),
@@ -326,5 +475,68 @@ describe("resolvePolicyAndCreateApproval", () => {
 		expect(transaction).toHaveBeenCalledTimes(1);
 		expect(txInserts).toHaveLength(3);
 		expect(outerInserts).toHaveLength(0);
+	});
+
+	it("records chain created and stage request created audit events", async () => {
+		const { dbService, auditEvents } = createPolicyResolutionDbService({ policies: [dbPolicy] });
+
+		await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: {
+					organizationId: "org-1",
+					approvalType: "absence_entry",
+					requesterEmployeeId: "emp-requester",
+					teamId: null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: null,
+					employeeGroupIds: [],
+					entityType: "absence_entry",
+					entityId: "absence-1",
+				},
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expectAuditEvents(auditEvents, [
+			"approval_policy.matched",
+			"approval_chain.created",
+			"approval_chain.stage_request_created",
+		]);
+		expect(auditEvents).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					organizationId: "org-1",
+					entityType: "absence_entry",
+					entityId: "absence-1",
+				}),
+			]),
+		);
+	});
+
+	it("records no-match fallback audit events", async () => {
+		const { dbService, auditEvents } = createPolicyResolutionDbService({ policies: [] });
+
+		await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: {
+					organizationId: "org-1",
+					approvalType: "absence_entry",
+					requesterEmployeeId: "emp-requester",
+					teamId: null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: null,
+					employeeGroupIds: [],
+					entityType: "absence_entry",
+					entityId: "absence-1",
+				},
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expectAuditEvents(auditEvents, ["approval_policy.no_match_fallback"]);
 	});
 });
