@@ -1,11 +1,21 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee, travelExpenseClaim, travelExpenseDecisionLog } from "@/db/schema";
-import { type AnyAppError, AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
+import {
+	approvalRequest,
+	employee,
+	travelExpenseClaim,
+	travelExpenseDecisionLog,
+} from "@/db/schema";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+} from "@/lib/effect/errors";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
-	resolvePolicyAndCreateApproval,
 	type ResolvePolicyAndCreateApprovalResult,
+	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import type { ApprovalDbService, CurrentApprover } from "./types";
@@ -69,6 +79,26 @@ export function loadTravelExpenseApprover(dbService: ApprovalDbService, approver
 		);
 }
 
+function hasAssignedPendingTravelExpenseApproval(
+	dbService: ApprovalDbService,
+	claimId: string,
+	currentEmployee: CurrentApprover,
+) {
+	return dbService
+		.query("getAssignedTravelExpenseApprovalRequest", async () => {
+			return await dbService.db.query.approvalRequest.findFirst({
+				where: and(
+					eq(approvalRequest.entityType, "travel_expense_claim"),
+					eq(approvalRequest.entityId, claimId),
+					eq(approvalRequest.approverId, currentEmployee.id),
+					eq(approvalRequest.organizationId, currentEmployee.organizationId),
+					eq(approvalRequest.status, "pending"),
+				),
+			});
+		})
+		.pipe(Effect.map(Boolean));
+}
+
 export function preflightTravelExpenseDecision(
 	dbService: ApprovalDbService,
 	claimId: string,
@@ -100,11 +130,15 @@ export function preflightTravelExpenseDecision(
 			);
 		}
 
-		if (
-			claim.approverId !== currentEmployee.id &&
-			currentEmployee.role !== "admin" &&
-			!options?.allowAnyApprover
-		) {
+		const hasDirectAuthorization =
+			claim.approverId === currentEmployee.id ||
+			currentEmployee.role === "admin" ||
+			!!options?.allowAnyApprover;
+		const hasAssignedApproval = hasDirectAuthorization
+			? false
+			: yield* _(hasAssignedPendingTravelExpenseApproval(dbService, claimId, currentEmployee));
+
+		if (!hasDirectAuthorization && !hasAssignedApproval) {
 			return yield* _(
 				Effect.fail(
 					new AuthorizationError({

@@ -12,7 +12,13 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 });
 
 vi.mock("@/db/schema", () => ({
-	approvalRequest: {},
+	approvalRequest: {
+		entityType: "approvalEntityType",
+		entityId: "approvalEntityId",
+		approverId: "approvalApproverId",
+		organizationId: "approvalOrganizationId",
+		status: "approvalStatus",
+	},
 	approvalChainInstance: {},
 	approvalChainStageInstance: {},
 	approvalPolicy: { organizationId: "organizationId", isActive: "isActive", priority: "priority" },
@@ -21,6 +27,7 @@ vi.mock("@/db/schema", () => ({
 	travelExpenseClaim: {
 		id: "id",
 		organizationId: "organizationId",
+		approverId: "approverId",
 		status: "status",
 	},
 	travelExpenseDecisionLog: {},
@@ -35,6 +42,7 @@ import {
 	buildTravelExpenseApprovalPolicyContext,
 	createTravelExpenseApprovalWorkflow,
 	persistTravelExpenseDecision,
+	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
 
@@ -52,9 +60,11 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 					]),
 				},
 				employeeManagers: {
-					findMany: vi.fn().mockResolvedValue([
-						{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
-					]),
+					findMany: vi
+						.fn()
+						.mockResolvedValue([
+							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
+						]),
 				},
 			},
 			insert: vi.fn((table: unknown) => ({
@@ -77,6 +87,97 @@ const travelPolicyContext = buildTravelExpenseApprovalPolicyContext({
 	employeeId: "emp-requester",
 	totalAmount: "1200.50",
 	employee: { teamId: "team-1" },
+});
+
+describe("preflightTravelExpenseDecision", () => {
+	it("allows a pending same-organization approval assignee when the legacy claim approver differs", async () => {
+		const findApprovalRequest = vi.fn().mockResolvedValue({ id: "approval-stage-2" });
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: {
+						findFirst: vi.fn().mockResolvedValue({
+							id: "claim-1",
+							organizationId: "org-1",
+							approverId: "default-approver",
+							status: "submitted",
+						}),
+					},
+					approvalRequest: {
+						findFirst: findApprovalRequest,
+					},
+				},
+			},
+			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+		const currentEmployee: CurrentApprover = {
+			id: "stage-2-approver",
+			userId: "user-stage-2",
+			organizationId: "org-1",
+			role: "manager",
+			user: {
+				id: "user-stage-2",
+				name: "Stage Two",
+				email: "stage-two@example.com",
+				image: null,
+			},
+		};
+
+		await expect(
+			Effect.runPromise(
+				preflightTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve"),
+			),
+		).resolves.toMatchObject({ id: "claim-1" });
+		expect(findApprovalRequest).toHaveBeenCalledTimes(1);
+		expect(eq).toHaveBeenCalledWith("approvalOrganizationId", "org-1");
+		expect(eq).toHaveBeenCalledWith("approvalApproverId", "stage-2-approver");
+		expect(eq).toHaveBeenCalledWith("approvalStatus", "pending");
+	});
+
+	it("rejects non-admin actors without a matching pending approval assignment", async () => {
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: {
+						findFirst: vi.fn().mockResolvedValue({
+							id: "claim-1",
+							organizationId: "org-1",
+							approverId: "default-approver",
+							status: "submitted",
+						}),
+					},
+					approvalRequest: {
+						findFirst: vi.fn().mockResolvedValue(null),
+					},
+				},
+			},
+			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+		const currentEmployee: CurrentApprover = {
+			id: "random-employee",
+			userId: "user-random",
+			organizationId: "org-1",
+			role: "manager",
+			user: {
+				id: "user-random",
+				name: "Random Employee",
+				email: "random@example.com",
+				image: null,
+			},
+		};
+
+		const exit = await Effect.runPromiseExit(
+			preflightTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve"),
+		);
+
+		expect(Exit.isFailure(exit)).toBe(true);
+		if (Exit.isFailure(exit)) {
+			expect(Option.getOrNull(Cause.failureOption(exit.cause))).toMatchObject({
+				_tag: "AuthorizationError",
+				message: "Unauthorized",
+			});
+		}
+	});
 });
 
 describe("persistTravelExpenseDecision", () => {
@@ -144,20 +245,14 @@ describe("persistTravelExpenseDecision", () => {
 		};
 
 		const exit = await Effect.runPromiseExit(
-			persistTravelExpenseDecision(
-				dbService,
-				"claim-1",
-				currentEmployee,
-				"approve",
-				"looks good",
-			),
+			persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve", "looks good"),
 		);
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
 			const error =
 				Option.getOrNull(Cause.failureOption(exit.cause)) ??
-				([...(Cause.defects(exit.cause) as Iterable<unknown>)] [0] as unknown);
+				([...(Cause.defects(exit.cause) as Iterable<unknown>)][0] as unknown);
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).toMatchObject({
 				message: "Only submitted claims can be decided",
@@ -205,13 +300,7 @@ describe("persistTravelExpenseDecision", () => {
 		};
 
 		const exit = await Effect.runPromiseExit(
-			persistTravelExpenseDecision(
-				dbService,
-				"claim-1",
-				currentEmployee,
-				"approve",
-				"looks good",
-			),
+			persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve", "looks good"),
 		);
 
 		expect(Exit.isFailure(exit)).toBe(true);
@@ -311,10 +400,21 @@ describe("travel expense approval policy resolution", () => {
 			}),
 		);
 
-		expect(result).toEqual({ kind: "chain_created", chainInstanceId: "insert-1", approvalRequestId: "insert-2" });
+		expect(result).toEqual({
+			kind: "chain_created",
+			chainInstanceId: "insert-1",
+			approvalRequestId: "insert-2",
+		});
 		expect(inserts).toHaveLength(3);
-		expect(inserts.map((insert) => insert.values.organizationId)).toEqual(["org-1", "org-1", "org-1"]);
-		expect(inserts[0].values).toMatchObject({ policyId: "policy-1", entityType: "travel_expense_claim" });
+		expect(inserts.map((insert) => insert.values.organizationId)).toEqual([
+			"org-1",
+			"org-1",
+			"org-1",
+		]);
+		expect(inserts[0].values).toMatchObject({
+			policyId: "policy-1",
+			entityType: "travel_expense_claim",
+		});
 		expect(inserts[1].values).toMatchObject({ approverId: "emp-manager", entityId: "claim-1" });
 		expect(inserts[2].values).toMatchObject({
 			chainInstanceId: "insert-1",
