@@ -38,10 +38,17 @@ export interface ImplementationChecklistViewModel {
 	totalCount: number;
 }
 
-export type ImplementationChecklistActionResult<T = undefined> =
-	| { success: true; data: T }
-	| { success: true }
-	| { success: false; error: string };
+type ImplementationChecklistActionFailure = { success: false; error: string };
+type ImplementationChecklistMutationSuccess = { success: true };
+type ImplementationChecklistQuerySuccess<T> = { success: true; data: T };
+
+export type ImplementationChecklistActionResult<T = void> = [T] extends [void]
+	? ImplementationChecklistMutationSuccess | ImplementationChecklistActionFailure
+	: ImplementationChecklistQuerySuccess<T> | ImplementationChecklistActionFailure;
+
+type ManualItemValidationResult =
+	| ImplementationChecklistQuerySuccess<ImplementationChecklistItemId>
+	| ImplementationChecklistActionFailure;
 
 type Detector = () => Promise<boolean>;
 
@@ -204,7 +211,7 @@ async function loadManualCompleteIds(
 	return manualCompleteIds;
 }
 
-function validateManualItemId(itemId: string): ImplementationChecklistActionResult<ImplementationChecklistItemId> {
+function validateManualItemId(itemId: string): ManualItemValidationResult {
 	if (!isImplementationChecklistItemId(itemId)) {
 		return { success: false, error: "Unknown implementation checklist item" };
 	}
