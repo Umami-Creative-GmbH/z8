@@ -44,6 +44,7 @@ import {
 	userRoleTemplateAssignment,
 } from "./identity";
 import { inviteCode, inviteCodeUsage, memberApproval } from "./invite-code";
+import { legalEntity, legalEntityAdmin } from "./legal-entity";
 import { notification, notificationPreference, pushSubscription } from "./notification";
 // Import tables from all domain files
 import {
@@ -139,6 +140,8 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Business relations
 	teams: many(team),
 	employees: many(employee),
+	legalEntities: many(legalEntity),
+	legalEntityAdmins: many(legalEntityAdmin),
 	absenceCategories: many(absenceCategory),
 	holidayCategories: many(holidayCategory),
 	holidays: many(holiday),
@@ -216,6 +219,41 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	travelExpenseAttachments: many(travelExpenseAttachment),
 	travelExpensePolicies: many(travelExpensePolicy),
 	travelExpenseDecisionLogs: many(travelExpenseDecisionLog),
+}));
+
+export const legalEntityRelations = relations(legalEntity, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [legalEntity.organizationId],
+		references: [organization.id],
+	}),
+	employees: many(employee),
+	admins: many(legalEntityAdmin),
+	holidayCategories: many(holidayCategory),
+	holidays: many(holiday),
+	holidayPresets: many(holidayPreset),
+	workPolicies: many(workPolicy),
+	workPolicyAssignments: many(workPolicyAssignment),
+	changePolicies: many(changePolicy),
+	changePolicyAssignments: many(changePolicyAssignment),
+	vacationAllowances: many(vacationAllowance),
+	vacationPolicyAssignments: many(vacationPolicyAssignment),
+	payrollExportConfigs: many(payrollExportConfig),
+	payrollExportJobs: many(payrollExportJob),
+}));
+
+export const legalEntityAdminRelations = relations(legalEntityAdmin, ({ one }) => ({
+	organization: one(organization, {
+		fields: [legalEntityAdmin.organizationId],
+		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [legalEntityAdmin.legalEntityId],
+		references: [legalEntity.id],
+	}),
+	employee: one(employee, {
+		fields: [legalEntityAdmin.employeeId],
+		references: [employee.id],
+	}),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -326,6 +364,10 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	organization: one(organization, {
 		fields: [employee.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [employee.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	team: one(team, {
 		fields: [employee.teamId],
@@ -697,6 +739,10 @@ export const holidayCategoryRelations = relations(holidayCategory, ({ one, many 
 		fields: [holidayCategory.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [holidayCategory.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	holidays: many(holiday),
 	presetHolidays: many(holidayPresetHoliday),
 }));
@@ -705,6 +751,10 @@ export const holidayRelations = relations(holiday, ({ one, many }) => ({
 	organization: one(organization, {
 		fields: [holiday.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [holiday.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	category: one(holidayCategory, {
 		fields: [holiday.categoryId],
@@ -726,6 +776,10 @@ export const holidayPresetRelations = relations(holidayPreset, ({ one, many }) =
 	organization: one(organization, {
 		fields: [holidayPreset.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [holidayPreset.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	holidays: many(holidayPresetHoliday),
 	assignments: many(holidayPresetAssignment),
@@ -759,6 +813,10 @@ export const holidayPresetAssignmentRelations = relations(holidayPresetAssignmen
 		fields: [holidayPresetAssignment.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [holidayPresetAssignment.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	team: one(team, {
 		fields: [holidayPresetAssignment.teamId],
 		references: [team.id],
@@ -782,6 +840,10 @@ export const holidayAssignmentRelations = relations(holidayAssignment, ({ one })
 		fields: [holidayAssignment.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [holidayAssignment.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	team: one(team, {
 		fields: [holidayAssignment.teamId],
 		references: [team.id],
@@ -801,6 +863,10 @@ export const vacationAllowanceRelations = relations(vacationAllowance, ({ one, m
 	organization: one(organization, {
 		fields: [vacationAllowance.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [vacationAllowance.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	creator: one(user, {
 		fields: [vacationAllowance.createdBy],
@@ -839,6 +905,10 @@ export const vacationPolicyAssignmentRelations = relations(vacationPolicyAssignm
 	organization: one(organization, {
 		fields: [vacationPolicyAssignment.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [vacationPolicyAssignment.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	team: one(team, {
 		fields: [vacationPolicyAssignment.teamId],
@@ -1477,6 +1547,10 @@ export const changePolicyRelations = relations(changePolicy, ({ one, many }) => 
 		fields: [changePolicy.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [changePolicy.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	assignments: many(changePolicyAssignment),
 	creator: one(user, {
 		fields: [changePolicy.createdBy],
@@ -1498,6 +1572,10 @@ export const changePolicyAssignmentRelations = relations(changePolicyAssignment,
 	organization: one(organization, {
 		fields: [changePolicyAssignment.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [changePolicyAssignment.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	team: one(team, {
 		fields: [changePolicyAssignment.teamId],
@@ -1582,6 +1660,10 @@ export const workPolicyRelations = relations(workPolicy, ({ one, many }) => ({
 		fields: [workPolicy.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [workPolicy.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	schedule: one(workPolicySchedule),
 	regulation: one(workPolicyRegulation),
 	presence: one(workPolicyPresence),
@@ -1657,6 +1739,10 @@ export const workPolicyAssignmentRelations = relations(workPolicyAssignment, ({ 
 		fields: [workPolicyAssignment.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [workPolicyAssignment.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	team: one(team, {
 		fields: [workPolicyAssignment.teamId],
 		references: [team.id],
@@ -1679,6 +1765,10 @@ export const workPolicyViolationRelations = relations(workPolicyViolation, ({ on
 	organization: one(organization, {
 		fields: [workPolicyViolation.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [workPolicyViolation.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	policy: one(workPolicy, {
 		fields: [workPolicyViolation.policyId],
@@ -1735,6 +1825,10 @@ export const payrollExportConfigRelations = relations(payrollExportConfig, ({ on
 		fields: [payrollExportConfig.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [payrollExportConfig.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	format: one(payrollExportFormat, {
 		fields: [payrollExportConfig.formatId],
 		references: [payrollExportFormat.id],
@@ -1776,6 +1870,10 @@ export const payrollExportJobRelations = relations(payrollExportJob, ({ one, man
 	organization: one(organization, {
 		fields: [payrollExportJob.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [payrollExportJob.legalEntityId],
+		references: [legalEntity.id],
 	}),
 	config: one(payrollExportConfig, {
 		fields: [payrollExportJob.configId],
@@ -1913,6 +2011,10 @@ export const scheduledExportRelations = relations(scheduledExport, ({ one, many 
 		fields: [scheduledExport.organizationId],
 		references: [organization.id],
 	}),
+	legalEntity: one(legalEntity, {
+		fields: [scheduledExport.legalEntityId],
+		references: [legalEntity.id],
+	}),
 	payrollConfig: one(payrollExportConfig, {
 		fields: [scheduledExport.payrollConfigId],
 		references: [payrollExportConfig.id],
@@ -1938,6 +2040,10 @@ export const scheduledExportExecutionRelations = relations(scheduledExportExecut
 	organization: one(organization, {
 		fields: [scheduledExportExecution.organizationId],
 		references: [organization.id],
+	}),
+	legalEntity: one(legalEntity, {
+		fields: [scheduledExportExecution.legalEntityId],
+		references: [legalEntity.id],
 	}),
 }));
 
