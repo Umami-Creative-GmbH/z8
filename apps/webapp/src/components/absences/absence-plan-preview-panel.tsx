@@ -77,6 +77,7 @@ export function AbsencePlanPreviewPanel({
 			? preview.reasons
 			: ["Planner checked the available request signals."];
 	const coverageRiskCount = preview.coverage.risks.length;
+	const hasAffectedShifts = preview.affectedShifts.length > 0;
 
 	return (
 		<Card className="gap-4 border-primary/15 bg-primary/5 shadow-none">
@@ -145,64 +146,64 @@ export function AbsencePlanPreviewPanel({
 				</PreviewSection>
 
 				<PreviewSection title={t("absences.planPreview.coverage", "Coverage")}>
-					{coverageRiskCount > 0 ? (
-						<div className="space-y-2">
-							<p className="text-sm">
-								{t(
-									"absences.planPreview.coverageWarnings",
-									coverageRiskCount === 1 ? "1 coverage warning" : "{count} coverage warnings",
-									{ count: coverageRiskCount },
-								)}
-							</p>
-							<ul className="space-y-1 text-sm">
-								{preview.coverage.risks.map((risk) => (
-									<li
-										className="rounded-md border bg-muted/30 px-2 py-1"
-										key={getCoverageRiskKey(risk)}
-									>
-										<div className="min-w-0 break-words font-medium">
-											{risk.date} · {risk.subareaName}
-										</div>
-										<div className="text-muted-foreground text-xs tabular-nums">
-											{risk.startTime}-{risk.endTime} ·{" "}
-											{t(
-												"absences.planPreview.coverageStaffAfterRequest",
-												"{after}/{minimum} staff after request",
-												{
-													after: risk.staffCountAfterAbsence,
-													minimum: risk.minimumStaffCount,
-												},
-											)}
-										</div>
-									</li>
-								))}
-							</ul>
-						</div>
-					) : (
-						<div className="space-y-2">
-							<p className="text-muted-foreground text-sm">
-								{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
-							</p>
-							{preview.affectedShifts.length > 0 && (
+					<div className="space-y-2">
+						{coverageRiskCount > 0 ? (
+							<>
+								<p className="text-sm">
+									{t(
+										"absences.planPreview.coverageWarnings",
+										coverageRiskCount === 1 ? "1 coverage warning" : "{count} coverage warnings",
+										{ count: coverageRiskCount },
+									)}
+								</p>
 								<ul className="space-y-1 text-sm">
-									{preview.affectedShifts.map((shift) => (
+									{preview.coverage.risks.map((risk) => (
 										<li
 											className="rounded-md border bg-muted/30 px-2 py-1"
-											key={getAffectedShiftKey(shift)}
+											key={getCoverageRiskKey(risk)}
 										>
 											<div className="min-w-0 break-words font-medium">
-												{shift.date} · {shift.subareaId}
+												{risk.date} · {risk.subareaName}
 											</div>
 											<div className="text-muted-foreground text-xs tabular-nums">
-												{shift.startTime}-{shift.endTime}{" "}
-												{t("absences.planPreview.affectedShift", "affected shift")}
+												{risk.startTime}-{risk.endTime} ·{" "}
+												{t(
+													"absences.planPreview.coverageStaffAfterRequest",
+													"{after}/{minimum} staff after request",
+													{
+														after: risk.staffCountAfterAbsence,
+														minimum: risk.minimumStaffCount,
+													},
+												)}
 											</div>
 										</li>
 									))}
 								</ul>
-							)}
-						</div>
-					)}
+							</>
+						) : (
+							<p className="text-muted-foreground text-sm">
+								{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
+							</p>
+						)}
+						{hasAffectedShifts && (
+							<ul className="space-y-1 text-sm">
+								{preview.affectedShifts.map((shift) => (
+									<li
+										className="rounded-md border bg-muted/30 px-2 py-1"
+										key={getAffectedShiftKey(shift)}
+									>
+										<div className="min-w-0 break-words font-medium">
+											{shift.date} · {shift.subareaId}
+										</div>
+										<div className="text-muted-foreground text-xs tabular-nums">
+											{shift.startTime}-{shift.endTime}{" "}
+											{t("absences.planPreview.affectedShift", "affected shift")}
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
 				</PreviewSection>
 
 				<PreviewSection title={t("absences.planPreview.approval", "Approval")}>

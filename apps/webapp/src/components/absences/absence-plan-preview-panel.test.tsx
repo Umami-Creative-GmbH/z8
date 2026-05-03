@@ -85,6 +85,11 @@ const affectedShiftPreview: AbsencePlanPreview = {
 	reasons: ["Request follows the normal approval path."],
 };
 
+const affectedShiftWithRiskPreview: AbsencePlanPreview = {
+	...riskyPreview,
+	affectedShifts: affectedShiftPreview.affectedShifts,
+};
+
 describe("AbsencePlanPreviewPanel", () => {
 	it("renders risky advisory preview with a warning", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
@@ -118,6 +123,15 @@ describe("AbsencePlanPreviewPanel", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
 
 		expect(screen.getByText("No published coverage risk")).toBeTruthy();
+		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+	});
+
+	it("renders affected published shifts with coverage risk details", () => {
+		render(<AbsencePlanPreviewPanel preview={affectedShiftWithRiskPreview} />);
+
+		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
 		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
 		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
 	});
