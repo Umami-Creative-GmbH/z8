@@ -14,6 +14,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { progressApprovalChainIfLinked } from "../policies/chain-service";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAuditLogger,
@@ -220,7 +221,20 @@ function executeApprovalWithCurrentEmployee<T>(
 
 		yield* _(updatePendingApprovalRequest(dbService, approval.id, statusUpdate));
 
-		if (updateEntity) {
+		const chainResult = yield* _(
+			progressApprovalChainIfLinked(dbService, {
+				approvalRequestId: approval.id,
+				actorEmployeeId: currentEmployee.id,
+				action,
+			}),
+		);
+
+		const shouldRunDomainSideEffect =
+			chainResult.kind === "not_linked" ||
+			chainResult.kind === "chain_completed" ||
+			chainResult.kind === "chain_rejected";
+
+		if (updateEntity && shouldRunDomainSideEffect) {
 			yield* _(updateEntity(dbService, entityId, currentEmployee));
 		}
 
