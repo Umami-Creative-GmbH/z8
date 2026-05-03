@@ -8,10 +8,13 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
-	resolvePolicyAndCreateApproval,
 	type ResolvePolicyAndCreateApprovalResult,
+	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
-import type { ApprovalPolicyEvaluationContext, ApprovalPolicyOvertimeRisk } from "../policies/types";
+import type {
+	ApprovalPolicyEvaluationContext,
+	ApprovalPolicyOvertimeRisk,
+} from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -212,7 +215,7 @@ export function approveTimeCorrectionWithCurrentApproverEffect(
 		undefined,
 		handleApprovedTimeCorrection,
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 
@@ -233,7 +236,7 @@ export function rejectTimeCorrectionWithCurrentApproverEffect(
 		(decisionDbService, entityId, approver) =>
 			handleRejectedTimeCorrection(decisionDbService, entityId, approver, reason),
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 

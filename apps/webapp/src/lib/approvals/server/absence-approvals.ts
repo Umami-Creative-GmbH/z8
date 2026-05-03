@@ -14,8 +14,8 @@ import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifi
 import { addCalendarSyncJob } from "@/lib/queue";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
-	resolvePolicyAndCreateApproval,
 	type ResolvePolicyAndCreateApprovalResult,
+	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
@@ -154,7 +154,7 @@ export function approveAbsenceWithCurrentApproverEffect(
 		undefined,
 		handleApprovedAbsence,
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 
@@ -175,7 +175,7 @@ export function rejectAbsenceWithCurrentApproverEffect(
 		(decisionDbService, entityId, approver) =>
 			handleRejectedAbsence(decisionDbService, entityId, approver, reason),
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 

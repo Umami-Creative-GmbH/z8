@@ -16,12 +16,12 @@ vi.mock("@/env", () => ({
 }));
 
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import {
 	buildTimeCorrectionApprovalPolicyContext,
 	calculateCorrectedDurationMinutes,
 	createTimeCorrectionApprovalWorkflow,
 } from "@/lib/approvals/server/time-correction-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 
 function createPolicyResolutionDbService(policies: unknown[]) {
 	const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = [];
@@ -37,9 +37,11 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 					]),
 				},
 				employeeManagers: {
-					findMany: vi.fn().mockResolvedValue([
-						{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
-					]),
+					findMany: vi
+						.fn()
+						.mockResolvedValue([
+							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
+						]),
 				},
 			},
 			insert: vi.fn((table: unknown) => ({
@@ -76,6 +78,79 @@ describe("calculateCorrectedDurationMinutes", () => {
 });
 
 describe("time correction approval policy resolution", () => {
+	it("forces time correction decisions through the transactional approval path", async () => {
+		vi.resetModules();
+		const processApprovalWithCurrentEmployee = vi.fn(() => Effect.void);
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApprovalWithCurrentEmployee,
+			processApproval: vi.fn(),
+		}));
+		const { approveTimeCorrectionWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/time-correction-approvals"
+		);
+
+		approveTimeCorrectionWithCurrentApproverEffect(
+			{} as ApprovalDbService,
+			{
+				id: "emp-manager",
+				userId: "user-manager",
+				organizationId: "org-1",
+				user: { id: "user-manager", name: "Manager", email: "manager@example.com", image: null },
+			},
+			"period-1",
+		);
+
+		expect(processApprovalWithCurrentEmployee).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			"time_entry",
+			"period-1",
+			"approve",
+			undefined,
+			expect.any(Function),
+			undefined,
+			expect.objectContaining({ transactional: true }),
+		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("forces time correction rejections through the transactional approval path", async () => {
+		vi.resetModules();
+		const processApprovalWithCurrentEmployee = vi.fn(() => Effect.void);
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApprovalWithCurrentEmployee,
+			processApproval: vi.fn(),
+		}));
+		const { rejectTimeCorrectionWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/time-correction-approvals"
+		);
+
+		rejectTimeCorrectionWithCurrentApproverEffect(
+			{} as ApprovalDbService,
+			{
+				id: "emp-manager",
+				userId: "user-manager",
+				organizationId: "org-1",
+				user: { id: "user-manager", name: "Manager", email: "manager@example.com", image: null },
+			},
+			"period-1",
+			"Incorrect shift",
+		);
+
+		expect(processApprovalWithCurrentEmployee).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			"time_entry",
+			"period-1",
+			"reject",
+			"Incorrect shift",
+			expect.any(Function),
+			undefined,
+			expect.objectContaining({ transactional: true }),
+		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("creates time correction approvals through the shared policy resolver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 
@@ -160,9 +235,17 @@ describe("time correction approval policy resolution", () => {
 			}),
 		);
 
-		expect(result).toEqual({ kind: "chain_created", chainInstanceId: "insert-1", approvalRequestId: "insert-2" });
+		expect(result).toEqual({
+			kind: "chain_created",
+			chainInstanceId: "insert-1",
+			approvalRequestId: "insert-2",
+		});
 		expect(inserts).toHaveLength(3);
-		expect(inserts.map((insert) => insert.values.organizationId)).toEqual(["org-1", "org-1", "org-1"]);
+		expect(inserts.map((insert) => insert.values.organizationId)).toEqual([
+			"org-1",
+			"org-1",
+			"org-1",
+		]);
 		expect(inserts[0].values).toMatchObject({ policyId: "policy-1", entityType: "time_entry" });
 		expect(inserts[1].values).toMatchObject({ approverId: "emp-manager", entityId: "period-1" });
 		expect(inserts[2].values).toMatchObject({
