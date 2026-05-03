@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	approvalChainInstance,
@@ -10,7 +10,7 @@ import {
 	employeeManagers,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, ValidationError } from "@/lib/effect/errors";
+import { type AnyAppError, ConflictError, ValidationError } from "@/lib/effect/errors";
 import type { ApprovalDbService } from "../server/types";
 import { resolveApproverFromDirectory } from "./approver-resolution";
 import { findMatchingPolicy } from "./matcher";
@@ -73,6 +73,23 @@ export type ChainProgressionResult =
 	| { kind: "chain_pending" }
 	| { kind: "chain_completed"; completed: true }
 	| { kind: "chain_rejected"; rejected: true };
+
+type ChainStageInstanceRecord = {
+	id: string;
+	organizationId: string;
+	chainInstanceId: string;
+	stepOrder: number;
+	status: ChainStatus;
+	resolvedApproverEmployeeId: string;
+};
+
+type ChainInstanceRecord = {
+	id: string;
+	organizationId: string;
+	entityType: string;
+	entityId: string;
+	requesterEmployeeId: string;
+};
 
 export interface ResolvePolicyAndCreateApprovalInput {
 	context: ApprovalPolicyEvaluationContext;
@@ -169,6 +186,33 @@ async function insertApprovalRequest(
 		.returning({ id: approvalRequest.id });
 
 	return insertedId(rows, input.context.entityId);
+}
+
+function supportsTransactions(
+	dbService: ApprovalDbService,
+): dbService is ApprovalDbService & { db: ApprovalDbService["db"] & { transaction: Function } } {
+	return typeof (dbService.db as { transaction?: unknown }).transaction === "function";
+}
+
+async function updateRows(
+	dbService: ApprovalDbService,
+	table: unknown,
+	values: Record<string, unknown>,
+	where: unknown,
+) {
+	const updateQuery = dbService.db.update(table as never).set(values as never).where(where as never);
+	if (updateQuery && typeof updateQuery === "object" && "returning" in updateQuery) {
+		const rows = (await updateQuery.returning()) as unknown;
+		if (Array.isArray(rows) && rows.length === 0) {
+			throw new ConflictError({
+				message: "Approval chain stage is no longer pending",
+				conflictType: "approval_chain_stage_status",
+			});
+		}
+		return rows;
+	}
+
+	return updateQuery;
 }
 
 async function loadPolicyContext(dbService: ApprovalDbService, context: ApprovalPolicyEvaluationContext) {
@@ -283,10 +327,204 @@ export function rejectCurrentStageInMemory(
 }
 
 export function progressApprovalChainIfLinked(
-	_dbService: ApprovalDbService,
-	_input: ChainProgressionInput,
+	dbService: ApprovalDbService,
+	input: ChainProgressionInput,
 ): Effect.Effect<ChainProgressionResult, AnyAppError, never> {
-	return Effect.succeed({ kind: "not_linked" });
+	return Effect.gen(function* (_) {
+		const linkedStage = yield* _(
+			dbService.query("getApprovalChainStageForRequest", async () => {
+				return await dbService.db.query.approvalChainStageInstance.findFirst({
+					where: eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+				});
+			}),
+		);
+
+		if (!linkedStage) {
+			return { kind: "not_linked" } as const;
+		}
+
+		const stage = linkedStage as ChainStageInstanceRecord;
+		if (stage.status !== "pending") {
+			return yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "Approval chain stage is no longer pending",
+						conflictType: "approval_chain_stage_status",
+					}),
+				),
+			);
+		}
+
+		const chain = yield* _(
+			dbService.query("getApprovalChainInstance", async () => {
+				return await dbService.db.query.approvalChainInstance.findFirst({
+					where: and(
+						eq(approvalChainInstance.id, stage.chainInstanceId),
+						eq(approvalChainInstance.organizationId, stage.organizationId),
+					),
+				});
+			}),
+		);
+
+		if (!chain) {
+			return yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "Approval chain instance not found",
+						conflictType: "approval_chain_missing",
+					}),
+				),
+			);
+		}
+
+		const chainRecord = chain as ChainInstanceRecord;
+		if (input.action === "reject") {
+			yield* _(
+				dbService.query("rejectApprovalChainStage", () =>
+					updateRows(
+						dbService,
+						approvalChainStageInstance,
+						{
+							status: "rejected",
+							decidedBy: input.actorEmployeeId,
+							decidedAt: currentTimestamp(),
+							updatedAt: currentTimestamp(),
+						},
+						and(
+							eq(approvalChainStageInstance.id, stage.id),
+							eq(approvalChainStageInstance.organizationId, stage.organizationId),
+							eq(approvalChainStageInstance.status, "pending"),
+						),
+					),
+				),
+			);
+			yield* _(
+				dbService.query("rejectApprovalChain", () =>
+					updateRows(
+						dbService,
+						approvalChainInstance,
+						{ status: "rejected", completedAt: currentTimestamp(), updatedAt: currentTimestamp() },
+						and(
+							eq(approvalChainInstance.id, chainRecord.id),
+							eq(approvalChainInstance.organizationId, chainRecord.organizationId),
+						),
+					),
+				),
+			);
+
+			return { kind: "chain_rejected", rejected: true } as const;
+		}
+
+		yield* _(
+			dbService.query("approveApprovalChainStage", () =>
+				updateRows(
+					dbService,
+					approvalChainStageInstance,
+					{
+						status: "approved",
+						decidedBy: input.actorEmployeeId,
+						decidedAt: currentTimestamp(),
+						updatedAt: currentTimestamp(),
+					},
+					and(
+						eq(approvalChainStageInstance.id, stage.id),
+						eq(approvalChainStageInstance.organizationId, stage.organizationId),
+						eq(approvalChainStageInstance.status, "pending"),
+					),
+				),
+			),
+		);
+
+		const nextStage = yield* _(
+			dbService.query("getNextApprovalChainStage", async () => {
+				return await dbService.db.query.approvalChainStageInstance.findFirst({
+					where: and(
+						eq(approvalChainStageInstance.organizationId, stage.organizationId),
+						eq(approvalChainStageInstance.chainInstanceId, stage.chainInstanceId),
+						gt(approvalChainStageInstance.stepOrder, stage.stepOrder),
+					),
+					orderBy: [asc(approvalChainStageInstance.stepOrder)],
+				});
+			}),
+		);
+
+		if (!nextStage) {
+			yield* _(
+				dbService.query("completeApprovalChain", () =>
+					updateRows(
+						dbService,
+						approvalChainInstance,
+						{ status: "approved", completedAt: currentTimestamp(), updatedAt: currentTimestamp() },
+						and(
+							eq(approvalChainInstance.id, chainRecord.id),
+							eq(approvalChainInstance.organizationId, chainRecord.organizationId),
+						),
+					),
+				),
+			);
+
+			return { kind: "chain_completed", completed: true } as const;
+		}
+
+		const next = nextStage as ChainStageInstanceRecord;
+		const nextApprovalRequestId = yield* _(
+			dbService.query("createNextApprovalRequest", () =>
+				insertApprovalRequest(
+					dbService,
+					{
+						context: {
+							organizationId: chainRecord.organizationId,
+							approvalType: chainRecord.entityType as ApprovalPolicyEvaluationContext["approvalType"],
+							requesterEmployeeId: chainRecord.requesterEmployeeId,
+							teamId: null,
+							locationId: null,
+							absenceCategoryId: null,
+							travelExpenseAmount: null,
+							overtimeRisk: null,
+							employeeGroupIds: [],
+							entityType: chainRecord.entityType,
+							entityId: chainRecord.entityId,
+						},
+						defaultApproverId: next.resolvedApproverEmployeeId,
+					},
+					next.resolvedApproverEmployeeId,
+				),
+			),
+		);
+
+		yield* _(
+			dbService.query("activateNextApprovalChainStage", () =>
+				updateRows(
+					dbService,
+					approvalChainStageInstance,
+					{
+						status: "pending",
+						approvalRequestId: nextApprovalRequestId,
+						updatedAt: currentTimestamp(),
+					},
+					and(
+						eq(approvalChainStageInstance.id, next.id),
+						eq(approvalChainStageInstance.organizationId, next.organizationId),
+					),
+				),
+			),
+		);
+		yield* _(
+			dbService.query("advanceApprovalChain", () =>
+				updateRows(
+					dbService,
+					approvalChainInstance,
+					{ currentStageOrder: next.stepOrder, updatedAt: currentTimestamp() },
+					and(
+						eq(approvalChainInstance.id, chainRecord.id),
+						eq(approvalChainInstance.organizationId, chainRecord.organizationId),
+					),
+				),
+			),
+		);
+
+		return { kind: "chain_pending" } as const;
+	});
 }
 
 export function resolvePolicyAndCreateApproval(
@@ -343,45 +581,58 @@ export function resolvePolicyAndCreateApproval(
 			);
 		}
 
+		const createChainRows = async (writeDbService: ApprovalDbService) => {
+			const chainRows = await writeDbService.db
+				.insert(approvalChainInstance)
+				.values({
+					organizationId: loaded.context.organizationId,
+					policyId: matchedPolicy.id,
+					policyNameSnapshot: matchedPolicy.name,
+					entityType: loaded.context.entityType,
+					entityId: loaded.context.entityId,
+					requesterEmployeeId: loaded.context.requesterEmployeeId,
+					currentStageOrder: firstStage.stage.stepOrder,
+					status: "pending",
+				})
+				.returning({ id: approvalChainInstance.id });
+			const chainInstanceId = insertedId(chainRows, loaded.context.entityId);
+			const approvalRequestId = await insertApprovalRequest(
+				writeDbService,
+				{ ...input, context: loaded.context },
+				firstStage.approverEmployeeId,
+			);
+
+			for (const resolvedStage of resolvedStages) {
+				const isCurrentStage = resolvedStage.stage.stepOrder === firstStage.stage.stepOrder;
+				await writeDbService.db.insert(approvalChainStageInstance).values({
+					organizationId: loaded.context.organizationId,
+					chainInstanceId,
+					policyStageId: resolvedStage.stage.id,
+					stepOrder: resolvedStage.stage.stepOrder,
+					labelSnapshot: resolvedStage.stage.label,
+					approverTypeSnapshot: resolvedStage.stage.approverType,
+					resolvedApproverEmployeeId: resolvedStage.approverEmployeeId,
+					approvalRequestId: isCurrentStage ? approvalRequestId : null,
+					status: isCurrentStage ? "pending" : "cancelled",
+					updatedAt: currentTimestamp(),
+				});
+			}
+
+			return { chainInstanceId, approvalRequestId };
+		};
+
 		const result = yield* _(
 			dbService.query("createApprovalChain", async () => {
-				const chainRows = await dbService.db
-					.insert(approvalChainInstance)
-					.values({
-						organizationId: loaded.context.organizationId,
-						policyId: matchedPolicy.id,
-						policyNameSnapshot: matchedPolicy.name,
-						entityType: loaded.context.entityType,
-						entityId: loaded.context.entityId,
-						requesterEmployeeId: loaded.context.requesterEmployeeId,
-						currentStageOrder: firstStage.stage.stepOrder,
-						status: "pending",
-					})
-					.returning({ id: approvalChainInstance.id });
-				const chainInstanceId = insertedId(chainRows, loaded.context.entityId);
-				const approvalRequestId = await insertApprovalRequest(
-					dbService,
-					{ ...input, context: loaded.context },
-					firstStage.approverEmployeeId,
-				);
-
-				for (const resolvedStage of resolvedStages) {
-					const isCurrentStage = resolvedStage.stage.stepOrder === firstStage.stage.stepOrder;
-					await dbService.db.insert(approvalChainStageInstance).values({
-						organizationId: loaded.context.organizationId,
-						chainInstanceId,
-						policyStageId: resolvedStage.stage.id,
-						stepOrder: resolvedStage.stage.stepOrder,
-						labelSnapshot: resolvedStage.stage.label,
-						approverTypeSnapshot: resolvedStage.stage.approverType,
-						resolvedApproverEmployeeId: resolvedStage.approverEmployeeId,
-						approvalRequestId: isCurrentStage ? approvalRequestId : null,
-						status: isCurrentStage ? "pending" : "cancelled",
-						updatedAt: currentTimestamp(),
+				if (supportsTransactions(dbService)) {
+					return await dbService.db.transaction(async (tx) => {
+						return await createChainRows({
+							db: tx as ApprovalDbService["db"],
+							query: dbService.query,
+						});
 					});
 				}
 
-				return { chainInstanceId, approvalRequestId };
+				return await createChainRows(dbService);
 			}),
 		);
 
