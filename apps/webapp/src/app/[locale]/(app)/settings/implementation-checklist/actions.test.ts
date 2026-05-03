@@ -327,6 +327,18 @@ describe("implementation checklist actions", () => {
 		expect(mocks.revalidatePath).toHaveBeenCalledWith(checklistPath);
 	});
 
+	it("returns a failure result without revalidating when marking complete fails", async () => {
+		mocks.onConflictDoUpdate.mockRejectedValue(new Error("duplicate key details"));
+
+		const result = await markImplementationChecklistItemComplete("approval-rules");
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to update checklist item.",
+		});
+		expect(mocks.revalidatePath).not.toHaveBeenCalled();
+	});
+
 	it("marks a manual item incomplete by deleting only active organization state", async () => {
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 
@@ -338,5 +350,17 @@ describe("implementation checklist actions", () => {
 			],
 		});
 		expect(mocks.revalidatePath).toHaveBeenCalledWith(checklistPath);
+	});
+
+	it("returns a failure result without revalidating when marking incomplete fails", async () => {
+		mocks.where.mockRejectedValue(new Error("delete failed"));
+
+		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to update checklist item.",
+		});
+		expect(mocks.revalidatePath).not.toHaveBeenCalled();
 	});
 });

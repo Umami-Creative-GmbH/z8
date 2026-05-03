@@ -31,6 +31,7 @@ import {
 } from "@/lib/implementation-checklist/status";
 
 const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
+const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR = "Failed to update checklist item.";
 
 export interface ImplementationChecklistViewModel {
 	items: ResolvedImplementationChecklistItem[];
@@ -263,26 +264,30 @@ export async function markImplementationChecklistItemComplete(
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const completedAt = DateTime.utc().toJSDate();
 
-	await db
-		.insert(implementationChecklistManualState)
-		.values({
-			organizationId,
-			itemId: validation.data,
-			status: "complete",
-			completedAt,
-			completedByUserId: authContext.user.id,
-		})
-		.onConflictDoUpdate({
-			target: [
-				implementationChecklistManualState.organizationId,
-				implementationChecklistManualState.itemId,
-			],
-			set: {
+	try {
+		await db
+			.insert(implementationChecklistManualState)
+			.values({
+				organizationId,
+				itemId: validation.data,
 				status: "complete",
 				completedAt,
 				completedByUserId: authContext.user.id,
-			},
-		});
+			})
+			.onConflictDoUpdate({
+				target: [
+					implementationChecklistManualState.organizationId,
+					implementationChecklistManualState.itemId,
+				],
+				set: {
+					status: "complete",
+					completedAt,
+					completedByUserId: authContext.user.id,
+				},
+			});
+	} catch {
+		return { success: false, error: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR };
+	}
 
 	revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
 
@@ -300,14 +305,18 @@ export async function markImplementationChecklistItemIncomplete(
 
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	await db
-		.delete(implementationChecklistManualState)
-		.where(
-			and(
-				eq(implementationChecklistManualState.organizationId, organizationId),
-				eq(implementationChecklistManualState.itemId, validation.data),
-			),
-		);
+	try {
+		await db
+			.delete(implementationChecklistManualState)
+			.where(
+				and(
+					eq(implementationChecklistManualState.organizationId, organizationId),
+					eq(implementationChecklistManualState.itemId, validation.data),
+				),
+			);
+	} catch {
+		return { success: false, error: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR };
+	}
 
 	revalidatePath(IMPLEMENTATION_CHECKLIST_PATH);
 
