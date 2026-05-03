@@ -63,6 +63,13 @@ export const queryKeys = {
 			["approvals", "time-corrections", params] as const,
 	},
 
+	// Absence plan preview
+	absencePlanPreview: {
+		all: ["absence-plan-preview"] as const,
+		detail: <T extends object>(orgId: string, input: T) =>
+			["absence-plan-preview", orgId, input] as const,
+	},
+
 	// Travel expenses
 	travelExpenses: {
 		all: ["travel-expenses"] as const,
