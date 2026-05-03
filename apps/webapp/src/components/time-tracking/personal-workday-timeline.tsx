@@ -9,10 +9,8 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { Link } from "@/navigation";
 import type {
-	SelectedWorkdayDate,
 	WorkdayTimelineData,
 	WorkdayTimelineItem,
-	WorkdayTimelineResult,
 	WorkdayTimelineSeverity,
 	WorkdayTimelineWarningItem,
 } from "@/app/[locale]/(app)/time-tracking/workday-timeline.types";
@@ -22,8 +20,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+export interface SerializableSelectedWorkdayDate {
+	dateKey: string;
+	todayDateKey: string;
+	previousDateKey: string;
+	nextDateKey: string;
+	label: string;
+}
+
+export type SerializableWorkdayTimelineData = Omit<WorkdayTimelineData, "selectedDate"> & {
+	selectedDate: SerializableSelectedWorkdayDate;
+	items: SerializableWorkdayTimelineItem[];
+	dayWarnings: SerializableWorkdayTimelineWarningItem[];
+};
+
+export type SerializableWorkdayTimelineItem = WorkdayTimelineItem extends infer T
+	? T extends WorkdayTimelineItem
+		? Omit<T, "startTime" | "endTime">
+		: never
+	: never;
+
+export type SerializableWorkdayTimelineWarningItem = Omit<
+	WorkdayTimelineWarningItem,
+	"startTime" | "endTime"
+>;
+
+export type SerializableWorkdayTimelineResult =
+	| { success: true; data: SerializableWorkdayTimelineData }
+	| { success: false; selectedDate: SerializableSelectedWorkdayDate; error: string };
+
 interface PersonalWorkdayTimelineProps {
-	result: WorkdayTimelineResult;
+	result: SerializableWorkdayTimelineResult;
 }
 
 export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps) {
@@ -51,7 +78,7 @@ export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps
 	);
 }
 
-function DayPicker({ selectedDate }: { selectedDate: SelectedWorkdayDate }) {
+function DayPicker({ selectedDate }: { selectedDate: SerializableSelectedWorkdayDate }) {
 	const { t } = useTranslate();
 
 	return (
@@ -86,7 +113,7 @@ function DayPicker({ selectedDate }: { selectedDate: SelectedWorkdayDate }) {
 	);
 }
 
-function TimelineContent({ result }: { result: WorkdayTimelineData }) {
+function TimelineContent({ result }: { result: SerializableWorkdayTimelineData }) {
 	const renderedWarningIds = new Set(result.dayWarnings.map((warning) => warning.id));
 	const timelineItems = result.items.filter((item) => !renderedWarningIds.has(item.id));
 
@@ -106,7 +133,7 @@ function TimelineContent({ result }: { result: WorkdayTimelineData }) {
 	);
 }
 
-function WarningSummary({ warnings }: { warnings: WorkdayTimelineWarningItem[] }) {
+function WarningSummary({ warnings }: { warnings: SerializableWorkdayTimelineWarningItem[] }) {
 	return (
 		<div className="space-y-2">
 			{warnings.map((warning) => (
@@ -116,7 +143,7 @@ function WarningSummary({ warnings }: { warnings: WorkdayTimelineWarningItem[] }
 	);
 }
 
-function WarningAlert({ warning }: { warning: WorkdayTimelineWarningItem }) {
+function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineWarningItem }) {
 	return (
 		<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
 			<IconAlertTriangle aria-hidden="true" className="text-amber-600 dark:text-amber-400" />
@@ -136,7 +163,7 @@ function WarningAlert({ warning }: { warning: WorkdayTimelineWarningItem }) {
 	);
 }
 
-function TimelineRow({ item }: { item: WorkdayTimelineItem }) {
+function TimelineRow({ item }: { item: SerializableWorkdayTimelineItem }) {
 	const timeRange = getTimeRange(item);
 	const content = <TimelineRowContent item={item} timeRange={timeRange} />;
 
@@ -157,7 +184,13 @@ function TimelineRow({ item }: { item: WorkdayTimelineItem }) {
 	);
 }
 
-function TimelineRowContent({ item, timeRange }: { item: WorkdayTimelineItem; timeRange: string | null }) {
+function TimelineRowContent({
+	item,
+	timeRange,
+}: {
+	item: SerializableWorkdayTimelineItem;
+	timeRange: string | null;
+}) {
 	return (
 		<div className="flex gap-3 px-4 py-3">
 			<div className={cn("mt-1 size-2.5 shrink-0 rounded-full", severityClassName(item.severity))} />
@@ -214,7 +247,7 @@ function dayHref(dateKey: string) {
 	return `/time-tracking?date=${encodeURIComponent(dateKey)}`;
 }
 
-function getTimeRange(item: WorkdayTimelineItem) {
+function getTimeRange(item: SerializableWorkdayTimelineItem) {
 	if (!item.startLabel && !item.endLabel) {
 		return null;
 	}

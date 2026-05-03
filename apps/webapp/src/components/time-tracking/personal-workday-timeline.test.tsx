@@ -1,13 +1,12 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
-import type {
-	WorkdayTimelineData,
-	WorkdayTimelineResult,
-} from "@/app/[locale]/(app)/time-tracking/workday-timeline.types";
-import { PersonalWorkdayTimeline } from "./personal-workday-timeline";
+import {
+	PersonalWorkdayTimeline,
+	type SerializableWorkdayTimelineData,
+	type SerializableWorkdayTimelineResult,
+} from "./personal-workday-timeline";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -27,11 +26,9 @@ const selectedDate = {
 	previousDateKey: "2026-05-02",
 	nextDateKey: "2026-05-04",
 	label: "May 3, 2026",
-	startUtc: DateTime.fromISO("2026-05-03T00:00:00.000Z"),
-	endUtc: DateTime.fromISO("2026-05-03T23:59:59.999Z"),
 };
 
-function success(data: Partial<WorkdayTimelineData>): WorkdayTimelineResult {
+function success(data: Partial<SerializableWorkdayTimelineData>): SerializableWorkdayTimelineResult {
 	return {
 		success: true,
 		data: {

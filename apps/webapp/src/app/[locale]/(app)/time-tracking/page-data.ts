@@ -7,8 +7,14 @@ import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
+import type { SerializableWorkdayTimelineResult } from "@/components/time-tracking/personal-workday-timeline";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
 import { getWorkdayTimelineData } from "./workday-timeline-data";
+import type {
+	SelectedWorkdayDate,
+	WorkdayTimelineItem,
+	WorkdayTimelineResult,
+} from "./workday-timeline.types";
 
 export interface TimeTrackingPageSearchParams {
 	date?: string;
@@ -58,6 +64,46 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		workPeriods,
 		summary,
 		t,
-		timelineResult,
+		timelineResult: serializeWorkdayTimelineResult(timelineResult),
 	} as const;
+}
+
+function serializeWorkdayTimelineResult(
+	result: WorkdayTimelineResult,
+): SerializableWorkdayTimelineResult {
+	if (!result.success) {
+		return {
+			success: false,
+			selectedDate: serializeSelectedDate(result.selectedDate),
+			error: result.error,
+		};
+	}
+
+	return {
+		success: true,
+		data: {
+			...result.data,
+			selectedDate: serializeSelectedDate(result.data.selectedDate),
+			items: result.data.items.map(serializeTimelineItem),
+			dayWarnings: result.data.dayWarnings.map(serializeTimelineItem),
+		},
+	};
+}
+
+function serializeSelectedDate({
+	dateKey,
+	todayDateKey,
+	previousDateKey,
+	nextDateKey,
+	label,
+}: SelectedWorkdayDate) {
+	return { dateKey, todayDateKey, previousDateKey, nextDateKey, label };
+}
+
+function serializeTimelineItem<T extends WorkdayTimelineItem>({
+	startTime: _startTime,
+	endTime: _endTime,
+	...item
+}: T): Omit<T, "startTime" | "endTime"> {
+	return item;
 }
