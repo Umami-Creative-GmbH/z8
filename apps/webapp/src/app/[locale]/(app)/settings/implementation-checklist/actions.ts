@@ -149,7 +149,10 @@ async function detectCompleteIds(
 		integrations: activeIntegration,
 		notifications: detectorComplete(async () => {
 			const preference = await db.query.notificationPreference.findFirst({
-				where: eq(notificationPreference.organizationId, organizationId),
+				where: and(
+					eq(notificationPreference.organizationId, organizationId),
+					eq(notificationPreference.enabled, true),
+				),
 			});
 
 			return Boolean(preference || (await activeIntegration));

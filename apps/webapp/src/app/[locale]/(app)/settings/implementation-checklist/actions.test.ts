@@ -78,8 +78,14 @@ vi.mock("@/db/schema", () => ({
 	implementationChecklistManualState: {
 		organizationId: "manualState.organizationId",
 		itemId: "manualState.itemId",
+		status: "manualState.status",
+		completedAt: "manualState.completedAt",
+		completedByUserId: "manualState.completedByUserId",
 	},
-	notificationPreference: { organizationId: "notificationPreference.organizationId" },
+	notificationPreference: {
+		organizationId: "notificationPreference.organizationId",
+		enabled: "notificationPreference.enabled",
+	},
 	slackWorkspaceConfig: { organizationId: "slack.organizationId", setupStatus: "slack.setupStatus" },
 	teamsTenantConfig: { organizationId: "teams.organizationId", setupStatus: "teams.setupStatus" },
 	telegramBotConfig: { organizationId: "telegram.organizationId", setupStatus: "telegram.setupStatus" },
@@ -164,7 +170,10 @@ describe("implementation checklist actions", () => {
 		expect(mocks.findFirst.implementationChecklistManualState).toHaveBeenCalledWith(
 			expect.objectContaining({
 				where: expect.objectContaining({
-					and: expect.arrayContaining([{ eq: ["manualState.organizationId", "org-active"] }]),
+					and: expect.arrayContaining([
+						{ eq: ["manualState.organizationId", "org-active"] },
+						{ eq: ["manualState.status", "complete"] },
+					]),
 				}),
 			}),
 		);
@@ -229,6 +238,31 @@ describe("implementation checklist actions", () => {
 					and: expect.arrayContaining([
 						{ eq: ["discord.organizationId", "org-active"] },
 						{ eq: ["discord.setupStatus", "active"] },
+					]),
+				}),
+			}),
+		);
+	});
+
+	it("only completes notifications from enabled notification preferences", async () => {
+		mocks.findFirst.notificationPreference.mockResolvedValue({ id: "preference-1" });
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(result.data.items.find((item) => item.id === "notifications")).toMatchObject({
+			status: "complete",
+			completionSource: "automatic",
+		});
+		expect(mocks.findFirst.notificationPreference).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					and: expect.arrayContaining([
+						{ eq: ["notificationPreference.organizationId", "org-active"] },
+						{ eq: ["notificationPreference.enabled", true] },
 					]),
 				}),
 			}),
