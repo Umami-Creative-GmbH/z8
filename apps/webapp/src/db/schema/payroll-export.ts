@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -96,6 +97,10 @@ export const payrollExportConfig = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("payrollExportConfig_formatId_idx").on(table.formatId),
 		// One active config per format per organization
 		uniqueIndex("payrollExportConfig_org_entity_format_active_idx")
@@ -242,6 +247,10 @@ export const payrollExportJob = pgTable(
 		index("payrollExportJob_organizationId_idx").on(table.organizationId),
 		index("payrollExportJob_legalEntityId_idx").on(table.legalEntityId),
 		index("payrollExportJob_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("payrollExportJob_configId_idx").on(table.configId),
 		index("payrollExportJob_requestedById_idx").on(table.requestedById),
 		index("payrollExportJob_status_idx").on(table.status),

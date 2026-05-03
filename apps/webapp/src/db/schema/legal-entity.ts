@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	foreignKey,
 	index,
 	pgTable,
 	text,
@@ -48,6 +49,7 @@ export const legalEntity = pgTable(
 	(table) => [
 		index("legalEntity_organizationId_idx").on(table.organizationId),
 		index("legalEntity_isActive_idx").on(table.isActive),
+		uniqueIndex("legalEntity_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("legalEntity_org_name_idx").on(table.organizationId, table.name),
 		uniqueIndex("legalEntity_org_default_active_idx")
 			.on(table.organizationId)
@@ -75,6 +77,14 @@ export const legalEntityAdmin = pgTable(
 	(table) => [
 		index("legalEntityAdmin_organizationId_idx").on(table.organizationId),
 		index("legalEntityAdmin_legalEntityId_idx").on(table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId, table.legalEntityId],
+			foreignColumns: [employee.id, employee.organizationId, employee.legalEntityId],
+		}),
 		uniqueIndex("legalEntityAdmin_entity_employee_idx").on(
 			table.legalEntityId,
 			table.employeeId,

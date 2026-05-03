@@ -3,6 +3,7 @@ import {
 	boolean,
 	date,
 	decimal,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -72,6 +73,10 @@ export const vacationAllowance = pgTable(
 		index("vacationAllowance_organizationId_idx").on(table.organizationId),
 		index("vacationAllowance_legalEntityId_idx").on(table.legalEntityId),
 		index("vacationAllowance_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("vacationAllowance_startDate_idx").on(table.startDate),
 		// Unique policy name per org (active policies only)
 		uniqueIndex("vacationAllowance_org_entity_name_active_idx")
@@ -168,6 +173,10 @@ export const vacationPolicyAssignment = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("vacationPolicyAssignment_teamId_idx").on(table.teamId),
 		index("vacationPolicyAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization per policy

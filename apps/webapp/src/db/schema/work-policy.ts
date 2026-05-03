@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	decimal,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -77,6 +78,10 @@ export const workPolicy = pgTable(
 		index("workPolicy_organizationId_idx").on(table.organizationId),
 		index("workPolicy_legalEntityId_idx").on(table.legalEntityId),
 		index("workPolicy_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("workPolicy_isActive_idx").on(table.isActive),
 		uniqueIndex("workPolicy_org_entity_name_idx").on(
 			table.organizationId,
@@ -360,6 +365,10 @@ export const workPolicyAssignment = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("workPolicyAssignment_teamId_idx").on(table.teamId),
 		index("workPolicyAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
@@ -427,6 +436,10 @@ export const workPolicyViolation = pgTable(
 		index("workPolicyViolation_organizationId_idx").on(table.organizationId),
 		index("workPolicyViolation_legalEntityId_idx").on(table.legalEntityId),
 		index("workPolicyViolation_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("workPolicyViolation_policyId_idx").on(table.policyId),
 		index("workPolicyViolation_violationDate_idx").on(table.violationDate),
 		index("workPolicyViolation_violationType_idx").on(table.violationType),

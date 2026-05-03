@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -48,6 +49,10 @@ export const holidayCategory = pgTable(
 		index("holidayCategory_organizationId_idx").on(table.organizationId),
 		index("holidayCategory_legalEntityId_idx").on(table.legalEntityId),
 		index("holidayCategory_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 	],
 );
 
@@ -86,6 +91,10 @@ export const holiday = pgTable(
 		index("holiday_organizationId_idx").on(table.organizationId),
 		index("holiday_legalEntityId_idx").on(table.legalEntityId),
 		index("holiday_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("holiday_startDate_idx").on(table.startDate),
 		index("holiday_categoryId_idx").on(table.categoryId),
 		index("holiday_orgId_isActive_recurrenceType_idx").on(
@@ -131,6 +140,10 @@ export const holidayPreset = pgTable(
 		index("holidayPreset_organizationId_idx").on(table.organizationId),
 		index("holidayPreset_legalEntityId_idx").on(table.legalEntityId),
 		index("holidayPreset_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		// Unique constraint for same location within organization
 		uniqueIndex("holidayPreset_org_entity_location_idx").on(
 			table.organizationId,
@@ -209,6 +222,10 @@ export const holidayPresetAssignment = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("holidayPresetAssignment_teamId_idx").on(table.teamId),
 		index("holidayPresetAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
@@ -260,6 +277,10 @@ export const holidayAssignment = pgTable(
 		index("holidayAssignment_organizationId_idx").on(table.organizationId),
 		index("holidayAssignment_legalEntityId_idx").on(table.legalEntityId),
 		index("holidayAssignment_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("holidayAssignment_teamId_idx").on(table.teamId),
 		index("holidayAssignment_employeeId_idx").on(table.employeeId),
 		// Prevent duplicate assignments for the same holiday to the same target

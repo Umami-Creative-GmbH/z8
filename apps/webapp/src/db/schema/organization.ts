@@ -1,6 +1,7 @@
 import {
 	boolean,
 	decimal,
+	foreignKey,
 	index,
 	pgTable,
 	text,
@@ -162,6 +163,15 @@ export const employee = pgTable(
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_managerId_idx").on(table.managerId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
+		uniqueIndex("employee_id_org_entity_idx").on(
+			table.id,
+			table.organizationId,
+			table.legalEntityId,
+		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 	],
 );
 

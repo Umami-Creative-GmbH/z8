@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
@@ -70,6 +71,10 @@ export const changePolicy = pgTable(
 		index("changePolicy_organizationId_idx").on(table.organizationId),
 		index("changePolicy_legalEntityId_idx").on(table.legalEntityId),
 		index("changePolicy_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("changePolicy_isActive_idx").on(table.isActive),
 		uniqueIndex("changePolicy_org_entity_name_idx").on(
 			table.organizationId,
@@ -140,6 +145,10 @@ export const changePolicyAssignment = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("changePolicyAssignment_teamId_idx").on(table.teamId),
 		index("changePolicyAssignment_employeeId_idx").on(table.employeeId),
 		// Composite index for efficient policy resolution queries

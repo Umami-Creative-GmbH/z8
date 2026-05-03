@@ -8,6 +8,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -150,6 +151,10 @@ export const scheduledExport = pgTable(
 		index("scheduledExport_organizationId_idx").on(table.organizationId),
 		index("scheduledExport_legalEntityId_idx").on(table.legalEntityId),
 		index("scheduledExport_org_entity_idx").on(table.organizationId, table.legalEntityId),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("scheduledExport_isActive_idx").on(table.isActive),
 		index("scheduledExport_nextExecutionAt_idx").on(table.nextExecutionAt),
 		index("scheduledExport_reportType_idx").on(table.reportType),
@@ -228,6 +233,10 @@ export const scheduledExportExecution = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		foreignKey({
+			columns: [table.legalEntityId, table.organizationId],
+			foreignColumns: [legalEntity.id, legalEntity.organizationId],
+		}),
 		index("scheduledExportExecution_status_idx").on(table.status),
 		index("scheduledExportExecution_triggeredAt_idx").on(table.triggeredAt),
 		// Composite for querying recent executions by schedule
