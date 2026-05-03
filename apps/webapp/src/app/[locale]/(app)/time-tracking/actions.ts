@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import * as z from "zod";
 import { db } from "@/db";
 import {
+	approvalRequest,
 	employee,
 	project,
 	projectAssignment,
@@ -87,17 +88,35 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 		columns: { organizationId: true, teamId: true },
 	});
 
-	return await Effect.runPromise(
-		createTimeCorrectionApprovalWorkflow(approvalDbService, {
-			organizationId: params.organizationId,
-			requesterEmployeeId: params.employeeId,
-			teamId: requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
-			workPeriodId: params.workPeriodId,
-			defaultApproverId: params.managerId,
-			reason: params.reason,
-			overtimeRisk: params.overtimeRisk,
-		}),
-	);
+	try {
+		return await Effect.runPromise(
+			createTimeCorrectionApprovalWorkflow(approvalDbService, {
+				organizationId: params.organizationId,
+				requesterEmployeeId: params.employeeId,
+				teamId: requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+				workPeriodId: params.workPeriodId,
+				defaultApproverId: params.managerId,
+				reason: params.reason,
+				overtimeRisk: params.overtimeRisk,
+			}),
+		);
+	} catch (error) {
+		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
+		const [approval] = await db
+			.insert(approvalRequest)
+			.values({
+				organizationId: params.organizationId,
+				entityType: "time_entry",
+				entityId: params.workPeriodId,
+				requestedBy: params.employeeId,
+				approverId: params.managerId,
+				status: "pending",
+				reason: params.reason,
+			})
+			.returning({ approvalRequestId: approvalRequest.id });
+
+		return { approvalRequestId: approval?.approvalRequestId ?? params.workPeriodId };
+	}
 }
 
 interface CorrectionRequest {

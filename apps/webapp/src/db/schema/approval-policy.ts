@@ -182,7 +182,6 @@ export const approvalChainStageInstance = pgTable(
 		uniqueIndex("approvalChainStageInstance_request_idx").on(table.approvalRequestId),
 		uniqueIndex("approvalChainStageInstance_chain_order_idx").on(table.chainInstanceId, table.stepOrder),
 		foreignKey({ columns: [table.chainInstanceId, table.organizationId], foreignColumns: [approvalChainInstance.id, approvalChainInstance.organizationId] }).onDelete("cascade"),
-		foreignKey({ columns: [table.policyStageId, table.organizationId], foreignColumns: [approvalPolicyStage.id, approvalPolicyStage.organizationId] }),
 		foreignKey({ columns: [table.approvalRequestId, table.organizationId], foreignColumns: [approvalRequest.id, approvalRequest.organizationId] }),
 		foreignKey({ columns: [table.resolvedApproverEmployeeId, table.organizationId], foreignColumns: [employee.id, employee.organizationId] }),
 		foreignKey({ columns: [table.decidedBy, table.organizationId], foreignColumns: [employee.id, employee.organizationId] }),

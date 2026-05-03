@@ -46,6 +46,7 @@ export interface ApprovalPolicyAuditEvent {
 	stageId?: string;
 	entityType: string;
 	entityId: string;
+	actorUserId: string;
 	actorEmployeeId?: string;
 	previousStatus?: string;
 	newStatus?: string;
@@ -109,7 +110,7 @@ function normalizePolicyEvent(event: ApprovalPolicyAuditEvent) {
 		entityType: event.entityType,
 		entityId: event.entityId,
 		action: event.eventName,
-		performedBy: event.actorEmployeeId ?? "system",
+		performedBy: event.actorUserId,
 		employeeId: event.actorEmployeeId ?? null,
 		changes:
 			event.previousStatus || event.newStatus

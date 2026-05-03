@@ -176,7 +176,7 @@ describe("approval policy schema exports", () => {
 				approvalPolicyStage,
 				["id", "organization_id"],
 			),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			hasCompositeForeignKey(
 				approvalChainStageInstance,

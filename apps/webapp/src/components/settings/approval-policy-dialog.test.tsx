@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
 } from "./approval-policy-dialog";
@@ -25,6 +26,14 @@ describe("approval policy dialog helpers", () => {
 			conditions: [{ conditionType: "approval_type", operator: "in", values: ["absence_entry"] }],
 			stages: [{ id: "1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
 		});
+	});
+
+	it("offers runtime approval type identifiers", () => {
+		expect(approvalTypeOptions.map((option) => option.value)).toEqual([
+			"absence_entry",
+			"time_entry",
+			"travel_expense_claim",
+		]);
 	});
 
 	it("rejects active payloads without stages", () => {

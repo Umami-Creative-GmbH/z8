@@ -90,6 +90,10 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "organizationId",
 		employeeId: "employeeId",
 	},
+	employeeGroup: {
+		organizationId: "organizationId",
+		isActive: "isActive",
+	},
 	employeeManagers: {},
 	employee: {
 		id: "id",
@@ -146,9 +150,12 @@ describe("submitTravelExpenseClaim", () => {
 					employeeGroupMember: {
 						findMany: vi.fn().mockResolvedValue([]),
 					},
+					employeeGroup: {
+						findMany: vi.fn().mockResolvedValue([]),
+					},
 					employee: {
 						findMany: vi.fn().mockResolvedValue([
-							{ id: "emp-1", organizationId: "org-1", isActive: true, role: "employee" },
+							{ id: "emp-1", userId: "user-1", organizationId: "org-1", isActive: true, role: "employee" },
 							{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
 						]),
 					},

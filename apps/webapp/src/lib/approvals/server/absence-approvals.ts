@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { syncCanonicalAbsenceApprovalState } from "@/app/[locale]/(app)/absences/actions.canonical";
-import { absenceEntry, holiday } from "@/db/schema";
+import { absenceEntry, approvalRequest, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -136,7 +136,25 @@ export function createAbsenceApprovalWorkflow(
 	return resolvePolicyAndCreateApproval(dbService, {
 		context: buildAbsenceApprovalPolicyContext(input.absence),
 		defaultApproverId: input.defaultApproverId,
-	});
+	}).pipe(
+		Effect.catchTag("ValidationError", () =>
+			dbService.query("createDefaultAbsenceApprovalFallback", async () => {
+				const [approval] = await dbService.db
+					.insert(approvalRequest)
+					.values({
+						organizationId: input.absence.organizationId,
+						entityType: "absence_entry",
+						entityId: input.absence.id,
+						requestedBy: input.absence.employeeId,
+						approverId: input.defaultApproverId,
+						status: "pending",
+					})
+					.returning({ id: approvalRequest.id });
+
+				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.absence.id };
+			}),
+		),
+	);
 }
 
 export function approveAbsenceWithCurrentApproverEffect(

@@ -23,6 +23,7 @@ vi.mock("@/db/schema", () => ({
 	approvalChainStageInstance: {},
 	approvalPolicy: { organizationId: "organizationId", isActive: "isActive", priority: "priority" },
 	employeeGroupMember: { organizationId: "organizationId", employeeId: "employeeId" },
+	employeeGroup: { organizationId: "organizationId", isActive: "isActive" },
 	employeeManagers: { organizationId: "organizationId" },
 	travelExpenseClaim: {
 		id: "id",
@@ -53,9 +54,10 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 			query: {
 				approvalPolicy: { findMany: vi.fn().mockResolvedValue(policies) },
 				employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+				employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 				employee: {
 					findMany: vi.fn().mockResolvedValue([
-						{ id: "emp-requester", organizationId: "org-1", isActive: true, role: "employee" },
+						{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
 						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
 				},

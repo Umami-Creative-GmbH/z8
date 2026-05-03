@@ -165,6 +165,7 @@ describe("progressApprovalChainIfLinked", () => {
 			progressApprovalChainIfLinked(dbService, {
 				approvalRequestId: "approval-1",
 				actorEmployeeId: "emp-manager",
+				actorUserId: "user-manager",
 				action: "approve",
 			}),
 		);
@@ -206,6 +207,7 @@ describe("progressApprovalChainIfLinked", () => {
 			progressApprovalChainIfLinked(dbService, {
 				approvalRequestId: "approval-2",
 				actorEmployeeId: "emp-admin",
+				actorUserId: "user-admin",
 				action: "approve",
 			}),
 		);
@@ -235,6 +237,7 @@ describe("progressApprovalChainIfLinked", () => {
 			progressApprovalChainIfLinked(dbService, {
 				approvalRequestId: "approval-1",
 				actorEmployeeId: "emp-manager",
+				actorUserId: "user-manager",
 				action: "reject",
 			}),
 		);
@@ -265,6 +268,7 @@ describe("progressApprovalChainIfLinked", () => {
 			progressApprovalChainIfLinked(dbService, {
 				approvalRequestId: "approval-2",
 				actorEmployeeId: "emp-admin",
+				actorUserId: "user-admin",
 				action: "approve",
 			}),
 		);
@@ -275,12 +279,14 @@ describe("progressApprovalChainIfLinked", () => {
 				organizationId: "org-1",
 				entityType: "absence_entry",
 				entityId: "absence-1",
+				performedBy: "user-admin",
 				employeeId: "emp-admin",
 			}),
 			expect.objectContaining({
 				organizationId: "org-1",
 				entityType: "absence_entry",
 				entityId: "absence-1",
+				performedBy: "user-admin",
 				employeeId: "emp-admin",
 			}),
 		]);
@@ -302,6 +308,7 @@ describe("progressApprovalChainIfLinked", () => {
 			progressApprovalChainIfLinked(dbService, {
 				approvalRequestId: "approval-1",
 				actorEmployeeId: "emp-manager",
+				actorUserId: "user-manager",
 				action: "reject",
 			}),
 		);
@@ -311,7 +318,11 @@ describe("progressApprovalChainIfLinked", () => {
 });
 
 describe("resolvePolicyAndCreateApproval", () => {
-	function createPolicyResolutionDbService(params: { policies: Record<string, unknown>[] }) {
+	function createPolicyResolutionDbService(params: {
+		policies: Record<string, unknown>[];
+		groupRows?: Record<string, unknown>[];
+		activeGroups?: Record<string, unknown>[];
+	}) {
 		const txInserts: Record<string, unknown>[] = [];
 		const outerInserts: Record<string, unknown>[] = [];
 		const auditEvents: Record<string, unknown>[] = [];
@@ -335,10 +346,11 @@ describe("resolvePolicyAndCreateApproval", () => {
 				query: {
 					auditLog: {},
 					approvalPolicy: { findMany: vi.fn().mockResolvedValue(params.policies) },
-					employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+					employeeGroupMember: { findMany: vi.fn().mockResolvedValue(params.groupRows ?? []) },
+					employeeGroup: { findMany: vi.fn().mockResolvedValue(params.activeGroups ?? []) },
 					employee: {
 						findMany: vi.fn().mockResolvedValue([
-							{ id: "emp-requester", organizationId: "org-1", isActive: true, role: "employee" },
+							{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
 							{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 						]),
 					},
@@ -429,9 +441,10 @@ describe("resolvePolicyAndCreateApproval", () => {
 						]),
 					},
 					employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+					employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 					employee: {
 						findMany: vi.fn().mockResolvedValue([
-							{ id: "emp-requester", organizationId: "org-1", isActive: true, role: "employee" },
+							{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
 							{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 						]),
 					},
@@ -477,6 +490,80 @@ describe("resolvePolicyAndCreateApproval", () => {
 		expect(outerInserts).toHaveLength(0);
 	});
 
+	it("matches policy conditions stored by settings actions", async () => {
+		const { dbService } = createPolicyResolutionDbService({
+			policies: [
+				{
+					...dbPolicy,
+					conditions: [
+						{
+							conditionType: "approval_type",
+							operator: "in",
+							valueJson: { value: undefined, values: ["absence_entry"] },
+						},
+					],
+				},
+			],
+		});
+
+		const result = await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: {
+					organizationId: "org-1",
+					approvalType: "absence_entry",
+					requesterEmployeeId: "emp-requester",
+					teamId: null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: null,
+					employeeGroupIds: [],
+					entityType: "absence_entry",
+					entityId: "absence-1",
+				},
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(result.kind).toBe("chain_created");
+	});
+
+	it("ignores requester memberships in inactive employee groups", async () => {
+		const { dbService } = createPolicyResolutionDbService({
+			groupRows: [{ organizationId: "org-1", employeeId: "emp-requester", groupId: "group-inactive" }],
+			activeGroups: [],
+			policies: [
+				{
+					...dbPolicy,
+					conditions: [
+						{ conditionType: "employee_group", operator: "equals", valueJson: "group-inactive" },
+					],
+				},
+			],
+		});
+
+		const result = await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: {
+					organizationId: "org-1",
+					approvalType: "absence_entry",
+					requesterEmployeeId: "emp-requester",
+					teamId: null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: null,
+					employeeGroupIds: [],
+					entityType: "absence_entry",
+					entityId: "absence-1",
+				},
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(result.kind).toBe("default_created");
+	});
+
 	it("records chain created and stage request created audit events", async () => {
 		const { dbService, auditEvents } = createPolicyResolutionDbService({ policies: [dbPolicy] });
 
@@ -510,8 +597,13 @@ describe("resolvePolicyAndCreateApproval", () => {
 					organizationId: "org-1",
 					entityType: "absence_entry",
 					entityId: "absence-1",
+					performedBy: "user-requester",
+					employeeId: "emp-requester",
 				}),
 			]),
+		);
+		expect(JSON.parse(auditEvents[2].metadata as string)).toEqual(
+			expect.objectContaining({ stageId: "tx-3" }),
 		);
 	});
 

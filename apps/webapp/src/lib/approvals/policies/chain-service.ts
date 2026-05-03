@@ -6,6 +6,7 @@ import {
 	approvalPolicy,
 	approvalRequest,
 	employee,
+	employeeGroup,
 	employeeGroupMember,
 	employeeManagers,
 } from "@/db/schema";
@@ -66,6 +67,7 @@ export interface CreateChainForPolicyInput {
 export interface ChainProgressionInput {
 	approvalRequestId: string;
 	actorEmployeeId: string;
+	actorUserId: string;
 	action: "approve" | "reject";
 }
 
@@ -114,6 +116,18 @@ function jsonStringArray(value: unknown) {
 	return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : undefined;
 }
 
+function jsonObjectValue(value: unknown) {
+	return value && typeof value === "object" && !Array.isArray(value) && typeof (value as { value?: unknown }).value === "string"
+		? (value as { value: string }).value
+		: undefined;
+}
+
+function jsonObjectValues(value: unknown) {
+	return value && typeof value === "object" && !Array.isArray(value)
+		? jsonStringArray((value as { values?: unknown }).values)
+		: undefined;
+}
+
 function nullableNumber(value: unknown) {
 	if (typeof value === "number") {
 		return value;
@@ -134,22 +148,27 @@ function policyFromDbRecord(record: DbPolicyRecord): ApprovalPolicyDraft {
 		name: record.name,
 		isActive: record.isActive,
 		priority: record.priority,
-		conditions: record.conditions.map((condition) => ({
-			conditionType: condition.conditionType,
-			operator: condition.operator,
-			value:
-				condition.value ??
-				jsonString((condition as { valueJson?: unknown }).valueJson) ??
-				(condition as { overtimeRisk?: string | null }).overtimeRisk ??
-				(condition as { teamId?: string | null }).teamId ??
-				(condition as { locationId?: string | null }).locationId ??
-				(condition as { absenceCategoryId?: string | null }).absenceCategoryId ??
-				(condition as { employeeGroupId?: string | null }).employeeGroupId ??
-				undefined,
-			values: condition.values ?? jsonStringArray((condition as { valueJson?: unknown }).valueJson),
-			amountMin: nullableNumber((condition as { amountMin?: unknown }).amountMin),
-			amountMax: nullableNumber((condition as { amountMax?: unknown }).amountMax),
-		})),
+		conditions: record.conditions.map((condition) => {
+			const valueJson = (condition as { valueJson?: unknown }).valueJson;
+
+			return {
+				conditionType: condition.conditionType,
+				operator: condition.operator,
+				value:
+					condition.value ??
+					jsonString(valueJson) ??
+					jsonObjectValue(valueJson) ??
+					(condition as { overtimeRisk?: string | null }).overtimeRisk ??
+					(condition as { teamId?: string | null }).teamId ??
+					(condition as { locationId?: string | null }).locationId ??
+					(condition as { absenceCategoryId?: string | null }).absenceCategoryId ??
+					(condition as { employeeGroupId?: string | null }).employeeGroupId ??
+					undefined,
+				values: condition.values ?? jsonStringArray(valueJson) ?? jsonObjectValues(valueJson),
+				amountMin: nullableNumber((condition as { amountMin?: unknown }).amountMin),
+				amountMax: nullableNumber((condition as { amountMax?: unknown }).amountMax),
+			};
+		}),
 		stages: record.stages.map((stage) => ({
 			id: stage.id,
 			stepOrder: stage.stepOrder,
@@ -217,7 +236,7 @@ async function updateRows(
 }
 
 async function loadPolicyContext(dbService: ApprovalDbService, context: ApprovalPolicyEvaluationContext) {
-	const [policies, groupRows, employees, managerLinks] = await Promise.all([
+	const [policies, groupRows, activeGroups, employees, managerLinks] = await Promise.all([
 		dbService.db.query.approvalPolicy.findMany({
 			where: eq(approvalPolicy.organizationId, context.organizationId),
 			orderBy: [asc(approvalPolicy.priority)],
@@ -231,11 +250,15 @@ async function loadPolicyContext(dbService: ApprovalDbService, context: Approval
 					),
 				})
 			: Promise.resolve([]),
+		dbService.db.query.employeeGroup.findMany({
+			where: and(eq(employeeGroup.organizationId, context.organizationId), eq(employeeGroup.isActive, true)),
+		}),
 		dbService.db.query.employee.findMany({
 			where: eq(employee.organizationId, context.organizationId),
 		}),
 		dbService.db.query.employeeManagers.findMany(),
 	]);
+	const activeGroupIds = new Set((activeGroups as Array<{ id: string }>).map((group) => group.id));
 
 	return {
 		policies: (policies as unknown as DbPolicyRecord[]).map(policyFromDbRecord),
@@ -243,14 +266,27 @@ async function loadPolicyContext(dbService: ApprovalDbService, context: Approval
 			...context,
 			employeeGroupIds:
 				context.employeeGroupIds.length > 0
-					? context.employeeGroupIds
+					? context.employeeGroupIds.filter((groupId) => activeGroupIds.has(groupId))
 					: (groupRows as Array<{ groupId: string; organizationId: string }>).flatMap((row) =>
-						row.organizationId === context.organizationId ? [row.groupId] : [],
+						row.organizationId === context.organizationId && activeGroupIds.has(row.groupId) ? [row.groupId] : [],
 					),
 		},
 		employees: employees as Parameters<typeof resolveApproverFromDirectory>[0]["employees"],
 		managerLinks: managerLinks as Parameters<typeof resolveApproverFromDirectory>[0]["managerLinks"],
 	};
+}
+
+function userIdForEmployee(employees: Array<{ id: string; userId?: string }>, employeeId: string) {
+	const userId = employees.find((employee) => employee.id === employeeId)?.userId;
+	if (!userId) {
+		throw new ValidationError({
+			message: "Requester has no user account in this organization.",
+			field: "approvalPolicy.requesterEmployeeId",
+			value: employeeId,
+		});
+	}
+
+	return userId;
 }
 
 function requestIdForStage(stepOrder: number) {
@@ -407,6 +443,7 @@ export function progressApprovalChainIfLinked(
 					stageId: stage.id,
 					entityType: chainRecord.entityType,
 					entityId: chainRecord.entityId,
+					actorUserId: input.actorUserId,
 					actorEmployeeId: input.actorEmployeeId,
 					previousStatus: "pending",
 					newStatus: "rejected",
@@ -433,6 +470,7 @@ export function progressApprovalChainIfLinked(
 					chainId: chainRecord.id,
 					entityType: chainRecord.entityType,
 					entityId: chainRecord.entityId,
+					actorUserId: input.actorUserId,
 					actorEmployeeId: input.actorEmployeeId,
 					previousStatus: "pending",
 					newStatus: "rejected",
@@ -470,6 +508,7 @@ export function progressApprovalChainIfLinked(
 				stageId: stage.id,
 				entityType: chainRecord.entityType,
 				entityId: chainRecord.entityId,
+				actorUserId: input.actorUserId,
 				actorEmployeeId: input.actorEmployeeId,
 				previousStatus: "pending",
 				newStatus: "approved",
@@ -511,6 +550,7 @@ export function progressApprovalChainIfLinked(
 					chainId: chainRecord.id,
 					entityType: chainRecord.entityType,
 					entityId: chainRecord.entityId,
+					actorUserId: input.actorUserId,
 					actorEmployeeId: input.actorEmployeeId,
 					previousStatus: "pending",
 					newStatus: "approved",
@@ -572,6 +612,7 @@ export function progressApprovalChainIfLinked(
 				stageId: next.id,
 				entityType: chainRecord.entityType,
 				entityId: chainRecord.entityId,
+				actorUserId: input.actorUserId,
 				actorEmployeeId: input.actorEmployeeId,
 				previousStatus: "cancelled",
 				newStatus: "pending",
@@ -603,6 +644,7 @@ export function resolvePolicyAndCreateApproval(
 	return Effect.gen(function* (_) {
 		const loaded = yield* _(dbService.query("loadApprovalPolicyContext", () => loadPolicyContext(dbService, input.context)));
 		const matchedPolicy = findMatchingPolicy(loaded.context, loaded.policies);
+		const requesterUserId = userIdForEmployee(loaded.employees, loaded.context.requesterEmployeeId);
 
 		if (!matchedPolicy) {
 			const approvalRequestId = yield* _(
@@ -616,6 +658,7 @@ export function resolvePolicyAndCreateApproval(
 					eventName: "approval_policy.no_match_fallback",
 					entityType: loaded.context.entityType,
 					entityId: loaded.context.entityId,
+					actorUserId: requesterUserId,
 					actorEmployeeId: loaded.context.requesterEmployeeId,
 					newStatus: "pending",
 					createdAt: new Date(),
@@ -625,28 +668,33 @@ export function resolvePolicyAndCreateApproval(
 			return { kind: "default_created", approvalRequestId } as const;
 		}
 
-		const resolvedStages = matchedPolicy.stages
-			.slice()
-			.sort((left, right) => left.stepOrder - right.stepOrder)
-			.map((stage) => {
-				const resolved = resolveApproverFromDirectory({
-					organizationId: loaded.context.organizationId,
-					requesterEmployeeId: loaded.context.requesterEmployeeId,
-					stage,
-					employees: loaded.employees,
-					managerLinks: loaded.managerLinks,
-				});
-
-				if (!resolved.ok) {
-					throw new ValidationError({
-						message: resolved.reason,
-						field: "approvalPolicyStage.approverType",
-						value: stage.approverType,
-					});
-				}
-
-				return { stage, approverEmployeeId: resolved.approverEmployeeId };
+		const resolvedStages: Array<{
+			stage: typeof matchedPolicy.stages[number];
+			approverEmployeeId: string;
+		}> = [];
+		for (const stage of matchedPolicy.stages.slice().sort((left, right) => left.stepOrder - right.stepOrder)) {
+			const resolved = resolveApproverFromDirectory({
+				organizationId: loaded.context.organizationId,
+				requesterEmployeeId: loaded.context.requesterEmployeeId,
+				stage,
+				employees: loaded.employees,
+				managerLinks: loaded.managerLinks,
 			});
+
+			if (!resolved.ok) {
+				return yield* _(
+					Effect.fail(
+						new ValidationError({
+							message: resolved.reason,
+							field: "approvalPolicyStage.approverType",
+							value: stage.approverType,
+						}),
+					),
+				);
+			}
+
+			resolvedStages.push({ stage, approverEmployeeId: resolved.approverEmployeeId });
+		}
 
 		const firstStage = resolvedStages[0];
 		if (!firstStage) {
@@ -684,6 +732,7 @@ export function resolvePolicyAndCreateApproval(
 					chainId: chainInstanceId,
 					entityType: loaded.context.entityType,
 					entityId: loaded.context.entityId,
+					actorUserId: requesterUserId,
 					actorEmployeeId: loaded.context.requesterEmployeeId,
 					createdAt: new Date(),
 				}),
@@ -696,6 +745,7 @@ export function resolvePolicyAndCreateApproval(
 					chainId: chainInstanceId,
 					entityType: loaded.context.entityType,
 					entityId: loaded.context.entityId,
+					actorUserId: requesterUserId,
 					actorEmployeeId: loaded.context.requesterEmployeeId,
 					newStatus: "pending",
 					createdAt: new Date(),
@@ -709,18 +759,22 @@ export function resolvePolicyAndCreateApproval(
 
 			for (const resolvedStage of resolvedStages) {
 				const isCurrentStage = resolvedStage.stage.stepOrder === firstStage.stage.stepOrder;
-				await writeDbService.db.insert(approvalChainStageInstance).values({
-					organizationId: loaded.context.organizationId,
-					chainInstanceId,
-					policyStageId: resolvedStage.stage.id,
-					stepOrder: resolvedStage.stage.stepOrder,
-					labelSnapshot: resolvedStage.stage.label,
-					approverTypeSnapshot: resolvedStage.stage.approverType,
-					resolvedApproverEmployeeId: resolvedStage.approverEmployeeId,
-					approvalRequestId: isCurrentStage ? approvalRequestId : null,
-					status: isCurrentStage ? "pending" : "cancelled",
-					updatedAt: currentTimestamp(),
-				});
+				const stageRows = await writeDbService.db
+					.insert(approvalChainStageInstance)
+					.values({
+						organizationId: loaded.context.organizationId,
+						chainInstanceId,
+						policyStageId: resolvedStage.stage.id,
+						stepOrder: resolvedStage.stage.stepOrder,
+						labelSnapshot: resolvedStage.stage.label,
+						approverTypeSnapshot: resolvedStage.stage.approverType,
+						resolvedApproverEmployeeId: resolvedStage.approverEmployeeId,
+						approvalRequestId: isCurrentStage ? approvalRequestId : null,
+						status: isCurrentStage ? "pending" : "cancelled",
+						updatedAt: currentTimestamp(),
+					})
+					.returning({ id: approvalChainStageInstance.id });
+				const stageInstanceId = insertedId(stageRows, resolvedStage.stage.id);
 
 				if (isCurrentStage) {
 					await Effect.runPromise(
@@ -729,9 +783,10 @@ export function resolvePolicyAndCreateApproval(
 							eventName: "approval_chain.stage_request_created",
 							policyId: matchedPolicy.id,
 							chainId: chainInstanceId,
-							stageId: resolvedStage.stage.id,
+							stageId: stageInstanceId,
 							entityType: loaded.context.entityType,
 							entityId: loaded.context.entityId,
+							actorUserId: requesterUserId,
 							actorEmployeeId: loaded.context.requesterEmployeeId,
 							newStatus: "pending",
 							createdAt: new Date(),

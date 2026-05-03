@@ -30,9 +30,10 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 			query: {
 				approvalPolicy: { findMany: vi.fn().mockResolvedValue(policies) },
 				employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+				employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 				employee: {
 					findMany: vi.fn().mockResolvedValue([
-						{ id: "emp-requester", organizationId: "org-1", isActive: true, role: "employee" },
+						{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
 						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
 				},
@@ -302,6 +303,52 @@ describe("time correction approval policy resolution", () => {
 			chainInstanceId: "insert-1",
 			approvalRequestId: "insert-2",
 			resolvedApproverEmployeeId: "emp-manager",
+		});
+	});
+
+	it("falls back to manager approval when a matched time policy cannot resolve", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([
+			{
+				id: "policy-1",
+				organizationId: "org-1",
+				name: "Broken time policy",
+				isActive: true,
+				priority: 1,
+				conditions: [{ conditionType: "approval_type", operator: "equals", valueJson: "time_entry" }],
+				stages: [
+					{
+						id: "stage-1",
+						stepOrder: 1,
+						label: "Missing approver",
+						approverType: "specific_employee",
+						approverEmployeeId: "missing-employee",
+					},
+				],
+			},
+		]);
+
+		const result = await Effect.runPromise(
+			createTimeCorrectionApprovalWorkflow(dbService, {
+				organizationId: "org-1",
+				requesterEmployeeId: "emp-requester",
+				teamId: "team-1",
+				workPeriodId: "period-1",
+				defaultApproverId: "emp-manager",
+				reason: "Correct missed clock-in",
+				overtimeRisk: "warning",
+			}),
+		);
+
+		expect(result).toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts).toHaveLength(1);
+		expect(inserts[0].values).toMatchObject({
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			reason: "Correct missed clock-in",
 		});
 	});
 });

@@ -95,10 +95,10 @@ interface ApprovalPolicyDialogProps {
 	onSubmit: (payload: ReturnType<typeof buildApprovalPolicyPayload>) => Promise<void>;
 }
 
-const approvalTypeOptions = [
+export const approvalTypeOptions = [
 	{ value: "absence_entry", label: "Absence requests" },
-	{ value: "time_entry_change", label: "Time entry changes" },
-	{ value: "travel_expense", label: "Travel expenses" },
+	{ value: "time_entry", label: "Time entry changes" },
+	{ value: "travel_expense_claim", label: "Travel expenses" },
 ];
 
 const approverTypeOptions = [

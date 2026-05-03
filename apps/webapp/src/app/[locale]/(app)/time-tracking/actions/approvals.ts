@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { approvalRequest, employee } from "@/db/schema";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import type { ApprovalPolicyOvertimeRisk } from "@/lib/approvals/policies/types";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
@@ -85,7 +85,25 @@ const approvalDbService = {
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 } satisfies ApprovalDbService;
 
-async function createTimeEntryApprovalRequest(params: {
+async function createDefaultTimeEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	reason: string;
+}) {
+	await db.insert(approvalRequest).values({
+		organizationId: params.organizationId,
+		entityType: "time_entry",
+		entityId: params.workPeriodId,
+		requestedBy: params.employeeId,
+		approverId: params.managerId,
+		status: "pending",
+		reason: params.reason,
+	});
+}
+
+export async function createTimeEntryApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
 	managerId: string;
@@ -98,26 +116,31 @@ async function createTimeEntryApprovalRequest(params: {
 		columns: { teamId: true, organizationId: true },
 	});
 
-	await Effect.runPromise(
-		resolvePolicyAndCreateApproval(approvalDbService, {
-			context: {
-				organizationId: params.organizationId,
-				approvalType: "time_entry",
-				requesterEmployeeId: params.employeeId,
-				teamId:
-					requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
-				locationId: null,
-				absenceCategoryId: null,
-				travelExpenseAmount: null,
-				overtimeRisk: params.overtimeRisk,
-				employeeGroupIds: [],
-				entityType: "time_entry",
-				entityId: params.workPeriodId,
-			},
-			defaultApproverId: params.managerId,
-			reason: params.reason,
-		}),
-	);
+	try {
+		await Effect.runPromise(
+			resolvePolicyAndCreateApproval(approvalDbService, {
+				context: {
+					organizationId: params.organizationId,
+					approvalType: "time_entry",
+					requesterEmployeeId: params.employeeId,
+					teamId:
+						requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: params.overtimeRisk,
+					employeeGroupIds: [],
+					entityType: "time_entry",
+					entityId: params.workPeriodId,
+				},
+				defaultApproverId: params.managerId,
+				reason: params.reason,
+			}),
+		);
+	} catch (error) {
+		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
+		await createDefaultTimeEntryApprovalRequest(params);
+	}
 }
 
 export async function createClockOutApprovalRequest(params: {

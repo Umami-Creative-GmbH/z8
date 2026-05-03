@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { timeEntry, timeRecord, workPeriod } from "@/db/schema";
+import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -167,7 +167,26 @@ export function createTimeCorrectionApprovalWorkflow(
 		context: buildTimeCorrectionApprovalPolicyContext(input),
 		defaultApproverId: input.defaultApproverId,
 		reason: input.reason,
-	});
+	}).pipe(
+		Effect.catchTag("ValidationError", () =>
+			dbService.query("createDefaultTimeCorrectionApprovalFallback", async () => {
+				const [approval] = await dbService.db
+					.insert(approvalRequest)
+					.values({
+						organizationId: input.organizationId,
+						entityType: "time_entry",
+						entityId: input.workPeriodId,
+						requestedBy: input.requesterEmployeeId,
+						approverId: input.defaultApproverId,
+						status: "pending",
+						reason: input.reason,
+					})
+					.returning({ id: approvalRequest.id });
+
+				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.workPeriodId };
+			}),
+		),
+	);
 }
 
 export async function syncCanonicalWorkCorrection(input: {

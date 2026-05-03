@@ -225,6 +225,7 @@ function executeApprovalWithCurrentEmployee<T>(
 			progressApprovalChainIfLinked(dbService, {
 				approvalRequestId: approval.id,
 				actorEmployeeId: currentEmployee.id,
+				actorUserId: currentEmployee.user.id,
 				action,
 			}),
 		);

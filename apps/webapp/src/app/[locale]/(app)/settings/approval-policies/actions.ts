@@ -91,6 +91,36 @@ async function findMissingOrganizationReferences(
 	return uniqueIds.filter((id) => !foundIds.has(id));
 }
 
+async function findMissingActiveOrganizationEmployees(organizationId: string, ids: string[]) {
+	const uniqueIds = uniqueValues(ids);
+	if (uniqueIds.length === 0) {
+		return [];
+	}
+
+	const rows = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true), inArray(employee.id, uniqueIds)));
+	const foundIds = new Set(rows.map((row) => row.id));
+
+	return uniqueIds.filter((id) => !foundIds.has(id));
+}
+
+async function findMissingActiveEmployeeGroups(organizationId: string, ids: string[]) {
+	const uniqueIds = uniqueValues(ids);
+	if (uniqueIds.length === 0) {
+		return [];
+	}
+
+	const rows = await db
+		.select({ id: employeeGroup.id })
+		.from(employeeGroup)
+		.where(and(eq(employeeGroup.organizationId, organizationId), eq(employeeGroup.isActive, true), inArray(employeeGroup.id, uniqueIds)));
+	const foundIds = new Set(rows.map((row) => row.id));
+
+	return uniqueIds.filter((id) => !foundIds.has(id));
+}
+
 async function validatePolicyReferences(organizationId: string, input: PolicyInput) {
 	const teamIds: string[] = [];
 	const locationIds: string[] = [];
@@ -118,8 +148,8 @@ async function validatePolicyReferences(organizationId: string, input: PolicyInp
 		findMissingOrganizationReferences(organizationId, teamIds, team),
 		findMissingOrganizationReferences(organizationId, locationIds, location),
 		findMissingOrganizationReferences(organizationId, absenceCategoryIds, absenceCategory),
-		findMissingOrganizationReferences(organizationId, employeeGroupIds, employeeGroup),
-		findMissingOrganizationReferences(organizationId, specificApproverIds, employee),
+		findMissingActiveEmployeeGroups(organizationId, employeeGroupIds),
+		findMissingActiveOrganizationEmployees(organizationId, specificApproverIds),
 	]);
 
 	if (
@@ -307,7 +337,7 @@ export async function upsertEmployeeGroup(input: z.infer<typeof employeeGroupInp
 		}
 	}
 
-	const missingEmployees = await findMissingOrganizationReferences(currentEmployee.organizationId, employeeIds, employee);
+	const missingEmployees = await findMissingActiveOrganizationEmployees(currentEmployee.organizationId, employeeIds);
 	if (missingEmployees.length > 0) {
 		return { success: false as const, error: "One or more employee group members are invalid." };
 	}
