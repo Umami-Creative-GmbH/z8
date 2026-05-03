@@ -24,6 +24,18 @@ function matchesString(value: string | null, condition: ApprovalPolicyConditionD
 	return false;
 }
 
+function matchesStringList(values: string[], condition: ApprovalPolicyConditionDraft) {
+	if (condition.operator === "equals") {
+		return !!condition.value && values.includes(condition.value);
+	}
+
+	if (condition.operator === "in") {
+		return stringList(condition).some((value) => values.includes(value));
+	}
+
+	return false;
+}
+
 function matchesAmount(amount: number | null, condition: ApprovalPolicyConditionDraft) {
 	if (amount === null) {
 		return false;
@@ -63,12 +75,55 @@ export function matchesCondition(
 		case "absence_category":
 			return matchesString(context.absenceCategoryId, condition);
 		case "employee_group":
-			return stringList(condition).some((groupId) => context.employeeGroupIds.includes(groupId));
+			return matchesStringList(context.employeeGroupIds, condition);
 		case "overtime_risk":
 			return matchesString(context.overtimeRisk, condition);
 		case "travel_expense_amount":
 			return matchesAmount(context.travelExpenseAmount, condition);
 	}
+}
+
+function validateCondition(condition: ApprovalPolicyConditionDraft, index: number): string[] {
+	const errors: string[] = [];
+	const label = `Condition ${index + 1} (${condition.conditionType})`;
+
+	if (condition.conditionType === "travel_expense_amount") {
+		if (!["gte", "lte", "between"].includes(condition.operator)) {
+			errors.push(`${label} only supports gte, lte, or between operators.`);
+		}
+
+		if (condition.operator === "gte" && typeof condition.amountMin !== "number") {
+			errors.push(`${label} requires amountMin for gte.`);
+		}
+
+		if (condition.operator === "lte" && typeof condition.amountMax !== "number") {
+			errors.push(`${label} requires amountMax for lte.`);
+		}
+
+		if (condition.operator === "between") {
+			if (typeof condition.amountMin !== "number" || typeof condition.amountMax !== "number") {
+				errors.push(`${label} requires amountMin and amountMax for between.`);
+			} else if (condition.amountMin > condition.amountMax) {
+				errors.push(`${label} requires amountMin to be less than or equal to amountMax.`);
+			}
+		}
+
+		return errors;
+	}
+
+	if (!["equals", "in"].includes(condition.operator)) {
+		errors.push(`${label} only supports equals or in operators.`);
+	}
+
+	if (condition.operator === "equals" && !condition.value) {
+		errors.push(`${label} requires a value for equals.`);
+	}
+
+	if (condition.operator === "in" && (!condition.values || condition.values.length === 0)) {
+		errors.push(`${label} requires at least one value for in.`);
+	}
+
+	return errors;
 }
 
 export function findMatchingPolicy(
@@ -88,6 +143,10 @@ export function validatePolicyDraft(policy: ApprovalPolicyDraft): string[] {
 
 	if (policy.isActive && policy.stages.length === 0) {
 		errors.push("Active policies require at least one approval stage.");
+	}
+
+	for (const [index, condition] of policy.conditions.entries()) {
+		errors.push(...validateCondition(condition, index));
 	}
 
 	for (const stage of policy.stages) {

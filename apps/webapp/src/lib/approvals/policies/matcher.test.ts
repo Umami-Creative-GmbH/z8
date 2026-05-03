@@ -52,6 +52,14 @@ describe("findMatchingPolicy", () => {
 
 		expect(result).toBeNull();
 	});
+
+	it("rejects employee group conditions with unsupported operators", () => {
+		const result = findMatchingPolicy(context, [
+			{ ...matchingPolicy, conditions: [{ conditionType: "employee_group", operator: "gte", value: "group_1" }] },
+		]);
+
+		expect(result).toBeNull();
+	});
 });
 
 describe("validatePolicyDraft", () => {
@@ -68,5 +76,41 @@ describe("validatePolicyDraft", () => {
 				stages: [{ id: "stage_1", stepOrder: 1, label: "Team Lead", approverType: "team_lead" }],
 			}),
 		).toContain("Team lead approver stages are not available until team lead relationships exist.");
+	});
+
+	it("rejects invalid string condition operator and value shapes", () => {
+		expect(
+			validatePolicyDraft({
+				...matchingPolicy,
+				conditions: [
+					{ conditionType: "team", operator: "gte", value: "team_1" },
+					{ conditionType: "location", operator: "equals" },
+					{ conditionType: "employee_group", operator: "in", values: [] },
+				],
+			}),
+		).toEqual([
+			"Condition 1 (team) only supports equals or in operators.",
+			"Condition 2 (location) requires a value for equals.",
+			"Condition 3 (employee_group) requires at least one value for in.",
+		]);
+	});
+
+	it("rejects invalid amount condition operator and value shapes", () => {
+		expect(
+			validatePolicyDraft({
+				...matchingPolicy,
+				conditions: [
+					{ conditionType: "travel_expense_amount", operator: "equals", value: "750" },
+					{ conditionType: "travel_expense_amount", operator: "gte" },
+					{ conditionType: "travel_expense_amount", operator: "lte" },
+					{ conditionType: "travel_expense_amount", operator: "between", amountMin: 1000, amountMax: 500 },
+				],
+			}),
+		).toEqual([
+			"Condition 1 (travel_expense_amount) only supports gte, lte, or between operators.",
+			"Condition 2 (travel_expense_amount) requires amountMin for gte.",
+			"Condition 3 (travel_expense_amount) requires amountMax for lte.",
+			"Condition 4 (travel_expense_amount) requires amountMin to be less than or equal to amountMax.",
+		]);
 	});
 });
