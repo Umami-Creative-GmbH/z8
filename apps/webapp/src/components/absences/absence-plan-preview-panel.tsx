@@ -30,6 +30,8 @@ const APPROVAL_SIGNAL_CLASSES: Record<ApprovalSignal, string> = {
 		"border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15",
 };
 
+type TranslateFn = Parameters<typeof formatDays>[1];
+
 export function AbsencePlanPreviewPanel({
 	preview,
 	isLoading = false,
@@ -44,7 +46,7 @@ export function AbsencePlanPreviewPanel({
 				className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm"
 				role="status"
 			>
-				<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+				<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
 				<span>
 					{t("absences.planPreview.loading", "Checking balance, holidays, and coverage…")}
 				</span>
@@ -70,8 +72,12 @@ export function AbsencePlanPreviewPanel({
 		return null;
 	}
 
-	const approvalReason = preview.reasons[0] ?? "Planner checked the available request signals.";
+	const approvalReasons =
+		preview.reasons.length > 0
+			? preview.reasons
+			: ["Planner checked the available request signals."];
 	const coverageRiskCount = preview.coverage.risks.length;
+	const vacationImpact = getVacationImpact(preview, t);
 
 	return (
 		<Card className="gap-4 border-primary/15 bg-primary/5 shadow-none">
@@ -98,22 +104,25 @@ export function AbsencePlanPreviewPanel({
 			</CardHeader>
 			<CardContent className="grid gap-3 sm:grid-cols-2">
 				<PreviewSection title={t("absences.planPreview.balance", "Balance")}>
-					{preview.balance ? (
-						<div className="space-y-2">
-							<MetricRow
-								label={t("absences.planPreview.requested", "Requested")}
-								value={formatDays(preview.requestedDays, t)}
-							/>
-							<MetricRow
-								label={t("absences.planPreview.remainingAfter", "Remaining after request")}
-								value={formatDays(preview.balance.remainingAfterRequest, t)}
-							/>
-						</div>
-					) : (
-						<p className="text-muted-foreground text-sm">
-							{t("absences.planPreview.balanceUnavailable", "Balance unavailable")}
-						</p>
-					)}
+					<div className="space-y-2">
+						<p className="text-muted-foreground text-sm">{vacationImpact}</p>
+						{preview.balance ? (
+							<>
+								<MetricRow
+									label={t("absences.planPreview.requested", "Requested")}
+									value={formatDays(preview.requestedDays, t)}
+								/>
+								<MetricRow
+									label={t("absences.planPreview.remainingAfter", "Remaining after request")}
+									value={formatDays(preview.balance.remainingAfterRequest, t)}
+								/>
+							</>
+						) : (
+							<p className="text-muted-foreground text-sm">
+								{t("absences.planPreview.balanceUnavailable", "Balance unavailable")}
+							</p>
+						)}
+					</div>
 				</PreviewSection>
 
 				<PreviewSection title={t("absences.planPreview.holidays", "Holidays")}>
@@ -138,11 +147,38 @@ export function AbsencePlanPreviewPanel({
 
 				<PreviewSection title={t("absences.planPreview.coverage", "Coverage")}>
 					{coverageRiskCount > 0 ? (
-						<p className="text-sm">
-							{t("absences.planPreview.coverageWarnings", "{count} coverage warnings", {
-								count: coverageRiskCount,
-							})}
-						</p>
+						<div className="space-y-2">
+							<p className="text-sm">
+								{t(
+									"absences.planPreview.coverageWarnings",
+									coverageRiskCount === 1 ? "1 coverage warning" : "{count} coverage warnings",
+									{ count: coverageRiskCount },
+								)}
+							</p>
+							<ul className="space-y-1 text-sm">
+								{preview.coverage.risks.map((risk) => (
+									<li
+										className="rounded-md border bg-muted/30 px-2 py-1"
+										key={getCoverageRiskKey(risk)}
+									>
+										<div className="min-w-0 break-words font-medium">
+											{risk.date} · {risk.subareaName}
+										</div>
+										<div className="text-muted-foreground text-xs tabular-nums">
+											{risk.startTime}-{risk.endTime} ·{" "}
+											{t(
+												"absences.planPreview.coverageStaffAfterRequest",
+												"{after}/{minimum} staff after request",
+												{
+													after: risk.staffCountAfterAbsence,
+													minimum: risk.minimumStaffCount,
+												},
+											)}
+										</div>
+									</li>
+								))}
+							</ul>
+						</div>
 					) : (
 						<p className="text-muted-foreground text-sm">
 							{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
@@ -152,7 +188,13 @@ export function AbsencePlanPreviewPanel({
 
 				<PreviewSection title={t("absences.planPreview.approval", "Approval")}>
 					<div className="space-y-2">
-						<p className="break-words text-sm">{approvalReason}</p>
+						<ul className="space-y-1 text-sm">
+							{approvalReasons.map((reason) => (
+								<li className="break-words" key={reason}>
+									{reason}
+								</li>
+							))}
+						</ul>
 						{preview.warnings.length > 0 ? (
 							<ul className="space-y-1 text-sm">
 								{preview.warnings.map((warning) => (
@@ -191,4 +233,14 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 			<span className="font-medium tabular-nums">{value}</span>
 		</div>
 	);
+}
+
+function getVacationImpact(preview: AbsencePlanPreview, t: TranslateFn) {
+	return preview.reasons.includes("This absence type does not reduce vacation balance.")
+		? t("absences.planPreview.doesNotReduceVacationBalance", "Does not reduce vacation balance")
+		: t("absences.planPreview.countsAgainstVacationBalance", "Counts against vacation balance");
+}
+
+function getCoverageRiskKey(risk: AbsencePlanPreview["coverage"]["risks"][number]) {
+	return `${risk.date}-${risk.subareaId}-${risk.startTime}-${risk.endTime}`;
 }

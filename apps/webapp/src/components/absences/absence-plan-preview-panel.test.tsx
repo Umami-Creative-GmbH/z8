@@ -46,7 +46,10 @@ const riskyPreview: AbsencePlanPreview = {
 	},
 	approvalSignal: "risky",
 	warnings: ["Vacation balance would be negative after this request."],
-	reasons: ["Request follows the normal approval path."],
+	reasons: [
+		"Coverage rules are not configured for the affected scheduled work.",
+		"Request follows the normal approval path.",
+	],
 };
 
 describe("AbsencePlanPreviewPanel", () => {
@@ -58,6 +61,28 @@ describe("AbsencePlanPreviewPanel", () => {
 		expect(screen.getByText("Vacation balance would be negative after this request.")).toBeTruthy();
 	});
 
+	it("shows vacation balance impact for the selected category", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(screen.getByText("Counts against vacation balance")).toBeTruthy();
+	});
+
+	it("renders compact coverage risk details by day and subarea", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
+	});
+
+	it("renders all explainable approval reasons", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(
+			screen.getByText("Coverage rules are not configured for the affected scheduled work."),
+		).toBeTruthy();
+		expect(screen.getByText("Request follows the normal approval path.")).toBeTruthy();
+	});
+
 	it("renders non-blocking unavailable copy for an error", () => {
 		render(<AbsencePlanPreviewPanel error="Preview failed" />);
 
@@ -67,9 +92,10 @@ describe("AbsencePlanPreviewPanel", () => {
 	});
 
 	it("renders accessible loading copy", () => {
-		render(<AbsencePlanPreviewPanel isLoading />);
+		const { container } = render(<AbsencePlanPreviewPanel isLoading />);
 
 		expect(screen.getByText("Checking balance, holidays, and coverage…")).toBeTruthy();
+		expect(container.querySelector("svg")?.className.baseVal).toContain("motion-safe:animate-spin");
 	});
 
 	it("renders nothing without preview, loading state, or error", () => {
