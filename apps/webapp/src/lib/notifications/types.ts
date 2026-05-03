@@ -158,4 +158,6 @@ export interface UserPreferencesResponse {
 	preferences: NotificationPreference[];
 	// Matrix format for UI: type -> channel -> enabled
 	matrix: Record<NotificationType, Record<NotificationChannel, boolean>>;
+	// Organization-scoped availability for rendering channel controls.
+	availableChannels: Record<NotificationChannel, boolean>;
 }

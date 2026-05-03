@@ -197,7 +197,8 @@ const CHANNEL_CONFIG: Record<
 };
 
 export function NotificationSettings() {
-	const { matrix, isLoading, updatePreference, isUpdating } = useNotificationPreferences();
+	const { matrix, availableChannels, isLoading, updatePreference, isUpdating } =
+		useNotificationPreferences();
 
 	const {
 		isSupported: isPushSupported,
@@ -217,6 +218,8 @@ export function NotificationSettings() {
 			});
 		},
 	});
+
+	const visibleChannels = NOTIFICATION_CHANNELS.filter((channel) => availableChannels[channel]);
 
 	const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 	const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -364,7 +367,7 @@ export function NotificationSettings() {
 
 			{/* Channel legend */}
 			<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-				{NOTIFICATION_CHANNELS.map((channel) => {
+				{visibleChannels.map((channel) => {
 					const config = CHANNEL_CONFIG[channel];
 					return (
 						<div key={channel} className="flex items-center gap-1.5">
@@ -390,11 +393,11 @@ export function NotificationSettings() {
 							{category.types.map((type) => (
 								<div
 									key={type}
-									className="flex items-center justify-between rounded-lg border bg-muted/30 p-3"
+									className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
 								>
 									<span className="text-sm font-medium">{TYPE_LABELS[type]}</span>
-									<div className="flex items-center gap-3">
-										{NOTIFICATION_CHANNELS.map((channel) => {
+									<div className="flex max-w-full flex-wrap items-center gap-3">
+										{visibleChannels.map((channel) => {
 											const isEnabled = matrix[type]?.[channel] ?? true;
 											const toggleId = `${type}-${channel}`;
 											const isPending = pendingToggle === toggleId;
