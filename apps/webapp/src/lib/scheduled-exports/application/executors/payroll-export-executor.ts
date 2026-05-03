@@ -4,6 +4,9 @@
  * Handles execution of scheduled payroll exports.
  * Delegates to the existing payroll export service.
  */
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import {
 	createExportJob,
@@ -15,11 +18,27 @@ import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from ".
 
 const logger = createLogger("PayrollExportExecutor");
 
-/**
- * System user ID for scheduled exports
- * This should be a valid user ID in the database for audit purposes
- */
-const SYSTEM_USER_ID = "system";
+export async function resolveScheduledPayrollRequester(input: {
+	organizationId: string;
+	legalEntityId: string;
+	createdBy?: string | null;
+}): Promise<string | null> {
+	if (!input.createdBy) {
+		return null;
+	}
+
+	const requester = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.userId, input.createdBy),
+			eq(employee.organizationId, input.organizationId),
+			eq(employee.legalEntityId, input.legalEntityId),
+			eq(employee.isActive, true),
+		),
+		columns: { id: true },
+	});
+
+	return requester?.id ?? null;
+}
 
 /**
  * Payroll Export Executor
@@ -34,7 +53,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 	 * Execute a payroll export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, legalEntityId, reportConfig, dateRange, filters, payrollConfigId } = params;
+		const { organizationId, legalEntityId, reportConfig, dateRange, filters } = params;
 		const config = reportConfig as PayrollExportReportConfig;
 
 		if (!legalEntityId) {
@@ -63,15 +82,16 @@ export class PayrollExportExecutor implements IReportExecutor {
 				};
 			}
 
-			// Get employee ID for the system user
-			// In a real implementation, this would look up a system employee or use the config creator
-			// For now, we'll need to pass this from the schedule's createdBy
-			const requestedById = payrollConfigId || payrollConfig.config.createdBy;
+			const requestedById = await resolveScheduledPayrollRequester({
+				organizationId,
+				legalEntityId,
+				createdBy: params.createdBy ?? payrollConfig.config.createdBy,
+			});
 
 			if (!requestedById) {
 				return {
 					success: false,
-					error: "Unable to determine requester for payroll export",
+					error: "Unable to determine requester employee for scheduled payroll export",
 				};
 			}
 

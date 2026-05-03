@@ -105,6 +105,7 @@ export interface SaveSageConfigInput {
 
 export interface SaveMappingInput {
 	organizationId: string;
+	legalEntityId: string;
 	configId: string;
 	workCategoryId?: string | null;
 	absenceCategoryId?: string | null;
@@ -126,6 +127,7 @@ export interface SaveMappingInput {
 
 export interface DeleteMappingInput {
 	organizationId: string;
+	legalEntityId: string;
 	mappingId: string;
 }
 
@@ -154,6 +156,20 @@ export function assertSingleLegalEntityPayrollFilter(input: {
 
 	if (hasOtherEntity) {
 		throw new Error("Payroll exports can include employees from only one legal entity.");
+	}
+}
+
+export function assertPayrollConfigForMappingMutation(input: {
+	config: { organizationId: string; legalEntityId: string | null } | null | undefined;
+	organizationId: string;
+	legalEntityId: string;
+}) {
+	if (
+		!input.config ||
+		input.config.organizationId !== input.organizationId ||
+		input.config.legalEntityId !== input.legalEntityId
+	) {
+		throw new Error("Configuration not found or access denied");
 	}
 }
 
@@ -1580,11 +1596,14 @@ export async function saveMappingAction(
 					where: and(
 						eq(payrollExportConfig.id, input.configId),
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 					),
 				});
-				if (!config) {
-					throw new Error("Configuration not found or access denied");
-				}
+				assertPayrollConfigForMappingMutation({
+					config,
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				});
 
 				if (input.workCategoryId) {
 					const category = await db.query.workCategory.findFirst({
@@ -1752,9 +1771,11 @@ export async function deleteMappingAction(
 					throw new Error("Mapping not found");
 				}
 
-				if (mapping.config.organizationId !== input.organizationId) {
-					throw new Error("Mapping not found or access denied");
-				}
+				assertPayrollConfigForMappingMutation({
+					config: mapping.config,
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				});
 
 				await db
 					.delete(payrollWageTypeMapping)

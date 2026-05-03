@@ -132,6 +132,7 @@ export function WageTypeMappings({ organizationId, legalEntityId, config }: Wage
 		startTransition(async () => {
 			const result = await saveMappingAction({
 				organizationId,
+				legalEntityId,
 				configId: config.id,
 				workCategoryId: sourceType === "work_category" ? selectedWorkCategory : null,
 				absenceCategoryId: sourceType === "absence_category" ? selectedAbsenceCategory : null,
@@ -162,6 +163,7 @@ export function WageTypeMappings({ organizationId, legalEntityId, config }: Wage
 		startTransition(async () => {
 			const result = await deleteMappingAction({
 				organizationId,
+				legalEntityId,
 				mappingId,
 			});
 
