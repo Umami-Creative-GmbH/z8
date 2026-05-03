@@ -241,6 +241,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "implementation-checklist",
+		titleKey: "settings.implementationChecklist.title",
+		titleDefault: "Implementation Checklist",
+		descriptionKey: "settings.implementationChecklist.description",
+		descriptionDefault:
+			"Track customer rollout setup across policies, payroll, integrations, and employee import",
+		href: "/settings/implementation-checklist",
+		icon: "target",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
 		id: "locations",
 		titleKey: "settings.locations.title",
 		titleDefault: "Locations",

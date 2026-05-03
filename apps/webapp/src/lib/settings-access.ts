@@ -24,6 +24,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/import",
 	"/settings/export-operations",
 	"/settings/scheduled-exports",
+	"/settings/implementation-checklist",
 ] as const;
 
 export type SettingsAccessMembershipRole = "owner" | "admin" | "member" | null;

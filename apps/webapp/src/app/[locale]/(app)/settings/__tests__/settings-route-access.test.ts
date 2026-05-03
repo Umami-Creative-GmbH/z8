@@ -33,6 +33,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"import/page.tsx",
 	"export-operations/page.tsx",
 	"scheduled-exports/page.tsx",
+	"implementation-checklist/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -75,6 +76,7 @@ describe("org-admin settings route access", () => {
 			"/settings/import",
 			"/settings/export-operations",
 			"/settings/scheduled-exports",
+			"/settings/implementation-checklist",
 		]);
 	});
 
@@ -115,6 +117,7 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(false);
 	});
 
 	it("guards direct demo route and mutations with the demo data feature helper", () => {
@@ -331,6 +334,19 @@ describe("org-admin settings route access", () => {
 		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*EmployeeSkillWithDetails/);
 		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillValidationResult/);
 		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillWithRelations/);
+	});
+
+	it("keeps the implementation checklist context loader server-only", () => {
+		const actionsSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/actions.ts"), "utf8"),
+		);
+		const queriesSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/queries.ts"), "utf8"),
+		);
+
+		expect(actionsSource).not.toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+		expect(queriesSource.startsWith('import "server-only";')).toBe(true);
+		expect(queriesSource).toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
 	});
 
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {
