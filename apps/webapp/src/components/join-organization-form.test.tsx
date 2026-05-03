@@ -15,6 +15,8 @@ describe("JoinOrganizationForm mobile UX", () => {
 		const source = readFileSync(join(process.cwd(), "src/components/join-organization-form.tsx"), "utf8");
 
 		expect(source).toContain("mx-auto w-full max-w-md");
-		expect(source).toContain("CardFooter className=\"flex flex-col gap-2 sm:flex-row sm:justify-center\"");
+		expect(source).toContain(
+			"CardFooter className=\"flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center\"",
+		);
 	});
 });

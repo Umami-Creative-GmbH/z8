@@ -209,7 +209,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 						</Alert>
 					)}
 				</CardContent>
-				<CardFooter className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+				<CardFooter className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
 					<Button asChild>
 						<Link href="/">{t("common.goToDashboard", "Go to Dashboard")}</Link>
 					</Button>
@@ -234,7 +234,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 						)}
 					</CardDescription>
 				</CardHeader>
-				<CardFooter className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+				<CardFooter className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
 					<Button asChild>
 						<Link href="/">{t("common.goToDashboard", "Go to Dashboard")}</Link>
 					</Button>
