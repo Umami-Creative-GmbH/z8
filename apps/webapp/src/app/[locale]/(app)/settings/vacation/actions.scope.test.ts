@@ -13,16 +13,18 @@ const mockState = vi.hoisted(() => ({
 		currentEmployee: {
 			id: "manager-employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "manager" as const,
 		},
 	},
 	targetEmployee: {
 		id: "employee-1",
 		organizationId: "org-1",
+		legalEntityId: "entity-1",
 		role: "employee" as const,
 	},
 	managedEmployeeIds: new Set<string>(["employee-1"]),
-	policyRows: [{ id: "policy-1", organizationId: "org-1", name: "Standard" }],
+	policyRows: [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard" }],
 	selectQueue: [] as Array<any>,
 	teamQueue: [] as Array<any>,
 	insertQueue: [] as Array<any>,
@@ -42,12 +44,14 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: { id: "id", organizationId: "organizationId", role: "role" },
+	employee: { id: "id", organizationId: "organizationId", legalEntityId: "legalEntityId", role: "role" },
+	legalEntity: { id: "id", organizationId: "organizationId", isDefault: "isDefault", isActive: "isActive" },
 	employeeVacationAllowance: { id: "id", employeeId: "employeeId", year: "year" },
 	vacationAdjustment: { id: "id", employeeId: "employeeId", year: "year" },
 	vacationAllowance: {
 		id: "id",
 		organizationId: "organizationId",
+		legalEntityId: "legalEntityId",
 		isActive: "isActive",
 		isCompanyDefault: "isCompanyDefault",
 		startDate: "startDate",
@@ -207,6 +211,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 				findMany: vi.fn(async () => mockState.policyRows),
 				findFirst: vi.fn(async () => mockState.policyRows[0] ?? null),
 			},
+			legalEntity: {
+				findFirst: vi.fn(async () => ({ id: "entity-1" })),
+			},
 			employeeVacationAllowance: {
 				findFirst: vi.fn(async () => null),
 			},
@@ -276,15 +283,17 @@ describe("vacation settings scope actions", () => {
 		mockState.actor.currentEmployee = {
 			id: "manager-employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "manager",
 		};
 		mockState.managedEmployeeIds = new Set(["employee-1"]);
 		mockState.targetEmployee = {
 			id: "employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "employee",
 		};
-		mockState.policyRows = [{ id: "policy-1", organizationId: "org-1", name: "Standard" }];
+		mockState.policyRows = [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard" }];
 		mockState.selectQueue = [];
 		mockState.teamQueue = [];
 		mockState.insertQueue = [];
@@ -299,7 +308,7 @@ describe("vacation settings scope actions", () => {
 	});
 
 	it("lets managers assign a vacation policy only to managed members", async () => {
-		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1" }]];
+		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }]];
 		mockState.insertQueue = [[{ id: "assignment-1" }]];
 
 		const result = await createVacationPolicyAssignment({
@@ -315,9 +324,10 @@ describe("vacation settings scope actions", () => {
 		mockState.targetEmployee = {
 			id: "employee-2",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "employee",
 		};
-		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1" }]];
+		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }]];
 
 		const result = await createVacationPolicyAssignment({
 			policyId: "policy-1",
@@ -333,7 +343,7 @@ describe("vacation settings scope actions", () => {
 
 	it("rejects vacation team assignments outside the actor organization", async () => {
 		mockState.actor.accessTier = "orgAdmin";
-		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1" }]];
+		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }]];
 		mockState.teamQueue = [null];
 
 		const result = await createVacationPolicyAssignment({
@@ -350,7 +360,7 @@ describe("vacation settings scope actions", () => {
 
 	it("rejects malformed vacation assignment payloads when required target ids are missing or conflicting", async () => {
 		mockState.actor.accessTier = "orgAdmin";
-		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1" }], [{ id: "policy-1", organizationId: "org-1" }], [{ id: "policy-1", organizationId: "org-1" }]];
+		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }], [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }], [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }]];
 
 		const missingTeamId = await createVacationPolicyAssignment({
 			policyId: "policy-1",

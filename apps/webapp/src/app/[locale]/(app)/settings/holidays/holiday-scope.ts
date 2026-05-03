@@ -101,3 +101,13 @@ export function filterAssignmentsForManagerHolidayScope<T extends HolidayScopeAs
 		return assignment.employeeId ? managedEmployeeIds.has(assignment.employeeId) : false;
 	});
 }
+
+export function assertSameLegalEntityTarget(input: {
+	holidayLegalEntityId: string;
+	targetLegalEntityId: string;
+	targetLabel: "team" | "employee";
+}) {
+	if (input.holidayLegalEntityId !== input.targetLegalEntityId) {
+		throw new Error(`The selected ${input.targetLabel} belongs to a different legal entity.`);
+	}
+}

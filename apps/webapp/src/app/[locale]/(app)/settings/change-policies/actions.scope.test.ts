@@ -13,6 +13,7 @@ const mockState = vi.hoisted(() => ({
 		currentEmployee: {
 			id: "manager-employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "manager" as const,
 		},
 		dbService: null as any,
@@ -20,18 +21,18 @@ const mockState = vi.hoisted(() => ({
 	managedEmployeeIds: new Set<string>(["employee-managed"]),
 	teamPermissionRows: [{ teamId: "team-managed", canManageTeamSettings: true }],
 	teamRows: [
-		{ id: "team-managed", organizationId: "org-1", name: "Managed Team" },
-		{ id: "team-other", organizationId: "org-1", name: "Other Team" },
+		{ id: "team-managed", organizationId: "org-1", legalEntityId: "entity-1", name: "Managed Team" },
+		{ id: "team-other", organizationId: "org-1", legalEntityId: "entity-1", name: "Other Team" },
 	],
 	employeeRows: [
-		{ id: "employee-managed", organizationId: "org-1", firstName: "Mina", lastName: "Miller", isActive: true, teamId: "team-managed" },
-		{ id: "employee-fallback", organizationId: "org-1", firstName: "Fall", lastName: "Back", isActive: true, teamId: null },
-		{ id: "employee-other", organizationId: "org-1", firstName: "Otto", lastName: "Other", isActive: true, teamId: "team-other" },
+		{ id: "employee-managed", organizationId: "org-1", legalEntityId: "entity-1", firstName: "Mina", lastName: "Miller", isActive: true, teamId: "team-managed" },
+		{ id: "employee-fallback", organizationId: "org-1", legalEntityId: "entity-1", firstName: "Fall", lastName: "Back", isActive: true, teamId: null },
+		{ id: "employee-other", organizationId: "org-1", legalEntityId: "entity-1", firstName: "Otto", lastName: "Other", isActive: true, teamId: "team-other" },
 	],
 	policyRows: [
-		{ id: "policy-org", organizationId: "org-1", name: "Org Default", isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
-		{ id: "policy-team", organizationId: "org-1", name: "Managed Team Policy", isActive: true, createdAt: new Date("2026-01-02T00:00:00.000Z") },
-		{ id: "policy-other", organizationId: "org-1", name: "Other Team Policy", isActive: true, createdAt: new Date("2026-01-03T00:00:00.000Z") },
+		{ id: "policy-org", organizationId: "org-1", legalEntityId: "entity-1", name: "Org Default", isActive: true, createdAt: new Date("2026-01-01T00:00:00.000Z") },
+		{ id: "policy-team", organizationId: "org-1", legalEntityId: "entity-1", name: "Managed Team Policy", isActive: true, createdAt: new Date("2026-01-02T00:00:00.000Z") },
+		{ id: "policy-other", organizationId: "org-1", legalEntityId: "entity-1", name: "Other Team Policy", isActive: true, createdAt: new Date("2026-01-03T00:00:00.000Z") },
 	],
 	assignmentRows: [
 		{
@@ -129,6 +130,7 @@ vi.mock("@/db/schema", () => ({
 	changePolicy: {
 		id: "id",
 		organizationId: "organizationId",
+		legalEntityId: "legalEntityId",
 		isActive: "isActive",
 		createdAt: "createdAt",
 		selfServiceDays: "selfServiceDays",
@@ -139,6 +141,7 @@ vi.mock("@/db/schema", () => ({
 	changePolicyAssignment: {
 		id: "id",
 		organizationId: "organizationId",
+		legalEntityId: "legalEntityId",
 		isActive: "isActive",
 		priority: "priority",
 		createdAt: "createdAt",
@@ -148,16 +151,18 @@ vi.mock("@/db/schema", () => ({
 		policyId: "policyId",
 		$inferSelect: {},
 	},
+		legalEntity: { id: "id", organizationId: "organizationId", isDefault: "isDefault", isActive: "isActive" },
 		employee: {
 			id: "id",
 			organizationId: "organizationId",
+			legalEntityId: "legalEntityId",
 			teamId: "teamId",
 			isActive: "isActive",
 		firstName: "firstName",
 		lastName: "lastName",
 		$inferSelect: {},
 	},
-	team: { id: "id", organizationId: "organizationId", name: "name" },
+	team: { id: "id", organizationId: "organizationId", legalEntityId: "legalEntityId", name: "name" },
 	teamPermissions: {
 		employeeId: "employeeId",
 		organizationId: "organizationId",
@@ -177,6 +182,9 @@ vi.mock("../employees/employee-action-utils", async () => {
 				dbService: {
 					db: {
 						query: {
+							legalEntity: {
+								findFirst: vi.fn(async () => ({ id: "entity-1" })),
+							},
 							changePolicy: {
 								findMany: vi.fn(async () => mockState.policyRows),
 							},
@@ -247,6 +255,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 
 	const db = {
 		query: {
+			legalEntity: {
+				findFirst: vi.fn(async () => ({ id: "entity-1" })),
+			},
 			changePolicy: {
 				findMany: vi.fn(async () => mockState.policyRows),
 			},
@@ -323,6 +334,7 @@ describe("change policy scoped access", () => {
 			currentEmployee: {
 				id: "manager-employee-1",
 				organizationId: "org-1",
+				legalEntityId: "entity-1",
 				role: "manager",
 			},
 		};

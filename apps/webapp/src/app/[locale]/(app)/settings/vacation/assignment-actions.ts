@@ -2,8 +2,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
-import { AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { employee, legalEntity, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
+import { type AnyAppError, AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -19,6 +19,86 @@ import {
 	validateAssignmentTargetFields,
 } from "../employees/employee-action-utils";
 
+function assertSameVacationPolicyLegalEntityTarget(input: {
+	policyLegalEntityId: string;
+	targetLegalEntityId: string;
+	targetLabel: "team" | "employee";
+}) {
+	if (input.policyLegalEntityId !== input.targetLegalEntityId) {
+		throw new Error(`The selected ${input.targetLabel} belongs to a different legal entity.`);
+	}
+}
+
+function resolveSelectedVacationAssignmentLegalEntityId(
+	actor: {
+		accessTier: string;
+		organizationId: string;
+		session: { user: { id: string } };
+		currentEmployee: { legalEntityId?: string | null } | null;
+		legalEntityAdminIds?: string[];
+	},
+	dbService: {
+		db: typeof import("@/db").db;
+		query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
+	},
+	requestedLegalEntityId: string | undefined,
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (requestedLegalEntityId) {
+			const canAccess =
+				actor.accessTier === "orgAdmin" ||
+				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+
+			if (!canAccess) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this legal entity.",
+							userId: actor.session.user.id,
+							resource: "legal_entity",
+							action: "access",
+						}),
+					),
+				);
+			}
+
+			return requestedLegalEntityId;
+		}
+
+		if (actor.currentEmployee?.legalEntityId) {
+			return actor.currentEmployee.legalEntityId;
+		}
+
+		const defaultEntity = yield* _(
+			dbService.query(queryName, async () => {
+				return await dbService.db.query.legalEntity.findFirst({
+					where: and(
+						eq(legalEntity.organizationId, actor.organizationId),
+						eq(legalEntity.isDefault, true),
+						eq(legalEntity.isActive, true),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!defaultEntity) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "No default legal entity exists for this organization.",
+						entityType: "legal_entity",
+					}),
+				),
+			);
+		}
+
+		return defaultEntity.id;
+	});
+}
+
 // ============================================
 // VACATION POLICY ASSIGNMENTS (Policies to org/team/employee)
 // ============================================
@@ -28,12 +108,21 @@ import {
  */
 export async function getVacationPolicies(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(
+		const actor = yield* _(
 			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPoliciesForAssignment:actor" }),
 		);
 		const dbService = yield* _(DatabaseService);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationAssignmentLegalEntityId(
+				actor,
+				dbService,
+				selectedLegalEntityIdParam,
+				"getVacationPoliciesForAssignment:defaultLegalEntity",
+			),
+		);
 
 		// Step 3: Get policies from database
 		const policies = yield* _(
@@ -41,7 +130,12 @@ export async function getVacationPolicies(
 				return await dbService.db
 					.select()
 					.from(vacationAllowance)
-					.where(eq(vacationAllowance.organizationId, organizationId))
+					.where(
+						and(
+							eq(vacationAllowance.organizationId, organizationId),
+							eq(vacationAllowance.legalEntityId, selectedLegalEntityId),
+						),
+					)
 					.orderBy(vacationAllowance.startDate);
 			}),
 			Effect.mapError(
@@ -66,12 +160,21 @@ export async function getVacationPolicies(
  */
 export async function getVacationPolicyAssignments(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
 			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPolicyAssignments:actor" }),
 		);
 		const dbService = yield* _(DatabaseService);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationAssignmentLegalEntityId(
+				actor,
+				dbService,
+				selectedLegalEntityIdParam,
+				"getVacationPolicyAssignments:defaultLegalEntity",
+			),
+		);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 
 		// Step 3: Get assignments from database with policy, team, and employee info
@@ -118,6 +221,7 @@ export async function getVacationPolicyAssignments(
 					.where(
 						and(
 							eq(vacationPolicyAssignment.organizationId, organizationId),
+							eq(vacationPolicyAssignment.legalEntityId, selectedLegalEntityId),
 							eq(vacationPolicyAssignment.isActive, true),
 						),
 					)
@@ -155,6 +259,7 @@ export async function createVacationPolicyAssignment(data: {
 	assignmentType: "organization" | "team" | "employee";
 	teamId?: string;
 	employeeId?: string;
+	legalEntityId?: string;
 }): Promise<ServerActionResult<any>> {
 	const effect = Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
@@ -206,10 +311,37 @@ export async function createVacationPolicyAssignment(data: {
 			);
 		}
 
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationAssignmentLegalEntityId(
+				actor,
+				dbService,
+				data.legalEntityId ?? policy.legalEntityId,
+				"createVacationPolicyAssignment:defaultLegalEntity",
+			),
+		);
+
+		if (policy.legalEntityId !== selectedLegalEntityId) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "vacation_policy_assignment",
+						action: "create",
+					}),
+				),
+			);
+		}
+
 		if (data.employeeId) {
 			const targetEmployee = yield* _(
 				getTargetEmployee(data.employeeId, "createVacationPolicyAssignment:getTargetEmployee"),
 			);
+			assertSameVacationPolicyLegalEntityTarget({
+				policyLegalEntityId: selectedLegalEntityId,
+				targetLegalEntityId: targetEmployee.legalEntityId,
+				targetLabel: "employee",
+			});
 			yield* _(
 				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
 					message: "Insufficient permissions",
@@ -220,13 +352,18 @@ export async function createVacationPolicyAssignment(data: {
 		}
 
 		if (data.assignmentType === "team" && data.teamId) {
-			yield* _(
+			const targetTeam = yield* _(
 				getOrganizationTeam(
 					data.teamId,
 					actor.organizationId,
 					"createVacationPolicyAssignment:getOrganizationTeam",
 				),
 			);
+			assertSameVacationPolicyLegalEntityTarget({
+				policyLegalEntityId: selectedLegalEntityId,
+				targetLegalEntityId: (targetTeam as unknown as { legalEntityId: string }).legalEntityId,
+				targetLabel: "team",
+			});
 		}
 
 		// Step 6: Calculate priority based on assignment type
@@ -241,6 +378,7 @@ export async function createVacationPolicyAssignment(data: {
 						.values({
 							policyId: data.policyId,
 							organizationId: actor.organizationId,
+							legalEntityId: selectedLegalEntityId,
 							assignmentType: data.assignmentType,
 							teamId: data.teamId || null,
 							employeeId: data.employeeId || null,
@@ -363,7 +501,7 @@ export async function setEmployeePolicyAssignment(
 		// If policyId provided, create new assignment
 		if (policyId) {
 			// Verify policy exists and belongs to same org
-			const _existingPolicy = yield* _(
+			const existingPolicy = yield* _(
 				dbService.query("verifyPolicy", async () => {
 					const [p] = await dbService.db
 						.select()
@@ -392,12 +530,19 @@ export async function setEmployeePolicyAssignment(
 				),
 			);
 
+			assertSameVacationPolicyLegalEntityTarget({
+				policyLegalEntityId: existingPolicy.legalEntityId,
+				targetLegalEntityId: targetEmployee.legalEntityId,
+				targetLabel: "employee",
+			});
+
 			// Create new assignment
 			yield* _(
 				dbService.query("createAssignment", async () => {
 					await dbService.db.insert(vacationPolicyAssignment).values({
 						policyId,
 						organizationId: actor.organizationId,
+						legalEntityId: existingPolicy.legalEntityId,
 						assignmentType: "employee",
 						employeeId,
 						priority: 2, // Employee level = highest priority

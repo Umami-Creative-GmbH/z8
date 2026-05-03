@@ -6,6 +6,7 @@ import {
 	changePolicy,
 	changePolicyAssignment,
 	employee,
+	legalEntity,
 	team,
 	teamPermissions,
 } from "@/db/schema";
@@ -69,6 +70,7 @@ export interface CreateAssignmentInput {
 	assignmentType: "organization" | "team" | "employee";
 	teamId?: string;
 	employeeId?: string;
+	legalEntityId?: string;
 	effectiveFrom?: Date;
 	effectiveUntil?: Date;
 }
@@ -76,14 +78,16 @@ export interface CreateAssignmentInput {
 type DatabaseClient = typeof import("@/db").db;
 
 type ChangePolicyScopedActor = {
-	accessTier: "manager" | "orgAdmin";
+	accessTier: "manager" | "orgAdmin" | "entityAdmin";
 	organizationId: string;
 	session: { user: { id: string } };
 	currentEmployee: {
 		id: string;
 		organizationId: string;
+		legalEntityId?: string | null;
 		role: "admin" | "manager" | "employee";
 	} | null;
+	legalEntityAdminIds?: string[];
 	dbService: {
 		db: DatabaseClient;
 		query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
@@ -181,6 +185,7 @@ function getScopedChangePolicyAccessContext(organizationId: string, queryName: s
 function getVisibleScopedChangePolicyIds(
 	actor: ChangePolicyScopedActor,
 	organizationId: string,
+	selectedLegalEntityId: string,
 	manageableTeamIds: Set<string> | null,
 	managedEmployeeIds: Set<string> | null,
 	queryName: string,
@@ -195,6 +200,7 @@ function getVisibleScopedChangePolicyIds(
 				return await actor.dbService.db.query.changePolicyAssignment.findMany({
 					where: and(
 						eq(changePolicyAssignment.organizationId, organizationId),
+						eq(changePolicyAssignment.legalEntityId, selectedLegalEntityId),
 						eq(changePolicyAssignment.isActive, true),
 					),
 					columns: {
@@ -325,6 +331,76 @@ function requireOrgAdminForChangePolicyMutation(
 	});
 }
 
+function assertSameChangePolicyLegalEntityTarget(input: {
+	policyLegalEntityId: string;
+	targetLegalEntityId: string;
+	targetLabel: "team" | "employee";
+}) {
+	if (input.policyLegalEntityId !== input.targetLegalEntityId) {
+		throw new Error(`The selected ${input.targetLabel} belongs to a different legal entity.`);
+	}
+}
+
+function resolveSelectedChangePolicyLegalEntityId(
+	actor: ChangePolicyScopedActor,
+	requestedLegalEntityId: string | undefined,
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (requestedLegalEntityId) {
+			const canAccess =
+				actor.accessTier === "orgAdmin" ||
+				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+
+			if (!canAccess) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this legal entity.",
+							userId: actor.session.user.id,
+							resource: "legal_entity",
+							action: "access",
+						}),
+					),
+				);
+			}
+
+			return requestedLegalEntityId;
+		}
+
+		if (actor.currentEmployee?.legalEntityId) {
+			return actor.currentEmployee.legalEntityId;
+		}
+
+		const defaultEntity = yield* _(
+			actor.dbService.query(queryName, async () => {
+				return await actor.dbService.db.query.legalEntity.findFirst({
+					where: and(
+						eq(legalEntity.organizationId, actor.organizationId),
+						eq(legalEntity.isDefault, true),
+						eq(legalEntity.isActive, true),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!defaultEntity) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "No default legal entity exists for this organization.",
+						entityType: "legal_entity",
+					}),
+				),
+			);
+		}
+
+		return defaultEntity.id;
+	});
+}
+
 function getPolicyForActiveOrganization(policyId: string, actor: ChangePolicyScopedActor, queryName: string) {
 	return actor.dbService.query(queryName, async () => {
 		return await actor.dbService.db.query.changePolicy.findFirst({
@@ -342,15 +418,24 @@ function getPolicyForActiveOrganization(policyId: string, actor: ChangePolicySco
 
 export async function getChangePolicies(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<ChangePolicyRecord[]>> {
 	const effect = Effect.gen(function* (_) {
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedChangePolicyAccessContext(organizationId, "getChangePolicies:actor"),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedChangePolicyLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getChangePolicies:defaultLegalEntity",
+			),
+		);
 		const visiblePolicyIds = yield* _(
 			getVisibleScopedChangePolicyIds(
 				actor,
 				organizationId,
+				selectedLegalEntityId,
 				manageableTeamIds,
 				managedEmployeeIds,
 				"getChangePolicies:visibleAssignments",
@@ -365,6 +450,7 @@ export async function getChangePolicies(
 			actor.dbService.query("getChangePolicies", async () => {
 				const conditions = [
 					eq(changePolicy.organizationId, organizationId),
+					eq(changePolicy.legalEntityId, selectedLegalEntityId),
 					eq(changePolicy.isActive, true),
 				];
 
@@ -398,6 +484,13 @@ export async function getChangePolicy(
 		)) as ChangePolicyScopedActor;
 
 		if (actor.accessTier === "manager") {
+			const selectedLegalEntityId = yield* _(
+				resolveSelectedChangePolicyLegalEntityId(
+					actor,
+					undefined,
+					"getChangePolicy:defaultLegalEntity",
+				),
+			);
 			const { managedEmployeeIds, manageableTeamIds } = yield* _(
 				getScopedChangePolicyAccessContext(actor.organizationId, "getChangePolicy:scope"),
 			);
@@ -405,6 +498,7 @@ export async function getChangePolicy(
 				getVisibleScopedChangePolicyIds(
 					actor,
 					actor.organizationId,
+					selectedLegalEntityId,
 					manageableTeamIds,
 					managedEmployeeIds,
 					"getChangePolicy:visibleAssignments",
@@ -431,6 +525,7 @@ export async function getChangePolicy(
 export async function createChangePolicy(
 	organizationId: string,
 	data: CreateChangePolicyInput,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = (yield* _(
@@ -478,12 +573,21 @@ export async function createChangePolicy(
 			);
 		}
 
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedChangePolicyLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"createChangePolicy:defaultLegalEntity",
+			),
+		);
+
 		const [policy] = yield* _(
 			actor.dbService.query("createChangePolicy", async () => {
 				return await actor.dbService.db
 					.insert(changePolicy)
 					.values({
 						organizationId: actor.organizationId,
+						legalEntityId: selectedLegalEntityId,
 						name: data.name.trim(),
 						description: data.description?.trim(),
 						selfServiceDays: data.selfServiceDays,
@@ -645,16 +749,25 @@ export async function deleteChangePolicy(policyId: string): Promise<ServerAction
 
 export async function getChangePolicyAssignments(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<ChangePolicyAssignmentWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedChangePolicyAccessContext(organizationId, "getChangePolicyAssignments:actor"),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedChangePolicyLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getChangePolicyAssignments:defaultLegalEntity",
+			),
 		);
 		const assignments = (yield* _(
 			actor.dbService.query("getChangePolicyAssignments", async () => {
 				return await actor.dbService.db.query.changePolicyAssignment.findMany({
 					where: and(
 						eq(changePolicyAssignment.organizationId, organizationId),
+						eq(changePolicyAssignment.legalEntityId, selectedLegalEntityId),
 						eq(changePolicyAssignment.isActive, true),
 					),
 					with: {
@@ -742,6 +855,102 @@ export async function createChangePolicyAssignment(
 		const priority =
 			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
+		const policy = yield* _(
+			getPolicyForActiveOrganization(data.policyId, actor, "createChangePolicyAssignment:getPolicy"),
+			Effect.flatMap((value) =>
+				value
+					? Effect.succeed(value)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Change policy not found",
+								entityType: "change_policy",
+								entityId: data.policyId,
+							}),
+						),
+			),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedChangePolicyLegalEntityId(
+				actor,
+				data.legalEntityId ?? policy.legalEntityId,
+				"createChangePolicyAssignment:defaultLegalEntity",
+			),
+		);
+
+		if (policy.legalEntityId !== selectedLegalEntityId) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "change_policy_assignment",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		if (data.employeeId) {
+			const targetEmployee = yield* _(
+				actor.dbService.query("createChangePolicyAssignment:getEmployee", async () => {
+					return await actor.dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.id, data.employeeId as string),
+							eq(employee.organizationId, actor.organizationId),
+							eq(employee.isActive, true),
+						),
+						columns: { id: true, legalEntityId: true },
+					});
+				}),
+				Effect.flatMap((value) =>
+					value
+						? Effect.succeed(value)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: data.employeeId,
+								}),
+							),
+				),
+			);
+			assertSameChangePolicyLegalEntityTarget({
+				policyLegalEntityId: selectedLegalEntityId,
+				targetLegalEntityId: targetEmployee.legalEntityId,
+				targetLabel: "employee",
+			});
+		}
+
+		if (data.assignmentType === "team" && data.teamId) {
+			const targetTeam = yield* _(
+				actor.dbService.query("createChangePolicyAssignment:getTeam", async () => {
+					return await actor.dbService.db.query.team.findFirst({
+						where: and(
+							eq(team.id, data.teamId as string),
+							eq(team.organizationId, actor.organizationId),
+						),
+						columns: { id: true, legalEntityId: true },
+					});
+				}),
+				Effect.flatMap((value) =>
+					value
+						? Effect.succeed(value)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Team not found",
+									entityType: "team",
+									entityId: data.teamId,
+								}),
+							),
+				),
+			);
+			assertSameChangePolicyLegalEntityTarget({
+				policyLegalEntityId: selectedLegalEntityId,
+				targetLegalEntityId: (targetTeam as unknown as { legalEntityId: string }).legalEntityId,
+				targetLabel: "team",
+			});
+		}
+
 		const [assignment] = yield* _(
 			actor.dbService.query("createChangePolicyAssignment", async () => {
 				return await actor.dbService.db
@@ -749,6 +958,7 @@ export async function createChangePolicyAssignment(
 					.values({
 						policyId: data.policyId,
 						organizationId: actor.organizationId,
+						legalEntityId: selectedLegalEntityId,
 						assignmentType: data.assignmentType,
 						teamId: data.teamId ?? null,
 						employeeId: data.employeeId ?? null,

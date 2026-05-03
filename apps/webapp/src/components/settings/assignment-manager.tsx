@@ -286,14 +286,14 @@ export function AssignmentManager({
 	return (
 		<>
 			<div className="space-y-6">
-				{/* Organization Level */}
+				{/* Entity Level */}
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
 							<IconBuilding className="h-5 w-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
-									{t("settings.holidays.assignments.orgLevel", "Organization Level")}
+									{t("settings.holidays.assignments.orgLevel", "Entity-wide Level")}
 								</CardTitle>
 								<CardDescription>
 									{t(

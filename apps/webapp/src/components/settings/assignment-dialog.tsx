@@ -161,7 +161,7 @@ export function AssignmentDialog({
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t("settings.holidays.assignments.setOrgDefault", "Set Organization Default");
+				return t("settings.holidays.assignments.setOrgDefault", "Set Entity-wide Default");
 			case "team":
 				return t("settings.holidays.assignments.assignToTeam", "Assign to Team");
 			case "employee":

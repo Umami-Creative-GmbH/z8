@@ -3,6 +3,7 @@ import {
 	canAccessPolicyDefinitions,
 	canManagePolicyDefinitions,
 	canManagePolicyTargetEmployee,
+	assertSameLegalEntityTarget,
 	canManagePolicyAssignmentType,
 	canAccessWorkPolicyComplianceActions,
 	policyBelongsToOrganization,
@@ -31,5 +32,15 @@ describe("policy scope helpers", () => {
 	it("requires assignments to stay within the actor organization", () => {
 		expect(policyBelongsToOrganization("org-1", "org-1")).toBe(true);
 		expect(policyBelongsToOrganization("org-2", "org-1")).toBe(false);
+	});
+
+	it("rejects assigning a policy to an employee in another legal entity", () => {
+		expect(() =>
+			assertSameLegalEntityTarget({
+				policyLegalEntityId: "entity-a",
+				targetLegalEntityId: "entity-b",
+				targetLabel: "employee",
+			}),
+		).toThrow("The selected employee belongs to a different legal entity.");
 	});
 });

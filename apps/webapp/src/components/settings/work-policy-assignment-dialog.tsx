@@ -148,7 +148,7 @@ export function WorkPolicyAssignmentDialog({
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t("settings.workPolicies.assignOrg", "Set Organization Default");
+				return t("settings.workPolicies.assignOrg", "Set Entity-wide Default");
 			case "team":
 				return t("settings.workPolicies.assignTeam", "Assign to Team");
 			case "employee":

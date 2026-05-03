@@ -40,3 +40,13 @@ export function policyBelongsToOrganization(
 ) {
 	return policyOrganizationId === organizationId;
 }
+
+export function assertSameLegalEntityTarget(input: {
+	policyLegalEntityId: string;
+	targetLegalEntityId: string;
+	targetLabel: "team" | "employee";
+}) {
+	if (input.policyLegalEntityId !== input.targetLegalEntityId) {
+		throw new Error(`The selected ${input.targetLabel} belongs to a different legal entity.`);
+	}
+}

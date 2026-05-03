@@ -4,6 +4,7 @@ import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	employee,
+	legalEntity,
 	team,
 	workPolicy,
 	workPolicyAssignment,
@@ -20,6 +21,7 @@ import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	AuthorizationError,
+	type AnyAppError,
 	ConflictError,
 	NotFoundError,
 	ValidationError,
@@ -40,7 +42,11 @@ import {
 	requireSettingsActorEmployeeRecord,
 	validateAssignmentTargetFields,
 } from "../employees/employee-action-utils";
-import { canAccessWorkPolicyComplianceActions, policyBelongsToOrganization } from "./policy-scope";
+import {
+	assertSameLegalEntityTarget,
+	canAccessWorkPolicyComplianceActions,
+	policyBelongsToOrganization,
+} from "./policy-scope";
 
 // ============================================
 // TYPES
@@ -139,6 +145,76 @@ export interface CreateWorkPolicyInput {
 
 export type UpdateWorkPolicyInput = Partial<CreateWorkPolicyInput>;
 
+function resolveSelectedPolicyLegalEntityId(
+	actor: {
+		accessTier: string;
+		organizationId: string;
+		session: { user: { id: string } };
+		currentEmployee: { legalEntityId?: string | null } | null;
+		legalEntityAdminIds?: string[];
+		dbService: {
+			db: typeof import("@/db").db;
+			query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
+		};
+	},
+	requestedLegalEntityId: string | undefined,
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (requestedLegalEntityId) {
+			const canAccess =
+				actor.accessTier === "orgAdmin" ||
+				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+
+			if (!canAccess) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this legal entity.",
+							userId: actor.session.user.id,
+							resource: "legal_entity",
+							action: "access",
+						}),
+					),
+				);
+			}
+
+			return requestedLegalEntityId;
+		}
+
+		if (actor.currentEmployee?.legalEntityId) {
+			return actor.currentEmployee.legalEntityId;
+		}
+
+		const defaultEntity = yield* _(
+			actor.dbService.query(queryName, async () => {
+				return await actor.dbService.db.query.legalEntity.findFirst({
+					where: and(
+						eq(legalEntity.organizationId, actor.organizationId),
+						eq(legalEntity.isDefault, true),
+						eq(legalEntity.isActive, true),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!defaultEntity) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "No default legal entity exists for this organization.",
+						entityType: "legal_entity",
+					}),
+				),
+			);
+		}
+
+		return defaultEntity.id;
+	});
+}
+
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
 // ============================================
@@ -147,17 +223,29 @@ export type UpdateWorkPolicyInput = Partial<CreateWorkPolicyInput>;
 
 export async function getWorkPolicies(
 	organizationId: string,
+	selectedLegalEntityId?: string,
 ): Promise<ServerActionResult<WorkPolicyWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(
+		const actor = yield* _(
 			getEmployeeSettingsActorContext({ organizationId, queryName: "getWorkPolicies:actor" }),
+		);
+		const scopedLegalEntityId = yield* _(
+			resolveSelectedPolicyLegalEntityId(
+				actor,
+				selectedLegalEntityId,
+				"getWorkPolicies:defaultLegalEntity",
+			),
 		);
 
 		const dbService = yield* _(DatabaseService);
 		const policies = yield* _(
 			dbService.query("getWorkPolicies", async () => {
 				return await dbService.db.query.workPolicy.findMany({
-					where: and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)),
+					where: and(
+						eq(workPolicy.organizationId, organizationId),
+						eq(workPolicy.legalEntityId, scopedLegalEntityId),
+						eq(workPolicy.isActive, true),
+					),
 					with: {
 						schedule: {
 							with: { days: true },
@@ -242,6 +330,7 @@ export async function getWorkPolicy(
 export async function createWorkPolicy(
 	organizationId: string,
 	data: CreateWorkPolicyInput,
+	selectedLegalEntityId?: string,
 ): Promise<ServerActionResult<WorkPolicyWithDetails>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -275,6 +364,19 @@ export async function createWorkPolicy(
 		}
 
 		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "createWorkPolicy:actor",
+			}),
+		);
+		const scopedLegalEntityId = yield* _(
+			resolveSelectedPolicyLegalEntityId(
+				actor,
+				selectedLegalEntityId,
+				"createWorkPolicy:defaultLegalEntity",
+			),
+		);
 
 		// Check for duplicate name
 		const existingPolicy = yield* _(
@@ -282,6 +384,7 @@ export async function createWorkPolicy(
 				return await dbService.db.query.workPolicy.findFirst({
 					where: and(
 						eq(workPolicy.organizationId, organizationId),
+						eq(workPolicy.legalEntityId, scopedLegalEntityId),
 						eq(workPolicy.name, data.name),
 						eq(workPolicy.isActive, true),
 					),
@@ -308,6 +411,7 @@ export async function createWorkPolicy(
 					.insert(workPolicy)
 					.values({
 						organizationId,
+						legalEntityId: scopedLegalEntityId,
 						name: data.name,
 						description: data.description,
 						scheduleEnabled: data.scheduleEnabled,
@@ -831,6 +935,7 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 
 export async function getWorkPolicyAssignments(
 	organizationId: string,
+	selectedLegalEntityId?: string,
 ): Promise<ServerActionResult<WorkPolicyAssignmentWithDetails[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
@@ -840,12 +945,20 @@ export async function getWorkPolicyAssignments(
 			}),
 		);
 		const dbService = yield* _(DatabaseService);
+		const scopedLegalEntityId = yield* _(
+			resolveSelectedPolicyLegalEntityId(
+				actor,
+				selectedLegalEntityId,
+				"getWorkPolicyAssignments:defaultLegalEntity",
+			),
+		);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const assignments = yield* _(
 			dbService.query("getWorkPolicyAssignments", async () => {
 				return await dbService.db.query.workPolicyAssignment.findMany({
 					where: and(
 						eq(workPolicyAssignment.organizationId, organizationId),
+						eq(workPolicyAssignment.legalEntityId, scopedLegalEntityId),
 						eq(workPolicyAssignment.isActive, true),
 					),
 					with: {
@@ -886,6 +999,7 @@ export async function createWorkPolicyAssignment(
 		assignmentType: "organization" | "team" | "employee";
 		teamId?: string;
 		employeeId?: string;
+		legalEntityId?: string;
 	},
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
@@ -914,10 +1028,12 @@ export async function createWorkPolicyAssignment(
 			);
 		}
 
+		let targetEmployeeLegalEntityId: string | null = null;
 		if (data.employeeId) {
 			const targetEmployee = yield* _(
 				getTargetEmployee(data.employeeId, "createWorkPolicyAssignment:getTargetEmployee"),
 			);
+			targetEmployeeLegalEntityId = targetEmployee.legalEntityId;
 			yield* _(
 				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
 					message: "Insufficient permissions",
@@ -927,14 +1043,16 @@ export async function createWorkPolicyAssignment(
 			);
 		}
 
+		let targetTeamLegalEntityId: string | null = null;
 		if (data.assignmentType === "team" && data.teamId) {
-			yield* _(
+			const targetTeam = yield* _(
 				getOrganizationTeam(
 					data.teamId,
 					actor.organizationId,
 					"createWorkPolicyAssignment:getOrganizationTeam",
 				),
 			);
+			targetTeamLegalEntityId = (targetTeam as unknown as { legalEntityId: string }).legalEntityId;
 		}
 
 		const dbService = yield* _(DatabaseService);
@@ -942,7 +1060,7 @@ export async function createWorkPolicyAssignment(
 			dbService.query("getAssignmentPolicy", async () => {
 				return await dbService.db.query.workPolicy.findFirst({
 					where: eq(workPolicy.id, data.policyId),
-					columns: { id: true, organizationId: true },
+					columns: { id: true, organizationId: true, legalEntityId: true },
 				});
 			}),
 			Effect.flatMap((value) =>
@@ -971,6 +1089,43 @@ export async function createWorkPolicyAssignment(
 			);
 		}
 
+		const scopedLegalEntityId = yield* _(
+			resolveSelectedPolicyLegalEntityId(
+				actor,
+				data.legalEntityId ?? policy.legalEntityId,
+				"createWorkPolicyAssignment:defaultLegalEntity",
+			),
+		);
+
+		if (policy.legalEntityId !== scopedLegalEntityId) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "work_policy_assignment",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		if (targetEmployeeLegalEntityId) {
+			assertSameLegalEntityTarget({
+				policyLegalEntityId: scopedLegalEntityId,
+				targetLegalEntityId: targetEmployeeLegalEntityId,
+				targetLabel: "employee",
+			});
+		}
+
+		if (targetTeamLegalEntityId) {
+			assertSameLegalEntityTarget({
+				policyLegalEntityId: scopedLegalEntityId,
+				targetLegalEntityId: targetTeamLegalEntityId,
+				targetLabel: "team",
+			});
+		}
+
 		const priority =
 			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
@@ -981,6 +1136,7 @@ export async function createWorkPolicyAssignment(
 					.values({
 						policyId: data.policyId,
 						organizationId: organizationId,
+						legalEntityId: scopedLegalEntityId,
 						assignmentType: data.assignmentType,
 						teamId: data.teamId ?? null,
 						employeeId: data.employeeId ?? null,
@@ -1850,6 +2006,7 @@ export async function duplicateWorkPolicy(
 					.insert(workPolicy)
 					.values({
 						organizationId: existingPolicy!.organizationId,
+						legalEntityId: existingPolicy!.legalEntityId,
 						name: newName,
 						description: existingPolicy!.description,
 						scheduleEnabled: existingPolicy!.scheduleEnabled,

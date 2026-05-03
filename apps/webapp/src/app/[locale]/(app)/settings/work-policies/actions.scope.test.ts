@@ -13,6 +13,7 @@ const mockState = vi.hoisted(() => ({
 		currentEmployee: {
 			id: "manager-employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "manager" as const,
 		},
 	},
@@ -28,10 +29,11 @@ const mockState = vi.hoisted(() => ({
 	targetEmployee: {
 		id: "employee-1",
 		organizationId: "org-1",
+		legalEntityId: "entity-1",
 		role: "employee" as const,
 	},
 	managedEmployeeIds: new Set<string>(["employee-1"]),
-	workPolicies: [{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true }],
+	workPolicies: [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard", isActive: true }],
 	workPolicyQueue: [] as Array<any>,
 	employeeQueue: [] as Array<any>,
 	teamQueue: [] as Array<any>,
@@ -58,12 +60,14 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: { id: "id", userId: "userId", isActive: "isActive", organizationId: "organizationId" },
-	team: { id: "id", organizationId: "organizationId", name: "name" },
-	workPolicy: { id: "id", organizationId: "organizationId", isActive: "isActive", name: "name" },
+	employee: { id: "id", userId: "userId", isActive: "isActive", organizationId: "organizationId", legalEntityId: "legalEntityId" },
+	legalEntity: { id: "id", organizationId: "organizationId", isDefault: "isDefault", isActive: "isActive" },
+	team: { id: "id", organizationId: "organizationId", legalEntityId: "legalEntityId", name: "name" },
+	workPolicy: { id: "id", organizationId: "organizationId", legalEntityId: "legalEntityId", isActive: "isActive", name: "name" },
 	workPolicyAssignment: {
 		id: "id",
 		organizationId: "organizationId",
+		legalEntityId: "legalEntityId",
 		employeeId: "employeeId",
 		assignmentType: "assignmentType",
 		isActive: "isActive",
@@ -256,6 +260,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 				findMany: vi.fn(async () => mockState.workPolicies),
 				findFirst: vi.fn(async () => mockState.workPolicyQueue.shift() ?? null),
 			},
+			legalEntity: {
+				findFirst: vi.fn(async () => ({ id: "entity-1" })),
+			},
 			workPolicyViolation: {
 				findMany: vi.fn(async () => mockState.violationRows),
 			},
@@ -357,16 +364,18 @@ describe("work policy settings scope actions", () => {
 		mockState.actor.currentEmployee = {
 			id: "manager-employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "manager",
 		};
 		mockState.managedEmployeeIds = new Set(["employee-1"]);
 		mockState.targetEmployee = {
 			id: "employee-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "employee",
 		};
 		mockState.workPolicies = [
-			{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true },
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard", isActive: true },
 		];
 		mockState.workPolicyQueue = [];
 		mockState.employeeQueue = [];
@@ -403,7 +412,7 @@ describe("work policy settings scope actions", () => {
 	});
 
 	it("lets managers assign work policies to managed members", async () => {
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }];
 		mockState.insertQueue = [[{ id: "assignment-1" }]];
 
 		const result = await createWorkPolicyAssignment("org-1", {
@@ -416,10 +425,11 @@ describe("work policy settings scope actions", () => {
 	});
 
 	it("rejects manager work policy assignment for unmanaged members", async () => {
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }];
 		mockState.targetEmployee = {
 			id: "employee-2",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "employee",
 		};
 
@@ -434,7 +444,7 @@ describe("work policy settings scope actions", () => {
 
 	it("rejects work policy team assignments outside the actor organization", async () => {
 		mockState.actor.accessTier = "orgAdmin";
-		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" }];
 		mockState.teamQueue = [null];
 
 		const result = await createWorkPolicyAssignment("org-1", {
@@ -449,9 +459,9 @@ describe("work policy settings scope actions", () => {
 	it("rejects malformed work policy assignment payloads when required target ids are missing or conflicting", async () => {
 		mockState.actor.accessTier = "orgAdmin";
 		mockState.workPolicyQueue = [
-			{ id: "policy-1", organizationId: "org-1" },
-			{ id: "policy-1", organizationId: "org-1" },
-			{ id: "policy-1", organizationId: "org-1" },
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" },
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" },
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1" },
 		];
 
 		const missingTeamId = await createWorkPolicyAssignment("org-1", {

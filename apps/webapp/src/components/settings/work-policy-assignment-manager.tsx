@@ -154,7 +154,7 @@ export function WorkPolicyAssignmentManager({
 	return (
 		<>
 			<div className="space-y-6">
-				{/* Organization Level */}
+				{/* Entity Level */}
 				{showOrgSection ? (
 				<Card>
 					<CardHeader>
@@ -162,7 +162,7 @@ export function WorkPolicyAssignmentManager({
 							<IconBuilding className="h-5 w-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
-									{t("settings.workPolicies.orgLevel", "Organization Default")}
+									{t("settings.workPolicies.orgLevel", "Entity-wide Default")}
 								</CardTitle>
 								<CardDescription>
 									{t(

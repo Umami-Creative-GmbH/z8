@@ -192,7 +192,7 @@ export function HolidayAssignmentDialog({
 	const getDialogTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t("settings.holidays.assignments.addOrgHoliday", "Add Organization-Wide Holiday");
+				return t("settings.holidays.assignments.addOrgHoliday", "Add Entity-wide Holiday");
 			case "team":
 				return t("settings.holidays.assignments.addTeamHoliday", "Add Team Holiday");
 			case "employee":

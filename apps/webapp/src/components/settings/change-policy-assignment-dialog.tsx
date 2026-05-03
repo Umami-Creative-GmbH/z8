@@ -146,7 +146,7 @@ export function ChangePolicyAssignmentDialog({
 	const getTitle = () => {
 		switch (assignmentType) {
 			case "organization":
-				return t("settings.changePolicies.assignOrgTitle", "Set Organization Default Policy");
+				return t("settings.changePolicies.assignOrgTitle", "Set Entity-wide Default Policy");
 			case "team":
 				return t("settings.changePolicies.assignTeamTitle", "Assign Policy to Team");
 			case "employee":

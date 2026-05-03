@@ -6,6 +6,7 @@ import { revalidateTag } from "next/cache";
 import {
 	employee,
 	employeeVacationAllowance,
+	legalEntity,
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
@@ -13,6 +14,7 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
 	AuthorizationError,
+	type AnyAppError,
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
@@ -28,6 +30,76 @@ import {
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,
 } from "../employees/employee-action-utils";
+
+function resolveSelectedVacationLegalEntityId(
+	actor: {
+		accessTier: string;
+		organizationId: string;
+		session: { user: { id: string } };
+		currentEmployee: { legalEntityId?: string | null } | null;
+		legalEntityAdminIds?: string[];
+	},
+	dbService: {
+		db: typeof import("@/db").db;
+		query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
+	},
+	requestedLegalEntityId: string | undefined,
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (requestedLegalEntityId) {
+			const canAccess =
+				actor.accessTier === "orgAdmin" ||
+				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+
+			if (!canAccess) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this legal entity.",
+							userId: actor.session.user.id,
+							resource: "legal_entity",
+							action: "access",
+						}),
+					),
+				);
+			}
+
+			return requestedLegalEntityId;
+		}
+
+		if (actor.currentEmployee?.legalEntityId) {
+			return actor.currentEmployee.legalEntityId;
+		}
+
+		const defaultEntity = yield* _(
+			dbService.query(queryName, async () => {
+				return await dbService.db.query.legalEntity.findFirst({
+					where: and(
+						eq(legalEntity.organizationId, actor.organizationId),
+						eq(legalEntity.isDefault, true),
+						eq(legalEntity.isActive, true),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!defaultEntity) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "No default legal entity exists for this organization.",
+						entityType: "legal_entity",
+					}),
+				),
+			);
+		}
+
+		return defaultEntity.id;
+	});
+}
 
 /**
  * Get a vacation policy by ID using Effect pattern
@@ -78,6 +150,7 @@ export async function getVacationPolicy(
  */
 export async function getCompanyDefaultVacationPolicy(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
@@ -99,6 +172,14 @@ export async function getCompanyDefaultVacationPolicy(
 
 		// Step 3: Get current company default policy
 		const dbService = yield* _(DatabaseService);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationLegalEntityId(
+				actor,
+				dbService,
+				selectedLegalEntityIdParam,
+				"getCompanyDefaultVacationPolicy:defaultLegalEntity",
+			),
+		);
 		const today = new Date().toISOString().split("T")[0];
 
 		const policy = yield* _(
@@ -107,6 +188,7 @@ export async function getCompanyDefaultVacationPolicy(
 				return await dbService.db.query.vacationAllowance.findFirst({
 					where: and(
 						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.legalEntityId, selectedLegalEntityId),
 						eq(vacationAllowance.isCompanyDefault, true),
 						eq(vacationAllowance.isActive, true),
 					),
@@ -133,6 +215,7 @@ export async function createVacationPolicy(data: {
 	startDate: string; // YYYY-MM-DD
 	validUntil?: string | null; // YYYY-MM-DD or null for ongoing
 	isCompanyDefault?: boolean;
+	legalEntityId?: string;
 	defaultAnnualDays: string;
 	accrualType: "annual" | "monthly" | "biweekly";
 	accrualStartMonth?: number;
@@ -153,6 +236,14 @@ export async function createVacationPolicy(data: {
 		);
 
 		const dbService = yield* _(DatabaseService);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationLegalEntityId(
+				actor,
+				dbService,
+				data.legalEntityId,
+				"createVacationPolicy:defaultLegalEntity",
+			),
+		);
 
 		// Step 4: If this is a company default, close the previous default
 		if (data.isCompanyDefault) {
@@ -162,6 +253,7 @@ export async function createVacationPolicy(data: {
 					const currentDefault = await dbService.db.query.vacationAllowance.findFirst({
 						where: and(
 							eq(vacationAllowance.organizationId, data.organizationId),
+							eq(vacationAllowance.legalEntityId, selectedLegalEntityId),
 							eq(vacationAllowance.isCompanyDefault, true),
 							eq(vacationAllowance.isActive, true),
 						),
@@ -193,6 +285,7 @@ export async function createVacationPolicy(data: {
 					.insert(vacationAllowance)
 					.values({
 						organizationId: data.organizationId,
+						legalEntityId: selectedLegalEntityId,
 						name: data.name,
 						startDate: data.startDate,
 						validUntil: data.validUntil || null,
@@ -290,6 +383,7 @@ export async function updateVacationPolicy(
 						.where(
 							and(
 								eq(vacationAllowance.organizationId, policy.organizationId),
+								eq(vacationAllowance.legalEntityId, policy.legalEntityId),
 								eq(vacationAllowance.isCompanyDefault, true),
 								eq(vacationAllowance.isActive, true),
 							),
@@ -608,17 +702,27 @@ export async function createVacationAdjustmentAction(
  */
 export async function getVacationPolicies(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<(typeof vacationAllowance.$inferSelect)[]>> {
 	const effect = Effect.gen(function* (_) {
-		yield* _(
+		const actor = yield* _(
 			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPolicies:actor" }),
 		);
 		const dbService = yield* _(DatabaseService);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationLegalEntityId(
+				actor,
+				dbService,
+				selectedLegalEntityIdParam,
+				"getVacationPolicies:defaultLegalEntity",
+			),
+		);
 		const policies = yield* _(
 			dbService.query("getVacationPolicies", async () => {
 				return await dbService.db.query.vacationAllowance.findMany({
 					where: and(
 						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.legalEntityId, selectedLegalEntityId),
 						eq(vacationAllowance.isActive, true),
 					),
 					with: {

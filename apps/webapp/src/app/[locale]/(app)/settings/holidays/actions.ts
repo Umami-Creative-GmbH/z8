@@ -2,7 +2,7 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { holiday, holidayAssignment, holidayCategory } from "@/db/schema";
+import { holiday, holidayAssignment, holidayCategory, legalEntity } from "@/db/schema";
 import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
 import {
 	AuthorizationError,
@@ -13,8 +13,14 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess } from "../employees/employee-action-utils";
 import {
+	getEmployeeSettingsActorContext,
+	getOrganizationTeam,
+	getTargetEmployee,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
+import {
+	assertSameLegalEntityTarget,
 	filterAssignmentsForManagerHolidayScope,
 	getScopedHolidayAccessContext,
 	type ScopedHolidaySettingsActor,
@@ -23,6 +29,7 @@ import {
 // Types for holiday list
 export interface HolidayListParams extends PaginatedParams {
 	categoryId?: string;
+	legalEntityId?: string;
 }
 
 export interface HolidayWithCategory {
@@ -71,9 +78,73 @@ function runHolidayServerAction<T>(effect: Effect.Effect<T, AnyAppError, never>)
 	return runServerActionSafe(effect);
 }
 
+function resolveSelectedHolidayLegalEntityId(
+	actor: ScopedHolidaySettingsActor & {
+		currentEmployee: { legalEntityId?: string | null } | null;
+		legalEntityAdminIds?: string[];
+	},
+	requestedLegalEntityId: string | undefined,
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (requestedLegalEntityId) {
+			const canAccess =
+				actor.accessTier === "orgAdmin" ||
+				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+
+			if (!canAccess) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this legal entity.",
+							userId: actor.session.user.id,
+							resource: "legal_entity",
+							action: "access",
+						}),
+					),
+				);
+			}
+
+			return requestedLegalEntityId;
+		}
+
+		if (actor.currentEmployee?.legalEntityId) {
+			return actor.currentEmployee.legalEntityId;
+		}
+
+		const defaultEntity = yield* _(
+			actor.dbService.query(queryName, async () => {
+				return await actor.dbService.db.query.legalEntity.findFirst({
+					where: and(
+						eq(legalEntity.organizationId, actor.organizationId),
+						eq(legalEntity.isDefault, true),
+						eq(legalEntity.isActive, true),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!defaultEntity) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "No default legal entity exists for this organization.",
+						entityType: "legal_entity",
+					}),
+				),
+			);
+		}
+
+		return defaultEntity.id;
+	});
+}
+
 function getVisibleScopedHolidayIds(
 	actor: ScopedHolidaySettingsActor,
 	organizationId: string,
+	selectedLegalEntityId: string,
 	manageableTeamIds: Set<string> | null,
 	managedEmployeeIds: Set<string> | null,
 	queryName: string,
@@ -88,6 +159,7 @@ function getVisibleScopedHolidayIds(
 				return await actor.dbService.db.query.holidayAssignment.findMany({
 					where: and(
 						eq(holidayAssignment.organizationId, organizationId),
+						eq(holidayAssignment.legalEntityId, selectedLegalEntityId),
 						eq(holidayAssignment.isActive, true),
 					),
 					columns: {
@@ -148,10 +220,21 @@ export async function getHolidays(
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedHolidayAccessContext(organizationId, "getHolidays:actor"),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedHolidayLegalEntityId(
+				actor as ScopedHolidaySettingsActor & {
+					currentEmployee: { legalEntityId?: string | null } | null;
+					legalEntityAdminIds?: string[];
+				},
+				params.legalEntityId,
+				"getHolidays:defaultLegalEntity",
+			),
+		);
 		const visibleHolidayIds = yield* _(
 			getVisibleScopedHolidayIds(
 				actor,
 				organizationId,
+				selectedLegalEntityId,
 				manageableTeamIds,
 				managedEmployeeIds,
 				"getHolidays:visibleAssignments",
@@ -164,7 +247,11 @@ export async function getHolidays(
 
 		const holidays = (yield* _(
 			actor.dbService.query("getHolidays", async () => {
-				const conditions = [eq(holiday.organizationId, organizationId), eq(holiday.isActive, true)];
+				const conditions = [
+					eq(holiday.organizationId, organizationId),
+					eq(holiday.legalEntityId, selectedLegalEntityId),
+					eq(holiday.isActive, true),
+				];
 				if (visibleHolidayIds) {
 					conditions.push(inArray(holiday.id, visibleHolidayIds));
 				}
@@ -232,15 +319,27 @@ export async function getHolidays(
  */
 export async function getHolidayCategories(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<HolidayCategoryItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedHolidayAccessContext(organizationId, "getHolidayCategories:actor"),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedHolidayLegalEntityId(
+				actor as ScopedHolidaySettingsActor & {
+					currentEmployee: { legalEntityId?: string | null } | null;
+					legalEntityAdminIds?: string[];
+				},
+				selectedLegalEntityIdParam,
+				"getHolidayCategories:defaultLegalEntity",
+			),
+		);
 		const visibleHolidayIds = yield* _(
 			getVisibleScopedHolidayIds(
 				actor,
 				organizationId,
+				selectedLegalEntityId,
 				manageableTeamIds,
 				managedEmployeeIds,
 				"getHolidayCategories:visibleAssignments",
@@ -255,6 +354,7 @@ export async function getHolidayCategories(
 			actor.dbService.query("getHolidayCategories", async () => {
 				const conditions = [
 					eq(holidayCategory.organizationId, organizationId),
+					eq(holidayCategory.legalEntityId, selectedLegalEntityId),
 					eq(holidayCategory.isActive, true),
 				];
 
@@ -262,6 +362,7 @@ export async function getHolidayCategories(
 					const visibleHolidays = await actor.dbService.db.query.holiday.findMany({
 						where: and(
 							eq(holiday.organizationId, organizationId),
+							eq(holiday.legalEntityId, selectedLegalEntityId),
 							eq(holiday.isActive, true),
 							inArray(holiday.id, visibleHolidayIds),
 						),
@@ -506,10 +607,21 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
  */
 export async function getHolidayAssignments(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<HolidayAssignmentRecord[]>> {
 	const effect = Effect.gen(function* (_) {
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedHolidayAccessContext(organizationId, "getHolidayAssignments:actor"),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedHolidayLegalEntityId(
+				actor as ScopedHolidaySettingsActor & {
+					currentEmployee: { legalEntityId?: string | null } | null;
+					legalEntityAdminIds?: string[];
+				},
+				selectedLegalEntityIdParam,
+				"getHolidayAssignments:defaultLegalEntity",
+			),
 		);
 
 		const assignments = yield* _(
@@ -517,6 +629,7 @@ export async function getHolidayAssignments(
 				return await actor.dbService.db.query.holidayAssignment.findMany({
 					where: and(
 						eq(holidayAssignment.organizationId, organizationId),
+						eq(holidayAssignment.legalEntityId, selectedLegalEntityId),
 						eq(holidayAssignment.isActive, true),
 					),
 					with: {
@@ -564,6 +677,7 @@ export async function createHolidayAssignment(data: {
 	assignmentType: "organization" | "team" | "employee";
 	teamId?: string;
 	employeeId?: string;
+	legalEntityId?: string;
 }): Promise<ServerActionResult<typeof holidayAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "createHolidayAssignment:actor" }));
@@ -575,7 +689,7 @@ export async function createHolidayAssignment(data: {
 			}),
 		);
 
-		const _existingHoliday = yield* _(
+		const existingHoliday = yield* _(
 			actor.dbService.query("verifyHoliday", async () => {
 				const [h] = await actor.dbService.db
 					.select()
@@ -604,6 +718,51 @@ export async function createHolidayAssignment(data: {
 					}),
 			),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedHolidayLegalEntityId(
+				actor as ScopedHolidaySettingsActor & {
+					currentEmployee: { legalEntityId?: string | null } | null;
+					legalEntityAdminIds?: string[];
+				},
+				data.legalEntityId ?? existingHoliday.legalEntityId,
+				"createHolidayAssignment:defaultLegalEntity",
+			),
+		);
+
+		if (existingHoliday.legalEntityId !== selectedLegalEntityId) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "holiday_assignment",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		if (data.employeeId) {
+			const targetEmployee = yield* _(
+				getTargetEmployee(data.employeeId, "createHolidayAssignment:getTargetEmployee"),
+			);
+			assertSameLegalEntityTarget({
+				holidayLegalEntityId: selectedLegalEntityId,
+				targetLegalEntityId: targetEmployee.legalEntityId,
+				targetLabel: "employee",
+			});
+		}
+
+		if (data.assignmentType === "team" && data.teamId) {
+			const targetTeam = yield* _(
+				getOrganizationTeam(data.teamId, actor.organizationId, "createHolidayAssignment:getOrganizationTeam"),
+			);
+			assertSameLegalEntityTarget({
+				holidayLegalEntityId: selectedLegalEntityId,
+				targetLegalEntityId: (targetTeam as unknown as { legalEntityId: string }).legalEntityId,
+				targetLabel: "team",
+			});
+		}
 
 		const newAssignment = yield* _(
 			actor.dbService.query("createHolidayAssignment", async () => {
@@ -612,6 +771,7 @@ export async function createHolidayAssignment(data: {
 					.values({
 						holidayId: data.holidayId,
 						organizationId: actor.organizationId,
+						legalEntityId: selectedLegalEntityId,
 						assignmentType: data.assignmentType,
 						teamId: data.teamId || null,
 						employeeId: data.employeeId || null,

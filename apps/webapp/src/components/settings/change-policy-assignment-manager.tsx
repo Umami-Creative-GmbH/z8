@@ -191,20 +191,20 @@ export function ChangePolicyAssignmentManager({
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.changePolicies.inheritanceInfo",
-								"Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the Organization Default. If no policy is assigned at any level, employees can edit their time entries without restrictions.",
+								"Policies are applied in priority order: Employee overrides take precedence over Team overrides, which take precedence over the entity-wide default. If no policy is assigned at any level, employees can edit their time entries without restrictions.",
 							)}
 						</p>
 					</CardContent>
 				</Card>
 
-				{/* Organization Default Level */}
+				{/* Entity Default Level */}
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
 							<IconBuilding className="h-5 w-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base">
-									{t("settings.changePolicies.organizationDefault", "Organization Default")}
+									{t("settings.changePolicies.organizationDefault", "Entity-wide Default")}
 								</CardTitle>
 								<CardDescription>
 									{t(
@@ -252,7 +252,7 @@ export function ChangePolicyAssignmentManager({
 									<IconLock className="h-5 w-5 text-muted-foreground" />
 									<div>
 										<p className="font-medium text-muted-foreground">
-											{t("settings.changePolicies.noOrgDefault", "No Organization Default")}
+											{t("settings.changePolicies.noOrgDefault", "No Entity-wide Default")}
 										</p>
 										<p className="text-sm text-muted-foreground">
 											{t(
@@ -265,7 +265,7 @@ export function ChangePolicyAssignmentManager({
 								{canManage ? <div className="flex justify-end">
 									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.changePolicies.setOrgDefault", "Set Organization Default")}
+										{t("settings.changePolicies.setOrgDefault", "Set Entity-wide Default")}
 									</Button>
 								</div> : null}
 							</div>
