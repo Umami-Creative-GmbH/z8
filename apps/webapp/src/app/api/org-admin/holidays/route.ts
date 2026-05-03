@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { db } from "@/db";
@@ -108,11 +108,27 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 		}
 
+		const [category] = await db
+			.select({ legalEntityId: holidayCategory.legalEntityId })
+			.from(holidayCategory)
+			.where(
+				and(
+					eq(holidayCategory.id, categoryId),
+					eq(holidayCategory.organizationId, activeOrgId),
+				),
+			)
+			.limit(1);
+
+		if (!category) {
+			return NextResponse.json({ error: "Category not found" }, { status: 404 });
+		}
+
 		// Create holiday
 		const [newHoliday] = await db
 			.insert(holiday)
 			.values({
 				organizationId: activeOrgId,
+				legalEntityId: category.legalEntityId,
 				name,
 				description: description || null,
 				categoryId,

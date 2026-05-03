@@ -12,6 +12,7 @@ import {
 	mapToHolidayFormValues,
 } from "@/lib/holidays/date-holidays-service";
 import { holidayImportSchema } from "@/lib/holidays/validation";
+import { getDefaultLegalEntity } from "@/lib/legal-entities/default-entity";
 
 /**
  * POST /api/org-admin/holidays/import
@@ -50,6 +51,10 @@ export async function POST(request: NextRequest) {
 		}
 
 		const { holidays, categoryId, createRecurring, skipDuplicates } = validationResult.data;
+		const defaultLegalEntity = await getDefaultLegalEntity(activeOrgId);
+		if (!defaultLegalEntity) {
+			return NextResponse.json({ error: "No default legal entity" }, { status: 400 });
+		}
 
 		// Get or create "Public Holidays" category
 		let targetCategoryId = categoryId;
@@ -62,6 +67,7 @@ export async function POST(request: NextRequest) {
 				.where(
 					and(
 						eq(holidayCategory.organizationId, activeOrgId),
+						eq(holidayCategory.legalEntityId, defaultLegalEntity.id),
 						eq(holidayCategory.type, "public_holiday"),
 						eq(holidayCategory.isActive, true),
 					),
@@ -76,6 +82,7 @@ export async function POST(request: NextRequest) {
 					.insert(holidayCategory)
 					.values({
 						organizationId: activeOrgId,
+						legalEntityId: defaultLegalEntity.id,
 						type: "public_holiday",
 						name: "Public Holidays",
 						description: "National and regional public holidays",
@@ -99,7 +106,11 @@ export async function POST(request: NextRequest) {
 			})
 			.from(holiday)
 			.where(
-				and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)),
+				and(
+					eq(holiday.organizationId, activeOrgId),
+					eq(holiday.legalEntityId, defaultLegalEntity.id),
+					eq(holiday.isActive, true),
+				),
 			);
 
 		// Process holidays
@@ -131,6 +142,7 @@ export async function POST(request: NextRequest) {
 
 				await db.insert(holiday).values({
 					organizationId: activeOrgId,
+					legalEntityId: defaultLegalEntity.id,
 					name: holidayData.name,
 					description: holidayData.description || null,
 					categoryId: holidayData.categoryId,

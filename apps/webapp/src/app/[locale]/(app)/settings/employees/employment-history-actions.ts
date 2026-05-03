@@ -90,7 +90,10 @@ export function canCancelEmploymentHistoryRow(
 	return DateTime.fromJSDate(row.validFrom).toUTC() > DateTime.fromJSDate(now).toUTC();
 }
 
-export function buildEmploymentAssignmentSyncPlan(row: EmploymentHistoryAssignmentRow) {
+export function buildEmploymentAssignmentSyncPlan(
+	row: EmploymentHistoryAssignmentRow,
+	legalEntityId: string,
+) {
 	if (row.reviewState !== "confirmed" || !row.workPolicyId) {
 		return null;
 	}
@@ -98,6 +101,7 @@ export function buildEmploymentAssignmentSyncPlan(row: EmploymentHistoryAssignme
 	return {
 		policyId: row.workPolicyId,
 		organizationId: row.organizationId,
+		legalEntityId,
 		assignmentType: "employee" as const,
 		employeeId: row.employeeId,
 		teamId: null,
@@ -390,7 +394,10 @@ export async function createEmployeeEmploymentHistoryAction(
 									);
 							}
 
-							const assignmentPlan = buildEmploymentAssignmentSyncPlan(inserted);
+							const assignmentPlan = buildEmploymentAssignmentSyncPlan(
+								inserted,
+								targetEmployee.legalEntityId,
+							);
 							if (assignmentPlan) {
 								await tx.insert(workPolicyAssignment).values({
 									...assignmentPlan,
@@ -567,7 +574,10 @@ export async function confirmEmployeeEmploymentHistoryAction(
 									);
 							}
 
-							const assignmentPlan = buildEmploymentAssignmentSyncPlan(updated);
+							const assignmentPlan = buildEmploymentAssignmentSyncPlan(
+								updated,
+								targetEmployee.legalEntityId,
+							);
 							if (assignmentPlan) {
 								await tx.insert(workPolicyAssignment).values({
 									...assignmentPlan,

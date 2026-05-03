@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { assertCanAssignEmployeeLegalEntity } from "./actions";
+import { assertCanAssignEmployeeLegalEntity } from "./employee-legal-entity";
 
 vi.mock("./employee-mutations.actions", () => ({
 	assignManagersAction: vi.fn(),

@@ -4,11 +4,12 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import type { TeamPermissions } from "@/lib/authorization";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import { buildTeamSettingsSurface, filterMembersForTeamSettingsSurface } from "./team-scope";
 
 export async function loadTeamSettingsPageData(input: {
 	organizationId: string;
-	settingsRouteContext: { accessTier: "member" | "manager" | "orgAdmin" };
+	settingsRouteContext: { accessTier: SettingsAccessTier };
 	principalContext: { permissions: TeamPermissions };
 }) {
 	const { organizationId, settingsRouteContext, principalContext } = input;

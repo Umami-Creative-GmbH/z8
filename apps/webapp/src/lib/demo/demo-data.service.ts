@@ -15,6 +15,7 @@ import {
 	location,
 	locationEmployee,
 	locationSubarea,
+	legalEntity,
 	project,
 	shift,
 	shiftRecurrence,
@@ -1433,6 +1434,18 @@ export async function generateDemoChangePolicies(options: DemoDataOptions): Prom
 	const policyCount = options.changePolicyCount ?? 2;
 	let policiesCreated = 0;
 	let assignmentsCreated = 0;
+	const defaultLegalEntity = await db.query.legalEntity.findFirst({
+		where: and(
+			eq(legalEntity.organizationId, options.organizationId),
+			eq(legalEntity.isDefault, true),
+			eq(legalEntity.isActive, true),
+		),
+		columns: { id: true },
+	});
+
+	if (!defaultLegalEntity) {
+		return { policiesCreated: 0, assignmentsCreated: 0 };
+	}
 
 	const createdPolicies: Array<{ id: string; name: string }> = [];
 
@@ -1442,6 +1455,7 @@ export async function generateDemoChangePolicies(options: DemoDataOptions): Prom
 			.insert(changePolicy)
 			.values({
 				organizationId: options.organizationId,
+				legalEntityId: defaultLegalEntity.id,
 				name: template.name,
 				description: `Demo change policy - ${template.description}`,
 				selfServiceDays: template.selfServiceDays,
@@ -1462,6 +1476,7 @@ export async function generateDemoChangePolicies(options: DemoDataOptions): Prom
 		await db.insert(changePolicyAssignment).values({
 			policyId: createdPolicies[0].id,
 			organizationId: options.organizationId,
+			legalEntityId: defaultLegalEntity.id,
 			assignmentType: "organization",
 			priority: 0,
 			isActive: true,

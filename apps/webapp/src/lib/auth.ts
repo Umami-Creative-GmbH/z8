@@ -16,6 +16,7 @@ import { employee, scimProvisioningLog } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { getDefaultLegalEntity } from "@/lib/legal-entities/default-entity";
 import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
@@ -642,10 +643,16 @@ export const auth = betterAuth({
 					});
 
 					if (!existingEmployee) {
+						const defaultLegalEntity = await getDefaultLegalEntity(provider.organizationId);
+						if (!defaultLegalEntity) {
+							throw new Error("No default legal entity exists for this organization.");
+						}
+
 						// Create employee record - isActive depends on approval setting
 						await db.insert(employee).values({
 							userId: user.id,
 							organizationId: provider.organizationId,
+							legalEntityId: defaultLegalEntity.id,
 							role: "employee",
 							isActive: !ssoRequiresApproval, // inactive if approval required
 						});

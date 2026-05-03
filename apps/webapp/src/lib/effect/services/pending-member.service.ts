@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { inviteCodeUsage, memberApproval, employee, team, teamPermissions } from "@/db/schema";
+import { inviteCodeUsage, memberApproval, employee, legalEntity, team, teamPermissions } from "@/db/schema";
 import { member, organization, user } from "@/db/auth-schema";
 import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -360,11 +360,25 @@ export const PendingMemberServiceLive = Layer.effect(
 							});
 
 							if (!existingEmployee) {
+								const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+									where: and(
+										eq(legalEntity.organizationId, input.organizationId),
+										eq(legalEntity.isDefault, true),
+										eq(legalEntity.isActive, true),
+									),
+									columns: { id: true },
+								});
+
+								if (!defaultLegalEntity) {
+									throw new Error("No default legal entity exists for this organization.");
+								}
+
 								const [newEmployee] = await dbService.db
 									.insert(employee)
 									.values({
 										userId: memberDetails!.userId,
 										organizationId: input.organizationId,
+										legalEntityId: defaultLegalEntity.id,
 										teamId: input.assignedTeamId,
 										role: "employee",
 										isActive: true,
@@ -472,6 +486,22 @@ export const PendingMemberServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					let approved = 0;
 					let failed = 0;
+					const defaultLegalEntity = yield* _(
+						dbService.query("bulkApproveDefaultLegalEntity", async () => {
+							return await dbService.db.query.legalEntity.findFirst({
+								where: and(
+									eq(legalEntity.organizationId, organizationId),
+									eq(legalEntity.isDefault, true),
+									eq(legalEntity.isActive, true),
+								),
+								columns: { id: true },
+							});
+						}),
+					);
+
+					if (!defaultLegalEntity) {
+						return { approved: 0, failed: memberIds.length };
+					}
 
 					for (const memberId of memberIds) {
 						try {
@@ -518,6 +548,7 @@ export const PendingMemberServiceLive = Layer.effect(
 										await dbService.db.insert(employee).values({
 											userId: memberRecord.userId,
 											organizationId,
+											legalEntityId: defaultLegalEntity.id,
 											teamId: assignedTeamId,
 											role: "employee",
 											isActive: true,

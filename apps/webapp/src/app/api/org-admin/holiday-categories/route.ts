@@ -6,6 +6,7 @@ import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { getDefaultLegalEntity } from "@/lib/legal-entities/default-entity";
 
 /**
  * GET /api/org-admin/holiday-categories
@@ -82,11 +83,17 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 		}
 
+		const defaultLegalEntity = await getDefaultLegalEntity(activeOrgId);
+		if (!defaultLegalEntity) {
+			return NextResponse.json({ error: "No default legal entity" }, { status: 400 });
+		}
+
 		// Create category
 		const [newCategory] = await db
 			.insert(holidayCategory)
 			.values({
 				organizationId: activeOrgId,
+				legalEntityId: defaultLegalEntity.id,
 				type,
 				name,
 				description: description || null,

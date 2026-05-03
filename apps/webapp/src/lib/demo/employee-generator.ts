@@ -1,9 +1,10 @@
 "use server";
 
 import { faker } from "@faker-js/faker";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { employee, legalEntity } from "@/db/schema";
 
 export interface GenerateEmployeesOptions {
 	organizationId: string;
@@ -55,6 +56,18 @@ export async function generateDemoEmployees(
 	let usersCreated = 0;
 	let employeesCreated = 0;
 	let managersCreated = 0;
+	const defaultLegalEntity = await db.query.legalEntity.findFirst({
+		where: and(
+			eq(legalEntity.organizationId, organizationId),
+			eq(legalEntity.isDefault, true),
+			eq(legalEntity.isActive, true),
+		),
+		columns: { id: true },
+	});
+
+	if (!defaultLegalEntity) {
+		return { usersCreated, employeesCreated, managersCreated };
+	}
 
 	// Calculate role distribution (20% managers if includeManagers is true)
 	const managerCount = includeManagers ? Math.max(1, Math.floor(count * 0.2)) : 0;
@@ -99,6 +112,7 @@ export async function generateDemoEmployees(
 			await db.insert(employee).values({
 				userId,
 				organizationId,
+				legalEntityId: defaultLegalEntity.id,
 				firstName,
 				lastName,
 				gender,

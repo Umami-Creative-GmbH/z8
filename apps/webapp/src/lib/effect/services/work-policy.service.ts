@@ -802,9 +802,22 @@ export const WorkPolicyServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					yield* _(
 						dbService.query("logViolation", async () => {
+							const employeeRecord = await dbService.db.query.employee.findFirst({
+								where: and(
+									eq(employee.id, input.employeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
+								columns: { legalEntityId: true },
+							});
+
+							if (!employeeRecord) {
+								throw new Error("Employee not found");
+							}
+
 							await dbService.db.insert(workPolicyViolation).values({
 								employeeId: input.employeeId,
 								organizationId: input.organizationId,
+								legalEntityId: employeeRecord.legalEntityId,
 								policyId: input.policyId,
 								workPeriodId: input.workPeriodId,
 								violationDate: new Date(),

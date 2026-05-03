@@ -8,6 +8,7 @@ import {
 	type changePolicyAssignment as ChangePolicyAssignmentTable,
 	employee,
 	employeeManagers,
+	legalEntity,
 } from "@/db/schema";
 import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -491,10 +492,24 @@ export const ChangePolicyServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const created = yield* _(
 						dbService.query("createChangePolicy", async () => {
+							const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+								where: and(
+									eq(legalEntity.organizationId, input.organizationId),
+									eq(legalEntity.isDefault, true),
+									eq(legalEntity.isActive, true),
+								),
+								columns: { id: true },
+							});
+
+							if (!defaultLegalEntity) {
+								throw new Error("No default legal entity exists for this organization.");
+							}
+
 							const [policy] = await dbService.db
 								.insert(changePolicy)
 								.values({
 									organizationId: input.organizationId,
+									legalEntityId: defaultLegalEntity.id,
 									name: input.name,
 									description: input.description,
 									selfServiceDays: input.selfServiceDays,
@@ -594,11 +609,24 @@ export const ChangePolicyServiceLive = Layer.effect(
 
 					const created = yield* _(
 						dbService.query("assignChangePolicy", async () => {
+							const policy = await dbService.db.query.changePolicy.findFirst({
+								where: and(
+									eq(changePolicy.id, input.policyId),
+									eq(changePolicy.organizationId, input.organizationId),
+								),
+								columns: { legalEntityId: true },
+							});
+
+							if (!policy) {
+								throw new Error("Change policy not found");
+							}
+
 							const [assignment] = await dbService.db
 								.insert(changePolicyAssignment)
 								.values({
 									policyId: input.policyId,
 									organizationId: input.organizationId,
+									legalEntityId: policy.legalEntityId,
 									assignmentType: input.assignmentType,
 									teamId: input.teamId,
 									employeeId: input.employeeId,

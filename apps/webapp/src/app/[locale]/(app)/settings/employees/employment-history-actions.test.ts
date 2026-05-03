@@ -68,7 +68,7 @@ describe("employment history action helpers", () => {
 				validFrom: d("2026-01-01"),
 				validUntil: null,
 				reviewState: "draft",
-			}),
+			}, "entity-1"),
 		).toBeNull();
 	});
 
@@ -81,10 +81,11 @@ describe("employment history action helpers", () => {
 				validFrom: d("2026-01-01"),
 				validUntil: d("2026-04-01"),
 				reviewState: "confirmed",
-			}),
+			}, "entity-1"),
 		).toMatchObject({
 			policyId: "policy-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			assignmentType: "employee",
 			employeeId: "employee-1",
 			priority: 2,

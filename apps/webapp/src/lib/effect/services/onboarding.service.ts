@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { member, user } from "@/db/auth-schema";
 import {
 	employee,
+	legalEntity,
 	holidayPreset,
 	holidayPresetAssignment,
 	notificationPreference,
@@ -341,12 +342,24 @@ export const OnboardingServiceLive = Layer.effect(
 							// Update existing employee record
 							await dbService.db.update(employee).set(profileData).where(eq(employee.id, emp.id));
 						} else if (activeOrgId) {
-							// Create new employee record (only if we have an organization)
-							await dbService.db.insert(employee).values({
-								userId: session.user.id,
-								organizationId: activeOrgId,
-								...profileData,
+							const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+								where: and(
+									eq(legalEntity.organizationId, activeOrgId),
+									eq(legalEntity.isDefault, true),
+									eq(legalEntity.isActive, true),
+								),
+								columns: { id: true },
 							});
+
+							if (defaultLegalEntity) {
+								// Create new employee record (only if we have an organization)
+								await dbService.db.insert(employee).values({
+									userId: session.user.id,
+									organizationId: activeOrgId,
+									legalEntityId: defaultLegalEntity.id,
+									...profileData,
+								});
+							}
 						}
 						// If no existing employee and no active org, skip employee creation
 						// The employee will be created when they join an organization
@@ -445,15 +458,27 @@ export const OnboardingServiceLive = Layer.effect(
 						}
 
 						if (!emp && activeOrgId) {
+							const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+								where: and(
+									eq(legalEntity.organizationId, activeOrgId),
+									eq(legalEntity.isDefault, true),
+									eq(legalEntity.isActive, true),
+								),
+								columns: { id: true },
+							});
+
 							// Create employee record with organizationId if available
-							const result = await dbService.db
-								.insert(employee)
-								.values({
-									userId: session.user.id,
-									organizationId: activeOrgId,
-								})
-								.returning();
-							emp = result[0];
+							if (defaultLegalEntity) {
+								const result = await dbService.db
+									.insert(employee)
+									.values({
+										userId: session.user.id,
+										organizationId: activeOrgId,
+										legalEntityId: defaultLegalEntity.id,
+									})
+									.returning();
+								emp = result[0];
+							}
 						}
 
 						// Determine next step based on admin status
@@ -544,23 +569,34 @@ export const OnboardingServiceLive = Layer.effect(
 
 						// Get current date as start date
 						const today = new Date().toISOString().split("T")[0];
+						const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+							where: and(
+								eq(legalEntity.organizationId, activeOrgId),
+								eq(legalEntity.isDefault, true),
+								eq(legalEntity.isActive, true),
+							),
+							columns: { id: true },
+						});
 
 						// Create vacation policy with isCompanyDefault=true (no separate assignment needed)
-						await dbService.db.insert(vacationAllowance).values({
-							organizationId: activeOrgId,
-							startDate: today,
-							validUntil: null, // Ongoing policy
-							isCompanyDefault: true, // This is the company default
-							isActive: true,
-							name: data.name,
-							defaultAnnualDays: data.defaultAnnualDays.toString(),
-							accrualType: data.accrualType,
-							accrualStartMonth: 1,
-							allowCarryover: data.allowCarryover,
-							maxCarryoverDays: data.maxCarryoverDays?.toString() || null,
-							carryoverExpiryMonths: data.allowCarryover ? 3 : null,
-							createdBy: session.user.id,
-						});
+						if (defaultLegalEntity) {
+							await dbService.db.insert(vacationAllowance).values({
+								organizationId: activeOrgId,
+								legalEntityId: defaultLegalEntity.id,
+								startDate: today,
+								validUntil: null, // Ongoing policy
+								isCompanyDefault: true, // This is the company default
+								isActive: true,
+								name: data.name,
+								defaultAnnualDays: data.defaultAnnualDays.toString(),
+								accrualType: data.accrualType,
+								accrualStartMonth: 1,
+								allowCarryover: data.allowCarryover,
+								maxCarryoverDays: data.maxCarryoverDays?.toString() || null,
+								carryoverExpiryMonths: data.allowCarryover ? 3 : null,
+								createdBy: session.user.id,
+							});
+						}
 
 						// Update onboarding step in userSettings
 						await dbService.db
@@ -616,11 +652,25 @@ export const OnboardingServiceLive = Layer.effect(
 							return;
 						}
 
+						const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+							where: and(
+								eq(legalEntity.organizationId, activeOrgId),
+								eq(legalEntity.isDefault, true),
+								eq(legalEntity.isActive, true),
+							),
+							columns: { id: true },
+						});
+
+						if (!defaultLegalEntity) {
+							return;
+						}
+
 						// Create holiday preset
 						const [preset] = await dbService.db
 							.insert(holidayPreset)
 							.values({
 								organizationId: activeOrgId,
+								legalEntityId: defaultLegalEntity.id,
 								name: data.presetName,
 								description: `Holidays for ${data.countryCode}${data.stateCode ? ` - ${data.stateCode}` : ""}`,
 								countryCode: data.countryCode,
@@ -636,6 +686,7 @@ export const OnboardingServiceLive = Layer.effect(
 							await dbService.db.insert(holidayPresetAssignment).values({
 								presetId: preset.id,
 								organizationId: activeOrgId,
+								legalEntityId: defaultLegalEntity.id,
 								assignmentType: "organization",
 								isActive: true,
 								createdBy: session.user.id,
@@ -695,11 +746,25 @@ export const OnboardingServiceLive = Layer.effect(
 							return;
 						}
 
+						const defaultLegalEntity = await dbService.db.query.legalEntity.findFirst({
+							where: and(
+								eq(legalEntity.organizationId, activeOrgId),
+								eq(legalEntity.isDefault, true),
+								eq(legalEntity.isActive, true),
+							),
+							columns: { id: true },
+						});
+
+						if (!defaultLegalEntity) {
+							return;
+						}
+
 						// Create work policy
 						const [policy] = await dbService.db
 							.insert(workPolicy)
 							.values({
 								organizationId: activeOrgId,
+								legalEntityId: defaultLegalEntity.id,
 								name: data.name,
 								description: "Created during onboarding",
 								scheduleEnabled: true,
@@ -754,6 +819,7 @@ export const OnboardingServiceLive = Layer.effect(
 								await dbService.db.insert(workPolicyAssignment).values({
 									policyId: policy.id,
 									organizationId: activeOrgId,
+									legalEntityId: defaultLegalEntity.id,
 									assignmentType: "organization",
 									priority: 0,
 									effectiveFrom: new Date(),

@@ -12,6 +12,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		const values = vi.fn(() => ({ returning }));
 		const insert = vi.fn(() => ({ values }));
 		const findFirst = vi.fn().mockResolvedValue(existingEmployee);
+		const legalEntityFindFirst = vi.fn().mockResolvedValue({ id: "entity-1" });
 		const memberFindMany = vi.fn().mockResolvedValue([]);
 		const employeeFindMany = vi.fn().mockResolvedValue([]);
 
@@ -19,6 +20,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			query: {
 				member: { findMany: memberFindMany },
 				employee: { findFirst, findMany: employeeFindMany },
+				legalEntity: { findFirst: legalEntityFindFirst },
 			},
 			insert,
 		} as unknown as ProvisioningDb;
@@ -26,6 +28,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		return {
 			db,
 			findFirst,
+			legalEntityFindFirst,
 			insert,
 			values,
 			returning,
@@ -46,6 +49,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		expect(values).toHaveBeenCalledWith({
 			userId: "user-1",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "employee",
 			isActive: true,
 		});
@@ -76,6 +80,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		expect(values).toHaveBeenCalledWith({
 			userId: "user-2",
 			organizationId: "org-1",
+			legalEntityId: "entity-1",
 			role: "admin",
 			isActive: true,
 		});

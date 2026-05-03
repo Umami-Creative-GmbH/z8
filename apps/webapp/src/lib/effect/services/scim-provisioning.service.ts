@@ -4,6 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import {
 	employee,
+	legalEntity,
 	teamPermissions,
 	scimProviderConfig,
 	scimProvisioningLog,
@@ -98,7 +99,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 				try {
 					// Parallelize independent queries for better performance
 					// @see async-parallel rule - 2-3x improvement
-					const [config, existingEmployee] = yield* Effect.all([
+					const [config, existingEmployee, defaultLegalEntity] = yield* Effect.all([
 						// Get org-specific SCIM config (cached per request)
 						Effect.tryPromise(() => getScimProviderConfig(organizationId)),
 						// Check if employee record already exists
@@ -108,11 +109,25 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 									andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
 							}),
 						),
+						Effect.tryPromise(() =>
+							db.query.legalEntity.findFirst({
+								where: and(
+									eq(legalEntity.organizationId, organizationId),
+									eq(legalEntity.isDefault, true),
+									eq(legalEntity.isActive, true),
+								),
+								columns: { id: true },
+							}),
+						),
 					]);
 
 					let newEmployee = existingEmployee;
 
 					if (!existingEmployee) {
+						if (!defaultLegalEntity) {
+							throw new Error("No default legal entity exists for this organization.");
+						}
+
 						// Create employee record
 						// isActive depends on autoActivateUsers config (defaults to false = needs approval)
 						const [created] = yield* Effect.tryPromise(() =>
@@ -121,6 +136,7 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 								.values({
 									userId,
 									organizationId,
+									legalEntityId: defaultLegalEntity.id,
 									role: "employee",
 									isActive: config?.autoActivateUsers ?? false,
 								})

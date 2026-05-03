@@ -11,6 +11,7 @@ import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { holidayPresetFormSchema } from "@/lib/holidays/validation";
+import { getDefaultLegalEntity } from "@/lib/legal-entities/default-entity";
 
 /**
  * GET /api/org-admin/holiday-presets
@@ -133,11 +134,16 @@ export async function POST(request: NextRequest) {
 
 		const { name, description, countryCode, stateCode, regionCode, color, isActive } =
 			validationResult.data;
+		const defaultLegalEntity = await getDefaultLegalEntity(activeOrgId);
+		if (!defaultLegalEntity) {
+			return NextResponse.json({ error: "No default legal entity" }, { status: 400 });
+		}
 
 		// Check for existing preset with same location
 		if (countryCode) {
 			const existingConditions = [
 				eq(holidayPreset.organizationId, activeOrgId),
+				eq(holidayPreset.legalEntityId, defaultLegalEntity.id),
 				eq(holidayPreset.countryCode, countryCode),
 			];
 
@@ -167,6 +173,7 @@ export async function POST(request: NextRequest) {
 			.insert(holidayPreset)
 			.values({
 				organizationId: activeOrgId,
+				legalEntityId: defaultLegalEntity.id,
 				name,
 				description: description || null,
 				countryCode: countryCode || null,

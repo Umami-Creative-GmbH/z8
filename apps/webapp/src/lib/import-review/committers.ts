@@ -328,7 +328,7 @@ async function commitHoliday(
 			eq(holidayCategory.id, payload.categoryId),
 			eq(holidayCategory.organizationId, job.organizationId),
 		),
-		columns: { id: true },
+		columns: { id: true, legalEntityId: true },
 	});
 	if (!category) {
 		const message = `Holiday category ${payload.categoryId} does not belong to organization ${job.organizationId}`;
@@ -350,6 +350,7 @@ async function commitHoliday(
 		.insert(holiday)
 		.values({
 			organizationId: job.organizationId,
+			legalEntityId: category.legalEntityId,
 			categoryId: payload.categoryId,
 			name,
 			description: payload.description?.trim() || null,

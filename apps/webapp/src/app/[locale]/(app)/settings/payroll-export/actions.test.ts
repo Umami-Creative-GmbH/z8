@@ -8,7 +8,7 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: vi.fn() } },
 }));
 
-import { assertPayrollConfigForMappingMutation, assertSingleLegalEntityPayrollFilter } from "./actions";
+import { assertPayrollConfigForMappingMutation, assertSingleLegalEntityPayrollFilter } from "./payroll-export-guards";
 
 describe("assertSingleLegalEntityPayrollFilter", () => {
 	it("accepts employees from the selected legal entity", () => {

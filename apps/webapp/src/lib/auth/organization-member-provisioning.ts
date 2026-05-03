@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { member } from "@/db/auth-schema";
-import { employee, teamPermissions } from "@/db/schema";
+import { employee, legalEntity, teamPermissions } from "@/db/schema";
 
 type OrganizationMemberRole = string | string[] | null | undefined;
 
@@ -31,9 +31,23 @@ export async function ensureEmployeeForOrganizationMember(
 		return existingEmployee;
 	}
 
+	const defaultLegalEntity = await dbClient.query.legalEntity.findFirst({
+		where: and(
+			eq(legalEntity.organizationId, input.organizationId),
+			eq(legalEntity.isDefault, true),
+			eq(legalEntity.isActive, true),
+		),
+		columns: { id: true },
+	});
+
+	if (!defaultLegalEntity) {
+		throw new Error("No default legal entity exists for this organization.");
+	}
+
 	const insertResult = dbClient.insert(employee).values({
 		userId: input.userId,
 		organizationId: input.organizationId,
+		legalEntityId: defaultLegalEntity.id,
 		role: hasAdminOrganizationRole(input.memberRole) ? "admin" : "employee",
 		isActive: true,
 	});

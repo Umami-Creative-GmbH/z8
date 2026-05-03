@@ -9,6 +9,7 @@ import {
 	employeeVacationAllowance,
 	holiday,
 	holidayCategory,
+	legalEntity,
 	surchargeModel,
 	surchargeRule,
 	team,
@@ -322,6 +323,18 @@ async function importUsers(
 
 	try {
 		const clockodoUsers = await client.getUsers();
+		const defaultLegalEntity = await db.query.legalEntity.findFirst({
+			where: and(
+				eq(legalEntity.organizationId, organizationId),
+				eq(legalEntity.isDefault, true),
+				eq(legalEntity.isActive, true),
+			),
+			columns: { id: true },
+		});
+
+		if (!defaultLegalEntity) {
+			throw new Error("No default legal entity found for user import");
+		}
 
 		for (const cu of clockodoUsers) {
 			try {
@@ -445,7 +458,13 @@ async function importUsers(
 					(mapped as Record<string, unknown>).teamId = idMappings.teams.get(cu.teams_id);
 				}
 
-				const [inserted] = await db.insert(employee).values(mapped).returning({ id: employee.id });
+				const [inserted] = await db
+					.insert(employee)
+					.values({
+						...mapped,
+						legalEntityId: defaultLegalEntity.id,
+					})
+					.returning({ id: employee.id });
 
 				idMappings.users.set(cu.id, {
 					employeeId: inserted.id,
@@ -570,6 +589,18 @@ async function importTargetHours(
 
 	try {
 		const targetHours = await client.getTargetHours();
+		const defaultLegalEntity = await db.query.legalEntity.findFirst({
+			where: and(
+				eq(legalEntity.organizationId, organizationId),
+				eq(legalEntity.isDefault, true),
+				eq(legalEntity.isActive, true),
+			),
+			columns: { id: true },
+		});
+
+		if (!defaultLegalEntity) {
+			throw new Error("No default legal entity found for target hours import");
+		}
 
 		for (const th of targetHours) {
 			try {
@@ -579,6 +610,7 @@ async function importTargetHours(
 				const existing = await db.query.workPolicy.findFirst({
 					where: and(
 						eq(workPolicy.organizationId, organizationId),
+						eq(workPolicy.legalEntityId, defaultLegalEntity.id),
 						eq(workPolicy.name, mapped.policy.name),
 					),
 				});
@@ -591,7 +623,10 @@ async function importTargetHours(
 				// Insert policy
 				const [insertedPolicy] = await db
 					.insert(workPolicy)
-					.values(mapped.policy)
+					.values({
+						...mapped.policy,
+						legalEntityId: defaultLegalEntity.id,
+					})
 					.returning({ id: workPolicy.id });
 
 				// Insert schedule
@@ -619,6 +654,7 @@ async function importTargetHours(
 					await db.insert(workPolicyAssignment).values({
 						policyId: insertedPolicy.id,
 						organizationId,
+						legalEntityId: defaultLegalEntity.id,
 						assignmentType: "employee",
 						employeeId: employeeMapping.employeeId,
 						priority: 2,
@@ -713,12 +749,25 @@ async function importNonBusinessDays(
 	try {
 		const currentYear = new Date().getFullYear();
 		const nonBusinessDays = await client.getNonBusinessDays(currentYear);
+		const defaultLegalEntity = await db.query.legalEntity.findFirst({
+			where: and(
+				eq(legalEntity.organizationId, organizationId),
+				eq(legalEntity.isDefault, true),
+				eq(legalEntity.isActive, true),
+			),
+			columns: { id: true },
+		});
+
+		if (!defaultLegalEntity) {
+			throw new Error("No default legal entity found for holiday import");
+		}
 
 		// Find or create a "Public Holiday" category
 		let categoryId: string;
 		const existingCategory = await db.query.holidayCategory.findFirst({
 			where: and(
 				eq(holidayCategory.organizationId, organizationId),
+				eq(holidayCategory.legalEntityId, defaultLegalEntity.id),
 				eq(holidayCategory.type, "public_holiday"),
 			),
 		});
@@ -730,6 +779,7 @@ async function importNonBusinessDays(
 				.insert(holidayCategory)
 				.values({
 					organizationId,
+					legalEntityId: defaultLegalEntity.id,
 					type: "public_holiday",
 					name: "Public Holiday",
 					blocksTimeEntry: true,
@@ -757,7 +807,10 @@ async function importNonBusinessDays(
 				}
 
 				const mapped = mapNonBusinessDayToHoliday(nbd, organizationId, categoryId, userId);
-				await db.insert(holiday).values(mapped);
+				await db.insert(holiday).values({
+					...mapped,
+					legalEntityId: defaultLegalEntity.id,
+				});
 				result.imported++;
 			} catch (error) {
 				result.errors.push(

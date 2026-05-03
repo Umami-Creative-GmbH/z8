@@ -37,8 +37,6 @@ export type {
 	SelectableEmployee,
 } from "./employee-action-types";
 
-export { assertCanAssignEmployeeLegalEntity } from "./employee-legal-entity";
-
 export async function createEmployee(
 	data: CreateEmployee,
 ): Promise<ServerActionResult<typeof import("@/db/schema").employee.$inferSelect>> {

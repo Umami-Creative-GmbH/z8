@@ -65,7 +65,8 @@ export function ExportForm({
 	onExportComplete,
 }: ExportFormProps) {
 	const { t } = useTranslate();
-	const [isPending, startTransition] = useTransition();
+	const [, startFilterTransition] = useTransition();
+	const [isExportPending, startExportTransition] = useTransition();
 	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
 	const exportFormatOptions = useMemo(
 		() => [
@@ -144,7 +145,7 @@ export function ExportForm({
 
 	// Memoize loader to avoid dependency warning
 	const loadFilterOptions = useCallback(async () => {
-		startTransition(async () => {
+		startFilterTransition(async () => {
 			const result = await getFilterOptionsAction(organizationId, legalEntityId);
 			if (result.success) {
 				setFilterOptions(result.data);
@@ -182,7 +183,7 @@ export function ExportForm({
 	const handleExport = async () => {
 		const dateRange = getDateRange();
 
-		startTransition(async () => {
+		startExportTransition(async () => {
 			const result = await startExportAction({
 				organizationId,
 				legalEntityId,
@@ -571,8 +572,8 @@ export function ExportForm({
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button onClick={handleExport} disabled={isPending || !isSelectedFormatConfigured}>
-					{isPending ? (
+				<Button onClick={handleExport} disabled={isExportPending || !isSelectedFormatConfigured}>
+					{isExportPending ? (
 						<>
 							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 							{t("settings.payrollExport.export.exporting", "Exporting…")}

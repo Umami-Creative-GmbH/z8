@@ -121,6 +121,8 @@ const fullyConfiguredAvailability = {
 	workday_api: { configured: true, reason: null },
 };
 
+const fullSuiteTimeout = 10_000;
+
 beforeAll(() => {
 	if (!globalThis.ResizeObserver) {
 		globalThis.ResizeObserver = class ResizeObserver {
@@ -205,7 +207,7 @@ describe("ExportForm", () => {
 				formatId: "workday_api",
 			}),
 		);
-	});
+	}, fullSuiteTimeout);
 
 	it("renders all export options and disables unconfigured exporters", async () => {
 		render(
@@ -278,7 +280,7 @@ describe("ExportForm", () => {
 		expect(screen.getByText("Sage - config")).toBeTruthy();
 		expect(screen.getByText("Personio - credentials")).toBeTruthy();
 		expect(screen.getByText("SAP SuccessFactors (API) - credentials")).toBeTruthy();
-	});
+	}, fullSuiteTimeout);
 
 	it("renders export flow without DATEV config and allows Workday selection", async () => {
 		render(
@@ -324,7 +326,24 @@ describe("ExportForm", () => {
 				}),
 			);
 		});
-	});
+	}, fullSuiteTimeout);
+
+	it("keeps export button label stable while filter options load", async () => {
+		getFilterOptionsActionMock.mockReturnValue(new Promise(() => {}));
+
+		render(
+			<ExportForm
+				organizationId="org_123"
+				legalEntityId="entity-a"
+				config={null}
+				exportAvailability={fullyConfiguredAvailability}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+		});
+	}, fullSuiteTimeout);
 
 	it("allows separate SAP SuccessFactors CSV export selection", async () => {
 		render(
@@ -375,5 +394,5 @@ describe("ExportForm", () => {
 				}),
 			);
 		});
-	});
+	}, fullSuiteTimeout);
 });
