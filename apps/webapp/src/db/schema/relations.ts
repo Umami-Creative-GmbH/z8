@@ -26,6 +26,7 @@ import {
 	organizationEmailConfig,
 	organizationSocialOAuth,
 } from "./enterprise";
+import { enterpriseIdentitySetup } from "./enterprise-identity-setup";
 import { dataExport, exportStorageConfig } from "./export";
 import {
 	holiday,
@@ -170,6 +171,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	branding: one(organizationBranding),
 	emailConfig: one(organizationEmailConfig),
 	socialOAuthConfigs: many(organizationSocialOAuth),
+	enterpriseIdentitySetup: one(enterpriseIdentitySetup),
 	// Surcharges
 	surchargeModels: many(surchargeModel),
 	surchargeModelAssignments: many(surchargeModelAssignment),
@@ -1246,6 +1248,27 @@ export const organizationSocialOAuthRelations = relations(organizationSocialOAut
 	organization: one(organization, {
 		fields: [organizationSocialOAuth.organizationId],
 		references: [organization.id],
+	}),
+}));
+
+export const enterpriseIdentitySetupRelations = relations(enterpriseIdentitySetup, ({ one }) => ({
+	organization: one(organization, {
+		fields: [enterpriseIdentitySetup.organizationId],
+		references: [organization.id],
+	}),
+	defaultRoleTemplate: one(roleTemplate, {
+		fields: [enterpriseIdentitySetup.defaultRoleTemplateId],
+		references: [roleTemplate.id],
+	}),
+	creator: one(user, {
+		fields: [enterpriseIdentitySetup.createdBy],
+		references: [user.id],
+		relationName: "enterprise_identity_setup_creator",
+	}),
+	updater: one(user, {
+		fields: [enterpriseIdentitySetup.updatedBy],
+		references: [user.id],
+		relationName: "enterprise_identity_setup_updater",
 	}),
 }));
 

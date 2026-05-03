@@ -16,6 +16,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"roles/page.tsx",
 	"travel-expenses/page.tsx",
 	"enterprise/domains/page.tsx",
+	"enterprise/identity-setup/page.tsx",
 	"enterprise/email/page.tsx",
 	"email-templates/page.tsx",
 	"enterprise/api-keys/page.tsx",
@@ -59,6 +60,7 @@ describe("org-admin settings route access", () => {
 			"/settings/roles",
 			"/settings/travel-expenses",
 			"/settings/enterprise/domains",
+			"/settings/enterprise/identity-setup",
 			"/settings/enterprise/email",
 			"/settings/email-templates",
 			"/settings/enterprise/api-keys",
@@ -500,6 +502,19 @@ describe("org-admin settings route access", () => {
 		expect(travelExpensesSource.includes('authContext.employee.role !== "admin"')).toBe(false);
 		expect(enterpriseActionsSource.includes("canManageCurrentOrganizationSettings(")).toBe(true);
 		expect(enterpriseActionsSource.includes('authContext.employee?.role !== "admin"')).toBe(false);
+	});
+
+	it("keeps enterprise identity setup on org-admin settings access", () => {
+		const setupPageSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "enterprise/identity-setup/page.tsx"), "utf8"),
+		);
+		const settingsAccessSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "../../../../lib/settings-access.ts"), "utf8"),
+		);
+
+		expect(setupPageSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(setupPageSource.includes('employee?.role !== "admin"')).toBe(false);
+		expect(settingsAccessSource.includes('"/settings/enterprise/identity-setup"')).toBe(true);
 	});
 
 	it("keeps the scheduled exports page shell on shared org-admin parity helpers", () => {

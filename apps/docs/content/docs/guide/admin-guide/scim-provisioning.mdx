@@ -1,20 +1,18 @@
 ---
 title: SCIM Provisioning
-description: Current SCIM support for managed enterprise provisioning
+description: SCIM provisioning setup through Enterprise Identity Setup
 icon: UserPlus
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-SCIM provisioning support exists in Z8's enterprise auth stack, but the current product does not expose a dedicated self-serve SCIM setup page in admin settings.
+SCIM provisioning is available through the **Enterprise Identity Setup** wizard for organization owners and admins.
 
 ---
 
 ## Current Availability
 
-Treat SCIM as a managed enterprise integration, not as a point-and-click configuration flow in the current UI.
-
-If your organization needs SCIM, coordinate the rollout with the team responsible for your enterprise identity setup instead of expecting a full in-product onboarding wizard.
+Open the wizard from **Settings → Enterprise → Enterprise Identity Setup** or go directly to `/settings/enterprise/identity-setup` in the web app.
 
 <Callout type="info" title="Organization Scope">
   SCIM provisioning is organization-scoped. It is meant to automate membership lifecycle changes for one organization at a time and does not imply cross-organization provisioning.
@@ -32,15 +30,16 @@ When SCIM is enabled for an organization, the backend supports:
 - Applying default role-template behavior where that configuration has been set up
 - Recording provisioning activity in SCIM-specific audit logs
 
-The current implementation also supports org-scoped provisioning behavior such as auto-activation and deprovision handling, but those settings are not documented as a self-serve admin surface today.
+The current implementation also supports org-scoped provisioning behavior such as auto-activation and deprovision handling.
 
 ---
 
 ## Admin Expectations
 
-- Do not expect a dedicated **Settings** page for SCIM setup in the current docs app or web app.
-- Do not assume there is a user-facing flow that reveals an endpoint URL and bearer token inside the product today.
-- Use the standard people-management pages, including [Employee Management](/docs/guide/admin-guide/employee-management), to review the resulting members and employee records after provisioning is enabled.
+- Configure SSO first, then enable optional SCIM provisioning in the same wizard.
+- Copy the SCIM base URL and bearer token when the wizard generates them. The token is shown only once.
+- Use your identity provider's test provisioning action, then return to the wizard to refresh SCIM status and logs.
+- Review the resulting members and employee records in [Employee Management](/docs/guide/admin-guide/employee-management).
 
 ---
 
