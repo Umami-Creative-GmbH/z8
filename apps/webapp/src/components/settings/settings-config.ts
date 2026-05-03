@@ -392,6 +392,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 	},
 	// Enterprise settings
 	{
+		id: "enterprise-identity-setup",
+		titleKey: "settings.enterpriseIdentitySetup.title",
+		titleDefault: "Enterprise Identity Setup",
+		descriptionKey: "settings.enterpriseIdentitySetup.description",
+		descriptionDefault:
+			"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles",
+		href: "/settings/enterprise/identity-setup",
+		icon: "key",
+		minimumTier: "orgAdmin",
+		group: "enterprise",
+	},
+	{
 		id: "custom-domains",
 		titleKey: "settings.customDomains.title",
 		titleDefault: "Domain & Branding",
