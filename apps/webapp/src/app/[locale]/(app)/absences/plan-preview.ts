@@ -5,8 +5,8 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, coverageRule, shift } from "@/db/schema";
 import {
-	buildAbsencePlanPreview,
 	type AbsencePlanPreview,
+	buildAbsencePlanPreview,
 	type CoverageEvaluationInput,
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
@@ -161,7 +161,10 @@ async function evaluateCoverageRisk({
 
 	const [rules, publishedShifts] = await Promise.all([
 		db.query.coverageRule.findMany({
-			where: and(eq(coverageRule.organizationId, organizationId), inArray(coverageRule.subareaId, subareaIds)),
+			where: and(
+				eq(coverageRule.organizationId, organizationId),
+				inArray(coverageRule.subareaId, subareaIds),
+			),
 			with: { subarea: true },
 		}),
 		db.query.shift.findMany({
@@ -193,7 +196,12 @@ async function evaluateCoverageRisk({
 			if (
 				rule.subareaId !== affectedShift.subareaId ||
 				rule.dayOfWeek !== dayOfWeek ||
-				!timeRangesOverlap(rule.startTime, rule.endTime, affectedShift.startTime, affectedShift.endTime)
+				!timeRangesOverlap(
+					rule.startTime,
+					rule.endTime,
+					affectedShift.startTime,
+					affectedShift.endTime,
+				)
 			) {
 				continue;
 			}
@@ -340,16 +348,16 @@ function clampTime(time: string, startTime: string, endTime: string) {
 }
 
 function isSameDate(left: Date, right: Date) {
-	return DateTime.fromJSDate(left, { zone: "utc" }).toISODate() === DateTime.fromJSDate(right, { zone: "utc" }).toISODate();
+	return (
+		DateTime.fromJSDate(left, { zone: "utc" }).toISODate() ===
+		DateTime.fromJSDate(right, { zone: "utc" }).toISODate()
+	);
 }
 
 function dedupeCoverageRisks(risks: CoverageEvaluationInput["risks"]) {
 	const risksByKey = new Map<string, CoverageEvaluationInput["risks"][number]>();
 	for (const risk of risks) {
-		risksByKey.set(
-			[risk.date, risk.subareaId, risk.startTime, risk.endTime].join(":"),
-			risk,
-		);
+		risksByKey.set([risk.date, risk.subareaId, risk.startTime, risk.endTime].join(":"), risk);
 	}
 
 	return [...risksByKey.values()];

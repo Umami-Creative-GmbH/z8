@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildAbsencePlanPreview,
 	type AbsencePlanPreviewInput,
+	buildAbsencePlanPreview,
 	type CoverageEvaluationInput,
 } from "./absence-plan-preview";
 
@@ -143,7 +143,9 @@ describe("buildAbsencePlanPreview", () => {
 
 		expect(preview.approvalSignal).toBe("risky");
 		expect(preview.coverage.risks[0]?.subareaName).toBe("Front Desk");
-		expect(preview.warnings).toContain("Published coverage would drop below the configured minimum.");
+		expect(preview.warnings).toContain(
+			"Published coverage would drop below the configured minimum.",
+		);
 	});
 
 	it("marks missing coverage rules for affected shifts as needs_review", () => {
@@ -232,6 +234,8 @@ describe("buildAbsencePlanPreview", () => {
 
 		expect(preview.approvalSignal).toBe("risky");
 		expect(preview.reasons).toContain("Vacation balance is unavailable for this year.");
-		expect(preview.warnings).toContain("Published coverage would drop below the configured minimum.");
+		expect(preview.warnings).toContain(
+			"Published coverage would drop below the configured minimum.",
+		);
 	});
 });

@@ -122,7 +122,10 @@ describe("getAbsencePlanPreview", () => {
 			expect.any(Date),
 			expect.any(Date),
 		);
-		expect(mockState.eq).toHaveBeenCalledWith(expect.objectContaining({ name: "employee_id" }), "emp-current");
+		expect(mockState.eq).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "employee_id" }),
+			"emp-current",
+		);
 		expect(mockState.eq).toHaveBeenCalledWith(
 			expect.objectContaining({ name: "organization_id" }),
 			"org-current",
@@ -135,7 +138,10 @@ describe("getAbsencePlanPreview", () => {
 		await getAbsencePlanPreview(previewRequest);
 
 		expect(mockState.categoryFindFirst).toHaveBeenCalledWith({ where: expect.anything() });
-		expect(mockState.eq).toHaveBeenCalledWith(expect.objectContaining({ name: "id" }), "cat-vacation");
+		expect(mockState.eq).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "id" }),
+			"cat-vacation",
+		);
 		expect(mockState.eq).toHaveBeenCalledWith(
 			expect.objectContaining({ name: "organization_id" }),
 			"org-current",
@@ -146,8 +152,14 @@ describe("getAbsencePlanPreview", () => {
 			with: { category: true },
 		});
 		expect(mockState.shiftFindMany).toHaveBeenCalledWith({ where: expect.anything() });
-		expect(mockState.eq).toHaveBeenCalledWith(expect.objectContaining({ name: "employee_id" }), "emp-current");
-		expect(mockState.eq).toHaveBeenCalledWith(expect.objectContaining({ name: "status" }), "published");
+		expect(mockState.eq).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "employee_id" }),
+			"emp-current",
+		);
+		expect(mockState.eq).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "status" }),
+			"published",
+		);
 	});
 
 	it("returns an error before deep queries for invalid date ranges", async () => {
