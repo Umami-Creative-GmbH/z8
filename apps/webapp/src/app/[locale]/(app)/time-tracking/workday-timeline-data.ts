@@ -1,4 +1,5 @@
-import { and, asc, eq, gte, lte } from "drizzle-orm";
+import { DateTime } from "luxon";
+import { and, asc, eq, gte, isNull, lte, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { absenceEntry, shift, workPeriod } from "@/db/schema";
@@ -88,6 +89,12 @@ export async function getWorkdayTimelineData({
 			);
 		}
 
+		const relevantPendingRequests = pendingRequests.items
+			.filter((request) =>
+				isRequestRelevantToSelectedDate(request, selectedDate.dateKey, timezone),
+			)
+			.map(mapPendingRequest);
+
 		return {
 			success: true,
 			data: normalizeWorkdayTimeline({
@@ -96,7 +103,7 @@ export async function getWorkdayTimelineData({
 				workPeriods,
 				shifts,
 				absences,
-				pendingRequests: pendingRequests.items.map(mapPendingRequest),
+				pendingRequests: relevantPendingRequests,
 			}),
 		};
 	} catch (error) {
@@ -121,8 +128,8 @@ async function loadWorkPeriods({
 		where: and(
 			eq(workPeriod.organizationId, organizationId),
 			eq(workPeriod.employeeId, employeeId),
-			gte(workPeriod.startTime, startBound),
 			lte(workPeriod.startTime, endBound),
+			or(gte(workPeriod.endTime, startBound), isNull(workPeriod.endTime)),
 		),
 		orderBy: [asc(workPeriod.startTime)],
 	})) as WorkPeriodRow[];
@@ -210,6 +217,49 @@ function mapPendingRequest(request: SelfServiceRequestItem): WorkdayPendingReque
 		submittedAt: request.submittedAt,
 		sourceHref: request.sourceHref,
 	};
+}
+
+export function isRequestRelevantToSelectedDate(
+	request: SelfServiceRequestItem,
+	selectedDateKey: string,
+	timezone: string,
+): boolean {
+	const submittedDateKey = DateTime.fromJSDate(request.submittedAt)
+		.setZone(timezone)
+		.toISODate();
+
+	if (submittedDateKey === selectedDateKey) return true;
+	if (request.subtitle.includes(selectedDateKey)) return true;
+
+	return getDateRanges(request.subtitle).some(
+		({ startDateKey, endDateKey }) =>
+			startDateKey <= selectedDateKey && selectedDateKey <= endDateKey,
+	);
+}
+
+export function isWorkPeriodRelevantToSelectedDate(
+	period: Pick<WorkPeriodRow, "startTime" | "endTime">,
+	selectedDate: Pick<ReturnType<typeof getSelectedWorkdayDate>, "startUtc" | "endUtc">,
+): boolean {
+	const selectedStart = selectedDate.startUtc.toJSDate();
+	const selectedEnd = selectedDate.endUtc.toJSDate();
+
+	return (
+		period.startTime <= selectedEnd &&
+		(period.endTime === null || period.endTime >= selectedStart)
+	);
+}
+
+function getDateRanges(subtitle: string): Array<{ startDateKey: string; endDateKey: string }> {
+	const ranges: Array<{ startDateKey: string; endDateKey: string }> = [];
+	const rangePattern = /(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})/g;
+
+	for (const match of subtitle.matchAll(rangePattern)) {
+		const [, startDateKey, endDateKey] = match;
+		if (startDateKey && endDateKey) ranges.push({ startDateKey, endDateKey });
+	}
+
+	return ranges;
 }
 
 function normalizePendingChanges(pendingChanges: unknown): string | null {

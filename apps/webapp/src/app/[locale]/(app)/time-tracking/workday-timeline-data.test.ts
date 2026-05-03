@@ -30,7 +30,11 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-import { getWorkdayTimelineData } from "./workday-timeline-data";
+import {
+	getWorkdayTimelineData,
+	isRequestRelevantToSelectedDate,
+	isWorkPeriodRelevantToSelectedDate,
+} from "./workday-timeline-data";
 
 describe("getWorkdayTimelineData", () => {
 	beforeEach(() => {
@@ -90,6 +94,45 @@ describe("getWorkdayTimelineData", () => {
 		expect(absenceOptions).toEqual(expect.objectContaining({ where: expect.any(Object) }));
 	});
 
+	it("filters pending requests to the selected workday before normalization", async () => {
+		mocks.getSelfServiceRequests.mockResolvedValue({
+			items: [
+				createRequest({
+					id: "current-day-submitted",
+					subtitle: "Submitted for review",
+					submittedAt: new Date("2026-05-03T08:00:00.000Z"),
+				}),
+				createRequest({
+					id: "current-day-subtitle",
+					subtitle: "Correction for 2026-05-03",
+					submittedAt: new Date("2026-05-01T08:00:00.000Z"),
+				}),
+				createRequest({
+					id: "other-day",
+					subtitle: "Correction for 2026-05-04",
+					submittedAt: new Date("2026-05-04T08:00:00.000Z"),
+				}),
+			],
+			counts: { pending: 3, requiredFixes: 0, recentDecisions: 0, total: 3 },
+			sourceErrors: [],
+		});
+
+		const result = await getWorkdayTimelineData({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			timezone: "UTC",
+			dateParam: "2026-05-03",
+		});
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.items.map((item) => item.id).sort()).toEqual([
+				"pending-request:current-day-submitted",
+				"pending-request:current-day-subtitle",
+			]);
+		}
+	});
+
 	it("logs and continues when pending request sources partially fail", async () => {
 		const sourceErrors = [
 			{
@@ -139,3 +182,116 @@ describe("getWorkdayTimelineData", () => {
 		);
 	});
 });
+
+describe("isRequestRelevantToSelectedDate", () => {
+	it("accepts requests submitted on the selected local date", () => {
+		expect(
+			isRequestRelevantToSelectedDate(
+				createRequest({ submittedAt: new Date("2026-05-02T22:30:00.000Z") }),
+				"2026-05-03",
+				"Europe/Berlin",
+			),
+		).toBe(true);
+	});
+
+	it("accepts requests whose subtitle contains the selected date key", () => {
+		expect(
+			isRequestRelevantToSelectedDate(
+				createRequest({
+					subtitle: "Time correction for 2026-05-03",
+					submittedAt: new Date("2026-05-01T08:00:00.000Z"),
+				}),
+				"2026-05-03",
+				"UTC",
+			),
+		).toBe(true);
+	});
+
+	it("accepts requests whose subtitle date range contains the selected date", () => {
+		expect(
+			isRequestRelevantToSelectedDate(
+				createRequest({
+					subtitle: "Absence 2026-05-01 to 2026-05-05",
+					submittedAt: new Date("2026-04-30T08:00:00.000Z"),
+				}),
+				"2026-05-03",
+				"UTC",
+			),
+		).toBe(true);
+	});
+
+	it("rejects requests unrelated to the selected date", () => {
+		expect(
+			isRequestRelevantToSelectedDate(
+				createRequest({
+					subtitle: "Time correction for 2026-05-04",
+					submittedAt: new Date("2026-05-04T08:00:00.000Z"),
+				}),
+				"2026-05-03",
+				"UTC",
+			),
+		).toBe(false);
+	});
+});
+
+describe("isWorkPeriodRelevantToSelectedDate", () => {
+	const selectedDate = {
+		startUtc: { toJSDate: () => new Date("2026-05-03T00:00:00.000Z") },
+		endUtc: { toJSDate: () => new Date("2026-05-03T23:59:59.999Z") },
+	};
+
+	it("accepts periods that started before the selected day and ended during it", () => {
+		expect(
+			isWorkPeriodRelevantToSelectedDate(
+				{
+					startTime: new Date("2026-05-02T22:00:00.000Z"),
+					endTime: new Date("2026-05-03T06:00:00.000Z"),
+				},
+				selectedDate,
+			),
+		).toBe(true);
+	});
+
+	it("accepts active periods that started before the selected day ends", () => {
+		expect(
+			isWorkPeriodRelevantToSelectedDate(
+				{
+					startTime: new Date("2026-05-02T22:00:00.000Z"),
+					endTime: null,
+				},
+				selectedDate,
+			),
+		).toBe(true);
+	});
+
+	it("rejects periods that do not overlap the selected day", () => {
+		expect(
+			isWorkPeriodRelevantToSelectedDate(
+				{
+					startTime: new Date("2026-05-04T00:00:00.000Z"),
+					endTime: new Date("2026-05-04T06:00:00.000Z"),
+				},
+				selectedDate,
+			),
+		).toBe(false);
+	});
+});
+
+function createRequest(overrides: Partial<Parameters<typeof isRequestRelevantToSelectedDate>[0]> = {}) {
+	return {
+		id: "request-1",
+		sourceType: "time_correction" as const,
+		sourceId: "source-1",
+		organizationId: "org-1",
+		employeeId: "employee-1",
+		status: "pending" as const,
+		submittedAt: new Date("2026-05-03T08:00:00.000Z"),
+		resolvedAt: null,
+		title: "Time correction",
+		subtitle: "Correction for 2026-05-03",
+		decisionReason: null,
+		availableActions: ["view" as const],
+		sourceHref: "/time-tracking",
+		...overrides,
+	};
+}
