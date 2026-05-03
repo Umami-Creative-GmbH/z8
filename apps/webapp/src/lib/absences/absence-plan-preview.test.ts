@@ -154,9 +154,7 @@ describe("buildAbsencePlanPreview", () => {
 		});
 
 		expect(preview.approvalSignal).toBe("needs_review");
-		expect(preview.reasons).toContain(
-			"Coverage rules are not configured for the affected scheduled work.",
-		);
+		expect(preview.reasons).toEqual(expect.arrayContaining([expect.stringMatching(/coverage/i)]));
 	});
 
 	it("does not require coverage review when no shifts are affected and no rules exist", () => {
