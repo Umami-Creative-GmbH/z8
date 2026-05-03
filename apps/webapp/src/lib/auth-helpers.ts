@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { invitation, member, organization, user as authUser } from "@/db/auth-schema";
-import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
+import { employee, employeeManagers, legalEntityAdmin, teamPermissions, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
 	mapSessionUserToAuthContextUser,
@@ -675,6 +675,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			employee: null,
 			permissions: { orgWide: null, byTeamId: new Map() },
 			managedEmployeeIds: [],
+			legalEntityAdminIds: [],
 			customRoles: [],
 		};
 	}
@@ -689,6 +690,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			employee: null,
 			permissions: { orgWide: null, byTeamId: new Map() },
 			managedEmployeeIds: [],
+			legalEntityAdminIds: [],
 			customRoles: [],
 		};
 	}
@@ -745,6 +747,22 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		}
 	}
 
+	let legalEntityAdminIds: string[] = [];
+
+	if (employeeRecord) {
+		const grantRecords = await db
+			.select({ legalEntityId: legalEntityAdmin.legalEntityId })
+			.from(legalEntityAdmin)
+			.where(
+				and(
+					eq(legalEntityAdmin.organizationId, activeOrganizationId),
+					eq(legalEntityAdmin.employeeId, employeeRecord.id),
+				),
+			);
+
+		legalEntityAdminIds = grantRecords.map((grant) => grant.legalEntityId);
+	}
+
 	// Load managed employee IDs
 	let managedEmployeeIds: string[] = [];
 
@@ -781,6 +799,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			: null,
 		permissions,
 		managedEmployeeIds,
+		legalEntityAdminIds,
 		customRoles: [],
 	};
 }
@@ -794,6 +813,7 @@ export async function getSettingsAccessInputForUser(
 			activeOrganizationId: null,
 			membershipRole: null,
 			employeeRole: null,
+			legalEntityAdminIds: [],
 		};
 	}
 
@@ -805,7 +825,7 @@ export async function getSettingsAccessInputForUser(
 			.limit(1)
 			.then((records) => records[0] ?? null),
 		db
-			.select({ role: employee.role })
+			.select({ id: employee.id, role: employee.role })
 			.from(employee)
 			.where(
 				and(
@@ -818,12 +838,29 @@ export async function getSettingsAccessInputForUser(
 			.then((records) => records[0] ?? null),
 	]);
 
+	let legalEntityAdminIds: string[] = [];
+
+	if (employeeRecord) {
+		const grantRecords = await db
+			.select({ legalEntityId: legalEntityAdmin.legalEntityId })
+			.from(legalEntityAdmin)
+			.where(
+				and(
+					eq(legalEntityAdmin.organizationId, activeOrganizationId),
+					eq(legalEntityAdmin.employeeId, employeeRecord.id),
+				),
+			);
+
+		legalEntityAdminIds = grantRecords.map((grant) => grant.legalEntityId);
+	}
+
 	return {
 		activeOrganizationId,
 		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
 			? membershipRecord.role
 			: null,
 		employeeRole: employeeRecord?.role ?? null,
+		legalEntityAdminIds,
 	};
 }
 

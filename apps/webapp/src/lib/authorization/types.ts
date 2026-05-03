@@ -146,6 +146,9 @@ export interface PrincipalContext {
 	/** Manager relationships - employee IDs this user manages */
 	managedEmployeeIds: string[];
 
+	/** Legal entity IDs this employee can administer */
+	legalEntityAdminIds: string[];
+
 	/** Custom roles assigned to this employee */
 	customRoles: CustomRoleInfo[];
 }

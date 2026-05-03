@@ -32,6 +32,7 @@ function createPrincipal(overrides: Partial<PrincipalContext> = {}): PrincipalCo
 		employee: null,
 		permissions: { orgWide: null, byTeamId: new Map() },
 		managedEmployeeIds: [],
+		legalEntityAdminIds: [],
 		customRoles: [],
 		...overrides,
 	};

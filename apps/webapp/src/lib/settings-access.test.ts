@@ -47,6 +47,17 @@ describe("resolveSettingsAccessTier", () => {
 		).toBe("manager");
 	});
 
+	it("resolves legal entity admins to entityAdmin without org-admin membership", () => {
+		expect(
+			resolveSettingsAccessTier({
+				activeOrganizationId: "org-a",
+				membershipRole: "member",
+				employeeRole: "employee",
+				legalEntityAdminIds: ["entity-a"],
+			}),
+		).toBe("entityAdmin");
+	});
+
 	it("falls back to member when there is no active organization", () => {
 		expect(
 			resolveSettingsAccessTier({
@@ -77,11 +88,16 @@ describe("resolveSettingsAccessTier", () => {
 });
 
 describe("hasSettingsAccessTier", () => {
-	it("applies member < manager < orgAdmin ordering", () => {
+	it("applies none < member < manager < entityAdmin < orgAdmin ordering", () => {
+		expect(hasSettingsAccessTier("none", "member")).toBe(false);
 		expect(hasSettingsAccessTier("member", "member")).toBe(true);
 		expect(hasSettingsAccessTier("member", "manager")).toBe(false);
 		expect(hasSettingsAccessTier("manager", "manager")).toBe(true);
+		expect(hasSettingsAccessTier("manager", "entityAdmin")).toBe(false);
+		expect(hasSettingsAccessTier("entityAdmin", "manager")).toBe(true);
+		expect(hasSettingsAccessTier("entityAdmin", "entityAdmin")).toBe(true);
 		expect(hasSettingsAccessTier("manager", "orgAdmin")).toBe(false);
+		expect(hasSettingsAccessTier("entityAdmin", "orgAdmin")).toBe(false);
 		expect(hasSettingsAccessTier("orgAdmin", "manager")).toBe(true);
 		expect(hasSettingsAccessTier("orgAdmin", "orgAdmin")).toBe(true);
 	});

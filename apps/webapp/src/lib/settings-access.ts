@@ -1,4 +1,4 @@
-export type SettingsAccessTier = "member" | "manager" | "orgAdmin";
+export type SettingsAccessTier = "none" | "member" | "manager" | "entityAdmin" | "orgAdmin";
 
 export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/organizations",
@@ -34,6 +34,7 @@ export interface ResolveSettingsAccessTierInput {
 	activeOrganizationId: string | null;
 	membershipRole: SettingsAccessMembershipRole;
 	employeeRole: SettingsAccessEmployeeRole;
+	legalEntityAdminIds?: string[];
 }
 
 export function isSettingsAccessMembershipRole(
@@ -43,15 +44,18 @@ export function isSettingsAccessMembershipRole(
 }
 
 const SETTINGS_ACCESS_RANK: Record<SettingsAccessTier, number> = {
-	member: 0,
-	manager: 1,
-	orgAdmin: 2,
+	none: 0,
+	member: 1,
+	manager: 2,
+	entityAdmin: 3,
+	orgAdmin: 4,
 };
 
 export function resolveSettingsAccessTier({
 	activeOrganizationId,
 	membershipRole,
 	employeeRole,
+	legalEntityAdminIds = [],
 }: ResolveSettingsAccessTierInput): SettingsAccessTier {
 	if (!activeOrganizationId) {
 		return "member";
@@ -63,6 +67,10 @@ export function resolveSettingsAccessTier({
 
 	if (employeeRole === "admin" || employeeRole === "manager") {
 		return "manager";
+	}
+
+	if (legalEntityAdminIds.length > 0) {
+		return "entityAdmin";
 	}
 
 	return "member";

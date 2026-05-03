@@ -14,6 +14,7 @@ import {
 	employeeManagers,
 	customRole,
 	customRolePermission,
+	legalEntityAdmin,
 	teamPermissions,
 } from "@/db/schema";
 import {
@@ -104,6 +105,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							legalEntityAdminIds: [],
 							customRoles: [],
 						} satisfies PrincipalContext;
 					}
@@ -118,6 +120,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							legalEntityAdminIds: [],
 							customRoles: [],
 						} satisfies PrincipalContext;
 					}
@@ -178,6 +181,26 @@ export const AuthorizationServiceLive = Layer.effect(
 								permissions.byTeamId.set(perm.teamId, flags);
 							}
 						}
+					}
+
+					let legalEntityAdminIds: string[] = [];
+
+					if (employeeRecord) {
+						const grantRecords = yield* _(
+							dbService.query("getLegalEntityAdminsForAuth", async () => {
+								return await dbService.db
+									.select({ legalEntityId: legalEntityAdmin.legalEntityId })
+									.from(legalEntityAdmin)
+									.where(
+										and(
+											eq(legalEntityAdmin.organizationId, activeOrganizationId),
+											eq(legalEntityAdmin.employeeId, employeeRecord.id),
+										),
+									);
+							}),
+						);
+
+						legalEntityAdminIds = grantRecords.map((grant) => grant.legalEntityId);
 					}
 
 					// Load managed employee IDs
@@ -263,6 +286,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							: null,
 						permissions,
 						managedEmployeeIds,
+						legalEntityAdminIds,
 						customRoles: customRolesInfo,
 					} satisfies PrincipalContext;
 				}),
@@ -281,6 +305,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							legalEntityAdminIds: [],
 							customRoles: [],
 						};
 						return defineAbilityFor(principal);
@@ -296,6 +321,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							employee: null,
 							permissions: { orgWide: null, byTeamId: new Map() },
 							managedEmployeeIds: [],
+							legalEntityAdminIds: [],
 							customRoles: [],
 						};
 						return defineAbilityFor(principal);
@@ -355,6 +381,26 @@ export const AuthorizationServiceLive = Layer.effect(
 								permissions.byTeamId.set(perm.teamId, flags);
 							}
 						}
+					}
+
+					let legalEntityAdminIds: string[] = [];
+
+					if (employeeRecord) {
+						const grantRecords = yield* _(
+							dbService.query("getLegalEntityAdminsForBuildAbility", async () => {
+								return await dbService.db
+									.select({ legalEntityId: legalEntityAdmin.legalEntityId })
+									.from(legalEntityAdmin)
+									.where(
+										and(
+											eq(legalEntityAdmin.organizationId, activeOrganizationId),
+											eq(legalEntityAdmin.employeeId, employeeRecord.id),
+										),
+									);
+							}),
+						);
+
+						legalEntityAdminIds = grantRecords.map((grant) => grant.legalEntityId);
 					}
 
 					// Load managed employee IDs
@@ -439,6 +485,7 @@ export const AuthorizationServiceLive = Layer.effect(
 							: null,
 						permissions,
 						managedEmployeeIds,
+						legalEntityAdminIds,
 						customRoles: customRolesInfo,
 					};
 
