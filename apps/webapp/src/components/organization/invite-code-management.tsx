@@ -157,9 +157,11 @@ export function InviteCodeManagement({
 							)}
 						</CardDescription>
 					</div>
-					<Button onClick={() => setCreateDialogOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.inviteCodes.createCode", "Create Code")}
+					<Button onClick={() => setCreateDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
+						<IconPlus className="h-4 w-4 sm:mr-2" />
+						<span className="sr-only sm:not-sr-only">
+							{t("settings.inviteCodes.createCode", "Create Code")}
+						</span>
 					</Button>
 				</div>
 			</CardHeader>

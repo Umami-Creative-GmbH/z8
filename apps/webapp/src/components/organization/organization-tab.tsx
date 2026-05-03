@@ -103,9 +103,9 @@ export function OrganizationTab({
 							<CardDescription>Manage organization members and send invitations</CardDescription>
 						</div>
 						{canInvite && (
-							<Button onClick={() => setInviteDialogOpen(true)}>
-								<IconUserPlus className="mr-2 h-4 w-4" />
-								Invite Member
+							<Button onClick={() => setInviteDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
+								<IconUserPlus className="h-4 w-4 sm:mr-2" />
+								<span className="sr-only sm:not-sr-only">Invite Member</span>
 							</Button>
 						)}
 					</div>
