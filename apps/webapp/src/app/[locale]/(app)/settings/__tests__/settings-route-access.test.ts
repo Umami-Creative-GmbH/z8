@@ -15,6 +15,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"avv/page.tsx",
 	"roles/page.tsx",
 	"travel-expenses/page.tsx",
+	"legal-entities/page.tsx",
 	"enterprise/domains/page.tsx",
 	"enterprise/email/page.tsx",
 	"email-templates/page.tsx",
@@ -57,6 +58,7 @@ describe("org-admin settings route access", () => {
 			"/settings/avv",
 			"/settings/roles",
 			"/settings/travel-expenses",
+			"/settings/legal-entities",
 			"/settings/enterprise/domains",
 			"/settings/enterprise/email",
 			"/settings/email-templates",
@@ -112,6 +114,7 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/surcharges")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/calendar")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/billing")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/legal-entities")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);

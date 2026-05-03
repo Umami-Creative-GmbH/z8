@@ -17,7 +17,7 @@ describe("resolveSettingsAccessTier", () => {
 				employeeRole: null,
 			}),
 		).toBe("orgAdmin");
-	});
+});
 
 	it("resolves admin membership to orgAdmin before employee-role checks", () => {
 		expect(
@@ -114,19 +114,21 @@ describe("hasSettingsAccessTier", () => {
 	});
 });
 
-	describe("statistics route access", () => {
-		it("does not treat statistics as an org-admin-only settings route", () => {
-			expect(ORG_ADMIN_SETTINGS_ROUTES).not.toContain("/settings/statistics");
-			expect(ORG_ADMIN_SETTINGS_ROUTES).toContain("/settings/scheduled-exports");
-		});
+describe("statistics route access", () => {
+	it("does not treat statistics as an org-admin-only settings route", () => {
+		expect(ORG_ADMIN_SETTINGS_ROUTES).not.toContain("/settings/statistics");
+		expect(ORG_ADMIN_SETTINGS_ROUTES).toContain("/settings/scheduled-exports");
+	});
 
-		it("allows managers into statistics while preserving org-admin-only routes", () => {
-			expect(canResolvedTierAccessRoute("manager", "/settings/statistics")).toBe(true);
-			expect(canResolvedTierAccessRoute("manager", "/settings/export")).toBe(false);
-			expect(canResolvedTierAccessRoute("manager", "/settings/scheduled-exports")).toBe(false);
-			expect(canResolvedTierAccessRoute("orgAdmin", "/settings/statistics")).toBe(true);
-			expect(canResolvedTierAccessRoute("orgAdmin", "/settings/scheduled-exports")).toBe(true);
-		});
+	it("allows managers into statistics while preserving org-admin-only routes", () => {
+		expect(canResolvedTierAccessRoute("manager", "/settings/statistics")).toBe(true);
+		expect(canResolvedTierAccessRoute("manager", "/settings/legal-entities")).toBe(false);
+		expect(canResolvedTierAccessRoute("manager", "/settings/export")).toBe(false);
+		expect(canResolvedTierAccessRoute("manager", "/settings/scheduled-exports")).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/legal-entities")).toBe(true);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/statistics")).toBe(true);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/scheduled-exports")).toBe(true);
+	});
 	});
 
 describe("isSettingsAccessMembershipRole", () => {

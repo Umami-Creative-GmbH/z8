@@ -6,6 +6,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/avv",
 	"/settings/roles",
 	"/settings/travel-expenses",
+	"/settings/legal-entities",
 	"/settings/enterprise/domains",
 	"/settings/enterprise/email",
 	"/settings/email-templates",
