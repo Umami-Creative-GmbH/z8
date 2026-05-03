@@ -37,4 +37,15 @@ describe("assertCanAssignEmployeeLegalEntity", () => {
 			}),
 		).toThrow("Only organization admins can move employees between legal entities.");
 	});
+
+	it("allows unchanged legal entity assignments outside entity admin grants", () => {
+		expect(() =>
+			assertCanAssignEmployeeLegalEntity({
+				isOrgAdmin: false,
+				currentLegalEntityId: "entity-b",
+				nextLegalEntityId: "entity-b",
+				allowedLegalEntityIds: ["entity-a"],
+			}),
+		).not.toThrow();
+	});
 });

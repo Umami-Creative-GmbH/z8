@@ -82,6 +82,17 @@ export function getEmployeeDetailPermissions(input: {
 	};
 }
 
+export function shouldUseLegalEntitySelectionContext(input: {
+	accessTier: SettingsAccessTier;
+	employeeLegalEntityId: string;
+	allowedLegalEntityIds: string[];
+}) {
+	return (
+		input.accessTier === "orgAdmin" ||
+		input.allowedLegalEntityIds.includes(input.employeeLegalEntityId)
+	);
+}
+
 export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {
 	form.reset();
 	form.setFieldValue("firstName", employee.firstName || "");

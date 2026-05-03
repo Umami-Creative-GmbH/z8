@@ -8,11 +8,9 @@ export function assertCanAssignEmployeeLegalEntity(input: {
 		return;
 	}
 
-	if (input.currentLegalEntityId !== input.nextLegalEntityId) {
-		throw new Error("Only organization admins can move employees between legal entities.");
+	if (input.currentLegalEntityId === input.nextLegalEntityId) {
+		return;
 	}
 
-	if (!input.allowedLegalEntityIds.includes(input.nextLegalEntityId)) {
-		throw new Error("You do not have access to this legal entity.");
-	}
+	throw new Error("Only organization admins can move employees between legal entities.");
 }

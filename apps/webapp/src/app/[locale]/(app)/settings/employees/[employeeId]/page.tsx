@@ -9,6 +9,7 @@ import {
 } from "@/lib/legal-entities/access";
 import { getEmployee } from "../actions";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
+import { shouldUseLegalEntitySelectionContext } from "./page-utils";
 
 export default async function EmployeeDetailPage({
 	params,
@@ -42,13 +43,19 @@ export default async function EmployeeDetailPage({
 		isOrgAdmin: settingsRouteContext.accessTier === "orgAdmin",
 		allowedLegalEntityIds: accessInput.legalEntityAdminIds ?? [],
 	};
-	const legalEntitySelectionContext = shouldShowLegalEntitySelector(legalEntityAccessScope)
-		? await getLegalEntitySelectionContext({
-				organizationId,
-				requestedLegalEntityId: employeeResult.data.legalEntityId,
-				...legalEntityAccessScope,
-			})
-		: null;
+	const legalEntitySelectionContext =
+		shouldShowLegalEntitySelector(legalEntityAccessScope) &&
+		shouldUseLegalEntitySelectionContext({
+			accessTier: settingsRouteContext.accessTier,
+			employeeLegalEntityId: employeeResult.data.legalEntityId,
+			allowedLegalEntityIds: legalEntityAccessScope.allowedLegalEntityIds,
+		})
+			? await getLegalEntitySelectionContext({
+					organizationId,
+					requestedLegalEntityId: employeeResult.data.legalEntityId,
+					...legalEntityAccessScope,
+				})
+			: null;
 	const fallbackLegalEntities = legalEntitySelectionContext
 		? []
 		: await db
