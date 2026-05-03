@@ -2,17 +2,22 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { syncCanonicalAbsenceApprovalState } from "@/app/[locale]/(app)/absences/actions.canonical";
-import { absenceEntry, holiday } from "@/db/schema";
+import { absenceEntry, approvalRequest, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	type ResolvePolicyAndCreateApprovalResult,
+	resolvePolicyAndCreateApproval,
+} from "../policies/chain-service";
+import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -99,6 +104,59 @@ export function formatAbsenceDateForEmail(date: Date | string) {
 	return value.toFormat("LLL d, yyyy");
 }
 
+export function buildAbsenceApprovalPolicyContext(absence: {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	categoryId: string | null;
+	employee: { teamId: string | null };
+}): ApprovalPolicyEvaluationContext {
+	return {
+		organizationId: absence.organizationId,
+		approvalType: "absence_entry",
+		requesterEmployeeId: absence.employeeId,
+		teamId: absence.employee.teamId,
+		locationId: null,
+		absenceCategoryId: absence.categoryId,
+		travelExpenseAmount: null,
+		overtimeRisk: null,
+		employeeGroupIds: [],
+		entityType: "absence_entry",
+		entityId: absence.id,
+	};
+}
+
+export function createAbsenceApprovalWorkflow(
+	dbService: ApprovalDbService,
+	input: {
+		absence: Parameters<typeof buildAbsenceApprovalPolicyContext>[0];
+		defaultApproverId: string;
+	},
+): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	return resolvePolicyAndCreateApproval(dbService, {
+		context: buildAbsenceApprovalPolicyContext(input.absence),
+		defaultApproverId: input.defaultApproverId,
+	}).pipe(
+		Effect.catchTag("ValidationError", () =>
+			dbService.query("createDefaultAbsenceApprovalFallback", async () => {
+				const [approval] = await dbService.db
+					.insert(approvalRequest)
+					.values({
+						organizationId: input.absence.organizationId,
+						entityType: "absence_entry",
+						entityId: input.absence.id,
+						requestedBy: input.absence.employeeId,
+						approverId: input.defaultApproverId,
+						status: "pending",
+					})
+					.returning({ id: approvalRequest.id });
+
+				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.absence.id };
+			}),
+		),
+	);
+}
+
 export function approveAbsenceWithCurrentApproverEffect(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
@@ -114,7 +172,7 @@ export function approveAbsenceWithCurrentApproverEffect(
 		undefined,
 		handleApprovedAbsence,
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 
@@ -135,7 +193,7 @@ export function rejectAbsenceWithCurrentApproverEffect(
 		(decisionDbService, entityId, approver) =>
 			handleRejectedAbsence(decisionDbService, entityId, approver, reason),
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 
@@ -294,7 +352,15 @@ function handleRejectedAbsence(
 }
 
 export async function approveAbsenceEffect(absenceId: string): Promise<ServerActionResult<void>> {
-	return processApproval("absence_entry", absenceId, "approve", undefined, handleApprovedAbsence);
+	return processApproval(
+		"absence_entry",
+		absenceId,
+		"approve",
+		undefined,
+		handleApprovedAbsence,
+		undefined,
+		{ transactional: true },
+	);
 }
 
 export async function rejectAbsenceEffect(
@@ -308,5 +374,7 @@ export async function rejectAbsenceEffect(
 		reason,
 		(dbService, entityId, currentEmployee) =>
 			handleRejectedAbsence(dbService, entityId, currentEmployee, reason),
+		undefined,
+		{ transactional: true },
 	);
 }

@@ -1,12 +1,20 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { timeEntry, timeRecord, workPeriod } from "@/db/schema";
+import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	type ResolvePolicyAndCreateApprovalResult,
+	resolvePolicyAndCreateApproval,
+} from "../policies/chain-service";
+import type {
+	ApprovalPolicyEvaluationContext,
+	ApprovalPolicyOvertimeRisk,
+} from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -121,6 +129,66 @@ export function calculateCorrectedDurationMinutes(startTime: Date, endTime: Date
 	return Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
 }
 
+export function buildTimeCorrectionApprovalPolicyContext(input: {
+	organizationId: string;
+	requesterEmployeeId: string;
+	teamId: string | null;
+	workPeriodId: string;
+	overtimeRisk: ApprovalPolicyOvertimeRisk;
+}): ApprovalPolicyEvaluationContext {
+	return {
+		organizationId: input.organizationId,
+		approvalType: "time_entry",
+		requesterEmployeeId: input.requesterEmployeeId,
+		teamId: input.teamId,
+		locationId: null,
+		absenceCategoryId: null,
+		travelExpenseAmount: null,
+		overtimeRisk: input.overtimeRisk,
+		employeeGroupIds: [],
+		entityType: "time_entry",
+		entityId: input.workPeriodId,
+	};
+}
+
+export function createTimeCorrectionApprovalWorkflow(
+	dbService: ApprovalDbService,
+	input: {
+		organizationId: string;
+		requesterEmployeeId: string;
+		teamId: string | null;
+		workPeriodId: string;
+		defaultApproverId: string;
+		reason?: string;
+		overtimeRisk: ApprovalPolicyOvertimeRisk;
+	},
+): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	return resolvePolicyAndCreateApproval(dbService, {
+		context: buildTimeCorrectionApprovalPolicyContext(input),
+		defaultApproverId: input.defaultApproverId,
+		reason: input.reason,
+	}).pipe(
+		Effect.catchTag("ValidationError", () =>
+			dbService.query("createDefaultTimeCorrectionApprovalFallback", async () => {
+				const [approval] = await dbService.db
+					.insert(approvalRequest)
+					.values({
+						organizationId: input.organizationId,
+						entityType: "time_entry",
+						entityId: input.workPeriodId,
+						requestedBy: input.requesterEmployeeId,
+						approverId: input.defaultApproverId,
+						status: "pending",
+						reason: input.reason,
+					})
+					.returning({ id: approvalRequest.id });
+
+				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.workPeriodId };
+			}),
+		),
+	);
+}
+
 export async function syncCanonicalWorkCorrection(input: {
 	organizationId: string;
 	canonicalRecordId: string | null;
@@ -166,7 +234,7 @@ export function approveTimeCorrectionWithCurrentApproverEffect(
 		undefined,
 		handleApprovedTimeCorrection,
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 
@@ -187,7 +255,7 @@ export function rejectTimeCorrectionWithCurrentApproverEffect(
 		(decisionDbService, entityId, approver) =>
 			handleRejectedTimeCorrection(decisionDbService, entityId, approver, reason),
 		undefined,
-		options,
+		{ ...options, transactional: true },
 	);
 }
 
@@ -332,6 +400,8 @@ export async function approveTimeCorrectionEffect(
 		"approve",
 		undefined,
 		handleApprovedTimeCorrection,
+		undefined,
+		{ transactional: true },
 	);
 }
 
@@ -346,5 +416,7 @@ export async function rejectTimeCorrectionEffect(
 		reason,
 		(dbService, entityId, currentEmployee) =>
 			handleRejectedTimeCorrection(dbService, entityId, currentEmployee, reason),
+		undefined,
+		{ transactional: true },
 	);
 }

@@ -1,8 +1,12 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
+import type { ApprovalPolicyOvertimeRisk } from "@/lib/approvals/policies/types";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import {
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
@@ -76,6 +80,69 @@ async function sendPendingApprovalNotifications(params: {
 	return { employeeName };
 }
 
+const approvalDbService = {
+	db,
+	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+} satisfies ApprovalDbService;
+
+async function createDefaultTimeEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	reason: string;
+}) {
+	await db.insert(approvalRequest).values({
+		organizationId: params.organizationId,
+		entityType: "time_entry",
+		entityId: params.workPeriodId,
+		requestedBy: params.employeeId,
+		approverId: params.managerId,
+		status: "pending",
+		reason: params.reason,
+	});
+}
+
+export async function createTimeEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	reason: string;
+	overtimeRisk: ApprovalPolicyOvertimeRisk;
+}) {
+	const requester = await db.query.employee.findFirst({
+		where: eq(employee.id, params.employeeId),
+		columns: { teamId: true, organizationId: true },
+	});
+
+	try {
+		await Effect.runPromise(
+			resolvePolicyAndCreateApproval(approvalDbService, {
+				context: {
+					organizationId: params.organizationId,
+					approvalType: "time_entry",
+					requesterEmployeeId: params.employeeId,
+					teamId:
+						requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: params.overtimeRisk,
+					employeeGroupIds: [],
+					entityType: "time_entry",
+					entityId: params.workPeriodId,
+				},
+				defaultApproverId: params.managerId,
+				reason: params.reason,
+			}),
+		);
+	} catch (error) {
+		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
+		await createDefaultTimeEntryApprovalRequest(params);
+	}
+}
+
 export async function createClockOutApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
@@ -86,14 +153,10 @@ export async function createClockOutApprovalRequest(params: {
 	durationMinutes: number;
 }): Promise<void> {
 	try {
-		await db.insert(approvalRequest).values({
-			organizationId: params.organizationId,
-			entityType: "time_entry",
-			entityId: params.workPeriodId,
-			requestedBy: params.employeeId,
-			approverId: params.managerId,
-			status: "pending",
+		await createTimeEntryApprovalRequest({
+			...params,
 			reason: "Clock-out requires approval (0-day policy)",
+			overtimeRisk: "warning",
 		});
 
 		await sendPendingApprovalNotifications({
@@ -130,14 +193,10 @@ export async function createManualEntryApprovalRequest(params: {
 	reason: string;
 }): Promise<void> {
 	try {
-		await db.insert(approvalRequest).values({
-			organizationId: params.organizationId,
-			entityType: "time_entry",
-			entityId: params.workPeriodId,
-			requestedBy: params.employeeId,
-			approverId: params.managerId,
-			status: "pending",
+		await createTimeEntryApprovalRequest({
+			...params,
 			reason: `Manual time entry: ${params.reason}`,
+			overtimeRisk: "none",
 		});
 
 		await sendPendingApprovalNotifications({

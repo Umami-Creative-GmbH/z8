@@ -18,6 +18,8 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -67,6 +69,55 @@ import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.c
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
+
+const approvalDbService = {
+	db,
+	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+} satisfies ApprovalDbService;
+
+async function createPolicyAwareTimeEntryApprovalRequest(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	reason: string;
+	overtimeRisk: "none" | "warning" | "violation";
+}) {
+	const requester = await db.query.employee.findFirst({
+		where: eq(employee.id, params.employeeId),
+		columns: { organizationId: true, teamId: true },
+	});
+
+	try {
+		return await Effect.runPromise(
+			createTimeCorrectionApprovalWorkflow(approvalDbService, {
+				organizationId: params.organizationId,
+				requesterEmployeeId: params.employeeId,
+				teamId: requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+				workPeriodId: params.workPeriodId,
+				defaultApproverId: params.managerId,
+				reason: params.reason,
+				overtimeRisk: params.overtimeRisk,
+			}),
+		);
+	} catch (error) {
+		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
+		const [approval] = await db
+			.insert(approvalRequest)
+			.values({
+				organizationId: params.organizationId,
+				entityType: "time_entry",
+				entityId: params.workPeriodId,
+				requestedBy: params.employeeId,
+				approverId: params.managerId,
+				status: "pending",
+				reason: params.reason,
+			})
+			.returning({ approvalRequestId: approvalRequest.id });
+
+		return { approvalRequestId: approval?.approvalRequestId ?? params.workPeriodId };
+	}
+}
 
 interface CorrectionRequest {
 	workPeriodId: string;
@@ -653,24 +704,19 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		// Step 10: Create approval request
-		const [approval] = yield* _(
-			dbService.query("createApprovalRequest", async () => {
-				return await dbService.db
-					.insert(approvalRequest)
-					.values({
-						organizationId: currentEmployee.organizationId,
-						entityType: "time_entry",
-						entityId: period.id,
-						requestedBy: currentEmployee.id,
-						approverId: currentEmployee.managerId!,
-						status: "pending",
-						reason: data.reason,
-					})
-					.returning();
+		const approval = yield* _(
+			createTimeCorrectionApprovalWorkflow(dbService, {
+				organizationId: currentEmployee.organizationId,
+				requesterEmployeeId: currentEmployee.id,
+				teamId: currentEmployee.teamId ?? null,
+				workPeriodId: period.id,
+				defaultApproverId: currentEmployee.managerId!,
+				reason: data.reason,
+				overtimeRisk: "warning",
 			}),
 		);
 
-		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.id));
+		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.approvalRequestId));
 
 		// Step 11: Fetch manager and employee details for email
 		const [manager, empWithUser] = yield* _(
@@ -748,14 +794,14 @@ export async function requestTimeCorrectionEffect(
 
 		logger.info(
 			{
-				approvalId: approval.id,
+				approvalId: approval.approvalRequestId,
 				workPeriodId: data.workPeriodId,
 				managerEmail: manager.user.email,
 			},
 			"Time correction request submitted and notification sent",
 		);
 
-		return { approvalId: approval.id };
+		return { approvalId: approval.approvalRequestId };
 	}).pipe(
 		Effect.tapError((error) =>
 			Effect.sync(() => {
@@ -2274,14 +2320,13 @@ export async function createClockOutApprovalRequest(params: {
 
 	try {
 		// Create approval request
-		await db.insert(approvalRequest).values({
+		await createPolicyAwareTimeEntryApprovalRequest({
+			workPeriodId,
+			employeeId,
+			managerId,
 			organizationId,
-			entityType: "time_entry",
-			entityId: workPeriodId,
-			requestedBy: employeeId,
-			approverId: managerId,
-			status: "pending",
 			reason: "Clock-out requires approval (0-day policy)",
+			overtimeRisk: "warning",
 		});
 
 		// Get employee and manager details for notifications
@@ -2883,14 +2928,13 @@ async function createManualEntryApprovalRequest(params: {
 
 	try {
 		// Create approval request
-		await db.insert(approvalRequest).values({
+		await createPolicyAwareTimeEntryApprovalRequest({
+			workPeriodId,
+			employeeId,
+			managerId,
 			organizationId,
-			entityType: "time_entry",
-			entityId: workPeriodId,
-			requestedBy: employeeId,
-			approverId: managerId,
-			status: "pending",
 			reason: `Manual time entry: ${reason}`,
+			overtimeRisk: "none",
 		});
 
 		// Get employee and manager details for notifications

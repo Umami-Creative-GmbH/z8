@@ -38,6 +38,21 @@ export interface ApprovalAuditEntry {
 	userAgent?: string;
 }
 
+export interface ApprovalPolicyAuditEvent {
+	organizationId: string;
+	eventName: string;
+	policyId?: string;
+	chainId?: string;
+	stageId?: string;
+	entityType: string;
+	entityId: string;
+	actorUserId: string;
+	actorEmployeeId?: string;
+	previousStatus?: string;
+	newStatus?: string;
+	createdAt: Date;
+}
+
 // ============================================
 // SERVICE DEFINITION
 // ============================================
@@ -87,6 +102,44 @@ function normalizeEntry(entry: ApprovalAuditEntry) {
 		userAgent: entry.userAgent || null,
 		timestamp: new Date(),
 	};
+}
+
+function normalizePolicyEvent(event: ApprovalPolicyAuditEvent) {
+	return {
+		organizationId: event.organizationId,
+		entityType: event.entityType,
+		entityId: event.entityId,
+		action: event.eventName,
+		performedBy: event.actorUserId,
+		employeeId: event.actorEmployeeId ?? null,
+		changes:
+			event.previousStatus || event.newStatus
+				? JSON.stringify({ from: event.previousStatus ?? null, to: event.newStatus ?? null })
+				: null,
+		metadata: JSON.stringify({
+			eventName: event.eventName,
+			...(event.policyId ? { policyId: event.policyId } : {}),
+			...(event.chainId ? { chainId: event.chainId } : {}),
+			...(event.stageId ? { stageId: event.stageId } : {}),
+		}),
+		ipAddress: null,
+		userAgent: null,
+		timestamp: event.createdAt,
+	};
+}
+
+export function logApprovalPolicyEvent(
+	dbService: ApprovalDbService,
+	event: ApprovalPolicyAuditEvent,
+): Effect.Effect<void, AnyAppError, never> {
+	return dbService.query("logApprovalPolicyEvent", async () => {
+		const relationalQuery = (dbService.db as { query?: Record<string, unknown> }).query;
+		if (!relationalQuery || !("auditLog" in relationalQuery)) {
+			return;
+		}
+
+		await dbService.db.insert(auditLog).values(normalizePolicyEvent(event));
+	});
 }
 
 export function createApprovalAuditLogger(dbService: ApprovalDbService) {

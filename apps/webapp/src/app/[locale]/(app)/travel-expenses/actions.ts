@@ -1,20 +1,18 @@
 "use server";
 
 import { and, asc, desc, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import {
-	approvalRequest,
-	employee,
-	travelExpenseAttachment,
-	travelExpenseClaim,
-} from "@/db/schema";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { employee, travelExpenseClaim } from "@/db/schema";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
+	createTravelExpenseApprovalWorkflow,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -146,6 +144,7 @@ export async function submitTravelExpenseClaim(input: {
 				),
 				columns: {
 					managerId: true,
+					teamId: true,
 				},
 			}),
 		]);
@@ -218,14 +217,23 @@ export async function submitTravelExpenseClaim(input: {
 				return null;
 			}
 
-			await tx.insert(approvalRequest).values({
-				organizationId: currentEmployee.organizationId,
-				entityType: "travel_expense_claim",
-				entityId: claim.id,
-				requestedBy: currentEmployee.id,
-				approverId,
-				status: "pending",
-			});
+			const approvalDbService = {
+				db: tx,
+				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+			} satisfies ApprovalDbService;
+
+			await Effect.runPromise(
+				createTravelExpenseApprovalWorkflow(approvalDbService, {
+					claim: {
+						id: claim.id,
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						calculatedAmount: claim.calculatedAmount,
+						employee: { teamId: currentEmployeeRecord.teamId ?? null },
+					},
+					defaultApproverId: approverId,
+				}),
+			);
 
 			return submittedClaim;
 		});
@@ -266,10 +274,6 @@ export async function approveTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		if (authContext.employee.role !== "manager" && authContext.employee.role !== "admin") {
-			return { success: false, error: "Unauthorized" };
-		}
-
 		const result = await processApproval(
 			"travel_expense_claim",
 			input.claimId,
@@ -301,10 +305,6 @@ export async function rejectTravelExpenseClaim(input: {
 	try {
 		const authContext = await getAuthContext();
 		if (!authContext?.employee) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		if (authContext.employee.role !== "manager" && authContext.employee.role !== "admin") {
 			return { success: false, error: "Unauthorized" };
 		}
 

@@ -4,9 +4,10 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { absenceCategory, absenceEntry, approvalRequest, employee } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -36,6 +37,7 @@ export interface RequestAbsenceEmployeeContext {
 	id: string;
 	organizationId: string;
 	managerId: string | null;
+	teamId?: string | null;
 }
 
 function validateRequestDates(data: AbsenceRequest) {
@@ -252,20 +254,20 @@ function linkCanonicalRecord(
 
 function createApprovalWorkflow(
 	dbService: typeof DatabaseService.Service,
-	organizationId: string,
+	currentEmployee: RequestAbsenceEmployeeContext,
 	absenceId: string,
-	requestedBy: string,
+	categoryId: string,
 	approverId: string,
 ) {
-	return dbService.query("createApprovalRequest", async () => {
-		return await dbService.db.insert(approvalRequest).values({
-			organizationId,
-			entityType: "absence_entry",
-			entityId: absenceId,
-			requestedBy,
-			approverId,
-			status: "pending",
-		});
+	return createAbsenceApprovalWorkflow(dbService, {
+		absence: {
+			id: absenceId,
+			organizationId: currentEmployee.organizationId,
+			employeeId: currentEmployee.id,
+			categoryId,
+			employee: { teamId: currentEmployee.teamId ?? null },
+		},
+		defaultApproverId: approverId,
 	});
 }
 
@@ -545,9 +547,9 @@ function requestAbsenceWithResolverEffect(
 					yield* _(
 						createApprovalWorkflow(
 							dbService,
-							currentEmployee.organizationId,
+							currentEmployee,
 							newAbsence.id,
-							currentEmployee.id,
+							data.categoryId,
 							managerId,
 						),
 					);

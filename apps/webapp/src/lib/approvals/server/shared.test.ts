@@ -1,5 +1,5 @@
 import { Cause, Effect, Exit, Option } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 
 vi.mock("@/env", () => ({
@@ -16,6 +16,14 @@ vi.mock("@/env", () => ({
 	},
 }));
 
+const chainServiceMocks = vi.hoisted(() => ({
+	progressApprovalChainIfLinked: vi.fn(),
+}));
+
+vi.mock("@/lib/approvals/policies/chain-service", () => ({
+	progressApprovalChainIfLinked: chainServiceMocks.progressApprovalChainIfLinked,
+}));
+
 import { mapBulkDecisionError } from "@/lib/approvals/application/bulk-approval.service";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import {
@@ -23,6 +31,77 @@ import {
 	processApprovalWithCurrentEmployee,
 } from "@/lib/approvals/server/shared";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+
+beforeEach(() => {
+	chainServiceMocks.progressApprovalChainIfLinked.mockReset();
+	chainServiceMocks.progressApprovalChainIfLinked.mockReturnValue(
+		Effect.succeed({ kind: "not_linked" }),
+	);
+});
+
+function createSharedApprovalTestContext(action: "approve" | "reject" = "approve") {
+	const approvalFindFirst = vi.fn().mockResolvedValue({
+		id: "approval-1",
+		entityId: "claim-1",
+		entityType: "travel_expense_claim",
+		approverId: "employee-1",
+		organizationId: "org-1",
+		status: "pending",
+		approvedAt: null,
+		rejectionReason: null,
+		updatedAt: new Date("2026-04-09T09:30:00.000Z"),
+	});
+	const returning = vi.fn().mockResolvedValue([{ id: "approval-1" }]);
+	const where = vi.fn().mockReturnValue({ returning });
+	const set = vi.fn().mockReturnValue({ where });
+	const updateEntity = vi.fn().mockReturnValue(Effect.void);
+	const log = vi.fn().mockReturnValue(Effect.void);
+
+	const dbService = DatabaseService.of({
+		db: {
+			query: {
+				approvalRequest: {
+					findFirst: approvalFindFirst,
+				},
+			},
+			update: vi.fn().mockReturnValue({ set }),
+		},
+		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+	});
+
+	const auditLogger = ApprovalAuditLogger.of({
+		log,
+		logBatch: vi.fn(),
+	});
+
+	const currentEmployee = {
+		id: "employee-1",
+		userId: "user-1",
+		organizationId: "org-1",
+		user: {
+			id: "user-1",
+			name: "Morgan Reviewer",
+			email: "morgan@example.com",
+			image: null,
+		},
+	};
+
+	const run = () =>
+		Effect.runPromise(
+			processApprovalWithCurrentEmployee(
+				dbService,
+				currentEmployee,
+				"travel_expense_claim",
+				"claim-1",
+				action,
+				action === "reject" ? "missing details" : undefined,
+				updateEntity,
+				undefined,
+			).pipe(Effect.provideService(ApprovalAuditLogger, auditLogger)),
+		);
+
+	return { dbService, updateEntity, run };
+}
 
 describe("getApprovalStatusUpdate", () => {
 	it("builds approved status payload", () => {
@@ -452,5 +531,46 @@ describe("getApprovalStatusUpdate", () => {
 
 		expect(txInsertValues).toHaveBeenCalledTimes(1);
 		expect(outerInsertValues).not.toHaveBeenCalled();
+	});
+
+	it("continues existing side effects for unlinked approval requests", async () => {
+		const { updateEntity, run } = createSharedApprovalTestContext();
+
+		await run();
+
+		expect(updateEntity).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not run final approve side effects for intermediate chain stages", async () => {
+		chainServiceMocks.progressApprovalChainIfLinked.mockReturnValue(
+			Effect.succeed({ kind: "chain_pending" }),
+		);
+		const { updateEntity, run } = createSharedApprovalTestContext();
+
+		await run();
+
+		expect(updateEntity).not.toHaveBeenCalled();
+	});
+
+	it("runs final approve side effects when the last chain stage completes", async () => {
+		chainServiceMocks.progressApprovalChainIfLinked.mockReturnValue(
+			Effect.succeed({ kind: "chain_completed", completed: true }),
+		);
+		const { updateEntity, run } = createSharedApprovalTestContext();
+
+		await run();
+
+		expect(updateEntity).toHaveBeenCalledTimes(1);
+	});
+
+	it("runs rejection side effects when any chain stage is rejected", async () => {
+		chainServiceMocks.progressApprovalChainIfLinked.mockReturnValue(
+			Effect.succeed({ kind: "chain_rejected", rejected: true }),
+		);
+		const { updateEntity, run } = createSharedApprovalTestContext("reject");
+
+		await run();
+
+		expect(updateEntity).toHaveBeenCalledTimes(1);
 	});
 });
