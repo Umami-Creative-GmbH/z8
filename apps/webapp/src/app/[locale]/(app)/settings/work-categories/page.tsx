@@ -7,13 +7,19 @@ import { WorkCategorySetsTable } from "@/components/settings/work-category-sets-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
+
+const SETTINGS_ROUTE = "/settings/work-categories";
 
 async function WorkCategoriesSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (
+		!settingsRouteContext ||
+		!canResolvedTierAccessRoute(settingsRouteContext.accessTier, SETTINGS_ROUTE)
+	) {
 		redirect("/settings");
 	}
 

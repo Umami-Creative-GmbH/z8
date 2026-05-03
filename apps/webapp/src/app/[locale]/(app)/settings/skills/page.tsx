@@ -2,13 +2,19 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { SkillCatalogManagement } from "@/components/settings/skill-catalog-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
+
+const SETTINGS_ROUTE = "/settings/skills";
 
 export default async function SkillsSettingsPage() {
 	await connection();
 
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (
+		!settingsRouteContext ||
+		!canResolvedTierAccessRoute(settingsRouteContext.accessTier, SETTINGS_ROUTE)
+	) {
 		redirect("/settings");
 	}
 

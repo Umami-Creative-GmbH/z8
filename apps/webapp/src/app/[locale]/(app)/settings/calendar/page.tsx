@@ -1,9 +1,12 @@
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
 import { getTranslate } from "@/tolgee/server";
 import { CalendarSettingsForm } from "@/components/settings/calendar-settings-form";
 import { getCalendarSettings, getManagerCalendarReadView } from "./actions";
+
+const SETTINGS_ROUTE = "/settings/calendar";
 
 export default async function CalendarSettingsPage() {
 	await connection();
@@ -20,7 +23,7 @@ export default async function CalendarSettingsPage() {
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
-	if (accessTier === "member" || !organizationId) {
+	if (!organizationId || !canResolvedTierAccessRoute(accessTier, SETTINGS_ROUTE)) {
 		redirect("/settings");
 	}
 

@@ -12,9 +12,12 @@ import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
 import { getTranslate } from "@/tolgee/server";
 import type { ManagerStatisticsReadView, OrganizationStats } from "./actions";
 import { getManagerStatisticsReadView, getOrganizationStats } from "./actions";
+
+const SETTINGS_ROUTE = "/settings/statistics";
 
 interface StatCardProps {
 	title: string;
@@ -66,7 +69,7 @@ async function StatisticsContent() {
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
-	if (accessTier === "member" || !organizationId) {
+	if (!organizationId || !canResolvedTierAccessRoute(accessTier, SETTINGS_ROUTE)) {
 		redirect("/settings");
 	}
 

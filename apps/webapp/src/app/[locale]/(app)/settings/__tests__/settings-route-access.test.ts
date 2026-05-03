@@ -163,7 +163,8 @@ describe("org-admin settings route access", () => {
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
-		expect(pageSource.includes('accessTier === "member"')).toBe(true);
+		expect(pageSource.includes("canResolvedTierAccessRoute(")).toBe(true);
+		expect(pageSource.includes("/settings/calendar")).toBe(true);
 		expect(pageSource.includes("getManagerCalendarReadView(")).toBe(true);
 		expect(pageSource.includes("getCalendarSettings(")).toBe(true);
 		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(false);
@@ -204,6 +205,25 @@ describe("org-admin settings route access", () => {
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
+	});
+
+	it("denies direct entity-admin access to non-entity manager settings routes", () => {
+		const pages = [
+			["locations/page.tsx", "/settings/locations"],
+			["work-categories/page.tsx", "/settings/work-categories"],
+			["skills/page.tsx", "/settings/skills"],
+			["projects/page.tsx", "/settings/projects"],
+			["calendar/page.tsx", "/settings/calendar"],
+			["statistics/page.tsx", "/settings/statistics"],
+		] as const;
+
+		for (const [relativePath, route] of pages) {
+			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+
+			expect(canResolvedTierAccessRoute("entityAdmin", route)).toBe(false);
+			expect(source.includes("canResolvedTierAccessRoute(")).toBe(true);
+			expect(source.includes(route)).toBe(true);
+		}
 	});
 
 	it("checks location detail access from the shared settings route context before rendering", () => {
