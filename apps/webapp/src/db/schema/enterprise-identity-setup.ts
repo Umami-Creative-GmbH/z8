@@ -3,6 +3,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { EnterpriseIdentitySetupState } from "@/lib/enterprise-identity/setup-state";
 
 import { organization, user } from "../auth-schema";
+import { roleTemplate } from "./identity";
 
 export const enterpriseIdentityPresetEnum = pgEnum("enterprise_identity_preset", [
 	"okta",
@@ -48,6 +49,9 @@ export const enterpriseIdentitySetup = pgTable(
 		enforcement: jsonb("enforcement")
 			.$type<EnterpriseIdentitySetupState["enforcement"]>()
 			.notNull(),
+		defaultRoleTemplateId: uuid("default_role_template_id").references(() => roleTemplate.id, {
+			onDelete: "set null",
+		}),
 
 		activated: boolean("activated").default(false).notNull(),
 		activatedAt: timestamp("activated_at"),

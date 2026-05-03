@@ -1256,6 +1256,10 @@ export const enterpriseIdentitySetupRelations = relations(enterpriseIdentitySetu
 		fields: [enterpriseIdentitySetup.organizationId],
 		references: [organization.id],
 	}),
+	defaultRoleTemplate: one(roleTemplate, {
+		fields: [enterpriseIdentitySetup.defaultRoleTemplateId],
+		references: [roleTemplate.id],
+	}),
 	creator: one(user, {
 		fields: [enterpriseIdentitySetup.createdBy],
 		references: [user.id],
