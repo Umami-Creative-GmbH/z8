@@ -381,6 +381,8 @@ export async function approveTimeCorrectionEffect(
 		"approve",
 		undefined,
 		handleApprovedTimeCorrection,
+		undefined,
+		{ transactional: true },
 	);
 }
 
@@ -395,5 +397,7 @@ export async function rejectTimeCorrectionEffect(
 		reason,
 		(dbService, entityId, currentEmployee) =>
 			handleRejectedTimeCorrection(dbService, entityId, currentEmployee, reason),
+		undefined,
+		{ transactional: true },
 	);
 }

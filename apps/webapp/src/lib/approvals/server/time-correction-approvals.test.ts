@@ -151,6 +151,56 @@ describe("time correction approval policy resolution", () => {
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
+	it("forces exported time correction approval actions through the transactional process path", async () => {
+		vi.resetModules();
+		const processApproval = vi.fn().mockResolvedValue(undefined);
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval,
+			processApprovalWithCurrentEmployee: vi.fn(),
+		}));
+		const { approveTimeCorrectionEffect } = await import(
+			"@/lib/approvals/server/time-correction-approvals"
+		);
+
+		await approveTimeCorrectionEffect("period-1");
+
+		expect(processApproval).toHaveBeenCalledWith(
+			"time_entry",
+			"period-1",
+			"approve",
+			undefined,
+			expect.any(Function),
+			undefined,
+			expect.objectContaining({ transactional: true }),
+		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("forces exported time correction rejection actions through the transactional process path", async () => {
+		vi.resetModules();
+		const processApproval = vi.fn().mockResolvedValue(undefined);
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval,
+			processApprovalWithCurrentEmployee: vi.fn(),
+		}));
+		const { rejectTimeCorrectionEffect } = await import(
+			"@/lib/approvals/server/time-correction-approvals"
+		);
+
+		await rejectTimeCorrectionEffect("period-1", "Incorrect shift");
+
+		expect(processApproval).toHaveBeenCalledWith(
+			"time_entry",
+			"period-1",
+			"reject",
+			"Incorrect shift",
+			expect.any(Function),
+			undefined,
+			expect.objectContaining({ transactional: true }),
+		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("creates time correction approvals through the shared policy resolver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 

@@ -146,6 +146,52 @@ describe("absence approval policy resolution", () => {
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
+	it("forces exported absence approval actions through the transactional process path", async () => {
+		vi.resetModules();
+		const processApproval = vi.fn().mockResolvedValue(undefined);
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval,
+			processApprovalWithCurrentEmployee: vi.fn(),
+		}));
+		const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
+
+		await approveAbsenceEffect("absence-1");
+
+		expect(processApproval).toHaveBeenCalledWith(
+			"absence_entry",
+			"absence-1",
+			"approve",
+			undefined,
+			expect.any(Function),
+			undefined,
+			expect.objectContaining({ transactional: true }),
+		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("forces exported absence rejection actions through the transactional process path", async () => {
+		vi.resetModules();
+		const processApproval = vi.fn().mockResolvedValue(undefined);
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval,
+			processApprovalWithCurrentEmployee: vi.fn(),
+		}));
+		const { rejectAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
+
+		await rejectAbsenceEffect("absence-1", "Too late");
+
+		expect(processApproval).toHaveBeenCalledWith(
+			"absence_entry",
+			"absence-1",
+			"reject",
+			"Too late",
+			expect.any(Function),
+			undefined,
+			expect.objectContaining({ transactional: true }),
+		);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("creates absence approvals through the shared policy resolver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 

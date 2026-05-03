@@ -334,7 +334,15 @@ function handleRejectedAbsence(
 }
 
 export async function approveAbsenceEffect(absenceId: string): Promise<ServerActionResult<void>> {
-	return processApproval("absence_entry", absenceId, "approve", undefined, handleApprovedAbsence);
+	return processApproval(
+		"absence_entry",
+		absenceId,
+		"approve",
+		undefined,
+		handleApprovedAbsence,
+		undefined,
+		{ transactional: true },
+	);
 }
 
 export async function rejectAbsenceEffect(
@@ -348,5 +356,7 @@ export async function rejectAbsenceEffect(
 		reason,
 		(dbService, entityId, currentEmployee) =>
 			handleRejectedAbsence(dbService, entityId, currentEmployee, reason),
+		undefined,
+		{ transactional: true },
 	);
 }
