@@ -42,6 +42,10 @@ export function resolveSelectedLegalEntityId(input: ResolveSelectedLegalEntityId
 	return firstAllowedEntity;
 }
 
+export function shouldShowLegalEntitySelector(scope: LegalEntityAccessScope) {
+	return scope.isOrgAdmin || scope.allowedLegalEntityIds.length > 0;
+}
+
 export async function getLegalEntitySelectionContext(input: {
 	organizationId: string;
 	requestedLegalEntityId: string | null;

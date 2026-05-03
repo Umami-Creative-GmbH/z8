@@ -247,6 +247,24 @@ describe("org-admin settings route access", () => {
 		}
 	});
 
+	it("guards legal entity selector context on manager-access settings pages", () => {
+		const pages = [
+			"change-policies/page.tsx",
+			"holidays/page.tsx",
+			"vacation/page.tsx",
+			"work-policies/page.tsx",
+		];
+
+		for (const relativePath of pages) {
+			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+			const guardIndex = source.indexOf("shouldShowLegalEntitySelector(");
+			const contextIndex = source.indexOf("await getLegalEntitySelectionContext(");
+
+			expect(guardIndex).toBeGreaterThan(-1);
+			expect(contextIndex).toBeGreaterThan(guardIndex);
+		}
+	});
+
 	it("keeps vacation employee allowances on shared org-admin route access instead of employee-role checks", () => {
 		const source = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "vacation/employees/page.tsx"), "utf8"),

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-entity-selector";
 import { HolidayManagement } from "@/components/settings/holiday-management";
 import { getCurrentSettingsRouteContext, getSettingsAccessInputForUser } from "@/lib/auth-helpers";
-import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
+import { getLegalEntitySelectionContext, shouldShowLegalEntitySelector } from "@/lib/legal-entities/access";
 
 type LegalEntitySearchParams = {
 	legalEntityId?: string;
@@ -33,18 +33,28 @@ export default async function HolidaySettingsPage({
 	}
 
 	const accessInput = await getSettingsAccessInputForUser(authContext.user.id, organizationId);
-	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
-		organizationId,
-		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+	const legalEntityAccessScope = {
 		isOrgAdmin: accessTier === "orgAdmin",
 		allowedLegalEntityIds: accessInput.legalEntityAdminIds ?? [],
-	});
+	};
+	const legalEntitySelectionContext = shouldShowLegalEntitySelector(legalEntityAccessScope)
+		? await getLegalEntitySelectionContext({
+				organizationId,
+				requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+				...legalEntityAccessScope,
+			})
+		: null;
 
 	return (
 		<>
-			<div className="px-4 pt-4">
-				<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
-			</div>
+			{legalEntitySelectionContext ? (
+				<div className="px-4 pt-4">
+					<LegalEntitySelector
+						entities={legalEntitySelectionContext.entities}
+						selectedLegalEntityId={legalEntitySelectionContext.selectedLegalEntityId}
+					/>
+				</div>
+			) : null}
 			<HolidayManagement
 				organizationId={organizationId}
 				canManage={accessTier === "orgAdmin"}

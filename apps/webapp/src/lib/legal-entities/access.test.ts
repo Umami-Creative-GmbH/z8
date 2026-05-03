@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { canAccessLegalEntity, getLegalEntitySelectionContext, resolveSelectedLegalEntityId } from "./access";
+import {
+	canAccessLegalEntity,
+	getLegalEntitySelectionContext,
+	resolveSelectedLegalEntityId,
+	shouldShowLegalEntitySelector,
+} from "./access";
 import { getDefaultLegalEntity } from "./default-entity";
 
 const dbSelect = vi.fn();
@@ -94,6 +99,14 @@ describe("resolveSelectedLegalEntityId", () => {
 				allowedLegalEntityIds: ["entity-c"],
 			}),
 		).toThrow("You do not have access to this legal entity.");
+	});
+});
+
+describe("shouldShowLegalEntitySelector", () => {
+	it("shows the selector for org admins and legal entity admins only", () => {
+		expect(shouldShowLegalEntitySelector({ isOrgAdmin: true, allowedLegalEntityIds: [] })).toBe(true);
+		expect(shouldShowLegalEntitySelector({ isOrgAdmin: false, allowedLegalEntityIds: ["entity-a"] })).toBe(true);
+		expect(shouldShowLegalEntitySelector({ isOrgAdmin: false, allowedLegalEntityIds: [] })).toBe(false);
 	});
 });
 

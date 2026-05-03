@@ -8,7 +8,7 @@ import { VacationPoliciesTable } from "@/components/settings/vacation-policies-t
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext, getSettingsAccessInputForUser } from "@/lib/auth-helpers";
-import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
+import { getLegalEntitySelectionContext, shouldShowLegalEntitySelector } from "@/lib/legal-entities/access";
 
 type LegalEntitySearchParams = {
 	legalEntityId?: string;
@@ -39,19 +39,29 @@ async function VacationSettingsContent({
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
 	const allowedAssignmentTypes = canManagePolicies ? (["team", "employee"] as const) : (["employee"] as const);
 	const accessInput = await getSettingsAccessInputForUser(settingsRouteContext.authContext.user.id, organizationId);
-	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
-		organizationId,
-		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+	const legalEntityAccessScope = {
 		isOrgAdmin: canManagePolicies,
 		allowedLegalEntityIds: accessInput.legalEntityAdminIds ?? [],
-	});
+	};
+	const legalEntitySelectionContext = shouldShowLegalEntitySelector(legalEntityAccessScope)
+		? await getLegalEntitySelectionContext({
+				organizationId,
+				requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+				...legalEntityAccessScope,
+			})
+		: null;
 
 	return (
 		<VacationManagement
 			organizationId={organizationId}
 			allowedAssignmentTypes={allowedAssignmentTypes}
 		>
-			<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
+			{legalEntitySelectionContext ? (
+				<LegalEntitySelector
+					entities={legalEntitySelectionContext.entities}
+					selectedLegalEntityId={legalEntitySelectionContext.selectedLegalEntityId}
+				/>
+			) : null}
 			<div className="grid gap-4">
 				<Card>
 					<CardHeader>
