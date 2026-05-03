@@ -29,6 +29,7 @@ describe("enterprise identity setup helpers", () => {
 		expect(state.enforcement.ssoRequired).toBe(false);
 		expect(state.enforcement.domainRestrictionEnabled).toBe(false);
 		expect(state.enforcement.inviteRestrictionEnabled).toBe(false);
+		expect("defaultRoleTemplateId" in state.enforcement).toBe(false);
 		expect(state.scim.enabled).toBe(false);
 	});
 
@@ -54,6 +55,25 @@ describe("enterprise identity setup helpers", () => {
 		});
 
 		expect(ready).toEqual({ canActivate: true, missing: [] });
+	});
+
+	it("requires the passing SSO test to match the current provider", () => {
+		const state = createDefaultEnterpriseIdentitySetupState({ organizationId: "org_1" });
+
+		const readiness = getEnterpriseIdentityReadiness({
+			...state,
+			provider: { preset: "okta", protocol: "oidc", providerId: "new-okta" },
+			domain: { domain: "acme.test", verified: true },
+			ssoTest: {
+				status: "passed",
+				testEmail: "admin@acme.test",
+				providerId: "old-okta",
+				checkedAt: "2026-05-03T10:00:00.000Z",
+				error: null,
+			},
+		});
+
+		expect(readiness).toEqual({ canActivate: false, missing: ["ssoTest"] });
 	});
 
 	it("maps Better Auth setup errors to actionable copy", () => {
