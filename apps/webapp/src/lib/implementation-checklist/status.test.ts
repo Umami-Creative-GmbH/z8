@@ -61,11 +61,11 @@ describe("implementation checklist status resolver", () => {
 
 	it("prefers automatic completion over stale manual state", () => {
 		const items = resolveImplementationChecklistItems({
-			detectedCompleteIds: new Set(["integrations"]),
-			manualCompleteIds: new Set(["integrations"]),
+			detectedCompleteIds: new Set(["approval-rules"]),
+			manualCompleteIds: new Set(["approval-rules"]),
 		});
 
-		expect(items.find((item) => item.id === "integrations")).toMatchObject({
+		expect(items.find((item) => item.id === "approval-rules")).toMatchObject({
 			status: "complete",
 			completionSource: "automatic",
 		});
