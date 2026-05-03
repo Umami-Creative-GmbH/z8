@@ -58,11 +58,19 @@ export function resolveApproverFromDirectory(
 	}
 
 	if (stage.approverType === "manager_manager") {
-		const managerId = directManagerId(managerLinks, requesterEmployeeId);
+		const manager = activeEmployeeInOrg(
+			employees,
+			organizationId,
+			directManagerId(managerLinks, requesterEmployeeId),
+		);
+		if (!manager) {
+			return { ok: false, reason: "Requester has no active direct manager in this organization." };
+		}
+
 		const secondManager = activeEmployeeInOrg(
 			employees,
 			organizationId,
-			managerId ? directManagerId(managerLinks, managerId) : undefined,
+			directManagerId(managerLinks, manager.id),
 		);
 		return secondManager
 			? { ok: true, approverEmployeeId: secondManager.id }
@@ -70,10 +78,14 @@ export function resolveApproverFromDirectory(
 	}
 
 	if (stage.approverType === "org_admin") {
-		const admin = employees.find(
-			(employee) =>
-				employee.organizationId === organizationId && employee.isActive && employee.role === "admin",
-		);
+		const admin = employees
+			.filter(
+				(employee) =>
+					employee.organizationId === organizationId &&
+					employee.isActive &&
+					employee.role === "admin",
+			)
+			.toSorted((left, right) => left.id.localeCompare(right.id))[0];
 		return admin
 			? { ok: true, approverEmployeeId: admin.id }
 			: { ok: false, reason: "Organization has no active admin approver." };

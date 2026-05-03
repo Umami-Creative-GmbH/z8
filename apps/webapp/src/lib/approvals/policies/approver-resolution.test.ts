@@ -5,11 +5,15 @@ import type { ApprovalPolicyStageDraft } from "./types";
 const employees = [
 	{ id: "emp_requester", organizationId: "org_1", isActive: true, role: "employee" as const },
 	{ id: "emp_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+	{ id: "emp_senior_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
 	{ id: "emp_admin", organizationId: "org_1", isActive: true, role: "admin" as const },
 	{ id: "emp_other_org", organizationId: "org_2", isActive: true, role: "admin" as const },
 ];
 
-const managerLinks = [{ employeeId: "emp_requester", managerId: "emp_manager" }];
+const managerLinks = [
+	{ employeeId: "emp_requester", managerId: "emp_manager" },
+	{ employeeId: "emp_manager", managerId: "emp_senior_manager" },
+];
 
 function stage(input: Partial<ApprovalPolicyStageDraft>): ApprovalPolicyStageDraft {
 	return { id: "stage_1", stepOrder: 1, label: "Stage", approverType: "direct_manager", ...input };
@@ -38,6 +42,86 @@ describe("resolveApproverFromDirectory", () => {
 				managerLinks,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_admin" });
+	});
+
+	it("selects organization admin deterministically by employee id", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "org_admin" }),
+				employees: [
+					{ id: "emp_requester", organizationId: "org_1", isActive: true, role: "employee" as const },
+					{ id: "emp_admin_z", organizationId: "org_1", isActive: true, role: "admin" as const },
+					{ id: "emp_admin_a", organizationId: "org_1", isActive: true, role: "admin" as const },
+				],
+				managerLinks,
+			}),
+		).toEqual({ ok: true, approverEmployeeId: "emp_admin_a" });
+	});
+
+	it("resolves manager manager through active managers inside the organization", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "manager_manager" }),
+				employees,
+				managerLinks,
+			}),
+		).toEqual({ ok: true, approverEmployeeId: "emp_senior_manager" });
+	});
+
+	it("rejects manager manager when direct manager is inactive", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "manager_manager" }),
+				employees: employees.map((employee) =>
+					employee.id === "emp_manager" ? { ...employee, isActive: false } : employee,
+				),
+				managerLinks,
+			}),
+		).toEqual({ ok: false, reason: "Requester has no active direct manager in this organization." });
+	});
+
+	it("rejects manager manager when direct manager is outside the organization", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "manager_manager" }),
+				employees: employees.map((employee) =>
+					employee.id === "emp_manager" ? { ...employee, organizationId: "org_2" } : employee,
+				),
+				managerLinks,
+			}),
+		).toEqual({ ok: false, reason: "Requester has no active direct manager in this organization." });
+	});
+
+	it("rejects unsupported team lead stages", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "team_lead" }),
+				employees,
+				managerLinks,
+			}),
+		).toEqual({ ok: false, reason: "Team lead approver stages are not available." });
+	});
+
+	it("rejects missing specific approvers", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "specific_employee", approverEmployeeId: "emp_missing" }),
+				employees,
+				managerLinks,
+			}),
+		).toEqual({ ok: false, reason: "Specific approver is not active in this organization." });
 	});
 
 	it("rejects cross-organization specific approvers", () => {
