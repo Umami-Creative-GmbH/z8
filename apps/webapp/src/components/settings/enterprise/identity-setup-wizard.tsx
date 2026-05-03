@@ -5,6 +5,7 @@ interface IdentitySetupWizardProps {
 	organizationId: string;
 }
 
+// Temporary route-unblocking shell; Task 4 replaces this with the full wizard.
 export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySetupWizardProps) {
 	return (
 		<section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
