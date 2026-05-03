@@ -1,7 +1,6 @@
 "use server";
 
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	absenceCategory,
@@ -10,12 +9,12 @@ import {
 	employeeVacationAllowance,
 	holidayAssignment,
 	holidayPresetAssignment,
-	type holidayPresetHoliday,
 	vacationAllowance,
 } from "@/db/schema";
 import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { expandPresetHolidayForYear } from "./holiday-expansion";
 import { mapAbsenceWithCategory } from "./mappers";
 
 export async function getVacationBalance(
@@ -205,34 +204,6 @@ export async function getHolidays(
 	return [...holidaysByKey.values()].sort(
 		(left, right) => left.startDate.getTime() - right.startDate.getTime(),
 	);
-}
-
-type PresetHolidayForExpansion = Pick<
-	typeof holidayPresetHoliday.$inferSelect,
-	"id" | "name" | "month" | "day" | "durationDays" | "categoryId"
->;
-
-export function expandPresetHolidayForYear(
-	presetHoliday: PresetHolidayForExpansion,
-	year: number,
-): Holiday[] {
-	const startDate = DateTime.local(year, presetHoliday.month, presetHoliday.day).startOf("day");
-	const durationDays = Math.max(presetHoliday.durationDays || 1, 1);
-	const endDate = startDate.plus({ days: durationDays - 1 });
-
-	if (!startDate.isValid || !endDate.isValid) {
-		return [];
-	}
-
-	return [
-		{
-			id: `preset-holiday-${presetHoliday.id}-${year}`,
-			name: presetHoliday.name,
-			startDate: startDate.toJSDate(),
-			endDate: endDate.toJSDate(),
-			categoryId: presetHoliday.categoryId ?? "",
-		},
-	];
 }
 
 export async function getAbsenceCategories(organizationId: string): Promise<
