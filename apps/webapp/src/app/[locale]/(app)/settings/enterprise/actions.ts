@@ -35,6 +35,7 @@ import {
 	createDefaultEnterpriseIdentitySetupState,
 	getEnterpriseIdentityReadiness,
 	mapBetterAuthIdentityError,
+	validateEnterpriseIdentityProviderInput,
 	type EnterpriseIdentitySetupState,
 	type EnterpriseIdentitySetupStep,
 } from "@/lib/enterprise-identity/setup-state";
@@ -316,6 +317,8 @@ export async function updateEnterpriseIdentityProviderAction(input: EnterpriseId
 	const domain = input.domain.trim().toLowerCase();
 
 	if (!providerId || !domain) throw new Error("Provider ID and domain are required");
+	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
+	if (validationError) throw new Error(validationError);
 
 	await updateEnterpriseIdentitySetupRecord(organizationId, {
 		preset: input.preset,
@@ -340,6 +343,8 @@ export async function registerEnterpriseIdentitySSOProviderAction(input: Enterpr
 	const domain = input.domain.trim().toLowerCase();
 
 	if (!providerId || !issuer || !domain) throw new Error("Provider ID, issuer, and domain are required");
+	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
+	if (validationError) throw new Error(validationError);
 
 	const secretPath = `sso/${providerId}/client_secret`;
 

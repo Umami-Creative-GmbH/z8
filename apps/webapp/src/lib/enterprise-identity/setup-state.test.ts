@@ -7,6 +7,7 @@ import {
 	createDefaultEnterpriseIdentitySetupState,
 	getEnterpriseIdentityReadiness,
 	mapBetterAuthIdentityError,
+	validateEnterpriseIdentityProviderInput,
 } from "./setup-state";
 
 describe("enterprise identity setup helpers", () => {
@@ -84,5 +85,19 @@ describe("enterprise identity setup helpers", () => {
 			"The identity provider only advertises an unsupported token authentication method. Use client_secret_basic or client_secret_post.",
 		);
 		expect(mapBetterAuthIdentityError(new Error("metadata failed"))).toBe("metadata failed");
+	});
+});
+
+describe("enterprise identity validation", () => {
+	it("rejects invalid provider IDs and domains", () => {
+		expect(
+			validateEnterpriseIdentityProviderInput({ providerId: "Bad ID", domain: "acme.com" }),
+		).toEqual("Provider ID must contain only lowercase letters, numbers, and hyphens");
+		expect(
+			validateEnterpriseIdentityProviderInput({ providerId: "acme-okta", domain: "not a domain" }),
+		).toEqual("Enter a valid email domain such as example.com");
+		expect(
+			validateEnterpriseIdentityProviderInput({ providerId: "acme-okta", domain: "acme.com" }),
+		).toBeNull();
 	});
 });

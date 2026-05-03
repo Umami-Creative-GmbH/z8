@@ -294,6 +294,37 @@ describe("IdentitySetupWizard behavior", () => {
 		expect(screen.getByText("scim_token_returned_once")).toBeTruthy();
 	});
 
+	it("keeps SCIM status pending until provisioning activity is observed", async () => {
+		renderWizard(
+			configuredSetup({
+				scim: {
+					enabled: true,
+					providerId: "acme-okta",
+					verified: false,
+					lastCheckedAt: null,
+					error: null,
+				},
+			}),
+		);
+
+		expect(
+			screen.getByText(
+				"SCIM verification updates after your identity provider sends a test user or group change.",
+			),
+		).toBeTruthy();
+		expect(screen.getByText("No provisioning activity yet")).toBeTruthy();
+		expect(screen.queryByText("Provisioning activity observed")).toBeNull();
+
+		fireEvent.click(screen.getByRole("button", { name: "Refresh status" }));
+
+		await waitFor(() => {
+			expect(refreshEnterpriseIdentityScimStatusActionMock).toHaveBeenCalled();
+		});
+
+		expect(screen.getByText("Provisioning activity observed")).toBeTruthy();
+		expect(screen.queryByText("No provisioning activity yet")).toBeNull();
+	});
+
 	it("saves access policy with top-level defaultRoleTemplateId", async () => {
 		renderWizard(configuredSetup());
 
@@ -369,5 +400,15 @@ describe("IdentitySetupWizard source supplements", () => {
 		expect(source).toContain("defaultRoleTemplateId");
 		expect(source).toContain("setDefaultRoleTemplateId");
 		expect(source).not.toContain("setup.enforcement.defaultRoleTemplateId");
+	});
+
+	it("explains that SCIM verification depends on IdP provisioning activity", () => {
+		const source = readFileSync(wizardPath, "utf8");
+
+		expect(source).toContain(
+			"SCIM verification updates after your identity provider sends a test user or group change.",
+		);
+		expect(source).toContain("No provisioning activity yet");
+		expect(source).toContain("Provisioning activity observed");
 	});
 });

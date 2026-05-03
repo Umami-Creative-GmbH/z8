@@ -52,6 +52,22 @@ export interface EnterpriseIdentityReadiness {
 	missing: Array<"provider" | "domain" | "ssoTest">;
 }
 
+const PROVIDER_ID_REGEX = /^[a-z0-9-]+$/;
+const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
+export function validateEnterpriseIdentityProviderInput(input: {
+	providerId: string;
+	domain: string;
+}): string | null {
+	if (!PROVIDER_ID_REGEX.test(input.providerId)) {
+		return "Provider ID must contain only lowercase letters, numbers, and hyphens";
+	}
+	if (!DOMAIN_REGEX.test(input.domain)) {
+		return "Enter a valid email domain such as example.com";
+	}
+	return null;
+}
+
 export function createDefaultEnterpriseIdentitySetupState({
 	organizationId,
 }: {

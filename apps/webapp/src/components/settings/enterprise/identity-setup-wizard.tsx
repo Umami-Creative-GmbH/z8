@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { DateTime } from "luxon";
 import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -157,6 +156,7 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 	const domain = setup.domain?.domain ?? "Not selected";
 	const providerId = setup.provider?.providerId ?? "";
 	const protocol = setup.provider?.protocol ?? preset.defaultProtocol;
+	const scimActivityObserved = setup.scim.verified && !!setup.scim.lastCheckedAt;
 
 	const providerForm = useForm({
 		defaultValues: {
@@ -260,7 +260,6 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 						...current.scim,
 						enabled: true,
 						providerId,
-						lastCheckedAt: DateTime.utc().toISO(),
 						error: null,
 					},
 				}));
@@ -634,6 +633,9 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 						title="SCIM Provisioning"
 						description="Generate the provisioning token and monitor connection health."
 					>
+						<p className="text-muted-foreground text-sm">
+							SCIM verification updates after your identity provider sends a test user or group change.
+						</p>
 						<div className="grid min-w-0 gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
 							<div className="min-w-0">
 								<p className="text-muted-foreground text-sm">Base URL</p>
@@ -668,8 +670,8 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 							<Button type="button" variant="outline" onClick={refreshScimStatus} disabled={isPending}>
 								Refresh status
 							</Button>
-							<Badge variant={setup.scim.verified ? "default" : "outline"}>
-								{setup.scim.verified ? "Verified" : "Not verified"}
+							<Badge variant={scimActivityObserved ? "default" : "outline"}>
+								{scimActivityObserved ? "Provisioning activity observed" : "No provisioning activity yet"}
 							</Badge>
 							{setup.scim.error ? <span className="text-destructive text-sm">{setup.scim.error}</span> : null}
 						</div>

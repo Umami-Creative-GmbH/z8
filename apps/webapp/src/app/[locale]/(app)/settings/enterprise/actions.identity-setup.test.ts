@@ -145,4 +145,26 @@ describe("enterprise identity setup action contracts", () => {
 		expect(generateIndex).toBeGreaterThan(setupWriteIndex);
 		expect(actionSource.slice(generateIndex)).not.toContain("getSetupResponse");
 	});
+
+	it("does not persist generated SCIM token text in setup state", () => {
+		const actionSource = getFunctionSource("generateEnterpriseIdentityScimTokenAction");
+		const setupWriteIndex = actionSource.indexOf("updateEnterpriseIdentitySetupRecord");
+		const generateIndex = actionSource.indexOf("generateSCIMToken");
+
+		expect(setupWriteIndex).toBeGreaterThan(-1);
+		expect(generateIndex).toBeGreaterThan(setupWriteIndex);
+		expect(actionSource.slice(setupWriteIndex, generateIndex)).not.toContain("scimToken");
+	});
+
+	it("validates provider and SSO registration input before side effects", () => {
+		const providerSource = getFunctionSource("updateEnterpriseIdentityProviderAction");
+		const ssoSource = getFunctionSource("registerEnterpriseIdentitySSOProviderAction");
+		const validationCall = "validateEnterpriseIdentityProviderInput({ providerId, domain })";
+
+		expect(source).toContain("validateEnterpriseIdentityProviderInput");
+		expect(providerSource).toContain(validationCall);
+		expect(ssoSource).toContain(validationCall);
+		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("storeOrgSecret"));
+		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("registerSSOProvider"));
+	});
 });
