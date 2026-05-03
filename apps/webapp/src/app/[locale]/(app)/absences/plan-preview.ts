@@ -47,24 +47,24 @@ export async function getAbsencePlanPreview(
 		return { success: false, error: "Invalid preview date range" };
 	}
 
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "No active employee found" };
-	}
-
-	const category = await db.query.absenceCategory.findFirst({
-		where: and(
-			eq(absenceCategory.id, request.categoryId),
-			eq(absenceCategory.organizationId, currentEmployee.organizationId),
-			eq(absenceCategory.isActive, true),
-		),
-	});
-
-	if (!category) {
-		return { success: false, error: "Absence category not found" };
-	}
-
 	try {
+		const currentEmployee = await getCurrentEmployee();
+		if (!currentEmployee) {
+			return { success: false, error: "No active employee found" };
+		}
+
+		const category = await db.query.absenceCategory.findFirst({
+			where: and(
+				eq(absenceCategory.id, request.categoryId),
+				eq(absenceCategory.organizationId, currentEmployee.organizationId),
+				eq(absenceCategory.isActive, true),
+			),
+		});
+
+		if (!category) {
+			return { success: false, error: "Absence category not found" };
+		}
+
 		const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
 			getVacationBalance(currentEmployee.id, range.start.year),
 			getHolidays(currentEmployee.id, range.startDate, range.endDate),

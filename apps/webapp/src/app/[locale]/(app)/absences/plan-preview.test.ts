@@ -288,4 +288,26 @@ describe("getAbsencePlanPreview", () => {
 			error: "Unable to build absence plan preview",
 		});
 	});
+
+	it("returns a generic failure when current employee lookup rejects", async () => {
+		mockState.getCurrentEmployee.mockRejectedValue(new Error("session unavailable"));
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Unable to build absence plan preview",
+		});
+	});
+
+	it("returns a generic failure when category lookup rejects", async () => {
+		mockState.categoryFindFirst.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Unable to build absence plan preview",
+		});
+	});
 });
