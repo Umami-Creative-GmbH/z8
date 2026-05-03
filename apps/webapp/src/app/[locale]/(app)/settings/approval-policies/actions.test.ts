@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeApprovalPolicyInputForTest, previewApprovalPolicyForTest } from "./actions";
+import { normalizeApprovalPolicyInputForTest, previewApprovalPolicyForTest } from "./action-helpers";
 
 describe("approval policy settings actions", () => {
 	it("normalizes policy input and rejects active policies without stages", () => {
