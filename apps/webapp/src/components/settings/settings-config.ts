@@ -36,6 +36,7 @@ export type SettingsIconName =
 	| "beach"
 	| "clock"
 	| "clock-edit"
+	| "git-branch"
 	| "gavel"
 	| "percentage"
 	| "address-book"
@@ -282,6 +283,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure reimbursement rates and effective periods for mileage and per diem claims.",
 		href: "/settings/travel-expenses",
 		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "approval-policies",
+		titleKey: "settings.approvalPolicies.title",
+		titleDefault: "Approval Policies",
+		descriptionKey: "settings.approvalPolicies.description",
+		descriptionDefault: "Configure sequential approval chains for operational workflows",
+		href: "/settings/approval-policies",
+		icon: "git-branch",
 		minimumTier: "orgAdmin",
 		group: "administration",
 	},

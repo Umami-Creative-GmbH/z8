@@ -1,0 +1,403 @@
+"use client";
+
+import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
+import { toast } from "sonner";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { Textarea } from "@/components/ui/textarea";
+
+type ApprovalPolicyApproverType =
+	| "direct_manager"
+	| "manager_manager"
+	| "org_admin"
+	| "specific_employee";
+
+export interface ApprovalPolicyFormValues {
+	name: string;
+	description: string;
+	isActive: boolean;
+	priority: string;
+	approvalTypes: string[];
+	stages: Array<{
+		localId: string;
+		label: string;
+		approverType: ApprovalPolicyApproverType;
+		approverEmployeeId: string;
+	}>;
+}
+
+export const defaultApprovalPolicyFormValues: ApprovalPolicyFormValues = {
+	name: "",
+	description: "",
+	isActive: false,
+	priority: "10",
+	approvalTypes: [],
+	stages: [],
+};
+
+export function buildApprovalPolicyPayload(values: ApprovalPolicyFormValues) {
+	if (values.isActive && values.stages.length === 0) {
+		throw new Error("Active policies require at least one approval stage.");
+	}
+
+	return {
+		name: values.name.trim(),
+		description: values.description.trim(),
+		isActive: values.isActive,
+		priority: Number(values.priority),
+		conditions: values.approvalTypes.length
+			? [
+					{
+						conditionType: "approval_type" as const,
+						operator: "in" as const,
+						values: values.approvalTypes,
+					},
+				]
+			: [],
+		stages: values.stages.map((stage, index) => ({
+			id: stage.localId,
+			stepOrder: index + 1,
+			label: stage.label.trim(),
+			approverType: stage.approverType,
+			...(stage.approverEmployeeId ? { approverEmployeeId: stage.approverEmployeeId } : {}),
+		})),
+	};
+}
+
+interface ApprovalPolicyDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onSubmit: (payload: ReturnType<typeof buildApprovalPolicyPayload>) => Promise<void>;
+}
+
+const approvalTypeOptions = [
+	{ value: "absence_entry", label: "Absence requests" },
+	{ value: "time_entry_change", label: "Time entry changes" },
+	{ value: "travel_expense", label: "Travel expenses" },
+];
+
+const approverTypeOptions = [
+	{ value: "direct_manager", label: "Direct manager" },
+	{ value: "manager_manager", label: "Manager's manager" },
+	{ value: "org_admin", label: "Organization admin" },
+	{ value: "specific_employee", label: "Specific employee" },
+];
+
+function newStage(): ApprovalPolicyFormValues["stages"][number] {
+	return {
+		localId: crypto.randomUUID(),
+		label: "Manager review",
+		approverType: "direct_manager",
+		approverEmployeeId: "",
+	};
+}
+
+export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalPolicyDialogProps) {
+	const { t } = useTranslate();
+	const form = useForm({
+		defaultValues: defaultApprovalPolicyFormValues,
+		onSubmit: async ({ value }) => {
+			try {
+				await onSubmit(buildApprovalPolicyPayload(value));
+			} catch (error) {
+				toast.error(error instanceof Error ? error.message : "Approval policy could not be saved.");
+			}
+		},
+	});
+
+	return (
+		<ActionPanel open={open} onOpenChange={onOpenChange}>
+			<ActionPanelContent size="wide">
+				<ActionPanelHeader>
+					<ActionPanelTitle>
+						{t("settings.approvalPolicies.createPolicy", "Create Approval Policy")}
+					</ActionPanelTitle>
+					<ActionPanelDescription>
+						{t(
+							"settings.approvalPolicies.dialogDescription",
+							"Define when an approval chain applies and which approvers handle each sequential stage.",
+						)}
+					</ActionPanelDescription>
+				</ActionPanelHeader>
+
+				<form
+					onSubmit={(event) => {
+						event.preventDefault();
+						form.handleSubmit();
+					}}
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					<ActionPanelBody className="space-y-5">
+						<form.Field name="name">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel required>{t("common.name", "Name")}</TFormLabel>
+									<TFormControl>
+										<Input
+											name="name"
+											autoComplete="off"
+											value={field.state.value}
+											onChange={(event) => field.handleChange(event.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={t(
+												"settings.approvalPolicies.namePlaceholder",
+												"Example: Absence escalation…",
+											)}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+
+						<form.Field name="description">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel>{t("common.description", "Description")}</TFormLabel>
+									<TFormControl>
+										<Textarea
+											name="description"
+											autoComplete="off"
+											value={field.state.value}
+											onChange={(event) => field.handleChange(event.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={t(
+												"settings.approvalPolicies.descriptionPlaceholder",
+												"Example: Escalates sensitive workflows to operations…",
+											)}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<form.Field name="priority">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel required>
+											{t("settings.approvalPolicies.priority", "Priority")}
+										</TFormLabel>
+										<TFormControl>
+											<Input
+												name="priority"
+												autoComplete="off"
+												type="number"
+												min="1"
+												step="1"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												onBlur={field.handleBlur}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Field name="isActive">
+								{(field) => (
+									<div className="flex items-center justify-between rounded-lg border p-4">
+										<div className="space-y-0.5">
+											<Label htmlFor="approval-policy-active" className="text-base">
+												{t("settings.approvalPolicies.activeLabel", "Active policy")}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.approvalPolicies.activeDescription",
+													"Eligible requests can match this policy.",
+												)}
+											</p>
+										</div>
+										<Switch
+											id="approval-policy-active"
+											checked={field.state.value}
+											onCheckedChange={field.handleChange}
+										/>
+									</div>
+								)}
+							</form.Field>
+						</div>
+
+						<form.Field name="approvalTypes">
+							{(field) => (
+								<fieldset className="space-y-3 rounded-lg border p-4">
+									<legend className="text-sm font-medium">
+										{t("settings.approvalPolicies.approvalTypes", "Approval types")}
+									</legend>
+									<div className="grid gap-2 sm:grid-cols-3">
+										{approvalTypeOptions.map((option) => (
+											<label key={option.value} className="flex items-center gap-2 text-sm">
+												<input
+													type="checkbox"
+													checked={field.state.value.includes(option.value)}
+													onChange={(event) => {
+														field.handleChange(
+															event.target.checked
+																? [...field.state.value, option.value]
+																: field.state.value.filter((value) => value !== option.value),
+														);
+													}}
+												/>
+												{option.label}
+											</label>
+										))}
+									</div>
+								</fieldset>
+							)}
+						</form.Field>
+
+						<form.Field name="stages">
+							{(field) => (
+								<section className="space-y-3" aria-labelledby="approval-stages-heading">
+									<div className="flex items-center justify-between gap-3">
+										<div>
+											<h3 id="approval-stages-heading" className="text-sm font-medium">
+												{t("settings.approvalPolicies.stages", "Approval stages")}
+											</h3>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.approvalPolicies.stagesDescription",
+													"Stages run in order; each request advances only after the current approver accepts it.",
+												)}
+											</p>
+										</div>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={() => field.handleChange([...field.state.value, newStage()])}
+										>
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.approvalPolicies.addStage", "Add stage")}
+										</Button>
+									</div>
+									{field.state.value.length === 0 ? (
+										<div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+											{t(
+												"settings.approvalPolicies.noStages",
+												"No approval stages configured yet.",
+											)}
+										</div>
+									) : (
+										<div className="space-y-3">
+											{field.state.value.map((stage, index) => (
+												<div key={stage.localId} className="rounded-lg border p-4">
+													<div className="mb-3 flex items-center justify-between gap-3">
+														<h4 className="text-sm font-medium">
+															{t("settings.approvalPolicies.stageNumber", "Stage {number}", {
+																number: index + 1,
+															})}
+														</h4>
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon"
+															onClick={() =>
+																field.handleChange(
+																	field.state.value.filter(
+																		(item) => item.localId !== stage.localId,
+																	),
+																)
+															}
+															aria-label={t(
+																"settings.approvalPolicies.removeStage",
+																"Remove stage",
+															)}
+														>
+															<IconTrash className="h-4 w-4" />
+														</Button>
+													</div>
+													<div className="grid gap-3 sm:grid-cols-2">
+														<div className="grid gap-2">
+															<Label htmlFor={`approval-stage-label-${stage.localId}`}>
+																{t("common.label", "Label")}
+															</Label>
+															<Input
+																id={`approval-stage-label-${stage.localId}`}
+																name={`approval-stage-label-${index + 1}`}
+																autoComplete="off"
+																value={stage.label}
+																onChange={(event) => {
+																	const stages = field.state.value.map((item) =>
+																		item.localId === stage.localId
+																			? { ...item, label: event.target.value }
+																			: item,
+																	);
+																	field.handleChange(stages);
+																}}
+															/>
+														</div>
+														<div className="grid gap-2">
+															<Label htmlFor={`approval-stage-approver-${stage.localId}`}>
+																{t("settings.approvalPolicies.approver", "Approver")}
+															</Label>
+															<select
+																id={`approval-stage-approver-${stage.localId}`}
+																name={`approval-stage-approver-${index + 1}`}
+																className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+																value={stage.approverType}
+																onChange={(event) => {
+																	const stages = field.state.value.map((item) =>
+																		item.localId === stage.localId
+																			? {
+																					...item,
+																					approverType: event.target
+																						.value as ApprovalPolicyApproverType,
+																				}
+																			: item,
+																	);
+																	field.handleChange(stages);
+																}}
+															>
+																{approverTypeOptions.map((option) => (
+																	<option key={option.value} value={option.value}>
+																		{option.label}
+																	</option>
+																))}
+															</select>
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+									)}
+								</section>
+							)}
+						</form.Field>
+					</ActionPanelBody>
+
+					<ActionPanelFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+							disabled={form.state.isSubmitting}
+						>
+							{t("common.cancel", "Cancel")}
+						</Button>
+						<Button type="submit" disabled={form.state.isSubmitting}>
+							{form.state.isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{t("common.create", "Create")}
+						</Button>
+					</ActionPanelFooter>
+				</form>
+			</ActionPanelContent>
+		</ActionPanel>
+	);
+}
