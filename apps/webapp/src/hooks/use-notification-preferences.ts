@@ -6,12 +6,23 @@ import {
 	getNotificationPreferences,
 	updateNotificationPreference,
 } from "@/app/[locale]/(app)/settings/notifications/actions";
+import { useSession } from "@/lib/auth-client";
 import type {
 	NotificationChannel,
 	NotificationType,
 	UserPreferencesResponse,
 } from "@/lib/notifications/types";
 import { queryKeys } from "@/lib/query/keys";
+
+const DEFAULT_AVAILABLE_CHANNELS: UserPreferencesResponse["availableChannels"] = {
+	in_app: true,
+	push: true,
+	email: true,
+	teams: false,
+	telegram: false,
+	discord: false,
+	slack: false,
+};
 
 /**
  * Hook for managing notification preferences
@@ -21,10 +32,14 @@ import { queryKeys } from "@/lib/query/keys";
  */
 export function useNotificationPreferences() {
 	const queryClient = useQueryClient();
+	const { data: session } = useSession();
+	const activeOrganizationId = session?.session?.activeOrganizationId ?? null;
+	const preferencesQueryKey = queryKeys.notifications.preferences(activeOrganizationId);
+	const preferencesQueryKeyPrefix = queryKeys.notifications.preferences();
 
 	// Fetch preferences using server action
 	const { data, isLoading, error } = useQuery({
-		queryKey: queryKeys.notifications.preferences(),
+		queryKey: preferencesQueryKey,
 		queryFn: async (): Promise<UserPreferencesResponse> => {
 			const result = await getNotificationPreferences();
 			if (!result.success) {
@@ -60,40 +75,47 @@ export function useNotificationPreferences() {
 		onMutate: async ({ notificationType, channel, enabled }) => {
 			// Cancel any outgoing refetches
 			await queryClient.cancelQueries({
-				queryKey: queryKeys.notifications.preferences(),
+				queryKey: preferencesQueryKeyPrefix,
 			});
 
-			// Snapshot the previous value
-			const previousData = queryClient.getQueryData<UserPreferencesResponse>(
-				queryKeys.notifications.preferences(),
+			// Snapshot all org-scoped caches because preference values are user-level.
+			const previousPreferenceQueries = queryClient.getQueriesData<UserPreferencesResponse>({
+				queryKey: preferencesQueryKeyPrefix,
+			});
+
+			// Optimistically update every cached organization response.
+			queryClient.setQueriesData<UserPreferencesResponse>(
+				{ queryKey: preferencesQueryKeyPrefix },
+				(previousData) => {
+					if (!previousData) {
+						return previousData;
+					}
+
+					return {
+						...previousData,
+						matrix: {
+							...previousData.matrix,
+							[notificationType]: {
+								...previousData.matrix[notificationType],
+								[channel]: enabled,
+							},
+						},
+					};
+				},
 			);
 
-			// Optimistically update
-			if (previousData) {
-				queryClient.setQueryData<UserPreferencesResponse>(queryKeys.notifications.preferences(), {
-					...previousData,
-					matrix: {
-						...previousData.matrix,
-						[notificationType]: {
-							...previousData.matrix[notificationType],
-							[channel]: enabled,
-						},
-					},
-				});
-			}
-
-			return { previousData };
+			return { previousPreferenceQueries };
 		},
 		onError: (_err, _variables, context) => {
 			// Rollback on error
-			if (context?.previousData) {
-				queryClient.setQueryData(queryKeys.notifications.preferences(), context.previousData);
+			for (const [queryKey, previousData] of context?.previousPreferenceQueries ?? []) {
+				queryClient.setQueryData(queryKey, previousData);
 			}
 		},
 		onSettled: () => {
 			// Always refetch after error or success
 			queryClient.invalidateQueries({
-				queryKey: queryKeys.notifications.preferences(),
+				queryKey: preferencesQueryKeyPrefix,
 			});
 		},
 	});
@@ -117,7 +139,7 @@ export function useNotificationPreferences() {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: queryKeys.notifications.preferences(),
+				queryKey: preferencesQueryKeyPrefix,
 			});
 		},
 	});
@@ -125,6 +147,7 @@ export function useNotificationPreferences() {
 	return {
 		preferences: data?.preferences ?? [],
 		matrix: data?.matrix ?? null,
+		availableChannels: data?.availableChannels ?? DEFAULT_AVAILABLE_CHANNELS,
 		isLoading,
 		error,
 		updatePreference: updatePreference.mutate,

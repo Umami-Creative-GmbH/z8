@@ -11,6 +11,7 @@ import {
 	type NotificationType,
 	type UserPreferencesResponse,
 } from "@/lib/notifications/types";
+import { isTelegramEnabledForOrganization } from "@/lib/telegram";
 
 /**
  * GET /api/notifications/preferences
@@ -24,12 +25,27 @@ export async function GET() {
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
+		const organizationId = session.session.activeOrganizationId;
 
-		// Get all preferences for this user (user-level, not org-specific)
+		// Preferences are user-level; channel availability remains org-scoped below.
 		const preferences = await db
 			.select()
 			.from(notificationPreference)
 			.where(eq(notificationPreference.userId, session.user.id));
+
+		const isTelegramAvailable = organizationId
+			? await isTelegramEnabledForOrganization(organizationId)
+			: false;
+
+		const availableChannels: Record<NotificationChannel, boolean> = {
+			in_app: true,
+			push: true,
+			email: true,
+			teams: false,
+			telegram: isTelegramAvailable,
+			discord: false,
+			slack: false,
+		};
 
 		// Build preference matrix (all types x all channels, defaulting to true)
 		const matrix: Record<NotificationType, Record<NotificationChannel, boolean>> = {} as Record<
@@ -55,6 +71,7 @@ export async function GET() {
 		const response: UserPreferencesResponse = {
 			preferences,
 			matrix,
+			availableChannels,
 		};
 
 		return NextResponse.json(response);
@@ -82,7 +99,6 @@ export async function PUT(request: NextRequest) {
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
-
 		const body = await request.json();
 		const { notificationType, channel, enabled } = body;
 
@@ -149,7 +165,6 @@ export async function POST(request: NextRequest) {
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
-
 		const body = await request.json();
 		const { preferences: updates } = body;
 
@@ -167,6 +182,9 @@ export async function POST(request: NextRequest) {
 			}
 			if (!NOTIFICATION_CHANNELS.includes(update.channel)) {
 				return NextResponse.json({ error: `Invalid channel: ${update.channel}` }, { status: 400 });
+			}
+			if (typeof update.enabled !== "boolean") {
+				return NextResponse.json({ error: "Invalid enabled value" }, { status: 400 });
 			}
 		}
 

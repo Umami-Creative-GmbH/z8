@@ -243,9 +243,13 @@ describe("ProfileForm", () => {
 	it("keeps profile picture actions inside the mobile viewport", async () => {
 		renderProfileForm();
 
-		const changePictureButton = await screen.findByRole("button", {
-			name: "Change Picture",
-		});
+		await screen.findByRole("button", { name: "Remove Picture" });
+		const changePictureButton = screen
+			.getAllByRole("button", { name: "Change Picture" })
+			.find((button) => button.className.includes("w-full"));
+		if (!changePictureButton) {
+			throw new Error("Expected a full-width Change Picture action button");
+		}
 		const removePictureButton = screen.getByRole("button", {
 			name: "Remove Picture",
 		});
