@@ -239,4 +239,27 @@ describe("ProfileForm", () => {
 			expect(toastSuccessMock).toHaveBeenCalled();
 		});
 	});
+
+	it("keeps profile picture actions inside the mobile viewport", async () => {
+		renderProfileForm();
+
+		await screen.findByRole("button", { name: "Remove Picture" });
+		const changePictureButton = screen
+			.getAllByRole("button", { name: "Change Picture" })
+			.find((button) => button.className.includes("w-full"));
+		if (!changePictureButton) {
+			throw new Error("Expected a full-width Change Picture action button");
+		}
+		const removePictureButton = screen.getByRole("button", {
+			name: "Remove Picture",
+		});
+		const actionRow = changePictureButton.parentElement;
+
+		expect(actionRow?.className).toContain("flex-col");
+		expect(actionRow?.className).toContain("sm:flex-row");
+		expect(changePictureButton.className).toContain("w-full");
+		expect(changePictureButton.className).toContain("sm:w-auto");
+		expect(removePictureButton.className).toContain("w-full");
+		expect(removePictureButton.className).toContain("sm:w-auto");
+	});
 });

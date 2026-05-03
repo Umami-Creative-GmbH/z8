@@ -71,8 +71,8 @@ export function OrganizationDetailsCard({
 		<>
 			<Card>
 				<CardHeader>
-					<div className="flex items-start justify-between">
-						<div className="flex items-start gap-4">
+					<div className="flex items-start justify-between gap-3">
+						<div className="flex min-w-0 items-start gap-4">
 							{/* Hidden file input */}
 							<input
 								ref={inputRef}
@@ -82,7 +82,7 @@ export function OrganizationDetailsCard({
 								aria-label="Upload organization logo"
 								onChange={handleFileInputChange}
 							/>
-							<div className="relative h-16 w-16">
+							<div className="relative h-16 w-16 shrink-0">
 								<Avatar className="h-16 w-16">
 									<AvatarImage src={previewUrl || logoUrl || undefined} alt={organization.name} />
 									<AvatarFallback className="bg-primary/10">
@@ -108,11 +108,11 @@ export function OrganizationDetailsCard({
 									</button>
 								)}
 							</div>
-							<div>
+							<div className="min-w-0">
 								<CardTitle className="text-2xl">{organization.name}</CardTitle>
 								<CardDescription className="mt-1">
 									{organization.slug && (
-										<span className="text-xs font-mono bg-muted px-2 py-1 rounded">
+										<span className="inline-block max-w-full truncate text-xs font-mono bg-muted px-2 py-1 rounded align-bottom">
 											{organization.slug}
 										</span>
 									)}
@@ -120,9 +120,14 @@ export function OrganizationDetailsCard({
 							</div>
 						</div>
 						{canEdit && (
-							<Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
-								<IconEdit className="h-4 w-4 mr-2" />
-								Edit
+							<Button
+								variant="outline"
+								size="sm"
+								className="shrink-0 px-2 sm:px-3"
+								onClick={() => setEditDialogOpen(true)}
+							>
+								<IconEdit className="h-4 w-4 sm:mr-2" />
+								<span className="sr-only sm:not-sr-only">Edit</span>
 							</Button>
 						)}
 					</div>

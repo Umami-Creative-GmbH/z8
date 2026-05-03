@@ -3,10 +3,12 @@
 import { useTranslate } from "@tolgee/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { memo, useMemo, useState } from "react";
+import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { toCalendarEvents } from "@/lib/absences/absence-calendar-adapter";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 
 interface AbsenceYearCalendarProps {
@@ -27,8 +29,9 @@ function getDaysInMonth(year: number, month: number): Date[] {
 	return days;
 }
 
-function getFirstDayOfMonth(year: number, month: number): number {
-	return new Date(year, month, 1).getDay();
+function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStartDay): number {
+	const day = new Date(year, month, 1).getDay();
+	return weekStartDay === "monday" ? (day + 6) % 7 : day;
 }
 
 function formatDateKey(date: Date): string {
@@ -43,6 +46,7 @@ const MiniMonth = memo(function MiniMonth({
 	month,
 	monthName,
 	weekdays,
+	weekStartDay,
 	eventsByDate,
 	onDayClick,
 }: {
@@ -50,16 +54,19 @@ const MiniMonth = memo(function MiniMonth({
 	month: number;
 	monthName: string;
 	weekdays: string[];
+	weekStartDay: WeekStartDay;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	onDayClick?: (date: Date) => void;
 }) {
 	const days = getDaysInMonth(year, month);
-	const firstDay = getFirstDayOfMonth(year, month);
+	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
 	const today = new Date();
 	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
 	// Create padding for days before the first day of the month
-	const paddingDays = Array.from({ length: firstDay }, (_, i) => i);
+	const paddingDays = Array.from({ length: firstDay }, (_, dayOffset) =>
+		formatDateKey(new Date(year, month, dayOffset - firstDay + 1)),
+	);
 
 	return (
 		<div className="p-2 border rounded-lg bg-card">
@@ -77,8 +84,8 @@ const MiniMonth = memo(function MiniMonth({
 			{/* Days grid */}
 			<div className="grid grid-cols-7 gap-0.5">
 				{/* Padding for alignment */}
-				{paddingDays.map((i) => (
-					<div key={`pad-${i}`} className="aspect-square" />
+				{paddingDays.map((dateKey) => (
+					<div key={dateKey} className="aspect-square" />
 				))}
 
 				{/* Actual days */}
@@ -139,6 +146,7 @@ export function AbsenceYearCalendar({
 	onYearChange,
 }: AbsenceYearCalendarProps) {
 	const { t } = useTranslate();
+	const weekStartDay = useWeekStartDay();
 	const [year, setYear] = useState(initialYear);
 
 	// Memoize translated month names to avoid recreating on every render
@@ -161,8 +169,8 @@ export function AbsenceYearCalendar({
 	);
 
 	// Memoize translated weekday names to avoid recreating on every render
-	const WEEKDAYS = useMemo(
-		() => [
+	const WEEKDAYS = useMemo(() => {
+		const sundayFirst = [
 			t("common.weekdays.su", "Su"),
 			t("common.weekdays.mo", "Mo"),
 			t("common.weekdays.tu", "Tu"),
@@ -170,9 +178,9 @@ export function AbsenceYearCalendar({
 			t("common.weekdays.th", "Th"),
 			t("common.weekdays.fr", "Fr"),
 			t("common.weekdays.sa", "Sa"),
-		],
-		[t],
-	);
+		];
+		return weekStartDay === "monday" ? [...sundayFirst.slice(1), sundayFirst[0]] : sundayFirst;
+	}, [t, weekStartDay]);
 
 	// Transform data to CalendarEvent format
 	const events = useMemo(() => {
@@ -252,13 +260,14 @@ export function AbsenceYearCalendar({
 
 			{/* 12 month grid */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
-				{Array.from({ length: 12 }, (_, month) => (
+				{MONTHS.map((monthName, month) => (
 					<MiniMonth
-						key={month}
+						key={monthName}
 						year={year}
 						month={month}
-						monthName={MONTHS[month]}
+						monthName={monthName}
 						weekdays={WEEKDAYS}
+						weekStartDay={weekStartDay}
 						eventsByDate={eventsByDate}
 						onDayClick={onDayClick}
 					/>

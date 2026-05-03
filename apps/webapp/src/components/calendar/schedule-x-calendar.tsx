@@ -22,6 +22,7 @@ import { DateTime } from "luxon";
 import { useTheme } from "next-themes";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -30,6 +31,7 @@ import {
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { getWeekBounds } from "@/lib/user-preferences/week-start";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -61,6 +63,7 @@ export function ScheduleXCalendarWrapper({
 	onRefresh,
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
+	const weekStartDay = useWeekStartDay();
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display
@@ -145,8 +148,7 @@ export function ScheduleXCalendarWrapper({
 			case "day":
 				return currentDate.toFormat("EEEE, MMMM d, yyyy");
 			case "week": {
-				const weekStart = currentDate.startOf("week");
-				const weekEnd = currentDate.endOf("week");
+				const { start: weekStart, end: weekEnd } = getWeekBounds(currentDate, weekStartDay);
 				if (weekStart.month === weekEnd.month) {
 					return `${weekStart.toFormat("MMMM d")} - ${weekEnd.toFormat("d, yyyy")}`;
 				}
@@ -157,7 +159,7 @@ export function ScheduleXCalendarWrapper({
 			default:
 				return currentDate.toFormat("MMMM d, yyyy");
 		}
-	}, [viewMode, currentDate]);
+	}, [viewMode, currentDate, weekStartDay]);
 
 	// Handle event click - Schedule-X passes the event object
 	const handleEventClick = useCallback(

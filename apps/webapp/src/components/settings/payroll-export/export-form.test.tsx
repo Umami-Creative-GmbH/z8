@@ -338,6 +338,10 @@ describe("ExportForm", () => {
 			/>,
 		);
 
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+		});
+
 		const formatSelect = screen
 			.getAllByRole("combobox")
 			.find((combobox) =>

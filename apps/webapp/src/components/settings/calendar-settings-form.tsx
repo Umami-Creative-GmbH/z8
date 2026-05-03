@@ -29,6 +29,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+const READ_ONLY_CALENDAR_SETTINGS_DEFAULTS: CalendarSettingsFormValues = {
+	googleEnabled: false,
+	microsoft365Enabled: false,
+	icsFeedsEnabled: false,
+	teamIcsFeedsEnabled: false,
+	autoSyncOnApproval: false,
+	conflictDetectionRequired: false,
+	eventTitleTemplate: "",
+	eventDescriptionTemplate: null,
+};
+
 interface CalendarSettingsFormProps {
 	initialSettings: CalendarSettings | ManagerCalendarReadView;
 	canManage: boolean;
@@ -39,40 +50,23 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 	const [loading, setLoading] = useState(false);
 	const controlsDisabled = loading || !canManage;
 	const relevantConnections = initialSettings.relevantConnections;
-
-	if (!canManage) {
-		return (
-			<div className="space-y-6">
-				<Alert>
-					<IconLock className="h-4 w-4" aria-hidden="true" />
-					<AlertDescription>
-						{t(
-							"settings.calendar.readOnlyManagerNotice",
-							"Managers can review calendar sync coverage for their teams, areas, and projects, but only organization admins can change these settings.",
-						)}
-					</AlertDescription>
-				</Alert>
-
-				<CalendarConnectionsCard relevantConnections={relevantConnections} />
-			</div>
-		);
-	}
-
-	const manageableSettings = initialSettings as CalendarSettings;
+	const manageableSettings = canManage ? (initialSettings as CalendarSettings) : null;
 
 	const form = useForm({
-		defaultValues: {
-			googleEnabled: manageableSettings.googleEnabled,
-			microsoft365Enabled: manageableSettings.microsoft365Enabled,
-			icsFeedsEnabled: manageableSettings.icsFeedsEnabled,
-			teamIcsFeedsEnabled: manageableSettings.teamIcsFeedsEnabled,
-			autoSyncOnApproval: manageableSettings.autoSyncOnApproval,
-			conflictDetectionRequired: manageableSettings.conflictDetectionRequired,
-			eventTitleTemplate: manageableSettings.eventTitleTemplate,
-			eventDescriptionTemplate: manageableSettings.eventDescriptionTemplate,
-		},
+		defaultValues: manageableSettings
+			? {
+					googleEnabled: manageableSettings.googleEnabled,
+					microsoft365Enabled: manageableSettings.microsoft365Enabled,
+					icsFeedsEnabled: manageableSettings.icsFeedsEnabled,
+					teamIcsFeedsEnabled: manageableSettings.teamIcsFeedsEnabled,
+					autoSyncOnApproval: manageableSettings.autoSyncOnApproval,
+					conflictDetectionRequired: manageableSettings.conflictDetectionRequired,
+					eventTitleTemplate: manageableSettings.eventTitleTemplate,
+					eventDescriptionTemplate: manageableSettings.eventDescriptionTemplate,
+				}
+			: READ_ONLY_CALENDAR_SETTINGS_DEFAULTS,
 		onSubmit: async ({ value }) => {
-			if (!canManage) {
+			if (!manageableSettings) {
 				return;
 			}
 
@@ -94,6 +88,24 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 
 	// Subscribe to form dirty state (rerender-defer-reads: only subscribe to derived boolean)
 	const isDirty = useStore(form.store, (state) => state.isDirty);
+
+	if (!manageableSettings) {
+		return (
+			<div className="space-y-6">
+				<Alert>
+					<IconLock className="h-4 w-4" aria-hidden="true" />
+					<AlertDescription>
+						{t(
+							"settings.calendar.readOnlyManagerNotice",
+							"Managers can review calendar sync coverage for their teams, areas, and projects, but only organization admins can change these settings.",
+						)}
+					</AlertDescription>
+				</Alert>
+
+				<CalendarConnectionsCard relevantConnections={relevantConnections} />
+			</div>
+		);
+	}
 
 	return (
 		<form

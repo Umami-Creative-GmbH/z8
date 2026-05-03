@@ -133,7 +133,7 @@ export async function proxy(request: NextRequest) {
 		if (!isPublicRoute) {
 			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const signInUrl = new URL(`/${locale}/sign-in`, request.url);
-			signInUrl.searchParams.set("callbackUrl", pathname);
+			signInUrl.searchParams.set("callbackUrl", pathWithoutLocale);
 			return NextResponse.redirect(signInUrl);
 		}
 	} else {

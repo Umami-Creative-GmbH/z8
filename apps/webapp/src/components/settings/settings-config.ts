@@ -2,6 +2,7 @@ import { hasSettingsAccessTier, type SettingsAccessTier } from "@/lib/settings-a
 
 export type SettingsGroup =
 	| "account"
+	| "notifications"
 	| "organization"
 	| "administration"
 	| "enterprise"
@@ -54,6 +55,9 @@ export type SettingsIconName =
 	| "certificate"
 	| "credit-card"
 	| "file-text"
+	| "brand-discord"
+	| "brand-slack"
+	| "brand-teams"
 	| "brand-telegram"
 	| "database-import";
 
@@ -84,6 +88,11 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		id: "account",
 		labelKey: "settings.group.account",
 		labelDefault: "Account",
+	},
+	{
+		id: "notifications",
+		labelKey: "settings.group.notifications",
+		labelDefault: "Notifications",
 	},
 	{
 		id: "organization",
@@ -139,7 +148,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/notifications",
 		icon: "bell",
 		minimumTier: "member",
-		group: "account",
+		group: "notifications",
 	},
 	{
 		id: "wellness",
@@ -190,8 +199,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.billing.title",
 		titleDefault: "Billing & Subscription",
 		descriptionKey: "settings.billing.description",
-		descriptionDefault:
-			"Manage your subscription, payment methods, and invoices",
+		descriptionDefault: "Manage your subscription, payment methods, and invoices",
 		href: "/settings/billing",
 		icon: "credit-card",
 		minimumTier: "orgAdmin",
@@ -203,8 +211,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.avv.title",
 		titleDefault: "Data Processing Agreement",
 		descriptionKey: "settings.avv.description",
-		descriptionDefault:
-			"Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
+		descriptionDefault: "Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
 		href: "/settings/avv",
 		icon: "file-text",
 		minimumTier: "orgAdmin",
@@ -216,8 +223,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.employees.title",
 		titleDefault: "Employees",
 		descriptionKey: "settings.employees.description",
-		descriptionDefault:
-			"Manage employee profiles, roles, and manager assignments",
+		descriptionDefault: "Manage employee profiles, roles, and manager assignments",
 		href: "/settings/employees",
 		icon: "users",
 		minimumTier: "manager",
@@ -228,8 +234,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.roles.title",
 		titleDefault: "Custom Roles",
 		descriptionKey: "settings.roles.description",
-		descriptionDefault:
-			"Create custom permission roles for your organization",
+		descriptionDefault: "Create custom permission roles for your organization",
 		href: "/settings/roles",
 		icon: "shield-check",
 		minimumTier: "orgAdmin",
@@ -285,8 +290,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workPolicies.title",
 		titleDefault: "Work Policies",
 		descriptionKey: "settings.workPolicies.description",
-		descriptionDefault:
-			"Configure work schedules, time limits, and break requirements",
+		descriptionDefault: "Configure work schedules, time limits, and break requirements",
 		href: "/settings/work-policies",
 		icon: "gavel",
 		minimumTier: "manager",
@@ -297,8 +301,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.workCategories.title",
 		titleDefault: "Work Categories",
 		descriptionKey: "settings.workCategories.description",
-		descriptionDefault:
-		"Define work categories with time factors for effective time calculation",
+		descriptionDefault: "Define work categories with time factors for effective time calculation",
 		href: "/settings/work-categories",
 		icon: "tag",
 		minimumTier: "manager",
@@ -309,8 +312,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.changePolicies.title",
 		titleDefault: "Change Policies",
 		descriptionKey: "settings.changePolicies.description",
-		descriptionDefault:
-			"Control when employees can edit time entries and require manager approval",
+		descriptionDefault: "Control when employees can edit time entries and require manager approval",
 		href: "/settings/change-policies",
 		icon: "clock-edit",
 		minimumTier: "manager",
@@ -321,8 +323,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.skills.title",
 		titleDefault: "Skills & Qualifications",
 		descriptionKey: "settings.skills.description",
-		descriptionDefault:
-			"Manage skill catalog, certifications, and employee qualifications",
+		descriptionDefault: "Manage skill catalog, certifications, and employee qualifications",
 		href: "/settings/skills",
 		icon: "certificate",
 		minimumTier: "manager",
@@ -334,8 +335,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.shiftTemplates.title",
 		titleDefault: "Shift Templates",
 		descriptionKey: "settings.shiftTemplates.description",
-		descriptionDefault:
-			"Create reusable shift templates for scheduling (Morning, Night, etc.)",
+		descriptionDefault: "Create reusable shift templates for scheduling (Morning, Night, etc.)",
 		href: "/settings/shifts",
 		icon: "calendar-clock",
 		minimumTier: "manager",
@@ -347,8 +347,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.coverageRules.title",
 		titleDefault: "Coverage Targets",
 		descriptionKey: "settings.coverageRules.description",
-		descriptionDefault:
-			"Set minimum staffing requirements per location and time",
+		descriptionDefault: "Set minimum staffing requirements per location and time",
 		href: "/settings/coverage-rules",
 		icon: "target",
 		minimumTier: "manager",
@@ -360,8 +359,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.surcharges.title",
 		titleDefault: "Surcharges",
 		descriptionKey: "settings.surcharges.description",
-		descriptionDefault:
-		"Configure time surcharges for overtime, night work, and holidays",
+		descriptionDefault: "Configure time surcharges for overtime, night work, and holidays",
 		href: "/settings/surcharges",
 		icon: "percentage",
 		minimumTier: "manager",
@@ -385,8 +383,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.projects.title",
 		titleDefault: "Projects",
 		descriptionKey: "settings.projects.description",
-		descriptionDefault:
-			"Manage projects, budgets, deadlines, and time assignments",
+		descriptionDefault: "Manage projects, budgets, deadlines, and time assignments",
 		href: "/settings/projects",
 		icon: "briefcase",
 		minimumTier: "manager",
@@ -399,8 +396,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.customDomains.title",
 		titleDefault: "Domain & Branding",
 		descriptionKey: "settings.customDomains.description",
-		descriptionDefault:
-			"Configure custom domain, branding, and SSO for your organization",
+		descriptionDefault: "Configure custom domain, branding, and SSO for your organization",
 		href: "/settings/enterprise/domains",
 		icon: "world",
 		minimumTier: "orgAdmin",
@@ -411,8 +407,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.emailConfig.title",
 		titleDefault: "Email Configuration",
 		descriptionKey: "settings.emailConfig.description",
-		descriptionDefault:
-			"Configure a custom email provider for organization emails",
+		descriptionDefault: "Configure a custom email provider for organization emails",
 		href: "/settings/enterprise/email",
 		icon: "mail",
 		minimumTier: "orgAdmin",
@@ -423,8 +418,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.apiKeys.title",
 		titleDefault: "API Keys",
 		descriptionKey: "settings.apiKeys.description",
-		descriptionDefault:
-			"Manage API keys for programmatic access to your organization data",
+		descriptionDefault: "Manage API keys for programmatic access to your organization data",
 		href: "/settings/enterprise/api-keys",
 		icon: "key",
 		minimumTier: "orgAdmin",
@@ -446,8 +440,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.webhooks.title",
 		titleDefault: "Webhooks",
 		descriptionKey: "settings.webhooks.description",
-		descriptionDefault:
-			"Configure webhook endpoints to receive real-time event notifications",
+		descriptionDefault: "Configure webhook endpoints to receive real-time event notifications",
 		href: "/settings/webhooks",
 		icon: "webhook",
 		minimumTier: "orgAdmin",
@@ -458,8 +451,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.calendar.title",
 		titleDefault: "Calendar Sync",
 		descriptionKey: "settings.calendar.description",
-		descriptionDefault:
-			"Configure calendar providers, ICS feeds, and sync settings",
+		descriptionDefault: "Configure calendar providers, ICS feeds, and sync settings",
 		href: "/settings/calendar",
 		icon: "calendar-sync",
 		minimumTier: "manager",
@@ -474,7 +466,40 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/telegram",
 		icon: "brand-telegram",
 		minimumTier: "orgAdmin",
-		group: "enterprise",
+		group: "notifications",
+	},
+	{
+		id: "slack",
+		titleKey: "settings.slack.title",
+		titleDefault: "Slack",
+		descriptionKey: "settings.slack.description",
+		descriptionDefault: "Configure Slack notifications for your organization",
+		href: "/settings/slack",
+		icon: "brand-slack",
+		minimumTier: "orgAdmin",
+		group: "notifications",
+	},
+	{
+		id: "discord",
+		titleKey: "settings.discord.title",
+		titleDefault: "Discord",
+		descriptionKey: "settings.discord.description",
+		descriptionDefault: "Configure Discord notifications for your organization",
+		href: "/settings/discord",
+		icon: "brand-discord",
+		minimumTier: "orgAdmin",
+		group: "notifications",
+	},
+	{
+		id: "teams-notifications",
+		titleKey: "settings.teamsNotifications.title",
+		titleDefault: "Microsoft Teams",
+		descriptionKey: "settings.teamsNotifications.description",
+		descriptionDefault: "Configure Microsoft Teams notifications for your organization",
+		href: "/settings/teams-notifications",
+		icon: "brand-teams",
+		minimumTier: "orgAdmin",
+		group: "notifications",
 	},
 	// Data settings
 	{
@@ -526,8 +551,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.auditExport.title",
 		titleDefault: "Audit Export",
 		descriptionKey: "settings.auditExport.description",
-		descriptionDefault:
-			"GoBD-compliant export hardening with digital signatures",
+		descriptionDefault: "GoBD-compliant export hardening with digital signatures",
 		href: "/settings/audit-export",
 		icon: "shield-check",
 		minimumTier: "orgAdmin",
@@ -538,8 +562,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		titleKey: "settings.demoData.title",
 		titleDefault: "Demo Data",
 		descriptionKey: "settings.demoData.description",
-		descriptionDefault:
-			"Generate sample data for testing or clear all time-related data",
+		descriptionDefault: "Generate sample data for testing or clear all time-related data",
 		href: "/settings/demo",
 		icon: "test-pipe",
 		minimumTier: "orgAdmin",
@@ -628,9 +651,6 @@ export function getResolvedSettingsVisibility({
 	};
 }
 
-export function getEntriesByGroup(
-	entries: SettingsEntry[],
-	group: SettingsGroup,
-): SettingsEntry[] {
+export function getEntriesByGroup(entries: SettingsEntry[], group: SettingsGroup): SettingsEntry[] {
 	return entries.filter((entry) => entry.group === group);
 }

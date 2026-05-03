@@ -4,6 +4,7 @@ import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
+import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AbsenceWithCategory, DayPeriod, Holiday } from "@/lib/absences/types";
@@ -26,6 +27,7 @@ interface DateStatus {
 
 export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 	const { t } = useTranslate();
+	const weekStartDay = useWeekStartDay();
 	const [currentDate, setCurrentDate] = useState(new Date());
 
 	const year = currentDate.getFullYear();
@@ -46,7 +48,7 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 		t("common.months.december", "December"),
 	];
 
-	const weekdays = [
+	const sundayFirstWeekdays = [
 		t("common.weekdays.sun", "Sun"),
 		t("common.weekdays.mon", "Mon"),
 		t("common.weekdays.tue", "Tue"),
@@ -55,9 +57,14 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 		t("common.weekdays.fri", "Fri"),
 		t("common.weekdays.sat", "Sat"),
 	];
+	const weekdays =
+		weekStartDay === "monday"
+			? [...sundayFirstWeekdays.slice(1), sundayFirstWeekdays[0]]
+			: sundayFirstWeekdays;
 
 	const daysInMonth = new Date(year, month + 1, 0).getDate();
-	const firstDayOfMonth = new Date(year, month, 1).getDay();
+	const firstDay = new Date(year, month, 1).getDay();
+	const firstDayOfMonth = weekStartDay === "monday" ? (firstDay + 6) % 7 : firstDay;
 
 	// Navigate months
 	const previousMonth = () => {
@@ -134,7 +141,8 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 	// Generate calendar days
 	const days = [];
 	for (let i = 0; i < firstDayOfMonth; i++) {
-		days.push(<div key={`empty-${i}`} className="aspect-square" />);
+		const emptyDateKey = new Date(year, month, i - firstDayOfMonth + 1).toISOString();
+		days.push(<div key={emptyDateKey} className="aspect-square" />);
 	}
 
 	for (let day = 1; day <= daysInMonth; day++) {
@@ -143,27 +151,6 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 			new Date().getDate() === day &&
 			new Date().getMonth() === month &&
 			new Date().getFullYear() === year;
-
-		// Determine background style based on period
-		const getBackgroundClass = () => {
-			if (status?.type !== "absence") return "";
-
-			const baseColor =
-				status.status === "approved"
-					? "from-blue-500/20 to-blue-500/20"
-					: status.status === "pending"
-						? "from-yellow-500/20 to-yellow-500/20"
-						: "from-red-500/20 to-red-500/20";
-
-			// For half-days, use gradient to show only half
-			if (status.period === "am") {
-				return `bg-gradient-to-b ${baseColor.replace("to-blue", "to-transparent").replace("to-yellow", "to-transparent").replace("to-red", "to-transparent")}`;
-			}
-			if (status.period === "pm") {
-				return `bg-gradient-to-t ${baseColor.replace("to-blue", "to-transparent").replace("to-yellow", "to-transparent").replace("to-red", "to-transparent")}`;
-			}
-			return "";
-		};
 
 		const getBackgroundStyle = () => {
 			if (status?.type !== "absence") return {};

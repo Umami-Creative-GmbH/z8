@@ -40,7 +40,7 @@ export default async function AbsencesPage() {
 	const [vacationBalance, absences, holidays, categories] = await Promise.all([
 		getVacationBalance(employee.id, currentYear),
 		getAbsenceEntries(employee.id, startOfYear, endOfYear),
-		getHolidays(employee.organizationId, yearStart, yearEnd),
+		getHolidays(employee.id, yearStart, yearEnd),
 		getAbsenceCategories(employee.organizationId),
 	]);
 

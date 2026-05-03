@@ -462,6 +462,21 @@ describe("Notification Service", () => {
 			expect(result).toBe(false);
 		});
 
+		test("looks up preferences by user, type, and channel only", async () => {
+			mockFindFirst.mockImplementation(() => Promise.resolve(null));
+
+			const { isChannelEnabled } = await import("../notification-service");
+
+			await isChannelEnabled("user-1", "org-1", "approval_request_submitted", "in_app");
+
+			const query = JSON.stringify(mockFindFirst.mock.calls[0]?.[0]);
+			expect(query).toContain("user-1");
+			expect(query).toContain("approval_request_submitted");
+			expect(query).toContain("in_app");
+			expect(query).not.toContain("organizationId");
+			expect(query).not.toContain("org-1");
+		});
+
 		test("returns true on error (fail open)", async () => {
 			mockFindFirst.mockImplementation(() => {
 				throw new Error("Database error");
@@ -573,7 +588,28 @@ describe("Notification Service", () => {
 			expect(result?.organizationId).toBe("org-specific");
 		});
 
-		test("isChannelEnabled requires organizationId for preference lookup", async () => {
+		test("createNotification reads user-level preferences without organization scope", async () => {
+			mockFindMany.mockImplementation(() => Promise.resolve([]));
+			mockReturning.mockImplementation(() => Promise.resolve([createMockNotification()]));
+
+			const { createNotification } = await import("../notification-service");
+
+			await createNotification({
+				userId: "user-1",
+				organizationId: "org-specific",
+				type: "approval_request_submitted",
+				title: "Test",
+				message: "Test message",
+			});
+
+			const query = JSON.stringify(mockFindMany.mock.calls[0]?.[0]);
+			expect(query).toContain("user-1");
+			expect(query).toContain("approval_request_submitted");
+			expect(query).not.toContain("organizationId");
+			expect(query).not.toContain("org-specific");
+		});
+
+		test("isChannelEnabled keeps organizationId in the signature for delivery context", async () => {
 			mockFindFirst.mockImplementation(() => Promise.resolve(null));
 
 			const { isChannelEnabled } = await import("../notification-service");

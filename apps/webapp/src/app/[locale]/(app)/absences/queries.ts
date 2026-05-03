@@ -1,13 +1,16 @@
 "use server";
 
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
 	employee,
 	employeeVacationAllowance,
-	holiday,
+	holidayAssignment,
+	holidayPresetAssignment,
+	type holidayPresetHoliday,
 	vacationAllowance,
 } from "@/db/schema";
 import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
@@ -95,26 +98,141 @@ export async function getAbsenceEntries(
 }
 
 export async function getHolidays(
-	organizationId: string,
+	employeeId: string,
 	startDate: Date,
 	endDate: Date,
 ): Promise<Holiday[]> {
-	const holidays = await db.query.holiday.findMany({
-		where: and(
-			eq(holiday.organizationId, organizationId),
-			gte(holiday.startDate, startDate),
-			lte(holiday.endDate, endDate),
-			eq(holiday.isActive, true),
-		),
+	const emp = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
 	});
 
-	return holidays.map((h) => ({
-		id: h.id,
-		name: h.name,
-		startDate: h.startDate,
-		endDate: h.endDate,
-		categoryId: h.categoryId,
-	}));
+	if (!emp) {
+		return [];
+	}
+
+	const assignmentScope = [eq(holidayAssignment.assignmentType, "organization")];
+	if (emp.teamId) {
+		assignmentScope.push(eq(holidayAssignment.teamId, emp.teamId));
+	}
+	assignmentScope.push(eq(holidayAssignment.employeeId, employeeId));
+
+	const customAssignments = await db.query.holidayAssignment.findMany({
+		where: and(
+			eq(holidayAssignment.organizationId, emp.organizationId),
+			eq(holidayAssignment.isActive, true),
+			or(...assignmentScope),
+		),
+		with: {
+			holiday: true,
+		},
+	});
+
+	const presetAssignmentScope = [eq(holidayPresetAssignment.assignmentType, "organization")];
+	if (emp.teamId) {
+		presetAssignmentScope.push(eq(holidayPresetAssignment.teamId, emp.teamId));
+	}
+	presetAssignmentScope.push(eq(holidayPresetAssignment.employeeId, employeeId));
+
+	const presetAssignments = await db.query.holidayPresetAssignment.findMany({
+		where: and(
+			eq(holidayPresetAssignment.organizationId, emp.organizationId),
+			eq(holidayPresetAssignment.isActive, true),
+			or(...presetAssignmentScope),
+			or(
+				isNull(holidayPresetAssignment.effectiveFrom),
+				lte(holidayPresetAssignment.effectiveFrom, endDate),
+			),
+			or(
+				isNull(holidayPresetAssignment.effectiveUntil),
+				gte(holidayPresetAssignment.effectiveUntil, startDate),
+			),
+		),
+		with: {
+			preset: {
+				with: {
+					holidays: true,
+				},
+			},
+		},
+	});
+
+	const holidaysByKey = new Map<string, Holiday>();
+
+	for (const assignment of customAssignments) {
+		const assignedHoliday = assignment.holiday;
+		if (
+			!assignedHoliday?.isActive ||
+			assignedHoliday.organizationId !== emp.organizationId ||
+			assignedHoliday.startDate > endDate ||
+			assignedHoliday.endDate < startDate
+		) {
+			continue;
+		}
+
+		holidaysByKey.set(`custom-${assignedHoliday.id}`, {
+			id: assignedHoliday.id,
+			name: assignedHoliday.name,
+			startDate: assignedHoliday.startDate,
+			endDate: assignedHoliday.endDate,
+			categoryId: assignedHoliday.categoryId,
+		});
+	}
+
+	const startYear = startDate.getFullYear();
+	const endYear = endDate.getFullYear();
+	for (const assignment of presetAssignments) {
+		if (!assignment.preset?.isActive) {
+			continue;
+		}
+
+		for (let year = startYear; year <= endYear; year++) {
+			for (const presetHoliday of assignment.preset.holidays) {
+				if (!presetHoliday.isActive) {
+					continue;
+				}
+
+				for (const expandedHoliday of expandPresetHolidayForYear(presetHoliday, year)) {
+					if (expandedHoliday.startDate > endDate || expandedHoliday.endDate < startDate) {
+						continue;
+					}
+
+					holidaysByKey.set(expandedHoliday.id, expandedHoliday);
+				}
+			}
+		}
+	}
+
+	return [...holidaysByKey.values()].sort(
+		(left, right) => left.startDate.getTime() - right.startDate.getTime(),
+	);
+}
+
+type PresetHolidayForExpansion = Pick<
+	typeof holidayPresetHoliday.$inferSelect,
+	"id" | "name" | "month" | "day" | "durationDays" | "categoryId"
+>;
+
+export function expandPresetHolidayForYear(
+	presetHoliday: PresetHolidayForExpansion,
+	year: number,
+): Holiday[] {
+	const startDate = DateTime.local(year, presetHoliday.month, presetHoliday.day).startOf("day");
+	const durationDays = Math.max(presetHoliday.durationDays || 1, 1);
+	const endDate = startDate.plus({ days: durationDays - 1 });
+
+	if (!startDate.isValid || !endDate.isValid) {
+		return [];
+	}
+
+	return [
+		{
+			id: `preset-holiday-${presetHoliday.id}-${year}`,
+			name: presetHoliday.name,
+			startDate: startDate.toJSDate(),
+			endDate: endDate.toJSDate(),
+			categoryId: presetHoliday.categoryId ?? "",
+		},
+	];
 }
 
 export async function getAbsenceCategories(organizationId: string): Promise<

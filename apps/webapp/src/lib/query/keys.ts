@@ -129,7 +129,10 @@ export const queryKeys = {
 			organizationId
 				? (["notifications", "unread-count", organizationId] as const)
 				: (["notifications", "unread-count"] as const),
-		preferences: () => ["notifications", "preferences"] as const,
+		preferences: (organizationId?: string | null) =>
+			organizationId
+				? (["notifications", "preferences", organizationId] as const)
+				: (["notifications", "preferences"] as const),
 	},
 
 	// Holiday presets

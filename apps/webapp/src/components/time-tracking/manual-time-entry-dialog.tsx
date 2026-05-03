@@ -175,9 +175,13 @@ export function ManualTimeEntryDialog({
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelTrigger asChild>
-				<Button variant="outline" size="sm">
-					<IconPlus className="size-4" />
-					{t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
+				<Button
+					aria-label={t("timeTracking.manualEntry.addButton", "Add Manual Entry")}
+					className="size-8"
+					variant="outline"
+					size="icon"
+				>
+					<IconPlus aria-hidden="true" className="size-4" />
 				</Button>
 			</ActionPanelTrigger>
 			<ActionPanelContent size="compact">

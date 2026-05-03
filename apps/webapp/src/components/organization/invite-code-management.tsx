@@ -62,6 +62,119 @@ const statusColors = {
 	archived: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
 
+function InviteCodeMobileCard({
+	code,
+	copiedCode,
+	onCopyCode,
+	onCopyUrl,
+	onOpenQr,
+	onEdit,
+	onDelete,
+	formatDate,
+	formatUsage,
+	t,
+}: {
+	code: InviteCodeWithRelations;
+	copiedCode: string | null;
+	onCopyCode: (code: string) => void;
+	onCopyUrl: (code: string) => void;
+	onOpenQr: (code: InviteCodeWithRelations) => void;
+	onEdit: (code: InviteCodeWithRelations) => void;
+	onDelete: (code: InviteCodeWithRelations) => void;
+	formatDate: (date: Date | null | undefined) => string;
+	formatUsage: (code: InviteCodeWithRelations) => string;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<div className="rounded-xl border bg-card p-4 shadow-sm">
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0 space-y-1">
+					<div className="flex min-w-0 items-center gap-2">
+						<code className="block min-w-0 max-w-full truncate rounded-md bg-muted px-2.5 py-1 font-mono text-sm font-semibold tracking-[0.12em] sm:text-base sm:tracking-[0.18em]">
+							{code.code}
+						</code>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-8 w-8 shrink-0 p-0"
+							onClick={() => onCopyCode(code.code)}
+							aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
+						>
+							{copiedCode === code.code ? (
+								<IconCheck className="h-4 w-4 text-green-600" aria-hidden="true" />
+							) : (
+								<IconCopy className="h-4 w-4" aria-hidden="true" />
+							)}
+						</Button>
+					</div>
+					<div className="truncate font-medium">{code.label}</div>
+					{code.description && (
+						<div className="line-clamp-2 text-sm text-muted-foreground">{code.description}</div>
+					)}
+				</div>
+
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button variant="ghost" size="sm" aria-label={t("common.moreActions", "More actions")}>
+							•••
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem onClick={() => onEdit(code)}>{t("common.edit", "Edit")}</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onDelete(code)} className="text-destructive">
+							{t("common.delete", "Delete")}
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
+
+			<div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+				<div>
+					<div className="text-muted-foreground">{t("settings.inviteCodes.status", "Status")}</div>
+					<Badge variant="secondary" className={statusColors[code.status]}>
+						{t(`settings.inviteCodes.status.${code.status}`, code.status)}
+					</Badge>
+				</div>
+				<div>
+					<div className="text-muted-foreground">{t("settings.inviteCodes.usage", "Usage")}</div>
+					<div className="font-medium">{formatUsage(code)}</div>
+				</div>
+				<div>
+					<div className="text-muted-foreground">{t("settings.inviteCodes.expires", "Expires")}</div>
+					<div className="font-medium">{formatDate(code.expiresAt)}</div>
+				</div>
+				<div>
+					<div className="text-muted-foreground">{t("settings.inviteCodes.approval", "Approval")}</div>
+					<Badge variant={code.requiresApproval ? "default" : "secondary"}>
+						{code.requiresApproval
+							? t("settings.inviteCodes.required", "Required")
+							: t("settings.inviteCodes.auto", "Auto")}
+					</Badge>
+				</div>
+			</div>
+
+			<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+				<Button
+					variant="outline"
+					className="min-w-0 whitespace-normal text-center"
+					onClick={() => onCopyUrl(code.code)}
+				>
+					<IconCopy className="mr-2 h-4 w-4" aria-hidden="true" />
+					{t("settings.inviteCodes.copyUrl", "Copy invite URL")}
+				</Button>
+				<Button
+					variant="outline"
+					className="min-w-0 whitespace-normal text-center"
+					onClick={() => onOpenQr(code)}
+				>
+					<IconQrcode className="mr-2 h-4 w-4" aria-hidden="true" />
+					{t("settings.inviteCodes.qrCode", "QR Code")}
+				</Button>
+			</div>
+		</div>
+	);
+}
+
 export function InviteCodeManagement({
 	organizationId,
 	currentMemberRole,
@@ -157,9 +270,11 @@ export function InviteCodeManagement({
 							)}
 						</CardDescription>
 					</div>
-					<Button onClick={() => setCreateDialogOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" />
-						{t("settings.inviteCodes.createCode", "Create Code")}
+					<Button onClick={() => setCreateDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
+						<IconPlus className="h-4 w-4 sm:mr-2" />
+						<span className="sr-only sm:not-sr-only">
+							{t("settings.inviteCodes.createCode", "Create Code")}
+						</span>
 					</Button>
 				</div>
 			</CardHeader>
@@ -173,132 +288,153 @@ export function InviteCodeManagement({
 						{t("settings.inviteCodes.noCodes", "No invite codes yet. Create one to get started.")}
 					</div>
 				) : (
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>{t("settings.inviteCodes.code", "Code")}</TableHead>
-								<TableHead>{t("settings.inviteCodes.label", "Label")}</TableHead>
-								<TableHead>{t("settings.inviteCodes.status", "Status")}</TableHead>
-								<TableHead>{t("settings.inviteCodes.usage", "Usage")}</TableHead>
-								<TableHead>{t("settings.inviteCodes.expires", "Expires")}</TableHead>
-								<TableHead>{t("settings.inviteCodes.approval", "Approval")}</TableHead>
-								<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{inviteCodes.map((code) => (
-								<TableRow key={code.id}>
-									<TableCell>
-										<div className="flex items-center gap-2">
-											<code className="font-mono text-sm bg-muted px-2 py-1 rounded">
-												{code.code}
-											</code>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="h-6 w-6 p-0"
-														onClick={() => handleCopyCodeOnly(code.code)}
-														aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
-													>
-														{copiedCode === code.code ? (
-															<IconCheck className="h-4 w-4 text-green-600" />
-														) : (
-															<IconCopy className="h-4 w-4" />
-														)}
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("settings.inviteCodes.copyCode", "Copy code")}
-												</TooltipContent>
-											</Tooltip>
-										</div>
-									</TableCell>
-									<TableCell>
-										<div>
-											<div className="font-medium">{code.label}</div>
-											{code.description && (
-												<div className="text-sm text-muted-foreground truncate max-w-[200px]">
-													{code.description}
+					<>
+						<div className="hidden md:block">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>{t("settings.inviteCodes.code", "Code")}</TableHead>
+										<TableHead>{t("settings.inviteCodes.label", "Label")}</TableHead>
+										<TableHead>{t("settings.inviteCodes.status", "Status")}</TableHead>
+										<TableHead>{t("settings.inviteCodes.usage", "Usage")}</TableHead>
+										<TableHead>{t("settings.inviteCodes.expires", "Expires")}</TableHead>
+										<TableHead>{t("settings.inviteCodes.approval", "Approval")}</TableHead>
+										<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{inviteCodes.map((code) => (
+										<TableRow key={code.id}>
+											<TableCell>
+												<div className="flex items-center gap-2">
+													<code className="font-mono text-sm bg-muted px-2 py-1 rounded">
+														{code.code}
+													</code>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="sm"
+																className="h-6 w-6 p-0"
+																onClick={() => handleCopyCodeOnly(code.code)}
+																aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
+															>
+																{copiedCode === code.code ? (
+																	<IconCheck className="h-4 w-4 text-green-600" />
+																) : (
+																	<IconCopy className="h-4 w-4" />
+																)}
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t("settings.inviteCodes.copyCode", "Copy code")}
+														</TooltipContent>
+													</Tooltip>
 												</div>
-											)}
-										</div>
-									</TableCell>
-									<TableCell>
-										<Badge variant="secondary" className={statusColors[code.status]}>
-											{t(`settings.inviteCodes.status.${code.status}`, code.status)}
-										</Badge>
-									</TableCell>
-									<TableCell>{formatUsage(code)}</TableCell>
-									<TableCell>{formatDate(code.expiresAt)}</TableCell>
-									<TableCell>
-										<Badge variant={code.requiresApproval ? "default" : "secondary"}>
-											{code.requiresApproval
-												? t("settings.inviteCodes.required", "Required")
-												: t("settings.inviteCodes.auto", "Auto")}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-right">
-										<div className="flex items-center justify-end gap-1">
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() => handleCopyCode(code.code)}
-														aria-label={t("settings.inviteCodes.copyUrl", "Copy invite URL")}
-													>
-														<IconCopy className="h-4 w-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("settings.inviteCodes.copyUrl", "Copy invite URL")}
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() => setQrDialogCode(code)}
-														aria-label={t("settings.inviteCodes.qrCode", "QR Code")}
-													>
-														<IconQrcode className="h-4 w-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("settings.inviteCodes.qrCode", "QR Code")}
-												</TooltipContent>
-											</Tooltip>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														aria-label={t("common.moreActions", "More actions")}
-													>
-														•••
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem onClick={() => setEditingCode(code)}>
-														{t("common.edit", "Edit")}
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={() => setDeleteDialogCode(code)}
-														className="text-destructive"
-													>
-														{t("common.delete", "Delete")}
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</div>
-									</TableCell>
-								</TableRow>
+											</TableCell>
+											<TableCell>
+												<div>
+													<div className="font-medium">{code.label}</div>
+													{code.description && (
+														<div className="text-sm text-muted-foreground truncate max-w-[200px]">
+															{code.description}
+														</div>
+													)}
+												</div>
+											</TableCell>
+											<TableCell>
+												<Badge variant="secondary" className={statusColors[code.status]}>
+													{t(`settings.inviteCodes.status.${code.status}`, code.status)}
+												</Badge>
+											</TableCell>
+											<TableCell>{formatUsage(code)}</TableCell>
+											<TableCell>{formatDate(code.expiresAt)}</TableCell>
+											<TableCell>
+												<Badge variant={code.requiresApproval ? "default" : "secondary"}>
+													{code.requiresApproval
+														? t("settings.inviteCodes.required", "Required")
+														: t("settings.inviteCodes.auto", "Auto")}
+												</Badge>
+											</TableCell>
+											<TableCell className="text-right">
+												<div className="flex items-center justify-end gap-1">
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() => handleCopyCode(code.code)}
+																aria-label={t("settings.inviteCodes.copyUrl", "Copy invite URL")}
+															>
+																<IconCopy className="h-4 w-4" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t("settings.inviteCodes.copyUrl", "Copy invite URL")}
+														</TooltipContent>
+													</Tooltip>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={() => setQrDialogCode(code)}
+																aria-label={t("settings.inviteCodes.qrCode", "QR Code")}
+															>
+																<IconQrcode className="h-4 w-4" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t("settings.inviteCodes.qrCode", "QR Code")}
+														</TooltipContent>
+													</Tooltip>
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button
+																variant="ghost"
+																size="sm"
+																aria-label={t("common.moreActions", "More actions")}
+															>
+																•••
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent align="end">
+															<DropdownMenuItem onClick={() => setEditingCode(code)}>
+																{t("common.edit", "Edit")}
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() => setDeleteDialogCode(code)}
+																className="text-destructive"
+															>
+																{t("common.delete", "Delete")}
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</div>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+						<div className="space-y-3 md:hidden">
+							{inviteCodes.map((code) => (
+								<InviteCodeMobileCard
+									key={code.id}
+									code={code}
+									copiedCode={copiedCode}
+									onCopyCode={handleCopyCodeOnly}
+									onCopyUrl={handleCopyCode}
+									onOpenQr={setQrDialogCode}
+									onEdit={setEditingCode}
+									onDelete={setDeleteDialogCode}
+									formatDate={formatDate}
+									formatUsage={formatUsage}
+									t={t}
+								/>
 							))}
-						</TableBody>
-					</Table>
+						</div>
+					</>
 				)}
 			</CardContent>
 

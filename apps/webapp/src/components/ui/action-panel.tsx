@@ -50,7 +50,7 @@ function ActionPanelContent({
 		<SheetContent
 			{...props}
 			className={cn(
-				"w-[calc(100vw-1rem)] gap-0 overflow-hidden p-0 sm:w-3/4",
+				"w-[calc(100vw-0.75rem)] gap-0 overflow-hidden p-0 sm:w-3/4",
 				actionPanelSizes[size],
 				className,
 			)}
@@ -86,7 +86,10 @@ function ActionPanelBody({ className, ...props }: React.ComponentProps<"div">) {
 function ActionPanelFooter({ className, ...props }: React.ComponentProps<typeof SheetFooter>) {
 	return (
 		<SheetFooter
-			className={cn("mt-0 border-t px-6 py-4 sm:flex-row sm:justify-end", className)}
+			className={cn(
+				"mt-0 flex-col-reverse border-t px-4 py-4 sm:flex-row sm:justify-end sm:px-6 *:w-full sm:*:w-auto",
+				className,
+			)}
 			data-slot="action-panel-footer"
 			{...props}
 		/>

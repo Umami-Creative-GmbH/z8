@@ -1,8 +1,10 @@
 "use server";
 
 import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employee";
-import { cancelAbsenceRequest as cancelAbsenceRequestAction } from "./mutations";
-import { cancelAbsenceRequestForEmployee as cancelAbsenceRequestForEmployeeAction } from "./mutations";
+import {
+	cancelAbsenceRequest as cancelAbsenceRequestAction,
+	cancelAbsenceRequestForEmployee as cancelAbsenceRequestForEmployeeAction,
+} from "./mutations";
 import {
 	getAbsenceCategories as getAbsenceCategoriesAction,
 	getAbsenceEntries as getAbsenceEntriesAction,
@@ -10,10 +12,10 @@ import {
 	getVacationBalance as getVacationBalanceAction,
 } from "./queries";
 import {
-	requestAbsenceEffect,
 	requestAbsenceEffect as requestAbsenceAction,
+	requestAbsenceEffect,
+	requestAbsenceForEmployeeEffect,
 } from "./request-absence-effect";
-import { requestAbsenceForEmployeeEffect } from "./request-absence-effect";
 
 export { requestAbsenceEffect };
 
@@ -35,20 +37,17 @@ export async function getAbsenceCategories(organizationId: string) {
 	return getAbsenceCategoriesAction(organizationId);
 }
 
-export async function getAbsenceEntries(
-	employeeId: string,
-	startDate: string,
-	endDate: string,
-) {
+export async function getAbsenceEntries(employeeId: string, startDate: string, endDate: string) {
 	return getAbsenceEntriesAction(employeeId, startDate, endDate);
 }
 
-export async function getHolidays(
-	organizationId: string,
-	startDate: Date,
-	endDate: Date,
-) {
-	return getHolidaysAction(organizationId, startDate, endDate);
+export async function getHolidays(employeeId: string, startDate: Date, endDate: Date) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return [];
+	}
+
+	return getHolidaysAction(employeeId, startDate, endDate);
 }
 
 export async function getVacationBalance(employeeId: string, year: number) {
@@ -59,6 +58,8 @@ export async function requestAbsence(...args: Parameters<typeof requestAbsenceAc
 	return requestAbsenceAction(...args);
 }
 
-export async function requestAbsenceForEmployee(...args: Parameters<typeof requestAbsenceForEmployeeEffect>) {
+export async function requestAbsenceForEmployee(
+	...args: Parameters<typeof requestAbsenceForEmployeeEffect>
+) {
 	return requestAbsenceForEmployeeEffect(...args);
 }

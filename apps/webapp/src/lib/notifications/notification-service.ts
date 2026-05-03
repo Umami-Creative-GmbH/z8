@@ -73,7 +73,6 @@ export async function createNotification(
 		const preferences = await db.query.notificationPreference.findMany({
 			where: and(
 				eq(notificationPreference.userId, params.userId),
-				eq(notificationPreference.organizationId, params.organizationId),
 				eq(notificationPreference.notificationType, params.type),
 			),
 		});
@@ -566,7 +565,6 @@ export async function isChannelEnabled(
 		const preference = await db.query.notificationPreference.findFirst({
 			where: and(
 				eq(notificationPreference.userId, userId),
-				eq(notificationPreference.organizationId, organizationId),
 				eq(notificationPreference.notificationType, notificationType),
 				eq(notificationPreference.channel, channel),
 			),

@@ -212,11 +212,11 @@ export function SessionManagement() {
 								<div key={session.id}>
 									{index > 0 && <Separator className="my-4" />}
 									<div className="flex items-start justify-between gap-4">
-										<div className="flex items-start gap-3 flex-1">
+										<div className="flex min-w-0 flex-1 items-start gap-3">
 											<div className="rounded-full bg-muted p-2">
 												<DeviceIcon className="h-5 w-5 text-muted-foreground" />
 											</div>
-											<div className="flex-1 space-y-1">
+											<div className="min-w-0 flex-1 space-y-1">
 												<div className="flex items-center gap-2">
 													<p className="font-medium">
 														{browser} on {os}
@@ -228,12 +228,16 @@ export function SessionManagement() {
 														</span>
 													)}
 												</div>
-												<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+												<div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
 													<span>{device}</span>
 													{session.ipAddress && (
-														<span className="flex items-center gap-1">
-															<IconMapPin className="h-3 w-3" />
-															{session.ipAddress}
+														<span
+															aria-label={session.ipAddress}
+															className="flex min-w-0 max-w-full items-center gap-1"
+															title={session.ipAddress}
+														>
+															<IconMapPin className="h-3 w-3 shrink-0" />
+															<span className="block min-w-0 truncate">{session.ipAddress}</span>
 														</span>
 													)}
 													<span>
