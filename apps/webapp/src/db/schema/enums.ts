@@ -16,6 +16,43 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"custom",
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
+export const approvalPolicyConditionTypeEnum = pgEnum("approval_policy_condition_type", [
+	"approval_type",
+	"team",
+	"location",
+	"absence_category",
+	"travel_expense_amount",
+	"overtime_risk",
+	"employee_group",
+]);
+
+export const approvalPolicyConditionOperatorEnum = pgEnum("approval_policy_condition_operator", [
+	"equals",
+	"in",
+	"gte",
+	"lte",
+	"between",
+]);
+
+export const approvalPolicyApproverTypeEnum = pgEnum("approval_policy_approver_type", [
+	"direct_manager",
+	"manager_manager",
+	"org_admin",
+	"specific_employee",
+]);
+
+export const approvalChainStatusEnum = pgEnum("approval_chain_status", [
+	"pending",
+	"approved",
+	"rejected",
+	"cancelled",
+]);
+
+export const approvalPolicyOvertimeRiskEnum = pgEnum("approval_policy_overtime_risk", [
+	"none",
+	"warning",
+	"violation",
+]);
 export const timeEntryTypeEnum = pgEnum("time_entry_type", ["clock_in", "clock_out", "correction"]);
 export const timeRecordKindEnum = pgEnum("time_record_kind", [
 	"work",

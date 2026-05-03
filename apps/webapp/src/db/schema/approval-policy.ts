@@ -1,0 +1,172 @@
+import {
+	boolean,
+	foreignKey,
+	index,
+	integer,
+	jsonb,
+	numeric,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
+import { organization, user } from "../auth-schema";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import {
+	approvalChainStatusEnum,
+	approvalPolicyApproverTypeEnum,
+	approvalPolicyConditionOperatorEnum,
+	approvalPolicyConditionTypeEnum,
+	approvalPolicyOvertimeRiskEnum,
+} from "./enums";
+import { absenceCategory } from "./absence";
+import { approvalRequest } from "./approval";
+import { employee, location, team } from "./organization";
+
+export const approvalPolicy = pgTable(
+	"approval_policy",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		description: text("description"),
+		isActive: boolean("is_active").default(false).notNull(),
+		priority: integer("priority").notNull(),
+		createdBy: text("created_by").notNull().references(() => user.id),
+		updatedBy: text("updated_by").references(() => user.id),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+	},
+	(table) => [
+		index("approvalPolicy_organizationId_idx").on(table.organizationId),
+		uniqueIndex("approvalPolicy_org_priority_idx").on(table.organizationId, table.priority),
+	],
+);
+
+export const approvalPolicyCondition = pgTable(
+	"approval_policy_condition",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		policyId: uuid("policy_id").notNull().references(() => approvalPolicy.id, { onDelete: "cascade" }),
+		conditionType: approvalPolicyConditionTypeEnum("condition_type").notNull(),
+		operator: approvalPolicyConditionOperatorEnum("operator").notNull(),
+		valueJson: jsonb("value_json"),
+		amountMin: numeric("amount_min", { precision: 12, scale: 2 }),
+		amountMax: numeric("amount_max", { precision: 12, scale: 2 }),
+		overtimeRisk: approvalPolicyOvertimeRiskEnum("overtime_risk"),
+		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
+		locationId: uuid("location_id").references(() => location.id, { onDelete: "cascade" }),
+		absenceCategoryId: uuid("absence_category_id").references(() => absenceCategory.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+	},
+	(table) => [
+		index("approvalPolicyCondition_org_policy_idx").on(table.organizationId, table.policyId),
+		index("approvalPolicyCondition_type_idx").on(table.conditionType),
+		foreignKey({ columns: [table.policyId, table.organizationId], foreignColumns: [approvalPolicy.id, approvalPolicy.organizationId] }),
+	],
+);
+
+export const approvalPolicyStage = pgTable(
+	"approval_policy_stage",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		policyId: uuid("policy_id").notNull().references(() => approvalPolicy.id, { onDelete: "cascade" }),
+		stepOrder: integer("step_order").notNull(),
+		label: text("label").notNull(),
+		approverType: approvalPolicyApproverTypeEnum("approver_type").notNull(),
+		approverEmployeeId: uuid("approver_employee_id").references(() => employee.id),
+		fallbackBehavior: text("fallback_behavior").default("fail").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+	},
+	(table) => [
+		index("approvalPolicyStage_org_policy_idx").on(table.organizationId, table.policyId),
+		uniqueIndex("approvalPolicyStage_policy_order_idx").on(table.policyId, table.stepOrder),
+		foreignKey({ columns: [table.policyId, table.organizationId], foreignColumns: [approvalPolicy.id, approvalPolicy.organizationId] }),
+	],
+);
+
+export const employeeGroup = pgTable(
+	"employee_group",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		description: text("description"),
+		isActive: boolean("is_active").default(true).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+	},
+	(table) => [
+		index("employeeGroup_organizationId_idx").on(table.organizationId),
+		uniqueIndex("employeeGroup_org_name_idx").on(table.organizationId, table.name),
+	],
+);
+
+export const employeeGroupMember = pgTable(
+	"employee_group_member",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		groupId: uuid("group_id").notNull().references(() => employeeGroup.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull().references(() => employee.id, { onDelete: "cascade" }),
+		createdBy: text("created_by").notNull().references(() => user.id),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(table) => [
+		index("employeeGroupMember_org_group_idx").on(table.organizationId, table.groupId),
+		uniqueIndex("employeeGroupMember_group_employee_idx").on(table.groupId, table.employeeId),
+		foreignKey({ columns: [table.groupId, table.organizationId], foreignColumns: [employeeGroup.id, employeeGroup.organizationId] }),
+	],
+);
+
+export const approvalChainInstance = pgTable(
+	"approval_chain_instance",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		policyId: uuid("policy_id").notNull().references(() => approvalPolicy.id),
+		policyNameSnapshot: text("policy_name_snapshot").notNull(),
+		entityType: text("entity_type").notNull(),
+		entityId: uuid("entity_id").notNull(),
+		requesterEmployeeId: uuid("requester_employee_id").notNull().references(() => employee.id),
+		currentStageOrder: integer("current_stage_order").notNull(),
+		status: approvalChainStatusEnum("status").default("pending").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+		completedAt: timestamp("completed_at"),
+	},
+	(table) => [
+		index("approvalChainInstance_org_entity_idx").on(table.organizationId, table.entityType, table.entityId),
+		index("approvalChainInstance_org_status_idx").on(table.organizationId, table.status),
+	],
+);
+
+export const approvalChainStageInstance = pgTable(
+	"approval_chain_stage_instance",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+		chainInstanceId: uuid("chain_instance_id").notNull().references(() => approvalChainInstance.id, { onDelete: "cascade" }),
+		policyStageId: uuid("policy_stage_id").notNull().references(() => approvalPolicyStage.id),
+		stepOrder: integer("step_order").notNull(),
+		labelSnapshot: text("label_snapshot").notNull(),
+		approverTypeSnapshot: text("approver_type_snapshot").notNull(),
+		resolvedApproverEmployeeId: uuid("resolved_approver_employee_id").notNull().references(() => employee.id),
+		approvalRequestId: uuid("approval_request_id").references(() => approvalRequest.id),
+		status: approvalChainStatusEnum("status").default("pending").notNull(),
+		decidedBy: uuid("decided_by").references(() => employee.id),
+		decidedAt: timestamp("decided_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").$onUpdate(() => currentTimestamp()).notNull(),
+	},
+	(table) => [
+		index("approvalChainStageInstance_org_chain_idx").on(table.organizationId, table.chainInstanceId),
+		uniqueIndex("approvalChainStageInstance_request_idx").on(table.approvalRequestId),
+		uniqueIndex("approvalChainStageInstance_chain_order_idx").on(table.chainInstanceId, table.stepOrder),
+	],
+);
