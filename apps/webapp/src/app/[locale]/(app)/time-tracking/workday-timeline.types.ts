@@ -1,4 +1,5 @@
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
+import type { DateTime } from "luxon";
 
 export type WorkdayTimelineItemType =
 	| "shift"
@@ -78,8 +79,8 @@ export interface SelectedWorkdayDate {
 	previousDateKey: string;
 	nextDateKey: string;
 	label: string;
-	startUtc: import("luxon").DateTime;
-	endUtc: import("luxon").DateTime;
+	startUtc: DateTime;
+	endUtc: DateTime;
 }
 
 export interface WorkdayTimelineData {
