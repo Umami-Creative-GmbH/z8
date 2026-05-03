@@ -86,6 +86,7 @@ describe("org-admin settings route access", () => {
 			"/settings/payroll-export",
 			"/settings/payroll-readiness",
 			"/settings/scheduled-exports",
+			"/settings/employees",
 			"/settings/holidays",
 			"/settings/vacation",
 			"/settings/work-policies",
@@ -95,6 +96,9 @@ describe("org-admin settings route access", () => {
 		}
 
 		expect(canResolvedTierAccessRoute(entityAdminTier, "/settings/legal-entities")).toBe(false);
+		expect(canResolvedTierAccessRoute(entityAdminTier, "/settings/locations")).toBe(false);
+		expect(canResolvedTierAccessRoute(entityAdminTier, "/settings/work-categories")).toBe(false);
+		expect(canResolvedTierAccessRoute(entityAdminTier, "/settings/statistics")).toBe(false);
 	});
 
 	it("keeps the export operations page on the shared org-admin helper", () => {

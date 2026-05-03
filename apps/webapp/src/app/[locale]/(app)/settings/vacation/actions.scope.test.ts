@@ -208,7 +208,15 @@ vi.mock("@/lib/effect/runtime", async () => {
 				findFirst: vi.fn(async () => mockState.teamQueue.shift() ?? null),
 			},
 			vacationAllowance: {
-				findMany: vi.fn(async () => mockState.policyRows),
+				findMany: vi.fn(async (input?: { where?: unknown }) => {
+					const where = JSON.stringify(input?.where);
+
+					if (where.includes("legalEntityId") && where.includes("entity-1")) {
+						return mockState.policyRows.filter((policy) => policy.legalEntityId === "entity-1");
+					}
+
+					return mockState.policyRows;
+				}),
 				findFirst: vi.fn(async () => mockState.policyRows[0] ?? null),
 			},
 			legalEntity: {
@@ -403,6 +411,40 @@ describe("vacation settings scope actions", () => {
 		const result = await deleteVacationPolicy("policy-1");
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+	});
+
+	it("does not use another legal entity default when deleting the selected entity default", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-1"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			role: "employee",
+		};
+		mockState.policyRows = [
+			{
+				id: "policy-entity-1-default",
+				organizationId: "org-1",
+				legalEntityId: "entity-1",
+				name: "Entity 1 Default",
+				isCompanyDefault: true,
+				isActive: true,
+			},
+			{
+				id: "policy-entity-2-default",
+				organizationId: "org-1",
+				legalEntityId: "entity-2",
+				name: "Entity 2 Default",
+				isCompanyDefault: true,
+				isActive: true,
+			},
+		];
+
+		const result = await deleteVacationPolicy("policy-entity-1-default");
+
+		expect(result).toMatchObject({ success: false, code: "ConflictError" });
+		expect(mockState.updateWhere).not.toHaveBeenCalled();
 	});
 
 	it("lets managers assign a vacation policy only to managed members", async () => {

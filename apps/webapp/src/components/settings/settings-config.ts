@@ -83,6 +83,20 @@ export interface SettingsGroupConfig {
 	labelDefault: string;
 }
 
+const ENTITY_ADMIN_SETTINGS_ENTRY_IDS = new Set([
+	"profile",
+	"security",
+	"notifications",
+	"wellness",
+	"employees",
+	"holidays",
+	"vacation",
+	"work-policies",
+	"change-policies",
+	"payroll-export",
+	"payroll-readiness",
+]);
+
 export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 	{
 		id: "account",
@@ -610,6 +624,10 @@ export function getVisibleSettings(
 	billingEnabled = false,
 ): SettingsEntry[] {
 	return SETTINGS_ENTRIES.filter((entry) => {
+		if (accessTier === "entityAdmin" && !ENTITY_ADMIN_SETTINGS_ENTRY_IDS.has(entry.id)) {
+			return false;
+		}
+
 		if (!hasSettingsAccessTier(accessTier, entry.minimumTier)) return false;
 		if (entry.requiresBilling && !billingEnabled) return false;
 		return true;

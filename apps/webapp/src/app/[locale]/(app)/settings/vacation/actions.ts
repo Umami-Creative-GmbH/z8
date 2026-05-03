@@ -862,6 +862,7 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 					return await dbService.db.query.vacationAllowance.findMany({
 						where: and(
 							eq(vacationAllowance.organizationId, policy.organizationId),
+							eq(vacationAllowance.legalEntityId, policy.legalEntityId),
 							eq(vacationAllowance.isCompanyDefault, true),
 							eq(vacationAllowance.isActive, true),
 						),

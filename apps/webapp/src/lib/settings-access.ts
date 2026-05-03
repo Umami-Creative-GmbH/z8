@@ -24,6 +24,21 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/export-operations",
 ] as const;
 
+export const ENTITY_ADMIN_SETTINGS_ROUTES = [
+	"/settings/profile",
+	"/settings/security",
+	"/settings/notifications",
+	"/settings/wellness",
+	"/settings/employees",
+	"/settings/holidays",
+	"/settings/vacation",
+	"/settings/work-policies",
+	"/settings/change-policies",
+	"/settings/payroll-export",
+	"/settings/payroll-readiness",
+	"/settings/scheduled-exports",
+] as const;
+
 export type SettingsAccessMembershipRole = "owner" | "admin" | "member" | null;
 
 export type SettingsAccessEmployeeRole = "admin" | "manager" | "employee" | null;
@@ -82,6 +97,12 @@ export function hasSettingsAccessTier(
 }
 
 export function canResolvedTierAccessRoute(accessTier: SettingsAccessTier, route: string): boolean {
+	if (accessTier === "entityAdmin") {
+		return ENTITY_ADMIN_SETTINGS_ROUTES.includes(
+			route as (typeof ENTITY_ADMIN_SETTINGS_ROUTES)[number],
+		);
+	}
+
 	if (!ORG_ADMIN_SETTINGS_ROUTES.includes(route as (typeof ORG_ADMIN_SETTINGS_ROUTES)[number])) {
 		return true;
 	}

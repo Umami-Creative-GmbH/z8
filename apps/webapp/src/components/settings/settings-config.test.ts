@@ -90,6 +90,29 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("does not let entity admins inherit every manager settings entry", () => {
+		const entityAdminEntryIds = getVisibleSettings("entityAdmin", true).map((entry) => entry.id);
+
+		expect(entityAdminEntryIds).toEqual(
+		expect.arrayContaining([
+			"profile",
+			"security",
+			"notifications",
+			"wellness",
+			"employees",
+			"holidays",
+			"vacation",
+			"work-policies",
+			"change-policies",
+			"payroll-export",
+			"payroll-readiness",
+		]),
+		);
+		expect(entityAdminEntryIds).not.toEqual(
+			expect.arrayContaining(["locations", "work-categories", "statistics", "calendar"]),
+		);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");

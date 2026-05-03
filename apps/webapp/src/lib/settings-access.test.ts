@@ -132,6 +132,11 @@ describe("statistics route access", () => {
 
 	it("allows entity admins into scoped legal-entity-owned settings but not parent org settings", () => {
 		const scopedRoutes = [
+			"/settings/profile",
+			"/settings/security",
+			"/settings/notifications",
+			"/settings/wellness",
+			"/settings/employees",
 			"/settings/payroll-export",
 			"/settings/payroll-readiness",
 			"/settings/scheduled-exports",
@@ -147,6 +152,9 @@ describe("statistics route access", () => {
 
 		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/legal-entities")).toBe(false);
 		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/billing")).toBe(false);
+		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/locations")).toBe(false);
+		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/work-categories")).toBe(false);
+		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/statistics")).toBe(false);
 	});
 	});
 
