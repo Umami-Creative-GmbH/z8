@@ -68,14 +68,14 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 					dangerouslySetInnerHTML={{ __html: cookieConsentScript }}
 				/>
 			)}
-			<div className="grid min-h-svh bg-background lg:grid-cols-2">
-				<section className="flex h-svh flex-col overflow-y-auto px-6 py-6 sm:px-8 lg:px-10">
+			<div className="min-h-svh bg-background lg:grid lg:grid-cols-2">
+				<section className="flex min-h-svh flex-col px-4 py-4 sm:px-8 sm:py-6 lg:h-svh lg:overflow-y-auto lg:px-10">
 					<div className="flex items-center justify-end gap-2">
 						<ThemeToggle />
 						<LanguageSwitcher />
 					</div>
 
-					<main className="flex flex-1 items-center justify-center py-10">
+					<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
 						<div className="w-full max-w-3xl">{children}</div>
 					</main>
 

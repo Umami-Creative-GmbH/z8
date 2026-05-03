@@ -49,4 +49,22 @@ describe("AuthFormWrapper", () => {
 		expect(screen.getByText("branded form")).toBeTruthy();
 		expect(screen.queryByAltText("Acme Time background")).toBeNull();
 	});
+
+	it("uses mobile-friendly card spacing before desktop card polish", () => {
+		const { container } = render(
+			<AuthFormWrapper title="Join workspace">
+				<div>join form</div>
+			</AuthFormWrapper>,
+		);
+
+		const wrapper = container.firstElementChild;
+		const card = wrapper?.firstElementChild;
+		const cardContent = card?.firstElementChild;
+
+		expect(wrapper?.className).toContain("max-w-md");
+		expect(card?.className).toContain("shadow-none");
+		expect(card?.className).toContain("sm:shadow-xl");
+		expect(cardContent?.className).toContain("p-5");
+		expect(cardContent?.className).toContain("sm:p-8");
+	});
 });
