@@ -15,7 +15,7 @@ import { useEmployee } from "@/lib/query/use-employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
-import { defaultFormValues, syncEmployeeForm } from "./page-utils";
+import { defaultFormValues, getEmployeeDetailPermissions, syncEmployeeForm } from "./page-utils";
 
 export function EmployeeDetailPageClient({
 	params,
@@ -32,6 +32,7 @@ export function EmployeeDetailPageClient({
 
 	const {
 		employee,
+		currentEmployee,
 		schedule,
 		availableManagers,
 		rateHistory,
@@ -51,14 +52,16 @@ export function EmployeeDetailPageClient({
 		isCancelingEmploymentHistory,
 		refetch,
 	} = useEmployee({ employeeId, accessTier });
-	const canManageEmployeeDetails = accessTier === "orgAdmin" || accessTier === "manager";
-	const canManageManagerAssignments = accessTier === "orgAdmin";
-	const canManageSkills = accessTier === "orgAdmin" || accessTier === "manager";
-	const canManageRates = accessTier === "orgAdmin" || accessTier === "manager";
-	const canManageCustomRoles = accessTier === "orgAdmin";
-	const canManageEmploymentHistory = accessTier === "orgAdmin";
+	const {
+		canManageEmployeeDetails,
+		canManageManagerAssignments,
+		canManageSkills,
+		canManageRates,
+		canManageCustomRoles,
+		canManageEmploymentHistory,
+		canMoveLegalEntity,
+	} = getEmployeeDetailPermissions({ accessTier, employeeRole: currentEmployee?.role });
 	const isMutatingEmploymentHistory = isConfirmingEmploymentHistory || isCancelingEmploymentHistory;
-	const canMoveLegalEntity = accessTier === "orgAdmin";
 
 	const form = useForm({
 		defaultValues: defaultFormValues,

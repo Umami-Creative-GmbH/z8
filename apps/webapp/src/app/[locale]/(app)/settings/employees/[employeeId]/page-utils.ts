@@ -4,6 +4,7 @@ import type {
 	ReactFormExtendedApi,
 } from "@tanstack/react-form";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export interface EmployeeDetailFormValues {
 	firstName: string;
@@ -61,6 +62,25 @@ export const scheduleDayKeys = [
 	"saturday",
 	"sunday",
 ] as const;
+
+export function getEmployeeDetailPermissions(input: {
+	accessTier: SettingsAccessTier;
+	employeeRole?: "admin" | "manager" | "employee" | null;
+}) {
+	const isOrgAdmin = input.accessTier === "orgAdmin";
+	const isManager = input.employeeRole === "manager" || input.accessTier === "manager";
+	const canManageEmployeeDetails = isOrgAdmin || isManager;
+
+	return {
+		canManageEmployeeDetails,
+		canManageManagerAssignments: isOrgAdmin,
+		canManageSkills: canManageEmployeeDetails,
+		canManageRates: canManageEmployeeDetails,
+		canManageCustomRoles: isOrgAdmin,
+		canManageEmploymentHistory: isOrgAdmin,
+		canMoveLegalEntity: isOrgAdmin,
+	};
+}
 
 export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {
 	form.reset();

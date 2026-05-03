@@ -3,10 +3,14 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
 	canAccessManagedEmployeeSettingsTarget,
+	filterEmployeeUpdateForRestrictedSettingsActor,
 	filterEmployeeUpdateForScopedManager,
 } from "./employee-scope";
 
-const source = readFileSync(fileURLToPath(new URL("./employee-action-utils.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./employee-action-utils.ts", import.meta.url)),
+	"utf8",
+);
 
 describe("employee settings scope helpers", () => {
 	it("keeps org admins fully enabled regardless of manager relationships", () => {
@@ -59,6 +63,32 @@ describe("employee settings scope helpers", () => {
 			firstName: "Alex",
 			lastName: "Stone",
 			position: "Supervisor",
+		});
+	});
+
+	it("strips org-admin-only employee fields from entity admin edits", () => {
+		expect(
+			filterEmployeeUpdateForRestrictedSettingsActor({
+				firstName: "Alex",
+				lastName: "Stone",
+				gender: "other",
+				position: "Supervisor",
+				legalEntityId: "entity-a",
+				role: "admin",
+				employeeNumber: "EMP-1",
+				contractType: "hourly",
+				hourlyRate: "24",
+				isActive: false,
+				canUseWebapp: false,
+				canUseDesktop: false,
+				canUseMobile: false,
+			}),
+		).toEqual({
+			firstName: "Alex",
+			lastName: "Stone",
+			gender: "other",
+			position: "Supervisor",
+			legalEntityId: "entity-a",
 		});
 	});
 

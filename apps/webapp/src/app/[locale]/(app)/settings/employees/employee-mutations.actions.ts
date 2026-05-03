@@ -35,7 +35,10 @@ import {
 	validateInput,
 } from "./employee-action-utils";
 import { assertCanAssignEmployeeLegalEntity } from "./employee-legal-entity";
-import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
+import {
+	filterEmployeeUpdateForRestrictedSettingsActor,
+	filterEmployeeUpdateForScopedManager,
+} from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
 
@@ -240,7 +243,9 @@ export async function updateEmployeeAction(
 				const scopedData: UpdateEmployee =
 					actor.accessTier === "manager"
 						? (filterEmployeeUpdateForScopedManager(validatedData) as UpdateEmployee)
-						: validatedData;
+						: actor.accessTier === "entityAdmin"
+							? (filterEmployeeUpdateForRestrictedSettingsActor(validatedData) as UpdateEmployee)
+							: validatedData;
 
 				if (actor.accessTier === "orgAdmin" || actor.accessTier === "entityAdmin") {
 					const assignmentError = (() => {
@@ -248,7 +253,7 @@ export async function updateEmployeeAction(
 							assertCanAssignEmployeeLegalEntity({
 								isOrgAdmin: actor.accessTier === "orgAdmin",
 								currentLegalEntityId: targetEmployee.legalEntityId,
-								nextLegalEntityId: validatedData.legalEntityId,
+								nextLegalEntityId: scopedData.legalEntityId,
 								allowedLegalEntityIds: actor.legalEntityAdminIds,
 							});
 							return null;
@@ -263,7 +268,7 @@ export async function updateEmployeeAction(
 								new ValidationError({
 									message: assignmentError,
 									field: "legalEntityId",
-									value: validatedData.legalEntityId,
+									value: scopedData.legalEntityId,
 								}),
 							),
 						);

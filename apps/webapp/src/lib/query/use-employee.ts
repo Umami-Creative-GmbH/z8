@@ -231,6 +231,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	return {
 		// Employee data
 		employee: employeeQuery.data ?? null,
+		currentEmployee: currentEmployeeQuery.data ?? null,
 		schedule: scheduleQuery.data ?? null,
 		availableManagers: managersQuery.data ?? [],
 		rateHistory: (rateHistoryQuery.data ?? []) as RateHistoryEntry[],

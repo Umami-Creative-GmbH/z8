@@ -7,8 +7,12 @@ const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = [
 	"position",
 ] as const;
 
-type ScopedManagerEditableEmployeeField =
-	(typeof SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS)[number];
+const RESTRICTED_SETTINGS_ACTOR_EDITABLE_EMPLOYEE_FIELDS = [
+	...SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS,
+	"legalEntityId",
+] as const;
+
+type ScopedManagerEditableEmployeeField = (typeof SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS)[number];
 
 export function canAccessManagedEmployeeSettingsTarget(input: {
 	actorRole: EmployeeSettingsActorRole;
@@ -25,6 +29,22 @@ export function filterEmployeeUpdateForScopedManager<T extends Record<string, un
 	const result = {} as Partial<Pick<T, ScopedManagerEditableEmployeeField>>;
 
 	for (const key of SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS) {
+		if (key in data) {
+			(result as Record<string, unknown>)[key] = data[key];
+		}
+	}
+
+	return result;
+}
+
+export function filterEmployeeUpdateForRestrictedSettingsActor<T extends Record<string, unknown>>(
+	data: T,
+) {
+	const result = {} as Partial<
+		Pick<T, (typeof RESTRICTED_SETTINGS_ACTOR_EDITABLE_EMPLOYEE_FIELDS)[number]>
+	>;
+
+	for (const key of RESTRICTED_SETTINGS_ACTOR_EDITABLE_EMPLOYEE_FIELDS) {
 		if (key in data) {
 			(result as Record<string, unknown>)[key] = data[key];
 		}
