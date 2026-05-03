@@ -25,7 +25,7 @@ export function LanguageSwitcher() {
 	const handleLanguageChange = (newLocale: string) => {
 		startTransition(async () => {
 			await setLanguage(newLocale);
-			persistLocaleToDb(newLocale).catch(() => {}); // fire-and-forget
+			await persistLocaleToDb(newLocale).catch(() => {});
 			router.replace(pathname, { locale: newLocale });
 		});
 	};
