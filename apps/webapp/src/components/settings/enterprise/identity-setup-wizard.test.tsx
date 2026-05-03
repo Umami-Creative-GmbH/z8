@@ -395,16 +395,27 @@ describe("DomainsAndBrandingTabs behavior", () => {
 
 describe("IdentitySetupWizard source supplements", () => {
 	it("keeps SCIM docs aligned with self-serve identity setup", () => {
-		const docsSource = readFileSync(
-			join(process.cwd(), "../../apps/docs/content/docs/guide/admin-guide/scim-provisioning.mdx"),
-			"utf8",
-		);
+		const docsSources = [
+			"../../apps/docs/content/docs/guide/admin-guide/scim-provisioning.mdx",
+			"../../apps/docs/content/docs/tech/technical/enterprise.mdx",
+			"../../apps/docs/content/docs/tech/technical/authentication.mdx",
+			"../../apps/docs/content/docs/guide/admin-guide/platform-admin.mdx",
+		].map((docsPath) => readFileSync(join(process.cwd(), docsPath), "utf8"));
 
-		expect(docsSource).toContain("Enterprise Identity Setup");
-		expect(docsSource).toContain("/settings/enterprise/identity-setup");
-		expect(docsSource).not.toContain(
-			"does not expose a dedicated self-serve SCIM setup page",
-		);
+		for (const docsSource of docsSources) {
+			expect(docsSource).toContain("Enterprise Identity Setup");
+			expect(docsSource).toContain("/settings/enterprise/identity-setup");
+			expect(docsSource).not.toContain(
+				"does not expose a dedicated self-serve SCIM setup page",
+			);
+			expect(docsSource).not.toContain(
+				"does not currently expose a dedicated self-serve SCIM setup page",
+			);
+			expect(docsSource).not.toContain("no self-serve settings page");
+			expect(docsSource).not.toContain(
+				"managed integration instead of looking for a normal admin settings screen",
+			);
+		}
 	});
 
 	it("keeps default role template outside the enforcement JSON", () => {

@@ -27,7 +27,7 @@ Operator expectations are split cleanly:
 - system secrets remain environment-backed
 - every enterprise feature remains organization-scoped even when managed centrally by platform operators
 
-For SCIM specifically, keep expectations narrower: the current product supports SCIM in the enterprise auth stack, but it does not currently expose a dedicated self-serve SCIM setup page in normal admin settings.
+For SCIM specifically, keep expectations organization-scoped: organization owners and admins configure it through **Enterprise Identity Setup** at `/settings/enterprise/identity-setup` after SSO is configured.
 
 ---
 
@@ -77,13 +77,14 @@ Webhooks deliver organization-scoped events to external systems.
 
 ## SCIM Provisioning
 
-SCIM support is part of the enterprise auth stack for managed provisioning. It should be understood as an organization-scoped integration, not a cross-tenant identity plane.
+SCIM support is part of the enterprise auth stack for provisioning through **Enterprise Identity Setup**. It should be understood as an organization-scoped integration, not a cross-tenant identity plane.
 
 In practice this means:
 
 - one SCIM configuration provisions one organization at a time
 - provisioning activity can map members, role templates, and lifecycle events into that organization
-- SCIM rollout is usually coordinated by operators for enterprise customers rather than treated as a casual self-serve toggle in the product UI
+- SCIM setup provides the base URL and bearer token in the wizard, with the token shown only once
+- provisioning verification depends on the identity provider pushing a test user or group change back to that organization's SCIM endpoint
 
 ## Organization Social OAuth
 
