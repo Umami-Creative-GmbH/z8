@@ -174,7 +174,9 @@ export function HolidayAssignmentDialog({
 					t("settings.holidays.assignments.holidayCreated", "Holiday assignment created"),
 				);
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.holidayAssignments.list(organizationId),
+					queryKey: queryKeys.holidayAssignments.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				onSuccess();
 				onOpenChange(false);

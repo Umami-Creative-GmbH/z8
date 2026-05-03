@@ -162,9 +162,11 @@ export function HolidayManagement({
 
 	const handleHolidayAssignmentSuccess = useCallback(() => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.holidayAssignments.list(organizationId),
+			queryKey: queryKeys.holidayAssignments.list(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
-	}, [queryClient, organizationId]);
+	}, [queryClient, organizationId, selectedLegalEntityId]);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">

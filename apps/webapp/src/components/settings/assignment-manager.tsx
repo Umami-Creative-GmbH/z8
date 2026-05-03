@@ -142,9 +142,11 @@ export function AssignmentManager({
 		isLoading: holidayLoading,
 		error: holidayError,
 	} = useQuery({
-		queryKey: queryKeys.holidayAssignments.list(organizationId),
+		queryKey: queryKeys.holidayAssignments.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getHolidayAssignments(organizationId);
+			const result = await getHolidayAssignments(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holiday assignments");
 			}
@@ -186,7 +188,9 @@ export function AssignmentManager({
 					t("settings.holidays.assignments.holidayDeleted", "Holiday assignment removed"),
 				);
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.holidayAssignments.list(organizationId),
+					queryKey: queryKeys.holidayAssignments.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				setDeleteDialogOpen(false);
 				setSelectedHolidayAssignment(null);
@@ -425,7 +429,7 @@ export function AssignmentManager({
 								<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
 									{t(
 										"settings.holidays.assignments.noOrgHolidays",
-										"No custom holidays assigned to organization",
+										"No custom holidays assigned to this legal entity",
 									)}
 								</p>
 							)}
@@ -450,7 +454,7 @@ export function AssignmentManager({
 								<CardDescription>
 									{t(
 										"settings.holidays.assignments.teamLevelDescription",
-										"Override organization defaults for specific teams",
+										"Override entity-wide defaults for specific teams",
 									)}
 								</CardDescription>
 							</div>
@@ -609,7 +613,7 @@ export function AssignmentManager({
 								<CardDescription>
 									{t(
 										"settings.holidays.assignments.employeeLevelDescription",
-										"Override team or organization defaults for specific employees",
+										"Override team or entity-wide defaults for specific employees",
 									)}
 								</CardDescription>
 							</div>
@@ -771,18 +775,18 @@ export function AssignmentManager({
 									{selectedPresetAssignment.assignmentType === "organization" &&
 										t(
 											"settings.holidays.assignments.deleteOrgDescription",
-											"This will remove the organization default preset. Employees will only see custom holidays.",
+											"This will remove the entity-wide default preset. Employees will only see custom holidays.",
 										)}
 									{selectedPresetAssignment.assignmentType === "team" &&
 										t(
 											"settings.holidays.assignments.deleteTeamDescription",
-											'This will remove the preset from team "{team}". They will use the organization default.',
+											'This will remove the preset from team "{team}". They will use the entity-wide default.',
 											{ team: selectedPresetAssignment.team?.name },
 										)}
 									{selectedPresetAssignment.assignmentType === "employee" &&
 										t(
 											"settings.holidays.assignments.deleteEmployeeDescription",
-											'This will remove the override for "{name}". They will use their team or organization default.',
+											'This will remove the override for "{name}". They will use their team or entity-wide default.',
 											{
 												name: `${selectedPresetAssignment.employee?.firstName} ${selectedPresetAssignment.employee?.lastName}`,
 											},

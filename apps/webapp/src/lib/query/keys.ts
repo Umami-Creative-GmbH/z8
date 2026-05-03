@@ -166,7 +166,8 @@ export const queryKeys = {
 	// Holiday assignments (individual custom holidays to org/team/employee)
 	holidayAssignments: {
 		all: ["holiday-assignments"] as const,
-		list: (orgId: string) => ["holiday-assignments", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holiday-assignments", orgId, params] as const,
 	},
 
 	// Vacation policies
