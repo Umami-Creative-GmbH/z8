@@ -33,6 +33,7 @@ export * from "./discord-integration";
 export * from "./email-template";
 export * from "./employment-history";
 export * from "./enterprise";
+export * from "./enterprise-identity-setup";
 // Enums
 export * from "./enums";
 export * from "./export";
