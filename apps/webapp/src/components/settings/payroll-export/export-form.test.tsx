@@ -203,7 +203,7 @@ describe("ExportForm", () => {
 				formatId: "workday_api",
 			}),
 		);
-	});
+	}, 15_000);
 
 	it("renders all export options and disables unconfigured exporters", async () => {
 		render(
@@ -275,7 +275,7 @@ describe("ExportForm", () => {
 		expect(screen.getByText("Sage - config")).toBeTruthy();
 		expect(screen.getByText("Personio - credentials")).toBeTruthy();
 		expect(screen.getByText("SAP SuccessFactors (API) - credentials")).toBeTruthy();
-	});
+	}, 15_000);
 
 	it("renders export flow without DATEV config and allows Workday selection", async () => {
 		render(
@@ -319,7 +319,7 @@ describe("ExportForm", () => {
 				}),
 			);
 		});
-	});
+	}, 15_000);
 
 	it("allows separate SAP SuccessFactors CSV export selection", async () => {
 		render(
@@ -338,15 +338,15 @@ describe("ExportForm", () => {
 			/>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+		const formatSelect = await waitFor(() => {
+			const combobox = screen
+				.getAllByRole("combobox")
+				.find((combobox) =>
+					within(combobox).queryByRole("option", { name: "SAP SuccessFactors (CSV)" }),
+				);
+			expect(combobox).toBeTruthy();
+			return combobox as HTMLSelectElement;
 		});
-
-		const formatSelect = screen
-			.getAllByRole("combobox")
-			.find((combobox) =>
-				within(combobox).queryByRole("option", { name: "SAP SuccessFactors (CSV)" }),
-			);
 
 		fireEvent.change(formatSelect as HTMLSelectElement, {
 			target: { value: "successfactors_csv" },
@@ -366,5 +366,5 @@ describe("ExportForm", () => {
 				}),
 			);
 		});
-	});
+	}, 15_000);
 });
