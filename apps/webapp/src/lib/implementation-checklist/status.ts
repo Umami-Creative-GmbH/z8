@@ -23,7 +23,7 @@ export function resolveImplementationChecklistItems({
 	manualCompleteIds,
 }: ResolveImplementationChecklistItemsInput): ResolvedImplementationChecklistItem[] {
 	return IMPLEMENTATION_CHECKLIST_ITEMS.map((item) => {
-		if (detectedCompleteIds.has(item.id)) {
+		if (item.detector === "automatic" && detectedCompleteIds.has(item.id)) {
 			return {
 				...item,
 				status: "complete" as const,

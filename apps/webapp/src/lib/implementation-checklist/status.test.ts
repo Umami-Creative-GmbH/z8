@@ -61,13 +61,31 @@ describe("implementation checklist status resolver", () => {
 
 	it("prefers automatic completion over stale manual state", () => {
 		const items = resolveImplementationChecklistItems({
-			detectedCompleteIds: new Set(["approval-rules"]),
+			detectedCompleteIds: new Set(["integrations"]),
+			manualCompleteIds: new Set(["integrations"]),
+		});
+
+		expect(items.find((item) => item.id === "integrations")).toMatchObject({
+			status: "complete",
+			completionSource: "automatic",
+		});
+	});
+
+	it("ignores detector output for manual-only items", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(["approval-rules", "payroll-readiness"]),
 			manualCompleteIds: new Set(["approval-rules"]),
 		});
 
 		expect(items.find((item) => item.id === "approval-rules")).toMatchObject({
 			status: "complete",
-			completionSource: "automatic",
+			completionSource: "manual",
+			canToggleManualCompletion: true,
+		});
+		expect(items.find((item) => item.id === "payroll-readiness")).toMatchObject({
+			status: "not-started",
+			completionSource: null,
+			canToggleManualCompletion: true,
 		});
 	});
 
