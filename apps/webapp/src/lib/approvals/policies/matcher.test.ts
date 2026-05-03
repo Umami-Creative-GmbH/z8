@@ -60,6 +60,22 @@ describe("findMatchingPolicy", () => {
 
 		expect(result).toBeNull();
 	});
+
+	it("does not treat value as values for in string conditions", () => {
+		const result = findMatchingPolicy(context, [
+			{ ...matchingPolicy, conditions: [{ conditionType: "team", operator: "in", value: "team_1" }] },
+		]);
+
+		expect(result).toBeNull();
+	});
+
+	it("does not treat value as values for in employee group conditions", () => {
+		const result = findMatchingPolicy(context, [
+			{ ...matchingPolicy, conditions: [{ conditionType: "employee_group", operator: "in", value: "group_1" }] },
+		]);
+
+		expect(result).toBeNull();
+	});
 });
 
 describe("validatePolicyDraft", () => {

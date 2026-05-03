@@ -5,7 +5,7 @@ import type {
 } from "./types";
 
 function stringList(condition: ApprovalPolicyConditionDraft): string[] {
-	return condition.values ?? (condition.value ? [condition.value] : []);
+	return condition.values ?? [];
 }
 
 function matchesString(value: string | null, condition: ApprovalPolicyConditionDraft) {
