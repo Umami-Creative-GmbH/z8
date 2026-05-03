@@ -17,6 +17,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({
 	enterpriseIdentitySetup: {},
+	organizationDomain: {},
 	roleTemplate: {},
 	scimProviderConfig: {},
 	scimProvisioningLog: {},
@@ -180,8 +181,26 @@ describe("enterprise identity setup action contracts", () => {
 
 		expect(actionSource).toContain("syncEnterpriseIdentityDomainVerification");
 		expect(actionSource).toContain("listOrganizationDomains");
+		expect(actionSource).toContain("selectVerifiedEnterpriseIdentityDomain");
 		expect(actionSource).toContain("updateDomainAuthConfig");
 		expect(actionSource).toContain("ssoProviderId: setupRecord.providerId");
+		expect(actionSource).not.toContain("const [domainRecord] = domains");
+	});
+
+	it("scopes domain management actions to the active organization", () => {
+		const domainActions = [
+			"verifyDomainAction",
+			"regenerateVerificationTokenAction",
+			"updateDomainAuthConfigAction",
+			"deleteDomainAction",
+		];
+
+		for (const actionName of domainActions) {
+			const actionSource = getFunctionSource(actionName);
+
+			expect(actionSource).toContain("requireEnterpriseOrgAdmin()");
+			expect(actionSource).toContain("requireOrganizationDomain(domainId, organizationId)");
+		}
 	});
 
 	it("validates provider and SSO registration input before side effects", () => {

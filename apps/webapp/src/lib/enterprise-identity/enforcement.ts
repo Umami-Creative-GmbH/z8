@@ -5,6 +5,13 @@ import { enterpriseIdentitySetup } from "@/db/schema";
 
 type EnterpriseIdentityRestriction = "inviteRestrictionEnabled" | "domainRestrictionEnabled";
 
+export interface EnterpriseIdentityOrganizationDomainCandidate {
+	id: string;
+	domain: string;
+	domainVerified: boolean;
+	authConfig: unknown;
+}
+
 export function isEmailInEnterpriseIdentityDomain(email: string, domain: string | null | undefined) {
 	const normalizedDomain = domain?.trim().toLowerCase();
 	const normalizedEmail = email.trim().toLowerCase();
@@ -13,6 +20,21 @@ export function isEmailInEnterpriseIdentityDomain(email: string, domain: string 
 	if (!normalizedDomain || atIndex <= 0 || atIndex === normalizedEmail.length - 1) return false;
 
 	return normalizedEmail.slice(atIndex + 1) === normalizedDomain;
+}
+
+export function selectVerifiedEnterpriseIdentityDomain<T extends EnterpriseIdentityOrganizationDomainCandidate>(
+	domains: T[],
+	setupDomain: string | null | undefined,
+) {
+	const normalizedSetupDomain = setupDomain?.trim().toLowerCase();
+
+	if (!normalizedSetupDomain) return null;
+
+	return (
+		domains.find(
+			(domain) => domain.domainVerified && domain.domain.toLowerCase() === normalizedSetupDomain,
+		) ?? null
+	);
 }
 
 async function getActiveEnterpriseIdentitySetup(organizationId: string) {

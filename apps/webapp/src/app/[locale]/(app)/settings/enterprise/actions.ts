@@ -7,6 +7,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	enterpriseIdentitySetup,
+	organizationDomain,
 	roleTemplate,
 	scimProviderConfig,
 	scimProvisioningLog,
@@ -30,6 +31,7 @@ import type {
 	EnterpriseIdentityProtocol,
 	EnterpriseIdentityProviderPresetId,
 } from "@/lib/enterprise-identity/provider-presets";
+import { selectVerifiedEnterpriseIdentityDomain } from "@/lib/enterprise-identity/enforcement";
 import { buildEnterpriseIdentityScimTokenResponse } from "@/lib/enterprise-identity/scim-token-response";
 import {
 	createDefaultEnterpriseIdentitySetupState,
@@ -352,6 +354,18 @@ async function updateEnterpriseIdentitySetupRecord(
 	return updated;
 }
 
+async function requireOrganizationDomain(domainId: string, organizationId: string) {
+	const domain = await db.query.organizationDomain.findFirst({
+		where: and(
+			eq(organizationDomain.id, domainId),
+			eq(organizationDomain.organizationId, organizationId),
+		),
+	});
+
+	if (!domain) throw new Error("Domain not found in active organization");
+	return domain;
+}
+
 // ============ Enterprise Identity Setup Actions ============
 
 export async function getEnterpriseIdentitySetupAction(): Promise<EnterpriseIdentitySetupResponse> {
@@ -642,15 +656,19 @@ export async function activateEnterpriseIdentitySetupAction() {
 
 	if (setupRecord.enforcement.ssoRequired && setupRecord.providerId) {
 		const domains = await listOrganizationDomains(organizationId);
-		const [domainRecord] = domains;
+		const domainRecord = selectVerifiedEnterpriseIdentityDomain(domains, setupRecord.domain);
 
-		if (domainRecord) {
-			await updateDomainAuthConfig(domainRecord.id, {
-				...domainRecord.authConfig,
-				ssoEnabled: true,
-				ssoProviderId: setupRecord.providerId,
-			});
+		if (!domainRecord) {
+			throw new Error(
+				"Require SSO needs a verified organization domain matching the enterprise identity domain before activation.",
+			);
 		}
+
+		await updateDomainAuthConfig(domainRecord.id, {
+			...domainRecord.authConfig,
+			ssoEnabled: true,
+			ssoProviderId: setupRecord.providerId,
+		});
 	}
 
 	const activatedAt = DateTime.utc();
@@ -679,7 +697,8 @@ export async function addDomainAction(domain: string) {
 }
 
 export async function verifyDomainAction(domainId: string) {
-	await requireEnterpriseOrgAdmin();
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await requireOrganizationDomain(domainId, organizationId);
 
 	const result = await verifyDomainOwnership(domainId);
 	revalidatePath("/settings/enterprise/domains");
@@ -687,7 +706,8 @@ export async function verifyDomainAction(domainId: string) {
 }
 
 export async function regenerateVerificationTokenAction(domainId: string) {
-	await requireEnterpriseOrgAdmin();
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await requireOrganizationDomain(domainId, organizationId);
 
 	const token = await requestNewVerificationToken(domainId);
 	revalidatePath("/settings/enterprise/domains");
@@ -695,14 +715,16 @@ export async function regenerateVerificationTokenAction(domainId: string) {
 }
 
 export async function updateDomainAuthConfigAction(domainId: string, config: AuthConfig) {
-	await requireEnterpriseOrgAdmin();
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await requireOrganizationDomain(domainId, organizationId);
 
 	await updateDomainAuthConfig(domainId, config);
 	revalidatePath("/settings/enterprise/domains");
 }
 
 export async function deleteDomainAction(domainId: string) {
-	await requireEnterpriseOrgAdmin();
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	await requireOrganizationDomain(domainId, organizationId);
 
 	await deleteCustomDomain(domainId);
 	revalidatePath("/settings/enterprise/domains");
