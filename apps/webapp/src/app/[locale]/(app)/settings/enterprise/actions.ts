@@ -134,6 +134,23 @@ export interface EnterpriseIdentityAccessPolicyInput {
 	defaultRoleTemplateId?: string | null;
 }
 
+export interface EnterpriseIdentityScimTokenResponse {
+	providerId: string;
+	scimToken: string | undefined;
+	baseUrl: "/api/auth/scim/v2";
+}
+
+export function buildEnterpriseIdentityScimTokenResponse(
+	result: { token?: string; scimToken?: string },
+	providerId: string,
+): EnterpriseIdentityScimTokenResponse {
+	return {
+		providerId,
+		scimToken: result.scimToken ?? result.token,
+		baseUrl: "/api/auth/scim/v2",
+	};
+}
+
 function toIsoFromDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
 
@@ -435,16 +452,6 @@ export async function generateEnterpriseIdentityScimTokenAction(input: Enterpris
 
 	if (!providerId) throw new Error("Provider ID is required");
 
-	let tokenResult: { token?: string; scimToken?: string };
-	try {
-		tokenResult = await (auth.api as any).generateSCIMToken({
-			body: { providerId, organizationId },
-			headers: await headers(),
-		});
-	} catch (error) {
-		throw new Error(mapBetterAuthIdentityError(error));
-	}
-
 	await db
 		.insert(scimProviderConfig)
 		.values({
@@ -479,11 +486,17 @@ export async function generateEnterpriseIdentityScimTokenAction(input: Enterpris
 	});
 
 	revalidatePath(IDENTITY_SETUP_PATH);
-	return {
-		token: tokenResult.token ?? tokenResult.scimToken,
-		baseUrl: "/api/auth/scim/v2",
-		state: (await getSetupResponse(organizationId, authContext.user.id)).state,
-	};
+
+	try {
+		const tokenResult = await (auth.api as any).generateSCIMToken({
+			body: { providerId, organizationId },
+			headers: await headers(),
+		});
+
+		return buildEnterpriseIdentityScimTokenResponse(tokenResult, providerId);
+	} catch (error) {
+		throw new Error(mapBetterAuthIdentityError(error));
+	}
 }
 
 export async function refreshEnterpriseIdentityScimStatusAction() {
