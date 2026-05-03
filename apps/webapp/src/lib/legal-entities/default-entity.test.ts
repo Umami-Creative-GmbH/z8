@@ -1,8 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/db", () => ({ db: {} }));
+const dbMock = vi.hoisted(() => ({
+	from: vi.fn(),
+	limit: vi.fn(),
+	select: vi.fn(),
+	where: vi.fn(),
+}));
 
-import { buildDefaultLegalEntityValues } from "./default-entity";
+vi.mock("@/db", () => ({
+	db: {
+		select: dbMock.select,
+	},
+}));
+
+import { buildDefaultLegalEntityValues, getDefaultLegalEntity } from "./default-entity";
+
+function mockDefaultLegalEntityRows(rows: unknown[]) {
+	dbMock.select.mockReturnValue({ from: dbMock.from });
+	dbMock.from.mockReturnValue({ where: dbMock.where });
+	dbMock.where.mockReturnValue({ limit: dbMock.limit });
+	dbMock.limit.mockResolvedValue(rows);
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 describe("buildDefaultLegalEntityValues", () => {
 	it("uses organization display data and safe defaults", () => {
@@ -23,5 +45,23 @@ describe("buildDefaultLegalEntityValues", () => {
 			createdBy: "user-1",
 			updatedBy: "user-1",
 		});
+	});
+});
+
+describe("getDefaultLegalEntity", () => {
+	it("returns the first selected default legal entity", async () => {
+		const entity = { id: "entity-1", organizationId: "org-1" };
+
+		mockDefaultLegalEntityRows([entity]);
+
+		await expect(getDefaultLegalEntity("org-1")).resolves.toBe(entity);
+		expect(dbMock.limit).toHaveBeenCalledWith(1);
+	});
+
+	it("returns null when no default legal entity is selected", async () => {
+		mockDefaultLegalEntityRows([]);
+
+		await expect(getDefaultLegalEntity("org-1")).resolves.toBeNull();
+		expect(dbMock.limit).toHaveBeenCalledWith(1);
 	});
 });

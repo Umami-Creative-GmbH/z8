@@ -231,14 +231,19 @@ export const legalEntityRelations = relations(legalEntity, ({ one, many }) => ({
 	holidayCategories: many(holidayCategory),
 	holidays: many(holiday),
 	holidayPresets: many(holidayPreset),
+	holidayPresetAssignments: many(holidayPresetAssignment),
+	holidayAssignments: many(holidayAssignment),
 	workPolicies: many(workPolicy),
 	workPolicyAssignments: many(workPolicyAssignment),
+	workPolicyViolations: many(workPolicyViolation),
 	changePolicies: many(changePolicy),
 	changePolicyAssignments: many(changePolicyAssignment),
 	vacationAllowances: many(vacationAllowance),
 	vacationPolicyAssignments: many(vacationPolicyAssignment),
 	payrollExportConfigs: many(payrollExportConfig),
 	payrollExportJobs: many(payrollExportJob),
+	scheduledExports: many(scheduledExport),
+	scheduledExportExecutions: many(scheduledExportExecution),
 }));
 
 export const legalEntityAdminRelations = relations(legalEntityAdmin, ({ one }) => ({
