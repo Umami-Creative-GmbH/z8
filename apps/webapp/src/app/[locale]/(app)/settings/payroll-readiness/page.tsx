@@ -2,8 +2,7 @@ import { connection } from "next/server";
 import { DateTime } from "luxon";
 import { PayrollReadinessDashboard } from "@/components/settings/payroll-readiness/payroll-readiness-dashboard";
 import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-entity-selector";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
+import { requireLegalEntitySettingsAccess } from "@/lib/auth-helpers";
 import { getPayrollReadiness } from "@/lib/payroll-readiness/get-payroll-readiness";
 import { getTranslate } from "@/tolgee/server";
 
@@ -24,16 +23,12 @@ export default async function PayrollReadinessPage({
 	searchParams?: Promise<PayrollReadinessSearchParams>;
 }) {
 	await connection();
-	const [{ organizationId }, t, resolvedSearchParams] = await Promise.all([
-		requireOrgAdminSettingsAccess(),
+	const [t, resolvedSearchParams] = await Promise.all([
 		getTranslate(),
 		searchParams ?? Promise.resolve({} as PayrollReadinessSearchParams),
 	]);
-	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
-		organizationId,
+	const { organizationId, entities, selectedLegalEntityId } = await requireLegalEntitySettingsAccess({
 		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
-		isOrgAdmin: true,
-		allowedLegalEntityIds: [],
 	});
 	const period = getPayrollReadinessPeriod(resolvedSearchParams);
 	const data = await getPayrollReadiness({ organizationId, legalEntityId: selectedLegalEntityId, period });

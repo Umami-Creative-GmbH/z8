@@ -153,7 +153,7 @@ function getScopedChangePolicyAccessContext(organizationId: string, queryName: s
 			getEmployeeSettingsActorContext({ organizationId, queryName }),
 		)) as ChangePolicyScopedActor;
 
-		if (actor.accessTier === "orgAdmin") {
+		if (actor.accessTier === "orgAdmin" || actor.accessTier === "entityAdmin") {
 			return {
 				actor,
 				managedEmployeeIds: null,
@@ -332,6 +332,10 @@ function requireOrgAdminForChangePolicyMutation(
 	action: string,
 	message: string,
 ) {
+	if (actor.accessTier === "entityAdmin") {
+		return Effect.void;
+	}
+
 	return requireOrgAdminEmployeeSettingsAccess(actor, {
 		message,
 		resource,
@@ -388,6 +392,14 @@ function resolveSelectedChangePolicyLegalEntityId(
 			}
 
 			return requestedLegalEntityId;
+		}
+
+		if (actor.accessTier === "entityAdmin") {
+			const [firstAdminEntityId] = actor.legalEntityAdminIds ?? [];
+
+			if (firstAdminEntityId) {
+				return firstAdminEntityId;
+			}
 		}
 
 		if (actor.currentEmployee?.legalEntityId) {

@@ -117,17 +117,36 @@ describe("hasSettingsAccessTier", () => {
 describe("statistics route access", () => {
 	it("does not treat statistics as an org-admin-only settings route", () => {
 		expect(ORG_ADMIN_SETTINGS_ROUTES).not.toContain("/settings/statistics");
-		expect(ORG_ADMIN_SETTINGS_ROUTES).toContain("/settings/scheduled-exports");
+		expect(ORG_ADMIN_SETTINGS_ROUTES).not.toContain("/settings/scheduled-exports");
 	});
 
 	it("allows managers into statistics while preserving org-admin-only routes", () => {
 		expect(canResolvedTierAccessRoute("manager", "/settings/statistics")).toBe(true);
 		expect(canResolvedTierAccessRoute("manager", "/settings/legal-entities")).toBe(false);
 		expect(canResolvedTierAccessRoute("manager", "/settings/export")).toBe(false);
-		expect(canResolvedTierAccessRoute("manager", "/settings/scheduled-exports")).toBe(false);
+		expect(canResolvedTierAccessRoute("manager", "/settings/scheduled-exports")).toBe(true);
 		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/legal-entities")).toBe(true);
 		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/statistics")).toBe(true);
 		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/scheduled-exports")).toBe(true);
+	});
+
+	it("allows entity admins into scoped legal-entity-owned settings but not parent org settings", () => {
+		const scopedRoutes = [
+			"/settings/payroll-export",
+			"/settings/payroll-readiness",
+			"/settings/scheduled-exports",
+			"/settings/holidays",
+			"/settings/vacation",
+			"/settings/work-policies",
+			"/settings/change-policies",
+		];
+
+		for (const route of scopedRoutes) {
+			expect(canResolvedTierAccessRoute("entityAdmin", route)).toBe(true);
+		}
+
+		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/legal-entities")).toBe(false);
+		expect(canResolvedTierAccessRoute("entityAdmin", "/settings/billing")).toBe(false);
 	});
 	});
 

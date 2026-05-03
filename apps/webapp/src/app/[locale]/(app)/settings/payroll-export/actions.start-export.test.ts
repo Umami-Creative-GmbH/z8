@@ -76,6 +76,19 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	isOrgAdminCasl: mockState.isOrgAdminCasl,
+	requireLegalEntitySettingsAccess: vi.fn(async () => ({
+		authContext: {
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
+		},
+		organizationId: "org-1",
+		selectedLegalEntityId: "entity-a",
+		isOrgAdmin: true,
+		principal: { userId: "user-1", legalEntityAdminIds: [] },
+		accessScope: { isOrgAdmin: true, allowedLegalEntityIds: [] },
+		entities: [{ id: "entity-a", name: "Entity A" }],
+	})),
 }));
 
 vi.mock("@/lib/vault/secrets", () => ({

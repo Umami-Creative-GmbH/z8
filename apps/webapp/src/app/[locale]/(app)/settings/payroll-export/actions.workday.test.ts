@@ -19,6 +19,19 @@ const mockState = vi.hoisted(() => {
 	return {
 		session,
 		isOrgAdminCasl: vi.fn(async () => true),
+		requireLegalEntitySettingsAccess: vi.fn(async () => ({
+			authContext: {
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-1" },
+				employee: null,
+			},
+			organizationId: "org-1",
+			selectedLegalEntityId: "entity-a",
+			isOrgAdmin: true,
+			principal: { userId: "user-1", legalEntityAdminIds: [] },
+			accessScope: { isOrgAdmin: true, allowedLegalEntityIds: [] },
+			entities: [{ id: "entity-a", name: "Entity A" }],
+		})),
 		getPayrollExportConfig: vi.fn<(...args: unknown[]) => Promise<unknown>>(async () => null),
 		findLegalEntity: vi.fn(async () => ({ id: "entity-a" })),
 		getOrgSecret: vi.fn<(...args: unknown[]) => Promise<string | null>>(async () => null),
@@ -66,6 +79,7 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	isOrgAdminCasl: mockState.isOrgAdminCasl,
+	requireLegalEntitySettingsAccess: mockState.requireLegalEntitySettingsAccess,
 }));
 
 vi.mock("@/lib/vault/secrets", () => ({
@@ -173,6 +187,19 @@ describe("payroll export workday actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.isOrgAdminCasl.mockResolvedValue(true);
+		mockState.requireLegalEntitySettingsAccess.mockResolvedValue({
+			authContext: {
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-1" },
+				employee: null,
+			},
+			organizationId: "org-1",
+			selectedLegalEntityId: "entity-a",
+			isOrgAdmin: true,
+			principal: { userId: "user-1", legalEntityAdminIds: [] },
+			accessScope: { isOrgAdmin: true, allowedLegalEntityIds: [] },
+			entities: [{ id: "entity-a", name: "Entity A" }],
+		});
 		mockState.getPayrollExportConfig.mockResolvedValue(null);
 		mockState.getOrgSecret.mockResolvedValue(null);
 	});
@@ -188,6 +215,9 @@ describe("payroll export workday actions", () => {
 
 	it("returns authorization error when user lacks access", async () => {
 		mockState.isOrgAdminCasl.mockResolvedValue(false);
+		mockState.requireLegalEntitySettingsAccess.mockRejectedValue(
+			{ _tag: "AuthorizationError", message: "Insufficient permissions - admin role required" },
+		);
 
 		const result = await getWorkdayConfigAction("org-1", "entity-a");
 

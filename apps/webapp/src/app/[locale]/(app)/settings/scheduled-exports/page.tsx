@@ -4,8 +4,7 @@ import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
+import { requireLegalEntitySettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getScheduledExportsAction,
@@ -29,16 +28,12 @@ async function ScheduledExportsContent({
 }) {
 	await connection(); // Mark as fully dynamic
 
-	const [, { organizationId }, resolvedSearchParams] = await Promise.all([
+	const [, resolvedSearchParams] = await Promise.all([
 		getTranslate(),
-		requireOrgAdminSettingsAccess(),
 		searchParams ?? Promise.resolve({} as LegalEntitySearchParams),
 	]);
-	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
-		organizationId,
+	const { organizationId, entities, selectedLegalEntityId } = await requireLegalEntitySettingsAccess({
 		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
-		isOrgAdmin: true,
-		allowedLegalEntityIds: [],
 	});
 
 	// Fetch initial data in parallel

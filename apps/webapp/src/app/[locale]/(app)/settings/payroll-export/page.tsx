@@ -13,8 +13,7 @@ import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
+import { requireLegalEntitySettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
@@ -42,16 +41,12 @@ async function PayrollExportContent({
 }) {
 	await connection(); // Mark as fully dynamic
 
-	const [t, { organizationId }, resolvedSearchParams] = await Promise.all([
+	const [t, resolvedSearchParams] = await Promise.all([
 		getTranslate(),
-		requireOrgAdminSettingsAccess(),
 		searchParams ?? Promise.resolve({} as LegalEntitySearchParams),
 	]);
-	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
-		organizationId,
+	const { organizationId, entities, selectedLegalEntityId } = await requireLegalEntitySettingsAccess({
 		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
-		isOrgAdmin: true,
-		allowedLegalEntityIds: [],
 	});
 
 	// Fetch configs and history in parallel

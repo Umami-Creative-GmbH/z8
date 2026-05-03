@@ -13,7 +13,10 @@ import {
 	workCategory,
 } from "@/db";
 import { employee, legalEntity } from "@/db/schema";
-import { isOrgAdminCasl } from "@/lib/auth-helpers";
+import {
+	isOrgAdminCasl as isOrgAdminCaslBase,
+	requireLegalEntitySettingsAccess,
+} from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -40,7 +43,18 @@ import {
 	type PayrollExportJobSummary,
 } from "@/lib/payroll-export";
 
-// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
+async function isOrgAdminCasl(organizationId: string) {
+	if (await isOrgAdminCaslBase(organizationId)) {
+		return true;
+	}
+
+	try {
+		await requireLegalEntitySettingsAccess({ organizationId });
+		return true;
+	} catch {
+		return false;
+	}
+}
 
 // ============================================
 // CONFIGURATION TYPES
@@ -177,6 +191,11 @@ async function assertOrganizationLegalEntity(input: {
 	organizationId: string;
 	legalEntityId: string;
 }) {
+	await requireLegalEntitySettingsAccess({
+		organizationId: input.organizationId,
+		requestedLegalEntityId: input.legalEntityId,
+	});
+
 	const selectedLegalEntity = await db.query.legalEntity.findFirst({
 		where: and(
 			eq(legalEntity.id, input.legalEntityId),

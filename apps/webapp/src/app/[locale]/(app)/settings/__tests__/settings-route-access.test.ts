@@ -27,13 +27,10 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"teams-notifications/page.tsx",
 	"webhooks/page.tsx",
 	"export/page.tsx",
-	"payroll-export/page.tsx",
-	"payroll-readiness/page.tsx",
 	"audit-export/page.tsx",
 	"demo/page.tsx",
 	"import/page.tsx",
 	"export-operations/page.tsx",
-	"scheduled-exports/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -70,14 +67,34 @@ describe("org-admin settings route access", () => {
 			"/settings/teams-notifications",
 			"/settings/webhooks",
 			"/settings/export",
-			"/settings/payroll-export",
-			"/settings/payroll-readiness",
 			"/settings/audit-export",
 			"/settings/demo",
 			"/settings/import",
 			"/settings/export-operations",
-			"/settings/scheduled-exports",
 		]);
+	});
+
+	it("allows entity admins into legal-entity-owned settings while keeping parent settings blocked", () => {
+		const entityAdminTier = resolveSettingsTierFromContext({
+			activeOrganizationId: "org-1",
+			membershipRole: "member",
+			employeeRole: "employee",
+			legalEntityAdminIds: ["entity-1"],
+		});
+
+		for (const route of [
+			"/settings/payroll-export",
+			"/settings/payroll-readiness",
+			"/settings/scheduled-exports",
+			"/settings/holidays",
+			"/settings/vacation",
+			"/settings/work-policies",
+			"/settings/change-policies",
+		]) {
+			expect(canResolvedTierAccessRoute(entityAdminTier, route)).toBe(true);
+		}
+
+		expect(canResolvedTierAccessRoute(entityAdminTier, "/settings/legal-entities")).toBe(false);
 	});
 
 	it("keeps the export operations page on the shared org-admin helper", () => {
@@ -507,12 +524,29 @@ describe("org-admin settings route access", () => {
 		expect(enterpriseActionsSource.includes('authContext.employee?.role !== "admin"')).toBe(false);
 	});
 
-	it("keeps the scheduled exports page shell on shared org-admin parity helpers", () => {
+	it("keeps payroll and scheduled export pages on legal entity settings access helpers", () => {
+		const pages = ["payroll-export/page.tsx", "payroll-readiness/page.tsx", "scheduled-exports/page.tsx"];
+
+		for (const relativePath of pages) {
+			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+
+			expect(source.includes("requireLegalEntitySettingsAccess(")).toBe(true);
+			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
+		}
+
+		const authHelperSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "../../../../lib/auth-helpers.ts"), "utf8"),
+		);
+		expect(authHelperSource.includes("getLegalEntitySelectionContext(")).toBe(true);
+	});
+
+	it("keeps scheduled export actions on legal entity settings access checks", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "scheduled-exports/page.tsx"), "utf8"),
+			readFileSync(join(SETTINGS_ROOT, "scheduled-exports/actions.ts"), "utf8"),
 		);
 
-		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(source.includes("requireLegalEntitySettingsAccess(")).toBe(true);
+		expect(source.includes("isOrgAdminCasl(")).toBe(false);
 		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
 	});
 
@@ -679,6 +713,7 @@ function resolveSettingsTierFromContext(input: {
 	activeOrganizationId: string | null;
 	membershipRole: "owner" | "admin" | "member" | null;
 	employeeRole: "admin" | "manager" | "employee" | null;
+	legalEntityAdminIds?: string[];
 }) {
 	return resolveSettingsAccessTier(input);
 }

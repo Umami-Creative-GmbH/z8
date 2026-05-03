@@ -457,4 +457,71 @@ describe("change policy scoped access", () => {
 		});
 		expect(mockState.insertedPolicies).toHaveLength(1);
 	});
+
+	it("lets entity admins read and create policies for their granted legal entity", async () => {
+		mockState.actor = {
+			...mockState.actor,
+			accessTier: "entityAdmin",
+			legalEntityAdminIds: ["entity-1"],
+			currentEmployee: {
+				id: "entity-admin-employee-1",
+				organizationId: "org-1",
+				legalEntityId: "entity-1",
+				role: "employee",
+			},
+		};
+		mockState.managedEmployeeIds = new Set();
+		mockState.teamPermissionRows = [];
+
+		const { createChangePolicy, getChangePolicies } = await import("./actions");
+
+		const policiesResult = await getChangePolicies("org-1", "entity-1");
+		expect(policiesResult.success).toBe(true);
+		if (!policiesResult.success) {
+			return;
+		}
+		expect(policiesResult.data.map((policy) => policy.id)).toEqual([
+			"policy-org",
+			"policy-team",
+			"policy-other",
+		]);
+
+		const createResult = await createChangePolicy("org-1", {
+			name: "Entity Policy",
+			selfServiceDays: 1,
+			approvalDays: 3,
+		});
+
+		expect(createResult).toMatchObject({ success: true, data: { id: "created-policy" } });
+		expect(mockState.insertedPolicies).toHaveLength(1);
+	});
+
+	it("rejects entity admin policy mutations for another legal entity", async () => {
+		mockState.actor = {
+			...mockState.actor,
+			accessTier: "entityAdmin",
+			legalEntityAdminIds: ["entity-other"],
+			currentEmployee: {
+				id: "entity-admin-employee-1",
+				organizationId: "org-1",
+				legalEntityId: "entity-other",
+				role: "employee",
+			},
+		};
+
+		const { createChangePolicy } = await import("./actions");
+
+		const result = await createChangePolicy(
+			"org-1",
+			{
+				name: "Blocked",
+				selfServiceDays: 1,
+				approvalDays: 3,
+			},
+			"entity-1",
+		);
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.insertedPolicies).toHaveLength(0);
+	});
 });

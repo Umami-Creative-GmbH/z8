@@ -30,6 +30,7 @@ import {
 	type PrincipalContext,
 	type TeamPermissions,
 } from "@/lib/authorization";
+import { getLegalEntitySelectionContext, type LegalEntityAccessScope } from "@/lib/legal-entities/access";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
 
 export interface AuthContext {
@@ -924,6 +925,60 @@ export async function requireOrgAdminSettingsAccess(): Promise<{
 	return {
 		authContext,
 		organizationId,
+	};
+}
+
+export async function requireLegalEntitySettingsAccess(input?: {
+	organizationId?: string;
+	requestedLegalEntityId?: string | null;
+}): Promise<{
+	authContext: AuthContext;
+	organizationId: string;
+	selectedLegalEntityId: string;
+	principal: PrincipalContext;
+	accessScope: LegalEntityAccessScope;
+	isOrgAdmin: boolean;
+	entities: { id: string; name: string }[];
+}> {
+	const authContext = await requireUser();
+	const organizationId = input?.organizationId ?? authContext.session.activeOrganizationId;
+
+	if (!organizationId || organizationId !== authContext.session.activeOrganizationId) {
+		throw new Error("No active organization selected");
+	}
+
+	const principal = await getPrincipalContext();
+
+	if (!principal || principal.activeOrganizationId !== organizationId) {
+		throw new Error("Authentication required");
+	}
+
+	const isOrgAdmin =
+		principal.orgMembership?.role === "owner" || principal.orgMembership?.role === "admin";
+	const accessScope = {
+		isOrgAdmin,
+		allowedLegalEntityIds: principal.legalEntityAdminIds,
+	};
+
+	if (!isOrgAdmin && principal.legalEntityAdminIds.length === 0) {
+		throw new Error("You do not have access to legal entity settings.");
+	}
+
+	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
+		organizationId,
+		requestedLegalEntityId: input?.requestedLegalEntityId ?? null,
+		isOrgAdmin,
+		allowedLegalEntityIds: principal.legalEntityAdminIds,
+	});
+
+	return {
+		authContext,
+		organizationId,
+		selectedLegalEntityId,
+		principal,
+		accessScope,
+		isOrgAdmin,
+		entities,
 	};
 }
 

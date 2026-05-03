@@ -12,6 +12,20 @@ const mockState = vi.hoisted(() => ({
 		},
 	},
 	isOrgAdminCasl: vi.fn(async () => true),
+	requireLegalEntitySettingsAccess: vi.fn(async () => ({
+		authContext: {
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
+		},
+		organizationId: "org-1",
+		selectedLegalEntityId: "entity-a",
+		isOrgAdmin: false,
+		principal: {
+			userId: "user-1",
+			legalEntityAdminIds: ["entity-a"],
+		},
+	})),
 	findLegalEntity: vi.fn(async () => ({ id: "entity-a", organizationId: "org-1" })),
 	findSchedule: vi.fn(async () => ({
 		id: "schedule-1",
@@ -145,6 +159,7 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	isOrgAdminCasl: mockState.isOrgAdminCasl,
+	requireLegalEntitySettingsAccess: mockState.requireLegalEntitySettingsAccess,
 }));
 
 vi.mock("@/lib/effect/services/auth.service", async () => {
@@ -228,11 +243,71 @@ import {
 describe("scheduled export legal entity scoping", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.isOrgAdminCasl.mockResolvedValue(true);
+		mockState.requireLegalEntitySettingsAccess.mockResolvedValue({
+			authContext: {
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-1" },
+				employee: null,
+			},
+			organizationId: "org-1",
+			selectedLegalEntityId: "entity-a",
+			isOrgAdmin: false,
+			principal: {
+				userId: "user-1",
+				legalEntityAdminIds: ["entity-a"],
+			},
+		});
 		mockState.findPayrollConfig.mockResolvedValue({
 			id: "payroll-config-1",
 			organizationId: "org-1",
 			legalEntityId: "entity-a",
 		});
+	});
+
+	it("allows an entity admin to create a schedule for their granted legal entity", async () => {
+		mockState.isOrgAdminCasl.mockResolvedValue(false);
+
+		const result = await createScheduledExportAction({
+			organizationId: "org-1",
+			legalEntityId: "entity-a",
+			name: "Payroll",
+			scheduleType: "daily",
+			reportType: "payroll_export",
+			reportConfig: { formatId: "datev_lohn" },
+			payrollConfigId: "payroll-config-1",
+			dateRangeStrategy: "previous_month",
+			deliveryMethod: "s3_only",
+			emailRecipients: [],
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-1", legalEntityId: "entity-a" }),
+		);
+	});
+
+	it("rejects an entity admin creating a schedule for another legal entity", async () => {
+		mockState.isOrgAdminCasl.mockResolvedValue(false);
+		mockState.requireLegalEntitySettingsAccess.mockRejectedValue(
+			new Error("You do not have access to this legal entity."),
+		);
+
+		const result = await createScheduledExportAction({
+			organizationId: "org-1",
+			legalEntityId: "entity-b",
+			name: "Payroll",
+			scheduleType: "daily",
+			reportType: "payroll_export",
+			reportConfig: { formatId: "datev_lohn" },
+			payrollConfigId: "payroll-config-1",
+			dateRangeStrategy: "previous_month",
+			deliveryMethod: "s3_only",
+			emailRecipients: [],
+		});
+
+		expect(result.success).toBe(false);
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("rejects create when payroll config is outside the selected legal entity", async () => {

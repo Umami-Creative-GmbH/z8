@@ -18,13 +18,10 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/teams-notifications",
 	"/settings/webhooks",
 	"/settings/export",
-	"/settings/payroll-export",
-	"/settings/payroll-readiness",
 	"/settings/audit-export",
 	"/settings/demo",
 	"/settings/import",
 	"/settings/export-operations",
-	"/settings/scheduled-exports",
 ] as const;
 
 export type SettingsAccessMembershipRole = "owner" | "admin" | "member" | null;
