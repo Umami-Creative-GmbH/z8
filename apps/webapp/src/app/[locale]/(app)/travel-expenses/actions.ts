@@ -4,8 +4,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { employee, travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { employee, travelExpenseClaim } from "@/db/schema";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
 	createTravelExpenseApprovalWorkflow,
@@ -13,6 +12,7 @@ import {
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -274,10 +274,6 @@ export async function approveTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		if (authContext.employee.role !== "manager" && authContext.employee.role !== "admin") {
-			return { success: false, error: "Unauthorized" };
-		}
-
 		const result = await processApproval(
 			"travel_expense_claim",
 			input.claimId,
@@ -309,10 +305,6 @@ export async function rejectTravelExpenseClaim(input: {
 	try {
 		const authContext = await getAuthContext();
 		if (!authContext?.employee) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		if (authContext.employee.role !== "manager" && authContext.employee.role !== "admin") {
 			return { success: false, error: "Unauthorized" };
 		}
 
