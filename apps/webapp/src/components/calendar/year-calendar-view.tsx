@@ -3,10 +3,12 @@
 import { useTranslate } from "@tolgee/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { memo, useMemo } from "react";
+import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
 
@@ -35,7 +37,7 @@ const MONTHS = [
 	"December",
 ];
 
-const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const SUNDAY_FIRST_WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 function getDaysInMonth(year: number, month: number): Date[] {
 	const days: Date[] = [];
@@ -47,14 +49,17 @@ function getDaysInMonth(year: number, month: number): Date[] {
 	return days;
 }
 
-function getFirstDayOfMonth(year: number, month: number): number {
-	return new Date(year, month, 1).getDay();
+function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStartDay): number {
+	const day = new Date(year, month, 1).getDay();
+	return weekStartDay === "monday" ? (day + 6) % 7 : day;
 }
 
 interface MiniMonthProps {
 	year: number;
 	month: number;
 	eventsByDate: Map<string, CalendarEvent[]>;
+	weekdays: string[];
+	weekStartDay: WeekStartDay;
 	workHoursData?: Map<string, { expected: number; actual: number }>;
 	onDayClick?: (date: Date) => void;
 }
@@ -63,16 +68,20 @@ const MiniMonth = memo(function MiniMonth({
 	year,
 	month,
 	eventsByDate,
+	weekdays,
+	weekStartDay,
 	workHoursData,
 	onDayClick,
 }: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
-	const firstDay = getFirstDayOfMonth(year, month);
+	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
 	const today = new Date();
 	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
 	// Create padding for days before the first day of the month
-	const paddingDays = Array.from({ length: firstDay }, (_, i) => i);
+	const paddingDays = Array.from({ length: firstDay }, (_, dayOffset) =>
+		format(new Date(year, month, dayOffset - firstDay + 1), "yyyy-MM-dd"),
+	);
 
 	return (
 		<div className="p-2 border rounded-lg bg-card">
@@ -80,7 +89,7 @@ const MiniMonth = memo(function MiniMonth({
 
 			{/* Weekday headers */}
 			<div className="grid grid-cols-7 gap-0.5 text-center mb-1">
-				{WEEKDAYS.map((day) => (
+				{weekdays.map((day) => (
 					<div key={day} className="text-[10px] text-muted-foreground font-medium">
 						{day}
 					</div>
@@ -90,8 +99,8 @@ const MiniMonth = memo(function MiniMonth({
 			{/* Days grid */}
 			<div className="grid grid-cols-7 gap-0.5">
 				{/* Padding for alignment */}
-				{paddingDays.map((i) => (
-					<div key={`pad-${i}`} className="aspect-square" />
+				{paddingDays.map((dateKey) => (
+					<div key={dateKey} className="aspect-square" />
 				))}
 
 				{/* Actual days */}
@@ -163,6 +172,14 @@ export function YearCalendarView({
 	workHoursData,
 }: YearCalendarViewProps) {
 	const { t } = useTranslate();
+	const weekStartDay = useWeekStartDay();
+	const weekdays = useMemo(
+		() =>
+			weekStartDay === "monday"
+				? [...SUNDAY_FIRST_WEEKDAYS.slice(1), SUNDAY_FIRST_WEEKDAYS[0]]
+				: SUNDAY_FIRST_WEEKDAYS,
+		[weekStartDay],
+	);
 
 	// Group events by date
 	const eventsByDate = useMemo(() => {
@@ -233,12 +250,14 @@ export function YearCalendarView({
 
 			{/* 12 month grid */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
-				{Array.from({ length: 12 }, (_, month) => (
+				{MONTHS.map((monthName, month) => (
 					<MiniMonth
-						key={month}
+						key={monthName}
 						year={year}
 						month={month}
 						eventsByDate={eventsByDate}
+						weekdays={weekdays}
+						weekStartDay={weekStartDay}
 						workHoursData={workHoursData}
 						onDayClick={onDayClick}
 					/>

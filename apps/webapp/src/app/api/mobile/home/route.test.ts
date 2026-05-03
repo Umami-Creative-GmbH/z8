@@ -4,6 +4,7 @@ const mockState = vi.hoisted(() => ({
 	requireMobileSessionContext: vi.fn(),
 	requireMobileEmployee: vi.fn(),
 	getUserTimezone: vi.fn(),
+	getUserWeekStartDay: vi.fn(),
 	getActiveWorkPeriod: vi.fn(),
 	getTimeSummary: vi.fn(),
 	findLatestTimeEntry: vi.fn(),
@@ -30,6 +31,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/auth", () => ({
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/queries", () => ({
 	getActiveWorkPeriod: mockState.getActiveWorkPeriod,
 	getTimeSummary: mockState.getTimeSummary,
+}));
+
+vi.mock("@/lib/user-preferences/week-start-server", () => ({
+	getUserWeekStartDay: mockState.getUserWeekStartDay,
 }));
 
 vi.mock("@/db", () => ({
@@ -70,6 +75,7 @@ describe("GET /api/mobile/home", () => {
 			organizationId: "org-1",
 		});
 		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
+		mockState.getUserWeekStartDay.mockResolvedValue("monday");
 		mockState.getActiveWorkPeriod.mockResolvedValue({
 			id: "wp-1",
 			startTime: new Date("2026-04-11T08:00:00.000Z"),
@@ -100,7 +106,7 @@ describe("GET /api/mobile/home", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
 		expect(mockState.getActiveWorkPeriod).toHaveBeenCalledWith("emp-1");
-		expect(mockState.getTimeSummary).toHaveBeenCalledWith("emp-1", "Europe/Berlin");
+		expect(mockState.getTimeSummary).toHaveBeenCalledWith("emp-1", "Europe/Berlin", "monday");
 		expect(await response.json()).toEqual({
 			activeOrganizationId: "org-1",
 			clock: {

@@ -239,4 +239,23 @@ describe("ProfileForm", () => {
 			expect(toastSuccessMock).toHaveBeenCalled();
 		});
 	});
+
+	it("keeps profile picture actions inside the mobile viewport", async () => {
+		renderProfileForm();
+
+		const changePictureButton = await screen.findByRole("button", {
+			name: "Change Picture",
+		});
+		const removePictureButton = screen.getByRole("button", {
+			name: "Remove Picture",
+		});
+		const actionRow = changePictureButton.parentElement;
+
+		expect(actionRow?.className).toContain("flex-col");
+		expect(actionRow?.className).toContain("sm:flex-row");
+		expect(changePictureButton.className).toContain("w-full");
+		expect(changePictureButton.className).toContain("sm:w-auto");
+		expect(removePictureButton.className).toContain("w-full");
+		expect(removePictureButton.className).toContain("sm:w-auto");
+	});
 });

@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { fromJSDate, parseISO } from "@/lib/datetime/luxon-utils";
+import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
 
 /**
  * Get day boundaries in user's timezone, returned as UTC DateTimes for DB queries
@@ -35,13 +36,15 @@ export function getTodayRangeInTimezone(timezone: string): { start: DateTime; en
 export function getWeekRangeInTimezone(
 	date: Date | DateTime,
 	timezone: string,
+	weekStartDay: WeekStartDay = "sunday",
 ): { start: DateTime; end: DateTime } {
 	const dt = date instanceof Date ? fromJSDate(date, "utc") : date;
 	const inUserTz = dt.setZone(timezone);
+	const { start, end } = getWeekBounds(inUserTz, weekStartDay);
 
 	return {
-		start: inUserTz.startOf("week").toUTC(),
-		end: inUserTz.endOf("week").toUTC(),
+		start: start.toUTC(),
+		end: end.toUTC(),
 	};
 }
 

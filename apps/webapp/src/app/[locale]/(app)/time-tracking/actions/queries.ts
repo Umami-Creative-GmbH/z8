@@ -30,16 +30,20 @@ import {
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
+import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import type { WorkPeriodWithEntries } from "../types";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { getAssignedProjectsWithHours } from "./entry-helpers";
 import { logger } from "./shared";
 import type { AssignedProject } from "./types";
 
-function mapWorkPeriodWithEntries(period: typeof workPeriod.$inferSelect & {
-	clockIn: WorkPeriodWithEntries["clockIn"];
-	clockOut: WorkPeriodWithEntries["clockOut"] | null;
-}): WorkPeriodWithEntries {
+function mapWorkPeriodWithEntries(
+	period: typeof workPeriod.$inferSelect & {
+		clockIn: WorkPeriodWithEntries["clockIn"];
+		clockOut: WorkPeriodWithEntries["clockOut"] | null;
+	},
+): WorkPeriodWithEntries {
 	return {
 		...period,
 		clockIn: period.clockIn,
@@ -118,11 +122,13 @@ export async function getWorkPeriods(
 export async function getTimeSummary(
 	employeeId: string,
 	timezone: string = "UTC",
+	weekStartDay: WeekStartDay = "sunday",
 ): Promise<TimeSummary> {
 	const { start: todayStartDateTime, end: todayEndDateTime } = getTodayRangeInTimezone(timezone);
 	const { start: weekStartDateTime, end: weekEndDateTime } = getWeekRangeInTimezone(
 		new Date(),
 		timezone,
+		weekStartDay,
 	);
 	const { start: monthStartDateTime, end: monthEndDateTime } = getMonthRangeInTimezone(
 		new Date(),
@@ -402,8 +408,8 @@ export async function getPresenceStatus(employeeId: string): Promise<
 			};
 		}
 
-		const weekStart = DateTime.now().startOf("week");
-		const weekEnd = DateTime.now().endOf("week");
+		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
+		const { start: weekStart, end: weekEnd } = getWeekBounds(DateTime.now(), weekStartDay);
 		const workPeriods = yield* _(
 			dbService.query("getWeekWorkPeriods", async () => {
 				return dbService.db.query.workPeriod.findMany({

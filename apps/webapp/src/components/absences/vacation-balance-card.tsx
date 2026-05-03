@@ -33,11 +33,11 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="@container/card grid gap-4 @xl/card:grid-cols-4 grid-cols-2">
+				<div className="@container/card grid grid-cols-1 gap-4 sm:grid-cols-2 @xl/card:grid-cols-4">
 					{/* Remaining Days - Most Important */}
-					<div className="@xl/card:col-span-2 rounded-lg border bg-card p-6">
+					<div className="sm:col-span-2 @xl/card:col-span-2 rounded-lg border bg-card p-6">
 						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<IconBeach className="size-4" />
+							<IconBeach className="size-4" aria-hidden="true" />
 							{t("absences.balance.daysRemaining", "Days Remaining")}
 						</div>
 						<div className="mt-2">
@@ -53,7 +53,7 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 					{/* Used Days */}
 					<div className="rounded-lg border bg-card p-4">
 						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<IconCalendarCheck className="size-4" />
+							<IconCalendarCheck className="size-4" aria-hidden="true" />
 							{t("absences.balance.used", "Used")}
 						</div>
 						<div className="mt-2">
@@ -65,7 +65,7 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 					{/* Pending Days */}
 					<div className="rounded-lg border bg-card p-4">
 						<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-							<IconClock className="size-4" />
+							<IconClock className="size-4" aria-hidden="true" />
 							{t("absences.balance.pending", "Pending")}
 						</div>
 						<div className="mt-2">
@@ -76,10 +76,11 @@ export function VacationBalanceCard({ balance }: VacationBalanceCardProps) {
 
 					{/* Carryover Warning (if applicable) */}
 					{hasCarryover && (
-						<div className="@xl/card:col-span-4 col-span-2 rounded-lg border bg-muted/50 p-4">
+						<div className="sm:col-span-2 @xl/card:col-span-4 rounded-lg border bg-muted/50 p-4">
 							<div className="flex items-start gap-3">
 								<IconAlertTriangle
 									className={`size-5 mt-0.5 ${carryoverExpiringSoon ? "text-destructive" : "text-muted-foreground"}`}
+									aria-hidden="true"
 								/>
 								<div className="flex-1">
 									<div className="text-sm font-medium">

@@ -1,14 +1,16 @@
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
+import { WeekStartSettings } from "@/components/settings/week-start-settings";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getCurrentTimezone, updateTimezone } from "./actions";
+import { getCurrentTimezone, getWeekStartDay, updateTimezone, updateWeekStartDay } from "./actions";
 
 export default async function ProfilePage() {
 	// Parallelize auth, timezone, and translation fetches
-	const [authContext, currentTimezone, t] = await Promise.all([
+	const [authContext, currentTimezone, currentWeekStartDay, t] = await Promise.all([
 		requireUser(),
 		getCurrentTimezone(),
+		getWeekStartDay(),
 		getTranslate(),
 	]);
 
@@ -27,6 +29,10 @@ export default async function ProfilePage() {
 				<ProfileForm user={authContext.user} />
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
+				<WeekStartSettings
+					currentWeekStartDay={currentWeekStartDay}
+					onUpdate={updateWeekStartDay}
+				/>
 			</div>
 		</div>
 	);

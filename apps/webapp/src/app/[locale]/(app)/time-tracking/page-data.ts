@@ -5,6 +5,7 @@ import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
 
@@ -17,7 +18,7 @@ export async function getTimeTrackingPageData() {
 		}),
 		db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, session.user.id),
-			columns: { timezone: true },
+			columns: { timezone: true, weekStartDay: true },
 		}),
 	]);
 
@@ -26,14 +27,15 @@ export async function getTimeTrackingPageData() {
 	}
 
 	const timezone = settings?.timezone || "UTC";
-	const { start, end } = getWeekRangeInTimezone(new Date(), timezone);
+	const weekStartDay = normalizeWeekStartDay(settings?.weekStartDay);
+	const { start, end } = getWeekRangeInTimezone(new Date(), timezone, weekStartDay);
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
 
 	const [activeWorkPeriod, workPeriods, summary, t] = await Promise.all([
 		getActiveWorkPeriod(currentEmployee.id),
 		getWorkPeriods(currentEmployee.id, startDate, endDate),
-		getTimeSummary(currentEmployee.id, timezone),
+		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
 		getTranslate(),
 	]);
 

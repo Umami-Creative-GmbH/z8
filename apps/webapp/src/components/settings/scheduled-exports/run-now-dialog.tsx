@@ -1,11 +1,13 @@
 "use client";
 
-import { DateTime } from "luxon";
-import { useTransition } from "react";
 import { useTranslate } from "@tolgee/react";
 import { AlertTriangle, Loader2, Play } from "lucide-react";
+import { DateTime } from "luxon";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import { runScheduledExportNowAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
+import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -16,7 +18,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
 
 interface RunNowDialogProps {
 	open: boolean;
@@ -29,7 +31,10 @@ interface RunNowDialogProps {
 	onSuccess?: () => void;
 }
 
-function getEstimatedDateRange(strategy: string): { start: string; end: string } {
+function getEstimatedDateRange(
+	strategy: string,
+	weekStartDay: WeekStartDay,
+): { start: string; end: string } {
 	const now = DateTime.utc();
 
 	switch (strategy) {
@@ -38,11 +43,13 @@ function getEstimatedDateRange(strategy: string): { start: string; end: string }
 				start: now.minus({ days: 1 }).startOf("day").toISODate() ?? "N/A",
 				end: now.minus({ days: 1 }).endOf("day").toISODate() ?? "N/A",
 			};
-		case "previous_week":
+		case "previous_week": {
+			const previousWeek = getWeekBounds(now.minus({ weeks: 1 }), weekStartDay);
 			return {
-				start: now.minus({ weeks: 1 }).startOf("week").toISODate() ?? "N/A",
-				end: now.minus({ weeks: 1 }).endOf("week").toISODate() ?? "N/A",
+				start: previousWeek.start.toISODate() ?? "N/A",
+				end: previousWeek.end.toISODate() ?? "N/A",
 			};
+		}
 		case "previous_month":
 			return {
 				start: now.minus({ months: 1 }).startOf("month").toISODate() ?? "N/A",
@@ -69,6 +76,7 @@ export function RunNowDialog({
 	onSuccess,
 }: RunNowDialogProps) {
 	const { t } = useTranslate();
+	const weekStartDay = useWeekStartDay();
 	const [isPending, startTransition] = useTransition();
 
 	const DATE_RANGE_LABELS: Record<string, string> = {
@@ -79,12 +87,14 @@ export function RunNowDialog({
 		custom_offset: t("settings.scheduledExports.dateRange.customOffset", "Custom Offset"),
 	};
 
-	const estimatedRange = getEstimatedDateRange(dateRangeStrategy);
+	const estimatedRange = getEstimatedDateRange(dateRangeStrategy, weekStartDay);
 
 	const handleRunNow = () => {
 		startTransition(async () => {
 			const result = await runScheduledExportNowAction(organizationId, scheduleId).catch(() => {
-				toast.error(t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"));
+				toast.error(
+					t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"),
+				);
 				return null;
 			});
 
@@ -94,7 +104,10 @@ export function RunNowDialog({
 
 			if (result.success) {
 				toast.success(t("settings.scheduledExports.runNow.success", "Export started"), {
-					description: t("settings.scheduledExports.runNow.successDesc", "The export has been queued and will run shortly. Check the execution history for progress."),
+					description: t(
+						"settings.scheduledExports.runNow.successDesc",
+						"The export has been queued and will run shortly. Check the execution history for progress.",
+					),
 				});
 				onOpenChange(false);
 				onSuccess?.();
@@ -110,22 +123,36 @@ export function RunNowDialog({
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{t("settings.scheduledExports.runNow.title", "Run Export Now")}</AlertDialogTitle>
+					<AlertDialogTitle>
+						{t("settings.scheduledExports.runNow.title", "Run Export Now")}
+					</AlertDialogTitle>
 					<AlertDialogDescription>
-						{t("settings.scheduledExports.runNow.description", "This will immediately run the scheduled export \"{scheduleName}\".", { scheduleName })}
+						{t(
+							"settings.scheduledExports.runNow.description",
+							'This will immediately run the scheduled export "{scheduleName}".',
+							{ scheduleName },
+						)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
 				<div className="space-y-4 py-4">
-					<div className="rounded-lg border p-4 space-y-2" role="region" aria-label={t("settings.scheduledExports.runNow.detailsRegion", "Export details")}>
+					<div
+						className="rounded-lg border p-4 space-y-2"
+						role="region"
+						aria-label={t("settings.scheduledExports.runNow.detailsRegion", "Export details")}
+					>
 						<div className="flex justify-between text-sm">
-							<span className="text-muted-foreground">{t("settings.scheduledExports.runNow.dateRangeStrategy", "Date Range Strategy")}</span>
+							<span className="text-muted-foreground">
+								{t("settings.scheduledExports.runNow.dateRangeStrategy", "Date Range Strategy")}
+							</span>
 							<span className="font-medium">
 								{DATE_RANGE_LABELS[dateRangeStrategy] || dateRangeStrategy}
 							</span>
 						</div>
 						<div className="flex justify-between text-sm">
-							<span className="text-muted-foreground">{t("settings.scheduledExports.runNow.estimatedRange", "Estimated Range")}</span>
+							<span className="text-muted-foreground">
+								{t("settings.scheduledExports.runNow.estimatedRange", "Estimated Range")}
+							</span>
 							<span>
 								{estimatedRange.start} {t("common.to", "to")} {estimatedRange.end}
 							</span>
@@ -136,7 +163,10 @@ export function RunNowDialog({
 						<Alert variant="destructive" role="alert">
 							<AlertTriangle className="h-4 w-4" aria-hidden="true" />
 							<AlertDescription>
-								{t("settings.scheduledExports.runNow.inProgressWarning", "There is already an execution in progress for this schedule. Running now may result in duplicate exports.")}
+								{t(
+									"settings.scheduledExports.runNow.inProgressWarning",
+									"There is already an execution in progress for this schedule. Running now may result in duplicate exports.",
+								)}
 							</AlertDescription>
 						</Alert>
 					)}

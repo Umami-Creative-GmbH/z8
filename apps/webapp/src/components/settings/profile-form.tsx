@@ -17,7 +17,10 @@ import { useTranslate } from "@tolgee/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import { updateProfileDetails, updateProfileImage } from "@/app/[locale]/(app)/settings/profile/actions";
+import {
+	updateProfileDetails,
+	updateProfileImage,
+} from "@/app/[locale]/(app)/settings/profile/actions";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +29,13 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TFormControl, fieldHasError, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	fieldHasError,
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { format } from "@/lib/datetime/luxon-utils";
@@ -169,7 +178,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		let isMounted = true;
 
 		async function loadEmployeeData() {
-			const emp = await getCurrentEmployee().then((value) => value, () => null);
+			const emp = await getCurrentEmployee().then(
+				(value) => value,
+				() => null,
+			);
 
 			if (!isMounted) {
 				return;
@@ -250,7 +262,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							{/* Avatar skeleton */}
 							<div className="space-y-4">
 								<Skeleton className="h-4 w-24" />
-								<div className="flex items-center gap-6">
+								<div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
 									<Skeleton className="h-24 w-24 rounded-full" />
 									<div className="flex-1 space-y-2">
 										<div className="flex items-center gap-2">
@@ -341,7 +353,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										/>
 										{isUploadingAvatar && (
 											<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-												<IconLoader2 className="h-8 w-8 animate-spin text-white" />
+												<IconLoader2
+													className="h-8 w-8 animate-spin text-white"
+													aria-hidden="true"
+												/>
 											</div>
 										)}
 										<button
@@ -351,23 +366,22 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											aria-label={t("profile.change-picture", "Change Picture")}
 											className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-transform hover:scale-110 focus-visible:scale-110 disabled:opacity-50"
 										>
-											<IconCamera className="h-4 w-4" />
+											<IconCamera className="h-4 w-4" aria-hidden="true" />
 										</button>
 									</div>
-									<div className="flex-1 space-y-2">
-										<div className="flex items-center gap-2">
+									<div className="w-full flex-1 space-y-2 sm:w-auto">
+										<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
 											<Button
 												type="button"
 												variant="outline"
 												size="sm"
+												className="w-full sm:w-auto"
 												onClick={() => inputRef.current?.click()}
 												disabled={
-													isUploadingAvatar ||
-													isSubmitting ||
-													removeAvatarMutation.isPending
+													isUploadingAvatar || isSubmitting || removeAvatarMutation.isPending
 												}
 											>
-												<IconUpload className="mr-2 h-4 w-4" />
+												<IconUpload className="mr-2 h-4 w-4" aria-hidden="true" />
 												{t("profile.change-picture", "Change Picture")}
 											</Button>
 											{avatarImage && (
@@ -375,17 +389,16 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													type="button"
 													variant="outline"
 													size="sm"
+													className="w-full sm:w-auto"
 													onClick={() => removeAvatarMutation.mutate()}
 													disabled={
-														isUploadingAvatar ||
-														isSubmitting ||
-														removeAvatarMutation.isPending
+														isUploadingAvatar || isSubmitting || removeAvatarMutation.isPending
 													}
 												>
 													{removeAvatarMutation.isPending ? (
-														<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+														<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 													) : (
-														<IconTrash className="mr-2 h-4 w-4" />
+														<IconTrash className="mr-2 h-4 w-4" aria-hidden="true" />
 													)}
 													{t("profile.remove-picture", "Remove Picture")}
 												</Button>
@@ -570,22 +583,22 @@ export function ProfileForm({ user }: ProfileFormProps) {
 												) : (
 													<span>Pick your birthday</span>
 												)}
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-									<Calendar
-										mode="single"
-										selected={selectedBirthday || undefined}
-										onSelect={(date) => form.setFieldValue("birthday", date || null)}
-										disabled={(date) => date > new Date()}
-										initialFocus
-										captionLayout="dropdown"
-										startMonth={new Date(1940, 0)}
-										endMonth={new Date()}
-										defaultMonth={selectedBirthday || new Date(2000, 0)}
-									/>
-								</PopoverContent>
-							</Popover>
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-auto p-0" align="start">
+											<Calendar
+												mode="single"
+												selected={selectedBirthday || undefined}
+												onSelect={(date) => form.setFieldValue("birthday", date || null)}
+												disabled={(date) => date > new Date()}
+												initialFocus
+												captionLayout="dropdown"
+												startMonth={new Date(1940, 0)}
+												endMonth={new Date()}
+												defaultMonth={selectedBirthday || new Date(2000, 0)}
+											/>
+										</PopoverContent>
+									</Popover>
 									<p className="text-muted-foreground text-sm">
 										Your birthday helps us celebrate with you
 									</p>

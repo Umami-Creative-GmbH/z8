@@ -12,6 +12,8 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { isWeekStartDay, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
 	passwordChangeSchema,
 	profileDetailsUpdateSchema,
@@ -421,4 +423,50 @@ export async function getCurrentTimezone(): Promise<string> {
 	});
 
 	return settingsData?.timezone || "UTC";
+}
+
+export async function updateWeekStartDay(
+	weekStartDay: WeekStartDay,
+): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+		if (!isWeekStartDay(weekStartDay)) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Week start day must be Sunday or Monday",
+						field: "weekStartDay",
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			dbService.query("updateWeekStartDay", async () => {
+				await dbService.db
+					.insert(userSettings)
+					.values({
+						userId: session.user.id,
+						weekStartDay,
+					})
+					.onConflictDoUpdate({
+						target: userSettings.userId,
+						set: { weekStartDay },
+					});
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function getWeekStartDay(): Promise<WeekStartDay> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return "sunday";
+	}
+
+	return getUserWeekStartDay(session.user.id);
 }

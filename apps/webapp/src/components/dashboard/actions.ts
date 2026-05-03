@@ -3,6 +3,7 @@
 import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import type { DashboardWidgetOrder } from "@/db/schema";
 import {
 	absenceEntry,
 	approvalRequest,
@@ -13,10 +14,8 @@ import {
 	waterIntakeLog,
 	workPeriod,
 } from "@/db/schema";
-import type { DashboardWidgetOrder } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
-import { currentTimestamp, dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { toDateKey } from "@/lib/datetime/luxon-utils";
+import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -24,6 +23,8 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
+import { getWeekBounds } from "@/lib/user-preferences/week-start";
+import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 
 /**
  * Get all employees managed by a specific manager
@@ -405,8 +406,10 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 
 		const now = currentTimestamp();
 		const nowDT = DateTime.fromJSDate(now);
-		const weekStart = nowDT.startOf("week").toJSDate(); // Luxon uses Monday by default
-		const weekEnd = nowDT.endOf("week").toJSDate();
+		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
+		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(nowDT, weekStartDay);
+		const weekStart = weekStartDateTime.toJSDate();
+		const weekEnd = weekEndDateTime.toJSDate();
 		const monthStart = nowDT.startOf("month").toJSDate();
 		const monthEnd = nowDT.endOf("month").toJSDate();
 
@@ -784,8 +787,6 @@ export async function getWhosOutToday(): Promise<
 		// Get today's date as YYYY-MM-DD string
 		const todayDT = DateTime.now();
 		const todayStr = todayDT.toFormat("yyyy-MM-dd");
-		const tomorrowStr = todayDT.plus({ days: 1 }).toFormat("yyyy-MM-dd");
-
 		// Get all employee IDs in this organization
 		const orgEmployees = yield* _(
 			dbService.query("getOrgEmployeeIds", async () => {
