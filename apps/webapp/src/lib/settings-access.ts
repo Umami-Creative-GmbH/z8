@@ -65,12 +65,12 @@ export function resolveSettingsAccessTier({
 		return "orgAdmin";
 	}
 
-	if (employeeRole === "admin" || employeeRole === "manager") {
-		return "manager";
-	}
-
 	if (legalEntityAdminIds.length > 0) {
 		return "entityAdmin";
+	}
+
+	if (employeeRole === "admin" || employeeRole === "manager") {
+		return "manager";
 	}
 
 	return "member";

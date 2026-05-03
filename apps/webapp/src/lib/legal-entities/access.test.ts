@@ -46,6 +46,17 @@ describe("resolveSelectedLegalEntityId", () => {
 		).toBe("entity-c");
 	});
 
+	it("uses the default entity for entity admins when it is allowed", () => {
+		expect(
+			resolveSelectedLegalEntityId({
+				requestedLegalEntityId: null,
+				defaultLegalEntityId: "entity-a",
+				isOrgAdmin: false,
+				allowedLegalEntityIds: ["entity-c", "entity-a"],
+			}),
+		).toBe("entity-a");
+	});
+
 	it("rejects unauthorized requested entities", () => {
 		expect(() =>
 			resolveSelectedLegalEntityId({

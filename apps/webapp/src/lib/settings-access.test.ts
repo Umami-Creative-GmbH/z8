@@ -58,6 +58,17 @@ describe("resolveSettingsAccessTier", () => {
 		).toBe("entityAdmin");
 	});
 
+	it("resolves manager legal entity admins to entityAdmin", () => {
+		expect(
+			resolveSettingsAccessTier({
+				activeOrganizationId: "org-a",
+				membershipRole: "member",
+				employeeRole: "manager",
+				legalEntityAdminIds: ["entity-a"],
+			}),
+		).toBe("entityAdmin");
+	});
+
 	it("falls back to member when there is no active organization", () => {
 		expect(
 			resolveSettingsAccessTier({

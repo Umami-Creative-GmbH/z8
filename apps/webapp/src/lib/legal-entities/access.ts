@@ -25,6 +25,10 @@ export function resolveSelectedLegalEntityId(input: ResolveSelectedLegalEntityId
 		return input.defaultLegalEntityId;
 	}
 
+	if (input.allowedLegalEntityIds.includes(input.defaultLegalEntityId)) {
+		return input.defaultLegalEntityId;
+	}
+
 	const [firstAllowedEntity] = input.allowedLegalEntityIds;
 	if (!firstAllowedEntity) {
 		throw new Error("No legal entity access is available for this user.");
