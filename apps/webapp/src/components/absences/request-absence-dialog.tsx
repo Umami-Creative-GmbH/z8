@@ -2,12 +2,12 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { requestAbsence } from "@/app/[locale]/(app)/absences/actions";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -18,6 +18,8 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Select,
 	SelectContent,
@@ -29,7 +31,9 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { Textarea } from "@/components/ui/textarea";
 import { calculateBusinessDaysWithHalfDays, formatDays } from "@/lib/absences/date-utils";
 import type { DayPeriod, Holiday } from "@/lib/absences/types";
+import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
+import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 
 interface RequestAbsenceDialogProps {
@@ -159,6 +163,32 @@ export function RequestAbsenceDialog({
 				);
 			}
 		},
+	});
+	const planPreviewValues = useStore(form.store, (state) => ({
+		categoryId: state.values.categoryId,
+		startDate: state.values.startDate,
+		startPeriod: state.values.startPeriod,
+		endDate: state.values.endDate,
+		endPeriod: state.values.endPeriod,
+	}));
+	const canLoadPlanPreview = Boolean(
+		open &&
+			planPreviewValues.categoryId &&
+			planPreviewValues.startDate &&
+			planPreviewValues.endDate,
+	);
+	const planPreviewQuery = useQuery({
+		queryKey: queryKeys.absencePlanPreview.detail("current", planPreviewValues),
+		queryFn: async () => {
+			const result = await getAbsencePlanPreview(planPreviewValues);
+
+			if (!result.success) {
+				throw new Error(result.error);
+			}
+
+			return result.data;
+		},
+		enabled: canLoadPlanPreview,
 	});
 
 	// Update form when initialDate changes (for controlled mode)
@@ -420,6 +450,14 @@ export function RequestAbsenceDialog({
 								);
 							}}
 						</form.Subscribe>
+
+						{canLoadPlanPreview && (
+							<AbsencePlanPreviewPanel
+								preview={planPreviewQuery.data}
+								isLoading={planPreviewQuery.isLoading}
+								error={planPreviewQuery.isError ? planPreviewQuery.error.message : null}
+							/>
+						)}
 
 						{/* Notes */}
 						<form.Field name="notes">
