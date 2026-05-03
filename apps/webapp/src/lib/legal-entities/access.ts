@@ -54,13 +54,6 @@ export async function getLegalEntitySelectionContext(input: {
 		throw new Error("No default legal entity exists for this organization.");
 	}
 
-	const selectedLegalEntityId = resolveSelectedLegalEntityId({
-		requestedLegalEntityId: input.requestedLegalEntityId,
-		defaultLegalEntityId: defaultEntity.id,
-		isOrgAdmin: input.isOrgAdmin,
-		allowedLegalEntityIds: input.allowedLegalEntityIds,
-	});
-
 	const whereClause = input.isOrgAdmin
 		? eq(legalEntity.organizationId, input.organizationId)
 		: and(
@@ -69,6 +62,16 @@ export async function getLegalEntitySelectionContext(input: {
 			);
 
 	const entities = await db.select().from(legalEntity).where(whereClause);
+	const organizationLegalEntityIds = entities.map((entity) => entity.id);
+	const allowedLegalEntityIds = input.isOrgAdmin
+		? organizationLegalEntityIds
+		: organizationLegalEntityIds.filter((entityId) => input.allowedLegalEntityIds.includes(entityId));
+	const selectedLegalEntityId = resolveSelectedLegalEntityId({
+		requestedLegalEntityId: input.requestedLegalEntityId,
+		defaultLegalEntityId: defaultEntity.id,
+		isOrgAdmin: false,
+		allowedLegalEntityIds,
+	});
 
 	return { entities, selectedLegalEntityId };
 }

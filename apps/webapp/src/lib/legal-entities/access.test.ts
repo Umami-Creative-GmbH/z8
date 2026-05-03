@@ -115,6 +115,19 @@ describe("getLegalEntitySelectionContext", () => {
 		).resolves.toEqual({ entities, selectedLegalEntityId: "entity-b" });
 	});
 
+	it("rejects org-admin requested entities outside the organization entity list", async () => {
+		mockLegalEntityQuery([{ id: "entity-a", name: "Germany GmbH", organizationId: "org-1" }]);
+
+		await expect(
+			getLegalEntitySelectionContext({
+				organizationId: "org-1",
+				requestedLegalEntityId: "entity-outside-org",
+				isOrgAdmin: true,
+				allowedLegalEntityIds: [],
+			}),
+		).rejects.toThrow("You do not have access to this legal entity.");
+	});
+
 	it("rejects unauthorized requested entities before returning entity-admin context", async () => {
 		mockLegalEntityQuery([{ id: "entity-a", name: "Germany GmbH", organizationId: "org-1" }]);
 
