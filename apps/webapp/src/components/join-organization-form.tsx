@@ -169,7 +169,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 	// Success state
 	if (state === "success") {
 		return (
-			<Card className="max-w-md mx-auto">
+			<Card className="mx-auto w-full max-w-md">
 				<CardHeader className="text-center">
 					<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
 						<IconCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -209,7 +209,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 						</Alert>
 					)}
 				</CardContent>
-				<CardFooter className="flex justify-center">
+				<CardFooter className="flex flex-col gap-2 sm:flex-row sm:justify-center">
 					<Button asChild>
 						<Link href="/">{t("common.goToDashboard", "Go to Dashboard")}</Link>
 					</Button>
@@ -221,7 +221,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 	// Already a member state
 	if (state === "already-member") {
 		return (
-			<Card className="max-w-md mx-auto">
+			<Card className="mx-auto w-full max-w-md">
 				<CardHeader className="text-center">
 					<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
 						<IconBuilding className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
@@ -234,7 +234,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 						)}
 					</CardDescription>
 				</CardHeader>
-				<CardFooter className="flex justify-center">
+				<CardFooter className="flex flex-col gap-2 sm:flex-row sm:justify-center">
 					<Button asChild>
 						<Link href="/">{t("common.goToDashboard", "Go to Dashboard")}</Link>
 					</Button>
@@ -260,7 +260,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				{/* Code input */}
 				<div className="space-y-2">
 					<Label htmlFor="code">{t("settings.inviteCodes.inviteCode", "Invite Code")}</Label>
-					<div className="flex gap-2">
+					<div className="flex flex-col gap-2 sm:flex-row">
 						<Input
 							id="code"
 							name="code"
@@ -270,12 +270,13 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 							value={code}
 							onChange={(e) => handleCodeChange(e.target.value)}
 							disabled={state === "loading" || state === "joining"}
-							className="uppercase"
+							className="font-mono uppercase tracking-[0.2em]"
 						/>
 						{!initialCode && (
 							<Button
 								type="button"
 								variant="outline"
+								className="w-full sm:w-auto"
 								onClick={handleValidateClick}
 								disabled={!code.trim() || state === "loading" || state === "joining"}
 							>
