@@ -2,7 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import type { SocialOAuthProvider, SocialOAuthProviderConfig } from "@/db/schema";
+import { and, desc, eq, or } from "drizzle-orm";
+import { DateTime } from "luxon";
+import { db } from "@/db";
+import {
+	enterpriseIdentitySetup,
+	roleTemplate,
+	scimProviderConfig,
+	scimProvisioningLog,
+	type SocialOAuthProvider,
+	type SocialOAuthProviderConfig,
+} from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
@@ -16,6 +26,17 @@ import {
 	updateOrganizationBranding,
 	verifyDomainOwnership,
 } from "@/lib/domain";
+import type {
+	EnterpriseIdentityProtocol,
+	EnterpriseIdentityProviderPresetId,
+} from "@/lib/enterprise-identity/provider-presets";
+import {
+	createDefaultEnterpriseIdentitySetupState,
+	getEnterpriseIdentityReadiness,
+	mapBetterAuthIdentityError,
+	type EnterpriseIdentitySetupState,
+	type EnterpriseIdentitySetupStep,
+} from "@/lib/enterprise-identity/setup-state";
 import {
 	createSocialOAuthConfig,
 	deleteSocialOAuthConfig,
@@ -39,6 +60,501 @@ async function requireEnterpriseOrgAdmin() {
 	}
 
 	return { authContext, organizationId };
+}
+
+const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
+
+type EnterpriseIdentitySetupRecord = typeof enterpriseIdentitySetup.$inferSelect;
+
+export interface EnterpriseIdentitySetupRoleTemplateResponse {
+	id: string;
+	organizationId: string | null;
+	name: string;
+	description: string | null;
+	isGlobal: boolean;
+	employeeRole: string;
+}
+
+export interface EnterpriseIdentitySetupScimConnectionResponse {
+	providerId: string;
+	organizationId: string | null;
+	createdAt: string | null;
+	updatedAt: string | null;
+}
+
+export interface EnterpriseIdentitySetupResponse {
+	state: EnterpriseIdentitySetupState;
+	defaultRoleTemplateId: string | null;
+	roleTemplates: EnterpriseIdentitySetupRoleTemplateResponse[];
+	scimConnection: EnterpriseIdentitySetupScimConnectionResponse | null;
+}
+
+export interface EnterpriseIdentityProviderInput {
+	preset: EnterpriseIdentityProviderPresetId;
+	protocol: EnterpriseIdentityProtocol;
+	providerId: string;
+	domain: string;
+	currentStep?: EnterpriseIdentitySetupStep;
+}
+
+export type EnterpriseIdentitySSOInput =
+	| {
+			protocol: "oidc";
+			providerId: string;
+			issuer: string;
+			domain: string;
+			clientId: string;
+			clientSecret: string;
+			scopes?: string[];
+		}
+	| {
+			protocol: "saml";
+			providerId: string;
+			issuer: string;
+			domain: string;
+			metadata: string;
+		};
+
+export interface EnterpriseIdentitySsoTestInput {
+	providerId: string;
+	testEmail: string;
+	status: "passed" | "failed";
+	error?: string | null;
+}
+
+export interface EnterpriseIdentityScimTokenInput {
+	providerId: string;
+	defaultRoleTemplateId?: string | null;
+}
+
+export interface EnterpriseIdentityAccessPolicyInput {
+	ssoRequired: boolean;
+	domainRestrictionEnabled: boolean;
+	inviteRestrictionEnabled: boolean;
+	defaultRoleTemplateId?: string | null;
+}
+
+function toIsoFromDate(value: Date | string | null | undefined): string | null {
+	if (!value) return null;
+
+	const dateTime =
+		value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(value);
+
+	return dateTime.isValid ? dateTime.toUTC().toISO() : null;
+}
+
+function normalizeEnterpriseIdentitySetupRecord(
+	record: EnterpriseIdentitySetupRecord,
+): EnterpriseIdentitySetupState {
+	const defaults = createDefaultEnterpriseIdentitySetupState({
+		organizationId: record.organizationId,
+	});
+
+	return {
+		organizationId: record.organizationId,
+		currentStep: record.currentStep,
+		provider:
+			record.preset && record.protocol && record.providerId
+				? {
+						preset: record.preset,
+						protocol: record.protocol,
+						providerId: record.providerId,
+					}
+				: null,
+		domain: record.domain
+			? {
+					domain: record.domain,
+					verified: record.domainVerified,
+				}
+			: null,
+		ssoTest: record.ssoTest ?? defaults.ssoTest,
+		scim: record.scim ?? defaults.scim,
+		enforcement: record.enforcement ?? defaults.enforcement,
+		activatedAt: toIsoFromDate(record.activatedAt),
+	};
+}
+
+async function getOrCreateEnterpriseIdentitySetupRecord(
+	organizationId: string,
+	userId: string,
+): Promise<EnterpriseIdentitySetupRecord> {
+	const existing = await db.query.enterpriseIdentitySetup.findFirst({
+		where: eq(enterpriseIdentitySetup.organizationId, organizationId),
+	});
+
+	if (existing) return existing;
+
+	const defaultState = createDefaultEnterpriseIdentitySetupState({ organizationId });
+	const [created] = await db
+		.insert(enterpriseIdentitySetup)
+		.values({
+			organizationId,
+			currentStep: defaultState.currentStep,
+			ssoTest: defaultState.ssoTest,
+			scim: defaultState.scim,
+			enforcement: defaultState.enforcement,
+			createdBy: userId,
+			updatedBy: userId,
+		})
+		.onConflictDoNothing({ target: enterpriseIdentitySetup.organizationId })
+		.returning();
+
+	if (created) return created;
+
+	const raced = await db.query.enterpriseIdentitySetup.findFirst({
+		where: eq(enterpriseIdentitySetup.organizationId, organizationId),
+	});
+
+	if (!raced) throw new Error("Unable to initialize enterprise identity setup");
+	return raced;
+}
+
+async function getSetupResponse(
+	organizationId: string,
+	userId: string,
+): Promise<EnterpriseIdentitySetupResponse> {
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, userId);
+	const templates = await db
+		.select({
+			id: roleTemplate.id,
+			organizationId: roleTemplate.organizationId,
+			name: roleTemplate.name,
+			description: roleTemplate.description,
+			isGlobal: roleTemplate.isGlobal,
+			employeeRole: roleTemplate.employeeRole,
+		})
+		.from(roleTemplate)
+		.where(
+			and(
+				eq(roleTemplate.isActive, true),
+				or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
+			),
+		);
+	const scimConnection = await getEnterpriseIdentityScimConnection(organizationId);
+
+	return {
+		state: normalizeEnterpriseIdentitySetupRecord(setupRecord),
+		defaultRoleTemplateId: setupRecord.defaultRoleTemplateId,
+		roleTemplates: templates,
+		scimConnection,
+	};
+}
+
+async function getEnterpriseIdentityScimConnection(
+	organizationId: string,
+): Promise<EnterpriseIdentitySetupScimConnectionResponse | null> {
+	const rawResult = await (auth.api as any).listSCIMProviderConnections({
+		headers: await headers(),
+	});
+	const connections: Array<{
+		providerId?: string;
+		organizationId?: string | null;
+		createdAt?: Date | string | null;
+		updatedAt?: Date | string | null;
+	}> = Array.isArray(rawResult)
+		? rawResult
+		: Array.isArray(rawResult?.connections)
+			? rawResult.connections
+			: [];
+	const connection = connections.find((entry) => entry.organizationId === organizationId);
+
+	if (!connection?.providerId) return null;
+
+	return {
+		providerId: connection.providerId,
+		organizationId: connection.organizationId ?? null,
+		createdAt: toIsoFromDate(connection.createdAt),
+		updatedAt: toIsoFromDate(connection.updatedAt),
+	};
+}
+
+async function assertRoleTemplateAllowed(
+	organizationId: string,
+	defaultRoleTemplateId: string | null | undefined,
+) {
+	if (!defaultRoleTemplateId) return null;
+
+	const template = await db.query.roleTemplate.findFirst({
+		where: and(
+			eq(roleTemplate.id, defaultRoleTemplateId),
+			eq(roleTemplate.isActive, true),
+			or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
+		),
+	});
+
+	if (!template) throw new Error("Default role template is not available for this organization");
+	return defaultRoleTemplateId;
+}
+
+async function updateEnterpriseIdentitySetupRecord(
+	organizationId: string,
+	values: Partial<typeof enterpriseIdentitySetup.$inferInsert>,
+): Promise<EnterpriseIdentitySetupRecord> {
+	const [updated] = await db
+		.update(enterpriseIdentitySetup)
+		.set(values)
+		.where(eq(enterpriseIdentitySetup.organizationId, organizationId))
+		.returning();
+
+	if (!updated) throw new Error("Enterprise identity setup not found");
+	return updated;
+}
+
+// ============ Enterprise Identity Setup Actions ============
+
+export async function getEnterpriseIdentitySetupAction(): Promise<EnterpriseIdentitySetupResponse> {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	return getSetupResponse(organizationId, authContext.user.id);
+}
+
+export async function updateEnterpriseIdentityProviderAction(input: EnterpriseIdentityProviderInput) {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+
+	const providerId = input.providerId.trim();
+	const domain = input.domain.trim().toLowerCase();
+
+	if (!providerId || !domain) throw new Error("Provider ID and domain are required");
+
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		preset: input.preset,
+		protocol: input.protocol,
+		providerId,
+		currentStep: input.currentStep ?? "sso",
+		domain,
+		domainVerified: false,
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return getSetupResponse(organizationId, authContext.user.id);
+}
+
+export async function registerEnterpriseIdentitySSOProviderAction(input: EnterpriseIdentitySSOInput) {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+
+	const providerId = input.providerId.trim();
+	const issuer = input.issuer.trim();
+	const domain = input.domain.trim().toLowerCase();
+
+	if (!providerId || !issuer || !domain) throw new Error("Provider ID, issuer, and domain are required");
+
+	const secretPath = `sso/${providerId}/client_secret`;
+
+	try {
+		if (input.protocol === "oidc") {
+			const clientId = input.clientId.trim();
+			const clientSecret = input.clientSecret.trim();
+
+			if (!clientId || !clientSecret) throw new Error("OIDC client ID and secret are required");
+
+			await storeOrgSecret(organizationId, secretPath, clientSecret);
+			await (auth.api as any).registerSSOProvider({
+				body: {
+					providerId,
+					issuer,
+					domain,
+					organizationId,
+					oidcConfig: {
+						clientId,
+						clientSecret,
+						scopes: input.scopes ?? ["openid", "email", "profile"],
+					},
+				},
+				headers: await headers(),
+			});
+		} else {
+			const metadata = input.metadata.trim();
+
+			if (!metadata) throw new Error("SAML metadata is required");
+
+			await (auth.api as any).registerSSOProvider({
+				body: {
+					providerId,
+					issuer,
+					domain,
+					organizationId,
+					samlConfig: { metadata },
+				},
+				headers: await headers(),
+			});
+		}
+	} catch (error) {
+		if (input.protocol === "oidc") {
+			await deleteOrgSecret(organizationId, secretPath).catch(() => undefined);
+		}
+		throw new Error(mapBetterAuthIdentityError(error));
+	}
+
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		protocol: input.protocol,
+		providerId,
+		domain,
+		currentStep: "ssoTest",
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return getSetupResponse(organizationId, authContext.user.id);
+}
+
+export async function recordEnterpriseIdentitySsoTestAction(input: EnterpriseIdentitySsoTestInput) {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const now = DateTime.utc().toISO();
+	const providerId = input.providerId.trim();
+	const testEmail = input.testEmail.trim().toLowerCase();
+
+	if (!providerId || !testEmail) throw new Error("Provider ID and test email are required");
+
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		currentStep: input.status === "passed" ? "scim" : "ssoTest",
+		ssoTest: {
+			status: input.status,
+			testEmail,
+			providerId,
+			checkedAt: now,
+			error: input.status === "failed" ? (input.error ?? "SSO test failed") : null,
+		},
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return getSetupResponse(organizationId, authContext.user.id);
+}
+
+export async function generateEnterpriseIdentityScimTokenAction(input: EnterpriseIdentityScimTokenInput) {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const providerId = input.providerId.trim();
+	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
+		organizationId,
+		input.defaultRoleTemplateId,
+	);
+
+	if (!providerId) throw new Error("Provider ID is required");
+
+	let tokenResult: { token?: string; scimToken?: string };
+	try {
+		tokenResult = await (auth.api as any).generateSCIMToken({
+			body: { providerId, organizationId },
+			headers: await headers(),
+		});
+	} catch (error) {
+		throw new Error(mapBetterAuthIdentityError(error));
+	}
+
+	await db
+		.insert(scimProviderConfig)
+		.values({
+			organizationId,
+			providerId,
+			defaultRoleTemplateId,
+			createdBy: authContext.user.id,
+			updatedBy: authContext.user.id,
+		})
+		.onConflictDoUpdate({
+			target: scimProviderConfig.organizationId,
+			set: {
+				providerId,
+				defaultRoleTemplateId,
+				updatedBy: authContext.user.id,
+			},
+		});
+
+	const now = DateTime.utc().toISO();
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		currentStep: "accessPolicy",
+		scim: {
+			...setupRecord.scim,
+			enabled: true,
+			providerId,
+			verified: false,
+			lastCheckedAt: now,
+			error: null,
+		},
+		defaultRoleTemplateId,
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return {
+		token: tokenResult.token ?? tokenResult.scimToken,
+		baseUrl: "/api/auth/scim/v2",
+		state: (await getSetupResponse(organizationId, authContext.user.id)).state,
+	};
+}
+
+export async function refreshEnterpriseIdentityScimStatusAction() {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const latestLog = await db.query.scimProvisioningLog.findFirst({
+		where: eq(scimProvisioningLog.organizationId, organizationId),
+		orderBy: desc(scimProvisioningLog.createdAt),
+	});
+	const checkedAt = DateTime.utc().toISO();
+	const verified = latestLog ? latestLog.eventType !== "error" : setupRecord.scim.verified;
+	const error = latestLog?.eventType === "error" ? (latestLog.metadata?.errorMessage ?? "SCIM error") : null;
+
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		scim: {
+			...setupRecord.scim,
+			verified,
+			lastCheckedAt: checkedAt,
+			error,
+		},
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return { checkedAt, verified, error };
+}
+
+export async function updateEnterpriseIdentityAccessPolicyAction(
+	input: EnterpriseIdentityAccessPolicyInput,
+) {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
+		organizationId,
+		input.defaultRoleTemplateId,
+	);
+
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		currentStep: "review",
+		enforcement: {
+			ssoRequired: input.ssoRequired,
+			domainRestrictionEnabled: input.domainRestrictionEnabled,
+			inviteRestrictionEnabled: input.inviteRestrictionEnabled,
+		},
+		defaultRoleTemplateId,
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return getSetupResponse(organizationId, authContext.user.id);
+}
+
+export async function activateEnterpriseIdentitySetupAction() {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const state = normalizeEnterpriseIdentitySetupRecord(setupRecord);
+	const readiness = getEnterpriseIdentityReadiness(state);
+
+	if (!readiness.canActivate) {
+		throw new Error(`Enterprise identity setup is missing: ${readiness.missing.join(", ")}`);
+	}
+
+	const activatedAt = DateTime.utc();
+	await updateEnterpriseIdentitySetupRecord(organizationId, {
+		activated: true,
+		activatedAt: activatedAt.toJSDate(),
+		updatedBy: authContext.user.id,
+	});
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return getSetupResponse(organizationId, authContext.user.id);
 }
 
 // ============ Domain Actions ============
