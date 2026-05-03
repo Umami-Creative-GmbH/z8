@@ -3,6 +3,7 @@
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -128,6 +129,12 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 			}
 		},
 	});
+
+	useEffect(() => {
+		if (open) {
+			form.reset(defaultApprovalPolicyFormValues);
+		}
+	}, [open, form]);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -293,7 +300,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 											size="sm"
 											onClick={() => field.handleChange([...field.state.value, newStage()])}
 										>
-											<IconPlus className="mr-2 h-4 w-4" />
+											<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 											{t("settings.approvalPolicies.addStage", "Add stage")}
 										</Button>
 									</div>
@@ -330,7 +337,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 																"Remove stage",
 															)}
 														>
-															<IconTrash className="h-4 w-4" />
+															<IconTrash className="h-4 w-4" aria-hidden="true" />
 														</Button>
 													</div>
 													<div className="grid gap-3 sm:grid-cols-2">
@@ -434,7 +441,9 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={form.state.isSubmitting}>
-							{form.state.isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{form.state.isSubmitting && (
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+							)}
 							{t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

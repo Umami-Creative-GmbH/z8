@@ -95,7 +95,7 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 							</CardDescription>
 						</div>
 						<Button onClick={() => setDialogOpen(true)}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 							Add Policy
 						</Button>
 					</div>
@@ -142,7 +142,7 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 										<TableCell>{stagesCount(policy)}</TableCell>
 										<TableCell>
 											<Button variant="ghost" size="icon" disabled aria-label="Edit policy">
-												<IconPencil className="h-4 w-4" />
+												<IconPencil className="h-4 w-4" aria-hidden="true" />
 											</Button>
 										</TableCell>
 									</TableRow>
