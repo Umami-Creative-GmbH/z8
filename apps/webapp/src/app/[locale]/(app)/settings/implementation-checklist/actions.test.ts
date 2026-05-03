@@ -284,7 +284,7 @@ describe("implementation checklist actions", () => {
 		});
 	});
 
-	it("rejects invalid or non-manual item ids before manual mutations", async () => {
+	it("requires access before rejecting invalid or non-manual item ids for manual mutations", async () => {
 		expect(await markImplementationChecklistItemComplete("not-a-real-item")).toEqual({
 			success: false,
 			error: "Unknown implementation checklist item",
@@ -297,6 +297,7 @@ describe("implementation checklist actions", () => {
 			success: false,
 			error: "Implementation checklist item cannot be manually completed",
 		});
+		expect(mocks.requireAccess).toHaveBeenCalledTimes(3);
 		expect(mocks.insert).not.toHaveBeenCalled();
 		expect(mocks.delete).not.toHaveBeenCalled();
 	});

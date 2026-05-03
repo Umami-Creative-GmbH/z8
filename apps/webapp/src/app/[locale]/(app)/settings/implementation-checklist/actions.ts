@@ -255,13 +255,13 @@ export async function getImplementationChecklist(): Promise<
 export async function markImplementationChecklistItemComplete(
 	itemId: string,
 ): Promise<ImplementationChecklistActionResult> {
+	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateManualItemId(itemId);
 
 	if (!validation.success) {
 		return validation;
 	}
 
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const completedAt = DateTime.utc().toJSDate();
 
 	try {
@@ -297,13 +297,12 @@ export async function markImplementationChecklistItemComplete(
 export async function markImplementationChecklistItemIncomplete(
 	itemId: string,
 ): Promise<ImplementationChecklistActionResult> {
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateManualItemId(itemId);
 
 	if (!validation.success) {
 		return validation;
 	}
-
-	const { organizationId } = await requireOrgAdminSettingsAccess();
 
 	try {
 		await db
