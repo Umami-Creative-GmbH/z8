@@ -82,6 +82,15 @@ vi.mock("@/db/schema", () => ({
 	travelExpenseAttachment: {
 		id: "id",
 	},
+	approvalPolicy: {
+		organizationId: "organizationId",
+		priority: "priority",
+	},
+	employeeGroupMember: {
+		organizationId: "organizationId",
+		employeeId: "employeeId",
+	},
+	employeeManagers: {},
 	employee: {
 		id: "id",
 		organizationId: "organizationId",
@@ -90,6 +99,7 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "createdAt",
 	},
 	approvalRequest: {
+		id: "id",
 		organizationId: "organizationId",
 		entityType: "entityType",
 		entityId: "entityId",
@@ -129,6 +139,25 @@ describe("submitTravelExpenseClaim", () => {
 			const pendingUpdates: unknown[] = [];
 			const pendingInserts: unknown[] = [];
 			const tx = {
+				query: {
+					approvalPolicy: {
+						findMany: vi.fn().mockResolvedValue([]),
+					},
+					employeeGroupMember: {
+						findMany: vi.fn().mockResolvedValue([]),
+					},
+					employee: {
+						findMany: vi.fn().mockResolvedValue([
+							{ id: "emp-1", organizationId: "org-1", isActive: true, role: "employee" },
+							{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+						]),
+					},
+					employeeManagers: {
+						findMany: vi.fn().mockResolvedValue([
+							{ employeeId: "emp-1", managerId: "manager-1", isPrimary: true },
+						]),
+					},
+				},
 				update: vi.fn(() => ({
 					set: vi.fn((values) => ({
 						where: vi.fn(() => ({
@@ -141,10 +170,13 @@ describe("submitTravelExpenseClaim", () => {
 					})),
 				})),
 				insert: vi.fn(() => ({
-					values: vi.fn(async (values) => {
-						await mockState.insertValues(values);
-						pendingInserts.push(values);
-					}),
+					values: vi.fn((values) => ({
+						returning: vi.fn(async () => {
+							await mockState.insertValues(values);
+							pendingInserts.push(values);
+							return [{ id: "approval-1" }];
+						}),
+					})),
 				})),
 			};
 
@@ -172,6 +204,7 @@ describe("submitTravelExpenseClaim", () => {
 			organizationId: "org-1",
 			status: "draft",
 			type: "receipt",
+			calculatedAmount: "42.00",
 			attachments: [{ id: "att-1" }],
 		});
 		mockState.findEmployee.mockResolvedValueOnce({ managerId: "manager-1" });
