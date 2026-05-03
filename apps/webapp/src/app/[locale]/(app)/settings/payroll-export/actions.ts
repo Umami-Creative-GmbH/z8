@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
@@ -12,7 +12,7 @@ import {
 	payrollWageTypeMapping,
 	workCategory,
 } from "@/db";
-import { employee } from "@/db/schema";
+import { employee, legalEntity } from "@/db/schema";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -57,6 +57,7 @@ export interface DatevConfigResult {
 
 export interface SaveDatevConfigInput {
 	organizationId: string;
+	legalEntityId: string;
 	config: DatevLohnConfig;
 }
 
@@ -75,6 +76,7 @@ export interface LexwareConfigResult {
 
 export interface SaveLexwareConfigInput {
 	organizationId: string;
+	legalEntityId: string;
 	config: LexwareLohnConfig;
 }
 
@@ -93,6 +95,7 @@ export interface SageConfigResult {
 
 export interface SaveSageConfigInput {
 	organizationId: string;
+	legalEntityId: string;
 	config: SageLohnConfig;
 }
 
@@ -132,12 +135,44 @@ export interface DeleteMappingInput {
 
 export interface StartExportInput {
 	organizationId: string;
+	legalEntityId: string;
 	formatId: string;
 	startDate: string; // ISO date
 	endDate: string; // ISO date
 	employeeIds?: string[];
 	teamIds?: string[];
 	projectIds?: string[];
+}
+
+export function assertSingleLegalEntityPayrollFilter(input: {
+	selectedLegalEntityId: string;
+	employees: { id: string; legalEntityId: string }[];
+}) {
+	const hasOtherEntity = input.employees.some(
+		(employeeRecord) => employeeRecord.legalEntityId !== input.selectedLegalEntityId,
+	);
+
+	if (hasOtherEntity) {
+		throw new Error("Payroll exports can include employees from only one legal entity.");
+	}
+}
+
+async function assertOrganizationLegalEntity(input: {
+	organizationId: string;
+	legalEntityId: string;
+}) {
+	const selectedLegalEntity = await db.query.legalEntity.findFirst({
+		where: and(
+			eq(legalEntity.id, input.legalEntityId),
+			eq(legalEntity.organizationId, input.organizationId),
+		),
+	});
+
+	if (!selectedLegalEntity) {
+		throw new Error("Legal entity not found.");
+	}
+
+	return selectedLegalEntity;
 }
 
 // ============================================
@@ -159,6 +194,7 @@ export interface FilterOptions {
  */
 export async function getDatevConfigAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<DatevConfigResult | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -181,8 +217,12 @@ export async function getDatevConfigAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, "datev_lohn")),
+			Effect.promise(() => getPayrollExportConfig(organizationId, "datev_lohn", selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -231,6 +271,15 @@ export async function saveDatevConfigAction(
 
 		// Ensure DATEV format exists
 		yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
+		yield* _(
 			Effect.promise(async () => {
 				const format = await db.query.payrollExportFormat.findFirst({
 					where: eq(payrollExportFormat.id, "datev_lohn"),
@@ -259,6 +308,7 @@ export async function saveDatevConfigAction(
 				const existing = await db.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 						eq(payrollExportConfig.formatId, "datev_lohn"),
 					),
 				});
@@ -279,6 +329,7 @@ export async function saveDatevConfigAction(
 						.insert(payrollExportConfig)
 						.values({
 							organizationId: input.organizationId,
+							legalEntityId: input.legalEntityId,
 							formatId: "datev_lohn",
 							config: input.config as unknown as Record<string, unknown>,
 							isActive: true,
@@ -318,6 +369,7 @@ const LEXWARE_FORMAT_ID = "lexware_lohn";
  */
 export async function getLexwareConfigAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<LexwareConfigResult | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -340,8 +392,12 @@ export async function getLexwareConfigAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, LEXWARE_FORMAT_ID)),
+			Effect.promise(() => getPayrollExportConfig(organizationId, LEXWARE_FORMAT_ID, selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -388,6 +444,15 @@ export async function saveLexwareConfigAction(
 			);
 		}
 
+		yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
 		// Ensure Lexware format exists
 		yield* _(
 			Effect.promise(async () => {
@@ -418,6 +483,7 @@ export async function saveLexwareConfigAction(
 				const existing = await db.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 						eq(payrollExportConfig.formatId, LEXWARE_FORMAT_ID),
 					),
 				});
@@ -438,6 +504,7 @@ export async function saveLexwareConfigAction(
 						.insert(payrollExportConfig)
 						.values({
 							organizationId: input.organizationId,
+							legalEntityId: input.legalEntityId,
 							formatId: LEXWARE_FORMAT_ID,
 							config: input.config as unknown as Record<string, unknown>,
 							isActive: true,
@@ -477,6 +544,7 @@ const SAGE_FORMAT_ID = "sage_lohn";
  */
 export async function getSageConfigAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<SageConfigResult | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -499,8 +567,12 @@ export async function getSageConfigAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, SAGE_FORMAT_ID)),
+			Effect.promise(() => getPayrollExportConfig(organizationId, SAGE_FORMAT_ID, selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -547,6 +619,15 @@ export async function saveSageConfigAction(
 			);
 		}
 
+		yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
 		// Ensure Sage format exists
 		yield* _(
 			Effect.promise(async () => {
@@ -577,6 +658,7 @@ export async function saveSageConfigAction(
 				const existing = await db.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 						eq(payrollExportConfig.formatId, SAGE_FORMAT_ID),
 					),
 				});
@@ -597,6 +679,7 @@ export async function saveSageConfigAction(
 						.insert(payrollExportConfig)
 						.values({
 							organizationId: input.organizationId,
+							legalEntityId: input.legalEntityId,
 							formatId: SAGE_FORMAT_ID,
 							config: input.config as unknown as Record<string, unknown>,
 							isActive: true,
@@ -1840,6 +1923,34 @@ export async function startExportAction(
 			throw new Error("End date must be after start date");
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
+		if (input.employeeIds && input.employeeIds.length > 0) {
+			const selectedEmployees = yield* _(
+				Effect.promise(() =>
+					db.query.employee.findMany({
+						where: and(
+							eq(employee.organizationId, input.organizationId),
+							inArray(employee.id, input.employeeIds ?? []),
+						),
+						columns: { id: true, legalEntityId: true },
+					}),
+				),
+			);
+
+			assertSingleLegalEntityPayrollFilter({
+				selectedLegalEntityId: selectedLegalEntity.id,
+				employees: selectedEmployees,
+			});
+		}
+
 		const filters: PayrollExportFilters = {
 			dateRange: {
 				start: startDate,
@@ -1855,6 +1966,7 @@ export async function startExportAction(
 			Effect.promise(() =>
 				createExportJob({
 					organizationId: input.organizationId,
+					legalEntityId: selectedLegalEntity.id,
 					formatId: input.formatId,
 					requestedById: currentEmployee.id,
 					filters,

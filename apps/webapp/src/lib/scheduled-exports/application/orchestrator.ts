@@ -104,6 +104,10 @@ export class ScheduledExportOrchestrator {
 		const execution = await this.createExecution(schedule, triggeredAt);
 
 		try {
+			if (schedule.reportType === "payroll" && !schedule.legalEntityId) {
+				throw new Error("Scheduled payroll exports require a legal entity.");
+			}
+
 			// Update status to processing
 			await this.updateExecutionStatus(execution.id, "processing");
 
@@ -147,6 +151,7 @@ export class ScheduledExportOrchestrator {
 			// Execute report
 			const exportResult = await executor.execute({
 				organizationId: schedule.organizationId,
+				legalEntityId: schedule.legalEntityId,
 				reportConfig,
 				dateRange,
 				filters: filterConfig,
@@ -271,6 +276,7 @@ export class ScheduledExportOrchestrator {
 			.values({
 				scheduledExportId: schedule.id,
 				organizationId: schedule.organizationId,
+				legalEntityId: schedule.legalEntityId,
 				triggeredAt: triggeredAt.toJSDate(),
 				scheduledFor: schedule.nextExecutionAt!,
 				dateRangeStart: dateRange.start.toISODate()!,

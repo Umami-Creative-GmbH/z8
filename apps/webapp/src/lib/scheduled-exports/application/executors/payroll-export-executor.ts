@@ -34,8 +34,12 @@ export class PayrollExportExecutor implements IReportExecutor {
 	 * Execute a payroll export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, dateRange, filters, payrollConfigId } = params;
+		const { organizationId, legalEntityId, reportConfig, dateRange, filters, payrollConfigId } = params;
 		const config = reportConfig as PayrollExportReportConfig;
+
+		if (!legalEntityId) {
+			throw new Error("Scheduled payroll exports require a legal entity.");
+		}
 
 		logger.info(
 			{
@@ -51,7 +55,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 
 		try {
 			// Verify payroll config exists
-			const payrollConfig = await getPayrollExportConfig(organizationId, config.formatId);
+			const payrollConfig = await getPayrollExportConfig(organizationId, config.formatId, legalEntityId);
 			if (!payrollConfig) {
 				return {
 					success: false,
@@ -74,6 +78,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 			// Create export job using existing service
 			const { jobId, isAsync } = await createExportJob({
 				organizationId,
+				legalEntityId,
 				formatId: config.formatId,
 				requestedById,
 				filters: {

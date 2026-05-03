@@ -55,6 +55,7 @@ export type PayrollReadinessResult = {
 };
 export type GetPayrollReadinessInput = {
 	organizationId: string;
+	legalEntityId: string;
 	period: {
 		start: DateTime;
 		end: DateTime;
@@ -194,6 +195,7 @@ export async function getPayrollReadiness(
 	input: GetPayrollReadinessInput,
 ): Promise<PayrollReadinessResult> {
 	const organizationId = input.organizationId;
+	const legalEntityId = input.legalEntityId;
 	const start = input.period.start.startOf("day");
 	const end = input.period.end.endOf("day");
 	const selectedStartDate = start.toISODate() ?? "";
@@ -213,6 +215,7 @@ export async function getPayrollReadiness(
 		db.query.timeRecord.findMany({
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
+				sql`${timeRecord.employeeId} in (select id from employee where organization_id = ${organizationId} and legal_entity_id = ${legalEntityId})`,
 				eq(timeRecord.recordKind, "work"),
 				gte(timeRecord.startAt, start.toJSDate()),
 				lte(timeRecord.startAt, end.toJSDate()),
@@ -229,6 +232,7 @@ export async function getPayrollReadiness(
 		db.query.timeRecord.findMany({
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
+				sql`${timeRecord.employeeId} in (select id from employee where organization_id = ${organizationId} and legal_entity_id = ${legalEntityId})`,
 				eq(timeRecord.approvalState, "pending"),
 				gte(timeRecord.startAt, start.toJSDate()),
 				lte(timeRecord.startAt, end.toJSDate()),
@@ -242,7 +246,11 @@ export async function getPayrollReadiness(
 			},
 		}),
 		db.query.employee.findMany({
-			where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+			where: and(
+				eq(employee.organizationId, organizationId),
+				eq(employee.legalEntityId, legalEntityId),
+				eq(employee.isActive, true),
+			),
 			with: {
 				user: true,
 			},
@@ -250,6 +258,7 @@ export async function getPayrollReadiness(
 		db.query.employeeEmploymentHistory.findMany({
 			where: and(
 				eq(employeeEmploymentHistory.organizationId, organizationId),
+				eq(employeeEmploymentHistory.legalEntityId, legalEntityId),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				lte(employeeEmploymentHistory.validFrom, end.toJSDate()),
 				or(
@@ -261,12 +270,14 @@ export async function getPayrollReadiness(
 		db.query.payrollExportConfig.findMany({
 			where: and(
 				eq(payrollExportConfig.organizationId, organizationId),
+				eq(payrollExportConfig.legalEntityId, legalEntityId),
 				eq(payrollExportConfig.isActive, true),
 			),
 		}),
 		db.query.payrollExportJob.findMany({
 			where: and(
 				eq(payrollExportJob.organizationId, organizationId),
+				eq(payrollExportJob.legalEntityId, legalEntityId),
 				sql`left(${payrollExportJob.filters}->'dateRange'->>'start', 10) = ${selectedStartDate}`,
 				sql`left(${payrollExportJob.filters}->'dateRange'->>'end', 10) = ${selectedEndDate}`,
 			),
@@ -276,6 +287,7 @@ export async function getPayrollReadiness(
 		db.query.travelExpenseClaim.findMany({
 			where: and(
 				eq(travelExpenseClaim.organizationId, organizationId),
+				eq(travelExpenseClaim.legalEntityId, legalEntityId),
 				or(eq(travelExpenseClaim.status, "submitted"), eq(travelExpenseClaim.status, "draft")),
 				lte(travelExpenseClaim.tripStart, end.toJSDate()),
 				gte(travelExpenseClaim.tripEnd, start.toJSDate()),

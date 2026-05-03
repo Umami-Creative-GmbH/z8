@@ -45,6 +45,7 @@ vi.mock("@/db", () => ({
 	},
 	timeRecord: {
 		organizationId: "time-record.organizationId",
+		employeeId: "time-record.employeeId",
 		recordKind: "time-record.recordKind",
 		approvalState: "time-record.approvalState",
 		startAt: "time-record.startAt",
@@ -56,17 +57,20 @@ vi.mock("@/db", () => ({
 	},
 	employee: {
 		organizationId: "employee.organizationId",
+		legalEntityId: "employee.legalEntityId",
 		isActive: "employee.isActive",
 	},
 	employeeEmploymentHistory: {
 		employeeId: "employee-employment-history.employeeId",
 		organizationId: "employee-employment-history.organizationId",
+		legalEntityId: "employee-employment-history.legalEntityId",
 		reviewState: "employee-employment-history.reviewState",
 		validFrom: "employee-employment-history.validFrom",
 		validUntil: "employee-employment-history.validUntil",
 	},
 	payrollExportConfig: {
 		organizationId: "payroll-export-config.organizationId",
+		legalEntityId: "payroll-export-config.legalEntityId",
 		isActive: "payroll-export-config.isActive",
 	},
 	payrollWageTypeMapping: {
@@ -74,11 +78,13 @@ vi.mock("@/db", () => ({
 	},
 	payrollExportJob: {
 		organizationId: "payroll-export-job.organizationId",
+		legalEntityId: "payroll-export-job.legalEntityId",
 		filters: "payroll-export-job.filters",
 		createdAt: "payroll-export-job.createdAt",
 	},
 	travelExpenseClaim: {
 		organizationId: "travel-expense-claim.organizationId",
+		legalEntityId: "travel-expense-claim.legalEntityId",
 		status: "travel-expense-claim.status",
 		tripStart: "travel-expense-claim.tripStart",
 		tripEnd: "travel-expense-claim.tripEnd",
@@ -89,12 +95,14 @@ vi.mock("@/db/schema", () => ({
 	employeeEmploymentHistory: {
 		employeeId: "employee-employment-history.employeeId",
 		organizationId: "employee-employment-history.organizationId",
+		legalEntityId: "employee-employment-history.legalEntityId",
 		reviewState: "employee-employment-history.reviewState",
 		validFrom: "employee-employment-history.validFrom",
 		validUntil: "employee-employment-history.validUntil",
 	},
 	travelExpenseClaim: {
 		organizationId: "travel-expense-claim.organizationId",
+		legalEntityId: "travel-expense-claim.legalEntityId",
 		status: "travel-expense-claim.status",
 		tripStart: "travel-expense-claim.tripStart",
 		tripEnd: "travel-expense-claim.tripEnd",
@@ -111,6 +119,7 @@ const period = {
 function defaultInput() {
 	return {
 		organizationId: "org-1",
+		legalEntityId: "entity-a",
 		period,
 		now: DateTime.fromISO("2026-04-28T12:00:00.000Z"),
 	};
@@ -164,12 +173,30 @@ describe("getPayrollReadiness", () => {
 
 		for (const findMany of [
 			mockState.timeRecordFindMany,
+			mockState.employeeFindMany,
+			mockState.employeeEmploymentHistoryFindMany,
 			mockState.payrollExportConfigFindMany,
 			mockState.payrollExportJobFindMany,
 			mockState.travelExpenseClaimFindMany,
 		]) {
 			expect(JSON.stringify(findMany.mock.calls[0]?.[0]?.where)).toContain("org-1");
+			expect(JSON.stringify(findMany.mock.calls[0]?.[0]?.where)).toContain("entity-a");
 		}
+	});
+
+	it("does not treat another legal entity's config as ready", async () => {
+		mockState.payrollExportConfigFindMany.mockResolvedValue([]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "payroll-export-targets")).toMatchObject({
+			status: "fail",
+			count: 0,
+		});
+		expect(JSON.stringify(mockState.payrollExportConfigFindMany.mock.calls[0]?.[0]?.where)).toContain(
+			"entity-a",
+		);
 	});
 
 	it("blocks for pending approval records", async () => {

@@ -4,7 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db, scheduledExport, scheduledExportExecution } from "@/db";
+import { db, legalEntity, scheduledExport, scheduledExportExecution } from "@/db";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import type {
 	ScheduledExport,
@@ -36,6 +36,7 @@ import type {
 
 export interface CreateScheduledExportInput {
 	organizationId: string;
+	legalEntityId: string;
 	name: string;
 	description?: string;
 	scheduleType: ScheduleType;
@@ -57,6 +58,7 @@ export interface CreateScheduledExportInput {
 export interface UpdateScheduledExportInput {
 	id: string;
 	organizationId: string;
+	legalEntityId?: string;
 	name?: string;
 	description?: string;
 	scheduleType?: ScheduleType;
@@ -103,6 +105,21 @@ export interface ExecutionHistoryItem {
 }
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
+
+async function assertScheduledExportLegalEntity(organizationId: string, legalEntityId: string) {
+	const selectedLegalEntity = await db.query.legalEntity.findFirst({
+		where: and(
+			eq(legalEntity.id, legalEntityId),
+			eq(legalEntity.organizationId, organizationId),
+		),
+	});
+
+	if (!selectedLegalEntity) {
+		throw new Error("Legal entity not found.");
+	}
+
+	return selectedLegalEntity;
+}
 
 // ============================================
 // CREATE
@@ -155,6 +172,10 @@ export async function createScheduledExportAction(
 			}
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertScheduledExportLegalEntity(input.organizationId, input.legalEntityId)),
+		);
+
 		// Calculate next execution time
 		const scheduleConfig: ScheduleConfig = {
 			type: input.scheduleType,
@@ -170,6 +191,7 @@ export async function createScheduledExportAction(
 					.insert(scheduledExport)
 					.values({
 						organizationId: input.organizationId,
+						legalEntityId: selectedLegalEntity.id,
 						name: input.name,
 						description: input.description,
 						scheduleType: input.scheduleType,
@@ -769,6 +791,7 @@ export async function getFilterOptionsAction(
 
 export interface PayrollConfigSummary {
 	id: string;
+	legalEntityId: string;
 	formatId: string;
 	formatName: string;
 }
@@ -817,6 +840,7 @@ export async function getPayrollConfigsAction(
 
 		return configs.map((c) => ({
 			id: c.id,
+			legalEntityId: c.legalEntityId,
 			formatId: c.format?.id ?? c.formatId,
 			formatName: c.format?.name ?? c.formatId,
 		}));

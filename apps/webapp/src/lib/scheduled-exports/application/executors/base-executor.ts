@@ -11,6 +11,7 @@ import type { CalculatedDateRange, FilterConfig, ReportConfig, ExecutionResult }
  */
 export interface ExecuteParams {
 	organizationId: string;
+	legalEntityId?: string;
 	reportConfig: ReportConfig;
 	dateRange: CalculatedDateRange;
 	filters?: FilterConfig;

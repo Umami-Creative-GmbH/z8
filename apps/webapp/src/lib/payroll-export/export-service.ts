@@ -113,6 +113,7 @@ export function isApiBasedExport(formatId: string): boolean {
  */
 export async function createExportJob(params: {
 	organizationId: string;
+	legalEntityId: string;
 	formatId: string;
 	requestedById: string;
 	filters: PayrollExportFilters;
@@ -121,7 +122,7 @@ export async function createExportJob(params: {
 	isAsync: boolean;
 }> {
 	logger.info(
-		{ organizationId: params.organizationId, formatId: params.formatId },
+		{ organizationId: params.organizationId, legalEntityId: params.legalEntityId, formatId: params.formatId },
 		"Creating payroll export job",
 	);
 
@@ -134,14 +135,14 @@ export async function createExportJob(params: {
 	}
 
 	// Verify configuration exists
-	const configResult = await getPayrollExportConfig(params.organizationId, params.formatId);
+	const configResult = await getPayrollExportConfig(params.organizationId, params.formatId, params.legalEntityId);
 	if (!configResult) {
 		throw new Error(`No configuration found for format: ${params.formatId}`);
 	}
 
 	// Count work periods to determine sync/async
 	// Use the sync threshold from whichever is available (formatter or exporter)
-	const count = await countWorkPeriods(params.organizationId, params.filters);
+	const count = await countWorkPeriods(params.organizationId, params.legalEntityId, params.filters);
 	const syncThreshold = formatter?.getSyncThreshold() ?? exporter?.getSyncThreshold() ?? 500;
 	const isAsync = count > syncThreshold;
 
@@ -161,6 +162,7 @@ export async function createExportJob(params: {
 		.insert(payrollExportJob)
 		.values({
 			organizationId: params.organizationId,
+			legalEntityId: params.legalEntityId,
 			configId: configResult.config.id,
 			requestedById: params.requestedById,
 			filters: serializedFilters,
@@ -200,6 +202,9 @@ export async function processExportJob(jobId: string): Promise<{
 		const job = await db.query.payrollExportJob.findFirst({
 			where: eq(payrollExportJob.id, jobId),
 			with: {
+				legalEntity: {
+					columns: { name: true },
+				},
 				config: {
 					with: {
 						format: true,
@@ -233,8 +238,8 @@ export async function processExportJob(jobId: string): Promise<{
 
 		// Fetch data
 		const [workPeriods, absences, mappings] = await Promise.all([
-			fetchWorkPeriodsForExport(job.organizationId, filters),
-			fetchAbsencesForExport(job.organizationId, filters),
+			fetchWorkPeriodsForExport(job.organizationId, job.legalEntityId, filters),
+			fetchAbsencesForExport(job.organizationId, job.legalEntityId, filters),
 			getWageTypeMappings(job.configId),
 		]);
 
@@ -288,12 +293,16 @@ export async function processExportJob(jobId: string): Promise<{
 				mappings,
 				job.config.config as Record<string, unknown>,
 			);
+			const rangeStart = filters.dateRange.start.toISODate();
+			const rangeEnd = filters.dateRange.end.toISODate();
+			const legalEntitySlug = slugifyFilenamePart(job.legalEntity?.name ?? job.legalEntityId);
+			const fileName = `${legalEntitySlug}-${job.config.formatId}-${rangeStart}-${rangeEnd}.csv`;
 
 			let downloadUrl: string | undefined;
 
 			if (job.isAsync) {
 				// Upload to S3
-				const s3Key = `payroll-exports/${job.organizationId}/${job.id}/${exportResult.fileName}`;
+				const s3Key = `payroll-exports/${job.organizationId}/${job.id}/${fileName}`;
 				const contentBuffer =
 					typeof exportResult.content === "string"
 						? Buffer.from(exportResult.content, exportResult.encoding)
@@ -309,7 +318,7 @@ export async function processExportJob(jobId: string): Promise<{
 					.update(payrollExportJob)
 					.set({
 						status: "completed",
-						fileName: exportResult.fileName,
+						fileName,
 						s3Key,
 						fileSizeBytes: contentBuffer.length,
 						workPeriodCount: exportResult.metadata.workPeriodCount,
@@ -333,7 +342,7 @@ export async function processExportJob(jobId: string): Promise<{
 					.update(payrollExportJob)
 					.set({
 						status: "completed",
-						fileName: exportResult.fileName,
+						fileName,
 						fileSizeBytes: contentBuffer.length,
 						workPeriodCount: exportResult.metadata.workPeriodCount,
 						employeeCount: exportResult.metadata.employeeCount,
@@ -489,4 +498,12 @@ export async function getExportDownloadUrl(
 	}
 
 	return getPresignedUrl(organizationId, job.s3Key);
+}
+
+function slugifyFilenamePart(value: string) {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "") || "legal-entity";
 }

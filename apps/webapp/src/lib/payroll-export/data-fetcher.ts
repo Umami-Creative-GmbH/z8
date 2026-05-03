@@ -30,25 +30,28 @@ const logger = createLogger("PayrollExportDataFetcher");
  */
 export async function fetchWorkPeriodsForExport(
 	organizationId: string,
+	legalEntityId: string,
 	filters: PayrollExportFilters,
 ): Promise<WorkPeriodData[]> {
 	await assertCanonicalCutoverReady(organizationId);
 
 	logger.info({ organizationId, filters: serializeFilters(filters) }, "Fetching work periods for payroll export");
 
+	const employeeIds = await getLegalEntityEmployeeIds(organizationId, legalEntityId, filters);
+
+	if (employeeIds.length === 0) {
+		return [];
+	}
+
 	// Build where conditions
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
+		inArray(timeRecord.employeeId, employeeIds),
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
 		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
 		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
 	];
-
-	// Add employee filter if specified
-	if (filters.employeeIds && filters.employeeIds.length > 0) {
-		whereConditions.push(inArray(timeRecord.employeeId, filters.employeeIds));
-	}
 
 	// Fetch work periods with employee and category data
 	const periods = await db.query.timeRecord.findMany({
@@ -151,35 +154,14 @@ export async function fetchWorkPeriodsForExport(
  */
 export async function fetchAbsencesForExport(
 	organizationId: string,
+	legalEntityId: string,
 	filters: PayrollExportFilters,
 ): Promise<AbsenceData[]> {
 	await assertCanonicalCutoverReady(organizationId);
 
 	logger.info({ organizationId, filters: serializeFilters(filters) }, "Fetching absences for payroll export");
 
-	// Get employee IDs for this org (optionally filtered)
-	let employeeIds: string[] = [];
-
-	if (filters.employeeIds && filters.employeeIds.length > 0) {
-		employeeIds = filters.employeeIds;
-	} else if (filters.teamIds && filters.teamIds.length > 0) {
-		// Get employees in specified teams
-		const teamEmployees = await db.query.employee.findMany({
-			where: and(
-				eq(employee.organizationId, organizationId),
-				inArray(employee.teamId, filters.teamIds),
-			),
-			columns: { id: true },
-		});
-		employeeIds = teamEmployees.map((e) => e.id);
-	} else {
-		// Get all employees for org
-		const orgEmployees = await db.query.employee.findMany({
-			where: eq(employee.organizationId, organizationId),
-			columns: { id: true },
-		});
-		employeeIds = orgEmployees.map((e) => e.id);
-	}
+	const employeeIds = await getLegalEntityEmployeeIds(organizationId, legalEntityId, filters);
 
 	if (employeeIds.length === 0) {
 		return [];
@@ -255,6 +237,7 @@ export async function fetchAbsencesForExport(
 export async function getPayrollExportConfig(
 	organizationId: string,
 	formatId: string,
+	legalEntityId: string,
 ): Promise<{
 	config: typeof payrollExportConfig.$inferSelect;
 	format: typeof payrollExportFormat.$inferSelect;
@@ -262,6 +245,7 @@ export async function getPayrollExportConfig(
 	const result = await db.query.payrollExportConfig.findFirst({
 		where: and(
 			eq(payrollExportConfig.organizationId, organizationId),
+			eq(payrollExportConfig.legalEntityId, legalEntityId),
 			eq(payrollExportConfig.formatId, formatId),
 			eq(payrollExportConfig.isActive, true),
 		),
@@ -377,6 +361,32 @@ export async function getEmployeesForFilter(organizationId: string) {
 	});
 }
 
+async function getLegalEntityEmployeeIds(
+	organizationId: string,
+	legalEntityId: string,
+	filters: PayrollExportFilters,
+) {
+	const whereConditions = [
+		eq(employee.organizationId, organizationId),
+		eq(employee.legalEntityId, legalEntityId),
+	];
+
+	if (filters.employeeIds && filters.employeeIds.length > 0) {
+		whereConditions.push(inArray(employee.id, filters.employeeIds));
+	}
+
+	if (filters.teamIds && filters.teamIds.length > 0) {
+		whereConditions.push(inArray(employee.teamId, filters.teamIds));
+	}
+
+	const employees = await db.query.employee.findMany({
+		where: and(...whereConditions),
+		columns: { id: true },
+	});
+
+	return employees.map((item) => item.id);
+}
+
 /**
  * Get teams for filter options
  */
@@ -412,21 +422,25 @@ export async function getProjectsForFilter(organizationId: string) {
  */
 export async function countWorkPeriods(
 	organizationId: string,
+	legalEntityId: string,
 	filters: PayrollExportFilters,
 ): Promise<number> {
 	await assertCanonicalCutoverReady(organizationId);
 
+	const employeeIds = await getLegalEntityEmployeeIds(organizationId, legalEntityId, filters);
+
+	if (employeeIds.length === 0) {
+		return 0;
+	}
+
 	const whereConditions = [
 		eq(timeRecord.organizationId, organizationId),
+		inArray(timeRecord.employeeId, employeeIds),
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
 		gte(timeRecord.startAt, filters.dateRange.start.toJSDate()),
 		lte(timeRecord.startAt, filters.dateRange.end.endOf("day").toJSDate()),
 	];
-
-	if (filters.employeeIds && filters.employeeIds.length > 0) {
-		whereConditions.push(inArray(timeRecord.employeeId, filters.employeeIds));
-	}
 
 	const result = await db.query.timeRecord.findMany({
 		where: and(...whereConditions),
