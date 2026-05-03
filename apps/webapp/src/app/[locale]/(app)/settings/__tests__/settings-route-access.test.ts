@@ -191,7 +191,8 @@ describe("org-admin settings route access", () => {
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
-		expect(pageSource.includes('accessTier === "member"')).toBe(true);
+		expect(pageSource.includes("canResolvedTierAccessRoute(")).toBe(true);
+		expect(pageSource.includes("/settings/surcharges")).toBe(true);
 		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(true);
 		expect(actionsSource.includes("requireOrgAdminSurchargeActor(")).toBe(true);
 		expect(actionsSource.includes("projectManager")).toBe(true);
@@ -210,11 +211,16 @@ describe("org-admin settings route access", () => {
 	it("denies direct entity-admin access to non-entity manager settings routes", () => {
 		const pages = [
 			["locations/page.tsx", "/settings/locations"],
+			["locations/[locationId]/page.tsx", "/settings/locations"],
 			["work-categories/page.tsx", "/settings/work-categories"],
 			["skills/page.tsx", "/settings/skills"],
 			["projects/page.tsx", "/settings/projects"],
 			["calendar/page.tsx", "/settings/calendar"],
 			["statistics/page.tsx", "/settings/statistics"],
+			["teams/page.tsx", "/settings/teams"],
+			["surcharges/page.tsx", "/settings/surcharges"],
+			["customers/page.tsx", "/settings/customers"],
+			["permissions/page.tsx", "/settings/permissions"],
 		] as const;
 
 		for (const [relativePath, route] of pages) {
@@ -234,7 +240,8 @@ describe("org-admin settings route access", () => {
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(source.includes("authContext.employee")).toBe(false);
 		expect(source.includes("NoEmployeeError")).toBe(false);
-		expect(source.includes('accessTier === "member"')).toBe(true);
+		expect(source.includes("canResolvedTierAccessRoute(")).toBe(true);
+		expect(source.includes("/settings/locations")).toBe(true);
 	});
 
 	it("uses shared org-admin parity helpers for location assignment mutations", () => {

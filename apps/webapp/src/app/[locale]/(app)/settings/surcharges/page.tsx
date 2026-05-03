@@ -2,7 +2,10 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
 import { getTranslate } from "@/tolgee/server";
+
+const SETTINGS_ROUTE = "/settings/surcharges";
 
 export default async function SurchargeSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
@@ -17,7 +20,7 @@ export default async function SurchargeSettingsPage() {
 	const { authContext, accessTier } = settingsRouteContext;
 	const organizationId = authContext.session.activeOrganizationId;
 
-	if (accessTier === "member" || !organizationId) {
+	if (!organizationId || !canResolvedTierAccessRoute(accessTier, SETTINGS_ROUTE)) {
 		redirect("/settings");
 	}
 

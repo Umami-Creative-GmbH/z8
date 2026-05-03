@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { LocationDetail } from "@/components/settings/location-detail";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
+
+const SETTINGS_ROUTE = "/settings/locations";
 
 interface LocationDetailPageProps {
 	params: Promise<{ locationId: string }>;
@@ -13,7 +16,10 @@ export default async function LocationDetailPage({ params }: LocationDetailPageP
 	const { locationId } = await params;
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (
+		!settingsRouteContext ||
+		!canResolvedTierAccessRoute(settingsRouteContext.accessTier, SETTINGS_ROUTE)
+	) {
 		redirect("/settings");
 	}
 

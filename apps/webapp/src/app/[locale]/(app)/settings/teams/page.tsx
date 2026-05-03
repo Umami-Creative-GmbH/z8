@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { loadTeamSettingsPageData } from "@/app/[locale]/(app)/settings/teams/team-settings-page-data";
 import { TeamsTab } from "@/components/organization/teams-tab";
 import { getCurrentSettingsRouteContext, getPrincipalContext } from "@/lib/auth-helpers";
+import { canResolvedTierAccessRoute } from "@/lib/settings-access";
 import { getTranslate } from "@/tolgee/server";
+
+const SETTINGS_ROUTE = "/settings/teams";
 
 export default async function TeamsPage() {
 	const [settingsRouteContext, principalContext, t] = await Promise.all([
@@ -15,7 +18,7 @@ export default async function TeamsPage() {
 		redirect("/settings");
 	}
 
-	if (settingsRouteContext.accessTier === "member") {
+	if (!canResolvedTierAccessRoute(settingsRouteContext.accessTier, SETTINGS_ROUTE)) {
 		redirect("/settings");
 	}
 
