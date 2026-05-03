@@ -86,6 +86,8 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 	const overlaps = findAbsenceOverlaps(input.request, input.existingAbsences);
 	const warnings: string[] = [];
 	const reasons: string[] = [];
+	let hasRisk = false;
+	let needsReview = false;
 
 	const balance = input.vacationBalance
 		? {
@@ -98,6 +100,7 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		: null;
 
 	if (input.category.countsAgainstVacation && !balance) {
+		needsReview = true;
 		reasons.push("Vacation balance is unavailable for this year.");
 	}
 
@@ -106,18 +109,32 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 	}
 
 	if (balance && input.category.countsAgainstVacation && balance.remainingAfterRequest < 0) {
+		hasRisk = true;
 		warnings.push("Vacation balance would be negative after this request.");
 	}
 
 	for (const overlap of overlaps) {
+		hasRisk = true;
 		warnings.push(`Request overlaps an existing ${overlap.status} absence.`);
 	}
 
 	if (input.coverage.risks.length > 0) {
+		hasRisk = true;
 		warnings.push("Published coverage would drop below the configured minimum.");
 	}
 
-	if (warnings.length === 0 && reasons.length === 0) {
+	if (input.affectedShifts.length > 0 && !input.coverage.hasConfiguredRulesForAffectedShifts) {
+		needsReview = true;
+		reasons.push("Coverage rules are not configured for the affected scheduled work.");
+	}
+
+	if (!input.category.requiresApproval) {
+		reasons.push("This absence type does not require approval.");
+	} else if (!input.hasManager) {
+		reasons.push(
+			"No manager is assigned, so this request follows the current auto-approval behavior.",
+		);
+	} else if (!hasRisk && !needsReview) {
 		reasons.push("Request follows the normal approval path.");
 	}
 
@@ -132,18 +149,24 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		})),
 		overlaps,
 		coverage: input.coverage,
-		approvalSignal: determineApprovalSignal(warnings, reasons),
+		approvalSignal: determineApprovalSignal({ hasRisk, needsReview }),
 		warnings,
 		reasons,
 	};
 }
 
-function determineApprovalSignal(warnings: string[], reasons: string[]): ApprovalSignal {
-	if (warnings.length > 0) {
+function determineApprovalSignal({
+	hasRisk,
+	needsReview,
+}: {
+	hasRisk: boolean;
+	needsReview: boolean;
+}): ApprovalSignal {
+	if (hasRisk) {
 		return "risky";
 	}
 
-	if (reasons.includes("Vacation balance is unavailable for this year.")) {
+	if (needsReview) {
 		return "needs_review";
 	}
 

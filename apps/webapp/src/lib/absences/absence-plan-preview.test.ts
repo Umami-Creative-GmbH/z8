@@ -145,4 +145,95 @@ describe("buildAbsencePlanPreview", () => {
 		expect(preview.coverage.risks[0]?.subareaName).toBe("Front Desk");
 		expect(preview.warnings).toContain("Published coverage would drop below the configured minimum.");
 	});
+
+	it("marks missing coverage rules for affected shifts as needs_review", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			affectedShifts: [{ id: "shift-1" }],
+			coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
+		});
+
+		expect(preview.approvalSignal).toBe("needs_review");
+		expect(preview.reasons).toContain(
+			"Coverage rules are not configured for the affected scheduled work.",
+		);
+	});
+
+	it("does not require coverage review when no shifts are affected and no rules exist", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			affectedShifts: [],
+			coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
+		});
+
+		expect(preview.approvalSignal).toBe("likely");
+		expect(preview.reasons).toContain("Request follows the normal approval path.");
+		expect(preview.reasons).not.toContain(
+			"Coverage rules are not configured for the affected scheduled work.",
+		);
+	});
+
+	it("explains manager-less approval behavior when approval is required", () => {
+		const preview = buildAbsencePlanPreview({ ...baseInput, hasManager: false });
+
+		expect(preview.approvalSignal).toBe("likely");
+		expect(preview.reasons).toContain(
+			"No manager is assigned, so this request follows the current auto-approval behavior.",
+		);
+	});
+
+	it("explains when approval is not required", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			category: { ...baseInput.category, requiresApproval: false },
+		});
+
+		expect(preview.approvalSignal).toBe("likely");
+		expect(preview.reasons).toContain("This absence type does not require approval.");
+		expect(preview.reasons).not.toContain("Request follows the normal approval path.");
+	});
+
+	it("excludes rejected absences from overlap warnings", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			existingAbsences: [
+				{
+					id: "absence-1",
+					startDate: "2026-05-05",
+					endDate: "2026-05-06",
+					status: "rejected",
+					categoryName: "Vacation",
+				},
+			],
+		});
+
+		expect(preview.approvalSignal).toBe("likely");
+		expect(preview.overlaps).toHaveLength(0);
+		expect(preview.warnings).not.toContain("Request overlaps an existing rejected absence.");
+	});
+
+	it("uses risky signal when warnings and review reasons both exist", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			vacationBalance: null,
+			coverage: {
+				risks: [
+					{
+						date: "2026-05-04",
+						subareaId: "subarea-1",
+						subareaName: "Front Desk",
+						startTime: "09:00",
+						endTime: "17:00",
+						minimumStaffCount: 2,
+						staffCountAfterAbsence: 1,
+					},
+				],
+				hasConfiguredRulesForAffectedShifts: true,
+			},
+		});
+
+		expect(preview.approvalSignal).toBe("risky");
+		expect(preview.reasons).toContain("Vacation balance is unavailable for this year.");
+		expect(preview.warnings).toContain("Published coverage would drop below the configured minimum.");
+	});
 });
