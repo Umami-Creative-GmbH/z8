@@ -33,8 +33,25 @@ const mockState = vi.hoisted(() => ({
 	})),
 	findExecutions: vi.fn(async () => []),
 	findEmployees: vi.fn(async () => []),
+	findPayrollConfig: vi.fn<(...args: unknown[]) => Promise<unknown>>(async () => null),
 	findTeams: vi.fn(async () => []),
 	findProjects: vi.fn(async () => []),
+	insertValues: vi.fn(),
+	insertReturning: vi.fn(async () => [{
+		id: "schedule-1",
+		name: "Payroll",
+		description: null,
+		scheduleType: "manual",
+		cronExpression: null,
+		timezone: "UTC",
+		reportType: "payroll_export",
+		deliveryMethod: "s3_only",
+		dateRangeStrategy: "previous_month",
+		isActive: true,
+		lastExecutionAt: null,
+		nextExecutionAt: null,
+		createdAt: new Date("2026-01-01T00:00:00.000Z"),
+	}]),
 	updateWhere: vi.fn(),
 	deleteWhere: vi.fn(),
 	updateReturning: vi.fn(async () => [{
@@ -66,6 +83,7 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			legalEntity: { findFirst: mockState.findLegalEntity },
+			payrollExportConfig: { findFirst: mockState.findPayrollConfig },
 			scheduledExport: { findFirst: mockState.findSchedule },
 			scheduledExportExecution: { findMany: mockState.findExecutions },
 			employee: { findMany: mockState.findEmployees },
@@ -86,6 +104,12 @@ vi.mock("@/db", () => ({
 				return Promise.resolve();
 			}),
 		})),
+		insert: vi.fn(() => ({
+			values: vi.fn((values) => {
+				mockState.insertValues(values);
+				return { returning: mockState.insertReturning };
+			}),
+		})),
 	},
 	employee: {
 		organizationId: "employee.organizationId",
@@ -93,6 +117,11 @@ vi.mock("@/db", () => ({
 		isActive: "employee.isActive",
 	},
 	project: { organizationId: "project.organizationId" },
+	payrollExportConfig: {
+		id: "payrollExportConfig.id",
+		organizationId: "payrollExportConfig.organizationId",
+		legalEntityId: "payrollExportConfig.legalEntityId",
+	},
 	scheduledExport: {
 		id: "scheduledExport.id",
 		organizationId: "scheduledExport.organizationId",
@@ -187,6 +216,7 @@ vi.mock("next/cache", () => ({
 }));
 
 import {
+	createScheduledExportAction,
 	deleteScheduledExportAction,
 	getExecutionHistoryAction,
 	getFilterOptionsAction,
@@ -198,6 +228,34 @@ import {
 describe("scheduled export legal entity scoping", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.findPayrollConfig.mockResolvedValue({
+			id: "payroll-config-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-a",
+		});
+	});
+
+	it("rejects create when payroll config is outside the selected legal entity", async () => {
+		mockState.findPayrollConfig.mockResolvedValue(null);
+
+		const result = await createScheduledExportAction({
+			organizationId: "org-1",
+			legalEntityId: "entity-a",
+			name: "Payroll",
+			scheduleType: "daily",
+			reportType: "payroll_export",
+			reportConfig: { formatId: "datev_lohn" },
+			payrollConfigId: "payroll-config-other-entity",
+			dateRangeStrategy: "previous_month",
+			deliveryMethod: "s3_only",
+			emailRecipients: [],
+		});
+
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			expect(result.error).toContain("Payroll export configuration not found");
+		}
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("scopes updates by organization, legal entity, and schedule id", async () => {

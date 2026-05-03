@@ -4,7 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db, scheduledExport, scheduledExportExecution } from "@/db";
+import { db, payrollExportConfig, scheduledExport, scheduledExportExecution } from "@/db";
 import { legalEntity } from "@/db/schema";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import type {
@@ -176,6 +176,24 @@ export async function createScheduledExportAction(
 		const selectedLegalEntity = yield* _(
 			Effect.promise(() => assertScheduledExportLegalEntity(input.organizationId, input.legalEntityId)),
 		);
+
+		if (input.payrollConfigId) {
+			const selectedPayrollConfig = yield* _(
+				Effect.promise(() =>
+					db.query.payrollExportConfig.findFirst({
+						where: and(
+							eq(payrollExportConfig.id, input.payrollConfigId!),
+							eq(payrollExportConfig.organizationId, input.organizationId),
+							eq(payrollExportConfig.legalEntityId, selectedLegalEntity.id),
+						),
+					}),
+				),
+			);
+
+			if (!selectedPayrollConfig) {
+				throw new Error("Payroll export configuration not found for the selected legal entity.");
+			}
+		}
 
 		// Calculate next execution time
 		const scheduleConfig: ScheduleConfig = {
