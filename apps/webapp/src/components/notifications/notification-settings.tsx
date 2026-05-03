@@ -403,11 +403,8 @@ export function NotificationSettings() {
 											const isPending = pendingToggle === toggleId;
 											const config = CHANNEL_CONFIG[channel];
 
-											// Disable push toggle if not subscribed
 											const isDisabled =
-												isPending ||
-												isUpdating ||
-												(channel === "push" && !isPushSubscribed && !isPushSupported);
+												isPending || isUpdating || (channel === "push" && !isPushSupported);
 
 											return (
 												<div

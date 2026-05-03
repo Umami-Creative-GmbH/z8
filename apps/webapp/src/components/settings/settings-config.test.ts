@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
 	filterSettingsByFeatureFlags,
 	getResolvedSettingsVisibility,
-	getVisibleGroupsForFeatureFlags,
 	getVisibleGroups,
+	getVisibleGroupsForFeatureFlags,
 	getVisibleSettings,
 	SETTINGS_ENTRIES,
 } from "@/components/settings/settings-config";
@@ -69,12 +69,34 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "email-templates")).toBe(false);
 	});
 
+	it("groups notification preferences and channel configuration together", () => {
+		const entries = getVisibleSettings("orgAdmin", true);
+		const notificationEntries = entries.filter((entry) => entry.group === "notifications");
+
+		expect(notificationEntries.map((entry) => entry.id)).toEqual([
+			"notifications",
+			"telegram",
+			"slack",
+			"discord",
+			"teams-notifications",
+		]);
+		expect(notificationEntries.find((entry) => entry.id === "notifications")).toMatchObject({
+			minimumTier: "member",
+			href: "/settings/notifications",
+		});
+		expect(notificationEntries.find((entry) => entry.id === "telegram")).toMatchObject({
+			minimumTier: "orgAdmin",
+			href: "/settings/telegram",
+		});
+	});
+
 	it("derives visible groups from the remaining visible entries", () => {
 		const entries = getVisibleSettings("manager", false);
 		const groups = getVisibleGroups(entries);
 
 		expect(groups.map((group) => group.id)).toEqual([
 			"account",
+			"notifications",
 			"organization",
 			"administration",
 			"enterprise",
@@ -203,9 +225,7 @@ describe("settings visibility tiers", () => {
 			true,
 		);
 
-		expect(ownerEntries.map((entry) => entry.id)).toEqual(
-			adminEntries.map((entry) => entry.id),
-		);
+		expect(ownerEntries.map((entry) => entry.id)).toEqual(adminEntries.map((entry) => entry.id));
 	});
 
 	it("hides demo data when the demo data feature is disabled", () => {

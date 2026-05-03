@@ -12,6 +12,9 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/enterprise/api-keys",
 	"/settings/enterprise/audit-log",
 	"/settings/telegram",
+	"/settings/slack",
+	"/settings/discord",
+	"/settings/teams-notifications",
 	"/settings/webhooks",
 	"/settings/export",
 	"/settings/payroll-export",
@@ -72,10 +75,7 @@ export function hasSettingsAccessTier(
 	return SETTINGS_ACCESS_RANK[currentTier] >= SETTINGS_ACCESS_RANK[requiredTier];
 }
 
-export function canResolvedTierAccessRoute(
-	accessTier: SettingsAccessTier,
-	route: string,
-): boolean {
+export function canResolvedTierAccessRoute(accessTier: SettingsAccessTier, route: string): boolean {
 	if (!ORG_ADMIN_SETTINGS_ROUTES.includes(route as (typeof ORG_ADMIN_SETTINGS_ROUTES)[number])) {
 		return true;
 	}

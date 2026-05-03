@@ -3,6 +3,7 @@
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { notificationPreference } from "@/db/schema";
+import { isDiscordEnabledForOrganization } from "@/lib/discord";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -15,6 +16,8 @@ import {
 	type NotificationType,
 	type UserPreferencesResponse,
 } from "@/lib/notifications/types";
+import { isSlackEnabledForOrganization } from "@/lib/slack";
+import { isTeamsEnabledForOrganization } from "@/lib/teams";
 import { isTelegramEnabledForOrganization } from "@/lib/telegram";
 
 /**
@@ -40,22 +43,28 @@ export async function getNotificationPreferences(): Promise<
 			}),
 		);
 
-		const isTelegramAvailable = organizationId
-			? yield* _(
-					dbService.query("getNotificationPreferencesTelegramConfig", async () => {
-						return isTelegramEnabledForOrganization(organizationId);
-					}),
-				)
-			: false;
+		const [isTeamsAvailable, isTelegramAvailable, isDiscordAvailable, isSlackAvailable] =
+			organizationId
+				? yield* _(
+						dbService.query("getNotificationPreferencesChannelAvailability", async () => {
+							return Promise.all([
+								isTeamsEnabledForOrganization(organizationId),
+								isTelegramEnabledForOrganization(organizationId),
+								isDiscordEnabledForOrganization(organizationId),
+								isSlackEnabledForOrganization(organizationId),
+							]);
+						}),
+					)
+				: [false, false, false, false];
 
 		const availableChannels: Record<NotificationChannel, boolean> = {
 			in_app: true,
 			push: true,
 			email: true,
-			teams: false,
+			teams: isTeamsAvailable,
 			telegram: isTelegramAvailable,
-			discord: false,
-			slack: false,
+			discord: isDiscordAvailable,
+			slack: isSlackAvailable,
 		};
 
 		// Build preference matrix (all types x all channels, defaulting to true)
