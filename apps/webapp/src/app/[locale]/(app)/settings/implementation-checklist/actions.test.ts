@@ -29,6 +29,8 @@ vi.mock("next/cache", () => ({
 	revalidatePath: mocks.revalidatePath,
 }));
 
+vi.mock("server-only", () => ({}));
+
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
@@ -103,10 +105,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 import {
 	getImplementationChecklist,
-	loadImplementationChecklistForContext,
 	markImplementationChecklistItemComplete,
 	markImplementationChecklistItemIncomplete,
 } from "./actions";
+import { loadImplementationChecklistForContext } from "./queries";
 
 const checklistPath = "/settings/implementation-checklist";
 

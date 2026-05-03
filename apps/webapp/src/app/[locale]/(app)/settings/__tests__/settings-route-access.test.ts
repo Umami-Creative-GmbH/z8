@@ -336,6 +336,19 @@ describe("org-admin settings route access", () => {
 		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillWithRelations/);
 	});
 
+	it("keeps the implementation checklist context loader server-only", () => {
+		const actionsSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/actions.ts"), "utf8"),
+		);
+		const queriesSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/queries.ts"), "utf8"),
+		);
+
+		expect(actionsSource).not.toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+		expect(queriesSource.startsWith('import "server-only";')).toBe(true);
+		expect(queriesSource).toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+	});
+
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {
 		const vacationActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),

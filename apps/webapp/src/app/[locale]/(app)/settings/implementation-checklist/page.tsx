@@ -2,8 +2,8 @@ import { connection } from "next/server";
 
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 
-import { loadImplementationChecklistForContext } from "./actions";
 import { ImplementationChecklistClient } from "./implementation-checklist-client";
+import { loadImplementationChecklistForContext } from "./queries";
 
 export const metadata = {
 	title: "Implementation Checklist",
