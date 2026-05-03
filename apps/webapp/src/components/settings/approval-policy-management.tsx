@@ -23,10 +23,15 @@ import { ApprovalPolicyDialog, type buildApprovalPolicyPayload } from "./approva
 import { ApprovalPolicyPreview } from "./approval-policy-preview";
 import { EmployeeGroupManagement } from "./employee-group-management";
 
-export const approvalPolicyQueryKey = ["approval-policies"] as const;
+export const approvalPolicyQueryKey = (organizationId: string) =>
+	["approval-policies", organizationId] as const;
 
 type ApprovalPolicyData = Awaited<ReturnType<typeof getApprovalPolicies>>[number];
 type ApprovalPolicyPayload = ReturnType<typeof buildApprovalPolicyPayload>;
+
+interface ApprovalPolicyManagementProps {
+	organizationId: string;
+}
 
 function conditionsCount(policy: ApprovalPolicyData) {
 	return policy.conditions.length;
@@ -36,11 +41,12 @@ function stagesCount(policy: ApprovalPolicyData) {
 	return policy.stages.length;
 }
 
-export function ApprovalPolicyManagement() {
+export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManagementProps) {
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const policyQueryKey = approvalPolicyQueryKey(organizationId);
 	const { data, isLoading, isError } = useQuery({
-		queryKey: approvalPolicyQueryKey,
+		queryKey: policyQueryKey,
 		queryFn: getApprovalPolicies,
 	});
 	const mutation = useMutation({
@@ -52,7 +58,7 @@ export function ApprovalPolicyManagement() {
 			}
 
 			toast.success("Approval policy created");
-			await queryClient.invalidateQueries({ queryKey: approvalPolicyQueryKey });
+			await queryClient.invalidateQueries({ queryKey: policyQueryKey });
 			setDialogOpen(false);
 		},
 		onError: () => {
@@ -76,7 +82,7 @@ export function ApprovalPolicyManagement() {
 			</div>
 
 			<ApprovalPolicyPreview />
-			<EmployeeGroupManagement />
+			<EmployeeGroupManagement organizationId={organizationId} />
 
 			<Card>
 				<CardHeader>
@@ -111,7 +117,7 @@ export function ApprovalPolicyManagement() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Priority</TableHead>
-									<TableHead>Name</TableHead>
+									<TableHead className="min-w-0">Name</TableHead>
 									<TableHead>Active status</TableHead>
 									<TableHead>Conditions count</TableHead>
 									<TableHead>Stages count</TableHead>
@@ -122,7 +128,11 @@ export function ApprovalPolicyManagement() {
 								{policies.map((policy) => (
 									<TableRow key={policy.id}>
 										<TableCell>{policy.priority}</TableCell>
-										<TableCell className="font-medium">{policy.name}</TableCell>
+										<TableCell className="min-w-0 max-w-[18rem] font-medium">
+											<div className="truncate" title={policy.name}>
+												{policy.name}
+											</div>
+										</TableCell>
 										<TableCell>
 											<Badge variant={policy.isActive ? "default" : "outline"}>
 												{policy.isActive ? "Active" : "Inactive"}

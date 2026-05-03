@@ -54,6 +54,14 @@ export function buildApprovalPolicyPayload(values: ApprovalPolicyFormValues) {
 		throw new Error("Active policies require at least one approval stage.");
 	}
 
+	if (
+		values.stages.some(
+			(stage) => stage.approverType === "specific_employee" && !stage.approverEmployeeId.trim(),
+		)
+	) {
+		throw new Error("Specific employee stages require an approver employee ID.");
+	}
+
 	return {
 		name: values.name.trim(),
 		description: values.description.trim(),
@@ -73,7 +81,9 @@ export function buildApprovalPolicyPayload(values: ApprovalPolicyFormValues) {
 			stepOrder: index + 1,
 			label: stage.label.trim(),
 			approverType: stage.approverType,
-			...(stage.approverEmployeeId ? { approverEmployeeId: stage.approverEmployeeId } : {}),
+			...(stage.approverEmployeeId.trim()
+				? { approverEmployeeId: stage.approverEmployeeId.trim() }
+				: {}),
 		})),
 	};
 }
@@ -359,6 +369,10 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 																					...item,
 																					approverType: event.target
 																						.value as ApprovalPolicyApproverType,
+																					approverEmployeeId:
+																						event.target.value === "specific_employee"
+																							? item.approverEmployeeId
+																							: "",
 																				}
 																			: item,
 																	);
@@ -372,6 +386,34 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 																))}
 															</select>
 														</div>
+														{stage.approverType === "specific_employee" ? (
+															<div className="grid gap-2 sm:col-span-2">
+																<Label htmlFor={`approval-stage-employee-${stage.localId}`}>
+																	{t(
+																		"settings.approvalPolicies.approverEmployeeId",
+																		"Approver Employee ID",
+																	)}
+																</Label>
+																<Input
+																	id={`approval-stage-employee-${stage.localId}`}
+																	name={`approval-stage-employee-${index + 1}`}
+																	autoComplete="off"
+																	value={stage.approverEmployeeId}
+																	onChange={(event) => {
+																		const stages = field.state.value.map((item) =>
+																			item.localId === stage.localId
+																				? { ...item, approverEmployeeId: event.target.value }
+																				: item,
+																		);
+																		field.handleChange(stages);
+																	}}
+																	placeholder={t(
+																		"settings.approvalPolicies.approverEmployeeIdPlaceholder",
+																		"Example: employee_123…",
+																	)}
+																/>
+															</div>
+														) : null}
 													</div>
 												</div>
 											))}
