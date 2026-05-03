@@ -32,6 +32,104 @@ describe("resolveApproverFromDirectory", () => {
 		).toEqual({ ok: true, approverEmployeeId: "emp_manager" });
 	});
 
+	it("prefers the primary direct manager link", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "direct_manager" }),
+				employees: [
+					...employees,
+					{ id: "emp_backup_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+				],
+				managerLinks: [
+					{ employeeId: "emp_requester", managerId: "emp_backup_manager" },
+					{ employeeId: "emp_requester", managerId: "emp_manager", isPrimary: true },
+				],
+			}),
+		).toEqual({ ok: true, approverEmployeeId: "emp_manager" });
+	});
+
+	it("selects the lowest manager id when no primary link exists", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "direct_manager" }),
+				employees: [
+					...employees,
+					{ id: "emp_z_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+					{ id: "emp_a_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+				],
+				managerLinks: [
+					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
+					{ employeeId: "emp_requester", managerId: "emp_a_manager" },
+				],
+			}),
+		).toEqual({ ok: true, approverEmployeeId: "emp_a_manager" });
+	});
+
+	it("does not depend on input order for duplicate manager links", () => {
+		const employeesWithManagers = [
+			...employees,
+			{ id: "emp_z_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+			{ id: "emp_a_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+		];
+
+		const input = {
+			organizationId: "org_1",
+			requesterEmployeeId: "emp_requester",
+			stage: stage({ approverType: "direct_manager" }),
+			employees: employeesWithManagers,
+		};
+
+		expect(
+			resolveApproverFromDirectory({
+				...input,
+				managerLinks: [
+					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
+					{ employeeId: "emp_requester", managerId: "emp_a_manager" },
+				],
+			}),
+		).toEqual(
+			resolveApproverFromDirectory({
+				...input,
+				managerLinks: [
+					{ employeeId: "emp_requester", managerId: "emp_a_manager" },
+					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
+				],
+			}),
+		);
+	});
+
+	it("rejects inactive requesters before resolving an organization admin", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "org_admin" }),
+				employees: employees.map((employee) =>
+					employee.id === "emp_requester" ? { ...employee, isActive: false } : employee,
+				),
+				managerLinks,
+			}),
+		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
+	});
+
+	it("rejects cross-organization requesters before resolving a specific employee", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "specific_employee", approverEmployeeId: "emp_admin" }),
+				employees: employees.map((employee) =>
+					employee.id === "emp_requester" ? { ...employee, organizationId: "org_2" } : employee,
+				),
+				managerLinks,
+			}),
+		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
+	});
+
 	it("resolves organization admin inside the organization", () => {
 		expect(
 			resolveApproverFromDirectory({
