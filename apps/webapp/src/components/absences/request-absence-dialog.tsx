@@ -66,11 +66,13 @@ const createDefaultValues = (initialDate?: string) => ({
 	notes: "",
 });
 
+const EMPTY_HOLIDAYS: Holiday[] = [];
+
 export function RequestAbsenceDialog({
 	categories,
 	organizationId,
 	remainingDays,
-	holidays = [],
+	holidays = EMPTY_HOLIDAYS,
 	trigger,
 	onSuccess,
 	open: controlledOpen,
@@ -78,7 +80,7 @@ export function RequestAbsenceDialog({
 	initialDate,
 }: RequestAbsenceDialogProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [internalOpen, setInternalOpen] = useState(false);
 
 	// Memoize period options to avoid recreating on every render
@@ -164,7 +166,7 @@ export function RequestAbsenceDialog({
 				setOpen(false);
 				form.reset();
 				// Revalidate the page data to show the new absence
-				router.refresh();
+				refresh();
 				onSuccess?.();
 			} else {
 				toast.error(
