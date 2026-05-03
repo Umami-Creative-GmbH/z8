@@ -213,24 +213,25 @@ export function InviteCodeDialog({
 				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-					<ActionPanelBody className="grid gap-4">
+					<ActionPanelBody className="space-y-5">
 						{/* Code */}
 						<div className="grid gap-2">
 							<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
-							<div className="flex gap-2">
+							<div className="flex flex-col gap-2 sm:flex-row">
 							<Input
 								id="code"
 								value={values.code}
 								onChange={(e) => updateDraft({ code: e.target.value.toUpperCase() })}
 								placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
 								disabled={isEditing}
-								className="uppercase"
+								className="font-mono uppercase tracking-[0.18em]"
 								/>
 								{!isEditing && (
 									<Button
 										type="button"
 										variant="outline"
 										onClick={handleGenerateCode}
+										className="w-full sm:w-auto"
 										aria-label={t("settings.inviteCodes.generateCode", "Generate new code")}
 									>
 										<IconRefresh className="h-4 w-4" />
@@ -355,7 +356,7 @@ export function InviteCodeDialog({
 								{t("settings.inviteCodes.requiresApproval", "Require admin approval")}
 							</Label>
 						</div>
-						<p className="text-sm text-muted-foreground -mt-2">
+						<p className="text-sm text-muted-foreground">
 							{t(
 								"settings.inviteCodes.requiresApprovalHelp",
 								"When enabled, new members will be pending until an admin approves them",

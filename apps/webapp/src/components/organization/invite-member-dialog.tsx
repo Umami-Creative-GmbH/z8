@@ -100,7 +100,7 @@ export function InviteMemberDialog({
 				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-					<ActionPanelBody className="space-y-4">
+					<ActionPanelBody className="space-y-5">
 						<div className="space-y-2">
 							<Label htmlFor="email">Email Address</Label>
 							<div className="relative">

@@ -24,4 +24,25 @@ describe("InviteCodeManagement responsive UX", () => {
 		expect(source).toContain("settings.inviteCodes.qrCode");
 		expect(source).toContain("font-mono text-base font-semibold tracking-[0.18em]");
 	});
+
+	it("keeps invite panels readable on mobile", () => {
+		const createPanel = readFileSync(
+			join(process.cwd(), "src/components/organization/invite-code-dialog.tsx"),
+			"utf8",
+		);
+		const memberPanel = readFileSync(
+			join(process.cwd(), "src/components/organization/invite-member-dialog.tsx"),
+			"utf8",
+		);
+		const qrPanel = readFileSync(
+			join(process.cwd(), "src/components/organization/invite-code-qr-dialog.tsx"),
+			"utf8",
+		);
+
+		expect(createPanel).toContain("flex flex-col gap-2 sm:flex-row");
+		expect(createPanel).toContain("space-y-5");
+		expect(memberPanel).toContain("space-y-5");
+		expect(qrPanel).toContain("break-all");
+		expect(qrPanel).toContain("size-[min(256px,70vw)]");
+	});
 });

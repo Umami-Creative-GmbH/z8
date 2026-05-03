@@ -134,7 +134,7 @@ export function InviteCodeQRDialog({
 					{/* Code and URL display */}
 					<div className="mb-4 text-center">
 						<div className="text-2xl font-mono font-bold">{inviteCode?.code}</div>
-						<div className="text-sm text-muted-foreground truncate mt-1">{joinUrl}</div>
+						<div className="mt-1 break-all text-sm text-muted-foreground">{joinUrl}</div>
 					</div>
 
 					{/* QR Code display */}
@@ -145,7 +145,7 @@ export function InviteCodeQRDialog({
 						</TabsList>
 
 						<TabsContent value="png" className="mt-4">
-							<div className="flex items-center justify-center min-h-[256px] bg-white rounded-lg p-4">
+							<div className="flex min-h-[220px] items-center justify-center rounded-lg bg-white p-4">
 								{generateMutation.isPending && format === "png" ? (
 									<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 								) : qrData.png ? (
@@ -156,7 +156,7 @@ export function InviteCodeQRDialog({
 										})}
 										width={256}
 										height={256}
-										className="max-w-full"
+										className="size-[min(256px,70vw)]"
 									/>
 								) : (
 									<div className="text-muted-foreground">
@@ -167,7 +167,7 @@ export function InviteCodeQRDialog({
 						</TabsContent>
 
 						<TabsContent value="svg" className="mt-4">
-							<div className="flex items-center justify-center min-h-[256px] bg-white rounded-lg p-4">
+							<div className="flex min-h-[220px] items-center justify-center rounded-lg bg-white p-4">
 								{generateMutation.isPending && format === "svg" ? (
 									<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 								) : qrData.svg ? (
@@ -176,7 +176,7 @@ export function InviteCodeQRDialog({
 										alt={t("settings.inviteCodes.qrAlt", "QR code for {code}", {
 											code: inviteCode?.code,
 										})}
-										className="max-w-full h-auto"
+										className="size-[min(256px,70vw)]"
 									/>
 								) : (
 									<div className="text-muted-foreground">
