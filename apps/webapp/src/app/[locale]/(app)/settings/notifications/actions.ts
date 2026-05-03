@@ -15,6 +15,7 @@ import {
 	type NotificationType,
 	type UserPreferencesResponse,
 } from "@/lib/notifications/types";
+import { isTelegramEnabledForOrganization } from "@/lib/telegram";
 
 /**
  * Get all notification preferences for the current user
@@ -27,8 +28,9 @@ export async function getNotificationPreferences(): Promise<
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+		const organizationId = session.session.activeOrganizationId;
 
-		// Get all preferences for this user (user-level, not org-specific)
+		// Preferences are user-level; channel availability remains org-scoped below.
 		const preferences = yield* _(
 			dbService.query("getNotificationPreferences", async () => {
 				return dbService.db
@@ -37,6 +39,24 @@ export async function getNotificationPreferences(): Promise<
 					.where(eq(notificationPreference.userId, session.user.id));
 			}),
 		);
+
+		const isTelegramAvailable = organizationId
+			? yield* _(
+					dbService.query("getNotificationPreferencesTelegramConfig", async () => {
+						return isTelegramEnabledForOrganization(organizationId);
+					}),
+				)
+			: false;
+
+		const availableChannels: Record<NotificationChannel, boolean> = {
+			in_app: true,
+			push: true,
+			email: true,
+			teams: false,
+			telegram: isTelegramAvailable,
+			discord: false,
+			slack: false,
+		};
 
 		// Build preference matrix (all types x all channels, defaulting to true)
 		const matrix: Record<NotificationType, Record<NotificationChannel, boolean>> = {} as Record<
@@ -62,6 +82,7 @@ export async function getNotificationPreferences(): Promise<
 		return {
 			preferences,
 			matrix,
+			availableChannels,
 		} satisfies UserPreferencesResponse;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -101,6 +122,16 @@ export async function updateNotificationPreference(data: {
 					new ValidationError({
 						message: "Invalid channel",
 						field: "channel",
+					}),
+				),
+			);
+		}
+		if (typeof data.enabled !== "boolean") {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Invalid enabled value",
+						field: "enabled",
 					}),
 				),
 			);
@@ -172,6 +203,16 @@ export async function bulkUpdateNotificationPreferences(
 						new ValidationError({
 							message: `Invalid channel: ${pref.channel}`,
 							field: "channel",
+						}),
+					),
+				);
+			}
+			if (typeof pref.enabled !== "boolean") {
+				return yield* _(
+					Effect.fail(
+						new ValidationError({
+							message: "Invalid enabled value",
+							field: "enabled",
 						}),
 					),
 				);
