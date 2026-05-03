@@ -25,16 +25,16 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 
 vi.mock("@/components/ui/date-picker", () => ({
 	DatePicker: ({
+		"aria-label": ariaLabel,
 		value,
 		onChange,
-		min,
 	}: {
+		"aria-label"?: string;
 		value?: string;
 		onChange: (value: string) => void;
-		min?: string;
 	}) => (
 		<input
-			aria-label={min === undefined ? "Start date" : "End date"}
+			aria-label={ariaLabel}
 			onChange={(event) => onChange(event.target.value)}
 			type="date"
 			value={value ?? ""}
@@ -60,6 +60,16 @@ vi.mock("@/components/ui/select", async () => {
 		});
 	}
 
+	function findAriaLabel(children: ReactNode): string | undefined {
+		for (const child of React.Children.toArray(children)) {
+			if (!React.isValidElement<{ "aria-label"?: string; children?: ReactNode }>(child)) continue;
+			if (child.props["aria-label"]) return child.props["aria-label"];
+
+			const nestedLabel = findAriaLabel(child.props.children);
+			if (nestedLabel) return nestedLabel;
+		}
+	}
+
 	return {
 		Select: ({
 			children,
@@ -71,7 +81,7 @@ vi.mock("@/components/ui/select", async () => {
 			value: string;
 		}) => (
 			<select
-				aria-label="Select option"
+				aria-label={findAriaLabel(children)}
 				onChange={(event) => onValueChange(event.target.value)}
 				value={value}
 			>
@@ -83,7 +93,9 @@ vi.mock("@/components/ui/select", async () => {
 		SelectItem: ({ children, value }: { children: ReactNode; value: string }) => (
 			<option value={value}>{children}</option>
 		),
-		SelectTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+		SelectTrigger: ({ children }: { "aria-label"?: string; children: ReactNode }) => (
+			<>{children}</>
+		),
 		SelectValue: ({ placeholder }: { placeholder?: string }) => <>{placeholder}</>,
 	};
 });
@@ -119,34 +131,43 @@ const riskyPreview: AbsencePlanPreview = {
 	reasons: ["Request follows the normal approval path."],
 };
 
-function renderDialog({ remainingDays = 10 }: { remainingDays?: number } = {}) {
+function renderDialog({
+	onOpenChange = vi.fn(),
+	organizationId = "org-1",
+	remainingDays = 10,
+}: {
+	onOpenChange?: (open: boolean) => void;
+	organizationId?: string;
+	remainingDays?: number;
+} = {}) {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
 
-	return render(
+	const view = render(
 		<QueryClientProvider client={queryClient}>
 			<RequestAbsenceDialog
 				open
-				onOpenChange={vi.fn()}
+				onOpenChange={onOpenChange}
+				organizationId={organizationId}
 				remainingDays={remainingDays}
 				categories={categories}
 			/>
 		</QueryClientProvider>,
 	);
+
+	return { ...view, queryClient };
 }
 
 function fillRequiredFields() {
-	const selects = screen.getAllByLabelText("Select option");
-	fireEvent.change(selects[0]!, { target: { value: "vacation" } });
-	fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-05-11" } });
-	fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-05-12" } });
+	fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
+	fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
+	fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-12" } });
 }
 
 function setInvalidSameDayPeriods() {
-	const selects = screen.getAllByLabelText("Select option");
-	fireEvent.change(selects[1]!, { target: { value: "pm" } });
-	fireEvent.change(selects[2]!, { target: { value: "am" } });
+	fireEvent.change(screen.getByLabelText("Start Period"), { target: { value: "pm" } });
+	fireEvent.change(screen.getByLabelText("End Period"), { target: { value: "am" } });
 }
 
 describe("RequestAbsenceDialog", () => {
@@ -160,6 +181,28 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		expect(screen.getByRole("heading", { name: "Request Absence" })).toBeTruthy();
+		expect(screen.getByLabelText("Absence Type *")).toBeTruthy();
+		expect(screen.getByLabelText("Start Date *")).toBeTruthy();
+		expect(screen.getByLabelText("Start Period")).toBeTruthy();
+		expect(screen.getByLabelText("End Date *")).toBeTruthy();
+		expect(screen.getByLabelText("End Period")).toBeTruthy();
+	});
+
+	it("does not require an open change handler in controlled mode", () => {
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<RequestAbsenceDialog
+					open
+					organizationId="org-1"
+					remainingDays={10}
+					categories={categories}
+				/>
+			</QueryClientProvider>,
+		);
+
+		expect(() => fireEvent.click(screen.getByRole("button", { name: "Cancel" }))).not.toThrow();
 	});
 
 	it("keeps the planner panel hidden until required fields are selected", () => {
@@ -170,7 +213,7 @@ describe("RequestAbsenceDialog", () => {
 	});
 
 	it("calls and renders the planner after required fields are selected", async () => {
-		renderDialog();
+		const { queryClient } = renderDialog({ organizationId: "org-1" });
 
 		fillRequiredFields();
 
@@ -183,6 +226,21 @@ describe("RequestAbsenceDialog", () => {
 				endPeriod: "full_day",
 			});
 		});
+		expect(
+			queryClient.getQueryCache().find({
+				queryKey: [
+					"absence-plan-preview",
+					"org-1",
+					{
+						categoryId: "vacation",
+						startDate: "2026-05-11",
+						startPeriod: "full_day",
+						endDate: "2026-05-12",
+						endPeriod: "full_day",
+					},
+				],
+			}),
+		).toBeTruthy();
 		expect(await screen.findByRole("heading", { name: "Smart planner" })).toBeTruthy();
 		expect(screen.getByText("Coverage may be tight for this request.")).toBeTruthy();
 	});
@@ -218,7 +276,7 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-05-11" } });
+		fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-11" } });
 		setInvalidSameDayPeriods();
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
@@ -230,7 +288,7 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog({ remainingDays: 1 });
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-05-14" } });
+		fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-14" } });
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 

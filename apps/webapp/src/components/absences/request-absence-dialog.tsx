@@ -45,6 +45,7 @@ interface RequestAbsenceDialogProps {
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
 	}>;
+	organizationId: string;
 	remainingDays: number;
 	holidays?: Holiday[];
 	trigger?: React.ReactNode;
@@ -67,6 +68,7 @@ const createDefaultValues = (initialDate?: string) => ({
 
 export function RequestAbsenceDialog({
 	categories,
+	organizationId,
 	remainingDays,
 	holidays = [],
 	trigger,
@@ -92,7 +94,14 @@ export function RequestAbsenceDialog({
 	// Support both controlled and uncontrolled modes
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
-	const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
+	const setOpen = (nextOpen: boolean) => {
+		if (isControlled) {
+			controlledOnOpenChange?.(nextOpen);
+			return;
+		}
+
+		setInternalOpen(nextOpen);
+	};
 
 	// Initialize form with TanStack Form
 	const form = useForm({
@@ -178,7 +187,7 @@ export function RequestAbsenceDialog({
 			planPreviewValues.endDate,
 	);
 	const planPreviewQuery = useQuery({
-		queryKey: queryKeys.absencePlanPreview.detail("current", planPreviewValues),
+		queryKey: queryKeys.absencePlanPreview.detail(organizationId, planPreviewValues),
 		queryFn: async () => {
 			const result = await getAbsencePlanPreview(planPreviewValues);
 
@@ -247,7 +256,7 @@ export function RequestAbsenceDialog({
 										onValueChange={(value) => field.handleChange(value)}
 									>
 										<TFormControl hasError={field.state.meta.errors.length > 0}>
-											<SelectTrigger>
+											<SelectTrigger aria-label={t("absences.form.absenceType", "Absence Type *")}>
 												<SelectValue
 													placeholder={t("absences.form.selectAbsenceType", "Select absence type")}
 												/>
@@ -288,6 +297,7 @@ export function RequestAbsenceDialog({
 										<TFormItem className="gap-0">
 											<TFormControl hasError={field.state.meta.errors.length > 0}>
 												<DatePicker
+													aria-label={t("absences.form.startDate", "Start Date *")}
 													value={field.state.value}
 													onChange={field.handleChange}
 													onBlur={field.handleBlur}
@@ -304,7 +314,7 @@ export function RequestAbsenceDialog({
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as DayPeriod)}
 										>
-											<SelectTrigger>
+											<SelectTrigger aria-label={t("absences.form.startPeriod", "Start Period")}>
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -339,6 +349,7 @@ export function RequestAbsenceDialog({
 													<TFormItem className="gap-0">
 														<TFormControl hasError={field.state.meta.errors.length > 0}>
 															<DatePicker
+																aria-label={t("absences.form.endDate", "End Date *")}
 																value={field.state.value}
 																min={values.startDate}
 																onChange={field.handleChange}
@@ -356,7 +367,7 @@ export function RequestAbsenceDialog({
 														value={field.state.value}
 														onValueChange={(value) => field.handleChange(value as DayPeriod)}
 													>
-														<SelectTrigger>
+														<SelectTrigger aria-label={t("absences.form.endPeriod", "End Period")}>
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
