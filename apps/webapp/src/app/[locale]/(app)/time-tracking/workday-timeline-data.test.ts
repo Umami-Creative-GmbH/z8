@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
 	shiftFindMany: vi.fn(),
 	absenceFindMany: vi.fn(),
 	getSelfServiceRequests: vi.fn(),
+	loggerWarn: vi.fn(),
+	loggerError: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -21,6 +23,13 @@ vi.mock("@/lib/self-service-requests/get-self-service-requests", () => ({
 	getSelfServiceRequests: mocks.getSelfServiceRequests,
 }));
 
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		warn: mocks.loggerWarn,
+		error: mocks.loggerError,
+	}),
+}));
+
 import { getWorkdayTimelineData } from "./workday-timeline-data";
 
 describe("getWorkdayTimelineData", () => {
@@ -29,6 +38,8 @@ describe("getWorkdayTimelineData", () => {
 		mocks.shiftFindMany.mockReset();
 		mocks.absenceFindMany.mockReset();
 		mocks.getSelfServiceRequests.mockReset();
+		mocks.loggerWarn.mockReset();
+		mocks.loggerError.mockReset();
 
 		mocks.workPeriodFindMany.mockResolvedValue([]);
 		mocks.shiftFindMany.mockResolvedValue([]);
@@ -79,8 +90,37 @@ describe("getWorkdayTimelineData", () => {
 		expect(absenceOptions).toEqual(expect.objectContaining({ where: expect.any(Object) }));
 	});
 
+	it("logs and continues when pending request sources partially fail", async () => {
+		const sourceErrors = [
+			{
+				sourceType: "absence" as const,
+				message: "Absence requests could not be loaded.",
+			},
+		];
+		mocks.getSelfServiceRequests.mockResolvedValue({
+			items: [],
+			counts: { pending: 0, requiredFixes: 0, recentDecisions: 0, total: 0 },
+			sourceErrors,
+		});
+
+		const result = await getWorkdayTimelineData({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			timezone: "UTC",
+			dateParam: "2026-05-03",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mocks.loggerWarn).toHaveBeenCalledWith(
+			{ sourceErrors },
+			"Workday timeline request sources partially failed",
+		);
+		expect(mocks.loggerError).not.toHaveBeenCalled();
+	});
+
 	it("returns an unavailable result if a source throws", async () => {
-		mocks.shiftFindMany.mockRejectedValue(new Error("database unavailable"));
+		const error = new Error("database unavailable");
+		mocks.shiftFindMany.mockRejectedValue(error);
 
 		const result = await getWorkdayTimelineData({
 			employeeId: "employee-1",
@@ -93,5 +133,9 @@ describe("getWorkdayTimelineData", () => {
 		if (!result.success) {
 			expect(result.selectedDate.dateKey).toBe("2026-05-03");
 		}
+		expect(mocks.loggerError).toHaveBeenCalledWith(
+			{ error },
+			"Workday timeline data could not be loaded",
+		);
 	});
 });

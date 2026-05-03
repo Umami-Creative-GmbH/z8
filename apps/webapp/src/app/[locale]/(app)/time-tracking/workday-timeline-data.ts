@@ -3,6 +3,7 @@ import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceEntry, shift, workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { createLogger } from "@/lib/logger";
 import { getSelfServiceRequests } from "@/lib/self-service-requests/get-self-service-requests";
 import type { SelfServiceRequestItem } from "@/lib/self-service-requests/types";
 import { getSelectedWorkdayDate } from "./workday-timeline-date";
@@ -14,6 +15,8 @@ import type {
 	WorkdayWorkPeriodSource,
 } from "./workday-timeline-normalize";
 import type { WorkdayTimelineResult } from "./workday-timeline.types";
+
+const logger = createLogger("WorkdayTimelineData");
 
 interface GetWorkdayTimelineDataInput {
 	employeeId: string;
@@ -78,6 +81,13 @@ export async function getWorkdayTimelineData({
 			}),
 		]);
 
+		if (pendingRequests.sourceErrors.length > 0) {
+			logger.warn(
+				{ sourceErrors: pendingRequests.sourceErrors },
+				"Workday timeline request sources partially failed",
+			);
+		}
+
 		return {
 			success: true,
 			data: normalizeWorkdayTimeline({
@@ -89,7 +99,9 @@ export async function getWorkdayTimelineData({
 				pendingRequests: pendingRequests.items.map(mapPendingRequest),
 			}),
 		};
-	} catch {
+	} catch (error) {
+		logger.error({ error }, "Workday timeline data could not be loaded");
+
 		return { success: false, selectedDate, error: "Timeline unavailable" };
 	}
 }
