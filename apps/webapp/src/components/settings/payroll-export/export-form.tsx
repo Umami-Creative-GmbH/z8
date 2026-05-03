@@ -145,12 +145,12 @@ export function ExportForm({
 	// Memoize loader to avoid dependency warning
 	const loadFilterOptions = useCallback(async () => {
 		startTransition(async () => {
-			const result = await getFilterOptionsAction(organizationId);
+			const result = await getFilterOptionsAction(organizationId, legalEntityId);
 			if (result.success) {
 				setFilterOptions(result.data);
 			}
 		});
-	}, [organizationId]);
+	}, [organizationId, legalEntityId]);
 
 	// Load filter options on mount
 	useEffect(() => {

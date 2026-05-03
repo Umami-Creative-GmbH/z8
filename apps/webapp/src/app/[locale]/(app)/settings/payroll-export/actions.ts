@@ -1855,6 +1855,7 @@ export async function getAbsenceCategoriesAction(
  */
 export async function getFilterOptionsAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<FilterOptions>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -1877,10 +1878,14 @@ export async function getFilterOptionsAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const [employees, teams, projects] = yield* _(
 			Effect.promise(() =>
 				Promise.all([
-					getEmployeesForFilter(organizationId),
+					getEmployeesForFilter(organizationId, selectedLegalEntity.id),
 					getTeamsForFilter(organizationId),
 					getProjectsForFilter(organizationId),
 				]),

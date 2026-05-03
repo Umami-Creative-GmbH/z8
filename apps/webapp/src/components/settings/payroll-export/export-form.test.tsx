@@ -348,6 +348,8 @@ describe("ExportForm", () => {
 			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
 		});
 
+		expect(getFilterOptionsActionMock).toHaveBeenCalledWith("org_123", "entity-a");
+
 		const formatSelect = screen
 			.getAllByRole("combobox")
 			.find((combobox) =>

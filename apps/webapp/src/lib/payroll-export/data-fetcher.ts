@@ -348,9 +348,13 @@ export async function getAbsenceCategories(organizationId: string) {
 /**
  * Get employees for filter options
  */
-export async function getEmployeesForFilter(organizationId: string) {
+export async function getEmployeesForFilter(organizationId: string, legalEntityId: string) {
 	return db.query.employee.findMany({
-		where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+		where: and(
+			eq(employee.organizationId, organizationId),
+			eq(employee.legalEntityId, legalEntityId),
+			eq(employee.isActive, true),
+		),
 		columns: {
 			id: true,
 			firstName: true,

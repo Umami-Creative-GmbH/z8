@@ -44,7 +44,7 @@ async function ScheduledExportsContent({
 	// Fetch initial data in parallel
 	const [schedulesResult, filterOptionsResult, payrollConfigsResult] = await Promise.all([
 		getScheduledExportsAction(organizationId, selectedLegalEntityId),
-		getFilterOptionsAction(organizationId),
+		getFilterOptionsAction(organizationId, selectedLegalEntityId),
 		getPayrollConfigsAction(organizationId, selectedLegalEntityId),
 	]);
 

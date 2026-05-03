@@ -114,7 +114,7 @@ export function ScheduledExportsTable({
 	// Load filter options and payroll configs when dialog opens
 	const loadDialogData = useCallback(async () => {
 		const [filterResult, configResult] = await Promise.all([
-			getFilterOptionsAction(organizationId),
+			getFilterOptionsAction(organizationId, legalEntityId),
 			getPayrollConfigsAction(organizationId, legalEntityId),
 		]);
 
@@ -182,7 +182,7 @@ export function ScheduledExportsTable({
 
 		await mutate(
 			async () => {
-				const result = await toggleScheduledExportAction(organizationId, scheduleId, isActive);
+				const result = await toggleScheduledExportAction(organizationId, legalEntityId, scheduleId, isActive);
 				if (result.success) {
 					return optimisticData;
 				}
@@ -208,7 +208,7 @@ export function ScheduledExportsTable({
 
 		await mutate(
 			async () => {
-				const result = await deleteScheduledExportAction(organizationId, scheduleId);
+				const result = await deleteScheduledExportAction(organizationId, legalEntityId, scheduleId);
 				if (result.success) {
 					return optimisticData;
 				}
@@ -480,6 +480,7 @@ export function ScheduledExportsTable({
 					open={Boolean(historySchedule)}
 					onOpenChange={(open) => !open && setHistorySchedule(null)}
 					organizationId={organizationId}
+					legalEntityId={legalEntityId}
 					scheduleId={historySchedule.id}
 					scheduleName={historySchedule.name}
 				/>
@@ -491,6 +492,7 @@ export function ScheduledExportsTable({
 					open={Boolean(runNowSchedule)}
 					onOpenChange={(open) => !open && setRunNowSchedule(null)}
 					organizationId={organizationId}
+					legalEntityId={legalEntityId}
 					scheduleId={runNowSchedule.id}
 					scheduleName={runNowSchedule.name}
 					dateRangeStrategy={runNowSchedule.dateRangeStrategy}

@@ -24,6 +24,7 @@ interface RunNowDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	legalEntityId: string;
 	scheduleId: string;
 	scheduleName: string;
 	dateRangeStrategy: string;
@@ -69,6 +70,7 @@ export function RunNowDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	legalEntityId,
 	scheduleId,
 	scheduleName,
 	dateRangeStrategy,
@@ -91,7 +93,7 @@ export function RunNowDialog({
 
 	const handleRunNow = () => {
 		startTransition(async () => {
-			const result = await runScheduledExportNowAction(organizationId, scheduleId).catch(() => {
+			const result = await runScheduledExportNowAction(organizationId, legalEntityId, scheduleId).catch(() => {
 				toast.error(
 					t("settings.scheduledExports.toast.unexpectedError", "An unexpected error occurred"),
 				);

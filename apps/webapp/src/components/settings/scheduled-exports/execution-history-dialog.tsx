@@ -43,6 +43,7 @@ interface ExecutionHistoryDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	legalEntityId: string;
 	scheduleId: string;
 	scheduleName: string;
 }
@@ -51,6 +52,7 @@ export function ExecutionHistoryDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	legalEntityId,
 	scheduleId,
 	scheduleName,
 }: ExecutionHistoryDialogProps) {
@@ -64,7 +66,7 @@ export function ExecutionHistoryDialog({
 			const fetchHistory = async () => {
 				setIsLoading(true);
 				setError(null);
-				const result = await getExecutionHistoryAction(organizationId, scheduleId, 50).then(
+				const result = await getExecutionHistoryAction(organizationId, legalEntityId, scheduleId, 50).then(
 					(response) => response,
 					() => null,
 				);
@@ -88,7 +90,7 @@ export function ExecutionHistoryDialog({
 			};
 			fetchHistory();
 		}
-	}, [open, organizationId, scheduleId, t]);
+	}, [open, organizationId, legalEntityId, scheduleId, t]);
 
 	const getStatusBadge = (status: string) => {
 		switch (status) {
