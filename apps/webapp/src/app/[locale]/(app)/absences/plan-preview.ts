@@ -199,25 +199,14 @@ async function evaluateCoverageRisk({
 			}
 			hasMatchingRuleForAffectedShifts = true;
 
-			const assignedStaffAfterAbsence = new Set(
-				typedPublishedShifts
-					.filter(
-						(publishedShift) =>
-							publishedShift.employeeId &&
-							publishedShift.employeeId !== employeeId &&
-							publishedShift.subareaId === rule.subareaId &&
-							isSameDate(publishedShift.date, affectedShift.date) &&
-							timeRangesOverlap(
-								rule.startTime,
-								rule.endTime,
-								publishedShift.startTime,
-								publishedShift.endTime,
-							),
-					)
-					.map((publishedShift) => publishedShift.employeeId),
-			).size;
+			const staffCountAfterAbsence = findLowestSegmentStaffCount({
+				rule,
+				affectedShift,
+				employeeId,
+				publishedShifts: typedPublishedShifts,
+			});
 
-			if (assignedStaffAfterAbsence < rule.minimumStaffCount) {
+			if (staffCountAfterAbsence < rule.minimumStaffCount) {
 				coverageRisks.push({
 					date: dateKey,
 					subareaId: rule.subareaId,
@@ -225,7 +214,7 @@ async function evaluateCoverageRisk({
 					startTime: rule.startTime,
 					endTime: rule.endTime,
 					minimumStaffCount: rule.minimumStaffCount,
-					staffCountAfterAbsence: assignedStaffAfterAbsence,
+					staffCountAfterAbsence,
 				});
 			}
 		}
@@ -244,6 +233,74 @@ function timeRangesOverlap(
 	rightEnd: string,
 ) {
 	return leftStart < rightEnd && leftEnd > rightStart;
+}
+
+function findLowestSegmentStaffCount({
+	rule,
+	affectedShift,
+	employeeId,
+	publishedShifts,
+}: {
+	rule: CoverageRuleWithSubarea;
+	affectedShift: AffectedShift;
+	employeeId: string;
+	publishedShifts: AffectedShift[];
+}) {
+	const candidateShifts = publishedShifts.filter(
+		(publishedShift) =>
+			publishedShift.employeeId &&
+			publishedShift.employeeId !== employeeId &&
+			publishedShift.subareaId === rule.subareaId &&
+			isSameDate(publishedShift.date, affectedShift.date) &&
+			timeRangesOverlap(
+				rule.startTime,
+				rule.endTime,
+				publishedShift.startTime,
+				publishedShift.endTime,
+			),
+	);
+	const boundaries = new Set([rule.startTime, rule.endTime]);
+
+	for (const publishedShift of candidateShifts) {
+		boundaries.add(clampTime(publishedShift.startTime, rule.startTime, rule.endTime));
+		boundaries.add(clampTime(publishedShift.endTime, rule.startTime, rule.endTime));
+	}
+
+	const sortedBoundaries = [...boundaries].sort();
+	let lowestStaffCount = Number.POSITIVE_INFINITY;
+
+	for (let index = 0; index < sortedBoundaries.length - 1; index++) {
+		const segmentStart = sortedBoundaries[index];
+		const segmentEnd = sortedBoundaries[index + 1];
+		if (!segmentStart || !segmentEnd || segmentStart === segmentEnd) {
+			continue;
+		}
+
+		const assignedStaff = new Set(
+			candidateShifts
+				.filter(
+					(publishedShift) =>
+						publishedShift.startTime <= segmentStart && publishedShift.endTime >= segmentEnd,
+				)
+				.map((publishedShift) => publishedShift.employeeId),
+		).size;
+
+		lowestStaffCount = Math.min(lowestStaffCount, assignedStaff);
+	}
+
+	return Number.isFinite(lowestStaffCount) ? lowestStaffCount : 0;
+}
+
+function clampTime(time: string, startTime: string, endTime: string) {
+	if (time < startTime) {
+		return startTime;
+	}
+
+	if (time > endTime) {
+		return endTime;
+	}
+
+	return time;
 }
 
 function isSameDate(left: Date, right: Date) {

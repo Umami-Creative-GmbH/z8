@@ -226,6 +226,83 @@ describe("getAbsencePlanPreview", () => {
 		}
 	});
 
+	it("adds a coverage risk when every segment in a rule window is understaffed", async () => {
+		mockState.shiftFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "17:00",
+					status: "published",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "17:00",
+					status: "published",
+				},
+				{
+					id: "shift-peer-am",
+					employeeId: "emp-peer-am",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "12:00",
+					status: "published",
+				},
+				{
+					id: "shift-peer-pm",
+					employeeId: "emp-peer-pm",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "12:00",
+					endTime: "17:00",
+					status: "published",
+				},
+			]);
+		mockState.coverageRuleFindMany.mockResolvedValue([
+			{
+				id: "rule-1",
+				organizationId: "org-current",
+				subareaId: "subarea-1",
+				dayOfWeek: "monday",
+				startTime: "09:00",
+				endTime: "17:00",
+				minimumStaffCount: 2,
+				subarea: { id: "subarea-1", name: "Front Desk" },
+			},
+		]);
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.coverage).toEqual({
+				hasConfiguredRulesForAffectedShifts: true,
+				risks: [
+					{
+						date: "2026-05-04",
+						subareaId: "subarea-1",
+						subareaName: "Front Desk",
+						startTime: "09:00",
+						endTime: "17:00",
+						minimumStaffCount: 2,
+						staffCountAfterAbsence: 1,
+					},
+				],
+			});
+			expect(result.data.approvalSignal).toBe("risky");
+		}
+	});
+
 	it("marks affected shifts as missing coverage rules when subarea rules do not match day or time", async () => {
 		mockState.shiftFindMany
 			.mockResolvedValueOnce([

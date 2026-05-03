@@ -39,6 +39,11 @@ export async function getAbsenceCategories(organizationId: string) {
 }
 
 export async function getAbsenceEntries(employeeId: string, startDate: string, endDate: string) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return [];
+	}
+
 	return getAbsenceEntriesAction(employeeId, startDate, endDate);
 }
 
@@ -52,6 +57,11 @@ export async function getHolidays(employeeId: string, startDate: Date, endDate: 
 }
 
 export async function getVacationBalance(employeeId: string, year: number) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return null;
+	}
+
 	return getVacationBalanceAction(employeeId, year);
 }
 
