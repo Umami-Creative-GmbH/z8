@@ -57,6 +57,7 @@ function getInheritedPermissions(
 		},
 		permissions: { orgWide: null, byTeamId: new Map() },
 		managedEmployeeIds: baseTier === "manager" ? ["placeholder-managed"] : [],
+		legalEntityAdminIds: [],
 		customRoles: [],
 	};
 
