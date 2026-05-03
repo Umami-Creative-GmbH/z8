@@ -1,13 +1,50 @@
+import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
 	approvalChainInstance,
 	approvalChainStageInstance,
+	approvalRequest,
 	approvalPolicy,
 	approvalPolicyCondition,
 	approvalPolicyStage,
 	employeeGroup,
 	employeeGroupMember,
+	organizationRelations,
 } from "@/db/schema";
+
+function uniqueIndexNames(table: Parameters<typeof getTableConfig>[0]): string[] {
+	return getTableConfig(table)
+		.indexes.filter((index) => index.config.unique)
+		.map((index) => index.config.name);
+}
+
+function hasCompositeForeignKey(
+	table: Parameters<typeof getTableConfig>[0],
+	columns: string[],
+	foreignTable: Parameters<typeof getTableConfig>[0],
+	foreignColumns: string[],
+): boolean {
+	return getTableConfig(table).foreignKeys.some((foreignKey) => {
+		const reference = foreignKey.reference();
+
+		return (
+			reference.columns.map((column) => column.name).join(",") === columns.join(",") &&
+			reference.foreignColumns.map((column) => column.name).join(",") ===
+				foreignColumns.join(",") &&
+			reference.foreignColumns.every((column) => column.table === foreignTable)
+		);
+	});
+}
+
+function organizationRelationKeys(): string[] {
+	const relation = { withFieldName: (fieldName: string) => fieldName };
+	const relations = organizationRelations.config({
+		one: () => relation,
+		many: () => relation,
+	});
+
+	return Object.keys(relations);
+}
 
 describe("approval policy schema exports", () => {
 	it("exports policy, group, and chain tables", () => {
@@ -18,5 +55,88 @@ describe("approval policy schema exports", () => {
 		expect(employeeGroupMember).toBeDefined();
 		expect(approvalChainInstance).toBeDefined();
 		expect(approvalChainStageInstance).toBeDefined();
+	});
+
+	it("defines parent uniqueness for org-scoped composite foreign keys", () => {
+		expect(uniqueIndexNames(approvalPolicy)).toEqual(
+			expect.arrayContaining(["approvalPolicy_id_organizationId_idx"]),
+		);
+		expect(uniqueIndexNames(employeeGroup)).toEqual(
+			expect.arrayContaining(["employeeGroup_id_organizationId_idx"]),
+		);
+		expect(uniqueIndexNames(approvalChainInstance)).toEqual(
+			expect.arrayContaining(["approvalChainInstance_id_organizationId_idx"]),
+		);
+		expect(uniqueIndexNames(approvalPolicyStage)).toEqual(
+			expect.arrayContaining(["approvalPolicyStage_id_organizationId_idx"]),
+		);
+		expect(uniqueIndexNames(approvalRequest)).toEqual(
+			expect.arrayContaining(["approvalRequest_id_organizationId_idx"]),
+		);
+	});
+
+	it("uses org-scoped composite foreign keys for approval policy runtime links", () => {
+		expect(
+			hasCompositeForeignKey(approvalPolicyCondition, ["policy_id", "organization_id"], approvalPolicy, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(approvalPolicyStage, ["policy_id", "organization_id"], approvalPolicy, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(employeeGroupMember, ["group_id", "organization_id"], employeeGroup, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(approvalChainInstance, ["policy_id", "organization_id"], approvalPolicy, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(
+				approvalChainStageInstance,
+				["chain_instance_id", "organization_id"],
+				approvalChainInstance,
+				["id", "organization_id"],
+			),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(
+				approvalChainStageInstance,
+				["policy_stage_id", "organization_id"],
+				approvalPolicyStage,
+				["id", "organization_id"],
+			),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(
+				approvalChainStageInstance,
+				["approval_request_id", "organization_id"],
+				approvalRequest,
+				["id", "organization_id"],
+			),
+		).toBe(true);
+	});
+
+	it("exposes organization relations for all approval policy tables", () => {
+		expect(organizationRelationKeys()).toEqual(
+			expect.arrayContaining([
+				"approvalPolicies",
+				"approvalPolicyConditions",
+				"approvalPolicyStages",
+				"employeeGroups",
+				"employeeGroupMembers",
+				"approvalChainInstances",
+				"approvalChainStageInstances",
+			]),
+		);
 	});
 });

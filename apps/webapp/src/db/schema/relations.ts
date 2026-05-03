@@ -204,8 +204,12 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Approval workflows
 	approvalRequests: many(approvalRequest),
 	approvalPolicies: many(approvalPolicy),
+	approvalPolicyConditions: many(approvalPolicyCondition),
+	approvalPolicyStages: many(approvalPolicyStage),
 	employeeGroups: many(employeeGroup),
+	employeeGroupMembers: many(employeeGroupMember),
 	approvalChainInstances: many(approvalChainInstance),
+	approvalChainStageInstances: many(approvalChainStageInstance),
 	// Compliance exceptions
 	complianceExceptions: many(complianceException),
 	schedulePublishComplianceAcks: many(schedulePublishComplianceAck),
