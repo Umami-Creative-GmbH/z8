@@ -181,6 +181,9 @@ export const scheduledExportExecution = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		// Execution timing
 		triggeredAt: timestamp("triggered_at", { withTimezone: true }).notNull(),
@@ -220,6 +223,11 @@ export const scheduledExportExecution = pgTable(
 	(table) => [
 		index("scheduledExportExecution_scheduledExportId_idx").on(table.scheduledExportId),
 		index("scheduledExportExecution_organizationId_idx").on(table.organizationId),
+		index("scheduledExportExecution_legalEntityId_idx").on(table.legalEntityId),
+		index("scheduledExportExecution_org_entity_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+		),
 		index("scheduledExportExecution_status_idx").on(table.status),
 		index("scheduledExportExecution_triggeredAt_idx").on(table.triggeredAt),
 		// Composite for querying recent executions by schedule

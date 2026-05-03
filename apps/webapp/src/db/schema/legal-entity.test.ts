@@ -11,8 +11,10 @@ import {
 	payrollExportConfig,
 	payrollExportJob,
 	scheduledExport,
+	scheduledExportExecution,
 	workPolicy,
 	workPolicyAssignment,
+	workPolicyViolation,
 	changePolicy,
 	changePolicyAssignment,
 	vacationAllowance,
@@ -42,6 +44,8 @@ describe("legal entity schema", () => {
 			payrollExportConfig,
 			payrollExportJob,
 			scheduledExport,
+			scheduledExportExecution,
+			workPolicyViolation,
 		];
 
 		for (const table of tables) {

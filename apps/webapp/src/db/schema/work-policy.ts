@@ -397,6 +397,9 @@ export const workPolicyViolation = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		policyId: uuid("policy_id").references(() => workPolicy.id, {
 			onDelete: "set null",
 		}),
@@ -422,6 +425,8 @@ export const workPolicyViolation = pgTable(
 	(table) => [
 		index("workPolicyViolation_employeeId_idx").on(table.employeeId),
 		index("workPolicyViolation_organizationId_idx").on(table.organizationId),
+		index("workPolicyViolation_legalEntityId_idx").on(table.legalEntityId),
+		index("workPolicyViolation_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("workPolicyViolation_policyId_idx").on(table.policyId),
 		index("workPolicyViolation_violationDate_idx").on(table.violationDate),
 		index("workPolicyViolation_violationType_idx").on(table.violationType),
