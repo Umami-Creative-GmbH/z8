@@ -13,6 +13,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
+import { legalEntity } from "./legal-entity";
 
 // ============================================
 // ORGANIZATION STRUCTURE
@@ -121,6 +122,9 @@ export const employee = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "restrict" }),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "set null" }),
 		managerId: uuid("manager_id"), // DEPRECATED: Use employee_managers table instead
 
@@ -153,6 +157,8 @@ export const employee = pgTable(
 	(table) => [
 		index("employee_userId_idx").on(table.userId),
 		index("employee_organizationId_idx").on(table.organizationId),
+		index("employee_legalEntityId_idx").on(table.legalEntityId),
+		index("employee_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_managerId_idx").on(table.managerId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),

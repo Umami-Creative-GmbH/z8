@@ -16,6 +16,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { holidayPresetAssignmentTypeEnum } from "./enums";
+import { legalEntity } from "./legal-entity";
 import { employee, team } from "./organization";
 
 // ============================================
@@ -30,6 +31,9 @@ export const vacationAllowance = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		// Policy name for identification (e.g., "5-day workers", "4-day workers", "Part-time")
 		name: text("name").notNull(),
@@ -66,14 +70,16 @@ export const vacationAllowance = pgTable(
 	},
 	(table) => [
 		index("vacationAllowance_organizationId_idx").on(table.organizationId),
+		index("vacationAllowance_legalEntityId_idx").on(table.legalEntityId),
+		index("vacationAllowance_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("vacationAllowance_startDate_idx").on(table.startDate),
 		// Unique policy name per org (active policies only)
-		uniqueIndex("vacationAllowance_org_name_active_idx")
-			.on(table.organizationId, table.name)
+		uniqueIndex("vacationAllowance_org_entity_name_active_idx")
+			.on(table.organizationId, table.legalEntityId, table.name)
 			.where(sql`is_active = true AND valid_until IS NULL`),
 		// Only one company default per org at a time (active and not superseded)
-		uniqueIndex("vacationAllowance_org_company_default_idx")
-			.on(table.organizationId)
+		uniqueIndex("vacationAllowance_entity_company_default_idx")
+			.on(table.organizationId, table.legalEntityId)
 			.where(sql`is_company_default = true AND is_active = true AND valid_until IS NULL`),
 	],
 );
@@ -134,6 +140,9 @@ export const vacationPolicyAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
 		employeeId: uuid("employee_id").references(() => employee.id, {
@@ -154,11 +163,16 @@ export const vacationPolicyAssignment = pgTable(
 	(table) => [
 		index("vacationPolicyAssignment_policyId_idx").on(table.policyId),
 		index("vacationPolicyAssignment_organizationId_idx").on(table.organizationId),
+		index("vacationPolicyAssignment_legalEntityId_idx").on(table.legalEntityId),
+		index("vacationPolicyAssignment_org_entity_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+		),
 		index("vacationPolicyAssignment_teamId_idx").on(table.teamId),
 		index("vacationPolicyAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization per policy
-		uniqueIndex("vacationPolicyAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
+		uniqueIndex("vacationPolicyAssignment_entity_default_idx")
+			.on(table.organizationId, table.legalEntityId, table.assignmentType)
 			.where(sql`assignment_type = 'organization' AND is_active = true`),
 		// One policy assignment per team
 		uniqueIndex("vacationPolicyAssignment_team_idx")

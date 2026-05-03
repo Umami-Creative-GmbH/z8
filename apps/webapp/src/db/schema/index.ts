@@ -37,6 +37,7 @@ export * from "./enterprise";
 export * from "./enums";
 export * from "./export";
 export * from "./holiday";
+export * from "./legal-entity";
 // Identity management (role templates, lifecycle)
 export * from "./identity";
 // Import review staging and audit tables

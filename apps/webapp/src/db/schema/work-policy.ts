@@ -26,6 +26,7 @@ import {
 	timeRegulationViolationTypeEnum,
 	workingDaysPresetEnum,
 } from "./enums";
+import { legalEntity } from "./legal-entity";
 import { employee, location, team } from "./organization";
 import { workPeriod } from "./time-tracking";
 import type { TimeRegulationBreakRulesPreset, TimeRegulationViolationDetails } from "./types";
@@ -45,6 +46,9 @@ export const workPolicy = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		// Policy identification
 		name: text("name").notNull(),
@@ -71,8 +75,14 @@ export const workPolicy = pgTable(
 	},
 	(table) => [
 		index("workPolicy_organizationId_idx").on(table.organizationId),
+		index("workPolicy_legalEntityId_idx").on(table.legalEntityId),
+		index("workPolicy_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("workPolicy_isActive_idx").on(table.isActive),
-		uniqueIndex("workPolicy_org_name_idx").on(table.organizationId, table.name),
+		uniqueIndex("workPolicy_org_entity_name_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+			table.name,
+		),
 	],
 );
 
@@ -313,6 +323,9 @@ export const workPolicyAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		// Assignment target
 		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
@@ -342,11 +355,16 @@ export const workPolicyAssignment = pgTable(
 	(table) => [
 		index("workPolicyAssignment_policyId_idx").on(table.policyId),
 		index("workPolicyAssignment_organizationId_idx").on(table.organizationId),
+		index("workPolicyAssignment_legalEntityId_idx").on(table.legalEntityId),
+		index("workPolicyAssignment_org_entity_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+		),
 		index("workPolicyAssignment_teamId_idx").on(table.teamId),
 		index("workPolicyAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
-		uniqueIndex("workPolicyAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
+		uniqueIndex("workPolicyAssignment_entity_default_idx")
+			.on(table.organizationId, table.legalEntityId, table.assignmentType)
 			.where(sql`assignment_type = 'organization' AND is_active = true`),
 		// One assignment per team
 		uniqueIndex("workPolicyAssignment_team_idx")

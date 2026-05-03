@@ -14,6 +14,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { holidayPresetAssignmentTypeEnum } from "./enums";
+import { legalEntity } from "./legal-entity";
 import { employee, team } from "./organization";
 
 // ============================================
@@ -40,6 +41,9 @@ export const changePolicy = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		name: text("name").notNull(),
 		description: text("description"),
@@ -64,8 +68,14 @@ export const changePolicy = pgTable(
 	},
 	(table) => [
 		index("changePolicy_organizationId_idx").on(table.organizationId),
+		index("changePolicy_legalEntityId_idx").on(table.legalEntityId),
+		index("changePolicy_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("changePolicy_isActive_idx").on(table.isActive),
-		uniqueIndex("changePolicy_org_name_idx").on(table.organizationId, table.name),
+		uniqueIndex("changePolicy_org_entity_name_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+			table.name,
+		),
 	],
 );
 
@@ -93,6 +103,9 @@ export const changePolicyAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		// Assignment target - reuses existing enum
 		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
@@ -122,17 +135,23 @@ export const changePolicyAssignment = pgTable(
 	(table) => [
 		index("changePolicyAssignment_policyId_idx").on(table.policyId),
 		index("changePolicyAssignment_organizationId_idx").on(table.organizationId),
+		index("changePolicyAssignment_legalEntityId_idx").on(table.legalEntityId),
+		index("changePolicyAssignment_org_entity_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+		),
 		index("changePolicyAssignment_teamId_idx").on(table.teamId),
 		index("changePolicyAssignment_employeeId_idx").on(table.employeeId),
 		// Composite index for efficient policy resolution queries
 		index("changePolicyAssignment_resolution_idx").on(
 			table.organizationId,
+			table.legalEntityId,
 			table.assignmentType,
 			table.isActive,
 		),
 		// One org default per organization
-		uniqueIndex("changePolicyAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
+		uniqueIndex("changePolicyAssignment_entity_default_idx")
+			.on(table.organizationId, table.legalEntityId, table.assignmentType)
 			.where(sql`assignment_type = 'organization' AND is_active = true`),
 		// One assignment per team
 		uniqueIndex("changePolicyAssignment_team_idx")

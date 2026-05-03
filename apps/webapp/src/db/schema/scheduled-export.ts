@@ -14,6 +14,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -25,6 +26,7 @@ import {
 	scheduledExportDateRangeStrategyEnum,
 	scheduledExportExecutionStatusEnum,
 } from "./enums";
+import { legalEntity } from "./legal-entity";
 import { payrollExportConfig } from "./payroll-export";
 
 // ============================================
@@ -89,6 +91,9 @@ export const scheduledExport = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 
 		// Schedule identification
 		name: text("name").notNull(), // "Monthly Payroll Export"
@@ -143,9 +148,14 @@ export const scheduledExport = pgTable(
 	},
 	(table) => [
 		index("scheduledExport_organizationId_idx").on(table.organizationId),
+		index("scheduledExport_legalEntityId_idx").on(table.legalEntityId),
+		index("scheduledExport_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("scheduledExport_isActive_idx").on(table.isActive),
 		index("scheduledExport_nextExecutionAt_idx").on(table.nextExecutionAt),
 		index("scheduledExport_reportType_idx").on(table.reportType),
+		uniqueIndex("scheduledExport_org_entity_name_active_idx")
+			.on(table.organizationId, table.legalEntityId, table.name)
+			.where(sql`is_active = true`),
 		// Composite index for finding due executions efficiently
 		index("scheduledExport_active_nextExecution_idx")
 			.on(table.isActive, table.nextExecutionAt)

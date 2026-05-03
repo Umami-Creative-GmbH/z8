@@ -17,6 +17,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { organization, user } from "../auth-schema";
 import { absenceCategory } from "./absence";
 import { payrollExportStatusEnum } from "./enums";
+import { legalEntity } from "./legal-entity";
 import { employee } from "./organization";
 import { workCategory } from "./work-category";
 
@@ -64,6 +65,9 @@ export const payrollExportConfig = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		formatId: text("format_id")
 			.notNull()
 			.references(() => payrollExportFormat.id, { onDelete: "cascade" }),
@@ -87,10 +91,15 @@ export const payrollExportConfig = pgTable(
 	},
 	(table) => [
 		index("payrollExportConfig_organizationId_idx").on(table.organizationId),
+		index("payrollExportConfig_legalEntityId_idx").on(table.legalEntityId),
+		index("payrollExportConfig_org_entity_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+		),
 		index("payrollExportConfig_formatId_idx").on(table.formatId),
 		// One active config per format per organization
-		uniqueIndex("payrollExportConfig_org_format_active_idx")
-			.on(table.organizationId, table.formatId)
+		uniqueIndex("payrollExportConfig_org_entity_format_active_idx")
+			.on(table.organizationId, table.legalEntityId, table.formatId)
 			.where(sql`is_active = true`),
 	],
 );
@@ -192,6 +201,9 @@ export const payrollExportJob = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		configId: uuid("config_id")
 			.notNull()
 			.references(() => payrollExportConfig.id, { onDelete: "cascade" }),
@@ -228,6 +240,8 @@ export const payrollExportJob = pgTable(
 	},
 	(table) => [
 		index("payrollExportJob_organizationId_idx").on(table.organizationId),
+		index("payrollExportJob_legalEntityId_idx").on(table.legalEntityId),
+		index("payrollExportJob_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("payrollExportJob_configId_idx").on(table.configId),
 		index("payrollExportJob_requestedById_idx").on(table.requestedById),
 		index("payrollExportJob_status_idx").on(table.status),

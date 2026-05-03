@@ -14,6 +14,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { holidayCategoryEnum, holidayPresetAssignmentTypeEnum, recurrenceTypeEnum } from "./enums";
+import { legalEntity } from "./legal-entity";
 import { employee, team } from "./organization";
 
 // ============================================
@@ -28,6 +29,9 @@ export const holidayCategory = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		type: holidayCategoryEnum("type").notNull(),
 		name: text("name").notNull(),
 		description: text("description"),
@@ -40,7 +44,11 @@ export const holidayCategory = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("holidayCategory_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("holidayCategory_organizationId_idx").on(table.organizationId),
+		index("holidayCategory_legalEntityId_idx").on(table.legalEntityId),
+		index("holidayCategory_org_entity_idx").on(table.organizationId, table.legalEntityId),
+	],
 );
 
 // Holidays and closing days with recurrence support
@@ -51,6 +59,9 @@ export const holiday = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		categoryId: uuid("category_id")
 			.notNull()
 			.references(() => holidayCategory.id),
@@ -73,6 +84,8 @@ export const holiday = pgTable(
 	},
 	(table) => [
 		index("holiday_organizationId_idx").on(table.organizationId),
+		index("holiday_legalEntityId_idx").on(table.legalEntityId),
+		index("holiday_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("holiday_startDate_idx").on(table.startDate),
 		index("holiday_categoryId_idx").on(table.categoryId),
 		index("holiday_orgId_isActive_recurrenceType_idx").on(
@@ -95,6 +108,9 @@ export const holidayPreset = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		name: text("name").notNull(), // "Germany - Bavaria"
 		description: text("description"),
 		countryCode: text("country_code"), // ISO 3166-1 alpha-2 (e.g., "DE")
@@ -113,9 +129,12 @@ export const holidayPreset = pgTable(
 	},
 	(table) => [
 		index("holidayPreset_organizationId_idx").on(table.organizationId),
+		index("holidayPreset_legalEntityId_idx").on(table.legalEntityId),
+		index("holidayPreset_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		// Unique constraint for same location within organization
-		uniqueIndex("holidayPreset_org_location_idx").on(
+		uniqueIndex("holidayPreset_org_entity_location_idx").on(
 			table.organizationId,
+			table.legalEntityId,
 			table.countryCode,
 			table.stateCode,
 			table.regionCode,
@@ -162,6 +181,9 @@ export const holidayPresetAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
 		employeeId: uuid("employee_id").references(() => employee.id, {
@@ -182,11 +204,16 @@ export const holidayPresetAssignment = pgTable(
 	(table) => [
 		index("holidayPresetAssignment_presetId_idx").on(table.presetId),
 		index("holidayPresetAssignment_organizationId_idx").on(table.organizationId),
+		index("holidayPresetAssignment_legalEntityId_idx").on(table.legalEntityId),
+		index("holidayPresetAssignment_org_entity_idx").on(
+			table.organizationId,
+			table.legalEntityId,
+		),
 		index("holidayPresetAssignment_teamId_idx").on(table.teamId),
 		index("holidayPresetAssignment_employeeId_idx").on(table.employeeId),
 		// One org default per organization
-		uniqueIndex("holidayPresetAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
+		uniqueIndex("holidayPresetAssignment_entity_default_idx")
+			.on(table.organizationId, table.legalEntityId, table.assignmentType)
 			.where(sql`assignment_type = 'organization' AND is_active = true`),
 		// One assignment per team
 		uniqueIndex("holidayPresetAssignment_team_idx")
@@ -211,6 +238,9 @@ export const holidayAssignment = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		legalEntityId: uuid("legal_entity_id")
+			.notNull()
+			.references(() => legalEntity.id, { onDelete: "cascade" }),
 		assignmentType: holidayPresetAssignmentTypeEnum("assignment_type").notNull(),
 		teamId: uuid("team_id").references(() => team.id, { onDelete: "cascade" }),
 		employeeId: uuid("employee_id").references(() => employee.id, {
@@ -228,11 +258,13 @@ export const holidayAssignment = pgTable(
 	(table) => [
 		index("holidayAssignment_holidayId_idx").on(table.holidayId),
 		index("holidayAssignment_organizationId_idx").on(table.organizationId),
+		index("holidayAssignment_legalEntityId_idx").on(table.legalEntityId),
+		index("holidayAssignment_org_entity_idx").on(table.organizationId, table.legalEntityId),
 		index("holidayAssignment_teamId_idx").on(table.teamId),
 		index("holidayAssignment_employeeId_idx").on(table.employeeId),
 		// Prevent duplicate assignments for the same holiday to the same target
-		uniqueIndex("holidayAssignment_holiday_org_idx")
-			.on(table.holidayId, table.organizationId, table.assignmentType)
+		uniqueIndex("holidayAssignment_holiday_entity_idx")
+			.on(table.holidayId, table.organizationId, table.legalEntityId, table.assignmentType)
 			.where(sql`assignment_type = 'organization' AND is_active = true`),
 		uniqueIndex("holidayAssignment_holiday_team_idx")
 			.on(table.holidayId, table.teamId)
