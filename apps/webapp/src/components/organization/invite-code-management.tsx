@@ -89,14 +89,14 @@ function InviteCodeMobileCard({
 		<div className="rounded-xl border bg-card p-4 shadow-sm">
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-1">
-					<div className="flex items-center gap-2">
-						<code className="rounded-md bg-muted px-2.5 py-1 font-mono text-base font-semibold tracking-[0.18em]">
+					<div className="flex min-w-0 items-center gap-2">
+						<code className="block min-w-0 max-w-full truncate rounded-md bg-muted px-2.5 py-1 font-mono text-sm font-semibold tracking-[0.12em] sm:text-base sm:tracking-[0.18em]">
 							{code.code}
 						</code>
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-8 w-8 p-0"
+							className="h-8 w-8 shrink-0 p-0"
 							onClick={() => onCopyCode(code.code)}
 							aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
 						>
@@ -153,12 +153,20 @@ function InviteCodeMobileCard({
 				</div>
 			</div>
 
-			<div className="mt-4 grid grid-cols-2 gap-2">
-				<Button variant="outline" onClick={() => onCopyUrl(code.code)}>
+			<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+				<Button
+					variant="outline"
+					className="min-w-0 whitespace-normal text-center"
+					onClick={() => onCopyUrl(code.code)}
+				>
 					<IconCopy className="mr-2 h-4 w-4" aria-hidden="true" />
 					{t("settings.inviteCodes.copyUrl", "Copy invite URL")}
 				</Button>
-				<Button variant="outline" onClick={() => onOpenQr(code)}>
+				<Button
+					variant="outline"
+					className="min-w-0 whitespace-normal text-center"
+					onClick={() => onOpenQr(code)}
+				>
 					<IconQrcode className="mr-2 h-4 w-4" aria-hidden="true" />
 					{t("settings.inviteCodes.qrCode", "QR Code")}
 				</Button>

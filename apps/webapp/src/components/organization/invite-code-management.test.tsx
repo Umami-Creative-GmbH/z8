@@ -22,7 +22,20 @@ describe("InviteCodeManagement responsive UX", () => {
 
 		expect(source).toContain("settings.inviteCodes.copyUrl");
 		expect(source).toContain("settings.inviteCodes.qrCode");
-		expect(source).toContain("font-mono text-base font-semibold tracking-[0.18em]");
+		expect(source).toContain("font-mono text-sm font-semibold tracking-[0.12em]");
+		expect(source).toContain("sm:text-base sm:tracking-[0.18em]");
+	});
+
+	it("prevents mobile invite cards from overflowing narrow screens", () => {
+		const source = readFileSync(
+			join(process.cwd(), "src/components/organization/invite-code-management.tsx"),
+			"utf8",
+		);
+
+		expect(source).toContain("min-w-0 items-center gap-2");
+		expect(source).toContain("max-w-full truncate");
+		expect(source).toContain("grid-cols-1 sm:grid-cols-2");
+		expect(source).toContain("min-w-0 whitespace-normal text-center");
 	});
 
 	it("keeps invite panels readable on mobile", () => {
