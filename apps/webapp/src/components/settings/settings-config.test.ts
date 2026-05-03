@@ -69,6 +69,14 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "email-templates")).toBe(false);
 	});
 
+	it("shows legal entities to organization admins only", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const entityAdminEntries = getVisibleSettings("entityAdmin", true);
+
+		expect(orgAdminEntries.some((entry) => entry.id === "legal-entities")).toBe(true);
+		expect(entityAdminEntries.some((entry) => entry.id === "legal-entities")).toBe(false);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");

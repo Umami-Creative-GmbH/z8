@@ -173,6 +173,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "organization",
 	},
 	{
+		id: "legal-entities",
+		titleKey: "settings.legalEntities.title",
+		titleDefault: "Legal Entities",
+		descriptionKey: "settings.legalEntities.description",
+		descriptionDefault:
+			"Manage company entities, entity admins, and configuration readiness",
+		href: "/settings/legal-entities",
+		icon: "building",
+		minimumTier: "orgAdmin",
+		group: "organization",
+	},
+	{
 		id: "email-templates",
 		titleKey: "settings.emailTemplates.title",
 		titleDefault: "Email Templates",
