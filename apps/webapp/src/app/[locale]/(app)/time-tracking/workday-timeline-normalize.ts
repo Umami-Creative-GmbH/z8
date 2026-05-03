@@ -13,7 +13,7 @@ type ApprovalStatus = "approved" | "pending" | "rejected";
 type PendingRequestStatus = ApprovalStatus | "cancelled";
 type PendingRequestSourceType = "time_correction" | "absence" | "travel_expense" | "shift";
 
-interface SourceWorkPeriod {
+export interface WorkdayWorkPeriodSource {
 	id: string;
 	startTime: Date;
 	endTime: Date | null;
@@ -24,7 +24,7 @@ interface SourceWorkPeriod {
 	autoAdjustmentReason: unknown;
 }
 
-interface SourceShift {
+export interface WorkdayShiftSource {
 	id: string;
 	date: string;
 	startTime: string;
@@ -33,7 +33,7 @@ interface SourceShift {
 	notes: string | null;
 }
 
-interface SourceAbsence {
+export interface WorkdayAbsenceSource {
 	id: string;
 	startDate: string;
 	endDate: string;
@@ -44,7 +44,7 @@ interface SourceAbsence {
 	categoryColor: string | null;
 }
 
-interface SourcePendingRequest {
+export interface WorkdayPendingRequestSource {
 	id: string;
 	sourceType: PendingRequestSourceType;
 	status: PendingRequestStatus;
@@ -54,13 +54,13 @@ interface SourcePendingRequest {
 	sourceHref: string;
 }
 
-interface NormalizeWorkdayTimelineInput {
+export interface NormalizeWorkdayTimelineInput {
 	selectedDate: SelectedWorkdayDate;
 	timezone: string;
-	workPeriods: SourceWorkPeriod[];
-	shifts: SourceShift[];
-	absences: SourceAbsence[];
-	pendingRequests: SourcePendingRequest[];
+	workPeriods: WorkdayWorkPeriodSource[];
+	shifts: WorkdayShiftSource[];
+	absences: WorkdayAbsenceSource[];
+	pendingRequests: WorkdayPendingRequestSource[];
 }
 
 export function normalizeWorkdayTimeline({
@@ -83,18 +83,22 @@ export function normalizeWorkdayTimeline({
 		link: { label: "View absence", href: "/absences" },
 	}));
 	const timedItems = [
-		...shifts.map<WorkdayTimelineItem>((shift) => ({
-			id: `shift:${shift.id}`,
-			type: "shift",
-			title: "Scheduled shift",
-			subtitle: shift.notes ?? undefined,
-			startTime: getShiftDateTime(shift.date, shift.startTime, timezone),
-			endTime: getShiftDateTime(shift.date, shift.endTime, timezone),
-			startLabel: shift.startTime,
-			endLabel: shift.endTime,
-			badge: shift.status,
-			status: shift.status,
-		})),
+		...shifts.map<WorkdayTimelineItem>((shift) => {
+			const { startTime, endTime } = getShiftDateTimes(shift, timezone);
+
+			return {
+				id: `shift:${shift.id}`,
+				type: "shift",
+				title: "Scheduled shift",
+				subtitle: shift.notes ?? undefined,
+				startTime,
+				endTime,
+				startLabel: shift.startTime,
+				endLabel: shift.endTime,
+				badge: shift.status,
+				status: shift.status,
+			};
+		}),
 		...workPeriods.map<WorkdayTimelineItem>((period) => ({
 			id: `work-period:${period.id}`,
 			type: "work-period",
@@ -128,18 +132,18 @@ export function normalizeWorkdayTimeline({
 				sourceType: request.sourceType,
 				status: request.status,
 			})),
-	].sort((left, right) => getLocalSortTime(left, timezone) - getLocalSortTime(right, timezone));
+	].sort((left, right) => compareTimedItems(left, right, timezone));
 
 	return {
 		selectedDate,
-		items: [...dayWarnings, ...absenceItems, ...timedItems],
+		items: [...absenceItems, ...timedItems],
 		dayWarnings,
 		hasScheduledContext: shifts.length > 0 || absences.length > 0,
 		hasRecordedActivity: workPeriods.length > 0,
 	};
 }
 
-function getWorkPeriodWarnings(period: SourceWorkPeriod): WorkdayTimelineWarningItem[] {
+function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimelineWarningItem[] {
 	const warnings: WorkdayTimelineWarningItem[] = [];
 
 	if (period.approvalStatus === "pending" || Boolean(period.pendingChanges)) {
@@ -176,14 +180,58 @@ function getWorkPeriodWarnings(period: SourceWorkPeriod): WorkdayTimelineWarning
 	return warnings;
 }
 
-function getShiftDateTime(date: string, time: string, timezone: string): Date {
+function getShiftDateTimes(
+	shift: WorkdayShiftSource,
+	timezone: string,
+): { startTime: Date; endTime: Date } {
+	const startDateTime = getShiftDateTime(shift.date, shift.startTime, timezone);
+	const parsedEndDateTime = getShiftDateTime(shift.date, shift.endTime, timezone);
+	const endDateTime =
+		parsedEndDateTime <= startDateTime
+			? parsedEndDateTime.plus({ days: 1 })
+			: parsedEndDateTime;
+
+	return {
+		startTime: startDateTime.toJSDate(),
+		endTime: endDateTime.toJSDate(),
+	};
+}
+
+function getShiftDateTime(date: string, time: string, timezone: string): DateTime {
 	const dateTime = DateTime.fromISO(`${date}T${time}`, { zone: timezone });
-	return dateTime.isValid ? dateTime.toJSDate() : new Date(`${date}T${time}`);
+	return dateTime.isValid ? dateTime : DateTime.fromISO(`${date}T${time}`);
+}
+
+function compareTimedItems(
+	left: WorkdayTimelineItem,
+	right: WorkdayTimelineItem,
+	timezone: string,
+): number {
+	const timeDifference = getLocalSortTime(left, timezone) - getLocalSortTime(right, timezone);
+	if (timeDifference !== 0) return timeDifference;
+
+	const priorityDifference = getTypeSortPriority(left) - getTypeSortPriority(right);
+	if (priorityDifference !== 0) return priorityDifference;
+
+	return left.id.localeCompare(right.id);
 }
 
 function getLocalSortTime(item: WorkdayTimelineItem, timezone: string): number {
 	if (!item.startTime) return Number.POSITIVE_INFINITY;
 	return DateTime.fromJSDate(item.startTime).setZone(timezone).toMillis();
+}
+
+function getTypeSortPriority(item: WorkdayTimelineItem): number {
+	switch (item.type) {
+		case "shift":
+			return 0;
+		case "work-period":
+			return 1;
+		case "pending-request":
+			return 2;
+		default:
+			return 3;
+	}
 }
 
 function formatDuration(durationMinutes: number | null): string | undefined {
@@ -196,7 +244,7 @@ function formatDuration(durationMinutes: number | null): string | undefined {
 	return `${hours}h ${minutes}m`;
 }
 
-function formatAbsencePeriod(absence: SourceAbsence): string {
+function formatAbsencePeriod(absence: WorkdayAbsenceSource): string {
 	if (absence.startDate === absence.endDate) {
 		return `${absence.startPeriod} (${absence.status})`;
 	}

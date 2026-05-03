@@ -1,7 +1,10 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import type { SelectedWorkdayDate } from "./workday-timeline.types";
-import { normalizeWorkdayTimeline } from "./workday-timeline-normalize";
+import {
+	normalizeWorkdayTimeline,
+	type NormalizeWorkdayTimelineInput,
+} from "./workday-timeline-normalize";
 
 const selectedDate: SelectedWorkdayDate = {
 	dateKey: "2026-05-03",
@@ -98,6 +101,119 @@ describe("normalizeWorkdayTimeline", () => {
 			label: "Review request",
 			href: "/my-requests",
 		});
+	});
+
+	it("keeps day warning summaries out of timeline items", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "period-pending",
+					startTime: new Date("2026-05-03T07:00:00.000Z"),
+					endTime: null,
+					durationMinutes: null,
+					approvalStatus: "pending",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.dayWarnings).toHaveLength(2);
+		expect(result.items.map((item) => item.type)).toEqual(["work-period"]);
+	});
+
+	it("rolls overnight shift end times into the next day", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			workPeriods: [],
+			shifts: [
+				{
+					id: "night-shift",
+					date: "2026-05-03",
+					startTime: "22:00",
+					endTime: "06:00",
+					status: "published",
+					notes: null,
+				},
+			],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.items[0]).toMatchObject({
+			startTime: DateTime.fromISO("2026-05-03T22:00", {
+				zone: "Europe/Berlin",
+			}).toJSDate(),
+			endTime: DateTime.fromISO("2026-05-04T06:00", {
+				zone: "Europe/Berlin",
+			}).toJSDate(),
+		});
+	});
+
+	it("orders same-start timed items by type priority then id", () => {
+		const sameStart = new Date("2026-05-03T08:00:00.000Z");
+		const input: NormalizeWorkdayTimelineInput = {
+			selectedDate,
+			timezone: "Europe/Berlin",
+			workPeriods: [
+				{
+					id: "z-period",
+					startTime: sameStart,
+					endTime: new Date("2026-05-03T12:00:00.000Z"),
+					durationMinutes: 240,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [
+				{
+					id: "b-shift",
+					date: "2026-05-03",
+					startTime: "10:00",
+					endTime: "18:00",
+					status: "published",
+					notes: null,
+				},
+				{
+					id: "a-shift",
+					date: "2026-05-03",
+					startTime: "10:00",
+					endTime: "18:00",
+					status: "published",
+					notes: null,
+				},
+			],
+			absences: [],
+			pendingRequests: [
+				{
+					id: "time_correction:a-request",
+					sourceType: "time_correction",
+					status: "pending",
+					title: "time_correction",
+					subtitle: "time_entry_correction",
+					submittedAt: sameStart,
+					sourceHref: "/time-tracking",
+				},
+			],
+		};
+
+		const result = normalizeWorkdayTimeline(input);
+
+		expect(result.items.map((item) => item.id)).toEqual([
+			"shift:a-shift",
+			"shift:b-shift",
+			"work-period:z-period",
+			"pending-request:time_correction:a-request",
+		]);
 	});
 
 	it("keeps only pending requests and ignores travel expenses for the workday timeline", () => {
