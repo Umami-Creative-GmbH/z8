@@ -1,20 +1,18 @@
 "use server";
 
 import { and, asc, desc, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import {
-	approvalRequest,
-	employee,
-	travelExpenseAttachment,
-	travelExpenseClaim,
-} from "@/db/schema";
+import { employee, travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
+	createTravelExpenseApprovalWorkflow,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -146,6 +144,7 @@ export async function submitTravelExpenseClaim(input: {
 				),
 				columns: {
 					managerId: true,
+					teamId: true,
 				},
 			}),
 		]);
@@ -218,14 +217,23 @@ export async function submitTravelExpenseClaim(input: {
 				return null;
 			}
 
-			await tx.insert(approvalRequest).values({
-				organizationId: currentEmployee.organizationId,
-				entityType: "travel_expense_claim",
-				entityId: claim.id,
-				requestedBy: currentEmployee.id,
-				approverId,
-				status: "pending",
-			});
+			const approvalDbService = {
+				db: tx,
+				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+			} satisfies ApprovalDbService;
+
+			await Effect.runPromise(
+				createTravelExpenseApprovalWorkflow(approvalDbService, {
+					claim: {
+						id: claim.id,
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						calculatedAmount: claim.calculatedAmount,
+						employee: { teamId: currentEmployeeRecord.teamId ?? null },
+					},
+					defaultApproverId: approverId,
+				}),
+			);
 
 			return submittedClaim;
 		});

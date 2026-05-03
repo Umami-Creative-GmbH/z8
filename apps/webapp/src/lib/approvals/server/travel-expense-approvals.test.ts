@@ -31,8 +31,11 @@ vi.mock("@/db/schema", () => ({
 
 import { and, eq } from "drizzle-orm";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
-import { persistTravelExpenseDecision } from "@/lib/approvals/server/travel-expense-approvals";
-import { buildTravelExpenseApprovalPolicyContext } from "@/lib/approvals/server/travel-expense-approvals";
+import {
+	buildTravelExpenseApprovalPolicyContext,
+	createTravelExpenseApprovalWorkflow,
+	persistTravelExpenseDecision,
+} from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
 
 function createPolicyResolutionDbService(policies: unknown[]) {
@@ -227,6 +230,34 @@ describe("persistTravelExpenseDecision", () => {
 });
 
 describe("travel expense approval policy resolution", () => {
+	it("creates travel expense approvals through the shared policy resolver", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		const result = await Effect.runPromise(
+			createTravelExpenseApprovalWorkflow(dbService, {
+				claim: {
+					id: "claim-1",
+					organizationId: "org-1",
+					employeeId: "emp-requester",
+					totalAmount: "1200.50",
+					employee: { teamId: "team-1" },
+				},
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(result).toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts).toHaveLength(1);
+		expect(inserts[0].values).toMatchObject({
+			organizationId: "org-1",
+			entityType: "travel_expense_claim",
+			entityId: "claim-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+		});
+	});
+
 	it("uses existing default approval behavior when no approval policy matches", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 

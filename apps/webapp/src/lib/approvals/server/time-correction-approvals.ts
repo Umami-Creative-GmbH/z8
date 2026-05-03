@@ -7,6 +7,10 @@ import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	resolvePolicyAndCreateApproval,
+	type ResolvePolicyAndCreateApprovalResult,
+} from "../policies/chain-service";
 import type { ApprovalPolicyEvaluationContext, ApprovalPolicyOvertimeRisk } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
@@ -142,6 +146,25 @@ export function buildTimeCorrectionApprovalPolicyContext(input: {
 		entityType: "time_entry",
 		entityId: input.workPeriodId,
 	};
+}
+
+export function createTimeCorrectionApprovalWorkflow(
+	dbService: ApprovalDbService,
+	input: {
+		organizationId: string;
+		requesterEmployeeId: string;
+		teamId: string | null;
+		workPeriodId: string;
+		defaultApproverId: string;
+		reason?: string;
+		overtimeRisk: ApprovalPolicyOvertimeRisk;
+	},
+): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	return resolvePolicyAndCreateApproval(dbService, {
+		context: buildTimeCorrectionApprovalPolicyContext(input),
+		defaultApproverId: input.defaultApproverId,
+		reason: input.reason,
+	});
 }
 
 export async function syncCanonicalWorkCorrection(input: {

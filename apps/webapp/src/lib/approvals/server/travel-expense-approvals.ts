@@ -1,8 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, travelExpenseClaim, travelExpenseDecisionLog } from "@/db/schema";
-import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	resolvePolicyAndCreateApproval,
+	type ResolvePolicyAndCreateApprovalResult,
+} from "../policies/chain-service";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -10,7 +14,8 @@ export function buildTravelExpenseApprovalPolicyContext(claim: {
 	id: string;
 	organizationId: string;
 	employeeId: string;
-	totalAmount: number | string;
+	totalAmount?: number | string;
+	calculatedAmount?: number | string;
 	employee: { teamId: string | null };
 }): ApprovalPolicyEvaluationContext {
 	return {
@@ -20,12 +25,25 @@ export function buildTravelExpenseApprovalPolicyContext(claim: {
 		teamId: claim.employee.teamId,
 		locationId: null,
 		absenceCategoryId: null,
-		travelExpenseAmount: Number(claim.totalAmount),
+		travelExpenseAmount: Number(claim.totalAmount ?? claim.calculatedAmount),
 		overtimeRisk: null,
 		employeeGroupIds: [],
 		entityType: "travel_expense_claim",
 		entityId: claim.id,
 	};
+}
+
+export function createTravelExpenseApprovalWorkflow(
+	dbService: ApprovalDbService,
+	input: {
+		claim: Parameters<typeof buildTravelExpenseApprovalPolicyContext>[0];
+		defaultApproverId: string;
+	},
+): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	return resolvePolicyAndCreateApproval(dbService, {
+		context: buildTravelExpenseApprovalPolicyContext(input.claim),
+		defaultApproverId: input.defaultApproverId,
+	});
 }
 
 export function loadTravelExpenseApprover(dbService: ApprovalDbService, approverId: string) {

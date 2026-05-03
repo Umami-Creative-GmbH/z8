@@ -6,13 +6,17 @@ import { absenceEntry, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	resolvePolicyAndCreateApproval,
+	type ResolvePolicyAndCreateApprovalResult,
+} from "../policies/chain-service";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
@@ -120,6 +124,19 @@ export function buildAbsenceApprovalPolicyContext(absence: {
 		entityType: "absence_entry",
 		entityId: absence.id,
 	};
+}
+
+export function createAbsenceApprovalWorkflow(
+	dbService: ApprovalDbService,
+	input: {
+		absence: Parameters<typeof buildAbsenceApprovalPolicyContext>[0];
+		defaultApproverId: string;
+	},
+): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	return resolvePolicyAndCreateApproval(dbService, {
+		context: buildAbsenceApprovalPolicyContext(input.absence),
+		defaultApproverId: input.defaultApproverId,
+	});
 }
 
 export function approveAbsenceWithCurrentApproverEffect(

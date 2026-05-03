@@ -17,6 +17,7 @@ vi.mock("@/env", () => ({
 
 import {
 	buildAbsenceApprovalPolicyContext,
+	createAbsenceApprovalWorkflow,
 	formatAbsenceDateForEmail,
 } from "@/lib/approvals/server/absence-approvals";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
@@ -72,6 +73,34 @@ describe("formatAbsenceDateForEmail", () => {
 });
 
 describe("absence approval policy resolution", () => {
+	it("creates absence approvals through the shared policy resolver", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		const result = await Effect.runPromise(
+			createAbsenceApprovalWorkflow(dbService, {
+				absence: {
+					id: "absence-1",
+					organizationId: "org-1",
+					employeeId: "emp-requester",
+					categoryId: "category-1",
+					employee: { teamId: "team-1" },
+				},
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(result).toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts).toHaveLength(1);
+		expect(inserts[0].values).toMatchObject({
+			organizationId: "org-1",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+		});
+	});
+
 	it("uses existing default approval behavior when no approval policy matches", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 

@@ -20,6 +20,7 @@ import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import {
 	buildTimeCorrectionApprovalPolicyContext,
 	calculateCorrectedDurationMinutes,
+	createTimeCorrectionApprovalWorkflow,
 } from "@/lib/approvals/server/time-correction-approvals";
 
 function createPolicyResolutionDbService(policies: unknown[]) {
@@ -75,6 +76,34 @@ describe("calculateCorrectedDurationMinutes", () => {
 });
 
 describe("time correction approval policy resolution", () => {
+	it("creates time correction approvals through the shared policy resolver", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		const result = await Effect.runPromise(
+			createTimeCorrectionApprovalWorkflow(dbService, {
+				organizationId: "org-1",
+				requesterEmployeeId: "emp-requester",
+				teamId: "team-1",
+				workPeriodId: "period-1",
+				defaultApproverId: "emp-manager",
+				reason: "Correct missed clock-in",
+				overtimeRisk: "warning",
+			}),
+		);
+
+		expect(result).toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts).toHaveLength(1);
+		expect(inserts[0].values).toMatchObject({
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			reason: "Correct missed clock-in",
+		});
+	});
+
 	it("uses existing default approval behavior when no approval policy matches", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 

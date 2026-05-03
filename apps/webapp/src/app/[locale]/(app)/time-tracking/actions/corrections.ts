@@ -3,7 +3,8 @@
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
+import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -473,24 +474,19 @@ export async function requestTimeCorrectionEffect(
 			"Time correction entries created",
 		);
 
-		const [approval] = yield* _(
-			dbService.query("createApprovalRequest", async () => {
-				return dbService.db
-					.insert(approvalRequest)
-					.values({
-						organizationId: currentEmployee.organizationId,
-						entityType: "time_entry",
-						entityId: selectedWorkPeriod.id,
-						requestedBy: currentEmployee.id,
-						approverId: currentEmployee.managerId!,
-						status: "pending",
-						reason: data.reason,
-					})
-					.returning();
+		const approval = yield* _(
+			createTimeCorrectionApprovalWorkflow(dbService, {
+				organizationId: currentEmployee.organizationId,
+				requesterEmployeeId: currentEmployee.id,
+				teamId: currentEmployee.teamId ?? null,
+				workPeriodId: selectedWorkPeriod.id,
+				defaultApproverId: currentEmployee.managerId!,
+				reason: data.reason,
+				overtimeRisk: "warning",
 			}),
 		);
 
-		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.id));
+		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.approvalRequestId));
 
 		const [manager, employeeWithUser] = yield* _(
 			Effect.all([
@@ -575,14 +571,14 @@ export async function requestTimeCorrectionEffect(
 
 		logger.info(
 			{
-				approvalId: approval.id,
+				approvalId: approval.approvalRequestId,
 				workPeriodId: data.workPeriodId,
 				managerEmail: manager.user.email,
 			},
 			"Time correction request submitted and notification sent",
 		);
 
-		return { approvalId: approval.id };
+		return { approvalId: approval.approvalRequestId };
 	}).pipe(
 		Effect.tapError((error) =>
 			Effect.sync(() => {
