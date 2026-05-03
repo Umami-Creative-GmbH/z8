@@ -115,9 +115,15 @@ export function HolidayAssignmentDialog({
 
 	// Fetch holidays (get all without pagination for dropdown)
 	const { data: holidays, isLoading: holidaysLoading } = useQuery({
-		queryKey: queryKeys.holidays.list(organizationId, { limit: 500, legalEntityId: selectedLegalEntityId }),
+		queryKey: queryKeys.holidays.list(organizationId, {
+			limit: 500,
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getHolidays(organizationId, { limit: 500, legalEntityId: selectedLegalEntityId });
+			const result = await getHolidays(organizationId, {
+				limit: 500,
+				legalEntityId: selectedLegalEntityId,
+			});
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holidays");
 			}
@@ -208,7 +214,7 @@ export function HolidayAssignmentDialog({
 			case "organization":
 				return t(
 					"settings.holidays.assignments.orgHolidayDescription",
-					"Select a custom holiday to apply to all employees in the organization",
+					"Select a custom holiday to apply to all employees in this legal entity",
 				);
 			case "team":
 				return t(

@@ -8,7 +8,10 @@ import { VacationPoliciesTable } from "@/components/settings/vacation-policies-t
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext, getSettingsAccessInputForUser } from "@/lib/auth-helpers";
-import { getLegalEntitySelectionContext, shouldShowLegalEntitySelector } from "@/lib/legal-entities/access";
+import {
+	getLegalEntitySelectionContext,
+	shouldShowLegalEntitySelector,
+} from "@/lib/legal-entities/access";
 
 type LegalEntitySearchParams = {
 	legalEntityId?: string;
@@ -37,8 +40,13 @@ async function VacationSettingsContent({
 	}
 
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
-	const allowedAssignmentTypes = canManagePolicies ? (["team", "employee"] as const) : (["employee"] as const);
-	const accessInput = await getSettingsAccessInputForUser(settingsRouteContext.authContext.user.id, organizationId);
+	const allowedAssignmentTypes = canManagePolicies
+		? (["team", "employee"] as const)
+		: (["employee"] as const);
+	const accessInput = await getSettingsAccessInputForUser(
+		settingsRouteContext.authContext.user.id,
+		organizationId,
+	);
 	const legalEntityAccessScope = {
 		isOrgAdmin: canManagePolicies,
 		allowedLegalEntityIds: accessInput.legalEntityAdminIds ?? [],
@@ -55,6 +63,7 @@ async function VacationSettingsContent({
 		<VacationManagement
 			organizationId={organizationId}
 			allowedAssignmentTypes={allowedAssignmentTypes}
+			selectedLegalEntityId={legalEntitySelectionContext?.selectedLegalEntityId}
 		>
 			{legalEntitySelectionContext ? (
 				<LegalEntitySelector
@@ -77,6 +86,7 @@ async function VacationSettingsContent({
 						<VacationPoliciesTable
 							organizationId={organizationId}
 							canManagePolicies={canManagePolicies}
+							selectedLegalEntityId={legalEntitySelectionContext?.selectedLegalEntityId}
 						/>
 					</CardContent>
 				</Card>

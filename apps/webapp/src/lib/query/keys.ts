@@ -173,13 +173,15 @@ export const queryKeys = {
 		list: <T extends object>(orgId: string, params?: T) =>
 			["vacation-policies", orgId, params] as const,
 		detail: (policyId: string) => ["vacation-policies", "detail", policyId] as const,
-		companyDefault: (orgId: string) => ["vacation-policies", "company-default", orgId] as const,
+		companyDefault: <T extends object>(orgId: string, params?: T) =>
+			["vacation-policies", "company-default", orgId, params] as const,
 	},
 
 	// Vacation policy assignments (policies to org/team/employee)
 	vacationPolicyAssignments: {
 		all: ["vacation-policy-assignments"] as const,
-		list: (orgId: string) => ["vacation-policy-assignments", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["vacation-policy-assignments", orgId, params] as const,
 	},
 
 	// Shift templates (Morning Shift, Night Shift, etc.)
@@ -338,7 +340,8 @@ export const queryKeys = {
 	// Change policies (time tracking edit restrictions)
 	changePolicies: {
 		all: ["change-policies"] as const,
-		list: <T extends object>(orgId: string, params?: T) => ["change-policies", "list", orgId, params] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["change-policies", "list", orgId, params] as const,
 		detail: (policyId: string) => ["change-policies", "detail", policyId] as const,
 		assignments: (orgId: string) => ["change-policies", "assignments", orgId] as const,
 		effective: (employeeId: string) => ["change-policies", "effective", employeeId] as const,
@@ -354,7 +357,8 @@ export const queryKeys = {
 	// Work policies (unified work schedules + time regulations)
 	workPolicies: {
 		all: ["work-policies"] as const,
-		list: <T extends object>(orgId: string, params?: T) => ["work-policies", "list", orgId, params] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["work-policies", "list", orgId, params] as const,
 		detail: (policyId: string) => ["work-policies", "detail", policyId] as const,
 		assignments: (orgId: string) => ["work-policies", "assignments", orgId] as const,
 		presets: () => ["work-policies", "presets"] as const,

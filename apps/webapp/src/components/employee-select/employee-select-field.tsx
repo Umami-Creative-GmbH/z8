@@ -50,6 +50,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	const {
 		excludeIds,
 		filters,
+		legalEntityId,
 		showFilters = true,
 		label,
 		placeholder,
@@ -190,6 +191,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 				onConfirm={handleConfirm}
 				excludeIds={excludeIds}
 				filters={filters}
+				legalEntityId={legalEntityId}
 				showFilters={showFilters}
 				maxSelections={maxSelections}
 				employees={preFilteredEmployees}
@@ -206,6 +208,7 @@ export interface EmployeeSingleSelectProps {
 	onChange: (value: string | null) => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFieldProps["filters"];
+	legalEntityId?: string;
 	showFilters?: boolean;
 	label?: string;
 	placeholder?: string;
@@ -228,6 +231,7 @@ export interface EmployeeMultiSelectProps {
 	onChange: (value: string[]) => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFieldProps["filters"];
+	legalEntityId?: string;
 	showFilters?: boolean;
 	label?: string;
 	placeholder?: string;

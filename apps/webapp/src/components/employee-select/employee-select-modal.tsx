@@ -46,6 +46,7 @@ export function EmployeeSelectModal({
 	onConfirm,
 	excludeIds,
 	filters,
+	legalEntityId,
 	showFilters = true,
 	maxSelections,
 	employees: preFilteredEmployees,
@@ -68,6 +69,7 @@ export function EmployeeSelectModal({
 	// Use the employee select hook (only when not using pre-filtered list)
 	const serverData = useEmployeeSelect({
 		filters,
+		legalEntityId,
 		excludeIds: effectiveExcludeIds,
 		enabled: open && !usePreFiltered,
 	});

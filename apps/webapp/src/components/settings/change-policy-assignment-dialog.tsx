@@ -59,7 +59,9 @@ export function ChangePolicyAssignmentDialog({
 
 	// Fetch policies for dropdown
 	const { data: policies, isLoading: policiesLoading } = useQuery({
-		queryKey: queryKeys.changePolicies.list(organizationId, { legalEntityId: selectedLegalEntityId }),
+		queryKey: queryKeys.changePolicies.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
 			const result = await getChangePolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
@@ -162,7 +164,7 @@ export function ChangePolicyAssignmentDialog({
 			case "organization":
 				return t(
 					"settings.changePolicies.assignOrgDescription",
-					"This policy will apply to all employees who don't have a team or individual policy assigned.",
+					"This policy will apply to all employees in this legal entity who don't have a team or individual policy assigned.",
 				);
 			case "team":
 				return t(
@@ -172,7 +174,7 @@ export function ChangePolicyAssignmentDialog({
 			case "employee":
 				return t(
 					"settings.changePolicies.assignEmployeeDescription",
-					"This policy will apply only to this specific employee, overriding any team or organization policies.",
+					"This policy will apply only to this specific employee, overriding any team or entity-wide policies.",
 				);
 		}
 	};

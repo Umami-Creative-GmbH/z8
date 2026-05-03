@@ -39,6 +39,7 @@ interface VacationAssignmentDialogProps {
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
 	assignmentType: "team" | "employee";
+	selectedLegalEntityId?: string;
 	onSuccess: () => void;
 }
 
@@ -69,6 +70,7 @@ export function VacationAssignmentDialog({
 	onOpenChange,
 	organizationId,
 	assignmentType,
+	selectedLegalEntityId,
 	onSuccess,
 }: VacationAssignmentDialogProps) {
 	const { t } = useTranslate();
@@ -114,9 +116,11 @@ export function VacationAssignmentDialog({
 
 	// Fetch vacation policies
 	const { data: policies, isLoading: policiesLoading } = useQuery({
-		queryKey: queryKeys.vacationPolicies.list(organizationId),
+		queryKey: queryKeys.vacationPolicies.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getVacationPolicies(organizationId);
+			const result = await getVacationPolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -128,9 +132,9 @@ export function VacationAssignmentDialog({
 
 	// Fetch teams (only for team assignment type)
 	const { data: teams, isLoading: teamsLoading } = useQuery({
-		queryKey: queryKeys.teams.list(organizationId),
+		queryKey: queryKeys.teams.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -147,6 +151,7 @@ export function VacationAssignmentDialog({
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
 				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
+				legalEntityId: selectedLegalEntityId,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {
@@ -184,12 +189,12 @@ export function VacationAssignmentDialog({
 			case "team":
 				return t(
 					"settings.vacation.assignments.teamPolicyDescription",
-					"Select a vacation policy and team. This overrides the company default for team members.",
+					"Select a vacation policy and team. This overrides the entity-wide default for team members.",
 				);
 			case "employee":
 				return t(
 					"settings.vacation.assignments.employeePolicyDescription",
-					"Select a vacation policy and employee. This overrides team and company defaults.",
+					"Select a vacation policy and employee. This overrides team and entity-wide defaults.",
 				);
 		}
 	};
@@ -324,6 +329,7 @@ export function VacationAssignmentDialog({
 											<EmployeeSingleSelect
 												value={field.state.value || null}
 												onChange={(val) => field.handleChange(val || "")}
+												legalEntityId={selectedLegalEntityId}
 												label={t("settings.vacation.assignments.employee", "Employee")}
 												placeholder={t(
 													"settings.vacation.assignments.selectEmployee",
@@ -334,7 +340,7 @@ export function VacationAssignmentDialog({
 											<p className="text-sm text-muted-foreground">
 												{t(
 													"settings.vacation.assignments.employeeNote",
-													"This policy will override team and company defaults for this employee",
+													"This policy will override team and entity-wide defaults for this employee",
 												)}
 											</p>
 										</div>

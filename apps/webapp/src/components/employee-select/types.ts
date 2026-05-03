@@ -83,6 +83,8 @@ export interface EmployeeSelectCommonProps {
 	excludeIds?: string[];
 	/** Pre-applied filters */
 	filters?: EmployeeSelectFilters;
+	/** Restrict server-side employee search to a legal entity */
+	legalEntityId?: string;
 	/** Show filter controls in the modal */
 	showFilters?: boolean;
 	/** Field label */
@@ -138,6 +140,7 @@ export interface EmployeeSelectModalProps {
 	onConfirm: () => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFilters;
+	legalEntityId?: string;
 	showFilters?: boolean;
 	maxSelections?: number;
 	/**

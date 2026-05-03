@@ -11,12 +11,14 @@ import { VacationAssignmentManager } from "./vacation-assignment-manager";
 interface VacationManagementProps {
 	organizationId: string;
 	allowedAssignmentTypes: readonly ("team" | "employee")[];
+	selectedLegalEntityId?: string;
 	children: React.ReactNode; // The existing policy content
 }
 
 export function VacationManagement({
 	organizationId,
 	allowedAssignmentTypes,
+	selectedLegalEntityId,
 	children,
 }: VacationManagementProps) {
 	const { t } = useTranslate();
@@ -38,7 +40,9 @@ export function VacationManagement({
 
 	const handleAssignmentSuccess = () => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.vacationPolicyAssignments.list(organizationId),
+			queryKey: queryKeys.vacationPolicyAssignments.list(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
 	};
 
@@ -51,7 +55,7 @@ export function VacationManagement({
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.vacation.description",
-						"Manage vacation policies and assignments for your organization",
+						"Manage vacation policies and assignments for the selected legal entity",
 					)}
 				</p>
 			</div>
@@ -74,6 +78,7 @@ export function VacationManagement({
 					<VacationAssignmentManager
 						organizationId={organizationId}
 						allowedAssignmentTypes={allowedAssignmentTypes}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>
@@ -84,6 +89,7 @@ export function VacationManagement({
 				onOpenChange={setAssignmentDialogOpen}
 				organizationId={organizationId}
 				assignmentType={assignmentType}
+				selectedLegalEntityId={selectedLegalEntityId}
 				onSuccess={handleAssignmentSuccess}
 			/>
 		</div>

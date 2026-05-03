@@ -42,6 +42,7 @@ interface VacationPolicyFormProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	selectedLegalEntityId?: string;
 	existingPolicy?: {
 		id: string;
 		name: string;
@@ -78,6 +79,7 @@ export function VacationPolicyForm({
 	open,
 	onOpenChange,
 	organizationId,
+	selectedLegalEntityId,
 	existingPolicy,
 }: VacationPolicyFormProps) {
 	const { t } = useTranslate();
@@ -137,6 +139,7 @@ export function VacationPolicyForm({
 							startDate: formatDateStr(value.startDate),
 							validUntil: value.validUntil ? formatDateStr(value.validUntil) : undefined,
 							isCompanyDefault: value.isCompanyDefault,
+							legalEntityId: selectedLegalEntityId,
 							name: value.name,
 							defaultAnnualDays: value.defaultAnnualDays,
 							accrualType: value.accrualType,
@@ -180,7 +183,7 @@ export function VacationPolicyForm({
 					<ActionPanelDescription>
 						{t(
 							"settings.vacation.policyDescription",
-							"Configure vacation allowance settings. Each policy can be assigned to the organization, specific teams, or individual employees.",
+							"Configure vacation allowance settings. Each policy can be assigned entity-wide, to specific teams, or to individual employees.",
 						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
@@ -328,11 +331,11 @@ export function VacationPolicyForm({
 									/>
 									<div className="space-y-1 leading-none">
 										<Label htmlFor="isCompanyDefault" className="cursor-pointer">
-											Set as Company Default
+											Set as Entity-wide Default
 										</Label>
 										<p className="text-sm text-muted-foreground">
 											This policy will apply to all employees without specific overrides. Setting
-											this will supersede any existing company default.
+											this will supersede any existing entity-wide default.
 										</p>
 									</div>
 								</div>

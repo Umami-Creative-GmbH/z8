@@ -15,6 +15,8 @@ import type { EmployeeSelectFilters } from "./types";
 interface UseEmployeeSelectOptions {
 	/** Pre-applied filters */
 	filters?: EmployeeSelectFilters;
+	/** Restrict server-side employee search to a legal entity */
+	legalEntityId?: string;
 	/** IDs to exclude from results */
 	excludeIds?: string[];
 	/** Page size for pagination */
@@ -62,7 +64,7 @@ interface UseEmployeeSelectReturn {
  * Custom hook for employee selection with debounced search and pagination
  */
 export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEmployeeSelectReturn {
-	const { filters, excludeIds = [], pageSize = 20, enabled = true } = options;
+	const { filters, legalEntityId, excludeIds = [], pageSize = 20, enabled = true } = options;
 
 	// Search state with debouncing
 	const [search, setSearchState] = useState("");
@@ -108,12 +110,22 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 			search: debouncedSearch || undefined,
 			role: roleFilter === "all" ? undefined : (roleFilter as EmployeeSelectParams["role"]),
 			status: statusFilter === "all" ? undefined : (statusFilter as EmployeeSelectParams["status"]),
+			legalEntityId,
 			teamId: teamFilter || undefined,
 			excludeIds: excludeIds.length > 0 ? excludeIds : undefined,
 			limit: pageSize,
 			offset: page * pageSize,
 		}),
-		[debouncedSearch, roleFilter, statusFilter, teamFilter, excludeIds, pageSize, page],
+		[
+			debouncedSearch,
+			roleFilter,
+			statusFilter,
+			legalEntityId,
+			teamFilter,
+			excludeIds,
+			pageSize,
+			page,
+		],
 	);
 
 	// Main employees query

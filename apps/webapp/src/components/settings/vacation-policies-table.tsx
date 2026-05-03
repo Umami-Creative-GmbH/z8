@@ -62,6 +62,7 @@ interface VacationPolicy {
 interface VacationPoliciesTableProps {
 	organizationId: string;
 	canManagePolicies?: boolean;
+	selectedLegalEntityId?: string;
 }
 
 const getAccrualTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: string) => {
@@ -91,6 +92,7 @@ const isPolicySuperseded = (policy: VacationPolicy) => {
 export function VacationPoliciesTable({
 	organizationId,
 	canManagePolicies = true,
+	selectedLegalEntityId,
 }: VacationPoliciesTableProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -108,9 +110,11 @@ export function VacationPoliciesTable({
 		isError,
 		refetch,
 	} = useQuery({
-		queryKey: queryKeys.vacationPolicies.list(organizationId),
+		queryKey: queryKeys.vacationPolicies.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getVacationPolicies(organizationId);
+			const result = await getVacationPolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -125,7 +129,9 @@ export function VacationPoliciesTable({
 			if (result.success) {
 				toast.success(t("vacation.policies.deleted", "Policy deleted successfully"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.vacationPolicies.list(organizationId),
+					queryKey: queryKeys.vacationPolicies.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
@@ -162,7 +168,9 @@ export function VacationPoliciesTable({
 			setEditingPolicy(null);
 			setCreateFormOpen(false);
 			queryClient.invalidateQueries({
-				queryKey: queryKeys.vacationPolicies.list(organizationId),
+				queryKey: queryKeys.vacationPolicies.list(organizationId, {
+					legalEntityId: selectedLegalEntityId,
+				}),
 			});
 		}
 	};
@@ -251,7 +259,7 @@ export function VacationPoliciesTable({
 						return (
 							<Badge className="bg-primary">
 								<IconStar className="mr-1 h-3 w-3" />
-								{t("vacation.policies.company-default", "Company Default")}
+								{t("vacation.policies.company-default", "Entity-wide Default")}
 							</Badge>
 						);
 					}
@@ -267,34 +275,34 @@ export function VacationPoliciesTable({
 			},
 			...(canManagePolicies
 				? [
-					{
-						id: "actions",
-						cell: ({ row }: { row: { original: VacationPolicy } }) => (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<IconDots className="h-4 w-4" />
-								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => handleEditClick(row.original)}>
-								<IconPencil className="mr-2 h-4 w-4" />
-								{t("common.edit", "Edit")}
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="text-destructive"
-								onClick={() => handleDeleteClick(row.original)}
-							>
-								<IconTrash className="mr-2 h-4 w-4" />
-								{t("common.delete", "Delete")}
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-						),
-					},
-				]
+						{
+							id: "actions",
+							cell: ({ row }: { row: { original: VacationPolicy } }) => (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="ghost" size="icon" className="h-8 w-8">
+											<IconDots className="h-4 w-4" />
+											<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem onClick={() => handleEditClick(row.original)}>
+											<IconPencil className="mr-2 h-4 w-4" />
+											{t("common.edit", "Edit")}
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											className="text-destructive"
+											onClick={() => handleDeleteClick(row.original)}
+										>
+											<IconTrash className="mr-2 h-4 w-4" />
+											{t("common.delete", "Delete")}
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							),
+						},
+					]
 				: []),
 		],
 		[t, canManagePolicies],
@@ -382,7 +390,7 @@ export function VacationPoliciesTable({
 							{policyToDelete?.isCompanyDefault
 								? t(
 										"vacation.policies.delete-default-warning",
-										'Warning: "{name}" is the company default policy. You must set another policy as default before deleting this one.',
+										'Warning: "{name}" is the entity-wide default policy. You must set another policy as default before deleting this one.',
 										{ name: policyToDelete?.name },
 									)
 								: t(
@@ -413,6 +421,7 @@ export function VacationPoliciesTable({
 					open={!!editingPolicy}
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}
+					selectedLegalEntityId={selectedLegalEntityId}
 					existingPolicy={editingPolicy}
 				/>
 			)}
@@ -422,6 +431,7 @@ export function VacationPoliciesTable({
 					open={createFormOpen}
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}
+					selectedLegalEntityId={selectedLegalEntityId}
 				/>
 			)}
 		</>

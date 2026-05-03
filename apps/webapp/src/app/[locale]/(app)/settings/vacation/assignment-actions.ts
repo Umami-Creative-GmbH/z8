@@ -2,8 +2,19 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee, legalEntity, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
-import { type AnyAppError, AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import {
+	employee,
+	legalEntity,
+	team,
+	vacationAllowance,
+	vacationPolicyAssignment,
+} from "@/db/schema";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	DatabaseError,
+	NotFoundError,
+} from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -61,8 +72,8 @@ function resolveSelectedVacationAssignmentLegalEntityId(
 			const canAccess =
 				Boolean(requestedEntity) &&
 				(actor.accessTier === "orgAdmin" ||
-				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
-				actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
+					actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+					actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
 
 			if (!canAccess) {
 				return yield* _(
@@ -125,7 +136,10 @@ export async function getVacationPolicies(
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPoliciesForAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getVacationPoliciesForAssignment:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 		const selectedLegalEntityId = yield* _(
@@ -177,7 +191,10 @@ export async function getVacationPolicyAssignments(
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPolicyAssignments:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getVacationPolicyAssignments:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 		const selectedLegalEntityId = yield* _(
@@ -385,19 +402,19 @@ export async function createVacationPolicyAssignment(data: {
 
 		// Step 7: Create the assignment
 		const newAssignment = yield* _(
-				dbService.query("createVacationPolicyAssignment", async () => {
-					const [assignment] = await dbService.db
-						.insert(vacationPolicyAssignment)
-						.values({
-							policyId: data.policyId,
-							organizationId: actor.organizationId,
-							legalEntityId: selectedLegalEntityId,
-							assignmentType: data.assignmentType,
-							teamId: data.teamId || null,
-							employeeId: data.employeeId || null,
-							priority,
-							createdBy: actor.session.user.id,
-						})
+			dbService.query("createVacationPolicyAssignment", async () => {
+				const [assignment] = await dbService.db
+					.insert(vacationPolicyAssignment)
+					.values({
+						policyId: data.policyId,
+						organizationId: actor.organizationId,
+						legalEntityId: selectedLegalEntityId,
+						assignmentType: data.assignmentType,
+						teamId: data.teamId || null,
+						employeeId: data.employeeId || null,
+						priority,
+						createdBy: actor.session.user.id,
+					})
 					.returning();
 
 				return assignment;
@@ -426,7 +443,9 @@ export async function getEmployeePolicyAssignment(
 	employeeId: string,
 ): Promise<ServerActionResult<any | null>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getEmployeePolicyAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "getEmployeePolicyAssignment:actor" }),
+		);
 		const targetEmployee = yield* _(
 			getTargetEmployee(employeeId, "getEmployeePolicyAssignment:getTargetEmployee"),
 		);
@@ -482,7 +501,9 @@ export async function setEmployeePolicyAssignment(
 	policyId: string | null,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "setEmployeePolicyAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "setEmployeePolicyAssignment:actor" }),
+		);
 		const targetEmployee = yield* _(
 			getTargetEmployee(employeeId, "setEmployeePolicyAssignment:getTargetEmployee"),
 		);
@@ -630,7 +651,10 @@ export async function deleteVacationPolicyAssignment(
 
 		if (existingAssignment.employeeId) {
 			const targetEmployee = yield* _(
-				getTargetEmployee(existingAssignment.employeeId, "deleteVacationPolicyAssignment:getTargetEmployee"),
+				getTargetEmployee(
+					existingAssignment.employeeId,
+					"deleteVacationPolicyAssignment:getTargetEmployee",
+				),
 			);
 			yield* _(
 				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
@@ -668,17 +692,31 @@ export async function deleteVacationPolicyAssignment(
  * Get company default policies (current and next scheduled)
  * Returns policies marked as isCompanyDefault=true, grouped by current/next
  */
-export async function getCompanyDefaultPolicies(organizationId: string): Promise<
+export async function getCompanyDefaultPolicies(
+	organizationId: string,
+	selectedLegalEntityIdParam?: string,
+): Promise<
 	ServerActionResult<{
 		current: any | null;
 		next: any | null;
 	}>
 > {
 	const effect = Effect.gen(function* (_) {
-		yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getCompanyDefaultPolicies:actor" }),
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getCompanyDefaultPolicies:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedVacationAssignmentLegalEntityId(
+				actor,
+				dbService,
+				selectedLegalEntityIdParam,
+				"getCompanyDefaultPolicies:defaultLegalEntity",
+			),
+		);
 
 		const today = new Date().toISOString().split("T")[0];
 
@@ -702,6 +740,7 @@ export async function getCompanyDefaultPolicies(organizationId: string): Promise
 					.where(
 						and(
 							eq(vacationAllowance.organizationId, organizationId),
+							eq(vacationAllowance.legalEntityId, selectedLegalEntityId),
 							eq(vacationAllowance.isCompanyDefault, true),
 							eq(vacationAllowance.isActive, true),
 						),

@@ -164,12 +164,12 @@ export function WorkPolicyAssignmentDialog({
 			case "organization":
 				return t(
 					"settings.workPolicies.assignOrgDescription",
-					"Set the default work policy for all employees in your organization.",
+					"Set the default work policy for all employees in this legal entity.",
 				);
 			case "team":
 				return t(
 					"settings.workPolicies.assignTeamDescription",
-					"Override the organization default for a specific team.",
+					"Override the entity-wide default for a specific team.",
 				);
 			case "employee":
 				return t(
@@ -293,6 +293,7 @@ export function WorkPolicyAssignmentDialog({
 									<EmployeeSingleSelect
 										value={field.state.value}
 										onChange={field.handleChange}
+										legalEntityId={selectedLegalEntityId}
 										label={t("settings.workPolicies.employee", "Employee")}
 										placeholder={t("settings.workPolicies.selectEmployee", "Select an employee")}
 									/>
