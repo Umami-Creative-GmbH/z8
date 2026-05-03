@@ -58,6 +58,7 @@ export default async function HolidaySettingsPage({
 			<HolidayManagement
 				organizationId={organizationId}
 				canManage={accessTier === "orgAdmin"}
+				selectedLegalEntityId={legalEntitySelectionContext?.selectedLegalEntityId}
 			/>
 		</>
 	);

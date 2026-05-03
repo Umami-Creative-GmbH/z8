@@ -14,9 +14,10 @@ import { ChangePolicyTable } from "./change-policy-table";
 interface ChangePolicyManagementProps {
 	organizationId: string;
 	canManage: boolean;
+	selectedLegalEntityId?: string;
 }
 
-export function ChangePolicyManagement({ organizationId, canManage }: ChangePolicyManagementProps) {
+export function ChangePolicyManagement({ organizationId, canManage, selectedLegalEntityId }: ChangePolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -118,6 +119,7 @@ export function ChangePolicyManagement({ organizationId, canManage }: ChangePoli
 						onOpenChange={setAssignmentDialogOpen}
 						organizationId={organizationId}
 						assignmentType={assignmentType}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onSuccess={handleAssignmentSuccess}
 					/>
 				</>

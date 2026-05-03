@@ -57,6 +57,7 @@ export default async function WorkPoliciesPage({
 			<WorkPolicyManagement
 				organizationId={organizationId}
 				accessTier={settingsRouteContext.accessTier}
+				selectedLegalEntityId={legalEntitySelectionContext?.selectedLegalEntityId}
 			/>
 		</>
 	);

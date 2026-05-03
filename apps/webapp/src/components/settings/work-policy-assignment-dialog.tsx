@@ -44,6 +44,7 @@ interface WorkPolicyAssignmentDialogProps {
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
 	assignmentType: "organization" | "team" | "employee";
+	selectedLegalEntityId?: string;
 	onSuccess: () => void;
 }
 
@@ -52,6 +53,7 @@ export function WorkPolicyAssignmentDialog({
 	onOpenChange,
 	organizationId,
 	assignmentType,
+	selectedLegalEntityId,
 	onSuccess,
 }: WorkPolicyAssignmentDialogProps) {
 	const { t } = useTranslate();
@@ -91,9 +93,9 @@ export function WorkPolicyAssignmentDialog({
 
 	// Fetch policies
 	const { data: policies, isLoading: loadingPolicies } = useQuery({
-		queryKey: queryKeys.workPolicies.list(organizationId),
+		queryKey: queryKeys.workPolicies.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getWorkPolicies(organizationId);
+			const result = await getWorkPolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -105,9 +107,9 @@ export function WorkPolicyAssignmentDialog({
 
 	// Fetch teams (only for team assignments)
 	const { data: teams, isLoading: loadingTeams } = useQuery({
-		queryKey: queryKeys.teams.list(organizationId),
+		queryKey: queryKeys.teams.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -125,6 +127,7 @@ export function WorkPolicyAssignmentDialog({
 				assignmentType: data.assignmentType,
 				teamId: assignmentType === "team" ? (data.teamId ?? undefined) : undefined,
 				employeeId: assignmentType === "employee" ? (data.employeeId ?? undefined) : undefined,
+				legalEntityId: selectedLegalEntityId,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {

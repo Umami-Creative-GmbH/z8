@@ -19,6 +19,7 @@ import { PresetManager } from "./preset-manager";
 interface HolidayManagementProps {
 	organizationId: string;
 	canManage: boolean;
+	selectedLegalEntityId?: string;
 }
 
 // Type definitions for entities used in handlers
@@ -63,7 +64,7 @@ interface Preset {
 
 type AssignmentType = "organization" | "team" | "employee";
 
-export function HolidayManagement({ organizationId, canManage }: HolidayManagementProps) {
+export function HolidayManagement({ organizationId, canManage, selectedLegalEntityId }: HolidayManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -276,6 +277,7 @@ export function HolidayManagement({ organizationId, canManage }: HolidayManageme
 						onOpenChange={setHolidayAssignmentDialogOpen}
 						organizationId={organizationId}
 						assignmentType={holidayAssignmentType}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onSuccess={handleHolidayAssignmentSuccess}
 					/>
 				</>

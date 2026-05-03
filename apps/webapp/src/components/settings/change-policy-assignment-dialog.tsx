@@ -37,6 +37,7 @@ interface ChangePolicyAssignmentDialogProps {
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
 	assignmentType: "organization" | "team" | "employee";
+	selectedLegalEntityId?: string;
 	onSuccess: () => void;
 }
 
@@ -51,15 +52,16 @@ export function ChangePolicyAssignmentDialog({
 	onOpenChange,
 	organizationId,
 	assignmentType,
+	selectedLegalEntityId,
 	onSuccess,
 }: ChangePolicyAssignmentDialogProps) {
 	const { t } = useTranslate();
 
 	// Fetch policies for dropdown
 	const { data: policies, isLoading: policiesLoading } = useQuery({
-		queryKey: queryKeys.changePolicies.list(organizationId),
+		queryKey: queryKeys.changePolicies.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getChangePolicies(organizationId);
+			const result = await getChangePolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -70,9 +72,9 @@ export function ChangePolicyAssignmentDialog({
 
 	// Fetch teams for dropdown
 	const { data: teams, isLoading: teamsLoading } = useQuery({
-		queryKey: queryKeys.teams.list(organizationId),
+		queryKey: queryKeys.teams.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -83,9 +85,9 @@ export function ChangePolicyAssignmentDialog({
 
 	// Fetch employees for dropdown
 	const { data: employees, isLoading: employeesLoading } = useQuery({
-		queryKey: queryKeys.employees.list(organizationId),
+		queryKey: queryKeys.employees.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
+			const result = await getEmployeesForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}
@@ -106,6 +108,7 @@ export function ChangePolicyAssignmentDialog({
 				assignmentType,
 				teamId: assignmentType === "team" ? value.teamId : undefined,
 				employeeId: assignmentType === "employee" ? value.employeeId : undefined,
+				legalEntityId: selectedLegalEntityId,
 			};
 			createMutation.mutate(input);
 		},

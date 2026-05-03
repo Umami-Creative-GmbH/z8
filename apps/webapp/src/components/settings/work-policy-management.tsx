@@ -17,9 +17,10 @@ import { WorkPolicyTable } from "./work-policy-table";
 interface WorkPolicyManagementProps {
 	organizationId: string;
 	accessTier: SettingsAccessTier;
+	selectedLegalEntityId?: string;
 }
 
-export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyManagementProps) {
+export function WorkPolicyManagement({ organizationId, accessTier, selectedLegalEntityId }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const canManagePolicies = accessTier === "orgAdmin";
@@ -168,6 +169,7 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 				onOpenChange={setAssignmentDialogOpen}
 				organizationId={organizationId}
 				assignmentType={assignmentType}
+				selectedLegalEntityId={selectedLegalEntityId}
 				onSuccess={handleAssignmentSuccess}
 			/>
 		</div>

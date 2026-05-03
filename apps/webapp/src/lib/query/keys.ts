@@ -45,7 +45,7 @@ export const queryKeys = {
 	// Teams
 	teams: {
 		all: ["teams"] as const,
-		list: (orgId: string) => ["teams", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) => ["teams", orgId, params] as const,
 		detail: (teamId: string) => ["teams", "detail", teamId] as const,
 		members: (teamId: string) => ["teams", teamId, "members"] as const,
 	},
@@ -338,7 +338,7 @@ export const queryKeys = {
 	// Change policies (time tracking edit restrictions)
 	changePolicies: {
 		all: ["change-policies"] as const,
-		list: (orgId: string) => ["change-policies", "list", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) => ["change-policies", "list", orgId, params] as const,
 		detail: (policyId: string) => ["change-policies", "detail", policyId] as const,
 		assignments: (orgId: string) => ["change-policies", "assignments", orgId] as const,
 		effective: (employeeId: string) => ["change-policies", "effective", employeeId] as const,
@@ -354,7 +354,7 @@ export const queryKeys = {
 	// Work policies (unified work schedules + time regulations)
 	workPolicies: {
 		all: ["work-policies"] as const,
-		list: (orgId: string) => ["work-policies", "list", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) => ["work-policies", "list", orgId, params] as const,
 		detail: (policyId: string) => ["work-policies", "detail", policyId] as const,
 		assignments: (orgId: string) => ["work-policies", "assignments", orgId] as const,
 		presets: () => ["work-policies", "presets"] as const,

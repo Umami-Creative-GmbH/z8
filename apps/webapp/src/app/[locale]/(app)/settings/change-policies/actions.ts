@@ -117,6 +117,14 @@ type ScopedChangePolicyAccessContext = {
 	manageableTeamIds: Set<string> | null;
 };
 
+function canAccessChangePolicyLegalEntity(actor: ChangePolicyScopedActor, legalEntityId: string) {
+	return (
+		actor.accessTier === "orgAdmin" ||
+		actor.legalEntityAdminIds?.includes(legalEntityId) ||
+		actor.currentEmployee?.legalEntityId === legalEntityId
+	);
+}
+
 function filterAssignmentsForManagerChangePolicyScope<T extends ChangePolicyScopeAssignment>(
 	assignments: T[],
 	manageableTeamIds: Set<string> | null,
@@ -348,10 +356,23 @@ function resolveSelectedChangePolicyLegalEntityId(
 ) {
 	return Effect.gen(function* (_) {
 		if (requestedLegalEntityId) {
+			const requestedEntity = yield* _(
+				actor.dbService.query(`${queryName}:requestedLegalEntity`, async () => {
+					return await actor.dbService.db.query.legalEntity.findFirst({
+						where: and(
+							eq(legalEntity.id, requestedLegalEntityId),
+							eq(legalEntity.organizationId, actor.organizationId),
+							eq(legalEntity.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
 			const canAccess =
-				actor.accessTier === "orgAdmin" ||
+				Boolean(requestedEntity) &&
+				(actor.accessTier === "orgAdmin" ||
 				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
-				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
 
 			if (!canAccess) {
 				return yield* _(
@@ -402,13 +423,32 @@ function resolveSelectedChangePolicyLegalEntityId(
 }
 
 function getPolicyForActiveOrganization(policyId: string, actor: ChangePolicyScopedActor, queryName: string) {
-	return actor.dbService.query(queryName, async () => {
-		return await actor.dbService.db.query.changePolicy.findFirst({
+	return Effect.gen(function* (_) {
+		const policy = yield* _(
+			actor.dbService.query(queryName, async () => {
+				return await actor.dbService.db.query.changePolicy.findFirst({
 			where: and(
 				eq(changePolicy.id, policyId),
 				eq(changePolicy.organizationId, actor.organizationId),
 			),
-		});
+				});
+			}),
+		);
+
+		if (policy && !canAccessChangePolicyLegalEntity(actor, policy.legalEntityId)) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "change_policy",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		return policy;
 	});
 }
 
@@ -1019,6 +1059,7 @@ export async function deleteChangePolicyAssignment(
 
 export async function getTeamsForAssignment(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<{ id: string; name: string }[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = (yield* _(
@@ -1032,11 +1073,32 @@ export async function getTeamsForAssignment(
 				"Only org admins can load change policy team assignments",
 			),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedChangePolicyLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getTeamsForAssignment:defaultLegalEntity",
+			),
+		);
 
 		const teams = yield* _(
 			actor.dbService.query("getTeamsForAssignment", async () => {
+				const teamEmployees = await actor.dbService.db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, organizationId),
+						eq(employee.legalEntityId, selectedLegalEntityId),
+						eq(employee.isActive, true),
+					),
+					columns: { teamId: true },
+				});
+				const scopedTeamIds = [...new Set(teamEmployees.map((row) => row.teamId).filter(Boolean))] as string[];
+
+				if (scopedTeamIds.length === 0) {
+					return [];
+				}
+
 				return await actor.dbService.db.query.team.findMany({
-					where: eq(team.organizationId, organizationId),
+					where: and(eq(team.organizationId, organizationId), inArray(team.id, scopedTeamIds)),
 					columns: { id: true, name: true },
 					orderBy: [team.name],
 				});
@@ -1051,6 +1113,7 @@ export async function getTeamsForAssignment(
 
 export async function getEmployeesForAssignment(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<
 	ServerActionResult<{ id: string; firstName: string | null; lastName: string | null }[]>
 > {
@@ -1069,11 +1132,22 @@ export async function getEmployeesForAssignment(
 				"Only org admins can load change policy employee assignments",
 			),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedChangePolicyLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getEmployeesForAssignment:defaultLegalEntity",
+			),
+		);
 
 		const employees = yield* _(
 			actor.dbService.query("getEmployeesForAssignment", async () => {
 				return await actor.dbService.db.query.employee.findMany({
-					where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+					where: and(
+						eq(employee.organizationId, organizationId),
+						eq(employee.legalEntityId, selectedLegalEntityId),
+						eq(employee.isActive, true),
+					),
 					columns: { id: true, firstName: true, lastName: true },
 					orderBy: [employee.lastName, employee.firstName],
 				});

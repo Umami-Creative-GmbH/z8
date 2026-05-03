@@ -40,6 +40,7 @@ interface HolidayAssignmentDialogProps {
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
 	assignmentType: "organization" | "team" | "employee";
+	selectedLegalEntityId?: string;
 	onSuccess: () => void;
 }
 
@@ -68,6 +69,7 @@ export function HolidayAssignmentDialog({
 	onOpenChange,
 	organizationId,
 	assignmentType,
+	selectedLegalEntityId,
 	onSuccess,
 }: HolidayAssignmentDialogProps) {
 	const { t } = useTranslate();
@@ -113,9 +115,9 @@ export function HolidayAssignmentDialog({
 
 	// Fetch holidays (get all without pagination for dropdown)
 	const { data: holidays, isLoading: holidaysLoading } = useQuery({
-		queryKey: queryKeys.holidays.list(organizationId, { limit: 500 }),
+		queryKey: queryKeys.holidays.list(organizationId, { limit: 500, legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getHolidays(organizationId, { limit: 500 });
+			const result = await getHolidays(organizationId, { limit: 500, legalEntityId: selectedLegalEntityId });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch holidays");
 			}
@@ -126,9 +128,9 @@ export function HolidayAssignmentDialog({
 
 	// Fetch teams (only for team assignment type)
 	const { data: teams, isLoading: teamsLoading } = useQuery({
-		queryKey: queryKeys.teams.list(organizationId),
+		queryKey: queryKeys.teams.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -139,9 +141,9 @@ export function HolidayAssignmentDialog({
 
 	// Fetch employees (only for employee assignment type)
 	const { data: employees, isLoading: employeesLoading } = useQuery({
-		queryKey: queryKeys.employees.list(organizationId),
+		queryKey: queryKeys.employees.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getEmployeesForAssignment(organizationId);
+			const result = await getEmployeesForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch employees");
 			}
@@ -158,6 +160,7 @@ export function HolidayAssignmentDialog({
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
 				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
+				legalEntityId: selectedLegalEntityId,
 			}),
 		onSuccess: (result) => {
 			if (result.success) {

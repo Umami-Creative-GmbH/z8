@@ -60,6 +60,7 @@ export default async function ChangePoliciesSettingsPage({
 			<ChangePolicyManagement
 				organizationId={organizationId}
 				canManage={accessTier === "orgAdmin"}
+				selectedLegalEntityId={legalEntitySelectionContext?.selectedLegalEntityId}
 			/>
 		</>
 	);

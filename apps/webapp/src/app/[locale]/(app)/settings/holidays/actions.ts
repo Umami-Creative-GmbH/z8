@@ -88,10 +88,23 @@ function resolveSelectedHolidayLegalEntityId(
 ) {
 	return Effect.gen(function* (_) {
 		if (requestedLegalEntityId) {
+			const requestedEntity = yield* _(
+				actor.dbService.query(`${queryName}:requestedLegalEntity`, async () => {
+					return await actor.dbService.db.query.legalEntity.findFirst({
+						where: and(
+							eq(legalEntity.id, requestedLegalEntityId),
+							eq(legalEntity.organizationId, actor.organizationId),
+							eq(legalEntity.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
 			const canAccess =
-				actor.accessTier === "orgAdmin" ||
+				Boolean(requestedEntity) &&
+				(actor.accessTier === "orgAdmin" ||
 				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
-				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
 
 			if (!canAccess) {
 				return yield* _(
@@ -613,25 +626,35 @@ export async function getHolidayAssignments(
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedHolidayAccessContext(organizationId, "getHolidayAssignments:actor"),
 		);
-		const selectedLegalEntityId = yield* _(
-			resolveSelectedHolidayLegalEntityId(
-				actor as ScopedHolidaySettingsActor & {
-					currentEmployee: { legalEntityId?: string | null } | null;
-					legalEntityAdminIds?: string[];
-				},
-				selectedLegalEntityIdParam,
-				"getHolidayAssignments:defaultLegalEntity",
-			),
-		);
+		const selectedLegalEntityId =
+			selectedLegalEntityIdParam ||
+			(actor.currentEmployee as { legalEntityId?: string | null } | null)?.legalEntityId ||
+			actor.accessTier !== "manager"
+				? yield* _(
+						resolveSelectedHolidayLegalEntityId(
+							actor as ScopedHolidaySettingsActor & {
+								currentEmployee: { legalEntityId?: string | null } | null;
+								legalEntityAdminIds?: string[];
+							},
+							selectedLegalEntityIdParam,
+							"getHolidayAssignments:defaultLegalEntity",
+						),
+					)
+				: null;
 
 		const assignments = yield* _(
 			actor.dbService.query("getHolidayAssignments", async () => {
+				const conditions = [
+					eq(holidayAssignment.organizationId, organizationId),
+					eq(holidayAssignment.isActive, true),
+				];
+
+				if (selectedLegalEntityId) {
+					conditions.push(eq(holidayAssignment.legalEntityId, selectedLegalEntityId));
+				}
+
 				return await actor.dbService.db.query.holidayAssignment.findMany({
-					where: and(
-						eq(holidayAssignment.organizationId, organizationId),
-						eq(holidayAssignment.legalEntityId, selectedLegalEntityId),
-						eq(holidayAssignment.isActive, true),
-					),
+					where: and(...conditions),
 					with: {
 						holiday: {
 							columns: {

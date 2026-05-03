@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	employee,
@@ -8,6 +8,7 @@ import {
 	holidayPreset,
 	holidayPresetAssignment,
 	holidayPresetHoliday,
+	legalEntity,
 	team,
 } from "@/db/schema";
 import {
@@ -102,6 +103,90 @@ type EmployeeListItem = {
 
 function runPresetServerAction<T>(effect: Effect.Effect<T, AnyAppError, never>) {
 	return runServerActionSafe(effect);
+}
+
+function resolveSelectedPresetLegalEntityId(
+	actor: {
+		accessTier: string;
+		organizationId: string;
+		session: { user: { id: string } };
+		currentEmployee: { legalEntityId?: string | null } | null;
+		legalEntityAdminIds?: string[];
+		dbService: {
+			db: typeof import("@/db").db;
+			query: <T>(key: string, fn: () => Promise<T>) => Effect.Effect<T, AnyAppError, never>;
+		};
+	},
+	requestedLegalEntityId: string | undefined,
+	queryName: string,
+) {
+	return Effect.gen(function* (_) {
+		if (requestedLegalEntityId) {
+			const requestedEntity = yield* _(
+				actor.dbService.query(`${queryName}:requestedLegalEntity`, async () => {
+					return await actor.dbService.db.query.legalEntity.findFirst({
+						where: and(
+							eq(legalEntity.id, requestedLegalEntityId),
+							eq(legalEntity.organizationId, actor.organizationId),
+							eq(legalEntity.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
+
+			const canAccess =
+				Boolean(requestedEntity) &&
+				(actor.accessTier === "orgAdmin" ||
+					actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
+					actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
+
+			if (!canAccess) {
+				return yield* _(
+					Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this legal entity.",
+							userId: actor.session.user.id,
+							resource: "legal_entity",
+							action: "access",
+						}),
+					),
+				);
+			}
+
+			return requestedLegalEntityId;
+		}
+
+		if (actor.currentEmployee?.legalEntityId) {
+			return actor.currentEmployee.legalEntityId;
+		}
+
+		const defaultEntity = yield* _(
+			actor.dbService.query(queryName, async () => {
+				return await actor.dbService.db.query.legalEntity.findFirst({
+					where: and(
+						eq(legalEntity.organizationId, actor.organizationId),
+						eq(legalEntity.isDefault, true),
+						eq(legalEntity.isActive, true),
+					),
+					columns: { id: true },
+				});
+			}),
+		);
+
+		if (!defaultEntity) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "No default legal entity exists for this organization.",
+						entityType: "legal_entity",
+					}),
+				),
+			);
+		}
+
+		return defaultEntity.id;
+	});
 }
 
 function filterPresetAssignmentsForScope(
@@ -348,6 +433,7 @@ export async function getHolidayPreset(
 export async function createHolidayPreset(
 	organizationId: string,
 	data: HolidayPresetFormValues,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
@@ -360,11 +446,19 @@ export async function createHolidayPreset(
 				action: "create",
 			}),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"createHolidayPreset:defaultLegalEntity",
+			),
+		);
 
 		// Check for existing preset with same location
 		if (data.countryCode) {
 			const existingConditions = [
 				eq(holidayPreset.organizationId, organizationId),
+				eq(holidayPreset.legalEntityId, selectedLegalEntityId),
 				eq(holidayPreset.countryCode, data.countryCode),
 			];
 
@@ -411,6 +505,7 @@ export async function createHolidayPreset(
 					.insert(holidayPreset)
 					.values({
 						organizationId,
+						legalEntityId: selectedLegalEntityId,
 						name: data.name,
 						description: data.description || null,
 						countryCode: data.countryCode || null,
@@ -917,6 +1012,7 @@ export async function getPresetAssignments(
 export async function createPresetAssignment(
 	organizationId: string,
 	data: HolidayPresetAssignmentFormValues,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<typeof holidayPresetAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
@@ -929,6 +1025,49 @@ export async function createPresetAssignment(
 				action: "create",
 			}),
 		);
+		const preset = yield* _(
+			actor.dbService.query("createPresetAssignment:getPreset", async () => {
+				return await actor.dbService.db.query.holidayPreset.findFirst({
+					where: and(
+						eq(holidayPreset.id, data.presetId),
+						eq(holidayPreset.organizationId, organizationId),
+						eq(holidayPreset.isActive, true),
+					),
+					columns: { id: true, legalEntityId: true },
+				});
+			}),
+			Effect.flatMap((value) =>
+				value
+					? Effect.succeed(value)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Holiday preset not found",
+								entityType: "holiday_preset",
+								entityId: data.presetId,
+							}),
+						),
+			),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam ?? preset.legalEntityId,
+				"createPresetAssignment:defaultLegalEntity",
+			),
+		);
+
+		if (preset.legalEntityId !== selectedLegalEntityId) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "holiday_preset_assignment",
+						action: "create",
+					}),
+				),
+			);
+		}
 
 		// Calculate priority based on assignment type
 		const priority =
@@ -937,6 +1076,7 @@ export async function createPresetAssignment(
 		// Check for existing assignment based on type
 		const existingConditions: SQL[] = [
 			eq(holidayPresetAssignment.organizationId, organizationId),
+			eq(holidayPresetAssignment.legalEntityId, selectedLegalEntityId),
 			eq(holidayPresetAssignment.isActive, true),
 		];
 
@@ -979,6 +1119,7 @@ export async function createPresetAssignment(
 					.values({
 						presetId: data.presetId,
 						organizationId,
+						legalEntityId: selectedLegalEntityId,
 						assignmentType: data.assignmentType,
 						teamId: data.teamId || null,
 						employeeId: data.employeeId || null,
@@ -1058,22 +1199,43 @@ export async function deletePresetAssignment(
  */
 export async function getTeamsForAssignment(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<TeamListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getTeamsForAssignment:actor" }),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getTeamsForAssignment:defaultLegalEntity",
+			),
+		);
 
 		const teams = yield* _(
-			dbService.query("getTeams", async () => {
-				return await dbService.db
+			actor.dbService.query("getTeams", async () => {
+				const teamEmployees = await actor.dbService.db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, organizationId),
+						eq(employee.legalEntityId, selectedLegalEntityId),
+						eq(employee.isActive, true),
+					),
+					columns: { teamId: true },
+				});
+				const scopedTeamIds = [...new Set(teamEmployees.map((row) => row.teamId).filter(Boolean))] as string[];
+
+				if (scopedTeamIds.length === 0) {
+					return [];
+				}
+
+				return await actor.dbService.db
 					.select({
 						id: team.id,
 						name: team.name,
 					})
 					.from(team)
-					.where(eq(team.organizationId, organizationId))
+					.where(and(eq(team.organizationId, organizationId), inArray(team.id, scopedTeamIds)))
 					.orderBy(team.name);
 			}),
 		);
@@ -1089,16 +1251,23 @@ export async function getTeamsForAssignment(
  */
 export async function getEmployeesForAssignment(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<EmployeeListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getEmployeesForAssignment:actor" }),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getEmployeesForAssignment:defaultLegalEntity",
+			),
+		);
 
 		const employees = yield* _(
-			dbService.query("getEmployees", async () => {
-				return await dbService.db
+			actor.dbService.query("getEmployees", async () => {
+				return await actor.dbService.db
 					.select({
 						id: employee.id,
 						firstName: employee.firstName,
@@ -1106,7 +1275,13 @@ export async function getEmployeesForAssignment(
 						position: employee.position,
 					})
 					.from(employee)
-					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+					.where(
+						and(
+							eq(employee.organizationId, organizationId),
+							eq(employee.legalEntityId, selectedLegalEntityId),
+							eq(employee.isActive, true),
+						),
+					)
 					.orderBy(employee.firstName, employee.lastName);
 			}),
 		);

@@ -48,10 +48,23 @@ function resolveSelectedVacationLegalEntityId(
 ) {
 	return Effect.gen(function* (_) {
 		if (requestedLegalEntityId) {
+			const requestedEntity = yield* _(
+				dbService.query(`${queryName}:requestedLegalEntity`, async () => {
+					return await dbService.db.query.legalEntity.findFirst({
+						where: and(
+							eq(legalEntity.id, requestedLegalEntityId),
+							eq(legalEntity.organizationId, actor.organizationId),
+							eq(legalEntity.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
 			const canAccess =
-				actor.accessTier === "orgAdmin" ||
+				Boolean(requestedEntity) &&
+				(actor.accessTier === "orgAdmin" ||
 				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
-				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
 
 			if (!canAccess) {
 				return yield* _(
@@ -101,6 +114,21 @@ function resolveSelectedVacationLegalEntityId(
 	});
 }
 
+function canAccessVacationPolicyLegalEntity(
+	actor: {
+		accessTier: string;
+		currentEmployee: { legalEntityId?: string | null } | null;
+		legalEntityAdminIds?: string[];
+	},
+	legalEntityId: string,
+) {
+	return (
+		actor.accessTier === "orgAdmin" ||
+		actor.legalEntityAdminIds?.includes(legalEntityId) ||
+		actor.currentEmployee?.legalEntityId === legalEntityId
+	);
+}
+
 /**
  * Get a vacation policy by ID using Effect pattern
  */
@@ -126,7 +154,10 @@ export async function getVacationPolicy(
 			return null;
 		}
 
-		if (actor.organizationId !== policy.organizationId) {
+		if (
+			actor.organizationId !== policy.organizationId ||
+			!canAccessVacationPolicyLegalEntity(actor, policy.legalEntityId)
+		) {
 			yield* _(
 				Effect.fail(
 					new AuthorizationError({
@@ -364,6 +395,22 @@ export async function updateVacationPolicy(
 					}),
 			),
 		);
+
+		if (
+			actor.organizationId !== policy.organizationId ||
+			!canAccessVacationPolicyLegalEntity(actor, policy.legalEntityId)
+		) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "vacation_policy",
+						action: "update",
+					}),
+				),
+			);
+		}
 
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -783,6 +830,22 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 					}),
 			),
 		);
+
+		if (
+			actor.organizationId !== policy.organizationId ||
+			!canAccessVacationPolicyLegalEntity(actor, policy.legalEntityId)
+		) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "vacation_policy",
+						action: "delete",
+					}),
+				),
+			);
+		}
 
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {

@@ -46,10 +46,23 @@ function resolveSelectedVacationAssignmentLegalEntityId(
 ) {
 	return Effect.gen(function* (_) {
 		if (requestedLegalEntityId) {
+			const requestedEntity = yield* _(
+				dbService.query(`${queryName}:requestedLegalEntity`, async () => {
+					return await dbService.db.query.legalEntity.findFirst({
+						where: and(
+							eq(legalEntity.id, requestedLegalEntityId),
+							eq(legalEntity.organizationId, actor.organizationId),
+							eq(legalEntity.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
 			const canAccess =
-				actor.accessTier === "orgAdmin" ||
+				Boolean(requestedEntity) &&
+				(actor.accessTier === "orgAdmin" ||
 				actor.legalEntityAdminIds?.includes(requestedLegalEntityId) ||
-				actor.currentEmployee?.legalEntityId === requestedLegalEntityId;
+				actor.currentEmployee?.legalEntityId === requestedLegalEntityId);
 
 			if (!canAccess) {
 				return yield* _(
