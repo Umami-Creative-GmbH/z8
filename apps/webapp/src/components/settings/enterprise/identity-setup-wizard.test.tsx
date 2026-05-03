@@ -394,6 +394,19 @@ describe("DomainsAndBrandingTabs behavior", () => {
 });
 
 describe("IdentitySetupWizard source supplements", () => {
+	it("keeps SCIM docs aligned with self-serve identity setup", () => {
+		const docsSource = readFileSync(
+			join(process.cwd(), "../../apps/docs/content/docs/guide/admin-guide/scim-provisioning.mdx"),
+			"utf8",
+		);
+
+		expect(docsSource).toContain("Enterprise Identity Setup");
+		expect(docsSource).toContain("/settings/enterprise/identity-setup");
+		expect(docsSource).not.toContain(
+			"does not expose a dedicated self-serve SCIM setup page",
+		);
+	});
+
 	it("keeps default role template outside the enforcement JSON", () => {
 		const source = readFileSync(wizardPath, "utf8");
 
