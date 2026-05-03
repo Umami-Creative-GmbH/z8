@@ -86,6 +86,24 @@ describe("ActionPanel", () => {
 		expect(screen.getByRole("dialog", { name: "Wide panel" }).className).toContain("lg:max-w-3xl");
 	});
 
+	it("uses mobile-safe width and stacked footer actions", () => {
+		render(
+			<ActionPanel open>
+				<ActionPanelContent>
+					<ActionPanelTitle>Responsive panel</ActionPanelTitle>
+					<ActionPanelFooter>Footer actions</ActionPanelFooter>
+				</ActionPanelContent>
+			</ActionPanel>,
+		);
+
+		const dialogClassName = screen.getByRole("dialog", { name: "Responsive panel" }).className;
+		expect(dialogClassName).toContain("w-[calc(100vw-0.75rem)]");
+		expect(dialogClassName).toContain("sm:w-3/4");
+		expect(screen.getByText("Footer actions").className).toContain("flex-col-reverse");
+		expect(screen.getByText("Footer actions").className).toContain("*:w-full");
+		expect(screen.getByText("Footer actions").className).toContain("sm:*:w-auto");
+	});
+
 	it("uses animated sheet transitions", () => {
 		render(
 			<ActionPanel open>
