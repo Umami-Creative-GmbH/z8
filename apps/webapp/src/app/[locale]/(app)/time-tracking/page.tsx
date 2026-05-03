@@ -1,14 +1,20 @@
 import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
+import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
 import { getTimeTrackingPageData } from "./page-data";
+import type { TimeTrackingPageSearchParams } from "./page-data";
 
-export default async function TimeTrackingPage() {
+interface TimeTrackingPageProps {
+	searchParams: Promise<TimeTrackingPageSearchParams>;
+}
+
+export default async function TimeTrackingPage({ searchParams }: TimeTrackingPageProps) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const pageData = await getTimeTrackingPageData();
+	const pageData = await getTimeTrackingPageData(await searchParams);
 
 	if (!pageData.currentEmployee) {
 		return (
@@ -25,6 +31,10 @@ export default async function TimeTrackingPage() {
 					activeWorkPeriod={pageData.activeWorkPeriod}
 					employeeName={pageData.session.user.name || pageData.t("common.employee", "Employee")}
 				/>
+			</div>
+
+			<div className="px-4 lg:px-6">
+				<PersonalWorkdayTimeline result={pageData.timelineResult} />
 			</div>
 
 			<WeeklySummaryCards summary={pageData.summary} />

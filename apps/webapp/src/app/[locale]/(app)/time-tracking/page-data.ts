@@ -8,8 +8,13 @@ import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
+import { getWorkdayTimelineData } from "./workday-timeline-data";
 
-export async function getTimeTrackingPageData() {
+export interface TimeTrackingPageSearchParams {
+	date?: string;
+}
+
+export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSearchParams = {}) {
 	const session = (await auth.api.getSession({ headers: await headers() }))!;
 
 	const [currentEmployee, settings] = await Promise.all([
@@ -32,11 +37,17 @@ export async function getTimeTrackingPageData() {
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
 
-	const [activeWorkPeriod, workPeriods, summary, t] = await Promise.all([
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
 		getActiveWorkPeriod(currentEmployee.id),
 		getWorkPeriods(currentEmployee.id, startDate, endDate),
 		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
 		getTranslate(),
+		getWorkdayTimelineData({
+			employeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			timezone,
+			dateParam: searchParams.date,
+		}),
 	]);
 
 	return {
@@ -47,5 +58,6 @@ export async function getTimeTrackingPageData() {
 		workPeriods,
 		summary,
 		t,
+		timelineResult,
 	} as const;
 }
