@@ -276,7 +276,9 @@ function findLowestSegmentStaffCount({
 	}
 
 	const sortedBoundaries = [...boundaries].sort();
-	let lowestStaffCount = Number.POSITIVE_INFINITY;
+	let lowestUnderstaffedSegment:
+		| { startTime: string; endTime: string; staffCountAfterAbsence: number }
+		| null = null;
 
 	for (let index = 0; index < sortedBoundaries.length - 1; index++) {
 		const segmentStart = sortedBoundaries[index];
@@ -294,14 +296,20 @@ function findLowestSegmentStaffCount({
 				.map((publishedShift) => publishedShift.employeeId),
 		).size;
 
-		lowestStaffCount = Math.min(lowestStaffCount, assignedStaff);
+		if (assignedStaff >= rule.minimumStaffCount) {
+			continue;
+		}
+
+		if (!lowestUnderstaffedSegment || assignedStaff < lowestUnderstaffedSegment.staffCountAfterAbsence) {
+			lowestUnderstaffedSegment = {
+				startTime: segmentStart,
+				endTime: segmentEnd,
+				staffCountAfterAbsence: assignedStaff,
+			};
+		}
 	}
 
-	return {
-		startTime: evaluationStart,
-		endTime: evaluationEnd,
-		staffCountAfterAbsence: Number.isFinite(lowestStaffCount) ? lowestStaffCount : 0,
-	};
+	return lowestUnderstaffedSegment;
 }
 
 function maxTime(left: string, right: string) {
