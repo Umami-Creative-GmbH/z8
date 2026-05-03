@@ -23,6 +23,7 @@ interface AbsencesViewContainerProps {
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
 	}>;
+	organizationId: string;
 	remainingDays: number;
 	currentYear: number;
 }
@@ -31,6 +32,7 @@ export function AbsencesViewContainer({
 	absences,
 	holidays,
 	categories,
+	organizationId,
 	remainingDays,
 	currentYear,
 }: AbsencesViewContainerProps) {
@@ -96,6 +98,7 @@ export function AbsencesViewContainer({
 				open={requestDialogOpen}
 				onOpenChange={handleDialogOpenChange}
 				categories={categories}
+				organizationId={organizationId}
 				remainingDays={remainingDays}
 				holidays={holidays}
 				initialDate={prefilledDate}
