@@ -78,6 +78,8 @@ export function AbsencePlanPreviewPanel({
 			: ["Planner checked the available request signals."];
 	const coverageRiskCount = preview.coverage.risks.length;
 	const hasAffectedShifts = preview.affectedShifts.length > 0;
+	const hasMissingCoverageRules =
+		hasAffectedShifts && !preview.coverage.hasConfiguredRulesForAffectedShifts;
 
 	return (
 		<Card className="gap-4 border-primary/15 bg-primary/5 shadow-none">
@@ -180,6 +182,13 @@ export function AbsencePlanPreviewPanel({
 									))}
 								</ul>
 							</>
+						) : hasMissingCoverageRules ? (
+							<p className="text-muted-foreground text-sm">
+								{t(
+									"absences.planPreview.noCoverageRulesConfigured",
+									"No coverage rules configured for affected shifts",
+								)}
+							</p>
 						) : (
 							<p className="text-muted-foreground text-sm">
 								{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
