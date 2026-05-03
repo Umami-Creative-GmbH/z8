@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const markComplete = vi.fn();
@@ -21,9 +21,26 @@ vi.mock("@/components/ui/badge", () => ({
 }));
 
 vi.mock("@/components/ui/button", () => ({
-	Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-		<button {...props}>{children}</button>
-	),
+	Button: ({
+		asChild,
+		children,
+		className,
+		...props
+	}: React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean }) => {
+		if (asChild && isValidElement(children)) {
+			const child = children as ReactElement<{ className?: string }>;
+			return cloneElement(child, {
+				...props,
+				className: [child.props.className, className].filter(Boolean).join(" ") || undefined,
+			});
+		}
+
+		return (
+			<button className={className} {...props}>
+				{children}
+			</button>
+		);
+	},
 }));
 
 vi.mock("@/components/ui/card", () => ({
