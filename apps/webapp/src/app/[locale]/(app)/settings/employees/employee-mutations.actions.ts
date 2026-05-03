@@ -1,13 +1,15 @@
 "use server";
 
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
-import { employee, employeeRateHistory } from "@/db/schema";
-import { AppAccessService } from "@/lib/effect/services/app-access.service";
+import { employee, employeeRateHistory, legalEntity } from "@/db/schema";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";
+import type { ServerActionResult } from "@/lib/effect/result";
+import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import { getDefaultLegalEntity } from "@/lib/legal-entities/default-entity";
 import { createLogger } from "@/lib/logger";
 import {
 	type AssignManagers,
@@ -19,10 +21,7 @@ import {
 	type UpdateEmployee,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 import {
-	ensureCanAccessEmployeeSettingsTarget,
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext,
 	getEmployeeSettingsActorContext,
@@ -35,6 +34,8 @@ import {
 	runTracedEmployeeAction,
 	validateInput,
 } from "./employee-action-utils";
+import { assertCanAssignEmployeeLegalEntity } from "./employee-legal-entity";
+import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
 
@@ -73,6 +74,53 @@ export async function createEmployeeAction(
 
 				yield* _(getTargetUser(validatedData.userId));
 
+				const legalEntityId =
+					validatedData.legalEntityId ??
+					(yield* _(
+						Effect.tryPromise({
+							try: async () => getDefaultLegalEntity(validatedData.organizationId),
+							catch: () =>
+								new ValidationError({
+									message: "No default legal entity exists for this organization.",
+									field: "legalEntityId",
+								}),
+						}),
+					))?.id;
+
+				if (!legalEntityId) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Legal entity is required",
+								field: "legalEntityId",
+							}),
+						),
+					);
+				}
+
+				const entityRecord = yield* _(
+					dbService.query("getEmployeeLegalEntityForCreate", async () => {
+						return await dbService.db.query.legalEntity.findFirst({
+							where: and(
+								eq(legalEntity.id, legalEntityId),
+								eq(legalEntity.organizationId, validatedData.organizationId),
+							),
+						});
+					}),
+				);
+
+				if (!entityRecord) {
+					return yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Legal entity not found",
+								field: "legalEntityId",
+								value: legalEntityId,
+							}),
+						),
+					);
+				}
+
 				const existing = yield* _(
 					dbService.query("checkExistingEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
@@ -105,6 +153,7 @@ export async function createEmployeeAction(
 							.values({
 								userId: validatedData.userId,
 								organizationId: validatedData.organizationId,
+								legalEntityId,
 								teamId: validatedData.teamId || null,
 								role: validatedData.role,
 								position: validatedData.position || null,
@@ -193,8 +242,63 @@ export async function updateEmployeeAction(
 						? (filterEmployeeUpdateForScopedManager(validatedData) as UpdateEmployee)
 						: validatedData;
 
+				if (actor.accessTier === "orgAdmin" || actor.accessTier === "entityAdmin") {
+					const assignmentError = (() => {
+						try {
+							assertCanAssignEmployeeLegalEntity({
+								isOrgAdmin: actor.accessTier === "orgAdmin",
+								currentLegalEntityId: targetEmployee.legalEntityId,
+								nextLegalEntityId: validatedData.legalEntityId,
+								allowedLegalEntityIds: actor.legalEntityAdminIds,
+							});
+							return null;
+						} catch (error) {
+							return error instanceof Error ? error.message : "Invalid legal entity assignment";
+						}
+					})();
+
+					if (assignmentError) {
+						return yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: assignmentError,
+									field: "legalEntityId",
+									value: validatedData.legalEntityId,
+								}),
+							),
+						);
+					}
+				}
+
+				if ("legalEntityId" in scopedData) {
+					const entityRecord = yield* _(
+						dbService.query("getEmployeeLegalEntityForUpdate", async () => {
+							return await dbService.db.query.legalEntity.findFirst({
+								where: and(
+									eq(legalEntity.id, scopedData.legalEntityId),
+									eq(legalEntity.organizationId, targetEmployee.organizationId),
+								),
+							});
+						}),
+					);
+
+					if (!entityRecord) {
+						return yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Legal entity not found",
+									field: "legalEntityId",
+									value: scopedData.legalEntityId,
+								}),
+							),
+						);
+					}
+				}
+
 				const newHourlyRate = parseHourlyRate(
-					"hourlyRate" in scopedData ? (scopedData.hourlyRate as string | null | undefined) : undefined,
+					"hourlyRate" in scopedData
+						? (scopedData.hourlyRate as string | null | undefined)
+						: undefined,
 				);
 				const currentRate = parseHourlyRate(targetEmployee.currentHourlyRate);
 
@@ -327,9 +431,7 @@ export async function updateOwnProfileAction(
 				const { dbService, currentEmployee } = yield* _(getEmployeeContext());
 				span.setAttribute("employee.id", currentEmployee.id);
 
-				const validatedData = yield* _(
-					validateInput(personalInformationSchema, data, "profile"),
-				);
+				const validatedData = yield* _(validateInput(personalInformationSchema, data, "profile"));
 
 				yield* _(
 					dbService.query("updateOwnProfile", async () => {

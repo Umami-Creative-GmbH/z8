@@ -20,9 +20,11 @@ import { defaultFormValues, syncEmployeeForm } from "./page-utils";
 export function EmployeeDetailPageClient({
 	params,
 	accessTier,
+	legalEntities,
 }: {
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
+	legalEntities: Array<{ id: string; name: string }>;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -56,6 +58,7 @@ export function EmployeeDetailPageClient({
 	const canManageCustomRoles = accessTier === "orgAdmin";
 	const canManageEmploymentHistory = accessTier === "orgAdmin";
 	const isMutatingEmploymentHistory = isConfirmingEmploymentHistory || isCancelingEmploymentHistory;
+	const canMoveLegalEntity = accessTier === "orgAdmin";
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
@@ -114,6 +117,8 @@ export function EmployeeDetailPageClient({
 					form={form}
 					canEditManagerFields={canManageEmployeeDetails}
 					canEditOrgAdminFields={accessTier === "orgAdmin"}
+					canMoveLegalEntity={canMoveLegalEntity}
+					legalEntities={legalEntities}
 					isUpdating={isUpdating}
 					onCancel={() => router.push("/settings/employees")}
 				/>

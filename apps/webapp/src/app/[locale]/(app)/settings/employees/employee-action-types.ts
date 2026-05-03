@@ -12,6 +12,7 @@ export interface EmployeeListParams {
 	search?: string;
 	role?: EmployeeRole | "all";
 	status?: "active" | "inactive" | "all";
+	legalEntityId?: string;
 	limit?: number;
 	offset?: number;
 }
@@ -48,6 +49,7 @@ export interface EmployeeSelectParams {
 	role?: EmployeeRole | "all";
 	roles?: EmployeeRole[];
 	status?: "active" | "inactive" | "all";
+	legalEntityId?: string;
 	teamId?: string;
 	excludeIds?: string[];
 	limit?: number;

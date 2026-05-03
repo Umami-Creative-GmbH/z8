@@ -44,6 +44,7 @@ import { columns } from "./columns";
 export function EmployeesPageClient(props: {
 	accessTier: SettingsAccessTier;
 	organizationId: string;
+	selectedLegalEntityId?: string;
 }) {
 	const { t } = useTranslate();
 	const {
@@ -52,7 +53,6 @@ export function EmployeesPageClient(props: {
 		isLoading,
 		isFetching,
 		hasEmployee,
-		isAdmin,
 		role,
 		status,
 		setSearch,
@@ -62,7 +62,11 @@ export function EmployeesPageClient(props: {
 		setPagination,
 		pageCount,
 		refresh,
-	} = useEmployees({ accessTier: props.accessTier, organizationId: props.organizationId });
+	} = useEmployees({
+		accessTier: props.accessTier,
+		organizationId: props.organizationId,
+		legalEntityId: props.selectedLegalEntityId,
+	});
 
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [searchInput, setSearchInput] = useState("");

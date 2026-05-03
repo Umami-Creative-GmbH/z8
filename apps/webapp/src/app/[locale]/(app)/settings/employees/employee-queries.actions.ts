@@ -34,10 +34,22 @@ function buildEmployeeFilters(
 	organizationId: string,
 	params: Pick<
 		EmployeeSelectParams,
-		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId"
-	>,
+		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId" | "legalEntityId"
+	> & { allowedLegalEntityIds?: string[] },
 ) {
 	const conditions = [eq(employee.organizationId, organizationId)];
+
+	if (params.allowedLegalEntityIds) {
+		if (params.allowedLegalEntityIds.length === 0) {
+			conditions.push(sql<boolean>`false`);
+		} else {
+			conditions.push(inArray(employee.legalEntityId, params.allowedLegalEntityIds));
+		}
+	}
+
+	if (params.legalEntityId) {
+		conditions.push(eq(employee.legalEntityId, params.legalEntityId));
+	}
 
 	if (params.role && params.role !== "all") {
 		conditions.push(eq(employee.role, params.role));
@@ -127,6 +139,9 @@ function loadEmployeePage(params: EmployeeListParams) {
 		const offset = params.offset ?? 0;
 		const where = buildEmployeeFilters(actor.organizationId, {
 			...params,
+			allowedLegalEntityIds:
+				actor.accessTier === "entityAdmin" ? actor.legalEntityAdminIds : undefined,
+			legalEntityId: actor.accessTier === "orgAdmin" ? params.legalEntityId : params.legalEntityId,
 			managerId:
 				actor.accessTier === "manager" && actor.currentEmployee
 					? actor.currentEmployee.id
@@ -173,6 +188,9 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 		const offset = params.offset ?? 0;
 		const where = buildEmployeeFilters(actor.organizationId, {
 			...params,
+			allowedLegalEntityIds:
+				actor.accessTier === "entityAdmin" ? actor.legalEntityAdminIds : undefined,
+			legalEntityId: actor.accessTier === "orgAdmin" ? params.legalEntityId : params.legalEntityId,
 			managerId:
 				actor.accessTier === "manager" && actor.currentEmployee
 					? actor.currentEmployee.id
@@ -362,6 +380,9 @@ export async function getEmployeesByIdsAction(
 					search: undefined,
 					status: undefined,
 					teamId: undefined,
+					legalEntityId: undefined,
+					allowedLegalEntityIds:
+						actor.accessTier === "entityAdmin" ? actor.legalEntityAdminIds : undefined,
 					managerId:
 						actor.accessTier === "manager" && actor.currentEmployee
 							? actor.currentEmployee.id

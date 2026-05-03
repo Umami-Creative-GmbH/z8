@@ -1,10 +1,10 @@
-import { SpanStatusCode, trace, type Attributes, type Span } from "@opentelemetry/api";
-import { revalidateTag } from "next/cache";
+import { type Attributes, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { revalidateTag } from "next/cache";
 import type { ZodType } from "zod";
 import { member, user } from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, legalEntityAdmin, team } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
 	type AnyAppError,
@@ -38,10 +38,10 @@ export function getEmployeeContext(options?: { organizationId?: string; queryNam
 
 		const where = options?.organizationId
 			? and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, options.organizationId),
-				eq(employee.isActive, true),
-			)
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, options.organizationId),
+					eq(employee.isActive, true),
+				)
 			: and(eq(employee.userId, session.user.id), eq(employee.isActive, true));
 
 		const currentEmployee = yield* _(
@@ -82,23 +82,55 @@ export function getEmployeeSettingsActorContext(options?: {
 
 		const [membershipRecord, employeeRecord] = yield* _(
 			Effect.all([
-				dbService.query(`${options?.queryName ?? "getEmployeeSettingsActor"}:membership`, async () => {
-					return await dbService.db.query.member.findFirst({
-						where: and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)),
-						columns: { role: true },
-					});
-				}),
-				dbService.query(`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`, async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-					});
-				}),
+				dbService.query(
+					`${options?.queryName ?? "getEmployeeSettingsActor"}:membership`,
+					async () => {
+						return await dbService.db.query.member.findFirst({
+							where: and(
+								eq(member.userId, session.user.id),
+								eq(member.organizationId, organizationId),
+							),
+							columns: { role: true },
+						});
+					},
+				),
+				dbService.query(
+					`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`,
+					async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, organizationId),
+								eq(employee.isActive, true),
+							),
+						});
+					},
+				),
 			]),
 		);
+
+		let legalEntityAdminIds: string[] = [];
+
+		if (employeeRecord) {
+			const grantRecords = yield* _(
+				dbService.query(
+					`${options?.queryName ?? "getEmployeeSettingsActor"}:legalEntityAdmins`,
+					async () => {
+						return await dbService.db
+							.select({ legalEntityId: legalEntityAdmin.legalEntityId })
+							.from(legalEntityAdmin)
+							.where(
+								and(
+									eq(legalEntityAdmin.organizationId, organizationId),
+									eq(legalEntityAdmin.employeeId, employeeRecord.id),
+								),
+							);
+					},
+				),
+			);
+
+			legalEntityAdminIds = grantRecords.map((grant) => grant.legalEntityId);
+		}
 
 		const accessTier = resolveSettingsAccessTier({
 			activeOrganizationId: organizationId,
@@ -106,6 +138,7 @@ export function getEmployeeSettingsActorContext(options?: {
 				? membershipRecord.role
 				: null,
 			employeeRole: employeeRecord?.role ?? null,
+			legalEntityAdminIds,
 		});
 
 		if (accessTier === "member") {
@@ -127,6 +160,7 @@ export function getEmployeeSettingsActorContext(options?: {
 			organizationId,
 			accessTier,
 			currentEmployee: employeeRecord ?? null,
+			legalEntityAdminIds,
 		};
 	});
 }
@@ -241,6 +275,7 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 		organizationId: string;
 		session: { user: { id: string } };
 		currentEmployee: typeof employee.$inferSelect | null;
+		legalEntityAdminIds?: string[];
 	},
 	targetEmployee: typeof employee.$inferSelect,
 	options: {
@@ -264,6 +299,13 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 		}
 
 		if (actor.accessTier === "orgAdmin") {
+			return;
+		}
+
+		if (
+			actor.accessTier === "entityAdmin" &&
+			actor.legalEntityAdminIds?.includes(targetEmployee.legalEntityId)
+		) {
 			return;
 		}
 
@@ -396,7 +438,7 @@ export function validateAssignmentTargetFields(
 				field: "teamId",
 			}),
 		);
-		}
+	}
 
 	return Effect.void;
 }

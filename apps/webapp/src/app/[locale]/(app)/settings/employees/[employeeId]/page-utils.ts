@@ -1,4 +1,8 @@
-import type { FormAsyncValidateOrFn, FormValidateOrFn, ReactFormExtendedApi } from "@tanstack/react-form";
+import type {
+	FormAsyncValidateOrFn,
+	FormValidateOrFn,
+	ReactFormExtendedApi,
+} from "@tanstack/react-form";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 
 export interface EmployeeDetailFormValues {
@@ -7,6 +11,7 @@ export interface EmployeeDetailFormValues {
 	gender: "male" | "female" | "other" | undefined;
 	position: string;
 	employeeNumber: string;
+	legalEntityId: string;
 	role: "admin" | "manager" | "employee" | undefined;
 	contractType: "fixed" | "hourly";
 	hourlyRate: string;
@@ -36,6 +41,7 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	gender: undefined,
 	position: "",
 	employeeNumber: "",
+	legalEntityId: "",
 	role: undefined,
 	contractType: "fixed",
 	hourlyRate: "",
@@ -63,6 +69,7 @@ export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: Employee
 	form.setFieldValue("gender", employee.gender || undefined);
 	form.setFieldValue("position", employee.position || "");
 	form.setFieldValue("employeeNumber", employee.employeeNumber || "");
+	form.setFieldValue("legalEntityId", employee.legalEntityId);
 	form.setFieldValue("role", employee.role || undefined);
 	form.setFieldValue("contractType", employee.contractType || "fixed");
 	form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");

@@ -16,7 +16,7 @@ export const hourlyRateSchema = z
 		(val) => {
 			if (!val || val === "") return true; // optional
 			const num = parseFloat(val);
-			return !isNaN(num) && num > 0;
+			return !Number.isNaN(num) && num > 0;
 		},
 		{ message: "Hourly rate must be a positive number" },
 	)
@@ -28,7 +28,7 @@ export const createRateHistorySchema = z.object({
 	hourlyRate: z.string().refine(
 		(val) => {
 			const num = parseFloat(val);
-			return !isNaN(num) && num > 0;
+			return !Number.isNaN(num) && num > 0;
 		},
 		{ message: "Hourly rate must be a positive number" },
 	),
@@ -53,6 +53,7 @@ export const personalInformationSchema = z.object({
 export const createEmployeeSchema = z.object({
 	userId: z.string().uuid("Invalid user ID"),
 	organizationId: z.string().min(1, "Organization ID is required"),
+	legalEntityId: z.string().uuid("Invalid legal entity ID").optional(),
 	teamId: z.string().uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema,
 	position: z
@@ -90,6 +91,7 @@ export const createEmployeeSchema = z.object({
 // Employee update schema (more permissive, all fields optional)
 export const updateEmployeeSchema = z
 	.object({
+		legalEntityId: z.string().uuid("Invalid legal entity ID"),
 		teamId: z.string().uuid("Invalid team ID").optional().nullable(),
 		role: employeeRoleSchema.optional(),
 		position: z.string().max(100, "Position is too long").optional().nullable(),

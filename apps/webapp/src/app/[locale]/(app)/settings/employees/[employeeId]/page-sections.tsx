@@ -1,6 +1,12 @@
 "use client";
 
-import { IconArrowBack, IconClock, IconDeviceFloppy, IconHome, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconArrowBack,
+	IconClock,
+	IconDeviceFloppy,
+	IconHome,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
@@ -81,7 +87,12 @@ export function EmployeeOverviewCard({
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="flex items-center gap-3">
-					<UserAvatar image={employee.user.image} seed={employee.user.id} name={employee.user.name} size="lg" />
+					<UserAvatar
+						image={employee.user.image}
+						seed={employee.user.id}
+						name={employee.user.name}
+						size="lg"
+					/>
 					<div>
 						<div className="font-medium">{employee.user.name}</div>
 						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
@@ -117,7 +128,9 @@ export function EmployeeOverviewCard({
 								<div key={manager.id} className="flex items-center gap-2">
 									<span>{manager.manager.user.name}</span>
 									{manager.isPrimary && (
-										<Badge variant="secondary" className="text-xs">Primary</Badge>
+										<Badge variant="secondary" className="text-xs">
+											Primary
+										</Badge>
 									)}
 								</div>
 							))}
@@ -164,7 +177,9 @@ export function EmployeeOverviewCard({
 											<div
 												key={label}
 												className={`rounded px-2 py-1 text-xs ${
-													isWorkDay ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+													isWorkDay
+														? "bg-primary/10 text-primary"
+														: "bg-muted text-muted-foreground"
 												}`}
 											>
 												{label}
@@ -187,12 +202,16 @@ export function EmployeeEditFormCard({
 	form,
 	canEditManagerFields,
 	canEditOrgAdminFields,
+	canMoveLegalEntity,
+	legalEntities,
 	isUpdating,
 	onCancel,
 }: {
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
 	canEditOrgAdminFields: boolean;
+	canMoveLegalEntity: boolean;
+	legalEntities: Array<{ id: string; name: string }>;
 	isUpdating: boolean;
 	onCancel: () => void;
 }) {
@@ -214,16 +233,57 @@ export function EmployeeEditFormCard({
 					className="space-y-6"
 				>
 					<div className="grid gap-4 md:grid-cols-2">
-						<TextField form={form} name="firstName" label="First Name" placeholder="Enter first name" disabled={!canEditManagerFields || isUpdating} />
-						<TextField form={form} name="lastName" label="Last Name" placeholder="Enter last name" disabled={!canEditManagerFields || isUpdating} />
+						<TextField
+							form={form}
+							name="firstName"
+							label="First Name"
+							placeholder="Enter first name"
+							disabled={!canEditManagerFields || isUpdating}
+						/>
+						<TextField
+							form={form}
+							name="lastName"
+							label="Last Name"
+							placeholder="Enter last name"
+							disabled={!canEditManagerFields || isUpdating}
+						/>
 					</div>
+
+					<form.Field name="legalEntityId">
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>Legal entity</TFormLabel>
+								<Select
+									value={field.state.value}
+									onValueChange={field.handleChange}
+									disabled={!canMoveLegalEntity || isUpdating}
+								>
+									<TFormControl hasError={fieldHasError(field)}>
+										<SelectTrigger>
+											<SelectValue placeholder="Select legal entity" />
+										</SelectTrigger>
+									</TFormControl>
+									<SelectContent>
+										{legalEntities.map((entity) => (
+											<SelectItem key={entity.id} value={entity.id}>
+												{entity.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
 
 					<form.Field name="gender">
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>Gender</TFormLabel>
 								<Select
-									onValueChange={(value) => field.handleChange(value as EmployeeDetailFormValues["gender"])}
+									onValueChange={(value) =>
+										field.handleChange(value as EmployeeDetailFormValues["gender"])
+									}
 									value={field.state.value || ""}
 									disabled={!canEditManagerFields || isUpdating}
 								>
@@ -244,15 +304,33 @@ export function EmployeeEditFormCard({
 					</form.Field>
 
 					<div className="grid gap-4 md:grid-cols-2">
-						<TextField form={form} name="position" label="Position" placeholder="Enter position" description="Job title or role" disabled={!canEditManagerFields || isUpdating} />
-						<TextField form={form} name="employeeNumber" label="Employee Number" placeholder="e.g., EMP-001" description="External payroll system ID" disabled={!canEditOrgAdminFields || isUpdating} />
+						<TextField
+							form={form}
+							name="position"
+							label="Position"
+							placeholder="Enter position"
+							description="Job title or role"
+							disabled={!canEditManagerFields || isUpdating}
+						/>
+						<TextField
+							form={form}
+							name="employeeNumber"
+							label="Employee Number"
+							placeholder="e.g., EMP-001"
+							description="External payroll system ID"
+							disabled={!canEditOrgAdminFields || isUpdating}
+						/>
 					</div>
 
 					<form.Field name="role">
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>System Role</TFormLabel>
-								<RoleSelector value={field.state.value} onChange={field.handleChange} disabled={!canEditOrgAdminFields || isUpdating} />
+								<RoleSelector
+									value={field.state.value}
+									onChange={field.handleChange}
+									disabled={!canEditOrgAdminFields || isUpdating}
+								/>
 								<TFormDescription>Determines access level in the system</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
@@ -263,7 +341,11 @@ export function EmployeeEditFormCard({
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>Contract Type</TFormLabel>
-								<ContractTypeSelector value={field.state.value} onChange={field.handleChange} disabled={!canEditOrgAdminFields || isUpdating} />
+								<ContractTypeSelector
+									value={field.state.value}
+									onChange={field.handleChange}
+									disabled={!canEditOrgAdminFields || isUpdating}
+								/>
 								<TFormDescription>Determines how compensation is calculated</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
@@ -305,7 +387,9 @@ export function EmployeeEditFormCard({
 							<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
 								{([isDirty, isSubmitting]) => (
 									<Button type="submit" disabled={!isDirty || isSubmitting || isUpdating}>
-										{(isSubmitting || isUpdating) && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+										{(isSubmitting || isUpdating) && (
+											<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+										)}
 										<IconDeviceFloppy className="mr-2 size-4" aria-hidden="true" />
 										Save Changes
 									</Button>
@@ -319,18 +403,47 @@ export function EmployeeEditFormCard({
 	);
 }
 
-function EmployeeAppAccessFields({ form, isUpdating }: { form: EmployeeDetailFormApi; isUpdating: boolean }) {
+function EmployeeAppAccessFields({
+	form,
+	isUpdating,
+}: {
+	form: EmployeeDetailFormApi;
+	isUpdating: boolean;
+}) {
 	return (
 		<>
 			<Separator className="my-4" />
 			<div className="space-y-4">
 				<div>
 					<h4 className="text-sm font-medium">App Access Permissions</h4>
-					<p className="text-sm text-muted-foreground">Control which applications this employee can access</p>
+					<p className="text-sm text-muted-foreground">
+						Control which applications this employee can access
+					</p>
 				</div>
-				<AccessSwitchField form={form} name="canUseWebapp" label="Web Application" description="Access to the browser-based application" ariaLabel="Toggle web application access" isUpdating={isUpdating} />
-				<AccessSwitchField form={form} name="canUseDesktop" label="Desktop Application" description="Access to the desktop app for time tracking" ariaLabel="Toggle desktop application access" isUpdating={isUpdating} />
-				<AccessSwitchField form={form} name="canUseMobile" label="Mobile Application" description="Access to mobile apps for time tracking" ariaLabel="Toggle mobile application access" isUpdating={isUpdating} />
+				<AccessSwitchField
+					form={form}
+					name="canUseWebapp"
+					label="Web Application"
+					description="Access to the browser-based application"
+					ariaLabel="Toggle web application access"
+					isUpdating={isUpdating}
+				/>
+				<AccessSwitchField
+					form={form}
+					name="canUseDesktop"
+					label="Desktop Application"
+					description="Access to the desktop app for time tracking"
+					ariaLabel="Toggle desktop application access"
+					isUpdating={isUpdating}
+				/>
+				<AccessSwitchField
+					form={form}
+					name="canUseMobile"
+					label="Mobile Application"
+					description="Access to mobile apps for time tracking"
+					ariaLabel="Toggle mobile application access"
+					isUpdating={isUpdating}
+				/>
 			</div>
 		</>
 	);
@@ -360,7 +473,12 @@ function AccessSwitchField({
 							<TFormLabel>{label}</TFormLabel>
 							<TFormDescription>{description}</TFormDescription>
 						</div>
-						<Switch checked={field.state.value ?? true} onCheckedChange={field.handleChange} disabled={isUpdating} aria-label={ariaLabel} />
+						<Switch
+							checked={field.state.value ?? true}
+							onCheckedChange={field.handleChange}
+							disabled={isUpdating}
+							aria-label={ariaLabel}
+						/>
 					</div>
 				</TFormItem>
 			)}

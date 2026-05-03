@@ -16,6 +16,7 @@ interface UseEmployeesOptions {
 	initialPageSize?: number;
 	organizationId?: string;
 	accessTier?: SettingsAccessTier;
+	legalEntityId?: string;
 }
 
 export function useEmployees(options: UseEmployeesOptions = {}) {
@@ -38,6 +39,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		search: search || undefined,
 		role: role === "all" ? undefined : (role as EmployeeListParams["role"]),
 		status: status === "all" ? undefined : (status as EmployeeListParams["status"]),
+		legalEntityId: options.legalEntityId,
 		limit: pagination.pageSize,
 		offset: pagination.pageIndex * pagination.pageSize,
 	};
