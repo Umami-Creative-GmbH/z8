@@ -1,6 +1,11 @@
-import { index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { organization, user } from "../auth-schema";
+
+export const implementationChecklistManualStatusEnum = pgEnum(
+	"implementation_checklist_manual_status",
+	["complete", "incomplete"],
+);
 
 export const implementationChecklistManualState = pgTable(
 	"implementation_checklist_manual_state",
@@ -10,7 +15,7 @@ export const implementationChecklistManualState = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		itemId: text("item_id").notNull(),
-		status: text("status").default("complete").notNull(),
+		status: implementationChecklistManualStatusEnum("status").default("complete").notNull(),
 		completedAt: timestamp("completed_at"),
 		completedByUserId: text("completed_by_user_id").references(() => user.id, {
 			onDelete: "set null",
