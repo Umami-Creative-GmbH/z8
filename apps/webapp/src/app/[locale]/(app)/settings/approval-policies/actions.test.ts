@@ -15,6 +15,29 @@ describe("approval policy settings actions", () => {
 		expect(result).toEqual({ success: false, error: "Active policies require at least one approval stage." });
 	});
 
+	it("normalizes valid policy input and trims text fields", () => {
+		const result = normalizeApprovalPolicyInputForTest({
+			name: "  Escalated absences  ",
+			description: "  Requires manager review  ",
+			isActive: true,
+			priority: 10,
+			conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
+			stages: [{ id: "stage_1", stepOrder: 1, label: "  Manager  ", approverType: "direct_manager" }],
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: {
+				name: "Escalated absences",
+				description: "Requires manager review",
+				isActive: true,
+				priority: 10,
+				conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
+				stages: [{ id: "stage_1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
+			},
+		});
+	});
+
 	it("previews the first matching policy and resolved approver labels", () => {
 		const result = previewApprovalPolicyForTest({
 			context: {
@@ -31,6 +54,15 @@ describe("approval policy settings actions", () => {
 				entityId: "absence_1",
 			},
 			policies: [
+				{
+					id: "policy_2",
+					organizationId: "org_1",
+					name: "Fallback absence chain",
+					isActive: true,
+					priority: 20,
+					conditions: [{ conditionType: "approval_type", operator: "equals", value: "absence_entry" }],
+					stages: [{ id: "stage_2", stepOrder: 1, label: "Admin", approverType: "org_admin" }],
+				},
 				{
 					id: "policy_1",
 					organizationId: "org_1",

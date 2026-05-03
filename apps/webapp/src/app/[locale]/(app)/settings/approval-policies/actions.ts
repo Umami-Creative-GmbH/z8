@@ -1,5 +1,3 @@
-"use server";
-
 import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -285,6 +283,8 @@ function databaseApproverType(approverType: PolicyInput["stages"][number]["appro
 }
 
 export async function getApprovalPolicies() {
+	"use server";
+
 	const currentEmployee = await requirePolicyAdmin();
 	return db.query.approvalPolicy.findMany({
 		where: (table, { eq: equals }) => equals(table.organizationId, currentEmployee.organizationId),
@@ -294,6 +294,8 @@ export async function getApprovalPolicies() {
 }
 
 export async function upsertApprovalPolicy(input: PolicyInput & { id?: string }) {
+	"use server";
+
 	const currentEmployee = await requirePolicyAdmin();
 	const parsed = upsertPolicyInputSchema.safeParse(input);
 	if (!parsed.success) {
@@ -387,6 +389,8 @@ export async function upsertApprovalPolicy(input: PolicyInput & { id?: string })
 }
 
 export async function getEmployeeGroups() {
+	"use server";
+
 	const currentEmployee = await requirePolicyAdmin();
 	return db.query.employeeGroup.findMany({
 		where: (table, { eq: equals }) => equals(table.organizationId, currentEmployee.organizationId),
@@ -395,6 +399,8 @@ export async function getEmployeeGroups() {
 }
 
 export async function upsertEmployeeGroup(input: z.infer<typeof employeeGroupInputSchema>) {
+	"use server";
+
 	const currentEmployee = await requirePolicyAdmin();
 	const parsed = employeeGroupInputSchema.safeParse(input);
 	if (!parsed.success) {
