@@ -64,61 +64,65 @@ export async function getAbsencePlanPreview(
 		return { success: false, error: "Absence category not found" };
 	}
 
-	const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
-		getVacationBalance(currentEmployee.id, range.start.year),
-		getHolidays(currentEmployee.id, range.startDate, range.endDate),
-		db.query.absenceEntry.findMany({
-			where: and(
-				eq(absenceEntry.employeeId, currentEmployee.id),
-				eq(absenceEntry.organizationId, currentEmployee.organizationId),
-				lte(absenceEntry.startDate, request.endDate),
-				gte(absenceEntry.endDate, request.startDate),
-			),
-			with: { category: true },
-		}),
-		db.query.shift.findMany({
-			where: and(
-				eq(shift.organizationId, currentEmployee.organizationId),
-				eq(shift.employeeId, currentEmployee.id),
-				eq(shift.status, "published"),
-				gte(shift.date, range.startDate),
-				lte(shift.date, range.endDate),
-			),
-		}),
-	]);
+	try {
+		const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
+			getVacationBalance(currentEmployee.id, range.start.year),
+			getHolidays(currentEmployee.id, range.startDate, range.endDate),
+			db.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, currentEmployee.id),
+					eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					lte(absenceEntry.startDate, request.endDate),
+					gte(absenceEntry.endDate, request.startDate),
+				),
+				with: { category: true },
+			}),
+			db.query.shift.findMany({
+				where: and(
+					eq(shift.organizationId, currentEmployee.organizationId),
+					eq(shift.employeeId, currentEmployee.id),
+					eq(shift.status, "published"),
+					gte(shift.date, range.startDate),
+					lte(shift.date, range.endDate),
+				),
+			}),
+		]);
 
-	const typedAffectedShifts = affectedShifts as AffectedShift[];
-	const coverage = await evaluateCoverageRisk({
-		organizationId: currentEmployee.organizationId,
-		startDate: range.startDate,
-		endDate: range.endDate,
-		employeeId: currentEmployee.id,
-		affectedShifts: typedAffectedShifts,
-	});
+		const typedAffectedShifts = affectedShifts as AffectedShift[];
+		const coverage = await evaluateCoverageRisk({
+			organizationId: currentEmployee.organizationId,
+			startDate: range.startDate,
+			endDate: range.endDate,
+			employeeId: currentEmployee.id,
+			affectedShifts: typedAffectedShifts,
+		});
 
-	const data = buildAbsencePlanPreview({
-		category: {
-			id: category.id,
-			name: category.name,
-			requiresApproval: category.requiresApproval,
-			countsAgainstVacation: category.countsAgainstVacation,
-		},
-		request,
-		vacationBalance,
-		holidays,
-		existingAbsences: existingAbsences.map((absence) => ({
-			id: absence.id,
-			startDate: absence.startDate,
-			endDate: absence.endDate,
-			status: absence.status,
-			categoryName: absence.category.name,
-		})) satisfies ExistingAbsenceInput[],
-		affectedShifts: typedAffectedShifts,
-		coverage,
-		hasManager: Boolean(currentEmployee.managerId),
-	});
+		const data = buildAbsencePlanPreview({
+			category: {
+				id: category.id,
+				name: category.name,
+				requiresApproval: category.requiresApproval,
+				countsAgainstVacation: category.countsAgainstVacation,
+			},
+			request,
+			vacationBalance,
+			holidays,
+			existingAbsences: existingAbsences.map((absence) => ({
+				id: absence.id,
+				startDate: absence.startDate,
+				endDate: absence.endDate,
+				status: absence.status,
+				categoryName: absence.category.name,
+			})) satisfies ExistingAbsenceInput[],
+			affectedShifts: typedAffectedShifts,
+			coverage,
+			hasManager: Boolean(currentEmployee.managerId),
+		});
 
-	return { success: true, data };
+		return { success: true, data };
+	} catch {
+		return { success: false, error: "Unable to build absence plan preview" };
+	}
 }
 
 function parsePreviewRange(request: AbsencePlanPreviewRequest) {
@@ -174,6 +178,7 @@ async function evaluateCoverageRisk({
 	const coverageRisks: CoverageEvaluationInput["risks"] = [];
 	const typedRules = rules as CoverageRuleWithSubarea[];
 	const typedPublishedShifts = publishedShifts as AffectedShift[];
+	let hasMatchingRuleForAffectedShifts = false;
 
 	for (const affectedShift of affectedShifts) {
 		const date = DateTime.fromJSDate(affectedShift.date, { zone: "utc" });
@@ -192,6 +197,7 @@ async function evaluateCoverageRisk({
 			) {
 				continue;
 			}
+			hasMatchingRuleForAffectedShifts = true;
 
 			const assignedStaffAfterAbsence = new Set(
 				typedPublishedShifts
@@ -227,7 +233,7 @@ async function evaluateCoverageRisk({
 
 	return {
 		risks: dedupeCoverageRisks(coverageRisks),
-		hasConfiguredRulesForAffectedShifts: typedRules.length > 0,
+		hasConfiguredRulesForAffectedShifts: hasMatchingRuleForAffectedShifts,
 	};
 }
 

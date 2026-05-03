@@ -225,4 +225,67 @@ describe("getAbsencePlanPreview", () => {
 			expect(result.data.approvalSignal).toBe("risky");
 		}
 	});
+
+	it("marks affected shifts as missing coverage rules when subarea rules do not match day or time", async () => {
+		mockState.shiftFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "17:00",
+					status: "published",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "17:00",
+					status: "published",
+				},
+			]);
+		mockState.coverageRuleFindMany.mockResolvedValue([
+			{
+				id: "rule-1",
+				organizationId: "org-current",
+				subareaId: "subarea-1",
+				dayOfWeek: "tuesday",
+				startTime: "18:00",
+				endTime: "20:00",
+				minimumStaffCount: 1,
+				subarea: { id: "subarea-1", name: "Front Desk" },
+			},
+		]);
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.coverage).toEqual({
+				hasConfiguredRulesForAffectedShifts: false,
+				risks: [],
+			});
+			expect(result.data.approvalSignal).toBe("needs_review");
+			expect(result.data.reasons).toContain(
+				"Coverage rules are not configured for the affected scheduled work.",
+			);
+		}
+	});
+
+	it("returns a generic failure when advisory planner dependencies reject", async () => {
+		mockState.getVacationBalance.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Unable to build absence plan preview",
+		});
+	});
 });
