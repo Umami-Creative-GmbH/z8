@@ -78,6 +78,13 @@
 			"when": 1777809000000,
 			"tag": "0010_user_week_start_day",
 			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1777835598309,
+			"tag": "0011_legal_entities",
+			"breakpoints": true
 		}
 	]
 }
