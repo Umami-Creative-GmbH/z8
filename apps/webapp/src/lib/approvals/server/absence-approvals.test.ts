@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/env", () => ({
@@ -14,12 +15,124 @@ vi.mock("@/env", () => ({
 	},
 }));
 
-import { formatAbsenceDateForEmail } from "@/lib/approvals/server/absence-approvals";
+import {
+	buildAbsenceApprovalPolicyContext,
+	formatAbsenceDateForEmail,
+} from "@/lib/approvals/server/absence-approvals";
+import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
+
+function createPolicyResolutionDbService(policies: unknown[]) {
+	const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = [];
+	const dbService = {
+		db: {
+			query: {
+				approvalPolicy: { findMany: vi.fn().mockResolvedValue(policies) },
+				employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
+				employee: {
+					findMany: vi.fn().mockResolvedValue([
+						{ id: "emp-requester", organizationId: "org-1", isActive: true, role: "employee" },
+						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
+					]),
+				},
+				employeeManagers: {
+					findMany: vi.fn().mockResolvedValue([
+						{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
+					]),
+				},
+			},
+			insert: vi.fn((table: unknown) => ({
+				values: vi.fn((values: Record<string, unknown>) => {
+					inserts.push({ table, values });
+					return { returning: vi.fn().mockResolvedValue([{ id: `insert-${inserts.length}` }]) };
+				}),
+			})),
+			update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+		},
+		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+	} as unknown as ApprovalDbService;
+
+	return { dbService, inserts };
+}
+
+const absencePolicyContext = buildAbsenceApprovalPolicyContext({
+	id: "absence-1",
+	organizationId: "org-1",
+	employeeId: "emp-requester",
+	categoryId: "category-1",
+	employee: { teamId: "team-1" },
+});
 
 describe("formatAbsenceDateForEmail", () => {
 	it("formats dates for absence emails", () => {
 		expect(formatAbsenceDateForEmail(new Date("2026-03-09T00:00:00.000Z"))).toBe(
 			"Mar 9, 2026",
 		);
+	});
+});
+
+describe("absence approval policy resolution", () => {
+	it("uses existing default approval behavior when no approval policy matches", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([]);
+
+		const result = await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: absencePolicyContext,
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(result).toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
+		expect(inserts).toHaveLength(1);
+		expect(inserts[0].values).toMatchObject({
+			organizationId: "org-1",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+		});
+	});
+
+	it("creates a chain approval request when an approval policy matches", async () => {
+		const { dbService, inserts } = createPolicyResolutionDbService([
+			{
+				id: "policy-1",
+				organizationId: "org-1",
+				name: "Absence policy",
+				isActive: true,
+				priority: 1,
+				conditions: [
+					{ conditionType: "approval_type", operator: "equals", valueJson: "absence_entry" },
+				],
+				stages: [
+					{
+						id: "stage-1",
+						stepOrder: 1,
+						label: "Manager",
+						approverType: "direct_manager",
+						approverEmployeeId: null,
+					},
+				],
+			},
+		]);
+
+		const result = await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: absencePolicyContext,
+				defaultApproverId: "emp-manager",
+			}),
+		);
+
+		expect(result).toEqual({ kind: "chain_created", chainInstanceId: "insert-1", approvalRequestId: "insert-2" });
+		expect(inserts).toHaveLength(3);
+		expect(inserts.map((insert) => insert.values.organizationId)).toEqual(["org-1", "org-1", "org-1"]);
+		expect(inserts[0].values).toMatchObject({ policyId: "policy-1", entityType: "absence_entry" });
+		expect(inserts[1].values).toMatchObject({ approverId: "emp-manager", entityId: "absence-1" });
+		expect(inserts[2].values).toMatchObject({
+			chainInstanceId: "insert-1",
+			approvalRequestId: "insert-2",
+			resolvedApproverEmployeeId: "emp-manager",
+		});
 	});
 });

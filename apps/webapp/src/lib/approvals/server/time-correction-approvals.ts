@@ -7,6 +7,7 @@ import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
+import type { ApprovalPolicyEvaluationContext, ApprovalPolicyOvertimeRisk } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -119,6 +120,28 @@ function ensureClockInCorrection(
 
 export function calculateCorrectedDurationMinutes(startTime: Date, endTime: Date) {
 	return Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
+}
+
+export function buildTimeCorrectionApprovalPolicyContext(input: {
+	organizationId: string;
+	requesterEmployeeId: string;
+	teamId: string | null;
+	workPeriodId: string;
+	overtimeRisk: ApprovalPolicyOvertimeRisk;
+}): ApprovalPolicyEvaluationContext {
+	return {
+		organizationId: input.organizationId,
+		approvalType: "time_entry",
+		requesterEmployeeId: input.requesterEmployeeId,
+		teamId: input.teamId,
+		locationId: null,
+		absenceCategoryId: null,
+		travelExpenseAmount: null,
+		overtimeRisk: input.overtimeRisk,
+		employeeGroupIds: [],
+		entityType: "time_entry",
+		entityId: input.workPeriodId,
+	};
 }
 
 export async function syncCanonicalWorkCorrection(input: {

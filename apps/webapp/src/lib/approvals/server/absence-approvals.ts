@@ -13,6 +13,7 @@ import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/li
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import type { ApprovalActionOptions } from "../domain/types";
+import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -97,6 +98,28 @@ function loadHolidays(dbService: ApprovalDbService, organizationId: string) {
 export function formatAbsenceDateForEmail(date: Date | string) {
 	const value = typeof date === "string" ? DateTime.fromISO(date) : DateTime.fromJSDate(date);
 	return value.toFormat("LLL d, yyyy");
+}
+
+export function buildAbsenceApprovalPolicyContext(absence: {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	categoryId: string | null;
+	employee: { teamId: string | null };
+}): ApprovalPolicyEvaluationContext {
+	return {
+		organizationId: absence.organizationId,
+		approvalType: "absence_entry",
+		requesterEmployeeId: absence.employeeId,
+		teamId: absence.employee.teamId,
+		locationId: null,
+		absenceCategoryId: absence.categoryId,
+		travelExpenseAmount: null,
+		overtimeRisk: null,
+		employeeGroupIds: [],
+		entityType: "absence_entry",
+		entityId: absence.id,
+	};
 }
 
 export function approveAbsenceWithCurrentApproverEffect(

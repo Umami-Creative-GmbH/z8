@@ -3,7 +3,30 @@ import { Effect } from "effect";
 import { employee, travelExpenseClaim, travelExpenseDecisionLog } from "@/db/schema";
 import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import type { ApprovalActionOptions } from "../domain/types";
+import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import type { ApprovalDbService, CurrentApprover } from "./types";
+
+export function buildTravelExpenseApprovalPolicyContext(claim: {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	totalAmount: number | string;
+	employee: { teamId: string | null };
+}): ApprovalPolicyEvaluationContext {
+	return {
+		organizationId: claim.organizationId,
+		approvalType: "travel_expense_claim",
+		requesterEmployeeId: claim.employeeId,
+		teamId: claim.employee.teamId,
+		locationId: null,
+		absenceCategoryId: null,
+		travelExpenseAmount: Number(claim.totalAmount),
+		overtimeRisk: null,
+		employeeGroupIds: [],
+		entityType: "travel_expense_claim",
+		entityId: claim.id,
+	};
+}
 
 export function loadTravelExpenseApprover(dbService: ApprovalDbService, approverId: string) {
 	return dbService
