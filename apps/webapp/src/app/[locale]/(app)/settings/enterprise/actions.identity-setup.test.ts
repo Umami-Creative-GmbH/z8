@@ -164,6 +164,12 @@ describe("enterprise identity setup action contracts", () => {
 		expect(source).toContain("validateEnterpriseIdentityProviderInput");
 		expect(providerSource).toContain(validationCall);
 		expect(ssoSource).toContain(validationCall);
+		expect(providerSource.indexOf(validationCall)).toBeLessThan(
+			providerSource.indexOf("getOrCreateEnterpriseIdentitySetupRecord"),
+		);
+		expect(ssoSource.indexOf(validationCall)).toBeLessThan(
+			ssoSource.indexOf("getOrCreateEnterpriseIdentitySetupRecord"),
+		);
 		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("storeOrgSecret"));
 		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("registerSSOProvider"));
 	});

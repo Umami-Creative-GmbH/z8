@@ -311,14 +311,14 @@ export async function getEnterpriseIdentitySetupAction(): Promise<EnterpriseIden
 
 export async function updateEnterpriseIdentityProviderAction(input: EnterpriseIdentityProviderInput) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
-
 	const providerId = input.providerId.trim();
 	const domain = input.domain.trim().toLowerCase();
 
 	if (!providerId || !domain) throw new Error("Provider ID and domain are required");
 	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
 	if (validationError) throw new Error(validationError);
+
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
 
 	await updateEnterpriseIdentitySetupRecord(organizationId, {
 		preset: input.preset,
@@ -336,8 +336,6 @@ export async function updateEnterpriseIdentityProviderAction(input: EnterpriseId
 
 export async function registerEnterpriseIdentitySSOProviderAction(input: EnterpriseIdentitySSOInput) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
-
 	const providerId = input.providerId.trim();
 	const issuer = input.issuer.trim();
 	const domain = input.domain.trim().toLowerCase();
@@ -345,6 +343,8 @@ export async function registerEnterpriseIdentitySSOProviderAction(input: Enterpr
 	if (!providerId || !issuer || !domain) throw new Error("Provider ID, issuer, and domain are required");
 	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
 	if (validationError) throw new Error(validationError);
+
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
 
 	const secretPath = `sso/${providerId}/client_secret`;
 

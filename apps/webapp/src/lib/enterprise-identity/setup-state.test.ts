@@ -93,9 +93,17 @@ describe("enterprise identity validation", () => {
 		expect(
 			validateEnterpriseIdentityProviderInput({ providerId: "Bad ID", domain: "acme.com" }),
 		).toEqual("Provider ID must contain only lowercase letters, numbers, and hyphens");
+		for (const providerId of ["-", "--", "acme-", "-okta"]) {
+			expect(validateEnterpriseIdentityProviderInput({ providerId, domain: "acme.com" })).toEqual(
+				"Provider ID must contain only lowercase letters, numbers, and hyphens",
+			);
+		}
 		expect(
 			validateEnterpriseIdentityProviderInput({ providerId: "acme-okta", domain: "not a domain" }),
 		).toEqual("Enter a valid email domain such as example.com");
+		for (const providerId of ["a", "acme", "acme-okta", "acme-123"]) {
+			expect(validateEnterpriseIdentityProviderInput({ providerId, domain: "acme.com" })).toBeNull();
+		}
 		expect(
 			validateEnterpriseIdentityProviderInput({ providerId: "acme-okta", domain: "acme.com" }),
 		).toBeNull();
