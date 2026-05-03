@@ -77,7 +77,6 @@ export function AbsencePlanPreviewPanel({
 			? preview.reasons
 			: ["Planner checked the available request signals."];
 	const coverageRiskCount = preview.coverage.risks.length;
-	const vacationImpact = getVacationImpact(preview, t);
 
 	return (
 		<Card className="gap-4 border-primary/15 bg-primary/5 shadow-none">
@@ -104,25 +103,25 @@ export function AbsencePlanPreviewPanel({
 			</CardHeader>
 			<CardContent className="grid gap-3 sm:grid-cols-2">
 				<PreviewSection title={t("absences.planPreview.balance", "Balance")}>
-					<div className="space-y-2">
-						<p className="text-muted-foreground text-sm">{vacationImpact}</p>
-						{preview.balance ? (
-							<>
-								<MetricRow
-									label={t("absences.planPreview.requested", "Requested")}
-									value={formatDays(preview.requestedDays, t)}
-								/>
-								<MetricRow
-									label={t("absences.planPreview.remainingAfter", "Remaining after request")}
-									value={formatDays(preview.balance.remainingAfterRequest, t)}
-								/>
-							</>
-						) : (
+					{preview.balance ? (
+						<div className="space-y-2">
 							<p className="text-muted-foreground text-sm">
-								{t("absences.planPreview.balanceUnavailable", "Balance unavailable")}
+								{getVacationImpact(preview.balance, t)}
 							</p>
-						)}
-					</div>
+							<MetricRow
+								label={t("absences.planPreview.requested", "Requested")}
+								value={formatDays(preview.requestedDays, t)}
+							/>
+							<MetricRow
+								label={t("absences.planPreview.remainingAfter", "Remaining after request")}
+								value={formatDays(preview.balance.remainingAfterRequest, t)}
+							/>
+						</div>
+					) : (
+						<p className="text-muted-foreground text-sm">
+							{t("absences.planPreview.balanceUnavailable", "Balance unavailable")}
+						</p>
+					)}
 				</PreviewSection>
 
 				<PreviewSection title={t("absences.planPreview.holidays", "Holidays")}>
@@ -180,9 +179,29 @@ export function AbsencePlanPreviewPanel({
 							</ul>
 						</div>
 					) : (
-						<p className="text-muted-foreground text-sm">
-							{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
-						</p>
+						<div className="space-y-2">
+							<p className="text-muted-foreground text-sm">
+								{t("absences.planPreview.noCoverageRisk", "No published coverage risk")}
+							</p>
+							{preview.affectedShifts.length > 0 && (
+								<ul className="space-y-1 text-sm">
+									{preview.affectedShifts.map((shift) => (
+										<li
+											className="rounded-md border bg-muted/30 px-2 py-1"
+											key={getAffectedShiftKey(shift)}
+										>
+											<div className="min-w-0 break-words font-medium">
+												{shift.date} · {shift.subareaId}
+											</div>
+											<div className="text-muted-foreground text-xs tabular-nums">
+												{shift.startTime}-{shift.endTime}{" "}
+												{t("absences.planPreview.affectedShift", "affected shift")}
+											</div>
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
 					)}
 				</PreviewSection>
 
@@ -235,12 +254,16 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 	);
 }
 
-function getVacationImpact(preview: AbsencePlanPreview, t: TranslateFn) {
-	return preview.reasons.includes("This absence type does not reduce vacation balance.")
-		? t("absences.planPreview.doesNotReduceVacationBalance", "Does not reduce vacation balance")
-		: t("absences.planPreview.countsAgainstVacationBalance", "Counts against vacation balance");
+function getVacationImpact(balance: NonNullable<AbsencePlanPreview["balance"]>, t: TranslateFn) {
+	return balance.countsAgainstVacation
+		? t("absences.planPreview.countsAgainstVacationBalance", "Counts against vacation balance")
+		: t("absences.planPreview.doesNotReduceVacationBalance", "Does not reduce vacation balance");
 }
 
 function getCoverageRiskKey(risk: AbsencePlanPreview["coverage"]["risks"][number]) {
 	return `${risk.date}-${risk.subareaId}-${risk.startTime}-${risk.endTime}`;
+}
+
+function getAffectedShiftKey(shift: AbsencePlanPreview["affectedShifts"][number]) {
+	return `${shift.id}-${shift.date}-${shift.startTime}-${shift.endTime}`;
 }

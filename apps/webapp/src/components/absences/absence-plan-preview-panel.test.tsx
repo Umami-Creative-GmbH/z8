@@ -20,6 +20,7 @@ const riskyPreview: AbsencePlanPreview = {
 		year: 2026,
 		remainingDays: 4,
 		remainingAfterRequest: -2,
+		countsAgainstVacation: true,
 	},
 	holidays: [
 		{
@@ -30,6 +31,7 @@ const riskyPreview: AbsencePlanPreview = {
 		},
 	],
 	overlaps: [],
+	affectedShifts: [],
 	coverage: {
 		risks: [
 			{
@@ -52,6 +54,37 @@ const riskyPreview: AbsencePlanPreview = {
 	],
 };
 
+const nonVacationPreview: AbsencePlanPreview = {
+	...riskyPreview,
+	balance: {
+		year: 2026,
+		remainingDays: 4,
+		remainingAfterRequest: 4,
+		countsAgainstVacation: false,
+	},
+	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
+	approvalSignal: "likely",
+	warnings: [],
+	reasons: ["Policy check passed without using vacation-specific copy."],
+};
+
+const affectedShiftPreview: AbsencePlanPreview = {
+	...riskyPreview,
+	affectedShifts: [
+		{
+			id: "shift-1",
+			subareaId: "kitchen",
+			date: "2026-05-16",
+			startTime: "12:00",
+			endTime: "18:00",
+		},
+	],
+	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
+	approvalSignal: "likely",
+	warnings: [],
+	reasons: ["Request follows the normal approval path."],
+};
+
 describe("AbsencePlanPreviewPanel", () => {
 	it("renders risky advisory preview with a warning", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
@@ -67,11 +100,26 @@ describe("AbsencePlanPreviewPanel", () => {
 		expect(screen.getByText("Counts against vacation balance")).toBeTruthy();
 	});
 
+	it("shows non-vacation balance impact from structured balance data", () => {
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+
+		expect(screen.getByText("Does not reduce vacation balance")).toBeTruthy();
+		expect(screen.queryByText("Counts against vacation balance")).toBeNull();
+	});
+
 	it("renders compact coverage risk details by day and subarea", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
 		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
 		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
+	});
+
+	it("renders affected published shifts without coverage risk", () => {
+		render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
+
+		expect(screen.getByText("No published coverage risk")).toBeTruthy();
+		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
 	});
 
 	it("renders all explainable approval reasons", () => {
