@@ -33,6 +33,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"import/page.tsx",
 	"export-operations/page.tsx",
 	"scheduled-exports/page.tsx",
+	"implementation-checklist/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -75,6 +76,7 @@ describe("org-admin settings route access", () => {
 			"/settings/import",
 			"/settings/export-operations",
 			"/settings/scheduled-exports",
+			"/settings/implementation-checklist",
 		]);
 	});
 
@@ -115,6 +117,7 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(false);
 	});
 
 	it("guards direct demo route and mutations with the demo data feature helper", () => {

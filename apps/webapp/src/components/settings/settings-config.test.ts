@@ -69,6 +69,21 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "email-templates")).toBe(false);
 	});
 
+	it("shows implementation checklist only for org admins", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "implementation-checklist")).toMatchObject({
+			titleDefault: "Implementation Checklist",
+			href: "/settings/implementation-checklist",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");
