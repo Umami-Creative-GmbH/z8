@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expandPresetHolidayForYear } from "./queries";
+import { expandPresetHolidayForYear } from "./holiday-expansion";
 
 describe("expandPresetHolidayForYear", () => {
 	it("expands preset holidays into concrete dates for the requested year", () => {
