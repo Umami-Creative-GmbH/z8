@@ -303,6 +303,140 @@ describe("getAbsencePlanPreview", () => {
 		}
 	});
 
+	it("does not add a coverage risk when staffing remains sufficient across the affected shift segment", async () => {
+		mockState.shiftFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "12:00",
+					endTime: "17:00",
+					status: "published",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "12:00",
+					endTime: "17:00",
+					status: "published",
+				},
+				{
+					id: "shift-peer-1",
+					employeeId: "emp-peer-1",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "12:00",
+					endTime: "17:00",
+					status: "published",
+				},
+				{
+					id: "shift-peer-2",
+					employeeId: "emp-peer-2",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "12:00",
+					endTime: "17:00",
+					status: "published",
+				},
+			]);
+		mockState.coverageRuleFindMany.mockResolvedValue([
+			{
+				id: "rule-1",
+				organizationId: "org-current",
+				subareaId: "subarea-1",
+				dayOfWeek: "monday",
+				startTime: "09:00",
+				endTime: "17:00",
+				minimumStaffCount: 2,
+				subarea: { id: "subarea-1", name: "Front Desk" },
+			},
+		]);
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.coverage).toEqual({
+				hasConfiguredRulesForAffectedShifts: true,
+				risks: [],
+			});
+			expect(result.data.approvalSignal).toBe("likely");
+		}
+	});
+
+	it("does not add a coverage risk for understaffing outside the affected shift segment", async () => {
+		mockState.shiftFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "12:00",
+					status: "published",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "shift-current",
+					employeeId: "emp-current",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "12:00",
+					status: "published",
+				},
+				{
+					id: "shift-peer-1",
+					employeeId: "emp-peer-1",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "12:00",
+					status: "published",
+				},
+				{
+					id: "shift-peer-2",
+					employeeId: "emp-peer-2",
+					subareaId: "subarea-1",
+					date: new Date("2026-05-04T00:00:00.000Z"),
+					startTime: "09:00",
+					endTime: "12:00",
+					status: "published",
+				},
+			]);
+		mockState.coverageRuleFindMany.mockResolvedValue([
+			{
+				id: "rule-1",
+				organizationId: "org-current",
+				subareaId: "subarea-1",
+				dayOfWeek: "monday",
+				startTime: "09:00",
+				endTime: "17:00",
+				minimumStaffCount: 2,
+				subarea: { id: "subarea-1", name: "Front Desk" },
+			},
+		]);
+
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.coverage).toEqual({
+				hasConfiguredRulesForAffectedShifts: true,
+				risks: [],
+			});
+			expect(result.data.approvalSignal).toBe("likely");
+		}
+	});
+
 	it("marks affected shifts as missing coverage rules when subarea rules do not match day or time", async () => {
 		mockState.shiftFindMany
 			.mockResolvedValueOnce([

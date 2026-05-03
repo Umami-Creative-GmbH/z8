@@ -205,6 +205,9 @@ async function evaluateCoverageRisk({
 				employeeId,
 				publishedShifts: typedPublishedShifts,
 			});
+			if (staffCountAfterAbsence === null) {
+				continue;
+			}
 
 			if (staffCountAfterAbsence < rule.minimumStaffCount) {
 				coverageRisks.push({
@@ -246,6 +249,12 @@ function findLowestSegmentStaffCount({
 	employeeId: string;
 	publishedShifts: AffectedShift[];
 }) {
+	const evaluationStart = maxTime(rule.startTime, affectedShift.startTime);
+	const evaluationEnd = minTime(rule.endTime, affectedShift.endTime);
+	if (evaluationStart >= evaluationEnd) {
+		return null;
+	}
+
 	const candidateShifts = publishedShifts.filter(
 		(publishedShift) =>
 			publishedShift.employeeId &&
@@ -253,17 +262,17 @@ function findLowestSegmentStaffCount({
 			publishedShift.subareaId === rule.subareaId &&
 			isSameDate(publishedShift.date, affectedShift.date) &&
 			timeRangesOverlap(
-				rule.startTime,
-				rule.endTime,
+				evaluationStart,
+				evaluationEnd,
 				publishedShift.startTime,
 				publishedShift.endTime,
 			),
 	);
-	const boundaries = new Set([rule.startTime, rule.endTime]);
+	const boundaries = new Set([evaluationStart, evaluationEnd]);
 
 	for (const publishedShift of candidateShifts) {
-		boundaries.add(clampTime(publishedShift.startTime, rule.startTime, rule.endTime));
-		boundaries.add(clampTime(publishedShift.endTime, rule.startTime, rule.endTime));
+		boundaries.add(clampTime(publishedShift.startTime, evaluationStart, evaluationEnd));
+		boundaries.add(clampTime(publishedShift.endTime, evaluationStart, evaluationEnd));
 	}
 
 	const sortedBoundaries = [...boundaries].sort();
@@ -289,6 +298,14 @@ function findLowestSegmentStaffCount({
 	}
 
 	return Number.isFinite(lowestStaffCount) ? lowestStaffCount : 0;
+}
+
+function maxTime(left: string, right: string) {
+	return left > right ? left : right;
+}
+
+function minTime(left: string, right: string) {
+	return left < right ? left : right;
 }
 
 function clampTime(time: string, startTime: string, endTime: string) {
