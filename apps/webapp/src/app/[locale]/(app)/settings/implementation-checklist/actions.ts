@@ -19,7 +19,7 @@ import {
 	workPolicy,
 	workPolicyAssignment,
 } from "@/db/schema";
-import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { requireOrgAdminSettingsAccess, type AuthContext } from "@/lib/auth-helpers";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	isImplementationChecklistItemId,
@@ -52,6 +52,11 @@ type ManualItemValidationResult =
 	| ImplementationChecklistActionFailure;
 
 type Detector = () => Promise<boolean>;
+
+export interface ImplementationChecklistLoaderContext {
+	authContext: AuthContext;
+	organizationId: string;
+}
 
 async function detectorComplete(detector: Detector): Promise<boolean> {
 	try {
@@ -232,10 +237,12 @@ function validateManualItemId(itemId: string): ManualItemValidationResult {
 	return { success: true, data: itemId };
 }
 
-export async function getImplementationChecklist(): Promise<
+export async function loadImplementationChecklistForContext({
+	authContext,
+	organizationId,
+}: ImplementationChecklistLoaderContext): Promise<
 	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
 > {
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const [detectedCompleteIds, manualCompleteIds] = await Promise.all([
 		detectCompleteIds(organizationId, authContext.user.id),
 		loadManualCompleteIds(organizationId),
@@ -250,6 +257,12 @@ export async function getImplementationChecklist(): Promise<
 			totalCount: items.length,
 		},
 	};
+}
+
+export async function getImplementationChecklist(): Promise<
+	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
+> {
+	return loadImplementationChecklistForContext(await requireOrgAdminSettingsAccess());
 }
 
 export async function markImplementationChecklistItemComplete(

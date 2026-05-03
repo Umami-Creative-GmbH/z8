@@ -2,7 +2,7 @@ import { connection } from "next/server";
 
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 
-import { getImplementationChecklist } from "./actions";
+import { loadImplementationChecklistForContext } from "./actions";
 import { ImplementationChecklistClient } from "./implementation-checklist-client";
 
 export const metadata = {
@@ -12,9 +12,9 @@ export const metadata = {
 
 export default async function ImplementationChecklistPage() {
 	await connection();
-	await requireOrgAdminSettingsAccess();
+	const accessContext = await requireOrgAdminSettingsAccess();
 
-	const result = await getImplementationChecklist();
+	const result = await loadImplementationChecklistForContext(accessContext);
 
 	if (!result.success) {
 		throw new Error(result.error);

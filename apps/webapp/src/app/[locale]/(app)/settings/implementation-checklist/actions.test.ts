@@ -103,6 +103,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 import {
 	getImplementationChecklist,
+	loadImplementationChecklistForContext,
 	markImplementationChecklistItemComplete,
 	markImplementationChecklistItemIncomplete,
 } from "./actions";
@@ -173,6 +174,43 @@ describe("implementation checklist actions", () => {
 					and: expect.arrayContaining([
 						{ eq: ["manualState.organizationId", "org-active"] },
 						{ eq: ["manualState.status", "complete"] },
+					]),
+				}),
+			}),
+		);
+	});
+
+	it("loads statuses from an existing org-admin context without resolving access again", async () => {
+		mocks.findFirst.employee.mockResolvedValue({ id: "employee-1" });
+
+		const result = await loadImplementationChecklistForContext({
+			authContext: {
+				user: {
+					id: "user-from-page",
+					email: "admin@example.com",
+					name: "Admin User",
+					canCreateOrganizations: true,
+					canUseWebapp: true,
+					canUseDesktop: true,
+					canUseMobile: true,
+				},
+				session: { activeOrganizationId: "org-from-page" },
+				employee: null,
+			},
+			organizationId: "org-from-page",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.requireAccess).not.toHaveBeenCalled();
+		expect(mocks.findFirst.employee).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					and: expect.arrayContaining([
+						{ eq: ["employee.organizationId", "org-from-page"] },
+						{ ne: ["employee.userId", "user-from-page"] },
 					]),
 				}),
 			}),
