@@ -61,7 +61,10 @@ export async function getLegalEntitySelectionContext(input: {
 				inArray(legalEntity.id, input.allowedLegalEntityIds),
 			);
 
-	const entities = await db.select().from(legalEntity).where(whereClause);
+	const entities = await db
+		.select({ id: legalEntity.id, name: legalEntity.name })
+		.from(legalEntity)
+		.where(whereClause);
 	const organizationLegalEntityIds = entities.map((entity) => entity.id);
 	const allowedLegalEntityIds = input.isOrgAdmin
 		? organizationLegalEntityIds

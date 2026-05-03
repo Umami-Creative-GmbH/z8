@@ -6,7 +6,7 @@ const dbSelect = vi.fn();
 
 vi.mock("@/db", () => ({
 	db: {
-		select: () => dbSelect(),
+		select: (...args: unknown[]) => dbSelect(...args),
 	},
 }));
 
@@ -113,6 +113,7 @@ describe("getLegalEntitySelectionContext", () => {
 				allowedLegalEntityIds: [],
 			}),
 		).resolves.toEqual({ entities, selectedLegalEntityId: "entity-b" });
+		expect(Object.keys(dbSelect.mock.calls[0]?.[0] ?? {})).toEqual(["id", "name"]);
 	});
 
 	it("rejects org-admin requested entities outside the organization entity list", async () => {
