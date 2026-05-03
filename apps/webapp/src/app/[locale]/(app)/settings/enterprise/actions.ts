@@ -270,6 +270,56 @@ async function getEnterpriseIdentityScimConnection(
 	};
 }
 
+async function getOrganizationSSOProviders(organizationId: string): Promise<SSOProviderResponse[]> {
+	const rawResult = await (auth.api as any).listSSOProviders({
+		headers: await headers(),
+	});
+
+	const providers: RawSSOProvider[] = Array.isArray(rawResult)
+		? rawResult
+		: Array.isArray(rawResult?.providers)
+			? rawResult.providers
+			: [];
+
+	return providers
+		.filter((provider) => provider.organizationId === organizationId)
+		.map(normalizeSSOProvider);
+}
+
+async function findEnterpriseIdentitySSOProvider(
+	organizationId: string,
+	setupRecord: EnterpriseIdentitySetupRecord,
+) {
+	if (!setupRecord.providerId || !setupRecord.domain) return null;
+
+	const providers = await getOrganizationSSOProviders(organizationId);
+	return (
+		providers.find(
+			(provider) =>
+				provider.providerId === setupRecord.providerId &&
+				provider.domain.toLowerCase() === setupRecord.domain?.toLowerCase(),
+		) ?? null
+	);
+}
+
+async function syncEnterpriseIdentityDomainVerification(
+	organizationId: string,
+	setupRecord: EnterpriseIdentitySetupRecord,
+	userId: string,
+) {
+	const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
+	const domainVerified = provider?.domainVerified === true;
+
+	if (domainVerified && !setupRecord.domainVerified) {
+		return updateEnterpriseIdentitySetupRecord(organizationId, {
+			domainVerified,
+			updatedBy: userId,
+		});
+	}
+
+	return setupRecord;
+}
+
 async function assertRoleTemplateAllowed(
 	organizationId: string,
 	defaultRoleTemplateId: string | null | undefined,
@@ -430,6 +480,23 @@ export async function recordEnterpriseIdentitySsoTestAction(input: EnterpriseIde
 	return getSetupResponse(organizationId, authContext.user.id);
 }
 
+export async function refreshEnterpriseIdentityDomainStatusAction() {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
+	const domainVerified = provider?.domainVerified === true;
+
+	if (domainVerified !== setupRecord.domainVerified) {
+		await updateEnterpriseIdentitySetupRecord(organizationId, {
+			domainVerified,
+			updatedBy: authContext.user.id,
+		});
+	}
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return getSetupResponse(organizationId, authContext.user.id);
+}
+
 export async function generateEnterpriseIdentityScimTokenAction(input: EnterpriseIdentityScimTokenInput) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
 	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
@@ -441,60 +508,80 @@ export async function generateEnterpriseIdentityScimTokenAction(input: Enterpris
 
 	if (!providerId) throw new Error("Provider ID is required");
 
-	await db
-		.insert(scimProviderConfig)
-		.values({
-			organizationId,
-			providerId,
-			defaultRoleTemplateId,
-			createdBy: authContext.user.id,
-			updatedBy: authContext.user.id,
-		})
-		.onConflictDoUpdate({
-			target: scimProviderConfig.organizationId,
-			set: {
-				providerId,
-				defaultRoleTemplateId,
-				updatedBy: authContext.user.id,
-			},
-		});
-
-	const now = DateTime.utc().toISO();
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		currentStep: "accessPolicy",
-		scim: {
-			...setupRecord.scim,
-			enabled: true,
-			providerId,
-			verified: false,
-			lastCheckedAt: now,
-			error: null,
-		},
-		defaultRoleTemplateId,
-		updatedBy: authContext.user.id,
-	});
-
-	revalidatePath(IDENTITY_SETUP_PATH);
-
+	let tokenResult: { token?: string; scimToken?: string };
 	try {
-		const tokenResult = await (auth.api as any).generateSCIMToken({
+		tokenResult = await (auth.api as any).generateSCIMToken({
 			body: { providerId, organizationId },
 			headers: await headers(),
 		});
-
-		return buildEnterpriseIdentityScimTokenResponse(tokenResult, providerId);
 	} catch (error) {
 		throw new Error(mapBetterAuthIdentityError(error));
 	}
+
+	try {
+		await db
+			.insert(scimProviderConfig)
+			.values({
+				organizationId,
+				providerId,
+				defaultRoleTemplateId,
+				createdBy: authContext.user.id,
+				updatedBy: authContext.user.id,
+			})
+			.onConflictDoUpdate({
+				target: scimProviderConfig.organizationId,
+				set: {
+					providerId,
+					defaultRoleTemplateId,
+					updatedBy: authContext.user.id,
+				},
+			});
+
+		const now = DateTime.utc().toISO();
+		await updateEnterpriseIdentitySetupRecord(organizationId, {
+			currentStep: "accessPolicy",
+			scim: {
+				...setupRecord.scim,
+				enabled: true,
+				providerId,
+				verified: false,
+				lastCheckedAt: now,
+				error: null,
+			},
+			defaultRoleTemplateId,
+			updatedBy: authContext.user.id,
+		});
+	} catch (error) {
+		await (auth.api as any)
+			.deleteSCIMProviderConnection({
+				body: { providerId, organizationId },
+				headers: await headers(),
+			})
+			.catch(() => undefined);
+		throw error;
+	}
+
+	revalidatePath(IDENTITY_SETUP_PATH);
+	return buildEnterpriseIdentityScimTokenResponse(tokenResult, providerId);
 }
 
 export async function refreshEnterpriseIdentityScimStatusAction() {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
 	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
-	const latestLog = await db.query.scimProvisioningLog.findFirst({
+	const isScimTokenGenerationLog = (log: typeof scimProvisioningLog.$inferSelect) => {
+		const metadata = log.metadata;
+		return (
+			metadata != null &&
+			metadata.idpProvider === "scim" &&
+			metadata.scimDisplayName?.startsWith("SCIM Provider ") === true
+		);
+	};
+	const latestLogs = await db.query.scimProvisioningLog.findMany({
 		where: eq(scimProvisioningLog.organizationId, organizationId),
 		orderBy: desc(scimProvisioningLog.createdAt),
+		limit: 25,
 	});
+	const latestLog = latestLogs.find((log) => !isScimTokenGenerationLog(log));
 	const checkedAt = DateTime.utc().toISO();
 	const verified = latestLog ? latestLog.eventType !== "error" : setupRecord.scim.verified;
 	const error = latestLog?.eventType === "error" ? (latestLog.metadata?.errorMessage ?? "SCIM error") : null;
@@ -540,12 +627,30 @@ export async function updateEnterpriseIdentityAccessPolicyAction(
 
 export async function activateEnterpriseIdentitySetupAction() {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	let setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	setupRecord = await syncEnterpriseIdentityDomainVerification(
+		organizationId,
+		setupRecord,
+		authContext.user.id,
+	);
 	const state = normalizeEnterpriseIdentitySetupRecord(setupRecord);
 	const readiness = getEnterpriseIdentityReadiness(state);
 
 	if (!readiness.canActivate) {
 		throw new Error(`Enterprise identity setup is missing: ${readiness.missing.join(", ")}`);
+	}
+
+	if (setupRecord.enforcement.ssoRequired && setupRecord.providerId) {
+		const domains = await listOrganizationDomains(organizationId);
+		const [domainRecord] = domains;
+
+		if (domainRecord) {
+			await updateDomainAuthConfig(domainRecord.id, {
+				...domainRecord.authConfig,
+				ssoEnabled: true,
+				ssoProviderId: setupRecord.providerId,
+			});
+		}
 	}
 
 	const activatedAt = DateTime.utc();
@@ -662,20 +767,7 @@ function normalizeSSOProvider(provider: RawSSOProvider): SSOProviderResponse {
 
 export async function listSSOProvidersAction(): Promise<SSOProviderResponse[]> {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
-
-	const rawResult = await (auth.api as any).listSSOProviders({
-		headers: await headers(),
-	});
-
-	const providers: RawSSOProvider[] = Array.isArray(rawResult)
-		? rawResult
-		: Array.isArray(rawResult?.providers)
-			? rawResult.providers
-			: [];
-
-	return providers
-		.filter((provider) => provider.organizationId === organizationId)
-		.map(normalizeSSOProvider);
+	return getOrganizationSSOProviders(organizationId);
 }
 
 export interface OIDCProviderInput {

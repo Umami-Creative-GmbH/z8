@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { member, organization, user } from "@/db/auth-schema";
 import { team } from "@/db/schema";
+import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import { type DatabaseError, NotFoundError, ValidationError, AuthorizationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -574,6 +575,22 @@ export const InviteCodeServiceLive = Layer.effect(
 							),
 						);
 					}
+
+					yield* _(
+						Effect.tryPromise({
+							try: async () => {
+								await assertEnterpriseIdentityInviteCodeRedemptionAllowed({
+									organizationId: inviteCodeRecord.organizationId,
+									userId: input.userId,
+								});
+							},
+							catch: (error) =>
+								new ValidationError({
+									message: error instanceof Error ? error.message : "Invite code redemption is not allowed",
+									field: "domainRestrictionEnabled",
+								}),
+						}),
+					);
 
 					// Check if user is already a member of this organization
 					const existingMember = yield* _(

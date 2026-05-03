@@ -8,6 +8,7 @@ import {
 	activateEnterpriseIdentitySetupAction,
 	generateEnterpriseIdentityScimTokenAction,
 	recordEnterpriseIdentitySsoTestAction,
+	refreshEnterpriseIdentityDomainStatusAction,
 	refreshEnterpriseIdentityScimStatusAction,
 	registerEnterpriseIdentitySSOProviderAction,
 	type EnterpriseIdentitySetupResponse,
@@ -290,6 +291,18 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 		});
 	};
 
+	const refreshDomainStatus = () => {
+		startTransition(async () => {
+			try {
+				const next = await refreshEnterpriseIdentityDomainStatusAction();
+				setSetup(next.state);
+				toast.success("Domain status refreshed");
+			} catch (error) {
+				toast.error(error instanceof Error ? error.message : "Failed to refresh domain status");
+			}
+		});
+	};
+
 	const saveAccessPolicy = () => {
 		startTransition(async () => {
 			try {
@@ -488,6 +501,15 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 								DNS verification uses the existing SSO domain verification actions. Complete that
 								verification before activating enforcement.
 							</p>
+							<Button
+								type="button"
+								variant="outline"
+								className="mt-4"
+								onClick={refreshDomainStatus}
+								disabled={isPending || !providerId || !setup.domain?.domain}
+							>
+								Check domain status
+							</Button>
 						</div>
 					</WizardCard>
 

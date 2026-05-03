@@ -76,6 +76,7 @@ describe("enterprise identity setup action contracts", () => {
 		"updateEnterpriseIdentityProviderAction",
 		"registerEnterpriseIdentitySSOProviderAction",
 		"recordEnterpriseIdentitySsoTestAction",
+		"refreshEnterpriseIdentityDomainStatusAction",
 		"generateEnterpriseIdentityScimTokenAction",
 		"refreshEnterpriseIdentityScimStatusAction",
 		"updateEnterpriseIdentityAccessPolicyAction",
@@ -103,6 +104,7 @@ describe("enterprise identity setup action contracts", () => {
 		expect(source).toContain("registerSSOProvider");
 		expect(source).toContain("generateSCIMToken");
 		expect(source).toContain("listSCIMProviderConnections");
+		expect(source).toContain("listSSOProviders");
 	});
 
 	it("maps Better Auth identity errors before returning them", () => {
@@ -133,7 +135,7 @@ describe("enterprise identity setup action contracts", () => {
 		expect(source).not.toContain("export function ");
 	});
 
-	it("does not do fallible setup response loading after SCIM token generation", () => {
+	it("generates SCIM token before persisting enabled setup state", () => {
 		const actionSource = getFunctionSource("generateEnterpriseIdentityScimTokenAction");
 		const generateIndex = actionSource.indexOf("generateSCIMToken");
 		const configWriteIndex = actionSource.indexOf("insert(scimProviderConfig)");
@@ -141,8 +143,8 @@ describe("enterprise identity setup action contracts", () => {
 
 		expect(configWriteIndex).toBeGreaterThan(-1);
 		expect(setupWriteIndex).toBeGreaterThan(-1);
-		expect(generateIndex).toBeGreaterThan(configWriteIndex);
-		expect(generateIndex).toBeGreaterThan(setupWriteIndex);
+		expect(generateIndex).toBeLessThan(configWriteIndex);
+		expect(generateIndex).toBeLessThan(setupWriteIndex);
 		expect(actionSource.slice(generateIndex)).not.toContain("getSetupResponse");
 	});
 
@@ -152,8 +154,34 @@ describe("enterprise identity setup action contracts", () => {
 		const generateIndex = actionSource.indexOf("generateSCIMToken");
 
 		expect(setupWriteIndex).toBeGreaterThan(-1);
-		expect(generateIndex).toBeGreaterThan(setupWriteIndex);
-		expect(actionSource.slice(setupWriteIndex, generateIndex)).not.toContain("scimToken");
+		expect(generateIndex).toBeLessThan(setupWriteIndex);
+		expect(actionSource.slice(setupWriteIndex)).not.toContain("scimToken");
+	});
+
+	it("filters SCIM token generation audit rows out of provisioning status", () => {
+		const actionSource = getFunctionSource("refreshEnterpriseIdentityScimStatusAction");
+
+		expect(actionSource).toContain("isScimTokenGenerationLog");
+		expect(actionSource).toContain('metadata.idpProvider === "scim"');
+		expect(actionSource).toContain('metadata.scimDisplayName?.startsWith("SCIM Provider ")');
+	});
+
+	it("refreshes domain verification from org-scoped Better Auth providers", () => {
+		const actionSource = getFunctionSource("refreshEnterpriseIdentityDomainStatusAction");
+
+		expect(actionSource).toContain("requireEnterpriseOrgAdmin()");
+		expect(actionSource).toContain("findEnterpriseIdentitySSOProvider");
+		expect(actionSource).toContain("domainVerified");
+		expect(actionSource).toContain("updateEnterpriseIdentitySetupRecord");
+	});
+
+	it("syncs domain verification and domain auth config during activation", () => {
+		const actionSource = getFunctionSource("activateEnterpriseIdentitySetupAction");
+
+		expect(actionSource).toContain("syncEnterpriseIdentityDomainVerification");
+		expect(actionSource).toContain("listOrganizationDomains");
+		expect(actionSource).toContain("updateDomainAuthConfig");
+		expect(actionSource).toContain("ssoProviderId: setupRecord.providerId");
 	});
 
 	it("validates provider and SSO registration input before side effects", () => {

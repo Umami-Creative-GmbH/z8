@@ -13,6 +13,7 @@ const {
 	activateEnterpriseIdentitySetupActionMock,
 	generateEnterpriseIdentityScimTokenActionMock,
 	recordEnterpriseIdentitySsoTestActionMock,
+	refreshEnterpriseIdentityDomainStatusActionMock,
 	refreshEnterpriseIdentityScimStatusActionMock,
 	registerEnterpriseIdentitySSOProviderActionMock,
 	updateEnterpriseIdentityAccessPolicyActionMock,
@@ -21,6 +22,7 @@ const {
 	activateEnterpriseIdentitySetupActionMock: vi.fn(),
 	generateEnterpriseIdentityScimTokenActionMock: vi.fn(),
 	recordEnterpriseIdentitySsoTestActionMock: vi.fn(),
+	refreshEnterpriseIdentityDomainStatusActionMock: vi.fn(),
 	refreshEnterpriseIdentityScimStatusActionMock: vi.fn(),
 	registerEnterpriseIdentitySSOProviderActionMock: vi.fn(),
 	updateEnterpriseIdentityAccessPolicyActionMock: vi.fn(),
@@ -60,6 +62,7 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	activateEnterpriseIdentitySetupAction: activateEnterpriseIdentitySetupActionMock,
 	generateEnterpriseIdentityScimTokenAction: generateEnterpriseIdentityScimTokenActionMock,
 	recordEnterpriseIdentitySsoTestAction: recordEnterpriseIdentitySsoTestActionMock,
+	refreshEnterpriseIdentityDomainStatusAction: refreshEnterpriseIdentityDomainStatusActionMock,
 	refreshEnterpriseIdentityScimStatusAction: refreshEnterpriseIdentityScimStatusActionMock,
 	registerEnterpriseIdentitySSOProviderAction: registerEnterpriseIdentitySSOProviderActionMock,
 	updateEnterpriseIdentityAccessPolicyAction: updateEnterpriseIdentityAccessPolicyActionMock,
@@ -189,6 +192,14 @@ beforeEach(() => {
 		verified: true,
 		error: null,
 	});
+	refreshEnterpriseIdentityDomainStatusActionMock.mockResolvedValue(
+		configuredSetup({
+			domain: {
+				domain: "example.com",
+				verified: true,
+			},
+		}),
+	);
 	updateEnterpriseIdentityAccessPolicyActionMock.mockResolvedValue(
 		configuredSetup({ currentStep: "review" }),
 	);
@@ -275,6 +286,19 @@ describe("IdentitySetupWizard behavior", () => {
 				error: null,
 			});
 		});
+	});
+
+	it("refreshes domain verification from the Domain card", async () => {
+		renderWizard(configuredSetup());
+
+		expect(screen.getByText("Pending")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Check domain status" }));
+
+		await waitFor(() => {
+			expect(refreshEnterpriseIdentityDomainStatusActionMock).toHaveBeenCalled();
+		});
+
+		expect(screen.getByText("Verified")).toBeTruthy();
 	});
 
 	it("shows the SCIM token only after token generation returns it", async () => {
