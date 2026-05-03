@@ -1,8 +1,8 @@
 import { DateTime } from "luxon";
-import { and, asc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 
 import { db } from "@/db";
-import { absenceEntry, shift, workPeriod } from "@/db/schema";
+import { absenceEntry, approvalRequest, shift, workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { createLogger } from "@/lib/logger";
 import { getSelfServiceRequests } from "@/lib/self-service-requests/get-self-service-requests";
@@ -57,6 +57,11 @@ interface AbsenceRow {
 	category?: { name: string; color: string | null } | null;
 }
 
+interface TimeCorrectionApprovalRow {
+	id: string;
+	entityId: string;
+}
+
 export async function getWorkdayTimelineData({
 	employeeId,
 	organizationId,
@@ -89,11 +94,15 @@ export async function getWorkdayTimelineData({
 			);
 		}
 
-		const relevantPendingRequests = pendingRequests.items
-			.filter((request) =>
-				isRequestRelevantToSelectedDate(request, selectedDate.dateKey, timezone),
-			)
-			.map(mapPendingRequest);
+		const relevantPendingRequests = await filterPendingRequestsForSelectedDate({
+			pendingRequests: pendingRequests.items,
+			employeeId,
+			organizationId,
+			selectedDateKey: selectedDate.dateKey,
+			timezone,
+			startBound,
+			endBound,
+		});
 
 		return {
 			success: true,
@@ -103,7 +112,7 @@ export async function getWorkdayTimelineData({
 				workPeriods,
 				shifts,
 				absences,
-				pendingRequests: relevantPendingRequests,
+				pendingRequests: relevantPendingRequests.map(mapPendingRequest),
 			}),
 		};
 	} catch (error) {
@@ -205,6 +214,89 @@ async function loadAbsences({
 		categoryName: row.category?.name ?? "Absence",
 		categoryColor: row.category?.color ?? null,
 	}));
+}
+
+async function filterPendingRequestsForSelectedDate({
+	pendingRequests,
+	employeeId,
+	organizationId,
+	selectedDateKey,
+	timezone,
+	startBound,
+	endBound,
+}: {
+	pendingRequests: SelfServiceRequestItem[];
+	employeeId: string;
+	organizationId: string;
+	selectedDateKey: string;
+	timezone: string;
+	startBound: Date;
+	endBound: Date;
+}): Promise<SelfServiceRequestItem[]> {
+	const timeCorrectionRequests = pendingRequests.filter(
+		(request) => request.sourceType === "time_correction",
+	);
+	const relevantTimeCorrectionIds = await getRelevantTimeCorrectionRequestIds({
+		requestIds: timeCorrectionRequests.map((request) => request.sourceId),
+		employeeId,
+		organizationId,
+		startBound,
+		endBound,
+	});
+
+	return pendingRequests.filter((request) => {
+		if (request.sourceType === "time_correction") {
+			return relevantTimeCorrectionIds.has(request.sourceId);
+		}
+
+		return isRequestRelevantToSelectedDate(request, selectedDateKey, timezone);
+	});
+}
+
+export async function getRelevantTimeCorrectionRequestIds({
+	requestIds,
+	employeeId,
+	organizationId,
+	startBound,
+	endBound,
+}: {
+	requestIds: string[];
+	employeeId: string;
+	organizationId: string;
+	startBound: Date;
+	endBound: Date;
+}): Promise<Set<string>> {
+	if (requestIds.length === 0) return new Set();
+
+	const approvals = (await db.query.approvalRequest.findMany({
+		where: and(
+			eq(approvalRequest.organizationId, organizationId),
+			eq(approvalRequest.requestedBy, employeeId),
+			eq(approvalRequest.entityType, "time_entry"),
+			eq(approvalRequest.status, "pending"),
+			inArray(approvalRequest.id, requestIds),
+		),
+	})) as TimeCorrectionApprovalRow[];
+
+	if (approvals.length === 0) return new Set();
+
+	const entityIds = approvals.map((approval) => approval.entityId);
+	const overlappingWorkPeriods = (await db.query.workPeriod.findMany({
+		where: and(
+			eq(workPeriod.organizationId, organizationId),
+			eq(workPeriod.employeeId, employeeId),
+			inArray(workPeriod.id, entityIds),
+			lte(workPeriod.startTime, endBound),
+			or(gte(workPeriod.endTime, startBound), isNull(workPeriod.endTime)),
+		),
+	})) as Pick<WorkPeriodRow, "id">[];
+	const overlappingWorkPeriodIds = new Set(overlappingWorkPeriods.map((period) => period.id));
+
+	return new Set(
+		approvals
+			.filter((approval) => overlappingWorkPeriodIds.has(approval.entityId))
+			.map((approval) => approval.id),
+	);
 }
 
 function mapPendingRequest(request: SelfServiceRequestItem): WorkdayPendingRequestSource {

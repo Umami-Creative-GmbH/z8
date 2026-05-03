@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	workPeriodFindMany: vi.fn(),
+	approvalRequestFindMany: vi.fn(),
 	shiftFindMany: vi.fn(),
 	absenceFindMany: vi.fn(),
 	getSelfServiceRequests: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			workPeriod: { findMany: mocks.workPeriodFindMany },
+			approvalRequest: { findMany: mocks.approvalRequestFindMany },
 			shift: { findMany: mocks.shiftFindMany },
 			absenceEntry: { findMany: mocks.absenceFindMany },
 		},
@@ -39,6 +41,7 @@ import {
 describe("getWorkdayTimelineData", () => {
 	beforeEach(() => {
 		mocks.workPeriodFindMany.mockReset();
+		mocks.approvalRequestFindMany.mockReset();
 		mocks.shiftFindMany.mockReset();
 		mocks.absenceFindMany.mockReset();
 		mocks.getSelfServiceRequests.mockReset();
@@ -46,6 +49,7 @@ describe("getWorkdayTimelineData", () => {
 		mocks.loggerError.mockReset();
 
 		mocks.workPeriodFindMany.mockResolvedValue([]);
+		mocks.approvalRequestFindMany.mockResolvedValue([]);
 		mocks.shiftFindMany.mockResolvedValue([]);
 		mocks.absenceFindMany.mockResolvedValue([]);
 		mocks.getSelfServiceRequests.mockResolvedValue({
@@ -99,16 +103,19 @@ describe("getWorkdayTimelineData", () => {
 			items: [
 				createRequest({
 					id: "current-day-submitted",
+					sourceType: "absence",
 					subtitle: "Submitted for review",
 					submittedAt: new Date("2026-05-03T08:00:00.000Z"),
 				}),
 				createRequest({
 					id: "current-day-subtitle",
+					sourceType: "absence",
 					subtitle: "Correction for 2026-05-03",
 					submittedAt: new Date("2026-05-01T08:00:00.000Z"),
 				}),
 				createRequest({
 					id: "other-day",
+					sourceType: "absence",
 					subtitle: "Correction for 2026-05-04",
 					submittedAt: new Date("2026-05-04T08:00:00.000Z"),
 				}),
@@ -129,6 +136,95 @@ describe("getWorkdayTimelineData", () => {
 			expect(result.data.items.map((item) => item.id).sort()).toEqual([
 				"pending-request:current-day-submitted",
 				"pending-request:current-day-subtitle",
+			]);
+		}
+	});
+
+	it("excludes time corrections submitted on the selected day when their work period does not overlap", async () => {
+		mocks.workPeriodFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+		mocks.approvalRequestFindMany.mockResolvedValue([
+			{
+				id: "approval-other-day",
+				entityId: "period-other-day",
+			},
+		]);
+		mocks.getSelfServiceRequests.mockResolvedValue({
+			items: [
+				createRequest({
+					id: "request-other-day",
+					sourceId: "approval-other-day",
+					sourceType: "time_correction",
+					subtitle: "time_entry_correction",
+					submittedAt: new Date("2026-05-03T08:00:00.000Z"),
+				}),
+			],
+			counts: { pending: 1, requiredFixes: 0, recentDecisions: 0, total: 1 },
+			sourceErrors: [],
+		});
+
+		const result = await getWorkdayTimelineData({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			timezone: "UTC",
+			dateParam: "2026-05-03",
+		});
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.items).toHaveLength(0);
+		}
+	});
+
+	it("includes time corrections tied to a work period overlapping the selected day", async () => {
+		mocks.workPeriodFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+			{
+				id: "period-overlap",
+				startTime: new Date("2026-05-02T22:00:00.000Z"),
+				endTime: new Date("2026-05-03T06:00:00.000Z"),
+			},
+		]);
+		mocks.approvalRequestFindMany.mockResolvedValue([
+			{
+				id: "approval-overlap",
+				entityId: "period-overlap",
+			},
+			{
+				id: "approval-other-day",
+				entityId: "period-other-day",
+			},
+		]);
+		mocks.getSelfServiceRequests.mockResolvedValue({
+			items: [
+				createRequest({
+					id: "request-overlap",
+					sourceId: "approval-overlap",
+					sourceType: "time_correction",
+					subtitle: "time_entry_correction",
+					submittedAt: new Date("2026-05-04T08:00:00.000Z"),
+				}),
+				createRequest({
+					id: "request-other-day",
+					sourceId: "approval-other-day",
+					sourceType: "time_correction",
+					subtitle: "time_entry_correction",
+					submittedAt: new Date("2026-05-03T08:00:00.000Z"),
+				}),
+			],
+			counts: { pending: 2, requiredFixes: 0, recentDecisions: 0, total: 2 },
+			sourceErrors: [],
+		});
+
+		const result = await getWorkdayTimelineData({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			timezone: "UTC",
+			dateParam: "2026-05-03",
+		});
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.items.map((item) => item.id)).toEqual([
+				"pending-request:request-overlap",
 			]);
 		}
 	});
