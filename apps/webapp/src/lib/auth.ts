@@ -693,6 +693,7 @@ export const auth = betterAuth({
 						metadata: {
 							idpProvider: "scim",
 							scimDisplayName: `SCIM Provider ${scimProvider.providerId}`,
+							tokenGenerated: true,
 						},
 					});
 				}

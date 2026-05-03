@@ -1,0 +1,183 @@
+/* @vitest-environment jsdom */
+
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
+import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+			if (!fallback) return _key;
+			return fallback.replace(/\{(\w+)\}/g, (_, key) => String(params?.[key] ?? `{${key}}`));
+		},
+	}),
+}));
+
+const riskyPreview: AbsencePlanPreview = {
+	requestedDays: 6,
+	balance: {
+		year: 2026,
+		remainingDays: 4,
+		remainingAfterRequest: -2,
+		countsAgainstVacation: true,
+	},
+	holidays: [
+		{
+			id: "holiday-1",
+			name: "Spring Holiday",
+			startDate: "2026-05-14",
+			endDate: "2026-05-14",
+		},
+	],
+	overlaps: [],
+	affectedShifts: [],
+	coverage: {
+		risks: [
+			{
+				date: "2026-05-15",
+				subareaId: "front-desk",
+				subareaName: "Front desk",
+				startTime: "09:00",
+				endTime: "17:00",
+				minimumStaffCount: 2,
+				staffCountAfterAbsence: 1,
+			},
+		],
+		hasConfiguredRulesForAffectedShifts: true,
+	},
+	approvalSignal: "risky",
+	warnings: ["Vacation balance would be negative after this request."],
+	reasons: [
+		"Coverage rules are not configured for the affected scheduled work.",
+		"Request follows the normal approval path.",
+	],
+};
+
+const nonVacationPreview: AbsencePlanPreview = {
+	...riskyPreview,
+	balance: {
+		year: 2026,
+		remainingDays: 4,
+		remainingAfterRequest: 4,
+		countsAgainstVacation: false,
+	},
+	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
+	approvalSignal: "likely",
+	warnings: [],
+	reasons: ["Policy check passed without using vacation-specific copy."],
+};
+
+const affectedShiftPreview: AbsencePlanPreview = {
+	...riskyPreview,
+	affectedShifts: [
+		{
+			id: "shift-1",
+			subareaId: "kitchen",
+			date: "2026-05-16",
+			startTime: "12:00",
+			endTime: "18:00",
+		},
+	],
+	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
+	approvalSignal: "likely",
+	warnings: [],
+	reasons: ["Request follows the normal approval path."],
+};
+
+const affectedShiftWithRiskPreview: AbsencePlanPreview = {
+	...riskyPreview,
+	affectedShifts: affectedShiftPreview.affectedShifts,
+};
+
+const affectedShiftWithoutRulesPreview: AbsencePlanPreview = {
+	...affectedShiftPreview,
+	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
+	approvalSignal: "needs_review",
+	reasons: ["Coverage rules are not configured for the affected scheduled work."],
+};
+
+describe("AbsencePlanPreviewPanel", () => {
+	it("renders risky advisory preview with a warning", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(screen.getByRole("heading", { name: "Smart planner" })).toBeTruthy();
+		expect(screen.getByText("Risky")).toBeTruthy();
+		expect(screen.getByText("Vacation balance would be negative after this request.")).toBeTruthy();
+	});
+
+	it("shows vacation balance impact for the selected category", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(screen.getByText("Counts against vacation balance")).toBeTruthy();
+	});
+
+	it("shows non-vacation balance impact from structured balance data", () => {
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+
+		expect(screen.getByText("Does not reduce vacation balance")).toBeTruthy();
+		expect(screen.queryByText("Counts against vacation balance")).toBeNull();
+	});
+
+	it("renders compact coverage risk details by day and subarea", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
+	});
+
+	it("renders affected published shifts without coverage risk", () => {
+		render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
+
+		expect(screen.getByText("No published coverage risk")).toBeTruthy();
+		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+	});
+
+	it("renders missing coverage rules for affected published shifts", () => {
+		render(<AbsencePlanPreviewPanel preview={affectedShiftWithoutRulesPreview} />);
+
+		expect(screen.getByText("No coverage rules configured for affected shifts")).toBeTruthy();
+		expect(screen.queryByText("No published coverage risk")).toBeNull();
+		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+	});
+
+	it("renders affected published shifts with coverage risk details", () => {
+		render(<AbsencePlanPreviewPanel preview={affectedShiftWithRiskPreview} />);
+
+		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
+		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+	});
+
+	it("renders all explainable approval reasons", () => {
+		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
+
+		expect(
+			screen.getByText("Coverage rules are not configured for the affected scheduled work."),
+		).toBeTruthy();
+		expect(screen.getByText("Request follows the normal approval path.")).toBeTruthy();
+	});
+
+	it("renders non-blocking unavailable copy for an error", () => {
+		render(<AbsencePlanPreviewPanel error="Preview failed" />);
+
+		expect(
+			screen.getByText("Planning preview unavailable. You can still submit your request."),
+		).toBeTruthy();
+	});
+
+	it("renders accessible loading copy", () => {
+		const { container } = render(<AbsencePlanPreviewPanel isLoading />);
+
+		expect(screen.getByText("Checking balance, holidays, and coverage…")).toBeTruthy();
+		expect(container.querySelector("svg")?.className.baseVal).toContain("motion-safe:animate-spin");
+	});
+
+	it("renders nothing without preview, loading state, or error", () => {
+		const { container } = render(<AbsencePlanPreviewPanel />);
+
+		expect(container.firstChild).toBeNull();
+	});
+});

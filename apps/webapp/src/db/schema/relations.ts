@@ -6,6 +6,15 @@ import { absenceCategory, absenceEntry } from "./absence";
 // Conditional access policies
 import { accessPolicy, accessViolationLog, sessionExtension, trustedDevice } from "./access-policy";
 import { approvalRequest } from "./approval";
+import {
+	approvalChainInstance,
+	approvalChainStageInstance,
+	approvalPolicy,
+	approvalPolicyCondition,
+	approvalPolicyStage,
+	employeeGroup,
+	employeeGroupMember,
+} from "./approval-policy";
 import { auditLog } from "./audit";
 import { changePolicy, changePolicyAssignment } from "./change-policy";
 import { complianceException, schedulePublishComplianceAck } from "./compliance";
@@ -26,6 +35,7 @@ import {
 	organizationEmailConfig,
 	organizationSocialOAuth,
 } from "./enterprise";
+import { enterpriseIdentitySetup } from "./enterprise-identity-setup";
 import { dataExport, exportStorageConfig } from "./export";
 import {
 	holiday,
@@ -170,6 +180,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	branding: one(organizationBranding),
 	emailConfig: one(organizationEmailConfig),
 	socialOAuthConfigs: many(organizationSocialOAuth),
+	enterpriseIdentitySetup: one(enterpriseIdentitySetup),
 	// Surcharges
 	surchargeModels: many(surchargeModel),
 	surchargeModelAssignments: many(surchargeModelAssignment),
@@ -194,6 +205,13 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	timeRecordApprovalDecisions: many(timeRecordApprovalDecision),
 	// Approval workflows
 	approvalRequests: many(approvalRequest),
+	approvalPolicies: many(approvalPolicy),
+	approvalPolicyConditions: many(approvalPolicyCondition),
+	approvalPolicyStages: many(approvalPolicyStage),
+	employeeGroups: many(employeeGroup),
+	employeeGroupMembers: many(employeeGroupMember),
+	approvalChainInstances: many(approvalChainInstance),
+	approvalChainStageInstances: many(approvalChainStageInstance),
 	// Compliance exceptions
 	complianceExceptions: many(complianceException),
 	schedulePublishComplianceAcks: many(schedulePublishComplianceAck),
@@ -216,6 +234,44 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	travelExpenseAttachments: many(travelExpenseAttachment),
 	travelExpensePolicies: many(travelExpensePolicy),
 	travelExpenseDecisionLogs: many(travelExpenseDecisionLog),
+}));
+
+export const approvalPolicyRelations = relations(approvalPolicy, ({ one, many }) => ({
+	organization: one(organization, { fields: [approvalPolicy.organizationId], references: [organization.id] }),
+	conditions: many(approvalPolicyCondition),
+	stages: many(approvalPolicyStage),
+}));
+
+export const approvalPolicyConditionRelations = relations(approvalPolicyCondition, ({ one }) => ({
+	policy: one(approvalPolicy, { fields: [approvalPolicyCondition.policyId], references: [approvalPolicy.id] }),
+}));
+
+export const approvalPolicyStageRelations = relations(approvalPolicyStage, ({ one }) => ({
+	policy: one(approvalPolicy, { fields: [approvalPolicyStage.policyId], references: [approvalPolicy.id] }),
+	specificApprover: one(employee, { fields: [approvalPolicyStage.approverEmployeeId], references: [employee.id] }),
+}));
+
+export const employeeGroupRelations = relations(employeeGroup, ({ one, many }) => ({
+	organization: one(organization, { fields: [employeeGroup.organizationId], references: [organization.id] }),
+	members: many(employeeGroupMember),
+}));
+
+export const employeeGroupMemberRelations = relations(employeeGroupMember, ({ one }) => ({
+	group: one(employeeGroup, { fields: [employeeGroupMember.groupId], references: [employeeGroup.id] }),
+	employee: one(employee, { fields: [employeeGroupMember.employeeId], references: [employee.id] }),
+}));
+
+export const approvalChainInstanceRelations = relations(approvalChainInstance, ({ one, many }) => ({
+	policy: one(approvalPolicy, { fields: [approvalChainInstance.policyId], references: [approvalPolicy.id] }),
+	requester: one(employee, { fields: [approvalChainInstance.requesterEmployeeId], references: [employee.id] }),
+	stages: many(approvalChainStageInstance),
+}));
+
+export const approvalChainStageInstanceRelations = relations(approvalChainStageInstance, ({ one }) => ({
+	chain: one(approvalChainInstance, { fields: [approvalChainStageInstance.chainInstanceId], references: [approvalChainInstance.id] }),
+	policyStage: one(approvalPolicyStage, { fields: [approvalChainStageInstance.policyStageId], references: [approvalPolicyStage.id] }),
+	approvalRequest: one(approvalRequest, { fields: [approvalChainStageInstance.approvalRequestId], references: [approvalRequest.id] }),
+	resolvedApprover: one(employee, { fields: [approvalChainStageInstance.resolvedApproverEmployeeId], references: [employee.id] }),
 }));
 
 export const teamRelations = relations(team, ({ one, many }) => ({
@@ -1246,6 +1302,27 @@ export const organizationSocialOAuthRelations = relations(organizationSocialOAut
 	organization: one(organization, {
 		fields: [organizationSocialOAuth.organizationId],
 		references: [organization.id],
+	}),
+}));
+
+export const enterpriseIdentitySetupRelations = relations(enterpriseIdentitySetup, ({ one }) => ({
+	organization: one(organization, {
+		fields: [enterpriseIdentitySetup.organizationId],
+		references: [organization.id],
+	}),
+	defaultRoleTemplate: one(roleTemplate, {
+		fields: [enterpriseIdentitySetup.defaultRoleTemplateId],
+		references: [roleTemplate.id],
+	}),
+	creator: one(user, {
+		fields: [enterpriseIdentitySetup.createdBy],
+		references: [user.id],
+		relationName: "enterprise_identity_setup_creator",
+	}),
+	updater: one(user, {
+		fields: [enterpriseIdentitySetup.updatedBy],
+		references: [user.id],
+		relationName: "enterprise_identity_setup_updater",
 	}),
 }));
 

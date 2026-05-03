@@ -1,7 +1,9 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import Link from "next/link";
 import type { SocialOAuthConfigResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import { BrandingForm } from "./branding-form";
@@ -71,6 +73,19 @@ export function DomainsAndBrandingTabs({
 			</TabsContent>
 
 			<TabsContent value="sso" className="space-y-4">
+				<div className="rounded-lg border bg-muted/30 p-4">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<h3 className="font-medium">Guided setup</h3>
+							<p className="text-muted-foreground text-sm">
+								Configure SSO, SCIM, access policy, and activation checks in one guarded flow.
+							</p>
+						</div>
+						<Button asChild variant="outline" className="w-fit">
+							<Link href="/settings/enterprise/identity-setup">Guided setup</Link>
+						</Button>
+					</div>
+				</div>
 				<SSOProviderManagement initialProviders={initialProviders} />
 			</TabsContent>
 

@@ -126,7 +126,10 @@ describe("travel expense approvals", () => {
 	it("reject fails for manager when claim approverId differs", async () => {
 		processApproval.mockResolvedValue({ success: false, error: "Unauthorized" });
 
-		const result = await rejectTravelExpenseClaim({ claimId: "claim-2", reason: "Missing receipt" });
+		const result = await rejectTravelExpenseClaim({
+			claimId: "claim-2",
+			reason: "Missing receipt",
+		});
 
 		expect(result).toEqual({ success: false, error: "Unauthorized" });
 		expect(processApproval).toHaveBeenCalledWith(
@@ -140,6 +143,93 @@ describe("travel expense approvals", () => {
 		);
 		expect(mockState.dbUpdate).not.toHaveBeenCalled();
 		expect(mockState.dbInsert).not.toHaveBeenCalled();
+		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it("approve allows an employee-role assigned approver to reach shared approval authorization", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-employee-approver" },
+			session: { activeOrganizationId: "org-1" },
+			employee: {
+				id: "employee-approver-1",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+			},
+		});
+		processApproval.mockResolvedValue({ success: true, data: undefined });
+
+		const result = await approveTravelExpenseClaim({ claimId: "claim-1", note: "Looks good" });
+
+		expect(result).toEqual({ success: true, data: { status: "approved" } });
+		expect(processApproval).toHaveBeenCalledWith(
+			"travel_expense_claim",
+			"claim-1",
+			"approve",
+			undefined,
+			expect.any(Function),
+			expect.any(Function),
+			{ transactional: true },
+		);
+		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
+	});
+
+	it("reject allows an employee-role assigned approver to reach shared approval authorization", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-employee-approver" },
+			session: { activeOrganizationId: "org-1" },
+			employee: {
+				id: "employee-approver-1",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+			},
+		});
+		processApproval.mockResolvedValue({ success: true, data: undefined });
+
+		const result = await rejectTravelExpenseClaim({
+			claimId: "claim-1",
+			reason: "Missing receipt",
+		});
+
+		expect(result).toEqual({ success: true, data: { status: "rejected" } });
+		expect(processApproval).toHaveBeenCalledWith(
+			"travel_expense_claim",
+			"claim-1",
+			"reject",
+			"Missing receipt",
+			expect.any(Function),
+			expect.any(Function),
+			{ transactional: true },
+		);
+		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
+	});
+
+	it("keeps random employee rejection in the shared approval path", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-random" },
+			session: { activeOrganizationId: "org-1" },
+			employee: {
+				id: "random-employee-1",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+			},
+		});
+		processApproval.mockResolvedValue({ success: false, error: "Unauthorized" });
+
+		const result = await approveTravelExpenseClaim({ claimId: "claim-1" });
+
+		expect(result).toEqual({ success: false, error: "Unauthorized" });
+		expect(processApproval).toHaveBeenCalledWith(
+			"travel_expense_claim",
+			"claim-1",
+			"approve",
+			undefined,
+			expect.any(Function),
+			expect.any(Function),
+			{ transactional: true },
+		);
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
 	});
 });

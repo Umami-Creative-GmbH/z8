@@ -19,6 +19,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
 import {
 	type InvitationData,
@@ -113,6 +114,23 @@ export async function sendInvitation(
 				}
 
 				const validatedData = validationResult.data;
+
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await assertEnterpriseIdentityInvitationAllowed({
+								organizationId: data.organizationId,
+								email: validatedData.email,
+							});
+						},
+						catch: (error) =>
+							new ValidationError({
+								message: error instanceof Error ? error.message : "Invitation is not allowed",
+								field: "email",
+								value: validatedData.email,
+							}),
+					}),
+				);
 
 				// Check for existing pending invitation
 				const existingInvitation = yield* _(

@@ -1,4 +1,4 @@
-import { boolean, date, foreignKey, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, foreignKey, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
@@ -32,7 +32,10 @@ export const absenceCategory = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("absenceCategory_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("absenceCategory_organizationId_idx").on(table.organizationId),
+		uniqueIndex("absenceCategory_id_organizationId_idx").on(table.id, table.organizationId),
+	],
 );
 
 // Absence entries (sick days, vacation, etc.)

@@ -36,6 +36,7 @@ export type SettingsIconName =
 	| "beach"
 	| "clock"
 	| "clock-edit"
+	| "git-branch"
 	| "gavel"
 	| "percentage"
 	| "address-book"
@@ -241,6 +242,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "implementation-checklist",
+		titleKey: "settings.implementationChecklist.title",
+		titleDefault: "Implementation Checklist",
+		descriptionKey: "settings.implementationChecklist.description",
+		descriptionDefault:
+			"Track customer rollout setup across policies, payroll, integrations, and employee import",
+		href: "/settings/implementation-checklist",
+		icon: "target",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
 		id: "locations",
 		titleKey: "settings.locations.title",
 		titleDefault: "Locations",
@@ -282,6 +295,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Configure reimbursement rates and effective periods for mileage and per diem claims.",
 		href: "/settings/travel-expenses",
 		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "approval-policies",
+		titleKey: "settings.approvalPolicies.title",
+		titleDefault: "Approval Policies",
+		descriptionKey: "settings.approvalPolicies.description",
+		descriptionDefault: "Configure sequential approval chains for operational workflows",
+		href: "/settings/approval-policies",
+		icon: "git-branch",
 		minimumTier: "orgAdmin",
 		group: "administration",
 	},
@@ -391,6 +415,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		requiredFeature: "projectsEnabled",
 	},
 	// Enterprise settings
+	{
+		id: "enterprise-identity-setup",
+		titleKey: "settings.enterpriseIdentitySetup.title",
+		titleDefault: "Enterprise Identity Setup",
+		descriptionKey: "settings.enterpriseIdentitySetup.description",
+		descriptionDefault:
+			"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles",
+		href: "/settings/enterprise/identity-setup",
+		icon: "key",
+		minimumTier: "orgAdmin",
+		group: "enterprise",
+	},
 	{
 		id: "custom-domains",
 		titleKey: "settings.customDomains.title",

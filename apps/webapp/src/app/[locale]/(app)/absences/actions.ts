@@ -5,6 +5,7 @@ import {
 	cancelAbsenceRequest as cancelAbsenceRequestAction,
 	cancelAbsenceRequestForEmployee as cancelAbsenceRequestForEmployeeAction,
 } from "./mutations";
+import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";
 import {
 	getAbsenceCategories as getAbsenceCategoriesAction,
 	getAbsenceEntries as getAbsenceEntriesAction,
@@ -38,6 +39,11 @@ export async function getAbsenceCategories(organizationId: string) {
 }
 
 export async function getAbsenceEntries(employeeId: string, startDate: string, endDate: string) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return [];
+	}
+
 	return getAbsenceEntriesAction(employeeId, startDate, endDate);
 }
 
@@ -51,7 +57,18 @@ export async function getHolidays(employeeId: string, startDate: Date, endDate: 
 }
 
 export async function getVacationBalance(employeeId: string, year: number) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return null;
+	}
+
 	return getVacationBalanceAction(employeeId, year);
+}
+
+export async function getAbsencePlanPreview(
+	...args: Parameters<typeof getAbsencePlanPreviewAction>
+) {
+	return getAbsencePlanPreviewAction(...args);
 }
 
 export async function requestAbsence(...args: Parameters<typeof requestAbsenceAction>) {

@@ -1,4 +1,4 @@
-import { foreignKey, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { approvalStatusEnum } from "./enums";
@@ -48,6 +48,7 @@ export const approvalRequest = pgTable(
 	},
 	(table) => [
 		index("approvalRequest_organizationId_idx").on(table.organizationId),
+		uniqueIndex("approvalRequest_id_organizationId_idx").on(table.id, table.organizationId),
 		index("approvalRequest_entityType_entityId_idx").on(table.entityType, table.entityId),
 		index("approvalRequest_org_canonicalRecordId_idx").on(
 			table.organizationId,

@@ -18,6 +18,7 @@ vi.mock("@/env", () => ({
 const testState = vi.hoisted(() => ({
 	approvalFindMany: vi.fn(),
 	approvalFindFirst: vi.fn(),
+	approvalChainStageFindFirst: vi.fn(),
 	travelExpenseFindMany: vi.fn(),
 	travelExpenseFindFirst: vi.fn(),
 	employeeFindFirst: vi.fn(),
@@ -79,6 +80,9 @@ function createDatabaseService() {
 				findMany: testState.approvalFindMany,
 				findFirst: testState.approvalFindFirst,
 			},
+			approvalChainStageInstance: {
+				findFirst: testState.approvalChainStageFindFirst,
+			},
 			travelExpenseClaim: {
 				findMany: testState.travelExpenseFindMany,
 				findFirst: testState.travelExpenseFindFirst,
@@ -119,6 +123,7 @@ describe("TravelExpenseClaimHandler", () => {
 		vi.setSystemTime(new Date("2026-04-11T09:00:00.000Z"));
 		testState.approvalFindMany.mockReset();
 		testState.approvalFindFirst.mockReset();
+		testState.approvalChainStageFindFirst.mockReset();
 		testState.travelExpenseFindMany.mockReset();
 		testState.travelExpenseFindFirst.mockReset();
 		testState.employeeFindFirst.mockReset();
@@ -135,6 +140,7 @@ describe("TravelExpenseClaimHandler", () => {
 		testState.dbUpdate.mockImplementation(() => createUpdateBuilder());
 		testState.updateSet.mockReturnValue({ where: testState.updateWhere });
 		testState.updateWhere.mockReturnValue({ returning: testState.updateReturning });
+		testState.approvalChainStageFindFirst.mockResolvedValue(null);
 		testState.dbTransaction.mockImplementation(async (run) => {
 			const pendingUpdates: unknown[] = [];
 			const pendingInserts: unknown[] = [];
@@ -146,6 +152,9 @@ describe("TravelExpenseClaimHandler", () => {
 					approvalRequest: {
 						findMany: testState.approvalFindMany,
 						findFirst: testState.approvalFindFirst,
+					},
+					approvalChainStageInstance: {
+						findFirst: testState.approvalChainStageFindFirst,
 					},
 					travelExpenseClaim: {
 						findMany: testState.travelExpenseFindMany,
