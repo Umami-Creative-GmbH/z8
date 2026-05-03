@@ -199,17 +199,14 @@ async function evaluateCoverageRisk({
 			}
 			hasMatchingRuleForAffectedShifts = true;
 
-			const evaluatedCoverage = findLowestSegmentStaffCount({
+			const evaluatedCoverageRisks = findUnderstaffedSegments({
 				rule,
 				affectedShift,
 				employeeId,
 				publishedShifts: typedPublishedShifts,
 			});
-			if (!evaluatedCoverage) {
-				continue;
-			}
 
-			if (evaluatedCoverage.staffCountAfterAbsence < rule.minimumStaffCount) {
+			for (const evaluatedCoverage of evaluatedCoverageRisks) {
 				coverageRisks.push({
 					date: dateKey,
 					subareaId: rule.subareaId,
@@ -238,7 +235,7 @@ function timeRangesOverlap(
 	return leftStart < rightEnd && leftEnd > rightStart;
 }
 
-function findLowestSegmentStaffCount({
+function findUnderstaffedSegments({
 	rule,
 	affectedShift,
 	employeeId,
@@ -252,7 +249,7 @@ function findLowestSegmentStaffCount({
 	const evaluationStart = maxTime(rule.startTime, affectedShift.startTime);
 	const evaluationEnd = minTime(rule.endTime, affectedShift.endTime);
 	if (evaluationStart >= evaluationEnd) {
-		return null;
+		return [];
 	}
 
 	const candidateShifts = publishedShifts.filter(
@@ -276,9 +273,11 @@ function findLowestSegmentStaffCount({
 	}
 
 	const sortedBoundaries = [...boundaries].sort();
-	let lowestUnderstaffedSegment:
-		| { startTime: string; endTime: string; staffCountAfterAbsence: number }
-		| null = null;
+	const understaffedSegments: Array<{
+		startTime: string;
+		endTime: string;
+		staffCountAfterAbsence: number;
+	}> = [];
 
 	for (let index = 0; index < sortedBoundaries.length - 1; index++) {
 		const segmentStart = sortedBoundaries[index];
@@ -300,16 +299,24 @@ function findLowestSegmentStaffCount({
 			continue;
 		}
 
-		if (!lowestUnderstaffedSegment || assignedStaff < lowestUnderstaffedSegment.staffCountAfterAbsence) {
-			lowestUnderstaffedSegment = {
-				startTime: segmentStart,
-				endTime: segmentEnd,
-				staffCountAfterAbsence: assignedStaff,
-			};
+		const previousSegment = understaffedSegments.at(-1);
+		if (previousSegment?.endTime === segmentStart) {
+			previousSegment.endTime = segmentEnd;
+			previousSegment.staffCountAfterAbsence = Math.min(
+				previousSegment.staffCountAfterAbsence,
+				assignedStaff,
+			);
+			continue;
 		}
+
+		understaffedSegments.push({
+			startTime: segmentStart,
+			endTime: segmentEnd,
+			staffCountAfterAbsence: assignedStaff,
+		});
 	}
 
-	return lowestUnderstaffedSegment;
+	return understaffedSegments;
 }
 
 function maxTime(left: string, right: string) {

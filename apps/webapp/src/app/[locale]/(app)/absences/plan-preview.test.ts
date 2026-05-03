@@ -293,7 +293,7 @@ describe("getAbsencePlanPreview", () => {
 						subareaId: "subarea-1",
 						subareaName: "Front Desk",
 						startTime: "12:00",
-						endTime: "14:00",
+						endTime: "17:00",
 						minimumStaffCount: 2,
 						staffCountAfterAbsence: 1,
 					},
