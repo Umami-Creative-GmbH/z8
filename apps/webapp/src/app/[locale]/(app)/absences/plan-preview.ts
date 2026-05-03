@@ -199,25 +199,25 @@ async function evaluateCoverageRisk({
 			}
 			hasMatchingRuleForAffectedShifts = true;
 
-			const staffCountAfterAbsence = findLowestSegmentStaffCount({
+			const evaluatedCoverage = findLowestSegmentStaffCount({
 				rule,
 				affectedShift,
 				employeeId,
 				publishedShifts: typedPublishedShifts,
 			});
-			if (staffCountAfterAbsence === null) {
+			if (!evaluatedCoverage) {
 				continue;
 			}
 
-			if (staffCountAfterAbsence < rule.minimumStaffCount) {
+			if (evaluatedCoverage.staffCountAfterAbsence < rule.minimumStaffCount) {
 				coverageRisks.push({
 					date: dateKey,
 					subareaId: rule.subareaId,
 					subareaName: rule.subarea?.name ?? "Unknown subarea",
-					startTime: rule.startTime,
-					endTime: rule.endTime,
+					startTime: evaluatedCoverage.startTime,
+					endTime: evaluatedCoverage.endTime,
 					minimumStaffCount: rule.minimumStaffCount,
-					staffCountAfterAbsence,
+					staffCountAfterAbsence: evaluatedCoverage.staffCountAfterAbsence,
 				});
 			}
 		}
@@ -297,7 +297,11 @@ function findLowestSegmentStaffCount({
 		lowestStaffCount = Math.min(lowestStaffCount, assignedStaff);
 	}
 
-	return Number.isFinite(lowestStaffCount) ? lowestStaffCount : 0;
+	return {
+		startTime: evaluationStart,
+		endTime: evaluationEnd,
+		staffCountAfterAbsence: Number.isFinite(lowestStaffCount) ? lowestStaffCount : 0,
+	};
 }
 
 function maxTime(left: string, right: string) {

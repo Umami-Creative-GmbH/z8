@@ -226,7 +226,7 @@ describe("getAbsencePlanPreview", () => {
 		}
 	});
 
-	it("adds a coverage risk when every segment in a rule window is understaffed", async () => {
+	it("adds a coverage risk with clamped times when every affected segment is understaffed", async () => {
 		mockState.shiftFindMany
 			.mockResolvedValueOnce([
 				{
@@ -234,7 +234,7 @@ describe("getAbsencePlanPreview", () => {
 					employeeId: "emp-current",
 					subareaId: "subarea-1",
 					date: new Date("2026-05-04T00:00:00.000Z"),
-					startTime: "09:00",
+					startTime: "12:00",
 					endTime: "17:00",
 					status: "published",
 				},
@@ -245,7 +245,7 @@ describe("getAbsencePlanPreview", () => {
 					employeeId: "emp-current",
 					subareaId: "subarea-1",
 					date: new Date("2026-05-04T00:00:00.000Z"),
-					startTime: "09:00",
+					startTime: "12:00",
 					endTime: "17:00",
 					status: "published",
 				},
@@ -254,8 +254,8 @@ describe("getAbsencePlanPreview", () => {
 					employeeId: "emp-peer-am",
 					subareaId: "subarea-1",
 					date: new Date("2026-05-04T00:00:00.000Z"),
-					startTime: "09:00",
-					endTime: "12:00",
+					startTime: "12:00",
+					endTime: "14:00",
 					status: "published",
 				},
 				{
@@ -263,7 +263,7 @@ describe("getAbsencePlanPreview", () => {
 					employeeId: "emp-peer-pm",
 					subareaId: "subarea-1",
 					date: new Date("2026-05-04T00:00:00.000Z"),
-					startTime: "12:00",
+					startTime: "14:00",
 					endTime: "17:00",
 					status: "published",
 				},
@@ -292,7 +292,7 @@ describe("getAbsencePlanPreview", () => {
 						date: "2026-05-04",
 						subareaId: "subarea-1",
 						subareaName: "Front Desk",
-						startTime: "09:00",
+						startTime: "12:00",
 						endTime: "17:00",
 						minimumStaffCount: 2,
 						staffCountAfterAbsence: 1,
