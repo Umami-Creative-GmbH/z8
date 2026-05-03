@@ -30,6 +30,7 @@ import type {
 	EnterpriseIdentityProtocol,
 	EnterpriseIdentityProviderPresetId,
 } from "@/lib/enterprise-identity/provider-presets";
+import { buildEnterpriseIdentityScimTokenResponse } from "@/lib/enterprise-identity/scim-token-response";
 import {
 	createDefaultEnterpriseIdentitySetupState,
 	getEnterpriseIdentityReadiness,
@@ -132,23 +133,6 @@ export interface EnterpriseIdentityAccessPolicyInput {
 	domainRestrictionEnabled: boolean;
 	inviteRestrictionEnabled: boolean;
 	defaultRoleTemplateId?: string | null;
-}
-
-export interface EnterpriseIdentityScimTokenResponse {
-	providerId: string;
-	scimToken: string | undefined;
-	baseUrl: "/api/auth/scim/v2";
-}
-
-export function buildEnterpriseIdentityScimTokenResponse(
-	result: { token?: string; scimToken?: string },
-	providerId: string,
-): EnterpriseIdentityScimTokenResponse {
-	return {
-		providerId,
-		scimToken: result.scimToken ?? result.token,
-		baseUrl: "/api/auth/scim/v2",
-	};
 }
 
 function toIsoFromDate(value: Date | string | null | undefined): string | null {

@@ -57,7 +57,9 @@ vi.mock("@/lib/vault", () => ({
 }));
 
 const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "actions.ts"), "utf8");
-const actions = await import("./actions");
+const { buildEnterpriseIdentityScimTokenResponse } = await import(
+	"@/lib/enterprise-identity/scim-token-response"
+);
 
 function getFunctionSource(functionName: string) {
 	const match = source.match(
@@ -119,12 +121,16 @@ describe("enterprise identity setup action contracts", () => {
 
 	it("builds a safe SCIM token generation response without setup state", () => {
 		expect(
-			actions.buildEnterpriseIdentityScimTokenResponse({ scimToken: "scim-secret" }, "provider-1"),
+			buildEnterpriseIdentityScimTokenResponse({ scimToken: "scim-secret" }, "provider-1"),
 		).toEqual({
 			providerId: "provider-1",
 			scimToken: "scim-secret",
 			baseUrl: "/api/auth/scim/v2",
 		});
+	});
+
+	it("does not export synchronous runtime helpers from the server action module", () => {
+		expect(source).not.toContain("export function ");
 	});
 
 	it("does not do fallible setup response loading after SCIM token generation", () => {
