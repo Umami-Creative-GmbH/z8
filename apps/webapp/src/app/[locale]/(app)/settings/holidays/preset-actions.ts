@@ -329,6 +329,25 @@ export async function getHolidayPreset(
 					}),
 			),
 		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				preset.legalEntityId,
+				"getHolidayPreset:defaultLegalEntity",
+			),
+		);
+
+		if (preset.legalEntityId !== selectedLegalEntityId) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "holiday_preset",
+						entityId: presetId,
+					}),
+				),
+			);
+		}
 
 		if (actor.accessTier === "manager") {
 			const { manageableTeamIds, managedEmployeeIds } = yield* _(
@@ -373,6 +392,7 @@ export async function getHolidayPreset(
 						.where(
 							and(
 								eq(holidayPresetAssignment.organizationId, actor.organizationId),
+								eq(holidayPresetAssignment.legalEntityId, selectedLegalEntityId),
 								eq(holidayPresetAssignment.presetId, presetId),
 								eq(holidayPresetAssignment.isActive, true),
 							),
@@ -913,12 +933,35 @@ export async function deleteHolidayFromPreset(
 			}),
 		);
 
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				undefined,
+				"deleteHolidayFromPreset:defaultLegalEntity",
+			),
+		);
+
 		// Delete (hard delete since it's a preset holiday)
 		yield* _(
 			actor.dbService.query("deleteHoliday", async () => {
+				const scopedPresets = actor.dbService.db
+					.select({ id: holidayPreset.id })
+					.from(holidayPreset)
+					.where(
+						and(
+							eq(holidayPreset.organizationId, actor.organizationId),
+							eq(holidayPreset.legalEntityId, selectedLegalEntityId),
+						),
+					);
+
 				await actor.dbService.db
 					.delete(holidayPresetHoliday)
-					.where(eq(holidayPresetHoliday.id, holidayId));
+					.where(
+						and(
+							eq(holidayPresetHoliday.id, holidayId),
+							inArray(holidayPresetHoliday.presetId, scopedPresets),
+						),
+					);
 			}),
 			Effect.mapError(
 				(error) =>
@@ -1093,6 +1136,64 @@ export async function createPresetAssignment(
 			);
 		}
 
+		if (data.assignmentType === "team" && data.teamId) {
+			const targetTeamId = data.teamId;
+			const targetTeam = yield* _(
+				actor.dbService.query("createPresetAssignment:validateTeam", async () => {
+					return await actor.dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.organizationId, organizationId),
+							eq(employee.legalEntityId, selectedLegalEntityId),
+							eq(employee.teamId, targetTeamId),
+							eq(employee.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
+
+			if (!targetTeam) {
+				return yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Team not found in selected legal entity",
+							entityType: "team",
+							entityId: targetTeamId,
+						}),
+					),
+				);
+			}
+		}
+
+		if (data.assignmentType === "employee" && data.employeeId) {
+			const targetEmployeeId = data.employeeId;
+			const targetEmployee = yield* _(
+				actor.dbService.query("createPresetAssignment:validateEmployee", async () => {
+					return await actor.dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.id, targetEmployeeId),
+							eq(employee.organizationId, organizationId),
+							eq(employee.legalEntityId, selectedLegalEntityId),
+							eq(employee.isActive, true),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
+
+			if (!targetEmployee) {
+				return yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Employee not found in selected legal entity",
+							entityType: "employee",
+							entityId: targetEmployeeId,
+						}),
+					),
+				);
+			}
+		}
+
 		// Calculate priority based on assignment type
 		const priority =
 			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
@@ -1191,13 +1292,27 @@ export async function deletePresetAssignment(
 			}),
 		);
 
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				undefined,
+				"deletePresetAssignment:defaultLegalEntity",
+			),
+		);
+
 		// Soft delete
 		yield* _(
 			actor.dbService.query("deleteAssignment", async () => {
 				await actor.dbService.db
 					.update(holidayPresetAssignment)
 					.set({ isActive: false })
-					.where(eq(holidayPresetAssignment.id, assignmentId));
+					.where(
+						and(
+							eq(holidayPresetAssignment.id, assignmentId),
+							eq(holidayPresetAssignment.organizationId, actor.organizationId),
+							eq(holidayPresetAssignment.legalEntityId, selectedLegalEntityId),
+						),
+					);
 			}),
 			Effect.mapError(
 				(error) =>
