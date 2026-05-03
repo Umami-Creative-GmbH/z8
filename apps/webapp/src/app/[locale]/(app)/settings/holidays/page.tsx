@@ -1,12 +1,25 @@
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-entity-selector";
 import { HolidayManagement } from "@/components/settings/holiday-management";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext, getSettingsAccessInputForUser } from "@/lib/auth-helpers";
+import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
 
-export default async function HolidaySettingsPage() {
+type LegalEntitySearchParams = {
+	legalEntityId?: string;
+};
+
+export default async function HolidaySettingsPage({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const [settingsRouteContext, resolvedSearchParams] = await Promise.all([
+		getCurrentSettingsRouteContext(),
+		searchParams ?? Promise.resolve({} as LegalEntitySearchParams),
+	]);
 
 	if (!settingsRouteContext) {
 		redirect("/settings");
@@ -19,10 +32,23 @@ export default async function HolidaySettingsPage() {
 		redirect("/settings");
 	}
 
+	const accessInput = await getSettingsAccessInputForUser(authContext.user.id, organizationId);
+	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
+		organizationId,
+		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+		isOrgAdmin: accessTier === "orgAdmin",
+		allowedLegalEntityIds: accessInput.legalEntityAdminIds ?? [],
+	});
+
 	return (
-		<HolidayManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
-		/>
+		<>
+			<div className="px-4 pt-4">
+				<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
+			</div>
+			<HolidayManagement
+				organizationId={organizationId}
+				canManage={accessTier === "orgAdmin"}
+			/>
+		</>
 	);
 }

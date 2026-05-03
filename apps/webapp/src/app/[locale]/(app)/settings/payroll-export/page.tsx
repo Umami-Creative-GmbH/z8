@@ -8,11 +8,13 @@ import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/s
 import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
+import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-entity-selector";
 import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
@@ -29,13 +31,28 @@ type ExportAvailabilityEntry = {
 	reason: "missingConfiguration" | "missingCredentials" | null;
 };
 
-async function PayrollExportContent() {
+type LegalEntitySearchParams = {
+	legalEntityId?: string;
+};
+
+async function PayrollExportContent({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	await connection(); // Mark as fully dynamic
 
-	const [t, { organizationId }] = await Promise.all([
+	const [t, { organizationId }, resolvedSearchParams] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
+		searchParams ?? Promise.resolve({} as LegalEntitySearchParams),
 	]);
+	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
+		organizationId,
+		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+		isOrgAdmin: true,
+		allowedLegalEntityIds: [],
+	});
 
 	// Fetch configs and history in parallel
 	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, workdayConfigResult, historyResult] = await Promise.all([
@@ -116,6 +133,7 @@ async function PayrollExportContent() {
 					)}
 				</p>
 			</div>
+			<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
 
 			<Tabs defaultValue={hasConfiguredExportTarget ? "export" : "datev"} className="w-full">
 				<TabsList>
@@ -215,10 +233,14 @@ function PayrollExportLoading() {
 	);
 }
 
-export default function PayrollExportPage() {
+export default function PayrollExportPage({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	return (
 		<Suspense fallback={<PayrollExportLoading />}>
-			<PayrollExportContent />
+			<PayrollExportContent searchParams={searchParams} />
 		</Suspense>
 	);
 }

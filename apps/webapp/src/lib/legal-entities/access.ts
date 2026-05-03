@@ -1,3 +1,8 @@
+import { and, eq, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { legalEntity } from "@/db/schema";
+import { getDefaultLegalEntity } from "./default-entity";
+
 export interface LegalEntityAccessScope {
 	isOrgAdmin: boolean;
 	allowedLegalEntityIds: string[];
@@ -35,4 +40,35 @@ export function resolveSelectedLegalEntityId(input: ResolveSelectedLegalEntityId
 	}
 
 	return firstAllowedEntity;
+}
+
+export async function getLegalEntitySelectionContext(input: {
+	organizationId: string;
+	requestedLegalEntityId: string | null;
+	isOrgAdmin: boolean;
+	allowedLegalEntityIds: string[];
+}) {
+	const defaultEntity = await getDefaultLegalEntity(input.organizationId);
+
+	if (!defaultEntity) {
+		throw new Error("No default legal entity exists for this organization.");
+	}
+
+	const selectedLegalEntityId = resolveSelectedLegalEntityId({
+		requestedLegalEntityId: input.requestedLegalEntityId,
+		defaultLegalEntityId: defaultEntity.id,
+		isOrgAdmin: input.isOrgAdmin,
+		allowedLegalEntityIds: input.allowedLegalEntityIds,
+	});
+
+	const whereClause = input.isOrgAdmin
+		? eq(legalEntity.organizationId, input.organizationId)
+		: and(
+				eq(legalEntity.organizationId, input.organizationId),
+				inArray(legalEntity.id, input.allowedLegalEntityIds),
+			);
+
+	const entities = await db.select().from(legalEntity).where(whereClause);
+
+	return { entities, selectedLegalEntityId };
 }

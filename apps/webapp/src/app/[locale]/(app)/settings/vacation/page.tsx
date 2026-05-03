@@ -2,16 +2,29 @@ import { IconCalendar } from "@tabler/icons-react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-entity-selector";
 import { VacationManagement } from "@/components/settings/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation-policies-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsRouteContext, getSettingsAccessInputForUser } from "@/lib/auth-helpers";
+import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
 
-async function VacationSettingsContent() {
+type LegalEntitySearchParams = {
+	legalEntityId?: string;
+};
+
+async function VacationSettingsContent({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const [settingsRouteContext, resolvedSearchParams] = await Promise.all([
+		getCurrentSettingsRouteContext(),
+		searchParams ?? Promise.resolve({} as LegalEntitySearchParams),
+	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");
@@ -25,12 +38,20 @@ async function VacationSettingsContent() {
 
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
 	const allowedAssignmentTypes = canManagePolicies ? (["team", "employee"] as const) : (["employee"] as const);
+	const accessInput = await getSettingsAccessInputForUser(settingsRouteContext.authContext.user.id, organizationId);
+	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
+		organizationId,
+		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+		isOrgAdmin: canManagePolicies,
+		allowedLegalEntityIds: accessInput.legalEntityAdminIds ?? [],
+	});
 
 	return (
 		<VacationManagement
 			organizationId={organizationId}
 			allowedAssignmentTypes={allowedAssignmentTypes}
 		>
+			<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
 			<div className="grid gap-4">
 				<Card>
 					<CardHeader>
@@ -77,10 +98,14 @@ function VacationSettingsLoading() {
 	);
 }
 
-export default function VacationSettingsPage() {
+export default function VacationSettingsPage({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	return (
 		<Suspense fallback={<VacationSettingsLoading />}>
-			<VacationSettingsContent />
+			<VacationSettingsContent searchParams={searchParams} />
 		</Suspense>
 	);
 }

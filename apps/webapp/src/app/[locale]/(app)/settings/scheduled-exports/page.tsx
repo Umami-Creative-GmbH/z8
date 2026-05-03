@@ -1,9 +1,11 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { LegalEntitySelector } from "@/components/settings/legal-entities/legal-entity-selector";
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getLegalEntitySelectionContext } from "@/lib/legal-entities/access";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getScheduledExportsAction,
@@ -16,11 +18,28 @@ export const metadata = {
 	description: "Configure recurring exports for payroll, data, and audit reports",
 };
 
-async function ScheduledExportsContent() {
+type LegalEntitySearchParams = {
+	legalEntityId?: string;
+};
+
+async function ScheduledExportsContent({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	await connection(); // Mark as fully dynamic
 
-	await getTranslate();
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	const [, { organizationId }, resolvedSearchParams] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+		searchParams ?? Promise.resolve({} as LegalEntitySearchParams),
+	]);
+	const { entities, selectedLegalEntityId } = await getLegalEntitySelectionContext({
+		organizationId,
+		requestedLegalEntityId: resolvedSearchParams.legalEntityId ?? null,
+		isOrgAdmin: true,
+		allowedLegalEntityIds: [],
+	});
 
 	// Fetch initial data in parallel
 	const [schedulesResult, filterOptionsResult, payrollConfigsResult] = await Promise.all([
@@ -35,6 +54,7 @@ async function ScheduledExportsContent() {
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
 			<ScheduledExportsTable
 				organizationId={organizationId}
 				initialSchedules={schedules}
@@ -69,10 +89,14 @@ function ScheduledExportsLoading() {
 	);
 }
 
-export default function ScheduledExportsPage() {
+export default function ScheduledExportsPage({
+	searchParams,
+}: {
+	searchParams?: Promise<LegalEntitySearchParams>;
+}) {
 	return (
 		<Suspense fallback={<ScheduledExportsLoading />}>
-			<ScheduledExportsContent />
+			<ScheduledExportsContent searchParams={searchParams} />
 		</Suspense>
 	);
 }

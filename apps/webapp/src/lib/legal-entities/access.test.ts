@@ -1,5 +1,33 @@
-import { describe, expect, it } from "vitest";
-import { canAccessLegalEntity, resolveSelectedLegalEntityId } from "./access";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { canAccessLegalEntity, getLegalEntitySelectionContext, resolveSelectedLegalEntityId } from "./access";
+import { getDefaultLegalEntity } from "./default-entity";
+
+const dbSelect = vi.fn();
+
+vi.mock("@/db", () => ({
+	db: {
+		select: () => dbSelect(),
+	},
+}));
+
+vi.mock("./default-entity", () => ({
+	getDefaultLegalEntity: vi.fn(),
+}));
+
+const mockGetDefaultLegalEntity = vi.mocked(getDefaultLegalEntity);
+
+function mockLegalEntityQuery(entities: Array<{ id: string; name: string; organizationId: string }>) {
+	dbSelect.mockReturnValue({
+		from: vi.fn(() => ({
+			where: vi.fn(async () => entities),
+		})),
+	});
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	mockGetDefaultLegalEntity.mockResolvedValue({ id: "entity-a" } as Awaited<ReturnType<typeof getDefaultLegalEntity>>);
+});
 
 describe("canAccessLegalEntity", () => {
 	it("allows org admins to access every legal entity", () => {
@@ -66,5 +94,37 @@ describe("resolveSelectedLegalEntityId", () => {
 				allowedLegalEntityIds: ["entity-c"],
 			}),
 		).toThrow("You do not have access to this legal entity.");
+	});
+});
+
+describe("getLegalEntitySelectionContext", () => {
+	it("returns all organization entities for org admins", async () => {
+		const entities = [
+			{ id: "entity-a", name: "Germany GmbH", organizationId: "org-1" },
+			{ id: "entity-b", name: "Portugal Lda", organizationId: "org-1" },
+		];
+		mockLegalEntityQuery(entities);
+
+		await expect(
+			getLegalEntitySelectionContext({
+				organizationId: "org-1",
+				requestedLegalEntityId: "entity-b",
+				isOrgAdmin: true,
+				allowedLegalEntityIds: [],
+			}),
+		).resolves.toEqual({ entities, selectedLegalEntityId: "entity-b" });
+	});
+
+	it("rejects unauthorized requested entities before returning entity-admin context", async () => {
+		mockLegalEntityQuery([{ id: "entity-a", name: "Germany GmbH", organizationId: "org-1" }]);
+
+		await expect(
+			getLegalEntitySelectionContext({
+				organizationId: "org-1",
+				requestedLegalEntityId: "entity-b",
+				isOrgAdmin: false,
+				allowedLegalEntityIds: ["entity-a"],
+			}),
+		).rejects.toThrow("You do not have access to this legal entity.");
 	});
 });
