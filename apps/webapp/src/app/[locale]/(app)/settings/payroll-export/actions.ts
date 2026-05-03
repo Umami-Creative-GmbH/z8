@@ -729,6 +729,7 @@ export interface SuccessFactorsConfigResult {
 
 export interface SaveSuccessFactorsConfigInput {
 	organizationId: string;
+	legalEntityId: string;
 	config: SuccessFactorsConfig;
 }
 
@@ -737,6 +738,7 @@ export interface SaveSuccessFactorsConfigInput {
  */
 export async function getSuccessFactorsConfigAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<SuccessFactorsConfigResult | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -759,8 +761,12 @@ export async function getSuccessFactorsConfigAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, SF_FORMAT_ID)),
+			Effect.promise(() => getPayrollExportConfig(organizationId, SF_FORMAT_ID, selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -821,6 +827,15 @@ export async function saveSuccessFactorsConfigAction(
 			);
 		}
 
+		yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
 		// Ensure SAP SuccessFactors format exists (for both API and CSV modes)
 		yield* _(
 			Effect.promise(async () => {
@@ -870,6 +885,7 @@ export async function saveSuccessFactorsConfigAction(
 				const existing = await db.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 						eq(payrollExportConfig.formatId, SF_FORMAT_ID),
 					),
 				});
@@ -890,6 +906,7 @@ export async function saveSuccessFactorsConfigAction(
 						.insert(payrollExportConfig)
 						.values({
 							organizationId: input.organizationId,
+							legalEntityId: input.legalEntityId,
 							formatId: SF_FORMAT_ID,
 							config: input.config as unknown as Record<string, unknown>,
 							isActive: true,
@@ -1105,6 +1122,7 @@ export interface WorkdayConfigResult {
 
 export interface SaveWorkdayConfigInput {
 	organizationId: string;
+	legalEntityId: string;
 	config: WorkdayConfig;
 }
 
@@ -1120,6 +1138,7 @@ export interface SaveWorkdayCredentialsInput {
 
 export async function getWorkdayConfigAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<WorkdayConfigResult | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -1142,8 +1161,12 @@ export async function getWorkdayConfigAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, WORKDAY_FORMAT_ID)),
+			Effect.promise(() => getPayrollExportConfig(organizationId, WORKDAY_FORMAT_ID, selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -1205,6 +1228,15 @@ export async function saveWorkdayConfigAction(
 		}
 
 		yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
+		yield* _(
 			Effect.promise(async () => {
 				const format = await db.query.payrollExportFormat.findFirst({
 					where: eq(payrollExportFormat.id, WORKDAY_FORMAT_ID),
@@ -1231,6 +1263,7 @@ export async function saveWorkdayConfigAction(
 				const existing = await db.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 						eq(payrollExportConfig.formatId, WORKDAY_FORMAT_ID),
 					),
 				});
@@ -1252,6 +1285,7 @@ export async function saveWorkdayConfigAction(
 					.insert(payrollExportConfig)
 					.values({
 						organizationId: input.organizationId,
+						legalEntityId: input.legalEntityId,
 						formatId: WORKDAY_FORMAT_ID,
 						config: input.config as unknown as Record<string, unknown>,
 						isActive: true,
@@ -1453,6 +1487,7 @@ export async function testWorkdayConnectionAction(input: {
  */
 export async function getMappingsAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<WageTypeMapping[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -1476,8 +1511,12 @@ export async function getMappingsAction(
 		}
 
 		// Get config first
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, "datev_lohn")),
+			Effect.promise(() => getPayrollExportConfig(organizationId, "datev_lohn", selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -2097,6 +2136,7 @@ export interface PersonioConfigResult {
 
 export interface SavePersonioConfigInput {
 	organizationId: string;
+	legalEntityId: string;
 	config: PersonioConfig;
 }
 
@@ -2115,6 +2155,7 @@ export interface SavePersonioCredentialsInput {
  */
 export async function getPersonioConfigAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<PersonioConfigResult | null>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -2137,8 +2178,12 @@ export async function getPersonioConfigAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID)),
+			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID, selectedLegalEntity.id)),
 		);
 
 		if (!configResult) {
@@ -2194,6 +2239,15 @@ export async function savePersonioConfigAction(
 			);
 		}
 
+		yield* _(
+			Effect.promise(() =>
+				assertOrganizationLegalEntity({
+					organizationId: input.organizationId,
+					legalEntityId: input.legalEntityId,
+				}),
+			),
+		);
+
 		// Ensure Personio format exists
 		yield* _(
 			Effect.promise(async () => {
@@ -2224,6 +2278,7 @@ export async function savePersonioConfigAction(
 				const existing = await db.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, input.organizationId),
+						eq(payrollExportConfig.legalEntityId, input.legalEntityId),
 						eq(payrollExportConfig.formatId, PERSONIO_FORMAT_ID),
 					),
 				});
@@ -2244,6 +2299,7 @@ export async function savePersonioConfigAction(
 						.insert(payrollExportConfig)
 						.values({
 							organizationId: input.organizationId,
+							legalEntityId: input.legalEntityId,
 							formatId: PERSONIO_FORMAT_ID,
 							config: input.config as unknown as Record<string, unknown>,
 							isActive: true,
@@ -2372,6 +2428,7 @@ export async function deletePersonioCredentialsAction(
  */
 export async function testPersonioConnectionAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<{ success: boolean; error?: string }>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -2400,9 +2457,13 @@ export async function testPersonioConnectionAction(
 			return { success: false, error: "Personio exporter not available" };
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		// Get config
 		const configResult = yield* _(
-			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID)),
+			Effect.promise(() => getPayrollExportConfig(organizationId, PERSONIO_FORMAT_ID, selectedLegalEntity.id)),
 		);
 
 		const config = configResult?.config.config || {};
