@@ -43,6 +43,7 @@ import { queryKeys } from "@/lib/query";
 interface ChangePolicyTableProps {
 	canManage: boolean;
 	organizationId: string;
+	selectedLegalEntityId?: string;
 	onCreateClick: () => void;
 	onEditClick: (policy: ChangePolicyRecord) => void;
 }
@@ -50,6 +51,7 @@ interface ChangePolicyTableProps {
 export function ChangePolicyTable({
 	canManage,
 	organizationId,
+	selectedLegalEntityId,
 	onCreateClick,
 	onEditClick,
 }: ChangePolicyTableProps) {
@@ -67,9 +69,11 @@ export function ChangePolicyTable({
 		isError,
 		refetch,
 	} = useQuery({
-		queryKey: queryKeys.changePolicies.list(organizationId),
+		queryKey: queryKeys.changePolicies.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getChangePolicies(organizationId);
+			const result = await getChangePolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -85,10 +89,14 @@ export function ChangePolicyTable({
 			if (result.success) {
 				toast.success(t("settings.changePolicies.deleted", "Policy deleted"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.changePolicies.list(organizationId),
+					queryKey: queryKeys.changePolicies.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.changePolicies.assignments(organizationId),
+					queryKey: queryKeys.changePolicies.assignments(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
@@ -216,28 +224,28 @@ export function ChangePolicyTable({
 				id: "actions",
 				cell: ({ row }) =>
 					canManage ? (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<IconDots className="h-4 w-4" />
-								<span className="sr-only">{t("common.actions", "Actions")}</span>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
-								<IconPencil className="h-4 w-4 mr-2" />
-								{t("common.edit", "Edit")}
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								onClick={() => handleDeleteClick(row.original)}
-								className="text-destructive focus:text-destructive"
-							>
-								<IconTrash className="h-4 w-4 mr-2" />
-								{t("common.delete", "Delete")}
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="icon" className="h-8 w-8">
+									<IconDots className="h-4 w-4" />
+									<span className="sr-only">{t("common.actions", "Actions")}</span>
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => onEditClick(row.original)}>
+									<IconPencil className="h-4 w-4 mr-2" />
+									{t("common.edit", "Edit")}
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={() => handleDeleteClick(row.original)}
+									className="text-destructive focus:text-destructive"
+								>
+									<IconTrash className="h-4 w-4 mr-2" />
+									{t("common.delete", "Delete")}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					) : null,
 			},
 		],

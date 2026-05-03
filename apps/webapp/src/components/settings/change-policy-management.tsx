@@ -17,7 +17,11 @@ interface ChangePolicyManagementProps {
 	selectedLegalEntityId?: string;
 }
 
-export function ChangePolicyManagement({ organizationId, canManage, selectedLegalEntityId }: ChangePolicyManagementProps) {
+export function ChangePolicyManagement({
+	organizationId,
+	canManage,
+	selectedLegalEntityId,
+}: ChangePolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -44,7 +48,9 @@ export function ChangePolicyManagement({ organizationId, canManage, selectedLega
 
 	const handlePolicySuccess = () => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.changePolicies.list(organizationId),
+			queryKey: queryKeys.changePolicies.list(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
 		setPolicyDialogOpen(false);
 		setEditingPolicy(null);
@@ -58,7 +64,9 @@ export function ChangePolicyManagement({ organizationId, canManage, selectedLega
 
 	const handleAssignmentSuccess = () => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.changePolicies.assignments(organizationId),
+			queryKey: queryKeys.changePolicies.assignments(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
 	};
 
@@ -90,6 +98,7 @@ export function ChangePolicyManagement({ organizationId, canManage, selectedLega
 					<ChangePolicyTable
 						canManage={canManage}
 						organizationId={organizationId}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onCreateClick={handleCreatePolicy}
 						onEditClick={handleEditPolicy}
 					/>
@@ -99,6 +108,7 @@ export function ChangePolicyManagement({ organizationId, canManage, selectedLega
 					<ChangePolicyAssignmentManager
 						canManage={canManage}
 						organizationId={organizationId}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>
@@ -110,6 +120,7 @@ export function ChangePolicyManagement({ organizationId, canManage, selectedLega
 						open={policyDialogOpen}
 						onOpenChange={setPolicyDialogOpen}
 						organizationId={organizationId}
+						selectedLegalEntityId={selectedLegalEntityId}
 						editingPolicy={editingPolicy}
 						onSuccess={handlePolicySuccess}
 					/>

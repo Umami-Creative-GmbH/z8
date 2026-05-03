@@ -64,7 +64,11 @@ interface Preset {
 
 type AssignmentType = "organization" | "team" | "employee";
 
-export function HolidayManagement({ organizationId, canManage, selectedLegalEntityId }: HolidayManagementProps) {
+export function HolidayManagement({
+	organizationId,
+	canManage,
+	selectedLegalEntityId,
+}: HolidayManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -144,9 +148,11 @@ export function HolidayManagement({ organizationId, canManage, selectedLegalEnti
 
 	const handleAssignmentSuccess = useCallback(() => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
+			queryKey: queryKeys.holidayPresetAssignments.list(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
-	}, [queryClient, organizationId]);
+	}, [queryClient, organizationId, selectedLegalEntityId]);
 
 	// Holiday assignment handlers - memoized
 	const handleHolidayAssignClick = useCallback((type: AssignmentType) => {
@@ -206,6 +212,7 @@ export function HolidayManagement({ organizationId, canManage, selectedLegalEnti
 					<AssignmentManager
 						organizationId={organizationId}
 						canManage={canManage}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onAssignClick={handleAssignClick}
 						onHolidayAssignClick={handleHolidayAssignClick}
 					/>
@@ -269,6 +276,7 @@ export function HolidayManagement({ organizationId, canManage, selectedLegalEnti
 						onOpenChange={setAssignmentDialogOpen}
 						organizationId={organizationId}
 						assignmentType={assignmentType}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onSuccess={handleAssignmentSuccess}
 					/>
 

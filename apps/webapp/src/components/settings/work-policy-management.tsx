@@ -20,13 +20,16 @@ interface WorkPolicyManagementProps {
 	selectedLegalEntityId?: string;
 }
 
-export function WorkPolicyManagement({ organizationId, accessTier, selectedLegalEntityId }: WorkPolicyManagementProps) {
+export function WorkPolicyManagement({
+	organizationId,
+	accessTier,
+	selectedLegalEntityId,
+}: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const canManagePolicies = accessTier === "orgAdmin";
-	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> = canManagePolicies
-		? (["organization", "team", "employee"] as const)
-		: (["employee"] as const);
+	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> =
+		canManagePolicies ? (["organization", "team", "employee"] as const) : (["employee"] as const);
 
 	// Policy dialog state
 	const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
@@ -59,7 +62,9 @@ export function WorkPolicyManagement({ organizationId, accessTier, selectedLegal
 
 	const handlePolicySuccess = () => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.workPolicies.list(organizationId),
+			queryKey: queryKeys.workPolicies.list(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
 		setPolicyDialogOpen(false);
 		setEditingPolicy(null);
@@ -77,13 +82,17 @@ export function WorkPolicyManagement({ organizationId, accessTier, selectedLegal
 
 	const handleAssignmentSuccess = () => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.workPolicies.assignments(organizationId),
+			queryKey: queryKeys.workPolicies.assignments(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
 	};
 
 	const handlePresetImportSuccess = () => {
 		queryClient.invalidateQueries({
-			queryKey: queryKeys.workPolicies.list(organizationId),
+			queryKey: queryKeys.workPolicies.list(organizationId, {
+				legalEntityId: selectedLegalEntityId,
+			}),
 		});
 	};
 
@@ -125,6 +134,7 @@ export function WorkPolicyManagement({ organizationId, accessTier, selectedLegal
 					<WorkPolicyTable
 						canManagePolicies={canManagePolicies}
 						organizationId={organizationId}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onCreateClick={handleCreatePolicy}
 						onEditClick={handleEditPolicy}
 					/>
@@ -134,6 +144,7 @@ export function WorkPolicyManagement({ organizationId, accessTier, selectedLegal
 					<WorkPolicyAssignmentManager
 						allowedAssignmentTypes={allowedAssignmentTypes}
 						organizationId={organizationId}
+						selectedLegalEntityId={selectedLegalEntityId}
 						onAssignClick={handleAssignClick}
 					/>
 				</TabsContent>
@@ -159,6 +170,7 @@ export function WorkPolicyManagement({ organizationId, accessTier, selectedLegal
 					open={policyDialogOpen}
 					onOpenChange={setPolicyDialogOpen}
 					organizationId={organizationId}
+					selectedLegalEntityId={selectedLegalEntityId}
 					editingPolicy={editingPolicy}
 					onSuccess={handlePolicySuccess}
 				/>

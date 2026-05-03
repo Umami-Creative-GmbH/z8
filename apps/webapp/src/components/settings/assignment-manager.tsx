@@ -42,6 +42,7 @@ import { queryKeys } from "@/lib/query";
 interface AssignmentManagerProps {
 	organizationId: string;
 	canManage: boolean;
+	selectedLegalEntityId?: string;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 	onHolidayAssignClick: (type: "organization" | "team" | "employee") => void;
 }
@@ -105,6 +106,7 @@ interface HolidayAssignmentData {
 export function AssignmentManager({
 	organizationId,
 	canManage,
+	selectedLegalEntityId,
 	onAssignClick,
 	onHolidayAssignClick,
 }: AssignmentManagerProps) {
@@ -122,9 +124,11 @@ export function AssignmentManager({
 		isLoading: presetLoading,
 		error: presetError,
 	} = useQuery({
-		queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
+		queryKey: queryKeys.holidayPresetAssignments.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getPresetAssignments(organizationId);
+			const result = await getPresetAssignments(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -155,7 +159,9 @@ export function AssignmentManager({
 			if (result.success) {
 				toast.success(t("settings.holidays.assignments.deleted", "Assignment removed"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
+					queryKey: queryKeys.holidayPresetAssignments.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				setDeleteDialogOpen(false);
 				setSelectedPresetAssignment(null);
@@ -342,11 +348,11 @@ export function AssignmentManager({
 									{canManage ? (
 										<Button
 											variant="ghost"
-										size="icon"
-										className="h-8 w-8 text-muted-foreground hover:text-destructive"
-										onClick={() => handleDeletePresetClick(orgPresetAssignment)}
-									>
-										<IconTrash className="h-4 w-4" />
+											size="icon"
+											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											onClick={() => handleDeletePresetClick(orgPresetAssignment)}
+										>
+											<IconTrash className="h-4 w-4" />
 										</Button>
 									) : null}
 								</div>
@@ -373,11 +379,11 @@ export function AssignmentManager({
 								{canManage ? (
 									<Button
 										onClick={() => onHolidayAssignClick("organization")}
-									size="sm"
-									variant="outline"
-								>
-									<IconPlus className="mr-2 h-4 w-4" />
-									{t("settings.holidays.assignments.addHoliday", "Add Holiday")}
+										size="sm"
+										variant="outline"
+									>
+										<IconPlus className="mr-2 h-4 w-4" />
+										{t("settings.holidays.assignments.addHoliday", "Add Holiday")}
 									</Button>
 								) : null}
 							</div>
@@ -402,17 +408,17 @@ export function AssignmentManager({
 													</span>
 												</div>
 											</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-												size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteHolidayClick(assignment)}
-											>
-												<IconTrash className="h-4 w-4" />
-										</Button>
-									) : null}
-									</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteHolidayClick(assignment)}
+												>
+													<IconTrash className="h-4 w-4" />
+												</Button>
+											) : null}
+										</div>
 									))}
 								</div>
 							) : (
@@ -471,12 +477,14 @@ export function AssignmentManager({
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="presets" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.holidays.assignments.assignTeam", "Assign Preset")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.holidays.assignments.assignTeam", "Assign Preset")}
+										</Button>
+									</div>
+								) : null}
 								{teamPresetAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{teamPresetAssignments.map((assignment) => (
@@ -500,17 +508,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeletePresetClick(assignment)}
-												>
-													<IconTrash className="h-4 w-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeletePresetClick(assignment)}
+													>
+														<IconTrash className="h-4 w-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -520,12 +528,18 @@ export function AssignmentManager({
 								)}
 							</TabsContent>
 							<TabsContent value="holidays" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button onClick={() => onHolidayAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button
+											onClick={() => onHolidayAssignClick("team")}
+											size="sm"
+											variant="outline"
+										>
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
+										</Button>
+									</div>
+								) : null}
 								{teamHolidayAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{teamHolidayAssignments.map((assignment) => (
@@ -551,17 +565,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeleteHolidayClick(assignment)}
-												>
-													<IconTrash className="h-4 w-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteHolidayClick(assignment)}
+													>
+														<IconTrash className="h-4 w-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -622,12 +636,14 @@ export function AssignmentManager({
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="presets" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.holidays.assignments.assignEmployee", "Assign Preset")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.holidays.assignments.assignEmployee", "Assign Preset")}
+										</Button>
+									</div>
+								) : null}
 								{employeePresetAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{employeePresetAssignments.map((assignment) => (
@@ -653,17 +669,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeletePresetClick(assignment)}
-												>
-													<IconTrash className="h-4 w-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeletePresetClick(assignment)}
+													>
+														<IconTrash className="h-4 w-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (
@@ -676,16 +692,18 @@ export function AssignmentManager({
 								)}
 							</TabsContent>
 							<TabsContent value="holidays" className="mt-4">
-								{canManage ? <div className="flex justify-end mb-2">
-									<Button
-										onClick={() => onHolidayAssignClick("employee")}
-										size="sm"
-										variant="outline"
-									>
-										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end mb-2">
+										<Button
+											onClick={() => onHolidayAssignClick("employee")}
+											size="sm"
+											variant="outline"
+										>
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
+										</Button>
+									</div>
+								) : null}
 								{employeeHolidayAssignments.length > 0 ? (
 									<div className="space-y-2">
 										{employeeHolidayAssignments.map((assignment) => (
@@ -713,17 +731,17 @@ export function AssignmentManager({
 														</span>
 													</div>
 												</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeleteHolidayClick(assignment)}
-												>
-													<IconTrash className="h-4 w-4" />
-											</Button>
-										) : null}
-									</div>
+												{canManage ? (
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 text-muted-foreground hover:text-destructive"
+														onClick={() => handleDeleteHolidayClick(assignment)}
+													>
+														<IconTrash className="h-4 w-4" />
+													</Button>
+												) : null}
+											</div>
 										))}
 									</div>
 								) : (

@@ -133,7 +133,9 @@ export function WorkPolicyAssignmentDialog({
 			if (result.success) {
 				toast.success(t("settings.workPolicies.assignmentCreated", "Policy assigned"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.workPolicies.assignments(organizationId),
+					queryKey: queryKeys.workPolicies.assignments(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				onSuccess();
 				onOpenChange(false);

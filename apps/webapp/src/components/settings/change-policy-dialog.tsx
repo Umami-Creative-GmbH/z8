@@ -37,6 +37,7 @@ interface ChangePolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	selectedLegalEntityId?: string;
 	editingPolicy: ChangePolicyRecord | null;
 	onSuccess: () => void;
 }
@@ -54,6 +55,7 @@ export function ChangePolicyDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	selectedLegalEntityId,
 	editingPolicy,
 	onSuccess,
 }: ChangePolicyDialogProps) {
@@ -81,7 +83,8 @@ export function ChangePolicyDialog({
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (data: CreateChangePolicyInput) => createChangePolicy(organizationId, data),
+		mutationFn: (data: CreateChangePolicyInput) =>
+			createChangePolicy(organizationId, data, selectedLegalEntityId),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.changePolicies.created", "Policy created successfully"));

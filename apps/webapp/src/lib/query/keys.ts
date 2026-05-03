@@ -138,14 +138,16 @@ export const queryKeys = {
 	// Holiday presets
 	holidayPresets: {
 		all: ["holiday-presets"] as const,
-		list: (orgId: string) => ["holiday-presets", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holiday-presets", orgId, params] as const,
 		detail: (presetId: string) => ["holiday-presets", "detail", presetId] as const,
 	},
 
 	// Holiday preset assignments
 	holidayPresetAssignments: {
 		all: ["holiday-preset-assignments"] as const,
-		list: (orgId: string) => ["holiday-preset-assignments", orgId] as const,
+		list: <T extends object>(orgId: string, params?: T) =>
+			["holiday-preset-assignments", orgId, params] as const,
 	},
 
 	// Holidays (custom org-wide)
@@ -343,7 +345,8 @@ export const queryKeys = {
 		list: <T extends object>(orgId: string, params?: T) =>
 			["change-policies", "list", orgId, params] as const,
 		detail: (policyId: string) => ["change-policies", "detail", policyId] as const,
-		assignments: (orgId: string) => ["change-policies", "assignments", orgId] as const,
+		assignments: <T extends object>(orgId: string, params?: T) =>
+			["change-policies", "assignments", orgId, params] as const,
 		effective: (employeeId: string) => ["change-policies", "effective", employeeId] as const,
 	},
 
@@ -360,7 +363,8 @@ export const queryKeys = {
 		list: <T extends object>(orgId: string, params?: T) =>
 			["work-policies", "list", orgId, params] as const,
 		detail: (policyId: string) => ["work-policies", "detail", policyId] as const,
-		assignments: (orgId: string) => ["work-policies", "assignments", orgId] as const,
+		assignments: <T extends object>(orgId: string, params?: T) =>
+			["work-policies", "assignments", orgId, params] as const,
 		presets: () => ["work-policies", "presets"] as const,
 		violations: {
 			all: ["work-policies", "violations"] as const,

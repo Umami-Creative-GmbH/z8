@@ -38,6 +38,7 @@ import { queryKeys } from "@/lib/query";
 interface ChangePolicyAssignmentManagerProps {
 	canManage: boolean;
 	organizationId: string;
+	selectedLegalEntityId?: string;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
 }
 
@@ -86,6 +87,7 @@ const getEmployeeName = (
 export function ChangePolicyAssignmentManager({
 	canManage,
 	organizationId,
+	selectedLegalEntityId,
 	onAssignClick,
 }: ChangePolicyAssignmentManagerProps) {
 	const { t } = useTranslate();
@@ -100,9 +102,11 @@ export function ChangePolicyAssignmentManager({
 		isLoading,
 		error,
 	} = useQuery({
-		queryKey: queryKeys.changePolicies.assignments(organizationId),
+		queryKey: queryKeys.changePolicies.assignments(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getChangePolicyAssignments(organizationId);
+			const result = await getChangePolicyAssignments(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
@@ -118,7 +122,9 @@ export function ChangePolicyAssignmentManager({
 			if (result.success) {
 				toast.success(t("settings.changePolicies.assignmentDeleted", "Assignment removed"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.changePolicies.assignments(organizationId),
+					queryKey: queryKeys.changePolicies.assignments(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				setDeleteDialogOpen(false);
 				setSelectedAssignment(null);
@@ -257,17 +263,23 @@ export function ChangePolicyAssignmentManager({
 										<p className="text-sm text-muted-foreground">
 											{t(
 												"settings.changePolicies.noOrgDefaultDescription",
-												"Without an organization default, employees can edit their time entries without restrictions.",
+												"Without an entity-wide default, employees can edit their time entries without restrictions.",
 											)}
 										</p>
 									</div>
 								</div>
-								{canManage ? <div className="flex justify-end">
-									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.changePolicies.setOrgDefault", "Set Entity-wide Default")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end">
+										<Button
+											onClick={() => onAssignClick("organization")}
+											size="sm"
+											variant="outline"
+										>
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.changePolicies.setOrgDefault", "Set Entity-wide Default")}
+										</Button>
+									</div>
+								) : null}
 							</div>
 						)}
 					</CardContent>
@@ -290,19 +302,21 @@ export function ChangePolicyAssignmentManager({
 								<CardDescription>
 									{t(
 										"settings.changePolicies.teamOverridesDescription",
-										"Override the organization default for specific teams (e.g., different departments or work schedules).",
+										"Override the entity-wide default for specific teams (e.g., different departments or work schedules).",
 									)}
 								</CardDescription>
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent>
-						{canManage ? <div className="flex justify-end mb-4">
-							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.changePolicies.assignToTeam", "Assign to Team")}
-							</Button>
-						</div> : null}
+						{canManage ? (
+							<div className="flex justify-end mb-4">
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.changePolicies.assignToTeam", "Assign to Team")}
+								</Button>
+							</div>
+						) : null}
 						{teamAssignments.length > 0 ? (
 							<div className="space-y-3">
 								{teamAssignments.map((assignment) => (
@@ -315,18 +329,18 @@ export function ChangePolicyAssignmentManager({
 												<IconUsers className="h-4 w-4 text-muted-foreground" />
 												<span className="font-medium">{assignment.team?.name}</span>
 											</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="h-4 w-4" />
-											<span className="sr-only">{t("common.remove", "Remove")}</span>
-										</Button>
-									) : null}
-								</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteClick(assignment)}
+												>
+													<IconTrash className="h-4 w-4" />
+													<span className="sr-only">{t("common.remove", "Remove")}</span>
+												</Button>
+											) : null}
+										</div>
 										<div className="mt-2 ml-7">
 											<div className="flex items-center gap-2 text-sm">
 												<Badge variant="outline" className="text-xs">
@@ -349,7 +363,7 @@ export function ChangePolicyAssignmentManager({
 							<p className="text-sm text-muted-foreground text-center py-4">
 								{t(
 									"settings.changePolicies.noTeamOverrides",
-									"No team-specific policies. All teams use the organization default.",
+									"No team-specific policies. All teams use the entity-wide default.",
 								)}
 							</p>
 						)}
@@ -373,19 +387,21 @@ export function ChangePolicyAssignmentManager({
 								<CardDescription>
 									{t(
 										"settings.changePolicies.employeeOverridesDescription",
-										"Override team or organization defaults for specific employees (e.g., special arrangements).",
+										"Override team or entity-wide defaults for specific employees (e.g., special arrangements).",
 									)}
 								</CardDescription>
 							</div>
 						</div>
 					</CardHeader>
 					<CardContent>
-						{canManage ? <div className="flex justify-end mb-4">
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.changePolicies.assignToEmployee", "Assign to Employee")}
-							</Button>
-						</div> : null}
+						{canManage ? (
+							<div className="flex justify-end mb-4">
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.changePolicies.assignToEmployee", "Assign to Employee")}
+								</Button>
+							</div>
+						) : null}
 						{employeeAssignments.length > 0 ? (
 							<div className="space-y-3">
 								{employeeAssignments.map((assignment) => (
@@ -398,18 +414,18 @@ export function ChangePolicyAssignmentManager({
 												<IconUser className="h-4 w-4 text-muted-foreground" />
 												<span className="font-medium">{getEmployeeName(assignment.employee)}</span>
 											</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="h-4 w-4" />
-											<span className="sr-only">{t("common.remove", "Remove")}</span>
-										</Button>
-									) : null}
-								</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteClick(assignment)}
+												>
+													<IconTrash className="h-4 w-4" />
+													<span className="sr-only">{t("common.remove", "Remove")}</span>
+												</Button>
+											) : null}
+										</div>
 										<div className="mt-2 ml-7">
 											<div className="flex items-center gap-2 text-sm">
 												<Badge variant="outline" className="text-xs">
@@ -432,7 +448,7 @@ export function ChangePolicyAssignmentManager({
 							<p className="text-sm text-muted-foreground text-center py-4">
 								{t(
 									"settings.changePolicies.noEmployeeOverrides",
-									"No employee-specific policies. Employees use their team or organization default.",
+									"No employee-specific policies. Employees use their team or entity-wide default.",
 								)}
 							</p>
 						)}
@@ -451,18 +467,18 @@ export function ChangePolicyAssignmentManager({
 							{selectedAssignment?.assignmentType === "organization" &&
 								t(
 									"settings.changePolicies.removeOrgDescription",
-									"This will remove the organization default policy. Employees will have no restrictions unless they have a team or individual override.",
+									"This will remove the entity-wide default policy. Employees will have no restrictions unless they have a team or individual override.",
 								)}
 							{selectedAssignment?.assignmentType === "team" &&
 								t(
 									"settings.changePolicies.removeTeamDescription",
-									'This will remove the policy from team "{team}". They will use the organization default.',
+									'This will remove the policy from team "{team}". They will use the entity-wide default.',
 									{ team: selectedAssignment.team?.name },
 								)}
 							{selectedAssignment?.assignmentType === "employee" &&
 								t(
 									"settings.changePolicies.removeEmployeeDescription",
-									'This will remove the override for "{name}". They will use their team or organization default.',
+									'This will remove the override for "{name}". They will use their team or entity-wide default.',
 									{ name: getEmployeeName(selectedAssignment.employee) },
 								)}
 						</AlertDialogDescription>

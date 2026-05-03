@@ -38,6 +38,7 @@ interface AssignmentDialogProps {
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
 	assignmentType: "organization" | "team" | "employee";
+	selectedLegalEntityId?: string;
 	onSuccess: () => void;
 }
 
@@ -59,6 +60,7 @@ export function AssignmentDialog({
 	onOpenChange,
 	organizationId,
 	assignmentType,
+	selectedLegalEntityId,
 	onSuccess,
 }: AssignmentDialogProps) {
 	const { t } = useTranslate();
@@ -104,9 +106,11 @@ export function AssignmentDialog({
 
 	// Fetch presets
 	const { data: presets, isLoading: presetsLoading } = useQuery({
-		queryKey: queryKeys.holidayPresets.list(organizationId),
+		queryKey: queryKeys.holidayPresets.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getHolidayPresets(organizationId);
+			const result = await getHolidayPresets(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch presets");
 			}
@@ -117,9 +121,9 @@ export function AssignmentDialog({
 
 	// Fetch teams (only for team assignment type)
 	const { data: teams, isLoading: teamsLoading } = useQuery({
-		queryKey: queryKeys.teams.list(organizationId),
+		queryKey: queryKeys.teams.list(organizationId, { legalEntityId: selectedLegalEntityId }),
 		queryFn: async () => {
-			const result = await getTeamsForAssignment(organizationId);
+			const result = await getTeamsForAssignment(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch teams");
 			}
@@ -131,18 +135,24 @@ export function AssignmentDialog({
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: (values: { presetId: string; teamId: string; employeeId: string }) =>
-			createPresetAssignment(organizationId, {
-				presetId: values.presetId,
-				assignmentType,
-				teamId: assignmentType === "team" ? values.teamId : undefined,
-				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
-				isActive: true,
-			}),
+			createPresetAssignment(
+				organizationId,
+				{
+					presetId: values.presetId,
+					assignmentType,
+					teamId: assignmentType === "team" ? values.teamId : undefined,
+					employeeId: assignmentType === "employee" ? values.employeeId : undefined,
+					isActive: true,
+				},
+				selectedLegalEntityId,
+			),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.holidays.assignments.created", "Assignment created"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
+					queryKey: queryKeys.holidayPresetAssignments.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				onSuccess();
 				onOpenChange(false);
@@ -174,17 +184,17 @@ export function AssignmentDialog({
 			case "organization":
 				return t(
 					"settings.holidays.assignments.orgDescription",
-					"Select a holiday preset to be the default for all employees in the organization",
+					"Select a holiday preset to be the default for all employees in this legal entity",
 				);
 			case "team":
 				return t(
 					"settings.holidays.assignments.teamDialogDescription",
-					"Select a holiday preset and team to override the organization default",
+					"Select a holiday preset and team to override the entity-wide default",
 				);
 			case "employee":
 				return t(
 					"settings.holidays.assignments.employeeDialogDescription",
-					"Select a holiday preset and employee to override team or organization defaults",
+					"Select a holiday preset and employee to override team or entity-wide defaults",
 				);
 		}
 	};
@@ -307,6 +317,7 @@ export function AssignmentDialog({
 											<EmployeeSingleSelect
 												value={field.state.value || null}
 												onChange={(val) => field.handleChange(val || "")}
+												legalEntityId={selectedLegalEntityId}
 												label={t("settings.holidays.assignments.employee", "Employee")}
 												placeholder={t(
 													"settings.holidays.assignments.selectEmployee",
@@ -317,7 +328,7 @@ export function AssignmentDialog({
 											<p className="text-sm text-muted-foreground">
 												{t(
 													"settings.holidays.assignments.employeeDescription",
-													"This employee will use this preset instead of team/organization defaults",
+													"This employee will use this preset instead of team/entity-wide defaults",
 												)}
 											</p>
 										</div>

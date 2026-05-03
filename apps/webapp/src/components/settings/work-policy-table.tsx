@@ -51,6 +51,7 @@ import { queryKeys } from "@/lib/query";
 interface WorkPolicyTableProps {
 	organizationId: string;
 	canManagePolicies?: boolean;
+	selectedLegalEntityId?: string;
 	onCreateClick: () => void;
 	onEditClick: (policy: WorkPolicyWithDetails) => void;
 }
@@ -58,6 +59,7 @@ interface WorkPolicyTableProps {
 export function WorkPolicyTable({
 	organizationId,
 	canManagePolicies = true,
+	selectedLegalEntityId,
 	onCreateClick,
 	onEditClick,
 }: WorkPolicyTableProps) {
@@ -75,9 +77,11 @@ export function WorkPolicyTable({
 		isError,
 		refetch,
 	} = useQuery({
-		queryKey: queryKeys.workPolicies.list(organizationId),
+		queryKey: queryKeys.workPolicies.list(organizationId, {
+			legalEntityId: selectedLegalEntityId,
+		}),
 		queryFn: async () => {
-			const result = await getWorkPolicies(organizationId);
+			const result = await getWorkPolicies(organizationId, selectedLegalEntityId);
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch policies");
 			}
@@ -93,7 +97,9 @@ export function WorkPolicyTable({
 			if (result.success) {
 				toast.success(t("settings.workPolicies.deleted", "Policy deleted"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.workPolicies.list(organizationId),
+					queryKey: queryKeys.workPolicies.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 				setDeleteDialogOpen(false);
 				setPolicyToDelete(null);
@@ -113,7 +119,9 @@ export function WorkPolicyTable({
 			if (result.success) {
 				toast.success(t("settings.workPolicies.duplicated", "Policy duplicated"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.workPolicies.list(organizationId),
+					queryKey: queryKeys.workPolicies.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 			} else {
 				toast.error(
@@ -133,7 +141,9 @@ export function WorkPolicyTable({
 			if (result.success) {
 				toast.success(t("settings.workPolicies.defaultSet", "Default policy set"));
 				queryClient.invalidateQueries({
-					queryKey: queryKeys.workPolicies.list(organizationId),
+					queryKey: queryKeys.workPolicies.list(organizationId, {
+						legalEntityId: selectedLegalEntityId,
+					}),
 				});
 			} else {
 				toast.error(
@@ -259,13 +269,19 @@ export function WorkPolicyTable({
 									<TooltipContent>
 										{row.original.presence
 											? row.original.presence.presenceMode === "minimum_count"
-												? t("settings.workPolicies.presenceSummaryDaysPerWeek", "{count} days/{period} on-site", {
-													count: row.original.presence.requiredOnsiteDays,
-													period: row.original.presence.evaluationPeriod,
-												})
+												? t(
+														"settings.workPolicies.presenceSummaryDaysPerWeek",
+														"{count} days/{period} on-site",
+														{
+															count: row.original.presence.requiredOnsiteDays,
+															period: row.original.presence.evaluationPeriod,
+														},
+													)
 												: t("settings.workPolicies.presenceSummaryFixedDays", "Fixed days on-site")
-											: t("settings.workPolicies.presenceEnabledTooltip", "On-site presence required")
-										}
+											: t(
+													"settings.workPolicies.presenceEnabledTooltip",
+													"On-site presence required",
+												)}
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
@@ -315,51 +331,51 @@ export function WorkPolicyTable({
 			},
 			...(canManagePolicies
 				? [
-					{
-						id: "actions",
-						cell: ({ row }: { row: { original: WorkPolicyWithDetails } }) => (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<IconDots className="h-4 w-4" />
-								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
-								<IconPencil className="mr-2 h-4 w-4" />
-								{t("common.edit", "Edit")}
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() => duplicateMutation.mutate(row.original.id)}
-								disabled={duplicateMutation.isPending}
-							>
-								<IconCopy className="mr-2 h-4 w-4" />
-								{t("common.duplicate", "Duplicate")}
-							</DropdownMenuItem>
-							{!row.original.isDefault && (
-								<DropdownMenuItem
-									onClick={() => setDefaultMutation.mutate(row.original.id)}
-									disabled={setDefaultMutation.isPending}
-								>
-									<IconStar className="mr-2 h-4 w-4" />
-									{t("settings.workPolicies.setAsDefault", "Set as Default")}
-								</DropdownMenuItem>
-							)}
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="text-destructive"
-								onClick={() => handleDeleteClick(row.original)}
-								disabled={row.original.isDefault}
-							>
-								<IconTrash className="mr-2 h-4 w-4" />
-								{t("common.delete", "Delete")}
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-						),
-					},
-				]
+						{
+							id: "actions",
+							cell: ({ row }: { row: { original: WorkPolicyWithDetails } }) => (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="ghost" size="icon" className="h-8 w-8">
+											<IconDots className="h-4 w-4" />
+											<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem onClick={() => onEditClick(row.original)}>
+											<IconPencil className="mr-2 h-4 w-4" />
+											{t("common.edit", "Edit")}
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => duplicateMutation.mutate(row.original.id)}
+											disabled={duplicateMutation.isPending}
+										>
+											<IconCopy className="mr-2 h-4 w-4" />
+											{t("common.duplicate", "Duplicate")}
+										</DropdownMenuItem>
+										{!row.original.isDefault && (
+											<DropdownMenuItem
+												onClick={() => setDefaultMutation.mutate(row.original.id)}
+												disabled={setDefaultMutation.isPending}
+											>
+												<IconStar className="mr-2 h-4 w-4" />
+												{t("settings.workPolicies.setAsDefault", "Set as Default")}
+											</DropdownMenuItem>
+										)}
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											className="text-destructive"
+											onClick={() => handleDeleteClick(row.original)}
+											disabled={row.original.isDefault}
+										>
+											<IconTrash className="mr-2 h-4 w-4" />
+											{t("common.delete", "Delete")}
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							),
+						},
+					]
 				: []),
 		],
 		[t, onEditClick, duplicateMutation, setDefaultMutation, canManagePolicies],

@@ -110,7 +110,7 @@ function resolveSelectedPresetLegalEntityId(
 		accessTier: string;
 		organizationId: string;
 		session: { user: { id: string } };
-		currentEmployee: { legalEntityId?: string | null } | null;
+		currentEmployee: { legalEntityId?: string | null; id?: string; role?: string } | null;
 		legalEntityAdminIds?: string[];
 		dbService: {
 			db: typeof import("@/db").db;
@@ -210,16 +210,23 @@ function filterPresetAssignmentsForScope(
  */
 export async function getHolidayPresets(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<HolidayPresetListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ organizationId, queryName: "getHolidayPresets:actor" }),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getHolidayPresets:defaultLegalEntity",
+			),
+		);
 
 		const presets = yield* _(
-			dbService.query("getHolidayPresets", async () => {
-				const results = await dbService.db
+			actor.dbService.query("getHolidayPresets", async () => {
+				const results = await actor.dbService.db
 					.select({
 						id: holidayPreset.id,
 						name: holidayPreset.name,
@@ -232,18 +239,23 @@ export async function getHolidayPresets(
 						createdAt: holidayPreset.createdAt,
 					})
 					.from(holidayPreset)
-					.where(eq(holidayPreset.organizationId, organizationId))
+					.where(
+						and(
+							eq(holidayPreset.organizationId, organizationId),
+							eq(holidayPreset.legalEntityId, selectedLegalEntityId),
+						),
+					)
 					.orderBy(holidayPreset.name);
 
 				// Get holiday counts and assignment counts for each preset
 				const presetsWithCounts = await Promise.all(
 					results.map(async (preset) => {
-						const [holidayCountResult] = await dbService.db
+						const [holidayCountResult] = await actor.dbService.db
 							.select({ count: sql<number>`count(*)::int` })
 							.from(holidayPresetHoliday)
 							.where(eq(holidayPresetHoliday.presetId, preset.id));
 
-						const [assignmentCountResult] = await dbService.db
+						const [assignmentCountResult] = await actor.dbService.db
 							.select({ count: sql<number>`count(*)::int` })
 							.from(holidayPresetAssignment)
 							.where(
@@ -932,10 +944,18 @@ export async function deleteHolidayFromPreset(
  */
 export async function getPresetAssignments(
 	organizationId: string,
+	selectedLegalEntityIdParam?: string,
 ): Promise<ServerActionResult<PresetAssignmentListItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
 			getScopedHolidayAccessContext(organizationId, "getPresetAssignments:actor"),
+		);
+		const selectedLegalEntityId = yield* _(
+			resolveSelectedPresetLegalEntityId(
+				actor,
+				selectedLegalEntityIdParam,
+				"getPresetAssignments:defaultLegalEntity",
+			),
 		);
 
 		const assignments = yield* _(
@@ -976,6 +996,7 @@ export async function getPresetAssignments(
 					.where(
 						and(
 							eq(holidayPresetAssignment.organizationId, organizationId),
+							eq(holidayPresetAssignment.legalEntityId, selectedLegalEntityId),
 							eq(holidayPresetAssignment.isActive, true),
 						),
 					)
@@ -1016,7 +1037,10 @@ export async function createPresetAssignment(
 ): Promise<ServerActionResult<typeof holidayPresetAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "createPresetAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "createPresetAssignment:actor",
+			}),
 		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -1223,7 +1247,9 @@ export async function getTeamsForAssignment(
 					),
 					columns: { teamId: true },
 				});
-				const scopedTeamIds = [...new Set(teamEmployees.map((row) => row.teamId).filter(Boolean))] as string[];
+				const scopedTeamIds = [
+					...new Set(teamEmployees.map((row) => row.teamId).filter(Boolean)),
+				] as string[];
 
 				if (scopedTeamIds.length === 0) {
 					return [];
@@ -1255,7 +1281,10 @@ export async function getEmployeesForAssignment(
 ): Promise<ServerActionResult<EmployeeListItem[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getEmployeesForAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getEmployeesForAssignment:actor",
+			}),
 		);
 		const selectedLegalEntityId = yield* _(
 			resolveSelectedPresetLegalEntityId(
