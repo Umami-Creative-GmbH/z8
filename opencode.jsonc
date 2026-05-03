@@ -3,9 +3,9 @@
 	"autoupdate": true,
 	"mcp": {
 		"better-auth": {
-			"url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp",
 			"type": "remote",
-			"enabled": false
+			"url": "https://mcp.better-auth.com/mcp",
+			"enabled": true
 		}
 	},
 	"plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]
