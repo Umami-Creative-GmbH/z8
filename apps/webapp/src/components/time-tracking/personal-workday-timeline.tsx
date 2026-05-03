@@ -87,7 +87,6 @@ function DayPicker({ selectedDate }: { selectedDate: SelectedWorkdayDate }) {
 }
 
 function TimelineContent({ result }: { result: WorkdayTimelineData }) {
-	const hasContext = result.hasScheduledContext || result.hasRecordedActivity;
 	const renderedWarningIds = new Set(result.dayWarnings.map((warning) => warning.id));
 	const timelineItems = result.items.filter((item) => !renderedWarningIds.has(item.id));
 
@@ -101,7 +100,7 @@ function TimelineContent({ result }: { result: WorkdayTimelineData }) {
 					))}
 				</ol>
 			) : (
-				!hasContext && <EmptyState />
+				<EmptyState />
 			)}
 		</div>
 	);

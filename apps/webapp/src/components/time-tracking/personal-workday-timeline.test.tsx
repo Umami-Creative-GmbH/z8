@@ -93,6 +93,17 @@ describe("PersonalWorkdayTimeline", () => {
 		).toBeTruthy();
 	});
 
+	it("keeps the required empty state when context exists without timeline items", () => {
+		render(<PersonalWorkdayTimeline result={success({ hasScheduledContext: true })} />);
+
+		expect(screen.getByText("No activity recorded for this day.")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"There are no shifts, absences, or time entries for the selected day yet.",
+			),
+		).toBeTruthy();
+	});
+
 	it("renders an unavailable alert without throwing", () => {
 		render(
 			<PersonalWorkdayTimeline
