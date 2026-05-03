@@ -40,6 +40,7 @@ const mockState = vi.hoisted(() => ({
 	assignmentFindFirstArgs: [] as Array<any>,
 	violationRows: [{ id: "violation-1", organizationId: "org-1" }],
 	insertQueue: [] as Array<any>,
+	insertValues: [] as Array<any>,
 	selectQueue: [] as Array<any>,
 	selectWhereArgs: [] as Array<any>,
 	updateWhereArgs: [] as Array<any>,
@@ -107,9 +108,19 @@ vi.mock("../employees/employee-action-utils", async () => {
 	const { AuthorizationError, NotFoundError, ValidationError } = await import(
 		"@/lib/effect/errors"
 	);
+	const dbService = {
+		db: {
+			query: {
+				legalEntity: {
+					findFirst: vi.fn(async () => ({ id: "entity-1" })),
+				},
+			},
+		},
+		query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+	};
 
 	return {
-		getEmployeeSettingsActorContext: vi.fn(() => Effect.succeed(mockState.actor)),
+		getEmployeeSettingsActorContext: vi.fn(() => Effect.succeed({ ...mockState.actor, dbService })),
 		getManagedEmployeeIdsForSettingsActor: vi.fn(() =>
 			Effect.succeed(mockState.managedEmployeeIds),
 		),
@@ -296,9 +307,12 @@ vi.mock("@/lib/effect/runtime", async () => {
 			})),
 		})),
 		insert: vi.fn(() => ({
-			values: vi.fn(() => ({
+			values: vi.fn((value: unknown) => {
+				mockState.insertValues.push(value);
+				return {
 				returning: vi.fn(async () => mockState.insertQueue.shift() ?? []),
-			})),
+			};
+			}),
 		})),
 		update: vi.fn(() => ({
 			set: vi.fn(() => ({
@@ -353,9 +367,11 @@ const {
 	acknowledgeWorkPolicyViolation,
 	createWorkPolicy,
 	createWorkPolicyAssignment,
+	deleteWorkPolicy,
 	getEmployeeEffectiveScheduleDetails,
 	getWorkPolicies,
 	getWorkPolicyViolations,
+	updateWorkPolicy,
 } = await import("./actions");
 
 describe("work policy settings scope actions", () => {
@@ -382,6 +398,7 @@ describe("work policy settings scope actions", () => {
 		mockState.teamQueue = [];
 		mockState.assignmentFindFirstArgs = [];
 		mockState.insertQueue = [];
+		mockState.insertValues = [];
 		mockState.selectQueue = [];
 		mockState.selectWhereArgs = [];
 		mockState.updateWhereArgs = [];
@@ -409,6 +426,93 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+	});
+
+	it("lets entity admins create work policies in their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-1"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			role: "employee",
+		};
+		mockState.workPolicyQueue = [null, { id: "policy-created", organizationId: "org-1", legalEntityId: "entity-1", name: "Entity Policy" }];
+		mockState.insertQueue = [[{ id: "policy-created" }]];
+
+		const result = await createWorkPolicy(
+			"org-1",
+			{
+				name: "Entity Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+			"entity-1",
+		);
+
+		expect(result).toMatchObject({ success: true, data: { id: "policy-created" } });
+		expect(mockState.insertValues[0]).toMatchObject({ legalEntityId: "entity-1" });
+	});
+
+	it("rejects entity admin work policy creation outside their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-2"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-2",
+			role: "employee",
+		};
+
+		const result = await createWorkPolicy(
+			"org-1",
+			{
+				name: "Blocked Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+			"entity-1",
+		);
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(mockState.insertValues).toEqual([]);
+	});
+
+	it("lets entity admins update and delete work policies in their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-1"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			role: "employee",
+		};
+		mockState.workPolicyQueue = [
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard", schedule: null, regulation: null, presence: null, scheduleEnabled: true, regulationEnabled: false, presenceEnabled: false },
+			null,
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Updated" },
+			{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Updated" },
+		];
+
+		const updateResult = await updateWorkPolicy("policy-1", { name: "Updated" });
+		const deleteResult = await deleteWorkPolicy("policy-1");
+
+		expect(updateResult).toMatchObject({ success: true, data: { id: "policy-1" } });
+		expect(deleteResult).toEqual({ success: true, data: undefined });
 	});
 
 	it("lets managers assign work policies to managed members", async () => {

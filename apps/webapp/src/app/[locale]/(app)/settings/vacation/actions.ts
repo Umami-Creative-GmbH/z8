@@ -28,7 +28,6 @@ import {
 	getManagedEmployeeIdsForSettingsActor,
 	requireSettingsActorEmployeeRecord,
 	getTargetEmployee,
-	requireOrgAdminEmployeeSettingsAccess,
 } from "../employees/employee-action-utils";
 
 function resolveSelectedVacationLegalEntityId(
@@ -126,6 +125,24 @@ function canAccessVacationPolicyLegalEntity(
 		actor.accessTier === "orgAdmin" ||
 		actor.legalEntityAdminIds?.includes(legalEntityId) ||
 		actor.currentEmployee?.legalEntityId === legalEntityId
+	);
+}
+
+function requireVacationPolicyMutationAccess(
+	actor: { accessTier: string; session: { user: { id: string } } },
+	action: "create" | "update" | "delete",
+) {
+	if (actor.accessTier === "orgAdmin" || actor.accessTier === "entityAdmin") {
+		return Effect.void;
+	}
+
+	return Effect.fail(
+		new AuthorizationError({
+			message: "Insufficient permissions",
+			userId: actor.session.user.id,
+			resource: "vacation_policy",
+			action,
+		}),
 	);
 }
 
@@ -258,13 +275,7 @@ export async function createVacationPolicy(data: {
 		const actor = yield* _(
 			getEmployeeSettingsActorContext({ organizationId: data.organizationId, queryName: "createVacationPolicy:actor" }),
 		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Insufficient permissions",
-				resource: "vacation_policy",
-				action: "create",
-			}),
-		);
+		yield* _(requireVacationPolicyMutationAccess(actor, "create"));
 
 		const dbService = yield* _(DatabaseService);
 		const selectedLegalEntityId = yield* _(
@@ -412,13 +423,7 @@ export async function updateVacationPolicy(
 			);
 		}
 
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Insufficient permissions",
-				resource: "vacation_policy",
-				action: "update",
-			}),
-		);
+		yield* _(requireVacationPolicyMutationAccess(actor, "update"));
 
 		// Step 5: If setting as company default, unset previous default
 		if (data.isCompanyDefault && !policy.isCompanyDefault) {
@@ -847,13 +852,7 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 			);
 		}
 
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Insufficient permissions",
-				resource: "vacation_policy",
-				action: "delete",
-			}),
-		);
+		yield* _(requireVacationPolicyMutationAccess(actor, "delete"));
 
 		// Step 5: Prevent deleting the only active company default
 		if (policy.isCompanyDefault) {

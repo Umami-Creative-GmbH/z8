@@ -544,7 +544,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
 		href: "/settings/payroll-export",
 		icon: "database-export",
-		minimumTier: "orgAdmin",
+		minimumTier: "entityAdmin",
 		group: "data",
 	},
 	{
@@ -555,7 +555,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Check whether a payroll period is ready before export",
 		href: "/settings/payroll-readiness",
 		icon: "shield-check",
-		minimumTier: "orgAdmin",
+		minimumTier: "entityAdmin",
 		group: "data",
 	},
 	{

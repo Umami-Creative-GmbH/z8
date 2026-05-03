@@ -264,6 +264,16 @@ describe("org-admin settings route access", () => {
 		}
 	});
 
+	it("lets entity admins manage selected legal entity vacation and work policies", () => {
+		const vacationPageSource = stripComments(readFileSync(join(SETTINGS_ROOT, "vacation/page.tsx"), "utf8"));
+		const workPolicyManagementSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "../../../../components/settings/work-policy-management.tsx"), "utf8"),
+		);
+
+		expect(vacationPageSource.includes('accessTier === "orgAdmin" || accessTier === "entityAdmin"')).toBe(true);
+		expect(workPolicyManagementSource.includes('accessTier === "orgAdmin" || accessTier === "entityAdmin"')).toBe(true);
+	});
+
 	it("guards legal entity selector context on manager-access settings pages", () => {
 		const pages = [
 			"change-policies/page.tsx",

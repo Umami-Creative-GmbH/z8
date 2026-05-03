@@ -27,7 +27,7 @@ export function WorkPolicyManagement({
 }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const canManagePolicies = accessTier === "orgAdmin";
+	const canManagePolicies = accessTier === "orgAdmin" || accessTier === "entityAdmin";
 	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> =
 		canManagePolicies ? (["organization", "team", "employee"] as const) : (["employee"] as const);
 

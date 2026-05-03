@@ -243,7 +243,27 @@ function canAccessWorkPolicyLegalEntity(
 	);
 }
 
-// Using isOrgAdminCasl from auth-helpers for CASL-based authorization
+function canManageWorkPolicyDefinitions(actor: { accessTier: string }) {
+	return actor.accessTier === "orgAdmin" || actor.accessTier === "entityAdmin";
+}
+
+function requireWorkPolicyDefinitionMutationAccess(
+	actor: { accessTier: string; session: { user: { id: string } } },
+	action: "create" | "update" | "delete",
+) {
+	if (canManageWorkPolicyDefinitions(actor)) {
+		return Effect.void;
+	}
+
+	return Effect.fail(
+		new AuthorizationError({
+			message: "Insufficient permissions",
+			userId: actor.session.user.id,
+			resource: "work_policy",
+			action,
+		}),
+	);
+}
 
 // ============================================
 // GET POLICIES
@@ -374,24 +394,6 @@ export async function createWorkPolicy(
 	selectedLegalEntityId?: string,
 ): Promise<ServerActionResult<WorkPolicyWithDetails>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "work_policy",
-						action: "create",
-					}),
-				),
-			);
-		}
-
 		// Validate at least one feature is enabled
 		if (!data.scheduleEnabled && !data.regulationEnabled && !data.presenceEnabled) {
 			yield* _(
@@ -411,6 +413,7 @@ export async function createWorkPolicy(
 				queryName: "createWorkPolicy:actor",
 			}),
 		);
+		yield* _(requireWorkPolicyDefinitionMutationAccess(actor, "create"));
 		const scopedLegalEntityId = yield* _(
 			resolveSelectedPolicyLegalEntityId(
 				actor,
@@ -458,7 +461,7 @@ export async function createWorkPolicy(
 						scheduleEnabled: data.scheduleEnabled,
 						regulationEnabled: data.regulationEnabled,
 						presenceEnabled: data.presenceEnabled ?? false,
-						createdBy: session.user.id,
+						createdBy: actor.session.user.id,
 						updatedAt: currentTimestamp(),
 					})
 					.returning();
@@ -624,9 +627,6 @@ export async function updateWorkPolicy(
 	data: UpdateWorkPolicyInput,
 ): Promise<ServerActionResult<WorkPolicyWithDetails>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
 		const dbService = yield* _(DatabaseService);
 
 		// Get existing policy
@@ -667,7 +667,7 @@ export async function updateWorkPolicy(
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
-						userId: session.user.id,
+						userId: actor.session.user.id,
 						resource: "work_policy",
 						action: "update",
 					}),
@@ -675,22 +675,7 @@ export async function updateWorkPolicy(
 			);
 		}
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
-		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "work_policy",
-						action: "update",
-					}),
-				),
-			);
-		}
+		yield* _(requireWorkPolicyDefinitionMutationAccess(actor, "update"));
 
 		// Check for duplicate name if name is being changed
 		if (data.name && data.name !== existingPolicy!.name) {
@@ -730,7 +715,7 @@ export async function updateWorkPolicy(
 						scheduleEnabled: data.scheduleEnabled ?? existingPolicy!.scheduleEnabled,
 						regulationEnabled: data.regulationEnabled ?? existingPolicy!.regulationEnabled,
 						presenceEnabled: data.presenceEnabled ?? existingPolicy!.presenceEnabled,
-						updatedBy: session.user.id,
+						updatedBy: actor.session.user.id,
 						updatedAt: currentTimestamp(),
 					})
 					.where(eq(workPolicy.id, policyId));
@@ -927,9 +912,6 @@ export async function updateWorkPolicy(
 
 export async function deleteWorkPolicy(policyId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-
 		const dbService = yield* _(DatabaseService);
 
 		const existingPolicy = yield* _(
@@ -964,7 +946,7 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 				Effect.fail(
 					new AuthorizationError({
 						message: "Insufficient permissions",
-						userId: session.user.id,
+						userId: actor.session.user.id,
 						resource: "work_policy",
 						action: "delete",
 					}),
@@ -972,22 +954,7 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 			);
 		}
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
-		);
-
-		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "work_policy",
-						action: "delete",
-					}),
-				),
-			);
-		}
+		yield* _(requireWorkPolicyDefinitionMutationAccess(actor, "delete"));
 
 		// Soft delete
 		yield* _(
@@ -997,7 +964,7 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 					.set({
 						isActive: false,
 						isDefault: false,
-						updatedBy: session.user.id,
+						updatedBy: actor.session.user.id,
 						updatedAt: currentTimestamp(),
 					})
 					.where(eq(workPolicy.id, policyId));

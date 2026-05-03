@@ -39,7 +39,8 @@ async function VacationSettingsContent({
 		redirect("/settings");
 	}
 
-	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
+	const accessTier = settingsRouteContext.accessTier;
+	const canManagePolicies = accessTier === "orgAdmin" || accessTier === "entityAdmin";
 	const allowedAssignmentTypes = canManagePolicies
 		? (["team", "employee"] as const)
 		: (["employee"] as const);

@@ -77,6 +77,19 @@ describe("settings visibility tiers", () => {
 		expect(entityAdminEntries.some((entry) => entry.id === "legal-entities")).toBe(false);
 	});
 
+	it("shows scoped payroll settings to entity admins", () => {
+		const entityAdminEntries = getVisibleSettings("entityAdmin", true);
+
+		expect(entityAdminEntries.find((entry) => entry.id === "payroll-export")).toMatchObject({
+			minimumTier: "entityAdmin",
+			href: "/settings/payroll-export",
+		});
+		expect(entityAdminEntries.find((entry) => entry.id === "payroll-readiness")).toMatchObject({
+			minimumTier: "entityAdmin",
+			href: "/settings/payroll-readiness",
+		});
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");

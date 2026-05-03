@@ -233,7 +233,10 @@ vi.mock("@/lib/effect/runtime", async () => {
 		})),
 		update: vi.fn(() => ({
 			set: vi.fn(() => ({
-				where: mockState.updateWhere,
+				where: vi.fn((input: unknown) => {
+					void mockState.updateWhere(input);
+					return { returning: vi.fn(async () => mockState.insertQueue.shift() ?? []) };
+				}),
 			})),
 		})),
 	};
@@ -274,7 +277,13 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { getVacationPolicies, createVacationAdjustmentAction } = await import("./actions");
+const {
+	createVacationPolicy,
+	deleteVacationPolicy,
+	getVacationPolicies,
+	createVacationAdjustmentAction,
+	updateVacationPolicy,
+} = await import("./actions");
 const { createVacationPolicyAssignment } = await import("./assignment-actions");
 
 describe("vacation settings scope actions", () => {
@@ -305,6 +314,95 @@ describe("vacation settings scope actions", () => {
 		const result = await getVacationPolicies("org-1");
 
 		expect(result).toEqual({ success: true, data: mockState.policyRows });
+	});
+
+	it("lets entity admins create vacation policies in their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-1"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			role: "employee",
+		};
+		mockState.policyRows = [];
+		mockState.insertQueue = [[{ id: "policy-created", organizationId: "org-1", legalEntityId: "entity-1" }]];
+
+		const result = await createVacationPolicy({
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			name: "Entity Vacation",
+			startDate: "2026-01-01",
+			defaultAnnualDays: "30",
+			accrualType: "annual",
+			allowCarryover: false,
+		});
+
+		expect(result).toMatchObject({
+			success: true,
+			data: { id: "policy-created", legalEntityId: "entity-1" },
+		});
+	});
+
+	it("rejects entity admin vacation policy creation outside their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-2"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-2",
+			role: "employee",
+		};
+
+		const result = await createVacationPolicy({
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			name: "Blocked Vacation",
+			startDate: "2026-01-01",
+			defaultAnnualDays: "30",
+			accrualType: "annual",
+			allowCarryover: false,
+		});
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+	});
+
+	it("lets entity admins update vacation policies in their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-1"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-1",
+			role: "employee",
+		};
+		mockState.policyRows = [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard", isCompanyDefault: false }];
+		mockState.insertQueue = [[{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Updated" }]];
+
+		const result = await updateVacationPolicy("policy-1", {
+			name: "Updated",
+			defaultAnnualDays: "28",
+			accrualType: "annual",
+			allowCarryover: false,
+		});
+
+		expect(result).toMatchObject({ success: true, data: { id: "policy-1", name: "Updated" } });
+	});
+
+	it("rejects entity admin vacation policy deletion outside their granted legal entity", async () => {
+		mockState.actor.accessTier = "entityAdmin";
+		mockState.actor.legalEntityAdminIds = ["entity-2"];
+		mockState.actor.currentEmployee = {
+			id: "entity-admin-employee-1",
+			organizationId: "org-1",
+			legalEntityId: "entity-2",
+			role: "employee",
+		};
+		mockState.policyRows = [{ id: "policy-1", organizationId: "org-1", legalEntityId: "entity-1", name: "Standard", isCompanyDefault: false }];
+
+		const result = await deleteVacationPolicy("policy-1");
+
+		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
 	it("lets managers assign a vacation policy only to managed members", async () => {
