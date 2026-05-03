@@ -7,7 +7,10 @@ import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
-import type { SerializableWorkdayTimelineResult } from "@/components/time-tracking/personal-workday-timeline";
+import type {
+	SerializableWorkdayTimelineItem,
+	SerializableWorkdayTimelineResult,
+} from "@/components/time-tracking/personal-workday-timeline";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
 import { getWorkdayTimelineData } from "./workday-timeline-data";
 import type {
@@ -100,10 +103,16 @@ function serializeSelectedDate({
 	return { dateKey, todayDateKey, previousDateKey, nextDateKey, label };
 }
 
-function serializeTimelineItem<T extends WorkdayTimelineItem>({
-	startTime: _startTime,
-	endTime: _endTime,
-	...item
-}: T): Omit<T, "startTime" | "endTime"> {
-	return item;
+function serializeTimelineItem({
+	id,
+	type,
+	title,
+	subtitle,
+	startLabel,
+	endLabel,
+	badge,
+	severity,
+	link,
+}: WorkdayTimelineItem): SerializableWorkdayTimelineItem {
+	return { id, type, title, subtitle, startLabel, endLabel, badge, severity, link };
 }

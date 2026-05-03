@@ -10,9 +10,9 @@ import { useTranslate } from "@tolgee/react";
 import { Link } from "@/navigation";
 import type {
 	WorkdayTimelineData,
-	WorkdayTimelineItem,
+	WorkdayTimelineItemType,
+	WorkdayTimelineLink,
 	WorkdayTimelineSeverity,
-	WorkdayTimelineWarningItem,
 } from "@/app/[locale]/(app)/time-tracking/workday-timeline.types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -28,22 +28,26 @@ export interface SerializableSelectedWorkdayDate {
 	label: string;
 }
 
-export type SerializableWorkdayTimelineData = Omit<WorkdayTimelineData, "selectedDate"> & {
+export type SerializableWorkdayTimelineData = Omit<
+	WorkdayTimelineData,
+	"selectedDate" | "items" | "dayWarnings"
+> & {
 	selectedDate: SerializableSelectedWorkdayDate;
 	items: SerializableWorkdayTimelineItem[];
-	dayWarnings: SerializableWorkdayTimelineWarningItem[];
+	dayWarnings: SerializableWorkdayTimelineItem[];
 };
 
-export type SerializableWorkdayTimelineItem = WorkdayTimelineItem extends infer T
-	? T extends WorkdayTimelineItem
-		? Omit<T, "startTime" | "endTime">
-		: never
-	: never;
-
-export type SerializableWorkdayTimelineWarningItem = Omit<
-	WorkdayTimelineWarningItem,
-	"startTime" | "endTime"
->;
+export interface SerializableWorkdayTimelineItem {
+	id: string;
+	type: WorkdayTimelineItemType;
+	title: string;
+	subtitle?: string;
+	startLabel?: string;
+	endLabel?: string;
+	badge?: string;
+	severity?: WorkdayTimelineSeverity;
+	link?: WorkdayTimelineLink;
+}
 
 export type SerializableWorkdayTimelineResult =
 	| { success: true; data: SerializableWorkdayTimelineData }
@@ -133,7 +137,7 @@ function TimelineContent({ result }: { result: SerializableWorkdayTimelineData }
 	);
 }
 
-function WarningSummary({ warnings }: { warnings: SerializableWorkdayTimelineWarningItem[] }) {
+function WarningSummary({ warnings }: { warnings: SerializableWorkdayTimelineItem[] }) {
 	return (
 		<div className="space-y-2">
 			{warnings.map((warning) => (
@@ -143,7 +147,7 @@ function WarningSummary({ warnings }: { warnings: SerializableWorkdayTimelineWar
 	);
 }
 
-function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineWarningItem }) {
+function WarningAlert({ warning }: { warning: SerializableWorkdayTimelineItem }) {
 	return (
 		<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
 			<IconAlertTriangle aria-hidden="true" className="text-amber-600 dark:text-amber-400" />

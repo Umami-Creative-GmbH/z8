@@ -64,7 +64,6 @@ describe("PersonalWorkdayTimeline", () => {
 							title: "Scheduled shift",
 							startLabel: "08:00",
 							endLabel: "16:00",
-							status: "published",
 						},
 					],
 				})}
