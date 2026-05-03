@@ -41,6 +41,7 @@ import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
 
 interface SuccessFactorsConfigFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialConfig?: SuccessFactorsConfigResult | null;
 	onConfigSaved?: () => void;
 }
@@ -56,6 +57,7 @@ const DEFAULT_CONFIG: SuccessFactorsConfig = {
 
 export function SuccessFactorsConfigForm({
 	organizationId,
+	legalEntityId,
 	initialConfig,
 	onConfigSaved,
 }: SuccessFactorsConfigFormProps) {
@@ -69,6 +71,7 @@ export function SuccessFactorsConfigForm({
 			startTransition(async () => {
 				const result = await saveSuccessFactorsConfigAction({
 					organizationId,
+					legalEntityId,
 					config: value,
 				});
 

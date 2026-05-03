@@ -38,6 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ExportFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	config: DatevConfigResult | null;
 	exportAvailability: Record<
 		string,
@@ -58,6 +59,7 @@ const EXPORT_FORMAT_IDS = [
 
 export function ExportForm({
 	organizationId,
+	legalEntityId,
 	config,
 	exportAvailability,
 	onExportComplete,
@@ -183,6 +185,7 @@ export function ExportForm({
 		startTransition(async () => {
 			const result = await startExportAction({
 				organizationId,
+				legalEntityId,
 				formatId: selectedFormatId,
 				startDate: dateRange.start,
 				endDate: dateRange.end,

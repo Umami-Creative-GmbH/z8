@@ -38,7 +38,9 @@ vi.mock("@/db", () => ({
 		},
 	},
 	employee: {
+		id: "employee.id",
 		organizationId: "employee.organizationId",
+		legalEntityId: "employee.legalEntityId",
 		teamId: "employee.teamId",
 	},
 	payrollExportConfig: {},
@@ -80,6 +82,7 @@ describe("payroll export canonical data fetching", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockAssertCanonicalCutoverReady.mockResolvedValue(undefined);
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-1" }, { id: "emp-2" }]);
 	});
 
 	it("rejects payroll export reads when canonical cutover is incomplete", async () => {
@@ -88,7 +91,7 @@ describe("payroll export canonical data fetching", () => {
 		);
 
 		await expect(
-			dataFetcher.fetchWorkPeriodsForExport("org-1", {
+			dataFetcher.fetchWorkPeriodsForExport("org-1", "entity-a", {
 				dateRange: {
 					start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
 					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
@@ -133,7 +136,9 @@ describe("payroll export canonical data fetching", () => {
 			},
 		]);
 
-		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-1" }]);
+
+		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", "entity-a", {
 			dateRange: {
 				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
 				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
@@ -191,7 +196,9 @@ describe("payroll export canonical data fetching", () => {
 			},
 		]);
 
-		const results = await dataFetcher.fetchAbsencesForExport("org-1", {
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-2" }]);
+
+		const results = await dataFetcher.fetchAbsencesForExport("org-1", "entity-a", {
 			dateRange: {
 				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
 				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
@@ -233,7 +240,9 @@ describe("payroll export canonical data fetching", () => {
 			},
 		]);
 
-		const count = await dataFetcher.countWorkPeriods("org-1", {
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-1" }]);
+
+		const count = await dataFetcher.countWorkPeriods("org-1", "entity-a", {
 			dateRange: {
 				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
 				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),

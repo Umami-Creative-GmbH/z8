@@ -2043,6 +2043,7 @@ export async function startExportAction(
  */
 export async function getExportHistoryAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<PayrollExportJobSummary[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -2065,8 +2066,12 @@ export async function getExportHistoryAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const history = yield* _(
-			Effect.promise(() => getExportJobHistory(organizationId)),
+			Effect.promise(() => getExportJobHistory(organizationId, selectedLegalEntity.id)),
 		);
 
 		return history;
@@ -2080,6 +2085,7 @@ export async function getExportHistoryAction(
  */
 export async function getExportDownloadUrlAction(
 	organizationId: string,
+	legalEntityId: string,
 	jobId: string,
 ): Promise<ServerActionResult<string | null>> {
 	const effect = Effect.gen(function* (_) {
@@ -2103,8 +2109,12 @@ export async function getExportDownloadUrlAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertOrganizationLegalEntity({ organizationId, legalEntityId })),
+		);
+
 		const url = yield* _(
-			Effect.promise(() => getExportDownloadUrl(organizationId, jobId)),
+			Effect.promise(() => getExportDownloadUrl(organizationId, selectedLegalEntity.id, jobId)),
 		);
 
 		return url;

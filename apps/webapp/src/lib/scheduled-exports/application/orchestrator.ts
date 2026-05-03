@@ -104,7 +104,7 @@ export class ScheduledExportOrchestrator {
 		const execution = await this.createExecution(schedule, triggeredAt);
 
 		try {
-			if (schedule.reportType === "payroll" && !schedule.legalEntityId) {
+			if (schedule.reportType === "payroll_export" && !schedule.legalEntityId) {
 				throw new Error("Scheduled payroll exports require a legal entity.");
 			}
 

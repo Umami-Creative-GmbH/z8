@@ -42,6 +42,7 @@ import type { DatevLohnConfig } from "@/lib/payroll-export/types";
 
 interface DatevConfigFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialConfig?: DatevConfigResult | null;
 	onConfigSaved?: () => void;
 }
@@ -58,6 +59,7 @@ const beraternummerSchema = z
 
 export function DatevConfigForm({
 	organizationId,
+	legalEntityId,
 	initialConfig,
 	onConfigSaved,
 }: DatevConfigFormProps) {
@@ -75,6 +77,7 @@ export function DatevConfigForm({
 			startTransition(async () => {
 				const result = await saveDatevConfigAction({
 					organizationId,
+					legalEntityId,
 					config: value,
 				});
 

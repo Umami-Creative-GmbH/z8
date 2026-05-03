@@ -39,6 +39,7 @@ import type { SageLohnConfig } from "@/lib/payroll-export/types";
 
 interface SageConfigFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialConfig?: SageConfigResult | null;
 	onConfigSaved?: () => void;
 }
@@ -51,6 +52,7 @@ const DEFAULT_CONFIG: SageLohnConfig = {
 
 export function SageConfigForm({
 	organizationId,
+	legalEntityId,
 	initialConfig,
 	onConfigSaved,
 }: SageConfigFormProps) {
@@ -64,6 +66,7 @@ export function SageConfigForm({
 			startTransition(async () => {
 				const result = await saveSageConfigAction({
 					organizationId,
+					legalEntityId,
 					config: value,
 				});
 

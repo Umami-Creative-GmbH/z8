@@ -12,6 +12,7 @@ const mockState = vi.hoisted(() => {
 			userId: "user-1",
 			expiresAt: new Date("2099-01-01T00:00:00.000Z"),
 			token: "token",
+			activeOrganizationId: "org-1",
 		},
 	};
 
@@ -19,6 +20,8 @@ const mockState = vi.hoisted(() => {
 		session,
 		isOrgAdminCasl: vi.fn(async () => true),
 		findEmployee: vi.fn(async () => ({ id: "emp-1" })),
+		findLegalEntity: vi.fn(async () => ({ id: "entity-a" })),
+		findEmployees: vi.fn(async () => []),
 		createExportJob: vi.fn(async () => ({ jobId: "job-1", isAsync: true })),
 		processExportJob: vi.fn(),
 		getExportJobHistory: vi.fn(),
@@ -37,6 +40,7 @@ const mockState = vi.hoisted(() => {
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+	inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
 }));
 
 vi.mock("@/db", () => ({
@@ -45,6 +49,8 @@ vi.mock("@/db", () => ({
 		query: {
 			payrollExportFormat: { findFirst: vi.fn() },
 			payrollExportConfig: { findFirst: vi.fn() },
+			legalEntity: { findFirst: mockState.findLegalEntity },
+			employee: { findMany: mockState.findEmployees },
 		},
 		insert: vi.fn(),
 		update: vi.fn(),
@@ -58,8 +64,13 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({
 	employee: {
+		id: "employeeId",
 		userId: "userId",
 		organizationId: "organizationId",
+	},
+	legalEntity: {
+		id: "legalEntityId",
+		organizationId: "legalEntityOrganizationId",
 	},
 }));
 
@@ -133,10 +144,10 @@ vi.mock("@/lib/effect/runtime", async () => {
 		db: {
 			query: {
 				employee: {
-					findFirst: mockState.findEmployee,
+					findFirst: mockState.findEmployee as never,
 				},
 			},
-		},
+		} as never,
 		query: <T>(_key: string, fn: () => Promise<T>) => Effect.promise(fn),
 	});
 
@@ -156,10 +167,10 @@ vi.mock("@/lib/effect/result", async () => {
 				const failure = Option.getOrNull(Cause.failureOption(cause));
 				const error = defect ?? failure ?? cause;
 
-				if (error && typeof error === "object" && "_tag" in error) {
+			if (error && typeof error === "object" && "_tag" in error) {
 					return {
 						success: false as const,
-						error: (error as { message: string }).message,
+						error: (error as unknown as { message: string }).message,
 						code: (error as { _tag: string })._tag,
 					};
 				}
@@ -182,7 +193,7 @@ vi.mock("@/lib/effect/result", async () => {
 		});
 
 	return {
-		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
+		runServerActionSafe: async (effect: Parameters<typeof Effect.runPromiseExit>[0]) => {
 			const exit = await Effect.runPromiseExit(effect);
 			return toServerActionResult(exit);
 		},
@@ -203,6 +214,7 @@ describe("startExportAction", () => {
 	it("passes input formatId through to createExportJob", async () => {
 		const result = await startExportAction({
 			organizationId: "org-1",
+			legalEntityId: "entity-a",
 			formatId: "workday_api",
 			startDate: "2026-01-01",
 			endDate: "2026-01-31",
@@ -216,6 +228,7 @@ describe("startExportAction", () => {
 		expect(mockState.createExportJob).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
+				legalEntityId: "entity-a",
 				formatId: "workday_api",
 				requestedById: "emp-1",
 			}),

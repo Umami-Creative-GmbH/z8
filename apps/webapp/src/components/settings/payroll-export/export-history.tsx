@@ -33,16 +33,17 @@ import type { PayrollExportJobSummary } from "@/lib/payroll-export/types";
 
 interface ExportHistoryProps {
 	organizationId: string;
+	legalEntityId: string;
 	exports: PayrollExportJobSummary[];
 }
 
-export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
+export function ExportHistory({ organizationId, legalEntityId, exports }: ExportHistoryProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 
 	const handleDownload = async (jobId: string) => {
 		startTransition(async () => {
-			const result = await getExportDownloadUrlAction(organizationId, jobId);
+			const result = await getExportDownloadUrlAction(organizationId, legalEntityId, jobId);
 
 			if (result.success && result.data) {
 				window.open(result.data, "_blank");

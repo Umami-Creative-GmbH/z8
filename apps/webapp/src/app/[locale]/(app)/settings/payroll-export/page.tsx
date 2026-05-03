@@ -56,13 +56,13 @@ async function PayrollExportContent({
 
 	// Fetch configs and history in parallel
 	const [datevConfigResult, lexwareConfigResult, sageConfigResult, personioConfigResult, successFactorsConfigResult, workdayConfigResult, historyResult] = await Promise.all([
-		getDatevConfigAction(organizationId),
-		getLexwareConfigAction(organizationId),
-		getSageConfigAction(organizationId),
-		getPersonioConfigAction(organizationId),
-		getSuccessFactorsConfigAction(organizationId),
-		getWorkdayConfigAction(organizationId),
-		getExportHistoryAction(organizationId),
+		getDatevConfigAction(organizationId, selectedLegalEntityId),
+		getLexwareConfigAction(organizationId, selectedLegalEntityId),
+		getSageConfigAction(organizationId, selectedLegalEntityId),
+		getPersonioConfigAction(organizationId, selectedLegalEntityId),
+		getSuccessFactorsConfigAction(organizationId, selectedLegalEntityId),
+		getWorkdayConfigAction(organizationId, selectedLegalEntityId),
+		getExportHistoryAction(organizationId, selectedLegalEntityId),
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
@@ -169,41 +169,42 @@ async function PayrollExportContent({
 				<TabsContent value="export" className="mt-4">
 					<ExportForm
 						organizationId={organizationId}
+						legalEntityId={selectedLegalEntityId}
 						config={config}
 						exportAvailability={exportAvailability}
 					/>
 				</TabsContent>
 
 				<TabsContent value="datev" className="mt-4">
-					<DatevConfigForm organizationId={organizationId} initialConfig={datevConfig} />
+					<DatevConfigForm organizationId={organizationId} legalEntityId={selectedLegalEntityId} initialConfig={datevConfig} />
 				</TabsContent>
 
 				<TabsContent value="lexware" className="mt-4">
-					<LexwareConfigForm organizationId={organizationId} initialConfig={lexwareConfig} />
+					<LexwareConfigForm organizationId={organizationId} legalEntityId={selectedLegalEntityId} initialConfig={lexwareConfig} />
 				</TabsContent>
 
 				<TabsContent value="sage" className="mt-4">
-					<SageConfigForm organizationId={organizationId} initialConfig={sageConfig} />
+					<SageConfigForm organizationId={organizationId} legalEntityId={selectedLegalEntityId} initialConfig={sageConfig} />
 				</TabsContent>
 
 				<TabsContent value="personio" className="mt-4">
-					<PersonioConfigForm organizationId={organizationId} initialConfig={personioConfig} />
+					<PersonioConfigForm organizationId={organizationId} legalEntityId={selectedLegalEntityId} initialConfig={personioConfig} />
 				</TabsContent>
 
 				<TabsContent value="successfactors" className="mt-4">
-					<SuccessFactorsConfigForm organizationId={organizationId} initialConfig={successFactorsConfig} />
+					<SuccessFactorsConfigForm organizationId={organizationId} legalEntityId={selectedLegalEntityId} initialConfig={successFactorsConfig} />
 				</TabsContent>
 
 				<TabsContent value="workday" className="mt-4">
-					<WorkdayConfigForm organizationId={organizationId} initialConfig={workdayConfig} />
+					<WorkdayConfigForm organizationId={organizationId} legalEntityId={selectedLegalEntityId} initialConfig={workdayConfig} />
 				</TabsContent>
 
 				<TabsContent value="mappings" className="mt-4">
-					<WageTypeMappings organizationId={organizationId} config={config} />
+					<WageTypeMappings organizationId={organizationId} legalEntityId={selectedLegalEntityId} config={config} />
 				</TabsContent>
 
 				<TabsContent value="history" className="mt-4">
-					<ExportHistory organizationId={organizationId} exports={exports} />
+					<ExportHistory organizationId={organizationId} legalEntityId={selectedLegalEntityId} exports={exports} />
 				</TabsContent>
 			</Tabs>
 		</div>

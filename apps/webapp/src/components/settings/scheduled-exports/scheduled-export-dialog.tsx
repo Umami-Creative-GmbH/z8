@@ -51,6 +51,7 @@ export interface ScheduledExportFormValues {
 
 	// Step 2: Report
 	reportType: ReportType;
+	legalEntityId?: string;
 	reportConfig: ScheduledExportReportConfig;
 	payrollConfigId?: string;
 
@@ -71,9 +72,10 @@ interface ScheduledExportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	legalEntityId: string;
 	editScheduleId?: string;
 	initialValues?: Partial<ScheduledExportFormValues>;
-	payrollConfigs: Array<{ id: string; formatId: string; formatName: string }>;
+	payrollConfigs: Array<{ id: string; legalEntityId: string; formatId: string; formatName: string }>;
 	filterOptions: FilterOptions | null;
 	onSuccess?: () => void;
 }
@@ -94,6 +96,7 @@ export function ScheduledExportDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	legalEntityId,
 	editScheduleId,
 	initialValues,
 	payrollConfigs,
@@ -135,7 +138,7 @@ export function ScheduledExportDialog({
 	];
 
 	const form = useForm({
-		defaultValues: { ...DEFAULT_VALUES, ...initialValues } as ScheduledExportFormValues,
+		defaultValues: { ...DEFAULT_VALUES, legalEntityId, ...initialValues } as ScheduledExportFormValues,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await (isEditing
@@ -143,10 +146,12 @@ export function ScheduledExportDialog({
 							id: editScheduleId!,
 							organizationId,
 							...value,
+							legalEntityId: value.legalEntityId ?? legalEntityId,
 						})
 					: createScheduledExportAction({
 							organizationId,
 							...value,
+							legalEntityId: value.legalEntityId ?? legalEntityId,
 						})
 				).then((response) => response, () => null);
 

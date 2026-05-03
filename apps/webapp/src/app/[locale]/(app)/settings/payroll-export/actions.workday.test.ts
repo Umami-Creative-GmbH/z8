@@ -12,14 +12,16 @@ const mockState = vi.hoisted(() => {
 			userId: "user-1",
 			expiresAt: new Date("2099-01-01T00:00:00.000Z"),
 			token: "token",
+			activeOrganizationId: "org-1",
 		},
 	};
 
 	return {
 		session,
 		isOrgAdminCasl: vi.fn(async () => true),
-		getPayrollExportConfig: vi.fn(async () => null),
-		getOrgSecret: vi.fn(async () => null),
+		getPayrollExportConfig: vi.fn<(...args: unknown[]) => Promise<unknown>>(async () => null),
+		findLegalEntity: vi.fn(async () => ({ id: "entity-a" })),
+		getOrgSecret: vi.fn<(...args: unknown[]) => Promise<string | null>>(async () => null),
 		storeOrgSecret: vi.fn(async () => undefined),
 		deleteOrgSecret: vi.fn(async () => undefined),
 		createExportJob: vi.fn(),
@@ -42,6 +44,7 @@ vi.mock("@/db", () => ({
 		query: {
 			payrollExportFormat: { findFirst: vi.fn() },
 			payrollExportConfig: { findFirst: vi.fn() },
+			legalEntity: { findFirst: mockState.findLegalEntity },
 		},
 		insert: vi.fn(),
 		update: vi.fn(),
@@ -55,6 +58,10 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({
 	employee: {},
+	legalEntity: {
+		id: "legalEntityId",
+		organizationId: "legalEntityOrganizationId",
+	},
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
@@ -118,10 +125,10 @@ vi.mock("@/lib/effect/result", async () => {
 				const failure = Option.getOrNull(Cause.failureOption(cause));
 				const error = defect ?? failure ?? cause;
 
-				if (error && typeof error === "object" && "_tag" in error) {
+			if (error && typeof error === "object" && "_tag" in error) {
 					return {
 						success: false as const,
-						error: (error as { message: string }).message,
+						error: (error as unknown as { message: string }).message,
 						code: (error as { _tag: string })._tag,
 					};
 				}
@@ -144,7 +151,7 @@ vi.mock("@/lib/effect/result", async () => {
 		});
 
 	return {
-		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
+		runServerActionSafe: async (effect: Parameters<typeof Effect.runPromiseExit>[0]) => {
 			const exit = await Effect.runPromiseExit(effect);
 			return toServerActionResult(exit);
 		},
@@ -182,7 +189,7 @@ describe("payroll export workday actions", () => {
 	it("returns authorization error when user lacks access", async () => {
 		mockState.isOrgAdminCasl.mockResolvedValue(false);
 
-		const result = await getWorkdayConfigAction("org-1");
+		const result = await getWorkdayConfigAction("org-1", "entity-a");
 
 		expect(result).toEqual({
 			success: false,
@@ -231,14 +238,15 @@ describe("payroll export workday actions", () => {
 			},
 		});
 
-		mockState.getOrgSecret.mockImplementation(async (_orgId: string, key: string) => {
+		mockState.getOrgSecret.mockImplementation(async (...args: unknown[]) => {
+			const key = args[1];
 			if (key === "payroll/workday/client_id") {
 				return "client-id";
 			}
 			return null;
 		});
 
-		const result = await getWorkdayConfigAction("org-1");
+		const result = await getWorkdayConfigAction("org-1", "entity-a");
 
 		expect(result.success).toBe(true);
 		if (result.success) {

@@ -43,9 +43,9 @@ async function ScheduledExportsContent({
 
 	// Fetch initial data in parallel
 	const [schedulesResult, filterOptionsResult, payrollConfigsResult] = await Promise.all([
-		getScheduledExportsAction(organizationId),
+		getScheduledExportsAction(organizationId, selectedLegalEntityId),
 		getFilterOptionsAction(organizationId),
-		getPayrollConfigsAction(organizationId),
+		getPayrollConfigsAction(organizationId, selectedLegalEntityId),
 	]);
 
 	const schedules = schedulesResult.success ? schedulesResult.data : [];
@@ -57,6 +57,7 @@ async function ScheduledExportsContent({
 			<LegalEntitySelector entities={entities} selectedLegalEntityId={selectedLegalEntityId} />
 			<ScheduledExportsTable
 				organizationId={organizationId}
+				legalEntityId={selectedLegalEntityId}
 				initialSchedules={schedules}
 				initialFilterOptions={filterOptions}
 				initialPayrollConfigs={payrollConfigs}

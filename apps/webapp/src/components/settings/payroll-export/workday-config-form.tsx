@@ -52,6 +52,7 @@ import type { WorkdayConfig } from "@/lib/payroll-export";
 
 interface WorkdayConfigFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialConfig?: WorkdayConfigResult | null;
 	onConfigSaved?: () => void;
 }
@@ -67,6 +68,7 @@ const DEFAULT_CONFIG: WorkdayConfig = {
 
 export function WorkdayConfigForm({
 	organizationId,
+	legalEntityId,
 	initialConfig,
 	onConfigSaved,
 }: WorkdayConfigFormProps) {
@@ -83,6 +85,7 @@ export function WorkdayConfigForm({
 			startTransition(async () => {
 				const result = await saveWorkdayConfigAction({
 					organizationId,
+					legalEntityId,
 					config: value,
 				});
 

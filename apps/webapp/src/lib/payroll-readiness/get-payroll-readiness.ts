@@ -258,7 +258,7 @@ export async function getPayrollReadiness(
 		db.query.employeeEmploymentHistory.findMany({
 			where: and(
 				eq(employeeEmploymentHistory.organizationId, organizationId),
-				eq(employeeEmploymentHistory.legalEntityId, legalEntityId),
+				sql`${employeeEmploymentHistory.employeeId} in (select id from employee where organization_id = ${organizationId} and legal_entity_id = ${legalEntityId})`,
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				lte(employeeEmploymentHistory.validFrom, end.toJSDate()),
 				or(
@@ -287,7 +287,7 @@ export async function getPayrollReadiness(
 		db.query.travelExpenseClaim.findMany({
 			where: and(
 				eq(travelExpenseClaim.organizationId, organizationId),
-				eq(travelExpenseClaim.legalEntityId, legalEntityId),
+				sql`${travelExpenseClaim.employeeId} in (select id from employee where organization_id = ${organizationId} and legal_entity_id = ${legalEntityId})`,
 				or(eq(travelExpenseClaim.status, "submitted"), eq(travelExpenseClaim.status, "draft")),
 				lte(travelExpenseClaim.tripStart, end.toJSDate()),
 				gte(travelExpenseClaim.tripEnd, start.toJSDate()),

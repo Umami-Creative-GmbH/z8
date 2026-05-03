@@ -39,6 +39,7 @@ import type { LexwareLohnConfig } from "@/lib/payroll-export/types";
 
 interface LexwareConfigFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialConfig?: LexwareConfigResult | null;
 	onConfigSaved?: () => void;
 }
@@ -52,6 +53,7 @@ const DEFAULT_CONFIG: LexwareLohnConfig = {
 
 export function LexwareConfigForm({
 	organizationId,
+	legalEntityId,
 	initialConfig,
 	onConfigSaved,
 }: LexwareConfigFormProps) {
@@ -64,6 +66,7 @@ export function LexwareConfigForm({
 			startTransition(async () => {
 				const result = await saveLexwareConfigAction({
 					organizationId,
+					legalEntityId,
 					config: value,
 				});
 

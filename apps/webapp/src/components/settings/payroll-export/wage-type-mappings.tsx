@@ -59,6 +59,7 @@ import type { WageTypeMapping } from "@/lib/payroll-export/types";
 
 interface WageTypeMappingsProps {
 	organizationId: string;
+	legalEntityId: string;
 	config: DatevConfigResult | null;
 }
 
@@ -76,7 +77,7 @@ interface AbsenceCategory {
 	type: string | null;
 }
 
-export function WageTypeMappings({ organizationId, config }: WageTypeMappingsProps) {
+export function WageTypeMappings({ organizationId, legalEntityId, config }: WageTypeMappingsProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [mappings, setMappings] = useState<WageTypeMapping[]>([]);
@@ -101,7 +102,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 	const loadData = useCallback(async () => {
 		startTransition(async () => {
 			const [mappingsResult, workCategoriesResult, absenceCategoriesResult] = await Promise.all([
-				getMappingsAction(organizationId),
+				getMappingsAction(organizationId, legalEntityId),
 				getWorkCategoriesAction(organizationId),
 				getAbsenceCategoriesAction(organizationId),
 			]);
@@ -116,7 +117,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 				setAbsenceCategories(absenceCategoriesResult.data);
 			}
 		});
-	}, [organizationId]);
+	}, [organizationId, legalEntityId]);
 
 	// Load data on mount
 	useEffect(() => {

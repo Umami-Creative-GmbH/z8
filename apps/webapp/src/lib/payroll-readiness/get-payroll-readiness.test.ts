@@ -199,6 +199,24 @@ describe("getPayrollReadiness", () => {
 		);
 	});
 
+	it("filters employment history through selected legal entity employees", async () => {
+		await getPayrollReadiness(defaultInput());
+
+		const where = JSON.stringify(mockState.employeeEmploymentHistoryFindMany.mock.calls[0]?.[0]?.where);
+
+		expect(where).toContain("entity-a");
+		expect(where).not.toContain("employee-employment-history.legalEntityId");
+	});
+
+	it("filters travel expense claims through selected legal entity employees", async () => {
+		await getPayrollReadiness(defaultInput());
+
+		const where = JSON.stringify(mockState.travelExpenseClaimFindMany.mock.calls[0]?.[0]?.where);
+
+		expect(where).toContain("entity-a");
+		expect(where).not.toContain("travel-expense-claim.legalEntityId");
+	});
+
 	it("blocks for pending approval records", async () => {
 		mockState.timeRecordFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
 			{

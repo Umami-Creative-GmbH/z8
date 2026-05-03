@@ -155,6 +155,7 @@ describe("ExportForm", () => {
 		render(
 			<ExportForm
 				organizationId="org_123"
+				legalEntityId="entity-a"
 				exportAvailability={fullyConfiguredAvailability}
 				config={{
 					id: "cfg_123",
@@ -200,6 +201,7 @@ describe("ExportForm", () => {
 		expect(startExportActionMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org_123",
+				legalEntityId: "entity-a",
 				formatId: "workday_api",
 			}),
 		);
@@ -209,6 +211,7 @@ describe("ExportForm", () => {
 		render(
 			<ExportForm
 				organizationId="org_123"
+				legalEntityId="entity-a"
 				config={null}
 				exportAvailability={{
 					datev_lohn: { configured: true, reason: null },
@@ -281,6 +284,7 @@ describe("ExportForm", () => {
 		render(
 			<ExportForm
 				organizationId="org_123"
+				legalEntityId="entity-a"
 				config={null}
 				exportAvailability={{
 					datev_lohn: { configured: false, reason: "missingConfiguration" },
@@ -315,6 +319,7 @@ describe("ExportForm", () => {
 			expect(startExportActionMock).toHaveBeenCalledWith(
 				expect.objectContaining({
 					organizationId: "org_123",
+					legalEntityId: "entity-a",
 					formatId: "workday_api",
 				}),
 			);
@@ -325,6 +330,7 @@ describe("ExportForm", () => {
 		render(
 			<ExportForm
 				organizationId="org_123"
+				legalEntityId="entity-a"
 				config={null}
 				exportAvailability={{
 					datev_lohn: { configured: true, reason: null },
@@ -362,6 +368,7 @@ describe("ExportForm", () => {
 			expect(startExportActionMock).toHaveBeenCalledWith(
 				expect.objectContaining({
 					organizationId: "org_123",
+					legalEntityId: "entity-a",
 					formatId: "successfactors_csv",
 				}),
 			);

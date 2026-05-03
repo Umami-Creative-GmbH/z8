@@ -4,7 +4,8 @@ import { and, desc, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db, legalEntity, scheduledExport, scheduledExportExecution } from "@/db";
+import { db, scheduledExport, scheduledExportExecution } from "@/db";
+import { legalEntity } from "@/db/schema";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import type {
 	ScheduledExport,
@@ -245,6 +246,7 @@ export async function createScheduledExportAction(
 
 export async function getScheduledExportsAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<ScheduledExportSummary[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -267,10 +269,17 @@ export async function getScheduledExportsAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertScheduledExportLegalEntity(organizationId, legalEntityId)),
+		);
+
 		const schedules = yield* _(
 			Effect.promise(async () => {
 				return db.query.scheduledExport.findMany({
-					where: eq(scheduledExport.organizationId, organizationId),
+					where: and(
+						eq(scheduledExport.organizationId, organizationId),
+						eq(scheduledExport.legalEntityId, selectedLegalEntity.id),
+					),
 					orderBy: [desc(scheduledExport.createdAt)],
 				});
 			}),
@@ -298,6 +307,7 @@ export async function getScheduledExportsAction(
 
 export async function getScheduledExportAction(
 	organizationId: string,
+	legalEntityId: string,
 	scheduleId: string,
 ): Promise<ServerActionResult<ScheduledExport | null>> {
 	const effect = Effect.gen(function* (_) {
@@ -321,12 +331,17 @@ export async function getScheduledExportAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertScheduledExportLegalEntity(organizationId, legalEntityId)),
+		);
+
 		const schedule = yield* _(
 			Effect.promise(async () => {
 				return db.query.scheduledExport.findFirst({
 					where: and(
 						eq(scheduledExport.id, scheduleId),
 						eq(scheduledExport.organizationId, organizationId),
+						eq(scheduledExport.legalEntityId, selectedLegalEntity.id),
 					),
 				});
 			}),
@@ -798,6 +813,7 @@ export interface PayrollConfigSummary {
 
 export async function getPayrollConfigsAction(
 	organizationId: string,
+	legalEntityId: string,
 ): Promise<ServerActionResult<PayrollConfigSummary[]>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -820,6 +836,10 @@ export async function getPayrollConfigsAction(
 			);
 		}
 
+		const selectedLegalEntity = yield* _(
+			Effect.promise(() => assertScheduledExportLegalEntity(organizationId, legalEntityId)),
+		);
+
 		const { payrollExportConfig, payrollExportFormat } = yield* _(
 			Effect.promise(() => import("@/db")),
 		);
@@ -829,6 +849,7 @@ export async function getPayrollConfigsAction(
 				return db.query.payrollExportConfig.findMany({
 					where: and(
 						eq(payrollExportConfig.organizationId, organizationId),
+						eq(payrollExportConfig.legalEntityId, selectedLegalEntity.id),
 						eq(payrollExportConfig.isActive, true),
 					),
 					with: {

@@ -63,6 +63,7 @@ const RunNowDialog = dynamic(
 
 interface ScheduledExportsTableProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialSchedules: ScheduledExportSummary[];
 	initialFilterOptions: FilterOptions | null;
 	initialPayrollConfigs: PayrollConfigSummary[];
@@ -70,6 +71,7 @@ interface ScheduledExportsTableProps {
 
 export function ScheduledExportsTable({
 	organizationId,
+	legalEntityId,
 	initialSchedules,
 	initialFilterOptions,
 	initialPayrollConfigs,
@@ -95,9 +97,9 @@ export function ScheduledExportsTable({
 		isLoading: loading,
 		mutate,
 	} = useSWR(
-		["scheduled-exports", organizationId],
+		["scheduled-exports", organizationId, legalEntityId],
 		async () => {
-			const result = await getScheduledExportsAction(organizationId);
+			const result = await getScheduledExportsAction(organizationId, legalEntityId);
 			if (result.success) {
 				return result.data;
 			}
@@ -113,7 +115,7 @@ export function ScheduledExportsTable({
 	const loadDialogData = useCallback(async () => {
 		const [filterResult, configResult] = await Promise.all([
 			getFilterOptionsAction(organizationId),
-			getPayrollConfigsAction(organizationId),
+			getPayrollConfigsAction(organizationId, legalEntityId),
 		]);
 
 		if (filterResult.success) {
@@ -122,15 +124,16 @@ export function ScheduledExportsTable({
 		if (configResult.success) {
 			setPayrollConfigs(configResult.data);
 		}
-	}, [organizationId]);
+	}, [organizationId, legalEntityId]);
 
 	// Load schedule for editing
 	const loadScheduleForEdit = useCallback(async (scheduleId: string) => {
-		const result = await getScheduledExportAction(organizationId, scheduleId);
+		const result = await getScheduledExportAction(organizationId, legalEntityId, scheduleId);
 		if (result.success && result.data) {
 			const schedule = result.data;
 			setEditInitialValues({
 				name: schedule.name,
+				legalEntityId: schedule.legalEntityId,
 				description: schedule.description,
 				scheduleType: schedule.scheduleType,
 				cronExpression: schedule.cronExpression,
@@ -149,7 +152,7 @@ export function ScheduledExportsTable({
 			});
 			setEditScheduleId(scheduleId);
 		}
-	}, [organizationId]);
+	}, [organizationId, legalEntityId]);
 
 	// Open create dialog
 	const handleOpenCreate = async () => {
@@ -463,6 +466,7 @@ export function ScheduledExportsTable({
 					}
 				}}
 				organizationId={organizationId}
+				legalEntityId={legalEntityId}
 				editScheduleId={editScheduleId ?? undefined}
 				initialValues={editInitialValues ?? undefined}
 				payrollConfigs={payrollConfigs}

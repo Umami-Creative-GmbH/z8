@@ -3,7 +3,7 @@
  * Orchestrates the export process: data fetching, transformation, and file generation
  */
 import { DateTime } from "luxon";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { uploadExport, getPresignedUrl } from "@/lib/storage/export-s3-client";
@@ -456,10 +456,14 @@ export async function getPendingExportJobs(): Promise<string[]> {
  */
 export async function getExportJobHistory(
 	organizationId: string,
+	legalEntityId: string,
 	limit = 50,
 ): Promise<PayrollExportJobSummary[]> {
 	const jobs = await db.query.payrollExportJob.findMany({
-		where: eq(payrollExportJob.organizationId, organizationId),
+		where: and(
+			eq(payrollExportJob.organizationId, organizationId),
+			eq(payrollExportJob.legalEntityId, legalEntityId),
+		),
 		orderBy: (job, { desc }) => [desc(job.createdAt)],
 		limit,
 	});
@@ -483,13 +487,18 @@ export async function getExportJobHistory(
  */
 export async function getExportDownloadUrl(
 	organizationId: string,
+	legalEntityId: string,
 	jobId: string,
 ): Promise<string | null> {
 	const job = await db.query.payrollExportJob.findFirst({
-		where: eq(payrollExportJob.id, jobId),
+		where: and(
+			eq(payrollExportJob.id, jobId),
+			eq(payrollExportJob.organizationId, organizationId),
+			eq(payrollExportJob.legalEntityId, legalEntityId),
+		),
 	});
 
-	if (!job || job.organizationId !== organizationId) {
+	if (!job) {
 		return null;
 	}
 

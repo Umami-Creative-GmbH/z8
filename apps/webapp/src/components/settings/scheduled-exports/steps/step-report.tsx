@@ -18,7 +18,7 @@ import type { ReportType } from "@/lib/scheduled-exports/domain/types";
 
 interface StepReportProps {
 	form: ScheduledExportForm;
-	payrollConfigs: Array<{ id: string; formatId: string; formatName: string }>;
+	payrollConfigs: Array<{ id: string; legalEntityId: string; formatId: string; formatName: string }>;
 }
 
 export function StepReport({ form, payrollConfigs }: StepReportProps) {
@@ -109,7 +109,7 @@ function PayrollReportConfig({
 	payrollConfigs,
 }: {
 	form: ScheduledExportForm;
-	payrollConfigs: Array<{ id: string; formatId: string; formatName: string }>;
+	payrollConfigs: Array<{ id: string; legalEntityId: string; formatId: string; formatName: string }>;
 }) {
 	const { t } = useTranslate();
 	const hasConfigs = payrollConfigs.length > 0;
@@ -141,6 +141,7 @@ function PayrollReportConfig({
 								// Set formatId in reportConfig from selected config
 								const config = payrollConfigs.find((c) => c.id === v);
 								if (config) {
+									form.setFieldValue("legalEntityId", config.legalEntityId);
 									form.setFieldValue("reportConfig", { formatId: config.formatId });
 								}
 							}}

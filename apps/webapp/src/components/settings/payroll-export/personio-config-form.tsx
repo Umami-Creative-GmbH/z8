@@ -60,6 +60,7 @@ import type { PersonioConfig } from "@/lib/payroll-export";
 
 interface PersonioConfigFormProps {
 	organizationId: string;
+	legalEntityId: string;
 	initialConfig?: PersonioConfigResult | null;
 	onConfigSaved?: () => void;
 }
@@ -73,6 +74,7 @@ const DEFAULT_CONFIG: PersonioConfig = {
 
 export function PersonioConfigForm({
 	organizationId,
+	legalEntityId,
 	initialConfig,
 	onConfigSaved,
 }: PersonioConfigFormProps) {
@@ -93,6 +95,7 @@ export function PersonioConfigForm({
 			startTransition(async () => {
 				const result = await savePersonioConfigAction({
 					organizationId,
+					legalEntityId,
 					config: value,
 				});
 
@@ -188,7 +191,7 @@ export function PersonioConfigForm({
 
 	const handleTestConnection = async () => {
 		setIsTesting(true);
-		const result = await testPersonioConnectionAction(organizationId).catch(() => null);
+		const result = await testPersonioConnectionAction(organizationId, legalEntityId).catch(() => null);
 		if (!result) {
 			toast.error(t("settings.payrollExport.personio.connectionFailed", "Connection test failed"));
 			setIsTesting(false);

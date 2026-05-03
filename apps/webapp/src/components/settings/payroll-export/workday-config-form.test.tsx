@@ -59,6 +59,7 @@ describe("WorkdayConfigForm", () => {
 		render(
 			<WorkdayConfigForm
 				organizationId="org_123"
+				legalEntityId="entity-a"
 				initialConfig={{
 					id: "cfg_123",
 					formatId: "workday_api",
