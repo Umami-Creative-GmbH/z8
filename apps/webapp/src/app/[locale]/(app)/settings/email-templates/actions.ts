@@ -26,15 +26,85 @@ type EmailTemplateListEntry = Omit<EmailTemplateDefinition, "renderDefault"> & {
 	starterDraftPlainText: string;
 };
 
-function createStarterDraft(definition: Omit<EmailTemplateDefinition, "renderDefault">) {
-	const variableRows = definition.variables
-		.map((variable) => `<li><strong>${variable.label}</strong>: {{${variable.name}}}</li>`)
-		.join("");
-	const starterDraftHtml = `<p>${definition.description}</p><ul>${variableRows}</ul>`;
-	const starterDraftPlainText = [
-		definition.description,
-		...definition.variables.map((variable) => `${variable.label}: {{${variable.name}}}`),
-	].join("\n");
+function decodeHtmlEntities(value: string) {
+	return value
+		.replaceAll("&nbsp;", " ")
+		.replaceAll("&#x27;", "'")
+		.replaceAll("&quot;", '"')
+		.replaceAll("&amp;", "&")
+		.replaceAll("&lt;", "<")
+		.replaceAll("&gt;", ">");
+}
+
+function htmlToPlainText(html: string) {
+	return decodeHtmlEntities(
+		html
+			.replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
+			.replaceAll(/<script[\s\S]*?<\/script>/gi, " ")
+			.replaceAll(/<!--[\s\S]*?-->/g, " ")
+			.replaceAll(/<\/(p|div|h[1-6]|li|tr|table|section)>/gi, "\n")
+			.replaceAll(/<br\s*\/?>/gi, "\n")
+			.replaceAll(/<[^>]*>/g, " ")
+			.replaceAll(/[ \t]+/g, " ")
+			.replaceAll(/\n\s+/g, "\n")
+			.replaceAll(/\n{3,}/g, "\n\n")
+			.trim(),
+	);
+}
+
+function escapeRegExp(value: string) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function replaceStandaloneTextValue(text: string, previewValue: string, token: string) {
+	return text.replace(
+		new RegExp(`(^|[^\\w.])${escapeRegExp(previewValue)}(?![\\w.])`, "g"),
+		`$1${token}`,
+	);
+}
+
+function replaceTextNodeValues(html: string, previewValue: string, token: string) {
+	return html.replace(/>([^<]+)</g, (match, text: string) => {
+		return `>${replaceStandaloneTextValue(text, previewValue, token)}<`;
+	});
+}
+
+function getGlobalPreviewReplacementValues(value: unknown) {
+	if (Array.isArray(value)) {
+		return [value.join(", "), value.join(","), value.join(" "), String(value)];
+	}
+
+	return typeof value === "string" ? [value] : [];
+}
+
+async function createSystemDraft(definition: EmailTemplateDefinition) {
+	let starterDraftHtml = await definition.renderDefault(definition.previewData as never);
+	const replacements = definition.variables
+		.flatMap((variable) =>
+			getGlobalPreviewReplacementValues(definition.previewData[variable.name]).map((previewValue) => ({
+				previewValue,
+				token: `{{${variable.name}}}`,
+			})),
+		)
+		.filter((replacement) => replacement.previewValue)
+		.sort((left, right) => right.previewValue.length - left.previewValue.length);
+
+	for (const { previewValue, token } of replacements) {
+		starterDraftHtml = starterDraftHtml.split(previewValue).join(token);
+	}
+
+	for (const variable of definition.variables) {
+		const previewValue = definition.previewData[variable.name];
+		if (typeof previewValue === "number" || typeof previewValue === "boolean") {
+			starterDraftHtml = replaceTextNodeValues(
+				starterDraftHtml,
+				String(previewValue),
+				`{{${variable.name}}}`,
+			);
+		}
+	}
+
+	const starterDraftPlainText = htmlToPlainText(starterDraftHtml);
 
 	return { starterDraftHtml, starterDraftPlainText };
 }
@@ -42,17 +112,28 @@ function createStarterDraft(definition: Omit<EmailTemplateDefinition, "renderDef
 export async function listEmailTemplates(): Promise<EmailTemplateListEntry[]> {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 	const overrides = await db.query.organizationEmailTemplate.findMany({
-		where: and(eq(organizationEmailTemplate.organizationId, organizationId)),
+		where: and(
+			eq(organizationEmailTemplate.organizationId, organizationId),
+			eq(organizationEmailTemplate.isEnabled, true),
+		),
 	});
 	const overridesByTemplateKey = new Map(
-		overrides.map((override) => [override.templateKey, override]),
+		overrides
+			.filter((override) => override.isEnabled)
+			.map((override) => [override.templateKey, override]),
 	);
 
-	return EMAIL_TEMPLATE_REGISTRY.map(({ renderDefault: _renderDefault, ...definition }) => ({
-		...definition,
-		...createStarterDraft(definition),
-		override: overridesByTemplateKey.get(definition.key) ?? null,
-	}));
+	return Promise.all(
+		EMAIL_TEMPLATE_REGISTRY.map(async (definition) => {
+			const { renderDefault: _renderDefault, ...publicDefinition } = definition;
+
+			return {
+				...publicDefinition,
+				...(await createSystemDraft(definition)),
+				override: overridesByTemplateKey.get(definition.key) ?? null,
+			};
+		}),
+	);
 }
 
 export async function saveEmailTemplate(
@@ -80,7 +161,7 @@ export async function saveEmailTemplate(
 			editorDocument: input.editorDocument as Record<string, unknown>,
 			html: sanitizedHtml,
 			plainText: input.plainText?.trim() ? input.plainText : null,
-			isEnabled: input.isEnabled,
+			isEnabled: true,
 			createdByUserId: authContext.user.id,
 			updatedByUserId: authContext.user.id,
 		})
@@ -91,7 +172,7 @@ export async function saveEmailTemplate(
 				editorDocument: input.editorDocument as Record<string, unknown>,
 				html: sanitizedHtml,
 				plainText: input.plainText?.trim() ? input.plainText : null,
-				isEnabled: input.isEnabled,
+				isEnabled: true,
 				updatedByUserId: authContext.user.id,
 			},
 		});

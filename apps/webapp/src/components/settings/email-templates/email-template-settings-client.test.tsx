@@ -117,10 +117,10 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(screen.getAllByText("Email verification").length).toBeGreaterThan(0);
 		expect(screen.getByText("Password reset")).toBeTruthy();
 		expect(screen.getByText("Email editor")).toBeTruthy();
-		expect(screen.getByRole("switch", { name: "Use custom template" })).toBeTruthy();
-		expect(screen.getByText("Custom template")).toBeTruthy();
-		expect(screen.getByText("System default")).toBeTruthy();
-		expect(screen.queryByText("Enabled")).toBeNull();
+		expect(screen.queryByRole("switch", { name: "Use custom template" })).toBeNull();
+		expect(screen.queryByText("Custom template")).toBeNull();
+		expect(screen.queryByText("System default")).toBeNull();
+		expect(screen.getAllByText("Default").length).toBeGreaterThan(0);
 	});
 
 	it("prevents saving untouched default starter content", async () => {
@@ -197,6 +197,7 @@ describe("EmailTemplateSettingsClient", () => {
 				: template,
 		);
 		render(<EmailTemplateSettingsClient templates={overriddenTemplates} />);
+		expect(screen.getAllByText("Customized").length).toBeGreaterThan(0);
 
 		fireEvent.change(screen.getByLabelText("Subject"), {
 			target: { value: "Updated custom subject" },
@@ -211,5 +212,77 @@ describe("EmailTemplateSettingsClient", () => {
 				}),
 			);
 		});
+		const payload = saveEmailTemplateMock.mock.calls[0]?.[0];
+		expect(payload).not.toHaveProperty("isEnabled");
+	});
+
+	it("omits enabled state from send test payloads", async () => {
+		sendEmailTemplateTestMock.mockResolvedValue({ success: true });
+		render(<EmailTemplateSettingsClient templates={templates} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Send test" }));
+
+		await waitFor(() => {
+			expect(sendEmailTemplateTestMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					templateKey: "email-verification",
+					subject: "Verify your email address",
+				}),
+			);
+		});
+		const payload = sendEmailTemplateTestMock.mock.calls[0]?.[0];
+		expect(payload).not.toHaveProperty("isEnabled");
+	});
+
+	it("resets an override back to the system template draft", async () => {
+		resetEmailTemplateMock.mockResolvedValue({ success: true });
+		saveEmailTemplateMock.mockResolvedValue({ success: true });
+		const overriddenTemplates = templates.map((template) =>
+			template.definition.key === "email-verification"
+				? {
+						...template,
+						override: {
+							subject: "Existing custom subject",
+							html: "<p>Existing custom body</p>",
+							plainText: "Existing custom body",
+							editorDocument: { type: "doc" },
+							isEnabled: true,
+						},
+					}
+				: template,
+		);
+		render(<EmailTemplateSettingsClient templates={overriddenTemplates} />);
+		const selectedStatus = () =>
+			screen
+				.getByRole("heading", { name: "Email Templates" })
+				.parentElement?.parentElement?.querySelector('[data-slot="badge"]');
+
+		expect(selectedStatus()?.textContent).toBe("Customized");
+		expect(screen.getByLabelText("Subject")).toHaveProperty(
+			"value",
+			"Existing custom subject",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Reset to system template" }));
+
+		await waitFor(() => {
+			expect(resetEmailTemplateMock).toHaveBeenCalledWith("email-verification");
+		});
+		expect(selectedStatus()?.textContent).toBe("Default");
+		expect(screen.getByLabelText("Subject")).toHaveProperty(
+			"value",
+			"Verify your email address",
+		);
+		expect(screen.getByTestId("editor-html").textContent).toContain("{{userName}}");
+		expect(screen.queryByText("Customized")).toBeNull();
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", false);
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(saveEmailTemplateMock).not.toHaveBeenCalled();
+		expect(toastErrorMock).toHaveBeenCalledWith(
+			"Edit the email body before saving a first custom template.",
+		);
 	});
 });

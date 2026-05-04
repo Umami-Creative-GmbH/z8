@@ -47,6 +47,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({
 	organizationEmailTemplate: {
+		isEnabled: "isEnabled",
 		organizationId: "organizationId",
 		templateKey: "templateKey",
 	},
@@ -109,6 +110,17 @@ describe("email template settings actions", () => {
 		expect(result).toEqual({ success: true, errors: [] });
 	});
 
+	it("accepts valid template input without an enabled state", () => {
+		const result = validateEmailTemplateInput({
+			templateKey: "password-reset",
+			subject: "Reset your password, {{userName}}",
+			html: "<p>{{resetUrl}}</p>",
+			editorDocument: { root: { type: "email" } },
+		});
+
+		expect(result).toEqual({ success: true, errors: [] });
+	});
+
 	it("rejects non-object editor documents", () => {
 		const result = validateEmailTemplateInput({
 			templateKey: "password-reset",
@@ -144,23 +156,78 @@ describe("email template settings actions", () => {
 		);
 	});
 
-	it("lists registry entries with active organization overrides only", async () => {
-		mocks.templates = [{ templateKey: "password-reset", subject: "Override" }];
-
+	it("lists registry entries with system-prefilled drafts when no override exists", async () => {
 		const templates = await listEmailTemplates();
+		const passwordReset = templates.find((entry) => entry.key === "password-reset");
 
 		expect(mocks.requireAccess).toHaveBeenCalledTimes(1);
 		expect(mocks.conditions).toContainEqual({ eq: ["organizationId", "org_1"] });
+		expect(passwordReset?.override).toBeNull();
+		expect(passwordReset?.starterDraftPlainText).toContain("Reset Your Password");
+		expect(passwordReset?.starterDraftPlainText).toContain("{{userName}}");
+		expect(passwordReset?.starterDraftPlainText).toContain("{{resetUrl}}");
+		expect(passwordReset?.starterDraftPlainText).not.toContain("Alex Morgan");
+		expect(passwordReset?.starterDraftHtml).toContain("Reset Your Password");
+		expect(passwordReset?.starterDraftHtml).toContain("{{resetUrl}}");
+		expect(passwordReset?.starterDraftHtml).not.toContain("/reset-password?token=preview");
+	});
+
+	it("lists rendered system drafts with non-string preview values restored to tokens", async () => {
+		const templates = await listEmailTemplates();
+		const exportReady = templates.find((entry) => entry.key === "export-ready");
+
+		expect(exportReady?.starterDraftHtml).toContain("Your Data Export is Ready");
+		expect(exportReady?.starterDraftHtml).toContain("{{categories}}");
+		expect(exportReady?.starterDraftHtml).not.toContain("Time entries, Absences");
+		expect(exportReady?.starterDraftPlainText).toContain("Your Data Export is Ready");
+		expect(exportReady?.starterDraftPlainText).toContain("{{categories}}");
+		expect(exportReady?.starterDraftPlainText).not.toContain("Time entries, Absences");
+	});
+
+	it("restores numeric preview values without corrupting unrelated HTML", async () => {
+		const templates = await listEmailTemplates();
+		const absenceSubmitted = templates.find(
+			(entry) => entry.key === "absence-request-submitted",
+		);
+
+		expect(absenceSubmitted?.starterDraftHtml).toMatch(/{{days}}(?:<!-- -->)? business days/);
+		expect(absenceSubmitted?.starterDraftHtml).not.toContain("3 business days");
+		expect(absenceSubmitted?.starterDraftHtml).toContain("color:#333");
+		expect(absenceSubmitted?.starterDraftHtml).not.toContain("#{{days}}{{days}}{{days}}");
+		expect(absenceSubmitted?.starterDraftPlainText).toContain("{{days}} business days");
+		expect(absenceSubmitted?.starterDraftPlainText).not.toContain("3 business days");
+	});
+
+	it("lists registry entries with organization overrides when they exist", async () => {
+		mocks.templates = [{ templateKey: "password-reset", subject: "Override", isEnabled: true }];
+
+		const templates = await listEmailTemplates();
+
 		expect(templates.find((entry) => entry.key === "password-reset")?.override).toEqual({
 			templateKey: "password-reset",
 			subject: "Override",
+			isEnabled: true,
 		});
-		expect(templates.find((entry) => entry.key === "password-reset")).not.toHaveProperty(
-			"defaultPreviewHtml",
-		);
-		expect(templates.find((entry) => entry.key === "password-reset")).not.toHaveProperty(
-			"defaultPreviewPlainText",
-		);
+	});
+
+	it("treats disabled organization overrides as inactive defaults when listing", async () => {
+		mocks.templates = [
+			{
+				templateKey: "password-reset",
+				subject: "Stale override",
+				html: "<p>stale custom content</p>",
+				plainText: "stale custom content",
+				isEnabled: false,
+			},
+		];
+
+		const templates = await listEmailTemplates();
+		const passwordReset = templates.find((entry) => entry.key === "password-reset");
+
+		expect(passwordReset?.override).toBeNull();
+		expect(passwordReset?.starterDraftPlainText).toContain("Reset Your Password");
+		expect(passwordReset?.starterDraftPlainText).toContain("{{resetUrl}}");
+		expect(passwordReset?.starterDraftPlainText).not.toContain("stale custom content");
 	});
 
 	it("saves sanitized templates scoped to the active organization", async () => {
@@ -169,7 +236,6 @@ describe("email template settings actions", () => {
 			subject: "Reset {{userName}}",
 			html: '<p>{{resetUrl}}</p><script>alert("x")</script>',
 			editorDocument: { root: { type: "email" } },
-			isEnabled: true,
 		});
 
 		expect(result).toEqual({ success: true });
@@ -178,6 +244,7 @@ describe("email template settings actions", () => {
 			templateKey: "password-reset",
 			createdByUserId: "user_1",
 			updatedByUserId: "user_1",
+			isEnabled: true,
 		});
 		expect((mocks.insertValues as { html: string }).html).toBe("<p>{{resetUrl}}</p>");
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/email-templates");

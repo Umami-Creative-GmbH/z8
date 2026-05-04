@@ -11,7 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import type { EmailTemplateEditorDocument, EmailTemplateKey } from "@/db/schema";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
 import { useRouter } from "@/navigation";
@@ -41,7 +40,6 @@ type Draft = {
 	html: string;
 	plainText: string;
 	editorDocument: EmailTemplateEditorDocument;
-	isEnabled: boolean;
 };
 
 const createDraft = ({
@@ -57,7 +55,6 @@ const createDraft = ({
 			{ type: "paragraph", content: [{ type: "text", text: definition.starterDraftPlainText }] },
 		],
 	},
-	isEnabled: override?.isEnabled ?? true,
 });
 
 const hasUnchangedDefaultStarterBody = (
@@ -81,9 +78,20 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 			templates.map((template) => [template.definition.key, createDraft(template)]),
 		),
 	);
+	const [overrideKeys, setOverrideKeys] = useState<Set<EmailTemplateKey>>(
+		() =>
+			new Set(
+				templates
+					.filter((template) => template.override)
+					.map((template) => template.definition.key),
+			),
+	);
 
+	const effectiveTemplates = templates.map((template) =>
+		overrideKeys.has(template.definition.key) ? template : { ...template, override: null },
+	);
 	const selectedTemplate =
-		templates.find((template) => template.definition.key === selectedKey) ?? null;
+		effectiveTemplates.find((template) => template.definition.key === selectedKey) ?? null;
 	const draft = selectedKey ? drafts[selectedKey] : null;
 
 	const updateDraft = (partial: Partial<Draft>) => {
@@ -96,11 +104,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 		}));
 	};
 
-	const selectedStatus = selectedTemplate?.override
-		? selectedTemplate.override.isEnabled
-			? "Customized"
-			: "Disabled"
-		: "Default";
+	const selectedStatus = selectedKey && overrideKeys.has(selectedKey) ? "Customized" : "Default";
 
 	const actionInput = () => {
 		if (!selectedTemplate || !draft) {
@@ -113,7 +117,6 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 			html: draft.html,
 			plainText: draft.plainText,
 			editorDocument: draft.editorDocument,
-			isEnabled: draft.isEnabled,
 		};
 	};
 
@@ -131,6 +134,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 		startTransition(async () => {
 			const result = await saveEmailTemplate(input);
 			if (result.success) {
+				setOverrideKeys((current) => new Set(current).add(input.templateKey));
 				toast.success(t("settings.emailTemplates.saved", "Email template saved"));
 				router.refresh();
 				return;
@@ -163,6 +167,11 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 		startTransition(async () => {
 			const result = await resetEmailTemplate(selectedTemplate.definition.key);
 			if (result.success) {
+				setOverrideKeys((current) => {
+					const next = new Set(current);
+					next.delete(selectedTemplate.definition.key);
+					return next;
+				});
 				setDrafts((current) => ({
 					...current,
 					[selectedTemplate.definition.key]: createDraft({
@@ -170,7 +179,9 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 						override: null,
 					}),
 				}));
-				toast.success(t("settings.emailTemplates.reset", "Email template reset to default"));
+				toast.success(
+					t("settings.emailTemplates.reset", "Email template reset to system template"),
+				);
 				router.refresh();
 				return;
 			}
@@ -220,7 +231,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 					</CardHeader>
 					<CardContent className="px-4">
 						<EmailTemplateList
-							templates={templates}
+							templates={effectiveTemplates}
 							selectedKey={selectedTemplate.definition.key}
 							onSelect={(key) => setSelectedKey(key as EmailTemplateKey)}
 						/>
@@ -236,15 +247,6 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 									{selectedTemplate.definition.description}
 								</p>
 							</div>
-							<label className="flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 text-sm">
-								<span className="text-muted-foreground">System default</span>
-								<Switch
-									checked={draft.isEnabled}
-									onCheckedChange={(isEnabled) => updateDraft({ isEnabled })}
-									aria-label="Use custom template"
-								/>
-								<span className="font-medium">Custom template</span>
-							</label>
 						</CardHeader>
 						<CardContent className="space-y-6">
 							<div className="rounded-xl border bg-muted/25 p-4 text-sm">
@@ -276,7 +278,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 
 							<div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
 								<Button type="button" variant="outline" onClick={handleReset} disabled={isPending}>
-									Reset
+									Reset to system template
 								</Button>
 								<Button
 									type="button"
