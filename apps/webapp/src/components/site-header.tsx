@@ -57,12 +57,8 @@ export function SiteHeader() {
 				<Separator className="mx-2 data-[orientation=vertical]:h-4" orientation="vertical" />
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
-					<div data-tour="notification-bell">
-						<NotificationBell />
-					</div>
-					<div data-tour="time-clock">
-						<TimeClockPopover />
-					</div>
+					<NotificationBell />
+					<TimeClockPopover />
 				</div>
 			</div>
 		</header>

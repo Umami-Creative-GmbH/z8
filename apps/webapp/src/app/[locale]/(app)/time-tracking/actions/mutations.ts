@@ -1,7 +1,8 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
+import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
@@ -9,6 +10,76 @@ import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
 import { logger } from "./shared";
 import { calculateDurationMinutes, setTimeOnStoredDate } from "./time-utils";
+
+export async function approveWorkPeriod(
+	workPeriodId: string,
+): Promise<ServerActionResult<{ workPeriodId: string }>> {
+	const session = await getCurrentSession();
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	try {
+		const [selectedWorkPeriod] = await db
+			.select({
+				id: workPeriod.id,
+				organizationId: workPeriod.organizationId,
+				approvalStatus: workPeriod.approvalStatus,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, workPeriodId),
+					eq(workPeriod.organizationId, currentEmployee.organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!selectedWorkPeriod) {
+			return { success: false, error: "Work period not found" };
+		}
+
+		const memberRecord = await db.query.member.findFirst({
+			where: and(
+				eq(authSchema.member.userId, session.user.id),
+				eq(authSchema.member.organizationId, selectedWorkPeriod.organizationId),
+			),
+		});
+
+		if (memberRecord?.role !== "admin" && memberRecord?.role !== "owner") {
+			return { success: false, error: "Only admins and owners can approve time entries" };
+		}
+
+		if (selectedWorkPeriod.approvalStatus !== "pending") {
+			return { success: false, error: "Only pending work periods can be approved" };
+		}
+
+		await db
+			.update(workPeriod)
+			.set({
+				approvalStatus: "approved",
+				pendingChanges: null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(workPeriod.id, selectedWorkPeriod.id),
+					eq(workPeriod.organizationId, selectedWorkPeriod.organizationId),
+					eq(workPeriod.approvalStatus, "pending"),
+				),
+			);
+
+		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
+	} catch (error) {
+		logger.error({ error, workPeriodId }, "Approve work period error");
+		return { success: false, error: "Failed to approve work period. Please try again." };
+	}
+}
 
 export async function updateWorkPeriodNotes(
 	workPeriodId: string,

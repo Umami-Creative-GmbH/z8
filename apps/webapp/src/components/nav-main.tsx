@@ -20,7 +20,6 @@ export function NavMain({
 		title: string;
 		url: string;
 		icon?: Icon;
-		dataTour?: string;
 	}[];
 	label?: ReactNode;
 }) {
@@ -30,7 +29,7 @@ export function NavMain({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => (
-						<SidebarMenuItem key={item.title} data-tour={item.dataTour}>
+						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton asChild tooltip={item.title}>
 								<Link href={item.url}>
 									{item.icon && <item.icon />}

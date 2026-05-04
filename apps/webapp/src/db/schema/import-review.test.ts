@@ -28,6 +28,10 @@ function hasCompositeForeignKey(
 	});
 }
 
+function foreignKeyNames(table: Parameters<typeof getTableConfig>[0]): string[] {
+	return getTableConfig(table).foreignKeys.map((foreignKey) => foreignKey.getName());
+}
+
 function uniqueConstraintNames(table: Parameters<typeof getTableConfig>[0]): string[] {
 	return getTableConfig(table).uniqueConstraints.map((constraint) => constraint.getName());
 }
@@ -56,7 +60,7 @@ describe("import review schema exports", () => {
 			expect.arrayContaining(["importBatch_id_organizationId_idx"]),
 		);
 		expect(uniqueConstraintNames(importStagedRow)).toEqual(
-			expect.arrayContaining(["importStagedRow_id_batch_org_idx"]),
+			expect.arrayContaining(["import_staged_row_id_batch_org_idx"]),
 		);
 
 		for (const table of [
@@ -74,14 +78,24 @@ describe("import review schema exports", () => {
 			).toBe(true);
 		}
 
-		expect(
-			hasCompositeForeignKey(
-				importIssue,
-				["staged_row_id", "batch_id", "organization_id"],
-				importStagedRow,
-				["id", "batch_id", "organization_id"],
-			),
-		).toBe(true);
+	});
+
+	it("keeps import review composite foreign key names aligned with migrations", () => {
+		expect(foreignKeyNames(importBatchJob)).toEqual(
+			expect.arrayContaining(["import_batch_job_batch_org_import_batch_fk"]),
+		);
+		expect(foreignKeyNames(importStagedRow)).toEqual(
+			expect.arrayContaining(["import_staged_row_batch_org_import_batch_fk"]),
+		);
+		expect(foreignKeyNames(importIssue)).toEqual(
+			expect.arrayContaining(["import_issue_batch_org_import_batch_fk"]),
+		);
+		expect(foreignKeyNames(importRejectedExport)).toEqual(
+			expect.arrayContaining(["import_rejected_export_batch_org_import_batch_fk"]),
+		);
+		expect(foreignKeyNames(importJobSecret)).toEqual(
+			expect.arrayContaining(["import_job_secret_batch_org_import_batch_fk"]),
+		);
 	});
 
 	it("includes a migration for the import review tables", () => {
@@ -106,9 +120,6 @@ describe("import review schema exports", () => {
 		);
 		expect(migration).toContain(
 			'FOREIGN KEY ("batch_id","organization_id") REFERENCES "public"."import_batch"("id","organization_id") ON DELETE cascade ON UPDATE no action',
-		);
-		expect(migration).toContain(
-			'FOREIGN KEY ("staged_row_id","batch_id","organization_id") REFERENCES "public"."import_staged_row"("id","batch_id","organization_id") ON DELETE cascade ON UPDATE no action',
 		);
 	});
 

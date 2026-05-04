@@ -39,3 +39,13 @@ export function withCallbackUrl(path: string, callbackUrl: string | null | undef
 	const separator = path.includes("?") ? "&" : "?";
 	return `${path}${separator}callbackUrl=${encodeURIComponent(safeCallbackUrl)}`;
 }
+
+export function getPostSignInRedirectUrl(callbackUrl: string | null | undefined) {
+	const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl, "/init");
+
+	if (safeCallbackUrl === "/init" || safeCallbackUrl.startsWith("/init?")) {
+		return safeCallbackUrl;
+	}
+
+	return withCallbackUrl("/init", safeCallbackUrl);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeCallbackUrl } from "./callback-url";
+import { getPostSignInRedirectUrl, sanitizeCallbackUrl } from "./callback-url";
 
 describe("sanitizeCallbackUrl", () => {
 	it("keeps internal path callback URLs", () => {
@@ -24,5 +24,19 @@ describe("sanitizeCallbackUrl", () => {
 				"https://app.example.com/sign-in",
 			),
 		).toBe("/fallback");
+	});
+});
+
+describe("getPostSignInRedirectUrl", () => {
+	it("routes protected-page callbacks through init so the active organization is loaded first", () => {
+		expect(getPostSignInRedirectUrl("/time-tracking?tab=week")).toBe(
+			"/init?callbackUrl=%2Ftime-tracking%3Ftab%3Dweek",
+		);
+	});
+
+	it("does not wrap init callbacks again", () => {
+		expect(getPostSignInRedirectUrl("/init?callbackUrl=%2Ftime-tracking")).toBe(
+			"/init?callbackUrl=%2Ftime-tracking",
+		);
 	});
 });

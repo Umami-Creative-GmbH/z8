@@ -73,16 +73,14 @@ export function SectionCards() {
 	}
 
 	return (
-		<div data-tour="dashboard-widgets">
-			<WidgetVisibilityProvider>
-				<SortableWidgetGrid widgetOrder={widgetOrder} onReorder={onReorder}>
-					{widgetOrder.map((widgetId) => {
-						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
-						if (!WidgetComponent) return null;
-						return <WidgetComponent key={widgetId} />;
-					})}
-				</SortableWidgetGrid>
-			</WidgetVisibilityProvider>
-		</div>
+		<WidgetVisibilityProvider>
+			<SortableWidgetGrid widgetOrder={widgetOrder} onReorder={onReorder}>
+				{widgetOrder.map((widgetId) => {
+					const WidgetComponent = WIDGET_COMPONENTS[widgetId];
+					if (!WidgetComponent) return null;
+					return <WidgetComponent key={widgetId} />;
+				})}
+			</SortableWidgetGrid>
+		</WidgetVisibilityProvider>
 	);
 }

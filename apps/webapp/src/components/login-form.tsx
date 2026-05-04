@@ -12,7 +12,11 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
+import {
+	getPostSignInRedirectUrl,
+	sanitizeCallbackUrl,
+	withCallbackUrl,
+} from "@/lib/auth/callback-url";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
@@ -272,6 +276,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		"/init",
 		typeof window === "undefined" ? undefined : window.location.href,
 	);
+	const postSignInRedirectUrl = getPostSignInRedirectUrl(callbackUrl);
 	const [state, dispatch] = useReducer(formReducer, initialState);
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
 
@@ -543,7 +548,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				}
 
 				// Onboarding complete, continue where the user intended to go
-				router.push(callbackUrl);
+				router.push(postSignInRedirectUrl);
 			}
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -571,12 +576,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				// Check if org has custom OAuth credentials for this provider
 				if (socialOAuthConfigured?.[provider]) {
 					// Use custom OAuth flow for org-specific credentials
-					window.location.href = `/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(callbackUrl)}`;
+					window.location.href = `/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`;
 				} else {
 					// Use global Better Auth flow
 					await authClient.signIn.social({
 						provider,
-						callbackURL: callbackUrl,
+						callbackURL: postSignInRedirectUrl,
 					});
 				}
 			} catch (err) {
@@ -590,7 +595,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				});
 			}
 		},
-		[callbackUrl, t, socialOAuthConfigured],
+		[postSignInRedirectUrl, t, socialOAuthConfigured],
 	);
 
 	const handlePasskeyLogin = useCallback(async () => {
@@ -625,7 +630,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					console.error("Error checking onboarding status:", fetchError);
 				}
 
-				router.push(callbackUrl);
+				router.push(postSignInRedirectUrl);
 			}
 		} catch (_error) {
 			dispatch({
@@ -634,7 +639,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [callbackUrl, t, router]);
+	}, [postSignInRedirectUrl, t, router]);
 
 	const handleSSOLogin = useCallback(async () => {
 		if (!ssoProviderId) {
@@ -651,7 +656,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		try {
 			await authClient.signIn.sso({
 				providerId: ssoProviderId,
-				callbackURL: callbackUrl,
+				callbackURL: postSignInRedirectUrl,
 			});
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -663,7 +668,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
 			});
 		}
-	}, [callbackUrl, ssoProviderId, t]);
+	}, [postSignInRedirectUrl, ssoProviderId, t]);
 
 	const handleVerify2FA = useCallback(async () => {
 		if (otpValue.length !== 6) {
@@ -709,7 +714,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				}
 
 				// Onboarding complete, continue where the user intended to go
-				router.push(callbackUrl);
+				router.push(postSignInRedirectUrl);
 			}
 		} catch (err) {
 			dispatch({
@@ -721,7 +726,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [callbackUrl, otpValue, trustDevice, t, router]);
+	}, [postSignInRedirectUrl, otpValue, trustDevice, t, router]);
 
 	return (
 		<AuthFormWrapper

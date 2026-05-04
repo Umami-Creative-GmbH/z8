@@ -95,6 +95,7 @@ export const importBatchJob = pgTable(
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
+			name: "import_batch_job_batch_org_import_batch_fk",
 		}).onDelete("cascade"),
 		uniqueIndex("importBatchJob_batch_kind_partition_idx").on(
 			table.batchId,
@@ -148,7 +149,11 @@ export const importStagedRow = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		unique("importStagedRow_id_batch_org_idx").on(table.id, table.batchId, table.organizationId),
+		unique("import_staged_row_id_batch_org_idx").on(
+			table.id,
+			table.batchId,
+			table.organizationId,
+		),
 		index("importStagedRow_batchId_idx").on(table.batchId),
 		index("importStagedRow_org_entity_idx").on(table.organizationId, table.entityType),
 		index("importStagedRow_status_idx").on(table.rowStatus),
@@ -162,6 +167,7 @@ export const importStagedRow = pgTable(
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
+			name: "import_staged_row_batch_org_import_batch_fk",
 		}).onDelete("cascade"),
 		uniqueIndex("importStagedRow_batch_source_unique_idx").on(
 			table.batchId,
@@ -213,10 +219,7 @@ export const importIssue = pgTable(
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
-		}).onDelete("cascade"),
-		foreignKey({
-			columns: [table.stagedRowId, table.batchId, table.organizationId],
-			foreignColumns: [importStagedRow.id, importStagedRow.batchId, importStagedRow.organizationId],
+			name: "import_issue_batch_org_import_batch_fk",
 		}).onDelete("cascade"),
 	],
 );
@@ -242,6 +245,7 @@ export const importRejectedExport = pgTable(
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
+			name: "import_rejected_export_batch_org_import_batch_fk",
 		}).onDelete("cascade"),
 	],
 );
@@ -267,6 +271,7 @@ export const importJobSecret = pgTable(
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
+			name: "import_job_secret_batch_org_import_batch_fk",
 		}).onDelete("cascade"),
 	],
 );

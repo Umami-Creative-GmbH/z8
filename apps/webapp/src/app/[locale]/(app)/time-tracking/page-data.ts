@@ -1,23 +1,24 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import type {
+	SerializableWorkdayTimelineItem,
+	SerializableWorkdayTimelineResult,
+} from "@/components/time-tracking/personal-workday-timeline";
 import { db } from "@/db";
+import * as authSchema from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
-import type {
-	SerializableWorkdayTimelineItem,
-	SerializableWorkdayTimelineResult,
-} from "@/components/time-tracking/personal-workday-timeline";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
-import { getWorkdayTimelineData } from "./workday-timeline-data";
 import type {
 	SelectedWorkdayDate,
 	WorkdayTimelineItem,
 	WorkdayTimelineResult,
 } from "./workday-timeline.types";
+import { getWorkdayTimelineData } from "./workday-timeline-data";
 
 export interface TimeTrackingPageSearchParams {
 	date?: string;
@@ -45,6 +46,14 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	const { start, end } = getWeekRangeInTimezone(new Date(), timezone, weekStartDay);
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
+	const memberRecord = await db.query.member.findFirst({
+		where: and(
+			eq(authSchema.member.userId, session.user.id),
+			eq(authSchema.member.organizationId, currentEmployee.organizationId),
+		),
+		columns: { role: true },
+	});
+	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
 	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
 		getActiveWorkPeriod(currentEmployee.id),
@@ -65,6 +74,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		timezone,
 		activeWorkPeriod,
 		workPeriods,
+		canApproveTimeEntries,
 		summary,
 		t,
 		timelineResult: serializeWorkdayTimelineResult(timelineResult),

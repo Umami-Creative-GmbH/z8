@@ -23,6 +23,7 @@ export interface WorkPeriodData {
 	startTime: Date;
 	endTime: Date | null;
 	durationMinutes: number | null;
+	approvalStatus: "pending" | "approved" | "rejected";
 	clockIn: TimeEntry;
 	clockOut: TimeEntry | undefined;
 	surchargeMinutes?: number | null;
@@ -112,11 +113,13 @@ export function getTimeEntriesColumns({
 	employeeTimezone,
 	hasManager,
 	renderEditAction,
+	renderAdminAction,
 }: {
 	t: TFnType;
 	employeeTimezone: string;
 	hasManager: boolean;
 	renderEditAction: (period: WorkPeriodData, isSameDay: boolean) => ReactNode;
+	renderAdminAction?: (period: WorkPeriodData) => ReactNode;
 }): ColumnDef<WorkPeriodData>[] {
 	const timezoneAbbreviation = getTimezoneAbbreviation(employeeTimezone);
 
@@ -199,11 +202,19 @@ export function getTimeEntriesColumns({
 				}
 
 				const isSameDay = isSameDayInTimezone(period.startTime, employeeTimezone);
-				if (!isSameDay && !hasManager) {
+				const editAction = isSameDay || hasManager ? renderEditAction(period, isSameDay) : null;
+				const adminAction = renderAdminAction?.(period) ?? null;
+
+				if (!editAction && !adminAction) {
 					return null;
 				}
 
-				return <div className="flex justify-end">{renderEditAction(period, isSameDay)}</div>;
+				return (
+					<div className="flex justify-end gap-1">
+						{editAction}
+						{adminAction}
+					</div>
+				);
 			},
 		},
 	];

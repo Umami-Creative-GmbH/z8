@@ -17,9 +17,12 @@ import {
 } from "@/db/schema";
 
 function uniqueIndexNames(table: Parameters<typeof getTableConfig>[0]): string[] {
-	return getTableConfig(table)
-		.indexes.filter((index) => index.config.unique)
-		.map((index) => index.config.name);
+	const config = getTableConfig(table);
+
+	return [
+		...config.indexes.filter((index) => index.config.unique).map((index) => index.config.name),
+		...config.uniqueConstraints.map((constraint) => constraint.getName()),
+	];
 }
 
 function hasCompositeForeignKey(

@@ -2,8 +2,10 @@
 
 import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getLastOrganization, saveLastOrganization } from "@/lib/org-persistence";
 
 type Organization = {
@@ -20,45 +22,54 @@ type Status = "checking" | "selecting" | "activating" | "redirecting";
  */
 export default function InitPage() {
 	const { t } = useTranslate();
+	const searchParams = useSearchParams();
+	const redirectUrl = sanitizeCallbackUrl(
+		searchParams.get("callbackUrl"),
+		"/",
+		typeof window === "undefined" ? undefined : window.location.href,
+	);
 	const [status, setStatus] = useState<Status>("checking");
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 	const [isActivating, setIsActivating] = useState(false);
 
-	const activateOrganization = useCallback(async (orgId: string) => {
-		setStatus("activating");
-		setIsActivating(true);
+	const activateOrganization = useCallback(
+		async (orgId: string) => {
+			setStatus("activating");
+			setIsActivating(true);
 
-		const switchResponse = await fetch("/api/organizations/switch", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ organizationId: orgId }),
-		}).catch((error) => {
-			console.error("Failed to activate organization:", error);
-			setIsActivating(false);
-			// On error, still try to go to dashboard
-			window.location.assign("/");
-			return null;
-		});
+			const switchResponse = await fetch("/api/organizations/switch", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ organizationId: orgId }),
+			}).catch((error) => {
+				console.error("Failed to activate organization:", error);
+				setIsActivating(false);
+				// On error, still try to go to dashboard
+				window.location.assign(redirectUrl);
+				return null;
+			});
 
-		if (!switchResponse) {
-			return;
-		}
+			if (!switchResponse) {
+				return;
+			}
 
-		if (switchResponse.ok) {
-			saveLastOrganization(orgId);
-		}
+			if (switchResponse.ok) {
+				saveLastOrganization(orgId);
+			}
 
-		// Hard redirect to dashboard to get fresh server state
-		setStatus("redirecting");
-		window.location.assign("/");
-	}, []);
+			// Hard redirect to dashboard to get fresh server state
+			setStatus("redirecting");
+			window.location.assign(redirectUrl);
+		},
+		[redirectUrl],
+	);
 
 	const initializeSession = useCallback(async () => {
 		// Check current session state
 		const response = await fetch("/api/session/organization-status").catch((error) => {
 			console.error("Failed to initialize session:", error);
-			window.location.assign("/");
+			window.location.assign(redirectUrl);
 			return null;
 		});
 		if (!response) {
@@ -82,7 +93,7 @@ export default function InitPage() {
 
 		const data = await response.json().catch((error) => {
 			console.error("Failed to parse organization status:", error);
-			window.location.assign("/");
+			window.location.assign(redirectUrl);
 			return null;
 		});
 		if (!data) {
@@ -94,14 +105,14 @@ export default function InitPage() {
 		// If already has an active org, go straight to dashboard
 		if (hasActiveOrganization) {
 			setStatus("redirecting");
-			window.location.assign("/");
+			window.location.assign(redirectUrl);
 			return;
 		}
 
 		// No organizations at all, go to dashboard (will show appropriate state)
 		if (!orgs || orgs.length === 0) {
 			setStatus("redirecting");
-			window.location.assign("/");
+			window.location.assign(redirectUrl);
 			return;
 		}
 
@@ -127,7 +138,7 @@ export default function InitPage() {
 		// Multiple orgs and no saved preference - show selection UI
 		setOrganizations(orgs);
 		setStatus("selecting");
-	}, [activateOrganization]);
+	}, [activateOrganization, redirectUrl]);
 
 	const handleSelectOrganization = useCallback(
 		async (orgId: string) => {

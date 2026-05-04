@@ -1,14 +1,24 @@
 "use client";
 
+import { IconCheck, IconDotsVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
+import { startTransition, useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { approveWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions/mutations";
 import { DataTable } from "@/components/data-table-server";
 import {
 	getTimeEntriesColumns,
 	type WorkPeriodData,
 } from "@/components/time-tracking/time-entries-table-columns";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useRouter } from "@/navigation";
 
 const TimeCorrectionDialog = dynamic(
@@ -24,13 +34,40 @@ const ManualTimeEntryDialog = dynamic(
 interface Props {
 	workPeriods: WorkPeriodData[];
 	hasManager: boolean;
+	canApproveTimeEntries: boolean;
 	employeeTimezone: string;
 	employeeId: string;
 }
 
-export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone, employeeId }: Props) {
+export function TimeEntriesTable({
+	workPeriods,
+	hasManager,
+	canApproveTimeEntries,
+	employeeTimezone,
+	employeeId,
+}: Props) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<string | null>(null);
+
+	const handleApproveWorkPeriod = useCallback(
+		async (period: WorkPeriodData) => {
+			setApprovingWorkPeriodId(period.id);
+			const result = await approveWorkPeriod(period.id);
+			setApprovingWorkPeriodId(null);
+
+			if (!result.success) {
+				toast.error(
+					result.error || t("timeTracking.table.approveFailed", "Failed to approve entry"),
+				);
+				return;
+			}
+
+			toast.success(t("timeTracking.table.approved", "Time entry approved"));
+			startTransition(() => router.refresh());
+		},
+		[router, t],
+	);
 
 	const columns = useMemo(
 		() =>
@@ -38,6 +75,15 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone, em
 				t,
 				employeeTimezone,
 				hasManager,
+				renderAdminAction: canApproveTimeEntries
+					? (period) => (
+							<TimeEntryAdminMenu
+								period={period}
+								isApproving={approvingWorkPeriodId === period.id}
+								onApprove={() => handleApproveWorkPeriod(period)}
+							/>
+						)
+					: undefined,
 				renderEditAction: (period, isSameDay) => (
 					<TimeCorrectionDialog
 						workPeriod={period}
@@ -46,7 +92,14 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone, em
 					/>
 				),
 			}),
-		[t, employeeTimezone, hasManager],
+		[
+			t,
+			employeeTimezone,
+			hasManager,
+			canApproveTimeEntries,
+			approvingWorkPeriodId,
+			handleApproveWorkPeriod,
+		],
 	);
 
 	return (
@@ -73,5 +126,44 @@ export function TimeEntriesTable({ workPeriods, hasManager, employeeTimezone, em
 				/>
 			</CardContent>
 		</Card>
+	);
+}
+
+function TimeEntryAdminMenu({
+	period,
+	isApproving,
+	onApprove,
+}: {
+	period: WorkPeriodData;
+	isApproving: boolean;
+	onApprove: () => void;
+}) {
+	const { t } = useTranslate();
+
+	if (period.approvalStatus !== "pending") {
+		return null;
+	}
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="size-8 text-muted-foreground hover:text-foreground"
+					aria-label={t("timeTracking.table.rowActions", "Time entry actions")}
+				>
+					<IconDotsVertical className="h-4 w-4" aria-hidden="true" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-44">
+				<DropdownMenuItem disabled={isApproving} onClick={onApprove}>
+					<IconCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+					{isApproving
+						? t("timeTracking.table.approving", "Approving...")
+						: t("timeTracking.table.approveEntry", "Approve entry")}
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

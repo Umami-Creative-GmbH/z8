@@ -4,8 +4,8 @@ import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
-import { getTimeTrackingPageData } from "./page-data";
 import type { TimeTrackingPageSearchParams } from "./page-data";
+import { getTimeTrackingPageData } from "./page-data";
 
 interface TimeTrackingPageProps {
 	searchParams: Promise<TimeTrackingPageSearchParams>;
@@ -43,6 +43,7 @@ export default async function TimeTrackingPage({ searchParams }: TimeTrackingPag
 				<TimeEntriesTable
 					workPeriods={pageData.workPeriods}
 					hasManager={!!pageData.currentEmployee.managerId}
+					canApproveTimeEntries={pageData.canApproveTimeEntries}
 					employeeTimezone={pageData.timezone}
 					employeeId={pageData.currentEmployee.id}
 				/>
