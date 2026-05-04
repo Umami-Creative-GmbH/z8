@@ -11,7 +11,7 @@ export interface SaveEmailTemplateInput {
 	html: string;
 	editorDocument: unknown;
 	plainText?: string;
-	isEnabled: boolean;
+	isEnabled?: boolean;
 }
 
 export interface EmailTemplateActionResult {
@@ -56,7 +56,7 @@ export function validateEmailTemplateInput(
 		errors.push("Plain text body must be a string");
 	}
 
-	if (typeof input.isEnabled !== "boolean") {
+	if (input.isEnabled !== undefined && typeof input.isEnabled !== "boolean") {
 		errors.push("Enabled state must be a boolean");
 	}
 
