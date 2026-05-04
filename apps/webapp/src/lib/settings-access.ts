@@ -8,6 +8,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/travel-expenses",
 	"/settings/legal-entities",
 	"/settings/enterprise/domains",
+	"/settings/enterprise/identity-setup",
 	"/settings/enterprise/email",
 	"/settings/email-templates",
 	"/settings/enterprise/api-keys",
@@ -22,6 +23,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/demo",
 	"/settings/import",
 	"/settings/export-operations",
+	"/settings/implementation-checklist",
 ] as const;
 
 export const ENTITY_ADMIN_SETTINGS_ROUTES = [

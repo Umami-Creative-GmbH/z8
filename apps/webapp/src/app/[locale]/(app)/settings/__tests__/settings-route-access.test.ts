@@ -17,6 +17,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"travel-expenses/page.tsx",
 	"legal-entities/page.tsx",
 	"enterprise/domains/page.tsx",
+	"enterprise/identity-setup/page.tsx",
 	"enterprise/email/page.tsx",
 	"email-templates/page.tsx",
 	"enterprise/api-keys/page.tsx",
@@ -31,6 +32,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"demo/page.tsx",
 	"import/page.tsx",
 	"export-operations/page.tsx",
+	"implementation-checklist/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -57,6 +59,7 @@ describe("org-admin settings route access", () => {
 			"/settings/travel-expenses",
 			"/settings/legal-entities",
 			"/settings/enterprise/domains",
+			"/settings/enterprise/identity-setup",
 			"/settings/enterprise/email",
 			"/settings/email-templates",
 			"/settings/enterprise/api-keys",
@@ -71,6 +74,7 @@ describe("org-admin settings route access", () => {
 			"/settings/demo",
 			"/settings/import",
 			"/settings/export-operations",
+			"/settings/implementation-checklist",
 		]);
 	});
 
@@ -139,6 +143,7 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(false);
 	});
 
 	it("guards direct demo route and mutations with the demo data feature helper", () => {
@@ -412,6 +417,19 @@ describe("org-admin settings route access", () => {
 		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillWithRelations/);
 	});
 
+	it("keeps the implementation checklist context loader server-only", () => {
+		const actionsSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/actions.ts"), "utf8"),
+		);
+		const queriesSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/queries.ts"), "utf8"),
+		);
+
+		expect(actionsSource).not.toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+		expect(queriesSource.startsWith('import "server-only";')).toBe(true);
+		expect(queriesSource).toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+	});
+
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {
 		const vacationActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),
@@ -589,6 +607,19 @@ describe("org-admin settings route access", () => {
 		expect(source.includes("requireLegalEntitySettingsAccess(")).toBe(true);
 		expect(source.includes("isOrgAdminCasl(")).toBe(false);
 		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
+	});
+
+	it("keeps enterprise identity setup on org-admin settings access", () => {
+		const setupPageSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "enterprise/identity-setup/page.tsx"), "utf8"),
+		);
+		const settingsAccessSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "../../../../lib/settings-access.ts"), "utf8"),
+		);
+
+		expect(setupPageSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(setupPageSource.includes('employee?.role !== "admin"')).toBe(false);
+		expect(settingsAccessSource.includes('"/settings/enterprise/identity-setup"')).toBe(true);
 	});
 
 	it("keeps the demo data feature flag out of direct Better Auth organization input", () => {

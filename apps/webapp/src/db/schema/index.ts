@@ -8,6 +8,7 @@ export * from "./absence";
 export * from "./access-policy";
 export * from "./app-auth";
 export * from "./approval";
+export * from "./approval-policy";
 export * from "./audit";
 // Audit export (signed packages, WORM retention)
 export * from "./audit-export";
@@ -33,6 +34,7 @@ export * from "./discord-integration";
 export * from "./email-template";
 export * from "./employment-history";
 export * from "./enterprise";
+export * from "./enterprise-identity-setup";
 // Enums
 export * from "./enums";
 export * from "./export";
@@ -42,6 +44,7 @@ export * from "./legal-entity";
 export * from "./identity";
 // Import review staging and audit tables
 export * from "./import-review";
+export * from "./implementation-checklist";
 // Invite codes
 export * from "./invite-code";
 export * from "./notification";

@@ -94,23 +94,55 @@ describe("settings visibility tiers", () => {
 		const entityAdminEntryIds = getVisibleSettings("entityAdmin", true).map((entry) => entry.id);
 
 		expect(entityAdminEntryIds).toEqual(
-		expect.arrayContaining([
-			"profile",
-			"security",
-			"notifications",
-			"wellness",
-			"employees",
-			"holidays",
-			"vacation",
-			"work-policies",
-			"change-policies",
-			"payroll-export",
-			"payroll-readiness",
-		]),
+			expect.arrayContaining([
+				"profile",
+				"security",
+				"notifications",
+				"wellness",
+				"employees",
+				"holidays",
+				"vacation",
+				"work-policies",
+				"change-policies",
+				"payroll-export",
+				"payroll-readiness",
+			]),
 		);
 		expect(entityAdminEntryIds).not.toEqual(
-			expect.arrayContaining(["locations", "work-categories", "statistics", "calendar"]),
+			expect.arrayContaining([
+				"locations",
+				"work-categories",
+				"statistics",
+				"calendar",
+				"implementation-checklist",
+			]),
 		);
+	});
+
+	it("shows scheduled exports as scoped entity-admin settings", () => {
+		const entityAdminEntries = getVisibleSettings("entityAdmin", true);
+
+		expect(entityAdminEntries.find((entry) => entry.id === "scheduled-exports")).toMatchObject({
+			minimumTier: "entityAdmin",
+			href: "/settings/scheduled-exports",
+		});
+	});
+
+	it("shows implementation checklist only for org admins", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+		const entityAdminEntries = getVisibleSettings("entityAdmin", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "implementation-checklist")).toMatchObject({
+			titleDefault: "Implementation Checklist",
+			href: "/settings/implementation-checklist",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
+		expect(entityAdminEntries.some((entry) => entry.id === "implementation-checklist")).toBe(false);
 	});
 
 	it("groups notification preferences and channel configuration together", () => {

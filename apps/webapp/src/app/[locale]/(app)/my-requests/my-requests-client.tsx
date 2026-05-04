@@ -3,20 +3,12 @@
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import type {
 	SelfServiceRequestItem,
 	SelfServiceRequestResult,
@@ -46,6 +38,8 @@ const statusLabels: Record<SelfServiceRequestStatus, { key: string; fallback: st
 	rejected: { key: "myRequests.status.rejected", fallback: "Rejected" },
 	cancelled: { key: "myRequests.status.cancelled", fallback: "Cancelled" },
 };
+
+const RECENT_DECISION_DAYS = 30;
 
 function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Translate) {
 	if (sourceType === "time_correction") {
@@ -134,6 +128,24 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }
 
+function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
+	if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
+		return false;
+	}
+
+	const cutoff = DateTime.fromJSDate(now).minus({ days: RECENT_DECISION_DAYS });
+	return DateTime.fromJSDate(item.resolvedAt) >= cutoff;
+}
+
+function groupRequestItems(items: SelfServiceRequestItem[], now: Date) {
+	return {
+		needsAttention: items.filter((item) => item.status === "rejected"),
+		inReview: items.filter((item) => item.status === "pending"),
+		recentlyDecided: items.filter((item) => isRecentlyDecided(item, now)),
+		all: items,
+	};
+}
+
 export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -157,7 +169,7 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 
 		return matchesStatus && matchesSourceType && searchableText.includes(normalizedSearch);
 	});
-	const rejectedItems = filteredItems.filter((item) => item.status === "rejected");
+	const groupedItems = groupRequestItems(filteredItems, new Date());
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
@@ -214,59 +226,18 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 				</section>
 			) : null}
 
-			{rejectedItems.length > 0 ? (
-				<section className="px-4 lg:px-6">
-					<Card className="border-destructive/30 bg-destructive/5">
-						<CardHeader>
-							<CardTitle>{t("myRequests.needsAttention.title", "Needs attention")}</CardTitle>
-							<CardDescription>
-								{t(
-									"myRequests.needsAttention.description",
-									"Rejected requests that may require a correction before resubmission.",
-								)}
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-3">
-							{rejectedItems.map((item) => (
-								<div
-									key={item.id}
-									className="flex flex-col gap-3 rounded-lg border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<div className="min-w-0 space-y-1">
-										<div className="flex flex-wrap items-center gap-2">
-											<p className="font-medium">{requestTitle(item, t)}</p>
-											<Badge variant="destructive">
-												{t("myRequests.status.rejected", "Rejected")}
-											</Badge>
-										</div>
-										<p className="break-words text-muted-foreground text-sm">
-											{requestSubtitle(item, locale, t)}
-										</p>
-										<p className="break-words text-sm">
-											{item.decisionReason?.trim() ||
-												t("myRequests.noReason", "No reason provided.")}
-										</p>
-									</div>
-									<RequestAction item={item} preferFix />
-								</div>
-							))}
-						</CardContent>
-					</Card>
-				</section>
-			) : null}
-
 			<section className="px-4 lg:px-6">
 				<Card>
 					<CardHeader>
-						<CardTitle>{t("myRequests.all.title", "All requests")}</CardTitle>
+						<CardTitle>{t("myRequests.filters.title", "Find requests")}</CardTitle>
 						<CardDescription>
 							{t(
-								"myRequests.all.description",
-								"Review requests across absences, time corrections, and expenses.",
+								"myRequests.filters.description",
+								"Filter every request section by text, status, or request type.",
 							)}
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-4">
+					<CardContent>
 						<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
 							<label htmlFor="request-search" className="grid gap-2 text-sm font-medium">
 								{t("myRequests.filters.search", "Search")}
@@ -319,78 +290,166 @@ export function MyRequestsClient({ initialResult }: MyRequestsClientProps) {
 								</select>
 							</label>
 						</div>
-
-						{initialResult.items.length === 0 ? (
-							<EmptyState
-								title={t("myRequests.empty.none.title", "No requests yet")}
-								description={t(
-									"myRequests.empty.none.description",
-									"Requests will appear here when they are submitted or loaded.",
-								)}
-							/>
-						) : filteredItems.length === 0 ? (
-							<EmptyState
-								title={t("myRequests.empty.filtered.title", "No requests match your filters")}
-								description={t(
-									"myRequests.empty.filtered.description",
-									"Requests will appear here when they are submitted or loaded.",
-								)}
-							/>
-						) : (
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("myRequests.table.type", "Type")}</TableHead>
-											<TableHead>{t("myRequests.table.request", "Request")}</TableHead>
-											<TableHead>{t("myRequests.table.status", "Status")}</TableHead>
-											<TableHead>{t("myRequests.table.submitted", "Submitted")}</TableHead>
-											<TableHead>{t("myRequests.table.decision", "Decision")}</TableHead>
-											<TableHead className="text-right">
-												{t("myRequests.table.action", "Action")}
-											</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{filteredItems.map((item) => (
-											<TableRow key={item.id}>
-												<TableCell>
-													{t(
-														sourceTypeLabels[item.sourceType].key,
-														sourceTypeLabels[item.sourceType].fallback,
-													)}
-												</TableCell>
-												<TableCell className="max-w-[320px] whitespace-normal">
-													<div className="space-y-1">
-														<p className="font-medium">{requestTitle(item, t)}</p>
-														<p className="break-words text-muted-foreground text-sm">
-															{requestSubtitle(item, locale, t)}
-														</p>
-														{item.decisionReason ? (
-															<p className="break-words text-sm">
-																{t("myRequests.reasonLabel", "Reason")}: {item.decisionReason}
-															</p>
-														) : null}
-													</div>
-												</TableCell>
-												<TableCell>
-													<StatusBadge status={item.status} />
-												</TableCell>
-												<TableCell>{formatDate(item.submittedAt, locale)}</TableCell>
-												<TableCell>{formatDate(item.resolvedAt, locale)}</TableCell>
-												<TableCell className="text-right">
-													<RequestAction item={item} />
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						)}
 					</CardContent>
 				</Card>
 			</section>
+
+			{initialResult.items.length === 0 ? (
+				<section className="px-4 lg:px-6">
+					<EmptyState
+						title={t("myRequests.empty.none.title", "No requests yet")}
+						description={t(
+							"myRequests.empty.none.description",
+							"Requests will appear here when they are submitted or loaded.",
+						)}
+					/>
+				</section>
+			) : filteredItems.length === 0 ? (
+				<section className="px-4 lg:px-6">
+					<EmptyState
+						title={t("myRequests.empty.filtered.title", "No requests match your filters")}
+						description={t(
+							"myRequests.empty.filtered.description",
+							"Requests will appear here when they are submitted or loaded.",
+						)}
+					/>
+				</section>
+			) : (
+				<>
+					<RequestSection
+						title={t("myRequests.needsAttention.title", "Needs attention")}
+						description={t(
+							"myRequests.needsAttention.description",
+							"Rejected requests that may require a correction before resubmission.",
+						)}
+						items={groupedItems.needsAttention}
+						preferFix
+						tone="attention"
+					/>
+					<RequestSection
+						title={t("myRequests.inReview.title", "In review")}
+						description={t(
+							"myRequests.inReview.description",
+							"Requests waiting for approval or processing.",
+						)}
+						items={groupedItems.inReview}
+					/>
+					<RequestSection
+						title={t("myRequests.recentlyDecided.title", "Recently decided")}
+						description={t(
+							"myRequests.recentlyDecided.description",
+							"Approved and rejected decisions from the last 30 days.",
+						)}
+						items={groupedItems.recentlyDecided}
+					/>
+					<RequestSection
+						title={t("myRequests.all.title", "All requests")}
+						description={t(
+							"myRequests.all.description",
+							"Review requests across absences, time corrections, and expenses.",
+						)}
+						items={groupedItems.all}
+						allowCancel={false}
+					/>
+				</>
+			)}
 		</div>
+	);
+}
+
+function RequestSection({
+	title,
+	description,
+	items,
+	allowCancel = true,
+	preferFix = false,
+	tone = "default",
+}: {
+	title: string;
+	description: string;
+	items: SelfServiceRequestItem[];
+	allowCancel?: boolean;
+	preferFix?: boolean;
+	tone?: "default" | "attention";
+}) {
+	const titleId = useId();
+
+	if (items.length === 0) {
+		return null;
+	}
+
+	return (
+		<section aria-labelledby={titleId} className="px-4 lg:px-6">
+			<Card className={tone === "attention" ? "border-destructive/30 bg-destructive/5" : undefined}>
+				<CardHeader>
+					<h2 id={titleId} className="font-semibold leading-none">
+						{title}
+					</h2>
+					<CardDescription>{description}</CardDescription>
+				</CardHeader>
+				<CardContent className="grid gap-3">
+					{items.map((item) => (
+						<RequestCard
+							key={item.id}
+							item={item}
+							allowCancel={allowCancel}
+							preferFix={preferFix}
+						/>
+					))}
+				</CardContent>
+			</Card>
+		</section>
+	);
+}
+
+function RequestCard({
+	item,
+	allowCancel = true,
+	preferFix = false,
+}: {
+	item: SelfServiceRequestItem;
+	allowCancel?: boolean;
+	preferFix?: boolean;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+
+	return (
+		<article className="rounded-lg border bg-background p-4 shadow-xs">
+			<div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+				<div className="min-w-0 space-y-3">
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge variant="outline">
+							{t(sourceTypeLabels[item.sourceType].key, sourceTypeLabels[item.sourceType].fallback)}
+						</Badge>
+						<StatusBadge status={item.status} />
+					</div>
+					<div className="space-y-1">
+						<h3 className="font-medium text-base leading-tight">{requestTitle(item, t)}</h3>
+						<p className="break-words text-muted-foreground text-sm">
+							{requestSubtitle(item, locale, t)}
+						</p>
+						{item.decisionReason ? (
+							<p className="break-words text-sm">
+								<span className="font-medium">{t("myRequests.reasonLabel", "Reason")}:</span>{" "}
+								{item.decisionReason}
+							</p>
+						) : null}
+					</div>
+					<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+						<span>
+							{t("myRequests.card.submitted", "Submitted")}: {formatDate(item.submittedAt, locale)}
+						</span>
+						{item.resolvedAt ? (
+							<span>
+								{t("myRequests.card.decision", "Decision")}: {formatDate(item.resolvedAt, locale)}
+							</span>
+						) : null}
+					</div>
+				</div>
+				<RequestAction item={item} allowCancel={allowCancel} preferFix={preferFix} />
+			</div>
+		</article>
 	);
 }
 
@@ -425,9 +484,11 @@ function StatusBadge({ status }: { status: SelfServiceRequestStatus }) {
 
 function RequestAction({
 	item,
+	allowCancel = true,
 	preferFix = false,
 }: {
 	item: SelfServiceRequestItem;
+	allowCancel?: boolean;
 	preferFix?: boolean;
 }) {
 	const { t } = useTranslate();
@@ -435,7 +496,7 @@ function RequestAction({
 	const [cancelError, setCancelError] = useState<string | null>(null);
 	const canFix = item.availableActions.includes("fix");
 	const canView = item.availableActions.includes("view");
-	const canCancel = item.availableActions.includes("cancel");
+	const canCancel = allowCancel && item.availableActions.includes("cancel");
 	const primaryAction = preferFix && canFix ? "fix" : canView ? "view" : canFix ? "fix" : null;
 	const primaryActionLabel =
 		primaryAction === "fix"

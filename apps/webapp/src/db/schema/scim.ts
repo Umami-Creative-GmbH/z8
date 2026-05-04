@@ -138,6 +138,7 @@ export const scimProvisioningLog = pgTable(
 
 			// IdP info
 			idpProvider?: string;
+			tokenGenerated?: boolean;
 		}>(),
 
 		// Request context

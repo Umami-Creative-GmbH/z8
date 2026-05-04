@@ -46,7 +46,7 @@ Platform admin access does not replace normal organization settings workflows. D
 
 If you need to manage invitations, app access, social OAuth, or payroll settings for one customer workspace, use that organization's admin settings rather than `/platform-admin`.
 
-SCIM is different: the current product does not expose a dedicated self-serve SCIM settings page, so treat it as a managed organization-scoped enterprise integration and follow the [SCIM Provisioning](/docs/guide/admin-guide/scim-provisioning) guidance instead of looking for a normal admin settings screen.
+SCIM remains organization-scoped: owners and admins configure it through **Enterprise Identity Setup** at `/settings/enterprise/identity-setup`, then verify provisioning after the identity provider pushes a test change. Platform admins should use the [SCIM Provisioning](/docs/guide/admin-guide/scim-provisioning) guidance when coordinating customer rollout rather than configuring SCIM from `/platform-admin`.
 
 ## Access Requirements
 

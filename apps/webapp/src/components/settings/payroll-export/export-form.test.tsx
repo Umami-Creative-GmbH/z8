@@ -363,18 +363,17 @@ describe("ExportForm", () => {
 			/>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+		const formatSelect = await waitFor(() => {
+			const combobox = screen
+				.getAllByRole("combobox")
+				.find((combobox) =>
+					within(combobox).queryByRole("option", { name: "SAP SuccessFactors (CSV)" }),
+				);
+			expect(combobox).toBeTruthy();
+			return combobox as HTMLSelectElement;
 		});
 
 		expect(getFilterOptionsActionMock).toHaveBeenCalledWith("org_123", "entity-a");
-
-		const formatSelect = screen
-			.getAllByRole("combobox")
-			.find((combobox) =>
-				within(combobox).queryByRole("option", { name: "SAP SuccessFactors (CSV)" }),
-			);
-
 		fireEvent.change(formatSelect as HTMLSelectElement, {
 			target: { value: "successfactors_csv" },
 		});

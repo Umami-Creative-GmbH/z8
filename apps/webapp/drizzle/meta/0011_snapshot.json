@@ -1,5 +1,5 @@
 {
-  "id": "32e366bd-3fed-4a46-a473-751b4033b3ff",
+  "id": "4881383c-cf1c-4a47-8ce1-f3e810ccd0d7",
   "prevId": "dcf5b21a-237c-43b7-92b8-c5272a98bae4",
   "version": "7",
   "dialect": "postgresql",
@@ -5832,12 +5832,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -5927,42 +5921,6 @@
           "method": "btree",
           "with": {}
         },
-        "changePolicy_legalEntityId_idx": {
-          "name": "changePolicy_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "changePolicy_org_entity_idx": {
-          "name": "changePolicy_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "changePolicy_isActive_idx": {
           "name": "changePolicy_isActive_idx",
           "columns": [
@@ -5978,17 +5936,11 @@
           "method": "btree",
           "with": {}
         },
-        "changePolicy_org_entity_name_idx": {
-          "name": "changePolicy_org_entity_name_idx",
+        "changePolicy_org_name_idx": {
+          "name": "changePolicy_org_name_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -6013,19 +5965,6 @@
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "change_policy_legal_entity_id_legal_entity_id_fk": {
-          "name": "change_policy_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "change_policy",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
           ],
           "columnsTo": [
             "id"
@@ -6058,21 +5997,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "change_policy_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "change_policy_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "change_policy",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -6101,12 +6025,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -6206,42 +6124,6 @@
           "method": "btree",
           "with": {}
         },
-        "changePolicyAssignment_legalEntityId_idx": {
-          "name": "changePolicyAssignment_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "changePolicyAssignment_org_entity_idx": {
-          "name": "changePolicyAssignment_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "changePolicyAssignment_teamId_idx": {
           "name": "changePolicyAssignment_teamId_idx",
           "columns": [
@@ -6282,12 +6164,6 @@
               "nulls": "last"
             },
             {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
               "expression": "assignment_type",
               "isExpression": false,
               "asc": true,
@@ -6305,17 +6181,11 @@
           "method": "btree",
           "with": {}
         },
-        "changePolicyAssignment_entity_default_idx": {
-          "name": "changePolicyAssignment_entity_default_idx",
+        "changePolicyAssignment_org_default_idx": {
+          "name": "changePolicyAssignment_org_default_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -6393,19 +6263,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "change_policy_assignment_legal_entity_id_legal_entity_id_fk": {
-          "name": "change_policy_assignment_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "change_policy_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "change_policy_assignment_team_id_team_id_fk": {
           "name": "change_policy_assignment_team_id_team_id_fk",
           "tableFrom": "change_policy_assignment",
@@ -6441,21 +6298,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "change_policy_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "change_policy_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "change_policy_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -11216,12 +11058,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "category_id": {
           "name": "category_id",
           "type": "uuid",
@@ -11321,42 +11157,6 @@
           "method": "btree",
           "with": {}
         },
-        "holiday_legalEntityId_idx": {
-          "name": "holiday_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "holiday_org_entity_idx": {
-          "name": "holiday_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "holiday_startDate_idx": {
           "name": "holiday_startDate_idx",
           "columns": [
@@ -11429,19 +11229,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "holiday_legal_entity_id_legal_entity_id_fk": {
-          "name": "holiday_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "holiday",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "holiday_category_id_holiday_category_id_fk": {
           "name": "holiday_category_id_holiday_category_id_fk",
           "tableFrom": "holiday",
@@ -11480,21 +11267,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "holiday_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "holiday_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "holiday",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -11523,12 +11295,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -11609,42 +11375,6 @@
           "method": "btree",
           "with": {}
         },
-        "holidayAssignment_legalEntityId_idx": {
-          "name": "holidayAssignment_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "holidayAssignment_org_entity_idx": {
-          "name": "holidayAssignment_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "holidayAssignment_teamId_idx": {
           "name": "holidayAssignment_teamId_idx",
           "columns": [
@@ -11675,8 +11405,8 @@
           "method": "btree",
           "with": {}
         },
-        "holidayAssignment_holiday_entity_idx": {
-          "name": "holidayAssignment_holiday_entity_idx",
+        "holidayAssignment_holiday_org_idx": {
+          "name": "holidayAssignment_holiday_org_idx",
           "columns": [
             {
               "expression": "holiday_id",
@@ -11686,12 +11416,6 @@
             },
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -11781,19 +11505,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "holiday_assignment_legal_entity_id_legal_entity_id_fk": {
-          "name": "holiday_assignment_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "holiday_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "holiday_assignment_team_id_team_id_fk": {
           "name": "holiday_assignment_team_id_team_id_fk",
           "tableFrom": "holiday_assignment",
@@ -11832,21 +11543,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "holiday_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "holiday_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "holiday_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -11869,12 +11565,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -11953,42 +11643,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "holidayCategory_legalEntityId_idx": {
-          "name": "holidayCategory_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "holidayCategory_org_entity_idx": {
-          "name": "holidayCategory_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -12003,34 +11657,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "holiday_category_legal_entity_id_legal_entity_id_fk": {
-          "name": "holiday_category_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "holiday_category",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "holiday_category_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "holiday_category_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "holiday_category",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -12054,12 +11680,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -12148,53 +11768,11 @@
           "method": "btree",
           "with": {}
         },
-        "holidayPreset_legalEntityId_idx": {
-          "name": "holidayPreset_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "holidayPreset_org_entity_idx": {
-          "name": "holidayPreset_org_entity_idx",
+        "holidayPreset_org_location_idx": {
+          "name": "holidayPreset_org_location_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "holidayPreset_org_entity_location_idx": {
-          "name": "holidayPreset_org_entity_location_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -12238,19 +11816,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "holiday_preset_legal_entity_id_legal_entity_id_fk": {
-          "name": "holiday_preset_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "holiday_preset",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "holiday_preset_created_by_user_id_fk": {
           "name": "holiday_preset_created_by_user_id_fk",
           "tableFrom": "holiday_preset",
@@ -12273,21 +11838,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "holiday_preset_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "holiday_preset_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "holiday_preset",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -12319,12 +11869,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -12424,42 +11968,6 @@
           "method": "btree",
           "with": {}
         },
-        "holidayPresetAssignment_legalEntityId_idx": {
-          "name": "holidayPresetAssignment_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "holidayPresetAssignment_org_entity_idx": {
-          "name": "holidayPresetAssignment_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "holidayPresetAssignment_teamId_idx": {
           "name": "holidayPresetAssignment_teamId_idx",
           "columns": [
@@ -12490,17 +11998,11 @@
           "method": "btree",
           "with": {}
         },
-        "holidayPresetAssignment_entity_default_idx": {
-          "name": "holidayPresetAssignment_entity_default_idx",
+        "holidayPresetAssignment_org_default_idx": {
+          "name": "holidayPresetAssignment_org_default_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -12578,19 +12080,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "holiday_preset_assignment_legal_entity_id_legal_entity_id_fk": {
-          "name": "holiday_preset_assignment_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "holiday_preset_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "holiday_preset_assignment_team_id_team_id_fk": {
           "name": "holiday_preset_assignment_team_id_team_id_fk",
           "tableFrom": "holiday_preset_assignment",
@@ -12626,21 +12115,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "holiday_preset_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "holiday_preset_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "holiday_preset_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -12816,456 +12290,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.legal_entity": {
-      "name": "legal_entity",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_name": {
-          "name": "legal_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "registration_number": {
-          "name": "registration_number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tax_id": {
-          "name": "tax_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "country_code": {
-          "name": "country_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "street": {
-          "name": "street",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "city": {
-          "name": "city",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "postal_code": {
-          "name": "postal_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "country": {
-          "name": "country",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "default_currency": {
-          "name": "default_currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'EUR'"
-        },
-        "timezone": {
-          "name": "timezone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'Europe/Berlin'"
-        },
-        "is_default": {
-          "name": "is_default",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "legalEntity_organizationId_idx": {
-          "name": "legalEntity_organizationId_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "legalEntity_isActive_idx": {
-          "name": "legalEntity_isActive_idx",
-          "columns": [
-            {
-              "expression": "is_active",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "legalEntity_id_organizationId_idx": {
-          "name": "legalEntity_id_organizationId_idx",
-          "columns": [
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "legalEntity_org_name_idx": {
-          "name": "legalEntity_org_name_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "legalEntity_org_default_active_idx": {
-          "name": "legalEntity_org_default_active_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "is_default = true AND is_active = true",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "legal_entity_organization_id_organization_id_fk": {
-          "name": "legal_entity_organization_id_organization_id_fk",
-          "tableFrom": "legal_entity",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "legal_entity_created_by_user_id_fk": {
-          "name": "legal_entity_created_by_user_id_fk",
-          "tableFrom": "legal_entity",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "legal_entity_updated_by_user_id_fk": {
-          "name": "legal_entity_updated_by_user_id_fk",
-          "tableFrom": "legal_entity",
-          "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.legal_entity_admin": {
-      "name": "legal_entity_admin",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "employee_id": {
-          "name": "employee_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "legalEntityAdmin_organizationId_idx": {
-          "name": "legalEntityAdmin_organizationId_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "legalEntityAdmin_legalEntityId_idx": {
-          "name": "legalEntityAdmin_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "legalEntityAdmin_entity_employee_idx": {
-          "name": "legalEntityAdmin_entity_employee_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "employee_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "legal_entity_admin_organization_id_organization_id_fk": {
-          "name": "legal_entity_admin_organization_id_organization_id_fk",
-          "tableFrom": "legal_entity_admin",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "legal_entity_admin_legal_entity_id_legal_entity_id_fk": {
-          "name": "legal_entity_admin_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "legal_entity_admin",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "legal_entity_admin_employee_id_employee_id_fk": {
-          "name": "legal_entity_admin_employee_id_employee_id_fk",
-          "tableFrom": "legal_entity_admin",
-          "tableTo": "employee",
-          "columnsFrom": [
-            "employee_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "legal_entity_admin_created_by_user_id_fk": {
-          "name": "legal_entity_admin_created_by_user_id_fk",
-          "tableFrom": "legal_entity_admin",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "legal_entity_admin_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "legal_entity_admin_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "legal_entity_admin",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "legal_entity_admin_employee_id_organization_id_legal_entity_id_employee_id_organization_id_legal_entity_id_fk": {
-          "name": "legal_entity_admin_employee_id_organization_id_legal_entity_id_employee_id_organization_id_legal_entity_id_fk",
-          "tableFrom": "legal_entity_admin",
-          "tableTo": "employee",
-          "columnsFrom": [
-            "employee_id",
-            "organization_id",
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id",
-            "legal_entity_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -15427,6 +14451,135 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.implementation_checklist_manual_state": {
+      "name": "implementation_checklist_manual_state",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "implementation_checklist_manual_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'complete'"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_by_user_id": {
+          "name": "completed_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "implementationChecklistManualState_org_item_idx": {
+          "name": "implementationChecklistManualState_org_item_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "implementationChecklistManualState_organizationId_idx": {
+          "name": "implementationChecklistManualState_organizationId_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "implementation_checklist_manual_state_organization_id_organization_id_fk": {
+          "name": "implementation_checklist_manual_state_organization_id_organization_id_fk",
+          "tableFrom": "implementation_checklist_manual_state",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "implementation_checklist_manual_state_completed_by_user_id_user_id_fk": {
+          "name": "implementation_checklist_manual_state_completed_by_user_id_user_id_fk",
+          "tableFrom": "implementation_checklist_manual_state",
+          "tableTo": "user",
+          "columnsFrom": [
+            "completed_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.invite_code": {
       "name": "invite_code",
       "schema": "",
@@ -16522,12 +15675,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "team_id": {
           "name": "team_id",
           "type": "uuid",
@@ -16663,42 +15810,6 @@
           "method": "btree",
           "with": {}
         },
-        "employee_legalEntityId_idx": {
-          "name": "employee_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "employee_org_entity_idx": {
-          "name": "employee_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "employee_teamId_idx": {
           "name": "employee_teamId_idx",
           "columns": [
@@ -16749,33 +15860,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "employee_id_org_entity_idx": {
-          "name": "employee_id_org_entity_idx",
-          "columns": [
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -16805,19 +15889,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "employee_legal_entity_id_legal_entity_id_fk": {
-          "name": "employee_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "employee",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
         "employee_team_id_team_id_fk": {
           "name": "employee_team_id_team_id_fk",
           "tableFrom": "employee",
@@ -16829,21 +15900,6 @@
             "id"
           ],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "employee_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "employee_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "employee",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -18133,12 +17189,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "format_id": {
           "name": "format_id",
           "type": "text",
@@ -18200,42 +17250,6 @@
           "method": "btree",
           "with": {}
         },
-        "payrollExportConfig_legalEntityId_idx": {
-          "name": "payrollExportConfig_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "payrollExportConfig_org_entity_idx": {
-          "name": "payrollExportConfig_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "payrollExportConfig_formatId_idx": {
           "name": "payrollExportConfig_formatId_idx",
           "columns": [
@@ -18251,17 +17265,11 @@
           "method": "btree",
           "with": {}
         },
-        "payrollExportConfig_org_entity_format_active_idx": {
-          "name": "payrollExportConfig_org_entity_format_active_idx",
+        "payrollExportConfig_org_format_active_idx": {
+          "name": "payrollExportConfig_org_format_active_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -18287,19 +17295,6 @@
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "payroll_export_config_legal_entity_id_legal_entity_id_fk": {
-          "name": "payroll_export_config_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "payroll_export_config",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
           ],
           "columnsTo": [
             "id"
@@ -18342,21 +17337,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "payroll_export_config_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "payroll_export_config_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "payroll_export_config",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -18476,12 +17456,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -18608,42 +17582,6 @@
           "method": "btree",
           "with": {}
         },
-        "payrollExportJob_legalEntityId_idx": {
-          "name": "payrollExportJob_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "payrollExportJob_org_entity_idx": {
-          "name": "payrollExportJob_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "payrollExportJob_configId_idx": {
           "name": "payrollExportJob_configId_idx",
           "columns": [
@@ -18740,19 +17678,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payroll_export_job_legal_entity_id_legal_entity_id_fk": {
-          "name": "payroll_export_job_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "payroll_export_job",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "payroll_export_job_config_id_payroll_export_config_id_fk": {
           "name": "payroll_export_job_config_id_payroll_export_config_id_fk",
           "tableFrom": "payroll_export_job",
@@ -18777,21 +17702,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "payroll_export_job_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "payroll_export_job_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "payroll_export_job",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -20288,12 +19198,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -20458,42 +19362,6 @@
           "method": "btree",
           "with": {}
         },
-        "scheduledExport_legalEntityId_idx": {
-          "name": "scheduledExport_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "scheduledExport_org_entity_idx": {
-          "name": "scheduledExport_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "scheduledExport_isActive_idx": {
           "name": "scheduledExport_isActive_idx",
           "columns": [
@@ -20539,34 +19407,6 @@
           "method": "btree",
           "with": {}
         },
-        "scheduledExport_org_entity_name_active_idx": {
-          "name": "scheduledExport_org_entity_name_active_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "is_active = true",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "scheduledExport_active_nextExecution_idx": {
           "name": "scheduledExport_active_nextExecution_idx",
           "columns": [
@@ -20597,19 +19437,6 @@
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "scheduled_export_legal_entity_id_legal_entity_id_fk": {
-          "name": "scheduled_export_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "scheduled_export",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
           ],
           "columnsTo": [
             "id"
@@ -20655,21 +19482,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "scheduled_export_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "scheduled_export_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "scheduled_export",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -20698,12 +19510,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -20857,42 +19663,6 @@
           "method": "btree",
           "with": {}
         },
-        "scheduledExportExecution_legalEntityId_idx": {
-          "name": "scheduledExportExecution_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "scheduledExportExecution_org_entity_idx": {
-          "name": "scheduledExportExecution_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "scheduledExportExecution_status_idx": {
           "name": "scheduledExportExecution_status_idx",
           "columns": [
@@ -20970,34 +19740,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "scheduled_export_execution_legal_entity_id_legal_entity_id_fk": {
-          "name": "scheduled_export_execution_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "scheduled_export_execution",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "scheduled_export_execution_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "scheduled_export_execution_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "scheduled_export_execution",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -30875,12 +29617,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -30987,42 +29723,6 @@
           "method": "btree",
           "with": {}
         },
-        "vacationAllowance_legalEntityId_idx": {
-          "name": "vacationAllowance_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vacationAllowance_org_entity_idx": {
-          "name": "vacationAllowance_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "vacationAllowance_startDate_idx": {
           "name": "vacationAllowance_startDate_idx",
           "columns": [
@@ -31038,17 +29738,11 @@
           "method": "btree",
           "with": {}
         },
-        "vacationAllowance_org_entity_name_active_idx": {
-          "name": "vacationAllowance_org_entity_name_active_idx",
+        "vacationAllowance_org_name_active_idx": {
+          "name": "vacationAllowance_org_name_active_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -31066,17 +29760,11 @@
           "method": "btree",
           "with": {}
         },
-        "vacationAllowance_entity_company_default_idx": {
-          "name": "vacationAllowance_entity_company_default_idx",
+        "vacationAllowance_org_company_default_idx": {
+          "name": "vacationAllowance_org_company_default_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -31103,19 +29791,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "vacation_allowance_legal_entity_id_legal_entity_id_fk": {
-          "name": "vacation_allowance_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "vacation_allowance",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "vacation_allowance_created_by_user_id_fk": {
           "name": "vacation_allowance_created_by_user_id_fk",
           "tableFrom": "vacation_allowance",
@@ -31125,21 +29800,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "vacation_allowance_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "vacation_allowance_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "vacation_allowance",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -31171,12 +29831,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -31276,42 +29930,6 @@
           "method": "btree",
           "with": {}
         },
-        "vacationPolicyAssignment_legalEntityId_idx": {
-          "name": "vacationPolicyAssignment_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vacationPolicyAssignment_org_entity_idx": {
-          "name": "vacationPolicyAssignment_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "vacationPolicyAssignment_teamId_idx": {
           "name": "vacationPolicyAssignment_teamId_idx",
           "columns": [
@@ -31342,17 +29960,11 @@
           "method": "btree",
           "with": {}
         },
-        "vacationPolicyAssignment_entity_default_idx": {
-          "name": "vacationPolicyAssignment_entity_default_idx",
+        "vacationPolicyAssignment_org_default_idx": {
+          "name": "vacationPolicyAssignment_org_default_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -31430,19 +30042,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "vacation_policy_assignment_legal_entity_id_legal_entity_id_fk": {
-          "name": "vacation_policy_assignment_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "vacation_policy_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "vacation_policy_assignment_team_id_team_id_fk": {
           "name": "vacation_policy_assignment_team_id_team_id_fk",
           "tableFrom": "vacation_policy_assignment",
@@ -31478,21 +30077,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "vacation_policy_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "vacation_policy_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "vacation_policy_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -32913,12 +31497,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -33008,42 +31586,6 @@
           "method": "btree",
           "with": {}
         },
-        "workPolicy_legalEntityId_idx": {
-          "name": "workPolicy_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "workPolicy_org_entity_idx": {
-          "name": "workPolicy_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "workPolicy_isActive_idx": {
           "name": "workPolicy_isActive_idx",
           "columns": [
@@ -33059,17 +31601,11 @@
           "method": "btree",
           "with": {}
         },
-        "workPolicy_org_entity_name_idx": {
-          "name": "workPolicy_org_entity_name_idx",
+        "workPolicy_org_name_idx": {
+          "name": "workPolicy_org_name_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -33094,19 +31630,6 @@
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "work_policy_legal_entity_id_legal_entity_id_fk": {
-          "name": "work_policy_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "work_policy",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
           ],
           "columnsTo": [
             "id"
@@ -33139,21 +31662,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "work_policy_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "work_policy_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "work_policy",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -33182,12 +31690,6 @@
         "organization_id": {
           "name": "organization_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -33287,42 +31789,6 @@
           "method": "btree",
           "with": {}
         },
-        "workPolicyAssignment_legalEntityId_idx": {
-          "name": "workPolicyAssignment_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "workPolicyAssignment_org_entity_idx": {
-          "name": "workPolicyAssignment_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "workPolicyAssignment_teamId_idx": {
           "name": "workPolicyAssignment_teamId_idx",
           "columns": [
@@ -33353,17 +31819,11 @@
           "method": "btree",
           "with": {}
         },
-        "workPolicyAssignment_entity_default_idx": {
-          "name": "workPolicyAssignment_entity_default_idx",
+        "workPolicyAssignment_org_default_idx": {
+          "name": "workPolicyAssignment_org_default_idx",
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -33473,19 +31933,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "work_policy_assignment_legal_entity_id_legal_entity_id_fk": {
-          "name": "work_policy_assignment_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "work_policy_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "work_policy_assignment_team_id_team_id_fk": {
           "name": "work_policy_assignment_team_id_team_id_fk",
           "tableFrom": "work_policy_assignment",
@@ -33521,21 +31968,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "work_policy_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "work_policy_assignment_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "work_policy_assignment",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -34423,12 +32855,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "legal_entity_id": {
-          "name": "legal_entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "policy_id": {
           "name": "policy_id",
           "type": "uuid",
@@ -34507,42 +32933,6 @@
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "workPolicyViolation_legalEntityId_idx": {
-          "name": "workPolicyViolation_legalEntityId_idx",
-          "columns": [
-            {
-              "expression": "legal_entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "workPolicyViolation_org_entity_idx": {
-          "name": "workPolicyViolation_org_entity_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legal_entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -34668,19 +33058,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "work_policy_violation_legal_entity_id_legal_entity_id_fk": {
-          "name": "work_policy_violation_legal_entity_id_legal_entity_id_fk",
-          "tableFrom": "work_policy_violation",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "work_policy_violation_policy_id_work_policy_id_fk": {
           "name": "work_policy_violation_policy_id_work_policy_id_fk",
           "tableFrom": "work_policy_violation",
@@ -34716,21 +33093,6 @@
           ],
           "columnsTo": [
             "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "work_policy_violation_legal_entity_id_organization_id_legal_entity_id_organization_id_fk": {
-          "name": "work_policy_violation_legal_entity_id_organization_id_legal_entity_id_organization_id_fk",
-          "tableFrom": "work_policy_violation",
-          "tableTo": "legal_entity",
-          "columnsFrom": [
-            "legal_entity_id",
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id",
-            "organization_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -35460,6 +33822,14 @@
         "scim",
         "sso",
         "invite_code"
+      ]
+    },
+    "public.implementation_checklist_manual_status": {
+      "name": "implementation_checklist_manual_status",
+      "schema": "public",
+      "values": [
+        "complete",
+        "incomplete"
       ]
     },
     "public.scim_provisioning_event_type": {

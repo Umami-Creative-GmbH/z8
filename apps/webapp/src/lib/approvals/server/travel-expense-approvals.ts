@@ -1,9 +1,60 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee, travelExpenseClaim, travelExpenseDecisionLog } from "@/db/schema";
-import { AuthorizationError, ConflictError, NotFoundError } from "@/lib/effect/errors";
+import {
+	approvalRequest,
+	employee,
+	travelExpenseClaim,
+	travelExpenseDecisionLog,
+} from "@/db/schema";
+import {
+	type AnyAppError,
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+} from "@/lib/effect/errors";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	type ResolvePolicyAndCreateApprovalResult,
+	resolvePolicyAndCreateApproval,
+} from "../policies/chain-service";
+import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import type { ApprovalDbService, CurrentApprover } from "./types";
+
+export function buildTravelExpenseApprovalPolicyContext(claim: {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	totalAmount?: number | string;
+	calculatedAmount?: number | string;
+	employee: { teamId: string | null };
+}): ApprovalPolicyEvaluationContext {
+	return {
+		organizationId: claim.organizationId,
+		approvalType: "travel_expense_claim",
+		requesterEmployeeId: claim.employeeId,
+		teamId: claim.employee.teamId,
+		locationId: null,
+		absenceCategoryId: null,
+		travelExpenseAmount: Number(claim.totalAmount ?? claim.calculatedAmount),
+		overtimeRisk: null,
+		employeeGroupIds: [],
+		entityType: "travel_expense_claim",
+		entityId: claim.id,
+	};
+}
+
+export function createTravelExpenseApprovalWorkflow(
+	dbService: ApprovalDbService,
+	input: {
+		claim: Parameters<typeof buildTravelExpenseApprovalPolicyContext>[0];
+		defaultApproverId: string;
+	},
+): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
+	return resolvePolicyAndCreateApproval(dbService, {
+		context: buildTravelExpenseApprovalPolicyContext(input.claim),
+		defaultApproverId: input.defaultApproverId,
+	});
+}
 
 export function loadTravelExpenseApprover(dbService: ApprovalDbService, approverId: string) {
 	return dbService
@@ -26,6 +77,26 @@ export function loadTravelExpenseApprover(dbService: ApprovalDbService, approver
 						),
 			),
 		);
+}
+
+function hasAssignedPendingTravelExpenseApproval(
+	dbService: ApprovalDbService,
+	claimId: string,
+	currentEmployee: CurrentApprover,
+) {
+	return dbService
+		.query("getAssignedTravelExpenseApprovalRequest", async () => {
+			return await dbService.db.query.approvalRequest.findFirst({
+				where: and(
+					eq(approvalRequest.entityType, "travel_expense_claim"),
+					eq(approvalRequest.entityId, claimId),
+					eq(approvalRequest.approverId, currentEmployee.id),
+					eq(approvalRequest.organizationId, currentEmployee.organizationId),
+					eq(approvalRequest.status, "pending"),
+				),
+			});
+		})
+		.pipe(Effect.map(Boolean));
 }
 
 export function preflightTravelExpenseDecision(
@@ -59,11 +130,15 @@ export function preflightTravelExpenseDecision(
 			);
 		}
 
-		if (
-			claim.approverId !== currentEmployee.id &&
-			currentEmployee.role !== "admin" &&
-			!options?.allowAnyApprover
-		) {
+		const hasDirectAuthorization =
+			claim.approverId === currentEmployee.id ||
+			currentEmployee.role === "admin" ||
+			!!options?.allowAnyApprover;
+		const hasAssignedApproval = hasDirectAuthorization
+			? false
+			: yield* _(hasAssignedPendingTravelExpenseApproval(dbService, claimId, currentEmployee));
+
+		if (!hasDirectAuthorization && !hasAssignedApproval) {
 			return yield* _(
 				Effect.fail(
 					new AuthorizationError({

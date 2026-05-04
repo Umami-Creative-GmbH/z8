@@ -2,12 +2,12 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { requestAbsence } from "@/app/[locale]/(app)/absences/actions";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -18,6 +18,8 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	Select,
 	SelectContent,
@@ -29,7 +31,9 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { Textarea } from "@/components/ui/textarea";
 import { calculateBusinessDaysWithHalfDays, formatDays } from "@/lib/absences/date-utils";
 import type { DayPeriod, Holiday } from "@/lib/absences/types";
+import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
+import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 
 interface RequestAbsenceDialogProps {
@@ -41,6 +45,7 @@ interface RequestAbsenceDialogProps {
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
 	}>;
+	organizationId: string;
 	remainingDays: number;
 	holidays?: Holiday[];
 	trigger?: React.ReactNode;
@@ -61,10 +66,13 @@ const createDefaultValues = (initialDate?: string) => ({
 	notes: "",
 });
 
+const EMPTY_HOLIDAYS: Holiday[] = [];
+
 export function RequestAbsenceDialog({
 	categories,
+	organizationId,
 	remainingDays,
-	holidays = [],
+	holidays = EMPTY_HOLIDAYS,
 	trigger,
 	onSuccess,
 	open: controlledOpen,
@@ -72,7 +80,7 @@ export function RequestAbsenceDialog({
 	initialDate,
 }: RequestAbsenceDialogProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [internalOpen, setInternalOpen] = useState(false);
 
 	// Memoize period options to avoid recreating on every render
@@ -88,7 +96,14 @@ export function RequestAbsenceDialog({
 	// Support both controlled and uncontrolled modes
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
-	const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
+	const setOpen = (nextOpen: boolean) => {
+		if (isControlled) {
+			controlledOnOpenChange?.(nextOpen);
+			return;
+		}
+
+		setInternalOpen(nextOpen);
+	};
 
 	// Initialize form with TanStack Form
 	const form = useForm({
@@ -151,7 +166,7 @@ export function RequestAbsenceDialog({
 				setOpen(false);
 				form.reset();
 				// Revalidate the page data to show the new absence
-				router.refresh();
+				refresh();
 				onSuccess?.();
 			} else {
 				toast.error(
@@ -159,6 +174,32 @@ export function RequestAbsenceDialog({
 				);
 			}
 		},
+	});
+	const planPreviewValues = useStore(form.store, (state) => ({
+		categoryId: state.values.categoryId,
+		startDate: state.values.startDate,
+		startPeriod: state.values.startPeriod,
+		endDate: state.values.endDate,
+		endPeriod: state.values.endPeriod,
+	}));
+	const canLoadPlanPreview = Boolean(
+		open &&
+			planPreviewValues.categoryId &&
+			planPreviewValues.startDate &&
+			planPreviewValues.endDate,
+	);
+	const planPreviewQuery = useQuery({
+		queryKey: queryKeys.absencePlanPreview.detail(organizationId, planPreviewValues),
+		queryFn: async () => {
+			const result = await getAbsencePlanPreview(planPreviewValues);
+
+			if (!result.success) {
+				throw new Error(result.error);
+			}
+
+			return result.data;
+		},
+		enabled: canLoadPlanPreview,
 	});
 
 	// Update form when initialDate changes (for controlled mode)
@@ -217,7 +258,7 @@ export function RequestAbsenceDialog({
 										onValueChange={(value) => field.handleChange(value)}
 									>
 										<TFormControl hasError={field.state.meta.errors.length > 0}>
-											<SelectTrigger>
+											<SelectTrigger aria-label={t("absences.form.absenceType", "Absence Type *")}>
 												<SelectValue
 													placeholder={t("absences.form.selectAbsenceType", "Select absence type")}
 												/>
@@ -258,6 +299,7 @@ export function RequestAbsenceDialog({
 										<TFormItem className="gap-0">
 											<TFormControl hasError={field.state.meta.errors.length > 0}>
 												<DatePicker
+													aria-label={t("absences.form.startDate", "Start Date *")}
 													value={field.state.value}
 													onChange={field.handleChange}
 													onBlur={field.handleBlur}
@@ -274,7 +316,7 @@ export function RequestAbsenceDialog({
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as DayPeriod)}
 										>
-											<SelectTrigger>
+											<SelectTrigger aria-label={t("absences.form.startPeriod", "Start Period")}>
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -309,6 +351,7 @@ export function RequestAbsenceDialog({
 													<TFormItem className="gap-0">
 														<TFormControl hasError={field.state.meta.errors.length > 0}>
 															<DatePicker
+																aria-label={t("absences.form.endDate", "End Date *")}
 																value={field.state.value}
 																min={values.startDate}
 																onChange={field.handleChange}
@@ -326,7 +369,7 @@ export function RequestAbsenceDialog({
 														value={field.state.value}
 														onValueChange={(value) => field.handleChange(value as DayPeriod)}
 													>
-														<SelectTrigger>
+														<SelectTrigger aria-label={t("absences.form.endPeriod", "End Period")}>
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>
@@ -420,6 +463,14 @@ export function RequestAbsenceDialog({
 								);
 							}}
 						</form.Subscribe>
+
+						{canLoadPlanPreview && (
+							<AbsencePlanPreviewPanel
+								preview={planPreviewQuery.data}
+								isLoading={planPreviewQuery.isLoading}
+								error={planPreviewQuery.isError ? planPreviewQuery.error.message : null}
+							/>
+						)}
 
 						{/* Notes */}
 						<form.Field name="notes">

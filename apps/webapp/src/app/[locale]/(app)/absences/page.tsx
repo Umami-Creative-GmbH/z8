@@ -82,6 +82,7 @@ export default async function AbsencesPage() {
 					</div>
 					<RequestAbsenceDialog
 						categories={categories}
+						organizationId={employee.organizationId}
 						remainingDays={vacationBalance.remainingDays}
 						holidays={holidays}
 						trigger={<Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
@@ -96,6 +97,7 @@ export default async function AbsencesPage() {
 					absences={absences}
 					holidays={holidays}
 					categories={categories}
+					organizationId={employee.organizationId}
 					remainingDays={vacationBalance.remainingDays}
 					currentYear={currentYear}
 				/>

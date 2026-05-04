@@ -35,7 +35,10 @@ export const team = pgTable(
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
-	(table) => [index("team_organizationId_idx").on(table.organizationId)],
+	(table) => [
+		index("team_organizationId_idx").on(table.organizationId),
+		uniqueIndex("team_id_organizationId_idx").on(table.id, table.organizationId),
+	],
 );
 
 // ============================================
@@ -76,6 +79,7 @@ export const location = pgTable(
 	(table) => [
 		index("location_organizationId_idx").on(table.organizationId),
 		index("location_isActive_idx").on(table.isActive),
+		uniqueIndex("location_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("location_org_name_idx").on(table.organizationId, table.name),
 	],
 );
@@ -168,6 +172,7 @@ export const employee = pgTable(
 			table.organizationId,
 			table.legalEntityId,
 		),
+		uniqueIndex("employee_id_organizationId_idx").on(table.id, table.organizationId),
 		foreignKey({
 			columns: [table.legalEntityId, table.organizationId],
 			foreignColumns: [legalEntity.id, legalEntity.organizationId],

@@ -7,9 +7,23 @@ import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
+import type {
+	SerializableWorkdayTimelineItem,
+	SerializableWorkdayTimelineResult,
+} from "@/components/time-tracking/personal-workday-timeline";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
+import { getWorkdayTimelineData } from "./workday-timeline-data";
+import type {
+	SelectedWorkdayDate,
+	WorkdayTimelineItem,
+	WorkdayTimelineResult,
+} from "./workday-timeline.types";
 
-export async function getTimeTrackingPageData() {
+export interface TimeTrackingPageSearchParams {
+	date?: string;
+}
+
+export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSearchParams = {}) {
 	const session = (await auth.api.getSession({ headers: await headers() }))!;
 
 	const [currentEmployee, settings] = await Promise.all([
@@ -32,11 +46,17 @@ export async function getTimeTrackingPageData() {
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
 
-	const [activeWorkPeriod, workPeriods, summary, t] = await Promise.all([
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
 		getActiveWorkPeriod(currentEmployee.id),
 		getWorkPeriods(currentEmployee.id, startDate, endDate),
 		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
 		getTranslate(),
+		getWorkdayTimelineData({
+			employeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			timezone,
+			dateParam: searchParams.date,
+		}),
 	]);
 
 	return {
@@ -47,5 +67,52 @@ export async function getTimeTrackingPageData() {
 		workPeriods,
 		summary,
 		t,
+		timelineResult: serializeWorkdayTimelineResult(timelineResult),
 	} as const;
+}
+
+function serializeWorkdayTimelineResult(
+	result: WorkdayTimelineResult,
+): SerializableWorkdayTimelineResult {
+	if (!result.success) {
+		return {
+			success: false,
+			selectedDate: serializeSelectedDate(result.selectedDate),
+			error: result.error,
+		};
+	}
+
+	return {
+		success: true,
+		data: {
+			...result.data,
+			selectedDate: serializeSelectedDate(result.data.selectedDate),
+			items: result.data.items.map(serializeTimelineItem),
+			dayWarnings: result.data.dayWarnings.map(serializeTimelineItem),
+		},
+	};
+}
+
+function serializeSelectedDate({
+	dateKey,
+	todayDateKey,
+	previousDateKey,
+	nextDateKey,
+	label,
+}: SelectedWorkdayDate) {
+	return { dateKey, todayDateKey, previousDateKey, nextDateKey, label };
+}
+
+function serializeTimelineItem({
+	id,
+	type,
+	title,
+	subtitle,
+	startLabel,
+	endLabel,
+	badge,
+	severity,
+	link,
+}: WorkdayTimelineItem): SerializableWorkdayTimelineItem {
+	return { id, type, title, subtitle, startLabel, endLabel, badge, severity, link };
 }
