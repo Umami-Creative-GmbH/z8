@@ -20,7 +20,6 @@ export function NavSecondary({
 		title: string;
 		url: string;
 		icon: Icon;
-		dataTour?: string;
 	}[];
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
 	return (
@@ -28,7 +27,7 @@ export function NavSecondary({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => (
-						<SidebarMenuItem key={item.title} data-tour={item.dataTour}>
+						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton asChild>
 								<Link href={item.url}>
 									<item.icon />

@@ -199,7 +199,7 @@ export function ManualTimeEntryDialog({
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="flex min-h-0 flex-1 flex-col"
+					className="flex min-h-0 flex-col"
 				>
 					<ActionPanelBody className="grid gap-4">
 						<p className="text-xs text-muted-foreground">
@@ -327,7 +327,7 @@ export function ManualTimeEntryDialog({
 						</form.Field>
 					</ActionPanelBody>
 
-					<ActionPanelFooter className="gap-2 sm:gap-0">
+					<ActionPanelFooter className="gap-2">
 						<ActionPanelClose asChild>
 							<Button type="button" variant="outline">
 								{t("common.cancel", "Cancel")}

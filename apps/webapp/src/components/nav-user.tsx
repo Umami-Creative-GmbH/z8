@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	IconChevronDown,
 	IconClock,
 	IconDeviceDesktop,
 	IconDotsVertical,
@@ -17,6 +18,7 @@ import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -65,6 +67,9 @@ export function NavUser({
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isPending, startTransition] = useTransition();
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [mobileOpenSection, setMobileOpenSection] = useState<"language" | "theme" | null>(null);
+	const mobileRadioItemClassName =
+		"pl-2 data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground [&>span:first-child]:hidden";
 
 	const handleLogout = async () => {
 		setDropdownOpen(false);
@@ -94,6 +99,10 @@ export function NavUser({
 		startTransition(() => {
 			router.replace(pathname, { locale: newLocale });
 		});
+	};
+
+	const setMobileSectionOpen = (section: "language" | "theme", open: boolean) => {
+		setMobileOpenSection(open ? section : null);
 	};
 
 	// Show skeleton loader while session is loading
@@ -170,51 +179,128 @@ export function NavUser({
 								</DropdownMenuItem>
 							</DropdownMenuGroup>
 							<DropdownMenuSeparator />
-							<DropdownMenuSub>
-								<DropdownMenuSubTrigger disabled={isPending}>
-									<IconLanguage className="mr-2 size-4" stroke={1.5} />
-									{t("user.language", "Language")}
-								</DropdownMenuSubTrigger>
-								<DropdownMenuSubContent>
-									<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
-										{ALL_LANGUAGES.map((lang) => {
-											const config = LANGUAGE_CONFIG[lang];
-											const FlagIcon = config?.Flag;
-											const name = config?.name ?? lang;
-											return (
-												<DropdownMenuRadioItem key={lang} value={lang}>
-													<span className="flex items-center gap-2">
-														{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
-														{name}
-													</span>
+							{isMobile ? (
+								<>
+									<Collapsible
+										open={mobileOpenSection === "language"}
+										onOpenChange={(open) => setMobileSectionOpen("language", open)}
+									>
+										<CollapsibleTrigger asChild>
+											<DropdownMenuItem
+												className="w-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&[data-state=open]>svg:last-child]:rotate-180"
+												disabled={isPending}
+												onSelect={(event) => event.preventDefault()}
+											>
+												<IconLanguage className="mr-2 size-4" stroke={1.5} />
+												{t("user.language", "Language")}
+												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
+											</DropdownMenuItem>
+										</CollapsibleTrigger>
+										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
+											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
+												{ALL_LANGUAGES.map((lang) => {
+													const config = LANGUAGE_CONFIG[lang];
+													const FlagIcon = config?.Flag;
+													const name = config?.name ?? lang;
+													return (
+														<DropdownMenuRadioItem
+															key={lang}
+															className={mobileRadioItemClassName}
+															value={lang}
+															disabled={isPending}
+														>
+															<span className="flex items-center gap-2">
+																{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+																{name}
+															</span>
+														</DropdownMenuRadioItem>
+													);
+												})}
+											</DropdownMenuRadioGroup>
+										</CollapsibleContent>
+									</Collapsible>
+									<DropdownMenuSeparator />
+									<Collapsible
+										open={mobileOpenSection === "theme"}
+										onOpenChange={(open) => setMobileSectionOpen("theme", open)}
+									>
+										<CollapsibleTrigger asChild>
+											<DropdownMenuItem
+												className="w-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&[data-state=open]>svg:last-child]:rotate-180"
+												onSelect={(event) => event.preventDefault()}
+											>
+												<IconPalette className="mr-2 size-4" stroke={1.5} />
+												{t("user.theme", "Theme")}
+												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
+											</DropdownMenuItem>
+										</CollapsibleTrigger>
+										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
+											<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="light">
+													<IconSun className="mr-2 size-4" />
+													{t("user.theme-light", "Light")}
 												</DropdownMenuRadioItem>
-											);
-										})}
-									</DropdownMenuRadioGroup>
-								</DropdownMenuSubContent>
-							</DropdownMenuSub>
-							<DropdownMenuSub>
-								<DropdownMenuSubTrigger>
-									<IconPalette className="mr-2 size-4" stroke={1.5} />
-									{t("user.theme", "Theme")}
-								</DropdownMenuSubTrigger>
-								<DropdownMenuSubContent>
-									<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-										<DropdownMenuRadioItem value="light">
-											<IconSun className="mr-2 size-4" />
-											{t("user.theme-light", "Light")}
-										</DropdownMenuRadioItem>
-										<DropdownMenuRadioItem value="dark">
-											<IconMoon className="mr-2 size-4" />
-											{t("user.theme-dark", "Dark")}
-										</DropdownMenuRadioItem>
-										<DropdownMenuRadioItem value="system">
-											<IconDeviceDesktop className="mr-2 size-4" />
-											{t("user.theme-system", "System")}
-										</DropdownMenuRadioItem>
-									</DropdownMenuRadioGroup>
-								</DropdownMenuSubContent>
-							</DropdownMenuSub>
+												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="dark">
+													<IconMoon className="mr-2 size-4" />
+													{t("user.theme-dark", "Dark")}
+												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="system">
+													<IconDeviceDesktop className="mr-2 size-4" />
+													{t("user.theme-system", "System")}
+												</DropdownMenuRadioItem>
+											</DropdownMenuRadioGroup>
+										</CollapsibleContent>
+									</Collapsible>
+								</>
+							) : (
+								<>
+									<DropdownMenuSub>
+										<DropdownMenuSubTrigger disabled={isPending}>
+											<IconLanguage className="mr-2 size-4" stroke={1.5} />
+											{t("user.language", "Language")}
+										</DropdownMenuSubTrigger>
+										<DropdownMenuSubContent>
+											<DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
+												{ALL_LANGUAGES.map((lang) => {
+													const config = LANGUAGE_CONFIG[lang];
+													const FlagIcon = config?.Flag;
+													const name = config?.name ?? lang;
+													return (
+														<DropdownMenuRadioItem key={lang} value={lang}>
+															<span className="flex items-center gap-2">
+																{FlagIcon && <FlagIcon className="h-4 w-auto" title={name} />}
+																{name}
+															</span>
+														</DropdownMenuRadioItem>
+													);
+												})}
+											</DropdownMenuRadioGroup>
+										</DropdownMenuSubContent>
+									</DropdownMenuSub>
+									<DropdownMenuSub>
+										<DropdownMenuSubTrigger>
+											<IconPalette className="mr-2 size-4" stroke={1.5} />
+											{t("user.theme", "Theme")}
+										</DropdownMenuSubTrigger>
+										<DropdownMenuSubContent>
+											<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+												<DropdownMenuRadioItem value="light">
+													<IconSun className="mr-2 size-4" />
+													{t("user.theme-light", "Light")}
+												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="dark">
+													<IconMoon className="mr-2 size-4" />
+													{t("user.theme-dark", "Dark")}
+												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="system">
+													<IconDeviceDesktop className="mr-2 size-4" />
+													{t("user.theme-system", "System")}
+												</DropdownMenuRadioItem>
+											</DropdownMenuRadioGroup>
+										</DropdownMenuSubContent>
+									</DropdownMenuSub>
+								</>
+							)}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem onClick={handleLogout}>
 								<IconLogout />

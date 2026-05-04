@@ -5,6 +5,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -35,7 +36,7 @@ export const team = pgTable(
 	},
 	(table) => [
 		index("team_organizationId_idx").on(table.organizationId),
-		uniqueIndex("team_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("team_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
 
@@ -77,7 +78,7 @@ export const location = pgTable(
 	(table) => [
 		index("location_organizationId_idx").on(table.organizationId),
 		index("location_isActive_idx").on(table.isActive),
-		uniqueIndex("location_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("location_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("location_org_name_idx").on(table.organizationId, table.name),
 	],
 );
@@ -160,7 +161,7 @@ export const employee = pgTable(
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_managerId_idx").on(table.managerId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
-		uniqueIndex("employee_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("employee_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
 

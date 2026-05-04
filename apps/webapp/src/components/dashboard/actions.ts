@@ -16,15 +16,115 @@ import {
 } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
-import { NotFoundError } from "@/lib/effect/errors";
+import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+
+export type ManagerTodaySummaryResult = {
+	role: "admin" | "manager" | "employee" | null;
+	summary: {
+		criticalIssues: number;
+		openApprovals: number;
+		attendanceExceptions: number;
+		absencesToday: number;
+		coverageRisks: number;
+		overtimeWarnings: number;
+		payrollIssues: number;
+	} | null;
+	error?: string;
+};
+
+export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResult> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const activeOrganizationId = session.session.activeOrganizationId;
+
+		if (!activeOrganizationId) {
+			return { role: null, summary: null };
+		}
+
+		const dbService = yield* _(DatabaseService);
+
+		const currentEmployee = yield* _(
+			dbService.query("getManagerTodayCurrentEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, activeOrganizationId),
+					),
+					columns: {
+						id: true,
+						role: true,
+						organizationId: true,
+					},
+				});
+			}),
+		);
+
+		if (!currentEmployee) {
+			return { role: null, summary: null };
+		}
+
+		const role = currentEmployee.role as "admin" | "manager" | "employee";
+
+		if (role !== "admin" && role !== "manager") {
+			return { role, summary: null };
+		}
+
+		if (!currentEmployee.organizationId) {
+			return { role, summary: null };
+		}
+
+		const briefing = yield* _(
+			Effect.tryPromise({
+				try: () =>
+					getManagerDailyBriefing({
+						currentEmployee: {
+							id: currentEmployee.id,
+							role,
+							organizationId: currentEmployee.organizationId,
+						},
+					}),
+				catch: (error) =>
+					new DatabaseError({
+						message: "Failed to load manager today summary",
+						operation: "getManagerTodaySummary",
+						cause: error,
+					}),
+			}).pipe(
+				Effect.catchAll(() =>
+					Effect.succeed({
+						role,
+						summary: null,
+						error: "Manager Today counts could not be loaded.",
+					}),
+				),
+			),
+		);
+
+		if ("error" in briefing) {
+			return briefing;
+		}
+
+		return { role, summary: briefing.summary };
+	}).pipe(Effect.provide(AppLayer));
+
+	const result = await runServerActionSafe(effect);
+
+	if (!result.success) {
+		throw new Error(String(result.error));
+	}
+
+	return result.data;
+}
 
 /**
  * Get all employees managed by a specific manager

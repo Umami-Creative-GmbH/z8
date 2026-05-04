@@ -8,6 +8,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -40,7 +41,7 @@ export const approvalPolicy = pgTable(
 	},
 	(table) => [
 		index("approvalPolicy_organizationId_idx").on(table.organizationId),
-		uniqueIndex("approvalPolicy_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("approvalPolicy_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("approvalPolicy_org_priority_idx").on(table.organizationId, table.priority),
 	],
 );
@@ -91,7 +92,7 @@ export const approvalPolicyStage = pgTable(
 	},
 	(table) => [
 		index("approvalPolicyStage_org_policy_idx").on(table.organizationId, table.policyId),
-		uniqueIndex("approvalPolicyStage_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("approvalPolicyStage_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("approvalPolicyStage_policy_order_idx").on(table.policyId, table.stepOrder),
 		foreignKey({ columns: [table.policyId, table.organizationId], foreignColumns: [approvalPolicy.id, approvalPolicy.organizationId] }).onDelete("cascade"),
 		foreignKey({ columns: [table.approverEmployeeId, table.organizationId], foreignColumns: [employee.id, employee.organizationId] }),
@@ -111,7 +112,7 @@ export const employeeGroup = pgTable(
 	},
 	(table) => [
 		index("employeeGroup_organizationId_idx").on(table.organizationId),
-		uniqueIndex("employeeGroup_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("employeeGroup_id_organizationId_idx").on(table.id, table.organizationId),
 		uniqueIndex("employeeGroup_org_name_idx").on(table.organizationId, table.name),
 	],
 );
@@ -151,7 +152,7 @@ export const approvalChainInstance = pgTable(
 		completedAt: timestamp("completed_at"),
 	},
 	(table) => [
-		uniqueIndex("approvalChainInstance_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("approvalChainInstance_id_organizationId_idx").on(table.id, table.organizationId),
 		index("approvalChainInstance_org_entity_idx").on(table.organizationId, table.entityType, table.entityId),
 		index("approvalChainInstance_org_status_idx").on(table.organizationId, table.status),
 		foreignKey({ columns: [table.policyId, table.organizationId], foreignColumns: [approvalPolicy.id, approvalPolicy.organizationId] }),

@@ -26,6 +26,10 @@ interface SettingsNavProps {
 	billingEnabled: boolean;
 }
 
+export function isSettingsNavItemActive(pathname: string | null | undefined, href: string) {
+	return pathname === href || pathname?.startsWith(`${href}/`) === true;
+}
+
 export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {
 	const pathname = usePathname();
 	const { t } = useTranslate();
@@ -60,7 +64,7 @@ export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {
 						<SidebarGroupContent>
 							<SidebarMenu>
 								{groupEntries.map((item) => {
-									const isActive = pathname?.startsWith(item.href);
+									const isActive = isSettingsNavItemActive(pathname, item.href);
 									const title = t(item.titleKey, item.titleDefault);
 									const Icon = SETTINGS_ICON_MAP[item.icon];
 									const hasFeatureFlag = !!item.requiredFeature;

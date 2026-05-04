@@ -1,56 +1,83 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconArrowRight,
-	IconCalendarCheck,
-	IconChecklist,
-	IconClockExclamation,
-} from "@tabler/icons-react";
+import { IconArrowRight, IconCalendarCheck } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { getManagerTodaySummary } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
+import { mapManagerTodaySummary, type ManagerTodayMetricCounts } from "./manager-today-summary";
 import { WidgetCard } from "./widget-card";
+export {
+	mapManagerTodaySummary,
+	type ManagerTodayBriefingSummary,
+	type ManagerTodayMetricCounts,
+} from "./manager-today-summary";
 
 type EmployeeRole = "admin" | "manager" | "employee";
+type MetricItem = {
+	label: string;
+	value: number;
+	activeClass?: string;
+};
 
-const focusItems = [
-	{
-		icon: IconClockExclamation,
-		labelKey: "dashboard.manager-today.missing-clock-ins",
-		fallback: "Missing clock-ins",
-	},
-	{
-		icon: IconChecklist,
-		labelKey: "dashboard.manager-today.approvals",
-		fallback: "Open approvals",
-	},
-	{
-		icon: IconAlertTriangle,
-		labelKey: "dashboard.manager-today.payroll-risks",
-		fallback: "Coverage, overtime, and payroll risks",
-	},
-] as const;
+const EMPTY_METRICS: ManagerTodayMetricCounts = {
+	critical: 0,
+	approvals: 0,
+	clockIns: 0,
+	risks: 0,
+	allClear: true,
+};
 
 export function ManagerTodayWidget() {
 	const { t } = useTranslate();
-	const currentEmployeeQuery = useQuery({
-		queryKey: ["dashboard", "manager-today", "current-employee"],
-		queryFn: async () => {
-			const current = await getCurrentEmployee();
-			return { role: (current?.role ?? null) as EmployeeRole | null };
-		},
+	const managerTodayQuery = useQuery({
+		queryKey: ["dashboard", "manager-today", "summary"],
+		queryFn: getManagerTodaySummary,
 	});
 
-	const role = currentEmployeeQuery.data?.role ?? null;
-	const loading = currentEmployeeQuery.isLoading;
+	const role = (managerTodayQuery.data?.role ?? null) as EmployeeRole | null;
+	const isAuthorized = role === "admin" || role === "manager";
+	const loading = managerTodayQuery.isLoading;
+	const hasError =
+		isAuthorized &&
+		(managerTodayQuery.isError ||
+			Boolean(managerTodayQuery.data?.error) ||
+			(!loading && !managerTodayQuery.data?.summary));
+	const metrics = managerTodayQuery.data?.summary
+		? mapManagerTodaySummary(managerTodayQuery.data.summary)
+		: EMPTY_METRICS;
 
-	if (!loading && role !== "admin" && role !== "manager") {
+	if (!isAuthorized) {
 		return null;
 	}
+
+	const metricItems: MetricItem[] = [
+		{
+			label: t("dashboard.manager-today.metric-critical", "Critical"),
+			value: metrics.critical,
+			activeClass:
+				"border-amber-300/70 bg-amber-50 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-100",
+		},
+		{
+			label: t("dashboard.manager-today.metric-approvals", "Approvals"),
+			value: metrics.approvals,
+		},
+		{
+			label: t("dashboard.manager-today.metric-clock-ins", "Clock-ins"),
+			value: metrics.clockIns,
+			activeClass:
+				"border-blue-300/70 bg-blue-50 text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/25 dark:text-blue-100",
+		},
+		{
+			label: t("dashboard.manager-today.metric-risks", "Risks"),
+			value: metrics.risks,
+			activeClass:
+				"border-orange-300/70 bg-orange-50 text-orange-950 dark:border-orange-900/50 dark:bg-orange-950/25 dark:text-orange-100",
+		},
+	];
 
 	return (
 		<DashboardWidget id="manager-today">
@@ -72,28 +99,40 @@ export function ManagerTodayWidget() {
 				}
 			>
 				<div className="space-y-4">
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"dashboard.manager-today.summary",
-							"Start with absences, missing punches, approvals, coverage risks, overtime, and other payroll-impacting issues.",
-						)}
-					</p>
+					{hasError ? (
+						<p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+							{t(
+								"dashboard.manager-today.error",
+								"Failed to load manager briefing counts.",
+							)}
+						</p>
+					) : null}
 
-					<div className="grid gap-2">
-						{focusItems.map((item) => {
-							const Icon = item.icon;
-
-							return (
-								<div
-									key={item.labelKey}
-									className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
-								>
-									<Icon className="size-4 text-blue-500" aria-hidden="true" />
-									<span>{t(item.labelKey, item.fallback)}</span>
+					<div className="grid grid-cols-2 gap-2" data-testid="manager-today-metrics">
+						{metricItems.map((item) => (
+							<div
+								key={item.label}
+								className={cn(
+									"rounded-lg border bg-muted/25 px-3 py-2",
+									item.value > 0 && item.activeClass,
+								)}
+							>
+								<div className="text-2xl font-semibold tabular-nums leading-none">
+									{item.value}
 								</div>
-							);
-						})}
+								<div className="mt-1 text-xs font-medium text-muted-foreground">{item.label}</div>
+							</div>
+						))}
 					</div>
+
+					{!hasError && metrics.allClear ? (
+						<p className="rounded-lg border border-blue-200/70 bg-blue-50/60 px-3 py-2 text-sm text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-100">
+							{t(
+								"dashboard.manager-today.all-clear",
+								"No manager action is flagged right now.",
+							)}
+						</p>
+					) : null}
 				</div>
 			</WidgetCard>
 		</DashboardWidget>
