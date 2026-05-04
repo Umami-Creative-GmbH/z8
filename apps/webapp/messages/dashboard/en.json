@@ -30,9 +30,14 @@
       "view-all-members": "View all {count} team members"
     },
     "manager-today": {
+      "all-clear": "No manager action is flagged right now.",
       "description": "Review today before small issues affect payroll or coverage.",
+      "error": "Failed to load manager briefing counts.",
+      "metric-approvals": "Approvals",
+      "metric-clock-ins": "Clock-ins",
+      "metric-critical": "Critical",
+      "metric-risks": "Risks",
       "open": "Open Brief",
-      "summary": "Start with absences, missing punches, approvals, coverage risks, overtime, and other payroll-impacting issues.",
       "title": "Manager Today"
     },
     "pending-approvals": {
