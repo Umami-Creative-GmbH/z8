@@ -7,10 +7,10 @@ import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+	type ApprovalWithAbsence,
 	approveAbsence,
 	getPendingApprovals,
 	rejectAbsence,
-	type ApprovalWithAbsence,
 } from "@/app/[locale]/(app)/approvals/actions";
 import { CategoryBadge } from "@/components/absences/category-badge";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
@@ -66,11 +66,12 @@ export function AbsenceApprovalsTable() {
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("approvals.absenceApproved", "Absence request approved"));
+				toast.success(t("approvals:approvals.absenceApproved", "Absence request approved"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
 			} else {
 				toast.error(
-					result.error || t("approvals.approveFailed", "Failed to approve absence request"),
+					result.error ||
+						t("approvals:approvals.approveFailed", "Failed to approve absence request"),
 				);
 			}
 		},
@@ -78,7 +79,7 @@ export function AbsenceApprovalsTable() {
 			if (context?.previousApprovals) {
 				queryClient.setQueryData(queryKeys.approvals.absences(), context.previousApprovals);
 			}
-			toast.error(t("approvals.approveFailed", "Failed to approve absence request"));
+			toast.error(t("approvals:approvals.approveFailed", "Failed to approve absence request"));
 		},
 	});
 
@@ -98,11 +99,11 @@ export function AbsenceApprovalsTable() {
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("approvals.absenceRejected", "Absence request rejected"));
+				toast.success(t("approvals:approvals.absenceRejected", "Absence request rejected"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.absences() });
 			} else {
 				toast.error(
-					result.error || t("approvals.rejectFailed", "Failed to reject absence request"),
+					result.error || t("approvals:approvals.rejectFailed", "Failed to reject absence request"),
 				);
 			}
 		},
@@ -110,7 +111,7 @@ export function AbsenceApprovalsTable() {
 			if (context?.previousApprovals) {
 				queryClient.setQueryData(queryKeys.approvals.absences(), context.previousApprovals);
 			}
-			toast.error(t("approvals.rejectFailed", "Failed to reject absence request"));
+			toast.error(t("approvals:approvals.rejectFailed", "Failed to reject absence request"));
 		},
 	});
 
@@ -157,7 +158,7 @@ export function AbsenceApprovalsTable() {
 		() => [
 			{
 				accessorKey: "requester",
-				header: t("approvals.employee", "Employee"),
+				header: t("approvals:approvals.employee", "Employee"),
 				cell: ({ row }) => (
 					<div className="flex items-center gap-3">
 						<UserAvatar
@@ -177,7 +178,7 @@ export function AbsenceApprovalsTable() {
 			},
 			{
 				accessorKey: "dates",
-				header: t("approvals.dates", "Dates"),
+				header: t("approvals:approvals.dates", "Dates"),
 				cell: ({ row }) => (
 					<span className="font-medium">
 						{formatDateRange(row.original.absence.startDate, row.original.absence.endDate)}
@@ -186,7 +187,7 @@ export function AbsenceApprovalsTable() {
 			},
 			{
 				accessorKey: "type",
-				header: t("approvals.type", "Type"),
+				header: t("approvals:approvals.type", "Type"),
 				cell: ({ row }) => (
 					<CategoryBadge
 						name={row.original.absence.category.name}
@@ -197,7 +198,7 @@ export function AbsenceApprovalsTable() {
 			},
 			{
 				accessorKey: "days",
-				header: () => <div className="text-right">{t("approvals.days", "Days")}</div>,
+				header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
 				cell: ({ row }) => {
 					const days = calculateBusinessDaysWithHalfDays(
 						row.original.absence.startDate,
@@ -211,7 +212,7 @@ export function AbsenceApprovalsTable() {
 			},
 			{
 				accessorKey: "notes",
-				header: t("approvals.notes", "Notes"),
+				header: t("approvals:approvals.notes", "Notes"),
 				cell: ({ row }) => (
 					<span className="max-w-[200px] truncate text-muted-foreground block">
 						{row.original.absence.notes || "—"}
@@ -229,7 +230,7 @@ export function AbsenceApprovalsTable() {
 							disabled={approveMutation.isPending || rejectMutation.isPending}
 						>
 							<IconCheck className="mr-1 size-4" />
-							{t("approvals.approve", "Approve")}
+							{t("approvals:approvals.approve", "Approve")}
 						</Button>
 						<Button
 							variant="outline"
@@ -238,7 +239,7 @@ export function AbsenceApprovalsTable() {
 							disabled={approveMutation.isPending || rejectMutation.isPending}
 						>
 							<IconX className="mr-1 size-4" />
-							{t("approvals.reject", "Reject")}
+							{t("approvals:approvals.reject", "Reject")}
 						</Button>
 					</div>
 				),
@@ -254,7 +255,9 @@ export function AbsenceApprovalsTable() {
 	if (isError) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg">
-				<p className="text-destructive">{t("approvals.loadError", "Failed to load approvals")}</p>
+				<p className="text-destructive">
+					{t("approvals:approvals.loadError", "Failed to load approvals")}
+				</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
 					<IconRefresh className="mr-2 h-4 w-4" />
 					{t("common.retry", "Retry")}
@@ -269,7 +272,10 @@ export function AbsenceApprovalsTable() {
 				<DataTableToolbar
 					search={search}
 					onSearchChange={setSearch}
-					searchPlaceholder={t("approvals.searchPlaceholder", "Search by name, email, or type...")}
+					searchPlaceholder={t(
+						"approvals:approvals.searchPlaceholder",
+						"Search by name, email, or type...",
+					)}
 					actions={
 						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
@@ -288,8 +294,11 @@ export function AbsenceApprovalsTable() {
 					isFetching={isFetching}
 					emptyMessage={
 						search
-							? t("approvals.noSearchResults", "No approvals match your search.")
-							: t("approvals.noAbsenceApprovals", "No pending absence requests to review.")
+							? t("approvals:approvals.noSearchResults", "No approvals match your search.")
+							: t(
+									"approvals:approvals.noAbsenceApprovals",
+									"No pending absence requests to review.",
+								)
 					}
 				/>
 			</div>
@@ -301,10 +310,10 @@ export function AbsenceApprovalsTable() {
 					action={dialogAction}
 					title={
 						dialogAction === "approve"
-							? t("approvals.approveTitle", "Approve Absence Request")
-							: t("approvals.rejectTitle", "Reject Absence Request")
+							? t("approvals:approvals.approveTitle", "Approve Absence Request")
+							: t("approvals:approvals.rejectTitle", "Reject Absence Request")
 					}
-					description={`${selectedApproval.requester.user.name} ${t("approvals.requestingOff", "is requesting")} ${formatDays(calculateBusinessDaysWithHalfDays(selectedApproval.absence.startDate, selectedApproval.absence.startPeriod, selectedApproval.absence.endDate, selectedApproval.absence.endPeriod, []))} ${t("approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
+					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatDays(calculateBusinessDaysWithHalfDays(selectedApproval.absence.startDate, selectedApproval.absence.startPeriod, selectedApproval.absence.endDate, selectedApproval.absence.endPeriod, []))} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
 					onConfirm={handleConfirm}
 				/>
 			)}

@@ -42,6 +42,7 @@
       "daysRemaining": "Días restantes:",
       "description": "Envíe una solicitud de tiempo libre. Su gerente será notificado para su aprobación.",
       "endDate": "Fecha de finalización *",
+      "endPeriod": "Período final",
       "errors": {
         "fillRequiredFields": "Por favor, complete todos los campos obligatorios",
         "insufficientBalance": "Saldo de vacaciones insuficiente",
@@ -57,12 +58,34 @@
       },
       "selectAbsenceType": "Seleccionar tipo de ausencia",
       "startDate": "Fecha de inicio *",
+      "startPeriod": "Período inicial",
       "submitRequest": "Enviar solicitud",
       "title": "Solicitar ausencia"
     },
     "period": {
       "am": "AM",
       "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "turno afectado",
+      "approval": "Aprobación",
+      "balance": "Saldo",
+      "balanceUnavailable": "Saldo no disponible",
+      "countsAgainstVacationBalance": "Cuenta contra el saldo de vacaciones",
+      "coverage": "Cobertura",
+      "coverageStaffAfterRequest": "{after}/{minimum} personal después de la solicitud",
+      "description": "Una verificación no bloqueante del saldo, días festivos, cobertura y señales de aprobación antes de enviar.",
+      "doesNotReduceVacationBalance": "No reduce el saldo de vacaciones",
+      "holidays": "Días festivos",
+      "loading": "Comprobando saldo, días festivos y cobertura…",
+      "noApprovalWarnings": "Sin advertencias de aprobación",
+      "noCoverageRisk": "Sin riesgo de cobertura publicado",
+      "noCoverageRulesConfigured": "No hay reglas de cobertura configuradas para los turnos afectados",
+      "noHolidays": "No hay días festivos asignados en el rango",
+      "remainingAfter": "Restante tras la solicitud",
+      "requested": "Solicitado",
+      "title": "Planificador inteligente",
+      "unavailable": "Vista previa de planificación no disponible. Aún puede enviar su solicitud."
     },
     "requestAbsence": "Solicitar ausencia",
     "status": {

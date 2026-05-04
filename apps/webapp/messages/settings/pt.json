@@ -37,6 +37,10 @@
       "warning": "Isso agendará a organização para exclusão. Você terá 5 dias para recuperá-la antes que todos os dados sejam excluídos permanentemente."
     },
     "features": {
+      "demo-data": "Dados de demonstração",
+      "demo-data-description": "Permitir que administradores gerem e limpem dados de exemplo da organização para testes.",
+      "demo-data-disabled": "Dados de demonstração desativados",
+      "demo-data-enabled": "Dados de demonstração ativados",
       "description": "Ative ou desative funcionalidades opcionais para a sua organização",
       "owner-only": "Apenas os proprietários da organização podem alterar as definições das funcionalidades.",
       "projects": "Projetos",
@@ -50,6 +54,7 @@
       "surcharges-disabled": "Sobretaxas desativadas",
       "surcharges-enabled": "Sobretaxas ativadas",
       "title": "Funcionalidades",
+      "toggle-demo-data": "Alternar dados de demonstração",
       "toggle-projects": "Alternar projetos",
       "toggle-surcharges": "Alternar sobretaxas",
       "toggle-work-shifts": "Alternar turnos de trabalho",
@@ -192,6 +197,27 @@
       "title": "Chaves de API",
       "updated": "Chave de API atualizada",
       "usage": "{count} de {max} chaves usadas"
+    },
+    "approvalPolicies": {
+      "activeDescription": "Solicitações elegíveis podem corresponder a esta política.",
+      "activeLabel": "Política ativa",
+      "addStage": "Adicionar etapa",
+      "approvalTypes": "Tipos de aprovação",
+      "approver": "Aprovador",
+      "approverEmployeeId": "ID do funcionário do aprovador",
+      "approverEmployeeIdPlaceholder": "Exemplo: funcionario_123…",
+      "createPolicy": "Criar política de aprovação",
+      "description": "Configurar cadeias de aprovação sequenciais para fluxos de trabalho operacionais",
+      "descriptionPlaceholder": "Exemplo: Escala fluxos de trabalho sensíveis para operações…",
+      "dialogDescription": "Defina quando uma cadeia de aprovação se aplica e quais aprovadores lidam com cada etapa sequencial.",
+      "namePlaceholder": "Exemplo: Escalonamento de ausência…",
+      "noStages": "Nenhuma etapa de aprovação configurada ainda.",
+      "priority": "Prioridade",
+      "removeStage": "Remover etapa",
+      "stageNumber": "Etapa {number}",
+      "stages": "Etapas de aprovação",
+      "stagesDescription": "As etapas são executadas em ordem; cada solicitação avança apenas após a aceitação do aprovador atual.",
+      "title": "Políticas de aprovação"
     },
     "auditExport": {
       "auditPack": {
@@ -1042,14 +1068,21 @@
     "demoData": {
       "title": "Dados de demonstração"
     },
+    "discord": {
+      "description": "Configure notificações do Discord para sua organização",
+      "title": "Discord"
+    },
+    "emailTemplates": {
+      "description": "Personalize os e-mails que sua organização envia",
+      "reset": "Modelo de e-mail redefinido para o padrão",
+      "saved": "Modelo de e-mail salvo",
+      "testSent": "E-mail de teste enviado para sua conta",
+      "title": "Modelos de e-mail"
+    },
     "employees": {
       "description": "Gerencie perfis de funcionários, equipes e permissões",
       "details": "Detalhes do funcionário",
       "title": "Colaboradores"
-    },
-    "emailTemplates": {
-      "description": "Personalize os e-mails que sua organização envia",
-      "title": "Modelos de e-mail"
     },
     "enterprise": {
       "domains": {
@@ -1107,6 +1140,10 @@
         "sso": "Fornecedores SSO"
       }
     },
+    "enterpriseIdentitySetup": {
+      "description": "Guie SSO, provisionamento SCIM, restrições de domínio, política de convite e funções padrão para esta organização.",
+      "title": "Configuração de Identidade Corporativa"
+    },
     "exportOperations": {
       "activity": {
         "audit": {
@@ -1148,6 +1185,9 @@
         "upcomingRuns": "Os dados de exportação agendada estão temporariamente indisponíveis."
       },
       "title": "Operações de exportação"
+    },
+    "group": {
+      "notifications": "Notificações"
     },
     "holidays": {
       "add": "Adicionar feriado",
@@ -1400,6 +1440,10 @@
       },
       "title": "Feriados"
     },
+    "implementationChecklist": {
+      "description": "Acompanhe a configuração de implementação do cliente em políticas, folha de pagamento, integrações e importação de funcionários",
+      "title": "Lista de verificação de implementação"
+    },
     "import": {
       "description": "Importe dados de provedores suportados como Clockodo e Clockin.",
       "title": "Importar dados"
@@ -1570,8 +1614,7 @@
         "description": "A organização não pôde ser encontrada ou você não tem acesso a ela.",
         "title": "Organização Não Encontrada"
       },
-      "description": "Gerencie membros, convites e detalhes da organização",
-      "title": "Organização"
+      "title": "Organizações e Equipas"
     },
     "payrollExport": {
       "datev": {
@@ -2347,6 +2390,10 @@
       "title": "Habilidades e Qualificações",
       "updateError": "Falha ao atualizar habilidade"
     },
+    "slack": {
+      "description": "Configure notificações do Slack para sua organização",
+      "title": "Slack"
+    },
     "statistics": {
       "cards": {
         "activeSessions": "Sessões ativas",
@@ -2489,11 +2536,15 @@
       }
     },
     "teams": {
-      "description": "Organize funcionários em equipas e gerencie atribuições de equipa",
+      "description": "Organize funcionários em equipes para uma melhor gestão",
       "details": "Detalhes da equipa",
       "details.description": "Gerenciar informações e membros da equipe",
       "details.title": "Detalhes da Equipe",
       "title": "Equipas"
+    },
+    "teamsNotifications": {
+      "description": "Configure notificações do Microsoft Teams para sua organização",
+      "title": "Microsoft Teams"
     },
     "telegram": {
       "bot": {
@@ -3114,5 +3165,95 @@
       "superseded": "Substituído",
       "unlimited": "Ilimitado"
     }
+  },
+  "webhooks": {
+    "copy-failed": "Falha ao copiar para a área de transferência",
+    "create": "Adicionar Webhook",
+    "create-failed": "Falha ao criar webhook",
+    "delete-confirm": {
+      "description": "Isso excluirá permanentemente o endpoint do webhook e todo o histórico de entrega. Esta ação não pode ser desfeita.",
+      "title": "Excluir webhook?"
+    },
+    "deleted": "Webhook excluído",
+    "delete-failed": "Falha ao excluir webhook",
+    "deliveries": "Entregas",
+    "description": "Configure endpoints de webhook para receber notificações em tempo real quando eventos ocorrerem em sua organização.",
+    "disabled": "Webhook desativado",
+    "empty": {
+      "description": "Crie seu primeiro webhook para começar a receber notificações de eventos.",
+      "title": "Nenhum webhook configurado"
+    },
+    "enabled": "Webhook ativado",
+    "events": "Eventos",
+    "form": {
+      "create": "Criar Webhook",
+      "create-description": "Configure um novo endpoint de webhook para receber notificações de eventos.",
+      "create-title": "Criar Webhook",
+      "description": "Descrição",
+      "description-placeholder": "Para que este webhook é usado?",
+      "deselect-all": "Desmarcar todos",
+      "edit-description": "Atualize a configuração do endpoint do webhook.",
+      "edit-title": "Editar Webhook",
+      "events": "Eventos a receber",
+      "events-hint": "Eventos selecionados: {{count}}",
+      "events-required": "Pelo menos um evento deve ser selecionado",
+      "name": "Nome",
+      "name-placeholder": "Meu Webhook",
+      "name-required": "O nome é obrigatório",
+      "select-all": "Selecionar todos",
+      "url": "URL do endpoint",
+      "url-hint": "HTTPS é obrigatório em produção. Os eventos serão enviados como solicitações POST.",
+      "url-required": "A URL é obrigatória"
+    },
+    "last-delivery": "Último",
+    "logs": {
+      "attempt": "Tentativa",
+      "description": "Tentativas recentes de entrega de webhook e seus resultados.",
+      "duration": "Duração",
+      "empty": "Nenhum registro de entrega ainda",
+      "error": "Erro",
+      "event": "Evento",
+      "failed": "Falha",
+      "http": "HTTP",
+      "payload": "Payload",
+      "pending": "Pendente",
+      "response": "Resposta",
+      "retrying": "Tentando novamente",
+      "showing": "Exibindo {{start}}-{{end}} de {{total}}",
+      "status": "Status",
+      "success": "Sucesso",
+      "time": "Hora",
+      "title": "Registros de Entrega"
+    },
+    "regenerate-failed": "Falha ao regenerar segredo",
+    "regenerate-secret": "Regenerar Segredo",
+    "secret-copied": "Segredo copiado para a área de transferência",
+    "secret-dialog": {
+      "copy-secret": "Copiar segredo para a área de transferência",
+      "description": "Este segredo é usado para verificar assinaturas de webhook. Armazene-o com segurança.",
+      "done": "Eu salvei o segredo",
+      "secret": "Segredo de Assinatura",
+      "title": "Segredo do Webhook",
+      "verification": "Verificação de assinatura",
+      "verification-hint": "Verifique as assinaturas de webhook usando HMAC-SHA256. A assinatura é enviada no cabeçalho X-Z8-Signature.",
+      "warning": "Este segredo será exibido apenas uma vez. Certifique-se de salvá-lo agora.",
+      "warning-title": "Importante"
+    },
+    "secret-regenerated": "Segredo regenerado",
+    "status": {
+      "degraded": "Degradado",
+      "failing": "Com falha",
+      "healthy": "Saudável",
+      "inactive": "Inativo"
+    },
+    "success-rate": "Sucesso",
+    "test": "Enviar teste",
+    "test-failed": "Falha ao enviar webhook de teste",
+    "test-sent": "Webhook de teste enviado",
+    "title": "Webhooks",
+    "toggle-active": "Alternar status do webhook",
+    "updated": "Webhook atualizado",
+    "update-failed": "Falha ao atualizar webhook",
+    "view-logs": "Ver logs"
   }
 }

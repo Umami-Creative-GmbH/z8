@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Abbrechen",
+      "cancelConfirmation": "Diesen Abwesenheitsantrag abbrechen?",
+      "cancelError": "Abwesenheitsantrag konnte nicht abgebrochen werden.",
+      "cancelling": "Wird abgebrochen…",
+      "fix": "Beheben",
+      "notAvailable": "Nicht verfügbar",
+      "view": "Anzeigen"
+    },
+    "all": {
+      "description": "Überprüfen Sie Anträge für Abwesenheiten, Zeitkorrekturen und Ausgaben.",
+      "title": "Alle Anträge"
+    },
+    "card": {
+      "decision": "Entscheidung",
+      "submitted": "Eingereicht"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Anträge erscheinen hier, sobald sie eingereicht oder geladen wurden.",
+        "title": "Keine Anträge entsprechen Ihren Filtern"
+      },
+      "none": {
+        "description": "Anträge erscheinen hier, sobald sie eingereicht oder geladen wurden.",
+        "title": "Noch keine Anträge"
+      }
+    },
+    "featureName": "Ihre Anträge anzeigen",
+    "filters": {
+      "allStatuses": "Alle Status",
+      "allTypes": "Alle Typen",
+      "approvedRequests": "Genehmigte Anfragen",
+      "cancelledRequests": "Stornierte Anfragen",
+      "description": "Filtern Sie jeden Anfragebereich nach Text, Status oder Anfragetyp.",
+      "pendingRequests": "Ausstehende Anfragen",
+      "rejectedRequests": "Abgelehnte Anfragen",
+      "search": "Suche",
+      "searchPlaceholder": "Nach Titel suchen…",
+      "status": "Status",
+      "title": "Anfragen finden",
+      "type": "Typ"
+    },
+    "inReview": {
+      "description": "Anfragen, die auf Genehmigung oder Bearbeitung warten.",
+      "title": "In Prüfung"
+    },
+    "needsAttention": {
+      "description": "Abgelehnte Anfragen, die vor einer erneuten Einreichung möglicherweise eine Korrektur erfordern.",
+      "title": "Erfordert Aufmerksamkeit"
+    },
+    "reasonLabel": "Grund",
+    "recentlyDecided": {
+      "description": "Genehmigte und abgelehnte Entscheidungen der letzten 30 Tage.",
+      "title": "Kürzlich entschieden"
+    },
+    "requests": {
+      "absence": {
+        "title": "Abwesenheitsantrag"
+      },
+      "timeCorrection": {
+        "subtitle": "Korrektur für eine Zeiterfassung",
+        "title": "Zeitkorrekturantrag"
+      },
+      "travelExpense": {
+        "title": "Reisekostenabrechnung"
+      }
+    },
+    "sourceError": {
+      "absence": "Abwesenheitsanträge konnten nicht geladen werden.",
+      "timeCorrection": "Zeitkorrekturanträge konnten nicht geladen werden.",
+      "title": "Einige Anfragen konnten nicht geladen werden.",
+      "travelExpense": "Reisekostenanträge konnten nicht geladen werden."
+    },
+    "sourceTypes": {
+      "absence": "Abwesenheit",
+      "timeCorrection": "Zeit",
+      "travelExpense": "Auslage"
+    },
+    "status": {
+      "approved": "Genehmigt",
+      "cancelled": "Storniert",
+      "inReview": "In Prüfung",
+      "pending": "Ausstehend",
+      "rejected": "Abgelehnt"
+    },
+    "subtitle": "Behalten Sie den Überblick über ausstehende Anfragen, erforderliche Korrekturen und aktuelle Entscheidungen an einem Ort.",
+    "summary": {
+      "ariaLabel": "Anfrageübersicht",
+      "pending": "Ausstehend",
+      "recentDecisions": "Aktuelle Entscheidungen",
+      "requiredFixes": "Erforderliche Korrekturen",
+      "totalLoaded": "Gesamt geladen"
+    },
+    "title": "Meine Anfragen",
+    "unavailableTitle": "Anfragen nicht verfügbar"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "init": {
+    "activating": "Arbeitsbereich wird eingerichtet...",
+    "checking": "Sitzung wird überprüft...",
+    "clickToSelect": "Zum Auswählen klicken",
+    "redirecting": "Wird weitergeleitet...",
+    "selectOrganization": "Organisation auswählen",
+    "selectOrganizationDescription": "Wählen Sie die Organisation aus, mit der Sie arbeiten möchten"
+  },
+  "setup": {
+    "button": {
+      "create": "Administratorkonto erstellen",
+      "creating": "Konto wird erstellt..."
+    },
+    "complete_message": "Ihr Plattform-Administratorkonto wurde erstellt.",
+    "complete_title": "Einrichtung abgeschlossen!",
+    "continue_to_sign_in": "Weiter zur Anmeldung",
+    "creating_account": "Ihr Administratorkonto wird erstellt...",
+    "description": "Richten Sie das erste Administratorkonto für Ihre Plattform ein. Dieses Konto verfügt über vollen Systemzugriff und ist von Organisationskonten getrennt.",
+    "error": {
+      "passwords_mismatch": "Passwörter stimmen nicht überein"
+    },
+    "field": {
+      "confirm_password": "Passwort bestätigen",
+      "confirm_password_placeholder": "Bestätigen Sie Ihr Passwort",
+      "email": "E-Mail-Adresse",
+      "email_placeholder": "admin@ihrefirma.de",
+      "name": "Vollständiger Name",
+      "name_placeholder": "Geben Sie Ihren vollständigen Namen ein",
+      "password": "Passwort",
+      "password_placeholder": "Erstellen Sie ein sicheres Passwort"
+    },
+    "hide_password": "Passwort ausblenden",
+    "layout": {
+      "subtitle": "Konfigurieren Sie Ihre Plattform, um zu beginnen",
+      "title": "Ersteinrichtung"
+    },
+    "password": {
+      "lowercase": "Kleinbuchstabe",
+      "min_length": "Mindestens 12 Zeichen",
+      "number": "Zahl",
+      "uppercase": "Großbuchstabe"
+    },
+    "please_wait": "Bitte warten Sie, während wir alles einrichten",
+    "show_password": "Passwort anzeigen",
+    "sign_in_with": "Sie können sich jetzt anmelden mit",
+    "title": "Plattform-Administrator erstellen"
+  }
+}

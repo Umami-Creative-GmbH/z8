@@ -1,15 +1,4 @@
-import {
-	Body,
-	Button,
-	Container,
-	Head,
-	Heading,
-	Hr,
-	Html,
-	Link,
-	Section,
-	Text,
-} from "@react-email/components";
+import { Body, Button, Container, Head, Heading, Hr, Html, Link, Section, Text } from "react-email";
 
 interface TeamMemberAddedProps {
 	memberName: string;

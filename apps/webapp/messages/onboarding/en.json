@@ -57,7 +57,7 @@
       "error": "Failed to save notification preferences",
       "notifyAbout": "Notify me about:",
       "preferencesDesc": "Choose which notifications you want to receive.",
-      "preferencesTitle": "Notification Preferences",
+      "preferencesTitle": "Notifications",
       "pushDenied": "Push notification permission denied",
       "pushDesc": "Receive instant updates even when you're not using the app.",
       "pushEnabled": "Push notifications enabled!",

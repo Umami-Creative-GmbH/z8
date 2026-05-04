@@ -1,0 +1,49 @@
+{
+  "init": {
+    "activating": "Configuration de votre espace de travail...",
+    "checking": "Vérification de la session...",
+    "clickToSelect": "Cliquez pour sélectionner",
+    "redirecting": "Redirection en cours...",
+    "selectOrganization": "Sélectionner une organisation",
+    "selectOrganizationDescription": "Choisissez l'organisation avec laquelle vous souhaitez travailler"
+  },
+  "setup": {
+    "button": {
+      "create": "Créer un compte administrateur",
+      "creating": "Création du compte..."
+    },
+    "complete_message": "Votre compte administrateur de plateforme a été créé.",
+    "complete_title": "Configuration terminée !",
+    "continue_to_sign_in": "Continuer vers la connexion",
+    "creating_account": "Création de votre compte administrateur...",
+    "description": "Configurez le premier compte administrateur pour votre plateforme. Ce compte aura un accès complet au système et est distinct des comptes d'organisation.",
+    "error": {
+      "passwords_mismatch": "Les mots de passe ne correspondent pas"
+    },
+    "field": {
+      "confirm_password": "Confirmer le mot de passe",
+      "confirm_password_placeholder": "Confirmez votre mot de passe",
+      "email": "Adresse e-mail",
+      "email_placeholder": "admin@votreentreprise.com",
+      "name": "Nom complet",
+      "name_placeholder": "Entrez votre nom complet",
+      "password": "Mot de passe",
+      "password_placeholder": "Créez un mot de passe fort"
+    },
+    "hide_password": "Masquer le mot de passe",
+    "layout": {
+      "subtitle": "Configurez votre plateforme pour commencer",
+      "title": "Configuration initiale"
+    },
+    "password": {
+      "lowercase": "Lettre minuscule",
+      "min_length": "12 caractères ou plus",
+      "number": "Chiffre",
+      "uppercase": "Lettre majuscule"
+    },
+    "please_wait": "Veuillez patienter pendant la configuration",
+    "show_password": "Afficher le mot de passe",
+    "sign_in_with": "Vous pouvez maintenant vous connecter avec",
+    "title": "Créer un administrateur de plateforme"
+  }
+}

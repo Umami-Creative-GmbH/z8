@@ -1,0 +1,38 @@
+{
+  "compliance": {
+    "exception": {
+      "approved": "Exceção Aprovada",
+      "approvedDescription": "A exceção de conformidade foi aprovada.",
+      "approveFailed": "Falha ao Aprovar",
+      "plannedDuration": "Planejado",
+      "plannedDurationHelp": "Estime quanto tempo adicional você espera precisar além do limite.",
+      "reason": "Motivo da Exceção",
+      "reasonPlaceholder": "Explique por que você precisa desta exceção (por exemplo, prazo urgente de projeto, reunião crítica com cliente)...",
+      "reasonRequired": "Motivo Obrigatório",
+      "reasonRequiredDescription": "Por favor, forneça um motivo para sua solicitação de exceção.",
+      "rejectDescription": "Forneça um motivo para rejeitar esta solicitação de exceção (opcional)",
+      "rejected": "Exceção Rejeitada",
+      "rejectedDescription": "A exceção de conformidade foi rejeitada.",
+      "rejectFailed": "Falha ao Rejeitar",
+      "rejectionPlaceholder": "Insira o motivo para rejeitar esta exceção...",
+      "rejectionReason": "Motivo da rejeição",
+      "rejectTitle": "Rejeitar Solicitação de Exceção",
+      "requestDescription": "Solicite a pré-aprovação do seu gerente para prosseguir apesar das restrições de conformidade. As exceções aprovadas são válidas por 24 horas.",
+      "requestedAt": "Solicitado",
+      "requestFailed": "Falha na Solicitação",
+      "requestSubmitted": "Solicitação de Exceção Enviada",
+      "requestSubmittedDescription": "Seu gerente será notificado e poderá aprovar ou rejeitar sua solicitação.",
+      "requestTitle": "Solicitar Exceção de Conformidade",
+      "submit": "Enviar Solicitação",
+      "type": "Tipo de Exceção"
+    },
+    "hasApprovedException": "Você possui uma exceção aprovada. Você pode prosseguir.",
+    "moreAlerts": "mais",
+    "noExceptions": "Nenhuma solicitação de exceção pendente",
+    "pendingExceptions": "Solicitações de exceção pendentes",
+    "pendingExceptionsDescription": "Analise as solicitações de exceção que requerem sua aprovação",
+    "requestException": "Solicitar exceção",
+    "restPeriodMessage": "Você precisa de mais {{time}} de descanso antes de poder registrar o ponto. Próximo registro permitido: {{nextTime}}",
+    "restPeriodRequired": "Período de descanso necessário"
+  }
+}

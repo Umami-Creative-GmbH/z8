@@ -111,6 +111,17 @@
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
       "title": "Entrées de temps"
     },
+    "timeline": {
+      "dayPicker": "Sélecteur de jour de la chronologie",
+      "emptyDescription": "Il n'y a pas encore de quarts de travail, d'absences ou d'entrées de temps pour le jour sélectionné.",
+      "emptyTitle": "Aucune activité enregistrée pour ce jour.",
+      "nextDay": "Jour suivant",
+      "previousDay": "Jour précédent",
+      "title": "Chronologie de la journée de travail",
+      "today": "Aujourd'hui",
+      "unavailableDescription": "Le suivi du temps fonctionne toujours. Essayez d'actualiser cette vue plus tard.",
+      "unavailableTitle": "Chronologie indisponible"
+    },
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
     "workCategory": "Catégorie de travail"

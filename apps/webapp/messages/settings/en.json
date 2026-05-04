@@ -37,6 +37,10 @@
       "warning": "This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted."
     },
     "features": {
+      "demo-data": "Demo Data",
+      "demo-data-description": "Allow admins to generate and clear sample organization data for testing.",
+      "demo-data-disabled": "Demo Data disabled",
+      "demo-data-enabled": "Demo Data enabled",
       "description": "Enable or disable optional features for your organization",
       "owner-only": "Only organization owners can change feature settings.",
       "projects": "Projects",
@@ -50,6 +54,7 @@
       "surcharges-disabled": "Surcharges disabled",
       "surcharges-enabled": "Surcharges enabled",
       "title": "Features",
+      "toggle-demo-data": "Toggle demo data",
       "toggle-projects": "Toggle projects",
       "toggle-surcharges": "Toggle surcharges",
       "toggle-work-shifts": "Toggle work shifts",
@@ -192,6 +197,27 @@
       "title": "API Keys",
       "updated": "API key updated",
       "usage": "{count} of {max} keys used"
+    },
+    "approvalPolicies": {
+      "activeDescription": "Eligible requests can match this policy.",
+      "activeLabel": "Active policy",
+      "addStage": "Add stage",
+      "approvalTypes": "Approval types",
+      "approver": "Approver",
+      "approverEmployeeId": "Approver Employee ID",
+      "approverEmployeeIdPlaceholder": "Example: employee_123…",
+      "createPolicy": "Create Approval Policy",
+      "description": "Configure sequential approval chains for operational workflows",
+      "descriptionPlaceholder": "Example: Escalates sensitive workflows to operations…",
+      "dialogDescription": "Define when an approval chain applies and which approvers handle each sequential stage.",
+      "namePlaceholder": "Example: Absence escalation…",
+      "noStages": "No approval stages configured yet.",
+      "priority": "Priority",
+      "removeStage": "Remove stage",
+      "stageNumber": "Stage {number}",
+      "stages": "Approval stages",
+      "stagesDescription": "Stages run in order; each request advances only after the current approver accepts it.",
+      "title": "Approval Policies"
     },
     "auditExport": {
       "auditPack": {
@@ -1042,14 +1068,21 @@
     "demoData": {
       "title": "Demo Data"
     },
+    "discord": {
+      "description": "Configure Discord notifications for your organization",
+      "title": "Discord"
+    },
+    "emailTemplates": {
+      "description": "Customize the emails your organization sends",
+      "reset": "Email template reset to default",
+      "saved": "Email template saved",
+      "testSent": "Test email sent to your account",
+      "title": "Email Templates"
+    },
     "employees": {
       "description": "Manage employee profiles, teams, and permissions",
       "details": "Employee Details",
       "title": "Employees"
-    },
-    "emailTemplates": {
-      "description": "Customize the emails your organization sends",
-      "title": "Email Templates"
     },
     "enterprise": {
       "domains": {
@@ -1107,6 +1140,10 @@
         "sso": "SSO Providers"
       }
     },
+    "enterpriseIdentitySetup": {
+      "description": "Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
+      "title": "Enterprise Identity Setup"
+    },
     "exportOperations": {
       "activity": {
         "audit": {
@@ -1148,6 +1185,9 @@
         "upcomingRuns": "Scheduled export data is temporarily unavailable."
       },
       "title": "Export Operations"
+    },
+    "group": {
+      "notifications": "Notifications"
     },
     "holidays": {
       "add": "Add Holiday",
@@ -1400,6 +1440,10 @@
       },
       "title": "Holidays"
     },
+    "implementationChecklist": {
+      "description": "Track customer rollout setup across policies, payroll, integrations, and employee import",
+      "title": "Implementation Checklist"
+    },
     "import": {
       "description": "Import data from supported providers like Clockodo and Clockin.",
       "title": "Import Data"
@@ -1563,15 +1607,14 @@
     },
     "notifications": {
       "description": "Choose how and when you want to be notified",
-      "title": "Notification Settings"
+      "title": "Notifications"
     },
     "organizations": {
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"
       },
-      "description": "Manage organization members, invitations, and details",
-      "title": "Organization"
+      "title": "Organizations & Teams"
     },
     "payrollExport": {
       "datev": {
@@ -2347,6 +2390,10 @@
       "title": "Skills & Qualifications",
       "updateError": "Failed to update skill"
     },
+    "slack": {
+      "description": "Configure Slack notifications for your organization",
+      "title": "Slack"
+    },
     "statistics": {
       "cards": {
         "activeSessions": "Active Sessions",
@@ -2489,11 +2536,15 @@
       }
     },
     "teams": {
-      "description": "Organize employees into teams and manage team assignments",
+      "description": "Organize employees into teams for better management",
       "details": "Team Details",
       "details.description": "Manage team information and members",
       "details.title": "Team Details",
       "title": "Teams"
+    },
+    "teamsNotifications": {
+      "description": "Configure Microsoft Teams notifications for your organization",
+      "title": "Microsoft Teams"
     },
     "telegram": {
       "bot": {
@@ -2691,7 +2742,7 @@
       "reminderFrequency": "Reminder Frequency",
       "saved": "Wellness settings saved",
       "saveError": "Failed to save wellness settings",
-      "title": "Wellness Settings"
+      "title": "Wellness"
     },
     "workCategories": {
       "addCategory": "Add Category",
@@ -3114,5 +3165,95 @@
       "superseded": "Superseded",
       "unlimited": "Unlimited"
     }
+  },
+  "webhooks": {
+    "copy-failed": "Failed to copy to clipboard",
+    "create": "Add Webhook",
+    "create-failed": "Failed to create webhook",
+    "delete-confirm": {
+      "description": "This will permanently delete the webhook endpoint and all delivery history. This action cannot be undone.",
+      "title": "Delete webhook?"
+    },
+    "deleted": "Webhook deleted",
+    "delete-failed": "Failed to delete webhook",
+    "deliveries": "Deliveries",
+    "description": "Configure webhook endpoints to receive real-time notifications when events occur in your organization.",
+    "disabled": "Webhook disabled",
+    "empty": {
+      "description": "Create your first webhook to start receiving event notifications.",
+      "title": "No webhooks configured"
+    },
+    "enabled": "Webhook enabled",
+    "events": "Events",
+    "form": {
+      "create": "Create Webhook",
+      "create-description": "Configure a new webhook endpoint to receive event notifications.",
+      "create-title": "Create Webhook",
+      "description": "Description",
+      "description-placeholder": "What is this webhook used for?",
+      "deselect-all": "Deselect All",
+      "edit-description": "Update the webhook endpoint configuration.",
+      "edit-title": "Edit Webhook",
+      "events": "Events to receive",
+      "events-hint": "Selected events: {{count}}",
+      "events-required": "At least one event must be selected",
+      "name": "Name",
+      "name-placeholder": "My Webhook",
+      "name-required": "Name is required",
+      "select-all": "Select All",
+      "url": "Endpoint URL",
+      "url-hint": "HTTPS is required in production. Events will be sent as POST requests.",
+      "url-required": "URL is required"
+    },
+    "last-delivery": "Last",
+    "logs": {
+      "attempt": "Attempt",
+      "description": "Recent webhook delivery attempts and their results.",
+      "duration": "Duration",
+      "empty": "No delivery logs yet",
+      "error": "Error",
+      "event": "Event",
+      "failed": "Failed",
+      "http": "HTTP",
+      "payload": "Payload",
+      "pending": "Pending",
+      "response": "Response",
+      "retrying": "Retrying",
+      "showing": "Showing {{start}}-{{end}} of {{total}}",
+      "status": "Status",
+      "success": "Success",
+      "time": "Time",
+      "title": "Delivery Logs"
+    },
+    "regenerate-failed": "Failed to regenerate secret",
+    "regenerate-secret": "Regenerate Secret",
+    "secret-copied": "Secret copied to clipboard",
+    "secret-dialog": {
+      "copy-secret": "Copy secret to clipboard",
+      "description": "This secret is used to verify webhook signatures. Store it securely.",
+      "done": "I've saved the secret",
+      "secret": "Signing Secret",
+      "title": "Webhook Secret",
+      "verification": "Signature Verification",
+      "verification-hint": "Verify webhook signatures using HMAC-SHA256. The signature is sent in the X-Z8-Signature header.",
+      "warning": "This secret will only be shown once. Make sure to save it now.",
+      "warning-title": "Important"
+    },
+    "secret-regenerated": "Secret regenerated",
+    "status": {
+      "degraded": "Degraded",
+      "failing": "Failing",
+      "healthy": "Healthy",
+      "inactive": "Inactive"
+    },
+    "success-rate": "Success",
+    "test": "Send Test",
+    "test-failed": "Failed to send test webhook",
+    "test-sent": "Test webhook sent",
+    "title": "Webhooks",
+    "toggle-active": "Toggle webhook active",
+    "updated": "Webhook updated",
+    "update-failed": "Failed to update webhook",
+    "view-logs": "View Logs"
   }
 }

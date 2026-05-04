@@ -5,8 +5,6 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/webhooks/actions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -15,6 +13,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	Table,
 	TableBody,
@@ -23,7 +24,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { WebhookDelivery } from "@/lib/webhooks/types";
 
 interface WebhookDeliveryLogsDialogProps {
@@ -85,28 +85,28 @@ export function WebhookDeliveryLogsDialog({
 				return (
 					<Badge variant="default" className="bg-green-600">
 						<IconCheck className="mr-1 h-3 w-3" aria-hidden="true" />
-						{t("webhooks.logs.success", "Success")}
+						{t("settings:webhooks.logs.success", "Success")}
 					</Badge>
 				);
 			case "failed":
 				return (
 					<Badge variant="destructive">
 						<IconX className="mr-1 h-3 w-3" aria-hidden="true" />
-						{t("webhooks.logs.failed", "Failed")}
+						{t("settings:webhooks.logs.failed", "Failed")}
 					</Badge>
 				);
 			case "retrying":
 				return (
 					<Badge variant="outline" className="border-yellow-500 text-yellow-600">
 						<IconRefresh className="mr-1 h-3 w-3" aria-hidden="true" />
-						{t("webhooks.logs.retrying", "Retrying")}
+						{t("settings:webhooks.logs.retrying", "Retrying")}
 					</Badge>
 				);
 			default:
 				return (
 					<Badge variant="secondary">
 						<IconLoader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden="true" />
-						{t("webhooks.logs.pending", "Pending")}
+						{t("settings:webhooks.logs.pending", "Pending")}
 					</Badge>
 				);
 		}
@@ -117,10 +117,13 @@ export function WebhookDeliveryLogsDialog({
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t("webhooks.logs.title", "Delivery Logs")} - {webhookName}
+						{t("settings:webhooks.logs.title", "Delivery Logs")} - {webhookName}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
-						{t("webhooks.logs.description", "Recent webhook delivery attempts and their results.")}
+						{t(
+							"settings:webhooks.logs.description",
+							"Recent webhook delivery attempts and their results.",
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
@@ -136,22 +139,30 @@ export function WebhookDeliveryLogsDialog({
 					) : deliveries.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<p className="text-muted-foreground">
-								{t("webhooks.logs.empty", "No delivery logs yet")}
+								{t("settings:webhooks.logs.empty", "No delivery logs yet")}
 							</p>
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-[140px]">{t("webhooks.logs.time", "Time")}</TableHead>
-									<TableHead className="w-[180px]">{t("webhooks.logs.event", "Event")}</TableHead>
-									<TableHead className="w-[100px]">{t("webhooks.logs.status", "Status")}</TableHead>
-									<TableHead className="w-[80px]">{t("webhooks.logs.http", "HTTP")}</TableHead>
-									<TableHead className="w-[80px]">
-										{t("webhooks.logs.duration", "Duration")}
+									<TableHead className="w-[140px]">
+										{t("settings:webhooks.logs.time", "Time")}
+									</TableHead>
+									<TableHead className="w-[180px]">
+										{t("settings:webhooks.logs.event", "Event")}
+									</TableHead>
+									<TableHead className="w-[100px]">
+										{t("settings:webhooks.logs.status", "Status")}
 									</TableHead>
 									<TableHead className="w-[80px]">
-										{t("webhooks.logs.attempt", "Attempt")}
+										{t("settings:webhooks.logs.http", "HTTP")}
+									</TableHead>
+									<TableHead className="w-[80px]">
+										{t("settings:webhooks.logs.duration", "Duration")}
+									</TableHead>
+									<TableHead className="w-[80px]">
+										{t("settings:webhooks.logs.attempt", "Attempt")}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -201,7 +212,7 @@ export function WebhookDeliveryLogsDialog({
 															{delivery.errorMessage && (
 																<div>
 																	<span className="text-sm font-medium text-red-600">
-																		{t("webhooks.logs.error", "Error")}:
+																		{t("settings:webhooks.logs.error", "Error")}:
 																	</span>
 																	<p className="text-sm text-muted-foreground">
 																		{delivery.errorMessage}
@@ -210,7 +221,7 @@ export function WebhookDeliveryLogsDialog({
 															)}
 															<div>
 																<span className="text-sm font-medium">
-																	{t("webhooks.logs.payload", "Payload")}:
+																	{t("settings:webhooks.logs.payload", "Payload")}:
 																</span>
 																<pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto max-h-40">
 																	{JSON.stringify(delivery.payload, null, 2)}
@@ -219,7 +230,7 @@ export function WebhookDeliveryLogsDialog({
 															{delivery.responseBody && (
 																<div>
 																	<span className="text-sm font-medium">
-																		{t("webhooks.logs.response", "Response")}:
+																		{t("settings:webhooks.logs.response", "Response")}:
 																	</span>
 																	<pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto max-h-40">
 																		{delivery.responseBody}
@@ -242,7 +253,7 @@ export function WebhookDeliveryLogsDialog({
 				{total > limit && (
 					<div className="flex items-center justify-between pt-4 border-t">
 						<p className="text-sm text-muted-foreground">
-							{t("webhooks.logs.showing", "Showing {{start}}-{{end}} of {{total}}", {
+							{t("settings:webhooks.logs.showing", "Showing {{start}}-{{end}} of {{total}}", {
 								start: offset + 1,
 								end: Math.min(offset + deliveries.length, total),
 								total,

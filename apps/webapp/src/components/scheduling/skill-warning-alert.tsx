@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
 import { IconAlertTriangle, IconCertificate, IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,9 +20,14 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 		return (
 			<Alert>
 				<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-				<AlertTitle>{t("scheduling.skills.validating", "Validating Skills…")}</AlertTitle>
+				<AlertTitle>
+					{t("scheduling:scheduling.skills.validating", "Validating Skills…")}
+				</AlertTitle>
 				<AlertDescription>
-					{t("scheduling.skills.validatingDescription", "Checking employee qualifications")}
+					{t(
+						"scheduling:scheduling.skills.validatingDescription",
+						"Checking employee qualifications",
+					)}
 				</AlertDescription>
 			</Alert>
 		);
@@ -54,8 +59,8 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 			<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
 			<AlertTitle>
 				{requiredMissing.length > 0 || hasExpired
-					? t("scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
-					: t("scheduling.skills.preferredSkillsMissing", "Preferred Skills Missing")}
+					? t("scheduling:scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
+					: t("scheduling:scheduling.skills.preferredSkillsMissing", "Preferred Skills Missing")}
 			</AlertTitle>
 			<AlertDescription>
 				<div className="space-y-3 mt-2">
@@ -64,7 +69,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 						<div>
 							<p className="font-medium text-sm mb-1.5 flex items-center gap-1.5">
 								<IconCertificate className="h-4 w-4" aria-hidden="true" />
-								{t("scheduling.skills.missingRequired", "Missing Required Skills:")}
+								{t("scheduling:scheduling.skills.missingRequired", "Missing Required Skills:")}
 							</p>
 							<ul className="space-y-1 pl-5">
 								{requiredMissing.map((skill) => (
@@ -84,7 +89,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					{preferredMissing.length > 0 && (
 						<div>
 							<p className="font-medium text-sm mb-1.5">
-								{t("scheduling.skills.missingPreferred", "Missing Preferred Skills:")}
+								{t("scheduling:scheduling.skills.missingPreferred", "Missing Preferred Skills:")}
 							</p>
 							<ul className="space-y-1 pl-5">
 								{preferredMissing.map((skill) => (
@@ -92,7 +97,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 										<span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
 										{skill.name}
 										<Badge variant="secondary" className="text-xs">
-											{t("scheduling.skills.preferred", "Preferred")}
+											{t("scheduling:scheduling.skills.preferred", "Preferred")}
 										</Badge>
 									</li>
 								))}
@@ -104,7 +109,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					{hasExpired && (
 						<div>
 							<p className="font-medium text-sm mb-1.5">
-								{t("scheduling.skills.expiredCertifications", "Expired Certifications:")}
+								{t("scheduling:scheduling.skills.expiredCertifications", "Expired Certifications:")}
 							</p>
 							<ul className="space-y-1 pl-5">
 								{validation.expiredSkills.map((skill) => (
@@ -112,8 +117,10 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 										<span className="w-1.5 h-1.5 rounded-full bg-destructive" />
 										{skill.name}
 										<span className="text-xs text-muted-foreground">
-											{t("scheduling.skills.expiredOn", "(Expired {{date}})", {
-												date: DateTime.fromJSDate(skill.expiresAt).toLocaleString(DateTime.DATE_SHORT),
+											{t("scheduling:scheduling.skills.expiredOn", "(Expired {{date}})", {
+												date: DateTime.fromJSDate(skill.expiresAt).toLocaleString(
+													DateTime.DATE_SHORT,
+												),
 											})}
 										</span>
 									</li>
@@ -126,8 +133,8 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					{(requiredMissing.length > 0 || hasExpired) && (
 						<p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
 							{t(
-								"scheduling.skills.warningMessage",
-								"You can still assign this shift, but it will be logged as an override."
+								"scheduling:scheduling.skills.warningMessage",
+								"You can still assign this shift, but it will be logged as an override.",
 							)}
 						</p>
 					)}
@@ -140,7 +147,11 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 /**
  * Compact version for inline display in employee lists
  */
-export function SkillWarningBadge({ validation }: { validation: SkillValidationResult | undefined }) {
+export function SkillWarningBadge({
+	validation,
+}: {
+	validation: SkillValidationResult | undefined;
+}) {
 	const { t } = useTranslate();
 
 	if (!validation || validation.isQualified) {
@@ -155,14 +166,16 @@ export function SkillWarningBadge({ validation }: { validation: SkillValidationR
 		return (
 			<Badge variant="destructive" className="text-xs">
 				<IconAlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
-				{t("scheduling.skills.unqualified", "Unqualified")}
+				{t("scheduling:scheduling.skills.unqualified", "Unqualified")}
 			</Badge>
 		);
 	}
 
 	return (
 		<Badge variant="secondary" className="text-xs">
-			{t("scheduling.skills.missingPreferredCount", "{{count}} preferred missing", { count: totalIssues })}
+			{t("scheduling:scheduling.skills.missingPreferredCount", "{{count}} preferred missing", {
+				count: totalIssues,
+			})}
 		</Badge>
 	);
 }

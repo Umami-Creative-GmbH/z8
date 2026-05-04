@@ -1,22 +1,27 @@
 "use client";
 
-import { useMemo, useCallback, useRef } from "react";
 import {
+	IconAlertTriangle,
 	IconCalendarOff,
+	IconClock,
 	IconClockEdit,
 	IconExchange,
-	IconAlertTriangle,
-	IconClock,
 	IconReceipt,
 } from "@tabler/icons-react";
-import type { ColumnDef, CellContext } from "@tanstack/react-table";
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { formatRelative } from "@/lib/datetime/luxon-utils";
+import { useCallback, useMemo, useRef } from "react";
 import { DataTable } from "@/components/data-table-server";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
-import type { ApprovalPriority, ApprovalType, SLAStatus, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import type {
+	ApprovalPriority,
+	ApprovalType,
+	SLAStatus,
+	UnifiedApprovalItem,
+} from "@/lib/approvals/domain/types";
+import { formatRelative } from "@/lib/datetime/luxon-utils";
 import { cn } from "@/lib/utils";
 
 interface ApprovalInboxTableProps {
@@ -36,7 +41,10 @@ const TYPE_ICONS: Record<ApprovalType, React.ComponentType<{ className?: string 
 };
 
 // Priority badge variants
-const PRIORITY_VARIANTS: Record<ApprovalPriority, "destructive" | "outline" | "default" | "secondary"> = {
+const PRIORITY_VARIANTS: Record<
+	ApprovalPriority,
+	"destructive" | "outline" | "default" | "secondary"
+> = {
 	urgent: "destructive",
 	high: "outline",
 	normal: "default",
@@ -92,7 +100,7 @@ export function ApprovalInboxTable({
 	const onSelectItemRef = useRef(onSelectItem);
 	onSelectItemRef.current = onSelectItem;
 
-	const ariaLabel = t("approvals.selectRow", "Select row");
+	const ariaLabel = t("approvals:approvals.selectRow", "Select row");
 
 	const columns = useMemo<ColumnDef<UnifiedApprovalItem>[]>(
 		() => [
@@ -115,7 +123,7 @@ export function ApprovalInboxTable({
 			// Type column
 			{
 				accessorKey: "approvalType",
-				header: t("approvals.type", "Type"),
+				header: t("approvals:approvals.type", "Type"),
 				cell: ({ row }) => {
 					const TypeIcon = TYPE_ICONS[row.original.approvalType] || IconClockEdit;
 					return (
@@ -130,7 +138,7 @@ export function ApprovalInboxTable({
 			// Requester column
 			{
 				accessorKey: "requester",
-				header: t("approvals.requester", "Requester"),
+				header: t("approvals:approvals.requester", "Requester"),
 				cell: ({ row }) => (
 					<div className="flex items-center gap-3">
 						<UserAvatar
@@ -152,7 +160,7 @@ export function ApprovalInboxTable({
 			// Summary column
 			{
 				accessorKey: "display.summary",
-				header: t("approvals.details", "Details"),
+				header: t("approvals:approvals.details", "Details"),
 				cell: ({ row }) => (
 					<div className="min-w-0">
 						<div className="font-medium truncate">{row.original.display.title}</div>
@@ -165,10 +173,10 @@ export function ApprovalInboxTable({
 			// Priority column
 			{
 				accessorKey: "priority",
-				header: t("approvals.priority", "Priority"),
+				header: t("approvals:approvals.priority", "Priority"),
 				cell: ({ row }) => (
 					<Badge variant={PRIORITY_VARIANTS[row.original.priority]}>
-						{t(`approvals.priorities.${row.original.priority}`, row.original.priority)}
+						{t(`approvals:approvals.priorities.${row.original.priority}`, row.original.priority)}
 					</Badge>
 				),
 				size: 100,
@@ -176,7 +184,7 @@ export function ApprovalInboxTable({
 			// SLA column
 			{
 				accessorKey: "sla",
-				header: t("approvals.sla", "SLA"),
+				header: t("approvals:approvals.sla", "SLA"),
 				cell: ({ row }) => {
 					const { sla } = row.original;
 					if (!sla.deadline) {
@@ -185,7 +193,9 @@ export function ApprovalInboxTable({
 
 					return (
 						<div className={cn("flex items-center gap-1", getSLAStatusColor(sla.status))}>
-							{sla.status === "overdue" && <IconAlertTriangle className="h-4 w-4" aria-hidden="true" />}
+							{sla.status === "overdue" && (
+								<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
+							)}
 							{sla.status === "approaching" && <IconClock className="h-4 w-4" aria-hidden="true" />}
 							<span className="text-sm">
 								{sla.hoursRemaining !== null
@@ -202,7 +212,7 @@ export function ApprovalInboxTable({
 			// Age column
 			{
 				accessorKey: "createdAt",
-				header: t("approvals.requested", "Requested"),
+				header: t("approvals:approvals.requested", "Requested"),
 				cell: ({ row }) => (
 					<span className="text-sm text-muted-foreground">
 						{formatRelative(row.original.createdAt)}
@@ -233,7 +243,7 @@ export function ApprovalInboxTable({
 				onRowClick={onRowClick}
 				getRowId={(row) => row.id}
 				rowClassName={getRowClassName}
-				emptyMessage={t("approvals.noRequests", "No pending requests")}
+				emptyMessage={t("approvals:approvals.noRequests", "No pending requests")}
 			/>
 		</div>
 	);

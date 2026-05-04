@@ -111,7 +111,7 @@ export function ApprovalInboxToolbar({
 					<Checkbox
 						checked={allSelected}
 						onCheckedChange={onSelectAll}
-						aria-label={t("approvals.selectAll", "Select all")}
+						aria-label={t("approvals:approvals.selectAll", "Select all")}
 					/>
 					{selectedCount > 0 && (
 						<span className="text-sm text-muted-foreground">
@@ -126,11 +126,11 @@ export function ApprovalInboxToolbar({
 						aria-hidden="true"
 					/>
 					<Input
-						placeholder={t("approvals.searchPlaceholder", "Search by name or email…")}
+						placeholder={t("approvals:approvals.searchPlaceholder", "Search by name or email…")}
 						value={filters.search || ""}
 						onChange={(e) => handleSearchChange(e.target.value)}
 						className="pl-9"
-						aria-label={t("approvals.searchLabel", "Search approvals")}
+						aria-label={t("approvals:approvals.searchLabel", "Search approvals")}
 					/>
 				</div>
 			</div>
@@ -141,7 +141,7 @@ export function ApprovalInboxToolbar({
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm">
-							{t("approvals.type", "Type")}
+							{t("approvals:approvals.type", "Type")}
 							{filters.types?.length ? (
 								<Badge variant="secondary" className="ml-2">
 									{filters.types.length}
@@ -150,7 +150,9 @@ export function ApprovalInboxToolbar({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						<DropdownMenuLabel>{t("approvals.filterByType", "Filter by type")}</DropdownMenuLabel>
+						<DropdownMenuLabel>
+							{t("approvals:approvals.filterByType", "Filter by type")}
+						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						{APPROVAL_TYPES.map((type) => (
 							<DropdownMenuCheckboxItem
@@ -158,7 +160,7 @@ export function ApprovalInboxToolbar({
 								checked={filters.types?.includes(type.value) || false}
 								onCheckedChange={() => handleTypeToggle(type.value)}
 							>
-								{t(`approvals.types.${type.value}`, type.label)}
+								{t(`approvals:approvals.types.${type.value}`, type.label)}
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuContent>
@@ -168,7 +170,7 @@ export function ApprovalInboxToolbar({
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm">
-							{t("approvals.priority", "Priority")}
+							{t("approvals:approvals.priority", "Priority")}
 							{filters.priority && (
 								<Badge variant="secondary" className="ml-2">
 									1
@@ -178,7 +180,7 @@ export function ApprovalInboxToolbar({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuLabel>
-							{t("approvals.filterByPriority", "Filter by priority")}
+							{t("approvals:approvals.filterByPriority", "Filter by priority")}
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						{PRIORITIES.map((priority) => (
@@ -187,7 +189,7 @@ export function ApprovalInboxToolbar({
 								checked={filters.priority === priority.value}
 								onCheckedChange={() => handlePriorityToggle(priority.value)}
 							>
-								{t(`approvals.priorities.${priority.value}`, priority.label)}
+								{t(`approvals:approvals.priorities.${priority.value}`, priority.label)}
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuContent>
@@ -197,7 +199,7 @@ export function ApprovalInboxToolbar({
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" size="sm">
-							{t("approvals.age", "Age")}
+							{t("approvals:approvals.age", "Age")}
 							{filters.minAgeDays && (
 								<Badge variant="secondary" className="ml-2">
 									1
@@ -206,7 +208,9 @@ export function ApprovalInboxToolbar({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						<DropdownMenuLabel>{t("approvals.filterByAge", "Filter by age")}</DropdownMenuLabel>
+						<DropdownMenuLabel>
+							{t("approvals:approvals.filterByAge", "Filter by age")}
+						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						{AGE_OPTIONS.map((age) => (
 							<DropdownMenuCheckboxItem
@@ -214,7 +218,7 @@ export function ApprovalInboxToolbar({
 								checked={filters.minAgeDays === age.value}
 								onCheckedChange={() => handleAgeToggle(age.value)}
 							>
-								{t(`approvals.ages.${age.value}`, age.label)}
+								{t(`approvals:approvals.ages.${age.value}`, age.label)}
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuContent>

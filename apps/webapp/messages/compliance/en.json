@@ -1,0 +1,38 @@
+{
+  "compliance": {
+    "exception": {
+      "approved": "Exception Approved",
+      "approvedDescription": "The compliance exception has been approved.",
+      "approveFailed": "Failed to Approve",
+      "plannedDuration": "Planned",
+      "plannedDurationHelp": "Estimate how much additional time you expect to need beyond the limit.",
+      "reason": "Reason for Exception",
+      "reasonPlaceholder": "Explain why you need this exception (e.g., urgent project deadline, critical client meeting)...",
+      "reasonRequired": "Reason Required",
+      "reasonRequiredDescription": "Please provide a reason for your exception request.",
+      "rejectDescription": "Provide a reason for rejecting this exception request (optional)",
+      "rejected": "Exception Rejected",
+      "rejectedDescription": "The compliance exception has been rejected.",
+      "rejectFailed": "Failed to Reject",
+      "rejectionPlaceholder": "Enter reason for rejecting this exception...",
+      "rejectionReason": "Reason for rejection",
+      "rejectTitle": "Reject Exception Request",
+      "requestDescription": "Request pre-approval from your manager to proceed despite compliance restrictions. Approved exceptions are valid for 24 hours.",
+      "requestedAt": "Requested",
+      "requestFailed": "Request Failed",
+      "requestSubmitted": "Exception Request Submitted",
+      "requestSubmittedDescription": "Your manager will be notified and can approve or reject your request.",
+      "requestTitle": "Request Compliance Exception",
+      "submit": "Submit Request",
+      "type": "Exception Type"
+    },
+    "hasApprovedException": "You have an approved exception. You may proceed.",
+    "moreAlerts": "more",
+    "noExceptions": "No pending exception requests",
+    "pendingExceptions": "Pending Exception Requests",
+    "pendingExceptionsDescription": "Review exception requests that require your approval",
+    "requestException": "Request Exception",
+    "restPeriodMessage": "You need {{time}} more rest before you can clock in. Next allowed clock-in: {{nextTime}}",
+    "restPeriodRequired": "Rest Period Required"
+  }
+}

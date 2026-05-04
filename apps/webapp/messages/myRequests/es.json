@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Cancelar",
+      "cancelConfirmation": "¿Cancelar esta solicitud de ausencia?",
+      "cancelError": "No se pudo cancelar la solicitud de ausencia.",
+      "cancelling": "Cancelando…",
+      "fix": "Corregir",
+      "notAvailable": "No disponible",
+      "view": "Ver"
+    },
+    "all": {
+      "description": "Revise las solicitudes de ausencias, correcciones de tiempo y gastos.",
+      "title": "Todas las solicitudes"
+    },
+    "card": {
+      "decision": "Decisión",
+      "submitted": "Enviado"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Las solicitudes aparecerán aquí cuando se envíen o carguen.",
+        "title": "No hay solicitudes que coincidan con sus filtros"
+      },
+      "none": {
+        "description": "Las solicitudes aparecerán aquí cuando se envíen o carguen.",
+        "title": "Aún no hay solicitudes"
+      }
+    },
+    "featureName": "ver sus solicitudes",
+    "filters": {
+      "allStatuses": "Todos los estados",
+      "allTypes": "Todos los tipos",
+      "approvedRequests": "Solicitudes aprobadas",
+      "cancelledRequests": "Solicitudes canceladas",
+      "description": "Filtre cada sección de solicitudes por texto, estado o tipo de solicitud.",
+      "pendingRequests": "Solicitudes pendientes",
+      "rejectedRequests": "Solicitudes rechazadas",
+      "search": "Buscar",
+      "searchPlaceholder": "Buscar por título…",
+      "status": "Estado",
+      "title": "Buscar solicitudes",
+      "type": "Tipo"
+    },
+    "inReview": {
+      "description": "Solicitudes a la espera de aprobación o procesamiento.",
+      "title": "En revisión"
+    },
+    "needsAttention": {
+      "description": "Solicitudes rechazadas que pueden requerir una corrección antes de volver a enviarse.",
+      "title": "Requiere atención"
+    },
+    "reasonLabel": "Motivo",
+    "recentlyDecided": {
+      "description": "Decisiones aprobadas y rechazadas de los últimos 30 días.",
+      "title": "Decididas recientemente"
+    },
+    "requests": {
+      "absence": {
+        "title": "Solicitud de ausencia"
+      },
+      "timeCorrection": {
+        "subtitle": "Corrección de un registro de tiempo",
+        "title": "Solicitud de corrección de tiempo"
+      },
+      "travelExpense": {
+        "title": "Reclamación de gastos de viaje"
+      }
+    },
+    "sourceError": {
+      "absence": "No se pudieron cargar las solicitudes de ausencia.",
+      "timeCorrection": "No se pudieron cargar las solicitudes de corrección de tiempo.",
+      "title": "No se pudieron cargar algunas solicitudes.",
+      "travelExpense": "No se pudieron cargar las solicitudes de gastos de viaje."
+    },
+    "sourceTypes": {
+      "absence": "Ausencia",
+      "timeCorrection": "Tiempo",
+      "travelExpense": "Gastos"
+    },
+    "status": {
+      "approved": "Aprobado",
+      "cancelled": "Cancelado",
+      "inReview": "En revisión",
+      "pending": "Pendiente",
+      "rejected": "Rechazado"
+    },
+    "subtitle": "Realice un seguimiento de las solicitudes pendientes, las correcciones necesarias y las decisiones recientes en un solo lugar.",
+    "summary": {
+      "ariaLabel": "Resumen de solicitudes",
+      "pending": "Pendiente",
+      "recentDecisions": "Decisiones recientes",
+      "requiredFixes": "Correcciones necesarias",
+      "totalLoaded": "Total cargado"
+    },
+    "title": "Mis solicitudes",
+    "unavailableTitle": "Solicitudes no disponibles"
+  }
+}

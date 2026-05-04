@@ -108,6 +108,7 @@ export async function assembleAuditPackZip(input: AuditPackAssembleInput): Promi
 
 	for (const file of files) {
 		zip.file(file.path, file.content, {
+			createFolders: false,
 			date: ZIP_ENTRY_DATE,
 			compression: "DEFLATE",
 			compressionOptions: { level: 9 },

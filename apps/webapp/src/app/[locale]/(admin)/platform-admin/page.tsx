@@ -127,31 +127,43 @@ async function DashboardStats() {
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			<StatCard
-				title={t("admin.overview.metrics.totalUsers", "Total Users")}
+				title={t("admin:admin.overview.metrics.totalUsers", "Total Users")}
 				value={totalUsers}
-				description={t("admin.overview.metrics.totalUsersDescription", "Registered platform accounts")}
+				description={t(
+					"admin:admin.overview.metrics.totalUsersDescription",
+					"Registered platform accounts",
+				)}
 				icon={<IconUsers className="size-5" aria-hidden="true" />}
 				href="/platform-admin/users"
 			/>
 			<StatCard
-				title={t("admin.overview.metrics.bannedUsers", "Banned Users")}
+				title={t("admin:admin.overview.metrics.bannedUsers", "Banned Users")}
 				value={bannedUsers}
-				description={t("admin.overview.metrics.bannedUsersDescription", "Restricted from access")}
+				description={t(
+					"admin:admin.overview.metrics.bannedUsersDescription",
+					"Restricted from access",
+				)}
 				icon={<IconUserX className="size-5" aria-hidden="true" />}
 				href="/platform-admin/users?status=banned"
 				variant={bannedUsers > 0 ? "destructive" : "default"}
 			/>
 			<StatCard
-				title={t("admin.overview.metrics.organizations", "Organizations")}
+				title={t("admin:admin.overview.metrics.organizations", "Organizations")}
 				value={totalOrgs}
-				description={t("admin.overview.metrics.organizationsDescription", "Active workspaces")}
+				description={t(
+					"admin:admin.overview.metrics.organizationsDescription",
+					"Active workspaces",
+				)}
 				icon={<IconBuilding className="size-5" aria-hidden="true" />}
 				href="/platform-admin/organizations"
 			/>
 			<StatCard
-				title={t("admin.overview.metrics.suspended", "Suspended")}
+				title={t("admin:admin.overview.metrics.suspended", "Suspended")}
 				value={suspendedOrgs}
-				description={t("admin.overview.metrics.suspendedDescription", "Read-only organizations")}
+				description={t(
+					"admin:admin.overview.metrics.suspendedDescription",
+					"Read-only organizations",
+				)}
 				icon={<IconAlertTriangle className="size-5" aria-hidden="true" />}
 				href="/platform-admin/organizations?status=suspended"
 				variant={suspendedOrgs > 0 ? "warning" : "default"}
@@ -159,17 +171,23 @@ async function DashboardStats() {
 			{billingEnabled ? (
 				<>
 					<StatCard
-						title={t("admin.overview.metrics.mrr", "MRR")}
+						title={t("admin:admin.overview.metrics.mrr", "MRR")}
 						value={billingStats.mrr}
-						description={t("admin.overview.metrics.mrrDescription", "Monthly recurring revenue (€)")}
+						description={t(
+							"admin:admin.overview.metrics.mrrDescription",
+							"Monthly recurring revenue (€)",
+						)}
 						icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
 						href="/platform-admin/billing"
 						variant="success"
 					/>
 					<StatCard
-						title={t("admin.overview.metrics.licensedSeats", "Licensed Seats")}
+						title={t("admin:admin.overview.metrics.licensedSeats", "Licensed Seats")}
 						value={billingStats.totalSeats}
-						description={t("admin.overview.metrics.licensedSeatsDescription", "Across all subscriptions")}
+						description={t(
+							"admin:admin.overview.metrics.licensedSeatsDescription",
+							"Across all subscriptions",
+						)}
 						icon={<IconCreditCard className="size-5" aria-hidden="true" />}
 						href="/platform-admin/billing"
 					/>
@@ -240,17 +258,17 @@ export default async function AdminDashboardPage() {
 			{/* Page Header */}
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("admin.overview.title", "Overview")}
+					{t("admin:admin.overview.title", "Overview")}
 				</h1>
 				<p className="text-muted-foreground">
-					{t("admin.overview.description", "Platform metrics and quick actions")}
+					{t("admin:admin.overview.description", "Platform metrics and quick actions")}
 				</p>
 			</div>
 
 			{/* Stats Grid */}
 			<section className="space-y-4">
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-					{t("admin.overview.metrics.title", "Platform Metrics")}
+					{t("admin:admin.overview.metrics.title", "Platform Metrics")}
 				</h2>
 				<Suspense fallback={<DashboardStatsLoading />}>
 					<DashboardStats />
@@ -260,25 +278,40 @@ export default async function AdminDashboardPage() {
 			{/* Quick Actions */}
 			<section className="space-y-4">
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-					{t("admin.overview.quickActions.title", "Quick Actions")}
+					{t("admin:admin.overview.quickActions.title", "Quick Actions")}
 				</h2>
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					<QuickActionCard
-						title={t("admin.overview.quickActions.users.title", "User Management")}
-						description={t("admin.overview.quickActions.users.description", "Ban/unban users, manage sessions, view activity")}
+						title={t("admin:admin.overview.quickActions.users.title", "User Management")}
+						description={t(
+							"admin:admin.overview.quickActions.users.description",
+							"Ban/unban users, manage sessions, view activity",
+						)}
 						href="/platform-admin/users"
 						icon={<IconUserBolt className="size-5" />}
 					/>
 					<QuickActionCard
-						title={t("admin.overview.quickActions.organizations.title", "Organization Management")}
-						description={t("admin.overview.quickActions.organizations.description", "Suspend, delete, or review organizations")}
+						title={t(
+							"admin:admin.overview.quickActions.organizations.title",
+							"Organization Management",
+						)}
+						description={t(
+							"admin:admin.overview.quickActions.organizations.description",
+							"Suspend, delete, or review organizations",
+						)}
 						href="/platform-admin/organizations"
 						icon={<IconBuilding className="size-5" />}
 					/>
 					{process.env.BILLING_ENABLED === "true" && (
 						<QuickActionCard
-							title={t("admin.overview.quickActions.billing.title", "Billing & Subscriptions")}
-							description={t("admin.overview.quickActions.billing.description", "Revenue metrics and subscription status")}
+							title={t(
+								"admin:admin.overview.quickActions.billing.title",
+								"Billing & Subscriptions",
+							)}
+							description={t(
+								"admin:admin.overview.quickActions.billing.description",
+								"Revenue metrics and subscription status",
+							)}
 							href="/platform-admin/billing"
 							icon={<IconCreditCard className="size-5" />}
 						/>

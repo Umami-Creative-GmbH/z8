@@ -15,10 +15,10 @@ export default async function SetupLayout({ children }: SetupLayoutProps) {
 					z8
 				</div>
 				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("setup.layout.title", "Initial Setup")}
+					{t("setup:setup.layout.title", "Initial Setup")}
 				</h1>
 				<p className="text-sm text-muted-foreground">
-					{t("setup.layout.subtitle", "Configure your platform to get started")}
+					{t("setup:setup.layout.subtitle", "Configure your platform to get started")}
 				</p>
 			</div>
 			{children}

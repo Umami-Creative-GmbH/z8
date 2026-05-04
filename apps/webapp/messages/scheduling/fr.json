@@ -1,0 +1,34 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Effectifs adéquats",
+      "byLocation": "Par emplacement :",
+      "gapCount": "{{count}} manque de personnel",
+      "gaps": "lacunes",
+      "hideOverlay": "Masquer la superposition de couverture",
+      "metSlots": "{{count}} adéquat",
+      "overSlots": "{{count}} sureffectif",
+      "overstaffed": "Sureffectif",
+      "showOverlay": "Afficher la superposition des objectifs de couverture",
+      "summary": "Résumé de la couverture :",
+      "toggleLabel": "Couverture",
+      "underSlots": "{{count}} sous-effectif",
+      "understaffed": "Sous-effectif",
+      "utilization": "{{percent}}% d'utilisation"
+    },
+    "skills": {
+      "expiredCertifications": "Certifications expirées :",
+      "expiredOn": "(Expiré le {{date}})",
+      "missingPreferred": "Compétences préférées manquantes :",
+      "missingPreferredCount": "{{count}} compétence préférée manquante",
+      "missingRequired": "Compétences requises manquantes :",
+      "preferred": "Préféré",
+      "preferredSkillsMissing": "Compétences préférées manquantes",
+      "requirementsNotMet": "Exigences de compétences non satisfaites",
+      "unqualified": "Non qualifié",
+      "validating": "Validation des compétences…",
+      "validatingDescription": "Vérification des qualifications de l'employé",
+      "warningMessage": "Vous pouvez toujours attribuer ce quart de travail, mais il sera enregistré comme une dérogation."
+    }
+  }
+}

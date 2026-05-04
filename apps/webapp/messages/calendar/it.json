@@ -42,6 +42,7 @@
       "daysRemaining": "Giorni rimanenti:",
       "description": "Invia una richiesta di ferie. Il tuo manager riceverà una notifica per l'approvazione.",
       "endDate": "Data di fine *",
+      "endPeriod": "Fine periodo",
       "errors": {
         "fillRequiredFields": "Si prega di compilare tutti i campi obbligatori",
         "insufficientBalance": "Saldo ferie insufficiente",
@@ -57,12 +58,34 @@
       },
       "selectAbsenceType": "Seleziona tipo di assenza",
       "startDate": "Data di inizio *",
+      "startPeriod": "Inizio periodo",
       "submitRequest": "Invia richiesta",
       "title": "Richiedi assenza"
     },
     "period": {
       "am": "AM",
       "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "turno interessato",
+      "approval": "Approvazione",
+      "balance": "Saldo",
+      "balanceUnavailable": "Saldo non disponibile",
+      "countsAgainstVacationBalance": "Incide sul saldo ferie",
+      "coverage": "Copertura",
+      "coverageStaffAfterRequest": "{after}/{minimum} personale dopo la richiesta",
+      "description": "Un controllo non bloccante di saldo, festività, copertura e segnali di approvazione prima dell'invio.",
+      "doesNotReduceVacationBalance": "Non riduce il saldo ferie",
+      "holidays": "Festività",
+      "loading": "Controllo di saldo, festività e copertura in corso…",
+      "noApprovalWarnings": "Nessun avviso di approvazione",
+      "noCoverageRisk": "Nessun rischio di copertura pubblicato",
+      "noCoverageRulesConfigured": "Nessuna regola di copertura configurata per i turni interessati",
+      "noHolidays": "Nessuna festività assegnata nell'intervallo",
+      "remainingAfter": "Rimanenti dopo la richiesta",
+      "requested": "Richiesto",
+      "title": "Pianificatore intelligente",
+      "unavailable": "Anteprima di pianificazione non disponibile. Puoi comunque inviare la tua richiesta."
     },
     "requestAbsence": "Richiedi assenza",
     "status": {

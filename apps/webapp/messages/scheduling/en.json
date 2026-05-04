@@ -1,0 +1,34 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Adequate staffing",
+      "byLocation": "By location:",
+      "gapCount": "{{count}} staff shortage",
+      "gaps": "gaps",
+      "hideOverlay": "Hide coverage overlay",
+      "metSlots": "{{count}} adequate",
+      "overSlots": "{{count}} overstaffed",
+      "overstaffed": "Overstaffed",
+      "showOverlay": "Show coverage targets overlay",
+      "summary": "Coverage Summary:",
+      "toggleLabel": "Coverage",
+      "underSlots": "{{count}} understaffed",
+      "understaffed": "Understaffed",
+      "utilization": "{{percent}}% utilization"
+    },
+    "skills": {
+      "expiredCertifications": "Expired Certifications:",
+      "expiredOn": "(Expired {{date}})",
+      "missingPreferred": "Missing Preferred Skills:",
+      "missingPreferredCount": "{{count}} preferred missing",
+      "missingRequired": "Missing Required Skills:",
+      "preferred": "Preferred",
+      "preferredSkillsMissing": "Preferred Skills Missing",
+      "requirementsNotMet": "Skill Requirements Not Met",
+      "unqualified": "Unqualified",
+      "validating": "Validating Skills…",
+      "validatingDescription": "Checking employee qualifications",
+      "warningMessage": "You can still assign this shift, but it will be logged as an override."
+    }
+  }
+}

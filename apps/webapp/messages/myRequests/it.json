@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Annulla",
+      "cancelConfirmation": "Annullare questa richiesta di assenza?",
+      "cancelError": "Impossibile annullare la richiesta di assenza.",
+      "cancelling": "Annullamento in corso…",
+      "fix": "Correggi",
+      "notAvailable": "Non disponibile",
+      "view": "Visualizza"
+    },
+    "all": {
+      "description": "Esamina le richieste relative ad assenze, correzioni orarie e spese.",
+      "title": "Tutte le richieste"
+    },
+    "card": {
+      "decision": "Decisione",
+      "submitted": "Inviata"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Le richieste appariranno qui quando verranno inviate o caricate.",
+        "title": "Nessuna richiesta corrisponde ai tuoi filtri"
+      },
+      "none": {
+        "description": "Le richieste appariranno qui quando verranno inviate o caricate.",
+        "title": "Ancora nessuna richiesta"
+      }
+    },
+    "featureName": "visualizza le tue richieste",
+    "filters": {
+      "allStatuses": "Tutti gli stati",
+      "allTypes": "Tutti i tipi",
+      "approvedRequests": "Richieste approvate",
+      "cancelledRequests": "Richieste annullate",
+      "description": "Filtra ogni sezione di richiesta per testo, stato o tipo di richiesta.",
+      "pendingRequests": "Richieste in sospeso",
+      "rejectedRequests": "Richieste respinte",
+      "search": "Cerca",
+      "searchPlaceholder": "Cerca per titolo…",
+      "status": "Stato",
+      "title": "Trova richieste",
+      "type": "Tipo"
+    },
+    "inReview": {
+      "description": "Richieste in attesa di approvazione o elaborazione.",
+      "title": "In revisione"
+    },
+    "needsAttention": {
+      "description": "Richieste respinte che potrebbero richiedere una correzione prima di essere inviate nuovamente.",
+      "title": "Richiede attenzione"
+    },
+    "reasonLabel": "Motivazione",
+    "recentlyDecided": {
+      "description": "Decisioni approvate e respinte degli ultimi 30 giorni.",
+      "title": "Decise di recente"
+    },
+    "requests": {
+      "absence": {
+        "title": "Richiesta di assenza"
+      },
+      "timeCorrection": {
+        "subtitle": "Correzione per una registrazione oraria",
+        "title": "Richiesta di correzione oraria"
+      },
+      "travelExpense": {
+        "title": "Richiesta di rimborso spese di viaggio"
+      }
+    },
+    "sourceError": {
+      "absence": "Impossibile caricare le richieste di assenza.",
+      "timeCorrection": "Impossibile caricare le richieste di correzione oraria.",
+      "title": "Impossibile caricare alcune richieste.",
+      "travelExpense": "Impossibile caricare le richieste di rimborso spese di viaggio."
+    },
+    "sourceTypes": {
+      "absence": "Assenza",
+      "timeCorrection": "Orario",
+      "travelExpense": "Spesa"
+    },
+    "status": {
+      "approved": "Approvato",
+      "cancelled": "Annullato",
+      "inReview": "In revisione",
+      "pending": "In sospeso",
+      "rejected": "Respinto"
+    },
+    "subtitle": "Tieni traccia delle richieste in sospeso, delle correzioni richieste e delle decisioni recenti in un unico posto.",
+    "summary": {
+      "ariaLabel": "Riepilogo richieste",
+      "pending": "In sospeso",
+      "recentDecisions": "Decisioni recenti",
+      "requiredFixes": "Correzioni richieste",
+      "totalLoaded": "Totale caricato"
+    },
+    "title": "Le mie richieste",
+    "unavailableTitle": "Richieste non disponibili"
+  }
+}

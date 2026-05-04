@@ -1,0 +1,38 @@
+{
+  "compliance": {
+    "exception": {
+      "approved": "Ausnahme genehmigt",
+      "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
+      "approveFailed": "Genehmigung fehlgeschlagen",
+      "plannedDuration": "Geplant",
+      "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
+      "reason": "Grund für die Ausnahme",
+      "reasonPlaceholder": "Erklären Sie, warum Sie diese Ausnahme benötigen (z. B. dringende Projektfrist, wichtiges Kundentreffen)...",
+      "reasonRequired": "Grund erforderlich",
+      "reasonRequiredDescription": "Bitte geben Sie einen Grund für Ihren Ausnahmeantrag an.",
+      "rejectDescription": "Geben Sie einen Grund für die Ablehnung dieses Ausnahmeantrags an (optional)",
+      "rejected": "Ausnahme abgelehnt",
+      "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
+      "rejectFailed": "Ablehnung fehlgeschlagen",
+      "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
+      "rejectionReason": "Grund für die Ablehnung",
+      "rejectTitle": "Ausnahmeantrag ablehnen",
+      "requestDescription": "Beantragen Sie eine Vorabgenehmigung bei Ihrem Vorgesetzten, um trotz Compliance-Beschränkungen fortzufahren. Genehmigte Ausnahmen sind 24 Stunden lang gültig.",
+      "requestedAt": "Beantragt",
+      "requestFailed": "Anfrage fehlgeschlagen",
+      "requestSubmitted": "Ausnahmeantrag eingereicht",
+      "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihren Antrag genehmigen oder ablehnen.",
+      "requestTitle": "Compliance-Ausnahme beantragen",
+      "submit": "Antrag einreichen",
+      "type": "Ausnahmetyp"
+    },
+    "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
+    "moreAlerts": "mehr",
+    "noExceptions": "Keine ausstehenden Ausnahmeanträge",
+    "pendingExceptions": "Ausstehende Ausnahmeanträge",
+    "pendingExceptionsDescription": "Überprüfen Sie Ausnahmeanträge, die Ihre Genehmigung erfordern",
+    "requestException": "Ausnahme beantragen",
+    "restPeriodMessage": "Sie benötigen noch {{time}} Ruhezeit, bevor Sie sich einstempeln können. Nächste erlaubte Einstempelzeit: {{nextTime}}",
+    "restPeriodRequired": "Ruhezeit erforderlich"
+  }
+}

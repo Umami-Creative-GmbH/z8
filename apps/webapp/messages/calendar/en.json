@@ -42,6 +42,7 @@
       "daysRemaining": "Days remaining:",
       "description": "Submit a request for time off. Your manager will be notified for approval.",
       "endDate": "End Date *",
+      "endPeriod": "End Period",
       "errors": {
         "fillRequiredFields": "Please fill in all required fields",
         "insufficientBalance": "Insufficient vacation balance",
@@ -57,12 +58,34 @@
       },
       "selectAbsenceType": "Select absence type",
       "startDate": "Start Date *",
+      "startPeriod": "Start Period",
       "submitRequest": "Submit Request",
       "title": "Request Absence"
     },
     "period": {
       "am": "AM",
       "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "affected shift",
+      "approval": "Approval",
+      "balance": "Balance",
+      "balanceUnavailable": "Balance unavailable",
+      "countsAgainstVacationBalance": "Counts against vacation balance",
+      "coverage": "Coverage",
+      "coverageStaffAfterRequest": "{after}/{minimum} staff after request",
+      "description": "A non-blocking check of balance, holidays, coverage, and approval signals before you submit.",
+      "doesNotReduceVacationBalance": "Does not reduce vacation balance",
+      "holidays": "Holidays",
+      "loading": "Checking balance, holidays, and coverage…",
+      "noApprovalWarnings": "No approval warnings",
+      "noCoverageRisk": "No published coverage risk",
+      "noCoverageRulesConfigured": "No coverage rules configured for affected shifts",
+      "noHolidays": "No assigned holidays in range",
+      "remainingAfter": "Remaining after request",
+      "requested": "Requested",
+      "title": "Smart planner",
+      "unavailable": "Planning preview unavailable. You can still submit your request."
     },
     "requestAbsence": "Request Absence",
     "status": {

@@ -236,14 +236,14 @@ export function EmployeeSelectModal({
 				<ActionPanelHeader className="sr-only">
 					<ActionPanelTitle>
 						{mode === "single"
-							? t("employeeSelect.selectEmployee", "Select Employee")
-							: t("employeeSelect.selectEmployees", "Select Employees")}
+							? t("common:employeeSelect.selectEmployee", "Select Employee")
+							: t("common:employeeSelect.selectEmployees", "Select Employees")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{mode === "single"
-							? t("employeeSelect.selectOneEmployee", "Choose an employee from the list")
+							? t("common:employeeSelect.selectOneEmployee", "Choose an employee from the list")
 							: t(
-									"employeeSelect.selectMultipleEmployees",
+									"common:employeeSelect.selectMultipleEmployees",
 									"Choose one or more employees from the list",
 								)}
 					</ActionPanelDescription>
@@ -262,7 +262,7 @@ export function EmployeeSelectModal({
 							<SearchIcon className="size-4 shrink-0 text-muted-foreground" />
 							<CommandPrimitive.Input
 								placeholder={t(
-									"employeeSelect.searchPlaceholder",
+									"common:employeeSelect.searchPlaceholder",
 									"Search by name, email, or position...",
 								)}
 								value={search}
@@ -290,32 +290,36 @@ export function EmployeeSelectModal({
 								{/* Role filter */}
 								<Select value={roleFilter} onValueChange={setRoleFilter}>
 									<SelectTrigger className="w-[120px] h-7 text-xs bg-background/50">
-										<SelectValue placeholder={t("employeeSelect.role", "Role")} />
+										<SelectValue placeholder={t("common:employeeSelect.role", "Role")} />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="all">{t("common.all", "All")}</SelectItem>
-										<SelectItem value="admin">{t("roles.admin", "Admin")}</SelectItem>
-										<SelectItem value="manager">{t("roles.manager", "Manager")}</SelectItem>
-										<SelectItem value="employee">{t("roles.employee", "Employee")}</SelectItem>
+										<SelectItem value="admin">{t("common:roles.admin", "Admin")}</SelectItem>
+										<SelectItem value="manager">{t("common:roles.manager", "Manager")}</SelectItem>
+										<SelectItem value="employee">
+											{t("common:roles.employee", "Employee")}
+										</SelectItem>
 									</SelectContent>
 								</Select>
 
 								{/* Status filter */}
 								<Select value={statusFilter} onValueChange={setStatusFilter}>
 									<SelectTrigger className="w-[120px] h-7 text-xs bg-background/50">
-										<SelectValue placeholder={t("employeeSelect.status", "Status")} />
+										<SelectValue placeholder={t("common:employeeSelect.status", "Status")} />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="all">{t("common.all", "All")}</SelectItem>
-										<SelectItem value="active">{t("status.active", "Active")}</SelectItem>
-										<SelectItem value="inactive">{t("status.inactive", "Inactive")}</SelectItem>
+										<SelectItem value="active">{t("common:status.active", "Active")}</SelectItem>
+										<SelectItem value="inactive">
+											{t("common:status.inactive", "Inactive")}
+										</SelectItem>
 									</SelectContent>
 								</Select>
 
 								{/* Team filter */}
 								<Select value={teamFilter} onValueChange={setTeamFilter}>
 									<SelectTrigger className="w-[140px] h-7 text-xs bg-background/50">
-										<SelectValue placeholder={t("employeeSelect.team", "Team")} />
+										<SelectValue placeholder={t("common:employeeSelect.team", "Team")} />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="">{t("common.all", "All Teams")}</SelectItem>
@@ -334,7 +338,9 @@ export function EmployeeSelectModal({
 							<div className="flex items-center justify-between px-4 py-2 border-b border-border/50 bg-muted/20">
 								<div className="flex items-center gap-2">
 									<span className="text-xs text-muted-foreground">
-										{t("employeeSelect.selected", "{count} selected", { count: selectionCount })}
+										{t("common:employeeSelect.selected", "{count} selected", {
+											count: selectionCount,
+										})}
 										{maxSelections && <span className="ml-1 opacity-60">/ {maxSelections}</span>}
 									</span>
 
@@ -419,7 +425,7 @@ export function EmployeeSelectModal({
 						{/* Footer - minimal, integrated */}
 						<div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20">
 							<span className="text-xs text-muted-foreground">
-								{t("employeeSelect.totalEmployees", "{count} employees", { count: total })}
+								{t("common:employeeSelect.totalEmployees", "{count} employees", { count: total })}
 							</span>
 							<div className="flex gap-2">
 								{mode === "multiple" && (

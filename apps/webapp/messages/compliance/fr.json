@@ -1,0 +1,38 @@
+{
+  "compliance": {
+    "exception": {
+      "approved": "Exception approuvée",
+      "approvedDescription": "L'exception de conformité a été approuvée.",
+      "approveFailed": "Échec de l'approbation",
+      "plannedDuration": "Planifié",
+      "plannedDurationHelp": "Estimez le temps supplémentaire dont vous pensez avoir besoin au-delà de la limite.",
+      "reason": "Motif de l'exception",
+      "reasonPlaceholder": "Expliquez pourquoi vous avez besoin de cette exception (par ex. date limite de projet urgente, réunion client critique)...",
+      "reasonRequired": "Motif requis",
+      "reasonRequiredDescription": "Veuillez fournir un motif pour votre demande d'exception.",
+      "rejectDescription": "Fournissez un motif pour le rejet de cette demande d'exception (facultatif)",
+      "rejected": "Exception rejetée",
+      "rejectedDescription": "L'exception de conformité a été rejetée.",
+      "rejectFailed": "Échec du rejet",
+      "rejectionPlaceholder": "Saisissez le motif du rejet de cette exception...",
+      "rejectionReason": "Motif du rejet",
+      "rejectTitle": "Rejeter la demande d'exception",
+      "requestDescription": "Demandez une pré-approbation à votre responsable pour procéder malgré les restrictions de conformité. Les exceptions approuvées sont valides pendant 24 heures.",
+      "requestedAt": "Demandé",
+      "requestFailed": "Échec de la demande",
+      "requestSubmitted": "Demande d'exception soumise",
+      "requestSubmittedDescription": "Votre responsable sera informé et pourra approuver ou rejeter votre demande.",
+      "requestTitle": "Demander une exception de conformité",
+      "submit": "Soumettre la demande",
+      "type": "Type d'exception"
+    },
+    "hasApprovedException": "Vous disposez d'une exception approuvée. Vous pouvez continuer.",
+    "moreAlerts": "plus",
+    "noExceptions": "Aucune demande d'exception en attente",
+    "pendingExceptions": "Demandes d'exception en attente",
+    "pendingExceptionsDescription": "Examinez les demandes d'exception qui nécessitent votre approbation",
+    "requestException": "Demander une exception",
+    "restPeriodMessage": "Vous avez besoin de {{time}} de repos supplémentaire avant de pouvoir pointer. Prochain pointage autorisé : {{nextTime}}",
+    "restPeriodRequired": "Période de repos requise"
+  }
+}

@@ -42,6 +42,7 @@
       "daysRemaining": "Verbleibende Tage:",
       "description": "Reichen Sie einen Antrag auf Freistellung ein. Ihr Manager wird zur Genehmigung benachrichtigt.",
       "endDate": "Enddatum *",
+      "endPeriod": "Ende des Zeitraums",
       "errors": {
         "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus",
         "insufficientBalance": "Unzureichender Urlaubssaldo",
@@ -57,12 +58,34 @@
       },
       "selectAbsenceType": "Abwesenheitstyp auswählen",
       "startDate": "Startdatum *",
+      "startPeriod": "Start des Zeitraums",
       "submitRequest": "Antrag einreichen",
       "title": "Abwesenheit beantragen"
     },
     "period": {
       "am": "VM",
       "pm": "NM"
+    },
+    "planPreview": {
+      "affectedShift": "betroffene Schicht",
+      "approval": "Genehmigung",
+      "balance": "Guthaben",
+      "balanceUnavailable": "Guthaben nicht verfügbar",
+      "countsAgainstVacationBalance": "Wird auf das Urlaubsguthaben angerechnet",
+      "coverage": "Abdeckung",
+      "coverageStaffAfterRequest": "{after}/{minimum} Personal nach Anfrage",
+      "description": "Eine unverbindliche Prüfung von Guthaben, Feiertagen, Abdeckung und Genehmigungssignalen vor dem Einreichen.",
+      "doesNotReduceVacationBalance": "Reduziert das Urlaubsguthaben nicht",
+      "holidays": "Feiertage",
+      "loading": "Guthaben, Feiertage und Abdeckung werden geprüft…",
+      "noApprovalWarnings": "Keine Genehmigungswarnungen",
+      "noCoverageRisk": "Kein veröffentlichtes Abdeckungsrisiko",
+      "noCoverageRulesConfigured": "Keine Abdeckungsregeln für betroffene Schichten konfiguriert",
+      "noHolidays": "Keine zugewiesenen Feiertage im Zeitraum",
+      "remainingAfter": "Verbleibend nach Anfrage",
+      "requested": "Angefragt",
+      "title": "Intelligenter Planer",
+      "unavailable": "Planungsvorschau nicht verfügbar. Sie können Ihre Anfrage dennoch einreichen."
     },
     "requestAbsence": "Abwesenheit beantragen",
     "status": {

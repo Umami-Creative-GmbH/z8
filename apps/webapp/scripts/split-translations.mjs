@@ -3,19 +3,26 @@
  * Migration script to split monolithic translation files into namespaces
  *
  * Namespace mapping:
- * - common: common, generic, nav, header, user, table, validation, errors, info, meta
+ * - common: common, generic, nav, header, user, table, validation, errors, info, meta,
+ *   accessDenied, colors, employeeSelect, offline, roles, status, time
  * - auth: auth, profile, sessions
+ * - admin: admin
+ * - approvals: approvals
+ * - compliance: compliance
  * - dashboard: dashboard
  * - calendar: absences, calendar
  * - timeTracking: timeTracking, wellness
  * - reports: reports
+ * - myRequests: myRequests
+ * - scheduling: scheduling
+ * - setup: init, setup
  * - settings: settings, organization, vacation, team
  * - onboarding: onboarding
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,10 +33,17 @@ const LANGUAGES = ["en", "de", "fr", "es", "it", "pt"];
 // Namespace mapping: namespace -> array of top-level key prefixes
 const NAMESPACE_MAP = {
 	common: [
+		"accessDenied",
+		"colors",
 		"common",
+		"employeeSelect",
 		"generic",
 		"nav",
 		"header",
+		"offline",
+		"roles",
+		"status",
+		"time",
 		"user",
 		"table",
 		"tour",
@@ -38,12 +52,18 @@ const NAMESPACE_MAP = {
 		"info",
 		"meta",
 	],
+	admin: ["admin"],
+	approvals: ["approvals"],
 	auth: ["auth", "profile", "sessions"],
+	compliance: ["compliance"],
 	dashboard: ["dashboard"],
 	calendar: ["absences", "calendar"],
 	timeTracking: ["timeTracking", "wellness"],
 	reports: ["reports"],
-	settings: ["settings", "organization", "vacation", "team"],
+	myRequests: ["myRequests"],
+	scheduling: ["scheduling"],
+	setup: ["init", "setup"],
+	settings: ["settings", "organization", "vacation", "team", "webhooks"],
 	onboarding: ["onboarding"],
 };
 
@@ -147,9 +167,7 @@ async function migrate() {
 		const beforeKeys = countKeys(translations);
 		stats.before[lang] = { size: beforeSize, keys: beforeKeys };
 
-		console.log(
-			`Processing ${lang}.json (${beforeSize} KB, ${beforeKeys} keys)`,
-		);
+		console.log(`Processing ${lang}.json (${beforeSize} KB, ${beforeKeys} keys)`);
 
 		// Split into namespaces
 		const namespaced = splitIntoNamespaces(translations);
@@ -164,7 +182,7 @@ async function migrate() {
 
 			if (keyCount > 0) {
 				// Write with pretty formatting
-				fs.writeFileSync(nsFile, JSON.stringify(data, null, 2) + "\n", "utf-8");
+				fs.writeFileSync(nsFile, `${JSON.stringify(data, null, 2)}\n`, "utf-8");
 				const nsSize = getFileSizeKB(nsFile);
 				totalAfterSize += parseFloat(nsSize);
 				namespaceSizes[ns] = { size: nsSize, keys: keyCount };

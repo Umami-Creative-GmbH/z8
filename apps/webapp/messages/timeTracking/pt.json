@@ -111,6 +111,17 @@
       "emptyState": "Nenhum registro de tempo encontrado para esta semana.",
       "title": "Registros de Tempo"
     },
+    "timeline": {
+      "dayPicker": "Seletor de dia da linha do tempo",
+      "emptyDescription": "Ainda não há turnos, ausências ou registros de horas para o dia selecionado.",
+      "emptyTitle": "Nenhuma atividade registrada para este dia.",
+      "nextDay": "Próximo dia",
+      "previousDay": "Dia anterior",
+      "title": "Linha do tempo do dia de trabalho",
+      "today": "Hoje",
+      "unavailableDescription": "O registro de tempo ainda está funcionando. Tente atualizar esta visualização mais tarde.",
+      "unavailableTitle": "Linha do tempo indisponível"
+    },
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
     "workCategory": "Categoria de Trabalho"

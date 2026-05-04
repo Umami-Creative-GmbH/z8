@@ -1,4 +1,4 @@
-import { render } from "@react-email/render";
+import { render } from "react-email";
 import { AbsenceRequestApproved } from "./templates/absence-request-approved";
 import { AbsenceRequestPendingApproval } from "./templates/absence-request-pending-approval";
 import { AbsenceRequestRejected } from "./templates/absence-request-rejected";

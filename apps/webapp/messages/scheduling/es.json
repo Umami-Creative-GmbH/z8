@@ -1,0 +1,34 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Personal adecuado",
+      "byLocation": "Por ubicación:",
+      "gapCount": "{{count}} falta de personal",
+      "gaps": "brechas",
+      "hideOverlay": "Ocultar superposición de cobertura",
+      "metSlots": "{{count}} adecuado",
+      "overSlots": "{{count}} exceso de personal",
+      "overstaffed": "Exceso de personal",
+      "showOverlay": "Mostrar superposición de objetivos de cobertura",
+      "summary": "Resumen de cobertura:",
+      "toggleLabel": "Cobertura",
+      "underSlots": "{{count}} con falta de personal",
+      "understaffed": "Falta de personal",
+      "utilization": "{{percent}}% de utilización"
+    },
+    "skills": {
+      "expiredCertifications": "Certificaciones caducadas:",
+      "expiredOn": "(Caducó el {{date}})",
+      "missingPreferred": "Habilidades preferidas faltantes:",
+      "missingPreferredCount": "{{count}} preferidas faltantes",
+      "missingRequired": "Habilidades requeridas faltantes:",
+      "preferred": "Preferido",
+      "preferredSkillsMissing": "Habilidades preferidas faltantes",
+      "requirementsNotMet": "Requisitos de habilidades no cumplidos",
+      "unqualified": "No cualificado",
+      "validating": "Validando habilidades…",
+      "validatingDescription": "Comprobando las cualificaciones del empleado",
+      "warningMessage": "Todavía puede asignar este turno, pero se registrará como una anulación."
+    }
+  }
+}

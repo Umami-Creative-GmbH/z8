@@ -1,0 +1,34 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Angemessene Personalbesetzung",
+      "byLocation": "Nach Standort:",
+      "gapCount": "{{count}} Personalmangel",
+      "gaps": "Lücken",
+      "hideOverlay": "Abdeckungseinblendung ausblenden",
+      "metSlots": "{{count}} angemessen",
+      "overSlots": "{{count}} überbesetzt",
+      "overstaffed": "Überbesetzt",
+      "showOverlay": "Abdeckungsziele einblenden",
+      "summary": "Abdeckungsübersicht:",
+      "toggleLabel": "Abdeckung",
+      "underSlots": "{{count}} unterbesetzt",
+      "understaffed": "Unterbesetzt",
+      "utilization": "{{percent}}% Auslastung"
+    },
+    "skills": {
+      "expiredCertifications": "Abgelaufene Zertifizierungen:",
+      "expiredOn": "(Abgelaufen am {{date}})",
+      "missingPreferred": "Fehlende bevorzugte Qualifikationen:",
+      "missingPreferredCount": "{{count}} bevorzugte Qualifikationen fehlen",
+      "missingRequired": "Fehlende erforderliche Qualifikationen:",
+      "preferred": "Bevorzugt",
+      "preferredSkillsMissing": "Bevorzugte Qualifikationen fehlen",
+      "requirementsNotMet": "Qualifikationsanforderungen nicht erfüllt",
+      "unqualified": "Nicht qualifiziert",
+      "validating": "Qualifikationen werden validiert…",
+      "validatingDescription": "Mitarbeiterqualifikationen werden geprüft",
+      "warningMessage": "Sie können diese Schicht dennoch zuweisen, sie wird jedoch als manuelle Übersteuerung protokolliert."
+    }
+  }
+}

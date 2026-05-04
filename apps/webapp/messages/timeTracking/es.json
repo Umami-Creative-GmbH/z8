@@ -111,6 +111,17 @@
       "emptyState": "No se encontraron entradas de tiempo para esta semana.",
       "title": "Entradas de tiempo"
     },
+    "timeline": {
+      "dayPicker": "Selector de día en la línea de tiempo",
+      "emptyDescription": "Todavía no hay turnos, ausencias o registros de tiempo para el día seleccionado.",
+      "emptyTitle": "No hay actividad registrada para este día.",
+      "nextDay": "Día siguiente",
+      "previousDay": "Día anterior",
+      "title": "Cronología de la jornada laboral",
+      "today": "Hoy",
+      "unavailableDescription": "El registro de tiempo sigue funcionando. Intenta actualizar esta vista más tarde.",
+      "unavailableTitle": "Cronología no disponible"
+    },
     "unknownCategory": "Categoría desconocida",
     "unknownProject": "Proyecto desconocido",
     "workCategory": "Categoría de trabajo"

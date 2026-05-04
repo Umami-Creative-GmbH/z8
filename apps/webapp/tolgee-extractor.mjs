@@ -14,10 +14,17 @@
 // Must match the NAMESPACE_MAP in scripts/split-translations.mjs
 const NAMESPACE_PREFIXES = {
 	// common namespace
+	accessDenied: "common",
+	colors: "common",
 	common: "common",
+	employeeSelect: "common",
 	generic: "common",
 	nav: "common",
 	header: "common",
+	offline: "common",
+	roles: "common",
+	status: "common",
+	time: "common",
 	user: "common",
 	table: "common",
 	tour: "common",
@@ -29,6 +36,12 @@ const NAMESPACE_PREFIXES = {
 	auth: "auth",
 	profile: "auth",
 	sessions: "auth",
+	// admin namespace
+	admin: "admin",
+	// approvals namespace
+	approvals: "approvals",
+	// compliance namespace
+	compliance: "compliance",
 	// dashboard namespace
 	dashboard: "dashboard",
 	// calendar namespace
@@ -39,11 +52,19 @@ const NAMESPACE_PREFIXES = {
 	wellness: "timeTracking",
 	// reports namespace
 	reports: "reports",
+	// myRequests namespace
+	myRequests: "myRequests",
+	// scheduling namespace
+	scheduling: "scheduling",
+	// setup namespace
+	init: "setup",
+	setup: "setup",
 	// settings namespace
 	settings: "settings",
 	organization: "settings",
 	vacation: "settings",
 	team: "settings",
+	webhooks: "settings",
 	// onboarding namespace
 	onboarding: "onboarding",
 	// bot namespace
@@ -62,6 +83,25 @@ function inferNamespace(keyName) {
 	return NAMESPACE_PREFIXES[prefix];
 }
 
+function resolveKeyAndNamespace(keyName, namespace) {
+	let finalKeyName = keyName;
+	let finalNamespace = namespace;
+
+	if (keyName.includes(":") && !keyName.startsWith("http")) {
+		const colonIndex = keyName.indexOf(":");
+		const beforeColon = keyName.substring(0, colonIndex);
+		if (!beforeColon.includes(".")) {
+			finalNamespace = finalNamespace || beforeColon;
+			finalKeyName = keyName.substring(colonIndex + 1);
+		}
+	}
+
+	return {
+		keyName: finalKeyName,
+		namespace: finalNamespace || inferNamespace(finalKeyName),
+	};
+}
+
 /**
  * Check if a key is dynamic (contains template literal interpolation)
  * Dynamic keys like `settings.${category}.label` cannot be statically extracted
@@ -72,7 +112,7 @@ function isDynamicKey(keyName) {
 	return keyName.includes("${") || keyName.includes("}");
 }
 
-export default function extractor(code, fileName) {
+export default function extractor(code, _fileName) {
 	const keys = [];
 	const warnings = [];
 
@@ -80,6 +120,7 @@ export default function extractor(code, fileName) {
 	// This runs for ALL files, not just those with translation imports, since these
 	// keys are defined in data files and consumed dynamically via t(step.titleKey).
 	keys.push(...extractKeyProperties(code));
+	keys.push(...extractKeyMappingObjects(code));
 
 	// Track if file has valid t-function sources
 	let hasValidTSource = false;
@@ -119,9 +160,6 @@ export default function extractor(code, fileName) {
 
 	// Extract all <T> components
 	keys.push(...extractTComponents(code));
-
-	// Extract keys from i18n key mapping objects
-	keys.push(...extractKeyMappingObjects(code));
 
 	return { keys, warnings };
 }
@@ -204,8 +242,8 @@ function extractTCalls(code) {
 		// Skip whitespace
 		while (pos < code.length && /\s/.test(code[pos])) pos++;
 
-		let defaultValue = undefined;
-		let namespace = undefined;
+		let defaultValue;
+		let namespace;
 
 		// Check for comma (second argument)
 		if (code[pos] === ",") {
@@ -261,17 +299,8 @@ function extractTCalls(code) {
 			}
 		}
 
-		// Handle namespace:key format
-		let finalKeyName = keyName;
-		if (keyName.includes(":") && !keyName.startsWith("http")) {
-			const colonIndex = keyName.indexOf(":");
-			// Only treat as namespace if it looks like a namespace (no dots before colon)
-			const beforeColon = keyName.substring(0, colonIndex);
-			if (!beforeColon.includes(".")) {
-				namespace = namespace || beforeColon;
-				finalKeyName = keyName.substring(colonIndex + 1);
-			}
-		}
+		const resolved = resolveKeyAndNamespace(keyName, namespace);
+		const finalKeyName = resolved.keyName;
 
 		// Skip dynamic keys with template literal interpolation
 		if (isDynamicKey(finalKeyName)) {
@@ -279,13 +308,10 @@ function extractTCalls(code) {
 			continue;
 		}
 
-		// If namespace not explicitly set, infer from key prefix
-		const finalNamespace = namespace || inferNamespace(finalKeyName);
-
 		results.push({
 			keyName: finalKeyName,
 			defaultValue,
-			namespace: finalNamespace,
+			namespace: resolved.namespace,
 			line: lineNumber,
 		});
 
@@ -304,8 +330,7 @@ function extractTComponents(code) {
 	// Match <T with attributes, handling multi-line
 	const tComponentRegex = /<T\s+([\s\S]*?)(?:\/>|>)/g;
 
-	let match;
-	while ((match = tComponentRegex.exec(code)) !== null) {
+	for (let match = tComponentRegex.exec(code); match !== null; match = tComponentRegex.exec(code)) {
 		const attrs = match[1];
 		const lineNumber = getLineNumber(code, match.index);
 
@@ -318,20 +343,14 @@ function extractTComponents(code) {
 		if (!keyResult) continue;
 
 		let keyName = keyResult.value;
-		let namespace = undefined;
+		let namespace;
 
-		// Handle namespace:key format
-		if (keyName.includes(":") && !keyName.startsWith("http")) {
-			const colonIndex = keyName.indexOf(":");
-			const beforeColon = keyName.substring(0, colonIndex);
-			if (!beforeColon.includes(".")) {
-				namespace = beforeColon;
-				keyName = keyName.substring(colonIndex + 1);
-			}
-		}
+		const resolved = resolveKeyAndNamespace(keyName, namespace);
+		keyName = resolved.keyName;
+		namespace = resolved.namespace;
 
 		// Extract defaultValue attribute
-		let defaultValue = undefined;
+		let defaultValue;
 		const defaultMatch = attrs.match(/defaultValue\s*=\s*(["'`])/);
 		if (defaultMatch) {
 			const defaultStart = attrs.indexOf(defaultMatch[0]) + defaultMatch[0].length - 1;
@@ -356,13 +375,10 @@ function extractTComponents(code) {
 			continue;
 		}
 
-		// If namespace not explicitly set, infer from key prefix
-		const finalNamespace = namespace || inferNamespace(keyName);
-
 		results.push({
 			keyName,
 			defaultValue,
-			namespace: finalNamespace,
+			namespace,
 			line: lineNumber,
 		});
 	}
@@ -388,49 +404,61 @@ function extractKeyMappingObjects(code) {
 	const objectPattern =
 		/(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\{([\s\S]*?)\};/g;
 
-	let match;
-	while ((match = objectPattern.exec(code)) !== null) {
+	for (let match = objectPattern.exec(code); match !== null; match = objectPattern.exec(code)) {
 		const objectContent = match[2];
 		const lineNumber = getLineNumber(code, match.index);
 
 		// Pattern 1: Nested objects with { key: "...", default: "..." }
 		const nestedPattern =
-			/(\w+)\s*:\s*\{\s*key\s*:\s*["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']\s*,\s*default\s*:\s*["']([^"']+)["']\s*\}/g;
+			/(\w+)\s*:\s*\{\s*key\s*:\s*["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']\s*,\s*(?:default|fallback)\s*:\s*["']([^"']+)["']\s*\}/g;
 
-		let nestedMatch;
-		while ((nestedMatch = nestedPattern.exec(objectContent)) !== null) {
+		for (
+			let nestedMatch = nestedPattern.exec(objectContent);
+			nestedMatch !== null;
+			nestedMatch = nestedPattern.exec(objectContent)
+		) {
 			const keyValue = nestedMatch[2];
 			const defaultValue = nestedMatch[3];
 
-			if (keyValue.includes(".") && !isDynamicKey(keyValue)) {
+			const resolved = resolveKeyAndNamespace(keyValue);
+
+			if (resolved.keyName.includes(".") && !isDynamicKey(resolved.keyName)) {
 				results.push({
-					keyName: keyValue,
+					keyName: resolved.keyName,
 					defaultValue,
-					namespace: inferNamespace(keyValue),
+					namespace: resolved.namespace,
 					line: lineNumber,
 				});
 			}
 		}
 
 		// Pattern 2: Simple string values - key: "value" or "key": "value"
-		const valuePattern = /["']?(\w+)["']?\s*:\s*["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
+		const valuePattern =
+			/["']?(\w+)["']?\s*:\s*["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
 
-		let valueMatch;
-		while ((valueMatch = valuePattern.exec(objectContent)) !== null) {
+		for (
+			let valueMatch = valuePattern.exec(objectContent);
+			valueMatch !== null;
+			valueMatch = valuePattern.exec(objectContent)
+		) {
 			const keyValue = valueMatch[2];
 
 			// Skip if this looks like it's part of a nested object (key: or default:)
 			if (valueMatch[1] === "key" || valueMatch[1] === "default") continue;
 
+			const resolved = resolveKeyAndNamespace(keyValue);
+
 			// Only include if it looks like a translation key (has at least one dot) and is not dynamic
-			if (keyValue.includes(".") && !isDynamicKey(keyValue)) {
+			if (resolved.keyName.includes(".") && !isDynamicKey(resolved.keyName)) {
 				// Check if we already added this from nested pattern
-				const alreadyAdded = results.some((r) => r.keyName === keyValue && r.line === lineNumber);
+				const alreadyAdded = results.some(
+					(r) => r.keyName === resolved.keyName && r.line === lineNumber,
+				);
 				if (!alreadyAdded) {
 					results.push({
-						keyName: keyValue,
+						keyName: resolved.keyName,
 						defaultValue: undefined,
-						namespace: inferNamespace(keyValue),
+						namespace: resolved.namespace,
 						line: lineNumber,
 					});
 				}
@@ -443,22 +471,28 @@ function extractKeyMappingObjects(code) {
 	const arrayPattern =
 		/(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/g;
 
-	while ((match = arrayPattern.exec(code)) !== null) {
+	for (let match = arrayPattern.exec(code); match !== null; match = arrayPattern.exec(code)) {
 		const arrayContent = match[2];
 		const lineNumber = getLineNumber(code, match.index);
 
 		// Extract all string values
-		const stringPattern = /["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
+		const stringPattern =
+			/["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
 
-		let stringMatch;
-		while ((stringMatch = stringPattern.exec(arrayContent)) !== null) {
+		for (
+			let stringMatch = stringPattern.exec(arrayContent);
+			stringMatch !== null;
+			stringMatch = stringPattern.exec(arrayContent)
+		) {
 			const keyValue = stringMatch[1];
 
-			if (keyValue.includes(".") && !isDynamicKey(keyValue)) {
+			const resolved = resolveKeyAndNamespace(keyValue);
+
+			if (resolved.keyName.includes(".") && !isDynamicKey(resolved.keyName)) {
 				results.push({
-					keyName: keyValue,
+					keyName: resolved.keyName,
 					defaultValue: undefined,
-					namespace: inferNamespace(keyValue),
+					namespace: resolved.namespace,
 					line: lineNumber,
 				});
 			}
@@ -477,22 +511,22 @@ function extractKeyMappingObjects(code) {
 function extractKeyProperties(code) {
 	const results = [];
 	// Match properties like: titleKey: "some.dotted.key" or descriptionKey: 'some.dotted.key'
-	const pattern = /(\w+Key)\s*:\s*["']([a-z][a-z0-9]*(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
+	const pattern =
+		/(\w+Key)\s*:\s*["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
 
-	let match;
-	while ((match = pattern.exec(code)) !== null) {
+	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
 		const keyValue = match[2];
 
 		// Must have at least one dot to be a translation key
 		if (!keyValue.includes(".") || isDynamicKey(keyValue)) continue;
 
-		const namespace = inferNamespace(keyValue);
+		const resolved = resolveKeyAndNamespace(keyValue);
 		const defaultValue = extractAdjacentDefaultValue(code, match.index, match[1]);
 
 		results.push({
-			keyName: keyValue,
+			keyName: resolved.keyName,
 			defaultValue,
-			namespace,
+			namespace: resolved.namespace,
 			line: getLineNumber(code, match.index),
 		});
 	}

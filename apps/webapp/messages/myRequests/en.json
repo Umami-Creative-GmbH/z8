@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Cancel",
+      "cancelConfirmation": "Cancel this absence request?",
+      "cancelError": "Absence request could not be cancelled.",
+      "cancelling": "Cancelling…",
+      "fix": "Fix",
+      "notAvailable": "Not available",
+      "view": "View"
+    },
+    "all": {
+      "description": "Review requests across absences, time corrections, and expenses.",
+      "title": "All requests"
+    },
+    "card": {
+      "decision": "Decision",
+      "submitted": "Submitted"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Requests will appear here when they are submitted or loaded.",
+        "title": "No requests match your filters"
+      },
+      "none": {
+        "description": "Requests will appear here when they are submitted or loaded.",
+        "title": "No requests yet"
+      }
+    },
+    "featureName": "view your requests",
+    "filters": {
+      "allStatuses": "All statuses",
+      "allTypes": "All types",
+      "approvedRequests": "Approved requests",
+      "cancelledRequests": "Cancelled requests",
+      "description": "Filter every request section by text, status, or request type.",
+      "pendingRequests": "Pending requests",
+      "rejectedRequests": "Rejected requests",
+      "search": "Search",
+      "searchPlaceholder": "Search by title…",
+      "status": "Status",
+      "title": "Find requests",
+      "type": "Type"
+    },
+    "inReview": {
+      "description": "Requests waiting for approval or processing.",
+      "title": "In review"
+    },
+    "needsAttention": {
+      "description": "Rejected requests that may require a correction before resubmission.",
+      "title": "Needs attention"
+    },
+    "reasonLabel": "Reason",
+    "recentlyDecided": {
+      "description": "Approved and rejected decisions from the last 30 days.",
+      "title": "Recently decided"
+    },
+    "requests": {
+      "absence": {
+        "title": "Absence request"
+      },
+      "timeCorrection": {
+        "subtitle": "Correction for a time entry",
+        "title": "Time correction request"
+      },
+      "travelExpense": {
+        "title": "Travel expense claim"
+      }
+    },
+    "sourceError": {
+      "absence": "Absence requests could not be loaded.",
+      "timeCorrection": "Time correction requests could not be loaded.",
+      "title": "Some requests could not be loaded.",
+      "travelExpense": "Travel expense requests could not be loaded."
+    },
+    "sourceTypes": {
+      "absence": "Absence",
+      "timeCorrection": "Time",
+      "travelExpense": "Expense"
+    },
+    "status": {
+      "approved": "Approved",
+      "cancelled": "Cancelled",
+      "inReview": "In review",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "subtitle": "Track pending requests, required fixes, and recent decisions in one place.",
+    "summary": {
+      "ariaLabel": "Request summary",
+      "pending": "Pending",
+      "recentDecisions": "Recent decisions",
+      "requiredFixes": "Required fixes",
+      "totalLoaded": "Total loaded"
+    },
+    "title": "My Requests",
+    "unavailableTitle": "Requests unavailable"
+  }
+}

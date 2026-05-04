@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Cancelar",
+      "cancelConfirmation": "Cancelar esta solicitação de ausência?",
+      "cancelError": "A solicitação de ausência não pôde ser cancelada.",
+      "cancelling": "Cancelando…",
+      "fix": "Corrigir",
+      "notAvailable": "Não disponível",
+      "view": "Visualizar"
+    },
+    "all": {
+      "description": "Analise solicitações de ausências, correções de ponto e despesas.",
+      "title": "Todas as solicitações"
+    },
+    "card": {
+      "decision": "Decisão",
+      "submitted": "Enviado"
+    },
+    "empty": {
+      "filtered": {
+        "description": "As solicitações aparecerão aqui quando forem enviadas ou carregadas.",
+        "title": "Nenhuma solicitação corresponde aos seus filtros"
+      },
+      "none": {
+        "description": "As solicitações aparecerão aqui quando forem enviadas ou carregadas.",
+        "title": "Nenhuma solicitação ainda"
+      }
+    },
+    "featureName": "visualizar suas solicitações",
+    "filters": {
+      "allStatuses": "Todos os status",
+      "allTypes": "Todos os tipos",
+      "approvedRequests": "Solicitações aprovadas",
+      "cancelledRequests": "Solicitações canceladas",
+      "description": "Filtre cada seção de solicitação por texto, status ou tipo de solicitação.",
+      "pendingRequests": "Solicitações pendentes",
+      "rejectedRequests": "Solicitações rejeitadas",
+      "search": "Pesquisar",
+      "searchPlaceholder": "Pesquisar por título…",
+      "status": "Status",
+      "title": "Encontrar solicitações",
+      "type": "Tipo"
+    },
+    "inReview": {
+      "description": "Solicitações aguardando aprovação ou processamento.",
+      "title": "Em análise"
+    },
+    "needsAttention": {
+      "description": "Solicitações rejeitadas que podem exigir correção antes do reenvio.",
+      "title": "Requer atenção"
+    },
+    "reasonLabel": "Motivo",
+    "recentlyDecided": {
+      "description": "Decisões aprovadas e rejeitadas dos últimos 30 dias.",
+      "title": "Decididas recentemente"
+    },
+    "requests": {
+      "absence": {
+        "title": "Solicitação de ausência"
+      },
+      "timeCorrection": {
+        "subtitle": "Correção de lançamento de horas",
+        "title": "Solicitação de correção de horas"
+      },
+      "travelExpense": {
+        "title": "Reembolso de despesas de viagem"
+      }
+    },
+    "sourceError": {
+      "absence": "Não foi possível carregar as solicitações de ausência.",
+      "timeCorrection": "Não foi possível carregar as solicitações de correção de horas.",
+      "title": "Não foi possível carregar algumas solicitações.",
+      "travelExpense": "Não foi possível carregar as solicitações de despesas de viagem."
+    },
+    "sourceTypes": {
+      "absence": "Ausência",
+      "timeCorrection": "Tempo",
+      "travelExpense": "Despesa"
+    },
+    "status": {
+      "approved": "Aprovado",
+      "cancelled": "Cancelado",
+      "inReview": "Em análise",
+      "pending": "Pendente",
+      "rejected": "Rejeitado"
+    },
+    "subtitle": "Acompanhe solicitações pendentes, correções necessárias e decisões recentes em um só lugar.",
+    "summary": {
+      "ariaLabel": "Resumo da solicitação",
+      "pending": "Pendente",
+      "recentDecisions": "Decisões recentes",
+      "requiredFixes": "Correções necessárias",
+      "totalLoaded": "Total carregado"
+    },
+    "title": "Minhas Solicitações",
+    "unavailableTitle": "Solicitações indisponíveis"
+  }
+}
