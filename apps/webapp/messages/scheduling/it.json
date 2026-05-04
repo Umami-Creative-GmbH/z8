@@ -1,0 +1,34 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Personale adeguato",
+      "byLocation": "Per sede:",
+      "gapCount": "{{count}} carenza di personale",
+      "gaps": "lacune",
+      "hideOverlay": "Nascondi sovrapposizione copertura",
+      "metSlots": "{{count}} adeguato",
+      "overSlots": "{{count}} con personale in eccesso",
+      "overstaffed": "Personale in eccesso",
+      "showOverlay": "Mostra sovrapposizione obiettivi di copertura",
+      "summary": "Riepilogo copertura:",
+      "toggleLabel": "Copertura",
+      "underSlots": "{{count}} sotto organico",
+      "understaffed": "Sotto organico",
+      "utilization": "{{percent}}% di utilizzo"
+    },
+    "skills": {
+      "expiredCertifications": "Certificazioni scadute:",
+      "expiredOn": "(Scaduto il {{date}})",
+      "missingPreferred": "Competenze preferenziali mancanti:",
+      "missingPreferredCount": "{{count}} preferenze mancanti",
+      "missingRequired": "Competenze richieste mancanti:",
+      "preferred": "Preferenziale",
+      "preferredSkillsMissing": "Competenze preferenziali mancanti",
+      "requirementsNotMet": "Requisiti di competenza non soddisfatti",
+      "unqualified": "Non qualificato",
+      "validating": "Convalida competenze in corso…",
+      "validatingDescription": "Verifica delle qualifiche del dipendente",
+      "warningMessage": "È ancora possibile assegnare questo turno, ma verrà registrato come eccezione."
+    }
+  }
+}

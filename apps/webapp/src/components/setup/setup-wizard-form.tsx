@@ -108,7 +108,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 			}
 
 			if (value.password !== value.confirmPassword) {
-				setError(t("setup.error.passwords_mismatch", "Passwords do not match"));
+				setError(t("setup:setup.error.passwords_mismatch", "Passwords do not match"));
 				return;
 			}
 
@@ -143,10 +143,10 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 				<CardContent className="flex flex-col items-center justify-center py-12">
 					<IconLoader2 className="size-12 animate-spin text-primary" aria-hidden="true" />
 					<p className="mt-4 text-lg font-medium" role="status" aria-live="polite">
-						{t("setup.creating_account", "Creating your admin account...")}
+						{t("setup:setup.creating_account", "Creating your admin account...")}
 					</p>
 					<p className="text-sm text-muted-foreground">
-						{t("setup.please_wait", "Please wait while we set things up")}
+						{t("setup:setup.please_wait", "Please wait while we set things up")}
 					</p>
 				</CardContent>
 			</Card>
@@ -161,17 +161,17 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 						<IconCheck className="size-8 text-green-600 dark:text-green-400" />
 					</div>
 					<h2 className="mt-4 text-xl font-semibold">
-						{t("setup.complete_title", "Setup Complete!")}
+						{t("setup:setup.complete_title", "Setup Complete!")}
 					</h2>
 					<p className="mt-2 text-center text-muted-foreground">
-						{t("setup.complete_message", "Your platform admin account has been created.")}
+						{t("setup:setup.complete_message", "Your platform admin account has been created.")}
 						<br />
-						{t("setup.sign_in_with", "You can now sign in with")}{" "}
+						{t("setup:setup.sign_in_with", "You can now sign in with")}{" "}
 						<span className="font-medium">{createdEmail}</span>
 					</p>
 					<Button onClick={handleContinueToSignIn} className="mt-6 gap-2">
 						<IconShieldCheck className="size-4" />
-						{t("setup.continue_to_sign_in", "Continue to Sign In")}
+						{t("setup:setup.continue_to_sign_in", "Continue to Sign In")}
 					</Button>
 				</CardContent>
 			</Card>
@@ -183,11 +183,11 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<IconShieldCheck className="size-5" />
-					{t("setup.title", "Create Platform Admin")}
+					{t("setup:setup.title", "Create Platform Admin")}
 				</CardTitle>
 				<CardDescription>
 					{t(
-						"setup.description",
+						"setup:setup.description",
 						"Set up the first administrator account for your platform. This account will have full system access and is separate from organization accounts.",
 					)}
 				</CardDescription>
@@ -221,13 +221,13 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								<TFormLabel hasError={field.state.meta.errors.length > 0} required>
 									<span className="flex items-center gap-2">
 										<IconUser className="size-4" />
-										{t("setup.field.name", "Full Name")}
+										{t("setup:setup.field.name", "Full Name")}
 									</span>
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
 									<Input
 										type="text"
-										placeholder={t("setup.field.name_placeholder", "Enter your full name")}
+										placeholder={t("setup:setup.field.name_placeholder", "Enter your full name")}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -250,13 +250,13 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								<TFormLabel hasError={field.state.meta.errors.length > 0} required>
 									<span className="flex items-center gap-2">
 										<IconMail className="size-4" />
-										{t("setup.field.email", "Email Address")}
+										{t("setup:setup.field.email", "Email Address")}
 									</span>
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
 									<Input
 										type="email"
-										placeholder={t("setup.field.email_placeholder", "admin@yourcompany.com")}
+										placeholder={t("setup:setup.field.email_placeholder", "admin@yourcompany.com")}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
@@ -279,7 +279,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								<TFormLabel hasError={field.state.meta.errors.length > 0} required>
 									<span className="flex items-center gap-2">
 										<IconLock className="size-4" />
-										{t("setup.field.password", "Password")}
+										{t("setup:setup.field.password", "Password")}
 									</span>
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
@@ -287,7 +287,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 										<Input
 											type={showPassword ? "text" : "password"}
 											placeholder={t(
-												"setup.field.password_placeholder",
+												"setup:setup.field.password_placeholder",
 												"Create a strong password",
 											)}
 											value={field.state.value}
@@ -302,8 +302,8 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 											aria-label={
 												showPassword
-													? t("setup.hide_password", "Hide password")
-													: t("setup.show_password", "Show password")
+													? t("setup:setup.hide_password", "Hide password")
+													: t("setup:setup.show_password", "Show password")
 											}
 										>
 											{showPassword ? (
@@ -326,7 +326,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 							onChangeListenTo: ["password"],
 							onChange: ({ value, fieldApi }) => {
 								if (value !== fieldApi.form.getFieldValue("password")) {
-									return t("setup.error.passwords_mismatch", "Passwords do not match");
+									return t("setup:setup.error.passwords_mismatch", "Passwords do not match");
 								}
 								return undefined;
 							},
@@ -337,7 +337,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								<TFormLabel hasError={field.state.meta.errors.length > 0} required>
 									<span className="flex items-center gap-2">
 										<IconLock className="size-4" />
-										{t("setup.field.confirm_password", "Confirm Password")}
+										{t("setup:setup.field.confirm_password", "Confirm Password")}
 									</span>
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
@@ -345,7 +345,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 										<Input
 											type={showConfirmPassword ? "text" : "password"}
 											placeholder={t(
-												"setup.field.confirm_password_placeholder",
+												"setup:setup.field.confirm_password_placeholder",
 												"Confirm your password",
 											)}
 											value={field.state.value}
@@ -360,8 +360,8 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 											aria-label={
 												showConfirmPassword
-													? t("setup.hide_password", "Hide password")
-													: t("setup.show_password", "Show password")
+													? t("setup:setup.hide_password", "Hide password")
+													: t("setup:setup.show_password", "Show password")
 											}
 										>
 											{showConfirmPassword ? (
@@ -387,12 +387,12 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 								{isSubmitting || isPending ? (
 									<>
 										<IconLoader2 className="size-4 animate-spin" />
-										{t("setup.button.creating", "Creating Account...")}
+										{t("setup:setup.button.creating", "Creating Account...")}
 									</>
 								) : (
 									<>
 										<IconShieldCheck className="size-4" />
-										{t("setup.button.create", "Create Admin Account")}
+										{t("setup:setup.button.create", "Create Admin Account")}
 									</>
 								)}
 							</Button>
@@ -413,16 +413,16 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
 	const { t } = useTranslate();
 
 	const checks = [
-		{ label: t("setup.password.min_length", "12+ characters"), valid: password.length >= 12 },
+		{ label: t("setup:setup.password.min_length", "12+ characters"), valid: password.length >= 12 },
 		{
-			label: t("setup.password.uppercase", "Uppercase letter"),
+			label: t("setup:setup.password.uppercase", "Uppercase letter"),
 			valid: UPPERCASE_REGEX.test(password),
 		},
 		{
-			label: t("setup.password.lowercase", "Lowercase letter"),
+			label: t("setup:setup.password.lowercase", "Lowercase letter"),
 			valid: LOWERCASE_REGEX.test(password),
 		},
-		{ label: t("setup.password.number", "Number"), valid: NUMBER_REGEX.test(password) },
+		{ label: t("setup:setup.password.number", "Number"), valid: NUMBER_REGEX.test(password) },
 	];
 
 	const validCount = checks.filter((c) => c.valid).length;

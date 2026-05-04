@@ -1,284 +1,290 @@
 {
-	"common": {
-		"actions": "Actions",
-		"active": "Active",
-		"add": "Add",
-		"all": "All",
-		"approve": "Approve",
-		"assign": "Assign",
-		"back": "Back",
-		"background-image-alt": "Background Image - Foto von Ally Griffin auf Unsplash",
-		"cancel": "Cancel",
-		"clear": "Clear",
-		"clearSearch": "Clear search",
-		"clearSelection": "Clear",
-		"close": "Close",
-		"confirm": "Confirm",
-		"continue": "Continue",
-		"copy": "Copy",
-		"create": "Create",
-		"days": {
-			"friday": "Friday",
-			"label": "days",
-			"monday": "Monday",
-			"saturday": "Saturday",
-			"sunday": "Sunday",
-			"thursday": "Thursday",
-			"tuesday": "Tuesday",
-			"wednesday": "Wednesday"
-		},
-		"delete": "Delete",
-		"deleting": "Deleting...",
-		"deselectAll": "Deselect All",
-		"details": "Details",
-		"dismiss": "Dismiss",
-		"download": "Download",
-		"duplicate": "Duplicate",
-		"edit": "Edit",
-		"enabled": "Enabled",
-		"error": "Error",
-		"error-occurred": "An error occurred",
-		"gender": {
-			"female": "Female",
-			"male": "Male",
-			"other": "Other"
-		},
-		"goToDashboard": "Go to Dashboard",
-		"inactive": "Inactive",
-		"loading": "Loading...",
-		"loadMore": "Load More",
-		"months": {
-			"april": "April",
-			"august": "August",
-			"december": "December",
-			"february": "February",
-			"january": "January",
-			"july": "July",
-			"june": "June",
-			"march": "March",
-			"may": "May",
-			"november": "November",
-			"october": "October",
-			"september": "September"
-		},
-		"more": "more",
-		"moreActions": "More actions",
-		"moveDown": "Move down",
-		"moveUp": "Move up",
-		"name": "Name",
-		"new": "New",
-		"next": "Next",
-		"notApplicable": "N/A",
-		"not-available": "Not available",
-		"openMenu": "Open menu",
-		"optional": "optional",
-		"or": "Or",
-		"previous": "Previous",
-		"recovering": "Recovering...",
-		"refresh": "Refresh",
-		"reject": "Reject",
-		"rejecting": "Rejecting…",
-		"remove": "Remove",
-		"removing": "Removing...",
-		"reset": "Reset",
-		"retry": "Retry",
-		"save": "Save",
-		"saveChanges": "Save Changes",
-		"saving": "Saving...",
-		"selectAll": "Select All",
-		"selected": "selected",
-		"select-language": "Select language",
-		"set": "set",
-		"sets": "sets",
-		"skip": "Skip",
-		"status": "Status",
-		"submitting": "Submitting…",
-		"to": "to",
-		"today": "Today",
-		"unexpectedError": "An unexpected error occurred",
-		"unknown": "Unknown",
-		"unknownEmployee": "Unknown Employee",
-		"unknownTeam": "Unknown Team",
-		"unnamed": "Unnamed",
-		"uploading": "Uploading...",
-		"validate": "Validate",
-		"validationError": "Validation error",
-		"weekdays": {
-			"fr": "Fr",
-			"fri": "Fri",
-			"mo": "Mo",
-			"mon": "Mon",
-			"sa": "Sa",
-			"sat": "Sat",
-			"su": "Su",
-			"sun": "Sun",
-			"th": "Th",
-			"thu": "Thu",
-			"tu": "Tu",
-			"tue": "Tue",
-			"we": "We",
-			"wed": "Wed"
-		}
-	},
-	"errors": {
-		"failedToLoad": "Failed to load data",
-		"noEmployee": {
-			"contactAdmin": "Contact Administrator",
-			"createOrg": "Create Organization",
-			"description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
-			"emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
-			"emailSubject": "Employee Profile Setup Required",
-			"helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
-			"title": "Employee Profile Required"
-		},
-		"noOrganization": {
-			"createOrg": "Create Organization",
-			"description": "You're not part of any organization yet. Create one to get started or wait for an invitation.",
-			"title": "No Organization Found",
-			"waiting": "Waiting for an invitation?",
-			"waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
-		},
-		"unexpected": {
-			"digest": "Reference: {digest}"
-		}
-	},
-	"generic": {
-		"done": "Done",
-		"submit": "Submit"
-	},
-	"header": {
-		"clock-in": "Clock In",
-		"clock-out": "Clock Out",
-		"request-absence": "Request Absence"
-	},
-	"info": {
-		"back-to-login": "Back to login"
-	},
-	"nav": {
-		"absences": "Absences",
-		"approvals": "Approvals",
-		"calendar": "Calendar",
-		"compliance": "Compliance",
-		"dashboard": "Dashboard",
-		"get-help": "Get Help",
-		"my-requests": "My Requests",
-		"reports": "Reports",
-		"scheduling": "Scheduling",
-		"settings": "Settings",
-		"team": "Team",
-		"team-label": "Team",
-		"time-tracking": "Time Tracking",
-		"travel-expenses": "Travel Expenses"
-	},
-	"table": {
-		"clearFilters": "Clear filters",
-		"clearSort": "Clear sort",
-		"description": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
-		"goToFirstPage": "Go to first page",
-		"goToLastPage": "Go to last page",
-		"goToNextPage": "Go to next page",
-		"goToPreviousPage": "Go to previous page",
-		"header": "Header",
-		"limit": "Limit",
-		"noResults": "No results.",
-		"pageOfPages": "Page {current} of {total}",
-		"reviewer": "Reviewer",
-		"rowsPerPage": "Rows per page",
-		"searchPlaceholder": "Search...",
-		"selectedOfTotal": "{selected} of {total} row(s) selected",
-		"select-reviewer": "Select a reviewer",
-		"select-status": "Select a status",
-		"select-type": "Select a type",
-		"showing-visitors": "Showing total visitors for the last 6 months",
-		"sortAscending": "Ascending",
-		"sortDescending": "Descending",
-		"status": "Status",
-		"status-options": {
-			"done": "Done",
-			"in-progress": "In Progress",
-			"not-started": "Not Started"
-		},
-		"target": "Target",
-		"totalRows": "{total} row(s)",
-		"trending-up": "Trending up by 5.2% this month",
-		"type": "Type",
-		"type-options": {
-			"capabilities": "Capabilities",
-			"cover-page": "Cover Page",
-			"design": "Design",
-			"executive-summary": "Executive Summary",
-			"focus-documents": "Focus Documents",
-			"narrative": "Narrative",
-			"table-of-contents": "Table of Contents",
-			"technical-approach": "Technical Approach"
-		}
-	},
-	"tour": {
-		"absences": {
-			"description": "Review absence balances, requests, and approvals in one place.",
-			"title": "Manage absences"
-		},
-		"approvals": {
-			"description": "Review pending time entries and absence requests from your team.",
-			"title": "Handle approvals"
-		},
-		"calendar": {
-			"description": "Use the calendar to see schedules, absences, and team availability.",
-			"title": "Check the calendar"
-		},
-		"dashboard": {
-			"description": "Track your current day, important summaries, and pending items from here.",
-			"title": "Start from the dashboard"
-		},
-		"notifications": {
-			"description": "Open notifications to catch approvals, updates, and important reminders.",
-			"title": "Stay informed"
-		},
-		"reports": {
-			"description": "Create reports and exports for payroll, compliance, and operational reviews.",
-			"title": "Use reports"
-		},
-		"requestAbsence": {
-			"description": "Submit vacation, sick leave, or other absence requests from here.",
-			"title": "Request time off"
-		},
-		"settings": {
-			"description": "Configure organization rules, teams, employees, and time tracking policies.",
-			"title": "Configure settings"
-		},
-		"sidebar": {
-			"description": "Use the sidebar to move between time tracking, planning, reports, and settings.",
-			"title": "Navigate Z8"
-		},
-		"teamSection": {
-			"description": "Team tools help managers coordinate approvals, schedules, and employee records.",
-			"title": "Work with your team"
-		},
-		"timeClock": {
-			"description": "Clock in and out quickly and keep your workday recorded accurately.",
-			"title": "Record your time"
-		},
-		"timeTracking": {
-			"description": "Review and adjust time entries before they are approved or exported.",
-			"title": "Track work entries"
-		}
-	},
-	"user": {
-		"language": "Language",
-		"logging-out": "Logging out...",
-		"log-out": "Log out",
-		"profile": "Profile",
-		"theme": "Theme",
-		"theme-dark": "Dark",
-		"theme-light": "Light",
-		"theme-system": "System",
-		"time-settings": "Time Settings"
-	},
-	"validation": {
-		"first-name-required": "First Name is required",
-		"invalid-email": "Invalid email address",
-		"invalid-password": "Invalid password",
-		"last-name-required": "Last Name is required",
-		"password-required": "Password is required"
-	}
+  "accessDenied": {
+    "contactAdmin": "Please contact your organization administrator to request access.",
+    "description": "Your account does not have permission to access the {{appLabel}}.",
+    "signOut": "Sign Out",
+    "title": "Access Restricted"
+  },
+  "colors": {
+    "blue": "Blue",
+    "green": "Green",
+    "indigo": "Indigo",
+    "orange": "Orange",
+    "pink": "Pink",
+    "purple": "Purple",
+    "red": "Red",
+    "teal": "Teal"
+  },
+  "common": {
+    "actions": "Actions",
+    "active": "Active",
+    "add": "Add",
+    "all": "All",
+    "approve": "Approve",
+    "assign": "Assign",
+    "back": "Back",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "clearSearch": "Clear search",
+    "clearSelection": "Clear",
+    "close": "Close",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "copy": "Copy",
+    "create": "Create",
+    "days": {
+      "friday": "Friday",
+      "label": "days",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
+    },
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "description": "Description",
+    "deselectAll": "Deselect All",
+    "details": "Details",
+    "dismiss": "Dismiss",
+    "download": "Download",
+    "duplicate": "Duplicate",
+    "edit": "Edit",
+    "enabled": "Enabled",
+    "error": "Error",
+    "error-occurred": "An error occurred",
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other"
+    },
+    "goToDashboard": "Go to Dashboard",
+    "inactive": "Inactive",
+    "label": "Label",
+    "loading": "Loading...",
+    "loadMore": "Load More",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "December",
+      "february": "February",
+      "january": "January",
+      "july": "July",
+      "june": "June",
+      "march": "March",
+      "may": "May",
+      "november": "November",
+      "october": "October",
+      "september": "September"
+    },
+    "more": "more",
+    "moreActions": "More actions",
+    "moveDown": "Move down",
+    "moveUp": "Move up",
+    "name": "Name",
+    "new": "New",
+    "next": "Next",
+    "notApplicable": "N/A",
+    "not-available": "Not available",
+    "openMenu": "Open menu",
+    "optional": "optional",
+    "or": "Or",
+    "previous": "Previous",
+    "recovering": "Recovering...",
+    "refresh": "Refresh",
+    "reject": "Reject",
+    "rejecting": "Rejecting…",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "reset": "Reset",
+    "retry": "Retry",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "selectAll": "Select All",
+    "selected": "selected",
+    "select-language": "Select language",
+    "set": "set",
+    "sets": "sets",
+    "skip": "Skip",
+    "status": "Status",
+    "submitting": "Submitting…",
+    "to": "to",
+    "today": "Today",
+    "unexpectedError": "An unexpected error occurred",
+    "unknown": "Unknown",
+    "unknownEmployee": "Unknown Employee",
+    "unknownTeam": "Unknown Team",
+    "unnamed": "Unnamed",
+    "uploading": "Uploading...",
+    "validate": "Validate",
+    "validationError": "Validation error",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fri",
+      "mo": "Mo",
+      "mon": "Mon",
+      "sa": "Sa",
+      "sat": "Sat",
+      "su": "Su",
+      "sun": "Sun",
+      "th": "Th",
+      "thu": "Thu",
+      "tu": "Tu",
+      "tue": "Tue",
+      "we": "We",
+      "wed": "Wed"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} employees selected",
+    "countWithMore": "{count} employees (+{more} more)",
+    "noEmployeesFound": "No employees found",
+    "role": "Role",
+    "searchPlaceholder": "Search by name, email, or position...",
+    "selected": "{count} selected",
+    "selectEmployee": "Select employee",
+    "selectEmployees": "Select employees",
+    "selectMultipleEmployees": "Choose one or more employees from the list",
+    "selectOneEmployee": "Choose an employee from the list",
+    "status": "Status",
+    "team": "Team",
+    "totalEmployees": "{count} employees",
+    "tryDifferentSearch": "Try adjusting your search or filters"
+  },
+  "errors": {
+    "failedToLoad": "Failed to load data",
+    "noEmployee": {
+      "contactAdmin": "Contact Administrator",
+      "createOrg": "Create Organization",
+      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
+      "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
+      "emailSubject": "Employee Profile Setup Required",
+      "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
+      "title": "Employee Profile Required"
+    },
+    "noOrganization": {
+      "createOrg": "Create Organization",
+      "description": "You're not part of any organization yet. Create one to get started or wait for an invitation.",
+      "title": "No Organization Found",
+      "waiting": "Waiting for an invitation?",
+      "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
+    },
+    "unexpected": {
+      "digest": "Reference: {digest}"
+    }
+  },
+  "generic": {
+    "done": "Done",
+    "submit": "Submit"
+  },
+  "header": {
+    "clock-in": "Clock In",
+    "clock-out": "Clock Out"
+  },
+  "info": {
+    "back-to-login": "Back to login"
+  },
+  "nav": {
+    "absences": "Absences",
+    "approvals": "Approvals",
+    "calendar": "Calendar",
+    "compliance": "Compliance",
+    "dashboard": "Dashboard",
+    "get-help": "Get Help",
+    "my-requests": "My Requests",
+    "reports": "Reports",
+    "scheduling": "Scheduling",
+    "settings": "Settings",
+    "team": "Team",
+    "team-label": "Team",
+    "time-tracking": "Time Tracking",
+    "travel-expenses": "Travel Expenses"
+  },
+  "offline": {
+    "banner": {
+      "offline": "You're offline",
+      "offlineWithPending": "Offline - {count} event(s) pending",
+      "pending": "{count} event(s) pending sync",
+      "retry": "Retry",
+      "syncing": "Syncing {count} event(s)..."
+    }
+  },
+  "roles": {
+    "admin": "Admin",
+    "employee": "Employee",
+    "manager": "Manager"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "table": {
+    "clearFilters": "Clear filters",
+    "clearSort": "Clear sort",
+    "description": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+    "goToFirstPage": "Go to first page",
+    "goToLastPage": "Go to last page",
+    "goToNextPage": "Go to next page",
+    "goToPreviousPage": "Go to previous page",
+    "header": "Header",
+    "limit": "Limit",
+    "noResults": "No results.",
+    "pageOfPages": "Page {current} of {total}",
+    "reviewer": "Reviewer",
+    "rowsPerPage": "Rows per page",
+    "searchPlaceholder": "Search...",
+    "selectedOfTotal": "{selected} of {total} row(s) selected",
+    "select-reviewer": "Select a reviewer",
+    "select-status": "Select a status",
+    "select-type": "Select a type",
+    "showing-visitors": "Showing total visitors for the last 6 months",
+    "sortAscending": "Ascending",
+    "sortDescending": "Descending",
+    "status": "Status",
+    "status-options": {
+      "done": "Done",
+      "in-progress": "In Progress",
+      "not-started": "Not Started"
+    },
+    "target": "Target",
+    "totalRows": "{total} row(s)",
+    "trending-up": "Trending up by 5.2% this month",
+    "type": "Type",
+    "type-options": {
+      "capabilities": "Capabilities",
+      "cover-page": "Cover Page",
+      "design": "Design",
+      "executive-summary": "Executive Summary",
+      "focus-documents": "Focus Documents",
+      "narrative": "Narrative",
+      "table-of-contents": "Table of Contents",
+      "technical-approach": "Technical Approach"
+    }
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours}h {minutes}m",
+    "hoursOnly": "{hours}h",
+    "pm": "PM"
+  },
+  "user": {
+    "language": "Language",
+    "logging-out": "Logging out...",
+    "log-out": "Log out",
+    "profile": "Profile",
+    "theme": "Theme",
+    "theme-dark": "Dark",
+    "theme-light": "Light",
+    "theme-system": "System",
+    "time-settings": "Time Settings"
+  },
+  "validation": {
+    "first-name-required": "First Name is required",
+    "invalid-email": "Invalid email address",
+    "invalid-password": "Invalid password",
+    "last-name-required": "Last Name is required",
+    "password-required": "Password is required"
+  }
 }

@@ -1,284 +1,290 @@
 {
-	"common": {
-		"actions": "Aktionen",
-		"active": "Aktiv",
-		"add": "Hinzufügen",
-		"all": "Alle",
-		"approve": "Genehmigen",
-		"assign": "Zuweisen",
-		"back": "Zurück",
-		"background-image-alt": "Hintergrundbild - Foto von Ally Griffin auf Unsplash",
-		"cancel": "Abbrechen",
-		"clear": "Leeren",
-		"clearSearch": "Suche löschen",
-		"clearSelection": "Löschen",
-		"close": "Schließen",
-		"confirm": "Bestätigen",
-		"continue": "Weiter",
-		"copy": "Kopieren",
-		"create": "Erstellen",
-		"days": {
-			"friday": "Freitag",
-			"label": "Tage",
-			"monday": "Montag",
-			"saturday": "Samstag",
-			"sunday": "Sonntag",
-			"thursday": "Donnerstag",
-			"tuesday": "Dienstag",
-			"wednesday": "Mittwoch"
-		},
-		"delete": "Löschen",
-		"deleting": "Löschen...",
-		"deselectAll": "Alle abwählen",
-		"details": "Details",
-		"dismiss": "Schließen",
-		"download": "Herunterladen",
-		"duplicate": "Duplizieren",
-		"edit": "Bearbeiten",
-		"enabled": "Aktiviert",
-		"error": "Fehler",
-		"error-occurred": "Ein Fehler ist aufgetreten",
-		"gender": {
-			"female": "Weiblich",
-			"male": "Männlich",
-			"other": "Andere"
-		},
-		"goToDashboard": "Zum Dashboard",
-		"inactive": "Inaktiv",
-		"loading": "Laden...",
-		"loadMore": "Mehr laden",
-		"months": {
-			"april": "April",
-			"august": "August",
-			"december": "Dezember",
-			"february": "Februar",
-			"january": "Januar",
-			"july": "Juli",
-			"june": "Juni",
-			"march": "März",
-			"may": "Mai",
-			"november": "November",
-			"october": "Oktober",
-			"september": "September"
-		},
-		"more": "mehr",
-		"moreActions": "Weitere Aktionen",
-		"moveDown": "Nach unten verschieben",
-		"moveUp": "Nach oben verschieben",
-		"name": "Name",
-		"new": "Neu",
-		"next": "Weiter",
-		"notApplicable": "n. v.",
-		"not-available": "Nicht verfügbar",
-		"openMenu": "Menü öffnen",
-		"optional": "optional",
-		"or": "Oder",
-		"previous": "Zurück",
-		"recovering": "Wiederherstellung läuft...",
-		"refresh": "Aktualisieren",
-		"reject": "Ablehnen",
-		"rejecting": "Wird abgelehnt…",
-		"remove": "Entfernen",
-		"removing": "Entfernen...",
-		"reset": "Zurücksetzen",
-		"retry": "Erneut versuchen",
-		"save": "Speichern",
-		"saveChanges": "Änderungen speichern",
-		"saving": "Speichern...",
-		"selectAll": "Alle auswählen",
-		"selected": "ausgewählt",
-		"select-language": "Sprache auswählen",
-		"set": "Satz",
-		"sets": "Sätze",
-		"skip": "Überspringen",
-		"status": "Status",
-		"submitting": "Wird übermittelt…",
-		"to": "bis",
-		"today": "Heute",
-		"unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
-		"unknown": "Unbekannt",
-		"unknownEmployee": "Unbekannter Mitarbeiter",
-		"unknownTeam": "Unbekanntes Team",
-		"unnamed": "Unbenannt",
-		"uploading": "Hochladen...",
-		"validate": "Validieren",
-		"validationError": "Validierungsfehler",
-		"weekdays": {
-			"fr": "Fr",
-			"fri": "Fr",
-			"mo": "Mo",
-			"mon": "Mo",
-			"sa": "Sa",
-			"sat": "Sa",
-			"su": "So",
-			"sun": "So",
-			"th": "Do",
-			"thu": "Do",
-			"tu": "Di",
-			"tue": "Di",
-			"we": "Mi",
-			"wed": "Mi"
-		}
-	},
-	"errors": {
-		"failedToLoad": "Daten konnten nicht geladen werden",
-		"noEmployee": {
-			"contactAdmin": "Administrator kontaktieren",
-			"createOrg": "Organisation erstellen",
-			"description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
-			"emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
-			"emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
-			"helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
-			"title": "Mitarbeiterprofil erforderlich"
-		},
-		"noOrganization": {
-			"createOrg": "Organisation erstellen",
-			"description": "Sie sind noch Teil keiner Organisation. Erstellen Sie eine, um zu beginnen, oder warten Sie auf eine Einladung.",
-			"title": "Keine Organisation gefunden",
-			"waiting": "Warten Sie auf eine Einladung?",
-			"waitingDesc": "Ihr Administrator wird Ihnen eine Einladungs-E-Mail senden. Überprüfen Sie Ihren Posteingang und Spam-Ordner."
-		},
-		"unexpected": {
-			"digest": "Referenz: {digest}"
-		}
-	},
-	"generic": {
-		"done": "Fertig",
-		"submit": "Absenden"
-	},
-	"header": {
-		"clock-in": "Einstempeln",
-		"clock-out": "Ausstempeln",
-		"request-absence": "Abwesenheit beantragen"
-	},
-	"info": {
-		"back-to-login": "Zurück zur Anmeldung"
-	},
-	"nav": {
-		"absences": "Abwesenheiten",
-		"approvals": "Genehmigungen",
-		"calendar": "Kalender",
-		"compliance": "Compliance",
-		"dashboard": "Dashboard",
-		"get-help": "Hilfe",
-		"my-requests": "Meine Anfragen",
-		"reports": "Berichte",
-		"scheduling": "Planung",
-		"settings": "Einstellungen",
-		"team": "Team",
-		"team-label": "Team",
-		"time-tracking": "Zeiterfassung",
-		"travel-expenses": "Reisekosten"
-	},
-	"table": {
-		"clearFilters": "Filter löschen",
-		"clearSort": "Sortierung löschen",
-		"description": "Zeigt die Gesamtbesucherzahl der letzten 6 Monate an. Dies ist nur ein zufälliger Text, um das Layout zu testen. Er erstreckt sich über mehrere Zeilen und sollte umbrechen.",
-		"goToFirstPage": "Zur ersten Seite",
-		"goToLastPage": "Zur letzten Seite",
-		"goToNextPage": "Zur nächsten Seite",
-		"goToPreviousPage": "Zur vorherigen Seite",
-		"header": "Kopfzeile",
-		"limit": "Limit",
-		"noResults": "Keine Ergebnisse.",
-		"pageOfPages": "Seite {current} von {total}",
-		"reviewer": "Prüfer",
-		"rowsPerPage": "Zeilen pro Seite",
-		"searchPlaceholder": "Suchen...",
-		"selectedOfTotal": "{selected} von {total} Zeile(n) ausgewählt",
-		"select-reviewer": "Prüfer auswählen",
-		"select-status": "Status auswählen",
-		"select-type": "Typ auswählen",
-		"showing-visitors": "Zeigt die Gesamtbesucher der letzten 6 Monate",
-		"sortAscending": "Aufsteigend",
-		"sortDescending": "Absteigend",
-		"status": "Status",
-		"status-options": {
-			"done": "Erledigt",
-			"in-progress": "In Bearbeitung",
-			"not-started": "Nicht begonnen"
-		},
-		"target": "Ziel",
-		"totalRows": "{total} Zeile(n)",
-		"trending-up": "Aufwärtstrend um 5,2% diesen Monat",
-		"type": "Typ",
-		"type-options": {
-			"capabilities": "Fähigkeiten",
-			"cover-page": "Deckblatt",
-			"design": "Design",
-			"executive-summary": "Zusammenfassung",
-			"focus-documents": "Fokus-Dokumente",
-			"narrative": "Erzählung",
-			"table-of-contents": "Inhaltsverzeichnis",
-			"technical-approach": "Technischer Ansatz"
-		}
-	},
-	"tour": {
-		"absences": {
-			"description": "Prüfe Abwesenheitssalden, Anträge und Freigaben an einem Ort.",
-			"title": "Abwesenheiten verwalten"
-		},
-		"approvals": {
-			"description": "Prüfe offene Zeiteinträge und Abwesenheitsanträge deines Teams.",
-			"title": "Freigaben bearbeiten"
-		},
-		"calendar": {
-			"description": "Nutze den Kalender für Schichten, Abwesenheiten und Teamverfügbarkeiten.",
-			"title": "Kalender prüfen"
-		},
-		"dashboard": {
-			"description": "Verfolge deinen aktuellen Tag, wichtige Übersichten und offene Aufgaben.",
-			"title": "Im Dashboard starten"
-		},
-		"notifications": {
-			"description": "Öffne Benachrichtigungen für Freigaben, Updates und wichtige Erinnerungen.",
-			"title": "Informiert bleiben"
-		},
-		"reports": {
-			"description": "Erstelle Berichte und Exporte für Lohnabrechnung, Compliance und Auswertungen.",
-			"title": "Berichte nutzen"
-		},
-		"requestAbsence": {
-			"description": "Reiche Urlaub, Krankheit oder andere Abwesenheiten direkt hier ein.",
-			"title": "Abwesenheit beantragen"
-		},
-		"settings": {
-			"description": "Konfiguriere Organisationsregeln, Teams, Mitarbeitende und Zeitrichtlinien.",
-			"title": "Einstellungen konfigurieren"
-		},
-		"sidebar": {
-			"description": "Über die Seitenleiste wechselst du zwischen Zeiterfassung, Planung, Berichten und Einstellungen.",
-			"title": "Z8 navigieren"
-		},
-		"teamSection": {
-			"description": "Teamfunktionen helfen Führungskräften bei Freigaben, Planung und Mitarbeiterdaten.",
-			"title": "Mit deinem Team arbeiten"
-		},
-		"timeClock": {
-			"description": "Stemple dich schnell ein und aus, damit dein Arbeitstag korrekt erfasst ist.",
-			"title": "Zeit erfassen"
-		},
-		"timeTracking": {
-			"description": "Prüfe und korrigiere Zeiteinträge, bevor sie freigegeben oder exportiert werden.",
-			"title": "Arbeitszeiten verfolgen"
-		}
-	},
-	"user": {
-		"language": "Sprache",
-		"logging-out": "Logge aus...",
-		"log-out": "Abmelden",
-		"profile": "Profil",
-		"theme": "Design",
-		"theme-dark": "Dunkel",
-		"theme-light": "Hell",
-		"theme-system": "System",
-		"time-settings": "Zeiteinstellungen"
-	},
-	"validation": {
-		"first-name-required": "Vorname ist erforderlich",
-		"invalid-email": "Ungültige E-Mail-Adresse",
-		"invalid-password": "Ungültiges Passwort",
-		"last-name-required": "Nachname ist erforderlich",
-		"password-required": "Passwort ist erforderlich"
-	}
+  "accessDenied": {
+    "contactAdmin": "Bitte wenden Sie sich an Ihren Organisationsadministrator, um Zugriff anzufordern.",
+    "description": "Ihr Konto verfügt nicht über die Berechtigung, auf {{appLabel}} zuzugreifen.",
+    "signOut": "Abmelden",
+    "title": "Zugriff eingeschränkt"
+  },
+  "colors": {
+    "blue": "Blau",
+    "green": "Grün",
+    "indigo": "Indigo",
+    "orange": "Orange",
+    "pink": "Pink",
+    "purple": "Lila",
+    "red": "Rot",
+    "teal": "Türkis"
+  },
+  "common": {
+    "actions": "Aktionen",
+    "active": "Aktiv",
+    "add": "Hinzufügen",
+    "all": "Alle",
+    "approve": "Genehmigen",
+    "assign": "Zuweisen",
+    "back": "Zurück",
+    "cancel": "Abbrechen",
+    "clear": "Leeren",
+    "clearSearch": "Suche löschen",
+    "clearSelection": "Löschen",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "continue": "Weiter",
+    "copy": "Kopieren",
+    "create": "Erstellen",
+    "days": {
+      "friday": "Freitag",
+      "label": "Tage",
+      "monday": "Montag",
+      "saturday": "Samstag",
+      "sunday": "Sonntag",
+      "thursday": "Donnerstag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch"
+    },
+    "delete": "Löschen",
+    "deleting": "Löschen...",
+    "description": "Beschreibung",
+    "deselectAll": "Alle abwählen",
+    "details": "Details",
+    "dismiss": "Schließen",
+    "download": "Herunterladen",
+    "duplicate": "Duplizieren",
+    "edit": "Bearbeiten",
+    "enabled": "Aktiviert",
+    "error": "Fehler",
+    "error-occurred": "Ein Fehler ist aufgetreten",
+    "gender": {
+      "female": "Weiblich",
+      "male": "Männlich",
+      "other": "Andere"
+    },
+    "goToDashboard": "Zum Dashboard",
+    "inactive": "Inaktiv",
+    "label": "Bezeichnung",
+    "loading": "Laden...",
+    "loadMore": "Mehr laden",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "Dezember",
+      "february": "Februar",
+      "january": "Januar",
+      "july": "Juli",
+      "june": "Juni",
+      "march": "März",
+      "may": "Mai",
+      "november": "November",
+      "october": "Oktober",
+      "september": "September"
+    },
+    "more": "mehr",
+    "moreActions": "Weitere Aktionen",
+    "moveDown": "Nach unten verschieben",
+    "moveUp": "Nach oben verschieben",
+    "name": "Name",
+    "new": "Neu",
+    "next": "Weiter",
+    "notApplicable": "n. v.",
+    "not-available": "Nicht verfügbar",
+    "openMenu": "Menü öffnen",
+    "optional": "optional",
+    "or": "Oder",
+    "previous": "Zurück",
+    "recovering": "Wiederherstellung läuft...",
+    "refresh": "Aktualisieren",
+    "reject": "Ablehnen",
+    "rejecting": "Wird abgelehnt…",
+    "remove": "Entfernen",
+    "removing": "Entfernen...",
+    "reset": "Zurücksetzen",
+    "retry": "Erneut versuchen",
+    "save": "Speichern",
+    "saveChanges": "Änderungen speichern",
+    "saving": "Speichern...",
+    "selectAll": "Alle auswählen",
+    "selected": "ausgewählt",
+    "select-language": "Sprache auswählen",
+    "set": "Satz",
+    "sets": "Sätze",
+    "skip": "Überspringen",
+    "status": "Status",
+    "submitting": "Wird übermittelt…",
+    "to": "bis",
+    "today": "Heute",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+    "unknown": "Unbekannt",
+    "unknownEmployee": "Unbekannter Mitarbeiter",
+    "unknownTeam": "Unbekanntes Team",
+    "unnamed": "Unbenannt",
+    "uploading": "Hochladen...",
+    "validate": "Validieren",
+    "validationError": "Validierungsfehler",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fr",
+      "mo": "Mo",
+      "mon": "Mo",
+      "sa": "Sa",
+      "sat": "Sa",
+      "su": "So",
+      "sun": "So",
+      "th": "Do",
+      "thu": "Do",
+      "tu": "Di",
+      "tue": "Di",
+      "we": "Mi",
+      "wed": "Mi"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} Mitarbeiter ausgewählt",
+    "countWithMore": "{count} Mitarbeiter (+{more} weitere)",
+    "noEmployeesFound": "Keine Mitarbeiter gefunden",
+    "role": "Rolle",
+    "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
+    "selected": "{count} ausgewählt",
+    "selectEmployee": "Mitarbeiter auswählen",
+    "selectEmployees": "Mitarbeiter auswählen",
+    "selectMultipleEmployees": "Wählen Sie einen oder mehrere Mitarbeiter aus der Liste aus",
+    "selectOneEmployee": "Wählen Sie einen Mitarbeiter aus der Liste aus",
+    "status": "Status",
+    "team": "Team",
+    "totalEmployees": "{count} Mitarbeiter",
+    "tryDifferentSearch": "Versuchen Sie, Ihre Suche oder Filter anzupassen"
+  },
+  "errors": {
+    "failedToLoad": "Daten konnten nicht geladen werden",
+    "noEmployee": {
+      "contactAdmin": "Administrator kontaktieren",
+      "createOrg": "Organisation erstellen",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
+      "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
+      "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
+      "title": "Mitarbeiterprofil erforderlich"
+    },
+    "noOrganization": {
+      "createOrg": "Organisation erstellen",
+      "description": "Sie sind noch Teil keiner Organisation. Erstellen Sie eine, um zu beginnen, oder warten Sie auf eine Einladung.",
+      "title": "Keine Organisation gefunden",
+      "waiting": "Warten Sie auf eine Einladung?",
+      "waitingDesc": "Ihr Administrator wird Ihnen eine Einladungs-E-Mail senden. Überprüfen Sie Ihren Posteingang und Spam-Ordner."
+    },
+    "unexpected": {
+      "digest": "Referenz: {digest}"
+    }
+  },
+  "generic": {
+    "done": "Fertig",
+    "submit": "Absenden"
+  },
+  "header": {
+    "clock-in": "Einstempeln",
+    "clock-out": "Ausstempeln"
+  },
+  "info": {
+    "back-to-login": "Zurück zur Anmeldung"
+  },
+  "nav": {
+    "absences": "Abwesenheiten",
+    "approvals": "Genehmigungen",
+    "calendar": "Kalender",
+    "compliance": "Compliance",
+    "dashboard": "Dashboard",
+    "get-help": "Hilfe",
+    "my-requests": "Meine Anfragen",
+    "reports": "Berichte",
+    "scheduling": "Planung",
+    "settings": "Einstellungen",
+    "team": "Team",
+    "team-label": "Team",
+    "time-tracking": "Zeiterfassung",
+    "travel-expenses": "Reisekosten"
+  },
+  "offline": {
+    "banner": {
+      "offline": "Sie sind offline",
+      "offlineWithPending": "Offline - {count} Ereignis(se) ausstehend",
+      "pending": "{count} Ereignis(se) warten auf Synchronisierung",
+      "retry": "Wiederholen",
+      "syncing": "Synchronisiere {count} Ereignis(se)..."
+    }
+  },
+  "roles": {
+    "admin": "Administrator",
+    "employee": "Mitarbeiter",
+    "manager": "Manager"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "table": {
+    "clearFilters": "Filter löschen",
+    "clearSort": "Sortierung löschen",
+    "description": "Zeigt die Gesamtbesucherzahl der letzten 6 Monate an. Dies ist nur ein zufälliger Text, um das Layout zu testen. Er erstreckt sich über mehrere Zeilen und sollte umbrechen.",
+    "goToFirstPage": "Zur ersten Seite",
+    "goToLastPage": "Zur letzten Seite",
+    "goToNextPage": "Zur nächsten Seite",
+    "goToPreviousPage": "Zur vorherigen Seite",
+    "header": "Kopfzeile",
+    "limit": "Limit",
+    "noResults": "Keine Ergebnisse.",
+    "pageOfPages": "Seite {current} von {total}",
+    "reviewer": "Prüfer",
+    "rowsPerPage": "Zeilen pro Seite",
+    "searchPlaceholder": "Suchen...",
+    "selectedOfTotal": "{selected} von {total} Zeile(n) ausgewählt",
+    "select-reviewer": "Prüfer auswählen",
+    "select-status": "Status auswählen",
+    "select-type": "Typ auswählen",
+    "showing-visitors": "Zeigt die Gesamtbesucher der letzten 6 Monate",
+    "sortAscending": "Aufsteigend",
+    "sortDescending": "Absteigend",
+    "status": "Status",
+    "status-options": {
+      "done": "Erledigt",
+      "in-progress": "In Bearbeitung",
+      "not-started": "Nicht begonnen"
+    },
+    "target": "Ziel",
+    "totalRows": "{total} Zeile(n)",
+    "trending-up": "Aufwärtstrend um 5,2% diesen Monat",
+    "type": "Typ",
+    "type-options": {
+      "capabilities": "Fähigkeiten",
+      "cover-page": "Deckblatt",
+      "design": "Design",
+      "executive-summary": "Zusammenfassung",
+      "focus-documents": "Fokus-Dokumente",
+      "narrative": "Erzählung",
+      "table-of-contents": "Inhaltsverzeichnis",
+      "technical-approach": "Technischer Ansatz"
+    }
+  },
+  "time": {
+    "am": "vorm.",
+    "hoursAndMinutes": "{hours} Std. {minutes} Min.",
+    "hoursOnly": "{hours} Std.",
+    "pm": "nachm."
+  },
+  "user": {
+    "language": "Sprache",
+    "logging-out": "Logge aus...",
+    "log-out": "Abmelden",
+    "profile": "Profil",
+    "theme": "Design",
+    "theme-dark": "Dunkel",
+    "theme-light": "Hell",
+    "theme-system": "System",
+    "time-settings": "Zeiteinstellungen"
+  },
+  "validation": {
+    "first-name-required": "Vorname ist erforderlich",
+    "invalid-email": "Ungültige E-Mail-Adresse",
+    "invalid-password": "Ungültiges Passwort",
+    "last-name-required": "Nachname ist erforderlich",
+    "password-required": "Passwort ist erforderlich"
+  }
 }

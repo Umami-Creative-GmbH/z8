@@ -148,11 +148,11 @@ export default function InitPage() {
 				<div className="w-full max-w-md space-y-6">
 					<div className="text-center space-y-2">
 						<h1 className="text-2xl font-semibold">
-							{t("init.selectOrganization", "Select Organization")}
+							{t("setup:init.selectOrganization", "Select Organization")}
 						</h1>
 						<p className="text-muted-foreground">
 							{t(
-								"init.selectOrganizationDescription",
+								"setup:init.selectOrganizationDescription",
 								"Choose which organization you want to work with",
 							)}
 						</p>
@@ -183,7 +183,7 @@ export default function InitPage() {
 										<div className="flex-1">
 											<CardTitle className="text-base">{org.name}</CardTitle>
 											<CardDescription className="text-xs">
-												{t("init.clickToSelect", "Click to select")}
+												{t("setup:init.clickToSelect", "Click to select")}
 											</CardDescription>
 										</div>
 										{selectedOrg === org.id && (
@@ -202,7 +202,7 @@ export default function InitPage() {
 							aria-live="polite"
 						>
 							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-							{t("init.activating", "Setting up your workspace...")}
+							{t("setup:init.activating", "Setting up your workspace...")}
 						</div>
 					)}
 				</div>
@@ -216,9 +216,9 @@ export default function InitPage() {
 			<div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
 				<IconLoader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
 				<p className="text-sm text-muted-foreground">
-					{status === "checking" && t("init.checking", "Checking session...")}
-					{status === "activating" && t("init.activating", "Setting up your workspace...")}
-					{status === "redirecting" && t("init.redirecting", "Redirecting...")}
+					{status === "checking" && t("setup:init.checking", "Checking session...")}
+					{status === "activating" && t("setup:init.activating", "Setting up your workspace...")}
+					{status === "redirecting" && t("setup:init.redirecting", "Redirecting...")}
 				</p>
 			</div>
 		</div>

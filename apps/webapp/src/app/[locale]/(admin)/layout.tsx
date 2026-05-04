@@ -3,9 +3,9 @@ import {
 	IconChartBar,
 	IconCreditCard,
 	IconLogout,
+	IconServer,
 	IconSettings,
 	IconShield,
-	IconServer,
 	IconUsers,
 } from "@tabler/icons-react";
 import { headers } from "next/headers";
@@ -32,27 +32,35 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	const t = await getTranslate();
 
 	const navItems = [
-		{ href: "/platform-admin", icon: IconChartBar, label: t("admin.layout.nav.overview", "Overview") },
-		{ href: "/platform-admin/users", icon: IconUsers, label: t("admin.layout.nav.users", "Users") },
+		{
+			href: "/platform-admin",
+			icon: IconChartBar,
+			label: t("admin:admin.layout.nav.overview", "Overview"),
+		},
+		{
+			href: "/platform-admin/users",
+			icon: IconUsers,
+			label: t("admin:admin.layout.nav.users", "Users"),
+		},
 		{
 			href: "/platform-admin/organizations",
 			icon: IconBuilding,
-			label: t("admin.layout.nav.organizations", "Organizations"),
+			label: t("admin:admin.layout.nav.organizations", "Organizations"),
 		},
 		{
 			href: "/platform-admin/billing",
 			icon: IconCreditCard,
-			label: t("admin.layout.nav.billing", "Billing"),
+			label: t("admin:admin.layout.nav.billing", "Billing"),
 		},
 		{
 			href: "/platform-admin/settings",
 			icon: IconSettings,
-			label: t("admin.layout.nav.settings", "Settings"),
+			label: t("admin:admin.layout.nav.settings", "Settings"),
 		},
 		{
 			href: "/platform-admin/worker-queue",
 			icon: IconServer,
-			label: t("admin.layout.nav.workerQueue", "Worker Queue"),
+			label: t("admin:admin.layout.nav.workerQueue", "Worker Queue"),
 		},
 	];
 
@@ -73,10 +81,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 							</div>
 							<div className="hidden sm:block">
 								<div className="text-sm font-semibold tracking-tight">
-									{t("admin.layout.title", "Admin Console")}
+									{t("admin:admin.layout.title", "Admin Console")}
 								</div>
 								<div className="text-xs text-muted-foreground">
-									{t("admin.layout.subtitle", "Platform Management")}
+									{t("admin:admin.layout.subtitle", "Platform Management")}
 								</div>
 							</div>
 						</Link>
@@ -123,7 +131,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 						>
 							<IconLogout className="size-4" aria-hidden="true" />
 							<span className="hidden sm:inline">
-								{t("admin.layout.exitAdmin", "Exit Admin")}
+								{t("admin:admin.layout.exitAdmin", "Exit Admin")}
 							</span>
 						</Link>
 					</div>

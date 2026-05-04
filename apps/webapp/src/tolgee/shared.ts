@@ -1,6 +1,6 @@
 import { FormatIcu } from "@tolgee/format-icu";
-import { DevTools, Tolgee } from "@tolgee/web";
 import type { TolgeeStaticData } from "@tolgee/react";
+import { DevTools, Tolgee } from "@tolgee/web";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -12,11 +12,16 @@ export const DEFAULT_LANGUAGE = "en";
 export const ALL_NAMESPACES = [
 	"common",
 	"admin",
+	"approvals",
 	"auth",
+	"compliance",
 	"dashboard",
 	"calendar",
 	"timeTracking",
 	"reports",
+	"myRequests",
+	"scheduling",
+	"setup",
 	"settings",
 	"onboarding",
 	"bot",
@@ -38,14 +43,22 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	// Platform admin routes
 	"/platform-admin": ["common", "admin"],
 	"/platform-admin/worker-queue": ["common", "admin", "settings"],
+	"/setup": ["common", "setup"],
+	"/init": ["common", "setup"],
+	"/approvals": ["common", "approvals"],
+	"/my-requests": ["common", "myRequests"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/calendar": ["common", "calendar"],
 	"/absences": ["common", "calendar"],
-	"/time-tracking": ["common", "timeTracking"],
+	"/time-tracking": ["common", "timeTracking", "compliance"],
 	"/travel-expenses": ["common", "settings"],
+	"/travel-expenses/approvals": ["common", "settings", "approvals"],
 	"/reports": ["common", "reports"],
+	"/scheduling": ["common", "scheduling", "compliance"],
 	"/settings": ["common", "settings"],
+	"/settings/compliance": ["common", "settings", "compliance"],
+	"/settings/webhooks": ["common", "settings"],
 	"/onboarding": ["common", "onboarding"],
 };
 
@@ -94,6 +107,14 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		it: () => import("../../messages/admin/it.json"),
 		pt: () => import("../../messages/admin/pt.json"),
 	},
+	approvals: {
+		en: () => import("../../messages/approvals/en.json"),
+		de: () => import("../../messages/approvals/de.json"),
+		fr: () => import("../../messages/approvals/fr.json"),
+		es: () => import("../../messages/approvals/es.json"),
+		it: () => import("../../messages/approvals/it.json"),
+		pt: () => import("../../messages/approvals/pt.json"),
+	},
 	auth: {
 		en: () => import("../../messages/auth/en.json"),
 		de: () => import("../../messages/auth/de.json"),
@@ -101,6 +122,14 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		es: () => import("../../messages/auth/es.json"),
 		it: () => import("../../messages/auth/it.json"),
 		pt: () => import("../../messages/auth/pt.json"),
+	},
+	compliance: {
+		en: () => import("../../messages/compliance/en.json"),
+		de: () => import("../../messages/compliance/de.json"),
+		fr: () => import("../../messages/compliance/fr.json"),
+		es: () => import("../../messages/compliance/es.json"),
+		it: () => import("../../messages/compliance/it.json"),
+		pt: () => import("../../messages/compliance/pt.json"),
 	},
 	dashboard: {
 		en: () => import("../../messages/dashboard/en.json"),
@@ -133,6 +162,30 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		es: () => import("../../messages/reports/es.json"),
 		it: () => import("../../messages/reports/it.json"),
 		pt: () => import("../../messages/reports/pt.json"),
+	},
+	myRequests: {
+		en: () => import("../../messages/myRequests/en.json"),
+		de: () => import("../../messages/myRequests/de.json"),
+		fr: () => import("../../messages/myRequests/fr.json"),
+		es: () => import("../../messages/myRequests/es.json"),
+		it: () => import("../../messages/myRequests/it.json"),
+		pt: () => import("../../messages/myRequests/pt.json"),
+	},
+	scheduling: {
+		en: () => import("../../messages/scheduling/en.json"),
+		de: () => import("../../messages/scheduling/de.json"),
+		fr: () => import("../../messages/scheduling/fr.json"),
+		es: () => import("../../messages/scheduling/es.json"),
+		it: () => import("../../messages/scheduling/it.json"),
+		pt: () => import("../../messages/scheduling/pt.json"),
+	},
+	setup: {
+		en: () => import("../../messages/setup/en.json"),
+		de: () => import("../../messages/setup/de.json"),
+		fr: () => import("../../messages/setup/fr.json"),
+		es: () => import("../../messages/setup/es.json"),
+		it: () => import("../../messages/setup/it.json"),
+		pt: () => import("../../messages/setup/pt.json"),
 	},
 	settings: {
 		en: () => import("../../messages/settings/en.json"),

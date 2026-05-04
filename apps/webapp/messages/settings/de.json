@@ -37,6 +37,10 @@
       "warning": "Dies wird die Organisation zur Löschung vormerken. Sie haben 5 Tage Zeit, sie wiederherzustellen, bevor alle Daten dauerhaft gelöscht werden."
     },
     "features": {
+      "demo-data": "Demodaten",
+      "demo-data-description": "Erlaubt Administratoren das Generieren und Löschen von Beispiel-Organisationsdaten zu Testzwecken.",
+      "demo-data-disabled": "Demodaten deaktiviert",
+      "demo-data-enabled": "Demodaten aktiviert",
       "description": "Aktivieren oder deaktivieren Sie optionale Funktionen für Ihre Organisation",
       "owner-only": "Nur Organisationsinhaber können Funktionseinstellungen ändern.",
       "projects": "Projekte",
@@ -50,6 +54,7 @@
       "surcharges-disabled": "Zuschläge deaktiviert",
       "surcharges-enabled": "Zuschläge aktiviert",
       "title": "Funktionen",
+      "toggle-demo-data": "Demodaten umschalten",
       "toggle-projects": "Projekte umschalten",
       "toggle-surcharges": "Zuschläge umschalten",
       "toggle-work-shifts": "Arbeitsschichten umschalten",
@@ -192,6 +197,27 @@
       "title": "API-Schlüssel",
       "updated": "API-Schlüssel aktualisiert",
       "usage": "{count} von {max} Schlüsseln verwendet"
+    },
+    "approvalPolicies": {
+      "activeDescription": "Berechtigte Anfragen können dieser Richtlinie entsprechen.",
+      "activeLabel": "Aktive Richtlinie",
+      "addStage": "Stufe hinzufügen",
+      "approvalTypes": "Genehmigungstypen",
+      "approver": "Genehmiger",
+      "approverEmployeeId": "Mitarbeiter-ID des Genehmigers",
+      "approverEmployeeIdPlaceholder": "Beispiel: mitarbeiter_123…",
+      "createPolicy": "Genehmigungsrichtlinie erstellen",
+      "description": "Konfigurieren Sie sequentielle Genehmigungsketten für operative Arbeitsabläufe",
+      "descriptionPlaceholder": "Beispiel: Eskaliert sensible Arbeitsabläufe an den Betrieb…",
+      "dialogDescription": "Definieren Sie, wann eine Genehmigungskette angewendet wird und welche Genehmiger die einzelnen Stufen bearbeiten.",
+      "namePlaceholder": "Beispiel: Abwesenheitseskalation…",
+      "noStages": "Noch keine Genehmigungsstufen konfiguriert.",
+      "priority": "Priorität",
+      "removeStage": "Stufe entfernen",
+      "stageNumber": "Stufe {number}",
+      "stages": "Genehmigungsstufen",
+      "stagesDescription": "Die Stufen werden nacheinander ausgeführt; jede Anfrage geht erst weiter, nachdem der aktuelle Genehmiger sie akzeptiert hat.",
+      "title": "Genehmigungsrichtlinien"
     },
     "auditExport": {
       "auditPack": {
@@ -1042,14 +1068,21 @@
     "demoData": {
       "title": "Demodaten"
     },
+    "discord": {
+      "description": "Discord-Benachrichtigungen für Ihre Organisation konfigurieren",
+      "title": "Discord"
+    },
+    "emailTemplates": {
+      "description": "Passen Sie die E-Mails an, die Ihre Organisation versendet",
+      "reset": "E-Mail-Vorlage auf Standard zurückgesetzt",
+      "saved": "E-Mail-Vorlage gespeichert",
+      "testSent": "Test-E-Mail an Ihr Konto gesendet",
+      "title": "E-Mail-Vorlagen"
+    },
     "employees": {
       "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
       "details": "Mitarbeiterdetails",
       "title": "Mitarbeiter"
-    },
-    "emailTemplates": {
-      "description": "Passen Sie die E-Mails an, die Ihre Organisation versendet",
-      "title": "E-Mail-Vorlagen"
     },
     "enterprise": {
       "domains": {
@@ -1107,6 +1140,10 @@
         "sso": "SSO-Anbieter"
       }
     },
+    "enterpriseIdentitySetup": {
+      "description": "Verwalten Sie SSO, SCIM-Bereitstellung, Domänenbeschränkungen, Einladungsrichtlinien und Standardrollen für diese Organisation.",
+      "title": "Enterprise-Identitätseinrichtung"
+    },
     "exportOperations": {
       "activity": {
         "audit": {
@@ -1148,6 +1185,9 @@
         "upcomingRuns": "Daten für geplante Exporte sind vorübergehend nicht verfügbar."
       },
       "title": "Exportvorgänge"
+    },
+    "group": {
+      "notifications": "Benachrichtigungen"
     },
     "holidays": {
       "add": "Feiertag hinzufügen",
@@ -1400,6 +1440,10 @@
       },
       "title": "Feiertage"
     },
+    "implementationChecklist": {
+      "description": "Verfolgen Sie die Einrichtung der Kundeneinführung über Richtlinien, Gehaltsabrechnung, Integrationen und Mitarbeiterimport hinweg",
+      "title": "Implementierungs-Checkliste"
+    },
     "import": {
       "description": "Importieren Sie Daten von unterstützten Anbietern wie Clockodo und Clockin.",
       "title": "Daten importieren"
@@ -1563,15 +1607,14 @@
     },
     "notifications": {
       "description": "Wählen Sie aus, wie und wann Sie benachrichtigt werden möchten",
-      "title": "Benachrichtigungseinstellungen"
+      "title": "Benachrichtigungen"
     },
     "organizations": {
       "notFound": {
         "description": "Die Organisation konnte nicht gefunden werden oder Sie haben keinen Zugriff darauf.",
         "title": "Organisation nicht gefunden"
       },
-      "description": "Organisationsmitglieder, Einladungen und Details verwalten",
-      "title": "Organisation"
+      "title": "Organisationen & Teams"
     },
     "payrollExport": {
       "datev": {
@@ -2347,6 +2390,10 @@
       "title": "Qualifikationen & Zertifizierungen",
       "updateError": "Qualifikation konnte nicht aktualisiert werden"
     },
+    "slack": {
+      "description": "Slack-Benachrichtigungen für Ihre Organisation konfigurieren",
+      "title": "Slack"
+    },
     "statistics": {
       "cards": {
         "activeSessions": "Aktive Sitzungen",
@@ -2489,11 +2536,15 @@
       }
     },
     "teams": {
-      "description": "Organisieren Sie Mitarbeiter in Teams und verwalten Sie Teamzuweisungen",
+      "description": "Organisieren Sie Mitarbeiter in Teams für eine bessere Verwaltung",
       "details": "Teamdetails",
       "details.description": "Teaminformationen und Mitglieder verwalten",
       "details.title": "Teamdetails",
       "title": "Teams"
+    },
+    "teamsNotifications": {
+      "description": "Microsoft Teams-Benachrichtigungen für Ihre Organisation konfigurieren",
+      "title": "Microsoft Teams"
     },
     "telegram": {
       "bot": {
@@ -2689,9 +2740,9 @@
       "description": "Wasser-Erinnerungen und Hydrations-Tracking während Ihrer Arbeitssitzungen konfigurieren",
       "glasses": "Gläser",
       "reminderFrequency": "Erinnerungshäufigkeit",
-      "saved": "Wellness-Einstellungen gespeichert",
-      "saveError": "Fehler beim Speichern der Wellness-Einstellungen",
-      "title": "Wellness-Einstellungen"
+      "saved": "Einstellungen gespeichert",
+      "saveError": "Fehler beim Speichern",
+      "title": "Wellness"
     },
     "workCategories": {
       "addCategory": "Kategorie hinzufügen",
@@ -3114,5 +3165,95 @@
       "superseded": "Ersetzt",
       "unlimited": "Unbegrenzt"
     }
+  },
+  "webhooks": {
+    "copy-failed": "Kopieren in die Zwischenablage fehlgeschlagen",
+    "create": "Webhook hinzufügen",
+    "create-failed": "Erstellen des Webhooks fehlgeschlagen",
+    "delete-confirm": {
+      "description": "Dies löscht den Webhook-Endpunkt und den gesamten Zustellungsverlauf dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "title": "Webhook löschen?"
+    },
+    "deleted": "Webhook gelöscht",
+    "delete-failed": "Löschen des Webhooks fehlgeschlagen",
+    "deliveries": "Zustellungen",
+    "description": "Konfigurieren Sie Webhook-Endpunkte, um Echtzeit-Benachrichtigungen zu erhalten, wenn Ereignisse in Ihrer Organisation auftreten.",
+    "disabled": "Webhook deaktiviert",
+    "empty": {
+      "description": "Erstellen Sie Ihren ersten Webhook, um Ereignisbenachrichtigungen zu erhalten.",
+      "title": "Keine Webhooks konfiguriert"
+    },
+    "enabled": "Webhook aktiviert",
+    "events": "Ereignisse",
+    "form": {
+      "create": "Webhook erstellen",
+      "create-description": "Konfigurieren Sie einen neuen Webhook-Endpunkt, um Ereignisbenachrichtigungen zu erhalten.",
+      "create-title": "Webhook erstellen",
+      "description": "Beschreibung",
+      "description-placeholder": "Wofür wird dieser Webhook verwendet?",
+      "deselect-all": "Alle abwählen",
+      "edit-description": "Aktualisieren Sie die Konfiguration des Webhook-Endpunkts.",
+      "edit-title": "Webhook bearbeiten",
+      "events": "Zu empfangende Ereignisse",
+      "events-hint": "Ausgewählte Ereignisse: {{count}}",
+      "events-required": "Es muss mindestens ein Ereignis ausgewählt werden",
+      "name": "Name",
+      "name-placeholder": "Mein Webhook",
+      "name-required": "Name ist erforderlich",
+      "select-all": "Alle auswählen",
+      "url": "Endpunkt-URL",
+      "url-hint": "HTTPS ist in der Produktion erforderlich. Ereignisse werden als POST-Anfragen gesendet.",
+      "url-required": "URL ist erforderlich"
+    },
+    "last-delivery": "Letzte",
+    "logs": {
+      "attempt": "Versuch",
+      "description": "Kürzliche Webhook-Zustellungsversuche und deren Ergebnisse.",
+      "duration": "Dauer",
+      "empty": "Noch keine Zustellungsprotokolle vorhanden",
+      "error": "Fehler",
+      "event": "Ereignis",
+      "failed": "Fehlgeschlagen",
+      "http": "HTTP",
+      "payload": "Nutzlast",
+      "pending": "Ausstehend",
+      "response": "Antwort",
+      "retrying": "Wird wiederholt",
+      "showing": "Zeige {{start}}-{{end}} von {{total}}",
+      "status": "Status",
+      "success": "Erfolgreich",
+      "time": "Zeit",
+      "title": "Zustellungsprotokolle"
+    },
+    "regenerate-failed": "Geheimnis konnte nicht neu generiert werden",
+    "regenerate-secret": "Geheimnis neu generieren",
+    "secret-copied": "Geheimnis in die Zwischenablage kopiert",
+    "secret-dialog": {
+      "copy-secret": "Geheimnis in die Zwischenablage kopieren",
+      "description": "Dieses Geheimnis wird zur Überprüfung von Webhook-Signaturen verwendet. Bewahren Sie es sicher auf.",
+      "done": "Ich habe das Geheimnis gespeichert",
+      "secret": "Signatur-Geheimnis",
+      "title": "Webhook-Geheimnis",
+      "verification": "Signaturüberprüfung",
+      "verification-hint": "Webhook-Signaturen mittels HMAC-SHA256 überprüfen. Die Signatur wird im Header X-Z8-Signature gesendet.",
+      "warning": "Dieses Geheimnis wird nur einmal angezeigt. Stellen Sie sicher, dass Sie es jetzt speichern.",
+      "warning-title": "Wichtig"
+    },
+    "secret-regenerated": "Geheimnis neu generiert",
+    "status": {
+      "degraded": "Eingeschränkt",
+      "failing": "Fehlerhaft",
+      "healthy": "Fehlerfrei",
+      "inactive": "Inaktiv"
+    },
+    "success-rate": "Erfolgreich",
+    "test": "Test senden",
+    "test-failed": "Test-Webhook konnte nicht gesendet werden",
+    "test-sent": "Test-Webhook gesendet",
+    "title": "Webhooks",
+    "toggle-active": "Webhook-Aktivierung umschalten",
+    "updated": "Webhook aktualisiert",
+    "update-failed": "Webhook konnte nicht aktualisiert werden",
+    "view-logs": "Protokolle anzeigen"
   }
 }

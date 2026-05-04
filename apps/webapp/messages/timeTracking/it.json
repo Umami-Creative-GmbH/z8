@@ -111,6 +111,17 @@
       "emptyState": "Nessuna voce oraria trovata per questa settimana.",
       "title": "Voci orarie"
     },
+    "timeline": {
+      "dayPicker": "Selettore giorno della timeline",
+      "emptyDescription": "Non ci sono ancora turni, assenze o registrazioni orarie per il giorno selezionato.",
+      "emptyTitle": "Nessuna attività registrata per questo giorno.",
+      "nextDay": "Giorno successivo",
+      "previousDay": "Giorno precedente",
+      "title": "Cronologia giornata lavorativa",
+      "today": "Oggi",
+      "unavailableDescription": "Il cronometraggio è ancora attivo. Prova ad aggiornare questa vista più tardi.",
+      "unavailableTitle": "Cronologia non disponibile"
+    },
     "unknownCategory": "Categoria sconosciuta",
     "unknownProject": "Progetto sconosciuto",
     "workCategory": "Categoria lavorativa"

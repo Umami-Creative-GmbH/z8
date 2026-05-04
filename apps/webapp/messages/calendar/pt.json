@@ -42,6 +42,7 @@
       "daysRemaining": "Dias restantes:",
       "description": "Envie um pedido de folga. O seu gerente será notificado para aprovação.",
       "endDate": "Data de fim *",
+      "endPeriod": "Período final",
       "errors": {
         "fillRequiredFields": "Preencha todos os campos obrigatórios",
         "insufficientBalance": "Saldo de férias insuficiente",
@@ -57,12 +58,34 @@
       },
       "selectAbsenceType": "Selecionar tipo de ausência",
       "startDate": "Data de início *",
+      "startPeriod": "Período inicial",
       "submitRequest": "Submeter pedido",
       "title": "Pedir ausência"
     },
     "period": {
       "am": "AM",
       "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "turno afetado",
+      "approval": "Aprovação",
+      "balance": "Saldo",
+      "balanceUnavailable": "Saldo indisponível",
+      "countsAgainstVacationBalance": "Conta contra o saldo de férias",
+      "coverage": "Cobertura",
+      "coverageStaffAfterRequest": "{after}/{minimum} funcionários após a solicitação",
+      "description": "Uma verificação não bloqueante de saldo, feriados, cobertura e sinais de aprovação antes de você enviar.",
+      "doesNotReduceVacationBalance": "Não reduz o saldo de férias",
+      "holidays": "Feriados",
+      "loading": "Verificando saldo, feriados e cobertura…",
+      "noApprovalWarnings": "Sem avisos de aprovação",
+      "noCoverageRisk": "Sem risco de cobertura publicado",
+      "noCoverageRulesConfigured": "Nenhuma regra de cobertura configurada para os turnos afetados",
+      "noHolidays": "Nenhum feriado atribuído no período",
+      "remainingAfter": "Restante após a solicitação",
+      "requested": "Solicitado",
+      "title": "Planejador inteligente",
+      "unavailable": "Visualização do planejamento indisponível. Você ainda pode enviar sua solicitação."
     },
     "requestAbsence": "Pedir ausência",
     "status": {

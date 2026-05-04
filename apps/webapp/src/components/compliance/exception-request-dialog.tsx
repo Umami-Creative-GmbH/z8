@@ -6,8 +6,6 @@ import { AlertTriangle, Clock, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { requestComplianceException } from "@/app/[locale]/(app)/settings/compliance/actions";
-import { queryKeys } from "@/lib/query/keys";
-import { Button } from "../ui/button";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -17,6 +15,8 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { queryKeys } from "@/lib/query/keys";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
@@ -95,12 +95,15 @@ export function ExceptionRequestDialog({
 			return result.data;
 		},
 		onSuccess: () => {
-			toast.success(t("compliance.exception.requestSubmitted", "Exception Request Submitted"), {
-				description: t(
-					"compliance.exception.requestSubmittedDescription",
-					"Your manager will be notified and can approve or reject your request.",
-				),
-			});
+			toast.success(
+				t("compliance:compliance.exception.requestSubmitted", "Exception Request Submitted"),
+				{
+					description: t(
+						"compliance:compliance.exception.requestSubmittedDescription",
+						"Your manager will be notified and can approve or reject your request.",
+					),
+				},
+			);
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.compliance.exceptions.my(employeeId, false),
 			});
@@ -114,7 +117,7 @@ export function ExceptionRequestDialog({
 			onSuccess?.();
 		},
 		onError: (error: Error) => {
-			toast.error(t("compliance.exception.requestFailed", "Request Failed"), {
+			toast.error(t("compliance:compliance.exception.requestFailed", "Request Failed"), {
 				description: error.message,
 			});
 		},
@@ -130,9 +133,9 @@ export function ExceptionRequestDialog({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!reason.trim()) {
-			toast.error(t("compliance.exception.reasonRequired", "Reason Required"), {
+			toast.error(t("compliance:compliance.exception.reasonRequired", "Reason Required"), {
 				description: t(
-					"compliance.exception.reasonRequiredDescription",
+					"compliance:compliance.exception.reasonRequiredDescription",
 					"Please provide a reason for your exception request.",
 				),
 			});
@@ -148,11 +151,11 @@ export function ExceptionRequestDialog({
 					<ActionPanelHeader>
 						<ActionPanelTitle className="flex items-center gap-2">
 							<Shield className="h-5 w-5" aria-hidden="true" />
-							{t("compliance.exception.requestTitle", "Request Compliance Exception")}
+							{t("compliance:compliance.exception.requestTitle", "Request Compliance Exception")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
-								"compliance.exception.requestDescription",
+								"compliance:compliance.exception.requestDescription",
 								"Request pre-approval from your manager to proceed despite compliance restrictions. Approved exceptions are valid for 24 hours.",
 							)}
 						</ActionPanelDescription>
@@ -161,7 +164,7 @@ export function ExceptionRequestDialog({
 					<ActionPanelBody className="space-y-4">
 						{/* Exception Type Selection */}
 						<div className="space-y-2">
-							<Label>{t("compliance.exception.type", "Exception Type")}</Label>
+							<Label>{t("compliance:compliance.exception.type", "Exception Type")}</Label>
 							<RadioGroup
 								value={exceptionType}
 								onValueChange={setExceptionType}
@@ -191,13 +194,13 @@ export function ExceptionRequestDialog({
 						{/* Reason */}
 						<div className="space-y-2">
 							<Label htmlFor="reason">
-								{t("compliance.exception.reason", "Reason for Exception")}
+								{t("compliance:compliance.exception.reason", "Reason for Exception")}
 								<span className="text-destructive">*</span>
 							</Label>
 							<Textarea
 								id="reason"
 								placeholder={t(
-									"compliance.exception.reasonPlaceholder",
+									"compliance:compliance.exception.reasonPlaceholder",
 									"Explain why you need this exception (e.g., urgent project deadline, critical client meeting)...",
 								)}
 								value={reason}
@@ -211,7 +214,10 @@ export function ExceptionRequestDialog({
 						{exceptionType !== "rest_period" && (
 							<div className="space-y-2">
 								<Label>
-									{t("compliance.exception.plannedDuration", "Planned Additional Duration")}{" "}
+									{t(
+										"compliance:compliance.exception.plannedDuration",
+										"Planned Additional Duration",
+									)}{" "}
 									<span className="text-muted-foreground">
 										({t("common.optional", "optional")})
 									</span>
@@ -248,7 +254,7 @@ export function ExceptionRequestDialog({
 								</div>
 								<p className="text-xs text-muted-foreground">
 									{t(
-										"compliance.exception.plannedDurationHelp",
+										"compliance:compliance.exception.plannedDurationHelp",
 										"Estimate how much additional time you expect to need beyond the limit.",
 									)}
 								</p>
@@ -263,7 +269,7 @@ export function ExceptionRequestDialog({
 						<Button type="submit" disabled={requestMutation.isPending || !reason.trim()}>
 							{requestMutation.isPending
 								? t("common.submitting", "Submitting…")
-								: t("compliance.exception.submit", "Submit Request")}
+								: t("compliance:compliance.exception.submit", "Submit Request")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

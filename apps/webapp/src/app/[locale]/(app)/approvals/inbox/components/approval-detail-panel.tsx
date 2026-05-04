@@ -97,11 +97,11 @@ export function ApprovalDetailPanel({
 
 		const result = await approveMutation.mutateAsync(approval.id);
 		if (result.success) {
-			toast.success(t("approvals.approved", "Request approved"));
+			toast.success(t("approvals:approvals.approved", "Request approved"));
 			onOpenChange(false);
 			onActioned();
 		} else {
-			toast.error(result.error || t("approvals.approveFailed", "Failed to approve"));
+			toast.error(result.error || t("approvals:approvals.approveFailed", "Failed to approve"));
 		}
 	};
 
@@ -113,13 +113,13 @@ export function ApprovalDetailPanel({
 			reason: rejectionReason.trim(),
 		});
 		if (result.success) {
-			toast.success(t("approvals.rejected", "Request rejected"));
+			toast.success(t("approvals:approvals.rejected", "Request rejected"));
 			setIsRejecting(false);
 			setRejectionReason("");
 			onOpenChange(false);
 			onActioned();
 		} else {
-			toast.error(result.error || t("approvals.rejectFailed", "Failed to reject"));
+			toast.error(result.error || t("approvals:approvals.rejectFailed", "Failed to reject"));
 		}
 	};
 
@@ -153,7 +153,7 @@ export function ApprovalDetailPanel({
 					{/* Requester info */}
 					<div>
 						<h4 className="text-sm font-medium text-muted-foreground mb-2">
-							{t("approvals.requester", "Requester")}
+							{t("approvals:approvals.requester", "Requester")}
 						</h4>
 						<div className="flex items-center gap-3">
 							<UserAvatar
@@ -174,17 +174,19 @@ export function ApprovalDetailPanel({
 					{/* Request details */}
 					<div>
 						<h4 className="text-sm font-medium text-muted-foreground mb-2">
-							{t("approvals.details", "Details")}
+							{t("approvals:approvals.details", "Details")}
 						</h4>
 						<div className="space-y-3">
 							<div className="flex justify-between">
-								<span className="text-sm text-muted-foreground">{t("approvals.type", "Type")}</span>
+								<span className="text-sm text-muted-foreground">
+									{t("approvals:approvals.type", "Type")}
+								</span>
 								<span className="text-sm font-medium">{approval.display.title}</span>
 							</div>
 							{approval.display.badge && (
 								<div className="flex justify-between items-center">
 									<span className="text-sm text-muted-foreground">
-										{t("approvals.category", "Category")}
+										{t("approvals:approvals.category", "Category")}
 									</span>
 									<Badge
 										style={
@@ -201,7 +203,7 @@ export function ApprovalDetailPanel({
 								<>
 									<div className="flex justify-between">
 										<span className="text-sm text-muted-foreground">
-											{t("approvals.destination", "Destination")}
+											{t("approvals:approvals.destination", "Destination")}
 										</span>
 										<span className="text-sm font-medium">
 											{travelExpenseDetail.destinationCity || t("common.notApplicable", "N/A")}
@@ -209,7 +211,7 @@ export function ApprovalDetailPanel({
 									</div>
 									<div className="flex justify-between">
 										<span className="text-sm text-muted-foreground">
-											{t("approvals.amount", "Amount")}
+											{t("approvals:approvals.amount", "Amount")}
 										</span>
 										<span className="text-sm font-medium">
 											{travelExpenseDetail.calculatedCurrency}{" "}
@@ -218,7 +220,7 @@ export function ApprovalDetailPanel({
 									</div>
 									<div className="flex justify-between">
 										<span className="text-sm text-muted-foreground">
-											{t("approvals.tripDates", "Trip dates")}
+											{t("approvals:approvals.tripDates", "Trip dates")}
 										</span>
 										<span className="text-sm font-medium">
 											{format(travelExpenseDetail.tripStart, "PP")} -{" "}
@@ -228,7 +230,7 @@ export function ApprovalDetailPanel({
 									{travelExpenseDetail.notes && (
 										<div className="flex justify-between gap-4">
 											<span className="text-sm text-muted-foreground">
-												{t("approvals.note", "Note")}
+												{t("approvals:approvals.note", "Note")}
 											</span>
 											<span className="text-sm font-medium text-right">
 												{travelExpenseDetail.notes}
@@ -239,7 +241,7 @@ export function ApprovalDetailPanel({
 							) : (
 								<div className="flex justify-between">
 									<span className="text-sm text-muted-foreground">
-										{t("approvals.dates", "Dates")}
+										{t("approvals:approvals.dates", "Dates")}
 									</span>
 									<span className="text-sm font-medium">{approval.display.subtitle}</span>
 								</div>
@@ -252,20 +254,20 @@ export function ApprovalDetailPanel({
 					{/* Status info */}
 					<div>
 						<h4 className="text-sm font-medium text-muted-foreground mb-2">
-							{t("approvals.status", "Status")}
+							{t("approvals:approvals.status", "Status")}
 						</h4>
 						<div className="space-y-3">
 							<div className="flex justify-between items-center">
 								<span className="text-sm text-muted-foreground">
-									{t("approvals.priority", "Priority")}
+									{t("approvals:approvals.priority", "Priority")}
 								</span>
 								<Badge variant={PRIORITY_VARIANTS[approval.priority]}>
-									{t(`approvals.priorities.${approval.priority}`, approval.priority)}
+									{t(`approvals:approvals.priorities.${approval.priority}`, approval.priority)}
 								</Badge>
 							</div>
 							<div className="flex justify-between">
 								<span className="text-sm text-muted-foreground">
-									{t("approvals.requested", "Requested")}
+									{t("approvals:approvals.requested", "Requested")}
 								</span>
 								<span className="text-sm">
 									{format(approval.createdAt, "PPp")}
@@ -277,7 +279,7 @@ export function ApprovalDetailPanel({
 							{approval.sla.deadline && (
 								<div className="flex justify-between">
 									<span className="text-sm text-muted-foreground">
-										{t("approvals.slaDeadline", "SLA Deadline")}
+										{t("approvals:approvals.slaDeadline", "SLA Deadline")}
 									</span>
 									<span
 										className={cn(
@@ -299,7 +301,7 @@ export function ApprovalDetailPanel({
 							<Separator />
 							<div>
 								<h4 className="text-sm font-medium text-muted-foreground mb-2">
-									{t("approvals.timeline", "Timeline")}
+									{t("approvals:approvals.timeline", "Timeline")}
 								</h4>
 								<div className="space-y-3">
 									{detail.timeline.map((event) => (
@@ -331,14 +333,14 @@ export function ApprovalDetailPanel({
 						<div className="w-full space-y-4">
 							<div>
 								<label className="text-sm font-medium" htmlFor="rejection-reason">
-									{t("approvals.rejectionReason", "Reason for rejection")}
+									{t("approvals:approvals.rejectionReason", "Reason for rejection")}
 								</label>
 								<Textarea
 									id="rejection-reason"
 									value={rejectionReason}
 									onChange={(e) => setRejectionReason(e.target.value)}
 									placeholder={t(
-										"approvals.rejectionReasonPlaceholder",
+										"approvals:approvals.rejectionReasonPlaceholder",
 										"Please provide a reason for rejecting this request…",
 									)}
 									className="mt-2"
@@ -365,7 +367,7 @@ export function ApprovalDetailPanel({
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 									)}
 									<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
-									{t("approvals.confirmReject", "Confirm Rejection")}
+									{t("approvals:approvals.confirmReject", "Confirm Rejection")}
 								</Button>
 							</div>
 						</div>
@@ -378,14 +380,14 @@ export function ApprovalDetailPanel({
 								disabled={isPending}
 							>
 								<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t("approvals.reject", "Reject")}
+								{t("approvals:approvals.reject", "Reject")}
 							</Button>
 							<Button className="flex-1" onClick={handleApprove} disabled={isPending}>
 								{approveMutation.isPending && (
 									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 								)}
 								<IconCheck className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t("approvals.approve", "Approve")}
+								{t("approvals:approvals.approve", "Approve")}
 							</Button>
 						</div>
 					)}

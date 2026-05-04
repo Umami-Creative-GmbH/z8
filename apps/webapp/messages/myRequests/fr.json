@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Annuler",
+      "cancelConfirmation": "Annuler cette demande d'absence ?",
+      "cancelError": "La demande d'absence n'a pas pu être annulée.",
+      "cancelling": "Annulation en cours…",
+      "fix": "Corriger",
+      "notAvailable": "Non disponible",
+      "view": "Voir"
+    },
+    "all": {
+      "description": "Examinez les demandes concernant les absences, les corrections de temps et les dépenses.",
+      "title": "Toutes les demandes"
+    },
+    "card": {
+      "decision": "Décision",
+      "submitted": "Soumis"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Les demandes apparaîtront ici lorsqu'elles seront soumises ou chargées.",
+        "title": "Aucune demande ne correspond à vos filtres"
+      },
+      "none": {
+        "description": "Les demandes apparaîtront ici lorsqu'elles seront soumises ou chargées.",
+        "title": "Aucune demande pour le moment"
+      }
+    },
+    "featureName": "voir vos demandes",
+    "filters": {
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types",
+      "approvedRequests": "Demandes approuvées",
+      "cancelledRequests": "Demandes annulées",
+      "description": "Filtrer chaque section de demande par texte, statut ou type de demande.",
+      "pendingRequests": "Demandes en attente",
+      "rejectedRequests": "Demandes rejetées",
+      "search": "Rechercher",
+      "searchPlaceholder": "Rechercher par titre…",
+      "status": "Statut",
+      "title": "Trouver des demandes",
+      "type": "Type"
+    },
+    "inReview": {
+      "description": "Demandes en attente d'approbation ou de traitement.",
+      "title": "En cours d'examen"
+    },
+    "needsAttention": {
+      "description": "Demandes rejetées pouvant nécessiter une correction avant d'être soumises à nouveau.",
+      "title": "Nécessite une attention"
+    },
+    "reasonLabel": "Motif",
+    "recentlyDecided": {
+      "description": "Décisions approuvées et rejetées des 30 derniers jours.",
+      "title": "Décisions récentes"
+    },
+    "requests": {
+      "absence": {
+        "title": "Demande d'absence"
+      },
+      "timeCorrection": {
+        "subtitle": "Correction d'une saisie de temps",
+        "title": "Demande de correction de temps"
+      },
+      "travelExpense": {
+        "title": "Note de frais de déplacement"
+      }
+    },
+    "sourceError": {
+      "absence": "Les demandes d'absence n'ont pas pu être chargées.",
+      "timeCorrection": "Les demandes de correction de temps n'ont pas pu être chargées.",
+      "title": "Certaines demandes n'ont pas pu être chargées.",
+      "travelExpense": "Les demandes de frais de déplacement n'ont pas pu être chargées."
+    },
+    "sourceTypes": {
+      "absence": "Absence",
+      "timeCorrection": "Temps",
+      "travelExpense": "Dépense"
+    },
+    "status": {
+      "approved": "Approuvé",
+      "cancelled": "Annulé",
+      "inReview": "En cours d'examen",
+      "pending": "En attente",
+      "rejected": "Rejeté"
+    },
+    "subtitle": "Suivez les demandes en attente, les corrections requises et les décisions récentes en un seul endroit.",
+    "summary": {
+      "ariaLabel": "Résumé des demandes",
+      "pending": "En attente",
+      "recentDecisions": "Décisions récentes",
+      "requiredFixes": "Corrections requises",
+      "totalLoaded": "Total chargé"
+    },
+    "title": "Mes demandes",
+    "unavailableTitle": "Demandes indisponibles"
+  }
+}

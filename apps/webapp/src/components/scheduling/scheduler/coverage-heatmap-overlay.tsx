@@ -1,20 +1,15 @@
 "use client";
 
-import { IconAlertTriangle, IconCheck, IconTrendingUp, IconTarget } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCheck, IconTarget, IconTrendingUp } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useMemo } from "react";
 import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
 import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { queryKeys } from "@/lib/query/keys";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
+import { queryKeys } from "@/lib/query/keys";
+import { cn } from "@/lib/utils";
 
 interface CoverageHeatmapOverlayProps {
 	organizationId: string;
@@ -80,13 +75,10 @@ export function CoverageToggleButton({
 						variant={visible ? "secondary" : "outline"}
 						size="sm"
 						onClick={onToggle}
-						className={cn(
-							"relative",
-							hasGaps && !visible && "ring-2 ring-red-500 ring-offset-2",
-						)}
+						className={cn("relative", hasGaps && !visible && "ring-2 ring-red-500 ring-offset-2")}
 					>
 						<IconTarget className="mr-2 h-4 w-4" />
-						{t("scheduling.coverage.toggleLabel", "Coverage")}
+						{t("scheduling:scheduling.coverage.toggleLabel", "Coverage")}
 						{hasGaps && (
 							<span className="absolute -right-1 -top-1 flex h-3 w-3">
 								<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
@@ -98,8 +90,8 @@ export function CoverageToggleButton({
 				<TooltipContent>
 					<p>
 						{visible
-							? t("scheduling.coverage.hideOverlay", "Hide coverage overlay")
-							: t("scheduling.coverage.showOverlay", "Show coverage targets overlay")}
+							? t("scheduling:scheduling.coverage.hideOverlay", "Hide coverage overlay")
+							: t("scheduling:scheduling.coverage.showOverlay", "Show coverage targets overlay")}
 					</p>
 				</TooltipContent>
 			</Tooltip>
@@ -133,12 +125,7 @@ export function CoverageDayIndicator({ dataPoints }: { dataPoints: HeatmapDataPo
 		<TooltipProvider>
 			<Tooltip>
 				<TooltipTrigger asChild>
-					<div
-						className={cn(
-							"absolute inset-0 pointer-events-none",
-							getStatusColor(worstStatus),
-						)}
-					>
+					<div className={cn("absolute inset-0 pointer-events-none", getStatusColor(worstStatus))}>
 						<div className="absolute bottom-1 right-1 pointer-events-auto">
 							{getStatusIcon(worstStatus)}
 						</div>
@@ -148,33 +135,30 @@ export function CoverageDayIndicator({ dataPoints }: { dataPoints: HeatmapDataPo
 					<div className="space-y-1">
 						<p className="font-medium">
 							{worstStatus === "under"
-								? t("scheduling.coverage.understaffed", "Understaffed")
+								? t("scheduling:scheduling.coverage.understaffed", "Understaffed")
 								: worstStatus === "met"
-									? t("scheduling.coverage.adequate", "Adequate staffing")
-									: t("scheduling.coverage.overstaffed", "Overstaffed")}
+									? t("scheduling:scheduling.coverage.adequate", "Adequate staffing")
+									: t("scheduling:scheduling.coverage.overstaffed", "Overstaffed")}
 						</p>
 						{totalGaps > 0 && (
 							<p className="text-sm text-muted-foreground">
-								{t("scheduling.coverage.gapCount", "{{count}} staff shortage", {
+								{t("scheduling:scheduling.coverage.gapCount", "{{count}} staff shortage", {
 									count: totalGaps,
 								})}
 							</p>
 						)}
 						<p className="text-sm text-muted-foreground">
-							{t("scheduling.coverage.utilization", "{{percent}}% utilization", {
+							{t("scheduling:scheduling.coverage.utilization", "{{percent}}% utilization", {
 								percent: avgUtilization.toFixed(0),
 							})}
 						</p>
 						{dataPoints.length > 1 && (
 							<div className="mt-2 border-t pt-2">
 								<p className="text-xs font-medium mb-1">
-									{t("scheduling.coverage.byLocation", "By location:")}
+									{t("scheduling:scheduling.coverage.byLocation", "By location:")}
 								</p>
 								{dataPoints.map((dp) => (
-									<div
-										key={dp.subareaId}
-										className="flex items-center gap-2 text-xs"
-									>
+									<div key={dp.subareaId} className="flex items-center gap-2 text-xs">
 										{getStatusIcon(dp.status)}
 										<span>
 											{dp.locationName} - {dp.subareaName}
@@ -272,17 +256,17 @@ export function CoverageSummaryBar({
 	return (
 		<div className="flex items-center gap-4 px-4 py-2 bg-muted/50 rounded-lg text-sm">
 			<span className="font-medium">
-				{t("scheduling.coverage.summary", "Coverage Summary:")}
+				{t("scheduling:scheduling.coverage.summary", "Coverage Summary:")}
 			</span>
 
 			{underCount > 0 && (
 				<div className="flex items-center gap-1 text-red-600 dark:text-red-400">
 					<IconAlertTriangle className="h-4 w-4" />
 					<span>
-						{t("scheduling.coverage.underSlots", "{{count}} understaffed", {
+						{t("scheduling:scheduling.coverage.underSlots", "{{count}} understaffed", {
 							count: underCount,
 						})}
-						{totalGaps > 0 && ` (${totalGaps} ${t("scheduling.coverage.gaps", "gaps")})`}
+						{totalGaps > 0 && ` (${totalGaps} ${t("scheduling:scheduling.coverage.gaps", "gaps")})`}
 					</span>
 				</div>
 			)}
@@ -291,7 +275,7 @@ export function CoverageSummaryBar({
 				<div className="flex items-center gap-1 text-green-600 dark:text-green-400">
 					<IconCheck className="h-4 w-4" />
 					<span>
-						{t("scheduling.coverage.metSlots", "{{count}} adequate", {
+						{t("scheduling:scheduling.coverage.metSlots", "{{count}} adequate", {
 							count: metCount,
 						})}
 					</span>
@@ -302,7 +286,7 @@ export function CoverageSummaryBar({
 				<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
 					<IconTrendingUp className="h-4 w-4" />
 					<span>
-						{t("scheduling.coverage.overSlots", "{{count}} overstaffed", {
+						{t("scheduling:scheduling.coverage.overSlots", "{{count}} overstaffed", {
 							count: overCount,
 						})}
 					</span>

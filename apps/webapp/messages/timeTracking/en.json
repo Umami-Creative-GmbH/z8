@@ -111,6 +111,17 @@
       "emptyState": "No time entries found for this week.",
       "title": "Time Entries"
     },
+    "timeline": {
+      "dayPicker": "Timeline day picker",
+      "emptyDescription": "There are no shifts, absences, or time entries for the selected day yet.",
+      "emptyTitle": "No activity recorded for this day.",
+      "nextDay": "Next day",
+      "previousDay": "Previous day",
+      "title": "Workday timeline",
+      "today": "Today",
+      "unavailableDescription": "Clocking time still works. Try refreshing this view later.",
+      "unavailableTitle": "Timeline unavailable"
+    },
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
     "workCategory": "Work Category"

@@ -1,0 +1,34 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Equipe adequada",
+      "byLocation": "Por local:",
+      "gapCount": "{{count}} falta de pessoal",
+      "gaps": "lacunas",
+      "hideOverlay": "Ocultar sobreposição de cobertura",
+      "metSlots": "{{count}} adequado",
+      "overSlots": "{{count}} com excesso de pessoal",
+      "overstaffed": "Excesso de pessoal",
+      "showOverlay": "Mostrar sobreposição de metas de cobertura",
+      "summary": "Resumo da Cobertura:",
+      "toggleLabel": "Cobertura",
+      "underSlots": "{{count}} com falta de pessoal",
+      "understaffed": "Com falta de pessoal",
+      "utilization": "{{percent}}% de utilização"
+    },
+    "skills": {
+      "expiredCertifications": "Certificações Expiradas:",
+      "expiredOn": "(Expirou em {{date}})",
+      "missingPreferred": "Habilidades Preferenciais Ausentes:",
+      "missingPreferredCount": "{{count}} preferenciais ausentes",
+      "missingRequired": "Habilidades Obrigatórias Ausentes:",
+      "preferred": "Preferencial",
+      "preferredSkillsMissing": "Habilidades Preferenciais Ausentes",
+      "requirementsNotMet": "Requisitos de Habilidade Não Atendidos",
+      "unqualified": "Não qualificado",
+      "validating": "Validando habilidades…",
+      "validatingDescription": "Verificando qualificações do funcionário",
+      "warningMessage": "Você ainda pode atribuir este turno, mas ele será registrado como uma substituição."
+    }
+  }
+}

@@ -42,6 +42,7 @@
       "daysRemaining": "Jours restants :",
       "description": "Soumettez une demande de congé. Votre responsable sera notifié pour approbation.",
       "endDate": "Date de fin *",
+      "endPeriod": "Période de fin",
       "errors": {
         "fillRequiredFields": "Veuillez remplir tous les champs obligatoires",
         "insufficientBalance": "Solde de vacances insuffisant",
@@ -57,12 +58,34 @@
       },
       "selectAbsenceType": "Sélectionner le type d'absence",
       "startDate": "Date de début *",
+      "startPeriod": "Période de début",
       "submitRequest": "Soumettre la demande",
       "title": "Demander une absence"
     },
     "period": {
       "am": "Matin",
       "pm": "Après-midi"
+    },
+    "planPreview": {
+      "affectedShift": "poste concerné",
+      "approval": "Approbation",
+      "balance": "Solde",
+      "balanceUnavailable": "Solde indisponible",
+      "countsAgainstVacationBalance": "Déduit du solde de congés",
+      "coverage": "Couverture",
+      "coverageStaffAfterRequest": "{after}/{minimum} personnel après la demande",
+      "description": "Une vérification non bloquante du solde, des jours fériés, de la couverture et des signaux d'approbation avant votre soumission.",
+      "doesNotReduceVacationBalance": "Ne réduit pas le solde de congés",
+      "holidays": "Jours fériés",
+      "loading": "Vérification du solde, des jours fériés et de la couverture…",
+      "noApprovalWarnings": "Aucun avertissement d'approbation",
+      "noCoverageRisk": "Aucun risque de couverture publié",
+      "noCoverageRulesConfigured": "Aucune règle de couverture configurée pour les postes concernés",
+      "noHolidays": "Aucun jour férié assigné dans la période",
+      "remainingAfter": "Restant après la demande",
+      "requested": "Demandé",
+      "title": "Planificateur intelligent",
+      "unavailable": "Aperçu de la planification indisponible. Vous pouvez toujours soumettre votre demande."
     },
     "requestAbsence": "Demander une absence",
     "status": {

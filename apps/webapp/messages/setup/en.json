@@ -1,0 +1,49 @@
+{
+  "init": {
+    "activating": "Setting up your workspace...",
+    "checking": "Checking session...",
+    "clickToSelect": "Click to select",
+    "redirecting": "Redirecting...",
+    "selectOrganization": "Select Organization",
+    "selectOrganizationDescription": "Choose which organization you want to work with"
+  },
+  "setup": {
+    "button": {
+      "create": "Create Admin Account",
+      "creating": "Creating Account..."
+    },
+    "complete_message": "Your platform admin account has been created.",
+    "complete_title": "Setup Complete!",
+    "continue_to_sign_in": "Continue to Sign In",
+    "creating_account": "Creating your admin account...",
+    "description": "Set up the first administrator account for your platform. This account will have full system access and is separate from organization accounts.",
+    "error": {
+      "passwords_mismatch": "Passwords do not match"
+    },
+    "field": {
+      "confirm_password": "Confirm Password",
+      "confirm_password_placeholder": "Confirm your password",
+      "email": "Email Address",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Full Name",
+      "name_placeholder": "Enter your full name",
+      "password": "Password",
+      "password_placeholder": "Create a strong password"
+    },
+    "hide_password": "Hide password",
+    "layout": {
+      "subtitle": "Configure your platform to get started",
+      "title": "Initial Setup"
+    },
+    "password": {
+      "lowercase": "Lowercase letter",
+      "min_length": "12+ characters",
+      "number": "Number",
+      "uppercase": "Uppercase letter"
+    },
+    "please_wait": "Please wait while we set things up",
+    "show_password": "Show password",
+    "sign_in_with": "You can now sign in with",
+    "title": "Create Platform Admin"
+  }
+}

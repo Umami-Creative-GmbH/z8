@@ -2,8 +2,8 @@
 
 import { IconCloudOff, IconRefresh, IconWifi } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { Button } from "@/components/ui/button";
+import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { cn } from "@/lib/utils";
 
 interface OfflineBannerProps {
@@ -22,7 +22,8 @@ type BannerState = "hidden" | "offline" | "offline_pending" | "syncing" | "pendi
  */
 export function OfflineBanner({ className }: OfflineBannerProps) {
 	const { t } = useTranslate();
-	const { isOffline, pendingCount, isSyncing, lastError, triggerSync, isOnline } = useOfflineClock();
+	const { isOffline, pendingCount, isSyncing, lastError, triggerSync, isOnline } =
+		useOfflineClock();
 
 	// Compute banner state once
 	const state: BannerState = (() => {
@@ -52,7 +53,9 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 		hidden: null,
 		offline: <IconCloudOff className="size-5" aria-hidden="true" />,
 		offline_pending: <IconCloudOff className="size-5" aria-hidden="true" />,
-		syncing: <IconRefresh className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />,
+		syncing: (
+			<IconRefresh className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+		),
 		pending: <IconWifi className="size-5" aria-hidden="true" />,
 		error: <IconWifi className="size-5" aria-hidden="true" />,
 	};
@@ -61,17 +64,17 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 	const getMessage = () => {
 		switch (state) {
 			case "offline":
-				return t("offline.banner.offline", "You're offline");
+				return t("common:offline.banner.offline", "You're offline");
 			case "offline_pending":
-				return t("offline.banner.offlineWithPending", "Offline - {count} event(s) pending", {
+				return t("common:offline.banner.offlineWithPending", "Offline - {count} event(s) pending", {
 					count: pendingCount,
 				});
 			case "syncing":
-				return t("offline.banner.syncing", "Syncing {count} event(s)...", {
+				return t("common:offline.banner.syncing", "Syncing {count} event(s)...", {
 					count: pendingCount,
 				});
 			case "pending":
-				return t("offline.banner.pending", "{count} event(s) pending sync", {
+				return t("common:offline.banner.pending", "{count} event(s) pending sync", {
 					count: pendingCount,
 				});
 			case "error":
@@ -109,7 +112,7 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 						onClick={() => triggerSync()}
 					>
 						<IconRefresh className="size-4 mr-1" aria-hidden="true" />
-						{t("offline.banner.retry", "Retry")}
+						{t("common:offline.banner.retry", "Retry")}
 					</Button>
 				)}
 			</div>

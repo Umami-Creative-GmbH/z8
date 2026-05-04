@@ -102,14 +102,14 @@ function useColorName() {
 	const { t } = useTranslate();
 	return (key: string) => {
 		const colorNames: Record<string, string> = {
-			blue: t("colors.blue", "Blue"),
-			green: t("colors.green", "Green"),
-			purple: t("colors.purple", "Purple"),
-			orange: t("colors.orange", "Orange"),
-			red: t("colors.red", "Red"),
-			teal: t("colors.teal", "Teal"),
-			pink: t("colors.pink", "Pink"),
-			indigo: t("colors.indigo", "Indigo"),
+			blue: t("common:colors.blue", "Blue"),
+			green: t("common:colors.green", "Green"),
+			purple: t("common:colors.purple", "Purple"),
+			orange: t("common:colors.orange", "Orange"),
+			red: t("common:colors.red", "Red"),
+			teal: t("common:colors.teal", "Teal"),
+			pink: t("common:colors.pink", "Pink"),
+			indigo: t("common:colors.indigo", "Indigo"),
 		};
 		return colorNames[key] || key;
 	};
@@ -121,7 +121,7 @@ function useFormatTime() {
 	return (time: string) => {
 		const [hours, minutes] = time.split(":");
 		const hour = parseInt(hours, 10);
-		const ampm = hour >= 12 ? t("time.pm", "PM") : t("time.am", "AM");
+		const ampm = hour >= 12 ? t("common:time.pm", "PM") : t("common:time.am", "AM");
 		const hour12 = hour % 12 || 12;
 		return `${hour12}:${minutes} ${ampm}`;
 	};
@@ -147,9 +147,9 @@ function useCalculateDuration() {
 		const minutes = durationMinutes % 60;
 
 		if (minutes === 0) {
-			return t("time.hoursOnly", "{hours}h", { hours });
+			return t("common:time.hoursOnly", "{hours}h", { hours });
 		}
-		return t("time.hoursAndMinutes", "{hours}h {minutes}m", { hours, minutes });
+		return t("common:time.hoursAndMinutes", "{hours}h {minutes}m", { hours, minutes });
 	};
 }
 

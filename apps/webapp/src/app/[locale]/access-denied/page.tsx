@@ -37,10 +37,12 @@ export default function AccessDeniedPage({
 					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10">
 						<IconLock className="size-8 text-destructive" aria-hidden="true" />
 					</div>
-					<CardTitle className="text-xl">{t("accessDenied.title", "Access Restricted")}</CardTitle>
+					<CardTitle className="text-xl">
+						{t("common:accessDenied.title", "Access Restricted")}
+					</CardTitle>
 					<CardDescription>
 						{t(
-							"accessDenied.description",
+							"common:accessDenied.description",
 							"Your account does not have permission to access the {{appLabel}}.",
 							{ appLabel },
 						)}
@@ -49,13 +51,13 @@ export default function AccessDeniedPage({
 				<CardContent className="space-y-4">
 					<p className="text-center text-sm text-muted-foreground">
 						{t(
-							"accessDenied.contactAdmin",
+							"common:accessDenied.contactAdmin",
 							"Please contact your organization administrator to request access.",
 						)}
 					</p>
 					<Button variant="outline" className="w-full" onClick={handleSignOut}>
 						<IconLogout className="mr-2 size-4" aria-hidden="true" />
-						{t("accessDenied.signOut", "Sign Out")}
+						{t("common:accessDenied.signOut", "Sign Out")}
 					</Button>
 				</CardContent>
 			</Card>

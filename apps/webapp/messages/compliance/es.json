@@ -1,0 +1,38 @@
+{
+  "compliance": {
+    "exception": {
+      "approved": "Excepción aprobada",
+      "approvedDescription": "La excepción de cumplimiento ha sido aprobada.",
+      "approveFailed": "Error al aprobar",
+      "plannedDuration": "Planificado",
+      "plannedDurationHelp": "Estime cuánto tiempo adicional espera necesitar más allá del límite.",
+      "reason": "Motivo de la excepción",
+      "reasonPlaceholder": "Explique por qué necesita esta excepción (p. ej., fecha límite de proyecto urgente, reunión crítica con cliente)...",
+      "reasonRequired": "Motivo requerido",
+      "reasonRequiredDescription": "Por favor, proporcione un motivo para su solicitud de excepción.",
+      "rejectDescription": "Proporcione un motivo para rechazar esta solicitud de excepción (opcional)",
+      "rejected": "Excepción rechazada",
+      "rejectedDescription": "La excepción de cumplimiento ha sido rechazada.",
+      "rejectFailed": "Error al rechazar",
+      "rejectionPlaceholder": "Ingrese el motivo para rechazar esta excepción...",
+      "rejectionReason": "Motivo del rechazo",
+      "rejectTitle": "Rechazar solicitud de excepción",
+      "requestDescription": "Solicite la aprobación previa de su gerente para proceder a pesar de las restricciones de cumplimiento. Las excepciones aprobadas son válidas por 24 horas.",
+      "requestedAt": "Solicitado",
+      "requestFailed": "Error en la solicitud",
+      "requestSubmitted": "Solicitud de excepción enviada",
+      "requestSubmittedDescription": "Su gerente será notificado y podrá aprobar o rechazar su solicitud.",
+      "requestTitle": "Solicitar excepción de cumplimiento",
+      "submit": "Enviar solicitud",
+      "type": "Tipo de excepción"
+    },
+    "hasApprovedException": "Tiene una excepción aprobada. Puede continuar.",
+    "moreAlerts": "más",
+    "noExceptions": "No hay solicitudes de excepción pendientes",
+    "pendingExceptions": "Solicitudes de excepción pendientes",
+    "pendingExceptionsDescription": "Revise las solicitudes de excepción que requieren su aprobación",
+    "requestException": "Solicitar excepción",
+    "restPeriodMessage": "Necesita {{time}} más de descanso antes de poder registrar su entrada. Próximo registro permitido: {{nextTime}}",
+    "restPeriodRequired": "Periodo de descanso requerido"
+  }
+}

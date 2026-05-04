@@ -41,19 +41,17 @@ export function WebhooksPageClient({
 			<div className="mx-auto max-w-4xl">
 				<div className="mb-6 flex items-start justify-between">
 					<div>
-						<h1 className="text-2xl font-semibold">
-							{t("webhooks.title", "Webhooks")}
-						</h1>
+						<h1 className="text-2xl font-semibold">{t("settings:webhooks.title", "Webhooks")}</h1>
 						<p className="text-muted-foreground">
 							{t(
-								"webhooks.description",
+								"settings:webhooks.description",
 								"Configure webhook endpoints to receive real-time notifications when events occur in your organization.",
 							)}
 						</p>
 					</div>
 					<Button onClick={() => setIsCreateDialogOpen(true)}>
 						<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-						{t("webhooks.create", "Add Webhook")}
+						{t("settings:webhooks.create", "Add Webhook")}
 					</Button>
 				</div>
 				<Card>
@@ -62,17 +60,17 @@ export function WebhooksPageClient({
 							<div className="flex flex-col items-center justify-center py-12 text-center">
 								<IconWebhook className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
 								<h3 className="mt-4 text-lg font-semibold">
-									{t("webhooks.empty.title", "No webhooks configured")}
+									{t("settings:webhooks.empty.title", "No webhooks configured")}
 								</h3>
 								<p className="mt-2 text-sm text-muted-foreground">
 									{t(
-										"webhooks.empty.description",
+										"settings:webhooks.empty.description",
 										"Create your first webhook to start receiving event notifications.",
 									)}
 								</p>
 								<Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
 									<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-									{t("webhooks.create", "Add Webhook")}
+									{t("settings:webhooks.create", "Add Webhook")}
 								</Button>
 							</div>
 						) : (

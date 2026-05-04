@@ -35,8 +35,8 @@ export function EmployeeSelectTrigger({
 
 	const defaultPlaceholder =
 		mode === "single"
-			? t("employeeSelect.selectEmployee", "Select employee")
-			: t("employeeSelect.selectEmployees", "Select employees");
+			? t("common:employeeSelect.selectEmployee", "Select employee")
+			: t("common:employeeSelect.selectEmployees", "Select employees");
 
 	const displayPlaceholder = placeholder || defaultPlaceholder;
 
@@ -145,11 +145,11 @@ export function EmployeeSelectTrigger({
 					{count === 1
 						? getEmployeeName(selectedEmployees[0])
 						: remaining > 0
-							? t("employeeSelect.countWithMore", "{count} employees (+{more} more)", {
+							? t("common:employeeSelect.countWithMore", "{count} employees (+{more} more)", {
 									count: displayedEmployees.length,
 									more: remaining,
 								})
-							: t("employeeSelect.countSelected", "{count} employees selected", { count })}
+							: t("common:employeeSelect.countSelected", "{count} employees selected", { count })}
 				</span>
 			</div>
 			<IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

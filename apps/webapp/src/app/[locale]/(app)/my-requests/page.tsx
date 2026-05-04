@@ -13,7 +13,7 @@ export default async function MyRequestsPage() {
 	if (!result.success && result.error === "Employee profile not found") {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("myRequests.featureName", "view your requests")} />
+				<NoEmployeeError feature={t("myRequests:myRequests.featureName", "view your requests")} />
 			</div>
 		);
 	}
@@ -22,7 +22,9 @@ export default async function MyRequestsPage() {
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
 				<Alert variant="destructive">
-					<AlertTitle>{t("myRequests.unavailableTitle", "Requests unavailable")}</AlertTitle>
+					<AlertTitle>
+						{t("myRequests:myRequests.unavailableTitle", "Requests unavailable")}
+					</AlertTitle>
 					<AlertDescription>{result.error}</AlertDescription>
 				</Alert>
 			</div>

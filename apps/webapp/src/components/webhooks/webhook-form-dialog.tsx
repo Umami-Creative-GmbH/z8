@@ -9,9 +9,6 @@ import {
 	getAvailableEventTypes,
 	updateWebhook,
 } from "@/app/[locale]/(app)/settings/webhooks/actions";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -21,6 +18,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -166,17 +166,19 @@ export function WebhookFormDialog({
 		e.preventDefault();
 
 		if (!name.trim()) {
-			toast.error(t("webhooks.form.name-required", "Name is required"));
+			toast.error(t("settings:webhooks.form.name-required", "Name is required"));
 			return;
 		}
 
 		if (!url.trim()) {
-			toast.error(t("webhooks.form.url-required", "URL is required"));
+			toast.error(t("settings:webhooks.form.url-required", "URL is required"));
 			return;
 		}
 
 		if (selectedEvents.size === 0) {
-			toast.error(t("webhooks.form.events-required", "At least one event must be selected"));
+			toast.error(
+				t("settings:webhooks.form.events-required", "At least one event must be selected"),
+			);
 			return;
 		}
 
@@ -190,11 +192,13 @@ export function WebhookFormDialog({
 
 			if (result.success) {
 				onSuccess(result.data.endpoint);
-				toast.success(t("webhooks.updated", "Webhook updated"));
+				toast.success(t("settings:webhooks.updated", "Webhook updated"));
 				onOpenChange(false);
 				startTransition(() => router.refresh());
 			} else {
-				toast.error(result.error ?? t("webhooks.update-failed", "Failed to update webhook"));
+				toast.error(
+					result.error ?? t("settings:webhooks.update-failed", "Failed to update webhook"),
+				);
 			}
 		} else {
 			const result = await createWebhook({
@@ -217,7 +221,9 @@ export function WebhookFormDialog({
 				setDescription("");
 				setSelectedEvents(new Set());
 			} else {
-				toast.error(result.error ?? t("webhooks.create-failed", "Failed to create webhook"));
+				toast.error(
+					result.error ?? t("settings:webhooks.create-failed", "Failed to create webhook"),
+				);
 			}
 		}
 	};
@@ -231,14 +237,17 @@ export function WebhookFormDialog({
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{isEditing
-								? t("webhooks.form.edit-title", "Edit Webhook")
-								: t("webhooks.form.create-title", "Create Webhook")}
+								? t("settings:webhooks.form.edit-title", "Edit Webhook")
+								: t("settings:webhooks.form.create-title", "Create Webhook")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{isEditing
-								? t("webhooks.form.edit-description", "Update the webhook endpoint configuration.")
+								? t(
+										"settings:webhooks.form.edit-description",
+										"Update the webhook endpoint configuration.",
+									)
 								: t(
-										"webhooks.form.create-description",
+										"settings:webhooks.form.create-description",
 										"Configure a new webhook endpoint to receive event notifications.",
 									)}
 						</ActionPanelDescription>
@@ -248,129 +257,134 @@ export function WebhookFormDialog({
 						<ActionPanelBody className="space-y-6">
 							{/* Basic Info */}
 							<div className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="webhook-name">{t("webhooks.form.name", "Name")}</Label>
-								<Input
-									id="webhook-name"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder={t("webhooks.form.name-placeholder", "My Webhook")}
-									required
-								/>
-							</div>
+								<div className="space-y-2">
+									<Label htmlFor="webhook-name">{t("settings:webhooks.form.name", "Name")}</Label>
+									<Input
+										id="webhook-name"
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+										placeholder={t("settings:webhooks.form.name-placeholder", "My Webhook")}
+										required
+									/>
+								</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="webhook-url">{t("webhooks.form.url", "Endpoint URL")}</Label>
-								<Input
-									id="webhook-url"
-									type="url"
-									value={url}
-									onChange={(e) => setUrl(e.target.value)}
-									placeholder="https://example.com/webhook"
-									required
-								/>
-								<p className="text-xs text-muted-foreground">
-									{t(
-										"webhooks.form.url-hint",
-										"HTTPS is required in production. Events will be sent as POST requests.",
-									)}
-								</p>
-							</div>
+								<div className="space-y-2">
+									<Label htmlFor="webhook-url">
+										{t("settings:webhooks.form.url", "Endpoint URL")}
+									</Label>
+									<Input
+										id="webhook-url"
+										type="url"
+										value={url}
+										onChange={(e) => setUrl(e.target.value)}
+										placeholder="https://example.com/webhook"
+										required
+									/>
+									<p className="text-xs text-muted-foreground">
+										{t(
+											"settings:webhooks.form.url-hint",
+											"HTTPS is required in production. Events will be sent as POST requests.",
+										)}
+									</p>
+								</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="webhook-description">
-									{t("webhooks.form.description", "Description")} (
-									{t("common.optional", "optional")})
-								</Label>
-								<Textarea
-									id="webhook-description"
-									value={description}
-									onChange={(e) => setDescription(e.target.value)}
-									placeholder={t(
-										"webhooks.form.description-placeholder",
-										"What is this webhook used for?",
-									)}
-									rows={2}
-								/>
-							</div>
+								<div className="space-y-2">
+									<Label htmlFor="webhook-description">
+										{t("settings:webhooks.form.description", "Description")} (
+										{t("common.optional", "optional")})
+									</Label>
+									<Textarea
+										id="webhook-description"
+										value={description}
+										onChange={(e) => setDescription(e.target.value)}
+										placeholder={t(
+											"settings:webhooks.form.description-placeholder",
+											"What is this webhook used for?",
+										)}
+										rows={2}
+									/>
+								</div>
 							</div>
 
 							{/* Event Selection */}
 							<div className="space-y-3">
-							<div className="flex items-center justify-between">
-								<Label>{t("webhooks.form.events", "Events to receive")}</Label>
-								<Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
-									{selectedEvents.size === allEventsCount
-										? t("webhooks.form.deselect-all", "Deselect All")
-										: t("webhooks.form.select-all", "Select All")}
-								</Button>
-							</div>
+								<div className="flex items-center justify-between">
+									<Label>{t("settings:webhooks.form.events", "Events to receive")}</Label>
+									<Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
+										{selectedEvents.size === allEventsCount
+											? t("settings:webhooks.form.deselect-all", "Deselect All")
+											: t("settings:webhooks.form.select-all", "Select All")}
+									</Button>
+								</div>
 
-							<div className="border rounded-lg divide-y">
-								{Object.entries(EVENT_CATEGORIES).map(([key, category]) => {
-									const categoryEvents = category.events as readonly string[];
-									const selectedCount = categoryEvents.filter((e) => selectedEvents.has(e)).length;
-									const allSelected = selectedCount === categoryEvents.length;
-									const someSelected = selectedCount > 0 && !allSelected;
+								<div className="border rounded-lg divide-y">
+									{Object.entries(EVENT_CATEGORIES).map(([key, category]) => {
+										const categoryEvents = category.events as readonly string[];
+										const selectedCount = categoryEvents.filter((e) =>
+											selectedEvents.has(e),
+										).length;
+										const allSelected = selectedCount === categoryEvents.length;
+										const someSelected = selectedCount > 0 && !allSelected;
 
-									return (
-										<Collapsible
-											key={key}
-											open={expandedCategories.has(key)}
-											onOpenChange={(open) => {
-												setExpandedCategories((prev) => {
-													const next = new Set(prev);
-													if (open) {
-														next.add(key);
-													} else {
-														next.delete(key);
-													}
-													return next;
-												});
-											}}
-										>
-											<div className="flex items-center gap-3 p-3 hover:bg-muted/50">
-												<Checkbox
-													checked={allSelected}
-													ref={(el) => {
-														if (el) {
-															(el as HTMLButtonElement & { indeterminate: boolean }).indeterminate =
-																someSelected;
+										return (
+											<Collapsible
+												key={key}
+												open={expandedCategories.has(key)}
+												onOpenChange={(open) => {
+													setExpandedCategories((prev) => {
+														const next = new Set(prev);
+														if (open) {
+															next.add(key);
+														} else {
+															next.delete(key);
 														}
-													}}
-													onCheckedChange={() => handleCategoryToggle(key)}
-												/>
-												<CollapsibleTrigger className="flex-1 text-left text-sm font-medium">
-													{t(`webhooks.categories.${key}`, category.label)}
-												</CollapsibleTrigger>
-												<span className="text-xs text-muted-foreground">
-													{selectedCount}/{categoryEvents.length}
-												</span>
-											</div>
-											<CollapsibleContent>
-												<div className="px-6 pb-3 space-y-2">
-													{categoryEvents.map((event) => (
-														<label key={event} className="flex items-center gap-2 cursor-pointer">
-															<Checkbox
-																checked={selectedEvents.has(event)}
-																onCheckedChange={() => handleEventToggle(event)}
-															/>
-															<span className="text-sm font-mono">{event}</span>
-														</label>
-													))}
+														return next;
+													});
+												}}
+											>
+												<div className="flex items-center gap-3 p-3 hover:bg-muted/50">
+													<Checkbox
+														checked={allSelected}
+														ref={(el) => {
+															if (el) {
+																(
+																	el as HTMLButtonElement & { indeterminate: boolean }
+																).indeterminate = someSelected;
+															}
+														}}
+														onCheckedChange={() => handleCategoryToggle(key)}
+													/>
+													<CollapsibleTrigger className="flex-1 text-left text-sm font-medium">
+														{t(`settings:webhooks.categories.${key}`, category.label)}
+													</CollapsibleTrigger>
+													<span className="text-xs text-muted-foreground">
+														{selectedCount}/{categoryEvents.length}
+													</span>
 												</div>
-											</CollapsibleContent>
-										</Collapsible>
-									);
-								})}
-							</div>
+												<CollapsibleContent>
+													<div className="px-6 pb-3 space-y-2">
+														{categoryEvents.map((event) => (
+															<label key={event} className="flex items-center gap-2 cursor-pointer">
+																<Checkbox
+																	checked={selectedEvents.has(event)}
+																	onCheckedChange={() => handleEventToggle(event)}
+																/>
+																<span className="text-sm font-mono">{event}</span>
+															</label>
+														))}
+													</div>
+												</CollapsibleContent>
+											</Collapsible>
+										);
+									})}
+								</div>
 
-							<p className="text-xs text-muted-foreground flex items-center gap-1">
-								<IconInfoCircle className="h-3 w-3" aria-hidden="true" />
-								{t("webhooks.form.events-hint", "Selected events: {{count}}", {
-									count: selectedEvents.size,
-								})}
-							</p>
+								<p className="text-xs text-muted-foreground flex items-center gap-1">
+									<IconInfoCircle className="h-3 w-3" aria-hidden="true" />
+									{t("settings:webhooks.form.events-hint", "Selected events: {{count}}", {
+										count: selectedEvents.size,
+									})}
+								</p>
 							</div>
 						</ActionPanelBody>
 
@@ -382,7 +396,9 @@ export function WebhookFormDialog({
 								{isPending && (
 									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 								)}
-								{isEditing ? t("common.save", "Save") : t("webhooks.form.create", "Create Webhook")}
+								{isEditing
+									? t("common.save", "Save")
+									: t("settings:webhooks.form.create", "Create Webhook")}
 							</Button>
 						</ActionPanelFooter>
 					</form>

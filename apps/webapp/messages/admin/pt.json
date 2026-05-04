@@ -1,12 +1,144 @@
 {
   "admin": {
     "layout": {
-      "title": "Administração da plataforma",
-      "subtitle": "Gerenciamento da plataforma",
+      "exitAdmin": "Sair do Admin",
       "nav": {
-        "workerQueue": "Fila de processos"
+        "billing": "Faturamento",
+        "organizations": "Organizações",
+        "overview": "Visão geral",
+        "settings": "Configurações",
+        "users": "Usuários",
+        "workerQueue": "Fila de trabalho"
       },
-      "exitAdmin": "Sair da administração da plataforma"
+      "subtitle": "Gerenciamento da plataforma",
+      "title": "Console de administração"
+    },
+    "organizations": {
+      "badges": {
+        "deleted": "Excluído",
+        "suspended": "Suspenso"
+      },
+      "deleteDialog": {
+        "confirmButton": "Excluir organização",
+        "confirmLabel": "Digite \"{name}\" para confirmar",
+        "confirmPlaceholder": "Nome da organização",
+        "description": "Esta ação excluirá \"{name}\" e todos os dados associados. Isso não pode ser desfeito.",
+        "immediateDelete": "Excluir imediatamente (ignorar período de carência de 5 dias)",
+        "skipNotification": "Ignorar notificação de exclusão para membros da organização",
+        "title": "Excluir organização"
+      },
+      "description": "Visualize e gerencie todas as organizações na plataforma",
+      "filters": {
+        "all": "Todas",
+        "deleted": "Excluídas",
+        "suspended": "Suspensas"
+      },
+      "pagination": {
+        "showing": "Exibindo de {from} a {to} de {total} organizações"
+      },
+      "searchPlaceholder": "Pesquisar por nome ou slug…",
+      "suspendDialog": {
+        "confirmButton": "Suspender organização",
+        "description": "Suspender \"{name}\" e colocá-la em modo somente leitura. Os membros poderão visualizar dados, mas não criar ou editar nada.",
+        "reason": "Motivo",
+        "reasonPlaceholder": "Insira o motivo da suspensão desta organização…",
+        "title": "Suspender Organização"
+      },
+      "table": {
+        "created": "Criado",
+        "employees": "Funcionários",
+        "members": "Membros",
+        "noOrganizationsFound": "Nenhuma organização encontrada",
+        "organization": "Organização"
+      },
+      "title": "Gestão de Organizações",
+      "toasts": {
+        "deletedGracePeriod": "A organização \"{name}\" foi agendada para exclusão em 5 dias",
+        "deletedImmediate": "A organização \"{name}\" foi agendada para exclusão imediata",
+        "suspended": "A organização \"{name}\" foi suspensa",
+        "unsuspended": "A organização \"{name}\" teve a suspensão removida"
+      }
+    },
+    "overview": {
+      "description": "Métricas da plataforma e ações rápidas",
+      "metrics": {
+        "bannedUsers": "Usuários banidos",
+        "bannedUsersDescription": "Acesso restrito",
+        "licensedSeats": "Licenças",
+        "licensedSeatsDescription": "Em todas as assinaturas",
+        "mrr": "MRR",
+        "mrrDescription": "Receita recorrente mensal (€)",
+        "organizations": "Organizações",
+        "organizationsDescription": "Workspaces ativos",
+        "suspended": "Suspenso",
+        "suspendedDescription": "Organizações somente leitura",
+        "title": "Métricas da Plataforma",
+        "totalUsers": "Total de Usuários",
+        "totalUsersDescription": "Contas registradas na plataforma"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Métricas de receita e status da assinatura",
+          "title": "Faturamento e Assinaturas"
+        },
+        "organizations": {
+          "description": "Suspender, excluir ou revisar organizações",
+          "title": "Gerenciamento de Organizações"
+        },
+        "title": "Ações Rápidas",
+        "users": {
+          "description": "Banir/desbanir usuários, gerenciar sessões, ver atividades",
+          "title": "Gerenciamento de Usuários"
+        }
+      },
+      "title": "Visão Geral"
+    },
+    "users": {
+      "badges": {
+        "admin": "Administrador",
+        "banExpiresUntil": "Até {date}",
+        "banned": "Banido",
+        "user": "Usuário"
+      },
+      "banDialog": {
+        "confirmButton": "Banir Usuário",
+        "description": "Banir {email} do acesso à plataforma.",
+        "expiry": "Data de Expiração (opcional)",
+        "permanentBanHint": "Deixe vazio para banimento permanente",
+        "reason": "Motivo",
+        "reasonPlaceholder": "Insira o motivo para banir este usuário…",
+        "title": "Banir Usuário"
+      },
+      "description": "Ver e gerenciar todos os usuários na plataforma",
+      "filters": {
+        "allUsers": "Todos os Usuários",
+        "banned": "Banidos"
+      },
+      "pagination": {
+        "showing": "Exibindo de {from} a {to} de {total} usuários"
+      },
+      "searchPlaceholder": "Pesquisar por nome ou e-mail…",
+      "sessionsDialog": {
+        "description": "Sessões ativas para {email}",
+        "noSessions": "Nenhuma sessão ativa",
+        "revokeAll": "Revogar todas as sessões",
+        "title": "Sessões do usuário",
+        "unknownDevice": "Dispositivo desconhecido",
+        "unknownIp": "IP desconhecido"
+      },
+      "table": {
+        "created": "Criado",
+        "noUsersFound": "Nenhum usuário encontrado",
+        "role": "Função",
+        "user": "Usuário"
+      },
+      "title": "Gerenciamento de usuários",
+      "toasts": {
+        "banned": "O usuário {email} foi banido",
+        "sessionRevoked": "Sessão revogada",
+        "sessionsRevoked": "{count} sessões revogadas",
+        "unbanned": "O usuário {email} foi desbanido"
+      }
     }
   }
 }

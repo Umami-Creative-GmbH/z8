@@ -89,7 +89,7 @@ export function ComplianceAlertBanner({
 				<span className="flex-1 truncate">{alert.message}</span>
 				{sortedAlerts.length > 1 && (
 					<span className="shrink-0 text-xs opacity-70">
-						+{sortedAlerts.length - 1} {t("compliance.moreAlerts", "more")}
+						+{sortedAlerts.length - 1} {t("compliance:compliance.moreAlerts", "more")}
 					</span>
 				)}
 			</div>
@@ -124,7 +124,7 @@ export function ComplianceAlertBanner({
 									onClick={() => onRequestException(alert.alertType)}
 								>
 									<Shield className="mr-1.5 h-3 w-3" aria-hidden="true" />
-									{t("compliance.requestException", "Request Exception")}
+									{t("compliance:compliance.requestException", "Request Exception")}
 								</Button>
 							)}
 						</AlertDescription>
@@ -164,11 +164,13 @@ export function RestPeriodBlocker({
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
 			<Clock className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
-			<AlertTitle>{t("compliance.restPeriodRequired", "Rest Period Required")}</AlertTitle>
+			<AlertTitle>
+				{t("compliance:compliance.restPeriodRequired", "Rest Period Required")}
+			</AlertTitle>
 			<AlertDescription className="space-y-3">
 				<p>
 					{t(
-						"compliance.restPeriodMessage",
+						"compliance:compliance.restPeriodMessage",
 						"You need {{time}} more rest before you can clock in. Next allowed clock-in: {{nextTime}}",
 						{ time: timeStr, nextTime: formattedNextAllowed },
 					)}
@@ -177,7 +179,7 @@ export function RestPeriodBlocker({
 					<p className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
 						<Shield className="h-4 w-4" aria-hidden="true" />
 						{t(
-							"compliance.hasApprovedException",
+							"compliance:compliance.hasApprovedException",
 							"You have an approved exception. You may proceed.",
 						)}
 					</p>
@@ -189,7 +191,7 @@ export function RestPeriodBlocker({
 						onClick={onRequestException}
 					>
 						<Shield className="mr-1.5 h-3 w-3" aria-hidden="true" />
-						{t("compliance.requestException", "Request Exception")}
+						{t("compliance:compliance.requestException", "Request Exception")}
 					</Button>
 				) : null}
 			</AlertDescription>

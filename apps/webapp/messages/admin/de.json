@@ -1,12 +1,144 @@
 {
   "admin": {
     "layout": {
-      "title": "Plattform-Admin",
-      "subtitle": "Plattformverwaltung",
+      "exitAdmin": "Admin-Modus beenden",
       "nav": {
+        "billing": "Abrechnung",
+        "organizations": "Organisationen",
+        "overview": "Übersicht",
+        "settings": "Einstellungen",
+        "users": "Benutzer",
         "workerQueue": "Worker-Warteschlange"
       },
-      "exitAdmin": "Plattform-Admin verlassen"
+      "subtitle": "Plattformverwaltung",
+      "title": "Admin-Konsole"
+    },
+    "organizations": {
+      "badges": {
+        "deleted": "Gelöscht",
+        "suspended": "Suspendiert"
+      },
+      "deleteDialog": {
+        "confirmButton": "Organisation löschen",
+        "confirmLabel": "Geben Sie „{name}“ ein, um zu bestätigen",
+        "confirmPlaceholder": "Organisationsname",
+        "description": "Diese Aktion löscht „{name}“ und alle zugehörigen Daten. Dies kann nicht rückgängig gemacht werden.",
+        "immediateDelete": "Sofort löschen (5-tägige Kulanzfrist überspringen)",
+        "skipNotification": "Löschbenachrichtigung an Organisationsmitglieder überspringen",
+        "title": "Organisation löschen"
+      },
+      "description": "Alle Organisationen auf der Plattform anzeigen und verwalten",
+      "filters": {
+        "all": "Alle",
+        "deleted": "Gelöscht",
+        "suspended": "Suspendiert"
+      },
+      "pagination": {
+        "showing": "Zeige {from} bis {to} von {total} Organisationen"
+      },
+      "searchPlaceholder": "Nach Name oder Slug suchen…",
+      "suspendDialog": {
+        "confirmButton": "Organisation suspendieren",
+        "description": "\"{name}\" sperren und in den schreibgeschützten Modus versetzen. Mitglieder können Daten weiterhin einsehen, aber nichts erstellen oder bearbeiten.",
+        "reason": "Grund",
+        "reasonPlaceholder": "Geben Sie den Grund für die Sperrung dieser Organisation ein…",
+        "title": "Organisation sperren"
+      },
+      "table": {
+        "created": "Erstellt",
+        "employees": "Mitarbeiter",
+        "members": "Mitglieder",
+        "noOrganizationsFound": "Keine Organisationen gefunden",
+        "organization": "Organisation"
+      },
+      "title": "Organisationsverwaltung",
+      "toasts": {
+        "deletedGracePeriod": "Die Löschung der Organisation \"{name}\" wurde für in 5 Tagen geplant",
+        "deletedImmediate": "Die Organisation \"{name}\" wurde zur sofortigen Löschung vorgemerkt",
+        "suspended": "Organisation \"{name}\" wurde gesperrt",
+        "unsuspended": "Organisation \"{name}\" wurde entsperrt"
+      }
+    },
+    "overview": {
+      "description": "Plattform-Metriken und Schnellaktionen",
+      "metrics": {
+        "bannedUsers": "Gesperrte Benutzer",
+        "bannedUsersDescription": "Zugriff eingeschränkt",
+        "licensedSeats": "Lizenzierte Plätze",
+        "licensedSeatsDescription": "Über alle Abonnements hinweg",
+        "mrr": "MRR",
+        "mrrDescription": "Monatlich wiederkehrender Umsatz (€)",
+        "organizations": "Organisationen",
+        "organizationsDescription": "Aktive Arbeitsbereiche",
+        "suspended": "Gesperrt",
+        "suspendedDescription": "Schreibgeschützte Organisationen",
+        "title": "Plattform-Metriken",
+        "totalUsers": "Gesamtanzahl Benutzer",
+        "totalUsersDescription": "Registrierte Plattform-Konten"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Umsatzkennzahlen und Abonnementstatus",
+          "title": "Abrechnung & Abonnements"
+        },
+        "organizations": {
+          "description": "Organisationen sperren, löschen oder überprüfen",
+          "title": "Organisationsverwaltung"
+        },
+        "title": "Schnellaktionen",
+        "users": {
+          "description": "Benutzer sperren/entsperren, Sitzungen verwalten, Aktivitäten einsehen",
+          "title": "Benutzerverwaltung"
+        }
+      },
+      "title": "Übersicht"
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Bis {date}",
+        "banned": "Gesperrt",
+        "user": "Benutzer"
+      },
+      "banDialog": {
+        "confirmButton": "Benutzer sperren",
+        "description": "Sperren Sie {email} vom Zugriff auf die Plattform.",
+        "expiry": "Ablaufdatum (optional)",
+        "permanentBanHint": "Für eine dauerhafte Sperrung leer lassen",
+        "reason": "Grund",
+        "reasonPlaceholder": "Geben Sie den Grund für die Sperrung dieses Benutzers ein…",
+        "title": "Benutzer sperren"
+      },
+      "description": "Alle Benutzer auf der Plattform anzeigen und verwalten",
+      "filters": {
+        "allUsers": "Alle Benutzer",
+        "banned": "Gesperrt"
+      },
+      "pagination": {
+        "showing": "Zeige {from} bis {to} von {total} Benutzern"
+      },
+      "searchPlaceholder": "Nach Name oder E-Mail suchen…",
+      "sessionsDialog": {
+        "description": "Aktive Sitzungen für {email}",
+        "noSessions": "Keine aktiven Sitzungen",
+        "revokeAll": "Alle Sitzungen widerrufen",
+        "title": "Benutzersitzungen",
+        "unknownDevice": "Unbekanntes Gerät",
+        "unknownIp": "Unbekannte IP"
+      },
+      "table": {
+        "created": "Erstellt",
+        "noUsersFound": "Keine Benutzer gefunden",
+        "role": "Rolle",
+        "user": "Benutzer"
+      },
+      "title": "Benutzerverwaltung",
+      "toasts": {
+        "banned": "Benutzer {email} wurde gesperrt",
+        "sessionRevoked": "Sitzung widerrufen",
+        "sessionsRevoked": "{count} Sitzungen widerrufen",
+        "unbanned": "Benutzer {email} wurde entsperrt"
+      }
     }
   }
 }

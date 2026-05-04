@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EnterpriseIdentitySetupResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import type { OrganizationBranding } from "@/lib/domain";
@@ -429,9 +429,7 @@ describe("IdentitySetupWizard source supplements", () => {
 		for (const docsSource of docsSources) {
 			expect(docsSource).toContain("Enterprise Identity Setup");
 			expect(docsSource).toContain("/settings/enterprise/identity-setup");
-			expect(docsSource).not.toContain(
-				"does not expose a dedicated self-serve SCIM setup page",
-			);
+			expect(docsSource).not.toContain("does not expose a dedicated self-serve SCIM setup page");
 			expect(docsSource).not.toContain(
 				"does not currently expose a dedicated self-serve SCIM setup page",
 			);
@@ -447,7 +445,7 @@ describe("IdentitySetupWizard source supplements", () => {
 
 		expect(source).toContain("defaultRoleTemplateId");
 		expect(source).toContain("setDefaultRoleTemplateId");
-		expect(source).not.toContain("setup.enforcement.defaultRoleTemplateId");
+		expect(source).not.toContain("setup:setup.enforcement.defaultRoleTemplateId");
 	});
 
 	it("explains that SCIM verification depends on IdP provisioning activity", () => {

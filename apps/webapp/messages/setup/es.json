@@ -1,0 +1,49 @@
+{
+  "init": {
+    "activating": "Configurando su espacio de trabajo...",
+    "checking": "Comprobando sesión...",
+    "clickToSelect": "Haga clic para seleccionar",
+    "redirecting": "Redirigiendo...",
+    "selectOrganization": "Seleccionar organización",
+    "selectOrganizationDescription": "Elija con qué organización desea trabajar"
+  },
+  "setup": {
+    "button": {
+      "create": "Crear cuenta de administrador",
+      "creating": "Creando cuenta..."
+    },
+    "complete_message": "Su cuenta de administrador de la plataforma ha sido creada.",
+    "complete_title": "¡Configuración completada!",
+    "continue_to_sign_in": "Continuar para iniciar sesión",
+    "creating_account": "Creando su cuenta de administrador...",
+    "description": "Configure la primera cuenta de administrador para su plataforma. Esta cuenta tendrá acceso total al sistema y es independiente de las cuentas de la organización.",
+    "error": {
+      "passwords_mismatch": "Las contraseñas no coinciden"
+    },
+    "field": {
+      "confirm_password": "Confirmar contraseña",
+      "confirm_password_placeholder": "Confirme su contraseña",
+      "email": "Dirección de correo electrónico",
+      "email_placeholder": "admin@tuempresa.com",
+      "name": "Nombre completo",
+      "name_placeholder": "Introduzca su nombre completo",
+      "password": "Contraseña",
+      "password_placeholder": "Cree una contraseña segura"
+    },
+    "hide_password": "Ocultar contraseña",
+    "layout": {
+      "subtitle": "Configure su plataforma para comenzar",
+      "title": "Configuración inicial"
+    },
+    "password": {
+      "lowercase": "Letra minúscula",
+      "min_length": "12+ caracteres",
+      "number": "Número",
+      "uppercase": "Letra mayúscula"
+    },
+    "please_wait": "Por favor, espere mientras configuramos todo",
+    "show_password": "Mostrar contraseña",
+    "sign_in_with": "Ahora puede iniciar sesión con",
+    "title": "Crear administrador de plataforma"
+  }
+}

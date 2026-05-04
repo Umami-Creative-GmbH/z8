@@ -147,16 +147,19 @@ export default function ApprovalInboxPage() {
 			handleBulkDecisionToasts(
 				t,
 				result,
-				"approvals.bulkApproveSuccess",
+				"approvals:approvals.bulkApproveSuccess",
 				"approved",
-				"approvals.bulkApproveFailed",
+				"approvals:approvals.bulkApproveFailed",
 			);
 
 			setSelectedIds(new Set());
 			refetch();
 		} catch (error) {
 			toast.error(
-				getErrorMessage(error, t("approvals.bulkApproveRequestFailed", "Bulk approve failed")),
+				getErrorMessage(
+					error,
+					t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed"),
+				),
 			);
 		}
 	}, [selectedIds, bulkApproveMutation, t, refetch]);
@@ -173,9 +176,9 @@ export default function ApprovalInboxPage() {
 			handleBulkDecisionToasts(
 				t,
 				result,
-				"approvals.bulkRejectSuccess",
+				"approvals:approvals.bulkRejectSuccess",
 				"rejected",
-				"approvals.bulkRejectFailed",
+				"approvals:approvals.bulkRejectFailed",
 			);
 
 			setBulkRejectOpen(false);
@@ -184,7 +187,10 @@ export default function ApprovalInboxPage() {
 			refetch();
 		} catch (error) {
 			toast.error(
-				getErrorMessage(error, t("approvals.bulkRejectRequestFailed", "Bulk reject failed")),
+				getErrorMessage(
+					error,
+					t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed"),
+				),
 			);
 		}
 	}, [bulkRejectReason, bulkRejectMutation, refetch, selectedIds, t]);
@@ -238,11 +244,11 @@ export default function ApprovalInboxPage() {
 				<div className="flex items-center justify-between">
 					<div>
 						<h1 className="text-2xl font-semibold tracking-tight">
-							{t("approvals.inbox", "Approval Inbox")}
+							{t("approvals:approvals.inbox", "Approval Inbox")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
 							{t(
-								"approvals.inboxDescription",
+								"approvals:approvals.inboxDescription",
 								"Review and approve pending requests from your team",
 							)}
 						</p>
@@ -262,12 +268,12 @@ export default function ApprovalInboxPage() {
 						<div className="flex flex-col items-center justify-center text-center">
 							<IconInbox className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
 							<h2 className="mt-4 text-lg font-medium">
-								{t("approvals.inboxErrorTitle", "Unable to load approval inbox")}
+								{t("approvals:approvals.inboxErrorTitle", "Unable to load approval inbox")}
 							</h2>
 							<p className="mt-1 max-w-md text-sm text-muted-foreground">
 								{getErrorMessage(
 									error,
-									t("approvals.inboxErrorDescription", "Failed to fetch approvals"),
+									t("approvals:approvals.inboxErrorDescription", "Failed to fetch approvals"),
 								)}
 							</p>
 						</div>
@@ -283,10 +289,13 @@ export default function ApprovalInboxPage() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("approvals.inbox", "Approval Inbox")}
+						{t("approvals:approvals.inbox", "Approval Inbox")}
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("approvals.inboxDescription", "Review and approve pending requests from your team")}
+						{t(
+							"approvals:approvals.inboxDescription",
+							"Review and approve pending requests from your team",
+						)}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -298,7 +307,7 @@ export default function ApprovalInboxPage() {
 								disabled={isBulkActionPending}
 							>
 								<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t("approvals.rejectSelected", "Reject Selected")} ({selectedIds.size})
+								{t("approvals:approvals.rejectSelected", "Reject Selected")} ({selectedIds.size})
 							</Button>
 							<Button onClick={handleBulkApprove} disabled={isBulkActionPending}>
 								{bulkApproveMutation.isPending ? (
@@ -306,7 +315,7 @@ export default function ApprovalInboxPage() {
 								) : (
 									<IconCheck className="mr-2 h-4 w-4" aria-hidden="true" />
 								)}
-								{t("approvals.approveSelected", "Approve Selected")} ({selectedIds.size})
+								{t("approvals:approvals.approveSelected", "Approve Selected")} ({selectedIds.size})
 							</Button>
 						</>
 					)}
@@ -326,14 +335,14 @@ export default function ApprovalInboxPage() {
 				<CardHeader className="pb-0">
 					<CardTitle className="flex items-center gap-2">
 						<IconInbox className="h-5 w-5" aria-hidden="true" />
-						{t("approvals.pendingRequests", "Pending Requests")}
+						{t("approvals:approvals.pendingRequests", "Pending Requests")}
 						{totalCount > 0 && (
 							<span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
 						)}
 					</CardTitle>
 					<CardDescription>
 						{t(
-							"approvals.pendingRequestsDescription",
+							"approvals:approvals.pendingRequestsDescription",
 							"Select requests to approve in bulk, or click a row for details",
 						)}
 					</CardDescription>
@@ -381,11 +390,11 @@ export default function ApprovalInboxPage() {
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<IconInbox className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
 							<h3 className="mt-4 text-lg font-medium">
-								{t("approvals.noRequests", "No pending requests")}
+								{t("approvals:approvals.noRequests", "No pending requests")}
 							</h3>
 							<p className="mt-1 text-sm text-muted-foreground">
 								{t(
-									"approvals.noRequestsDescription",
+									"approvals:approvals.noRequestsDescription",
 									"When team members submit requests, they will appear here",
 								)}
 							</p>
@@ -413,24 +422,26 @@ export default function ApprovalInboxPage() {
 			>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>{t("approvals.rejectSelected", "Reject Selected")}</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("approvals:approvals.rejectSelected", "Reject Selected")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
-								"approvals.bulkRejectDescription",
+								"approvals:approvals.bulkRejectDescription",
 								"Provide a reason that will be applied to each selected request.",
 							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-2">
 						<label className="text-sm font-medium" htmlFor="bulk-reject-reason">
-							{t("approvals.rejectionReason", "Reason for rejection")}
+							{t("approvals:approvals.rejectionReason", "Reason for rejection")}
 						</label>
 						<Textarea
 							id="bulk-reject-reason"
 							value={bulkRejectReason}
 							onChange={(event) => setBulkRejectReason(event.target.value)}
 							placeholder={t(
-								"approvals.rejectionReasonPlaceholder",
+								"approvals:approvals.rejectionReasonPlaceholder",
 								"Please provide a reason for rejecting this request…",
 							)}
 							rows={4}
@@ -456,7 +467,7 @@ export default function ApprovalInboxPage() {
 								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 							)}
 							<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
-							{t("approvals.confirmReject", "Confirm Rejection")}
+							{t("approvals:approvals.confirmReject", "Confirm Rejection")}
 						</Button>
 					</ActionPanelFooter>
 				</ActionPanelContent>

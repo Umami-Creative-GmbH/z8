@@ -1,0 +1,49 @@
+{
+  "init": {
+    "activating": "Configurazione dello spazio di lavoro in corso...",
+    "checking": "Controllo sessione in corso...",
+    "clickToSelect": "Clicca per selezionare",
+    "redirecting": "Reindirizzamento in corso...",
+    "selectOrganization": "Seleziona organizzazione",
+    "selectOrganizationDescription": "Scegli l'organizzazione con cui vuoi lavorare"
+  },
+  "setup": {
+    "button": {
+      "create": "Crea account amministratore",
+      "creating": "Creazione account in corso..."
+    },
+    "complete_message": "Il tuo account amministratore della piattaforma è stato creato.",
+    "complete_title": "Configurazione completata!",
+    "continue_to_sign_in": "Continua per accedere",
+    "creating_account": "Creazione del tuo account amministratore in corso...",
+    "description": "Configura il primo account amministratore per la tua piattaforma. Questo account avrà accesso completo al sistema ed è separato dagli account dell'organizzazione.",
+    "error": {
+      "passwords_mismatch": "Le password non corrispondono"
+    },
+    "field": {
+      "confirm_password": "Conferma password",
+      "confirm_password_placeholder": "Conferma la tua password",
+      "email": "Indirizzo email",
+      "email_placeholder": "admin@tuazienda.com",
+      "name": "Nome completo",
+      "name_placeholder": "Inserisci il tuo nome completo",
+      "password": "Password",
+      "password_placeholder": "Crea una password sicura"
+    },
+    "hide_password": "Nascondi password",
+    "layout": {
+      "subtitle": "Configura la tua piattaforma per iniziare",
+      "title": "Configurazione iniziale"
+    },
+    "password": {
+      "lowercase": "Lettera minuscola",
+      "min_length": "12+ caratteri",
+      "number": "Numero",
+      "uppercase": "Lettera maiuscola"
+    },
+    "please_wait": "Attendi mentre completiamo la configurazione",
+    "show_password": "Mostra password",
+    "sign_in_with": "Ora puoi accedere con",
+    "title": "Crea amministratore della piattaforma"
+  }
+}

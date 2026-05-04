@@ -111,6 +111,17 @@
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
       "title": "Zeiteinträge"
     },
+    "timeline": {
+      "dayPicker": "Zeitstrahl-Tagesauswahl",
+      "emptyDescription": "Für den ausgewählten Tag gibt es noch keine Schichten, Abwesenheiten oder Zeiteinträge.",
+      "emptyTitle": "Keine Aktivität für diesen Tag aufgezeichnet.",
+      "nextDay": "Nächster Tag",
+      "previousDay": "Vorheriger Tag",
+      "title": "Arbeitstag-Zeitstrahl",
+      "today": "Heute",
+      "unavailableDescription": "Die Zeiterfassung läuft noch. Versuchen Sie später, diese Ansicht zu aktualisieren.",
+      "unavailableTitle": "Zeitstrahl nicht verfügbar"
+    },
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
     "workCategory": "Arbeitskategorie"

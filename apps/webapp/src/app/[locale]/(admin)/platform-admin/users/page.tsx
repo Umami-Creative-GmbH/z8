@@ -167,7 +167,7 @@ export default function UsersPage() {
 			const result = await banUserAction(banDialogUser.id, banReason, banExpiry || null);
 			if (result.success) {
 				toast.success(
-					t("admin.users.toasts.banned", "User {email} has been banned", {
+					t("admin:admin.users.toasts.banned", "User {email} has been banned", {
 						email: banDialogUser.email,
 					}),
 				);
@@ -187,7 +187,9 @@ export default function UsersPage() {
 			const result = await unbanUserAction(user.id);
 			if (result.success) {
 				toast.success(
-					t("admin.users.toasts.unbanned", "User {email} has been unbanned", { email: user.email }),
+					t("admin:admin.users.toasts.unbanned", "User {email} has been unbanned", {
+						email: user.email,
+					}),
 				);
 				queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			} else {
@@ -214,7 +216,7 @@ export default function UsersPage() {
 		startTransition(async () => {
 			const result = await revokeSessionAction(sessionId);
 			if (result.success) {
-				toast.success(t("admin.users.toasts.sessionRevoked", "Session revoked"));
+				toast.success(t("admin:admin.users.toasts.sessionRevoked", "Session revoked"));
 				setSessions(sessions.filter((s) => s.id !== sessionId));
 			} else {
 				toast.error(result.error);
@@ -230,7 +232,7 @@ export default function UsersPage() {
 			const result = await revokeAllUserSessionsAction(sessionsDialogUser.id);
 			if (result.success) {
 				toast.success(
-					t("admin.users.toasts.sessionsRevoked", "Revoked {count} sessions", {
+					t("admin:admin.users.toasts.sessionsRevoked", "Revoked {count} sessions", {
 						count: result.data,
 					}),
 				);
@@ -248,10 +250,10 @@ export default function UsersPage() {
 			{/* Page Header */}
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("admin.users.title", "User Management")}
+					{t("admin:admin.users.title", "User Management")}
 				</h1>
 				<p className="text-muted-foreground">
-					{t("admin.users.description", "View and manage all users on the platform")}
+					{t("admin:admin.users.description", "View and manage all users on the platform")}
 				</p>
 			</div>
 
@@ -263,7 +265,7 @@ export default function UsersPage() {
 						aria-hidden="true"
 					/>
 					<Input
-						placeholder={t("admin.users.searchPlaceholder", "Search by name or email…")}
+						placeholder={t("admin:admin.users.searchPlaceholder", "Search by name or email…")}
 						name="search"
 						autoComplete="off"
 						value={search}
@@ -279,9 +281,13 @@ export default function UsersPage() {
 						<SelectValue placeholder={t("common.status", "Status")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">{t("admin.users.filters.allUsers", "All Users")}</SelectItem>
+						<SelectItem value="all">
+							{t("admin:admin.users.filters.allUsers", "All Users")}
+						</SelectItem>
 						<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
-						<SelectItem value="banned">{t("admin.users.filters.banned", "Banned")}</SelectItem>
+						<SelectItem value="banned">
+							{t("admin:admin.users.filters.banned", "Banned")}
+						</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
@@ -299,10 +305,10 @@ export default function UsersPage() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("admin.users.table.user", "User")}</TableHead>
-									<TableHead>{t("admin.users.table.role", "Role")}</TableHead>
+									<TableHead>{t("admin:admin.users.table.user", "User")}</TableHead>
+									<TableHead>{t("admin:admin.users.table.role", "Role")}</TableHead>
 									<TableHead>{t("common.status", "Status")}</TableHead>
-									<TableHead>{t("admin.users.table.created", "Created")}</TableHead>
+									<TableHead>{t("admin:admin.users.table.created", "Created")}</TableHead>
 									<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -310,7 +316,7 @@ export default function UsersPage() {
 								{users.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={5} className="text-center text-muted-foreground">
-											{t("admin.users.table.noUsersFound", "No users found")}
+											{t("admin:admin.users.table.noUsersFound", "No users found")}
 										</TableCell>
 									</TableRow>
 								) : (
@@ -339,20 +345,24 @@ export default function UsersPage() {
 											</TableCell>
 											<TableCell>
 												{user.role === "admin" ? (
-													<Badge variant="default">{t("admin.users.badges.admin", "Admin")}</Badge>
+													<Badge variant="default">
+														{t("admin:admin.users.badges.admin", "Admin")}
+													</Badge>
 												) : (
-													<Badge variant="secondary">{t("admin.users.badges.user", "User")}</Badge>
+													<Badge variant="secondary">
+														{t("admin:admin.users.badges.user", "User")}
+													</Badge>
 												)}
 											</TableCell>
 											<TableCell>
 												{user.banned ? (
 													<div>
 														<Badge variant="destructive">
-															{t("admin.users.badges.banned", "Banned")}
+															{t("admin:admin.users.badges.banned", "Banned")}
 														</Badge>
 														{user.banExpires && (
 															<div className="text-xs text-muted-foreground mt-1">
-																{t("admin.users.badges.banExpiresUntil", "Until {date}", {
+																{t("admin:admin.users.badges.banExpiresUntil", "Until {date}", {
 																	date: DateTime.fromJSDate(user.banExpires).toLocaleString(
 																		DateTime.DATE_SHORT,
 																	),
@@ -376,7 +386,10 @@ export default function UsersPage() {
 														variant="ghost"
 														size="sm"
 														onClick={() => handleViewSessions(user)}
-														aria-label={t("admin.users.sessionsDialog.title", "User Sessions")}
+														aria-label={t(
+															"admin:admin.users.sessionsDialog.title",
+															"User Sessions",
+														)}
 													>
 														<IconDevices className="size-4" aria-hidden="true" />
 													</Button>
@@ -387,7 +400,7 @@ export default function UsersPage() {
 															onClick={() => handleUnban(user)}
 															disabled={isPending}
 															aria-label={t(
-																"admin.users.toasts.unbanned",
+																"admin:admin.users.toasts.unbanned",
 																"User {email} has been unbanned",
 																{ email: user.email },
 															)}
@@ -400,7 +413,7 @@ export default function UsersPage() {
 															size="sm"
 															onClick={() => setBanDialogUser(user)}
 															disabled={user.role === "admin"}
-															aria-label={t("admin.users.banDialog.title", "Ban User")}
+															aria-label={t("admin:admin.users.banDialog.title", "Ban User")}
 														>
 															<IconBan className="size-4" aria-hidden="true" />
 														</Button>
@@ -420,7 +433,7 @@ export default function UsersPage() {
 			{totalPages > 1 && (
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-sm text-muted-foreground">
-						{t("admin.users.pagination.showing", "Showing {from} to {to} of {total} users", {
+						{t("admin:admin.users.pagination.showing", "Showing {from} to {to} of {total} users", {
 							from: (page - 1) * PAGE_SIZE + 1,
 							to: Math.min(page * PAGE_SIZE, total),
 							total,
@@ -457,20 +470,26 @@ export default function UsersPage() {
 			<AlertDialog open={!!banDialogUser} onOpenChange={() => setBanDialogUser(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>{t("admin.users.banDialog.title", "Ban User")}</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("admin:admin.users.banDialog.title", "Ban User")}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							{t("admin.users.banDialog.description", "Ban {email} from accessing the platform.", {
-								email: banDialogUser?.email ?? "",
-							})}
+							{t(
+								"admin:admin.users.banDialog.description",
+								"Ban {email} from accessing the platform.",
+								{
+									email: banDialogUser?.email ?? "",
+								},
+							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
-							<Label htmlFor="reason">{t("admin.users.banDialog.reason", "Reason")}</Label>
+							<Label htmlFor="reason">{t("admin:admin.users.banDialog.reason", "Reason")}</Label>
 							<Textarea
 								id="reason"
 								placeholder={t(
-									"admin.users.banDialog.reasonPlaceholder",
+									"admin:admin.users.banDialog.reasonPlaceholder",
 									"Enter the reason for banning this user…",
 								)}
 								value={banReason}
@@ -479,7 +498,7 @@ export default function UsersPage() {
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="expiry">
-								{t("admin.users.banDialog.expiry", "Expiry Date (optional)")}
+								{t("admin:admin.users.banDialog.expiry", "Expiry Date (optional)")}
 							</Label>
 							<Input
 								id="expiry"
@@ -488,7 +507,7 @@ export default function UsersPage() {
 								onChange={(e) => setBanExpiry(e.target.value)}
 							/>
 							<p className="text-xs text-muted-foreground">
-								{t("admin.users.banDialog.permanentBanHint", "Leave empty for permanent ban")}
+								{t("admin:admin.users.banDialog.permanentBanHint", "Leave empty for permanent ban")}
 							</p>
 						</div>
 					</div>
@@ -505,7 +524,7 @@ export default function UsersPage() {
 								}}
 								disabled={!banReason || isPending}
 							>
-								{t("admin.users.banDialog.confirmButton", "Ban User")}
+								{t("admin:admin.users.banDialog.confirmButton", "Ban User")}
 							</Button>
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -517,10 +536,10 @@ export default function UsersPage() {
 				<ActionPanelContent size="wide">
 					<ActionPanelHeader>
 						<ActionPanelTitle>
-							{t("admin.users.sessionsDialog.title", "User Sessions")}
+							{t("admin:admin.users.sessionsDialog.title", "User Sessions")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
-							{t("admin.users.sessionsDialog.description", "Active sessions for {email}", {
+							{t("admin:admin.users.sessionsDialog.description", "Active sessions for {email}", {
 								email: sessionsDialogUser?.email ?? "",
 							})}
 						</ActionPanelDescription>
@@ -534,7 +553,7 @@ export default function UsersPage() {
 							</div>
 						) : sessions.length === 0 ? (
 							<p className="text-center text-muted-foreground py-8">
-								{t("admin.users.sessionsDialog.noSessions", "No active sessions")}
+								{t("admin:admin.users.sessionsDialog.noSessions", "No active sessions")}
 							</p>
 						) : (
 							<div className="space-y-2">
@@ -547,11 +566,11 @@ export default function UsersPage() {
 											<div className="font-medium text-sm">
 												{session.userAgent
 													? `${session.userAgent.substring(0, 50)}…`
-													: t("admin.users.sessionsDialog.unknownDevice", "Unknown device")}
+													: t("admin:admin.users.sessionsDialog.unknownDevice", "Unknown device")}
 											</div>
 											<div className="text-xs text-muted-foreground">
 												{session.ipAddress ??
-													t("admin.users.sessionsDialog.unknownIp", "Unknown IP")}{" "}
+													t("admin:admin.users.sessionsDialog.unknownIp", "Unknown IP")}{" "}
 												• Created {DateTime.fromJSDate(session.createdAt).toRelative()}
 											</div>
 										</div>
@@ -560,7 +579,7 @@ export default function UsersPage() {
 											size="sm"
 											onClick={() => handleRevokeSession(session.id)}
 											disabled={isPending}
-											aria-label={t("admin.users.toasts.sessionRevoked", "Session revoked")}
+											aria-label={t("admin:admin.users.toasts.sessionRevoked", "Session revoked")}
 										>
 											<IconX className="size-4" aria-hidden="true" />
 										</Button>
@@ -575,7 +594,7 @@ export default function UsersPage() {
 						</Button>
 						{sessions.length > 0 && (
 							<Button variant="destructive" onClick={handleRevokeAllSessions} disabled={isPending}>
-								{t("admin.users.sessionsDialog.revokeAll", "Revoke All Sessions")}
+								{t("admin:admin.users.sessionsDialog.revokeAll", "Revoke All Sessions")}
 							</Button>
 						)}
 					</ActionPanelFooter>

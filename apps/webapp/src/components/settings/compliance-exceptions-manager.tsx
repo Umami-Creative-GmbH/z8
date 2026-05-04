@@ -10,13 +10,6 @@ import {
 	getPendingExceptions,
 	rejectComplianceException,
 } from "@/app/[locale]/(app)/settings/compliance/actions";
-import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
-import { formatDistance } from "@/lib/datetime/format";
-import { queryKeys } from "@/lib/query";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -26,6 +19,13 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { formatDistance } from "@/lib/datetime/format";
+import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
+import { queryKeys } from "@/lib/query";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Skeleton } from "../ui/skeleton";
 import { Textarea } from "../ui/textarea";
@@ -87,16 +87,16 @@ export function ComplianceExceptionsManager({
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.compliance.pendingExceptions(organizationId),
 			});
-			toast.success(t("compliance.exception.approved", "Exception Approved"), {
+			toast.success(t("compliance:compliance.exception.approved", "Exception Approved"), {
 				description: t(
-					"compliance.exception.approvedDescription",
+					"compliance:compliance.exception.approvedDescription",
 					"The compliance exception has been approved.",
 				),
 			});
 		},
 		onError: (error: unknown) => {
 			const message = error instanceof Error ? error.message : String(error);
-			toast.error(t("compliance.exception.approveFailed", "Failed to Approve"), {
+			toast.error(t("compliance:compliance.exception.approveFailed", "Failed to Approve"), {
 				description: message,
 			});
 		},
@@ -117,16 +117,16 @@ export function ComplianceExceptionsManager({
 			setRejectionDialogOpen(false);
 			setRejectingException(null);
 			setRejectionReason("");
-			toast.success(t("compliance.exception.rejected", "Exception Rejected"), {
+			toast.success(t("compliance:compliance.exception.rejected", "Exception Rejected"), {
 				description: t(
-					"compliance.exception.rejectedDescription",
+					"compliance:compliance.exception.rejectedDescription",
 					"The compliance exception has been rejected.",
 				),
 			});
 		},
 		onError: (error: unknown) => {
 			const message = error instanceof Error ? error.message : String(error);
-			toast.error(t("compliance.exception.rejectFailed", "Failed to Reject"), {
+			toast.error(t("compliance:compliance.exception.rejectFailed", "Failed to Reject"), {
 				description: message,
 			});
 		},
@@ -172,11 +172,11 @@ export function ComplianceExceptionsManager({
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2 text-lg">
 						<Clock className="h-5 w-5" aria-hidden="true" />
-						{t("compliance.pendingExceptions", "Pending Exception Requests")}
+						{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}
 					</CardTitle>
 					<CardDescription>
 						{t(
-							"compliance.pendingExceptionsDescription",
+							"compliance:compliance.pendingExceptionsDescription",
 							"Review exception requests that require your approval",
 						)}
 					</CardDescription>
@@ -199,7 +199,7 @@ export function ComplianceExceptionsManager({
 						<div className="flex flex-col items-center justify-center py-8 text-center">
 							<Check className="mb-3 h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
 							<p className="text-sm text-muted-foreground">
-								{t("compliance.noExceptions", "No pending exception requests")}
+								{t("compliance:compliance.noExceptions", "No pending exception requests")}
 							</p>
 						</div>
 					) : (
@@ -223,11 +223,11 @@ export function ComplianceExceptionsManager({
 				<ActionPanelContent>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
-							{t("compliance.exception.rejectTitle", "Reject Exception Request")}
+							{t("compliance:compliance.exception.rejectTitle", "Reject Exception Request")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
-								"compliance.exception.rejectDescription",
+								"compliance:compliance.exception.rejectDescription",
 								"Provide a reason for rejecting this exception request (optional)",
 							)}
 						</ActionPanelDescription>
@@ -248,12 +248,12 @@ export function ComplianceExceptionsManager({
 
 						<div className="space-y-2">
 							<Label htmlFor="rejection-reason">
-								{t("compliance.exception.rejectionReason", "Reason for rejection")}
+								{t("compliance:compliance.exception.rejectionReason", "Reason for rejection")}
 							</Label>
 							<Textarea
 								id="rejection-reason"
 								placeholder={t(
-									"compliance.exception.rejectionPlaceholder",
+									"compliance:compliance.exception.rejectionPlaceholder",
 									"Enter reason for rejecting this exception...",
 								)}
 								value={rejectionReason}
@@ -323,12 +323,12 @@ function ExceptionCard({ exception, onApprove, onReject, isApproving }: Exceptio
 
 				<div className="flex items-center gap-3 text-xs text-muted-foreground">
 					<span>
-						{t("compliance.exception.requestedAt", "Requested")}{" "}
+						{t("compliance:compliance.exception.requestedAt", "Requested")}{" "}
 						{formatDistance(exception.createdAt)}
 					</span>
 					{exception.plannedDurationMinutes && (
 						<span>
-							{t("compliance.exception.plannedDuration", "Planned")}:{" "}
+							{t("compliance:compliance.exception.plannedDuration", "Planned")}:{" "}
 							{Math.floor(exception.plannedDurationMinutes / 60)}h{" "}
 							{exception.plannedDurationMinutes % 60}m
 						</span>

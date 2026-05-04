@@ -33,10 +33,10 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 		try {
 			await navigator.clipboard.writeText(secret);
 			setCopied(true);
-			toast.success(t("webhooks.secret-copied", "Secret copied to clipboard"));
+			toast.success(t("settings:webhooks.secret-copied", "Secret copied to clipboard"));
 			setTimeout(() => setCopied(false), 2000);
 		} catch {
-			toast.error(t("webhooks.copy-failed", "Failed to copy to clipboard"));
+			toast.error(t("settings:webhooks.copy-failed", "Failed to copy to clipboard"));
 		}
 	};
 
@@ -46,11 +46,11 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
 						<IconKey className="h-5 w-5" aria-hidden="true" />
-						{t("webhooks.secret-dialog.title", "Webhook Secret")}
+						{t("settings:webhooks.secret-dialog.title", "Webhook Secret")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
-							"webhooks.secret-dialog.description",
+							"settings:webhooks.secret-dialog.description",
 							"This secret is used to verify webhook signatures. Store it securely.",
 						)}
 					</ActionPanelDescription>
@@ -59,11 +59,11 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 				<ActionPanelBody className="space-y-4">
 					<Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
 						<AlertTitle className="text-yellow-700 dark:text-yellow-400">
-							{t("webhooks.secret-dialog.warning-title", "Important")}
+							{t("settings:webhooks.secret-dialog.warning-title", "Important")}
 						</AlertTitle>
 						<AlertDescription className="text-yellow-600 dark:text-yellow-500">
 							{t(
-								"webhooks.secret-dialog.warning",
+								"settings:webhooks.secret-dialog.warning",
 								"This secret will only be shown once. Make sure to save it now.",
 							)}
 						</AlertDescription>
@@ -71,7 +71,7 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 
 					<div className="space-y-2">
 						<label htmlFor="webhook-secret-input" className="text-sm font-medium">
-							{t("webhooks.secret-dialog.secret", "Signing Secret")}
+							{t("settings:webhooks.secret-dialog.secret", "Signing Secret")}
 						</label>
 						<div className="flex gap-2">
 							<Input
@@ -85,7 +85,10 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 								size="icon"
 								onClick={handleCopy}
 								className="shrink-0"
-								aria-label={t("webhooks.secret-dialog.copy-secret", "Copy secret to clipboard")}
+								aria-label={t(
+									"settings:webhooks.secret-dialog.copy-secret",
+									"Copy secret to clipboard",
+								)}
 							>
 								{copied ? (
 									<IconCheck className="h-4 w-4 text-green-600" aria-hidden="true" />
@@ -98,11 +101,11 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 
 					<div className="space-y-2">
 						<label className="text-sm font-medium">
-							{t("webhooks.secret-dialog.verification", "Signature Verification")}
+							{t("settings:webhooks.secret-dialog.verification", "Signature Verification")}
 						</label>
 						<p className="text-sm text-muted-foreground">
 							{t(
-								"webhooks.secret-dialog.verification-hint",
+								"settings:webhooks.secret-dialog.verification-hint",
 								"Verify webhook signatures using HMAC-SHA256. The signature is sent in the X-Z8-Signature header.",
 							)}
 						</p>
@@ -126,7 +129,7 @@ function verifySignature(payload, signature, secret) {
 
 				<ActionPanelFooter>
 					<Button onClick={() => onOpenChange(false)}>
-						{t("webhooks.secret-dialog.done", "I've saved the secret")}
+						{t("settings:webhooks.secret-dialog.done", "I've saved the secret")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>
