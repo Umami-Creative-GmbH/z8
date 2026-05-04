@@ -86,8 +86,8 @@ const nextConfig: NextConfig = {
 		"@tus/s3-store",
 		"@tus/file-store",
 		"exceljs",
-		"@react-email/render",
-		"@react-email/components",
+		"react-email",
+		"@react-email/ui",
 	],
 };
 

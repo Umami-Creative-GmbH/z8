@@ -1506,7 +1506,7 @@ async function sendOrganizationDeletionNotifications(
 	deletedByName: string,
 	deletionDate: Date,
 ): Promise<void> {
-	const { render } = await import("@react-email/components");
+	const { render } = await import("react-email");
 	const { OrganizationDeletion } = await import("@/lib/email/templates/organization-deletion");
 	const { sendEmail } = await import("@/lib/email/email-service");
 

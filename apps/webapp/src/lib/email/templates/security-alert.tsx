@@ -1,15 +1,4 @@
-import {
-	Body,
-	Button,
-	Container,
-	Head,
-	Heading,
-	Hr,
-	Html,
-	Link,
-	Section,
-	Text,
-} from "@react-email/components";
+import { Body, Button, Container, Head, Heading, Hr, Html, Link, Section, Text } from "react-email";
 
 type SecurityEventType = "password_changed" | "two_factor_enabled" | "two_factor_disabled";
 

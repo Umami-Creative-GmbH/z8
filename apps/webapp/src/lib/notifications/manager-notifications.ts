@@ -4,7 +4,7 @@
  * Handles sending email notifications when managers are assigned or removed
  */
 
-import { render } from "@react-email/components";
+import { render } from "react-email";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email/email-service";
 import { ManagerAssignedEmail } from "@/lib/email/templates/manager-assigned";
