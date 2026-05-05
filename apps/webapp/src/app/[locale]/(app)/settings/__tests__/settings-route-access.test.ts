@@ -42,6 +42,23 @@ function stripComments(source: string): string {
 }
 
 describe("org-admin settings route access", () => {
+	it("keeps settings layout mobile overflow guards in place", () => {
+		const source = stripComments(readFileSync(join(SETTINGS_ROOT, "layout.tsx"), "utf8"));
+
+		expect(source).toContain('className="flex min-h-0 min-w-0 flex-1 overflow-hidden"');
+		expect(source).toContain('className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"');
+		expect(source).toContain('className="min-w-0 flex-1 overflow-auto overflow-x-hidden"');
+	});
+
+	it("keeps third-party notification settings pages mobile-safe", () => {
+		for (const pagePath of ["slack/page.tsx", "discord/page.tsx", "teams-notifications/page.tsx"]) {
+			const source = stripComments(readFileSync(join(SETTINGS_ROOT, pagePath), "utf8"));
+
+			expect(source).toContain('className="p-4 sm:p-6"');
+			expect(source).toContain('className="mx-auto min-w-0 max-w-3xl space-y-6"');
+		}
+	});
+
 	it("treats owners as org admins for settings route checks", () => {
 		const accessTier = resolveSettingsTierFromContext({
 			activeOrganizationId: "org-1",
@@ -119,7 +136,9 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(
+			false,
+		);
 	});
 
 	it("guards direct demo route and mutations with the demo data feature helper", () => {
@@ -346,9 +365,13 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/queries.ts"), "utf8"),
 		);
 
-		expect(actionsSource).not.toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+		expect(actionsSource).not.toMatch(
+			/export\s+async\s+function\s+loadImplementationChecklistForContext/,
+		);
 		expect(queriesSource.startsWith('import "server-only";')).toBe(true);
-		expect(queriesSource).toMatch(/export\s+async\s+function\s+loadImplementationChecklistForContext/);
+		expect(queriesSource).toMatch(
+			/export\s+async\s+function\s+loadImplementationChecklistForContext/,
+		);
 	});
 
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {

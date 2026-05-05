@@ -16,16 +16,16 @@ export default async function SettingsLayout({
 	const billingEnabled = process.env.BILLING_ENABLED === "true";
 
 	return (
-		<div className="flex flex-1 overflow-hidden">
+		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
 			{/* Settings navigation sidebar */}
 			<aside className="w-64 border-r bg-card p-4 hidden md:block overflow-auto">
 				<SettingsNav accessTier={accessTier} billingEnabled={billingEnabled} />
 			</aside>
 
 			{/* Main content area */}
-			<main className="flex-1 flex flex-col overflow-hidden">
+			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 				<SettingsBreadcrumbs />
-				<div className="flex-1 overflow-auto">{children}</div>
+				<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
 			</main>
 		</div>
 	);
