@@ -10,8 +10,8 @@ export default async function SlackSettingsPage() {
 	const configResult = await getSlackNotificationChannelConfig();
 
 	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
+		<div className="p-4 sm:p-6">
+			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
 				<div>
 					<h1 className="text-2xl font-semibold">Slack</h1>
 					<p className="text-muted-foreground">

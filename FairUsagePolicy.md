@@ -111,7 +111,7 @@ The daily telemetry payload includes **only** the following aggregated, anonymiz
 
 ### Transmission & Security
 
-- Telemetry is sent via **HTTPS POST** to `https://z8-time.app/telemetry`
+- Telemetry is sent via **HTTPS POST** to `https://telemetry.z8-time.app/`
 - Each payload is **encrypted in transit** using TLS 1.3+
 - The `deployment_id` (a random UUID) is the only persistent identifier across reports
 - Data is sent **once per day** (UTC midnight) via a scheduled cron job

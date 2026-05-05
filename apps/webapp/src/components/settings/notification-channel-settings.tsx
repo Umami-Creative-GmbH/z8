@@ -81,7 +81,7 @@ export function NotificationChannelSettings({
 	const disableForm = controlsDisabled || isSubmitting;
 
 	return (
-		<div className="space-y-6">
+		<div className="min-w-0 space-y-6">
 			<Card>
 				<CardHeader>
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -119,12 +119,15 @@ export function NotificationChannelSettings({
 							form.handleSubmit();
 						}}
 					>
-						<div className="flex items-center justify-between gap-4">
-							<div className="space-y-1">
+						<div className="flex min-w-0 items-center justify-between gap-4">
+							<div className="min-w-0 space-y-1">
 								<Label htmlFor="enableApprovals" className="text-sm font-medium">
 									Approval notifications
 								</Label>
-								<p id="enableApprovals-description" className="text-sm text-muted-foreground">
+								<p
+									id="enableApprovals-description"
+									className="break-words text-sm text-muted-foreground"
+								>
 									Send approval requests and approval status updates.
 								</p>
 							</div>
@@ -136,6 +139,7 @@ export function NotificationChannelSettings({
 										onCheckedChange={field.handleChange}
 										disabled={disableForm}
 										aria-describedby="enableApprovals-description"
+										className="shrink-0"
 									/>
 								)}
 							</form.Field>
@@ -143,12 +147,15 @@ export function NotificationChannelSettings({
 
 						<div className="h-px bg-border" />
 
-						<div className="flex items-center justify-between gap-4">
-							<div className="space-y-1">
+						<div className="flex min-w-0 items-center justify-between gap-4">
+							<div className="min-w-0 space-y-1">
 								<Label htmlFor="enableCommands" className="text-sm font-medium">
 									Commands
 								</Label>
-								<p id="enableCommands-description" className="text-sm text-muted-foreground">
+								<p
+									id="enableCommands-description"
+									className="break-words text-sm text-muted-foreground"
+								>
 									Allow supported workplace commands from this channel.
 								</p>
 							</div>
@@ -160,6 +167,7 @@ export function NotificationChannelSettings({
 										onCheckedChange={field.handleChange}
 										disabled={disableForm}
 										aria-describedby="enableCommands-description"
+										className="shrink-0"
 									/>
 								)}
 							</form.Field>
@@ -168,12 +176,15 @@ export function NotificationChannelSettings({
 						<div className="h-px bg-border" />
 
 						<div className="space-y-3">
-							<div className="flex items-center justify-between gap-4">
-								<div className="space-y-1">
+							<div className="flex min-w-0 items-center justify-between gap-4">
+								<div className="min-w-0 space-y-1">
 									<Label htmlFor="enableDailyDigest" className="text-sm font-medium">
 										Daily digest
 									</Label>
-									<p id="enableDailyDigest-description" className="text-sm text-muted-foreground">
+									<p
+										id="enableDailyDigest-description"
+										className="break-words text-sm text-muted-foreground"
+									>
 										Send a daily summary of absences, schedules, and pending work.
 									</p>
 								</div>
@@ -185,6 +196,7 @@ export function NotificationChannelSettings({
 											onCheckedChange={field.handleChange}
 											disabled={disableForm}
 											aria-describedby="enableDailyDigest-description"
+											className="shrink-0"
 										/>
 									)}
 								</form.Field>
@@ -228,12 +240,15 @@ export function NotificationChannelSettings({
 						<div className="h-px bg-border" />
 
 						<div className="space-y-3">
-							<div className="flex items-center justify-between gap-4">
-								<div className="space-y-1">
+							<div className="flex min-w-0 items-center justify-between gap-4">
+								<div className="min-w-0 space-y-1">
 									<Label htmlFor="enableEscalations" className="text-sm font-medium">
 										Escalations
 									</Label>
-									<p id="enableEscalations-description" className="text-sm text-muted-foreground">
+									<p
+										id="enableEscalations-description"
+										className="break-words text-sm text-muted-foreground"
+									>
 										Escalate unanswered approval requests after the configured timeout.
 									</p>
 								</div>
@@ -245,6 +260,7 @@ export function NotificationChannelSettings({
 											onCheckedChange={field.handleChange}
 											disabled={disableForm}
 											aria-describedby="enableEscalations-description"
+											className="shrink-0"
 										/>
 									)}
 								</form.Field>
