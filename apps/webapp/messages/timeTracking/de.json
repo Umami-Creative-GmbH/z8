@@ -108,7 +108,12 @@
       "today": "Heute"
     },
     "table": {
+      "approved": "Zeiteintrag genehmigt",
+      "approveEntry": "Eintrag genehmigen",
+      "approveFailed": "Fehler beim Genehmigen des Eintrags",
+      "approving": "Wird genehmigt...",
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
+      "rowActions": "Aktionen für Zeiteinträge",
       "title": "Zeiteinträge"
     },
     "timeline": {

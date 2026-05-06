@@ -30,9 +30,14 @@
       "view-all-members": "Ver todos os {count} membros da equipa"
     },
     "manager-today": {
+      "all-clear": "Nenhuma ação do gerente está sinalizada no momento.",
       "description": "Revise hoje antes que pequenos problemas afetem a folha de pagamento ou a cobertura.",
+      "error": "Falha ao carregar as contagens do briefing do gerente.",
+      "metric-approvals": "Aprovações",
+      "metric-clock-ins": "Registros de ponto",
+      "metric-critical": "Crítico",
+      "metric-risks": "Riscos",
       "open": "Resumo Aberto",
-      "summary": "Comece com ausências, marcações ausentes, aprovações, riscos de cobertura, horas extras e outros problemas que impactam a folha de pagamento.",
       "title": "Gestor Hoje"
     },
     "pending-approvals": {

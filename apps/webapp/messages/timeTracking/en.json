@@ -108,7 +108,12 @@
       "today": "Today"
     },
     "table": {
+      "approved": "Time entry approved",
+      "approveEntry": "Approve entry",
+      "approveFailed": "Failed to approve entry",
+      "approving": "Approving...",
       "emptyState": "No time entries found for this week.",
+      "rowActions": "Time entry actions",
       "title": "Time Entries"
     },
     "timeline": {
