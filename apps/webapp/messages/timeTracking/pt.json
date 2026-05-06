@@ -108,7 +108,12 @@
       "today": "Hoje"
     },
     "table": {
+      "approved": "Registro de horas aprovado",
+      "approveEntry": "Aprovar registro",
+      "approveFailed": "Falha ao aprovar registro",
+      "approving": "Aprovando...",
       "emptyState": "Nenhum registro de tempo encontrado para esta semana.",
+      "rowActions": "Ações do registro de horas",
       "title": "Registros de Tempo"
     },
     "timeline": {

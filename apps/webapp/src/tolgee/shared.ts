@@ -25,6 +25,7 @@ export const ALL_NAMESPACES = [
 	"settings",
 	"onboarding",
 	"bot",
+	"teamsBot",
 ] as const;
 
 export type Namespace = (typeof ALL_NAMESPACES)[number];
@@ -55,6 +56,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/travel-expenses": ["common", "settings"],
 	"/travel-expenses/approvals": ["common", "settings", "approvals"],
 	"/reports": ["common", "reports"],
+	"/team": ["common", "settings"],
 	"/scheduling": ["common", "scheduling", "compliance"],
 	"/settings": ["common", "settings"],
 	"/settings/compliance": ["common", "settings", "compliance"],
@@ -211,6 +213,14 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		it: () => import("../../messages/bot/it.json"),
 		pt: () => import("../../messages/bot/pt.json"),
 	},
+	teamsBot: {
+		en: () => import("../../messages/teamsBot/en.json"),
+		de: () => import("../../messages/teamsBot/de.json"),
+		fr: () => import("../../messages/teamsBot/fr.json"),
+		es: () => import("../../messages/teamsBot/es.json"),
+		it: () => import("../../messages/teamsBot/it.json"),
+		pt: () => import("../../messages/teamsBot/pt.json"),
+	},
 };
 
 /**
@@ -246,8 +256,9 @@ export async function loadNamespaces(
 	// Merge all namespace translations into a single object
 	// This allows t("auth.login") to work without specifying namespace
 	const merged: TreeTranslationsData = {};
-	for (const { data } of loaded) {
+	for (const { ns, data } of loaded) {
 		Object.assign(merged, data);
+		addNamespaceKeyAliases(merged, ns, data);
 	}
 
 	// Return in TolgeeStaticData format with just the locale as key
@@ -272,6 +283,20 @@ export async function loadRouteTranslations(
 // Tolgee's expected translation data type
 type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
 
+function addNamespaceKeyAliases(
+	target: TreeTranslationsData,
+	namespace: Namespace,
+	data: TreeTranslationsData,
+) {
+	if (namespace === DEFAULT_NAMESPACE) {
+		return;
+	}
+
+	for (const [key, value] of Object.entries(data)) {
+		target[`${namespace}:${key}`] = value;
+	}
+}
+
 /**
  * Load and merge all namespaces for a language
  */
@@ -285,6 +310,7 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 				const data =
 					(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
 				Object.assign(merged, data);
+				addNamespaceKeyAliases(merged, ns, data);
 			} catch (error) {
 				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
 			}

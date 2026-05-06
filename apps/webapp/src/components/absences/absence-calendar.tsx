@@ -7,7 +7,9 @@ import { useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AbsenceWithCategory, DayPeriod, Holiday } from "@/lib/absences/types";
+import { cn } from "@/lib/utils";
 
 interface AbsenceCalendarProps {
 	absences: AbsenceWithCategory[];
@@ -23,6 +25,7 @@ interface DateStatus {
 	isLastDay?: boolean;
 	startPeriod?: DayPeriod;
 	endPeriod?: DayPeriod;
+	holidays?: Array<Pick<Holiday, "id" | "name">>;
 }
 
 export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
@@ -79,6 +82,18 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 	const getDateStatus = (day: number): DateStatus | null => {
 		// Create YYYY-MM-DD string for comparison
 		const dateStr = DateTime.local(year, month + 1, day).toFormat("yyyy-MM-dd");
+		const date = DateTime.local(year, month + 1, day);
+
+		// Check for holidays
+		const matchingHolidays: Array<Pick<Holiday, "id" | "name">> = [];
+		for (const holiday of holidays) {
+			const start = DateTime.fromJSDate(holiday.startDate);
+			const end = DateTime.fromJSDate(holiday.endDate);
+
+			if (date >= start.startOf("day") && date <= end.endOf("day")) {
+				matchingHolidays.push({ id: holiday.id, name: holiday.name });
+			}
+		}
 
 		// Check for absences (dates are now YYYY-MM-DD strings)
 		for (const absence of absences) {
@@ -120,19 +135,13 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 					isLastDay,
 					startPeriod: absence.startPeriod,
 					endPeriod: absence.endPeriod,
+					holidays: matchingHolidays.length > 0 ? matchingHolidays : undefined,
 				};
 			}
 		}
 
-		// Check for holidays
-		for (const holiday of holidays) {
-			const start = DateTime.fromJSDate(holiday.startDate);
-			const end = DateTime.fromJSDate(holiday.endDate);
-			const date = DateTime.local(year, month + 1, day);
-
-			if (date >= start.startOf("day") && date <= end.endOf("day")) {
-				return { type: "holiday" };
-			}
+		if (matchingHolidays.length > 0) {
+			return { type: "holiday", holidays: matchingHolidays };
 		}
 
 		return null;
@@ -147,6 +156,8 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 
 	for (let day = 1; day <= daysInMonth; day++) {
 		const status = getDateStatus(day);
+		const holidayTooltipItems = status?.holidays ?? [];
+		const hasHolidayTooltip = holidayTooltipItems.length > 0;
 		const isToday =
 			new Date().getDate() === day &&
 			new Date().getMonth() === month &&
@@ -195,16 +206,17 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 			return "";
 		};
 
-		days.push(
+		const dayCell = (
 			<div
 				key={day}
-				className={`
-          aspect-square rounded-md p-2 text-sm relative
-          ${isToday ? "ring-2 ring-primary" : ""}
-          ${status?.type === "holiday" ? "bg-muted" : ""}
-          ${getTextClass()}
-        `}
+				className={cn(
+					"aspect-square rounded-md p-2 text-sm relative",
+					isToday && "ring-2 ring-primary",
+					status?.type === "holiday" && "bg-muted",
+					getTextClass(),
+				)}
 				style={status?.type === "absence" ? getBackgroundStyle() : {}}
+				tabIndex={hasHolidayTooltip ? 0 : undefined}
 			>
 				<div className="flex flex-col h-full">
 					<div className="font-medium">{day}</div>
@@ -221,7 +233,25 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 						</div>
 					)}
 				</div>
-			</div>,
+			</div>
+		);
+
+		if (!hasHolidayTooltip) {
+			days.push(dayCell);
+			continue;
+		}
+
+		days.push(
+			<Tooltip key={day}>
+				<TooltipTrigger asChild>{dayCell}</TooltipTrigger>
+				<TooltipContent className="max-w-xs">
+					<div className="space-y-1">
+						{holidayTooltipItems.map((holiday) => (
+							<div key={holiday.id}>{holiday.name}</div>
+						))}
+					</div>
+				</TooltipContent>
+			</Tooltip>,
 		);
 	}
 
@@ -243,17 +273,19 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="grid grid-cols-7 gap-2">
-					{/* Day Headers */}
-					{weekdays.map((day) => (
-						<div key={day} className="text-center text-sm font-medium text-muted-foreground pb-2">
-							{day}
-						</div>
-					))}
+				<TooltipProvider delayDuration={150}>
+					<div className="grid grid-cols-7 gap-2">
+						{/* Day Headers */}
+						{weekdays.map((day) => (
+							<div key={day} className="text-center text-sm font-medium text-muted-foreground pb-2">
+								{day}
+							</div>
+						))}
 
-					{/* Calendar Days */}
-					{days}
-				</div>
+						{/* Calendar Days */}
+						{days}
+					</div>
+				</TooltipProvider>
 
 				{/* Legend */}
 				<div className="mt-6 pt-6 border-t flex flex-wrap gap-4 text-sm">

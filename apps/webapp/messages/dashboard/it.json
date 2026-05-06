@@ -30,9 +30,14 @@
       "view-all-members": "Vedi tutti i {count} membri del team"
     },
     "manager-today": {
+      "all-clear": "Al momento non ci sono azioni del manager segnalate.",
       "description": "Controlla oggi stesso prima che piccoli problemi influiscano sulle buste paga o sulla copertura.",
+      "error": "Caricamento dei conteggi del briefing del manager non riuscito.",
+      "metric-approvals": "Approvazioni",
+      "metric-clock-ins": "Timbrature",
+      "metric-critical": "Critico",
+      "metric-risks": "Rischi",
       "open": "Brief aperto",
-      "summary": "Inizia con assenze, timbrature mancanti, approvazioni, rischi di copertura, straordinari e altri problemi che influiscono sulle buste paga.",
       "title": "Manager oggi"
     },
     "pending-approvals": {

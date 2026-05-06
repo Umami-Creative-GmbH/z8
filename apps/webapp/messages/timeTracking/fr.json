@@ -108,7 +108,12 @@
       "today": "Aujourd'hui"
     },
     "table": {
+      "approved": "Entrée de temps approuvée",
+      "approveEntry": "Approuver l'entrée",
+      "approveFailed": "Échec de l'approbation de l'entrée",
+      "approving": "Approbation en cours...",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
+      "rowActions": "Actions sur les entrées de temps",
       "title": "Entrées de temps"
     },
     "timeline": {

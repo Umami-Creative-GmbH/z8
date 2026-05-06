@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toCalendarEvents } from "@/lib/absences/absence-calendar-adapter";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -96,7 +97,10 @@ const MiniMonth = memo(function MiniMonth({
 					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
 					// Determine event type to show
-					const hasHoliday = dayEvents.some((e) => e.type === "holiday");
+					const holidayEvents = dayEvents
+						.filter((event) => event.type === "holiday")
+						.filter((event) => Boolean(event.title));
+					const hasHoliday = holidayEvents.length > 0;
 					const absenceEvent = dayEvents.find((e) => e.type === "absence");
 					const absenceStatus = absenceEvent?.metadata?.status as
 						| "pending"
@@ -106,17 +110,17 @@ const MiniMonth = memo(function MiniMonth({
 
 					// Determine background color based on status
 					let bgClass = "";
-					if (hasHoliday) {
-						bgClass = "bg-amber-100 dark:bg-amber-900/30";
-					} else if (absenceStatus === "approved") {
+					if (absenceStatus === "approved") {
 						bgClass = "bg-blue-100 dark:bg-blue-900/30";
 					} else if (absenceStatus === "pending") {
 						bgClass = "bg-yellow-100 dark:bg-yellow-900/30";
 					} else if (absenceStatus === "rejected") {
 						bgClass = "bg-red-100 dark:bg-red-900/30";
+					} else if (hasHoliday) {
+						bgClass = "bg-amber-100 dark:bg-amber-900/30";
 					}
 
-					return (
+					const dayButton = (
 						<button
 							key={date.getTime()}
 							type="button"
@@ -131,6 +135,23 @@ const MiniMonth = memo(function MiniMonth({
 						>
 							<span>{date.getDate()}</span>
 						</button>
+					);
+
+					if (!hasHoliday) {
+						return dayButton;
+					}
+
+					return (
+						<Tooltip key={date.getTime()}>
+							<TooltipTrigger asChild>{dayButton}</TooltipTrigger>
+							<TooltipContent className="max-w-xs">
+								<div className="space-y-1">
+									{holidayEvents.map((holidayEvent) => (
+										<div key={holidayEvent.id}>{holidayEvent.title}</div>
+									))}
+								</div>
+							</TooltipContent>
+						</Tooltip>
 					);
 				})}
 			</div>
@@ -259,20 +280,22 @@ export function AbsenceYearCalendar({
 			</div>
 
 			{/* 12 month grid */}
-			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
-				{MONTHS.map((monthName, month) => (
-					<MiniMonth
-						key={monthName}
-						year={year}
-						month={month}
-						monthName={monthName}
-						weekdays={WEEKDAYS}
-						weekStartDay={weekStartDay}
-						eventsByDate={eventsByDate}
-						onDayClick={onDayClick}
-					/>
-				))}
-			</div>
+			<TooltipProvider delayDuration={150}>
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
+					{MONTHS.map((monthName, monthIndex) => (
+						<MiniMonth
+							key={monthName}
+							year={year}
+							month={monthIndex}
+							monthName={monthName}
+							weekdays={WEEKDAYS}
+							weekStartDay={weekStartDay}
+							eventsByDate={eventsByDate}
+							onDayClick={onDayClick}
+						/>
+					))}
+				</div>
+			</TooltipProvider>
 		</div>
 	);
 }

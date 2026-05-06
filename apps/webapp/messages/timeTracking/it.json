@@ -108,7 +108,12 @@
       "today": "Oggi"
     },
     "table": {
+      "approved": "Voce di tempo approvata",
+      "approveEntry": "Approva voce",
+      "approveFailed": "Approvazione della voce non riuscita",
+      "approving": "Approvazione in corso...",
       "emptyState": "Nessuna voce oraria trovata per questa settimana.",
+      "rowActions": "Azioni voce di tempo",
       "title": "Voci orarie"
     },
     "timeline": {

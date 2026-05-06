@@ -30,9 +30,14 @@
       "view-all-members": "Voir tous les {count} membres de l'équipe"
     },
     "manager-today": {
+      "all-clear": "Aucune action de gestionnaire n'est signalée pour le moment.",
       "description": "Passez en revue la journée d'aujourd'hui avant que des problèmes mineurs n'affectent la paie ou la couverture.",
+      "error": "Échec du chargement des comptes rendus de gestionnaire.",
+      "metric-approvals": "Approbations",
+      "metric-clock-ins": "Pointages",
+      "metric-critical": "Critique",
+      "metric-risks": "Risques",
       "open": "Résumé",
-      "summary": "Commencez par les absences, les pointages manquants, les approbations, les risques de couverture, les heures supplémentaires et autres problèmes ayant un impact sur la paie.",
       "title": "Aujourd'hui pour le manager"
     },
     "pending-approvals": {

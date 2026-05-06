@@ -5,7 +5,6 @@ import {
 	RestPeriodBlocker,
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
-import { BreakReminder } from "@/components/time-tracking/break-reminder";
 import {
 	ActiveSessionSummary,
 	ClockActionButton,
@@ -13,9 +12,9 @@ import {
 	RestPeriodWarnBanner,
 	WorkLocationSelector,
 } from "@/components/time-tracking/clock-in-out-widget-parts";
+import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
 import { useClockInOutWidget } from "@/components/time-tracking/use-clock-in-out-widget";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { WaterReminder } from "@/components/wellness/water-reminder";
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -80,12 +79,7 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName }: Props) {
 					<RestPeriodWarnBanner t={widget.t} />
 				) : null}
 
-				<BreakReminder
-					isClockedIn={widget.isClockedIn}
-					sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
-				/>
-
-				<WaterReminder
+				<SessionReminderPanel
 					isClockedIn={widget.isClockedIn}
 					sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
 				/>

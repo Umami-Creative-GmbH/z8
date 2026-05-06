@@ -1,6 +1,6 @@
 "use client";
 
-import { TolgeeProvider, useTolgee, type TolgeeStaticData } from "@tolgee/react";
+import { TolgeeProvider, type TolgeeStaticData, useTolgee } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type Namespace, TolgeeBase } from "./shared";
@@ -12,6 +12,23 @@ type Props = {
 };
 
 const tolgeeCache = new Map<string, ReturnType<ReturnType<typeof TolgeeBase>["init"]>>();
+const addedStaticData = new WeakMap<object, WeakSet<object>>();
+
+function addStaticDataOnce(
+	instance: ReturnType<ReturnType<typeof TolgeeBase>["init"]>,
+	staticData: TolgeeStaticData,
+) {
+	let instanceData = addedStaticData.get(instance);
+	if (!instanceData) {
+		instanceData = new WeakSet();
+		addedStaticData.set(instance, instanceData);
+	}
+
+	if (!instanceData.has(staticData)) {
+		instance.addStaticData(staticData);
+		instanceData.add(staticData);
+	}
+}
 
 function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
 	let instance = tolgeeCache.get(language);
@@ -22,21 +39,14 @@ function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
 		});
 		tolgeeCache.set(language, instance);
 	}
+	addStaticDataOnce(instance, staticData);
 	return instance;
 }
 
 export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
 	const router = useRouter();
 
-	const tolgee = useMemo(
-		() => getOrCreateTolgee(language, staticData),
-		[language],
-	);
-
-	// Always add staticData (idempotent) in case new namespaces were loaded
-	if (staticData) {
-		tolgee.addStaticData(staticData);
-	}
+	const tolgee = useMemo(() => getOrCreateTolgee(language, staticData), [language, staticData]);
 
 	useEffect(() => {
 		// this ensures server components refresh, after translation change

@@ -108,7 +108,12 @@
       "today": "Hoy"
     },
     "table": {
+      "approved": "Entrada de tiempo aprobada",
+      "approveEntry": "Aprobar entrada",
+      "approveFailed": "Error al aprobar la entrada",
+      "approving": "Aprobando...",
       "emptyState": "No se encontraron entradas de tiempo para esta semana.",
+      "rowActions": "Acciones de entrada de tiempo",
       "title": "Entradas de tiempo"
     },
     "timeline": {

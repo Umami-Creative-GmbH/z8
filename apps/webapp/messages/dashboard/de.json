@@ -30,9 +30,14 @@
       "view-all-members": "Alle {count} Teammitglieder anzeigen"
     },
     "manager-today": {
+      "all-clear": "Aktuell sind keine Manager-Aktionen markiert.",
       "description": "Überprüfen Sie den heutigen Tag, bevor kleine Probleme die Gehaltsabrechnung oder die Personalabdeckung beeinträchtigen.",
+      "error": "Fehler beim Laden der Manager-Briefing-Anzahl.",
+      "metric-approvals": "Genehmigungen",
+      "metric-clock-ins": "Arbeitsbeginn-Erfassungen",
+      "metric-critical": "Kritisch",
+      "metric-risks": "Risiken",
       "open": "Kurzübersicht",
-      "summary": "Beginnen Sie mit Abwesenheiten, fehlenden Stempelungen, Genehmigungen, Abdeckungsrisiken, Überstunden und anderen Problemen, die sich auf die Gehaltsabrechnung auswirken.",
       "title": "Manager Heute"
     },
     "pending-approvals": {
