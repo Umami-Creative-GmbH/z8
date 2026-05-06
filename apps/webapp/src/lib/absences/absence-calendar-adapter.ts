@@ -15,6 +15,10 @@ function formatDateKey(date: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
+export function isHolidayOnDate(holiday: Holiday, date: Date): boolean {
+	return formatDateKey(holiday.startDate) === formatDateKey(date);
+}
+
 /**
  * Transform AbsenceWithCategory[] to CalendarEvent[]
  * Creates one event per day for multi-day absences
@@ -57,34 +61,20 @@ export function absencesToCalendarEvents(absences: AbsenceWithCategory[]): Calen
 
 /**
  * Transform Holiday[] to CalendarEvent[]
- * Creates one event per day for multi-day holidays
+ * Creates one event per holiday. Holidays are displayed on their start date only.
  */
 export function holidaysToCalendarEvents(holidays: Holiday[]): CalendarEvent[] {
-	const events: CalendarEvent[] = [];
-
-	for (const holiday of holidays) {
-		const startDate = new Date(holiday.startDate);
-		const endDate = new Date(holiday.endDate);
-
-		// For multi-day holidays, create an event for each day
-		const current = new Date(startDate);
-		while (current <= endDate) {
-			events.push({
-				id: `holiday-${holiday.id}-${formatDateKey(current)}`,
-				type: "holiday",
-				date: new Date(current),
-				title: holiday.name,
-				color: "#f59e0b", // amber-500
-				metadata: {
-					holidayId: holiday.id,
-					name: holiday.name,
-				},
-			});
-			current.setDate(current.getDate() + 1);
-		}
-	}
-
-	return events;
+	return holidays.map((holiday) => ({
+		id: `holiday-${holiday.id}-${formatDateKey(holiday.startDate)}`,
+		type: "holiday",
+		date: new Date(holiday.startDate),
+		title: holiday.name,
+		color: "#f59e0b", // amber-500
+		metadata: {
+			holidayId: holiday.id,
+			name: holiday.name,
+		},
+	}));
 }
 
 /**

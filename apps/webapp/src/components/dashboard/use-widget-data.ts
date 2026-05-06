@@ -23,6 +23,7 @@ export function useWidgetData<T>(
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 	const prevOrgIdRef = useRef<string | null>(null);
+	const mountedRef = useRef(false);
 
 	const loadData = useCallback(
 		async (isRefresh = false) => {
@@ -31,18 +32,35 @@ export function useWidgetData<T>(
 			}
 			try {
 				const result = await fetcher();
+				if (!mountedRef.current) {
+					return;
+				}
 				if (result.success && result.data) {
 					setData(result.data);
 				}
 			} catch {
+				if (!mountedRef.current) {
+					return;
+				}
 				toast.error(options?.errorMessage ?? "Failed to load data");
 			} finally {
+				if (!mountedRef.current) {
+					return;
+				}
 				setLoading(false);
 				setRefreshing(false);
 			}
 		},
 		[fetcher, options?.errorMessage],
 	);
+
+	useEffect(() => {
+		mountedRef.current = true;
+
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
 
 	// Initial load
 	useEffect(() => {
