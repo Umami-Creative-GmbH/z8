@@ -3,7 +3,31 @@ import "temporal-polyfill/global";
 import { describe, expect, it } from "vitest";
 
 import { calendarEventToScheduleX, generateBreakEvents } from "./schedule-x-adapter";
-import type { WorkPeriodEvent } from "./types";
+import type { HolidayEvent, WorkPeriodEvent } from "./types";
+
+describe("calendarEventToScheduleX", () => {
+	it("keeps holidays on a single day when the stored end date is next-day midnight", () => {
+		const holiday: HolidayEvent = {
+			id: "holiday-1",
+			type: "holiday",
+			date: new Date("2026-05-01T00:00:00.000Z"),
+			endDate: new Date("2026-05-02T00:00:00.000Z"),
+			title: "Labor Day",
+			color: "#f59e0b",
+			metadata: {
+				categoryName: "Public holiday",
+				categoryType: "public",
+				blocksTimeEntry: true,
+				isRecurring: false,
+			},
+		};
+
+		const scheduleXEvent = calendarEventToScheduleX(holiday);
+
+		expect(scheduleXEvent?.start.toString()).toBe("2026-05-01");
+		expect(scheduleXEvent?.end.toString()).toBe("2026-05-02");
+	});
+});
 
 describe("generateBreakEvents", () => {
 	it("creates CSS-selector-safe ids for generated breaks", () => {

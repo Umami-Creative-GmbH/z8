@@ -231,6 +231,19 @@ export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent |
 		// - Holidays and absences are always all-day
 		const isAllDay = event.type === "holiday" || event.type === "absence";
 
+		if (event.type === "holiday") {
+			const start = toTemporalPlainDate(startDate);
+
+			return {
+				id: event.id,
+				title: event.title,
+				start,
+				end: start.add({ days: 1 }),
+				calendarId: event.type,
+				_eventData: event,
+			};
+		}
+
 		if (isAllDay) {
 			// For all-day events, use Temporal.PlainDate
 			// End date is exclusive in Schedule-X, so add 1 day
