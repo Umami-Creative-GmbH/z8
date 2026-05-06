@@ -8,6 +8,7 @@ import { useWeekStartDay } from "@/components/providers/user-preferences-provide
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { isHolidayOnDate } from "@/lib/absences/absence-calendar-adapter";
 import type { AbsenceWithCategory, DayPeriod, Holiday } from "@/lib/absences/types";
 import { cn } from "@/lib/utils";
 
@@ -87,10 +88,7 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 		// Check for holidays
 		const matchingHolidays: Array<Pick<Holiday, "id" | "name">> = [];
 		for (const holiday of holidays) {
-			const start = DateTime.fromJSDate(holiday.startDate);
-			const end = DateTime.fromJSDate(holiday.endDate);
-
-			if (date >= start.startOf("day") && date <= end.endOf("day")) {
+			if (isHolidayOnDate(holiday, date.toJSDate())) {
 				matchingHolidays.push({ id: holiday.id, name: holiday.name });
 			}
 		}
