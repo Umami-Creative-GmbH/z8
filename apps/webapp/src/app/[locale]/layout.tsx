@@ -1,15 +1,13 @@
-import type { TolgeeStaticData } from "@tolgee/react";
 import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
-import { TolgeeNextProvider } from "@/tolgee/client";
-import { ALL_LANGUAGES, loadNamespaces, getNamespacesForRoute } from "@/tolgee/shared";
 import { DOMAIN_HEADERS } from "@/proxy";
+import { TolgeeNextProvider } from "@/tolgee/client";
+import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
@@ -19,16 +17,6 @@ type Props = {
 	params: Promise<{ locale: string }>;
 };
 
-// Load translations for the current route's required namespaces
-async function loadRouteTranslations(locale: string, pathname: string): Promise<TolgeeStaticData> {
-	// Get namespaces for this route
-	const namespaces = getNamespacesForRoute(pathname);
-	return loadNamespaces(locale, namespaces).catch((error) => {
-		console.warn("Failed to load translations:", error);
-		return {};
-	});
-}
-
 // Generate static params for all locales to enable static generation
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
@@ -36,61 +24,39 @@ export async function generateStaticParams() {
 
 // Separate component for loading translations to wrap in Suspense
 async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
-	let records: TolgeeStaticData = {};
-	let messages = {};
-
 	// Get the current pathname to determine which namespaces to load
 	const headersList = await headers();
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
 	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
 	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
 
-	records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
+	const records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
-		return {};
-	});
-
-	messages = await getMessages({ locale }).catch((error) => {
-		console.warn("Failed to load next-intl messages:", error);
 		return {};
 	});
 
 	return (
 		<TolgeeNextProvider language={locale} staticData={records}>
-			<NextIntlClientProvider locale={locale} messages={messages}>
+			<NextIntlClientProvider locale={locale} messages={{ locale }}>
 				{children}
 			</NextIntlClientProvider>
 		</TolgeeNextProvider>
 	);
 }
 
-// Component for translated meta tags (title, description, keywords)
-// Uses next-intl instead of Tolgee to avoid observer side effects (duplicate elements, invisible characters)
+// Keep global metadata static to avoid loading legacy root locale messages on every page.
 const DEFAULT_META = {
 	title: "z8 - time app",
 	description: "z8 - time app",
 	keywords: "z8, time, app, productivity",
 };
 
-async function TranslatedMeta({ locale }: { locale: string }) {
-	let meta = DEFAULT_META;
-
-	const messages = await getMessages({ locale }).catch((error) => {
-		console.warn("Failed to load translated meta:", error);
-		return {};
-	});
-	const translatedMeta = (messages as Record<string, Record<string, string>>).meta || {};
-	meta = {
-		title: translatedMeta.title || DEFAULT_META.title,
-		description: translatedMeta.description || DEFAULT_META.description,
-		keywords: translatedMeta.keywords || DEFAULT_META.keywords,
-	};
-
+function TranslatedMeta() {
 	return (
 		<>
-			<title>{meta.title}</title>
-			<meta content={meta.description} name="description" />
-			<meta content={meta.keywords} name="keywords" />
+			<title>{DEFAULT_META.title}</title>
+			<meta content={DEFAULT_META.description} name="description" />
+			<meta content={DEFAULT_META.keywords} name="keywords" />
 		</>
 	);
 }
@@ -117,9 +83,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="yes" name="mobile-web-app-capable" />
 				<meta content="yes" name="apple-mobile-web-app-capable" />
 				<meta content="default" name="apple-mobile-web-app-status-bar-style" />
-				<Suspense fallback={<title>z8 - time app</title>}>
-					<TranslatedMeta locale={locale} />
-				</Suspense>
+				<TranslatedMeta />
 			</head>
 			<body>
 				<Suspense

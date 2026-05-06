@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getNamespacesForRoute } from "@/tolgee/shared";
+import { getNamespacesForRoute, loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 
 describe("route namespaces", () => {
 	it("loads admin namespaces for /platform-admin", () => {
@@ -43,6 +43,10 @@ describe("route namespaces", () => {
 		expect(getNamespacesForRoute("/my-requests")).toEqual(["common", "myRequests"]);
 	});
 
+	it("loads settings translations for team routes", () => {
+		expect(getNamespacesForRoute("/team")).toEqual(["common", "settings"]);
+	});
+
 	it("loads scheduling and compliance namespaces for scheduling routes", () => {
 		expect(getNamespacesForRoute("/scheduling")).toEqual(["common", "scheduling", "compliance"]);
 	});
@@ -62,5 +66,23 @@ describe("route namespaces", () => {
 	it("loads setup translations for setup and init routes", () => {
 		expect(getNamespacesForRoute("/setup")).toEqual(["common", "setup"]);
 		expect(getNamespacesForRoute("/init")).toEqual(["common", "setup"]);
+	});
+
+	it("resolves namespace-prefixed route translations from static data", async () => {
+		const staticData = await loadNamespaces("de", ["common", "myRequests"]);
+		const tolgee = TolgeeBase().init({ language: "de", staticData });
+
+		await tolgee.run();
+
+		expect(tolgee.t("myRequests:myRequests.title", "My Requests")).toBe("Meine Anfragen");
+	});
+
+	it("loads teams bot translations as a registered namespace", async () => {
+		const staticData = await loadNamespaces("de", ["teamsBot"]);
+		const tolgee = TolgeeBase().init({ language: "de", staticData });
+
+		await tolgee.run();
+
+		expect(tolgee.t("teamsBot:commands.help.availableCommands", "Help")).toBe("Verfügbare Befehle");
 	});
 });
