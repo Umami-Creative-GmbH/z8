@@ -1,145 +1,161 @@
 {
-  "timeTracking": {
-    "addNotePrompt": "Add a note about your work (optional)",
-    "autoAdjusted": {
-      "toast": {
-        "description": "A {breakMinutes}-minute break was added to comply with time regulations.",
-        "title": "Break auto-added for compliance"
-      }
-    },
-    "breakReminder": {
-      "breakNeeded": "Break required: {remaining} minutes remaining of {total} total",
-      "overLimitMessage": "You've exceeded the maximum uninterrupted working time. Please take a break soon.",
-      "overLimitTitle": "Break Required",
-      "title": "Break Reminder",
-      "uninterrupted": "Uninterrupted work",
-      "warningMessage": "You have {minutes} minutes until a break is required."
-    },
-    "budget": "Budget",
-    "clockedOutSuccess": "You've clocked out!",
-    "clockIn": "Clock In",
-    "clockingIn": "Clocking In…",
-    "clockingOut": "Clocking Out…",
-    "clockInQueued": "Clock-in queued for sync",
-    "clockInSuccess": "Clocked in successfully",
-    "clockOut": "Clock Out",
-    "clockOutQueued": "Clock-out queued for sync",
-    "clockOutSuccess": "Clocked out successfully",
-    "compliance": {
-      "violation": "Compliance Violation",
-      "warning": "Compliance Notice"
-    },
-    "correction": {
-      "clockIn": "Clock In",
-      "clockOut": "Clock Out",
-      "editDescription": "Make changes to your time entry for today.",
-      "editEntry": "Edit time entry",
-      "editTitle": "Edit Time Entry",
-      "errors": {
-        "invalidTimeRange": "Clock out time must be after clock in time",
-        "submitFailed": "Failed to submit correction",
-        "updateFailed": "Failed to update time entry"
-      },
-      "noteLabel": "Note (optional)",
-      "notePlaceholder": "Add a note about this change…",
-      "reasonLabel": "Reason for Correction",
-      "reasonPlaceholder": "Explain why this correction is needed…",
-      "requestCorrection": "Request time correction",
-      "requestDescription": "Submit a correction request for this time entry. Your manager will need to approve it.",
-      "requestTitle": "Request Time Correction",
-      "saveChanges": "Save Changes",
-      "saving": "Saving…",
-      "submitRequest": "Submit Request",
-      "submitting": "Submitting…",
-      "success": {
-        "submitted": "Correction request submitted for manager approval",
-        "updated": "Time entry updated successfully"
-      },
-      "timezoneNote": "Times are in your local timezone ({timezone})"
-    },
-    "currentlyClockedIn": "You're currently clocked in",
-    "deadline": "Deadline",
-    "errors": {
-      "clockInFailed": "Failed to clock in",
-      "clockOutFailed": "Failed to clock out",
-      "holidayBlocked": "Cannot clock out on {holidayName}",
-      "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
-      "notesSaveFailed": "Failed to save notes",
-      "restPeriodBlocked": "Rest period not complete",
-      "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed."
-    },
-    "manualEntry": {
-      "addButton": "Add Manual Entry",
-      "clockInLabel": "Clock In",
-      "clockOutLabel": "Clock Out",
-      "dateLabel": "Date",
-      "description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
-      "errors": {
-        "createFailed": "Failed to create time entry",
-        "futureDate": "Cannot create entries for future dates",
-        "invalidTimeRange": "Clock out time must be after clock in time",
-        "tooLong": "Work period cannot exceed 24 hours"
-      },
-      "reasonLabel": "Reason",
-      "reasonPlaceholder": "Describe what you worked on…",
-      "submit": "Create Entry",
-      "submitting": "Creating…",
-      "success": {
-        "adjusted": "Times adjusted to {clockIn} - {clockOut} to avoid overlap",
-        "created": "Time entry created successfully",
-        "pendingApproval": "Time entry submitted for manager approval"
-      },
-      "title": "Add Manual Time Entry"
-    },
-    "noCategory": "No category (100%)",
-    "noProject": "No project",
-    "notesPlaceholder": "What did you work on?",
-    "notesSaved": "Notes saved",
-    "project": "Project",
-    "readyToClockIn": "Ready to start working?",
-    "selectCategory": "Select a category",
-    "selectProject": "Select a project",
-    "startedAt": "Started at",
-    "summary": {
-      "baseWorked": "Base worked",
-      "surcharge": "Surcharge",
-      "thisMonth": "This Month",
-      "thisWeek": "This Week",
-      "today": "Today"
-    },
-    "table": {
-      "emptyState": "No time entries found for this week.",
-      "title": "Time Entries"
-    },
-    "timeline": {
-      "dayPicker": "Timeline day picker",
-      "emptyDescription": "There are no shifts, absences, or time entries for the selected day yet.",
-      "emptyTitle": "No activity recorded for this day.",
-      "nextDay": "Next day",
-      "previousDay": "Previous day",
-      "title": "Workday timeline",
-      "today": "Today",
-      "unavailableDescription": "Clocking time still works. Try refreshing this view later.",
-      "unavailableTitle": "Timeline unavailable"
-    },
-    "unknownCategory": "Unknown category",
-    "unknownProject": "Unknown project",
-    "workCategory": "Work Category"
-  },
-  "wellness": {
-    "water": {
-      "goalMet": "Daily goal reached! Keep up the great work!",
-      "logError": "Failed to log water intake",
-      "logged": "Water logged! {progress}% of daily goal",
-      "logOne": "+1 Glass",
-      "logTwo": "+2 Glasses",
-      "reminderMessage": "Stay healthy - drink some water. You've had {intake} of {goal} glasses today.",
-      "reminderTitle": "Time to hydrate!",
-      "snoozed": "Water reminders snoozed for today",
-      "snoozeError": "Failed to snooze reminders",
-      "snoozeToday": "Snooze today",
-      "streak": "Current streak: {days} days",
-      "todayProgress": "Today's progress"
-    }
-  }
+	"timeTracking": {
+		"addNotePrompt": "Add a note about your work (optional)",
+		"autoAdjusted": {
+			"toast": {
+				"description": "A {breakMinutes}-minute break was added to comply with time regulations.",
+				"title": "Break auto-added for compliance"
+			}
+		},
+		"breakReminder": {
+			"breakNeeded": "Break required: {remaining} minutes remaining of {total} total",
+			"overLimitMessage": "You've exceeded the maximum uninterrupted working time. Please take a break soon.",
+			"overLimitTitle": "Break Required",
+			"title": "Break Reminder",
+			"uninterrupted": "Uninterrupted work",
+			"warningMessage": "You have {minutes} minutes until a break is required."
+		},
+		"sessionReminders": {
+			"breakRequired": "Break required now",
+			"breakRequiredMessage": "Take a break before continuing your session.",
+			"breakSoon": "Break soon",
+			"breakOpen": "{remaining} min break remaining",
+			"dismissBreak": "Dismiss break reminder",
+			"dismissHydration": "Dismiss hydration reminder",
+			"hydration": "Hydration",
+			"hydrationProgress": "{intake}/{goal} glasses today",
+			"logOneGlass": "+1 glass",
+			"logTwoGlasses": "+2",
+			"minutesUntilBreak": "{minutes} min until break",
+			"snoozeToday": "Snooze today",
+			"subtitle": "During this shift",
+			"title": "Session reminders"
+		},
+		"budget": "Budget",
+		"clockedOutSuccess": "You've clocked out!",
+		"clockIn": "Clock In",
+		"clockingIn": "Clocking In…",
+		"clockingOut": "Clocking Out…",
+		"clockInQueued": "Clock-in queued for sync",
+		"clockInSuccess": "Clocked in successfully",
+		"clockOut": "Clock Out",
+		"clockOutQueued": "Clock-out queued for sync",
+		"clockOutSuccess": "Clocked out successfully",
+		"compliance": {
+			"violation": "Compliance Violation",
+			"warning": "Compliance Notice"
+		},
+		"correction": {
+			"clockIn": "Clock In",
+			"clockOut": "Clock Out",
+			"editDescription": "Make changes to your time entry for today.",
+			"editEntry": "Edit time entry",
+			"editTitle": "Edit Time Entry",
+			"errors": {
+				"invalidTimeRange": "Clock out time must be after clock in time",
+				"submitFailed": "Failed to submit correction",
+				"updateFailed": "Failed to update time entry"
+			},
+			"noteLabel": "Note (optional)",
+			"notePlaceholder": "Add a note about this change…",
+			"reasonLabel": "Reason for Correction",
+			"reasonPlaceholder": "Explain why this correction is needed…",
+			"requestCorrection": "Request time correction",
+			"requestDescription": "Submit a correction request for this time entry. Your manager will need to approve it.",
+			"requestTitle": "Request Time Correction",
+			"saveChanges": "Save Changes",
+			"saving": "Saving…",
+			"submitRequest": "Submit Request",
+			"submitting": "Submitting…",
+			"success": {
+				"submitted": "Correction request submitted for manager approval",
+				"updated": "Time entry updated successfully"
+			},
+			"timezoneNote": "Times are in your local timezone ({timezone})"
+		},
+		"currentlyClockedIn": "You're currently clocked in",
+		"deadline": "Deadline",
+		"errors": {
+			"clockInFailed": "Failed to clock in",
+			"clockOutFailed": "Failed to clock out",
+			"holidayBlocked": "Cannot clock out on {holidayName}",
+			"holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
+			"notesSaveFailed": "Failed to save notes",
+			"restPeriodBlocked": "Rest period not complete",
+			"restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed."
+		},
+		"manualEntry": {
+			"addButton": "Add Manual Entry",
+			"clockInLabel": "Clock In",
+			"clockOutLabel": "Clock Out",
+			"dateLabel": "Date",
+			"description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
+			"errors": {
+				"createFailed": "Failed to create time entry",
+				"futureDate": "Cannot create entries for future dates",
+				"invalidTimeRange": "Clock out time must be after clock in time",
+				"tooLong": "Work period cannot exceed 24 hours"
+			},
+			"reasonLabel": "Reason",
+			"reasonPlaceholder": "Describe what you worked on…",
+			"submit": "Create Entry",
+			"submitting": "Creating…",
+			"success": {
+				"adjusted": "Times adjusted to {clockIn} - {clockOut} to avoid overlap",
+				"created": "Time entry created successfully",
+				"pendingApproval": "Time entry submitted for manager approval"
+			},
+			"title": "Add Manual Time Entry"
+		},
+		"noCategory": "No category (100%)",
+		"noProject": "No project",
+		"notesPlaceholder": "What did you work on?",
+		"notesSaved": "Notes saved",
+		"project": "Project",
+		"readyToClockIn": "Ready to start working?",
+		"selectCategory": "Select a category",
+		"selectProject": "Select a project",
+		"startedAt": "Started at",
+		"summary": {
+			"baseWorked": "Base worked",
+			"surcharge": "Surcharge",
+			"thisMonth": "This Month",
+			"thisWeek": "This Week",
+			"today": "Today"
+		},
+		"table": {
+			"emptyState": "No time entries found for this week.",
+			"title": "Time Entries"
+		},
+		"timeline": {
+			"dayPicker": "Timeline day picker",
+			"emptyDescription": "There are no shifts, absences, or time entries for the selected day yet.",
+			"emptyTitle": "No activity recorded for this day.",
+			"nextDay": "Next day",
+			"previousDay": "Previous day",
+			"title": "Workday timeline",
+			"today": "Today",
+			"unavailableDescription": "Clocking time still works. Try refreshing this view later.",
+			"unavailableTitle": "Timeline unavailable"
+		},
+		"unknownCategory": "Unknown category",
+		"unknownProject": "Unknown project",
+		"workCategory": "Work Category"
+	},
+	"wellness": {
+		"water": {
+			"goalMet": "Daily goal reached! Keep up the great work!",
+			"logError": "Failed to log water intake",
+			"logged": "Water logged! {progress}% of daily goal",
+			"logOne": "+1 Glass",
+			"logTwo": "+2 Glasses",
+			"reminderMessage": "Stay healthy - drink some water. You've had {intake} of {goal} glasses today.",
+			"reminderTitle": "Time to hydrate!",
+			"snoozed": "Water reminders snoozed for today",
+			"snoozeError": "Failed to snooze reminders",
+			"snoozeToday": "Snooze today",
+			"streak": "Current streak: {days} days",
+			"todayProgress": "Today's progress"
+		}
+	}
 }
