@@ -375,6 +375,11 @@ function formatBreakDuration(minutes: number): string {
 	}
 }
 
+function toScheduleXSafeIdPart(value: string): string {
+	const safeValue = value.replace(/[^A-Za-z0-9_-]/g, "-").replace(/-+/g, "-");
+	return safeValue || "event";
+}
+
 /**
  * Generate break events from work periods
  * Breaks are the gaps between consecutive work periods on the same day
@@ -405,7 +410,7 @@ export function generateBreakEvents(workPeriodEvents: ScheduleXEvent[]): Schedul
 	}
 
 	// For each group, sort by start time and find gaps
-	for (const [groupKey, periods] of periodsByDayAndEmployee) {
+	for (const periods of periodsByDayAndEmployee.values()) {
 		if (periods.length < 2) continue; // Need at least 2 periods for a break
 
 		// Sort by start time
@@ -441,15 +446,16 @@ export function generateBreakEvents(workPeriodEvents: ScheduleXEvent[]): Schedul
 				const employeeName = currentPeriod._eventData.metadata?.employeeName || "Unknown";
 				const breakStart = currentEnd instanceof Date ? currentEnd : new Date(String(currentEnd));
 				const breakEnd = nextStart instanceof Date ? nextStart : new Date(String(nextStart));
+				const breakEventId = `break_${toScheduleXSafeIdPart(currentPeriod.id)}_${toScheduleXSafeIdPart(nextPeriod.id)}_${i}`;
 
 				const breakEvent: ScheduleXEvent = {
-					id: `break_${groupKey}_${i}`,
+					id: breakEventId,
 					title: `Break - ${formatBreakDuration(gapMinutes)}`,
 					start: toTemporalZonedDateTime(breakStart),
 					end: toTemporalZonedDateTime(breakEnd),
 					calendarId: "break",
 					_eventData: {
-						id: `break_${groupKey}_${i}`,
+						id: breakEventId,
 						type: "break",
 						date: breakStart,
 						endDate: breakEnd,
