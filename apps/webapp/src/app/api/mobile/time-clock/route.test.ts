@@ -63,6 +63,40 @@ describe("POST /api/mobile/time-clock", () => {
 		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 
+	it("accepts remote work location when clocking in", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({ action: "clock_in", workLocationType: "remote" }),
+				headers: {
+					"content-type": "application/json",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
+		expect(mockState.clockIn).toHaveBeenCalledWith("remote");
+		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
+	it("rejects obsolete field work location when clocking in", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({ action: "clock_in", workLocationType: "field" }),
+				headers: {
+					"content-type": "application/json",
+				},
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.clockIn).not.toHaveBeenCalled();
+	});
+
 	it("returns 403 when the user has no employee record in the active organization", async () => {
 		mockState.requireMobileEmployee.mockRejectedValue(
 			new mockState.MobileApiError(403, "Employee record required for the active organization"),

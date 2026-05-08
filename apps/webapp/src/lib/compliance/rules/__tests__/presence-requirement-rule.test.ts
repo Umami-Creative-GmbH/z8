@@ -247,11 +247,11 @@ describe("PresenceRequirementRule", () => {
 	});
 
 	describe("location type classification", () => {
-		test("field counts as on-site", async () => {
+		test("remote does not count as on-site", async () => {
 			const workPeriods = [
-				makeWorkPeriod(0, "field"), // Monday
-				makeWorkPeriod(1, "field"), // Tuesday
-				makeWorkPeriod(2, "field"), // Wednesday
+				makeWorkPeriod(0, "remote"),
+				makeWorkPeriod(1, "remote"),
+				makeWorkPeriod(2, "remote"),
 			];
 
 			const findings = await rule.detectViolations(
@@ -261,7 +261,26 @@ describe("PresenceRequirementRule", () => {
 				}),
 			);
 
-			expect(findings).toHaveLength(0);
+			expect(findings).toHaveLength(1);
+			expect((findings[0].evidence as PresenceRequirementEvidence).actualOnsiteDays).toBe(0);
+		});
+
+		test("obsolete field does not count as on-site", async () => {
+			const workPeriods = [
+				makeWorkPeriod(0, "field"),
+				makeWorkPeriod(1, "field"),
+				makeWorkPeriod(2, "field"),
+			];
+
+			const findings = await rule.detectViolations(
+				makeInput({
+					workPeriods,
+					presenceConfig: makePresenceConfig({ requiredOnsiteDays: 3 }),
+				}),
+			);
+
+			expect(findings).toHaveLength(1);
+			expect((findings[0].evidence as PresenceRequirementEvidence).actualOnsiteDays).toBe(0);
 		});
 
 		test("null/untagged work location type does not count as on-site", async () => {
@@ -600,9 +619,9 @@ describe("PresenceRequirementRule", () => {
 	describe("edge cases", () => {
 		test("active/incomplete work periods are excluded", async () => {
 			const workPeriods: WorkPeriodWithLocation[] = [
-				makeWorkPeriod(0, "office", { isActive: true, endTime: null, durationMinutes: null }),
-				makeWorkPeriod(1, "office", { isActive: true, endTime: null, durationMinutes: null }),
-				makeWorkPeriod(2, "office", { isActive: true, endTime: null, durationMinutes: null }),
+				makeWorkPeriod(0, "office", { isActive: true, endTime: null }),
+				makeWorkPeriod(1, "office", { isActive: true, endTime: null }),
+				makeWorkPeriod(2, "office", { isActive: true, endTime: null }),
 			];
 
 			const findings = await rule.detectViolations(

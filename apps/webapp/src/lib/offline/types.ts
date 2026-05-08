@@ -4,6 +4,8 @@
  * These types are shared between the service worker and React app.
  */
 
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+
 /**
  * A clock event queued for offline sync
  */
@@ -31,6 +33,8 @@ export interface QueuedClockEvent {
 	projectId?: string;
 	/** Optional work category ID for clock-out */
 	workCategoryId?: string;
+	/** Optional work location type for clock-in */
+	workLocationType?: WorkLocationType;
 }
 
 /**

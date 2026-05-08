@@ -167,6 +167,7 @@ async function handleTimeEntryRequest(request) {
 				location: body.location,
 				projectId: body.projectId,
 				workCategoryId: body.workCategoryId,
+				workLocationType: body.workLocationType,
 			});
 
 			// Register background sync

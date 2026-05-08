@@ -14,6 +14,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 type LegacyApprovalStatus = "pending" | "approved" | "rejected";
 type CanonicalDayPeriod = "full_day" | "am" | "pm";
@@ -30,7 +31,7 @@ export type LegacyWorkPeriod = {
 	approvalStatus: LegacyApprovalStatus;
 	projectId: string | null;
 	workCategoryId: string | null;
-	workLocationType: "office" | "home" | "field" | "other" | null;
+	workLocationType: WorkLocationType | null;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -106,7 +107,7 @@ export type CanonicalBackfillPayload = {
 		organizationId: string;
 		recordKind: "work";
 		workCategoryId: string | null;
-		workLocationType: "office" | "home" | "field" | "other" | null;
+		workLocationType: WorkLocationType | null;
 		computationMetadata: string | null;
 	}>;
 	timeRecordAbsence: Array<{

@@ -8,6 +8,13 @@
 const TIME_ENTRIES_API = "/api/time-entries";
 const MAX_RETRY_COUNT = 5;
 const SYNC_TIMEOUT_MS = 30000; // 30 second timeout for sync requests
+const WORK_LOCATION_TYPES = new Set(["office", "home", "remote", "other"]);
+
+function normalizeWorkLocationType(value) {
+	if (value === "field") return "remote";
+	if (WORK_LOCATION_TYPES.has(value)) return value;
+	return undefined;
+}
 
 /**
  * Sync a single clock event to the server
@@ -30,6 +37,8 @@ async function syncEvent(event) {
 		if (event.location) body.location = event.location;
 		if (event.projectId) body.projectId = event.projectId;
 		if (event.workCategoryId) body.workCategoryId = event.workCategoryId;
+		const workLocationType = normalizeWorkLocationType(event.workLocationType);
+		if (workLocationType) body.workLocationType = workLocationType;
 
 		const response = await fetch(new URL(TIME_ENTRIES_API, self.location.origin).href, {
 			method: "POST",

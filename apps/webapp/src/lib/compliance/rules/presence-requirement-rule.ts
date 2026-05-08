@@ -56,7 +56,7 @@ export interface PresenceConfig {
 	requiredOnsiteDays: number;
 	/** Required days of week (1=Monday..7=Sunday) for fixed_days mode */
 	requiredOnsiteFixedDays: number[];
-	/** Optional location constraint (null = any office/field location) */
+	/** Optional location constraint (null = any on-site location) */
 	locationId: string | null;
 	/** Evaluation period type */
 	evaluationPeriod: "week" | "month";
@@ -78,7 +78,7 @@ export interface PresenceRuleDetectionInput extends RuleDetectionInput {
 // Helpers
 // ============================================
 
-const ONSITE_LOCATION_TYPES = new Set(["office", "field"]);
+const ONSITE_LOCATION_TYPES = new Set(["office"]);
 
 const WEEKDAY_NAMES: Record<number, string> = {
 	1: "monday",

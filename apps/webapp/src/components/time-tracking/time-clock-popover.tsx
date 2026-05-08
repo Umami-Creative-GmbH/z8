@@ -9,6 +9,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
+import {
+	normalizeWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
+import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelector } from "./project-selector";
 import { WorkCategorySelector } from "./work-category-selector";
 
@@ -49,11 +54,22 @@ export function TimeClockPopover() {
 	const [selectedWorkCategoryId, setSelectedWorkCategoryId] = useState<string | undefined>(
 		undefined,
 	);
+	const [workLocationType, setWorkLocationType] = useState<WorkLocationType>(() => {
+		if (typeof window === "undefined") {
+			return "office";
+		}
+
+		return normalizeWorkLocationType(localStorage.getItem("z8-work-location-type"));
+	});
 
 	const handleClockIn = async () => {
-		const result = await clockIn();
+		const result = await clockIn({ workLocationType });
 
 		if (result.success) {
+			if (typeof window !== "undefined") {
+				localStorage.setItem("z8-work-location-type", workLocationType);
+			}
+
 			// Check if this was an offline queued request
 			if ("queued" in result && result.queued) {
 				toast.info(t("timeTracking.clockInQueued", "Clock-in queued for sync"));
@@ -267,6 +283,14 @@ export function TimeClockPopover() {
 									value={selectedWorkCategoryId}
 									onValueChange={setSelectedWorkCategoryId}
 									disabled={isMutating}
+								/>
+							)}
+
+							{!isClockedIn && (
+								<WorkLocationSelector
+									value={workLocationType}
+									onChange={setWorkLocationType}
+									t={t}
 								/>
 							)}
 
