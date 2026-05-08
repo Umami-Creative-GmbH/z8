@@ -1,3 +1,4 @@
+import { resolvePrimaryEligibleManager, type EligibleTeam, type EligibleTeamMembership } from "./manager-eligibility";
 import type { ApprovalPolicyStageDraft } from "./types";
 
 export interface ApproverDirectoryEmployee {
@@ -23,6 +24,8 @@ interface ResolveApproverFromDirectoryInput {
 	stage: ApprovalPolicyStageDraft;
 	employees: ApproverDirectoryEmployee[];
 	managerLinks: ApproverDirectoryManagerLink[];
+	teamMemberships?: EligibleTeamMembership[];
+	teams?: EligibleTeam[];
 }
 
 function activeEmployeeInOrg(
@@ -63,14 +66,18 @@ export function resolveApproverFromDirectory(
 
 	switch (stage.approverType) {
 		case "direct_manager": {
-			const manager = activeEmployeeInOrg(
-				employees,
+			const manager = resolvePrimaryEligibleManager({
 				organizationId,
-				directManagerId(managerLinks, requester.id),
-			);
-			return manager
-				? { ok: true, approverEmployeeId: manager.id }
-				: { ok: false, reason: "Requester has no active direct manager in this organization." };
+				requesterEmployeeId: requester.id,
+				employees,
+				managerLinks,
+				teamMemberships: input.teamMemberships ?? [],
+				teams: input.teams ?? [],
+			});
+
+			return manager.ok
+				? { ok: true, approverEmployeeId: manager.managerId }
+				: { ok: false, reason: manager.reason };
 		}
 
 		case "manager_manager": {

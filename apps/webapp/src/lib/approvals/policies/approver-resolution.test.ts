@@ -15,6 +15,9 @@ const managerLinks = [
 	{ employeeId: "emp_manager", managerId: "emp_senior_manager" },
 ];
 
+const teamMemberships = [];
+const teams = [];
+
 function stage(input: Partial<ApprovalPolicyStageDraft>): ApprovalPolicyStageDraft {
 	return { id: "stage_1", stepOrder: 1, label: "Stage", approverType: "direct_manager", ...input };
 }
@@ -28,8 +31,27 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "direct_manager" }),
 				employees,
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_manager" });
+	});
+
+	it("resolves direct manager through team fallback when no direct manager exists", () => {
+		expect(
+			resolveApproverFromDirectory({
+				organizationId: "org_1",
+				requesterEmployeeId: "emp_requester",
+				stage: stage({ approverType: "direct_manager" }),
+				employees: [
+					...employees,
+					{ id: "emp_team_manager", organizationId: "org_1", isActive: true, role: "manager" as const },
+				],
+				managerLinks: [],
+				teamMemberships: [{ employeeId: "emp_requester", teamId: "team_1" }],
+				teams: [{ id: "team_1", organizationId: "org_1", primaryManagerId: "emp_team_manager" }],
+			}),
+		).toEqual({ ok: true, approverEmployeeId: "emp_team_manager" });
 	});
 
 	it("prefers the primary direct manager link", () => {
@@ -46,6 +68,8 @@ describe("resolveApproverFromDirectory", () => {
 					{ employeeId: "emp_requester", managerId: "emp_backup_manager" },
 					{ employeeId: "emp_requester", managerId: "emp_manager", isPrimary: true },
 				],
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_manager" });
 	});
@@ -65,6 +89,8 @@ describe("resolveApproverFromDirectory", () => {
 					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
 					{ employeeId: "emp_requester", managerId: "emp_a_manager" },
 				],
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_a_manager" });
 	});
@@ -90,6 +116,8 @@ describe("resolveApproverFromDirectory", () => {
 					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
 					{ employeeId: "emp_requester", managerId: "emp_a_manager" },
 				],
+				teamMemberships,
+				teams,
 			}),
 		).toEqual(
 			resolveApproverFromDirectory({
@@ -98,6 +126,8 @@ describe("resolveApproverFromDirectory", () => {
 					{ employeeId: "emp_requester", managerId: "emp_a_manager" },
 					{ employeeId: "emp_requester", managerId: "emp_z_manager" },
 				],
+				teamMemberships,
+				teams,
 			}),
 		);
 	});
@@ -112,6 +142,8 @@ describe("resolveApproverFromDirectory", () => {
 					employee.id === "emp_requester" ? { ...employee, isActive: false } : employee,
 				),
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
 	});
@@ -126,6 +158,8 @@ describe("resolveApproverFromDirectory", () => {
 					employee.id === "emp_requester" ? { ...employee, organizationId: "org_2" } : employee,
 				),
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
 	});
@@ -138,6 +172,8 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "org_admin" }),
 				employees,
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_admin" });
 	});
@@ -154,6 +190,8 @@ describe("resolveApproverFromDirectory", () => {
 					{ id: "emp_admin_a", organizationId: "org_1", isActive: true, role: "admin" as const },
 				],
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_admin_a" });
 	});
@@ -166,6 +204,8 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "manager_manager" }),
 				employees,
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: true, approverEmployeeId: "emp_senior_manager" });
 	});
@@ -180,6 +220,8 @@ describe("resolveApproverFromDirectory", () => {
 					employee.id === "emp_manager" ? { ...employee, isActive: false } : employee,
 				),
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Requester has no active direct manager in this organization." });
 	});
@@ -194,6 +236,8 @@ describe("resolveApproverFromDirectory", () => {
 					employee.id === "emp_manager" ? { ...employee, organizationId: "org_2" } : employee,
 				),
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Requester has no active direct manager in this organization." });
 	});
@@ -206,6 +250,8 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "team_lead" }),
 				employees,
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Team lead approver stages are not available." });
 	});
@@ -218,6 +264,8 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "specific_employee", approverEmployeeId: "emp_missing" }),
 				employees,
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Specific approver is not active in this organization." });
 	});
@@ -230,6 +278,8 @@ describe("resolveApproverFromDirectory", () => {
 				stage: stage({ approverType: "specific_employee", approverEmployeeId: "emp_other_org" }),
 				employees,
 				managerLinks,
+				teamMemberships,
+				teams,
 			}),
 		).toEqual({ ok: false, reason: "Specific approver is not active in this organization." });
 	});
