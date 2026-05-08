@@ -56,7 +56,10 @@ export async function requireMobileSessionContext(request: Request): Promise<Mob
 	};
 }
 
-export async function requireMobileEmployee(userId: string, organizationId: string) {
+export async function requireMobileEmployee(
+	userId: string,
+	organizationId: string,
+): Promise<typeof employee.$inferSelect> {
 	const employeeRecord = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.userId, userId),
@@ -69,7 +72,7 @@ export async function requireMobileEmployee(userId: string, organizationId: stri
 		throw new MobileApiError(403, "Employee record required for the active organization");
 	}
 
-	return employeeRecord;
+	return employeeRecord as typeof employee.$inferSelect;
 }
 
 export async function getMobileOrganizationSummary(userId: string, organizationId: string) {
