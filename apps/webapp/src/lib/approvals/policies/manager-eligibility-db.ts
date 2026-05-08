@@ -14,19 +14,19 @@ interface ApprovalEligibilityDb {
 			findFirst(input: { where: SQL | undefined }): Promise<{
 				requestedBy: string;
 				approverId: string;
-			} | null>;
+			} | null | undefined>;
 		};
 		employee: {
-			findMany(input: { where: SQL | undefined }): Promise<EligibleManagerEmployee[]>;
+			findMany(input: { where: SQL | undefined }): Promise<unknown[]>;
 		};
 		employeeManagers: {
-			findMany(input: { where: SQL | undefined }): Promise<EligibleManagerLink[]>;
+			findMany(input: { where: SQL | undefined }): Promise<unknown[]>;
 		};
 		teamMembership: {
-			findMany(input: { where: SQL | undefined }): Promise<EligibleTeamMembership[]>;
+			findMany(input: { where: SQL | undefined }): Promise<unknown[]>;
 		};
 		team: {
-			findMany(input: { where: SQL | undefined }): Promise<EligibleTeam[]>;
+			findMany(input: { where: SQL | undefined }): Promise<unknown[]>;
 		};
 	};
 }
@@ -65,10 +65,10 @@ export async function getEligibleManagerIdsForRequester(input: {
 	return getEligibleManagerIds({
 		organizationId: input.organizationId,
 		requesterEmployeeId: input.requesterEmployeeId,
-		employees,
-		managerLinks,
-		teamMemberships: memberships,
-		teams,
+		employees: employees as EligibleManagerEmployee[],
+		managerLinks: managerLinks as EligibleManagerLink[],
+		teamMemberships: memberships as EligibleTeamMembership[],
+		teams: teams as EligibleTeam[],
 	});
 }
 
@@ -109,7 +109,8 @@ export async function getEligibleApprovalScopesForManager(input: {
 	const employees = await input.db.query.employee.findMany({
 		where: eq(employee.organizationId, input.organizationId),
 	});
-	const requesterIds = employees.map((requester) => requester.id);
+	const typedEmployees = employees as EligibleManagerEmployee[];
+	const requesterIds = typedEmployees.map((requester) => requester.id);
 
 	if (requesterIds.length === 0) {
 		return [];
@@ -125,14 +126,14 @@ export async function getEligibleApprovalScopesForManager(input: {
 		input.db.query.team.findMany({ where: eq(team.organizationId, input.organizationId) }),
 	]);
 
-	return employees.flatMap((requester: { id: string }) => {
+	return typedEmployees.flatMap((requester: { id: string }) => {
 		const eligibleManagerIds = getEligibleManagerIds({
 			organizationId: input.organizationId,
 			requesterEmployeeId: requester.id,
-			employees,
-			managerLinks,
-			teamMemberships: memberships,
-			teams,
+			employees: typedEmployees,
+			managerLinks: managerLinks as EligibleManagerLink[],
+			teamMemberships: memberships as EligibleTeamMembership[],
+			teams: teams as EligibleTeam[],
 		});
 
 		return eligibleManagerIds.includes(input.managerEmployeeId)
