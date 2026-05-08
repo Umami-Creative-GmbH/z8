@@ -14,7 +14,6 @@ import {
 	AddMemberDialog,
 	DeleteTeamDialog,
 	extractTeamMemberIds,
-	invalidateTeamQueries,
 	RemoveMemberDialog,
 	type TeamFormValues,
 	TeamInfoCard,
@@ -26,7 +25,7 @@ import {
 export default function TeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
 	const { teamId } = use(params);
 	useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const queryClient = useQueryClient();
 	const [uiState, dispatch] = useTeamPageUiState();
 
@@ -109,7 +108,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		onSuccess: () => {
 			toast.success("Team member added successfully");
 			dispatch({ type: "resetAddMemberDialog" });
-			invalidateTeamQueries(queryClient, teamId);
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
 		},
 		onError: (error: Error) => toast.error(error.message),
 	});
@@ -164,7 +165,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		onSuccess: () => {
 			toast.success("Team deleted successfully");
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
-			router.push("/settings/teams");
+			push("/settings/teams");
 		},
 		onError: (error: Error) => toast.error(error.message),
 		onSettled: () => dispatch({ type: "setShowDeleteDialog", value: false }),
