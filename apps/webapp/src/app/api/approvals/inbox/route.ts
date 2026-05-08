@@ -21,6 +21,7 @@ import type {
 	ApprovalStatus,
 	ApprovalType,
 } from "@/lib/approvals/domain/types";
+import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -46,12 +47,9 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
-		// Check CASL permissions - must be able to approve or manage approvals
+		// Check CASL permissions; eligible managers are authorized after employee lookup.
 		const ability = await getAbility();
-		if (
-			!ability ||
-			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
-		) {
+		if (!ability) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -69,6 +67,24 @@ export async function GET(request: NextRequest) {
 		if (!currentEmployee) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
+
+		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		const canApproveOrManage =
+			ability.cannot("approve", "Approval") === false || canManageApprovals;
+
+		if (!canApproveOrManage) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
+		const eligibleApprovalScopes = canManageApprovals
+			? []
+			: await getEligibleApprovalScopesForManager({
+					db,
+					managerEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				});
 
 		// Parse query parameters
 		const { searchParams } = new URL(request.url);
@@ -99,6 +115,7 @@ export async function GET(request: NextRequest) {
 		// Build query params
 		const params: ApprovalQueryParams = {
 			approverId: currentEmployee.id,
+			includeAllApprovers: canManageApprovals || undefined,
 			organizationId: currentEmployee.organizationId,
 			status,
 			types,
@@ -109,6 +126,7 @@ export async function GET(request: NextRequest) {
 			dateRange,
 			cursor,
 			limit,
+			eligibleApprovalScopes,
 		};
 
 		const result = await Effect.runPromise(

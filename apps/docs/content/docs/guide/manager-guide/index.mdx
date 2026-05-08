@@ -1,178 +1,39 @@
 ---
 title: Manager Guide
-description: Guide for team managers using the Z8 Team Management System
+description: Guide for managers reviewing team activity, approvals, schedules, and reports in Z8.
+icon: Users
 ---
 
-This guide covers the additional responsibilities and features available to managers in Z8.
+import { Cards, Card } from "fumadocs-ui/components/card";
 
-## Manager Overview
+Use the manager guide to focus on the team workflows available to your role. Managers usually review daily operational signals, handle assigned approvals, check scheduling impact, and monitor team-level reports.
 
-Managers review team requests, monitor coverage, and work inside the scoped settings and analytics available to them in their organization.
+<Cards>
+  <Card
+    title="Manager Dashboard"
+    description="Use daily briefing signals and today counts to focus manager attention."
+    href="/docs/guide/manager-guide/dashboard"
+  />
+  <Card
+    title="Approvals"
+    description="Review absence, correction, shift, and travel expense requests assigned to you."
+    href="/docs/guide/manager-guide/approvals"
+  />
+  <Card
+    title="Scheduling and Coverage"
+    description="Review coverage targets, shifts, and team availability."
+    href="/docs/guide/manager-guide/scheduling"
+  />
+  <Card
+    title="Coverage Targets"
+    description="Understand staffing targets, scheduler heatmaps, and coverage validation."
+    href="/docs/guide/manager-guide/coverage-targets"
+  />
+  <Card
+    title="Manager Reports"
+    description="Review team-level time, absence, and operational reports."
+    href="/docs/guide/manager-guide/reports"
+  />
+</Cards>
 
-As a manager, your day-to-day access may include:
-
-- **Approve requests** - Handle time-off, time corrections, shift requests, and travel expenses assigned to you when approvals are enabled for your organization
-- **Monitor team schedules** - Ensure adequate coverage
-- **View team analytics** - Track team performance and work patterns in the areas shared with managers
-- **Calendar overview** - See team absences at a glance
-- **Support your team** - Answer questions and provide guidance
-
-## Your Team
-
-### Viewing Your Direct Reports
-
-To see employees who report to you:
-
-1. Go to the team views available in your workspace, such as **Approvals**, **Calendar**, or manager-level analytics
-2. Open the **Approval Inbox** to review pending requests from your direct reports
-3. Use the manager settings pages your organization has enabled to confirm team membership and responsibilities
-
-### Primary vs Secondary Manager
-
-You may be assigned as:
-
-- **Primary Manager** - The main point of contact for an employee
-- **Secondary Manager** - Additional approval authority
-
-Both roles can approve requests, but the primary manager is the default contact for the employee.
-
-## Handling Approvals
-
-### Approval Inbox
-
-All manager approvals now flow through the shared **Approval Inbox**.
-
-Use the inbox to:
-
-- review absence requests, time corrections, shift requests, and travel expenses in one place
-- filter by request type when you only want to work a single queue
-- approve or reject one request at a time from the detail panel
-- bulk approve or bulk reject selected items when the same decision applies to multiple requests
-
-If you open approvals from the **Travel Expenses** page, z8 redirects you to the inbox with the travel-expense filter already applied.
-
-The queue and request types you see still depend on your assignments and your organization's configuration.
-
-### Absence Requests
-
-When an employee requests time off:
-
-1. Go to **Approvals** → **Approval Inbox**
-2. Filter by **Absence Requests** when needed
-3. Review the request details:
-   - Dates requested
-   - Type of absence
-   - Employee's reason
-   - Current vacation balance
-4. **Approve** or **Deny** the request
-5. If denying, provide a clear reason
-
-### Time Corrections
-
-When a time change is routed to you for approval:
-
-1. Go to **Approvals** → **Approval Inbox**
-2. Filter by **Time Corrections** when needed
-3. Review what was originally entered vs. the correction
-4. Verify the correction is accurate
-5. **Approve** or **Deny** as appropriate
-
-### Travel Expense Approvals
-
-When an employee submits a travel expense claim:
-
-1. Go to **Approvals** → **Approval Inbox**
-2. Filter by **Travel Expenses** when needed
-3. Review the claim details:
-   - Destination
-   - Trip dates
-   - Approved amount and currency
-   - Supporting notes
-4. **Approve** or **Reject** the claim
-5. If rejecting, provide a clear reason so the employee can correct and resubmit the claim
-
-### Bulk Actions
-
-When several requests need the same decision:
-
-1. Select the relevant rows in the **Approval Inbox**
-2. Choose **Approve Selected** or **Reject Selected**
-3. For bulk rejects, enter a rejection reason that applies to each selected request
-4. Review the result message to see which requests succeeded and which need follow-up
-
-### Best Practices
-
-- **Respond promptly** - Employees plan around approvals
-- **Use filters before bulk actions** - Confirm you are acting on the right request type and scope
-- **Be consistent** - Apply the same standards fairly
-- **Check coverage** - Ensure team can handle absences
-- **Communicate** - Discuss complex situations directly
-
-## Team Coverage
-
-Before approving time-off requests, consider:
-
-- Are other team members already off during that period?
-- Are there important deadlines or meetings?
-- Is there backup for critical responsibilities?
-
-## Team Calendar
-
-### Viewing Team Absences
-
-The calendar helps you review employee availability based on the people and records available to your role:
-
-1. Go to **Calendar** from the main navigation
-2. Choose the employee or schedule records you want to review
-3. Review absences and other calendar entries shown for that selection
-4. Click an entry to see details
-
-### Planning Around Absences
-
-Use the calendar to:
-- Identify periods of low coverage
-- Plan meetings when everyone is available
-- Coordinate vacation schedules across the team
-
-## Team Analytics
-
-### Accessing Team Reports
-
-If your role includes analytics access, you can review team reports such as:
-
-1. Go to **Analytics** from the main navigation
-2. Open the reports and employee data available to your role
-3. Review reports including:
-   - Work hours by team member
-   - Overtime trends
-   - Vacation usage
-   - Attendance patterns
-
-### Exporting Data
-
-Export team reports in various formats:
-- **CSV** - For spreadsheet analysis
-- **Excel** - With formatting preserved
-
-## Notifications
-
-### Manager Notifications
-
-You'll receive notifications for:
-- New absence requests from your team
-- Time correction requests
-- Upcoming team member absences
-- Birthday reminders for your team
-
-### Configuring Notifications
-
-Customize which notifications you receive:
-1. Go to **Settings** → **Notifications**
-2. Toggle manager-specific notifications
-3. Choose delivery channels (email, push, in-app)
-
-## Need Help?
-
-- [User Guide](/docs/guide/user-guide) - General employee features
-- [Admin Guide](/docs/guide/admin-guide) - For administrators with additional permissions
-- Contact your organization's administrator for system configuration questions
+For general employee workflows, start with the [User Guide](/docs/guide/user-guide). For organization-wide configuration, policy setup, and admin exports, use the [Admin Guide](/docs/guide/admin-guide).

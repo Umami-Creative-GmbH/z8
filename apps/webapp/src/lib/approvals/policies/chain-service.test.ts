@@ -322,6 +322,10 @@ describe("resolvePolicyAndCreateApproval", () => {
 		policies: Record<string, unknown>[];
 		groupRows?: Record<string, unknown>[];
 		activeGroups?: Record<string, unknown>[];
+		employees?: Record<string, unknown>[];
+		employeeManagers?: Record<string, unknown>[];
+		teamMemberships?: Record<string, unknown>[];
+		teams?: Record<string, unknown>[];
 	}) {
 		const txInserts: Record<string, unknown>[] = [];
 		const outerInserts: Record<string, unknown>[] = [];
@@ -349,16 +353,18 @@ describe("resolvePolicyAndCreateApproval", () => {
 					employeeGroupMember: { findMany: vi.fn().mockResolvedValue(params.groupRows ?? []) },
 					employeeGroup: { findMany: vi.fn().mockResolvedValue(params.activeGroups ?? []) },
 					employee: {
-						findMany: vi.fn().mockResolvedValue([
+						findMany: vi.fn().mockResolvedValue(params.employees ?? [
 							{ id: "emp-requester", userId: "user-requester", organizationId: "org-1", isActive: true, role: "employee" },
 							{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 						]),
 					},
 					employeeManagers: {
-						findMany: vi.fn().mockResolvedValue([
+						findMany: vi.fn().mockResolvedValue(params.employeeManagers ?? [
 							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
 						]),
 					},
+					teamMembership: { findMany: vi.fn().mockResolvedValue(params.teamMemberships ?? []) },
+					team: { findMany: vi.fn().mockResolvedValue(params.teams ?? []) },
 				},
 				insert: vi.fn(() => ({
 					values: vi.fn((values: Record<string, unknown>) => {
@@ -453,6 +459,8 @@ describe("resolvePolicyAndCreateApproval", () => {
 							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
 						]),
 					},
+					teamMembership: { findMany: vi.fn().mockResolvedValue([]) },
+					team: { findMany: vi.fn().mockResolvedValue([]) },
 				},
 				insert: vi.fn(() => ({
 					values: vi.fn((values: Record<string, unknown>) => {
@@ -488,6 +496,51 @@ describe("resolvePolicyAndCreateApproval", () => {
 		expect(transaction).toHaveBeenCalledTimes(1);
 		expect(txInserts).toHaveLength(3);
 		expect(outerInserts).toHaveLength(0);
+	});
+
+	it("resolves direct manager policy stages through team primary manager fallback", async () => {
+		const { dbService, txInserts } = createPolicyResolutionDbService({
+			policies: [
+				{
+					id: "policy-1",
+					organizationId: "org-1",
+					name: "Absence policy",
+					isActive: true,
+					priority: 1,
+					conditions: [],
+					stages: [{ id: "stage-1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
+				},
+			],
+			employees: [
+				{ id: "requester", organizationId: "org-1", userId: "user-requester", isActive: true, role: "employee" },
+				{ id: "team-manager", organizationId: "org-1", userId: "user-manager", isActive: true, role: "manager" },
+			],
+			employeeManagers: [],
+			teamMemberships: [{ employeeId: "requester", teamId: "team-1" }],
+			teams: [{ id: "team-1", organizationId: "org-1", primaryManagerId: "team-manager" }],
+		});
+
+		const result = await Effect.runPromise(
+			resolvePolicyAndCreateApproval(dbService, {
+				context: {
+					organizationId: "org-1",
+					approvalType: "absence_entry",
+					requesterEmployeeId: "requester",
+					teamId: null,
+					locationId: null,
+					absenceCategoryId: null,
+					travelExpenseAmount: null,
+					overtimeRisk: null,
+					employeeGroupIds: [],
+					entityType: "absence_entry",
+					entityId: "absence-1",
+				},
+				defaultApproverId: "fallback-manager",
+			}),
+		);
+
+		expect(result.kind).toBe("chain_created");
+		expect(txInserts.some((insert) => insert.approverId === "team-manager")).toBe(true);
 	});
 
 	it("matches policy conditions stored by settings actions", async () => {

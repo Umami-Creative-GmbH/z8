@@ -76,13 +76,20 @@ export function DomainsAndBrandingTabs({
 				<div className="rounded-lg border bg-muted/30 p-4">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 						<div>
-							<h3 className="font-medium">Guided setup</h3>
+							<h3 className="font-medium">
+								{t("settings.enterprise.domains.guidedSetup.title", "Guided setup")}
+							</h3>
 							<p className="text-muted-foreground text-sm">
-								Configure SSO, SCIM, access policy, and activation checks in one guarded flow.
+								{t(
+									"settings.enterprise.domains.guidedSetup.description",
+									"Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
+								)}
 							</p>
 						</div>
 						<Button asChild variant="outline" className="w-fit">
-							<Link href="/settings/enterprise/identity-setup">Guided setup</Link>
+							<Link href="/settings/enterprise/identity-setup">
+								{t("settings.enterprise.domains.guidedSetup.action", "Guided setup")}
+							</Link>
 						</Button>
 					</div>
 				</div>

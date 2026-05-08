@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { getEmployeeGroups } from "@/app/[locale]/(app)/settings/approval-policies/actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ function groupMemberCount(group: EmployeeGroupData) {
 }
 
 export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagementProps) {
+	const { t } = useTranslate();
 	const { data, isLoading, isError } = useQuery({
 		queryKey: employeeGroupQueryKey(organizationId),
 		queryFn: getEmployeeGroups,
@@ -36,30 +38,38 @@ export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagem
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Employee Groups</CardTitle>
+				<CardTitle>{t("settings.employeeGroups.title", "Employee Groups")}</CardTitle>
 				<CardDescription>
-					Reusable employee cohorts for policies that need group-specific approval chains.
+					{t(
+						"settings.employeeGroups.description",
+						"Reusable employee cohorts for policies that need group-specific approval chains.",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				{isLoading ? (
-					<div className="py-6 text-sm text-muted-foreground">Loading employee groups…</div>
+					<div className="py-6 text-sm text-muted-foreground">
+						{t("settings.employeeGroups.loading", "Loading employee groups…")}
+					</div>
 				) : isError ? (
 					<div className="py-6 text-sm text-destructive" role="status">
-						Employee groups could not be loaded.
+						{t("settings.employeeGroups.loadFailed", "Employee groups could not be loaded.")}
 					</div>
 				) : groups.length === 0 ? (
 					<div className="py-6 text-sm text-muted-foreground">
-						No employee groups configured yet. Groups can be used as policy conditions once created.
+						{t(
+							"settings.employeeGroups.empty",
+							"No employee groups configured yet. Groups can be used as policy conditions once created.",
+						)}
 					</div>
 				) : (
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead className="min-w-0">Name</TableHead>
-								<TableHead className="min-w-0">Description</TableHead>
-								<TableHead>Members</TableHead>
-								<TableHead>Status</TableHead>
+								<TableHead className="min-w-0">{t("common.name", "Name")}</TableHead>
+								<TableHead className="min-w-0">{t("common.description", "Description")}</TableHead>
+								<TableHead>{t("settings.employeeGroups.members", "Members")}</TableHead>
+								<TableHead>{t("settings.employeeGroups.status", "Status")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -78,7 +88,9 @@ export function EmployeeGroupManagement({ organizationId }: EmployeeGroupManagem
 									<TableCell>{groupMemberCount(group)}</TableCell>
 									<TableCell>
 										<Badge variant={group.isActive ? "default" : "outline"}>
-											{group.isActive ? "Active" : "Inactive"}
+											{group.isActive
+												? t("settings.employeeGroups.status.active", "Active")
+												: t("settings.employeeGroups.status.inactive", "Inactive")}
 										</Badge>
 									</TableCell>
 								</TableRow>

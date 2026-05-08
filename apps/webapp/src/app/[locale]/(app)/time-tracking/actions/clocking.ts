@@ -11,6 +11,10 @@ import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
+import {
+	isWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
@@ -47,7 +51,7 @@ type ManualEntryOverlapResult =
 	  };
 
 export async function clockIn(
-	workLocationType?: "office" | "home" | "field" | "other",
+	workLocationType?: WorkLocationType,
 ): Promise<ServerActionResult<Awaited<ReturnType<typeof createTimeEntry>>>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -75,6 +79,12 @@ export async function clockIn(
 		};
 	}
 
+	const resolvedWorkLocationType = workLocationType ?? "office";
+
+	if (!isWorkLocationType(resolvedWorkLocationType)) {
+		return { success: false, error: "Invalid work location type" };
+	}
+
 	try {
 		const entry = await createTimeEntry({
 			employeeId: currentEmployee.id,
@@ -89,7 +99,7 @@ export async function clockIn(
 			organizationId: currentEmployee.organizationId,
 			clockInId: entry.id,
 			startTime: now,
-			workLocationType: workLocationType ?? null,
+			workLocationType: resolvedWorkLocationType,
 		});
 
 		return { success: true, data: entry };

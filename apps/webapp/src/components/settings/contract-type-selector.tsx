@@ -52,14 +52,21 @@ interface ContractTypeSelectorProps {
 	value?: ContractType;
 	onChange: (value: ContractType) => void;
 	disabled?: boolean;
+	labels?: Partial<Record<ContractType, { label: string; description: string }>>;
 }
 
-export function ContractTypeSelector({ value, onChange, disabled }: ContractTypeSelectorProps) {
+export function ContractTypeSelector({
+	value,
+	onChange,
+	disabled,
+	labels,
+}: ContractTypeSelectorProps) {
 	return (
 		<div className="grid grid-cols-2 gap-3">
 			{contractTypeOptions.map((option) => {
 				const isSelected = value === option.value;
 				const Icon = option.icon;
+				const copy = labels?.[option.value] ?? option;
 
 				return (
 					<button
@@ -109,11 +116,11 @@ export function ContractTypeSelector({ value, onChange, disabled }: ContractType
 								isSelected ? option.color.text : "text-foreground",
 							)}
 						>
-							{option.label}
+							{copy.label}
 						</span>
 
 						{/* Description */}
-						<span className="text-xs text-muted-foreground">{option.description}</span>
+						<span className="text-xs text-muted-foreground">{copy.description}</span>
 					</button>
 				);
 			})}

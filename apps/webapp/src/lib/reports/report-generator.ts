@@ -20,7 +20,6 @@ import {
 	format,
 	fromJSDate,
 	startOfDay,
-	toJSDate,
 } from "@/lib/datetime/luxon-utils";
 import {
 	calculateExpectedWorkHoursForEmployee,
@@ -332,11 +331,14 @@ export async function aggregateHomeOfficeDays(
 	const rangeEndDT = endOfDay(fromJSDate(endDate));
 
 	// Step 1: Get approved home office absences
-	const homeOfficeCategory = await db.query.absenceCategory.findFirst({
-		where: eq(absenceCategory.type, "home_office"),
+	const homeOfficeCategories = await db.query.absenceCategory.findMany({
+		where: and(
+			eq(absenceCategory.type, "home_office"),
+			eq(absenceCategory.organizationId, organizationId),
+		),
 	});
 
-	if (!homeOfficeCategory) {
+	if (homeOfficeCategories.length === 0) {
 		return {
 			days: 0,
 			hoursWorked: 0,
@@ -347,7 +349,7 @@ export async function aggregateHomeOfficeDays(
 	const homeOfficeAbsences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			eq(absenceEntry.categoryId, homeOfficeCategory.id),
+			or(...homeOfficeCategories.map((category) => eq(absenceEntry.categoryId, category.id))),
 			eq(absenceEntry.status, "approved"),
 			lte(absenceEntry.startDate, rangeEndStr),
 			gte(absenceEntry.endDate, rangeStartStr),
@@ -463,7 +465,7 @@ function calculateComplianceMetrics(
  */
 async function calculateHourlyEarnings(
 	employeeId: string,
-	organizationId: string,
+	_organizationId: string,
 	startDate: Date,
 	endDate: Date,
 	totalHours: number,

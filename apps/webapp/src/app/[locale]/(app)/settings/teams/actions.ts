@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import * as z from "zod";
 import { member, user as authUser } from "@/db/auth-schema";
-import { employee, team, teamPermissions } from "@/db/schema";
+import { employee, team, teamMembership, teamPermissions } from "@/db/schema";
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -26,7 +26,6 @@ import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/trig
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
-	canReassignEmployeeWithinScope,
 	getScopedTeamFlags,
 	type ScopedTeam,
 } from "./team-scope";
@@ -46,6 +45,7 @@ const createTeamSchema = z.object({
 const updateTeamSchema = z.object({
 	name: z.string().min(1, "Team name is required").max(100, "Team name is too long").optional(),
 	description: z.string().max(500, "Description is too long").optional().nullable(),
+	primaryManagerId: z.string().uuid().nullable().optional(),
 });
 
 type CreateTeam = z.infer<typeof createTeamSchema>;
@@ -104,6 +104,49 @@ function loadScopedPermissions(
 
 		return permissions;
 	}) as Effect.Effect<ScopedPermissions, AnyAppError>;
+}
+
+function validatePrimaryManager(
+	dbService: DatabaseServiceInstance,
+	organizationId: string,
+	primaryManagerId: string | null | undefined,
+) {
+	if (!primaryManagerId) {
+		return Effect.succeed(undefined);
+	}
+
+	return Effect.gen(function* (_) {
+		const manager = yield* _(
+			dbService.query("getPrimaryManagerCandidate", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, primaryManagerId),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
+					),
+				});
+			}),
+		);
+
+		if (!manager || (manager.role !== "manager" && manager.role !== "admin")) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Primary manager must be an active manager or admin in this organization",
+						field: "primaryManagerId",
+						value: primaryManagerId,
+					}),
+				),
+			);
+		}
+	});
+}
+
+function withMembershipEmployees<T extends { memberships?: Array<{ employee: unknown }> }>(teamRecord: T) {
+	return {
+		...teamRecord,
+		employees: teamRecord.memberships?.map((membership) => membership.employee) ?? [],
+	};
 }
 
 function ensureManagerScopedEmployee(
@@ -454,6 +497,7 @@ export async function updateTeam(
 				}
 
 				const validatedData = validationResult.data;
+				yield* _(validatePrimaryManager(dbService, targetTeam.organizationId, validatedData.primaryManagerId));
 
 				// Check for duplicate name if name is being changed
 				if (validatedData.name && validatedData.name !== targetTeam.name) {
@@ -482,14 +526,20 @@ export async function updateTeam(
 				}
 
 				// Update team
+				const updateValues = {
+					...(validatedData.name !== undefined ? { name: validatedData.name } : {}),
+					...(validatedData.description !== undefined ? { description: validatedData.description } : {}),
+					...(validatedData.primaryManagerId !== undefined
+						? { primaryManagerId: validatedData.primaryManagerId }
+						: {}),
+					updatedAt: currentTimestamp(),
+				};
+
 				yield* _(
 					dbService.query("updateTeam", async () => {
 						await dbService.db
 							.update(team)
-							.set({
-								...validatedData,
-								updatedAt: currentTimestamp(),
-							})
+							.set(updateValues)
 							.where(eq(team.id, teamId));
 					}),
 				);
@@ -615,9 +665,12 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 
 				// Check if team has members
 				const members = yield* _(
-					dbService.query("getTeamMembers", async () => {
-						return await dbService.db.query.employee.findMany({
-							where: eq(employee.teamId, teamId),
+					dbService.query("getTeamMemberships", async () => {
+						return await dbService.db.query.teamMembership.findMany({
+							where: and(
+								eq(teamMembership.organizationId, targetTeam.organizationId),
+								eq(teamMembership.teamId, teamId),
+							),
 						});
 					}),
 				);
@@ -685,11 +738,12 @@ export async function getTeam(
 				return await dbService.db.query.team.findFirst({
 					where: eq(team.id, teamId),
 					with: {
-						employees: {
+						memberships: {
 							with: {
-								user: true,
+								employee: { with: { user: true } },
 							},
 						},
+						primaryManager: { with: { user: true } },
 					},
 				});
 			}),
@@ -752,7 +806,7 @@ export async function getTeam(
 		}
 
 		return {
-			...targetTeam,
+			...withMembershipEmployees(targetTeam),
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};
@@ -805,11 +859,12 @@ export async function listTeams(
 				return await dbService.db.query.team.findMany({
 					where: eq(team.organizationId, targetOrgId),
 					with: {
-						employees: {
+						memberships: {
 							with: {
-								user: true,
+								employee: { with: { user: true } },
 							},
 						},
+						primaryManager: { with: { user: true } },
 					},
 					orderBy: (team, { asc }) => [asc(team.name)],
 				});
@@ -822,7 +877,7 @@ export async function listTeams(
 
 		return buildTeamSettingsSurface({
 			accessTier: actor.accessTier,
-			teams,
+			teams: teams.map(withMembershipEmployees),
 			permissions: scopedPermissions,
 		}).teams;
 	}).pipe(Effect.provide(AppLayer));
@@ -938,19 +993,31 @@ export async function addTeamMember(
 					const scopedPermissions = yield* _(
 						loadScopedPermissions(dbService, actor.actorId, targetTeam.organizationId),
 					);
+					const targetEmployeeMemberships = yield* _(
+						dbService.query("getTargetEmployeeMemberships", async () => {
+							return await dbService.db.query.teamMembership.findMany({
+								where: and(
+									eq(teamMembership.organizationId, targetTeam.organizationId),
+									eq(teamMembership.employeeId, targetEmployee.id),
+								),
+							});
+						}),
+					);
 					const manageableTeamIds = new Set(
 						Array.from(scopedPermissions.byTeamId.entries())
 							.filter(([, flags]) => flags.canManageTeamMembers)
 							.map(([managedTeamId]) => managedTeamId),
 					);
+					const currentTeamIds = new Set(
+						[
+							targetEmployee.teamId,
+							...targetEmployeeMemberships.map((membership) => membership.teamId),
+						].filter((currentTeamId): currentTeamId is string => Boolean(currentTeamId)),
+					);
 
 					if (
 						!scopedPermissions.orgWide?.canManageTeamMembers &&
-						!canReassignEmployeeWithinScope({
-							currentEmployeeTeamId: targetEmployee.teamId,
-							targetTeamId: teamId,
-							manageableTeamIds,
-						})
+						Array.from(currentTeamIds).some((currentTeamId) => !manageableTeamIds.has(currentTeamId))
 					) {
 						yield* _(
 							Effect.fail(
@@ -965,18 +1032,31 @@ export async function addTeamMember(
 					}
 				}
 
-				// Add employee to team
 				yield* _(
-					dbService.query("addTeamMember", async () => {
+					dbService.query("addTeamMembership", async () => {
 						await dbService.db
-							.update(employee)
-							.set({
+							.insert(teamMembership)
+							.values({
+								organizationId: targetTeam.organizationId,
 								teamId,
-								updatedAt: currentTimestamp(),
+								employeeId: targetEmployee.id,
+								createdBy: session.user.id,
 							})
-							.where(eq(employee.id, targetEmployee.id));
+							.onConflictDoNothing();
 					}),
 				);
+
+				// Keep legacy employee.teamId populated only for employees without a compatibility team.
+				if (!targetEmployee.teamId) {
+					yield* _(
+						dbService.query("setEmployeePrimaryTeamCompatibility", async () => {
+							await dbService.db
+								.update(employee)
+								.set({ teamId, updatedAt: currentTimestamp() })
+								.where(eq(employee.id, targetEmployee.id));
+						}),
+					);
+				}
 
 				// Trigger in-app notification (fire-and-forget)
 				void onTeamMemberAdded({
@@ -1092,24 +1172,56 @@ export async function removeTeamMember(
 				const targetEmployee = yield* _(
 					dbService.query("getTargetEmployee", async () => {
 						return await dbService.db.query.employee.findFirst({
-							where: and(eq(employee.id, employeeId), eq(employee.teamId, teamId)),
+							where: and(
+								eq(employee.id, employeeId),
+								eq(employee.organizationId, targetTeam.organizationId),
+							),
 							with: { user: true },
 						});
 					}),
 				);
 
-				// Remove employee from team
 				yield* _(
-					dbService.query("removeTeamMember", async () => {
+					dbService.query("removeTeamMembership", async () => {
 						await dbService.db
-							.update(employee)
-							.set({
-								teamId: null,
-								updatedAt: currentTimestamp(),
-							})
-							.where(and(eq(employee.id, employeeId), eq(employee.teamId, teamId)));
+							.delete(teamMembership)
+							.where(
+								and(
+									eq(teamMembership.organizationId, targetTeam.organizationId),
+									eq(teamMembership.teamId, teamId),
+									eq(teamMembership.employeeId, employeeId),
+								),
+							);
 					}),
 				);
+
+				if (targetEmployee?.teamId === teamId) {
+					const remainingMemberships = yield* _(
+						dbService.query("getRemainingTeamMemberships", async () => {
+							return await dbService.db.query.teamMembership.findMany({
+								where: and(
+									eq(teamMembership.organizationId, targetTeam.organizationId),
+									eq(teamMembership.employeeId, employeeId),
+								),
+							});
+						}),
+					);
+
+					const nextTeamId =
+						remainingMemberships
+							.map((membership) => membership.teamId)
+							.filter((remainingTeamId) => remainingTeamId !== teamId)
+							.toSorted()[0] ?? null;
+
+					yield* _(
+						dbService.query("updateEmployeePrimaryTeamCompatibility", async () => {
+							await dbService.db
+								.update(employee)
+								.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
+								.where(eq(employee.id, employeeId));
+						}),
+					);
+				}
 
 				// Trigger in-app notification (fire-and-forget)
 				if (targetEmployee) {

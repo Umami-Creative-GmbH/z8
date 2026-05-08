@@ -6,8 +6,10 @@ import { useEffect, useReducer } from "react";
 import { toast } from "sonner";
 import { useComplianceStatus } from "@/hooks/use-compliance-status";
 import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
-
-type WorkLocationType = "office" | "home" | "field" | "other";
+import {
+	normalizeWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -37,7 +39,7 @@ function getInitialWorkLocationType(): WorkLocationType {
 		return "office";
 	}
 
-	return (localStorage.getItem("z8-work-location-type") as WorkLocationType) ?? "office";
+	return normalizeWorkLocationType(localStorage.getItem("z8-work-location-type"));
 }
 
 function createInitialWidgetState(): ClockInOutWidgetState {

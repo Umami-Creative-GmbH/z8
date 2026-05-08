@@ -5,7 +5,7 @@
  * and optimize database queries.
  */
 
-import { and, count, desc, eq, lte } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
@@ -75,7 +75,20 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 	];
 
 	if (!params.includeAllApprovers) {
-		conditions.push(eq(approvalRequest.approverId, params.approverId));
+		const assignedApproverCondition = eq(approvalRequest.approverId, params.approverId);
+		const eligibleApprovalScopeConditions = params.eligibleApprovalScopes
+			?.filter((scope) => scope.eligibleApproverIds.length > 0)
+			.map((scope) =>
+				and(
+					eq(approvalRequest.requestedBy, scope.requesterEmployeeId),
+					inArray(approvalRequest.approverId, scope.eligibleApproverIds),
+				),
+			);
+		conditions.push(
+			eligibleApprovalScopeConditions && eligibleApprovalScopeConditions.length > 0
+				? or(assignedApproverCondition, ...eligibleApprovalScopeConditions)
+				: assignedApproverCondition,
+		);
 	}
 
 	// Add age filter
@@ -158,23 +171,24 @@ export function getApprovalCount(
 	entityType: ApprovalType,
 	approverId: string,
 	organizationId: string,
+	visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
 ): Effect.Effect<number, AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
+		const conditions = buildBaseConditions(entityType, {
+			approverId,
+			organizationId,
+			status: "pending",
+			limit: 1,
+			...visibility,
+		});
 
 		const result = yield* _(
 			dbService.query(`get${entityType}Count`, async () => {
 				return await dbService.db
 					.select({ count: count() })
 					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.entityType, entityType),
-							eq(approvalRequest.approverId, approverId),
-							eq(approvalRequest.organizationId, organizationId),
-							eq(approvalRequest.status, "pending"),
-						),
-					);
+					.where(and(...conditions));
 			}),
 		);
 

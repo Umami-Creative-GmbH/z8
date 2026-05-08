@@ -92,6 +92,27 @@
       "when": 1777826107256,
       "tag": "0012_enterprise_identity_setup",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778232000000,
+      "tag": "0013_work_location_remote",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1778243622840,
+      "tag": "0014_team_membership_primary_manager",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1778245000000,
+      "tag": "0015_absence_entry_category_guard_idx",
+      "breakpoints": true
     }
   ]
 }

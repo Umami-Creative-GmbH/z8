@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, team, teamMembership } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import type { TeamPermissions } from "@/lib/authorization";
 import { buildTeamSettingsSurface, filterMembersForTeamSettingsSurface } from "./team-scope";
@@ -14,7 +14,7 @@ export async function loadTeamSettingsPageData(input: {
 	const { organizationId, settingsRouteContext, principalContext } = input;
 	await ensureEmployeeProfilesForOrganizationMembers(db, organizationId);
 
-	const [membersData, allTeams] = await Promise.all([
+	const [membersData, allTeams, membershipRows] = await Promise.all([
 		db
 			.select({
 				member: authSchema.member,
@@ -32,7 +32,27 @@ export async function loadTeamSettingsPageData(input: {
 			where: eq(team.organizationId, organizationId),
 			orderBy: (currentTeam, { asc }) => [asc(currentTeam.name)],
 		}),
+		db.query.teamMembership.findMany({
+			where: eq(teamMembership.organizationId, organizationId),
+			with: {
+				employee: { with: { user: true } },
+			},
+		}),
 	]);
+
+	const membershipsByEmployeeId = new Map<string, typeof membershipRows>();
+	for (const membership of membershipRows) {
+		const employeeMemberships = membershipsByEmployeeId.get(membership.employeeId) ?? [];
+		employeeMemberships.push(membership);
+		membershipsByEmployeeId.set(membership.employeeId, employeeMemberships);
+	}
+
+	const membersWithMemberships = membersData.map((memberEntry) => ({
+		...memberEntry,
+		teamMemberships: memberEntry.employee
+			? (membershipsByEmployeeId.get(memberEntry.employee.id) ?? [])
+			: [],
+	}));
 
 	const teamSurface = buildTeamSettingsSurface({
 		accessTier: settingsRouteContext.accessTier,
@@ -44,7 +64,7 @@ export async function loadTeamSettingsPageData(input: {
 	return {
 		teamSurface,
 		scopedMembers: filterMembersForTeamSettingsSurface({
-			members: membersData,
+			members: membersWithMemberships,
 			manageableTeamIds: scopedTeamIds,
 			canAccessOrganizationAdminSurface: teamSurface.canAccessOrganizationAdminSurface,
 		}),

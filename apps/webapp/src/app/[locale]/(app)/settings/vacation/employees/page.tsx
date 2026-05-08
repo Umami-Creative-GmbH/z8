@@ -68,22 +68,45 @@ async function EmployeeAllowancesContent() {
 				<CardHeader>
 					<div className="flex items-center justify-between">
 						<div>
-							<CardTitle>Vacation Allowances for {currentYear}</CardTitle>
+							<CardTitle>
+								{t(
+									"settings.vacation.employees.allowancesForYear",
+									"Vacation Allowances for {{year}}",
+									{ year: currentYear },
+								)}
+							</CardTitle>
 							<CardDescription>
-								Default allowance: {defaultDays} days per year
-								{!orgPolicy && " (No org policy configured)"}
+								{t(
+									"settings.vacation.employees.defaultAllowanceDescription",
+									"Default allowance: {{days}} days per year",
+									{ days: defaultDays },
+								)}
+								{!orgPolicy &&
+									t(
+										"settings.vacation.employees.noOrgPolicyConfigured",
+										" (No org policy configured)",
+									)}
 							</CardDescription>
 						</div>
-						<Badge variant="secondary">{employees.length} employees</Badge>
+						<Badge variant="secondary">
+							{t("settings.vacation.employees.employeeCount", "{{count}} employees", {
+								count: employees.length,
+							})}
+						</Badge>
 					</div>
 				</CardHeader>
 				<CardContent>
 					{employees.length === 0 ? (
 						<div className="rounded-lg border border-dashed p-8 text-center">
 							<IconUser className="mx-auto size-10 text-muted-foreground" />
-							<h3 className="mt-4 text-lg font-semibold">No employees found</h3>
+							<h3 className="mt-4 text-lg font-semibold">
+								{t("settings.vacation.employees.emptyTitle", "No employees found")}
+							</h3>
 							<p className="mt-2 text-sm text-muted-foreground">
-								Add employees to your organization to manage their vacation allowances.
+								{t(
+									"settings.vacation.employees.emptyDescription",
+									"Add employees to your organization to manage their vacation allowances.",
+								)}
 							</p>
 						</div>
 					) : (
@@ -91,16 +114,32 @@ async function EmployeeAllowancesContent() {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>Employee</TableHead>
-										<TableHead>Policy</TableHead>
-										<TableHead>Team</TableHead>
-										<TableHead>Managers</TableHead>
-										<TableHead className="text-right">Default Days</TableHead>
-										<TableHead className="text-right">Custom Days</TableHead>
-										<TableHead className="text-right">Carryover</TableHead>
-										<TableHead className="text-right">Adjustments</TableHead>
-										<TableHead className="text-right">Total Available</TableHead>
-										<TableHead className="text-right">Actions</TableHead>
+										<TableHead>
+											{t("settings.vacation.employees.table.employee", "Employee")}
+										</TableHead>
+										<TableHead>{t("settings.vacation.employees.table.policy", "Policy")}</TableHead>
+										<TableHead>{t("settings.vacation.employees.table.team", "Team")}</TableHead>
+										<TableHead>
+											{t("settings.vacation.employees.table.managers", "Managers")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.vacation.employees.table.defaultDays", "Default Days")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.vacation.employees.table.customDays", "Custom Days")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.vacation.employees.table.carryover", "Carryover")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.vacation.employees.table.adjustments", "Adjustments")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.vacation.employees.table.totalAvailable", "Total Available")}
+										</TableHead>
+										<TableHead className="text-right">
+											{t("settings.vacation.employees.table.actions", "Actions")}
+										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -139,7 +178,9 @@ async function EmployeeAllowancesContent() {
 													{policyAssignment ? (
 														<Badge variant="outline">{policyAssignment.policy?.name}</Badge>
 													) : (
-														<span className="text-muted-foreground text-sm">Default</span>
+														<span className="text-muted-foreground text-sm">
+															{t("settings.vacation.employees.defaultPolicy", "Default")}
+														</span>
 													)}
 												</TableCell>
 												<TableCell>{emp.team?.name || "—"}</TableCell>
@@ -151,7 +192,7 @@ async function EmployeeAllowancesContent() {
 																	<span className="text-sm">{m.manager.user.name}</span>
 																	{m.isPrimary && (
 																		<Badge variant="secondary" className="text-xs">
-																			Primary
+																			{t("settings.vacation.employees.primaryManager", "Primary")}
 																		</Badge>
 																	)}
 																</div>
@@ -201,7 +242,7 @@ async function EmployeeAllowancesContent() {
 													<Button variant="ghost" size="sm" asChild>
 														<Link href={`/settings/vacation/employees/${emp.id}`}>
 															<IconEdit className="mr-1 size-4" />
-															Edit
+															{t("settings.vacation.employees.actions.edit", "Edit")}
 														</Link>
 													</Button>
 												</TableCell>

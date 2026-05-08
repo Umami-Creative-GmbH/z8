@@ -424,7 +424,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 
 		const onsiteDates = new Set<string>();
 		for (const period of workPeriods) {
-			if (period.workLocationType === "office" || period.workLocationType === "field") {
+			if (period.workLocationType === "office") {
 				const date = DateTime.fromJSDate(period.startTime).toISODate();
 				if (date) {
 					onsiteDates.add(date);

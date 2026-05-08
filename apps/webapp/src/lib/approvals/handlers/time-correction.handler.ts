@@ -173,8 +173,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			},
 		}),
 
-	getCount: (approverId, organizationId) =>
-		getApprovalCount("time_entry", approverId, organizationId),
+	getCount: (approverId, organizationId, visibility) =>
+		getApprovalCount("time_entry", approverId, organizationId, visibility),
 
 	getDetail: (entityId, organizationId) =>
 		Effect.gen(function* (_) {

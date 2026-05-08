@@ -1,4 +1,5 @@
 import { getTableConfig } from "drizzle-orm/pg-core";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	approvalChainInstance,
@@ -14,6 +15,7 @@ import {
 	location,
 	organizationRelations,
 	team,
+	teamMembership,
 } from "@/db/schema";
 
 function uniqueIndexNames(table: Parameters<typeof getTableConfig>[0]): string[] {
@@ -217,6 +219,65 @@ describe("approval policy schema exports", () => {
 				"approvalChainInstances",
 				"approvalChainStageInstances",
 			]),
+		);
+	});
+
+	it("defines team membership and primary team manager schema", () => {
+		expect(team.primaryManagerId.name).toBe("primary_manager_id");
+		expect(teamMembership).toBeDefined();
+		expect(teamMembership.organizationId.notNull).toBe(true);
+		expect(teamMembership.teamId.notNull).toBe(true);
+		expect(teamMembership.employeeId.notNull).toBe(true);
+		expect(teamMembership.createdBy.notNull).toBe(false);
+		expect(uniqueIndexNames(teamMembership)).toEqual(
+			expect.arrayContaining(["teamMembership_team_employee_idx"]),
+		);
+		expect(
+			hasCompositeForeignKey(team, ["primary_manager_id", "organization_id"], employee, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(teamMembership, ["team_id", "organization_id"], team, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(teamMembership, ["employee_id", "organization_id"], employee, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+	});
+
+	it("blocks primary manager deletion until the team reference is cleared", () => {
+		const migration = readFileSync("drizzle/0014_team_membership_primary_manager.sql", "utf8");
+
+		expect(migration).not.toContain("ON DELETE SET NULL");
+	});
+
+	it("uses generated foreign key names in the team membership migration", () => {
+		const migration = readFileSync("drizzle/0014_team_membership_primary_manager.sql", "utf8");
+
+		expect(migration).toContain(
+			'ADD CONSTRAINT "team_primary_manager_id_organization_id_employee_id_organization_id_fk"',
+		);
+		expect(migration).toContain(
+			'ADD CONSTRAINT "team_membership_team_id_organization_id_team_id_organization_id_fk"',
+		);
+		expect(migration).toContain(
+			'ADD CONSTRAINT "team_membership_employee_id_organization_id_employee_id_organization_id_fk"',
+		);
+	});
+
+	it("guards team membership backfill by organization", () => {
+		const migration = readFileSync("drizzle/0014_team_membership_primary_manager.sql", "utf8");
+
+		expect(migration).toContain('JOIN "team" ON "team"."id" = "employee"."team_id"');
+		expect(migration).toContain(
+			'AND "team"."organization_id" = "employee"."organization_id"',
 		);
 	});
 });

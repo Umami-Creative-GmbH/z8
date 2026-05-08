@@ -16,6 +16,21 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, values?: Record<string, string | number>) => {
+			if (!values) {
+				return fallback;
+			}
+
+			return Object.entries(values).reduce(
+				(text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
+				fallback,
+			);
+		},
+	}),
+}));
+
 vi.mock("@/components/ui/badge", () => ({
 	Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
@@ -88,7 +103,8 @@ const checklist = {
 		{
 			id: "holidays",
 			title: "Holidays",
-			description: "Configure public holidays and closing days used by absence and payroll workflows.",
+			description:
+				"Configure public holidays and closing days used by absence and payroll workflows.",
 			helperText: "Z8 checks for active holiday presets, assignments, or custom holidays.",
 			actionLabel: "Configure holidays",
 			href: "/settings/holidays",
@@ -114,7 +130,9 @@ describe("ImplementationChecklistClient", () => {
 		render(<ImplementationChecklistClient checklist={checklist} />);
 
 		expect(screen.getByText("Customer implementation")).toBeTruthy();
-		expect(screen.getByRole("heading", { name: "Implementation checklist", level: 1 })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Implementation checklist", level: 1 }),
+		).toBeTruthy();
 		expect(screen.getByText(/Finish the setup steps before inviting your full team/i)).toBeTruthy();
 		expect(screen.getByText("1 of 2 complete")).toBeTruthy();
 		expect(screen.getByText("50% complete")).toBeTruthy();

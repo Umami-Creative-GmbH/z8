@@ -44,6 +44,8 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
 						]),
 				},
+				teamMembership: { findMany: vi.fn().mockResolvedValue([]) },
+				team: { findMany: vi.fn().mockResolvedValue([]) },
 			},
 			insert: vi.fn((table: unknown) => ({
 				values: vi.fn((values: Record<string, unknown>) => {

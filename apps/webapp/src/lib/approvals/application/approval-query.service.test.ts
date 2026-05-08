@@ -217,6 +217,97 @@ describe("ApprovalQueryService", () => {
 		expect(result.hasMore).toBe(true);
 	});
 
+	it("keeps directly assigned approvals when eligible requester visibility is present", async () => {
+		approvalQueryTestState.handlers = [
+			{
+				type: "absence_entry",
+				getApprovals: vi.fn(() =>
+					Effect.succeed([
+						createUnifiedApprovalItem({
+							id: "assigned-directly",
+							approvalType: "absence_entry",
+							createdAt: "2026-04-12T09:00:00.000Z",
+							priority: "normal",
+							requesterId: "non-eligible-requester",
+							approverId: "manager-1",
+						}),
+						createUnifiedApprovalItem({
+							id: "eligible-requester",
+							approvalType: "absence_entry",
+							createdAt: "2026-04-11T09:00:00.000Z",
+							priority: "normal",
+							requesterId: "eligible-requester",
+							approverId: "manager-2",
+						}),
+					]),
+				),
+				getCount: vi.fn(() => Effect.succeed(2)),
+			},
+		];
+
+		const result = await runApprovalQuery(
+			Effect.gen(function* (_) {
+				const service = yield* _(ApprovalQueryService);
+				return yield* _(
+					service.getApprovals({
+						approverId: "manager-1",
+						organizationId: "org-1",
+						status: "pending",
+						eligibleApprovalScopes: [
+							{ requesterEmployeeId: "eligible-requester", eligibleApproverIds: ["manager-2"] },
+						],
+						limit: 10,
+					}),
+				);
+			}),
+		);
+
+		expect(result.items.map((item) => item.id)).toEqual([
+			"assigned-directly",
+			"eligible-requester",
+		]);
+		expect(result.total).toBe(2);
+	});
+
+	it("keeps directly assigned approvals when eligible requester visibility is empty", async () => {
+		approvalQueryTestState.handlers = [
+			{
+				type: "absence_entry",
+				getApprovals: vi.fn(() =>
+					Effect.succeed([
+						createUnifiedApprovalItem({
+							id: "assigned-directly",
+							approvalType: "absence_entry",
+							createdAt: "2026-04-12T09:00:00.000Z",
+							priority: "normal",
+							requesterId: "non-eligible-requester",
+							approverId: "manager-1",
+						}),
+					]),
+				),
+				getCount: vi.fn(() => Effect.succeed(1)),
+			},
+		];
+
+		const result = await runApprovalQuery(
+			Effect.gen(function* (_) {
+				const service = yield* _(ApprovalQueryService);
+				return yield* _(
+					service.getApprovals({
+						approverId: "manager-1",
+						organizationId: "org-1",
+						status: "pending",
+						eligibleApprovalScopes: [],
+						limit: 10,
+					}),
+				);
+			}),
+		);
+
+		expect(result.items.map((item) => item.id)).toEqual(["assigned-directly"]);
+		expect(result.total).toBe(1);
+	});
+
 	it("keeps same-timestamp items reachable across cursor pages", async () => {
 		approvalQueryTestState.handlers = [
 			{

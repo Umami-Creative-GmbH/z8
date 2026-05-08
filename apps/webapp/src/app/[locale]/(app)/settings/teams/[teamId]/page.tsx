@@ -13,25 +13,22 @@ import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from
 import {
 	AddMemberDialog,
 	DeleteTeamDialog,
-	extractTeamMemberIds,
-	invalidateTeamQueries,
 	RemoveMemberDialog,
-	type TeamFormValues,
 	TeamInfoCard,
 	TeamMembersCard,
 	TeamPageHeader,
-	useTeamPageUiState,
-} from "./page-utils";
+} from "./page-sections";
+import { extractTeamMemberIds, type TeamFormValues, useTeamPageUiState } from "./page-state";
 
 export default function TeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
 	const { teamId } = use(params);
-	useTranslate();
-	const router = useRouter();
+	const { t } = useTranslate();
+	const { push } = useRouter();
 	const queryClient = useQueryClient();
 	const [uiState, dispatch] = useTeamPageUiState();
 
 	const form = useForm({
-		defaultValues: { name: "", description: "" },
+		defaultValues: { name: "", description: "", primaryManagerId: null as string | null },
 		onSubmit: async ({ value }) => updateTeamMutation.mutate(value),
 	});
 
@@ -40,7 +37,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		queryFn: async () => {
 			const result = await getTeam(teamId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to load team");
+				throw new Error(
+					result.error || t("settings.teams.detail.errors.loadTeam", "Failed to load team"),
+				);
 			}
 			return result.data;
 		},
@@ -48,6 +47,25 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
 	const canManageSettings = team?.canManageSettings ?? false;
 	const canManageMembers = team?.canManageMembers ?? false;
+
+	const { data: managerOptions = [] } = useQuery({
+		queryKey: ["teams", teamId, "primary-manager-options"],
+		queryFn: async () => {
+			const result = await listEmployeesForSelect({
+				limit: 1000,
+				roles: ["manager", "admin"],
+				status: "active",
+			});
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load manager options");
+			}
+			return result.data.employees.filter(
+				(employee) =>
+					employee.isActive && (employee.role === "manager" || employee.role === "admin"),
+			);
+		},
+		enabled: canManageSettings,
+	});
 
 	async function loadAvailableEmployees() {
 		if (!team) return;
@@ -66,12 +84,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async (values: TeamFormValues) => {
 			const result = await updateTeam(teamId, values);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to update team");
+				throw new Error(
+					result.error || t("settings.teams.detail.errors.updateTeam", "Failed to update team"),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Team updated successfully");
+			toast.success(t("settings.teams.detail.toasts.teamUpdated", "Team updated successfully"));
 			dispatch({ type: "setEditing", value: false });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
@@ -83,14 +103,21 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async (employeeId: string) => {
 			const result = await addTeamMember(teamId, employeeId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to add team member");
+				throw new Error(
+					result.error ||
+						t("settings.teams.detail.errors.addTeamMember", "Failed to add team member"),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Team member added successfully");
+			toast.success(
+				t("settings.teams.detail.toasts.teamMemberAdded", "Team member added successfully"),
+			);
 			dispatch({ type: "resetAddMemberDialog" });
-			invalidateTeamQueries(queryClient, teamId);
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
 		},
 		onError: (error: Error) => toast.error(error.message),
 	});
@@ -99,7 +126,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async (employeeId: string) => {
 			const result = await removeTeamMember(teamId, employeeId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to remove team member");
+				throw new Error(
+					result.error ||
+						t("settings.teams.detail.errors.removeTeamMember", "Failed to remove team member"),
+				);
 			}
 			return result;
 		},
@@ -118,7 +148,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 			return { previousTeam };
 		},
 		onSuccess: () => {
-			toast.success("Team member removed successfully");
+			toast.success(
+				t("settings.teams.detail.toasts.teamMemberRemoved", "Team member removed successfully"),
+			);
 			dispatch({ type: "setSelectedMemberToRemove", employeeId: null });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
@@ -138,14 +170,16 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async () => {
 			const result = await deleteTeam(teamId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to delete team");
+				throw new Error(
+					result.error || t("settings.teams.detail.errors.deleteTeam", "Failed to delete team"),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Team deleted successfully");
+			toast.success(t("settings.teams.detail.toasts.teamDeleted", "Team deleted successfully"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
-			router.push("/settings/teams");
+			push("/settings/teams");
 		},
 		onError: (error: Error) => toast.error(error.message),
 		onSettled: () => dispatch({ type: "setShowDeleteDialog", value: false }),
@@ -153,7 +187,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
 	function handleAddMember() {
 		if (!uiState.selectedEmployee) {
-			toast.error("Please select an employee");
+			toast.error(
+				t("settings.teams.detail.validation.selectEmployee", "Please select an employee"),
+			);
 			return;
 		}
 
@@ -169,8 +205,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	if (isLoadingTeam || !team) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-center p-8">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				<div
+					className="flex items-center justify-center p-8"
+					role="status"
+					aria-label="Loading team"
+				>
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
 			</div>
 		);
@@ -186,13 +226,18 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 			<div className="grid gap-4 lg:grid-cols-3">
 				<TeamInfoCard
 					team={team}
+					managerOptions={managerOptions}
 					isEditing={uiState.isEditing}
 					canManageSettings={canManageSettings}
 					loading={loading}
 					form={form}
 					onStartEdit={() => {
 						dispatch({ type: "setEditing", value: true });
-						form.reset({ name: team.name, description: team.description || "" });
+						form.reset({
+							name: team.name,
+							description: team.description || "",
+							primaryManagerId: team.primaryManagerId ?? null,
+						});
 					}}
 					onCancelEdit={() => dispatch({ type: "setEditing", value: false })}
 					onSubmit={() => form.handleSubmit()}

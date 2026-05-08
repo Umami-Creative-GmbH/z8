@@ -1,5 +1,5 @@
 {
   "title": "Manager Guide",
   "icon": "Users",
-  "pages": ["index", "coverage-targets"]
+  "pages": ["index", "dashboard", "approvals", "scheduling", "coverage-targets", "reports"]
 }

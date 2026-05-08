@@ -20,7 +20,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { format } from "@/lib/datetime/luxon-utils";
+import { WEEK_START_OPTIONS, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 import { skipProfileSetup, updateProfileOnboarding } from "./actions";
@@ -30,6 +38,7 @@ const defaultValues = {
 	lastName: "",
 	gender: undefined as "male" | "female" | "other" | undefined,
 	birthday: undefined as Date | undefined,
+	weekStartDay: "sunday" as WeekStartDay,
 };
 
 export default function ProfilePage() {
@@ -245,6 +254,38 @@ export default function ProfilePage() {
 											{t(
 												"onboarding.profile.birthdayDesc",
 												"Your team can wish you a happy birthday!",
+											)}
+										</p>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field name="weekStartDay">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="week-start-day">
+											{t("onboarding.profile.weekStartDay", "First day of the week")}
+										</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => field.handleChange(value as WeekStartDay)}
+											disabled={loading}
+										>
+											<SelectTrigger id="week-start-day" className="w-full">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{WEEK_START_OPTIONS.map((option) => (
+													<SelectItem key={option.value} value={option.value}>
+														{option.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"onboarding.profile.weekStartDayDesc",
+												"This controls how calendars and weekly summaries are displayed.",
 											)}
 										</p>
 									</div>

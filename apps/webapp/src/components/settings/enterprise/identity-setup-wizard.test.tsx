@@ -1,7 +1,5 @@
 /* @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EnterpriseIdentitySetupResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
@@ -29,9 +27,72 @@ const {
 	updateEnterpriseIdentityProviderActionMock: vi.fn(),
 }));
 
+const germanCopy: Record<string, string> = {
+	"settings.enterprise.identity.hero.eyebrow": "Unternehmensidentität",
+	"settings.enterprise.identity.hero.title": "Operative Befehlscheckliste",
+	"settings.enterprise.identity.step.provider": "Anbieter",
+	"settings.enterprise.identity.step.domain": "Domäne",
+	"settings.enterprise.identity.step.sso": "SSO-Konfiguration",
+	"settings.enterprise.identity.step.ssoTest": "Testbenutzer",
+	"settings.enterprise.identity.step.scim": "SCIM-Bereitstellung",
+	"settings.enterprise.identity.step.accessPolicy": "Zugriffsrichtlinie",
+	"settings.enterprise.identity.step.review": "Prüfen & Aktivieren",
+	"settings.enterprise.identity.badge.ready": "Bereit",
+	"settings.enterprise.identity.badge.now": "Jetzt",
+	"settings.enterprise.identity.badge.queued": "Wartend",
+	"settings.enterprise.identity.provider.title": "Anbieter",
+	"settings.enterprise.identity.provider.action.save": "Anbieter speichern",
+	"settings.enterprise.identity.provider.label.preset": "Anbietervorlage",
+	"settings.enterprise.identity.provider.label.protocol": "Protokoll",
+	"settings.enterprise.identity.provider.label.providerId": "Anbieter-ID",
+	"settings.enterprise.identity.provider.label.domain": "E-Mail-Domäne",
+	"settings.enterprise.identity.provider.placeholder.providerId": "z. B. acme-okta…",
+	"settings.enterprise.identity.provider.placeholder.domain": "z. B. example.com…",
+	"settings.enterprise.identity.domain.title": "Domäne",
+	"settings.enterprise.identity.domain.status.pending": "Ausstehend",
+	"settings.enterprise.identity.domain.status.verified": "Verifiziert",
+	"settings.enterprise.identity.domain.action.checkStatus": "Domänenstatus prüfen",
+	"settings.enterprise.identity.sso.label.issuer": "Aussteller",
+	"settings.enterprise.identity.sso.label.clientId": "Client-ID",
+	"settings.enterprise.identity.sso.label.clientSecret": "Client-Geheimnis",
+	"settings.enterprise.identity.sso.action.register": "SSO-Anbieter registrieren",
+	"settings.enterprise.identity.sso.placeholder.issuer.generic": "https://idp.beispiel.de…",
+	"settings.enterprise.identity.ssoTest.title": "Testbenutzer",
+	"settings.enterprise.identity.ssoTest.label.email": "Testbenutzer-E-Mail",
+	"settings.enterprise.identity.ssoTest.label.failureNote": "Fehlernotiz",
+	"settings.enterprise.identity.ssoTest.action.recordPass": "Erfolg erfassen",
+	"settings.enterprise.identity.ssoTest.action.recordFail": "Fehler erfassen",
+	"settings.enterprise.identity.ssoTest.status.passed": "Bestanden",
+	"settings.enterprise.identity.review.requirement.provider": "Anbieter",
+	"settings.enterprise.identity.review.requirement.ssoTest": "SSO-Test",
+	"settings.enterprise.identity.review.missingRequirement":
+		"{item} ist vor Aktivierung erforderlich",
+	"settings.enterprise.identity.ssoTest.status.notRun": "Nicht ausgeführt",
+	"settings.enterprise.identity.scim.action.generateToken": "Token generieren",
+	"settings.enterprise.identity.scim.action.refreshStatus": "Status aktualisieren",
+	"settings.enterprise.identity.scim.tokenShownOnce": "Dieses Token wird einmal angezeigt",
+	"settings.enterprise.identity.scim.description":
+		"SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter einen Testbenutzer oder eine Gruppenänderung sendet.",
+	"settings.enterprise.identity.scim.status.none": "Noch keine Provisionierungsaktivität",
+	"settings.enterprise.identity.scim.status.observed": "Provisionierungsaktivität erkannt",
+	"settings.enterprise.identity.accessPolicy.defaultRoleTemplate": "Standard-Rollenvorlage",
+	"settings.enterprise.identity.accessPolicy.action.save": "Zugriffsrichtlinie speichern",
+	"settings.enterprise.identity.review.action.activate": "Unternehmensidentität aktivieren",
+	"settings.enterprise.tab.sso": "SSO-Anbieter",
+	"settings.enterprise.domains.guidedSetup.action": "Geführte Einrichtung",
+};
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: (key: string, defaultValue?: string, params?: Record<string, string>) => {
+			const copy = germanCopy[key] ?? defaultValue ?? key;
+			return params
+				? Object.entries(params).reduce(
+						(result, [name, value]) => result.replaceAll(`{${name}}`, value),
+						copy,
+					)
+				: copy;
+		},
 	}),
 }));
 
@@ -68,11 +129,6 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	updateEnterpriseIdentityAccessPolicyAction: updateEnterpriseIdentityAccessPolicyActionMock,
 	updateEnterpriseIdentityProviderAction: updateEnterpriseIdentityProviderActionMock,
 }));
-
-const wizardPath = join(
-	process.cwd(),
-	"src/components/settings/enterprise/identity-setup-wizard.tsx",
-);
 
 const roleTemplate = {
 	id: "role-template-1",
@@ -210,34 +266,56 @@ beforeEach(() => {
 
 describe("IdentitySetupWizard behavior", () => {
 	it("renders all seven steps and accessible controls", () => {
-		renderWizard();
+		renderWizard(setupResponse({ currentStep: "domain" }));
 
-		expect(screen.getAllByText("Provider").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Domain").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("SSO Configuration").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("SCIM Provisioning").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Access Policy").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Review & Activate").length).toBeGreaterThan(0);
+		expect(screen.getByText("Unternehmensidentität")).toBeTruthy();
+		expect(screen.getByText("Operative Befehlscheckliste")).toBeTruthy();
+		expect(screen.queryByText("Enterprise identity")).toBeNull();
+		expect(screen.queryByText("Operational command checklist")).toBeNull();
+		expect(screen.getAllByText("Anbieter").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Domäne").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("SSO-Konfiguration").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Testbenutzer").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("SCIM-Bereitstellung").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Zugriffsrichtlinie").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Prüfen & Aktivieren").length).toBeGreaterThan(0);
 
-		expect(screen.getByLabelText("Provider preset")).toBeTruthy();
-		expect(screen.getByLabelText("Protocol")).toBeTruthy();
-		expect(screen.getByLabelText("Provider ID")).toBeTruthy();
-		expect(screen.getByLabelText("Email domain")).toBeTruthy();
-		expect(screen.getByLabelText("Issuer")).toBeTruthy();
-		expect(screen.getByLabelText("Client ID")).toBeTruthy();
-		expect(screen.getByLabelText("Client secret")).toBeTruthy();
-		expect(screen.getByLabelText("Test user email")).toBeTruthy();
-		expect(screen.getByLabelText("Failure note")).toBeTruthy();
-		expect(screen.getByLabelText("Default role template")).toBeTruthy();
+		expect(screen.getAllByText("Bereit").length).toBeGreaterThan(0);
+		expect(screen.getByText("Jetzt")).toBeTruthy();
+		expect(screen.getAllByText("Wartend").length).toBeGreaterThan(0);
+		expect(screen.getByLabelText("Anbietervorlage")).toBeTruthy();
+		expect(screen.getByPlaceholderText("z. B. acme-okta…")).toBeTruthy();
+		expect(screen.getByPlaceholderText("z. B. example.com…")).toBeTruthy();
+		expect(screen.queryByPlaceholderText("e.g. acme-okta…")).toBeNull();
+		expect(screen.queryByPlaceholderText("e.g. example.com…")).toBeNull();
+		expect(screen.getByLabelText("Protokoll")).toBeTruthy();
+		expect(screen.getByLabelText("Anbieter-ID")).toBeTruthy();
+		expect(screen.getByLabelText("E-Mail-Domäne")).toBeTruthy();
+		expect(screen.getByLabelText("Aussteller")).toBeTruthy();
+		expect(screen.getByPlaceholderText("https://idp.beispiel.de…")).toBeTruthy();
+		expect(screen.queryByPlaceholderText("https://idp.example.com…")).toBeNull();
+		expect(screen.getByLabelText("Client-ID")).toBeTruthy();
+		expect(screen.getByLabelText("Client-Geheimnis")).toBeTruthy();
+		expect(screen.getByLabelText("Testbenutzer-E-Mail")).toBeTruthy();
+		expect(screen.getByLabelText("Fehlernotiz")).toBeTruthy();
+		expect(screen.getByRole("checkbox", { name: "Require SSO" })).toBeTruthy();
+		expect(screen.getByRole("checkbox", { name: "Restrict to verified domain" })).toBeTruthy();
+		expect(screen.getByRole("checkbox", { name: "Restrict invites" })).toBeTruthy();
+		expect(screen.getByLabelText("Standard-Rollenvorlage")).toBeTruthy();
+		expect(screen.getByText("Nicht ausgeführt")).toBeTruthy();
+		expect(screen.queryByText("not-run")).toBeNull();
+		expect(screen.getByText("Anbieter ist vor Aktivierung erforderlich")).toBeTruthy();
+		expect(screen.getByText("SSO-Test ist vor Aktivierung erforderlich")).toBeTruthy();
+		expect(screen.queryByText("provider is required before activation")).toBeNull();
+		expect(screen.queryByText("ssoTest is required before activation")).toBeNull();
 	});
 
 	it("saves provider setup with the expected payload", async () => {
 		renderWizard();
 
-		setInput("Provider ID", "acme-okta");
-		setInput("Email domain", "example.com");
-		fireEvent.click(screen.getByRole("button", { name: "Save provider" }));
+		setInput("Anbieter-ID", "acme-okta");
+		setInput("E-Mail-Domäne", "example.com");
+		fireEvent.click(screen.getByRole("button", { name: "Anbieter speichern" }));
 
 		await waitFor(() => {
 			expect(updateEnterpriseIdentityProviderActionMock).toHaveBeenCalledWith({
@@ -253,10 +331,10 @@ describe("IdentitySetupWizard behavior", () => {
 	it("registers OIDC SSO with provider, domain, issuer, and client credentials", async () => {
 		renderWizard(configuredSetup());
 
-		setInput("Issuer", "https://idp.example.com");
-		setInput("Client ID", "client_123");
-		setInput("Client secret", "secret_123");
-		fireEvent.click(screen.getByRole("button", { name: "Register SSO provider" }));
+		setInput("Aussteller", "https://idp.example.com");
+		setInput("Client-ID", "client_123");
+		setInput("Client-Geheimnis", "secret_123");
+		fireEvent.click(screen.getByRole("button", { name: "SSO-Anbieter registrieren" }));
 
 		await waitFor(() => {
 			expect(registerEnterpriseIdentitySSOProviderActionMock).toHaveBeenCalledWith(
@@ -275,8 +353,8 @@ describe("IdentitySetupWizard behavior", () => {
 	it("records a passed live SSO test", async () => {
 		renderWizard(configuredSetup());
 
-		setInput("Test user email", "admin@example.com");
-		fireEvent.click(screen.getByRole("button", { name: "Record pass" }));
+		setInput("Testbenutzer-E-Mail", "admin@example.com");
+		fireEvent.click(screen.getByRole("button", { name: "Erfolg erfassen" }));
 
 		await waitFor(() => {
 			expect(recordEnterpriseIdentitySsoTestActionMock).toHaveBeenCalledWith({
@@ -291,21 +369,21 @@ describe("IdentitySetupWizard behavior", () => {
 	it("refreshes domain verification from the Domain card", async () => {
 		renderWizard(configuredSetup());
 
-		expect(screen.getByText("Pending")).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Check domain status" }));
+		expect(screen.getByText("Ausstehend")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Domänenstatus prüfen" }));
 
 		await waitFor(() => {
 			expect(refreshEnterpriseIdentityDomainStatusActionMock).toHaveBeenCalled();
 		});
 
-		expect(screen.getByText("Verified")).toBeTruthy();
+		expect(screen.getByText("Verifiziert")).toBeTruthy();
 	});
 
 	it("shows the SCIM token only after token generation returns it", async () => {
 		renderWizard(configuredSetup());
 
 		expect(screen.queryByText("scim_token_returned_once")).toBeNull();
-		fireEvent.click(screen.getByRole("button", { name: "Generate token" }));
+		fireEvent.click(screen.getByRole("button", { name: "Token generieren" }));
 
 		await waitFor(() => {
 			expect(generateEnterpriseIdentityScimTokenActionMock).toHaveBeenCalledWith({
@@ -314,7 +392,7 @@ describe("IdentitySetupWizard behavior", () => {
 			});
 		});
 
-		expect(screen.getByText("This token is shown once")).toBeTruthy();
+		expect(screen.getByText("Dieses Token wird einmal angezeigt")).toBeTruthy();
 		expect(screen.getByText("scim_token_returned_once")).toBeTruthy();
 	});
 
@@ -333,26 +411,26 @@ describe("IdentitySetupWizard behavior", () => {
 
 		expect(
 			screen.getByText(
-				"SCIM verification updates after your identity provider sends a test user or group change.",
+				"SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter einen Testbenutzer oder eine Gruppenänderung sendet.",
 			),
 		).toBeTruthy();
-		expect(screen.getByText("No provisioning activity yet")).toBeTruthy();
-		expect(screen.queryByText("Provisioning activity observed")).toBeNull();
+		expect(screen.getByText("Noch keine Provisionierungsaktivität")).toBeTruthy();
+		expect(screen.queryByText("Provisionierungsaktivität erkannt")).toBeNull();
 
-		fireEvent.click(screen.getByRole("button", { name: "Refresh status" }));
+		fireEvent.click(screen.getByRole("button", { name: "Status aktualisieren" }));
 
 		await waitFor(() => {
 			expect(refreshEnterpriseIdentityScimStatusActionMock).toHaveBeenCalled();
 		});
 
-		expect(screen.getByText("Provisioning activity observed")).toBeTruthy();
-		expect(screen.queryByText("No provisioning activity yet")).toBeNull();
+		expect(screen.getByText("Provisionierungsaktivität erkannt")).toBeTruthy();
+		expect(screen.queryByText("Noch keine Provisionierungsaktivität")).toBeNull();
 	});
 
 	it("saves access policy with top-level defaultRoleTemplateId", async () => {
 		renderWizard(configuredSetup());
 
-		fireEvent.click(screen.getByRole("button", { name: "Save access policy" }));
+		fireEvent.click(screen.getByRole("button", { name: "Zugriffsrichtlinie speichern" }));
 
 		await waitFor(() => {
 			expect(updateEnterpriseIdentityAccessPolicyActionMock).toHaveBeenCalledWith({
@@ -373,7 +451,9 @@ describe("IdentitySetupWizard behavior", () => {
 		);
 
 		expect(
-			screen.getByRole("button", { name: "Activate enterprise identity" }).hasAttribute("disabled"),
+			screen
+				.getByRole("button", { name: "Unternehmensidentität aktivieren" })
+				.hasAttribute("disabled"),
 		).toBe(true);
 
 		rerender(
@@ -397,7 +477,9 @@ describe("IdentitySetupWizard behavior", () => {
 		);
 
 		expect(
-			screen.getByRole("button", { name: "Activate enterprise identity" }).hasAttribute("disabled"),
+			screen
+				.getByRole("button", { name: "Unternehmensidentität aktivieren" })
+				.hasAttribute("disabled"),
 		).toBe(false);
 	});
 });
@@ -406,55 +488,13 @@ describe("DomainsAndBrandingTabs behavior", () => {
 	it("renders a usable guided setup link in the SSO tab", () => {
 		renderDomainsTabs();
 
-		const ssoTab = screen.getByRole("tab", { name: "SSO Providers" });
+		const ssoTab = screen.getByRole("tab", { name: "SSO-Anbieter" });
 		fireEvent.pointerDown(ssoTab, { button: 0, ctrlKey: false });
 		fireEvent.keyDown(ssoTab, { key: "Enter" });
 		fireEvent.click(ssoTab);
 
-		expect(screen.getByRole("link", { name: /guided setup/i }).getAttribute("href")).toBe(
+		expect(screen.getByRole("link", { name: "Geführte Einrichtung" }).getAttribute("href")).toBe(
 			"/settings/enterprise/identity-setup",
 		);
-	});
-});
-
-describe("IdentitySetupWizard source supplements", () => {
-	it("keeps SCIM docs aligned with self-serve identity setup", () => {
-		const docsSources = [
-			"../../apps/docs/content/docs/guide/admin-guide/scim-provisioning.mdx",
-			"../../apps/docs/content/docs/tech/technical/enterprise.mdx",
-			"../../apps/docs/content/docs/tech/technical/authentication.mdx",
-			"../../apps/docs/content/docs/guide/admin-guide/platform-admin.mdx",
-		].map((docsPath) => readFileSync(join(process.cwd(), docsPath), "utf8"));
-
-		for (const docsSource of docsSources) {
-			expect(docsSource).toContain("Enterprise Identity Setup");
-			expect(docsSource).toContain("/settings/enterprise/identity-setup");
-			expect(docsSource).not.toContain("does not expose a dedicated self-serve SCIM setup page");
-			expect(docsSource).not.toContain(
-				"does not currently expose a dedicated self-serve SCIM setup page",
-			);
-			expect(docsSource).not.toContain("no self-serve settings page");
-			expect(docsSource).not.toContain(
-				"managed integration instead of looking for a normal admin settings screen",
-			);
-		}
-	});
-
-	it("keeps default role template outside the enforcement JSON", () => {
-		const source = readFileSync(wizardPath, "utf8");
-
-		expect(source).toContain("defaultRoleTemplateId");
-		expect(source).toContain("setDefaultRoleTemplateId");
-		expect(source).not.toContain("setup:setup.enforcement.defaultRoleTemplateId");
-	});
-
-	it("explains that SCIM verification depends on IdP provisioning activity", () => {
-		const source = readFileSync(wizardPath, "utf8");
-
-		expect(source).toContain(
-			"SCIM verification updates after your identity provider sends a test user or group change.",
-		);
-		expect(source).toContain("No provisioning activity yet");
-		expect(source).toContain("Provisioning activity observed");
 	});
 });

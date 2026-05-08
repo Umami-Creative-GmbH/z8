@@ -6,6 +6,12 @@ import type { ReactNode } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { NotificationChannelSettings } from "@/components/settings/notification-channel-settings";
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+	}),
+}));
+
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
 		refresh: vi.fn(),
@@ -32,6 +38,30 @@ function renderWithQueryClient(children: ReactNode) {
 }
 
 describe("NotificationChannelSettings", () => {
+	it("localizes known non-active setup status labels", () => {
+		renderWithQueryClient(
+			<NotificationChannelSettings
+				channelName="Discord"
+				description="Configure Discord notifications for your organization."
+				config={{
+					setupStatus: "pending",
+					displayName: "Discord app",
+					enableApprovals: false,
+					enableCommands: false,
+					enableDailyDigest: false,
+					enableEscalations: false,
+					digestTime: "09:00",
+					digestTimezone: "Europe/Berlin",
+					escalationTimeoutHours: 24,
+				}}
+				updateAction={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("Pending")).toBeTruthy();
+		expect(screen.queryByText("pending")).toBeNull();
+	});
+
 	it("keeps switch controls visible beside wrapping labels on narrow screens", () => {
 		renderWithQueryClient(
 			<NotificationChannelSettings

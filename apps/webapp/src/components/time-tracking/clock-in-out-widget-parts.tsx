@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
 	hour: "2-digit",
@@ -66,8 +67,8 @@ export function WorkLocationSelector({
 	onChange,
 	t,
 }: {
-	value: "office" | "home" | "field" | "other";
-	onChange: (value: "office" | "home" | "field" | "other") => void;
+	value: WorkLocationType;
+	onChange: (value: WorkLocationType) => void;
 	t: TFnType;
 }) {
 	return (
@@ -95,10 +96,10 @@ export function WorkLocationSelector({
 					{t("timeTracking.workLocationHome", "Home")}
 				</span>
 			</ToggleGroupItem>
-			<ToggleGroupItem value="field" aria-label={t("timeTracking.workLocationField", "Field")}>
+			<ToggleGroupItem value="remote" aria-label={t("timeTracking.workLocationRemote", "Remote")}>
 				<IconMapPin className="size-4" />
 				<span className="hidden @[20rem]/widget:inline text-xs">
-					{t("timeTracking.workLocationField", "Field")}
+					{t("timeTracking.workLocationRemote", "Remote")}
 				</span>
 			</ToggleGroupItem>
 			<ToggleGroupItem value="other" aria-label={t("timeTracking.workLocationOther", "Other")}>

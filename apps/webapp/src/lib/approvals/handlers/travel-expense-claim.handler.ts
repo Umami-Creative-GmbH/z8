@@ -212,8 +212,8 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 			},
 		}),
 
-	getCount: (approverId, organizationId) =>
-		getApprovalCount("travel_expense_claim", approverId, organizationId),
+	getCount: (approverId, organizationId, visibility) =>
+		getApprovalCount("travel_expense_claim", approverId, organizationId, visibility),
 
 	getDetail: (entityId, organizationId) =>
 		Effect.gen(function* (_) {

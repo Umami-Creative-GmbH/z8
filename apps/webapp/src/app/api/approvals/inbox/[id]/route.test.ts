@@ -18,6 +18,7 @@ const mockState = vi.hoisted(() => ({
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
 	findApprovalRequest: vi.fn(),
+	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	handlerGetDetail: vi.fn(),
 	logger: {
 		error: vi.fn(),
@@ -38,6 +39,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	isEligibleManagerForApprovalRequest: mockState.isEligibleManagerForApprovalRequest,
 }));
 
 vi.mock("@/db", () => ({
@@ -86,6 +91,7 @@ function createRequest(): NextRequest {
 describe("GET /api/approvals/inbox/[id]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
 			user: { id: "user-1" },
@@ -93,6 +99,7 @@ describe("GET /api/approvals/inbox/[id]", () => {
 		});
 		mockState.getAbility.mockResolvedValue({
 			can: vi.fn(() => false),
+			cannot: vi.fn((action) => action === "manage"),
 		});
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
@@ -103,6 +110,7 @@ describe("GET /api/approvals/inbox/[id]", () => {
 			entityId: "entity-1",
 			entityType: "absence_entry",
 			approverId: "employee-1",
+			requestedBy: "requester-1",
 			organizationId: "org-1",
 			status: "pending",
 		});
@@ -130,5 +138,86 @@ describe("GET /api/approvals/inbox/[id]", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.handlerGetDetail).toHaveBeenCalledWith("entity-1", "org-1");
+	});
+
+	it("returns 403 when an assigned approver lacks approve or manage permission", async () => {
+		mockState.getAbility.mockResolvedValue({
+			can: vi.fn(() => false),
+			cannot: vi.fn(() => true),
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
+	});
+
+	it("allows an eligible fallback manager with approve permission to read a request assigned to another eligible manager", async () => {
+		mockState.getAbility.mockResolvedValue({
+			can: vi.fn(() => false),
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mockState.handlerGetDetail).toHaveBeenCalledWith("entity-1", "org-1");
+	});
+
+	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
+		mockState.getAbility.mockResolvedValue({
+			can: vi.fn(() => false),
+			cannot: vi.fn(() => true),
+		});
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 before detail authorization when the approval belongs to another organization", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-2",
+			status: "pending",
+		});
+
+		const response = await GET(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(404);
+		expect(mockState.handlerGetDetail).not.toHaveBeenCalled();
 	});
 });

@@ -15,6 +15,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
+import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { AnyAppError } from "@/lib/effect/errors";
 import type { ApprovalDetail } from "@/lib/approvals/domain/types";
@@ -74,12 +75,33 @@ export async function GET(
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
 
-		// Check CASL permissions - must be the approver OR have manage Approval permission
+		// Check CASL permissions and approval scope after org ownership is verified.
 		const ability = await getAbility();
-		const isAssignedApprover = request.approverId === currentEmployee.id;
-		const canManageApprovals = ability?.can("manage", "Approval");
+		if (!ability) {
+			const error = new ForbiddenError("read", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
 
-		if (!isAssignedApprover && !canManageApprovals) {
+		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
+		if (!canApproveApprovals && !canManageApprovals) {
+			const error = new ForbiddenError("read", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
+		const isAssignedApprover = request.approverId === currentEmployee.id;
+		const isEligibleManager = isAssignedApprover
+			? true
+			: await isEligibleManagerForApprovalRequest({
+					db,
+					approvalRequestId: request.id,
+					managerEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				});
+
+		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
 			const error = new ForbiddenError("read", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });

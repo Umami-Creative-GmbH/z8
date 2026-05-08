@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => ({
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
 	findApprovalRequest: vi.fn(),
+	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	insertAuditLog: vi.fn(),
 	handlerApprove: vi.fn(),
 	logger: {
@@ -41,6 +42,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	isEligibleManagerForApprovalRequest: mockState.isEligibleManagerForApprovalRequest,
 }));
 
 vi.mock("@/db", () => ({
@@ -108,6 +113,7 @@ function createRequest(): NextRequest {
 describe("POST /api/approvals/inbox/[id]/approve", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
 			user: { id: "user-1" },
@@ -131,10 +137,97 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		mockState.handlerApprove.mockReturnValue(Effect.succeed(undefined));
 	});
 
-	it("rejects forbidden requests before employee lookup or mutation", async () => {
+	it("allows an eligible fallback team manager to approve a request assigned to another manager", async () => {
 		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => true),
+			cannot: vi.fn((action) => action === "manage"),
 		});
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mockState.handlerApprove).toHaveBeenCalledWith("entity-1", "employee-1", {
+			approvalRequestId: "approval-1",
+			allowAnyApprover: true,
+		});
+	});
+
+	it("returns 403 when an assigned approver lacks approve or manage permission", async () => {
+		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
+		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 when a requester manager tries to approve a request assigned to a non-manager policy approver", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "org-admin-1",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerApprove).not.toHaveBeenCalled();
+	});
+
+	it("rejects requests when ability cannot be resolved before employee lookup or mutation", async () => {
+		mockState.getAbility.mockResolvedValue(null);
 
 		const response = await POST(createRequest(), {
 			params: Promise.resolve({ id: "approval-1" }),

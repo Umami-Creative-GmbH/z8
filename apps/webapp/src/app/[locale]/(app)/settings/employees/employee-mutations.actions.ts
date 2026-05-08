@@ -405,7 +405,7 @@ export async function assignManagersAction(
 							employeeId,
 							assignment.managerId,
 							assignment.isPrimary,
-							actor.currentEmployee?.id ?? actor.session.user.id,
+							actor.session.user.id,
 						),
 					);
 				}

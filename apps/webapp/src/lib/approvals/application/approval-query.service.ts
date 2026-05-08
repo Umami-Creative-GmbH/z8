@@ -125,6 +125,7 @@ export class ApprovalQueryService extends Context.Tag("ApprovalQueryService")<
 		readonly getCounts: (
 			approverId: string,
 			organizationId: string,
+			visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
 		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, any>;
 	}
 >() {}
@@ -185,13 +186,13 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					};
 				}),
 
-			getCounts: (approverId, organizationId) =>
+			getCounts: (approverId, organizationId, visibility) =>
 				Effect.gen(function* (_) {
 					const handlers = getAllApprovalHandlers();
 					const counts = { ...ZERO_APPROVAL_COUNTS };
 
 					for (const handler of handlers) {
-						const count = yield* _(handler.getCount(approverId, organizationId));
+						const count = yield* _(handler.getCount(approverId, organizationId, visibility));
 						counts[handler.type] = count;
 					}
 
