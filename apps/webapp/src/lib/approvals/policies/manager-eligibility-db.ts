@@ -1,9 +1,35 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, type SQL } from "drizzle-orm";
 import { approvalRequest, employee, employeeManagers, team, teamMembership } from "@/db/schema";
-import { isEligibleManager } from "./manager-eligibility";
+import {
+	type EligibleManagerEmployee,
+	type EligibleManagerLink,
+	type EligibleTeam,
+	type EligibleTeamMembership,
+	isEligibleManager,
+} from "./manager-eligibility";
+
+interface ApprovalEligibilityDb {
+	query: {
+		approvalRequest: {
+			findFirst(input: { where: SQL | undefined }): Promise<{ requestedBy: string } | null>;
+		};
+		employee: {
+			findMany(input: { where: SQL | undefined }): Promise<EligibleManagerEmployee[]>;
+		};
+		employeeManagers: {
+			findMany(input: { where: SQL | undefined }): Promise<EligibleManagerLink[]>;
+		};
+		teamMembership: {
+			findMany(input: { where: SQL | undefined }): Promise<EligibleTeamMembership[]>;
+		};
+		team: {
+			findMany(input: { where: SQL | undefined }): Promise<EligibleTeam[]>;
+		};
+	};
+}
 
 export async function isEligibleManagerForApprovalRequest(input: {
-	db: any;
+	db: ApprovalEligibilityDb;
 	approvalRequestId: string;
 	managerEmployeeId: string;
 	organizationId: string;
@@ -21,7 +47,9 @@ export async function isEligibleManagerForApprovalRequest(input: {
 
 	const [employees, managerLinks, memberships, teams] = await Promise.all([
 		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
-		input.db.query.employeeManagers.findMany(),
+		input.db.query.employeeManagers.findMany({
+			where: eq(employeeManagers.employeeId, request.requestedBy),
+		}),
 		input.db.query.teamMembership.findMany({
 			where: and(
 				eq(teamMembership.organizationId, input.organizationId),
@@ -43,13 +71,23 @@ export async function isEligibleManagerForApprovalRequest(input: {
 }
 
 export async function getEligibleRequesterIdsForManager(input: {
-	db: any;
+	db: ApprovalEligibilityDb;
 	managerEmployeeId: string;
 	organizationId: string;
 }) {
-	const [employees, managerLinks, memberships, teams] = await Promise.all([
-		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
-		input.db.query.employeeManagers.findMany(),
+	const employees = await input.db.query.employee.findMany({
+		where: eq(employee.organizationId, input.organizationId),
+	});
+	const requesterIds = employees.map((requester) => requester.id);
+
+	if (requesterIds.length === 0) {
+		return [];
+	}
+
+	const [managerLinks, memberships, teams] = await Promise.all([
+		input.db.query.employeeManagers.findMany({
+			where: inArray(employeeManagers.employeeId, requesterIds),
+		}),
 		input.db.query.teamMembership.findMany({
 			where: eq(teamMembership.organizationId, input.organizationId),
 		}),

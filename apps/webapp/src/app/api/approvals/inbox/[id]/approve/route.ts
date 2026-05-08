@@ -106,6 +106,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
+		if (!canApproveApprovals && !canManageApprovals) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		const isAssignedApprover = request.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover
 			? true
