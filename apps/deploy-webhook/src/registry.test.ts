@@ -43,6 +43,7 @@ describe("RegistryClient", () => {
     const client = new RegistryClient({
       registryHost: "ghcr.io",
       owner: "umami-creative-gmbh",
+      registryUsername: "z8-deployer",
       token: "configured-token",
       fetchImpl
     });
@@ -59,7 +60,7 @@ describe("RegistryClient", () => {
       2,
       "https://ghcr.io/token?service=ghcr.io&scope=repository%3Aumami-creative-gmbh%2Fz8-docs%3Apull",
       {
-        headers: { Authorization: `Basic ${Buffer.from("token:configured-token").toString("base64")}` }
+        headers: { Authorization: `Basic ${Buffer.from("z8-deployer:configured-token").toString("base64")}` }
       }
     );
     expect(fetchImpl).toHaveBeenNthCalledWith(3, manifestUrl, {
@@ -87,6 +88,27 @@ describe("RegistryClient", () => {
     );
   });
 
+  it("throws when the registry challenges with a token but no username is configured", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(null, {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:owner/name:pull"'
+        }
+      })
+    );
+    const client = new RegistryClient({
+      registryHost: "ghcr.io",
+      owner: "umami-creative-gmbh",
+      token: "configured-token",
+      fetchImpl
+    });
+
+    await expect(client.hasTag("z8-worker", "sha-abcdef1")).rejects.toThrow(
+      "Registry authentication challenge for z8-worker:sha-abcdef1 requires a configured registry username"
+    );
+  });
+
   it("throws when the registry challenge is missing required parameters", async () => {
     const fetchImpl = vi.fn(async () =>
       new Response(null, { status: 401, headers: { "WWW-Authenticate": 'Bearer service="ghcr.io"' } })
@@ -94,6 +116,7 @@ describe("RegistryClient", () => {
     const client = new RegistryClient({
       registryHost: "ghcr.io",
       owner: "umami-creative-gmbh",
+      registryUsername: "z8-deployer",
       token: "configured-token",
       fetchImpl
     });

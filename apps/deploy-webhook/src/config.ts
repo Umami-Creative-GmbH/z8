@@ -3,6 +3,7 @@ export type AppConfig = {
   namespace: string;
   githubOwner: string;
   githubWebhookSecret: string;
+  ghcrUsername?: string;
   ghcrToken?: string;
   registryHost: string;
   rolloutTimeoutMs: number;
@@ -34,6 +35,7 @@ export function loadConfig(): AppConfig {
     namespace: process.env.NAMESPACE ?? "app-prod",
     githubOwner: process.env.GITHUB_OWNER ?? "umami-creative-gmbh",
     githubWebhookSecret: requiredEnv("GITHUB_WEBHOOK_SECRET"),
+    ghcrUsername: process.env.GHCR_USERNAME || undefined,
     ghcrToken: process.env.GHCR_TOKEN || undefined,
     registryHost: process.env.REGISTRY_HOST ?? "ghcr.io",
     rolloutTimeoutMs: intEnv("ROLLOUT_TIMEOUT_MS", 600_000),

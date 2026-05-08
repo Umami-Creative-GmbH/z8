@@ -3,6 +3,7 @@ import type { ImageObservation } from "./github-event.js";
 type RegistryClientOptions = {
   registryHost: string;
   owner: string;
+  registryUsername?: string;
   token?: string;
   fetchImpl?: typeof fetch;
 };
@@ -32,12 +33,14 @@ function parseBearerChallenge(header: string | null): BearerChallenge | null {
 export class RegistryClient {
   private readonly registryHost: string;
   private readonly owner: string;
+  private readonly registryUsername?: string;
   private readonly token?: string;
   private readonly fetchImpl: typeof fetch;
 
-  constructor({ registryHost, owner, token, fetchImpl = fetch }: RegistryClientOptions) {
+  constructor({ registryHost, owner, registryUsername, token, fetchImpl = fetch }: RegistryClientOptions) {
     this.registryHost = registryHost;
     this.owner = owner;
+    this.registryUsername = registryUsername;
     this.token = token;
     this.fetchImpl = fetchImpl;
   }
@@ -49,6 +52,9 @@ export class RegistryClient {
     if (response.status === 401) {
       if (!this.token) {
         throw new Error(`Registry authentication challenge for ${packageName}:${tag} requires a configured token`);
+      }
+      if (!this.registryUsername) {
+        throw new Error(`Registry authentication challenge for ${packageName}:${tag} requires a configured registry username`);
       }
 
       const registryToken = await this.requestRegistryToken(packageName, tag, response.headers.get("WWW-Authenticate"));
@@ -78,7 +84,7 @@ export class RegistryClient {
     if (challenge.scope) url.searchParams.set("scope", challenge.scope);
 
     const response = await this.fetchImpl(url.toString(), {
-      headers: { Authorization: `Basic ${Buffer.from(`token:${this.token}`).toString("base64")}` }
+      headers: { Authorization: `Basic ${Buffer.from(`${this.registryUsername}:${this.token}`).toString("base64")}` }
     });
 
     if (!response.ok) {
