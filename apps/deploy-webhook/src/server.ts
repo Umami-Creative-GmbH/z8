@@ -123,8 +123,16 @@ export function startServer(): void {
       return;
     }
 
+    try {
+      await reconciler.recordObservation(observation);
+    } catch (error) {
+      console.error("Deploy webhook observation recording failed", error);
+      send(response, 500, "failed to record observation");
+      return;
+    }
+
     send(response, 202, "accepted");
-    void reconcileWithRetry(() => reconciler.reconcile(observation)).catch((error) => {
+    void reconcileWithRetry(() => reconciler.reconcileRecorded(observation)).catch((error) => {
       console.error("Deploy webhook reconciliation failed", error);
     });
   });

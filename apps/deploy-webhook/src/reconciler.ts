@@ -11,6 +11,7 @@ type DeploymentSpec = {
 };
 
 type DeployedKey = "app" | "appMigration" | "docs" | "marketing";
+type DeploymentGroup = "app" | "docs" | "marketing";
 
 export type ReconcilerDependencies = {
   registry: {
@@ -53,14 +54,23 @@ export class Reconciler {
   }
 
   async reconcile(observation: ImageObservation): Promise<void> {
+    await this.recordObservation(observation);
+    await this.reconcileRecorded(observation);
+  }
+
+  async recordObservation(observation: ImageObservation): Promise<DeployState> {
+    return this.dependencies.state.recordObservation(observation);
+  }
+
+  async reconcileRecorded(observation: ImageObservation): Promise<void> {
     if (isAppPackage(observation.packageName)) {
-      await this.serialize(`app:${observation.tag}`, () => this.reconcileApp(observation));
+      await this.serialize("app", () => this.reconcileApp(observation));
       return;
     }
 
     const spec = independentDeployments[observation.packageName];
     if (spec) {
-      await this.serialize(`${spec.deployment}:${observation.tag}`, () => this.reconcileIndependent(spec, observation.tag));
+      await this.serialize(spec.deployment, () => this.reconcileIndependent(spec, observation));
     }
   }
 
@@ -77,9 +87,12 @@ export class Reconciler {
   }
 
   private async reconcileApp(observation: ImageObservation): Promise<void> {
-    const state = await this.dependencies.state.recordObservation(observation);
+    const state = await this.dependencies.state.read();
     const observed = new Set(state.observed[observation.tag] ?? []);
     if (!appPackages.every((packageName) => observed.has(packageName))) return;
+    const publishedAt = this.appPublishedAt(state, observation.tag) ?? observation.publishedAt;
+
+    if (this.isStale(state, "app", publishedAt) || this.isStale(state, "appMigration", publishedAt)) return;
 
     if (state.deployed.app === observation.tag) {
       await this.deployAppImages(observation.tag);
@@ -92,14 +105,14 @@ export class Reconciler {
 
     if (state.deployed.appMigration !== observation.tag) {
       await this.dependencies.kube.runMigration(
-        observation.tag,
-        this.image("z8-migration", observation.tag),
-        this.dependencies.migrationTimeoutMs
+          observation.tag,
+          this.image("z8-migration", observation.tag),
+          this.dependencies.migrationTimeoutMs
       );
-      await this.markDeployed("appMigration", observation.tag);
+      await this.markDeployed("appMigration", observation.tag, publishedAt);
     }
     await this.deployAppImages(observation.tag);
-    await this.markDeployed("app", observation.tag);
+    await this.markDeployed("app", observation.tag, publishedAt);
   }
 
   private async deployAppImages(tag: string): Promise<void> {
@@ -115,10 +128,14 @@ export class Reconciler {
     );
   }
 
-  private async reconcileIndependent(spec: DeploymentSpec, tag: string): Promise<void> {
+  private async reconcileIndependent(spec: DeploymentSpec, observation: ImageObservation): Promise<void> {
     const deployedKey = spec.deployment as DeployedKey;
+    const state = await this.dependencies.state.read();
+    if (this.isStale(state, deployedKey, observation.publishedAt)) return;
+
+    const tag = observation.tag;
     if (!(await this.deployIfNeeded(spec, tag))) return;
-    await this.markDeployed(deployedKey, tag);
+    await this.markDeployed(deployedKey, tag, observation.publishedAt);
   }
 
   private async deployIfNeeded(
@@ -140,14 +157,33 @@ export class Reconciler {
     return true;
   }
 
-  private async markDeployed(key: DeployedKey, tag: string): Promise<void> {
+  private async markDeployed(key: DeployedKey, tag: string, publishedAt: string): Promise<void> {
     await this.dependencies.state.update((state) => {
-      if (state.deployed[key] === tag) return state;
+      if (state.deployed[key] === tag && state.deployedAt[key] === publishedAt) return state;
       return {
         ...state,
-        deployed: { ...state.deployed, [key]: tag }
+        deployed: { ...state.deployed, [key]: tag },
+        deployedAt: { ...state.deployedAt, [key]: publishedAt }
       };
     });
+  }
+
+  private appPublishedAt(state: DeployState, tag: string): string | null {
+    const observedAt = state.observedAt?.[tag];
+    if (!observedAt) return null;
+
+    const timestamps = appPackages.map((packageName) => observedAt[packageName]).filter((value): value is string => Boolean(value));
+    if (timestamps.length !== appPackages.length) return null;
+    return timestamps.reduce((latest, timestamp) => (Date.parse(timestamp) > Date.parse(latest) ? timestamp : latest));
+  }
+
+  private isStale(state: DeployState, key: DeployedKey | DeploymentGroup, publishedAt: string): boolean {
+    const deployedAt = state.deployedAt?.[key];
+    const acceptedAt = key === "appMigration" ? state.latestAcceptedAt?.app : state.latestAcceptedAt?.[key as DeploymentGroup];
+    return Boolean(
+      (deployedAt && Date.parse(publishedAt) < Date.parse(deployedAt)) ||
+        (acceptedAt && Date.parse(publishedAt) < Date.parse(acceptedAt))
+    );
   }
 
   private image(packageName: ImageObservation["packageName"], tag: string): string {

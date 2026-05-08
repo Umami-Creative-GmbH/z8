@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "test": "vitest run"
+    "test": "vitest run src"
   },
   "dependencies": {
     "@kubernetes/client-node": "^1.4.0"

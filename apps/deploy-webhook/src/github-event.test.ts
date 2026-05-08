@@ -8,6 +8,7 @@ const basePayload = {
     name: "z8-docs",
     owner: { login: "umami-creative-gmbh" },
     package_version: {
+      created_at: "2026-05-08T10:00:00Z",
       container_metadata: { tag: { name: "sha-abcdef1" } }
     }
   }
@@ -17,8 +18,29 @@ describe("parseGitHubPackageEvent", () => {
   it("extracts an allowlisted SHA image observation", () => {
     expect(parseGitHubPackageEvent(basePayload, "umami-creative-gmbh")).toEqual({
       packageName: "z8-docs",
+      publishedAt: "2026-05-08T10:00:00.000Z",
       tag: "sha-abcdef1"
     });
+  });
+
+  it("ignores package events without a valid package version creation timestamp", () => {
+    const missingTimestampPayload = {
+      ...basePayload,
+      package: {
+        ...basePayload.package,
+        package_version: { container_metadata: { tag: { name: "sha-abcdef1" } } }
+      }
+    };
+    const invalidTimestampPayload = {
+      ...basePayload,
+      package: {
+        ...basePayload.package,
+        package_version: { created_at: "not-a-date", container_metadata: { tag: { name: "sha-abcdef1" } } }
+      }
+    };
+
+    expect(parseGitHubPackageEvent(missingTimestampPayload, "umami-creative-gmbh")).toBeNull();
+    expect(parseGitHubPackageEvent(invalidTimestampPayload, "umami-creative-gmbh")).toBeNull();
   });
 
   it("ignores unrelated owners", () => {

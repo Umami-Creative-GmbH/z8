@@ -6,16 +6,22 @@ describe("addObservation", () => {
   it("adds observed packages once and keeps them sorted", () => {
     const state: DeployState = {
       observed: { "sha-abcdef1": ["z8-worker"] },
+      observedAt: {},
       deployed: { web: "sha-old" },
+      deployedAt: {},
+      latestAcceptedAt: {},
       failures: { "sha-old": "failed" }
     };
 
-    expect(addObservation(state, { tag: "sha-abcdef1", packageName: "z8-webapp" })).toEqual({
+    expect(addObservation(state, { tag: "sha-abcdef1", packageName: "z8-webapp", publishedAt: "2026-05-08T10:00:00.000Z" })).toEqual({
       observed: { "sha-abcdef1": ["z8-webapp", "z8-worker"] },
+      observedAt: { "sha-abcdef1": { "z8-webapp": "2026-05-08T10:00:00.000Z" } },
       deployed: { web: "sha-old" },
-      failures: { "sha-old": "failed" }
+      deployedAt: {},
+      failures: { "sha-old": "failed" },
+      latestAcceptedAt: { app: "2026-05-08T10:00:00.000Z" }
     });
-    expect(addObservation(state, { tag: "sha-abcdef1", packageName: "z8-worker" }).observed["sha-abcdef1"]).toEqual([
+    expect(addObservation(state, { tag: "sha-abcdef1", packageName: "z8-worker", publishedAt: "2026-05-08T10:01:00.000Z" }).observed["sha-abcdef1"]).toEqual([
       "z8-worker"
     ]);
   });
@@ -25,7 +31,7 @@ describe("StateStore", () => {
   it("retries updates on conflicts and preserves concurrent deployed markers", async () => {
     let stored: { resourceVersion: string; state: DeployState } = {
       resourceVersion: "1",
-      state: { observed: {}, deployed: { docs: "sha-docs" }, failures: {} }
+      state: { observed: {}, observedAt: {}, deployed: { docs: "sha-docs" }, deployedAt: {}, failures: {}, latestAcceptedAt: {} }
     };
     let injectedConcurrentUpdate = false;
     const coreApi = {
@@ -38,7 +44,14 @@ describe("StateStore", () => {
           injectedConcurrentUpdate = true;
           stored = {
             resourceVersion: "2",
-            state: { observed: {}, deployed: { docs: "sha-docs", marketing: "sha-marketing" }, failures: {} }
+            state: {
+              observed: {},
+              observedAt: {},
+              deployed: { docs: "sha-docs", marketing: "sha-marketing" },
+              deployedAt: {},
+              failures: {},
+              latestAcceptedAt: {}
+            }
           };
         }
 
@@ -61,7 +74,10 @@ describe("StateStore", () => {
       store.update((state) => ({ ...state, deployed: { ...state.deployed, app: "sha-app" } }))
     ).resolves.toEqual({
       observed: {},
+      observedAt: {},
       deployed: { app: "sha-app", docs: "sha-docs", marketing: "sha-marketing" },
+      deployedAt: {},
+      latestAcceptedAt: {},
       failures: {}
     });
     expect(coreApi.replaceNamespacedConfigMap).toHaveBeenCalledTimes(2);
@@ -71,7 +87,14 @@ describe("StateStore", () => {
   it("uses the same resourceVersion as the observed state when recording observations", async () => {
     let stored: { resourceVersion: string; state: DeployState } = {
       resourceVersion: "1",
-      state: { observed: { "sha-abcdef1": ["z8-worker"] }, deployed: {}, failures: {} }
+      state: {
+        observed: { "sha-abcdef1": ["z8-worker"] },
+        observedAt: {},
+        deployed: {},
+        deployedAt: {},
+        failures: {},
+        latestAcceptedAt: {}
+      }
     };
     let readCount = 0;
     let injectedConcurrentUpdate = false;
@@ -79,7 +102,14 @@ describe("StateStore", () => {
       injectedConcurrentUpdate = true;
       stored = {
         resourceVersion: "2",
-        state: { observed: { "sha-abcdef1": ["z8-docs", "z8-worker"] }, deployed: {}, failures: {} }
+        state: {
+          observed: { "sha-abcdef1": ["z8-docs", "z8-worker"] },
+          observedAt: {},
+          deployed: {},
+          deployedAt: {},
+          failures: {},
+          latestAcceptedAt: {}
+        }
       };
     };
     const coreApi = {
@@ -108,16 +138,22 @@ describe("StateStore", () => {
 
     const store = new StateStore({ namespace: "app-prod", name: "deploy-webhook-state", coreApi: coreApi as never });
 
-    await expect(store.recordObservation({ tag: "sha-abcdef1", packageName: "z8-webapp" })).resolves.toEqual({
+    await expect(store.recordObservation({ tag: "sha-abcdef1", packageName: "z8-webapp", publishedAt: "2026-05-08T10:00:00.000Z" })).resolves.toEqual({
       observed: { "sha-abcdef1": ["z8-docs", "z8-webapp", "z8-worker"] },
+      observedAt: { "sha-abcdef1": { "z8-webapp": "2026-05-08T10:00:00.000Z" } },
       deployed: {},
+      deployedAt: {},
+      latestAcceptedAt: { app: "2026-05-08T10:00:00.000Z" },
       failures: {}
     });
 
     expect(coreApi.replaceNamespacedConfigMap).toHaveBeenCalledTimes(2);
     expect(stored.state).toEqual({
       observed: { "sha-abcdef1": ["z8-docs", "z8-webapp", "z8-worker"] },
+      observedAt: { "sha-abcdef1": { "z8-webapp": "2026-05-08T10:00:00.000Z" } },
       deployed: {},
+      deployedAt: {},
+      latestAcceptedAt: { app: "2026-05-08T10:00:00.000Z" },
       failures: {}
     });
   });

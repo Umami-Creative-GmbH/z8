@@ -1,5 +1,6 @@
 export type ImageObservation = {
   packageName: "z8-webapp" | "z8-worker" | "z8-migration" | "z8-docs" | "z8-marketing";
+  publishedAt: string;
   tag: string;
 };
 
@@ -19,6 +20,15 @@ function getString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
+function parseTimestamp(value: unknown): string | null {
+  const timestamp = getString(value);
+  if (!timestamp) return null;
+
+  const milliseconds = Date.parse(timestamp);
+  if (!Number.isFinite(milliseconds)) return null;
+  return new Date(milliseconds).toISOString();
+}
+
 export function parseGitHubPackageEvent(payload: unknown, expectedOwner: string): ImageObservation | null {
   if (!isObject(payload)) return null;
   if (payload.action !== "published") return null;
@@ -34,11 +44,13 @@ export function parseGitHubPackageEvent(payload: unknown, expectedOwner: string)
   if (!packageName || !allowedPackages.has(packageName as ImageObservation["packageName"])) return null;
 
   const packageVersion = isObject(packageValue.package_version) ? packageValue.package_version : null;
+  const publishedAt = packageVersion ? parseTimestamp(packageVersion.created_at) : null;
   const containerMetadata = packageVersion && isObject(packageVersion.container_metadata) ? packageVersion.container_metadata : null;
   const tagObject = containerMetadata && isObject(containerMetadata.tag) ? containerMetadata.tag : null;
   const tag = tagObject ? getString(tagObject.name) : null;
 
+  if (!publishedAt) return null;
   if (!tag || !/^sha-[a-f0-9]+$/.test(tag)) return null;
 
-  return { packageName: packageName as ImageObservation["packageName"], tag };
+  return { packageName: packageName as ImageObservation["packageName"], publishedAt, tag };
 }

@@ -3,8 +3,11 @@ import type { ImageObservation } from "./github-event.js";
 
 export type DeployState = {
   observed: Record<string, ImageObservation["packageName"][]>;
+  observedAt: Record<string, Partial<Record<ImageObservation["packageName"], string>>>;
   deployed: Record<string, string>;
+  deployedAt: Record<string, string>;
   failures: Record<string, string>;
+  latestAcceptedAt: Record<string, string>;
 };
 
 type StateStoreOptions = {
@@ -23,7 +26,7 @@ const recordObservationAttempts = 3;
 const updateAttempts = 3;
 
 function emptyState(): DeployState {
-  return { observed: {}, deployed: {}, failures: {} };
+  return { observed: {}, observedAt: {}, deployed: {}, deployedAt: {}, failures: {}, latestAcceptedAt: {} };
 }
 
 function loadKubeConfig(): KubeConfig {
@@ -50,20 +53,53 @@ function parseState(raw: string | undefined): DeployState {
   const parsed = JSON.parse(raw) as Partial<DeployState>;
   return {
     observed: parsed.observed ?? {},
+    observedAt: parsed.observedAt ?? {},
     deployed: parsed.deployed ?? {},
-    failures: parsed.failures ?? {}
+    deployedAt: parsed.deployedAt ?? {},
+    failures: parsed.failures ?? {},
+    latestAcceptedAt: parsed.latestAcceptedAt ?? {}
   };
 }
 
+function deploymentGroup(packageName: ImageObservation["packageName"]): "app" | "docs" | "marketing" {
+  if (packageName === "z8-docs") return "docs";
+  if (packageName === "z8-marketing") return "marketing";
+  return "app";
+}
+
+function isOlderThan(left: string, right: string | undefined): boolean {
+  return Boolean(right && Date.parse(left) < Date.parse(right));
+}
+
 export function addObservation(state: DeployState, observation: ImageObservation): DeployState {
+  const group = deploymentGroup(observation.packageName);
+  const observedAt = state.observedAt ?? {};
+  const latestAcceptedAt = state.latestAcceptedAt ?? {};
+  const tagAlreadyObserved = Boolean(state.observed[observation.tag]?.length);
+  if (!tagAlreadyObserved && isOlderThan(observation.publishedAt, latestAcceptedAt[group])) return state;
+
   const packages = new Set(state.observed[observation.tag] ?? []);
   packages.add(observation.packageName);
+  const tagObservedAt = observedAt[observation.tag] ?? {};
 
   return {
     ...state,
     observed: {
       ...state.observed,
       [observation.tag]: Array.from(packages).sort()
+    },
+    observedAt: {
+      ...observedAt,
+      [observation.tag]: {
+        ...tagObservedAt,
+        [observation.packageName]: observation.publishedAt
+      }
+    },
+    latestAcceptedAt: {
+      ...latestAcceptedAt,
+      [group]: isOlderThan(observation.publishedAt, latestAcceptedAt[group])
+        ? latestAcceptedAt[group]
+        : observation.publishedAt
     }
   };
 }
