@@ -179,7 +179,7 @@ export class KubernetesAdapter {
                 name: "migrate",
                 image,
                 imagePullPolicy: "IfNotPresent",
-                workingDir: "/app/apps/webapp",
+                workingDir: "/app",
                 command: ["node", "./scripts/migrate-with-lock.js"],
                 env: [
                   { name: "VALKEY_HOST", value: "valkey" },

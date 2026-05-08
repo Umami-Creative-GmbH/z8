@@ -14,6 +14,7 @@ type StateStoreOptions = {
 };
 
 const stateKey = "state.json";
+const recordObservationAttempts = 3;
 
 function emptyState(): DeployState {
   return { observed: {}, deployed: {}, failures: {} };
@@ -33,6 +34,10 @@ function isNotFound(error: unknown): boolean {
   return error instanceof ApiException && error.code === 404;
 }
 
+function isConflict(error: unknown): boolean {
+  return error instanceof ApiException && error.code === 409;
+}
+
 function parseState(raw: string | undefined): DeployState {
   if (!raw) return emptyState();
 
@@ -41,6 +46,19 @@ function parseState(raw: string | undefined): DeployState {
     observed: parsed.observed ?? {},
     deployed: parsed.deployed ?? {},
     failures: parsed.failures ?? {}
+  };
+}
+
+export function addObservation(state: DeployState, observation: ImageObservation): DeployState {
+  const packages = new Set(state.observed[observation.tag] ?? []);
+  packages.add(observation.packageName);
+
+  return {
+    ...state,
+    observed: {
+      ...state.observed,
+      [observation.tag]: Array.from(packages).sort()
+    }
   };
 }
 
@@ -82,12 +100,18 @@ export class StateStore {
   }
 
   async recordObservation(observation: ImageObservation): Promise<DeployState> {
-    const state = await this.read();
-    const packages = new Set(state.observed[observation.tag] ?? []);
-    packages.add(observation.packageName);
-    state.observed[observation.tag] = Array.from(packages).sort();
-    await this.write(state);
-    return state;
+    for (let attempt = 1; attempt <= recordObservationAttempts; attempt++) {
+      const state = addObservation(await this.read(), observation);
+
+      try {
+        await this.write(state);
+        return state;
+      } catch (error) {
+        if (!isConflict(error) || attempt === recordObservationAttempts) throw error;
+      }
+    }
+
+    throw new Error("Unreachable recordObservation retry state");
   }
 
   private createConfigMap(state: DeployState): V1ConfigMap {
