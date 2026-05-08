@@ -43,7 +43,9 @@ export const team = pgTable(
 		foreignKey({
 			columns: [table.primaryManagerId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
-		}).onDelete("set null"),
+		}),
+		// The SQL migration uses column-specific SET NULL for primary_manager_id only
+		// because generic composite SET NULL would try to null organization_id.
 	],
 );
 

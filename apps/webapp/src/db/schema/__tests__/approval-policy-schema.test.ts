@@ -1,4 +1,5 @@
 import { getTableConfig } from "drizzle-orm/pg-core";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	approvalChainInstance,
@@ -249,5 +250,11 @@ describe("approval policy schema exports", () => {
 				"organization_id",
 			]),
 		).toBe(true);
+	});
+
+	it("keeps team organization id when deleting a primary manager", () => {
+		const migration = readFileSync("drizzle/0013_team_membership_primary_manager.sql", "utf8");
+
+		expect(migration).toContain('ON DELETE SET NULL ("primary_manager_id")');
 	});
 });

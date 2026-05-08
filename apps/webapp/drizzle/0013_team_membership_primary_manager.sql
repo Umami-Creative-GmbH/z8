@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS "team_membership" (
 ALTER TABLE "team" ADD CONSTRAINT "team_primary_manager_org_fk"
 	FOREIGN KEY ("primary_manager_id", "organization_id")
 	REFERENCES "employee"("id", "organization_id")
-	ON DELETE SET NULL;
+	ON DELETE SET NULL ("primary_manager_id");
 
 ALTER TABLE "team_membership" ADD CONSTRAINT "team_membership_organization_id_organization_id_fk"
 	FOREIGN KEY ("organization_id") REFERENCES "organization"("id") ON DELETE CASCADE;
