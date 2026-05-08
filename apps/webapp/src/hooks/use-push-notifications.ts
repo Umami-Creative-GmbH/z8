@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
 
@@ -56,31 +56,52 @@ export function usePushNotifications(
 	options: UsePushNotificationsOptions = {},
 ): UsePushNotificationsResult {
 	const { onSubscribe, onUnsubscribe, onError } = options;
+	const onErrorRef = useRef(onError);
+	onErrorRef.current = onError;
 
 	const [isSupported, setIsSupported] = useState(false);
 	const [permission, setPermission] = useState<PushPermission>("default");
 	const [isSubscribed, setIsSubscribed] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+	const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
 
 	// Check browser support and current state
 	useEffect(() => {
 		const checkSupport = async () => {
-			// Check if push notifications are supported
-			if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-				setIsSupported(false);
-				setPermission("unsupported");
-				setIsLoading(false);
-				return;
-			}
-
-			setIsSupported(true);
-
-			// Check current permission
-			const currentPermission = Notification.permission;
-			setPermission(currentPermission);
-
 			try {
+				// Check if push notifications are supported
+				if (
+					!("serviceWorker" in navigator) ||
+					!("PushManager" in window) ||
+					!("Notification" in window)
+				) {
+					setIsSupported(false);
+					setPermission("unsupported");
+					return;
+				}
+
+				const vapidResponse = await fetch("/api/notifications/push/vapid-key");
+				if (!vapidResponse.ok) {
+					setIsSupported(false);
+					setPermission("unsupported");
+					return;
+				}
+
+				const { publicKey } = await vapidResponse.json();
+				if (!publicKey) {
+					setIsSupported(false);
+					setPermission("unsupported");
+					return;
+				}
+
+				setIsSupported(true);
+				setVapidPublicKey(publicKey);
+
+				// Check current permission
+				const currentPermission = Notification.permission;
+				setPermission(currentPermission);
+
 				// Register or get existing service worker
 				const reg = await navigator.serviceWorker.register("/sw.js", {
 					scope: "/",
@@ -91,15 +112,17 @@ export function usePushNotifications(
 				const subscription = await reg.pushManager.getSubscription();
 				setIsSubscribed(!!subscription);
 			} catch (error) {
-				console.error("Failed to register service worker:", error);
-				onError?.(error as Error);
+				console.error("Failed to initialize push notifications:", error);
+				setIsSupported(false);
+				setPermission("unsupported");
+				onErrorRef.current?.(error as Error);
+			} finally {
+				setIsLoading(false);
 			}
-
-			setIsLoading(false);
 		};
 
 		checkSupport();
-	}, [onError]);
+	}, []);
 
 	// Request notification permission
 	const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
@@ -121,7 +144,7 @@ export function usePushNotifications(
 	// Subscribe to push notifications
 	const subscribe = useCallback(
 		async (deviceName?: string): Promise<boolean> => {
-			if (!isSupported || !registration) {
+			if (!isSupported || !registration || !vapidPublicKey) {
 				return false;
 			}
 
@@ -139,18 +162,10 @@ export function usePushNotifications(
 					return false;
 				}
 
-				// Get VAPID public key from server
-				const vapidResponse = await fetch("/api/notifications/push/vapid-key");
-				if (!vapidResponse.ok) {
-					throw new Error("Failed to get VAPID key");
-				}
-
-				const { publicKey } = await vapidResponse.json();
-
 				// Subscribe to push manager
 				const subscription = await registration.pushManager.subscribe({
 					userVisibleOnly: true,
-					applicationServerKey: urlBase64ToUint8Array(publicKey),
+					applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
 				});
 
 				// Send subscription to server
@@ -178,7 +193,7 @@ export function usePushNotifications(
 				setIsLoading(false);
 			}
 		},
-		[isSupported, registration, requestPermission, onSubscribe, onError],
+		[isSupported, registration, requestPermission, vapidPublicKey, onSubscribe, onError],
 	);
 
 	// Unsubscribe from push notifications
