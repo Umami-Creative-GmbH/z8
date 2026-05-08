@@ -14,6 +14,12 @@ describe("verifyGitHubSignature", () => {
     expect(verifyGitHubSignature(body, "sha256=bad", "secret")).toBe(false);
   });
 
+  it("rejects signatures with trailing malformed hex", () => {
+    const body = Buffer.from("{}");
+    const signature = `sha256=${createHmac("sha256", "secret").update(body).digest("hex")}zz`;
+    expect(verifyGitHubSignature(body, signature, "secret")).toBe(false);
+  });
+
   it("rejects missing or non-sha256 signatures", () => {
     expect(verifyGitHubSignature(Buffer.from("{}"), undefined, "secret")).toBe(false);
     expect(verifyGitHubSignature(Buffer.from("{}"), "sha1=abc", "secret")).toBe(false);
