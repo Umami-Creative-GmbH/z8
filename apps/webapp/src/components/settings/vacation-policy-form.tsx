@@ -271,7 +271,7 @@ export function VacationPolicyForm({
 															setStartDateOpen(false);
 														}
 													}}
-													initialFocus
+													autoFocus
 												/>
 											</PopoverContent>
 										</Popover>
@@ -331,7 +331,7 @@ export function VacationPolicyForm({
 														field.handleChange(date || null);
 														setValidUntilOpen(false);
 													}}
-													initialFocus
+													autoFocus
 												/>
 											</PopoverContent>
 										</Popover>
