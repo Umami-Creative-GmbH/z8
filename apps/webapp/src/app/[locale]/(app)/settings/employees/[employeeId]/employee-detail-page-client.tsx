@@ -26,7 +26,7 @@ export function EmployeeDetailPageClient({
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 
 	const {
 		employee,
@@ -63,15 +63,22 @@ export function EmployeeDetailPageClient({
 			const result = await updateEmployee(value).catch(() => null);
 
 			if (!result) {
-				toast.error("An unexpected error occurred");
+				toast.error(
+					t("settings.employees.detailView.unexpectedError", "An unexpected error occurred"),
+				);
 				return;
 			}
 
 			if (result.success) {
-				toast.success("Employee updated successfully");
-				router.push("/settings/employees");
+				toast.success(
+					t("settings.employees.detailView.updateSuccess", "Employee updated successfully"),
+				);
+				push("/settings/employees");
 			} else {
-				toast.error(result.error || "Failed to update employee");
+				toast.error(
+					result.error ||
+						t("settings.employees.detailView.updateFailed", "Failed to update employee"),
+				);
 			}
 		},
 	});
@@ -85,7 +92,9 @@ export function EmployeeDetailPageClient({
 	if (!hasEmployee && !isLoading) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage employees" />
+				<NoEmployeeError
+					feature={t("settings.employees.detailView.manageEmployees", "manage employees")}
+				/>
 			</div>
 		);
 	}
@@ -96,7 +105,10 @@ export function EmployeeDetailPageClient({
 				<div
 					className="flex items-center justify-center p-8"
 					role="status"
-					aria-label="Loading employee data"
+					aria-label={t(
+						"settings.employees.detailView.loadingEmployeeData",
+						"Loading employee data",
+					)}
 				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
@@ -109,13 +121,14 @@ export function EmployeeDetailPageClient({
 			<EmployeeDetailHeader t={t} />
 
 			<div className="grid gap-4 lg:grid-cols-3">
-				<EmployeeOverviewCard employee={employee} schedule={schedule} />
+				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
 				<EmployeeEditFormCard
 					form={form}
 					canEditManagerFields={canManageEmployeeDetails}
 					canEditOrgAdminFields={accessTier === "orgAdmin"}
 					isUpdating={isUpdating}
-					onCancel={() => router.push("/settings/employees")}
+					onCancel={() => push("/settings/employees")}
+					t={t}
 				/>
 			</div>
 
