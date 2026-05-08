@@ -3,6 +3,10 @@ import { auditPackArtifact, auditPackRequest, db } from "@/db";
 
 export type AuditPackRequestStatus = (typeof auditPackRequest.$inferSelect)["status"];
 
+type AuditPackRequestWithArtifact = typeof auditPackRequest.$inferSelect & {
+	artifact: typeof auditPackArtifact.$inferSelect | null;
+};
+
 export interface CreateAuditPackRequestInput {
 	organizationId: string;
 	requestedById: string;
@@ -79,11 +83,11 @@ export const auditPackRequestRepository = {
 			},
 		});
 
-		return requests;
+		return requests as unknown as AuditPackRequestWithArtifact[];
 	},
 
 	async getRequest(input: GetAuditPackRequestInput) {
-		return db.query.auditPackRequest.findFirst({
+		const request = await db.query.auditPackRequest.findFirst({
 			where: and(
 				eq(auditPackRequest.id, input.requestId),
 				eq(auditPackRequest.organizationId, input.organizationId),
@@ -92,6 +96,8 @@ export const auditPackRequestRepository = {
 				artifact: true,
 			},
 		});
+
+		return request as unknown as AuditPackRequestWithArtifact | undefined;
 	},
 
 	async setStatus(input: SetAuditPackStatusInput): Promise<void> {
