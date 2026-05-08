@@ -10,7 +10,7 @@ type DeploymentSpec = {
   container: string;
 };
 
-type DeployedKey = "app" | "docs" | "marketing";
+type DeployedKey = "app" | "appMigration" | "docs" | "marketing";
 
 export type ReconcilerDependencies = {
   registry: {
@@ -26,6 +26,7 @@ export type ReconcilerDependencies = {
     recordObservation(observation: ImageObservation): Promise<DeployState>;
     read(): Promise<DeployState>;
     write(state: DeployState): Promise<void>;
+    update(mutator: (state: DeployState) => DeployState): Promise<DeployState>;
   };
   owner: string;
   rolloutTimeoutMs: number;
@@ -89,11 +90,14 @@ export class Reconciler {
       if (!(await this.dependencies.registry.hasTag(packageName, observation.tag))) return;
     }
 
-    await this.dependencies.kube.runMigration(
-      observation.tag,
-      this.image("z8-migration", observation.tag),
-      this.dependencies.migrationTimeoutMs
-    );
+    if (state.deployed.appMigration !== observation.tag) {
+      await this.dependencies.kube.runMigration(
+        observation.tag,
+        this.image("z8-migration", observation.tag),
+        this.dependencies.migrationTimeoutMs
+      );
+      await this.markDeployed("appMigration", observation.tag);
+    }
     await this.deployAppImages(observation.tag);
     await this.markDeployed("app", observation.tag);
   }
@@ -137,12 +141,12 @@ export class Reconciler {
   }
 
   private async markDeployed(key: DeployedKey, tag: string): Promise<void> {
-    const state = await this.dependencies.state.read();
-    if (state.deployed[key] === tag) return;
-
-    await this.dependencies.state.write({
-      ...state,
-      deployed: { ...state.deployed, [key]: tag }
+    await this.dependencies.state.update((state) => {
+      if (state.deployed[key] === tag) return state;
+      return {
+        ...state,
+        deployed: { ...state.deployed, [key]: tag }
+      };
     });
   }
 

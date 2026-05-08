@@ -20,6 +20,7 @@ type VersionedState = {
 
 const stateKey = "state.json";
 const recordObservationAttempts = 3;
+const updateAttempts = 3;
 
 function emptyState(): DeployState {
   return { observed: {}, deployed: {}, failures: {} };
@@ -105,19 +106,23 @@ export class StateStore {
   }
 
   async recordObservation(observation: ImageObservation): Promise<DeployState> {
-    for (let attempt = 1; attempt <= recordObservationAttempts; attempt++) {
+    return this.update((state) => addObservation(state, observation), recordObservationAttempts);
+  }
+
+  async update(mutator: (state: DeployState) => DeployState, attempts = updateAttempts): Promise<DeployState> {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
       const current = await this.readVersioned();
-      const state = addObservation(current.state, observation);
+      const state = mutator(current.state);
 
       try {
         await this.writeVersioned(state, current.resourceVersion);
         return state;
       } catch (error) {
-        if (!isConflict(error) || attempt === recordObservationAttempts) throw error;
+        if (!isConflict(error) || attempt === attempts) throw error;
       }
     }
 
-    throw new Error("Unreachable recordObservation retry state");
+    throw new Error("Unreachable state update retry state");
   }
 
   private async readVersioned(): Promise<VersionedState> {

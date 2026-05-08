@@ -9,6 +9,8 @@ import {
 
 export type DeploymentTarget = "web" | "worker" | "docs" | "marketing";
 
+type JobState = "missing" | "active" | "complete" | "failed";
+
 type KubernetesAdapterOptions = {
   namespace: string;
   appsApi?: AppsV1Api;
@@ -121,9 +123,32 @@ export class KubernetesAdapter {
 
   async runMigration(tag: string, image: string, timeoutMs: number): Promise<void> {
     const name = safeMigrationJobName(tag);
-    await this.deleteJobIfExists(name, timeoutMs);
+    const state = await this.getJobState(name);
+
+    if (state === "complete") return;
+    if (state === "active") {
+      await this.waitForJobComplete(name, timeoutMs);
+      return;
+    }
+
+    if (state === "failed") {
+      await this.deleteJobIfExists(name, timeoutMs);
+    }
+
     await this.batchApi.createNamespacedJob({ namespace: this.namespace, body: this.createMigrationJob(name, image) });
     await this.waitForJobComplete(name, timeoutMs);
+  }
+
+  private async getJobState(name: string): Promise<JobState> {
+    try {
+      const job = await this.batchApi.readNamespacedJobStatus({ name, namespace: this.namespace });
+      if ((job.status?.succeeded ?? 0) > 0) return "complete";
+      if ((job.status?.failed ?? 0) > 0) return "failed";
+      return "active";
+    } catch (error) {
+      if (isNotFound(error)) return "missing";
+      throw error;
+    }
   }
 
   private async deleteJobIfExists(name: string, timeoutMs: number): Promise<void> {

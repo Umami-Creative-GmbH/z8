@@ -3,7 +3,7 @@ import { Reconciler, type ReconcilerDependencies } from "./reconciler.js";
 import type { ImageObservation } from "./github-event.js";
 import type { DeployState } from "./state.js";
 
-function createDependencies(state: DeployState): ReconcilerDependencies & { calls: string[] } {
+function createDependencies(state: DeployState): ReconcilerDependencies & { calls: string[]; getState: () => DeployState } {
   const calls: string[] = [];
   const currentImages = new Map<string, string | null>();
   const hasTag = vi.fn(async (packageName: ImageObservation["packageName"], tag: string) => {
@@ -13,6 +13,7 @@ function createDependencies(state: DeployState): ReconcilerDependencies & { call
 
   return {
     calls,
+    getState: () => state,
     owner: "umami-creative-gmbh",
     rolloutTimeoutMs: 60_000,
     migrationTimeoutMs: 90_000,
@@ -34,6 +35,10 @@ function createDependencies(state: DeployState): ReconcilerDependencies & { call
       read: vi.fn(async () => state),
       write: vi.fn(async (nextState) => {
         state = nextState;
+      }),
+      update: vi.fn(async (mutator) => {
+        state = mutator(state);
+        return state;
       }),
       recordObservation: vi.fn(async (observation) => {
         const observed = new Set(state.observed[observation.tag] ?? []);
@@ -175,6 +180,30 @@ describe("Reconciler", () => {
     expect(dependencies.kube.runMigration).toHaveBeenCalledTimes(1);
   });
 
+  it("does not re-run migration when retrying after migration succeeded but app rollout failed", async () => {
+    const dependencies = createDependencies({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: {},
+      failures: {}
+    });
+    dependencies.kube.setDeploymentImage = vi.fn(async (deployment, container, image) => {
+      dependencies.calls.push(`set:${deployment}/${container}:${image}`);
+      if (deployment === "web") throw new Error("web rollout patch failed");
+    });
+    const reconciler = new Reconciler(dependencies);
+
+    await expect(reconciler.reconcile({ packageName: "z8-migration", tag: "sha-abc123" })).rejects.toThrow(
+      "web rollout patch failed"
+    );
+    dependencies.kube.setDeploymentImage = vi.fn(async (deployment, container, image) => {
+      dependencies.calls.push(`set:${deployment}/${container}:${image}`);
+    });
+
+    await reconciler.reconcile({ packageName: "z8-webapp", tag: "sha-abc123" });
+
+    expect(dependencies.kube.runMigration).toHaveBeenCalledTimes(1);
+  });
+
   it("persists deployed tags after successful rollouts", async () => {
     const dependencies = createDependencies({
       observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
@@ -187,19 +216,11 @@ describe("Reconciler", () => {
     await reconciler.reconcile({ packageName: "z8-docs", tag: "sha-abc123" });
     await reconciler.reconcile({ packageName: "z8-marketing", tag: "sha-abc123" });
 
-    expect(dependencies.state.write).toHaveBeenCalledWith({
+    expect(dependencies.state.update).toHaveBeenCalledWith(expect.any(Function));
+    expect(dependencies.state.write).not.toHaveBeenCalled();
+    expect(dependencies.getState()).toEqual({
       observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
-      deployed: { app: "sha-abc123" },
-      failures: {}
-    });
-    expect(dependencies.state.write).toHaveBeenCalledWith({
-      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
-      deployed: { app: "sha-abc123", docs: "sha-abc123" },
-      failures: {}
-    });
-    expect(dependencies.state.write).toHaveBeenCalledWith({
-      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
-      deployed: { app: "sha-abc123", docs: "sha-abc123", marketing: "sha-abc123" },
+      deployed: { appMigration: "sha-abc123", app: "sha-abc123", docs: "sha-abc123", marketing: "sha-abc123" },
       failures: {}
     });
   });

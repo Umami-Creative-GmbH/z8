@@ -22,6 +22,52 @@ describe("addObservation", () => {
 });
 
 describe("StateStore", () => {
+  it("retries updates on conflicts and preserves concurrent deployed markers", async () => {
+    let stored: { resourceVersion: string; state: DeployState } = {
+      resourceVersion: "1",
+      state: { observed: {}, deployed: { docs: "sha-docs" }, failures: {} }
+    };
+    let injectedConcurrentUpdate = false;
+    const coreApi = {
+      readNamespacedConfigMap: vi.fn(async () => ({
+        metadata: { resourceVersion: stored.resourceVersion },
+        data: { "state.json": JSON.stringify(stored.state) }
+      })),
+      replaceNamespacedConfigMap: vi.fn(async ({ body }: { body: { metadata?: { resourceVersion?: string }; data?: Record<string, string> } }) => {
+        if (!injectedConcurrentUpdate) {
+          injectedConcurrentUpdate = true;
+          stored = {
+            resourceVersion: "2",
+            state: { observed: {}, deployed: { docs: "sha-docs", marketing: "sha-marketing" }, failures: {} }
+          };
+        }
+
+        if (body.metadata?.resourceVersion !== stored.resourceVersion) {
+          throw new ApiException(409, "conflict", {}, {});
+        }
+
+        stored = {
+          resourceVersion: String(Number(stored.resourceVersion) + 1),
+          state: JSON.parse(body.data?.["state.json"] ?? "{}") as DeployState
+        };
+        return body;
+      }),
+      createNamespacedConfigMap: vi.fn()
+    };
+
+    const store = new StateStore({ namespace: "app-prod", name: "deploy-webhook-state", coreApi: coreApi as never });
+
+    await expect(
+      store.update((state) => ({ ...state, deployed: { ...state.deployed, app: "sha-app" } }))
+    ).resolves.toEqual({
+      observed: {},
+      deployed: { app: "sha-app", docs: "sha-docs", marketing: "sha-marketing" },
+      failures: {}
+    });
+    expect(coreApi.replaceNamespacedConfigMap).toHaveBeenCalledTimes(2);
+    expect(stored.state.deployed).toEqual({ app: "sha-app", docs: "sha-docs", marketing: "sha-marketing" });
+  });
+
   it("uses the same resourceVersion as the observed state when recording observations", async () => {
     let stored: { resourceVersion: string; state: DeployState } = {
       resourceVersion: "1",
