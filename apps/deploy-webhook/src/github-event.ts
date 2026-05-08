@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 export type ImageObservation = {
   packageName: "z8-webapp" | "z8-worker" | "z8-migration" | "z8-docs" | "z8-marketing";
   publishedAt: string;
@@ -24,9 +26,9 @@ function parseTimestamp(value: unknown): string | null {
   const timestamp = getString(value);
   if (!timestamp) return null;
 
-  const milliseconds = Date.parse(timestamp);
-  if (!Number.isFinite(milliseconds)) return null;
-  return new Date(milliseconds).toISOString();
+  const parsed = DateTime.fromISO(timestamp, { setZone: true });
+  if (!parsed.isValid) return null;
+  return parsed.toUTC().toISO({ suppressMilliseconds: false });
 }
 
 export function parseGitHubPackageEvent(payload: unknown, expectedOwner: string): ImageObservation | null {

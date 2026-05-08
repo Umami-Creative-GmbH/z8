@@ -1,4 +1,5 @@
 import { ApiException, CoreV1Api, KubeConfig, type V1ConfigMap } from "@kubernetes/client-node";
+import { DateTime } from "luxon";
 import type { ImageObservation } from "./github-event.js";
 
 export type DeployState = {
@@ -68,7 +69,7 @@ function deploymentGroup(packageName: ImageObservation["packageName"]): "app" | 
 }
 
 function isOlderThan(left: string, right: string | undefined): boolean {
-  return Boolean(right && Date.parse(left) < Date.parse(right));
+  return Boolean(right && DateTime.fromISO(left).toMillis() < DateTime.fromISO(right).toMillis());
 }
 
 export function addObservation(state: DeployState, observation: ImageObservation): DeployState {

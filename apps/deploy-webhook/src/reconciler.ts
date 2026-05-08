@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { DeploymentTarget } from "./kubernetes.js";
 import type { ImageObservation } from "./github-event.js";
 import type { DeployState } from "./state.js";
@@ -174,15 +175,17 @@ export class Reconciler {
 
     const timestamps = appPackages.map((packageName) => observedAt[packageName]).filter((value): value is string => Boolean(value));
     if (timestamps.length !== appPackages.length) return null;
-    return timestamps.reduce((latest, timestamp) => (Date.parse(timestamp) > Date.parse(latest) ? timestamp : latest));
+    return timestamps.reduce((latest, timestamp) =>
+      DateTime.fromISO(timestamp).toMillis() > DateTime.fromISO(latest).toMillis() ? timestamp : latest
+    );
   }
 
   private isStale(state: DeployState, key: DeployedKey | DeploymentGroup, publishedAt: string): boolean {
     const deployedAt = state.deployedAt?.[key];
     const acceptedAt = key === "appMigration" ? state.latestAcceptedAt?.app : state.latestAcceptedAt?.[key as DeploymentGroup];
     return Boolean(
-      (deployedAt && Date.parse(publishedAt) < Date.parse(deployedAt)) ||
-        (acceptedAt && Date.parse(publishedAt) < Date.parse(acceptedAt))
+      (deployedAt && DateTime.fromISO(publishedAt).toMillis() < DateTime.fromISO(deployedAt).toMillis()) ||
+        (acceptedAt && DateTime.fromISO(publishedAt).toMillis() < DateTime.fromISO(acceptedAt).toMillis())
     );
   }
 
