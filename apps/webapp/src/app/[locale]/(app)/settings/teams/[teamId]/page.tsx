@@ -31,7 +31,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	const [uiState, dispatch] = useTeamPageUiState();
 
 	const form = useForm({
-		defaultValues: { name: "", description: "" },
+		defaultValues: { name: "", description: "", primaryManagerId: null as string | null },
 		onSubmit: async ({ value }) => updateTeamMutation.mutate(value),
 	});
 
@@ -48,6 +48,21 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
 	const canManageSettings = team?.canManageSettings ?? false;
 	const canManageMembers = team?.canManageMembers ?? false;
+
+	const { data: managerOptions = [] } = useQuery({
+		queryKey: ["teams", teamId, "primary-manager-options"],
+		queryFn: async () => {
+			const result = await listEmployeesForSelect({ limit: 1000, status: "active" });
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load manager options");
+			}
+			return result.data.employees.filter(
+				(employee) =>
+					employee.isActive && (employee.role === "manager" || employee.role === "admin"),
+			);
+		},
+		enabled: canManageSettings,
+	});
 
 	async function loadAvailableEmployees() {
 		if (!team) return;
@@ -186,13 +201,18 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 			<div className="grid gap-4 lg:grid-cols-3">
 				<TeamInfoCard
 					team={team}
+					managerOptions={managerOptions}
 					isEditing={uiState.isEditing}
 					canManageSettings={canManageSettings}
 					loading={loading}
 					form={form}
 					onStartEdit={() => {
 						dispatch({ type: "setEditing", value: true });
-						form.reset({ name: team.name, description: team.description || "" });
+						form.reset({
+							name: team.name,
+							description: team.description || "",
+							primaryManagerId: team.primaryManagerId ?? null,
+						});
 					}}
 					onCancelEdit={() => dispatch({ type: "setEditing", value: false })}
 					onSubmit={() => form.handleSubmit()}

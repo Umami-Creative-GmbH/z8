@@ -89,6 +89,7 @@ export function TeamPageHeader({
 
 export function TeamInfoCard(props: {
 	team: any;
+	managerOptions: SelectableEmployee[];
 	isEditing: boolean;
 	canManageSettings: boolean;
 	loading: boolean;
@@ -97,8 +98,17 @@ export function TeamInfoCard(props: {
 	onCancelEdit: () => void;
 	onSubmit: () => void;
 }) {
-	const { team, isEditing, canManageSettings, loading, form, onStartEdit, onCancelEdit, onSubmit } =
-		props;
+	const {
+		team,
+		managerOptions,
+		isEditing,
+		canManageSettings,
+		loading,
+		form,
+		onStartEdit,
+		onCancelEdit,
+		onSubmit,
+	} = props;
 
 	return (
 		<Card>
@@ -158,6 +168,30 @@ export function TeamInfoCard(props: {
 							)}
 						</form.Field>
 
+						<form.Field name="primaryManagerId">
+							{(field: any) => (
+								<div className="space-y-2">
+									<Label htmlFor="team-primary-manager">Primary Manager</Label>
+									<Select
+										value={field.state.value ?? "none"}
+										onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
+									>
+										<SelectTrigger id="team-primary-manager">
+											<SelectValue placeholder="No primary manager assigned" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">No primary manager assigned</SelectItem>
+											{managerOptions.map((employee) => (
+												<SelectItem key={employee.id} value={employee.id}>
+													{employee.user.name} ({employee.user.email})
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+						</form.Field>
+
 						<div className="flex justify-end gap-2">
 							<Button
 								type="button"
@@ -194,6 +228,13 @@ export function TeamInfoCard(props: {
 								</div>
 							</>
 						) : null}
+						<Separator />
+						<div className="space-y-2">
+							<div className="text-sm text-muted-foreground">Primary Manager</div>
+							<div className="font-medium">
+								{team.primaryManager?.user?.name ?? "No primary manager assigned"}
+							</div>
+						</div>
 						<Separator />
 						<div className="space-y-2">
 							<div className="text-sm text-muted-foreground">Members</div>
