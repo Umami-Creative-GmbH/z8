@@ -46,6 +46,12 @@ type Translate = (
 	values?: Record<string, string | number>,
 ) => string;
 
+type EmployeeManagerRelation = {
+	id: string;
+	isPrimary: boolean;
+	manager: { user: { name: string } };
+};
+
 const defaultTranslate: Translate = (_key, defaultValue) => defaultValue;
 
 export function EmployeeDetailHeader({ t }: { t: Translate }) {
@@ -118,6 +124,7 @@ export function EmployeeOverviewCard({
 		t("settings.employees.detailView.daySaturday", "Sat"),
 		t("settings.employees.detailView.daySunday", "Sun"),
 	];
+	const managers = employee.managers as EmployeeManagerRelation[] | undefined;
 
 	return (
 		<Card>
@@ -169,13 +176,13 @@ export function EmployeeOverviewCard({
 					</div>
 				)}
 
-				{employee.managers && employee.managers.length > 0 && (
+				{managers && managers.length > 0 && (
 					<div className="space-y-2">
 						<div className="text-sm text-muted-foreground">
 							{t("settings.employees.detailView.managers", "Managers")}
 						</div>
 						<div className="space-y-1">
-							{employee.managers.map((manager) => (
+							{managers.map((manager) => (
 								<div key={manager.id} className="flex items-center gap-2">
 									<span>{manager.manager.user.name}</span>
 									{manager.isPrimary && (
