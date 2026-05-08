@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import type { DashboardWidgetOrder } from "@/db/schema";
@@ -13,6 +13,7 @@ import {
 	userSettings,
 	waterIntakeLog,
 	workPeriod,
+	workPolicyAssignment,
 } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
@@ -39,6 +40,19 @@ export type ManagerTodaySummaryResult = {
 		payrollIssues: number;
 	} | null;
 	error?: string;
+};
+
+type DashboardAbsenceEmployeeRow = typeof absenceEntry.$inferSelect & {
+	employee: Pick<typeof employee.$inferSelect, "id"> & {
+		user: { name: string | null };
+	};
+};
+
+type DashboardTodayAbsenceRow = typeof absenceEntry.$inferSelect & {
+	employee: Pick<typeof employee.$inferSelect, "id"> & {
+		user: { id: string; name: string | null; image: string | null };
+	};
+	category: { name: string; color: string | null };
 };
 
 export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResult> {
@@ -337,7 +351,9 @@ export async function getTeamCalendarData(
 		const monthStartDT = DateTime.fromISO(monthStartStr);
 		const monthEndDT = DateTime.fromISO(monthEndStr);
 
-		for (const absence of absences) {
+		const typedAbsences = absences as unknown as DashboardAbsenceEmployeeRow[];
+
+		for (const absence of typedAbsences) {
 			// absence.startDate and absence.endDate are now YYYY-MM-DD strings
 			const startDT = DateTime.fromISO(absence.startDate);
 			const endDT = DateTime.fromISO(absence.endDate);
@@ -478,8 +494,8 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 					where: eq(employee.userId, session.user.id),
 					with: {
 						workPolicyAssignments: {
-							where: (assignment, { eq }) => eq(assignment.isActive, true),
-							orderBy: (assignment, { desc }) => [desc(assignment.effectiveFrom)],
+							where: eq(workPolicyAssignment.isActive, true),
+							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
 							limit: 1,
 							with: {
 								policy: {
@@ -779,8 +795,8 @@ export async function getTeamOverviewStats(): Promise<
 					where: eq(employee.organizationId, currentEmployee.organizationId),
 					with: {
 						workPolicyAssignments: {
-							where: (assignment, { eq }) => eq(assignment.isActive, true),
-							orderBy: (assignment, { desc }) => [desc(assignment.effectiveFrom)],
+							where: eq(workPolicyAssignment.isActive, true),
+							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
 							limit: 1,
 							with: {
 								policy: {
@@ -961,7 +977,9 @@ export async function getWhosOutToday(): Promise<
 			}
 		>();
 
-		for (const absence of todayAbsences) {
+		const typedTodayAbsences = todayAbsences as unknown as DashboardTodayAbsenceRow[];
+
+		for (const absence of typedTodayAbsences) {
 			const employeeId = absence.employee.id;
 			const endsToday = absence.endDate === todayStr;
 			const endDT = DateTime.fromISO(absence.endDate);
