@@ -202,7 +202,7 @@ async function loadAbsences({
 		),
 		with: { category: true },
 		orderBy: [asc(absenceEntry.startDate)],
-	})) as AbsenceRow[];
+	})) as unknown as AbsenceRow[];
 
 	return rows.map((row) => ({
 		id: row.id,
