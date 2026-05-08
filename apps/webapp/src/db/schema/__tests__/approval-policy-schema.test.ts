@@ -252,10 +252,10 @@ describe("approval policy schema exports", () => {
 		).toBe(true);
 	});
 
-	it("keeps team organization id when deleting a primary manager", () => {
+	it("blocks primary manager deletion until the team reference is cleared", () => {
 		const migration = readFileSync("drizzle/0013_team_membership_primary_manager.sql", "utf8");
 
-		expect(migration).toContain('ON DELETE SET NULL ("primary_manager_id")');
+		expect(migration).not.toContain("ON DELETE SET NULL");
 	});
 
 	it("guards team membership backfill by organization", () => {

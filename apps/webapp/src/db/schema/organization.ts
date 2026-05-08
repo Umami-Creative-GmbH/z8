@@ -44,8 +44,6 @@ export const team = pgTable(
 			columns: [table.primaryManagerId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
-		// The SQL migration uses column-specific SET NULL for primary_manager_id only
-		// because generic composite SET NULL would try to null organization_id.
 	],
 );
 
