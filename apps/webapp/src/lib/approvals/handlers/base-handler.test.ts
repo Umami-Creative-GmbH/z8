@@ -285,19 +285,26 @@ describe("fetchApprovals", () => {
 		expect(conditions).toHaveLength(4);
 	});
 
-	it("includes assigned approver or eligible requester approvals when eligible requesters are present", () => {
+	it("includes assigned approver or manager-routed eligible requester approvals", () => {
 		const conditions = buildBaseConditions("absence_entry", {
 			approverId: "manager-1",
 			organizationId: "org-1",
 			status: "pending",
 			limit: 20,
-			eligibleRequesterEmployeeIds: ["employee-2"],
+			eligibleApprovalScopes: [
+				{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["manager-1", "manager-2"] },
+			],
 		});
 
 		expect(conditions[3]).toEqual({
 			or: [
 				{ eq: [expect.anything(), "manager-1"] },
-				{ inArray: [expect.anything(), ["employee-2"]] },
+				{
+					and: [
+						{ eq: [expect.anything(), "employee-2"] },
+						{ inArray: [expect.anything(), ["manager-1", "manager-2"]] },
+					],
+				},
 			],
 		});
 	});

@@ -253,7 +253,9 @@ describe("ApprovalQueryService", () => {
 						approverId: "manager-1",
 						organizationId: "org-1",
 						status: "pending",
-						eligibleRequesterEmployeeIds: ["eligible-requester"],
+						eligibleApprovalScopes: [
+							{ requesterEmployeeId: "eligible-requester", eligibleApproverIds: ["manager-2"] },
+						],
 						limit: 10,
 					}),
 				);
@@ -295,7 +297,7 @@ describe("ApprovalQueryService", () => {
 						approverId: "manager-1",
 						organizationId: "org-1",
 						status: "pending",
-						eligibleRequesterEmployeeIds: [],
+						eligibleApprovalScopes: [],
 						limit: 10,
 					}),
 				);

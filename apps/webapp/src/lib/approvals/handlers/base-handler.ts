@@ -76,12 +76,17 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 
 	if (!params.includeAllApprovers) {
 		const assignedApproverCondition = eq(approvalRequest.approverId, params.approverId);
+		const eligibleApprovalScopeConditions = params.eligibleApprovalScopes
+			?.filter((scope) => scope.eligibleApproverIds.length > 0)
+			.map((scope) =>
+				and(
+					eq(approvalRequest.requestedBy, scope.requesterEmployeeId),
+					inArray(approvalRequest.approverId, scope.eligibleApproverIds),
+				),
+			);
 		conditions.push(
-			params.eligibleRequesterEmployeeIds && params.eligibleRequesterEmployeeIds.length > 0
-				? or(
-						assignedApproverCondition,
-						inArray(approvalRequest.requestedBy, params.eligibleRequesterEmployeeIds),
-					)
+			eligibleApprovalScopeConditions && eligibleApprovalScopeConditions.length > 0
+				? or(assignedApproverCondition, ...eligibleApprovalScopeConditions)
 				: assignedApproverCondition,
 		);
 	}
