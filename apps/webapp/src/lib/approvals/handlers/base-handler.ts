@@ -84,11 +84,12 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 					inArray(approvalRequest.approverId, scope.eligibleApproverIds),
 				),
 			);
-		conditions.push(
+		const approverCondition =
 			eligibleApprovalScopeConditions && eligibleApprovalScopeConditions.length > 0
 				? or(assignedApproverCondition, ...eligibleApprovalScopeConditions)
-				: assignedApproverCondition,
-		);
+				: assignedApproverCondition;
+
+		conditions.push(approverCondition ?? assignedApproverCondition);
 	}
 
 	// Add age filter

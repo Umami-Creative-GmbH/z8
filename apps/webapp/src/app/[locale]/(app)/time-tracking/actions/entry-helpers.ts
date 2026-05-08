@@ -11,6 +11,13 @@ import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { getRequestMetadata } from "./auth";
 import { BOOKABLE_PROJECT_STATUSES } from "./shared";
 
+type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
+	project: Pick<
+		typeof project.$inferSelect,
+		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+	> | null;
+};
+
 export async function createTimeEntry(params: {
 	employeeId: string;
 	organizationId: string;
@@ -150,7 +157,12 @@ export async function getAssignedProjectsWithHours(
 		}
 	>();
 
-	for (const assignment of [...directAssignments, ...teamAssignments]) {
+	const typedAssignments = [
+		...directAssignments,
+		...teamAssignments,
+	] as unknown as ProjectAssignmentWithProject[];
+
+	for (const assignment of typedAssignments) {
 		const assignedProject = assignment.project;
 		if (
 			assignedProject &&

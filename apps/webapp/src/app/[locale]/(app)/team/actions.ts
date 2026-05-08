@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { employeeManagers } from "@/db/schema";
+import { employee, employeeManagers, team } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -35,6 +35,13 @@ export interface ManagedEmployee {
 		name: string;
 	} | null;
 }
+
+type ManagedEmployeeRecord = typeof employeeManagers.$inferSelect & {
+	employee: typeof employee.$inferSelect & {
+		user: { id: string; name: string; email: string; image: string | null };
+		team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
+	};
+};
 
 // =============================================================================
 // Server Actions
@@ -126,7 +133,8 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		);
 
 		// Transform to ManagedEmployee type
-		const managedEmployees: ManagedEmployee[] = managedEmployeeRecords.map((record) => ({
+		const typedManagedEmployeeRecords = managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
+		const managedEmployees: ManagedEmployee[] = typedManagedEmployeeRecords.map((record) => ({
 			id: record.employee.id,
 			userId: record.employee.userId,
 			firstName: record.employee.firstName,

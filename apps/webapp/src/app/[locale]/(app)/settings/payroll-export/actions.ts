@@ -42,6 +42,10 @@ import {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
+type PayrollWageTypeMappingWithConfig = typeof payrollWageTypeMapping.$inferSelect & {
+	config: Pick<typeof payrollExportConfig.$inferSelect, "organizationId">;
+};
+
 // ============================================
 // CONFIGURATION TYPES
 // ============================================
@@ -1630,7 +1634,9 @@ export async function deleteMappingAction(
 					throw new Error("Mapping not found");
 				}
 
-				if (mapping.config.organizationId !== input.organizationId) {
+				const typedMapping = mapping as unknown as PayrollWageTypeMappingWithConfig;
+
+				if (typedMapping.config.organizationId !== input.organizationId) {
 					throw new Error("Mapping not found or access denied");
 				}
 

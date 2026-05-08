@@ -1,4 +1,5 @@
 import {
+	type AnyPgColumn,
 	boolean,
 	decimal,
 	foreignKey,
@@ -133,7 +134,9 @@ export const employee = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		teamId: uuid("team_id").references(() => team.id, { onDelete: "set null" }),
+		teamId: uuid("team_id").references((): AnyPgColumn => team.id, {
+			onDelete: "set null",
+		}),
 		managerId: uuid("manager_id"), // DEPRECATED: Use employee_managers table instead
 
 		// Personal information

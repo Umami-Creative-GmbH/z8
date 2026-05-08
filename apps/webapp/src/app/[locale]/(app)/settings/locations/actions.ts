@@ -98,6 +98,30 @@ export interface LocationListItem {
 	employeeCount: number;
 }
 
+type LocationListRow = typeof location.$inferSelect & {
+	subareas: Pick<typeof locationSubarea.$inferSelect, "id">[];
+	employees: unknown[];
+};
+
+type LocationEmployeeRow = typeof locationEmployee.$inferSelect & {
+	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName"> & {
+		user: { name: string | null; email: string };
+	};
+};
+
+type LocationSubareaRow = typeof locationSubarea.$inferSelect & {
+	employees: LocationEmployeeRow[];
+};
+
+type LocationDetailRow = typeof location.$inferSelect & {
+	subareas: LocationSubareaRow[];
+	employees: LocationEmployeeRow[];
+};
+
+type SubareaWithLocation = typeof locationSubarea.$inferSelect & {
+	location: Pick<typeof location.$inferSelect, "organizationId">;
+};
+
 function getScopedLocationSubareas<T extends { id: string }>(
 	locationId: string,
 	accessTier: SettingsAccessTier,
@@ -156,7 +180,8 @@ export async function getLocations(
 				);
 
 				// Map to list items
-				const result: LocationListItem[] = locations
+				const typedLocations = locations as unknown as LocationListRow[];
+				const result: LocationListItem[] = typedLocations
 					.map((loc) => ({
 						...loc,
 						subareas: getScopedLocationSubareas(
@@ -257,23 +282,25 @@ export async function getLocation(
 					),
 				);
 
+				const typedLocation = loc as unknown as LocationDetailRow;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: loc.organizationId,
+						organizationId: typedLocation.organizationId,
 						queryName: "getLocationActor",
 					}),
 				);
 				const scopedSubareas = getScopedLocationSubareas(
-					loc.id,
+					typedLocation.id,
 					actor.accessTier,
 					actor.manageableLocationIds,
 					actor.manageableSubareaIds,
-					loc.subareas,
+					typedLocation.subareas,
 				);
 
 				if (
 					actor.accessTier !== "orgAdmin" &&
-					!actor.manageableLocationIds?.has(loc.id) &&
+					!actor.manageableLocationIds?.has(typedLocation.id) &&
 					scopedSubareas.length === 0
 				) {
 					return yield* _(
@@ -290,18 +317,18 @@ export async function getLocation(
 
 				// Map to LocationWithDetails
 				const result: LocationWithDetails = {
-					id: loc.id,
-					organizationId: loc.organizationId,
-					name: loc.name,
-					street: loc.street,
-					city: loc.city,
-					postalCode: loc.postalCode,
-					country: loc.country,
-					isActive: loc.isActive,
-					createdAt: loc.createdAt,
-					createdBy: loc.createdBy,
-					updatedAt: loc.updatedAt,
-					updatedBy: loc.updatedBy,
+					id: typedLocation.id,
+					organizationId: typedLocation.organizationId,
+					name: typedLocation.name,
+					street: typedLocation.street,
+					city: typedLocation.city,
+					postalCode: typedLocation.postalCode,
+					country: typedLocation.country,
+					isActive: typedLocation.isActive,
+					createdAt: typedLocation.createdAt,
+					createdBy: typedLocation.createdBy,
+					updatedAt: typedLocation.updatedAt,
+					updatedBy: typedLocation.updatedBy,
 					subareas: scopedSubareas.map((sub) => ({
 						id: sub.id,
 						locationId: sub.locationId,
@@ -324,7 +351,7 @@ export async function getLocation(
 							},
 						})),
 					})),
-					employees: loc.employees.map((e) => ({
+					employees: typedLocation.employees.map((e) => ({
 						id: e.id,
 						employeeId: e.employeeId,
 						isPrimary: e.isPrimary,
@@ -339,7 +366,7 @@ export async function getLocation(
 						},
 					})),
 					subareaCount: scopedSubareas.length,
-					employeeCount: loc.employees.length,
+					employeeCount: typedLocation.employees.length,
 				};
 
 				span.setStatus({ code: SpanStatusCode.OK });
@@ -878,9 +905,11 @@ export async function updateSubarea(
 					),
 				);
 
+				const typedExisting = existing as unknown as SubareaWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: existing.location.organizationId,
+						organizationId: typedExisting.location.organizationId,
 						queryName: "updateSubareaActor",
 					}),
 				);
@@ -892,12 +921,12 @@ export async function updateSubarea(
 				);
 
 				// Check for duplicate name if name is being changed
-				if (input.name && input.name !== existing.name) {
+				if (input.name && input.name !== typedExisting.name) {
 					const duplicate = yield* _(
 						actor.dbService.query("checkDuplicate", async () => {
 							return await actor.dbService.db.query.locationSubarea.findFirst({
 								where: and(
-									eq(locationSubarea.locationId, existing.locationId),
+									eq(locationSubarea.locationId, typedExisting.locationId),
 									eq(locationSubarea.name, input.name!),
 								),
 							});
@@ -984,9 +1013,11 @@ export async function deleteSubarea(subareaId: string): Promise<ServerActionResu
 					),
 				);
 
+				const typedExisting = existing as unknown as SubareaWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: existing.location.organizationId,
+						organizationId: typedExisting.location.organizationId,
 						queryName: "deleteSubareaActor",
 					}),
 				);

@@ -72,6 +72,25 @@ export type WorkPolicyAssignmentWithDetails = typeof workPolicyAssignment.$infer
 	} | null;
 };
 
+type EffectiveWorkPolicyAssignment = typeof workPolicyAssignment.$inferSelect & {
+	policy:
+		| (Pick<typeof workPolicy.$inferSelect, "name" | "isActive" | "scheduleEnabled"> & {
+				schedule:
+					| (Pick<
+							typeof workPolicySchedule.$inferSelect,
+							"scheduleCycle" | "scheduleType" | "hoursPerCycle" | "homeOfficeDaysPerCycle"
+					  > & {
+							days: Pick<
+								typeof workPolicyScheduleDay.$inferSelect,
+								"dayOfWeek" | "hoursPerDay" | "isWorkDay" | "cycleWeek"
+							>[];
+					  })
+					| null;
+		  })
+		| null;
+	team?: Pick<typeof team.$inferSelect, "name"> | null;
+};
+
 export type WorkPolicyViolationWithDetails = typeof workPolicyViolation.$inferSelect & {
 	employee: {
 		id: string;
@@ -509,7 +528,6 @@ export async function updateWorkPolicy(
 				),
 			);
 		}
-
 		const hasPermission = yield* _(
 			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
 		);
@@ -786,7 +804,6 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 				),
 			);
 		}
-
 		const hasPermission = yield* _(
 			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
 		);
@@ -1550,11 +1567,13 @@ export async function getEmployeeEffectiveScheduleDetails(
 				});
 			}),
 		);
+		const typedEmployeeAssignment =
+			employeeAssignment as unknown as EffectiveWorkPolicyAssignment | null;
 
-		if (employeeAssignment?.policy?.isActive && employeeAssignment.policy.scheduleEnabled) {
-			const schedule = employeeAssignment.policy.schedule;
+		if (typedEmployeeAssignment?.policy?.isActive && typedEmployeeAssignment.policy.scheduleEnabled) {
+			const schedule = typedEmployeeAssignment.policy.schedule;
 			return {
-				policyName: employeeAssignment.policy.name,
+				policyName: typedEmployeeAssignment.policy.name,
 				assignedVia: "Individual",
 				scheduleCycle: schedule?.scheduleCycle,
 				scheduleType: schedule?.scheduleType,
@@ -1607,12 +1626,14 @@ export async function getEmployeeEffectiveScheduleDetails(
 					});
 				}),
 			);
+			const typedTeamAssignment =
+				teamAssignment as unknown as EffectiveWorkPolicyAssignment | null;
 
-			if (teamAssignment?.policy?.isActive && teamAssignment.policy.scheduleEnabled) {
-				const schedule = teamAssignment.policy.schedule;
+			if (typedTeamAssignment?.policy?.isActive && typedTeamAssignment.policy.scheduleEnabled) {
+				const schedule = typedTeamAssignment.policy.schedule;
 				return {
-					policyName: teamAssignment.policy.name,
-					assignedVia: teamAssignment.team?.name ?? "Team",
+					policyName: typedTeamAssignment.policy.name,
+					assignedVia: typedTeamAssignment.team?.name ?? "Team",
 					scheduleCycle: schedule?.scheduleCycle,
 					scheduleType: schedule?.scheduleType,
 					hoursPerCycle: schedule?.hoursPerCycle ?? undefined,
@@ -1662,11 +1683,12 @@ export async function getEmployeeEffectiveScheduleDetails(
 				});
 			}),
 		);
+		const typedOrgAssignment = orgAssignment as unknown as EffectiveWorkPolicyAssignment | null;
 
-		if (orgAssignment?.policy?.isActive && orgAssignment.policy.scheduleEnabled) {
-			const schedule = orgAssignment.policy.schedule;
+		if (typedOrgAssignment?.policy?.isActive && typedOrgAssignment.policy.scheduleEnabled) {
+			const schedule = typedOrgAssignment.policy.schedule;
 			return {
-				policyName: orgAssignment.policy.name,
+				policyName: typedOrgAssignment.policy.name,
 				assignedVia: "Organization Default",
 				scheduleCycle: schedule?.scheduleCycle,
 				scheduleType: schedule?.scheduleType,
@@ -1799,6 +1821,7 @@ export async function duplicateWorkPolicy(
 				),
 			);
 		}
+		const existingPolicyWithDetails = existingPolicy as WorkPolicyWithDetails;
 
 		const hasPermission = yield* _(
 			Effect.promise(() => isOrgAdminCasl(existingPolicy!.organizationId)),
@@ -1864,29 +1887,30 @@ export async function duplicateWorkPolicy(
 		);
 
 		// Duplicate schedule if exists
-		if (existingPolicy!.schedule) {
+		if (existingPolicyWithDetails.schedule) {
+			const scheduleSource = existingPolicyWithDetails.schedule;
 			const [schedule] = yield* _(
 				dbService.query("duplicateSchedule", async () => {
 					return await dbService.db
 						.insert(workPolicySchedule)
 						.values({
 							policyId: newPolicy.id,
-							scheduleCycle: existingPolicy!.schedule!.scheduleCycle,
-							scheduleType: existingPolicy!.schedule!.scheduleType,
-							workingDaysPreset: existingPolicy!.schedule!.workingDaysPreset,
-							hoursPerCycle: existingPolicy!.schedule!.hoursPerCycle,
-							homeOfficeDaysPerCycle: existingPolicy!.schedule!.homeOfficeDaysPerCycle,
+							scheduleCycle: scheduleSource.scheduleCycle,
+							scheduleType: scheduleSource.scheduleType,
+							workingDaysPreset: scheduleSource.workingDaysPreset,
+							hoursPerCycle: scheduleSource.hoursPerCycle,
+							homeOfficeDaysPerCycle: scheduleSource.homeOfficeDaysPerCycle,
 							updatedAt: currentTimestamp(),
 						})
 						.returning();
 				}),
 			);
 
-			if (existingPolicy!.schedule!.days.length > 0) {
+			if (scheduleSource.days.length > 0) {
 				yield* _(
 					dbService.query("duplicateScheduleDays", async () => {
 						await dbService.db.insert(workPolicyScheduleDay).values(
-							existingPolicy!.schedule!.days.map((day) => ({
+							scheduleSource.days.map((day) => ({
 								scheduleId: schedule.id,
 								dayOfWeek: day.dayOfWeek,
 								hoursPerDay: day.hoursPerDay,
@@ -1900,23 +1924,24 @@ export async function duplicateWorkPolicy(
 		}
 
 		// Duplicate regulation if exists
-		if (existingPolicy!.regulation) {
+		if (existingPolicyWithDetails.regulation) {
+			const regulationSource = existingPolicyWithDetails.regulation;
 			const [regulation] = yield* _(
 				dbService.query("duplicateRegulation", async () => {
 					return await dbService.db
 						.insert(workPolicyRegulation)
 						.values({
 							policyId: newPolicy.id,
-							maxDailyMinutes: existingPolicy!.regulation!.maxDailyMinutes,
-							maxWeeklyMinutes: existingPolicy!.regulation!.maxWeeklyMinutes,
-							maxUninterruptedMinutes: existingPolicy!.regulation!.maxUninterruptedMinutes,
+							maxDailyMinutes: regulationSource.maxDailyMinutes,
+							maxWeeklyMinutes: regulationSource.maxWeeklyMinutes,
+							maxUninterruptedMinutes: regulationSource.maxUninterruptedMinutes,
 							updatedAt: currentTimestamp(),
 						})
 						.returning();
 				}),
 			);
 
-			for (const rule of existingPolicy!.regulation!.breakRules) {
+			for (const rule of regulationSource.breakRules) {
 				const [breakRule] = yield* _(
 					dbService.query("duplicateBreakRule", async () => {
 						return await dbService.db
@@ -1951,17 +1976,18 @@ export async function duplicateWorkPolicy(
 		}
 
 		// Duplicate presence if exists
-		if (existingPolicy!.presence) {
+		if (existingPolicyWithDetails.presence) {
+			const presenceSource = existingPolicyWithDetails.presence;
 			yield* _(
 				dbService.query("duplicatePresence", async () => {
 					await dbService.db.insert(workPolicyPresence).values({
 						policyId: newPolicy.id,
-						presenceMode: existingPolicy!.presence!.presenceMode,
-						requiredOnsiteDays: existingPolicy!.presence!.requiredOnsiteDays,
-						requiredOnsiteFixedDays: existingPolicy!.presence!.requiredOnsiteFixedDays,
-						locationId: existingPolicy!.presence!.locationId,
-						evaluationPeriod: existingPolicy!.presence!.evaluationPeriod,
-						enforcement: existingPolicy!.presence!.enforcement,
+						presenceMode: presenceSource.presenceMode,
+						requiredOnsiteDays: presenceSource.requiredOnsiteDays,
+						requiredOnsiteFixedDays: presenceSource.requiredOnsiteFixedDays,
+						locationId: presenceSource.locationId,
+						evaluationPeriod: presenceSource.evaluationPeriod,
+						enforcement: presenceSource.enforcement,
 						updatedAt: currentTimestamp(),
 					});
 				}),

@@ -6,6 +6,11 @@ interface AcceptInvitationPageProps {
 	params: Promise<{ invitationId: string }>;
 }
 
+type InvitationWithRelations = typeof invitationTable.$inferSelect & {
+	organization: { name: string } | null;
+	user: { name: string | null } | null;
+};
+
 export default async function AcceptInvitationPage({ params }: AcceptInvitationPageProps) {
 	const { invitationId } = await params;
 
@@ -24,18 +29,19 @@ export default async function AcceptInvitationPage({ params }: AcceptInvitationP
 			},
 		},
 	});
+	const typedInvitation = invitation as unknown as InvitationWithRelations | undefined;
 
 	return (
 		<AcceptInvitationForm
 			invitation={
-				invitation
+				typedInvitation
 					? {
-						email: invitation.email,
-						inviterName: invitation.user?.name ?? null,
-						isExpired: invitation.expiresAt < new Date(),
-						organizationName: invitation.organization?.name ?? null,
-						role: invitation.role ?? null,
-						status: invitation.status,
+						email: typedInvitation.email,
+						inviterName: typedInvitation.user?.name ?? null,
+						isExpired: typedInvitation.expiresAt < new Date(),
+						organizationName: typedInvitation.organization?.name ?? null,
+						role: typedInvitation.role ?? null,
+						status: typedInvitation.status,
 					}
 					: null
 			}

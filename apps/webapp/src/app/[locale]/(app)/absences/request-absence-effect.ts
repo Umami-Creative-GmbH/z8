@@ -40,6 +40,12 @@ export interface RequestAbsenceEmployeeContext {
 	teamId?: string | null;
 }
 
+type EmployeeWithUserContact = {
+	user: { name: string; email: string };
+	userId: string;
+	organizationId: string;
+};
+
 function validateRequestDates(data: AbsenceRequest) {
 	if (data.startDate > data.endDate) {
 		return Effect.fail(
@@ -155,7 +161,7 @@ function getRequestingEmployee(
 		.pipe(
 			Effect.flatMap((employeeRecord) =>
 				employeeRecord
-					? Effect.succeed(employeeRecord)
+					? Effect.succeed(employeeRecord as RequestAbsenceEmployeeContext)
 					: Effect.fail(
 							new NotFoundError({
 								message: "Employee profile not found",
@@ -303,7 +309,7 @@ function getManagerAndEmployeeDetails(
 			.pipe(
 				Effect.flatMap((manager) =>
 					manager
-						? Effect.succeed(manager)
+						? Effect.succeed(manager as EmployeeWithUserContact)
 						: Effect.fail(
 								new NotFoundError({
 									message: "Manager not found",
@@ -323,7 +329,7 @@ function getManagerAndEmployeeDetails(
 			.pipe(
 				Effect.flatMap((employeeRecord) =>
 					employeeRecord
-						? Effect.succeed(employeeRecord)
+						? Effect.succeed(employeeRecord as EmployeeWithUserContact)
 						: Effect.fail(
 								new NotFoundError({
 									message: "Employee not found",

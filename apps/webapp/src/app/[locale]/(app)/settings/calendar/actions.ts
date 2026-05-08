@@ -70,6 +70,10 @@ export interface CalendarConnectionSummary {
 	createdAt: Date;
 }
 
+type CalendarConnectionWithEmployee = typeof calendarConnection.$inferSelect & {
+	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName"> | null;
+};
+
 export interface ManagerCalendarReadView {
 	relevantConnections: CalendarConnectionSummary[];
 }
@@ -357,7 +361,9 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 			}),
 		);
 
-		return connections
+		const typedConnections = connections as unknown as CalendarConnectionWithEmployee[];
+
+		return typedConnections
 			.filter((connection) => scopedEmployeeIds === null || scopedEmployeeIds.has(connection.employeeId))
 			.map((connection) => ({
 				id: connection.id,

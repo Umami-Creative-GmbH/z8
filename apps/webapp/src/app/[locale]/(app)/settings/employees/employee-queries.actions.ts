@@ -1,9 +1,9 @@
 "use server";
 
-import { and, asc, count, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
-import { employee, employeeManagers, team } from "@/db/schema";
+import { employee, employeeManagers, team, workPolicyAssignment } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -99,14 +99,16 @@ function mapEmployeeRow(row: {
 	};
 }
 
-function mapSelectableEmployeeRow(row: {
+type SelectableEmployeeRow = {
 	employee: Pick<
 		typeof employee.$inferSelect,
 		"id" | "userId" | "firstName" | "lastName" | "position" | "role" | "isActive" | "teamId"
 	>;
 	user: Pick<typeof user.$inferSelect, "id" | "name" | "email" | "image">;
 	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
-}): SelectableEmployee {
+};
+
+function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmployee {
 	return {
 		...row.employee,
 		user: row.user,
@@ -224,8 +226,9 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 		);
 
 		const total = totalResult[0]?.total ?? 0;
+		const typedRows = rows as unknown as SelectableEmployeeRow[];
 		return {
-			employees: rows.map(mapSelectableEmployeeRow),
+			employees: typedRows.map(mapSelectableEmployeeRow),
 			total,
 			hasMore: offset + rows.length < total,
 		};
@@ -300,7 +303,7 @@ export async function getEmployeeAction(
 									},
 								},
 							},
-							orderBy: (assignment, { desc }) => [desc(assignment.effectiveFrom)],
+							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
 							limit: 1,
 						},
 					},
@@ -399,7 +402,8 @@ export async function getEmployeesByIdsAction(
 			}),
 		);
 
-		return rows.map(mapSelectableEmployeeRow);
+		const typedRows = rows as unknown as SelectableEmployeeRow[];
+		return typedRows.map(mapSelectableEmployeeRow);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

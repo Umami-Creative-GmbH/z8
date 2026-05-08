@@ -23,6 +23,11 @@ interface LocationSettingsActorContext {
 	manageableSubareaIds: Set<string> | null;
 }
 
+type TeamEmployeeAssignmentRow = {
+	subareaAssignments: Array<{ subareaId: string }>;
+	locationAssignments: Array<{ locationId: string }>;
+};
+
 export function getLocationSettingsActorContext(options?: { organizationId?: string; queryName?: string }) {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -143,10 +148,11 @@ export function getLocationSettingsActorContext(options?: { organizationId?: str
 						}),
 				  );
 
-		const teamManagedSubareaIds = teamEmployees.flatMap((teamEmployee) =>
+		const typedTeamEmployees = teamEmployees as TeamEmployeeAssignmentRow[];
+		const teamManagedSubareaIds = typedTeamEmployees.flatMap((teamEmployee) =>
 			teamEmployee.subareaAssignments.map((assignment) => assignment.subareaId),
 		);
-		const teamManagedLocationIds = teamEmployees.flatMap((teamEmployee) =>
+		const teamManagedLocationIds = typedTeamEmployees.flatMap((teamEmployee) =>
 			(teamEmployee.locationAssignments ?? []).map((assignment) => assignment.locationId),
 		);
 

@@ -72,6 +72,27 @@ export interface ProjectWithDetails {
 	totalHoursBooked: number;
 }
 
+type ProjectWithCustomer = typeof project.$inferSelect & {
+	customer: Pick<typeof customer.$inferSelect, "id" | "name"> | null;
+};
+
+type ProjectManagerWithEmployee = typeof projectManager.$inferSelect & {
+	employee:
+		| (Pick<typeof employee.$inferSelect, "id"> & {
+				user: { name: string | null } | null;
+		  })
+		| null;
+};
+
+type ProjectAssignmentWithRelations = typeof projectAssignment.$inferSelect & {
+	team: Pick<typeof team.$inferSelect, "name"> | null;
+	employee:
+		| (Pick<typeof employee.$inferSelect, "id"> & {
+				user: { name: string | null } | null;
+		  })
+		| null;
+};
+
 export interface CreateProjectInput {
 	organizationId: string;
 	name: string;
@@ -132,7 +153,8 @@ export async function getProjects(
 				);
 
 				// Fetch managers for all projects
-				const scopedProjects = filterItemsToManagedProjects(projects, managedProjectIds);
+				const typedProjects = projects as unknown as ProjectWithCustomer[];
+				const scopedProjects = filterItemsToManagedProjects(typedProjects, managedProjectIds);
 				const projectIds = scopedProjects.map((p) => p.id);
 				const managers = yield* _(
 					dbService.query("getProjectManagers", async () => {
@@ -186,6 +208,9 @@ export async function getProjects(
 					}),
 				);
 
+				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
+				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
+
 				const hoursMap = new Map(
 					hoursBooked.map((h) => [h.projectId, Math.round((h.totalMinutes / 60) * 100) / 100]),
 				);
@@ -208,14 +233,14 @@ export async function getProjects(
 					createdBy: p.createdBy,
 					updatedAt: p.updatedAt,
 					updatedBy: p.updatedBy,
-					managers: managers
+					managers: typedManagers
 						.filter((m) => m.projectId === p.id)
 						.map((m) => ({
 							id: m.id,
 							employeeId: m.employeeId,
 							employeeName: m.employee?.user?.name || "Unknown",
 						})),
-					assignments: assignments
+					assignments: typedAssignments
 						.filter((a) => a.projectId === p.id)
 						.map((a) => ({
 							id: a.id,

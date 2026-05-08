@@ -79,6 +79,13 @@ const approvalDbService = {
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 } satisfies ApprovalDbService;
 
+type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
+	project: Pick<
+		typeof project.$inferSelect,
+		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+	> | null;
+};
+
 async function createPolicyAwareTimeEntryApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
@@ -921,11 +928,12 @@ export async function getActiveWorkPeriod(
 	});
 
 	if (!period) return null;
+	const typedPeriod = period as unknown as WorkPeriodWithEntries;
 
 	return {
-		...period,
-		clockIn: period.clockIn,
-		clockOut: period.clockOut || undefined,
+		...typedPeriod,
+		clockIn: typedPeriod.clockIn,
+		clockOut: typedPeriod.clockOut || undefined,
 	};
 }
 
@@ -950,7 +958,8 @@ export async function getWorkPeriods(
 		orderBy: [desc(workPeriod.startTime)],
 	});
 
-	return periods.map((p) => ({
+	const typedPeriods = periods as unknown as WorkPeriodWithEntries[];
+	return typedPeriods.map((p) => ({
 		...p,
 		clockIn: p.clockIn,
 		clockOut: p.clockOut || undefined,
@@ -2173,7 +2182,12 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 			}
 		>();
 
-		for (const assignment of [...directAssignments, ...teamAssignments]) {
+		const typedAssignments = [
+			...directAssignments,
+			...teamAssignments,
+		] as unknown as ProjectAssignmentWithProject[];
+
+		for (const assignment of typedAssignments) {
 			const proj = assignment.project;
 			if (proj && bookableStatuses.includes(proj.status) && !bookableProjects.has(proj.id)) {
 				bookableProjects.set(proj.id, {
