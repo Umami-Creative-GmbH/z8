@@ -3,9 +3,16 @@
 import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
+import type { db } from "@/db";
 import {
+	absenceCategory,
+	absenceEntry,
+	approvalPolicyCondition,
 	employee,
 	employeeVacationAllowance,
+	payrollExportConfig,
+	payrollWageTypeMapping,
+	timeRecordAbsence,
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
@@ -24,10 +31,100 @@ import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
-	requireSettingsActorEmployeeRecord,
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,
+	requireSettingsActorEmployeeRecord,
 } from "../employees/employee-action-utils";
+
+export type AbsenceCategoryType =
+	| "home_office"
+	| "sick"
+	| "vacation"
+	| "personal"
+	| "unpaid"
+	| "parental"
+	| "bereavement"
+	| "custom";
+
+type AbsenceCategoryWriteData = {
+	type: AbsenceCategoryType;
+	name: string;
+	description?: string | null;
+	requiresWorkTime: boolean;
+	requiresApproval: boolean;
+	countsAgainstVacation: boolean;
+	color?: string | null;
+	isActive?: boolean;
+};
+
+function normalizeOptionalText(value: string | null | undefined) {
+	const trimmed = value?.trim();
+	return trimmed ? trimmed : null;
+}
+
+function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
+	const name = data.name.trim();
+	return {
+		...data,
+		name,
+		description: normalizeOptionalText(data.description),
+		color: normalizeOptionalText(data.color),
+	};
+}
+
+function rejectBlankAbsenceCategoryName() {
+	return Effect.fail(
+		new ConflictError({
+			message: "Absence category name cannot be blank",
+			conflictType: "invalid_absence_category_name",
+		}),
+	);
+}
+
+type AbsenceCategoryReferenceQueryable =
+	| typeof db
+	| Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function hasAbsenceCategoryAbsenceReferences(
+	dbClient: AbsenceCategoryReferenceQueryable,
+	categoryId: string,
+	organizationId: string,
+) {
+	const [referencedAbsence] = await dbClient
+		.select({ id: absenceEntry.id })
+		.from(absenceEntry)
+		.where(eq(absenceEntry.categoryId, categoryId))
+		.limit(1);
+
+	if (referencedAbsence) {
+		return true;
+	}
+
+	const [referencedCanonicalAbsence] = await dbClient
+		.select({ recordId: timeRecordAbsence.recordId })
+		.from(timeRecordAbsence)
+		.where(
+			and(
+				eq(timeRecordAbsence.absenceCategoryId, categoryId),
+				eq(timeRecordAbsence.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+
+	return Boolean(referencedCanonicalAbsence);
+}
+
+function hasOperationalAbsenceCategoryChanges(
+	category: typeof absenceCategory.$inferSelect,
+	normalized: AbsenceCategoryWriteData,
+) {
+	return (
+		category.type !== normalized.type ||
+		category.requiresWorkTime !== normalized.requiresWorkTime ||
+		category.requiresApproval !== normalized.requiresApproval ||
+		category.countsAgainstVacation !== normalized.countsAgainstVacation
+	);
+}
 
 /**
  * Get a vacation policy by ID using Effect pattern
@@ -36,7 +133,9 @@ export async function getVacationPolicy(
 	policyId: string,
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getVacationPolicy:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "getVacationPolicy:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		const policy = yield* _(
@@ -81,7 +180,10 @@ export async function getCompanyDefaultVacationPolicy(
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect | null>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getCompanyDefaultVacationPolicy:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getCompanyDefaultVacationPolicy:actor",
+			}),
 		);
 
 		if (actor.organizationId !== organizationId) {
@@ -99,7 +201,6 @@ export async function getCompanyDefaultVacationPolicy(
 
 		// Step 3: Get current company default policy
 		const dbService = yield* _(DatabaseService);
-		const today = new Date().toISOString().split("T")[0];
 
 		const policy = yield* _(
 			dbService.query("getCompanyDefaultPolicy", async () => {
@@ -142,7 +243,10 @@ export async function createVacationPolicy(data: {
 }): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId: data.organizationId, queryName: "createVacationPolicy:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId: data.organizationId,
+				queryName: "createVacationPolicy:actor",
+			}),
 		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -246,7 +350,9 @@ export async function updateVacationPolicy(
 	},
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateVacationPolicy:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateVacationPolicy:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get the policy to check permissions
@@ -346,7 +452,10 @@ export async function getEmployeesWithAllowances(
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getEmployeesWithAllowances:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getEmployeesWithAllowances:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
@@ -383,7 +492,9 @@ export async function getEmployeeAllowance(
 	year: number,
 ): Promise<ServerActionResult<any | null>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getEmployeeAllowance:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "getEmployeeAllowance:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get employee
@@ -442,10 +553,14 @@ export async function updateEmployeeAllowance(
 	},
 ): Promise<ServerActionResult<typeof employeeVacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateEmployeeAllowance:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateEmployeeAllowance:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
-		const emp = yield* _(getTargetEmployee(employeeId, "updateEmployeeAllowance:getTargetEmployee"));
+		const emp = yield* _(
+			getTargetEmployee(employeeId, "updateEmployeeAllowance:getTargetEmployee"),
+		);
 		yield* _(
 			ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
 				message: "Insufficient permissions",
@@ -638,6 +753,469 @@ export async function getVacationPolicies(
 	return runServerActionSafe(effect);
 }
 
+export async function getAbsenceCategoriesForSettings(
+	organizationId: string,
+): Promise<ServerActionResult<(typeof absenceCategory.$inferSelect)[]>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				queryName: "getAbsenceCategoriesForSettings:actor",
+			}),
+		);
+
+		if (actor.organizationId !== organizationId) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "absence_category",
+						action: "read",
+					}),
+				),
+			);
+		}
+
+		const dbService = yield* _(DatabaseService);
+		return yield* _(
+			dbService.query("getAbsenceCategoriesForSettings", async () => {
+				return await dbService.db.query.absenceCategory.findMany({
+					where: eq(absenceCategory.organizationId, organizationId),
+					orderBy: (table, { desc: descOrder, asc }) => [
+						descOrder(table.isActive),
+						asc(table.name),
+						asc(table.createdAt),
+					],
+				});
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to fetch absence categories",
+						operation: "select",
+						table: "absence_category",
+						cause: error,
+					}),
+			),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function createAbsenceCategory(
+	data: AbsenceCategoryWriteData & { organizationId: string },
+): Promise<ServerActionResult<typeof absenceCategory.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				queryName: "createAbsenceCategory:actor",
+			}),
+		);
+
+		if (actor.organizationId !== data.organizationId) {
+			yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Insufficient permissions",
+						userId: actor.session.user.id,
+						resource: "absence_category",
+						action: "create",
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "absence_category",
+				action: "create",
+			}),
+		);
+
+		const normalized = normalizeAbsenceCategoryData(data);
+		if (!normalized.name) {
+			yield* _(rejectBlankAbsenceCategoryName());
+		}
+
+		const dbService = yield* _(DatabaseService);
+		const [created] = yield* _(
+			dbService.query("createAbsenceCategory", async () => {
+				return await dbService.db
+					.insert(absenceCategory)
+					.values({
+						organizationId: data.organizationId,
+						type: normalized.type,
+						name: normalized.name,
+						description: normalized.description,
+						requiresWorkTime: normalized.requiresWorkTime,
+						requiresApproval: normalized.requiresApproval,
+						countsAgainstVacation: normalized.countsAgainstVacation,
+						color: normalized.color,
+						isActive: data.isActive ?? true,
+					})
+					.returning();
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to create absence category",
+						operation: "insert",
+						table: "absence_category",
+						cause: error,
+					}),
+			),
+		);
+
+		return created;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function updateAbsenceCategory(
+	categoryId: string,
+	data: AbsenceCategoryWriteData & { isActive: boolean },
+): Promise<ServerActionResult<typeof absenceCategory.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateAbsenceCategory:actor" }),
+		);
+		const dbService = yield* _(DatabaseService);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "absence_category",
+				action: "update",
+			}),
+		);
+
+		const normalized = normalizeAbsenceCategoryData(data);
+		if (!normalized.name) {
+			yield* _(rejectBlankAbsenceCategoryName());
+		}
+
+		const updateResult = yield* _(
+			dbService.query("updateAbsenceCategory", async () => {
+				return await dbService.db.transaction(async (tx) => {
+					const [category] = await tx
+						.select()
+						.from(absenceCategory)
+						.where(
+							and(
+								eq(absenceCategory.id, categoryId),
+								eq(absenceCategory.organizationId, actor.organizationId),
+							),
+						)
+						.for("update");
+
+					if (!category) {
+						return { type: "not_found" as const };
+					}
+
+					const hasAbsenceReferences = await hasAbsenceCategoryAbsenceReferences(
+						tx,
+						category.id,
+						actor.organizationId,
+					);
+
+					if (hasAbsenceReferences && hasOperationalAbsenceCategoryChanges(category, normalized)) {
+						return { type: "conflict" as const };
+					}
+
+					const [updated] = await tx
+						.update(absenceCategory)
+						.set({
+							type: normalized.type,
+							name: normalized.name,
+							description: normalized.description,
+							requiresWorkTime: normalized.requiresWorkTime,
+							requiresApproval: normalized.requiresApproval,
+							countsAgainstVacation: normalized.countsAgainstVacation,
+							color: normalized.color,
+							isActive: data.isActive,
+						})
+						.where(
+							and(
+								eq(absenceCategory.id, categoryId),
+								eq(absenceCategory.organizationId, actor.organizationId),
+							),
+						)
+						.returning();
+
+					if (!updated) {
+						return { type: "not_found" as const };
+					}
+
+					return { type: "updated" as const, category: updated };
+				});
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to update absence category",
+						operation: "update",
+						table: "absence_category",
+						cause: error,
+					}),
+			),
+		);
+
+		if (updateResult.type === "not_found") {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Absence category not found",
+						entityType: "absence_category",
+						entityId: categoryId,
+					}),
+				),
+			);
+		}
+
+		if (updateResult.type === "conflict") {
+			return yield* _(
+				Effect.fail(
+					new ConflictError({
+						message:
+							"This category is used by existing absences. Create a new category for different rules, or deactivate this one.",
+						conflictType: "absence_category_in_use",
+						details: { categoryId },
+					}),
+				),
+			);
+		}
+
+		return updateResult.category;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function setAbsenceCategoryActive(
+	categoryId: string,
+	isActive: boolean,
+): Promise<ServerActionResult<typeof absenceCategory.$inferSelect>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "setAbsenceCategoryActive:actor" }),
+		);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "absence_category",
+				action: "update",
+			}),
+		);
+
+		const dbService = yield* _(DatabaseService);
+		const category = yield* _(
+			dbService.query("getAbsenceCategory", async () => {
+				return await dbService.db.query.absenceCategory.findFirst({
+					where: and(
+						eq(absenceCategory.id, categoryId),
+						eq(absenceCategory.organizationId, actor.organizationId),
+					),
+				});
+			}),
+		);
+		if (!category) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Absence category not found",
+						entityType: "absence_category",
+						entityId: categoryId,
+					}),
+				),
+			);
+		}
+
+		const [updated] = yield* _(
+			dbService.query("setAbsenceCategoryActive", async () => {
+				return await dbService.db
+					.update(absenceCategory)
+					.set({ isActive })
+					.where(
+						and(
+							eq(absenceCategory.id, categoryId),
+							eq(absenceCategory.organizationId, actor.organizationId),
+						),
+					)
+					.returning();
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to update absence category status",
+						operation: "update",
+						table: "absence_category",
+						cause: error,
+					}),
+			),
+		);
+
+		if (!updated) {
+			return yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Absence category not found",
+						entityType: "absence_category",
+						entityId: categoryId,
+					}),
+				),
+			);
+		}
+
+		return updated;
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function deleteAbsenceCategory(
+	categoryId: string,
+): Promise<ServerActionResult<{ id: string }>> {
+	const effect = Effect.gen(function* (_) {
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteAbsenceCategory:actor" }),
+		);
+		const dbService = yield* _(DatabaseService);
+		yield* _(
+			requireOrgAdminEmployeeSettingsAccess(actor, {
+				message: "Insufficient permissions",
+				resource: "absence_category",
+				action: "delete",
+			}),
+		);
+
+		const deleteResult = yield* _(
+			dbService.query("deleteAbsenceCategory", async () => {
+				return await dbService.db.transaction(async (tx) => {
+					const [category] = await tx
+						.select({ id: absenceCategory.id })
+						.from(absenceCategory)
+						.where(
+							and(
+								eq(absenceCategory.id, categoryId),
+								eq(absenceCategory.organizationId, actor.organizationId),
+							),
+						)
+						.for("update");
+
+					if (!category) {
+						return { type: "not_found" as const };
+					}
+
+					const hasAbsenceReferences = await hasAbsenceCategoryAbsenceReferences(
+						tx,
+						category.id,
+						actor.organizationId,
+					);
+
+					if (hasAbsenceReferences) {
+						return {
+							type: "conflict" as const,
+							message: "Deactivate this category instead because it is used by existing absences.",
+						};
+					}
+
+					const [referencedApprovalPolicyCondition] = await tx
+						.select({ id: approvalPolicyCondition.id })
+						.from(approvalPolicyCondition)
+						.where(
+							and(
+								eq(approvalPolicyCondition.absenceCategoryId, category.id),
+								eq(approvalPolicyCondition.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+
+					if (referencedApprovalPolicyCondition) {
+						return {
+							type: "conflict" as const,
+							message:
+								"Deactivate this category or remove dependent approval policies before deleting it.",
+						};
+					}
+
+					const [referencedPayrollWageTypeMapping] = await tx
+						.select({ id: payrollWageTypeMapping.id })
+						.from(payrollWageTypeMapping)
+						.innerJoin(
+							payrollExportConfig,
+							eq(payrollWageTypeMapping.configId, payrollExportConfig.id),
+						)
+						.where(
+							and(
+								eq(payrollWageTypeMapping.absenceCategoryId, category.id),
+								eq(payrollExportConfig.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+
+					if (referencedPayrollWageTypeMapping) {
+						return {
+							type: "conflict" as const,
+							message:
+								"Deactivate this category or remove dependent payroll wage type mappings before deleting it.",
+						};
+					}
+
+					await tx
+						.delete(absenceCategory)
+						.where(
+							and(
+								eq(absenceCategory.id, categoryId),
+								eq(absenceCategory.organizationId, actor.organizationId),
+							),
+						);
+
+					return { type: "deleted" as const };
+				});
+			}),
+			Effect.mapError(
+				(error) =>
+					new DatabaseError({
+						message: "Failed to delete absence category",
+						operation: "delete",
+						table: "absence_category",
+						cause: error,
+					}),
+			),
+		);
+
+		if (deleteResult.type === "not_found") {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Absence category not found",
+						entityType: "absence_category",
+						entityId: categoryId,
+					}),
+				),
+			);
+		}
+
+		if (deleteResult.type === "conflict") {
+			yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: deleteResult.message,
+						conflictType: "absence_category_in_use",
+						details: { categoryId },
+					}),
+				),
+			);
+		}
+
+		return { id: categoryId };
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
 /**
  * @deprecated No longer needed - policies are now date-based, not year-based
  * Get available years for vacation policies in an organization
@@ -654,7 +1232,9 @@ export async function getVacationPolicyYears(
  */
 export async function deleteVacationPolicy(policyId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteVacationPolicy:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteVacationPolicy:actor" }),
+		);
 		const dbService = yield* _(DatabaseService);
 
 		// Step 3: Get the policy to check permissions

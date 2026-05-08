@@ -1,4 +1,14 @@
-import { boolean, date, foreignKey, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	date,
+	foreignKey,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
@@ -83,6 +93,7 @@ export const absenceEntry = pgTable(
 			table.organizationId,
 			table.canonicalRecordId,
 		),
+		index("absenceEntry_categoryId_idx").on(table.categoryId),
 		foreignKey({
 			columns: [table.canonicalRecordId, table.organizationId],
 			foreignColumns: [timeRecord.id, timeRecord.organizationId],
