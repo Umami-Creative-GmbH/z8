@@ -36,6 +36,20 @@ import {
 	requireLocationOrgAdminAccess,
 } from "./location-settings-actor";
 
+type LocationAssignmentWithLocation = typeof locationEmployee.$inferSelect & {
+	location: Pick<typeof location.$inferSelect, "organizationId">;
+};
+
+type SubareaWithLocation = typeof locationSubarea.$inferSelect & {
+	location: Pick<typeof location.$inferSelect, "organizationId">;
+};
+
+type SubareaAssignmentWithLocation = typeof subareaEmployee.$inferSelect & {
+	subarea: Pick<typeof locationSubarea.$inferSelect, "locationId"> & {
+		location: Pick<typeof location.$inferSelect, "organizationId">;
+	};
+};
+
 // ============================================
 // LOCATION EMPLOYEE ASSIGNMENTS
 // ============================================
@@ -235,9 +249,11 @@ export async function updateLocationEmployee(
 					),
 				);
 
+				const typedAssignment = assignment as unknown as LocationAssignmentWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: assignment.location.organizationId,
+						organizationId: typedAssignment.location.organizationId,
 						queryName: "updateLocationEmployeeActor",
 					}),
 				);
@@ -258,7 +274,7 @@ export async function updateLocationEmployee(
 					}),
 				);
 
-				revalidatePath(`/settings/locations/${assignment.locationId}`);
+				revalidatePath(`/settings/locations/${typedAssignment.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.catchAll((error) =>
@@ -314,9 +330,11 @@ export async function removeLocationEmployee(
 					),
 				);
 
+				const typedAssignment = assignment as unknown as LocationAssignmentWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: assignment.location.organizationId,
+						organizationId: typedAssignment.location.organizationId,
 						queryName: "removeLocationEmployeeActor",
 					}),
 				);
@@ -334,7 +352,7 @@ export async function removeLocationEmployee(
 					}),
 				);
 
-				revalidatePath(`/settings/locations/${assignment.locationId}`);
+				revalidatePath(`/settings/locations/${typedAssignment.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.catchAll((error) =>
@@ -407,9 +425,11 @@ export async function assignSubareaEmployee(
 					),
 				);
 
+				const typedSubarea = subarea as unknown as SubareaWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: subarea.location.organizationId,
+						organizationId: typedSubarea.location.organizationId,
 						queryName: "assignSubareaEmployeeActor",
 					}),
 				);
@@ -426,7 +446,7 @@ export async function assignSubareaEmployee(
 						return await dbService.db.query.employee.findFirst({
 							where: and(
 								eq(employee.id, input.employeeId),
-								eq(employee.organizationId, subarea.location.organizationId),
+								eq(employee.organizationId, typedSubarea.location.organizationId),
 								eq(employee.isActive, true),
 							),
 						});
@@ -558,9 +578,11 @@ export async function updateSubareaEmployee(
 					),
 				);
 
+				const typedAssignment = assignment as unknown as SubareaAssignmentWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: assignment.subarea.location.organizationId,
+						organizationId: typedAssignment.subarea.location.organizationId,
 						queryName: "updateSubareaEmployeeActor",
 					}),
 				);
@@ -581,7 +603,7 @@ export async function updateSubareaEmployee(
 					}),
 				);
 
-				revalidatePath(`/settings/locations/${assignment.subarea.locationId}`);
+				revalidatePath(`/settings/locations/${typedAssignment.subarea.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.catchAll((error) =>
@@ -641,9 +663,11 @@ export async function removeSubareaEmployee(
 					),
 				);
 
+				const typedAssignment = assignment as unknown as SubareaAssignmentWithLocation;
+
 				const actor = yield* _(
 					getLocationSettingsActorContext({
-						organizationId: assignment.subarea.location.organizationId,
+						organizationId: typedAssignment.subarea.location.organizationId,
 						queryName: "removeSubareaEmployeeActor",
 					}),
 				);
@@ -661,7 +685,7 @@ export async function removeSubareaEmployee(
 					}),
 				);
 
-				revalidatePath(`/settings/locations/${assignment.subarea.locationId}`);
+				revalidatePath(`/settings/locations/${typedAssignment.subarea.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
 				Effect.catchAll((error) =>
