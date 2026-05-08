@@ -37,7 +37,9 @@ CREATE INDEX IF NOT EXISTS "teamMembership_employeeId_idx" ON "team_membership" 
 CREATE UNIQUE INDEX IF NOT EXISTS "teamMembership_team_employee_idx" ON "team_membership" ("team_id", "employee_id");
 
 INSERT INTO "team_membership" ("organization_id", "team_id", "employee_id", "created_by")
-SELECT "organization_id", "team_id", "id", NULL
+SELECT "employee"."organization_id", "employee"."team_id", "employee"."id", NULL
 FROM "employee"
+JOIN "team" ON "team"."id" = "employee"."team_id"
+	AND "team"."organization_id" = "employee"."organization_id"
 WHERE "team_id" IS NOT NULL
 ON CONFLICT ("team_id", "employee_id") DO NOTHING;

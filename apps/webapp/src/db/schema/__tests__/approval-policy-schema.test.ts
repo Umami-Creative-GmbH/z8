@@ -257,4 +257,13 @@ describe("approval policy schema exports", () => {
 
 		expect(migration).toContain('ON DELETE SET NULL ("primary_manager_id")');
 	});
+
+	it("guards team membership backfill by organization", () => {
+		const migration = readFileSync("drizzle/0013_team_membership_primary_manager.sql", "utf8");
+
+		expect(migration).toContain('JOIN "team" ON "team"."id" = "employee"."team_id"');
+		expect(migration).toContain(
+			'AND "team"."organization_id" = "employee"."organization_id"',
+		);
+	});
 });
