@@ -17,6 +17,7 @@ const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
+	getEligibleApprovalScopesForManager: vi.fn(async () => []),
 	getApprovals: vi.fn(),
 	logger: {
 		error: vi.fn(),
@@ -37,6 +38,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	getEligibleApprovalScopesForManager: mockState.getEligibleApprovalScopesForManager,
 }));
 
 vi.mock("@/db", () => ({
@@ -96,12 +101,13 @@ describe("GET /api/approvals/inbox", () => {
 			session: { activeOrganizationId: "org-1" },
 		});
 		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => false),
+			cannot: vi.fn((action) => action === "manage"),
 		});
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
 		});
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
 		mockState.getApprovals.mockReturnValue(
 			Effect.succeed({
 				items: [],
@@ -121,15 +127,27 @@ describe("GET /api/approvals/inbox", () => {
 		expect(mockState.getApprovals).not.toHaveBeenCalled();
 	});
 
-	it("rejects forbidden requests before delegating", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => true),
-		});
+	it("rejects requests when ability cannot be resolved before delegating", async () => {
+		mockState.getAbility.mockResolvedValue(null);
 
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
 		expect(response.status).toBe(403);
 		expect(mockState.findEmployee).not.toHaveBeenCalled();
+		expect(mockState.getApprovals).not.toHaveBeenCalled();
+	});
+
+	it("rejects users without approval permission even when they have eligible requesters", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn(() => true),
+		});
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([
+			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
+		]);
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(403);
 		expect(mockState.getApprovals).not.toHaveBeenCalled();
 	});
 
@@ -145,6 +163,7 @@ describe("GET /api/approvals/inbox", () => {
 		expect(eq).toHaveBeenCalledWith("isActive", true);
 		expect(mockState.getApprovals).toHaveBeenCalledWith({
 			approverId: "employee-1",
+			includeAllApprovers: undefined,
 			organizationId: "org-1",
 			status: "pending",
 			types: ["travel_expense_claim", "absence_entry"],
@@ -155,6 +174,20 @@ describe("GET /api/approvals/inbox", () => {
 			dateRange: undefined,
 			cursor: undefined,
 			limit: 15,
+			eligibleApprovalScopes: [],
 		});
+	});
+
+	it("sets includeAllApprovers for manage-Approval users so admins see org-wide approvals", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action !== "manage"),
+		});
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(200);
+		expect(mockState.getApprovals).toHaveBeenCalledWith(
+			expect.objectContaining({ includeAllApprovers: true }),
+		);
 	});
 });

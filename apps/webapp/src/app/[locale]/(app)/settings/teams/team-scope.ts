@@ -76,7 +76,9 @@ export function buildTeamSettingsSurface(input: {
 	};
 }
 
-export function filterMembersForTeamSettingsSurface<T extends { employee: { teamId: string | null } | null }>(
+export function filterMembersForTeamSettingsSurface<
+	T extends { employee: { id: string; teamId: string | null } | null; teamMemberships?: Array<{ teamId: string }> },
+>(
 	input: {
 		members: T[];
 		manageableTeamIds: Set<string>;
@@ -88,7 +90,9 @@ export function filterMembersForTeamSettingsSurface<T extends { employee: { team
 	}
 
 	return input.members.filter(
-		(entry) => entry.employee?.teamId && input.manageableTeamIds.has(entry.employee.teamId),
+		(entry) =>
+			entry.teamMemberships?.some((membership) => input.manageableTeamIds.has(membership.teamId)) ||
+			(entry.employee?.teamId && input.manageableTeamIds.has(entry.employee.teamId)),
 	);
 }
 

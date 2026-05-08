@@ -142,6 +142,13 @@ export interface ApprovalQueryParams {
 	/** Filter by requester employee IDs before pagination */
 	requesterEmployeeIds?: string[];
 
+
+	/** Manager-routed requester/approver pairs this manager can see through current eligibility. */
+	eligibleApprovalScopes?: Array<{
+		requesterEmployeeId: string;
+		eligibleApproverIds: string[];
+	}>;
+
 	/** Filter by date range (request creation date) */
 	dateRange?: {
 		from: Date;
@@ -231,7 +238,11 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	 * Get count of pending approvals (for badges).
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	getCount: (approverId: string, organizationId: string) => Effect.Effect<number, AnyAppError, any>;
+	getCount: (
+		approverId: string,
+		organizationId: string,
+		visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
+	) => Effect.Effect<number, AnyAppError, any>;
 
 	/**
 	 * Get full details for the slide-over panel.

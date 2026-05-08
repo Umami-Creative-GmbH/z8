@@ -65,6 +65,7 @@ import {
 	locationSubarea,
 	subareaEmployee,
 	team,
+	teamMembership,
 	teamPermissions,
 } from "./organization";
 import {
@@ -279,7 +280,13 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 		fields: [team.organizationId],
 		references: [organization.id],
 	}),
+	primaryManager: one(employee, {
+		fields: [team.primaryManagerId],
+		references: [employee.id],
+		relationName: "team_primary_manager",
+	}),
 	employees: many(employee),
+	memberships: many(teamMembership),
 	holidayPresetAssignments: many(holidayPresetAssignment),
 	holidayAssignments: many(holidayAssignment),
 	vacationPolicyAssignments: many(vacationPolicyAssignment),
@@ -291,6 +298,25 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	workCategorySetAssignments: many(workCategorySetAssignment),
 	// Change policies
 	changePolicyAssignments: many(changePolicyAssignment),
+}));
+
+export const teamMembershipRelations = relations(teamMembership, ({ one }) => ({
+	organization: one(organization, {
+		fields: [teamMembership.organizationId],
+		references: [organization.id],
+	}),
+	team: one(team, {
+		fields: [teamMembership.teamId],
+		references: [team.id],
+	}),
+	employee: one(employee, {
+		fields: [teamMembership.employeeId],
+		references: [employee.id],
+	}),
+	creator: one(user, {
+		fields: [teamMembership.createdBy],
+		references: [user.id],
+	}),
 }));
 
 // Location relations
@@ -386,6 +412,10 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	team: one(team, {
 		fields: [employee.teamId],
 		references: [team.id],
+	}),
+	teamMemberships: many(teamMembership),
+	primaryManagedTeams: many(team, {
+		relationName: "team_primary_manager",
 	}),
 	manager: one(employee, {
 		fields: [employee.managerId],

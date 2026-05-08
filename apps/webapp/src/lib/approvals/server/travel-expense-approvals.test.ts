@@ -25,6 +25,8 @@ vi.mock("@/db/schema", () => ({
 	employeeGroupMember: { organizationId: "organizationId", employeeId: "employeeId" },
 	employeeGroup: { organizationId: "organizationId", isActive: "isActive" },
 	employeeManagers: { organizationId: "organizationId" },
+	teamMembership: { organizationId: "organizationId", employeeId: "employeeId" },
+	team: { organizationId: "organizationId" },
 	travelExpenseClaim: {
 		id: "id",
 		organizationId: "organizationId",
@@ -68,6 +70,8 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 							{ employeeId: "emp-requester", managerId: "emp-manager", isPrimary: true },
 						]),
 				},
+				teamMembership: { findMany: vi.fn().mockResolvedValue([]) },
+				team: { findMany: vi.fn().mockResolvedValue([]) },
 			},
 			insert: vi.fn((table: unknown) => ({
 				values: vi.fn((values: Record<string, unknown>) => {

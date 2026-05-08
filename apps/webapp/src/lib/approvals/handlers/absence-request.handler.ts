@@ -157,8 +157,8 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 			},
 		}),
 
-	getCount: (approverId, organizationId) =>
-		getApprovalCount("absence_entry", approverId, organizationId),
+	getCount: (approverId, organizationId, visibility) =>
+		getApprovalCount("absence_entry", approverId, organizationId, visibility),
 
 	getDetail: (entityId, organizationId) =>
 		Effect.gen(function* (_) {

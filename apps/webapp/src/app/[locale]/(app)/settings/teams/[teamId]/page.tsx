@@ -14,7 +14,6 @@ import {
 	AddMemberDialog,
 	DeleteTeamDialog,
 	extractTeamMemberIds,
-	invalidateTeamQueries,
 	RemoveMemberDialog,
 	type TeamFormValues,
 	TeamInfoCard,
@@ -26,12 +25,12 @@ import {
 export default function TeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
 	const { teamId } = use(params);
 	useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const queryClient = useQueryClient();
 	const [uiState, dispatch] = useTeamPageUiState();
 
 	const form = useForm({
-		defaultValues: { name: "", description: "" },
+		defaultValues: { name: "", description: "", primaryManagerId: null as string | null },
 		onSubmit: async ({ value }) => updateTeamMutation.mutate(value),
 	});
 
@@ -48,6 +47,25 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
 	const canManageSettings = team?.canManageSettings ?? false;
 	const canManageMembers = team?.canManageMembers ?? false;
+
+	const { data: managerOptions = [] } = useQuery({
+		queryKey: ["teams", teamId, "primary-manager-options"],
+		queryFn: async () => {
+			const result = await listEmployeesForSelect({
+				limit: 1000,
+				roles: ["manager", "admin"],
+				status: "active",
+			});
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load manager options");
+			}
+			return result.data.employees.filter(
+				(employee) =>
+					employee.isActive && (employee.role === "manager" || employee.role === "admin"),
+			);
+		},
+		enabled: canManageSettings,
+	});
 
 	async function loadAvailableEmployees() {
 		if (!team) return;
@@ -90,7 +108,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		onSuccess: () => {
 			toast.success("Team member added successfully");
 			dispatch({ type: "resetAddMemberDialog" });
-			invalidateTeamQueries(queryClient, teamId);
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
 		},
 		onError: (error: Error) => toast.error(error.message),
 	});
@@ -145,7 +165,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		onSuccess: () => {
 			toast.success("Team deleted successfully");
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
-			router.push("/settings/teams");
+			push("/settings/teams");
 		},
 		onError: (error: Error) => toast.error(error.message),
 		onSettled: () => dispatch({ type: "setShowDeleteDialog", value: false }),
@@ -169,8 +189,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	if (isLoadingTeam || !team) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-center p-8">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				<div
+					className="flex items-center justify-center p-8"
+					role="status"
+					aria-label="Loading team"
+				>
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
 			</div>
 		);
@@ -186,13 +210,18 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 			<div className="grid gap-4 lg:grid-cols-3">
 				<TeamInfoCard
 					team={team}
+					managerOptions={managerOptions}
 					isEditing={uiState.isEditing}
 					canManageSettings={canManageSettings}
 					loading={loading}
 					form={form}
 					onStartEdit={() => {
 						dispatch({ type: "setEditing", value: true });
-						form.reset({ name: team.name, description: team.description || "" });
+						form.reset({
+							name: team.name,
+							description: team.description || "",
+							primaryManagerId: team.primaryManagerId ?? null,
+						});
 					}}
 					onCancelEdit={() => dispatch({ type: "setEditing", value: false })}
 					onSubmit={() => form.handleSubmit()}

@@ -9,6 +9,8 @@ import {
 	employeeGroup,
 	employeeGroupMember,
 	employeeManagers,
+	team,
+	teamMembership,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, ConflictError, ValidationError } from "@/lib/effect/errors";
@@ -236,7 +238,7 @@ async function updateRows(
 }
 
 async function loadPolicyContext(dbService: ApprovalDbService, context: ApprovalPolicyEvaluationContext) {
-	const [policies, groupRows, activeGroups, employees, managerLinks] = await Promise.all([
+	const [policies, groupRows, activeGroups, employees, managerLinks, teamMemberships, teams] = await Promise.all([
 		dbService.db.query.approvalPolicy.findMany({
 			where: eq(approvalPolicy.organizationId, context.organizationId),
 			orderBy: [asc(approvalPolicy.priority)],
@@ -257,6 +259,15 @@ async function loadPolicyContext(dbService: ApprovalDbService, context: Approval
 			where: eq(employee.organizationId, context.organizationId),
 		}),
 		dbService.db.query.employeeManagers.findMany(),
+		dbService.db.query.teamMembership.findMany({
+			where: and(
+				eq(teamMembership.organizationId, context.organizationId),
+				eq(teamMembership.employeeId, context.requesterEmployeeId),
+			),
+		}),
+		dbService.db.query.team.findMany({
+			where: eq(team.organizationId, context.organizationId),
+		}),
 	]);
 	const activeGroupIds = new Set((activeGroups as Array<{ id: string }>).map((group) => group.id));
 
@@ -273,6 +284,8 @@ async function loadPolicyContext(dbService: ApprovalDbService, context: Approval
 		},
 		employees: employees as Parameters<typeof resolveApproverFromDirectory>[0]["employees"],
 		managerLinks: managerLinks as Parameters<typeof resolveApproverFromDirectory>[0]["managerLinks"],
+		teamMemberships: teamMemberships as NonNullable<Parameters<typeof resolveApproverFromDirectory>[0]["teamMemberships"]>,
+		teams: teams as NonNullable<Parameters<typeof resolveApproverFromDirectory>[0]["teams"]>,
 	};
 }
 
@@ -679,6 +692,8 @@ export function resolvePolicyAndCreateApproval(
 				stage,
 				employees: loaded.employees,
 				managerLinks: loaded.managerLinks,
+				teamMemberships: loaded.teamMemberships,
+				teams: loaded.teams,
 			});
 
 			if (!resolved.ok) {

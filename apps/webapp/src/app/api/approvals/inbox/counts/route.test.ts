@@ -16,6 +16,7 @@ const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
+	getEligibleApprovalScopesForManager: vi.fn(),
 	getCounts: vi.fn(),
 	logger: {
 		error: vi.fn(),
@@ -36,6 +37,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	getEligibleApprovalScopesForManager: mockState.getEligibleApprovalScopesForManager,
 }));
 
 vi.mock("@/db", () => ({
@@ -87,12 +92,13 @@ describe("GET /api/approvals/inbox/counts", () => {
 			session: { activeOrganizationId: "org-1" },
 		});
 		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => false),
+			cannot: vi.fn((action) => action === "manage"),
 		});
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
 		});
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
 		mockState.getCounts.mockReturnValue(
 			Effect.succeed({
 				absence_entry: 0,
@@ -131,6 +137,47 @@ describe("GET /api/approvals/inbox/counts", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.findEmployee).toHaveBeenCalledTimes(1);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
-		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1");
+		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1", {
+			eligibleApprovalScopes: [],
+			includeAllApprovers: undefined,
+		});
+	});
+
+	it("includes all organization approvals in counts for manage-Approval users", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action !== "manage"),
+		});
+
+		const response = await GET();
+
+		expect(response.status).toBe(200);
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1", {
+			eligibleApprovalScopes: [],
+			includeAllApprovers: true,
+		});
+	});
+
+	it("includes manager-routed eligible approval scopes in counts for approve-only users", async () => {
+		const eligibleApprovalScopes = [
+			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1", "employee-3"] },
+		];
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn((action) => action === "manage"),
+		});
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue(eligibleApprovalScopes);
+
+		const response = await GET();
+
+		expect(response.status).toBe(200);
+		expect(mockState.getEligibleApprovalScopesForManager).toHaveBeenCalledWith({
+			db: expect.anything(),
+			managerEmployeeId: "employee-1",
+			organizationId: "org-1",
+		});
+		expect(mockState.getCounts).toHaveBeenCalledWith("employee-1", "org-1", {
+			eligibleApprovalScopes,
+			includeAllApprovers: undefined,
+		});
 	});
 });

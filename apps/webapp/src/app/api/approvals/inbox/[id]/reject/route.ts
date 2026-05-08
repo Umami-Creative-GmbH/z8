@@ -13,6 +13,7 @@ import { approvalRequest, employee } from "@/db/schema";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
+import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -59,14 +60,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 	try {
 		const { id } = await params;
 
-		// Parse body
-		const body = await request.json();
-		const reason = body.reason as string;
-
-		if (!reason || reason.trim().length === 0) {
-			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
-		}
-
 		// Authenticate
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -79,10 +72,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 		}
 
 		const ability = await getAbility();
-		if (
-			!ability ||
-			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
-		) {
+		if (!ability) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -114,8 +104,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
 
-		// Managers can only action assigned approvals; Approval managers can action org-wide approvals.
-		if (approvalReq.approverId !== currentEmployee.id && ability.cannot("manage", "Approval")) {
+		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
+		if (!canApproveApprovals && !canManageApprovals) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
+		const isAssignedApprover = approvalReq.approverId === currentEmployee.id;
+		const isEligibleManager = isAssignedApprover
+			? true
+			: await isEligibleManagerForApprovalRequest({
+					db,
+					approvalRequestId: approvalReq.id,
+					managerEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				});
+
+		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
 			return NextResponse.json(
 				{ error: "You are not authorized to reject this request" },
 				{ status: 403 },
@@ -128,6 +135,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 				{ error: `Request is already ${approvalReq.status}` },
 				{ status: 409 },
 			);
+		}
+
+		// Parse body only after authentication and approval authorization.
+		const body = await request.json();
+		const reason = body.reason as string;
+
+		if (!reason || reason.trim().length === 0) {
+			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
 		}
 
 		// Get handler
