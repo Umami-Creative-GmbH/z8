@@ -32,6 +32,10 @@ import {
 
 const logger = createLogger("OrganizationActions");
 
+type MemberWithUser = typeof authSchema.member.$inferSelect & {
+	user: Pick<typeof authSchema.user.$inferSelect, "name" | "email"> | null;
+};
+
 // =============================================================================
 // Invitation Management Actions
 // =============================================================================
@@ -1522,7 +1526,10 @@ async function sendOrganizationDeletionNotifications(
 	});
 
 	// Filter to only admins and owners
-	const adminsAndOwners = adminMembers.filter((m) => m.role === "admin" || m.role === "owner");
+	const typedAdminMembers = adminMembers as unknown as MemberWithUser[];
+	const adminsAndOwners = typedAdminMembers.filter(
+		(m) => m.role === "admin" || m.role === "owner",
+	);
 
 	const appUrl = await getOrganizationBaseUrl(organizationId);
 	const recoveryUrl = `${appUrl}/settings/organizations`;
