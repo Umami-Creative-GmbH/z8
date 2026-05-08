@@ -225,7 +225,7 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { addTeamMember, createTeam, getTeam, removeTeamMember, updateTeam } = await import("./actions");
+const { addTeamMember, createTeam, deleteTeam, getTeam, listTeams, removeTeamMember, updateTeam } = await import("./actions");
 
 describe("team settings server scope", () => {
 	const employeePrimaryManagerId = "11111111-1111-4111-8111-111111111111";
@@ -341,6 +341,100 @@ describe("team settings server scope", () => {
 		}
 	});
 
+	it("maps getTeam employees from team memberships for UI compatibility", async () => {
+		mockState.employeeQueue = [null];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "owner" }];
+		mockState.teamQueue = [
+			{
+				id: "team-a",
+				organizationId: "org-1",
+				name: "Alpha",
+				description: null,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				memberships: [
+					{
+						teamId: "team-a",
+						employeeId: "target-1",
+						employee: {
+							id: "target-1",
+							userId: "user-2",
+							organizationId: "org-1",
+							teamId: "team-b",
+							user: { id: "user-2", name: "Target" },
+						},
+					},
+				],
+			},
+		];
+
+		const result = await getTeam("team-a");
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.employees).toEqual([
+				expect.objectContaining({ id: "target-1", user: { id: "user-2", name: "Target" } }),
+			]);
+		}
+	});
+
+	it("lists teams with employees mapped from memberships for UI compatibility", async () => {
+		mockState.employeeQueue = [null, null];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "owner" }];
+		mockState.teamQueue = [
+			[
+				{
+					id: "team-a",
+					organizationId: "org-1",
+					name: "Alpha",
+					description: null,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					memberships: [
+						{
+							teamId: "team-a",
+							employeeId: "target-1",
+							employee: {
+								id: "target-1",
+								userId: "user-2",
+								organizationId: "org-1",
+								teamId: null,
+								user: { id: "user-2", name: "Target" },
+							},
+						},
+					],
+				},
+			],
+		];
+
+		const result = await listTeams("org-1");
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data).toHaveLength(1);
+			expect(result.data[0]?.employees).toEqual([
+				expect.objectContaining({ id: "target-1", user: { id: "user-2", name: "Target" } }),
+			]);
+		}
+	});
+
+	it("blocks deleting a team when team memberships exist", async () => {
+		mockState.employeeQueue = [
+			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
+		mockState.teamQueue = [{ id: "team-a", organizationId: "org-1", name: "Alpha" }];
+		mockState.teamMembershipRows = [[
+			{ organizationId: "org-1", teamId: "team-a", employeeId: "target-1" },
+		]];
+
+		const result = await deleteTeam("team-a");
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe("Cannot delete team with active members. Please reassign members first.");
+		expect(mockState.deleteWhere).not.toHaveBeenCalled();
+	});
+
 	it("keeps team actor lookups restricted to active employee rows", () => {
 		const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
 
@@ -408,6 +502,31 @@ describe("team settings server scope", () => {
 			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
 		);
 		expect(mockState.updateSet).not.toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
+	});
+
+	it("adds team membership and sets compatibility team when employee has none", async () => {
+		mockState.employeeQueue = [
+			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+				user: { id: "user-2", name: "Target", email: "target@example.com" },
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
+		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
+		mockState.teamMembershipFindFirst.mockResolvedValue(null);
+
+		const result = await addTeamMember("team-b", "target-1");
+
+		expect(result.success).toBe(true);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
+		);
+		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
 	});
 
 	it("removes only selected team membership and reassigns compatibility team to another remaining membership", async () => {
