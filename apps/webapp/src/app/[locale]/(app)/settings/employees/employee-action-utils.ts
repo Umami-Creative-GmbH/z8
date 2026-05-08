@@ -53,7 +53,7 @@ export function getEmployeeContext(options?: { organizationId?: string; queryNam
 			),
 		);
 
-		return { session, dbService, currentEmployee };
+		return { session, dbService, currentEmployee: currentEmployee as typeof employee.$inferSelect };
 	});
 }
 
@@ -126,7 +126,9 @@ export function getEmployeeSettingsActorContext(options?: {
 			dbService,
 			organizationId,
 			accessTier,
-			currentEmployee: employeeRecord ?? null,
+			currentEmployee: employeeRecord
+				? (employeeRecord as typeof employee.$inferSelect)
+				: null,
 		};
 	});
 }
