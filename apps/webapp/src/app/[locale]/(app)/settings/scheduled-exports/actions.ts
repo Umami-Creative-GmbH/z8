@@ -4,7 +4,13 @@ import { and, desc, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { db, scheduledExport, scheduledExportExecution } from "@/db";
+import {
+	db,
+	payrollExportConfig,
+	payrollExportFormat,
+	scheduledExport,
+	scheduledExportExecution,
+} from "@/db";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import type {
 	ScheduledExport,
@@ -87,6 +93,10 @@ export interface ScheduledExportSummary {
 	nextExecutionAt: Date | null;
 	createdAt: Date;
 }
+
+type PayrollExportConfigWithFormat = typeof payrollExportConfig.$inferSelect & {
+	format: Pick<typeof payrollExportFormat.$inferSelect, "id" | "name"> | null;
+};
 
 export interface ExecutionHistoryItem {
 	id: string;
@@ -797,10 +807,6 @@ export async function getPayrollConfigsAction(
 			);
 		}
 
-		const { payrollExportConfig, payrollExportFormat } = yield* _(
-			Effect.promise(() => import("@/db")),
-		);
-
 		const configs = yield* _(
 			Effect.promise(async () => {
 				return db.query.payrollExportConfig.findMany({
@@ -815,7 +821,9 @@ export async function getPayrollConfigsAction(
 			}),
 		);
 
-		return configs.map((c) => ({
+		const typedConfigs = configs as unknown as PayrollExportConfigWithFormat[];
+
+		return typedConfigs.map((c) => ({
 			id: c.id,
 			formatId: c.format?.id ?? c.formatId,
 			formatName: c.format?.name ?? c.formatId,
