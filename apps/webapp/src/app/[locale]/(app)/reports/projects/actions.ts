@@ -24,6 +24,13 @@ import type {
 
 const logger = createLogger("ProjectReportsActions");
 
+type WorkPeriodWithEmployee = typeof workPeriod.$inferSelect & {
+	employee: Pick<typeof employee.$inferSelect, "teamId"> & {
+		user: { name: string } | null;
+		team: { name: string } | null;
+	};
+};
+
 /**
  * Get portfolio overview of all projects in the organization
  */
@@ -314,15 +321,20 @@ export async function getProjectDetailedReport(
 					}),
 				);
 
+				const typedWorkPeriods = workPeriods as unknown as WorkPeriodWithEmployee[];
+
 				// Calculate summary
-				const totalMinutes = workPeriods.reduce((sum, wp) => sum + (wp.durationMinutes ?? 0), 0);
+				const totalMinutes = typedWorkPeriods.reduce(
+					(sum, wp) => sum + (wp.durationMinutes ?? 0),
+					0,
+				);
 				const totalHours = totalMinutes / 60;
 				const budgetHours = projectData.budgetHours ? Number(projectData.budgetHours) : null;
 				const percentBudgetUsed = budgetHours ? (totalHours / budgetHours) * 100 : null;
 				const remainingBudgetHours = budgetHours ? budgetHours - totalHours : null;
 
 				// Unique employees
-				const uniqueEmployeeIds = new Set(workPeriods.map((wp) => wp.employeeId));
+				const uniqueEmployeeIds = new Set(typedWorkPeriods.map((wp) => wp.employeeId));
 
 				// Days in period for average calculation
 				const daysDiff = Math.ceil(
@@ -332,7 +344,7 @@ export async function getProjectDetailedReport(
 
 				// Build time series (by day)
 				const timeSeriesMap = new Map<string, number>();
-				for (const wp of workPeriods) {
+				for (const wp of typedWorkPeriods) {
 					const dateKey = wp.startTime.toISOString().split("T")[0];
 					const existing = timeSeriesMap.get(dateKey) ?? 0;
 					timeSeriesMap.set(dateKey, existing + (wp.durationMinutes ?? 0) / 60);
@@ -352,7 +364,7 @@ export async function getProjectDetailedReport(
 					string,
 					{ name: string; minutes: number; count: number }
 				>();
-				for (const wp of workPeriods) {
+				for (const wp of typedWorkPeriods) {
 					const key = wp.employeeId;
 					const existing = employeeStatsMap.get(key) ?? {
 						name: wp.employee.user?.name ?? "Unknown",
@@ -384,7 +396,7 @@ export async function getProjectDetailedReport(
 						members: Map<string, { name: string; minutes: number; count: number }>;
 					}
 				>();
-				for (const wp of workPeriods) {
+				for (const wp of typedWorkPeriods) {
 					const teamId = wp.employee.teamId ?? "unassigned";
 					const teamName = wp.employee.team?.name ?? "Unassigned";
 					const existing = teamStatsMap.get(teamId) ?? {
@@ -447,7 +459,7 @@ export async function getProjectDetailedReport(
 						percentBudgetUsed,
 						remainingBudgetHours,
 						uniqueEmployees: uniqueEmployeeIds.size,
-						workPeriodCount: workPeriods.length,
+						workPeriodCount: typedWorkPeriods.length,
 						averageHoursPerDay,
 					},
 					timeSeries,
