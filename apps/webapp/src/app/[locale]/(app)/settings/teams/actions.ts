@@ -56,6 +56,14 @@ type OrganizationEmployee = typeof employee.$inferSelect;
 type OrganizationEmployeeWithUser = OrganizationEmployee & {
 	user: typeof authUser.$inferSelect;
 };
+type TeamWithMemberRelations = typeof team.$inferSelect & {
+	primaryManager: OrganizationEmployeeWithUser | null;
+	memberships: Array<
+		typeof teamMembership.$inferSelect & {
+			employee: OrganizationEmployeeWithUser;
+		}
+	>;
+};
 type TeamSettingsActor = {
 	organizationId: string;
 	accessTier: "orgAdmin" | "manager" | "member";
@@ -142,7 +150,9 @@ function validatePrimaryManager(
 	});
 }
 
-function withMembershipEmployees<T extends { memberships?: Array<{ employee: unknown }> }>(teamRecord: T) {
+function withMembershipEmployees<T extends { memberships?: Array<{ employee: OrganizationEmployeeWithUser }> }>(
+	teamRecord: T,
+) {
 	return {
 		...teamRecord,
 		employees: teamRecord.memberships?.map((membership) => membership.employee) ?? [],
@@ -806,7 +816,7 @@ export async function getTeam(
 		}
 
 		return {
-			...withMembershipEmployees(targetTeam),
+			...withMembershipEmployees(targetTeam as TeamWithMemberRelations),
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};
@@ -877,7 +887,7 @@ export async function listTeams(
 
 		return buildTeamSettingsSurface({
 			accessTier: actor.accessTier,
-			teams: teams.map(withMembershipEmployees),
+			teams: (teams as TeamWithMemberRelations[]).map(withMembershipEmployees),
 			permissions: scopedPermissions,
 		}).teams;
 	}).pipe(Effect.provide(AppLayer));
