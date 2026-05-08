@@ -60,7 +60,7 @@ export function requireCurrentEmployee(queryName = "getCurrentEmployee") {
 			);
 		}
 
-		return { currentEmployee, session };
+		return { currentEmployee: currentEmployee as CurrentEmployee, session };
 	});
 }
 
