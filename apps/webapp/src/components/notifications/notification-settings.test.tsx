@@ -56,8 +56,9 @@ describe("NotificationSettings", () => {
 			isSubscribed: true,
 			subscribe: vi.fn(),
 			unsubscribe: vi.fn(),
+			requestPermission: vi.fn(),
+			registration: null,
 			isLoading: false,
-			error: null,
 		});
 
 		mockNotificationPreferences({
@@ -127,8 +128,9 @@ describe("NotificationSettings", () => {
 			isSubscribed: false,
 			subscribe: vi.fn(),
 			unsubscribe: vi.fn(),
+			requestPermission: vi.fn(),
+			registration: null,
 			isLoading: false,
-			error: null,
 		});
 
 		render(<NotificationSettings />);
