@@ -1,5 +1,6 @@
 "use server";
 
+import { employee } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type {
 	AssignManagers,
@@ -39,7 +40,7 @@ export type {
 
 export async function createEmployee(
 	data: CreateEmployee,
-): Promise<ServerActionResult<typeof import("@/db/schema").employee.$inferSelect>> {
+): Promise<ServerActionResult<typeof employee.$inferSelect>> {
 	return createEmployeeAction(data);
 }
 
