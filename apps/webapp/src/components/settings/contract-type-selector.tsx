@@ -52,14 +52,22 @@ interface ContractTypeSelectorProps {
 	value?: ContractType;
 	onChange: (value: ContractType) => void;
 	disabled?: boolean;
+	labels?: Partial<Record<ContractType, { label: string; description: string }>>;
 }
 
-export function ContractTypeSelector({ value, onChange, disabled }: ContractTypeSelectorProps) {
+export function ContractTypeSelector({
+	value,
+	onChange,
+	disabled,
+	labels,
+}: ContractTypeSelectorProps) {
 	return (
 		<div className="grid grid-cols-2 gap-3">
 			{contractTypeOptions.map((option) => {
 				const isSelected = value === option.value;
 				const Icon = option.icon;
+				const label = labels?.[option.value]?.label ?? option.label;
+				const description = labels?.[option.value]?.description ?? option.description;
 
 				return (
 					<button
@@ -68,7 +76,7 @@ export function ContractTypeSelector({ value, onChange, disabled }: ContractType
 						onClick={() => !disabled && onChange(option.value)}
 						disabled={disabled}
 						className={cn(
-							"relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all",
+							"relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-[border-color,background-color,transform]",
 							"hover:scale-[1.02] active:scale-[0.98]",
 							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 							disabled && "cursor-not-allowed opacity-50",
@@ -109,11 +117,11 @@ export function ContractTypeSelector({ value, onChange, disabled }: ContractType
 								isSelected ? option.color.text : "text-foreground",
 							)}
 						>
-							{option.label}
+							{label}
 						</span>
 
 						{/* Description */}
-						<span className="text-xs text-muted-foreground">{option.description}</span>
+						<span className="text-xs text-muted-foreground">{description}</span>
 					</button>
 				);
 			})}

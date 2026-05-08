@@ -97,7 +97,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				});
 
 				if (profileResult.success) {
-					toast.success(t("profile.update-success", "Profile updated successfully"));
+					toast.success(t("settings.profile.updateSuccess", "Profile updated successfully"));
 					await Promise.all([
 						queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() }),
 						queryClient.invalidateQueries({ queryKey: queryKeys.employees.all }),
@@ -106,9 +106,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 					return;
 				}
 
-				toast.error(profileResult.error || t("profile.update-failed", "Failed to update profile"));
+				toast.error(
+					profileResult.error || t("settings.profile.updateFailed", "Failed to update profile"),
+				);
 			} catch {
-				toast.error(t("profile.update-failed", "Failed to update profile"));
+				toast.error(t("settings.profile.updateFailed", "Failed to update profile"));
 			}
 		},
 	});
@@ -144,14 +146,16 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		mutationFn: (data: { image: string | null }) => updateProfileImage(data),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("profile.avatar-uploaded", "Avatar uploaded successfully"));
+				toast.success(t("settings.profile.avatarUploaded", "Avatar uploaded successfully"));
 				// Cache invalidation is handled by useImageProcessMutation
 			} else {
-				toast.error(result.error || t("profile.avatar-save-failed", "Failed to save avatar"));
+				toast.error(
+					result.error || t("settings.profile.avatarSaveFailed", "Failed to save avatar"),
+				);
 			}
 		},
 		onError: () => {
-			toast.error(t("profile.avatar-save-failed", "Failed to save avatar"));
+			toast.error(t("settings.profile.avatarSaveFailed", "Failed to save avatar"));
 		},
 	});
 
@@ -169,7 +173,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			avatarUpdateMutation.mutate({ image: imageUrl });
 		},
 		onError: (error) => {
-			toast.error(error?.message || t("profile.avatar-upload-failed", "Failed to upload avatar"));
+			toast.error(
+				error?.message || t("settings.profile.avatarUploadFailed", "Failed to upload avatar"),
+			);
 		},
 	});
 
@@ -228,18 +234,20 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("profile.avatar-removed", "Avatar removed successfully"));
+				toast.success(t("settings.profile.avatarRemoved", "Avatar removed successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() });
 				router.refresh(); // Refresh to update server components (sidebar)
 			} else {
-				toast.error(result.error || t("profile.avatar-remove-failed", "Failed to remove avatar"));
+				toast.error(
+					result.error || t("settings.profile.avatarRemoveFailed", "Failed to remove avatar"),
+				);
 			}
 		},
 		onError: (_error, _vars, context) => {
 			if (context?.previousImage) {
 				form.setFieldValue("image", context.previousImage);
 			}
-			toast.error(t("profile.avatar-remove-failed", "Failed to remove avatar"));
+			toast.error(t("settings.profile.avatarRemoveFailed", "Failed to remove avatar"));
 		},
 	});
 
@@ -248,10 +256,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			{/* Profile Information Section */}
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("profile.information", "Profile Information")}</CardTitle>
+					<CardTitle>{t("settings.profile.information", "Profile Information")}</CardTitle>
 					<CardDescription>
 						{t(
-							"profile.information-description",
+							"settings.profile.informationDescription",
 							"Update your personal information and profile picture",
 						)}
 					</CardDescription>
@@ -332,7 +340,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							{/* Profile Picture Upload */}
 							<div className="space-y-4">
 								<Label className="text-sm font-medium">
-									{t("profile.profile-picture", "Profile Picture")}
+									{t("settings.profile.profilePicture", "Profile Picture")}
 								</Label>
 								{/* Hidden file input */}
 								<input
@@ -340,7 +348,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 									type="file"
 									accept="image/*"
 									className="hidden"
-									aria-label="Upload profile picture"
+									aria-label={t("settings.profile.uploadProfilePicture", "Upload profile picture")}
 									onChange={handleFileInputChange}
 								/>
 								<div className="flex items-center gap-6">
@@ -363,7 +371,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											type="button"
 											onClick={() => inputRef.current?.click()}
 											disabled={isUploadingAvatar}
-											aria-label={t("profile.change-picture", "Change Picture")}
+											aria-label={t("settings.profile.changePicture", "Change Picture")}
 											className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-transform hover:scale-110 focus-visible:scale-110 disabled:opacity-50"
 										>
 											<IconCamera className="h-4 w-4" aria-hidden="true" />
@@ -382,7 +390,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 												}
 											>
 												<IconUpload className="mr-2 h-4 w-4" aria-hidden="true" />
-												{t("profile.change-picture", "Change Picture")}
+												{t("settings.profile.changePicture", "Change Picture")}
 											</Button>
 											{avatarImage && (
 												<Button
@@ -400,13 +408,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													) : (
 														<IconTrash className="mr-2 h-4 w-4" aria-hidden="true" />
 													)}
-													{t("profile.remove-picture", "Remove Picture")}
+													{t("settings.profile.removePicture", "Remove Picture")}
 												</Button>
 											)}
 										</div>
 										<p className="text-muted-foreground text-sm">
 											{t(
-												"profile.picture-hint",
+												"settings.profile.pictureHint",
 												"JPG, PNG or WebP. Max 5MB. Recommended 400x400px",
 											)}
 										</p>
@@ -414,7 +422,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											<div className="space-y-1">
 												<Progress value={uploadProgress} className="h-2" />
 												<p className="text-xs text-muted-foreground">
-													{t("profile.uploading", "Uploading")} {uploadProgress}%
+													{t("settings.profile.uploading", "Uploading")} {uploadProgress}%
 												</p>
 											</div>
 										)}
@@ -424,7 +432,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 							{/* Email Field (Read-only) */}
 							<div className="space-y-2">
-								<Label htmlFor="email">{t("profile.email", "Email")}</Label>
+								<Label htmlFor="email">{t("settings.profile.email", "Email")}</Label>
 								<Input
 									id="email"
 									name="email"
@@ -436,13 +444,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
 									className="bg-muted"
 								/>
 								<p className="text-muted-foreground text-sm">
-									{t("profile.email-readonly", "Email cannot be changed")}
+									{t("settings.profile.emailReadonly", "Email cannot be changed")}
 								</p>
 							</div>
 
 							{/* Personal Information Section */}
 							<div className="border-t pt-6 space-y-6">
-								<h3 className="text-lg font-medium">Personal Information</h3>
+								<h3 className="text-lg font-medium">
+									{t("settings.profile.personalInformation", "Personal Information")}
+								</h3>
 
 								<div className="grid gap-4 md:grid-cols-2">
 									<form.Field
@@ -459,7 +469,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 											return (
 												<TFormItem>
-													<TFormLabel hasError={hasError}>First Name</TFormLabel>
+													<TFormLabel hasError={hasError}>
+														{t("settings.profile.firstName", "First Name")}
+													</TFormLabel>
 													<TFormControl hasError={hasError}>
 														<Input
 															name="firstName"
@@ -467,7 +479,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 															value={field.state.value}
 															onChange={(e) => field.handleChange(e.target.value)}
 															onBlur={field.handleBlur}
-															placeholder="Ada…"
+															placeholder={t("settings.profile.firstNamePlaceholder", "Ada…")}
 														/>
 													</TFormControl>
 													<TFormMessage field={field} />
@@ -490,7 +502,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 											return (
 												<TFormItem>
-													<TFormLabel hasError={hasError}>Last Name</TFormLabel>
+													<TFormLabel hasError={hasError}>
+														{t("settings.profile.lastName", "Last Name")}
+													</TFormLabel>
 													<TFormControl hasError={hasError}>
 														<Input
 															name="lastName"
@@ -498,7 +512,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 															value={field.state.value}
 															onChange={(e) => field.handleChange(e.target.value)}
 															onBlur={field.handleBlur}
-															placeholder="Lovelace…"
+															placeholder={t("settings.profile.lastNamePlaceholder", "Lovelace…")}
 														/>
 													</TFormControl>
 													<TFormMessage field={field} />
@@ -510,7 +524,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 								{/* Gender */}
 								<div className="space-y-2">
-									<Label id="gender-label">Gender</Label>
+									<Label id="gender-label">{t("settings.profile.gender.label", "Gender")}</Label>
 									<div
 										role="radiogroup"
 										aria-labelledby="gender-label"
@@ -528,8 +542,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													: "border-border bg-background",
 											)}
 										>
-											<IconGenderMale className="h-6 w-6" />
-											<span className="text-sm font-medium">Male</span>
+											<IconGenderMale className="h-6 w-6" aria-hidden="true" />
+											<span className="text-sm font-medium">
+												{t("settings.profile.gender.male", "Male")}
+											</span>
 										</button>
 										<button
 											type="button"
@@ -543,8 +559,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													: "border-border bg-background",
 											)}
 										>
-											<IconGenderFemale className="h-6 w-6" />
-											<span className="text-sm font-medium">Female</span>
+											<IconGenderFemale className="h-6 w-6" aria-hidden="true" />
+											<span className="text-sm font-medium">
+												{t("settings.profile.gender.female", "Female")}
+											</span>
 										</button>
 										<button
 											type="button"
@@ -558,15 +576,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													: "border-border bg-background",
 											)}
 										>
-											<IconGenderBigender className="h-6 w-6" />
-											<span className="text-sm font-medium">Other</span>
+											<IconGenderBigender className="h-6 w-6" aria-hidden="true" />
+											<span className="text-sm font-medium">
+												{t("settings.profile.gender.other", "Other")}
+											</span>
 										</button>
 									</div>
 								</div>
 
 								{/* Birthday */}
 								<div className="space-y-2">
-									<Label htmlFor="birthday">Birthday</Label>
+									<Label htmlFor="birthday">
+										{t("settings.profile.birthday.label", "Birthday")}
+									</Label>
 									<Popover>
 										<PopoverTrigger asChild>
 											<Button
@@ -577,11 +599,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													!selectedBirthday && "text-muted-foreground",
 												)}
 											>
-												<IconCalendar className="mr-2 h-4 w-4" />
+												<IconCalendar className="mr-2 h-4 w-4" aria-hidden="true" />
 												{selectedBirthday ? (
 													format(selectedBirthday, "PPP")
 												) : (
-													<span>Pick your birthday</span>
+													<span>
+														{t("settings.profile.birthday.placeholder", "Pick your birthday")}
+													</span>
 												)}
 											</Button>
 										</PopoverTrigger>
@@ -600,7 +624,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										</PopoverContent>
 									</Popover>
 									<p className="text-muted-foreground text-sm">
-										Your birthday helps us celebrate with you
+										{t(
+											"settings.profile.birthday.hint",
+											"Your birthday helps us celebrate with you",
+										)}
 									</p>
 								</div>
 							</div>
@@ -610,10 +637,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 								{isSubmitting ? (
 									<>
 										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-										{t("common.saving", "Saving…")}
+										{t("settings.profile.saving", "Saving…")}
 									</>
 								) : (
-									t("profile.update-profile", "Update Profile")
+									t("settings.profile.updateProfile", "Update Profile")
 								)}
 							</Button>
 						</form>

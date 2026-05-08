@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AppleIcon, GitHubIcon, GoogleIcon, LinkedInIcon } from "@/components/icons/provider-icons";
@@ -58,6 +59,7 @@ const providers: Provider[] = [
 ];
 
 export function SocialAccounts() {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
 	const [accountToUnlink, setAccountToUnlink] = useState<{
@@ -72,7 +74,12 @@ export function SocialAccounts() {
 		queryFn: async () => {
 			const result = await authClient.listAccounts();
 			if (result.error) {
-				throw new Error(getAuthErrorMessage(result.error, "Failed to load connected accounts"));
+				throw new Error(
+					getAuthErrorMessage(
+						result.error,
+						t("settings.socialAccounts.loadFailed", "Failed to load connected accounts"),
+					),
+				);
 			}
 			return (result.data || []) as ConnectedAccount[];
 		},
@@ -84,19 +91,29 @@ export function SocialAccounts() {
 		mutationFn: async ({ providerId, accountId }: { providerId: string; accountId: string }) => {
 			const result = await authClient.unlinkAccount({ providerId, accountId });
 			if (result.error) {
-				throw new Error(getAuthErrorMessage(result.error, "Failed to disconnect account"));
+				throw new Error(
+					getAuthErrorMessage(
+						result.error,
+						t("settings.socialAccounts.disconnectFailed", "Failed to disconnect account"),
+					),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Account disconnected successfully");
+			toast.success(
+				t("settings.socialAccounts.disconnectSuccess", "Account disconnected successfully"),
+			);
 			setUnlinkDialogOpen(false);
 			setAccountToUnlink(null);
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.accounts() });
 		},
 		onError: (error) => {
-			toast.error("Failed to disconnect account", {
-				description: error instanceof Error ? error.message : "An unexpected error occurred",
+			toast.error(t("settings.socialAccounts.disconnectFailed", "Failed to disconnect account"), {
+				description:
+					error instanceof Error
+						? error.message
+						: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
 			});
 		},
 	});
@@ -128,9 +145,11 @@ export function SocialAccounts() {
 	return (
 		<div className="space-y-4">
 			<div>
-				<h3 className="text-lg font-medium">Social Accounts</h3>
+				<h3 className="text-lg font-medium">
+					{t("settings.socialAccounts.title", "Social Accounts")}
+				</h3>
 				<p className="text-sm text-muted-foreground">
-					Link your social accounts for easier sign-in
+					{t("settings.socialAccounts.description", "Link your social accounts for easier sign-in")}
 				</p>
 			</div>
 
@@ -152,15 +171,25 @@ export function SocialAccounts() {
 											<CardTitle className="text-base">{provider.name}</CardTitle>
 											<CardDescription>
 												{isConnected && connectedAccount
-													? `Connected as ${connectedAccount.accountId}`
-													: `Connect your ${provider.name} account`}
+													? t("settings.socialAccounts.connectedAs", "Connected as {accountId}", {
+															accountId: connectedAccount.accountId,
+														})
+													: t(
+															"settings.socialAccounts.connectProvider",
+															"Connect your {provider} account",
+															{
+																provider: provider.name,
+															},
+														)}
 											</CardDescription>
 										</div>
 									</div>
 									<div className="flex items-center gap-2">
 										{isConnected && connectedAccount ? (
 											<>
-												<Badge variant="default">Connected</Badge>
+												<Badge variant="default">
+													{t("settings.socialAccounts.connected", "Connected")}
+												</Badge>
 												<Button
 													variant="outline"
 													size="sm"
@@ -169,7 +198,7 @@ export function SocialAccounts() {
 													}
 													disabled={isPending}
 												>
-													Disconnect
+													{t("settings.socialAccounts.disconnect", "Disconnect")}
 												</Button>
 											</>
 										) : (
@@ -179,7 +208,9 @@ export function SocialAccounts() {
 												onClick={() => handleConnect(provider.id)}
 												disabled={isPending || connectingProvider === provider.id}
 											>
-												{connectingProvider === provider.id ? "Connecting..." : "Connect"}
+												{connectingProvider === provider.id
+													? t("settings.socialAccounts.connecting", "Connecting…")
+													: t("settings.socialAccounts.connect", "Connect")}
 											</Button>
 										)}
 									</div>
@@ -194,19 +225,26 @@ export function SocialAccounts() {
 			<AlertDialog open={unlinkDialogOpen} onOpenChange={setUnlinkDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Disconnect Account?</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("settings.socialAccounts.disconnectTitle", "Disconnect Account?")}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will remove the link to your social account. You can reconnect it at any time.
+							{t(
+								"settings.socialAccounts.disconnectDescription",
+								"This will remove the link to your social account. You can reconnect it at any time.",
+							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={unlinkMutation.isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={unlinkMutation.isPending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleUnlink}
 							disabled={unlinkMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							Disconnect
+							{t("settings.socialAccounts.disconnect", "Disconnect")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

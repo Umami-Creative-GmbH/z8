@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -42,6 +43,7 @@ interface TwoFactorSetupProps {
 }
 
 export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupProps) {
+	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [isEnabled, setIsEnabled] = useState(initialIsEnabled);
 	const [setupDialogOpen, setSetupDialogOpen] = useState(false);
@@ -60,8 +62,11 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 
 	const handleEnable2FA = () => {
 		if (!password) {
-			toast.error("Password required", {
-				description: "Please enter your password to enable 2FA",
+			toast.error(t("settings.security.twoFactor.passwordRequired", "Password required"), {
+				description: t(
+					"settings.security.twoFactor.enablePasswordRequiredDescription",
+					"Please enter your password to enable 2FA",
+				),
 			});
 			return;
 		}
@@ -73,8 +78,11 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 				});
 
 				if (result.error) {
-					toast.error("Failed to setup 2FA", {
-						description: getAuthErrorMessage(result.error, "Failed to setup 2FA"),
+					toast.error(t("settings.security.twoFactor.setupFailed", "Failed to setup 2FA"), {
+						description: getAuthErrorMessage(
+							result.error,
+							t("settings.security.twoFactor.setupFailed", "Failed to setup 2FA"),
+						),
 					});
 				} else if (result.data) {
 					setTotpUri(result.data.totpURI);
@@ -84,8 +92,11 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 					setPassword("");
 				}
 			} catch (error) {
-				toast.error("Failed to setup 2FA", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
+				toast.error(t("settings.security.twoFactor.setupFailed", "Failed to setup 2FA"), {
+					description:
+						error instanceof Error
+							? error.message
+							: t("settings.security.twoFactor.unexpectedError", "An unexpected error occurred"),
 				});
 			}
 		});
@@ -93,8 +104,11 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 
 	const handleVerifyAndEnable = () => {
 		if (otpValue.length !== 6) {
-			toast.error("Invalid code", {
-				description: "Please enter a 6-digit code",
+			toast.error(t("settings.security.twoFactor.invalidCode", "Invalid code"), {
+				description: t(
+					"settings.security.twoFactor.enterSixDigitCode",
+					"Please enter a 6-digit code",
+				),
 			});
 			return;
 		}
@@ -106,19 +120,27 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 				});
 
 				if (result.error) {
-					toast.error("Verification failed", {
-						description: getAuthErrorMessage(result.error, "Verification failed"),
+					toast.error(t("settings.security.twoFactor.verificationFailed", "Verification failed"), {
+						description: getAuthErrorMessage(
+							result.error,
+							t("settings.security.twoFactor.verificationFailed", "Verification failed"),
+						),
 					});
 				} else {
 					setSetupDialogOpen(false);
 					setBackupCodesDialogOpen(true);
 					setOtpValue("");
 					setIsEnabled(true);
-					toast.success("Two-factor authentication enabled");
+					toast.success(
+						t("settings.security.twoFactor.enabledToast", "Two-factor authentication enabled"),
+					);
 				}
 			} catch (error) {
-				toast.error("Verification failed", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
+				toast.error(t("settings.security.twoFactor.verificationFailed", "Verification failed"), {
+					description:
+						error instanceof Error
+							? error.message
+							: t("settings.security.twoFactor.unexpectedError", "An unexpected error occurred"),
 				});
 			}
 		});
@@ -128,7 +150,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 
 	const handleDisable2FA = () => {
 		if (!disablePassword) {
-			toast.error("Password required");
+			toast.error(t("settings.security.twoFactor.passwordRequired", "Password required"));
 			return;
 		}
 
@@ -139,18 +161,26 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 				});
 
 				if (result.error) {
-					toast.error("Failed to disable 2FA", {
-						description: getAuthErrorMessage(result.error, "Failed to disable 2FA"),
+					toast.error(t("settings.security.twoFactor.disableFailed", "Failed to disable 2FA"), {
+						description: getAuthErrorMessage(
+							result.error,
+							t("settings.security.twoFactor.disableFailed", "Failed to disable 2FA"),
+						),
 					});
 				} else {
 					setDisableDialogOpen(false);
 					setDisablePassword("");
 					setIsEnabled(false);
-					toast.success("Two-factor authentication disabled");
+					toast.success(
+						t("settings.security.twoFactor.disabledToast", "Two-factor authentication disabled"),
+					);
 				}
 			} catch (error) {
-				toast.error("Failed to disable 2FA", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
+				toast.error(t("settings.security.twoFactor.disableFailed", "Failed to disable 2FA"), {
+					description:
+						error instanceof Error
+							? error.message
+							: t("settings.security.twoFactor.unexpectedError", "An unexpected error occurred"),
 				});
 			}
 		});
@@ -165,7 +195,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 
 	const handleRegenerateBackupCodes = () => {
 		if (!regeneratePassword) {
-			toast.error("Password required");
+			toast.error(t("settings.security.twoFactor.passwordRequired", "Password required"));
 			return;
 		}
 
@@ -176,59 +206,85 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 				});
 
 				if (result.error) {
-					toast.error("Failed to regenerate backup codes", {
-						description: getAuthErrorMessage(result.error, "Failed to regenerate backup codes"),
-					});
+					toast.error(
+						t("settings.security.twoFactor.regenerateFailed", "Failed to regenerate backup codes"),
+						{
+							description: getAuthErrorMessage(
+								result.error,
+								t(
+									"settings.security.twoFactor.regenerateFailed",
+									"Failed to regenerate backup codes",
+								),
+							),
+						},
+					);
 				} else if (result.data) {
 					setBackupCodes(result.data.backupCodes);
 					setShowRegenerateDialog(false);
 					setBackupCodesDialogOpen(true);
 					setRegeneratePassword("");
-					toast.success("Backup codes regenerated");
+					toast.success(
+						t("settings.security.twoFactor.backupCodesRegenerated", "Backup codes regenerated"),
+					);
 				}
 			} catch (error) {
-				toast.error("Failed to regenerate backup codes", {
-					description: error instanceof Error ? error.message : "An unexpected error occurred",
-				});
+				toast.error(
+					t("settings.security.twoFactor.regenerateFailed", "Failed to regenerate backup codes"),
+					{
+						description:
+							error instanceof Error
+								? error.message
+								: t("settings.security.twoFactor.unexpectedError", "An unexpected error occurred"),
+					},
+				);
 			}
 		});
 	};
 
 	const handleCopyBackupCodes = () => {
 		navigator.clipboard.writeText(backupCodes.join("\n"));
-		toast.success("Backup codes copied to clipboard");
+		toast.success(
+			t("settings.security.twoFactor.backupCodesCopied", "Backup codes copied to clipboard"),
+		);
 	};
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h3 className="text-lg font-medium">Two-Factor Authentication</h3>
+					<h3 className="text-lg font-medium">
+						{t("settings.security.twoFactor.title", "Two-Factor Authentication")}
+					</h3>
 					<p className="text-sm text-muted-foreground">
-						Add an extra layer of security to your account
+						{t(
+							"settings.security.twoFactor.description",
+							"Add an extra layer of security to your account",
+						)}
 					</p>
 				</div>
 				<Badge variant={isEnabled ? "default" : "secondary"}>
-					{isEnabled ? "Enabled" : "Disabled"}
+					{isEnabled
+						? t("settings.security.twoFactor.status.enabled", "Enabled")
+						: t("settings.security.twoFactor.status.disabled", "Disabled")}
 				</Badge>
 			</div>
 
 			<div className="flex gap-2">
 				{!isEnabled ? (
 					<Button onClick={handleRequestEnable} disabled={isPending}>
-						Enable Two-Factor Authentication
+						{t("settings.security.twoFactor.enable", "Enable Two-Factor Authentication")}
 					</Button>
 				) : (
 					<>
 						<Button variant="outline" onClick={handleRequestRegenerate} disabled={isPending}>
-							Regenerate Backup Codes
+							{t("settings.security.twoFactor.regenerateBackupCodes", "Regenerate Backup Codes")}
 						</Button>
 						<Button
 							variant="destructive"
 							onClick={() => setDisableDialogOpen(true)}
 							disabled={isPending}
 						>
-							Disable
+							{t("settings.security.twoFactor.disable", "Disable")}
 						</Button>
 					</>
 				)}
@@ -238,23 +294,33 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 			<ActionPanel open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>Enter Your Password</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.security.twoFactor.enterPasswordTitle", "Enter Your Password")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Please confirm your password to enable two-factor authentication
+							{t(
+								"settings.security.twoFactor.confirmPasswordToEnable",
+								"Please confirm your password to enable two-factor authentication",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium" htmlFor="enable-2fa-password">
-								Password
+								{t("settings.security.twoFactor.passwordLabel", "Password")}
 							</label>
 							<input
 								id="enable-2fa-password"
+								name="password"
 								type="password"
+								autoComplete="current-password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-								placeholder="Enter your password"
+								placeholder={t(
+									"settings.security.twoFactor.passwordPlaceholder",
+									"Enter your password…",
+								)}
 							/>
 						</div>
 					</ActionPanelBody>
@@ -267,10 +333,10 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							}}
 							disabled={isPending}
 						>
-							Cancel
+							{t("settings.security.twoFactor.cancel", "Cancel")}
 						</Button>
 						<Button onClick={handleEnable2FA} disabled={isPending || !password}>
-							Continue
+							{t("settings.security.twoFactor.continue", "Continue")}
 						</Button>
 					</ActionPanelFooter>
 				</ActionPanelContent>
@@ -280,23 +346,33 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 			<ActionPanel open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>Enter Your Password</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.security.twoFactor.enterPasswordTitle", "Enter Your Password")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Please confirm your password to regenerate backup codes
+							{t(
+								"settings.security.twoFactor.confirmPasswordToRegenerate",
+								"Please confirm your password to regenerate backup codes",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium" htmlFor="regenerate-2fa-password">
-								Password
+								{t("settings.security.twoFactor.passwordLabel", "Password")}
 							</label>
 							<input
 								id="regenerate-2fa-password"
+								name="password"
 								type="password"
+								autoComplete="current-password"
 								value={regeneratePassword}
 								onChange={(e) => setRegeneratePassword(e.target.value)}
 								className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-								placeholder="Enter your password"
+								placeholder={t(
+									"settings.security.twoFactor.passwordPlaceholder",
+									"Enter your password…",
+								)}
 							/>
 						</div>
 					</ActionPanelBody>
@@ -309,13 +385,13 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							}}
 							disabled={isPending}
 						>
-							Cancel
+							{t("settings.security.twoFactor.cancel", "Cancel")}
 						</Button>
 						<Button
 							onClick={handleRegenerateBackupCodes}
 							disabled={isPending || !regeneratePassword}
 						>
-							Regenerate Codes
+							{t("settings.security.twoFactor.regenerateCodes", "Regenerate Codes")}
 						</Button>
 					</ActionPanelFooter>
 				</ActionPanelContent>
@@ -325,9 +401,14 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 			<ActionPanel open={setupDialogOpen} onOpenChange={setSetupDialogOpen}>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>Setup Two-Factor Authentication</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.security.twoFactor.setupTitle", "Setup Two-Factor Authentication")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Scan the QR code with your authenticator app
+							{t(
+								"settings.security.twoFactor.scanQrCode",
+								"Scan the QR code with your authenticator app",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
@@ -344,7 +425,10 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 						{/* OTP Input */}
 						<div className="space-y-2">
 							<div className="text-sm font-medium">
-								Enter the 6-digit code from your authenticator app
+								{t(
+									"settings.security.twoFactor.enterAuthenticatorCode",
+									"Enter the 6-digit code from your authenticator app",
+								)}
 							</div>
 							<div className="flex justify-center">
 								<InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
@@ -367,10 +451,10 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							onClick={() => setSetupDialogOpen(false)}
 							disabled={isPending}
 						>
-							Cancel
+							{t("settings.security.twoFactor.cancel", "Cancel")}
 						</Button>
 						<Button onClick={handleVerifyAndEnable} disabled={isPending || otpValue.length !== 6}>
-							Verify and Enable
+							{t("settings.security.twoFactor.verifyAndEnable", "Verify and Enable")}
 						</Button>
 					</ActionPanelFooter>
 				</ActionPanelContent>
@@ -380,10 +464,14 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 			<ActionPanel open={backupCodesDialogOpen} onOpenChange={setBackupCodesDialogOpen}>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>Save Your Backup Codes</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.security.twoFactor.saveBackupCodesTitle", "Save Your Backup Codes")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Keep these codes in a safe place. You can use them to access your account if you lose
-							access to your authenticator app. Each code can only be used once.
+							{t(
+								"settings.security.twoFactor.saveBackupCodesDescription",
+								"Keep these codes in a safe place. You can use them to access your account if you lose access to your authenticator app. Each code can only be used once.",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
@@ -397,12 +485,14 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 						</div>
 
 						<Button variant="outline" onClick={handleCopyBackupCodes} className="w-full">
-							Copy Codes
+							{t("settings.security.twoFactor.copyCodes", "Copy Codes")}
 						</Button>
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button onClick={() => setBackupCodesDialogOpen(false)}>I've Saved These Codes</Button>
+						<Button onClick={() => setBackupCodesDialogOpen(false)}>
+							{t("settings.security.twoFactor.savedCodes", "I've Saved These Codes")}
+						</Button>
 					</ActionPanelFooter>
 				</ActionPanelContent>
 			</ActionPanel>
@@ -411,24 +501,33 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 			<AlertDialog open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Disable Two-Factor Authentication?</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("settings.security.twoFactor.disableTitle", "Disable Two-Factor Authentication?")}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will remove the extra layer of security from your account. Please enter your
-							password to confirm.
+							{t(
+								"settings.security.twoFactor.disableDescription",
+								"This will remove the extra layer of security from your account. Please enter your password to confirm.",
+							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<div className="space-y-4">
 						<div className="space-y-2">
 							<label className="text-sm font-medium" htmlFor="disable-2fa-password">
-								Password
+								{t("settings.security.twoFactor.passwordLabel", "Password")}
 							</label>
 							<input
 								id="disable-2fa-password"
+								name="password"
 								type="password"
+								autoComplete="current-password"
 								value={disablePassword}
 								onChange={(e) => setDisablePassword(e.target.value)}
 								className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-								placeholder="Enter your password"
+								placeholder={t(
+									"settings.security.twoFactor.passwordPlaceholder",
+									"Enter your password…",
+								)}
 							/>
 						</div>
 					</div>
@@ -440,7 +539,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 							}}
 							disabled={isPending}
 						>
-							Cancel
+							{t("settings.security.twoFactor.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction asChild>
 							<Button
@@ -451,7 +550,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								}}
 								disabled={isPending || !disablePassword}
 							>
-								Disable 2FA
+								{t("settings.security.twoFactor.disable2fa", "Disable 2FA")}
 							</Button>
 						</AlertDialogAction>
 					</AlertDialogFooter>

@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,8 @@ interface WeekStartSettingsProps {
 }
 
 export function WeekStartSettings({ currentWeekStartDay, onUpdate }: WeekStartSettingsProps) {
-	const router = useRouter();
+	const { t } = useTranslate();
+	const { refresh } = useRouter();
 	const normalizedCurrent = normalizeWeekStartDay(currentWeekStartDay);
 	const [weekStartDay, setWeekStartDay] = useState<WeekStartDay>(normalizedCurrent);
 	const [isLoading, setIsLoading] = useState(false);
@@ -41,16 +43,20 @@ export function WeekStartSettings({ currentWeekStartDay, onUpdate }: WeekStartSe
 		);
 
 		if (!result) {
-			toast.error("An error occurred while updating week start day");
+			toast.error(
+				t("settings.weekStart.updateError", "An error occurred while updating week start day"),
+			);
 			setIsLoading(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success("Week start day updated successfully");
-			router.refresh();
+			toast.success(t("settings.weekStart.updateSuccess", "Week start day updated successfully"));
+			refresh();
 		} else {
-			toast.error(result.error || "Failed to update week start day");
+			toast.error(
+				result.error || t("settings.weekStart.updateFailed", "Failed to update week start day"),
+			);
 		}
 
 		setIsLoading(false);
@@ -59,14 +65,19 @@ export function WeekStartSettings({ currentWeekStartDay, onUpdate }: WeekStartSe
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Week Starts On</CardTitle>
+				<CardTitle>{t("settings.weekStart.title", "Week Starts On")}</CardTitle>
 				<CardDescription>
-					Choose whether calendars and weekly summaries start on Sunday or Monday.
+					{t(
+						"settings.weekStart.description",
+						"Choose whether calendars and weekly summaries start on Sunday or Monday.",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="space-y-2">
-					<Label htmlFor="week-start-day">First day of the week</Label>
+					<Label htmlFor="week-start-day">
+						{t("settings.weekStart.label", "First day of the week")}
+					</Label>
 					<Select
 						value={weekStartDay}
 						onValueChange={(value) => setWeekStartDay(normalizeWeekStartDay(value))}
@@ -78,7 +89,9 @@ export function WeekStartSettings({ currentWeekStartDay, onUpdate }: WeekStartSe
 						<SelectContent>
 							{WEEK_START_OPTIONS.map((option) => (
 								<SelectItem key={option.value} value={option.value}>
-									{option.label}
+									{option.value === "sunday"
+										? t("settings.weekStart.options.sunday", "Sunday")
+										: t("settings.weekStart.options.monday", "Monday")}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -88,7 +101,7 @@ export function WeekStartSettings({ currentWeekStartDay, onUpdate }: WeekStartSe
 				{hasChanged && (
 					<Button onClick={handleSave} disabled={isLoading} className="w-full">
 						{isLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-						Save Week Start
+						{t("settings.weekStart.save", "Save Week Start")}
 					</Button>
 				)}
 			</CardContent>

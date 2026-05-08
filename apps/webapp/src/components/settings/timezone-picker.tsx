@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { Check, ChevronsUpDown, Globe } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -20,75 +21,70 @@ import { cn } from "@/lib/utils";
  */
 const TIMEZONE_GROUPS = [
 	{
-		region: "Americas",
+		region: "americas",
 		timezones: [
-			{ value: "America/New_York", label: "Eastern Time (New York)" },
-			{ value: "America/Chicago", label: "Central Time (Chicago)" },
-			{ value: "America/Denver", label: "Mountain Time (Denver)" },
-			{ value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
-			{ value: "America/Anchorage", label: "Alaska Time (Anchorage)" },
-			{ value: "Pacific/Honolulu", label: "Hawaii Time (Honolulu)" },
-			{ value: "America/Toronto", label: "Eastern Time (Toronto)" },
-			{ value: "America/Vancouver", label: "Pacific Time (Vancouver)" },
-			{ value: "America/Mexico_City", label: "Central Time (Mexico City)" },
-			{ value: "America/Sao_Paulo", label: "Brasilia Time (São Paulo)" },
-			{ value: "America/Buenos_Aires", label: "Argentina Time (Buenos Aires)" },
+			"America/New_York",
+			"America/Chicago",
+			"America/Denver",
+			"America/Los_Angeles",
+			"America/Anchorage",
+			"Pacific/Honolulu",
+			"America/Toronto",
+			"America/Vancouver",
+			"America/Mexico_City",
+			"America/Sao_Paulo",
+			"America/Buenos_Aires",
 		],
 	},
 	{
-		region: "Europe",
+		region: "europe",
 		timezones: [
-			{ value: "Europe/London", label: "GMT/BST (London)" },
-			{ value: "Europe/Paris", label: "Central European Time (Paris)" },
-			{ value: "Europe/Berlin", label: "Central European Time (Berlin)" },
-			{ value: "Europe/Rome", label: "Central European Time (Rome)" },
-			{ value: "Europe/Madrid", label: "Central European Time (Madrid)" },
-			{ value: "Europe/Amsterdam", label: "Central European Time (Amsterdam)" },
-			{ value: "Europe/Brussels", label: "Central European Time (Brussels)" },
-			{ value: "Europe/Vienna", label: "Central European Time (Vienna)" },
-			{ value: "Europe/Warsaw", label: "Central European Time (Warsaw)" },
-			{ value: "Europe/Stockholm", label: "Central European Time (Stockholm)" },
-			{ value: "Europe/Athens", label: "Eastern European Time (Athens)" },
-			{ value: "Europe/Helsinki", label: "Eastern European Time (Helsinki)" },
-			{ value: "Europe/Moscow", label: "Moscow Time (Moscow)" },
-			{ value: "Europe/Istanbul", label: "Turkey Time (Istanbul)" },
+			"Europe/London",
+			"Europe/Paris",
+			"Europe/Berlin",
+			"Europe/Rome",
+			"Europe/Madrid",
+			"Europe/Amsterdam",
+			"Europe/Brussels",
+			"Europe/Vienna",
+			"Europe/Warsaw",
+			"Europe/Stockholm",
+			"Europe/Athens",
+			"Europe/Helsinki",
+			"Europe/Moscow",
+			"Europe/Istanbul",
 		],
 	},
 	{
-		region: "Asia",
+		region: "asia",
 		timezones: [
-			{ value: "Asia/Dubai", label: "Gulf Standard Time (Dubai)" },
-			{ value: "Asia/Kolkata", label: "India Standard Time (Kolkata)" },
-			{ value: "Asia/Bangkok", label: "Indochina Time (Bangkok)" },
-			{ value: "Asia/Singapore", label: "Singapore Time (Singapore)" },
-			{ value: "Asia/Hong_Kong", label: "Hong Kong Time (Hong Kong)" },
-			{ value: "Asia/Shanghai", label: "China Standard Time (Shanghai)" },
-			{ value: "Asia/Tokyo", label: "Japan Standard Time (Tokyo)" },
-			{ value: "Asia/Seoul", label: "Korea Standard Time (Seoul)" },
+			"Asia/Dubai",
+			"Asia/Kolkata",
+			"Asia/Bangkok",
+			"Asia/Singapore",
+			"Asia/Hong_Kong",
+			"Asia/Shanghai",
+			"Asia/Tokyo",
+			"Asia/Seoul",
 		],
 	},
 	{
-		region: "Australia & Pacific",
+		region: "australiaPacific",
 		timezones: [
-			{ value: "Australia/Sydney", label: "Australian Eastern Time (Sydney)" },
-			{ value: "Australia/Melbourne", label: "Australian Eastern Time (Melbourne)" },
-			{ value: "Australia/Brisbane", label: "Australian Eastern Time (Brisbane)" },
-			{ value: "Australia/Perth", label: "Australian Western Time (Perth)" },
-			{ value: "Pacific/Auckland", label: "New Zealand Time (Auckland)" },
+			"Australia/Sydney",
+			"Australia/Melbourne",
+			"Australia/Brisbane",
+			"Australia/Perth",
+			"Pacific/Auckland",
 		],
 	},
 	{
-		region: "Africa",
-		timezones: [
-			{ value: "Africa/Cairo", label: "Eastern European Time (Cairo)" },
-			{ value: "Africa/Johannesburg", label: "South Africa Time (Johannesburg)" },
-			{ value: "Africa/Lagos", label: "West Africa Time (Lagos)" },
-			{ value: "Africa/Nairobi", label: "East Africa Time (Nairobi)" },
-		],
+		region: "africa",
+		timezones: ["Africa/Cairo", "Africa/Johannesburg", "Africa/Lagos", "Africa/Nairobi"],
 	},
 	{
-		region: "UTC/Other",
-		timezones: [{ value: "UTC", label: "Coordinated Universal Time (UTC)" }],
+		region: "utcOther",
+		timezones: ["UTC"],
 	},
 ];
 
@@ -99,17 +95,153 @@ interface TimezonePickerProps {
 }
 
 export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePickerProps) {
+	const { t } = useTranslate();
 	const [open, setOpen] = React.useState(false);
 	const listboxId = React.useId();
 
-	// Get current timezone label
-	const selectedLabel = React.useMemo(() => {
-		for (const group of TIMEZONE_GROUPS) {
-			const tz = group.timezones.find((t) => t.value === value);
-			if (tz) return tz.label;
+	const getGroupHeading = (region: string) => {
+		switch (region) {
+			case "americas":
+				return t("settings.timezone.picker.groups.americas", "Americas");
+			case "europe":
+				return t("settings.timezone.picker.groups.europe", "Europe");
+			case "asia":
+				return t("settings.timezone.picker.groups.asia", "Asia");
+			case "australiaPacific":
+				return t("settings.timezone.picker.groups.australiaPacific", "Australia & Pacific");
+			case "africa":
+				return t("settings.timezone.picker.groups.africa", "Africa");
+			case "utcOther":
+				return t("settings.timezone.picker.groups.utcOther", "UTC/Other");
+			default:
+				return region;
 		}
-		return value;
-	}, [value]);
+	};
+
+	const getTimezoneLabel = (timezone: string) => {
+		switch (timezone) {
+			case "America/New_York":
+				return t("settings.timezone.picker.labels.americaNewYork", "Eastern Time (New York)");
+			case "America/Chicago":
+				return t("settings.timezone.picker.labels.americaChicago", "Central Time (Chicago)");
+			case "America/Denver":
+				return t("settings.timezone.picker.labels.americaDenver", "Mountain Time (Denver)");
+			case "America/Los_Angeles":
+				return t("settings.timezone.picker.labels.americaLosAngeles", "Pacific Time (Los Angeles)");
+			case "America/Anchorage":
+				return t("settings.timezone.picker.labels.americaAnchorage", "Alaska Time (Anchorage)");
+			case "Pacific/Honolulu":
+				return t("settings.timezone.picker.labels.pacificHonolulu", "Hawaii Time (Honolulu)");
+			case "America/Toronto":
+				return t("settings.timezone.picker.labels.americaToronto", "Eastern Time (Toronto)");
+			case "America/Vancouver":
+				return t("settings.timezone.picker.labels.americaVancouver", "Pacific Time (Vancouver)");
+			case "America/Mexico_City":
+				return t("settings.timezone.picker.labels.americaMexicoCity", "Central Time (Mexico City)");
+			case "America/Sao_Paulo":
+				return t("settings.timezone.picker.labels.americaSaoPaulo", "Brasilia Time (São Paulo)");
+			case "America/Buenos_Aires":
+				return t(
+					"settings.timezone.picker.labels.americaBuenosAires",
+					"Argentina Time (Buenos Aires)",
+				);
+			case "Europe/London":
+				return t("settings.timezone.picker.labels.europeLondon", "GMT/BST (London)");
+			case "Europe/Paris":
+				return t("settings.timezone.picker.labels.europeParis", "Central European Time (Paris)");
+			case "Europe/Berlin":
+				return t("settings.timezone.picker.labels.europeBerlin", "Central European Time (Berlin)");
+			case "Europe/Rome":
+				return t("settings.timezone.picker.labels.europeRome", "Central European Time (Rome)");
+			case "Europe/Madrid":
+				return t("settings.timezone.picker.labels.europeMadrid", "Central European Time (Madrid)");
+			case "Europe/Amsterdam":
+				return t(
+					"settings.timezone.picker.labels.europeAmsterdam",
+					"Central European Time (Amsterdam)",
+				);
+			case "Europe/Brussels":
+				return t(
+					"settings.timezone.picker.labels.europeBrussels",
+					"Central European Time (Brussels)",
+				);
+			case "Europe/Vienna":
+				return t("settings.timezone.picker.labels.europeVienna", "Central European Time (Vienna)");
+			case "Europe/Warsaw":
+				return t("settings.timezone.picker.labels.europeWarsaw", "Central European Time (Warsaw)");
+			case "Europe/Stockholm":
+				return t(
+					"settings.timezone.picker.labels.europeStockholm",
+					"Central European Time (Stockholm)",
+				);
+			case "Europe/Athens":
+				return t("settings.timezone.picker.labels.europeAthens", "Eastern European Time (Athens)");
+			case "Europe/Helsinki":
+				return t(
+					"settings.timezone.picker.labels.europeHelsinki",
+					"Eastern European Time (Helsinki)",
+				);
+			case "Europe/Moscow":
+				return t("settings.timezone.picker.labels.europeMoscow", "Moscow Time (Moscow)");
+			case "Europe/Istanbul":
+				return t("settings.timezone.picker.labels.europeIstanbul", "Turkey Time (Istanbul)");
+			case "Asia/Dubai":
+				return t("settings.timezone.picker.labels.asiaDubai", "Gulf Standard Time (Dubai)");
+			case "Asia/Kolkata":
+				return t("settings.timezone.picker.labels.asiaKolkata", "India Standard Time (Kolkata)");
+			case "Asia/Bangkok":
+				return t("settings.timezone.picker.labels.asiaBangkok", "Indochina Time (Bangkok)");
+			case "Asia/Singapore":
+				return t("settings.timezone.picker.labels.asiaSingapore", "Singapore Time (Singapore)");
+			case "Asia/Hong_Kong":
+				return t("settings.timezone.picker.labels.asiaHongKong", "Hong Kong Time (Hong Kong)");
+			case "Asia/Shanghai":
+				return t("settings.timezone.picker.labels.asiaShanghai", "China Standard Time (Shanghai)");
+			case "Asia/Tokyo":
+				return t("settings.timezone.picker.labels.asiaTokyo", "Japan Standard Time (Tokyo)");
+			case "Asia/Seoul":
+				return t("settings.timezone.picker.labels.asiaSeoul", "Korea Standard Time (Seoul)");
+			case "Australia/Sydney":
+				return t(
+					"settings.timezone.picker.labels.australiaSydney",
+					"Australian Eastern Time (Sydney)",
+				);
+			case "Australia/Melbourne":
+				return t(
+					"settings.timezone.picker.labels.australiaMelbourne",
+					"Australian Eastern Time (Melbourne)",
+				);
+			case "Australia/Brisbane":
+				return t(
+					"settings.timezone.picker.labels.australiaBrisbane",
+					"Australian Eastern Time (Brisbane)",
+				);
+			case "Australia/Perth":
+				return t(
+					"settings.timezone.picker.labels.australiaPerth",
+					"Australian Western Time (Perth)",
+				);
+			case "Pacific/Auckland":
+				return t("settings.timezone.picker.labels.pacificAuckland", "New Zealand Time (Auckland)");
+			case "Africa/Cairo":
+				return t("settings.timezone.picker.labels.africaCairo", "Eastern European Time (Cairo)");
+			case "Africa/Johannesburg":
+				return t(
+					"settings.timezone.picker.labels.africaJohannesburg",
+					"South Africa Time (Johannesburg)",
+				);
+			case "Africa/Lagos":
+				return t("settings.timezone.picker.labels.africaLagos", "West Africa Time (Lagos)");
+			case "Africa/Nairobi":
+				return t("settings.timezone.picker.labels.africaNairobi", "East Africa Time (Nairobi)");
+			case "UTC":
+				return t("settings.timezone.picker.labels.utc", "Coordinated Universal Time (UTC)");
+			default:
+				return timezone;
+		}
+	};
+
+	const selectedLabel = getTimezoneLabel(value);
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -131,15 +263,15 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 			</PopoverTrigger>
 			<PopoverContent className="w-[400px] p-0" align="start">
 				<Command>
-					<CommandInput placeholder="Search timezone..." />
-					<CommandEmpty>No timezone found.</CommandEmpty>
+					<CommandInput placeholder={t("settings.timezone.picker.search", "Search timezone…")} />
+					<CommandEmpty>{t("settings.timezone.picker.empty", "No timezone found.")}</CommandEmpty>
 					<CommandList id={listboxId}>
 						{TIMEZONE_GROUPS.map((group) => (
-							<CommandGroup key={group.region} heading={group.region}>
-								{group.timezones.map((tz) => (
+							<CommandGroup key={group.region} heading={getGroupHeading(group.region)}>
+								{group.timezones.map((timezone) => (
 									<CommandItem
-										key={tz.value}
-										value={tz.value}
+										key={timezone}
+										value={timezone}
 										onSelect={(currentValue) => {
 											onChange(currentValue);
 											setOpen(false);
@@ -148,10 +280,10 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 										<Check
 											className={cn(
 												"mr-2 h-4 w-4",
-												value === tz.value ? "opacity-100" : "opacity-0",
+												value === timezone ? "opacity-100" : "opacity-0",
 											)}
 										/>
-										{tz.label}
+										{getTimezoneLabel(timezone)}
 									</CommandItem>
 								))}
 							</CommandGroup>

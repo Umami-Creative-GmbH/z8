@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { assignManagers } from "@/app/[locale]/(app)/settings/employees/actions";
@@ -52,11 +53,14 @@ export function ManagerAssignment({
 	onSuccess,
 	onCancel,
 }: ManagerAssignmentProps) {
+	const { t } = useTranslate();
 	const [initialManagerState] = useState(() => buildInitialManagerState(currentManagers));
 	const [selectedManagers, setSelectedManagers] = useState<Set<string>>(
 		() => initialManagerState.selectedManagers,
 	);
-	const [primaryManager, setPrimaryManager] = useState<string>(() => initialManagerState.primaryManager);
+	const [primaryManager, setPrimaryManager] = useState<string>(
+		() => initialManagerState.primaryManager,
+	);
 	const [loading, setLoading] = useState(false);
 
 	const handleManagerToggle = (managerId: string, checked: boolean) => {
@@ -82,13 +86,17 @@ export function ManagerAssignment({
 	const handleSave = async () => {
 		// Validate at least one manager selected
 		if (selectedManagers.size === 0) {
-			toast.error("Please select at least one manager");
+			toast.error(
+				t("settings.managerAssignment.validation.selectOne", "Please select at least one manager"),
+			);
 			return;
 		}
 
 		// Validate primary manager is selected
 		if (!primaryManager || !selectedManagers.has(primaryManager)) {
-			toast.error("Please designate a primary manager");
+			toast.error(
+				t("settings.managerAssignment.validation.primary", "Please designate a primary manager"),
+			);
 			return;
 		}
 
@@ -102,16 +110,20 @@ export function ManagerAssignment({
 		const result = await assignManagers(employeeId, { managers }).catch(() => null);
 
 		if (!result) {
-			toast.error("An unexpected error occurred");
+			toast.error(t("settings.managerAssignment.unexpectedError", "An unexpected error occurred"));
 			setLoading(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success("Managers assigned successfully");
+			toast.success(
+				t("settings.managerAssignment.assignSuccess", "Managers assigned successfully"),
+			);
 			onSuccess?.();
 		} else {
-			toast.error(result.error || "Failed to assign managers");
+			toast.error(
+				result.error || t("settings.managerAssignment.assignFailed", "Failed to assign managers"),
+			);
 		}
 
 		setLoading(false);
@@ -125,19 +137,26 @@ export function ManagerAssignment({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Manager Assignment</CardTitle>
+				<CardTitle>{t("settings.managerAssignment.title", "Manager Assignment")}</CardTitle>
 				<CardDescription>
-					Select one or more managers for this employee. Designate one as primary.
+					{t(
+						"settings.managerAssignment.description",
+						"Select one or more managers for this employee. Designate one as primary.",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{/* Manager Selection */}
 				<div className="space-y-4">
-					<Label className="text-base font-semibold">Available Managers</Label>
+					<Label className="text-base font-semibold">
+						{t("settings.managerAssignment.availableManagers", "Available Managers")}
+					</Label>
 					<ScrollArea className="h-[300px] rounded-md border p-4">
 						<div className="space-y-4">
 							{availableManagers.length === 0 ? (
-								<p className="text-sm text-muted-foreground">No available managers</p>
+								<p className="text-sm text-muted-foreground">
+									{t("settings.managerAssignment.empty", "No available managers")}
+								</p>
 							) : (
 								availableManagers.map((manager) => {
 									const isSelected = selectedManagers.has(manager.id);
@@ -185,7 +204,9 @@ export function ManagerAssignment({
 				{/* Primary Manager Selection */}
 				{selectedManagers.size > 0 && (
 					<div className="space-y-4">
-						<Label className="text-base font-semibold">Primary Manager</Label>
+						<Label className="text-base font-semibold">
+							{t("settings.managerAssignment.primaryManager", "Primary Manager")}
+						</Label>
 						<RadioGroup value={primaryManager} onValueChange={setPrimaryManager} disabled={loading}>
 							<div className="space-y-2">
 								{Array.from(selectedManagers).map((managerId) => {
@@ -227,7 +248,10 @@ export function ManagerAssignment({
 							</div>
 						</RadioGroup>
 						<p className="text-sm text-muted-foreground">
-							The primary manager will be the default for approvals and notifications
+							{t(
+								"settings.managerAssignment.primaryDescription",
+								"The primary manager will be the default for approvals and notifications",
+							)}
 						</p>
 					</div>
 				)}
@@ -237,13 +261,13 @@ export function ManagerAssignment({
 					{onCancel && (
 						<Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
 							<IconX className="mr-2 size-4" />
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 					)}
 					<Button onClick={handleSave} disabled={loading || !isChanged}>
 						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 						<IconCheck className="mr-2 size-4" />
-						Save Managers
+						{t("settings.managerAssignment.save", "Save Managers")}
 					</Button>
 				</div>
 			</CardContent>

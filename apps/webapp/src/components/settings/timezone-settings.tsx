@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface TimezoneSettingsProps {
 }
 
 export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: TimezoneSettingsProps) {
+	const { t } = useTranslate();
 	const [timezone, setTimezone] = useState(currentTimezone);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -25,15 +27,15 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 		);
 
 		if (!result) {
-			toast.error("An error occurred while updating timezone");
+			toast.error(t("settings.timezone.updateError", "An error occurred while updating timezone"));
 			setIsLoading(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success("Timezone updated successfully");
+			toast.success(t("settings.timezone.updateSuccess", "Timezone updated successfully"));
 		} else {
-			toast.error(result.error || "Failed to update timezone");
+			toast.error(result.error || t("settings.timezone.updateFailed", "Failed to update timezone"));
 		}
 
 		setIsLoading(false);
@@ -44,16 +46,21 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Timezone</CardTitle>
+				<CardTitle>{t("settings.timezone.title", "Timezone")}</CardTitle>
 				<CardDescription>
-					Set your timezone for accurate date and time display across the application
+					{t(
+						"settings.timezone.description",
+						"Set your timezone for accurate date and time display across the application",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="space-y-2">
 					<TimezonePicker value={timezone} onChange={setTimezone} disabled={isLoading} />
 					<p className="text-sm text-muted-foreground">
-						Current time in {timezone}:{" "}
+						{t("settings.timezone.currentTimePrefix", "Current time in {timezone}:", {
+							timezone,
+						})}{" "}
 						{new Date().toLocaleString("en-US", {
 							timeZone: timezone,
 							dateStyle: "medium",
@@ -65,7 +72,7 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 				{hasChanged && (
 					<Button onClick={handleSave} disabled={isLoading} className="w-full">
 						{isLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-						Save Timezone
+						{t("settings.timezone.save", "Save Timezone")}
 					</Button>
 				)}
 			</CardContent>

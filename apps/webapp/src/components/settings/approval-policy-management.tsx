@@ -2,6 +2,7 @@
 
 import { IconPencil, IconPlus } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -42,6 +43,7 @@ function stagesCount(policy: ApprovalPolicyData) {
 }
 
 export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManagementProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const policyQueryKey = approvalPolicyQueryKey(organizationId);
@@ -53,16 +55,21 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 		mutationFn: upsertApprovalPolicy,
 		onSuccess: async (result) => {
 			if (!result.success) {
-				toast.error(result.error || "Approval policy could not be saved.");
+				toast.error(
+					result.error ||
+						t("settings.approvalPolicies.toast.saveFailed", "Approval policy could not be saved."),
+				);
 				return;
 			}
 
-			toast.success("Approval policy created");
+			toast.success(t("settings.approvalPolicies.toast.created", "Approval policy created"));
 			await queryClient.invalidateQueries({ queryKey: policyQueryKey });
 			setDialogOpen(false);
 		},
 		onError: () => {
-			toast.error("Approval policy could not be saved.");
+			toast.error(
+				t("settings.approvalPolicies.toast.saveFailed", "Approval policy could not be saved."),
+			);
 		},
 	});
 	const policies = data || [];
@@ -74,10 +81,14 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">Approval Policies</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("settings.approvalPolicies.title", "Approval Policies")}
+				</h1>
 				<p className="text-sm text-muted-foreground">
-					Configure sequential approval chains by team, location, category, amount, overtime risk,
-					and employee group.
+					{t(
+						"settings.approvalPolicies.description",
+						"Configure sequential approval chains by team, location, category, amount, overtime risk, and employee group.",
+					)}
 				</p>
 			</div>
 
@@ -88,40 +99,54 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 				<CardHeader>
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 						<div className="space-y-1.5">
-							<CardTitle>Active Policy Table</CardTitle>
+							<CardTitle>
+								{t("settings.approvalPolicies.activePolicyTable", "Active Policy Table")}
+							</CardTitle>
 							<CardDescription>
-								Policies are evaluated by priority; the first matching active policy provides the
-								approval chain.
+								{t(
+									"settings.approvalPolicies.activePolicyTableDescription",
+									"Policies are evaluated by priority; the first matching active policy provides the approval chain.",
+								)}
 							</CardDescription>
 						</div>
 						<Button onClick={() => setDialogOpen(true)}>
 							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-							Add Policy
+							{t("settings.approvalPolicies.addPolicy", "Add Policy")}
 						</Button>
 					</div>
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (
-						<div className="py-6 text-sm text-muted-foreground">Loading policies…</div>
+						<div className="py-6 text-sm text-muted-foreground">
+							{t("settings.approvalPolicies.loading", "Loading policies…")}
+						</div>
 					) : isError ? (
 						<div className="py-6 text-sm text-destructive" role="status">
-							Approval policies could not be loaded.
+							{t("settings.approvalPolicies.loadFailed", "Approval policies could not be loaded.")}
 						</div>
 					) : policies.length === 0 ? (
 						<div className="py-6 text-sm text-muted-foreground">
-							No approval policies configured yet. Create a policy to define your first approval
-							chain.
+							{t(
+								"settings.approvalPolicies.empty",
+								"No approval policies configured yet. Create a policy to define your first approval chain.",
+							)}
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Priority</TableHead>
-									<TableHead className="min-w-0">Name</TableHead>
-									<TableHead>Active status</TableHead>
-									<TableHead>Conditions count</TableHead>
-									<TableHead>Stages count</TableHead>
-									<TableHead className="w-[80px]">Actions</TableHead>
+									<TableHead>{t("settings.approvalPolicies.priority", "Priority")}</TableHead>
+									<TableHead className="min-w-0">{t("common.name", "Name")}</TableHead>
+									<TableHead>
+										{t("settings.approvalPolicies.activeStatus", "Active status")}
+									</TableHead>
+									<TableHead>
+										{t("settings.approvalPolicies.conditionsCount", "Conditions count")}
+									</TableHead>
+									<TableHead>
+										{t("settings.approvalPolicies.stagesCount", "Stages count")}
+									</TableHead>
+									<TableHead className="w-[80px]">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -135,13 +160,20 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 										</TableCell>
 										<TableCell>
 											<Badge variant={policy.isActive ? "default" : "outline"}>
-												{policy.isActive ? "Active" : "Inactive"}
+												{policy.isActive
+													? t("settings.approvalPolicies.status.active", "Active")
+													: t("settings.approvalPolicies.status.inactive", "Inactive")}
 											</Badge>
 										</TableCell>
 										<TableCell>{conditionsCount(policy)}</TableCell>
 										<TableCell>{stagesCount(policy)}</TableCell>
 										<TableCell>
-											<Button variant="ghost" size="icon" disabled aria-label="Edit policy">
+											<Button
+												variant="ghost"
+												size="icon"
+												disabled
+												aria-label={t("settings.approvalPolicies.editPolicy", "Edit policy")}
+											>
 												<IconPencil className="h-4 w-4" aria-hidden="true" />
 											</Button>
 										</TableCell>

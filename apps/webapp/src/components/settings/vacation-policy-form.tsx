@@ -12,9 +12,6 @@ import {
 	createVacationPolicy,
 	updateVacationPolicy,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,6 +21,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -196,21 +196,35 @@ export function VacationPolicyForm({
 						<form.Field
 							name="name"
 							validators={{
-								onChange: z.string().min(1, "Policy name is required").max(100, "Name too long"),
+								onChange: z
+									.string()
+									.min(
+										1,
+										t("settings.vacation.policyForm.policyNameRequired", "Policy name is required"),
+									)
+									.max(100, t("settings.vacation.policyForm.nameTooLong", "Name too long")),
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="policyName">Policy Name</Label>
+									<Label htmlFor="policyName">
+										{t("settings.vacation.policyForm.policyName", "Policy Name")}
+									</Label>
 									<Input
 										id="policyName"
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}
-										placeholder="e.g., Germany Standard, Senior Engineers"
+										placeholder={t(
+											"settings.vacation.policyForm.policyNamePlaceholder",
+											"e.g., Germany Standard, Senior Engineers",
+										)}
 									/>
 									<p className="text-sm text-muted-foreground">
-										A descriptive name to identify this vacation policy
+										{t(
+											"settings.vacation.policyForm.policyNameDescription",
+											"A descriptive name to identify this vacation policy",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">
@@ -227,7 +241,9 @@ export function VacationPolicyForm({
 							<form.Field name="startDate">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>Effective From</Label>
+										<Label>
+											{t("settings.vacation.policyForm.effectiveFrom", "Effective From")}
+										</Label>
 										<Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
 											<PopoverTrigger asChild>
 												<Button
@@ -241,7 +257,7 @@ export function VacationPolicyForm({
 													{field.state.value ? (
 														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 													) : (
-														<span>Pick a date</span>
+														<span>{t("settings.vacation.policyForm.pickDate", "Pick a date")}</span>
 													)}
 												</Button>
 											</PopoverTrigger>
@@ -260,7 +276,10 @@ export function VacationPolicyForm({
 											</PopoverContent>
 										</Popover>
 										<p className="text-sm text-muted-foreground">
-											When this policy becomes effective
+											{t(
+												"settings.vacation.policyForm.effectiveFromDescription",
+												"When this policy becomes effective",
+											)}
 										</p>
 									</div>
 								)}
@@ -269,7 +288,9 @@ export function VacationPolicyForm({
 							<form.Field name="validUntil">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>Valid Until (optional)</Label>
+										<Label>
+											{t("settings.vacation.policyForm.validUntil", "Valid Until (optional)")}
+										</Label>
 										<Popover open={validUntilOpen} onOpenChange={setValidUntilOpen}>
 											<PopoverTrigger asChild>
 												<Button
@@ -283,7 +304,9 @@ export function VacationPolicyForm({
 													{field.state.value ? (
 														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 													) : (
-														<span>No end date</span>
+														<span>
+															{t("settings.vacation.policyForm.noEndDate", "No end date")}
+														</span>
 													)}
 												</Button>
 											</PopoverTrigger>
@@ -298,7 +321,7 @@ export function VacationPolicyForm({
 															setValidUntilOpen(false);
 														}}
 													>
-														Clear date
+														{t("settings.vacation.policyForm.clearDate", "Clear date")}
 													</Button>
 												</div>
 												<Calendar
@@ -312,7 +335,12 @@ export function VacationPolicyForm({
 												/>
 											</PopoverContent>
 										</Popover>
-										<p className="text-sm text-muted-foreground">Leave empty for ongoing policy</p>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"settings.vacation.policyForm.validUntilDescription",
+												"Leave empty for ongoing policy",
+											)}
+										</p>
 									</div>
 								)}
 							</form.Field>
@@ -328,11 +356,13 @@ export function VacationPolicyForm({
 									/>
 									<div className="space-y-1 leading-none">
 										<Label htmlFor="isCompanyDefault" className="cursor-pointer">
-											Set as Company Default
+											{t("settings.vacation.policyForm.companyDefault", "Set as Company Default")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
-											This policy will apply to all employees without specific overrides. Setting
-											this will supersede any existing company default.
+											{t(
+												"settings.vacation.policyForm.companyDefaultDescription",
+												"This policy will apply to all employees without specific overrides. Setting this will supersede any existing company default.",
+											)}
 										</p>
 									</div>
 								</div>
@@ -346,13 +376,15 @@ export function VacationPolicyForm({
 									.string()
 									.refine(
 										(val) => val && !Number.isNaN(parseFloat(val)) && parseFloat(val) > 0,
-										"Must be a positive number",
+										t("settings.vacation.policyForm.positiveNumber", "Must be a positive number"),
 									),
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="defaultAnnualDays">Default Annual Days</Label>
+									<Label htmlFor="defaultAnnualDays">
+										{t("settings.vacation.policyForm.defaultAnnualDays", "Default Annual Days")}
+									</Label>
 									<Input
 										id="defaultAnnualDays"
 										type="number"
@@ -363,7 +395,10 @@ export function VacationPolicyForm({
 										placeholder="20"
 									/>
 									<p className="text-sm text-muted-foreground">
-										Default number of vacation days per year for all employees
+										{t(
+											"settings.vacation.policyForm.defaultAnnualDaysDescription",
+											"Default number of vacation days per year for all employees",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">
@@ -379,7 +414,9 @@ export function VacationPolicyForm({
 						<form.Field name="accrualType">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="accrualType">Accrual Type</Label>
+									<Label htmlFor="accrualType">
+										{t("settings.vacation.policyForm.accrualType", "Accrual Type")}
+									</Label>
 									<Select
 										value={field.state.value}
 										onValueChange={(value) =>
@@ -387,16 +424,30 @@ export function VacationPolicyForm({
 										}
 									>
 										<SelectTrigger id="accrualType">
-											<SelectValue placeholder="Select accrual type" />
+											<SelectValue
+												placeholder={t(
+													"settings.vacation.policyForm.selectAccrualType",
+													"Select accrual type",
+												)}
+											/>
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="annual">Annual (all at once)</SelectItem>
-											<SelectItem value="monthly">Monthly accrual</SelectItem>
-											<SelectItem value="biweekly">Biweekly accrual</SelectItem>
+											<SelectItem value="annual">
+												{t("settings.vacation.policyForm.accrualAnnual", "Annual (all at once)")}
+											</SelectItem>
+											<SelectItem value="monthly">
+												{t("settings.vacation.policyForm.accrualMonthly", "Monthly accrual")}
+											</SelectItem>
+											<SelectItem value="biweekly">
+												{t("settings.vacation.policyForm.accrualBiweekly", "Biweekly accrual")}
+											</SelectItem>
 										</SelectContent>
 									</Select>
 									<p className="text-sm text-muted-foreground">
-										How vacation days are granted throughout the year
+										{t(
+											"settings.vacation.policyForm.accrualTypeDescription",
+											"How vacation days are granted throughout the year",
+										)}
 									</p>
 								</div>
 							)}
@@ -405,13 +456,17 @@ export function VacationPolicyForm({
 						<form.Field name="accrualStartMonth">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="accrualStartMonth">Accrual Start Month</Label>
+									<Label htmlFor="accrualStartMonth">
+										{t("settings.vacation.policyForm.accrualStartMonth", "Accrual Start Month")}
+									</Label>
 									<Select
 										value={field.state.value?.toString() || "1"}
 										onValueChange={(val) => field.handleChange(parseInt(val, 10))}
 									>
 										<SelectTrigger id="accrualStartMonth">
-											<SelectValue placeholder="Select month" />
+											<SelectValue
+												placeholder={t("settings.vacation.policyForm.selectMonth", "Select month")}
+											/>
 										</SelectTrigger>
 										<SelectContent>
 											{Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
@@ -424,7 +479,10 @@ export function VacationPolicyForm({
 										</SelectContent>
 									</Select>
 									<p className="text-sm text-muted-foreground">
-										Month when vacation accrual begins (typically January or hire date)
+										{t(
+											"settings.vacation.policyForm.accrualStartMonthDescription",
+											"Month when vacation accrual begins (typically January or hire date)",
+										)}
 									</p>
 								</div>
 							)}
@@ -434,9 +492,14 @@ export function VacationPolicyForm({
 							{(field) => (
 								<div className="flex flex-row items-center justify-between rounded-lg border p-4">
 									<div className="space-y-0.5">
-										<Label className="text-base">Allow Carryover</Label>
+										<Label className="text-base">
+											{t("settings.vacation.policyForm.allowCarryover", "Allow Carryover")}
+										</Label>
 										<p className="text-sm text-muted-foreground">
-											Allow employees to carry unused days to next year
+											{t(
+												"settings.vacation.policyForm.allowCarryoverDescription",
+												"Allow employees to carry unused days to next year",
+											)}
 										</p>
 									</div>
 									<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
@@ -449,7 +512,12 @@ export function VacationPolicyForm({
 								<form.Field name="maxCarryoverDays">
 									{(field) => (
 										<div className="space-y-2">
-											<Label htmlFor="maxCarryoverDays">Max Carryover Days (optional)</Label>
+											<Label htmlFor="maxCarryoverDays">
+												{t(
+													"settings.vacation.policyForm.maxCarryoverDays",
+													"Max Carryover Days (optional)",
+												)}
+											</Label>
 											<Input
 												id="maxCarryoverDays"
 												type="number"
@@ -457,10 +525,16 @@ export function VacationPolicyForm({
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
 												onBlur={field.handleBlur}
-												placeholder="Leave empty for unlimited"
+												placeholder={t(
+													"settings.vacation.policyForm.unlimitedPlaceholder",
+													"Leave empty for unlimited",
+												)}
 											/>
 											<p className="text-sm text-muted-foreground">
-												Maximum days that can be carried over (leave empty for unlimited)
+												{t(
+													"settings.vacation.policyForm.maxCarryoverDaysDescription",
+													"Maximum days that can be carried over (leave empty for unlimited)",
+												)}
 											</p>
 										</div>
 									)}
@@ -470,7 +544,10 @@ export function VacationPolicyForm({
 									{(field) => (
 										<div className="space-y-2">
 											<Label htmlFor="carryoverExpiryMonths">
-												Carryover Expiry (months, optional)
+												{t(
+													"settings.vacation.policyForm.carryoverExpiryMonths",
+													"Carryover Expiry (months, optional)",
+												)}
 											</Label>
 											<Input
 												id="carryoverExpiryMonths"
@@ -484,10 +561,16 @@ export function VacationPolicyForm({
 													)
 												}
 												onBlur={field.handleBlur}
-												placeholder="e.g., 3"
+												placeholder={t(
+													"settings.vacation.policyForm.expiryMonthsPlaceholder",
+													"e.g., 3",
+												)}
 											/>
 											<p className="text-sm text-muted-foreground">
-												Number of months before carried-over days expire (optional)
+												{t(
+													"settings.vacation.policyForm.carryoverExpiryMonthsDescription",
+													"Number of months before carried-over days expire (optional)",
+												)}
 											</p>
 										</div>
 									)}
