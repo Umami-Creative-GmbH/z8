@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2, IconShield, IconUserCog } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { PermissionEditor } from "@/components/settings/permission-editor";
 import {
@@ -27,10 +28,14 @@ import type { SelectableEmployee } from "../employees/actions";
 import type { TeamItem } from "./page-utils";
 
 export function PermissionsEmptyState({ noEmployee }: { noEmployee: boolean }) {
+	const { t } = useTranslate();
+
 	if (noEmployee) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage permissions" />
+				<NoEmployeeError
+					feature={t("settings.permissions.noEmployeeFeature", "manage permissions")}
+				/>
 			</div>
 		);
 	}
@@ -40,7 +45,9 @@ export function PermissionsEmptyState({ noEmployee }: { noEmployee: boolean }) {
 			<Card>
 				<CardContent className="flex flex-col items-center justify-center py-8">
 					<IconShield className="mb-4 size-12 text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">Admin access required</p>
+					<p className="text-sm text-muted-foreground">
+						{t("settings.permissions.adminRequired", "Admin access required")}
+					</p>
 				</CardContent>
 			</Card>
 		</div>
@@ -56,6 +63,7 @@ export function PermissionsTableCard(props: {
 	onEdit: (employee: SelectableEmployee) => void;
 	getSummary: (employeeId: string) => { count: number; scope: string } | null;
 }) {
+	const { t } = useTranslate();
 	const { loading, searchQuery, onSearchChange, onRefresh, employees, onEdit, getSummary } = props;
 
 	return (
@@ -63,19 +71,30 @@ export function PermissionsTableCard(props: {
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div>
-						<CardTitle>Employee Permissions</CardTitle>
-						<CardDescription>Click on an employee to edit their permissions</CardDescription>
+						<CardTitle>
+							{t("settings.permissions.employeePermissions.title", "Employee Permissions")}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.permissions.employeePermissions.description",
+								"Click on an employee to edit their permissions",
+							)}
+						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
 						{loading ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
-						Refresh
+						{t("settings.permissions.refresh", "Refresh")}
 					</Button>
 				</div>
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-4">
 					<Input
-						placeholder="Search by name, email, or position..."
+						aria-label={t("settings.permissions.searchLabel", "Search employees")}
+						placeholder={t(
+							"settings.permissions.searchPlaceholder",
+							"Search by name, email, or position...",
+						)}
 						value={searchQuery}
 						onChange={(event) => onSearchChange(event.target.value)}
 						className="max-w-sm"
@@ -88,17 +107,23 @@ export function PermissionsTableCard(props: {
 					) : employees.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8">
 							<IconUserCog className="mb-4 size-12 text-muted-foreground" />
-							<p className="text-sm text-muted-foreground">No employees found</p>
+							<p className="text-sm text-muted-foreground">
+								{t("settings.permissions.emptyState", "No employees found")}
+							</p>
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Employee</TableHead>
-									<TableHead>Position</TableHead>
-									<TableHead>Role</TableHead>
-									<TableHead>Permissions</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
+									<TableHead>{t("settings.permissions.table.employee", "Employee")}</TableHead>
+									<TableHead>{t("settings.permissions.table.position", "Position")}</TableHead>
+									<TableHead>{t("settings.permissions.table.role", "Role")}</TableHead>
+									<TableHead>
+										{t("settings.permissions.table.permissions", "Permissions")}
+									</TableHead>
+									<TableHead className="text-right">
+										{t("settings.permissions.table.actions", "Actions")}
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -133,17 +158,26 @@ export function PermissionsTableCard(props: {
 											</TableCell>
 											<TableCell>
 												{employee.role === "admin" ? (
-													<Badge variant="default">All Permissions</Badge>
+													<Badge variant="default">
+														{t("settings.permissions.badge.allPermissions", "All Permissions")}
+													</Badge>
 												) : permissionSummary ? (
 													<div className="flex gap-2">
 														<Badge variant="secondary">
-															{permissionSummary.count} permission
-															{permissionSummary.count !== 1 ? "s" : ""}
+															{t(
+																"settings.permissions.badge.permissionCount",
+																"{count} permission(s)",
+																{
+																	count: permissionSummary.count,
+																},
+															)}
 														</Badge>
 														<Badge variant="outline">{permissionSummary.scope}</Badge>
 													</div>
 												) : (
-													<span className="text-sm text-muted-foreground">No permissions</span>
+													<span className="text-sm text-muted-foreground">
+														{t("settings.permissions.noPermissions", "No permissions")}
+													</span>
 												)}
 											</TableCell>
 											<TableCell className="text-right">
@@ -153,7 +187,9 @@ export function PermissionsTableCard(props: {
 													onClick={() => onEdit(employee)}
 													disabled={employee.role === "admin"}
 												>
-													{employee.role === "admin" ? "—" : "Edit"}
+													{employee.role === "admin"
+														? "—"
+														: t("settings.permissions.actions.edit", "Edit")}
 												</Button>
 											</TableCell>
 										</TableRow>
@@ -176,6 +212,7 @@ export function PermissionEditorDialog(props: {
 	onClose: () => void;
 	onSuccess: () => void;
 }) {
+	const { t } = useTranslate();
 	const { selectedEmployee, currentEmployee, teams, currentPermissions, onClose, onSuccess } =
 		props;
 
@@ -183,7 +220,11 @@ export function PermissionEditorDialog(props: {
 		<ActionPanel open={!!selectedEmployee} onOpenChange={(open) => !open && onClose()}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
-					<ActionPanelTitle>Edit Permissions - {selectedEmployee?.user.name}</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.permissions.editor.title", "Edit Permissions - {name}", {
+							name: selectedEmployee?.user.name ?? "",
+						})}
+					</ActionPanelTitle>
 				</ActionPanelHeader>
 				<ActionPanelBody>
 					{selectedEmployee && currentEmployee ? (

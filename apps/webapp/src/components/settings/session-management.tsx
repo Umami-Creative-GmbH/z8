@@ -49,7 +49,7 @@ function parseUserAgent(userAgent: string | null | undefined): {
 	device: string;
 } {
 	if (!userAgent) {
-		return { browser: "Unknown", os: "Unknown", device: "Unknown" };
+		return { browser: "Unknown Browser", os: "Unknown OS", device: "Desktop" };
 	}
 
 	// Simple user agent parsing (you might want to use a library like ua-parser-js for production)
@@ -117,11 +117,11 @@ export function SessionManagement() {
 			setRevokingSessionId(sessionId);
 		},
 		onSuccess: () => {
-			toast.success(t("sessions.revoked", "Session revoked successfully"));
+			toast.success(t("settings.sessions.revoked", "Session revoked successfully"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.sessions() });
 		},
 		onError: (error) => {
-			toast.error(t("sessions.revoke-failed", "Failed to revoke session"));
+			toast.error(t("settings.sessions.revokeFailed", "Failed to revoke session"));
 			console.error("Failed to revoke session:", error);
 		},
 		onSettled: () => {
@@ -135,11 +135,13 @@ export function SessionManagement() {
 			await authClient.revokeOtherSessions();
 		},
 		onSuccess: () => {
-			toast.success(t("sessions.others-revoked", "All other sessions revoked successfully"));
+			toast.success(
+				t("settings.sessions.othersRevoked", "All other sessions revoked successfully"),
+			);
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.sessions() });
 		},
 		onError: (error) => {
-			toast.error(t("sessions.revoke-all-failed", "Failed to revoke other sessions"));
+			toast.error(t("settings.sessions.revokeAllFailed", "Failed to revoke other sessions"));
 			console.error("Failed to revoke other sessions:", error);
 		},
 	});
@@ -153,9 +155,12 @@ export function SessionManagement() {
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("sessions.title", "Active Sessions")}</CardTitle>
+					<CardTitle>{t("settings.sessions.title", "Active Sessions")}</CardTitle>
 					<CardDescription>
-						{t("sessions.description", "Manage your active sessions across different devices")}
+						{t(
+							"settings.sessions.description",
+							"Manage your active sessions across different devices",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -172,9 +177,12 @@ export function SessionManagement() {
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div>
-						<CardTitle>{t("sessions.title", "Active Sessions")}</CardTitle>
+						<CardTitle>{t("settings.sessions.title", "Active Sessions")}</CardTitle>
 						<CardDescription>
-							{t("sessions.description", "Manage your active sessions across different devices")}
+							{t(
+								"settings.sessions.description",
+								"Manage your active sessions across different devices",
+							)}
 						</CardDescription>
 					</div>
 					{otherSessionsCount > 0 && (
@@ -187,10 +195,10 @@ export function SessionManagement() {
 							{revokeOtherSessionsMutation.isPending ? (
 								<>
 									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-									{t("sessions.revoking", "Revoking...")}
+									{t("settings.sessions.revoking", "Revoking…")}
 								</>
 							) : (
-								t("sessions.revoke-all-others", "Revoke All Other Sessions")
+								t("settings.sessions.revokeAllOthers", "Revoke All Other Sessions")
 							)}
 						</Button>
 					)}
@@ -200,13 +208,25 @@ export function SessionManagement() {
 				<div className="space-y-4">
 					{sessions.length === 0 ? (
 						<p className="text-center text-muted-foreground py-8">
-							{t("sessions.none", "No active sessions")}
+							{t("settings.sessions.none", "No active sessions")}
 						</p>
 					) : (
 						sessions.map((session, index) => {
 							const isCurrentSession = session.token === currentSessionToken;
 							const { browser, os, device } = parseUserAgent(session.userAgent);
 							const DeviceIcon = getDeviceIcon(session.userAgent);
+							const browserLabel =
+								browser === "Unknown Browser"
+									? t("settings.sessions.unknownBrowser", "Unknown Browser")
+									: browser;
+							const osLabel =
+								os === "Unknown OS" ? t("settings.sessions.unknownOs", "Unknown OS") : os;
+							const deviceLabel =
+								device === "Mobile"
+									? t("settings.sessions.devices.mobile", "Mobile")
+									: device === "Tablet"
+										? t("settings.sessions.devices.tablet", "Tablet")
+										: t("settings.sessions.devices.desktop", "Desktop");
 
 							return (
 								<div key={session.id}>
@@ -214,34 +234,36 @@ export function SessionManagement() {
 									<div className="flex items-start justify-between gap-4">
 										<div className="flex min-w-0 flex-1 items-start gap-3">
 											<div className="rounded-full bg-muted p-2">
-												<DeviceIcon className="h-5 w-5 text-muted-foreground" />
+												<DeviceIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
 											</div>
 											<div className="min-w-0 flex-1 space-y-1">
 												<div className="flex items-center gap-2">
 													<p className="font-medium">
-														{browser} on {os}
+														{t("settings.sessions.browserOnOs", "{browser} on {os}", {
+															browser: browserLabel,
+															os: osLabel,
+														})}
 													</p>
 													{isCurrentSession && (
 														<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-															<IconCheck className="h-3 w-3" />
-															{t("sessions.current", "Current Session")}
+															<IconCheck className="h-3 w-3" aria-hidden="true" />
+															{t("settings.sessions.current", "Current Session")}
 														</span>
 													)}
 												</div>
 												<div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-													<span>{device}</span>
+													<span>{deviceLabel}</span>
 													{session.ipAddress && (
 														<span
-															aria-label={session.ipAddress}
 															className="flex min-w-0 max-w-full items-center gap-1"
 															title={session.ipAddress}
 														>
-															<IconMapPin className="h-3 w-3 shrink-0" />
+															<IconMapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
 															<span className="block min-w-0 truncate">{session.ipAddress}</span>
 														</span>
 													)}
 													<span>
-														{t("sessions.signed-in", "Signed in")}{" "}
+														{t("settings.sessions.signedIn", "Signed in")}{" "}
 														{formatDistanceToNow(new Date(session.createdAt))}
 													</span>
 												</div>
@@ -260,11 +282,13 @@ export function SessionManagement() {
 												disabled={revokingSessionId === session.id}
 											>
 												{revokingSessionId === session.id ? (
-													<IconLoader2 className="h-4 w-4 animate-spin" />
+													<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
 												) : (
 													<>
-														<IconTrash className="h-4 w-4" />
-														<span className="sr-only">{t("sessions.revoke", "Revoke")}</span>
+														<IconTrash className="h-4 w-4" aria-hidden="true" />
+														<span className="sr-only">
+															{t("settings.sessions.revoke", "Revoke")}
+														</span>
 													</>
 												)}
 											</Button>
@@ -280,7 +304,7 @@ export function SessionManagement() {
 					<div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
 						<p className="text-sm text-amber-900 dark:text-amber-200">
 							{t(
-								"sessions.security-tip",
+								"settings.sessions.securityTip",
 								"If you see a session you don't recognize, revoke it immediately and change your password.",
 							)}
 						</p>

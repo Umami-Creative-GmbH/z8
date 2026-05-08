@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
 	getCurrentEmployeeMock,
 	refreshMock,
+	tMock,
 	toastErrorMock,
 	toastSuccessMock,
 	updateProfileDetailsMock,
@@ -15,6 +16,7 @@ const {
 } = vi.hoisted(() => ({
 	getCurrentEmployeeMock: vi.fn(),
 	refreshMock: vi.fn(),
+	tMock: vi.fn((_key: string, defaultValue?: string) => defaultValue ?? _key),
 	toastErrorMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
 	updateProfileDetailsMock: vi.fn(),
@@ -23,7 +25,7 @@ const {
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: tMock,
 	}),
 }));
 
@@ -130,6 +132,21 @@ describe("ProfileForm", () => {
 		expect(await screen.findByLabelText("First Name")).toBeTruthy();
 		expect(screen.getByLabelText("Last Name")).toBeTruthy();
 		expect(screen.queryByLabelText("Name")).toBeNull();
+	});
+
+	it("uses settings profile static literal keys for visible copy", async () => {
+		getCurrentEmployeeMock.mockResolvedValue(null);
+		renderProfileForm();
+
+		expect(await screen.findByText("Profile Information")).toBeTruthy();
+
+		expect(tMock).toHaveBeenCalledWith("settings.profile.information", "Profile Information");
+		expect(tMock).toHaveBeenCalledWith("settings.profile.firstName", "First Name");
+		expect(tMock).toHaveBeenCalledWith("settings.profile.gender.male", "Male");
+		expect(tMock).toHaveBeenCalledWith(
+			"settings.profile.birthday.placeholder",
+			"Pick your birthday",
+		);
 	});
 
 	it("submits structured names through updateProfileDetails", async () => {

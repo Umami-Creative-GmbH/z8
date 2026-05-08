@@ -10,19 +10,20 @@ const {
 	resetEmailTemplateMock,
 	saveEmailTemplateMock,
 	sendEmailTemplateTestMock,
+	tMock,
 	toastErrorMock,
-} =
-	vi.hoisted(() => ({
-		insertIntoBodyMock: vi.fn(),
-		resetEmailTemplateMock: vi.fn(),
-		saveEmailTemplateMock: vi.fn(),
-		sendEmailTemplateTestMock: vi.fn(),
-		toastErrorMock: vi.fn(),
-	}));
+} = vi.hoisted(() => ({
+	insertIntoBodyMock: vi.fn(),
+	resetEmailTemplateMock: vi.fn(),
+	saveEmailTemplateMock: vi.fn(),
+	sendEmailTemplateTestMock: vi.fn(),
+	tMock: vi.fn((_key: string, defaultValue?: string) => defaultValue ?? _key),
+	toastErrorMock: vi.fn(),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: tMock,
 	}),
 }));
 
@@ -121,6 +122,21 @@ describe("EmailTemplateSettingsClient", () => {
 		expect(screen.queryByText("Custom template")).toBeNull();
 		expect(screen.queryByText("System default")).toBeNull();
 		expect(screen.getAllByText("Default").length).toBeGreaterThan(0);
+	});
+
+	it("uses settings email template static literal keys for page copy", () => {
+		render(<EmailTemplateSettingsClient templates={templates} />);
+
+		expect(tMock).toHaveBeenCalledWith(
+			"settings.emailTemplates.eyebrow",
+			"Operational communications",
+		);
+		expect(tMock).toHaveBeenCalledWith("settings.emailTemplates.status.default", "Default");
+		expect(tMock).toHaveBeenCalledWith(
+			"settings.emailTemplates.systemTemplates",
+			"System templates",
+		);
+		expect(tMock).toHaveBeenCalledWith("settings.emailTemplates.actions.save", "Save");
 	});
 
 	it("prevents saving untouched default starter content", async () => {
@@ -258,20 +274,14 @@ describe("EmailTemplateSettingsClient", () => {
 				.parentElement?.parentElement?.querySelector('[data-slot="badge"]');
 
 		expect(selectedStatus()?.textContent).toBe("Customized");
-		expect(screen.getByLabelText("Subject")).toHaveProperty(
-			"value",
-			"Existing custom subject",
-		);
+		expect(screen.getByLabelText("Subject")).toHaveProperty("value", "Existing custom subject");
 		fireEvent.click(screen.getByRole("button", { name: "Reset to system template" }));
 
 		await waitFor(() => {
 			expect(resetEmailTemplateMock).toHaveBeenCalledWith("email-verification");
 		});
 		expect(selectedStatus()?.textContent).toBe("Default");
-		expect(screen.getByLabelText("Subject")).toHaveProperty(
-			"value",
-			"Verify your email address",
-		);
+		expect(screen.getByLabelText("Subject")).toHaveProperty("value", "Verify your email address");
 		expect(screen.getByTestId("editor-html").textContent).toContain("{{userName}}");
 		expect(screen.queryByText("Customized")).toBeNull();
 		await waitFor(() => {

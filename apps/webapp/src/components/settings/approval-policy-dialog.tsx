@@ -41,6 +41,11 @@ export interface ApprovalPolicyFormValues {
 	}>;
 }
 
+interface ApprovalPolicyPayloadMessages {
+	activePolicyRequiresStage: string;
+	specificEmployeeRequiresId: string;
+}
+
 export const defaultApprovalPolicyFormValues: ApprovalPolicyFormValues = {
 	name: "",
 	description: "",
@@ -50,9 +55,15 @@ export const defaultApprovalPolicyFormValues: ApprovalPolicyFormValues = {
 	stages: [],
 };
 
-export function buildApprovalPolicyPayload(values: ApprovalPolicyFormValues) {
+export function buildApprovalPolicyPayload(
+	values: ApprovalPolicyFormValues,
+	messages: ApprovalPolicyPayloadMessages = {
+		activePolicyRequiresStage: "Active policies require at least one approval stage.",
+		specificEmployeeRequiresId: "Specific employee stages require an approver employee ID.",
+	},
+) {
 	if (values.isActive && values.stages.length === 0) {
-		throw new Error("Active policies require at least one approval stage.");
+		throw new Error(messages.activePolicyRequiresStage);
 	}
 
 	if (
@@ -60,7 +71,7 @@ export function buildApprovalPolicyPayload(values: ApprovalPolicyFormValues) {
 			(stage) => stage.approverType === "specific_employee" && !stage.approverEmployeeId.trim(),
 		)
 	) {
-		throw new Error("Specific employee stages require an approver employee ID.");
+		throw new Error(messages.specificEmployeeRequiresId);
 	}
 
 	return {
@@ -96,22 +107,22 @@ interface ApprovalPolicyDialogProps {
 }
 
 export const approvalTypeOptions = [
-	{ value: "absence_entry", label: "Absence requests" },
-	{ value: "time_entry", label: "Time entry changes" },
-	{ value: "travel_expense_claim", label: "Travel expenses" },
-];
+	{ value: "absence_entry" },
+	{ value: "time_entry" },
+	{ value: "travel_expense_claim" },
+] as const;
 
 const approverTypeOptions = [
-	{ value: "direct_manager", label: "Direct manager" },
-	{ value: "manager_manager", label: "Manager's manager" },
-	{ value: "org_admin", label: "Organization admin" },
-	{ value: "specific_employee", label: "Specific employee" },
-];
+	{ value: "direct_manager" },
+	{ value: "manager_manager" },
+	{ value: "org_admin" },
+	{ value: "specific_employee" },
+] as const;
 
-function newStage(): ApprovalPolicyFormValues["stages"][number] {
+function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
 	return {
 		localId: crypto.randomUUID(),
-		label: "Manager review",
+		label,
 		approverType: "direct_manager",
 		approverEmployeeId: "",
 	};
@@ -119,13 +130,53 @@ function newStage(): ApprovalPolicyFormValues["stages"][number] {
 
 export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalPolicyDialogProps) {
 	const { t } = useTranslate();
+	function approvalTypeLabel(value: (typeof approvalTypeOptions)[number]["value"]) {
+		switch (value) {
+			case "absence_entry":
+				return t("settings.approvalPolicies.approvalType.absenceRequests", "Absence requests");
+			case "time_entry":
+				return t("settings.approvalPolicies.approvalType.timeEntryChanges", "Time entry changes");
+			case "travel_expense_claim":
+				return t("settings.approvalPolicies.approvalType.travelExpenses", "Travel expenses");
+		}
+	}
+	function approverTypeLabel(value: (typeof approverTypeOptions)[number]["value"]) {
+		switch (value) {
+			case "direct_manager":
+				return t("settings.approvalPolicies.approverType.directManager", "Direct manager");
+			case "manager_manager":
+				return t("settings.approvalPolicies.approverType.managerManager", "Manager's manager");
+			case "org_admin":
+				return t("settings.approvalPolicies.approverType.organizationAdmin", "Organization admin");
+			case "specific_employee":
+				return t("settings.approvalPolicies.approverType.specificEmployee", "Specific employee");
+		}
+	}
 	const form = useForm({
 		defaultValues: defaultApprovalPolicyFormValues,
 		onSubmit: async ({ value }) => {
 			try {
-				await onSubmit(buildApprovalPolicyPayload(value));
+				await onSubmit(
+					buildApprovalPolicyPayload(value, {
+						activePolicyRequiresStage: t(
+							"settings.approvalPolicies.validation.activePolicyRequiresStage",
+							"Active policies require at least one approval stage.",
+						),
+						specificEmployeeRequiresId: t(
+							"settings.approvalPolicies.validation.specificEmployeeRequiresId",
+							"Specific employee stages require an approver employee ID.",
+						),
+					}),
+				);
 			} catch (error) {
-				toast.error(error instanceof Error ? error.message : "Approval policy could not be saved.");
+				toast.error(
+					error instanceof Error
+						? error.message
+						: t(
+								"settings.approvalPolicies.toast.saveFailed",
+								"Approval policy could not be saved.",
+							),
+				);
 			}
 		},
 	});
@@ -271,7 +322,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 														);
 													}}
 												/>
-												{option.label}
+												{approvalTypeLabel(option.value)}
 											</label>
 										))}
 									</div>
@@ -298,7 +349,14 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 											type="button"
 											variant="outline"
 											size="sm"
-											onClick={() => field.handleChange([...field.state.value, newStage()])}
+											onClick={() =>
+												field.handleChange([
+													...field.state.value,
+													newStage(
+														t("settings.approvalPolicies.defaultStageLabel", "Manager review"),
+													),
+												])
+											}
 										>
 											<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
 											{t("settings.approvalPolicies.addStage", "Add stage")}
@@ -388,7 +446,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 															>
 																{approverTypeOptions.map((option) => (
 																	<option key={option.value} value={option.value}>
-																		{option.label}
+																		{approverTypeLabel(option.value)}
 																	</option>
 																))}
 															</select>

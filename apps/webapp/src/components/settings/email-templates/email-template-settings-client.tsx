@@ -67,7 +67,7 @@ const hasUnchangedDefaultStarterBody = (
 
 export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettingsClientProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const editorRef = useRef<EmailTemplateEditorHandle>(null);
 	const [isPending, startTransition] = useTransition();
 	const [selectedKey, setSelectedKey] = useState<EmailTemplateKey | null>(
@@ -104,7 +104,10 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 		}));
 	};
 
-	const selectedStatus = selectedKey && overrideKeys.has(selectedKey) ? "Customized" : "Default";
+	const selectedStatus =
+		selectedKey && overrideKeys.has(selectedKey)
+			? t("settings.emailTemplates.status.customized", "Customized")
+			: t("settings.emailTemplates.status.default", "Default");
 
 	const actionInput = () => {
 		if (!selectedTemplate || !draft) {
@@ -122,7 +125,12 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 
 	const handleSave = () => {
 		if (selectedTemplate && draft && hasUnchangedDefaultStarterBody(selectedTemplate, draft)) {
-			toast.error("Edit the email body before saving a first custom template.");
+			toast.error(
+				t(
+					"settings.emailTemplates.editBodyBeforeSaving",
+					"Edit the email body before saving a first custom template.",
+				),
+			);
 			return;
 		}
 
@@ -136,10 +144,13 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 			if (result.success) {
 				setOverrideKeys((current) => new Set(current).add(input.templateKey));
 				toast.success(t("settings.emailTemplates.saved", "Email template saved"));
-				router.refresh();
+				refresh();
 				return;
 			}
-			toast.error(result.errors?.join("\n") ?? "Failed to save email template");
+			toast.error(
+				result.errors?.join("\n") ??
+					t("settings.emailTemplates.saveFailed", "Failed to save email template"),
+			);
 		});
 	};
 
@@ -155,7 +166,10 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 				toast.success(t("settings.emailTemplates.testSent", "Test email sent to your account"));
 				return;
 			}
-			toast.error(result.errors?.join("\n") ?? "Failed to send test email");
+			toast.error(
+				result.errors?.join("\n") ??
+					t("settings.emailTemplates.testFailed", "Failed to send test email"),
+			);
 		});
 	};
 
@@ -182,10 +196,13 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 				toast.success(
 					t("settings.emailTemplates.reset", "Email template reset to system template"),
 				);
-				router.refresh();
+				refresh();
 				return;
 			}
-			toast.error(result.errors?.join("\n") ?? "Failed to reset email template");
+			toast.error(
+				result.errors?.join("\n") ??
+					t("settings.emailTemplates.resetFailed", "Failed to reset email template"),
+			);
 		});
 	};
 
@@ -198,7 +215,10 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 		return (
 			<Card>
 				<CardContent className="py-10 text-center text-muted-foreground">
-					No email templates are available for this organization.
+					{t(
+						"settings.emailTemplates.empty",
+						"No email templates are available for this organization.",
+					)}
 				</CardContent>
 			</Card>
 		);
@@ -209,13 +229,17 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 			<div className="space-y-2">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 					<div className="space-y-1">
-						<p className="font-medium text-primary text-sm">Operational communications</p>
+						<p className="font-medium text-primary text-sm">
+							{t("settings.emailTemplates.eyebrow", "Operational communications")}
+						</p>
 						<h1 className="font-semibold text-2xl tracking-tight">
 							{t("settings.emailTemplates.title", "Email Templates")}
 						</h1>
 						<p className="max-w-3xl text-muted-foreground text-sm leading-6">
-							Select a system email, customize the copy, and keep approved variables visible while
-							preserving safe defaults.
+							{t(
+								"settings.emailTemplates.description",
+								"Select a system email, customize the copy, and keep approved variables visible while preserving safe defaults.",
+							)}
 						</p>
 					</div>
 					<Badge variant="outline" className="h-7 px-3">
@@ -227,7 +251,9 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 			<div className="grid gap-6 lg:grid-cols-[minmax(260px,360px)_1fr]">
 				<Card className="gap-4 py-4">
 					<CardHeader className="px-4">
-						<CardTitle className="text-base">System templates</CardTitle>
+						<CardTitle className="text-base">
+							{t("settings.emailTemplates.systemTemplates", "System templates")}
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="px-4">
 						<EmailTemplateList
@@ -250,9 +276,14 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 						</CardHeader>
 						<CardContent className="space-y-6">
 							<div className="rounded-xl border bg-muted/25 p-4 text-sm">
-								<p className="font-medium">Default fallback</p>
+								<p className="font-medium">
+									{t("settings.emailTemplates.defaultFallback", "Default fallback")}
+								</p>
 								<p className="mt-1 text-muted-foreground">
-									If this template uses the system default, Z8 sends the system copy and subject:{" "}
+									{t(
+										"settings.emailTemplates.defaultFallbackDescription",
+										"If this template uses the system default, Z8 sends the system copy and subject:",
+									)}{" "}
 									<span className="font-medium text-foreground">
 										{selectedTemplate.definition.defaultSubject}
 									</span>
@@ -278,7 +309,7 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 
 							<div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
 								<Button type="button" variant="outline" onClick={handleReset} disabled={isPending}>
-									Reset to system template
+									{t("settings.emailTemplates.actions.reset", "Reset to system template")}
 								</Button>
 								<Button
 									type="button"
@@ -286,10 +317,10 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 									onClick={handleSendTest}
 									disabled={isPending}
 								>
-									Send test
+									{t("settings.emailTemplates.actions.sendTest", "Send test")}
 								</Button>
 								<Button type="button" onClick={handleSave} disabled={isPending}>
-									Save
+									{t("settings.emailTemplates.actions.save", "Save")}
 								</Button>
 							</div>
 						</CardContent>

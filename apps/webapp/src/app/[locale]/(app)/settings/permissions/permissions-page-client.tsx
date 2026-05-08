@@ -26,7 +26,12 @@ export function PermissionsPageClient(props: { organizationId: string; isOrgAdmi
 	useEffect(() => {
 		async function loadData() {
 			if (!props.isOrgAdmin) {
-				toast.error("You must be an admin to manage permissions");
+				toast.error(
+					t(
+						"settings.permissions.toast.adminRequired",
+						"You must be an admin to manage permissions",
+					),
+				);
 				dispatch({ type: "setNoEmployee", value: true });
 				return;
 			}
@@ -63,7 +68,7 @@ export function PermissionsPageClient(props: { organizationId: string; isOrgAdmi
 		}
 
 		void loadData();
-	}, [props.isOrgAdmin, props.organizationId]);
+	}, [props.isOrgAdmin, props.organizationId, t]);
 
 	const handleRefresh = async () => {
 		dispatch({ type: "setLoading", value: true });

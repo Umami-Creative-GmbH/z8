@@ -52,7 +52,6 @@ export function EmployeesPageClient(props: {
 		isLoading,
 		isFetching,
 		hasEmployee,
-		isAdmin,
 		role,
 		status,
 		setSearch,
@@ -90,7 +89,9 @@ export function EmployeesPageClient(props: {
 	if (!hasEmployee && !isLoading) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage employees" />
+				<NoEmployeeError
+					feature={t("settings.employees.directory.noEmployeeFeature", "manage employees")}
+				/>
 			</div>
 		);
 	}
@@ -112,13 +113,13 @@ export function EmployeesPageClient(props: {
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
 						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">Refresh</span>
+						<span className="sr-only">{t("settings.employees.directory.refresh", "Refresh")}</span>
 					</Button>
 					{props.accessTier === "orgAdmin" && (
 						<Button asChild>
 							<Link href="/settings/organizations">
 								<IconPlus className="mr-2 size-4" />
-								Invite Employee
+								{t("settings.employees.directory.inviteEmployee", "Invite Employee")}
 							</Link>
 						</Button>
 					)}
@@ -127,9 +128,11 @@ export function EmployeesPageClient(props: {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Employee Directory</CardTitle>
+					<CardTitle>{t("settings.employees.directory.title", "Employee Directory")}</CardTitle>
 					<CardDescription>
-						{total} employee{total !== 1 ? "s" : ""} found
+						{t("settings.employees.directory.countFound", "{count} employee(s) found", {
+							count: total,
+						})}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -137,7 +140,11 @@ export function EmployeesPageClient(props: {
 						<div className="relative flex-1">
 							<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
-								placeholder="Search by name, email, or position..."
+								aria-label={t("settings.employees.directory.searchLabel", "Search employees")}
+								placeholder={t(
+									"settings.employees.directory.searchPlaceholder",
+									"Search by name, email, or position...",
+								)}
 								value={searchInput}
 								onChange={(e) => setSearchInput(e.target.value)}
 								className="pl-9"
@@ -145,30 +152,50 @@ export function EmployeesPageClient(props: {
 						</div>
 						<Select value={role} onValueChange={setRole}>
 							<SelectTrigger className="w-full sm:w-[180px]">
-								<SelectValue placeholder="Filter by role" />
+								<SelectValue
+									placeholder={t("settings.employees.directory.roleFilter", "Filter by role")}
+								/>
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All Roles</SelectItem>
-								<SelectItem value="admin">Admin</SelectItem>
-								<SelectItem value="manager">Manager</SelectItem>
-								<SelectItem value="employee">Employee</SelectItem>
+								<SelectItem value="all">
+									{t("settings.employees.directory.roles.all", "All Roles")}
+								</SelectItem>
+								<SelectItem value="admin">
+									{t("settings.employees.directory.roles.admin", "Admin")}
+								</SelectItem>
+								<SelectItem value="manager">
+									{t("settings.employees.directory.roles.manager", "Manager")}
+								</SelectItem>
+								<SelectItem value="employee">
+									{t("settings.employees.directory.roles.employee", "Employee")}
+								</SelectItem>
 							</SelectContent>
 						</Select>
 						<Select value={status} onValueChange={setStatus}>
 							<SelectTrigger className="w-full sm:w-[180px]">
-								<SelectValue placeholder="Filter by status" />
+								<SelectValue
+									placeholder={t("settings.employees.directory.statusFilter", "Filter by status")}
+								/>
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All Status</SelectItem>
-								<SelectItem value="active">Active</SelectItem>
-								<SelectItem value="inactive">Inactive</SelectItem>
+								<SelectItem value="all">
+									{t("settings.employees.directory.statuses.all", "All Status")}
+								</SelectItem>
+								<SelectItem value="active">
+									{t("settings.employees.directory.statuses.active", "Active")}
+								</SelectItem>
+								<SelectItem value="inactive">
+									{t("settings.employees.directory.statuses.inactive", "Inactive")}
+								</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<p className="text-sm text-muted-foreground">Loading employees...</p>
+							<p className="text-sm text-muted-foreground">
+								{t("settings.employees.directory.loading", "Loading employees...")}
+							</p>
 						</div>
 					) : (
 						<>
@@ -203,7 +230,9 @@ export function EmployeesPageClient(props: {
 												<TableCell colSpan={columns.length} className="h-24 text-center">
 													<div className="flex flex-col items-center justify-center">
 														<IconUser className="mb-2 size-8 text-muted-foreground" />
-														<p className="text-sm text-muted-foreground">No employees found</p>
+														<p className="text-sm text-muted-foreground">
+															{t("settings.employees.directory.emptyState", "No employees found")}
+														</p>
 													</div>
 												</TableCell>
 											</TableRow>
@@ -215,7 +244,10 @@ export function EmployeesPageClient(props: {
 							{pageCount > 1 && (
 								<div className="mt-4 flex items-center justify-between">
 									<div className="text-sm text-muted-foreground">
-										Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+										{t("settings.employees.directory.pagination.pageOf", "Page {page} of {total}", {
+											page: table.getState().pagination.pageIndex + 1,
+											total: table.getPageCount(),
+										})}
 									</div>
 									<div className="flex items-center gap-2">
 										<Button
@@ -225,7 +257,7 @@ export function EmployeesPageClient(props: {
 											disabled={!table.getCanPreviousPage() || isFetching}
 										>
 											<IconChevronLeft className="mr-1 size-4" />
-											Previous
+											{t("settings.employees.directory.pagination.previous", "Previous")}
 										</Button>
 										<Button
 											variant="outline"
@@ -233,7 +265,7 @@ export function EmployeesPageClient(props: {
 											onClick={() => table.nextPage()}
 											disabled={!table.getCanNextPage() || isFetching}
 										>
-											Next
+											{t("settings.employees.directory.pagination.next", "Next")}
 											<IconChevronRight className="ml-1 size-4" />
 										</Button>
 									</div>

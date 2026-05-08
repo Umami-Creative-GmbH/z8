@@ -13,18 +13,16 @@ import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from
 import {
 	AddMemberDialog,
 	DeleteTeamDialog,
-	extractTeamMemberIds,
 	RemoveMemberDialog,
-	type TeamFormValues,
 	TeamInfoCard,
 	TeamMembersCard,
 	TeamPageHeader,
-	useTeamPageUiState,
-} from "./page-utils";
+} from "./page-sections";
+import { extractTeamMemberIds, type TeamFormValues, useTeamPageUiState } from "./page-state";
 
 export default function TeamDetailPage({ params }: { params: Promise<{ teamId: string }> }) {
 	const { teamId } = use(params);
-	useTranslate();
+	const { t } = useTranslate();
 	const { push } = useRouter();
 	const queryClient = useQueryClient();
 	const [uiState, dispatch] = useTeamPageUiState();
@@ -39,7 +37,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		queryFn: async () => {
 			const result = await getTeam(teamId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to load team");
+				throw new Error(
+					result.error || t("settings.teams.detail.errors.loadTeam", "Failed to load team"),
+				);
 			}
 			return result.data;
 		},
@@ -84,12 +84,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async (values: TeamFormValues) => {
 			const result = await updateTeam(teamId, values);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to update team");
+				throw new Error(
+					result.error || t("settings.teams.detail.errors.updateTeam", "Failed to update team"),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Team updated successfully");
+			toast.success(t("settings.teams.detail.toasts.teamUpdated", "Team updated successfully"));
 			dispatch({ type: "setEditing", value: false });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
@@ -101,12 +103,17 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async (employeeId: string) => {
 			const result = await addTeamMember(teamId, employeeId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to add team member");
+				throw new Error(
+					result.error ||
+						t("settings.teams.detail.errors.addTeamMember", "Failed to add team member"),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Team member added successfully");
+			toast.success(
+				t("settings.teams.detail.toasts.teamMemberAdded", "Team member added successfully"),
+			);
 			dispatch({ type: "resetAddMemberDialog" });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
@@ -119,7 +126,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async (employeeId: string) => {
 			const result = await removeTeamMember(teamId, employeeId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to remove team member");
+				throw new Error(
+					result.error ||
+						t("settings.teams.detail.errors.removeTeamMember", "Failed to remove team member"),
+				);
 			}
 			return result;
 		},
@@ -138,7 +148,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 			return { previousTeam };
 		},
 		onSuccess: () => {
-			toast.success("Team member removed successfully");
+			toast.success(
+				t("settings.teams.detail.toasts.teamMemberRemoved", "Team member removed successfully"),
+			);
 			dispatch({ type: "setSelectedMemberToRemove", employeeId: null });
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
@@ -158,12 +170,14 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 		mutationFn: async () => {
 			const result = await deleteTeam(teamId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to delete team");
+				throw new Error(
+					result.error || t("settings.teams.detail.errors.deleteTeam", "Failed to delete team"),
+				);
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Team deleted successfully");
+			toast.success(t("settings.teams.detail.toasts.teamDeleted", "Team deleted successfully"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 			push("/settings/teams");
 		},
@@ -173,7 +187,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
 	function handleAddMember() {
 		if (!uiState.selectedEmployee) {
-			toast.error("Please select an employee");
+			toast.error(
+				t("settings.teams.detail.validation.selectEmployee", "Please select an employee"),
+			);
 			return;
 		}
 

@@ -4,6 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
+import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type {
@@ -43,9 +44,12 @@ export function NotificationChannelSettings({
 	config,
 	updateAction,
 }: NotificationChannelSettingsProps) {
+	const { t } = useTranslate();
 	const isConfigured = Boolean(config);
 	const isActive = config?.setupStatus === "active";
-	const statusLabel = config ? (isActive ? "Active" : config.setupStatus) : "Not configured";
+	const statusLabel = config
+		? getSetupStatusLabel(config.setupStatus, t)
+		: t("settings.notifications.status.notConfigured", "Not configured");
 	const controlsDisabled = !isConfigured;
 	const { refresh } = useRouter();
 
@@ -53,7 +57,11 @@ export function NotificationChannelSettings({
 		mutationFn: updateAction,
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(`${channelName} notification settings saved`);
+				toast.success(
+					t("settings.notifications.saved", "{channelName} notification settings saved", {
+						channelName,
+					}),
+				);
 				refresh();
 				return;
 			}
@@ -61,7 +69,13 @@ export function NotificationChannelSettings({
 			toast.error(result.error);
 		},
 		onError: () => {
-			toast.error(`Failed to save ${channelName} notification settings`);
+			toast.error(
+				t(
+					"settings.notifications.saveFailed",
+					"Failed to save {channelName} notification settings",
+					{ channelName },
+				),
+			);
 		},
 	});
 
@@ -94,21 +108,33 @@ export function NotificationChannelSettings({
 				</CardHeader>
 				<CardContent className="space-y-2">
 					<p className="break-words text-sm font-medium">
-						{config?.displayName ?? `${channelName} is not connected`}
+						{config?.displayName ??
+							t("settings.notifications.notConnected", "{channelName} is not connected", {
+								channelName,
+							})}
 					</p>
 					<p className="text-sm text-muted-foreground">
 						{config
-							? "Manage which notification features are enabled for this integration."
-							: "Connect or configure this integration before changing notification settings."}
+							? t(
+									"settings.notifications.manageEnabledFeatures",
+									"Manage which notification features are enabled for this integration.",
+								)
+							: t(
+									"settings.notifications.connectBeforeChanging",
+									"Connect or configure this integration before changing notification settings.",
+								)}
 					</p>
 				</CardContent>
 			</Card>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Feature Settings</CardTitle>
+					<CardTitle>{t("settings.notifications.featureSettings", "Feature Settings")}</CardTitle>
 					<CardDescription>
-						Choose which organization notifications and commands are available through this channel.
+						{t(
+							"settings.notifications.featureSettingsDescription",
+							"Choose which organization notifications and commands are available through this channel.",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -122,13 +148,16 @@ export function NotificationChannelSettings({
 						<div className="flex min-w-0 items-center justify-between gap-4">
 							<div className="min-w-0 space-y-1">
 								<Label htmlFor="enableApprovals" className="text-sm font-medium">
-									Approval notifications
+									{t("settings.notifications.approvals", "Approval notifications")}
 								</Label>
 								<p
 									id="enableApprovals-description"
 									className="break-words text-sm text-muted-foreground"
 								>
-									Send approval requests and approval status updates.
+									{t(
+										"settings.notifications.approvalsDescription",
+										"Send approval requests and approval status updates.",
+									)}
 								</p>
 							</div>
 							<form.Field name="enableApprovals">
@@ -150,13 +179,16 @@ export function NotificationChannelSettings({
 						<div className="flex min-w-0 items-center justify-between gap-4">
 							<div className="min-w-0 space-y-1">
 								<Label htmlFor="enableCommands" className="text-sm font-medium">
-									Commands
+									{t("settings.notifications.commands", "Commands")}
 								</Label>
 								<p
 									id="enableCommands-description"
 									className="break-words text-sm text-muted-foreground"
 								>
-									Allow supported workplace commands from this channel.
+									{t(
+										"settings.notifications.commandsDescription",
+										"Allow supported workplace commands from this channel.",
+									)}
 								</p>
 							</div>
 							<form.Field name="enableCommands">
@@ -179,13 +211,16 @@ export function NotificationChannelSettings({
 							<div className="flex min-w-0 items-center justify-between gap-4">
 								<div className="min-w-0 space-y-1">
 									<Label htmlFor="enableDailyDigest" className="text-sm font-medium">
-										Daily digest
+										{t("settings.notifications.dailyDigest", "Daily digest")}
 									</Label>
 									<p
 										id="enableDailyDigest-description"
 										className="break-words text-sm text-muted-foreground"
 									>
-										Send a daily summary of absences, schedules, and pending work.
+										{t(
+											"settings.notifications.dailyDigestDescription",
+											"Send a daily summary of absences, schedules, and pending work.",
+										)}
 									</p>
 								</div>
 								<form.Field name="enableDailyDigest">
@@ -206,7 +241,9 @@ export function NotificationChannelSettings({
 								<form.Field name="digestTime">
 									{(field) => (
 										<div className="space-y-2">
-											<Label htmlFor="digestTime">Digest time</Label>
+											<Label htmlFor="digestTime">
+												{t("settings.notifications.digestTime", "Digest time")}
+											</Label>
 											<TimeInput
 												id="digestTime"
 												name="digestTime"
@@ -221,14 +258,19 @@ export function NotificationChannelSettings({
 								<form.Field name="digestTimezone">
 									{(field) => (
 										<div className="space-y-2">
-											<Label htmlFor="digestTimezone">Timezone</Label>
+											<Label htmlFor="digestTimezone">
+												{t("settings.notifications.timezone", "Timezone")}
+											</Label>
 											<Input
 												id="digestTimezone"
 												name="digestTimezone"
 												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
 												disabled={disableForm}
-												placeholder="Europe/Berlin…"
+												placeholder={t(
+													"settings.notifications.timezonePlaceholder",
+													"Europe/Berlin…",
+												)}
 												autoComplete="off"
 											/>
 										</div>
@@ -243,13 +285,16 @@ export function NotificationChannelSettings({
 							<div className="flex min-w-0 items-center justify-between gap-4">
 								<div className="min-w-0 space-y-1">
 									<Label htmlFor="enableEscalations" className="text-sm font-medium">
-										Escalations
+										{t("settings.notifications.escalations", "Escalations")}
 									</Label>
 									<p
 										id="enableEscalations-description"
 										className="break-words text-sm text-muted-foreground"
 									>
-										Escalate unanswered approval requests after the configured timeout.
+										{t(
+											"settings.notifications.escalationsDescription",
+											"Escalate unanswered approval requests after the configured timeout.",
+										)}
 									</p>
 								</div>
 								<form.Field name="enableEscalations">
@@ -270,7 +315,7 @@ export function NotificationChannelSettings({
 								{(field) => (
 									<div className="flex max-w-xs items-center gap-3 rounded-lg border bg-muted/30 p-3">
 										<Label htmlFor="escalationTimeoutHours" className="shrink-0">
-											Timeout
+											{t("settings.notifications.timeout", "Timeout")}
 										</Label>
 										<Input
 											id="escalationTimeoutHours"
@@ -284,7 +329,9 @@ export function NotificationChannelSettings({
 											autoComplete="off"
 											className="w-24"
 										/>
-										<span className="text-sm text-muted-foreground">hours</span>
+										<span className="text-sm text-muted-foreground">
+											{t("settings.notifications.hours", "hours")}
+										</span>
 									</div>
 								)}
 							</form.Field>
@@ -298,7 +345,7 @@ export function NotificationChannelSettings({
 										aria-hidden="true"
 									/>
 								)}
-								Save Settings
+								{t("settings.notifications.saveSettings", "Save Settings")}
 							</Button>
 						</div>
 					</form>
@@ -306,4 +353,23 @@ export function NotificationChannelSettings({
 			</Card>
 		</div>
 	);
+}
+
+function getSetupStatusLabel(setupStatus: string, t: ReturnType<typeof useTranslate>["t"]): string {
+	switch (setupStatus) {
+		case "active":
+			return t("settings.notifications.status.active", "Active");
+		case "pending":
+			return t("settings.notifications.status.pending", "Pending");
+		case "configured":
+			return t("settings.notifications.status.configured", "Configured");
+		case "error":
+			return t("settings.notifications.status.error", "Error");
+		case "disconnected":
+			return t("settings.notifications.status.disconnected", "Disconnected");
+		case "disabled":
+			return t("settings.notifications.status.disabled", "Disabled");
+		default:
+			return t("settings.notifications.status.unknown", "Unknown status");
+	}
 }

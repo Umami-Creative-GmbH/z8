@@ -62,24 +62,27 @@ export function TeamPageHeader({
 		<div className="flex items-center justify-between">
 			<div>
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="sm" aria-label="Back to Teams" asChild>
-						<Link href="/settings/teams">
+					<Button variant="ghost" size="sm" asChild>
+						<Link
+							href="/settings/teams"
+							aria-label={t("settings.teams.detail.back", "Back to teams")}
+						>
 							<IconArrowBack className="size-4" aria-hidden="true" />
 						</Link>
 					</Button>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.teams.details.title", "Team Details")}
+						{t("settings.teams.detail.title", "Team Details")}
 					</h1>
 				</div>
 				<p className="text-sm text-muted-foreground">
-					{t("settings.teams.details.description", "Manage team information and members")}
+					{t("settings.teams.detail.description", "Manage team information and members")}
 				</p>
 			</div>
 			{canManageSettings ? (
 				<div className="flex gap-2">
 					<Button variant="destructive" size="sm" onClick={onDelete}>
 						<IconTrash className="mr-2 size-4" aria-hidden="true" />
-						Delete Team
+						{t("settings.teams.detail.delete.title", "Delete Team")}
 					</Button>
 				</div>
 			) : null}
@@ -89,7 +92,7 @@ export function TeamPageHeader({
 
 export function TeamInfoCard(props: {
 	team: any;
-	managerOptions: SelectableEmployee[];
+	managerOptions?: SelectableEmployee[];
 	isEditing: boolean;
 	canManageSettings: boolean;
 	loading: boolean;
@@ -100,7 +103,7 @@ export function TeamInfoCard(props: {
 }) {
 	const {
 		team,
-		managerOptions,
+		managerOptions = [],
 		isEditing,
 		canManageSettings,
 		loading,
@@ -109,15 +112,19 @@ export function TeamInfoCard(props: {
 		onCancelEdit,
 		onSubmit,
 	} = props;
+	const { t } = useTranslate();
+	const teamNameInputId = "team-detail-name";
+	const teamDescriptionInputId = "team-detail-description";
+	const teamPrimaryManagerInputId = "team-detail-primary-manager";
 
 	return (
 		<Card>
 			<CardHeader>
 				<div className="flex items-center justify-between">
-					<CardTitle>Team Information</CardTitle>
+					<CardTitle>{t("settings.teams.detail.info.title", "Team Information")}</CardTitle>
 					{canManageSettings && !isEditing ? (
 						<Button variant="ghost" size="sm" onClick={onStartEdit}>
-							Edit
+							{t("settings.teams.detail.actions.edit", "Edit")}
 						</Button>
 					) : null}
 				</div>
@@ -130,54 +137,55 @@ export function TeamInfoCard(props: {
 							validators={{
 								onChange: z
 									.string()
-									.min(1, "Team name is required")
-									.max(100, "Team name is too long"),
+									.min(
+										1,
+										t("settings.teams.detail.validation.teamNameRequired", "Team name is required"),
+									)
+									.max(
+										100,
+										t("settings.teams.detail.validation.teamNameTooLong", "Team name is too long"),
+									),
 							}}
 						>
-							{(field: any) => {
-								const error = field.state.meta.errors[0];
-								const errorMessage =
-									typeof error === "string" ? error : error?.message || "Invalid input";
-
-								return (
-									<div className="space-y-2">
-										<Label htmlFor="team-name">Team Name</Label>
-										<Input
-											id="team-name"
-											name="name"
-											autoComplete="off"
-											aria-invalid={field.state.meta.errors.length > 0}
-											aria-describedby={
-												field.state.meta.errors.length > 0 ? "team-name-error" : undefined
-											}
-											placeholder="Enter team name…"
-											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
-											onBlur={field.handleBlur}
-										/>
-										{error ? (
-											<p
-												id="team-name-error"
-												className="text-sm text-destructive"
-												aria-live="polite"
-											>
-												{errorMessage}
-											</p>
-										) : null}
-									</div>
-								);
-							}}
+							{(field: any) => (
+								<div className="space-y-2">
+									<Label htmlFor={teamNameInputId}>
+										{t("settings.teams.detail.info.teamName", "Team Name")}
+									</Label>
+									<Input
+										id={teamNameInputId}
+										placeholder={t(
+											"settings.teams.detail.info.teamNamePlaceholder",
+											"Enter team name",
+										)}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+										onBlur={field.handleBlur}
+									/>
+									{field.state.meta.errors.length > 0 ? (
+										<p className="text-sm text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: (field.state.meta.errors[0] as any)?.message ||
+													t("settings.teams.detail.validation.invalidInput", "Invalid input")}
+										</p>
+									) : null}
+								</div>
+							)}
 						</form.Field>
 
 						<form.Field name="description">
 							{(field: any) => (
 								<div className="space-y-2">
-									<Label htmlFor="team-description">Description</Label>
+									<Label htmlFor={teamDescriptionInputId}>
+										{t("settings.teams.detail.info.description", "Description")}
+									</Label>
 									<Textarea
-										id="team-description"
-										name="description"
-										autoComplete="off"
-										placeholder="Enter team description…"
+										id={teamDescriptionInputId}
+										placeholder={t(
+											"settings.teams.detail.info.descriptionPlaceholder",
+											"Enter team description",
+										)}
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
@@ -189,16 +197,28 @@ export function TeamInfoCard(props: {
 						<form.Field name="primaryManagerId">
 							{(field: any) => (
 								<div className="space-y-2">
-									<Label htmlFor="team-primary-manager">Primary Manager</Label>
+									<Label htmlFor={teamPrimaryManagerInputId}>
+										{t("settings.teams.detail.info.primaryManager", "Primary Manager")}
+									</Label>
 									<Select
 										value={field.state.value ?? "none"}
 										onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
 									>
-										<SelectTrigger id="team-primary-manager" className="w-full min-w-0">
-											<SelectValue placeholder="No primary manager assigned" />
+										<SelectTrigger id={teamPrimaryManagerInputId} className="w-full min-w-0">
+											<SelectValue
+												placeholder={t(
+													"settings.teams.detail.info.noPrimaryManager",
+													"No primary manager assigned",
+												)}
+											/>
 										</SelectTrigger>
 										<SelectContent className="max-w-[var(--radix-select-trigger-width)]">
-											<SelectItem value="none">No primary manager assigned</SelectItem>
+											<SelectItem value="none">
+												{t(
+													"settings.teams.detail.info.noPrimaryManager",
+													"No primary manager assigned",
+												)}
+											</SelectItem>
 											{managerOptions.map((employee) => (
 												<SelectItem key={employee.id} value={employee.id} className="max-w-full">
 													<span className="block truncate">
@@ -221,7 +241,7 @@ export function TeamInfoCard(props: {
 								disabled={loading}
 							>
 								<IconX className="mr-2 size-4" aria-hidden="true" />
-								Cancel
+								{t("settings.teams.detail.actions.cancel", "Cancel")}
 							</Button>
 							<Button type="button" size="sm" disabled={loading} onClick={onSubmit}>
 								{loading ? (
@@ -229,35 +249,44 @@ export function TeamInfoCard(props: {
 								) : (
 									<IconCheck className="mr-2 size-4" aria-hidden="true" />
 								)}
-								Save
+								{t("settings.teams.detail.actions.save", "Save")}
 							</Button>
 						</div>
 					</div>
 				) : (
 					<>
-						<div className="min-w-0 space-y-2">
-							<div className="text-sm text-muted-foreground">Team Name</div>
-							<div className="break-words font-medium">{team.name}</div>
+						<div className="space-y-2">
+							<div className="text-sm text-muted-foreground">
+								{t("settings.teams.detail.info.teamName", "Team Name")}
+							</div>
+							<div className="font-medium">{team.name}</div>
 						</div>
 						{team.description ? (
 							<>
 								<Separator />
-								<div className="min-w-0 space-y-2">
-									<div className="text-sm text-muted-foreground">Description</div>
-									<div className="break-words text-sm">{team.description}</div>
+								<div className="space-y-2">
+									<div className="text-sm text-muted-foreground">
+										{t("settings.teams.detail.info.description", "Description")}
+									</div>
+									<div className="text-sm">{team.description}</div>
 								</div>
 							</>
 						) : null}
 						<Separator />
-						<div className="min-w-0 space-y-2">
-							<div className="text-sm text-muted-foreground">Primary Manager</div>
+						<div className="space-y-2">
+							<div className="text-sm text-muted-foreground">
+								{t("settings.teams.detail.info.primaryManager", "Primary Manager")}
+							</div>
 							<div className="break-words font-medium">
-								{team.primaryManager?.user?.name ?? "No primary manager assigned"}
+								{team.primaryManager?.user?.name ??
+									t("settings.teams.detail.info.noPrimaryManager", "No primary manager assigned")}
 							</div>
 						</div>
 						<Separator />
 						<div className="space-y-2">
-							<div className="text-sm text-muted-foreground">Members</div>
+							<div className="text-sm text-muted-foreground">
+								{t("settings.teams.detail.info.members", "Members")}
+							</div>
 							<div className="flex items-center gap-2">
 								<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />
 								<span className="font-medium">{team.employees?.length || 0}</span>
@@ -277,19 +306,22 @@ export function TeamMembersCard(props: {
 	onRemoveMember: (employeeId: string) => void;
 }) {
 	const { team, canManageMembers, onOpenAddMember, onRemoveMember } = props;
+	const { t } = useTranslate();
 
 	return (
 		<Card className="lg:col-span-2">
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div>
-						<CardTitle>Team Members</CardTitle>
-						<CardDescription>Employees assigned to this team</CardDescription>
+						<CardTitle>{t("settings.teams.detail.members.title", "Team Members")}</CardTitle>
+						<CardDescription>
+							{t("settings.teams.detail.members.description", "Employees assigned to this team")}
+						</CardDescription>
 					</div>
 					{canManageMembers ? (
 						<Button size="sm" onClick={onOpenAddMember}>
 							<IconPlus className="mr-2 size-4" aria-hidden="true" />
-							Add Member
+							{t("settings.teams.detail.members.add", "Add Member")}
 						</Button>
 					) : null}
 				</div>
@@ -298,40 +330,38 @@ export function TeamMembersCard(props: {
 				{!team.employees || team.employees.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-8">
 						<IconUsers className="mb-4 size-12 text-muted-foreground" aria-hidden="true" />
-						<p className="text-sm text-muted-foreground">No members in this team</p>
+						<p className="text-sm text-muted-foreground">
+							{t("settings.teams.detail.members.empty", "No members in this team")}
+						</p>
 					</div>
 				) : (
 					<div className="space-y-2">
 						{team.employees.map((employee: any) => (
 							<div
 								key={employee.id}
-								className="flex items-center justify-between gap-3 rounded-lg border p-3"
+								className="flex items-center justify-between rounded-lg border p-3"
 							>
-								<div className="flex min-w-0 items-center gap-3">
+								<div className="flex items-center gap-3">
 									<UserAvatar
 										image={employee.user.image}
 										seed={employee.id}
 										name={employee.user.name}
 										size="md"
 									/>
-									<div className="min-w-0">
-										<div className="truncate font-medium">{employee.user.name}</div>
-										<div className="truncate text-sm text-muted-foreground">
-											{employee.user.email}
-										</div>
+									<div>
+										<div className="font-medium">{employee.user.name}</div>
+										<div className="text-sm text-muted-foreground">{employee.user.email}</div>
 									</div>
 									{employee.position ? (
-										<Badge variant="secondary" className="max-w-32 truncate">
-											{employee.position}
-										</Badge>
+										<Badge variant="secondary">{employee.position}</Badge>
 									) : null}
 								</div>
 								{canManageMembers ? (
 									<Button
 										variant="ghost"
 										size="sm"
-										aria-label={`Remove ${employee.user.name} from team`}
 										onClick={() => onRemoveMember(employee.id)}
+										aria-label={t("settings.teams.detail.members.remove", "Remove team member")}
 									>
 										<IconUserMinus className="size-4" aria-hidden="true" />
 									</Button>
@@ -363,53 +393,57 @@ export function AddMemberDialog(props: {
 		onAddMember,
 		loading,
 	} = props;
+	const { t } = useTranslate();
+	const employeeSelectId = "team-detail-member-select";
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>Add Team Member</ActionPanelTitle>
-					<ActionPanelDescription>Select an employee to add to this team</ActionPanelDescription>
+					<ActionPanelTitle>
+						{t("settings.teams.detail.addMember.title", "Add Team Member")}
+					</ActionPanelTitle>
+					<ActionPanelDescription>
+						{t(
+							"settings.teams.detail.addMember.description",
+							"Select an employee to add to this team",
+						)}
+					</ActionPanelDescription>
 				</ActionPanelHeader>
 				<ActionPanelBody className="space-y-4">
-					<div className="space-y-2">
-						<Label htmlFor="team-member-select">Employee</Label>
-						<Select
-							value={selectedEmployee}
-							onValueChange={onSelectedEmployeeChange}
-							disabled={availableEmployees.length === 0}
+					<Label htmlFor={employeeSelectId}>
+						{t("settings.teams.detail.selectEmployee", "Select employee")}
+					</Label>
+					<Select value={selectedEmployee} onValueChange={onSelectedEmployeeChange}>
+						<SelectTrigger
+							id={employeeSelectId}
+							aria-label={t("settings.teams.detail.selectEmployee", "Select employee")}
 						>
-							<SelectTrigger id="team-member-select" className="w-full min-w-0">
-								<SelectValue
-									placeholder={
-										availableEmployees.length === 0 ? "No employees available" : "Select employee"
-									}
-								/>
-							</SelectTrigger>
-							<SelectContent className="max-w-[var(--radix-select-trigger-width)]">
-								{availableEmployees.map((employee) => (
-									<SelectItem key={employee.id} value={employee.id} className="max-w-full">
-										<div className="flex min-w-0 items-center gap-2">
-											<span className="truncate">{employee.user.name}</span>
-											<span className="truncate text-sm text-muted-foreground">
-												({employee.user.email})
-											</span>
-										</div>
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+							<SelectValue
+								placeholder={t("settings.teams.detail.addMember.selectEmployee", "Select employee")}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{availableEmployees.map((employee) => (
+								<SelectItem key={employee.id} value={employee.id}>
+									<div className="flex items-center gap-2">
+										<span>{employee.user.name}</span>
+										<span className="text-sm text-muted-foreground">({employee.user.email})</span>
+									</div>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</ActionPanelBody>
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-						Cancel
+						{t("settings.teams.detail.actions.cancel", "Cancel")}
 					</Button>
-					<Button onClick={onAddMember} disabled={loading || !selectedEmployee}>
+					<Button onClick={onAddMember} disabled={loading}>
 						{loading ? (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : null}
-						Add Member
+						{t("settings.teams.detail.members.add", "Add Member")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>
@@ -424,20 +458,25 @@ export function RemoveMemberDialog(props: {
 	loading: boolean;
 }) {
 	const { open, onOpenChange, onConfirm, loading } = props;
+	const { t } = useTranslate();
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+					<AlertDialogTitle>
+						{t("settings.teams.detail.removeMember.title", "Remove Team Member")}
+					</AlertDialogTitle>
 					<AlertDialogDescription>
-						Are you sure you want to remove this employee from the team? They will still have access
-						to the organization.
+						{t(
+							"settings.teams.detail.removeMember.description",
+							"Are you sure you want to remove this employee from the team? They will still have access to the organization.",
+						)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={() => onOpenChange(false)} disabled={loading}>
-						Cancel
+						{t("settings.teams.detail.actions.cancel", "Cancel")}
 					</AlertDialogCancel>
 					<AlertDialogAction asChild>
 						<Button
@@ -451,7 +490,7 @@ export function RemoveMemberDialog(props: {
 							{loading ? (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							) : null}
-							Remove
+							{t("settings.teams.detail.removeMember.confirm", "Remove")}
 						</Button>
 					</AlertDialogAction>
 				</AlertDialogFooter>
@@ -467,20 +506,25 @@ export function DeleteTeamDialog(props: {
 	loading: boolean;
 }) {
 	const { open, onOpenChange, onConfirm, loading } = props;
+	const { t } = useTranslate();
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>Delete Team</AlertDialogTitle>
+					<AlertDialogTitle>
+						{t("settings.teams.detail.delete.title", "Delete Team")}
+					</AlertDialogTitle>
 					<AlertDialogDescription>
-						Are you sure you want to delete this team? This action cannot be undone. Team members
-						will not be deleted.
+						{t(
+							"settings.teams.detail.delete.description",
+							"Are you sure you want to delete this team? This action cannot be undone. Team members will not be deleted.",
+						)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel onClick={() => onOpenChange(false)} disabled={loading}>
-						Cancel
+						{t("settings.teams.detail.actions.cancel", "Cancel")}
 					</AlertDialogCancel>
 					<AlertDialogAction asChild>
 						<Button
@@ -494,7 +538,7 @@ export function DeleteTeamDialog(props: {
 							{loading ? (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							) : null}
-							Delete Team
+							{t("settings.teams.detail.delete.title", "Delete Team")}
 						</Button>
 					</AlertDialogAction>
 				</AlertDialogFooter>

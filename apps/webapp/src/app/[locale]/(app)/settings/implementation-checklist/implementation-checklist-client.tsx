@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconCircle, IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ interface ImplementationChecklistClientProps {
 }
 
 export function ImplementationChecklistClient({ checklist }: ImplementationChecklistClientProps) {
+	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const [pendingItemId, setPendingItemId] = useState<string | null>(null);
 	const progressPercent = checklist.totalCount
@@ -56,7 +58,13 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 					: await markImplementationChecklistItemComplete(item.id);
 
 			if (!result.success) {
-				toast.error(result.error || "Failed to update checklist item.");
+				toast.error(
+					result.error ||
+						t(
+							"settings.implementationChecklist.errors.updateItem",
+							"Failed to update checklist item.",
+						),
+				);
 			}
 
 			setPendingItemId(null);
@@ -66,26 +74,57 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 	return (
 		<div className="space-y-6">
 			<div className="space-y-2">
-				<p className="font-medium text-muted-foreground text-sm">Customer implementation</p>
+				<p className="font-medium text-muted-foreground text-sm">
+					{t("settings.implementationChecklist.eyebrow", "Customer implementation")}
+				</p>
 				<div className="space-y-1">
-					<h1 className="text-balance font-semibold text-2xl tracking-tight">Implementation checklist</h1>
+					<h1 className="text-balance font-semibold text-2xl tracking-tight">
+						{t("settings.implementationChecklist.title", "Implementation checklist")}
+					</h1>
 					<p className="max-w-3xl text-muted-foreground">
-						Finish the setup steps before inviting your full team so time tracking, approvals, and
-						payroll workflows are ready for daily use.
+						{t(
+							"settings.implementationChecklist.description",
+							"Finish the setup steps before inviting your full team so time tracking, approvals, and payroll workflows are ready for daily use.",
+						)}
 					</p>
 				</div>
 			</div>
 
 			<Card>
 				<CardHeader>
-					<CardDescription>Setup progress</CardDescription>
+					<CardDescription>
+						{t("settings.implementationChecklist.progress.label", "Setup progress")}
+					</CardDescription>
 					<CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-						<span>{checklist.completedCount} of {checklist.totalCount} complete</span>
-						<span className="font-semibold text-muted-foreground text-sm tabular-nums">{progressPercent}% complete</span>
+						<span>
+							{t(
+								"settings.implementationChecklist.progress.completedCount",
+								"{{completed}} of {{total}} complete",
+								{
+									completed: checklist.completedCount,
+									total: checklist.totalCount,
+								},
+							)}
+						</span>
+						<span className="font-semibold text-muted-foreground text-sm tabular-nums">
+							{t(
+								"settings.implementationChecklist.progress.percentComplete",
+								"{{percent}}% complete",
+								{
+									percent: progressPercent,
+								},
+							)}
+						</span>
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Progress aria-label="Implementation checklist progress" value={progressPercent} />
+					<Progress
+						aria-label={t(
+							"settings.implementationChecklist.progress.ariaLabel",
+							"Implementation checklist progress",
+						)}
+						value={progressPercent}
+					/>
 				</CardContent>
 			</Card>
 
@@ -107,7 +146,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 												<CardDescription>{item.description}</CardDescription>
 											</div>
 											<Badge variant={item.status === "complete" ? "secondary" : "outline"}>
-												{getStatusLabel(item)}
+												{getStatusLabel(item, t)}
 											</Badge>
 										</div>
 									</div>
@@ -127,8 +166,18 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 											type="button"
 											variant="outline"
 										>
-											{itemPending ? <IconLoader2 aria-hidden="true" className="size-4 animate-spin" /> : null}
-											{item.status === "complete" ? "Mark incomplete" : "Mark complete"}
+											{itemPending ? (
+												<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+											) : null}
+											{item.status === "complete"
+												? t(
+														"settings.implementationChecklist.actions.markIncomplete",
+														"Mark incomplete",
+													)
+												: t(
+														"settings.implementationChecklist.actions.markComplete",
+														"Mark complete",
+													)}
 										</Button>
 									) : null}
 								</div>
@@ -142,12 +191,18 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 }
 
 function StatusMarker({ status }: { status: ChecklistStatus }) {
+	const { t } = useTranslate();
 	const complete = status === "complete";
 	const Icon = complete ? IconCheck : IconCircle;
 
 	return (
 		<span
-			aria-label={complete ? "Complete" : "Not started"}
+			aria-label={
+				complete
+					? t("settings.implementationChecklist.status.complete", "Complete")
+					: t("settings.implementationChecklist.status.notStarted", "Not started")
+			}
+			role="img"
 			className={cn(
 				"mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full border",
 				complete
@@ -160,10 +215,15 @@ function StatusMarker({ status }: { status: ChecklistStatus }) {
 	);
 }
 
-function getStatusLabel(item: ImplementationChecklistItem) {
+function getStatusLabel(
+	item: ImplementationChecklistItem,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
 	if (item.status !== "complete") {
-		return "Needs review";
+		return t("settings.implementationChecklist.status.needsReview", "Needs review");
 	}
 
-	return item.completionSource === "manual" ? "Manually complete" : "Complete";
+	return item.completionSource === "manual"
+		? t("settings.implementationChecklist.status.manuallyComplete", "Manually complete")
+		: t("settings.implementationChecklist.status.complete", "Complete");
 }

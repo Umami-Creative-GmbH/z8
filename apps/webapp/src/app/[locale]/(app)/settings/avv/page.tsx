@@ -1,11 +1,12 @@
-import { connection } from "next/server";
-import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function AvvPage() {
 	await connection();
@@ -15,8 +16,9 @@ export default async function AvvPage() {
 	}
 
 	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
+	const t = await getTranslate();
 
-	const [memberRecord, organization] = await Promise.all([
+	const [_memberRecord, organization] = await Promise.all([
 		db.query.member.findFirst({
 			where: and(
 				eq(authSchema.member.userId, authContext.user.id),
@@ -35,33 +37,40 @@ export default async function AvvPage() {
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">Auftragsverarbeitungsvertrag (AVV)</h1>
+				<h1 className="text-2xl font-semibold">
+					{t("settings.avv.title", "Auftragsverarbeitungsvertrag (AVV)")}
+				</h1>
 				<p className="text-muted-foreground">
-					Laden Sie Ihren Auftragsverarbeitungsvertrag gem&auml;&szlig; Art. 28 DSGVO
-					herunter.
+					{t(
+						"settings.avv.description",
+						"Laden Sie Ihren Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO herunter.",
+					)}
 				</p>
 			</div>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Vertragsdetails</CardTitle>
+					<CardTitle>{t("settings.avv.contractDetails.title", "Vertragsdetails")}</CardTitle>
 					<CardDescription>
-						Dieser Vertrag regelt die Auftragsverarbeitung personenbezogener Daten
-						zwischen Ihrer Organisation und Umami Creative GmbH.
+						{t(
+							"settings.avv.contractDetails.descriptionPrefix",
+							"Dieser Vertrag regelt die Auftragsverarbeitung personenbezogener Daten zwischen Ihrer Organisation und ",
+						)}
+						Umami Creative GmbH.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-6">
 					<div className="grid gap-6 sm:grid-cols-2">
 						<div className="space-y-1">
 							<h2 className="text-sm font-medium text-muted-foreground">
-								Auftraggeber (Verantwortlicher)
+								{t("settings.avv.contractDetails.controller", "Auftraggeber (Verantwortlicher)")}
 							</h2>
 							<p className="font-medium">{organization.name}</p>
 						</div>
 
 						<div className="space-y-1">
 							<h2 className="text-sm font-medium text-muted-foreground">
-								Auftragnehmer (Auftragsverarbeiter)
+								{t("settings.avv.contractDetails.processor", "Auftragnehmer (Auftragsverarbeiter)")}
 							</h2>
 							<div className="text-sm">
 								<p className="font-medium">Umami Creative GmbH</p>
@@ -74,11 +83,15 @@ export default async function AvvPage() {
 
 					<div className="space-y-1">
 						<h2 className="text-sm font-medium text-muted-foreground">
-							Hosting &amp; Subprozessoren
+							{t("settings.avv.hosting.title", "Hosting & Subprozessoren")}
 						</h2>
 						<p className="text-sm">
-							Alle Daten werden auf Servern der Hetzner Online GmbH in Deutschland
-							gehostet. Es werden keine weiteren Subprozessoren eingesetzt.
+							{t("settings.avv.hosting.descriptionPrefix", "Alle Daten werden auf Servern der ")}
+							Hetzner Online GmbH in Deutschland
+							{t(
+								"settings.avv.hosting.descriptionSuffix",
+								" gehostet. Es werden keine weiteren Subprozessoren eingesetzt.",
+							)}
 						</p>
 					</div>
 
