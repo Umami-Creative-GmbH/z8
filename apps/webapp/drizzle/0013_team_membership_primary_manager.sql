@@ -9,19 +9,19 @@ CREATE TABLE IF NOT EXISTS "team_membership" (
 	"created_by" text
 );
 
-ALTER TABLE "team" ADD CONSTRAINT "team_primary_manager_org_fk"
+ALTER TABLE "team" ADD CONSTRAINT "team_primary_manager_id_organization_id_employee_id_organization_id_fk"
 	FOREIGN KEY ("primary_manager_id", "organization_id")
 	REFERENCES "employee"("id", "organization_id");
 
 ALTER TABLE "team_membership" ADD CONSTRAINT "team_membership_organization_id_organization_id_fk"
 	FOREIGN KEY ("organization_id") REFERENCES "organization"("id") ON DELETE CASCADE;
 
-ALTER TABLE "team_membership" ADD CONSTRAINT "team_membership_team_org_fk"
+ALTER TABLE "team_membership" ADD CONSTRAINT "team_membership_team_id_organization_id_team_id_organization_id_fk"
 	FOREIGN KEY ("team_id", "organization_id")
 	REFERENCES "team"("id", "organization_id")
 	ON DELETE CASCADE;
 
-ALTER TABLE "team_membership" ADD CONSTRAINT "team_membership_employee_org_fk"
+ALTER TABLE "team_membership" ADD CONSTRAINT "team_membership_employee_id_organization_id_employee_id_organization_id_fk"
 	FOREIGN KEY ("employee_id", "organization_id")
 	REFERENCES "employee"("id", "organization_id")
 	ON DELETE CASCADE;

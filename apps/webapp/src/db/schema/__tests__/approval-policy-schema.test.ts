@@ -258,6 +258,20 @@ describe("approval policy schema exports", () => {
 		expect(migration).not.toContain("ON DELETE SET NULL");
 	});
 
+	it("uses generated foreign key names in the team membership migration", () => {
+		const migration = readFileSync("drizzle/0013_team_membership_primary_manager.sql", "utf8");
+
+		expect(migration).toContain(
+			'ADD CONSTRAINT "team_primary_manager_id_organization_id_employee_id_organization_id_fk"',
+		);
+		expect(migration).toContain(
+			'ADD CONSTRAINT "team_membership_team_id_organization_id_team_id_organization_id_fk"',
+		);
+		expect(migration).toContain(
+			'ADD CONSTRAINT "team_membership_employee_id_organization_id_employee_id_organization_id_fk"',
+		);
+	});
+
 	it("guards team membership backfill by organization", () => {
 		const migration = readFileSync("drizzle/0013_team_membership_primary_manager.sql", "utf8");
 
