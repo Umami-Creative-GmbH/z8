@@ -16,6 +16,7 @@ import {
 	workPolicyScheduleDay,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	OnboardingHolidaySetupFormValues,
 	OnboardingNotificationsFormValues,
@@ -75,7 +76,7 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 		// Profile setup
 		readonly updateProfile: (
 			data: OnboardingProfileFormValues,
-		) => Effect.Effect<{ nextStep: string }, AuthenticationError | DatabaseError>;
+		) => Effect.Effect<{ nextStep: string }, AuthenticationError | DatabaseError | ValidationError>;
 		readonly skipProfileSetup: () => Effect.Effect<
 			{ nextStep: string },
 			AuthenticationError | DatabaseError
@@ -312,6 +313,15 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 					const activeOrgId = session.session.activeOrganizationId;
 
+					if (!isWeekStartDay(data.weekStartDay)) {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Week start day must be Sunday or Monday",
+								field: "weekStartDay",
+							}),
+						);
+					}
+
 					const nextStep = yield* dbService.query("updateProfile", async () => {
 						// Find employee record - prioritize the one with the active organization
 						let emp = activeOrgId
@@ -368,11 +378,13 @@ export const OnboardingServiceLive = Layer.effect(
 							.values({
 								userId: session.user.id,
 								onboardingStep: nextStep,
+								weekStartDay: data.weekStartDay,
 							})
 							.onConflictDoUpdate({
 								target: userSettings.userId,
 								set: {
 									onboardingStep: nextStep,
+									weekStartDay: data.weekStartDay,
 								},
 							});
 

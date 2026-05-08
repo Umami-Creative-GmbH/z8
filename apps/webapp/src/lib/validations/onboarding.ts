@@ -5,6 +5,7 @@ export const onboardingProfileSchema = z.object({
 	lastName: z.string().min(1, "Last name is required").max(50),
 	gender: z.enum(["male", "female", "other"]).optional(),
 	birthday: z.date().optional(),
+	weekStartDay: z.enum(["sunday", "monday"]).default("sunday"),
 });
 
 export const onboardingWorkScheduleSchema = z.object({
