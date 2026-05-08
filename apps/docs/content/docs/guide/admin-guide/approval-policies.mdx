@@ -1,0 +1,26 @@
+---
+title: Approval Policies
+description: Configure organization-scoped approval routing for operational requests.
+icon: Scale
+---
+
+Approval policies define who reviews requests and in what order. They keep absence, correction, overtime, travel, and other approval workflows predictable across the organization.
+
+## What Policies Control
+
+- Which request types need approval.
+- Which roles or managers review each request.
+- The sequential approval chain each request follows.
+- How eligible-manager fallback or team-based routing is used when the primary reviewer is unavailable.
+
+Policies use sequential approval chains. They do not configure arbitrary parallel approval modes or let any eligible reviewer bypass the configured order.
+
+## Team Manager Routing
+
+For team-based approvals, use primary team manager assignments where possible. If an employee belongs to multiple teams, routing should stay clear enough that both employees and managers know who is responsible for the decision.
+
+Eligible-manager fallback and team routing determine who can receive a step in the chain when the preferred reviewer cannot be resolved. They are routing safeguards, not separate approval modes.
+
+## Safe Changes
+
+Change approval policies carefully. Before enabling a new policy, confirm the affected teams, request types, and fallback behavior. After a change, review pending requests to make sure they still have an eligible reviewer.
