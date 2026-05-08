@@ -95,7 +95,9 @@ export async function getActiveWorkPeriod(
 		},
 	});
 
-	return activeWorkPeriod ? mapWorkPeriodWithEntries(activeWorkPeriod) : null;
+	return activeWorkPeriod
+		? mapWorkPeriodWithEntries(activeWorkPeriod as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0])
+		: null;
 }
 
 export async function getWorkPeriods(
@@ -116,7 +118,9 @@ export async function getWorkPeriods(
 		orderBy: [workPeriod.startTime],
 	});
 
-	return workPeriods.reverse().map(mapWorkPeriodWithEntries);
+	return (workPeriods as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0][])
+		.reverse()
+		.map(mapWorkPeriodWithEntries);
 }
 
 export async function getTimeSummary(
