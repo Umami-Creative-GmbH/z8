@@ -15,5 +15,9 @@ export type TeamFormValues = {
 };
 
 export function extractTeamMemberIds(team: any): string[] {
-	return team.employees?.map((employee: any) => employee.id) ?? [];
+	return (
+		team.employees
+			?.map((entry: any) => entry.employee?.id ?? entry.id)
+			.filter((employeeId: string | undefined): employeeId is string => Boolean(employeeId)) ?? []
+	);
 }

@@ -52,7 +52,11 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	const { data: managerOptions = [] } = useQuery({
 		queryKey: ["teams", teamId, "primary-manager-options"],
 		queryFn: async () => {
-			const result = await listEmployeesForSelect({ limit: 1000, status: "active" });
+			const result = await listEmployeesForSelect({
+				limit: 1000,
+				roles: ["manager", "admin"],
+				status: "active",
+			});
 			if (!result.success) {
 				throw new Error(result.error || "Failed to load manager options");
 			}
@@ -184,8 +188,12 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 	if (isLoadingTeam || !team) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-center p-8">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				<div
+					className="flex items-center justify-center p-8"
+					role="status"
+					aria-label="Loading team"
+				>
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
 			</div>
 		);
