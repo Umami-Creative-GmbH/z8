@@ -1,11 +1,12 @@
 import { IconCalendar } from "@tabler/icons-react";
-import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { VacationManagement } from "@/components/settings/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation-policies-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 async function VacationSettingsContent() {
@@ -24,12 +25,20 @@ async function VacationSettingsContent() {
 	}
 
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
-	const allowedAssignmentTypes = canManagePolicies ? (["team", "employee"] as const) : (["employee"] as const);
+
+	if (canManagePolicies) {
+		await ensureDefaultAbsenceCategoriesForOrganization(organizationId);
+	}
+
+	const allowedAssignmentTypes = canManagePolicies
+		? (["team", "employee"] as const)
+		: (["employee"] as const);
 
 	return (
 		<VacationManagement
 			organizationId={organizationId}
 			allowedAssignmentTypes={allowedAssignmentTypes}
+			canManageCategories={canManagePolicies}
 		>
 			<div className="grid gap-4">
 				<Card>

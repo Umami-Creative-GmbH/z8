@@ -70,6 +70,12 @@ export const queryKeys = {
 			["absence-plan-preview", orgId, input] as const,
 	},
 
+	// Absence categories
+	absenceCategories: {
+		all: ["absence-categories"] as const,
+		list: (orgId: string) => ["absence-categories", orgId] as const,
+	},
+
 	// Travel expenses
 	travelExpenses: {
 		all: ["travel-expenses"] as const,

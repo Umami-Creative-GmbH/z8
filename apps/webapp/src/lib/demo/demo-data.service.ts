@@ -29,6 +29,7 @@ import {
 	workCategorySetCategory,
 	workPeriod,
 } from "@/db/schema";
+import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 
@@ -576,58 +577,7 @@ export async function generateDemoTimeEntries(
  * Ensure default absence categories exist for the organization
  */
 async function ensureDefaultAbsenceCategories(organizationId: string) {
-	const existingCategories = await db.query.absenceCategory.findMany({
-		where: eq(absenceCategory.organizationId, organizationId),
-	});
-
-	const existingTypes = new Set(existingCategories.map((c) => c.type));
-	const categoriesToCreate: Array<typeof absenceCategory.$inferInsert> = [];
-
-	if (!existingTypes.has("vacation")) {
-		categoriesToCreate.push({
-			organizationId,
-			type: "vacation",
-			name: "Vacation",
-			description: "Paid time off",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: true,
-			color: "#10b981",
-			isActive: true,
-		});
-	}
-
-	if (!existingTypes.has("sick")) {
-		categoriesToCreate.push({
-			organizationId,
-			type: "sick",
-			name: "Sick Leave",
-			description: "Sick day",
-			requiresWorkTime: false,
-			requiresApproval: false,
-			countsAgainstVacation: false,
-			color: "#ef4444",
-			isActive: true,
-		});
-	}
-
-	if (!existingTypes.has("personal")) {
-		categoriesToCreate.push({
-			organizationId,
-			type: "personal",
-			name: "Personal Day",
-			description: "Personal time off",
-			requiresWorkTime: false,
-			requiresApproval: true,
-			countsAgainstVacation: false,
-			color: "#8b5cf6",
-			isActive: true,
-		});
-	}
-
-	if (categoriesToCreate.length > 0) {
-		await db.insert(absenceCategory).values(categoriesToCreate);
-	}
+	await ensureDefaultAbsenceCategoriesForOrganization(organizationId);
 }
 
 /**

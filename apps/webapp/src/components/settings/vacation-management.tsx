@@ -5,18 +5,21 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
+import { AbsenceCategoriesTable } from "./absence-categories-table";
 import { VacationAssignmentDialog } from "./vacation-assignment-dialog";
 import { VacationAssignmentManager } from "./vacation-assignment-manager";
 
 interface VacationManagementProps {
 	organizationId: string;
 	allowedAssignmentTypes: readonly ("team" | "employee")[];
+	canManageCategories: boolean;
 	children: React.ReactNode; // The existing policy content
 }
 
 export function VacationManagement({
 	organizationId,
 	allowedAssignmentTypes,
+	canManageCategories,
 	children,
 }: VacationManagementProps) {
 	const { t } = useTranslate();
@@ -61,6 +64,9 @@ export function VacationManagement({
 					<TabsTrigger value="policies">
 						{t("settings.vacation.tab.policies", "Policies")}
 					</TabsTrigger>
+					<TabsTrigger value="categories">
+						{t("settings.vacation.tab.categories", "Categories")}
+					</TabsTrigger>
 					<TabsTrigger value="assignments">
 						{t("settings.vacation.tab.assignments", "Assignments")}
 					</TabsTrigger>
@@ -68,6 +74,13 @@ export function VacationManagement({
 
 				<TabsContent value="policies" className="space-y-4">
 					{children}
+				</TabsContent>
+
+				<TabsContent value="categories" className="space-y-4">
+					<AbsenceCategoriesTable
+						organizationId={organizationId}
+						canManageCategories={canManageCategories}
+					/>
 				</TabsContent>
 
 				<TabsContent value="assignments" className="space-y-4">
