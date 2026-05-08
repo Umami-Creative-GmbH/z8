@@ -1,0 +1,157 @@
+name: Publish Deploy Webhook Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-deploy-webhook-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-native:
+    name: Build Native (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify workflow contract
+        run: node scripts/ci/verify-publish-deploy-webhook-image-workflow.mjs
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push deploy webhook image by digest
+        id: build_deploy_webhook
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile.deploy-webhook
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=ghcr.io/umami-creative-gmbh/z8-deploy-webhook,push-by-digest=true,name-canonical=true,push=true
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=deploy-webhook-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=deploy-webhook-${{ matrix.arch }}
+
+      - name: Export digest artifact
+        env:
+          DEPLOY_WEBHOOK_DIGEST: ${{ steps.build_deploy_webhook.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests/deploy-webhook
+          touch "/tmp/digests/deploy-webhook/${DEPLOY_WEBHOOK_DIGEST#sha256:}"
+
+      - name: Upload deploy webhook digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-deploy-webhook-${{ matrix.arch }}
+          path: /tmp/digests/deploy-webhook/*
+          if-no-files-found: error
+
+  publish-manifest:
+    name: Publish Manifest
+    needs: build-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 digest
+        uses: actions/download-artifact@v4
+        with:
+          name: digests-deploy-webhook-amd64
+          path: /tmp/digests/amd64
+
+      - name: Download arm64 digest
+        uses: actions/download-artifact@v4
+        with:
+          name: digests-deploy-webhook-arm64
+          path: /tmp/digests/arm64
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/umami-creative-gmbh/z8-deploy-webhook
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+
+      - name: Create and push multi-arch manifests
+        env:
+          IMAGE_NAME: ghcr.io/umami-creative-gmbh/z8-deploy-webhook
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+
+          set -- /tmp/digests/amd64/*
+          AMD64_DIGEST="sha256:${1##*/}"
+
+          set -- /tmp/digests/arm64/*
+          ARM64_DIGEST="sha256:${1##*/}"
+
+          for tag in $TAGS; do
+            docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+              -t "$tag" \
+              "$IMAGE_NAME@$AMD64_DIGEST" \
+              "$IMAGE_NAME@$ARM64_DIGEST"
+          done
+
+  cleanup-package-versions:
+    name: Cleanup Package Versions
+    needs: publish-manifest
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Delete old package versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: umami-creative-gmbh
+          package-name: z8-deploy-webhook
+          package-type: container
+          min-versions-to-keep: 10
+          ignore-versions: '^(latest|v.*)$'
