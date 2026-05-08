@@ -21,8 +21,11 @@ function getString(value: unknown): string | null {
 
 export function parseGitHubPackageEvent(payload: unknown, expectedOwner: string): ImageObservation | null {
   if (!isObject(payload)) return null;
+  if (payload.action !== "published") return null;
+
   const packageValue = payload.package;
   if (!isObject(packageValue)) return null;
+  if (packageValue.package_type !== "container") return null;
 
   const owner = isObject(packageValue.owner) ? getString(packageValue.owner.login) : null;
   if (owner !== expectedOwner) return null;

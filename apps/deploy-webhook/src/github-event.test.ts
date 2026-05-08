@@ -26,6 +26,16 @@ describe("parseGitHubPackageEvent", () => {
     expect(parseGitHubPackageEvent(payload, "umami-creative-gmbh")).toBeNull();
   });
 
+  it("ignores non-published package actions", () => {
+    const payload = { ...basePayload, action: "deleted" };
+    expect(parseGitHubPackageEvent(payload, "umami-creative-gmbh")).toBeNull();
+  });
+
+  it("ignores non-container package types", () => {
+    const payload = { ...basePayload, package: { ...basePayload.package, package_type: "npm" } };
+    expect(parseGitHubPackageEvent(payload, "umami-creative-gmbh")).toBeNull();
+  });
+
   it("ignores non-SHA tags and unknown packages", () => {
     const latestPayload = {
       ...basePayload,
