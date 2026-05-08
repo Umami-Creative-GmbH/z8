@@ -1,6 +1,12 @@
 "use client";
 
-import { IconArrowBack, IconClock, IconDeviceFloppy, IconHome, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconArrowBack,
+	IconClock,
+	IconDeviceFloppy,
+	IconHome,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
@@ -32,25 +38,40 @@ import {
 	type EmployeeDetailFormApi,
 	type EmployeeDetailFormValues,
 	scheduleDayKeys,
-	scheduleDayLabels,
 } from "./page-utils";
 
-export function EmployeeDetailHeader({ t }: { t: (key: string, defaultValue: string) => string }) {
+type Translate = (
+	key: string,
+	defaultValue: string,
+	values?: Record<string, string | number>,
+) => string;
+
+const defaultTranslate: Translate = (_key, defaultValue) => defaultValue;
+
+export function EmployeeDetailHeader({ t }: { t: Translate }) {
 	return (
 		<div className="flex items-center justify-between">
 			<div>
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="sm" asChild aria-label="Back to employee list">
+					<Button
+						variant="ghost"
+						size="sm"
+						asChild
+						aria-label={t(
+							"settings.employees.detailView.backToEmployeeList",
+							"Back to employee list",
+						)}
+					>
 						<Link href="/settings/employees">
 							<IconArrowBack className="size-4" aria-hidden="true" />
 						</Link>
 					</Button>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.employees.details.title", "Employee Details")}
+						{t("settings.employees.detailsTitle", "Employee Details")}
 					</h1>
 				</div>
 				<p className="text-sm text-muted-foreground">
-					{t("settings.employees.details.description", "View and edit employee information")}
+					{t("settings.employees.detailsDescription", "View and edit employee information")}
 				</p>
 			</div>
 		</div>
@@ -60,9 +81,11 @@ export function EmployeeDetailHeader({ t }: { t: (key: string, defaultValue: str
 export function EmployeeOverviewCard({
 	employee,
 	schedule,
+	t = defaultTranslate,
 }: {
 	employee: EmployeeDetail;
 	schedule: unknown;
+	t?: Translate;
 }) {
 	const effectiveSchedule = schedule as {
 		policyName: string;
@@ -74,14 +97,43 @@ export function EmployeeOverviewCard({
 		days?: Array<{ dayOfWeek: string; isWorkDay: boolean }>;
 	} | null;
 
+	const scheduleCycleLabels: Record<string, string> = {
+		weekly: t("settings.employees.detailView.scheduleCycleWeekly", "weekly"),
+		week: t("settings.employees.detailView.scheduleCycleWeekly", "weekly"),
+	};
+	const assignedViaLabels: Record<string, string> = {
+		Individual: t("settings.employees.detailView.assignedViaIndividual", "Individual"),
+		"Organization Default": t(
+			"settings.employees.detailView.assignedViaOrganizationDefault",
+			"Organization Default",
+		),
+		Team: t("settings.employees.detailView.assignedViaTeam", "Team"),
+	};
+	const scheduleDayLabels = [
+		t("settings.employees.detailView.dayMonday", "Mon"),
+		t("settings.employees.detailView.dayTuesday", "Tue"),
+		t("settings.employees.detailView.dayWednesday", "Wed"),
+		t("settings.employees.detailView.dayThursday", "Thu"),
+		t("settings.employees.detailView.dayFriday", "Fri"),
+		t("settings.employees.detailView.daySaturday", "Sat"),
+		t("settings.employees.detailView.daySunday", "Sun"),
+	];
+
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Employee Information</CardTitle>
+				<CardTitle>
+					{t("settings.employees.detailView.employeeInformation", "Employee Information")}
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="flex items-center gap-3">
-					<UserAvatar image={employee.user.image} seed={employee.user.id} name={employee.user.name} size="lg" />
+					<UserAvatar
+						image={employee.user.image}
+						seed={employee.user.id}
+						name={employee.user.name}
+						size="lg"
+					/>
 					<div>
 						<div className="font-medium">{employee.user.name}</div>
 						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
@@ -91,33 +143,45 @@ export function EmployeeOverviewCard({
 				<Separator />
 
 				<div className="space-y-2">
-					<div className="text-sm text-muted-foreground">Team</div>
+					<div className="text-sm text-muted-foreground">
+						{t("settings.employees.detailView.team", "Team")}
+					</div>
 					<div>{employee.team?.name || "-"}</div>
 				</div>
 
 				<div className="space-y-2">
-					<div className="text-sm text-muted-foreground">Status</div>
+					<div className="text-sm text-muted-foreground">
+						{t("settings.employees.detailView.status", "Status")}
+					</div>
 					<Badge variant={employee.isActive ? "default" : "secondary"}>
-						{employee.isActive ? "Active" : "Inactive"}
+						{employee.isActive
+							? t("settings.employees.detailView.statusActive", "Active")
+							: t("settings.employees.detailView.statusInactive", "Inactive")}
 					</Badge>
 				</div>
 
 				{employee.employeeNumber && (
 					<div className="space-y-2">
-						<div className="text-sm text-muted-foreground">Employee Number</div>
+						<div className="text-sm text-muted-foreground">
+							{t("settings.employees.detailView.employeeNumber", "Employee Number")}
+						</div>
 						<div className="font-mono text-sm">{employee.employeeNumber}</div>
 					</div>
 				)}
 
 				{employee.managers && employee.managers.length > 0 && (
 					<div className="space-y-2">
-						<div className="text-sm text-muted-foreground">Managers</div>
+						<div className="text-sm text-muted-foreground">
+							{t("settings.employees.detailView.managers", "Managers")}
+						</div>
 						<div className="space-y-1">
 							{employee.managers.map((manager) => (
 								<div key={manager.id} className="flex items-center gap-2">
 									<span>{manager.manager.user.name}</span>
 									{manager.isPrimary && (
-										<Badge variant="secondary" className="text-xs">Primary</Badge>
+										<Badge variant="secondary" className="text-xs">
+											{t("settings.employees.detailView.primaryManager", "Primary")}
+										</Badge>
 									)}
 								</div>
 							))}
@@ -130,7 +194,7 @@ export function EmployeeOverviewCard({
 				<div className="space-y-3">
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<IconClock className="size-4" aria-hidden="true" />
-						<span>Work Schedule</span>
+						<span>{t("settings.employees.detailView.workSchedule", "Work Schedule")}</span>
 					</div>
 					{effectiveSchedule ? (
 						<div className="space-y-2">
@@ -138,20 +202,32 @@ export function EmployeeOverviewCard({
 							<div className="flex flex-wrap gap-2">
 								{effectiveSchedule.hoursPerCycle && (
 									<Badge variant="outline">
-										{effectiveSchedule.hoursPerCycle}h / {effectiveSchedule.scheduleCycle || "week"}
+										{effectiveSchedule.hoursPerCycle}h /{" "}
+										{scheduleCycleLabels[effectiveSchedule.scheduleCycle ?? ""] ??
+											effectiveSchedule.scheduleCycle ??
+											t("settings.employees.detailView.scheduleCycleWeekly", "weekly")}
 									</Badge>
 								)}
 								{effectiveSchedule.homeOfficeDaysPerCycle != null &&
 									effectiveSchedule.homeOfficeDaysPerCycle > 0 && (
 										<Badge variant="outline" className="flex items-center gap-1">
 											<IconHome className="size-3" aria-hidden="true" />
-											{effectiveSchedule.homeOfficeDaysPerCycle} home office day
-											{effectiveSchedule.homeOfficeDaysPerCycle > 1 ? "s" : ""}
+											{t(
+												"settings.employees.detailView.homeOfficeDays",
+												"{count} home office day(s)",
+												{
+													count: effectiveSchedule.homeOfficeDaysPerCycle,
+												},
+											)}
 										</Badge>
 									)}
 							</div>
 							<div className="text-xs text-muted-foreground">
-								Assigned via: {effectiveSchedule.assignedVia}
+								{t("settings.employees.detailView.assignedVia", "Assigned via: {source}", {
+									source:
+										assignedViaLabels[effectiveSchedule.assignedVia] ??
+										effectiveSchedule.assignedVia,
+								})}
 							</div>
 							{effectiveSchedule.scheduleType === "detailed" && effectiveSchedule.days && (
 								<div className="mt-2 flex flex-wrap gap-1">
@@ -164,7 +240,9 @@ export function EmployeeOverviewCard({
 											<div
 												key={label}
 												className={`rounded px-2 py-1 text-xs ${
-													isWorkDay ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+													isWorkDay
+														? "bg-primary/10 text-primary"
+														: "bg-muted text-muted-foreground"
 												}`}
 											>
 												{label}
@@ -175,7 +253,9 @@ export function EmployeeOverviewCard({
 							)}
 						</div>
 					) : (
-						<div className="text-sm text-muted-foreground">No schedule assigned</div>
+						<div className="text-sm text-muted-foreground">
+							{t("settings.employees.detailView.noScheduleAssigned", "No schedule assigned")}
+						</div>
 					)}
 				</div>
 			</CardContent>
@@ -189,19 +269,23 @@ export function EmployeeEditFormCard({
 	canEditOrgAdminFields,
 	isUpdating,
 	onCancel,
+	t = defaultTranslate,
 }: {
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
 	canEditOrgAdminFields: boolean;
 	isUpdating: boolean;
 	onCancel: () => void;
+	t?: Translate;
 }) {
 	return (
 		<Card className="lg:col-span-2">
 			<CardHeader>
-				<CardTitle>Edit Employee</CardTitle>
+				<CardTitle>{t("settings.employees.detailView.editTitle", "Edit Employee")}</CardTitle>
 				<CardDescription>
-					{canEditManagerFields ? "Update approved employee details" : "View employee details"}
+					{canEditManagerFields
+						? t("settings.employees.detailView.editDescription", "Update approved employee details")
+						: t("settings.employees.detailView.viewDescription", "View employee details")}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -214,28 +298,61 @@ export function EmployeeEditFormCard({
 					className="space-y-6"
 				>
 					<div className="grid gap-4 md:grid-cols-2">
-						<TextField form={form} name="firstName" label="First Name" placeholder="Enter first name" disabled={!canEditManagerFields || isUpdating} />
-						<TextField form={form} name="lastName" label="Last Name" placeholder="Enter last name" disabled={!canEditManagerFields || isUpdating} />
+						<TextField
+							form={form}
+							name="firstName"
+							label={t("settings.employees.detailView.firstName", "First Name")}
+							placeholder={t(
+								"settings.employees.detailView.firstNamePlaceholder",
+								"Enter first name",
+							)}
+							disabled={!canEditManagerFields || isUpdating}
+						/>
+						<TextField
+							form={form}
+							name="lastName"
+							label={t("settings.employees.detailView.lastName", "Last Name")}
+							placeholder={t(
+								"settings.employees.detailView.lastNamePlaceholder",
+								"Enter last name",
+							)}
+							disabled={!canEditManagerFields || isUpdating}
+						/>
 					</div>
 
 					<form.Field name="gender">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>Gender</TFormLabel>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("settings.employees.detailView.gender", "Gender")}
+								</TFormLabel>
 								<Select
-									onValueChange={(value) => field.handleChange(value as EmployeeDetailFormValues["gender"])}
+									onValueChange={(value) =>
+										field.handleChange(value as EmployeeDetailFormValues["gender"])
+									}
 									value={field.state.value || ""}
 									disabled={!canEditManagerFields || isUpdating}
 								>
 									<TFormControl hasError={fieldHasError(field)}>
 										<SelectTrigger>
-											<SelectValue placeholder="Select gender" />
+											<SelectValue
+												placeholder={t(
+													"settings.employees.detailView.genderPlaceholder",
+													"Select gender",
+												)}
+											/>
 										</SelectTrigger>
 									</TFormControl>
 									<SelectContent>
-										<SelectItem value="male">Male</SelectItem>
-										<SelectItem value="female">Female</SelectItem>
-										<SelectItem value="other">Other</SelectItem>
+										<SelectItem value="male">
+											{t("settings.employees.detailView.genderMale", "Male")}
+										</SelectItem>
+										<SelectItem value="female">
+											{t("settings.employees.detailView.genderFemale", "Female")}
+										</SelectItem>
+										<SelectItem value="other">
+											{t("settings.employees.detailView.genderOther", "Other")}
+										</SelectItem>
 									</SelectContent>
 								</Select>
 								<TFormMessage field={field} />
@@ -244,16 +361,73 @@ export function EmployeeEditFormCard({
 					</form.Field>
 
 					<div className="grid gap-4 md:grid-cols-2">
-						<TextField form={form} name="position" label="Position" placeholder="Enter position" description="Job title or role" disabled={!canEditManagerFields || isUpdating} />
-						<TextField form={form} name="employeeNumber" label="Employee Number" placeholder="e.g., EMP-001" description="External payroll system ID" disabled={!canEditOrgAdminFields || isUpdating} />
+						<TextField
+							form={form}
+							name="position"
+							label={t("settings.employees.detailView.position", "Position")}
+							placeholder={t("settings.employees.detailView.positionPlaceholder", "Enter position")}
+							description={t(
+								"settings.employees.detailView.positionDescription",
+								"Job title or role",
+							)}
+							disabled={!canEditManagerFields || isUpdating}
+						/>
+						<TextField
+							form={form}
+							name="employeeNumber"
+							label={t("settings.employees.detailView.employeeNumber", "Employee Number")}
+							placeholder={t(
+								"settings.employees.detailView.employeeNumberPlaceholder",
+								"e.g., EMP-001",
+							)}
+							description={t(
+								"settings.employees.detailView.employeeNumberDescription",
+								"External payroll system ID",
+							)}
+							disabled={!canEditOrgAdminFields || isUpdating}
+						/>
 					</div>
 
 					<form.Field name="role">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>System Role</TFormLabel>
-								<RoleSelector value={field.state.value} onChange={field.handleChange} disabled={!canEditOrgAdminFields || isUpdating} />
-								<TFormDescription>Determines access level in the system</TFormDescription>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("settings.employees.detailView.systemRole", "System Role")}
+								</TFormLabel>
+								<RoleSelector
+									value={field.state.value}
+									onChange={field.handleChange}
+									disabled={!canEditOrgAdminFields || isUpdating}
+									labels={{
+										admin: {
+											label: t("settings.employees.detailView.roleAdmin", "Admin"),
+											description: t(
+												"settings.employees.detailView.roleAdminDescription",
+												"Full system access",
+											),
+										},
+										manager: {
+											label: t("settings.employees.detailView.roleManager", "Manager"),
+											description: t(
+												"settings.employees.detailView.roleManagerDescription",
+												"Team oversight",
+											),
+										},
+										employee: {
+											label: t("settings.employees.detailView.roleEmployee", "Employee"),
+											description: t(
+												"settings.employees.detailView.roleEmployeeDescription",
+												"Standard access",
+											),
+										},
+									}}
+								/>
+								<TFormDescription>
+									{t(
+										"settings.employees.detailView.systemRoleDescription",
+										"Determines access level in the system",
+									)}
+								</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
 						)}
@@ -262,9 +436,36 @@ export function EmployeeEditFormCard({
 					<form.Field name="contractType">
 						{(field) => (
 							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>Contract Type</TFormLabel>
-								<ContractTypeSelector value={field.state.value} onChange={field.handleChange} disabled={!canEditOrgAdminFields || isUpdating} />
-								<TFormDescription>Determines how compensation is calculated</TFormDescription>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("settings.employees.detailView.contractType", "Contract Type")}
+								</TFormLabel>
+								<ContractTypeSelector
+									value={field.state.value}
+									onChange={field.handleChange}
+									disabled={!canEditOrgAdminFields || isUpdating}
+									labels={{
+										fixed: {
+											label: t("settings.employees.detailView.contractFixed", "Fixed"),
+											description: t(
+												"settings.employees.detailView.contractFixedDescription",
+												"Salary-based compensation",
+											),
+										},
+										hourly: {
+											label: t("settings.employees.detailView.contractHourly", "Hourly"),
+											description: t(
+												"settings.employees.detailView.contractHourlyDescription",
+												"Paid by hours worked",
+											),
+										},
+									}}
+								/>
+								<TFormDescription>
+									{t(
+										"settings.employees.detailView.contractTypeDescription",
+										"Determines how compensation is calculated",
+									)}
+								</TFormDescription>
 								<TFormMessage field={field} />
 							</TFormItem>
 						)}
@@ -276,7 +477,9 @@ export function EmployeeEditFormCard({
 								<form.Field name="hourlyRate">
 									{(field) => (
 										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)}>Hourly Rate</TFormLabel>
+											<TFormLabel hasError={fieldHasError(field)}>
+												{t("settings.employees.detailView.hourlyRate", "Hourly Rate")}
+											</TFormLabel>
 											<TFormControl hasError={fieldHasError(field)}>
 												<HourlyRateInput
 													value={field.state.value}
@@ -286,7 +489,12 @@ export function EmployeeEditFormCard({
 													hasError={fieldHasError(field)}
 												/>
 											</TFormControl>
-											<TFormDescription>Current hourly rate for this employee</TFormDescription>
+											<TFormDescription>
+												{t(
+													"settings.employees.detailView.hourlyRateDescription",
+													"Current hourly rate for this employee",
+												)}
+											</TFormDescription>
 											<TFormMessage field={field} />
 										</TFormItem>
 									)}
@@ -295,19 +503,23 @@ export function EmployeeEditFormCard({
 						}
 					</form.Subscribe>
 
-					{canEditOrgAdminFields && <EmployeeAppAccessFields form={form} isUpdating={isUpdating} />}
+					{canEditOrgAdminFields && (
+						<EmployeeAppAccessFields form={form} isUpdating={isUpdating} t={t} />
+					)}
 
 					{canEditManagerFields && (
 						<div className="flex justify-end gap-2">
 							<Button type="button" variant="outline" onClick={onCancel} disabled={isUpdating}>
-								Cancel
+								{t("settings.employees.detailView.cancel", "Cancel")}
 							</Button>
 							<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
 								{([isDirty, isSubmitting]) => (
 									<Button type="submit" disabled={!isDirty || isSubmitting || isUpdating}>
-										{(isSubmitting || isUpdating) && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+										{(isSubmitting || isUpdating) && (
+											<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+										)}
 										<IconDeviceFloppy className="mr-2 size-4" aria-hidden="true" />
-										Save Changes
+										{t("settings.employees.detailView.saveChanges", "Save Changes")}
 									</Button>
 								)}
 							</form.Subscribe>
@@ -319,18 +531,72 @@ export function EmployeeEditFormCard({
 	);
 }
 
-function EmployeeAppAccessFields({ form, isUpdating }: { form: EmployeeDetailFormApi; isUpdating: boolean }) {
+function EmployeeAppAccessFields({
+	form,
+	isUpdating,
+	t,
+}: {
+	form: EmployeeDetailFormApi;
+	isUpdating: boolean;
+	t: Translate;
+}) {
 	return (
 		<>
 			<Separator className="my-4" />
 			<div className="space-y-4">
 				<div>
-					<h4 className="text-sm font-medium">App Access Permissions</h4>
-					<p className="text-sm text-muted-foreground">Control which applications this employee can access</p>
+					<h4 className="text-sm font-medium">
+						{t("settings.employees.detailView.appAccessPermissions", "App Access Permissions")}
+					</h4>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.employees.detailView.appAccessDescription",
+							"Control which applications this employee can access",
+						)}
+					</p>
 				</div>
-				<AccessSwitchField form={form} name="canUseWebapp" label="Web Application" description="Access to the browser-based application" ariaLabel="Toggle web application access" isUpdating={isUpdating} />
-				<AccessSwitchField form={form} name="canUseDesktop" label="Desktop Application" description="Access to the desktop app for time tracking" ariaLabel="Toggle desktop application access" isUpdating={isUpdating} />
-				<AccessSwitchField form={form} name="canUseMobile" label="Mobile Application" description="Access to mobile apps for time tracking" ariaLabel="Toggle mobile application access" isUpdating={isUpdating} />
+				<AccessSwitchField
+					form={form}
+					name="canUseWebapp"
+					label={t("settings.employees.detailView.webApplication", "Web Application")}
+					description={t(
+						"settings.employees.detailView.webApplicationDescription",
+						"Access to the browser-based application",
+					)}
+					ariaLabel={t(
+						"settings.employees.detailView.toggleWebApplicationAccess",
+						"Toggle web application access",
+					)}
+					isUpdating={isUpdating}
+				/>
+				<AccessSwitchField
+					form={form}
+					name="canUseDesktop"
+					label={t("settings.employees.detailView.desktopApplication", "Desktop Application")}
+					description={t(
+						"settings.employees.detailView.desktopApplicationDescription",
+						"Access to the desktop app for time tracking",
+					)}
+					ariaLabel={t(
+						"settings.employees.detailView.toggleDesktopApplicationAccess",
+						"Toggle desktop application access",
+					)}
+					isUpdating={isUpdating}
+				/>
+				<AccessSwitchField
+					form={form}
+					name="canUseMobile"
+					label={t("settings.employees.detailView.mobileApplication", "Mobile Application")}
+					description={t(
+						"settings.employees.detailView.mobileApplicationDescription",
+						"Access to mobile apps for time tracking",
+					)}
+					ariaLabel={t(
+						"settings.employees.detailView.toggleMobileApplicationAccess",
+						"Toggle mobile application access",
+					)}
+					isUpdating={isUpdating}
+				/>
 			</div>
 		</>
 	);
@@ -360,7 +626,12 @@ function AccessSwitchField({
 							<TFormLabel>{label}</TFormLabel>
 							<TFormDescription>{description}</TFormDescription>
 						</div>
-						<Switch checked={field.state.value ?? true} onCheckedChange={field.handleChange} disabled={isUpdating} aria-label={ariaLabel} />
+						<Switch
+							checked={field.state.value ?? true}
+							onCheckedChange={field.handleChange}
+							disabled={isUpdating}
+							aria-label={ariaLabel}
+						/>
 					</div>
 				</TFormItem>
 			)}

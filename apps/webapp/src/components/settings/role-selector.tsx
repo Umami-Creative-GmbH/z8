@@ -65,14 +65,16 @@ interface RoleSelectorProps {
 	value?: Role;
 	onChange: (value: Role) => void;
 	disabled?: boolean;
+	labels?: Partial<Record<Role, { label: string; description: string }>>;
 }
 
-export function RoleSelector({ value, onChange, disabled }: RoleSelectorProps) {
+export function RoleSelector({ value, onChange, disabled, labels }: RoleSelectorProps) {
 	return (
 		<div className="grid grid-cols-3 gap-3">
 			{roleOptions.map((option) => {
 				const isSelected = value === option.value;
 				const Icon = option.icon;
+				const copy = labels?.[option.value] ?? option;
 
 				return (
 					<button
@@ -123,11 +125,11 @@ export function RoleSelector({ value, onChange, disabled }: RoleSelectorProps) {
 								isSelected ? option.color.text : "text-foreground",
 							)}
 						>
-							{option.label}
+							{copy.label}
 						</span>
 
 						{/* Description */}
-						<span className="text-xs text-muted-foreground">{option.description}</span>
+						<span className="text-xs text-muted-foreground">{copy.description}</span>
 					</button>
 				);
 			})}
