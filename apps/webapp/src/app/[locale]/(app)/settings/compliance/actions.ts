@@ -3,7 +3,7 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { employee, userSettings } from "@/db/schema";
+import { complianceException, employee, userSettings } from "@/db/schema";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -24,6 +24,14 @@ import {
 } from "@/lib/notifications/compliance-triggers";
 
 const logger = createLogger("ComplianceActions");
+
+type EmployeeWithUser = typeof employee.$inferSelect & {
+	user: { name: string };
+};
+
+type ComplianceExceptionWithEmployee = typeof complianceException.$inferSelect & {
+	employee: EmployeeWithUser;
+};
 
 // =============================================================================
 // Layer composition for compliance service
@@ -77,13 +85,21 @@ async function getCurrentEmployeeWithTimezone() {
 		);
 
 		return {
-			employee: emp,
+			employee: emp as EmployeeWithUser,
 			timezone: settings?.timezone || "UTC",
 			userId: session.user.id,
 		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return Effect.runPromise(effect);
+}
+
+function typeEmployeeWithUser<T>(employeeRecord: T) {
+	return employeeRecord as T & EmployeeWithUser;
+}
+
+function typeComplianceExceptionWithEmployee(exception: unknown) {
+	return exception as ComplianceExceptionWithEmployee | undefined;
 }
 
 // =============================================================================
@@ -443,7 +459,7 @@ export async function approveComplianceException(
 					}),
 					Effect.flatMap((emp) =>
 						emp
-							? Effect.succeed(emp)
+							? Effect.succeed(typeEmployeeWithUser(emp))
 							: Effect.fail(
 									new NotFoundError({
 										message: "Employee profile not found",
@@ -464,7 +480,7 @@ export async function approveComplianceException(
 				);
 
 				// Get exception details for notification
-				const exception = yield* _(
+				const exceptionResult = yield* _(
 					dbService.query("getExceptionDetails", async () => {
 						return await dbService.db.query.complianceException.findFirst({
 							where: eq(complianceException.id, exceptionId),
@@ -474,6 +490,7 @@ export async function approveComplianceException(
 						});
 					}),
 				);
+				const exception = typeComplianceExceptionWithEmployee(exceptionResult);
 
 				// Trigger notification (fire-and-forget)
 				if (exception) {
@@ -522,9 +539,6 @@ export async function approveComplianceException(
 	return runServerActionSafe(effect);
 }
 
-// Need to import complianceException for the query
-import { complianceException } from "@/db/schema";
-
 /**
  * Reject a compliance exception
  */
@@ -556,7 +570,7 @@ export async function rejectComplianceException(
 					}),
 					Effect.flatMap((emp) =>
 						emp
-							? Effect.succeed(emp)
+							? Effect.succeed(typeEmployeeWithUser(emp))
 							: Effect.fail(
 									new NotFoundError({
 										message: "Employee profile not found",
@@ -569,7 +583,7 @@ export async function rejectComplianceException(
 				span.setAttribute("approver.id", approver.id);
 
 				// Get exception details before rejection for notification
-				const exception = yield* _(
+				const exceptionResult = yield* _(
 					dbService.query("getExceptionDetails", async () => {
 						return await dbService.db.query.complianceException.findFirst({
 							where: eq(complianceException.id, exceptionId),
@@ -579,6 +593,7 @@ export async function rejectComplianceException(
 						});
 					}),
 				);
+				const exception = typeComplianceExceptionWithEmployee(exceptionResult);
 
 				const complianceService = yield* _(ComplianceGuardrailService);
 				yield* _(
