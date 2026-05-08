@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
+import {
+	OrganizationsPageClient,
+	type InvitationWithInviter,
+	type MemberWithUserAndEmployee,
+} from "@/components/organization/organizations-page-client";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
@@ -81,11 +85,14 @@ export default async function OrganizationsPage() {
 		);
 	}
 
+	const typedInvitations = invitations as unknown as InvitationWithInviter[];
+	const typedMembers = members as unknown as MemberWithUserAndEmployee[];
+
 	return (
 		<OrganizationsPageClient
 			organization={organization}
-			members={members}
-			invitations={invitations}
+			members={typedMembers}
+			invitations={typedInvitations}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
 			currentUserId={authContext.user.id}
 			canCreateOrganizations={
