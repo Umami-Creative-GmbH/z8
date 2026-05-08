@@ -26,7 +26,6 @@ import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/trig
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
-	canReassignEmployeeWithinScope,
 	getScopedTeamFlags,
 	type ScopedTeam,
 } from "./team-scope";
@@ -994,19 +993,31 @@ export async function addTeamMember(
 					const scopedPermissions = yield* _(
 						loadScopedPermissions(dbService, actor.actorId, targetTeam.organizationId),
 					);
+					const targetEmployeeMemberships = yield* _(
+						dbService.query("getTargetEmployeeMemberships", async () => {
+							return await dbService.db.query.teamMembership.findMany({
+								where: and(
+									eq(teamMembership.organizationId, targetTeam.organizationId),
+									eq(teamMembership.employeeId, targetEmployee.id),
+								),
+							});
+						}),
+					);
 					const manageableTeamIds = new Set(
 						Array.from(scopedPermissions.byTeamId.entries())
 							.filter(([, flags]) => flags.canManageTeamMembers)
 							.map(([managedTeamId]) => managedTeamId),
 					);
+					const currentTeamIds = new Set(
+						[
+							targetEmployee.teamId,
+							...targetEmployeeMemberships.map((membership) => membership.teamId),
+						].filter((currentTeamId): currentTeamId is string => Boolean(currentTeamId)),
+					);
 
 					if (
 						!scopedPermissions.orgWide?.canManageTeamMembers &&
-						!canReassignEmployeeWithinScope({
-							currentEmployeeTeamId: targetEmployee.teamId,
-							targetTeamId: teamId,
-							manageableTeamIds,
-						})
+						Array.from(currentTeamIds).some((currentTeamId) => !manageableTeamIds.has(currentTeamId))
 					) {
 						yield* _(
 							Effect.fail(
@@ -1021,30 +1032,19 @@ export async function addTeamMember(
 					}
 				}
 
-				const existingMembership = yield* _(
-					dbService.query("getExistingTeamMembership", async () => {
-						return await dbService.db.query.teamMembership.findFirst({
-							where: and(
-								eq(teamMembership.organizationId, targetTeam.organizationId),
-								eq(teamMembership.teamId, teamId),
-								eq(teamMembership.employeeId, targetEmployee.id),
-							),
-						});
-					}),
-				);
-
-				if (!existingMembership) {
-					yield* _(
-						dbService.query("addTeamMembership", async () => {
-							await dbService.db.insert(teamMembership).values({
+				yield* _(
+					dbService.query("addTeamMembership", async () => {
+						await dbService.db
+							.insert(teamMembership)
+							.values({
 								organizationId: targetTeam.organizationId,
 								teamId,
 								employeeId: targetEmployee.id,
 								createdBy: session.user.id,
-							});
-						}),
-					);
-				}
+							})
+							.onConflictDoNothing();
+					}),
+				);
 
 				// Keep legacy employee.teamId populated only for employees without a compatibility team.
 				if (!targetEmployee.teamId) {

@@ -25,6 +25,7 @@ const mockState = vi.hoisted(() => {
 		onTeamMemberAdded: vi.fn(),
 		onTeamMemberRemoved: vi.fn(),
 		insertValues: vi.fn(async () => undefined),
+		onConflictDoNothing: vi.fn(async () => undefined),
 		insertReturning: vi.fn(async () => []),
 		updateSet: vi.fn(() => undefined),
 		updateWhere: vi.fn(async () => undefined),
@@ -120,7 +121,7 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 				teamMembership: { findFirst: (input: unknown) => Promise<any>; findMany: (input: unknown) => Promise<any[]> };
 				teamPermissions: { findMany: (input: unknown) => Promise<any[]> };
 			};
-			insert: (table: unknown) => { values: (input: unknown) => { returning: () => Promise<any[]> } };
+			insert: (table: unknown) => { values: (input: unknown) => { onConflictDoNothing: () => Promise<void>; returning: () => Promise<any[]> } };
 			update: (table: unknown) => { set: (input: unknown) => { where: (input: unknown) => Promise<void> } };
 			delete: (table: unknown) => { where: (input: unknown) => Promise<void> };
 		};
@@ -170,7 +171,10 @@ vi.mock("@/lib/effect/runtime", async () => {
 				},
 			},
 			insert: vi.fn(() => ({
-				values: mockState.insertValues.mockImplementation(() => ({ returning: mockState.insertReturning })),
+				values: mockState.insertValues.mockImplementation(() => ({
+					onConflictDoNothing: mockState.onConflictDoNothing,
+					returning: mockState.insertReturning,
+				})),
 			})),
 			update: vi.fn(() => ({
 				set: mockState.updateSet.mockImplementation(() => ({ where: mockState.updateWhere })),
@@ -241,7 +245,11 @@ describe("team settings server scope", () => {
 		mockState.teamMembershipRows = [];
 		mockState.teamPermissionsRows = [];
 		mockState.hasTeamPermission.mockResolvedValue(false);
-		mockState.insertValues.mockImplementation(() => ({ returning: mockState.insertReturning }));
+		mockState.insertValues.mockImplementation(() => ({
+			onConflictDoNothing: mockState.onConflictDoNothing,
+			returning: mockState.insertReturning,
+		}));
+		mockState.onConflictDoNothing.mockResolvedValue(undefined);
 		mockState.insertReturning.mockResolvedValue([]);
 		mockState.updateSet.mockImplementation(() => ({ where: mockState.updateWhere }));
 		mockState.teamMembershipFindFirst.mockResolvedValue(null);
@@ -251,6 +259,7 @@ describe("team settings server scope", () => {
 		mockState.employeeQueue = [
 			{ id: "emp-1", userId: "user-1", organizationId: "org-1", role: "manager", teamId: "team-a" },
 		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "member" }];
 		mockState.hasTeamPermission.mockResolvedValue(true);
 
 		const result = await createTeam({
@@ -465,6 +474,7 @@ describe("team settings server scope", () => {
 				user: { name: "Target" },
 			},
 		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "member" }];
 		mockState.hasTeamPermission.mockResolvedValue(true);
 		mockState.teamPermissionsRows = [
 			{
@@ -527,6 +537,126 @@ describe("team settings server scope", () => {
 			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
 		);
 		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
+	});
+
+	it("rejects scoped manager adding employee with existing membership outside scope", async () => {
+		mockState.teamQueue = [
+			{ id: "team-b", organizationId: "org-1", name: "Beta", description: null },
+		];
+		mockState.employeeQueue = [
+			{
+				id: "emp-manager",
+				userId: "user-1",
+				organizationId: "org-1",
+				role: "manager",
+				teamId: "team-b",
+				user: { name: "Manager" },
+			},
+			{
+				id: "emp-target",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+				user: { name: "Target" },
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "member" }];
+		mockState.hasTeamPermission.mockResolvedValue(true);
+		mockState.teamPermissionsRows = [
+			{
+				id: "perm-1",
+				employeeId: "emp-manager",
+				organizationId: "org-1",
+				teamId: "team-b",
+				canCreateTeams: false,
+				canManageTeamMembers: true,
+				canManageTeamSettings: false,
+				canApproveTeamRequests: false,
+			},
+		];
+		mockState.teamMembershipRows = [[
+			{ organizationId: "org-1", teamId: "team-a", employeeId: "emp-target" },
+		]];
+
+		const result = await addTeamMember("team-b", "emp-target");
+
+		expect(result.success).toBe(false);
+		expect(result.code).toBe("AuthorizationError");
+		expect(result.error).toBe("Cannot move employees from teams outside your scope");
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.updateSet).not.toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
+	});
+
+	it("allows scoped manager adding employee with no memberships and no legacy team", async () => {
+		mockState.teamQueue = [
+			{ id: "team-b", organizationId: "org-1", name: "Beta", description: null },
+		];
+		mockState.employeeQueue = [
+			{
+				id: "emp-manager",
+				userId: "user-1",
+				organizationId: "org-1",
+				role: "manager",
+				teamId: "team-b",
+				user: { name: "Manager" },
+			},
+			{
+				id: "emp-target",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+				user: { name: "Target" },
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "member" }];
+		mockState.hasTeamPermission.mockResolvedValue(true);
+		mockState.teamPermissionsRows = [
+			{
+				id: "perm-1",
+				employeeId: "emp-manager",
+				organizationId: "org-1",
+				teamId: "team-b",
+				canCreateTeams: false,
+				canManageTeamMembers: true,
+				canManageTeamSettings: false,
+				canApproveTeamRequests: false,
+			},
+		];
+		mockState.teamMembershipRows = [[]];
+
+		const result = await addTeamMember("team-b", "emp-target");
+
+		expect(result.success).toBe(true);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ teamId: "team-b", employeeId: "emp-target", organizationId: "org-1" }),
+		);
+		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
+	});
+
+	it("uses idempotent insert for duplicate team membership adds", async () => {
+		mockState.employeeQueue = [
+			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-a",
+				user: { id: "user-2", name: "Target", email: "target@example.com" },
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
+		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
+
+		const result = await addTeamMember("team-b", "target-1");
+
+		expect(result.success).toBe(true);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
+		);
+		expect(mockState.onConflictDoNothing).toHaveBeenCalledOnce();
 	});
 
 	it("removes only selected team membership and reassigns compatibility team to another remaining membership", async () => {
