@@ -2,7 +2,7 @@
 
 import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import * as React from "react";
-import { type DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
+import { type DayButton, DayPicker, getDefaultClassNames } from "@daypicker/react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { weekStartDayToDayPickerValue } from "@/lib/user-preferences/week-start";
@@ -76,7 +76,7 @@ function Calendar({
 						: "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
 					defaultClassNames.caption_label,
 				),
-				table: "w-full border-collapse",
+				month_grid: "w-full border-collapse",
 				weekdays: cn("flex", defaultClassNames.weekdays),
 				weekday: cn(
 					"text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem] select-none",
