@@ -154,8 +154,7 @@ export const ApprovalQueryServiceLive = Layer.effect(
 						allItems.push(...items);
 					}
 
-					const requesterEmployeeIds =
-						params.requesterEmployeeIds ?? params.eligibleRequesterEmployeeIds;
+					const requesterEmployeeIds = params.requesterEmployeeIds;
 					const filteredItems = requesterEmployeeIds
 						? allItems.filter((item) => requesterEmployeeIds.includes(item.requester.id))
 						: allItems;
