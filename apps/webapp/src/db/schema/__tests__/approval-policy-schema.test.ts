@@ -14,6 +14,7 @@ import {
 	location,
 	organizationRelations,
 	team,
+	teamMembership,
 } from "@/db/schema";
 
 function uniqueIndexNames(table: Parameters<typeof getTableConfig>[0]): string[] {
@@ -218,5 +219,35 @@ describe("approval policy schema exports", () => {
 				"approvalChainStageInstances",
 			]),
 		);
+	});
+
+	it("defines team membership and primary team manager schema", () => {
+		expect(team.primaryManagerId.name).toBe("primary_manager_id");
+		expect(teamMembership).toBeDefined();
+		expect(teamMembership.organizationId.notNull).toBe(true);
+		expect(teamMembership.teamId.notNull).toBe(true);
+		expect(teamMembership.employeeId.notNull).toBe(true);
+		expect(teamMembership.createdBy.notNull).toBe(false);
+		expect(uniqueIndexNames(teamMembership)).toEqual(
+			expect.arrayContaining(["teamMembership_team_employee_idx"]),
+		);
+		expect(
+			hasCompositeForeignKey(team, ["primary_manager_id", "organization_id"], employee, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(teamMembership, ["team_id", "organization_id"], team, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
+		expect(
+			hasCompositeForeignKey(teamMembership, ["employee_id", "organization_id"], employee, [
+				"id",
+				"organization_id",
+			]),
+		).toBe(true);
 	});
 });

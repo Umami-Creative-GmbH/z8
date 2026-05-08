@@ -1,6 +1,7 @@
 import {
 	boolean,
 	decimal,
+	foreignKey,
 	index,
 	pgTable,
 	text,
@@ -29,6 +30,7 @@ export const team = pgTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		description: text("description"),
+		primaryManagerId: uuid("primary_manager_id"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -36,7 +38,12 @@ export const team = pgTable(
 	},
 	(table) => [
 		index("team_organizationId_idx").on(table.organizationId),
+		index("team_primaryManagerId_idx").on(table.primaryManagerId),
 		unique("team_id_organizationId_idx").on(table.id, table.organizationId),
+		foreignKey({
+			columns: [table.primaryManagerId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("set null"),
 	],
 );
 
@@ -232,6 +239,34 @@ export const employeeManagers = pgTable(
 		// Prevent duplicate manager assignments
 		index("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
 		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
+	],
+);
+
+export const teamMembership = pgTable(
+	"team_membership",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		teamId: uuid("team_id").notNull(),
+		employeeId: uuid("employee_id").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		createdBy: text("created_by").references(() => user.id),
+	},
+	(table) => [
+		index("teamMembership_organizationId_idx").on(table.organizationId),
+		index("teamMembership_teamId_idx").on(table.teamId),
+		index("teamMembership_employeeId_idx").on(table.employeeId),
+		uniqueIndex("teamMembership_team_employee_idx").on(table.teamId, table.employeeId),
+		foreignKey({
+			columns: [table.teamId, table.organizationId],
+			foreignColumns: [team.id, team.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
 	],
 );
 
