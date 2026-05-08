@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveApproverFromDirectory } from "./approver-resolution";
+import type { EligibleTeam, EligibleTeamMembership } from "./manager-eligibility";
 import type { ApprovalPolicyStageDraft } from "./types";
 
 const employees = [
@@ -15,8 +16,8 @@ const managerLinks = [
 	{ employeeId: "emp_manager", managerId: "emp_senior_manager" },
 ];
 
-const teamMemberships = [];
-const teams = [];
+const teamMemberships: EligibleTeamMembership[] = [];
+const teams: EligibleTeam[] = [];
 
 function stage(input: Partial<ApprovalPolicyStageDraft>): ApprovalPolicyStageDraft {
 	return { id: "stage_1", stepOrder: 1, label: "Stage", approverType: "direct_manager", ...input };

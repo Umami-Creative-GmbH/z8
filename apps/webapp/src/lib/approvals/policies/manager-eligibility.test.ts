@@ -81,6 +81,36 @@ describe("resolveEligibleManagers", () => {
 		).toEqual({ ok: false, reason: "Requester has no active direct or team manager in this organization." });
 	});
 
+	it("rejects inactive requesters before resolving managers", () => {
+		expect(
+			resolveEligibleManagers({
+				organizationId: "org-1",
+				requesterEmployeeId: "requester",
+				employees: employees.map((employee) =>
+					employee.id === "requester" ? { ...employee, isActive: false } : employee,
+				),
+				managerLinks: [{ employeeId: "requester", managerId: "direct-a" }],
+				teamMemberships: [],
+				teams: [],
+			}),
+		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
+	});
+
+	it("rejects cross-organization requesters before resolving managers", () => {
+		expect(
+			resolveEligibleManagers({
+				organizationId: "org-1",
+				requesterEmployeeId: "requester",
+				employees: employees.map((employee) =>
+					employee.id === "requester" ? { ...employee, organizationId: "org-2" } : employee,
+				),
+				managerLinks: [{ employeeId: "requester", managerId: "direct-a" }],
+				teamMemberships: [],
+				teams: [],
+			}),
+		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
+	});
+
 	it("selects a deterministic display approver", () => {
 		expect(
 			resolvePrimaryEligibleManager({

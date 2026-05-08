@@ -53,6 +53,19 @@ function activeManagerInOrg(
 	);
 }
 
+function activeEmployeeInOrg(
+	employees: EligibleManagerEmployee[],
+	organizationId: string,
+	employeeId: string,
+) {
+	return employees.find(
+		(employee) =>
+			employee.id === employeeId &&
+			employee.organizationId === organizationId &&
+			employee.isActive,
+	);
+}
+
 function uniqueSorted(values: string[]) {
 	return Array.from(new Set(values)).toSorted((left, right) => left.localeCompare(right));
 }
@@ -87,6 +100,11 @@ function teamManagerIds(input: ResolveEligibleManagersInput) {
 }
 
 export function resolveEligibleManagers(input: ResolveEligibleManagersInput): EligibleManagerResult {
+	const requester = activeEmployeeInOrg(input.employees, input.organizationId, input.requesterEmployeeId);
+	if (!requester) {
+		return { ok: false, reason: "Requester is not active in this organization." };
+	}
+
 	const direct = directManagerIds(input);
 	if (direct.length > 0) {
 		return { ok: true, source: "direct", managerIds: direct };
