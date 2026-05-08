@@ -16,6 +16,9 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 
 const mockState = vi.hoisted(() => ({
 	findMany: vi.fn(),
+	select: vi.fn(),
+	from: vi.fn(),
+	where: vi.fn(),
 	fetchEntitiesByIds: vi.fn(),
 }));
 
@@ -34,18 +37,26 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 							findMany: mockState.findMany,
 						},
 					},
+					select: mockState.select,
 				},
 			}),
 		),
 	};
 });
 
-import { buildBaseConditions, fetchApprovals } from "@/lib/approvals/handlers/base-handler";
+import {
+	buildBaseConditions,
+	fetchApprovals,
+	getApprovalCount,
+} from "@/lib/approvals/handlers/base-handler";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 describe("fetchApprovals", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.select.mockReturnValue({ from: mockState.from });
+		mockState.from.mockReturnValue({ where: mockState.where });
+		mockState.where.mockResolvedValue([{ count: 2 }]);
 		mockState.findMany.mockImplementation(async (query) => {
 			const rows = [
 				{
@@ -319,5 +330,52 @@ describe("fetchApprovals", () => {
 		});
 
 		expect(conditions).toHaveLength(3);
+	});
+
+	it("counts assigned approver or manager-routed eligible requester approvals", async () => {
+		const result = await Effect.runPromise(
+			getApprovalCount("absence_entry", "manager-1", "org-1", {
+				eligibleApprovalScopes: [
+					{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["manager-1", "manager-2"] },
+				],
+			}).pipe(Effect.provide(DatabaseServiceLive)),
+		);
+
+		expect(result).toBe(2);
+		expect(mockState.where).toHaveBeenCalledWith(
+			expect.objectContaining({
+				and: expect.arrayContaining([
+					expect.objectContaining({
+						or: [
+							{ eq: [expect.anything(), "manager-1"] },
+							{
+								and: [
+									{ eq: [expect.anything(), "employee-2"] },
+									{ inArray: [expect.anything(), ["manager-1", "manager-2"]] },
+								],
+							},
+						],
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("counts all organization approvals when includeAllApprovers is enabled", async () => {
+		await Effect.runPromise(
+			getApprovalCount("absence_entry", "admin-1", "org-1", {
+				includeAllApprovers: true,
+			}).pipe(Effect.provide(DatabaseServiceLive)),
+		);
+
+		expect(mockState.where).toHaveBeenCalledWith(
+			expect.objectContaining({
+				and: [
+					{ eq: [expect.anything(), "absence_entry"] },
+					{ eq: [expect.anything(), "org-1"] },
+					{ eq: [expect.anything(), "pending"] },
+				],
+			}),
+		);
 	});
 });

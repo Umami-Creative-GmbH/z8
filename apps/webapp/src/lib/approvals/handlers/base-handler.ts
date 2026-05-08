@@ -171,23 +171,24 @@ export function getApprovalCount(
 	entityType: ApprovalType,
 	approverId: string,
 	organizationId: string,
+	visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
 ): Effect.Effect<number, AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
+		const conditions = buildBaseConditions(entityType, {
+			approverId,
+			organizationId,
+			status: "pending",
+			limit: 1,
+			...visibility,
+		});
 
 		const result = yield* _(
 			dbService.query(`get${entityType}Count`, async () => {
 				return await dbService.db
 					.select({ count: count() })
 					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.entityType, entityType),
-							eq(approvalRequest.approverId, approverId),
-							eq(approvalRequest.organizationId, organizationId),
-							eq(approvalRequest.status, "pending"),
-						),
-					);
+					.where(and(...conditions));
 			}),
 		);
 

@@ -60,14 +60,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 	try {
 		const { id } = await params;
 
-		// Parse body
-		const body = await request.json();
-		const reason = body.reason as string;
-
-		if (!reason || reason.trim().length === 0) {
-			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
-		}
-
 		// Authenticate
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
@@ -143,6 +135,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 				{ error: `Request is already ${approvalReq.status}` },
 				{ status: 409 },
 			);
+		}
+
+		// Parse body only after authentication and approval authorization.
+		const body = await request.json();
+		const reason = body.reason as string;
+
+		if (!reason || reason.trim().length === 0) {
+			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
 		}
 
 		// Get handler

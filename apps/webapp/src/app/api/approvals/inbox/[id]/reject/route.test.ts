@@ -111,6 +111,13 @@ function createRequest(body: unknown): NextRequest {
 	} as unknown as NextRequest;
 }
 
+function createMalformedJsonRequest(): NextRequest {
+	return {
+		json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+		headers: new Headers(),
+	} as unknown as NextRequest;
+}
+
 describe("POST /api/approvals/inbox/[id]/reject", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -167,6 +174,19 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 				allowAnyApprover: true,
 			},
 		);
+	});
+
+	it("returns 401 before parsing malformed JSON for unauthenticated requests", async () => {
+		mockState.getSession.mockResolvedValue(null);
+		const request = createMalformedJsonRequest();
+
+		const response = await POST(request, {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(401);
+		expect(request.json).not.toHaveBeenCalled();
+		expect(mockState.handlerReject).not.toHaveBeenCalled();
 	});
 
 	it("returns 403 when an assigned approver lacks approve or manage permission", async () => {

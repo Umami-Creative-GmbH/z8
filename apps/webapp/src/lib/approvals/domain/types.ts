@@ -238,7 +238,11 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 	 * Get count of pending approvals (for badges).
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	getCount: (approverId: string, organizationId: string) => Effect.Effect<number, AnyAppError, any>;
+	getCount: (
+		approverId: string,
+		organizationId: string,
+		visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
+	) => Effect.Effect<number, AnyAppError, any>;
 
 	/**
 	 * Get full details for the slide-over panel.
