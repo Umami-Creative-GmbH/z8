@@ -6,11 +6,12 @@ import {
 	requireMobileSessionContext,
 } from "@/app/api/mobile/shared";
 import { clockIn, clockOut } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
+import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
 
 const mobileTimeClockSchema = z.discriminatedUnion("action", [
 	z.object({
 		action: z.literal("clock_in"),
-		workLocationType: z.enum(["office", "home", "field", "other"], {
+		workLocationType: z.enum(WORK_LOCATION_TYPES, {
 			error: "workLocationType is required for clock_in",
 		}),
 	}),

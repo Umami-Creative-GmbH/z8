@@ -236,7 +236,7 @@ export const restPeriodEnforcementEnum = pgEnum("rest_period_enforcement", [
 export const workLocationTypeEnum = pgEnum("work_location_type", [
 	"office",
 	"home",
-	"field",
+	"remote",
 	"other",
 ]);
 

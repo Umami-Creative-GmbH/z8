@@ -9,6 +9,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { isWorkLocationType } from "@/lib/time-tracking/work-location";
 
 /**
  * GET /api/time-entries
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { type, timestamp, notes, location, projectId } = body;
+		const { type, timestamp, notes, location, projectId, workLocationType } = body;
 
 		// Validate required fields
 		if (!type || !["clock_in", "clock_out"].includes(type)) {
@@ -138,6 +139,13 @@ export async function POST(request: NextRequest) {
 				{ error: "Invalid type. Must be 'clock_in' or 'clock_out'" },
 				{ status: 400 },
 			);
+		}
+
+		const resolvedWorkLocationType =
+			type === "clock_in" ? (workLocationType ?? "office") : undefined;
+
+		if (type === "clock_in" && !isWorkLocationType(resolvedWorkLocationType)) {
+			return NextResponse.json({ error: "Invalid work location type" }, { status: 400 });
 		}
 
 		// Get current user's employee record for the active organization
@@ -201,6 +209,7 @@ export async function POST(request: NextRequest) {
 				clockInId: entry.id,
 				startTime: entryTime,
 				isActive: true,
+				workLocationType: resolvedWorkLocationType,
 			});
 		} else if (type === "clock_out") {
 			// Find and close the active work period for this employee in this org

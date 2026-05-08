@@ -63,6 +63,10 @@ import {
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	isWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
@@ -1039,7 +1043,7 @@ export async function getTimeSummary(
  * Clock in for current employee
  */
 export async function clockIn(
-	workLocationType?: "office" | "home" | "field" | "other",
+	workLocationType?: WorkLocationType,
 ): Promise<ServerActionResult<typeof timeEntry.$inferSelect>> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
@@ -1076,6 +1080,12 @@ export async function clockIn(
 		};
 	}
 
+	const resolvedWorkLocationType = workLocationType ?? "office";
+
+	if (!isWorkLocationType(resolvedWorkLocationType)) {
+		return { success: false, error: "Invalid work location type" };
+	}
+
 	try {
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
@@ -1091,7 +1101,7 @@ export async function clockIn(
 			organizationId: emp.organizationId,
 			clockInId: entry.id,
 			startTime: now,
-			workLocationType: workLocationType ?? null,
+			workLocationType: resolvedWorkLocationType,
 		});
 
 		return { success: true, data: entry };
@@ -3143,7 +3153,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		// Count on-site days
 		const onsiteDates = new Set<string>();
 		for (const period of periods) {
-			if (period.workLocationType === "office" || period.workLocationType === "field") {
+			if (period.workLocationType === "office") {
 				const dateStr = DateTime.fromJSDate(period.startTime).toISODate();
 				if (dateStr) onsiteDates.add(dateStr);
 			}

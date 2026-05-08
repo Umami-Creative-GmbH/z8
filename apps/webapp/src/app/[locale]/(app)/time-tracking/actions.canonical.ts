@@ -8,6 +8,7 @@ import {
 	TimeEntryService,
 	TimeEntryServiceLive,
 } from "@/lib/effect/services/time-entry.service";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 export const canonicalTimeEntryClient = {
 	createTimeEntry: async (input: {
@@ -62,7 +63,7 @@ export const canonicalWorkRecordClient = {
 		approvalState: "pending" | "approved" | "rejected";
 		createdBy: string;
 		workCategoryId?: string | null;
-		workLocationType?: "office" | "home" | "field" | "other" | null;
+		workLocationType?: WorkLocationType | null;
 		projectId?: string | null;
 		origin: "clock" | "manual";
 	}) => {

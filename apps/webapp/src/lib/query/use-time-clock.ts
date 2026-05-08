@@ -9,6 +9,7 @@ import {
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
 
 export interface TimeClockState {
@@ -107,13 +108,14 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock in mutation with offline support
 	const clockInMutation = useMutation({
-		mutationFn: async (params: { workLocationType?: "office" | "home" | "field" | "other" }) => {
+		mutationFn: async (params: { workLocationType?: WorkLocationType }) => {
 			// When offline, queue the event for later sync
 			if (isOffline) {
 				const result = await queueClockEvent({
 					type: "clock_in",
 					timestamp: Date.now(),
 					organizationId: "pending", // Will be resolved on sync
+					workLocationType: params?.workLocationType,
 				});
 
 				if (result.success) {
@@ -232,7 +234,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isSyncing,
 
 		// Mutations
-		clockIn: (params?: { workLocationType?: "office" | "home" | "field" | "other" }) =>
+		clockIn: (params?: { workLocationType?: WorkLocationType }) =>
 			clockInMutation.mutateAsync(params ?? {}),
 		clockOut: clockOutMutation.mutateAsync,
 		updateNotes: updateNotesMutation.mutateAsync,

@@ -99,7 +99,7 @@ export const workPeriod = pgTable(
 			onDelete: "set null",
 		}),
 
-		// Work location type - employee tags at clock-in (office, home, field, other)
+		// Work location type - employee tags at clock-in (office, home, remote, other)
 		workLocationType: workLocationTypeEnum("work_location_type"),
 
 		startTime: timestamp("start_time").notNull(),

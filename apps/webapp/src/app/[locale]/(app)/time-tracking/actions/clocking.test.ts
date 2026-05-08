@@ -14,6 +14,7 @@ const mockState = vi.hoisted(() => ({
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
+	insertValues: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
 	logger: {
@@ -24,6 +25,9 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		insert: vi.fn(() => ({
+			values: mockState.insertValues,
+		})),
 		update: vi.fn(() => ({
 			set: mockState.updateSet,
 		})),
@@ -88,7 +92,62 @@ vi.mock("./shared", () => ({
 	ONE_MINUTE_MS: 60_000,
 }));
 
-const { clockOut } = await import("./clocking");
+const { clockIn, clockOut } = await import("./clocking");
+
+describe("clockIn", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-04T09:00:00.000Z"));
+
+		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			teamId: null,
+			managerId: null,
+		});
+		mockState.getUserTimezone.mockResolvedValue("UTC");
+		mockState.getActiveWorkPeriod.mockResolvedValue(null);
+		mockState.validateTimeEntry.mockResolvedValue({ isValid: true });
+		mockState.createTimeEntry.mockResolvedValue({
+			id: "clock-in-1",
+			type: "clock_in",
+			timestamp: new Date("2026-05-04T09:00:00.000Z"),
+		});
+		mockState.insertValues.mockResolvedValue(undefined);
+	});
+
+	it("persists remote work location when clocking in", async () => {
+		const result = await clockIn("remote");
+
+		expect(result.success).toBe(true);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workLocationType: "remote",
+			}),
+		);
+	});
+
+	it("defaults to office work location when clocking in without a location", async () => {
+		const result = await clockIn();
+
+		expect(result.success).toBe(true);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workLocationType: "office",
+			}),
+		);
+	});
+
+	it("rejects invalid work location before creating a time entry", async () => {
+		const result = await clockIn("field" as never);
+
+		expect(result).toEqual({ success: false, error: "Invalid work location type" });
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+	});
+});
 
 describe("clockOut", () => {
 	beforeEach(() => {

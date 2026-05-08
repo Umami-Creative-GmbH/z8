@@ -129,7 +129,11 @@
     },
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
-    "workCategory": "Arbeitskategorie"
+    "workCategory": "Arbeitskategorie",
+    "workLocationHome": "Zuhause",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Andere",
+    "workLocationRemote": "Remote"
   },
   "wellness": {
     "water": {
