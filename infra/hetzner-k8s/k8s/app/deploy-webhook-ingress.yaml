@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deploy-webhook
+  namespace: app-prod
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - deploy-webhook.z8-time.app
+      secretName: deploy-webhook-tls
+  rules:
+    - host: deploy-webhook.z8-time.app
+      http:
+        paths:
+          - path: /webhooks/github
+            pathType: Exact
+            backend:
+              service:
+                name: deploy-webhook
+                port:
+                  number: 80

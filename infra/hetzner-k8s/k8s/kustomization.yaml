@@ -10,16 +10,20 @@ resources:
   - app/phase-secret.yaml
   - app/valkey.yaml
   - app/rustfs.yaml
+  - app/deploy-webhook-rbac.yaml
   - app/web-deployment.yaml
   - app/docs-deployment.yaml
   - app/marketing-deployment.yaml
   - app/worker-deployment.yaml
+  - app/deploy-webhook-deployment.yaml
   - app/web-service.yaml
   - app/docs-service.yaml
   - app/marketing-service.yaml
+  - app/deploy-webhook-service.yaml
   - app/marketing-ip-allowlist-middleware.yaml
   - app/web-forwarded-headers-middleware.yaml
   - app/www-redirect-middleware.yaml
   - app/web-ingress.yaml
   - app/docs-ingress.yaml
   - app/marketing-ingress.yaml
+  - app/deploy-webhook-ingress.yaml
