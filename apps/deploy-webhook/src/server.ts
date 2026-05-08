@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { pathToFileURL } from "node:url";
 import { loadConfig } from "./config.js";
 import { parseGitHubPackageEvent } from "./github-event.js";
 import { KubernetesAdapter } from "./kubernetes.js";
@@ -8,6 +9,37 @@ import { verifyGitHubSignature } from "./signature.js";
 import { StateStore } from "./state.js";
 
 const maxBodyBytes = 1024 * 1024;
+const reconciliationRetryAttempts = 3;
+const reconciliationRetryDelayMs = 1_000;
+
+type RetryOptions = {
+  attempts: number;
+  delayMs: number;
+  sleep: (delayMs: number) => Promise<void>;
+};
+
+function sleep(delayMs: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+export async function reconcileWithRetry(
+  reconcile: () => Promise<void>,
+  { attempts, delayMs, sleep: sleepFn }: RetryOptions = {
+    attempts: reconciliationRetryAttempts,
+    delayMs: reconciliationRetryDelayMs,
+    sleep
+  }
+): Promise<void> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await reconcile();
+      return;
+    } catch (error) {
+      if (attempt === attempts) throw error;
+      await sleepFn(delayMs);
+    }
+  }
+}
 
 function send(response: ServerResponse, statusCode: number, body: string): void {
   response.writeHead(statusCode, { "content-type": "text/plain; charset=utf-8" });
@@ -92,7 +124,7 @@ export function startServer(): void {
     }
 
     send(response, 202, "accepted");
-    void reconciler.reconcile(observation).catch((error) => {
+    void reconcileWithRetry(() => reconciler.reconcile(observation)).catch((error) => {
       console.error("Deploy webhook reconciliation failed", error);
     });
   });
@@ -102,4 +134,6 @@ export function startServer(): void {
   });
 }
 
-startServer();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startServer();
+}

@@ -123,17 +123,84 @@ describe("Reconciler", () => {
     expect(dependencies.calls).toEqual(["hasTag:z8-docs:sha-abc123"]);
     expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
     expect(dependencies.kube.waitForDeploymentRollout).not.toHaveBeenCalled();
+    expect(dependencies.state.write).not.toHaveBeenCalled();
   });
 
-  it("skips patching and rollout wait when the deployment already uses the desired image", async () => {
+  it("skips patching but still waits when the deployment already uses the desired image", async () => {
     const dependencies = createDependencies({ observed: {}, deployed: {}, failures: {} });
     dependencies.kube.getDeploymentImage = vi.fn(async () => "ghcr.io/umami-creative-gmbh/z8-docs:sha-abc123");
     const reconciler = new Reconciler(dependencies);
 
     await reconciler.reconcile({ packageName: "z8-docs", tag: "sha-abc123" });
 
-    expect(dependencies.calls).toEqual(["hasTag:z8-docs:sha-abc123"]);
+    expect(dependencies.calls).toEqual(["hasTag:z8-docs:sha-abc123", "wait:docs:60000"]);
     expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
-    expect(dependencies.kube.waitForDeploymentRollout).not.toHaveBeenCalled();
+    expect(dependencies.kube.waitForDeploymentRollout).toHaveBeenCalledWith("docs", 60_000);
+  });
+
+  it("does not re-run migration for a duplicate app event after the app tag is deployed", async () => {
+    const dependencies = createDependencies({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: { app: "sha-abc123" },
+      failures: {}
+    });
+    dependencies.kube.getDeploymentImage = vi.fn(async (deployment) =>
+      deployment === "web"
+        ? "ghcr.io/umami-creative-gmbh/z8-webapp:sha-abc123"
+        : "ghcr.io/umami-creative-gmbh/z8-worker:sha-abc123"
+    );
+    const reconciler = new Reconciler(dependencies);
+
+    await reconciler.reconcile({ packageName: "z8-webapp", tag: "sha-abc123" });
+
+    expect(dependencies.kube.runMigration).not.toHaveBeenCalled();
+    expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
+    expect(dependencies.kube.waitForDeploymentRollout).toHaveBeenCalledWith("web", 60_000);
+    expect(dependencies.kube.waitForDeploymentRollout).toHaveBeenCalledWith("worker", 60_000);
+  });
+
+  it("serializes concurrent app reconciles for the same tag", async () => {
+    const dependencies = createDependencies({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: {},
+      failures: {}
+    });
+    const reconciler = new Reconciler(dependencies);
+
+    await Promise.all([
+      reconciler.reconcile({ packageName: "z8-migration", tag: "sha-abc123" }),
+      reconciler.reconcile({ packageName: "z8-webapp", tag: "sha-abc123" })
+    ]);
+
+    expect(dependencies.kube.runMigration).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists deployed tags after successful rollouts", async () => {
+    const dependencies = createDependencies({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: {},
+      failures: {}
+    });
+    const reconciler = new Reconciler(dependencies);
+
+    await reconciler.reconcile({ packageName: "z8-migration", tag: "sha-abc123" });
+    await reconciler.reconcile({ packageName: "z8-docs", tag: "sha-abc123" });
+    await reconciler.reconcile({ packageName: "z8-marketing", tag: "sha-abc123" });
+
+    expect(dependencies.state.write).toHaveBeenCalledWith({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: { app: "sha-abc123" },
+      failures: {}
+    });
+    expect(dependencies.state.write).toHaveBeenCalledWith({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: { app: "sha-abc123", docs: "sha-abc123" },
+      failures: {}
+    });
+    expect(dependencies.state.write).toHaveBeenCalledWith({
+      observed: { "sha-abc123": ["z8-migration", "z8-webapp", "z8-worker"] },
+      deployed: { app: "sha-abc123", docs: "sha-abc123", marketing: "sha-abc123" },
+      failures: {}
+    });
   });
 });
