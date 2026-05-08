@@ -22,22 +22,39 @@ describe("addObservation", () => {
 });
 
 describe("StateStore", () => {
-  it("retries recordObservation when replacing the ConfigMap conflicts", async () => {
-    const states: DeployState[] = [
-      { observed: { "sha-abcdef1": ["z8-worker"] }, deployed: {}, failures: {} },
-      { observed: { "sha-abcdef1": ["z8-docs", "z8-worker"] }, deployed: {}, failures: {} }
-    ];
-    const written: DeployState[] = [];
+  it("uses the same resourceVersion as the observed state when recording observations", async () => {
+    let stored: { resourceVersion: string; state: DeployState } = {
+      resourceVersion: "1",
+      state: { observed: { "sha-abcdef1": ["z8-worker"] }, deployed: {}, failures: {} }
+    };
     let readCount = 0;
+    let injectedConcurrentUpdate = false;
+    const injectConcurrentUpdate = () => {
+      injectedConcurrentUpdate = true;
+      stored = {
+        resourceVersion: "2",
+        state: { observed: { "sha-abcdef1": ["z8-docs", "z8-worker"] }, deployed: {}, failures: {} }
+      };
+    };
     const coreApi = {
-      readNamespacedConfigMap: vi.fn(async () => ({
-        metadata: { resourceVersion: String(readCount + 1) },
-        data: { "state.json": JSON.stringify(states[Math.min(readCount++, states.length - 1)]) }
-      })),
-      replaceNamespacedConfigMap: vi.fn(async ({ body }: { body: { data?: Record<string, string> } }) => {
+      readNamespacedConfigMap: vi.fn(async () => {
+        readCount += 1;
+        if (readCount === 2 && !injectedConcurrentUpdate) injectConcurrentUpdate();
+
+        return {
+          metadata: { resourceVersion: stored.resourceVersion },
+          data: { "state.json": JSON.stringify(stored.state) }
+        };
+      }),
+      replaceNamespacedConfigMap: vi.fn(async ({ body }: { body: { metadata?: { resourceVersion?: string }; data?: Record<string, string> } }) => {
+        if (!injectedConcurrentUpdate) injectConcurrentUpdate();
+
+        if (body.metadata?.resourceVersion !== stored.resourceVersion) {
+          throw new ApiException(409, "conflict", {}, {});
+        }
+
         const state = JSON.parse(body.data?.["state.json"] ?? "{}") as DeployState;
-        written.push(state);
-        if (written.length === 1) throw new ApiException(409, "conflict", {}, {});
+        stored = { resourceVersion: String(Number(stored.resourceVersion) + 1), state };
         return body;
       }),
       createNamespacedConfigMap: vi.fn()
@@ -52,9 +69,10 @@ describe("StateStore", () => {
     });
 
     expect(coreApi.replaceNamespacedConfigMap).toHaveBeenCalledTimes(2);
-    expect(written).toEqual([
-      { observed: { "sha-abcdef1": ["z8-webapp", "z8-worker"] }, deployed: {}, failures: {} },
-      { observed: { "sha-abcdef1": ["z8-docs", "z8-webapp", "z8-worker"] }, deployed: {}, failures: {} }
-    ]);
+    expect(stored.state).toEqual({
+      observed: { "sha-abcdef1": ["z8-docs", "z8-webapp", "z8-worker"] },
+      deployed: {},
+      failures: {}
+    });
   });
 });

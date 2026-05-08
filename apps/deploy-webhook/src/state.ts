@@ -13,6 +13,11 @@ type StateStoreOptions = {
   coreApi?: CoreV1Api;
 };
 
+type VersionedState = {
+  state: DeployState;
+  resourceVersion?: string;
+};
+
 const stateKey = "state.json";
 const recordObservationAttempts = 3;
 
@@ -101,10 +106,11 @@ export class StateStore {
 
   async recordObservation(observation: ImageObservation): Promise<DeployState> {
     for (let attempt = 1; attempt <= recordObservationAttempts; attempt++) {
-      const state = addObservation(await this.read(), observation);
+      const current = await this.readVersioned();
+      const state = addObservation(current.state, observation);
 
       try {
-        await this.write(state);
+        await this.writeVersioned(state, current.resourceVersion);
         return state;
       } catch (error) {
         if (!isConflict(error) || attempt === recordObservationAttempts) throw error;
@@ -112,6 +118,31 @@ export class StateStore {
     }
 
     throw new Error("Unreachable recordObservation retry state");
+  }
+
+  private async readVersioned(): Promise<VersionedState> {
+    try {
+      const configMap = await this.coreApi.readNamespacedConfigMap({ name: this.name, namespace: this.namespace });
+      return { state: parseState(configMap.data?.[stateKey]), resourceVersion: configMap.metadata?.resourceVersion };
+    } catch (error) {
+      if (isNotFound(error)) return { state: emptyState() };
+      throw error;
+    }
+  }
+
+  private async writeVersioned(state: DeployState, resourceVersion: string | undefined): Promise<void> {
+    const configMap = this.createConfigMap(state);
+
+    if (!resourceVersion) {
+      await this.coreApi.createNamespacedConfigMap({ namespace: this.namespace, body: configMap });
+      return;
+    }
+
+    await this.coreApi.replaceNamespacedConfigMap({
+      name: this.name,
+      namespace: this.namespace,
+      body: { ...configMap, metadata: { ...configMap.metadata, resourceVersion } }
+    });
   }
 
   private createConfigMap(state: DeployState): V1ConfigMap {
