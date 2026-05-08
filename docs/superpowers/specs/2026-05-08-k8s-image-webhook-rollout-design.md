@@ -24,13 +24,13 @@ An in-cluster `deploy-webhook` service runs in `app-prod`. GitHub package webhoo
 
 The service has three main units:
 
-- **Webhook endpoint**: validates GitHub HMAC signatures, parses supported package events, allowlists the expected owner/package names, and rejects malformed or unrelated requests.
+- **Webhook endpoint**: validates GitHub HMAC signatures, parses supported package events, allowlists the expected owner/package names, rejects invalid requests, and ignores signed valid JSON that is unsupported or unrelated.
 - **Image readiness checker**: performs OCI/GHCR manifest checks. Public packages can pass anonymously; private package readiness follows the GHCR Bearer challenge flow and requires both optional `GHCR_USERNAME` and `GHCR_TOKEN` when authentication is challenged.
 - **Rollout reconciler**: records observations in a ConfigMap, serializes same-release work in process, updates Kubernetes resources, waits for rollouts, and records deployed markers so duplicate events are safe.
 
 ## Webhook Security And Secrets
 
-The webhook secret is read from `deploy-webhook-secrets` key `github-webhook-secret` and verified against `X-Hub-Signature-256` with HMAC-SHA256 before JSON parsing. Invalid signatures return `401`; malformed payloads return `400`.
+The webhook secret is read from `deploy-webhook-secrets` key `github-webhook-secret` and verified against `X-Hub-Signature-256` with HMAC-SHA256 before JSON parsing. Invalid signatures return `401`; invalid JSON returns `400`; signed valid JSON that is unsupported, unrelated, or not a matching package event returns `202 ignored`.
 
 `deploy-webhook-secrets` is provisioned through the existing PhaseSecret managed secret references. The manifest references keys only; no secret values are committed. Optional `ghcr-token` and `ghcr-username` keys are used only when GHCR requires authenticated readiness checks.
 
@@ -64,7 +64,7 @@ Duplicate events for an already deployed tag are successful no-ops after confirm
 
 ## State, Idempotency, And Retry
 
-The receiver stores lightweight state in ConfigMap `deploy-webhook-state` in `app-prod`. State includes observed app image tags, deployed markers, and failure metadata. Kubernetes remains the source of truth for live image references.
+The receiver stores lightweight state in ConfigMap `deploy-webhook-state` in `app-prod`. State includes observed app image tags and deployed markers, and preserves a failures map type for future use. Reconciliation failures are logged and internally retried; they are not currently persisted as failure metadata. Kubernetes remains the source of truth for live image references.
 
 ConfigMap writes use resource versions and retry on conflicts, making state updates safe when multiple webhook deliveries overlap. Within one process, reconciliation is serialized by app release tag or independent deployment/tag key to avoid overlapping rollouts for the same target.
 
@@ -92,6 +92,8 @@ Final static verification should run:
 - `pnpm --filter deploy-webhook build`
 - `pnpm node scripts/ci/verify-publish-deploy-webhook-image-workflow.mjs`
 - `kubectl kustomize infra/hetzner-k8s/k8s >/tmp/z8-kustomize.yaml`
+
+Local image build verification with `docker build -f docker/Dockerfile.deploy-webhook -t z8-deploy-webhook:local .` was skipped in the implementation WSL environment because Docker/container runtime access was unavailable. This is a verification environment limitation, not product behavior.
 
 Live setup still requires the Kubernetes/Phase secret values, the GitHub package webhook pointed at `https://deploy-webhook.z8-time.app/webhooks/github`, and DNS for `deploy-webhook.z8-time.app` pointed at the cluster ingress.
 
