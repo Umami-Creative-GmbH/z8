@@ -7,8 +7,11 @@ import {
 	absenceEntry,
 	employee,
 	employeeVacationAllowance,
+	holiday,
 	holidayAssignment,
+	holidayPreset,
 	holidayPresetAssignment,
+	holidayPresetHoliday,
 	vacationAllowance,
 } from "@/db/schema";
 import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
@@ -16,6 +19,21 @@ import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { expandPresetHolidayForYear } from "./holiday-expansion";
 import { mapAbsenceWithCategory } from "./mappers";
+
+type HolidayAssignmentWithHoliday = {
+	holiday: Pick<
+		typeof holiday.$inferSelect,
+		"id" | "name" | "organizationId" | "startDate" | "endDate" | "categoryId" | "isActive"
+	> | null;
+};
+
+type HolidayPresetAssignmentWithPreset = {
+	preset:
+		| (Pick<typeof holidayPreset.$inferSelect, "isActive"> & {
+				holidays: (typeof holidayPresetHoliday.$inferSelect)[];
+		  })
+		| null;
+};
 
 export async function getVacationBalance(
 	employeeId: string,
@@ -65,7 +83,8 @@ export async function getVacationBalance(
 		return null;
 	}
 
-	const absencesWithCategory: AbsenceWithCategory[] = absences.map(mapAbsenceWithCategory);
+	const typedAbsences = absences as unknown as AbsenceWithCategory[];
+	const absencesWithCategory = typedAbsences.map(mapAbsenceWithCategory);
 
 	return calculateVacationBalance({
 		organizationAllowance: orgAllowance,
@@ -93,7 +112,8 @@ export async function getAbsenceEntries(
 		orderBy: [desc(absenceEntry.startDate)],
 	});
 
-	return absences.map(mapAbsenceWithCategory);
+	const typedAbsences = absences as unknown as AbsenceWithCategory[];
+	return typedAbsences.map(mapAbsenceWithCategory);
 }
 
 export async function getHolidays(
@@ -157,7 +177,11 @@ export async function getHolidays(
 
 	const holidaysByKey = new Map<string, Holiday>();
 
-	for (const assignment of customAssignments) {
+	const typedCustomAssignments = customAssignments as unknown as HolidayAssignmentWithHoliday[];
+	const typedPresetAssignments =
+		presetAssignments as unknown as HolidayPresetAssignmentWithPreset[];
+
+	for (const assignment of typedCustomAssignments) {
 		const assignedHoliday = assignment.holiday;
 		if (
 			!assignedHoliday?.isActive ||
@@ -179,7 +203,7 @@ export async function getHolidays(
 
 	const startYear = startDate.getFullYear();
 	const endYear = endDate.getFullYear();
-	for (const assignment of presetAssignments) {
+	for (const assignment of typedPresetAssignments) {
 		if (!assignment.preset?.isActive) {
 			continue;
 		}

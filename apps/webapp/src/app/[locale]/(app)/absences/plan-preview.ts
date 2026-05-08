@@ -29,6 +29,13 @@ type AffectedShift = {
 	endTime: string;
 };
 
+type ExistingAbsenceRow = Pick<
+	typeof absenceEntry.$inferSelect,
+	"id" | "startDate" | "endDate" | "status"
+> & {
+	category: Pick<typeof absenceCategory.$inferSelect, "name">;
+};
+
 type CoverageRuleWithSubarea = {
 	id: string;
 	subareaId: string;
@@ -88,6 +95,7 @@ export async function getAbsencePlanPreview(
 			}),
 		]);
 
+		const typedExistingAbsences = existingAbsences as unknown as ExistingAbsenceRow[];
 		const typedAffectedShifts = affectedShifts as AffectedShift[];
 		const coverage = await evaluateCoverageRisk({
 			organizationId: currentEmployee.organizationId,
@@ -107,7 +115,7 @@ export async function getAbsencePlanPreview(
 			request,
 			vacationBalance,
 			holidays,
-			existingAbsences: existingAbsences.map((absence) => ({
+			existingAbsences: typedExistingAbsences.map((absence) => ({
 				id: absence.id,
 				startDate: absence.startDate,
 				endDate: absence.endDate,
@@ -179,7 +187,7 @@ async function evaluateCoverageRisk({
 	]);
 
 	const coverageRisks: CoverageEvaluationInput["risks"] = [];
-	const typedRules = rules as CoverageRuleWithSubarea[];
+	const typedRules = rules as unknown as CoverageRuleWithSubarea[];
 	const typedPublishedShifts = publishedShifts as AffectedShift[];
 	let hasMatchingRuleForAffectedShifts = false;
 
