@@ -142,6 +142,9 @@ export interface ApprovalQueryParams {
 	/** Filter by requester employee IDs before pagination */
 	requesterEmployeeIds?: string[];
 
+	/** Requester employee IDs this manager can action through current eligibility. */
+	eligibleRequesterEmployeeIds?: string[];
+
 	/** Filter by date range (request creation date) */
 	dateRange?: {
 		from: Date;

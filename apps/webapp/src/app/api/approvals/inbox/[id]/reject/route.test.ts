@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => ({
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
 	findApprovalRequest: vi.fn(),
+	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	insertAuditLog: vi.fn(),
 	handlerReject: vi.fn(),
 	logger: {
@@ -41,6 +42,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	isEligibleManagerForApprovalRequest: mockState.isEligibleManagerForApprovalRequest,
 }));
 
 vi.mock("@/db", () => ({
@@ -109,6 +114,7 @@ function createRequest(body: unknown): NextRequest {
 describe("POST /api/approvals/inbox/[id]/reject", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
 			user: { id: "user-1" },
@@ -132,10 +138,37 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		mockState.handlerReject.mockReturnValue(Effect.succeed(undefined));
 	});
 
-	it("rejects forbidden requests before employee lookup or mutation", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => true),
+	it("allows an eligible fallback team manager to reject a request assigned to another manager", async () => {
+		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
 		});
+
+		const response = await POST(createRequest({ reason: "Missing receipt" }), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mockState.handlerReject).toHaveBeenCalledWith(
+			"entity-1",
+			"employee-1",
+			"Missing receipt",
+			{
+				approvalRequestId: "approval-1",
+				allowAnyApprover: true,
+			},
+		);
+	});
+
+	it("rejects requests when ability cannot be resolved before employee lookup or mutation", async () => {
+		mockState.getAbility.mockResolvedValue(null);
 
 		const response = await POST(createRequest({ reason: "Missing receipt" }), {
 			params: Promise.resolve({ id: "approval-1" }),

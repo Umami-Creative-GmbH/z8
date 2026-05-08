@@ -13,6 +13,7 @@ import { approvalRequest, employee } from "@/db/schema";
 import { getApprovalHandler } from "@/lib/approvals/domain/registry";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
+import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -72,10 +73,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 		}
 
 		const ability = await getAbility();
-		if (
-			!ability ||
-			(ability.cannot("approve", "Approval") && ability.cannot("manage", "Approval"))
-		) {
+		if (!ability) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -107,8 +105,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
 		}
 
-		// Managers can only action assigned approvals; Approval managers can action org-wide approvals.
-		if (request.approverId !== currentEmployee.id && ability.cannot("manage", "Approval")) {
+		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		const isAssignedApprover = request.approverId === currentEmployee.id;
+		const isEligibleManager = isAssignedApprover
+			? true
+			: await isEligibleManagerForApprovalRequest({
+					db,
+					approvalRequestId: request.id,
+					managerEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				});
+
+		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
 			return NextResponse.json(
 				{ error: "You are not authorized to approve this request" },
 				{ status: 403 },

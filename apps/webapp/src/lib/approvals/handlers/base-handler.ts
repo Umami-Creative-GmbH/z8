@@ -5,7 +5,7 @@
  * and optimize database queries.
  */
 
-import { and, count, desc, eq, lte } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
@@ -75,7 +75,15 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 	];
 
 	if (!params.includeAllApprovers) {
-		conditions.push(eq(approvalRequest.approverId, params.approverId));
+		const assignedApproverCondition = eq(approvalRequest.approverId, params.approverId);
+		conditions.push(
+			params.eligibleRequesterEmployeeIds && params.eligibleRequesterEmployeeIds.length > 0
+				? or(
+						assignedApproverCondition,
+						inArray(approvalRequest.requestedBy, params.eligibleRequesterEmployeeIds),
+					)
+				: assignedApproverCondition,
+		);
 	}
 
 	// Add age filter

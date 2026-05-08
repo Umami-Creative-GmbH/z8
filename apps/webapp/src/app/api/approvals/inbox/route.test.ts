@@ -17,6 +17,7 @@ const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 	getAbility: vi.fn(),
 	findEmployee: vi.fn(),
+	getEligibleRequesterIdsForManager: vi.fn(async () => []),
 	getApprovals: vi.fn(),
 	logger: {
 		error: vi.fn(),
@@ -37,6 +38,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	getEligibleRequesterIdsForManager: mockState.getEligibleRequesterIdsForManager,
 }));
 
 vi.mock("@/db", () => ({
@@ -102,6 +107,7 @@ describe("GET /api/approvals/inbox", () => {
 			id: "employee-1",
 			organizationId: "org-1",
 		});
+		mockState.getEligibleRequesterIdsForManager.mockResolvedValue([]);
 		mockState.getApprovals.mockReturnValue(
 			Effect.succeed({
 				items: [],
@@ -121,10 +127,8 @@ describe("GET /api/approvals/inbox", () => {
 		expect(mockState.getApprovals).not.toHaveBeenCalled();
 	});
 
-	it("rejects forbidden requests before delegating", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => true),
-		});
+	it("rejects requests when ability cannot be resolved before delegating", async () => {
+		mockState.getAbility.mockResolvedValue(null);
 
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
 
@@ -155,6 +159,7 @@ describe("GET /api/approvals/inbox", () => {
 			dateRange: undefined,
 			cursor: undefined,
 			limit: 15,
+			eligibleRequesterEmployeeIds: [],
 		});
 	});
 });
