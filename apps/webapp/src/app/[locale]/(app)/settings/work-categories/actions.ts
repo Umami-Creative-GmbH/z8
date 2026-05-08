@@ -95,6 +95,16 @@ type SetAssignmentListItem = {
 	employee: { id: string; firstName: string | null; lastName: string | null } | null;
 };
 
+type WorkCategorySetAssignmentWithRelations = typeof workCategorySetAssignment.$inferSelect & {
+	set: Pick<typeof workCategorySet.$inferSelect, "id" | "name" | "description">;
+	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
+	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName"> | null;
+};
+
+type EffectiveWorkCategorySetAssignment = typeof workCategorySetAssignment.$inferSelect & {
+	set: Pick<typeof workCategorySet.$inferSelect, "isActive"> | null;
+};
+
 type TeamListItem = { id: string; name: string };
 type EmployeeListItem = {
 	id: string;
@@ -1589,7 +1599,9 @@ export async function getWorkCategorySetAssignments(
 					],
 				});
 
-				return results.map((a) => ({
+				const typedResults = results as unknown as WorkCategorySetAssignmentWithRelations[];
+
+				return typedResults.map((a) => ({
 					id: a.id,
 					setId: a.setId,
 					assignmentType: a.assignmentType,
@@ -1937,8 +1949,9 @@ export async function getAvailableCategoriesForEmployee(
 				}),
 			),
 		);
+		const typedEmpAssignment = empAssignment as EffectiveWorkCategorySetAssignment | undefined;
 
-		if (empAssignment?.set?.isActive) {
+		if (typedEmpAssignment?.set?.isActive) {
 			const categories = yield* _(
 				dbService.query("getCategoriesFromEmpSet", async () =>
 					dbService.db
@@ -1955,7 +1968,7 @@ export async function getAvailableCategoriesForEmployee(
 						.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
 						.where(
 							and(
-								eq(workCategorySetCategory.setId, empAssignment.setId),
+								eq(workCategorySetCategory.setId, typedEmpAssignment.setId),
 								eq(workCategory.isActive, true),
 							),
 						)
@@ -1980,8 +1993,9 @@ export async function getAvailableCategoriesForEmployee(
 					}),
 				),
 			);
+			const typedTeamAssignment = teamAssignment as EffectiveWorkCategorySetAssignment | undefined;
 
-			if (teamAssignment?.set?.isActive) {
+			if (typedTeamAssignment?.set?.isActive) {
 				const categories = yield* _(
 					dbService.query("getCategoriesFromTeamSet", async () =>
 						dbService.db
@@ -1998,7 +2012,7 @@ export async function getAvailableCategoriesForEmployee(
 							.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
 							.where(
 								and(
-									eq(workCategorySetCategory.setId, teamAssignment.setId),
+									eq(workCategorySetCategory.setId, typedTeamAssignment.setId),
 									eq(workCategory.isActive, true),
 								),
 							)
@@ -2023,8 +2037,9 @@ export async function getAvailableCategoriesForEmployee(
 				}),
 			),
 		);
+		const typedOrgAssignment = orgAssignment as EffectiveWorkCategorySetAssignment | undefined;
 
-		if (orgAssignment?.set?.isActive) {
+		if (typedOrgAssignment?.set?.isActive) {
 			const categories = yield* _(
 				dbService.query("getCategoriesFromOrgSet", async () =>
 					dbService.db
@@ -2041,7 +2056,7 @@ export async function getAvailableCategoriesForEmployee(
 						.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
 						.where(
 							and(
-								eq(workCategorySetCategory.setId, orgAssignment.setId),
+								eq(workCategorySetCategory.setId, typedOrgAssignment.setId),
 								eq(workCategory.isActive, true),
 							),
 						)
