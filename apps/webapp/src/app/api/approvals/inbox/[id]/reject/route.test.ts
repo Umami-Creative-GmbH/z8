@@ -188,6 +188,27 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		expect(mockState.handlerReject).not.toHaveBeenCalled();
 	});
 
+	it("returns 403 when an eligible fallback manager lacks approve or manage permission", async () => {
+		mockState.getAbility.mockResolvedValue({ cannot: vi.fn(() => true) });
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		const response = await POST(createRequest({ reason: "Missing receipt" }), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(403);
+		expect(mockState.handlerReject).not.toHaveBeenCalled();
+	});
+
 	it("rejects requests when ability cannot be resolved before employee lookup or mutation", async () => {
 		mockState.getAbility.mockResolvedValue(null);
 

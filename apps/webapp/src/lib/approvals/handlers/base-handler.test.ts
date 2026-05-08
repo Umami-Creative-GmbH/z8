@@ -1,6 +1,19 @@
 import { Context, Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("drizzle-orm", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("drizzle-orm")>();
+	return {
+		...actual,
+		and: vi.fn((...args: unknown[]) => ({ and: args })),
+		desc: vi.fn((value: unknown) => ({ desc: value })),
+		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
+		lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
+		or: vi.fn((...args: unknown[]) => ({ or: args })),
+	};
+});
+
 const mockState = vi.hoisted(() => ({
 	findMany: vi.fn(),
 	fetchEntitiesByIds: vi.fn(),
@@ -270,6 +283,23 @@ describe("fetchApprovals", () => {
 		});
 
 		expect(conditions).toHaveLength(4);
+	});
+
+	it("includes assigned approver or eligible requester approvals when eligible requesters are present", () => {
+		const conditions = buildBaseConditions("absence_entry", {
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 20,
+			eligibleRequesterEmployeeIds: ["employee-2"],
+		});
+
+		expect(conditions[3]).toEqual({
+			or: [
+				{ eq: [expect.anything(), "manager-1"] },
+				{ inArray: [expect.anything(), ["employee-2"]] },
+			],
+		});
 	});
 
 	it("can include approvals assigned to other approvers for admin briefings", () => {

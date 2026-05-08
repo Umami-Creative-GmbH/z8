@@ -137,6 +137,18 @@ describe("GET /api/approvals/inbox", () => {
 		expect(mockState.getApprovals).not.toHaveBeenCalled();
 	});
 
+	it("rejects users without approval permission even when they have eligible requesters", async () => {
+		mockState.getAbility.mockResolvedValue({
+			cannot: vi.fn(() => true),
+		});
+		mockState.getEligibleRequesterIdsForManager.mockResolvedValue(["employee-2"]);
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(403);
+		expect(mockState.getApprovals).not.toHaveBeenCalled();
+	});
+
 	it("preserves employee lookup and delegates approved reads to ApprovalQueryService", async () => {
 		const response = await GET(
 			createRequest(

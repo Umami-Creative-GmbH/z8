@@ -68,20 +68,21 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
+		const canApproveOrManage =
+			ability.cannot("approve", "Approval") === false ||
+			ability.cannot("manage", "Approval") === false;
+
+		if (!canApproveOrManage) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
 		const eligibleRequesterEmployeeIds = await getEligibleRequesterIdsForManager({
 			db,
 			managerEmployeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 		});
-		const canApproveOrManage =
-			ability.cannot("approve", "Approval") === false ||
-			ability.cannot("manage", "Approval") === false;
-
-		if (!canApproveOrManage && eligibleRequesterEmployeeIds.length === 0) {
-			const error = new ForbiddenError("approve", "Approval");
-			const httpError = toHttpError(error);
-			return NextResponse.json(httpError.body, { status: httpError.status });
-		}
 
 		// Parse query parameters
 		const { searchParams } = new URL(request.url);
