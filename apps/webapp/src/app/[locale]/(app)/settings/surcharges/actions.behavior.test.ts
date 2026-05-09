@@ -300,7 +300,7 @@ vi.mock("../employees/employee-action-utils", async () => {
 							resource: options.resource,
 							action: options.action,
 						}),
-				  ),
+					),
 		),
 	};
 });
@@ -319,7 +319,12 @@ vi.mock("@/db/schema", () => ({
 		calculationDate: "calculationDate",
 		employeeId: "employeeId",
 	},
-	surchargeModel: { id: "id", organizationId: "organizationId", createdAt: "createdAt", isActive: "isActive" },
+	surchargeModel: {
+		id: "id",
+		organizationId: "organizationId",
+		createdAt: "createdAt",
+		isActive: "isActive",
+	},
 	surchargeModelAssignment: {
 		id: "id",
 		modelId: "modelId",
@@ -336,7 +341,13 @@ vi.mock("@/db/schema", () => ({
 		teamId: "teamId",
 		canManageTeamSettings: "canManageTeamSettings",
 	},
-	workPeriod: { id: "id", organizationId: "organizationId", projectId: "projectId", locationId: "locationId", subareaId: "subareaId" },
+	workPeriod: {
+		id: "id",
+		organizationId: "organizationId",
+		projectId: "projectId",
+		locationId: "locationId",
+		subareaId: "subareaId",
+	},
 }));
 
 vi.mock("@/db", () => ({
@@ -350,7 +361,7 @@ vi.mock("@/db", () => ({
 				findFirst: vi.fn(async () =>
 					mockState.surchargeModelDetail !== undefined
 						? mockState.surchargeModelDetail
-						: mockState.surchargeModels[0] ?? null,
+						: (mockState.surchargeModels[0] ?? null),
 				),
 			},
 			surchargeModelAssignment: {
@@ -392,7 +403,10 @@ vi.mock("@/db", () => ({
 				findFirst: vi.fn(async ({ where }: { where?: { eq?: [unknown, string] } }) => {
 					mockState.workPeriodFindFirstCalls += 1;
 					const workPeriodId = where?.eq?.[1];
-					return workPeriodId ? mockState.workPeriodsById[workPeriodId as keyof typeof mockState.workPeriodsById] ?? null : null;
+					return workPeriodId
+						? (mockState.workPeriodsById[workPeriodId as keyof typeof mockState.workPeriodsById] ??
+								null)
+						: null;
 				}),
 			},
 		},
