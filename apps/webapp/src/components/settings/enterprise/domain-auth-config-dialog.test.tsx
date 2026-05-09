@@ -17,7 +17,7 @@ const domain = {
 	},
 };
 
-	describe("DomainAuthConfigDialog", () => {
+describe("DomainAuthConfigDialog", () => {
 	it("loads and saves the custom-domain cookie consent script", async () => {
 		const onSave = vi.fn().mockResolvedValue(undefined);
 
