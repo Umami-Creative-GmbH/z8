@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => {
@@ -5,6 +6,7 @@ const mockState = vi.hoisted(() => {
 	const updateWhere = vi.fn(() => ({ returning: updateReturning }));
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const insertValues = vi.fn();
+	const notifyTravelExpenseRequesterAfterDecisionForApprover = vi.fn();
 
 	return {
 		getAuthContext: vi.fn(),
@@ -14,6 +16,7 @@ const mockState = vi.hoisted(() => {
 		dbInsert: vi.fn(() => ({ values: insertValues })),
 		updateReturning,
 		insertValues,
+		notifyTravelExpenseRequesterAfterDecisionForApprover,
 	};
 });
 
@@ -44,6 +47,14 @@ const processApproval = vi.fn();
 
 vi.mock("@/lib/approvals/server/shared", () => ({
 	processApproval,
+}));
+
+vi.mock("@/lib/approvals/server/travel-expense-approvals", () => ({
+	createTravelExpenseApprovalWorkflow: vi.fn(),
+	notifyTravelExpenseRequesterAfterDecisionForApprover:
+		mockState.notifyTravelExpenseRequesterAfterDecisionForApprover,
+	persistTravelExpenseDecision: vi.fn(),
+	preflightTravelExpenseDecision: vi.fn(),
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -102,6 +113,7 @@ describe("travel expense approvals", () => {
 			},
 		});
 		mockState.insertValues.mockResolvedValue(undefined);
+		mockState.notifyTravelExpenseRequesterAfterDecisionForApprover.mockReturnValue(Effect.void);
 	});
 
 	it("approve succeeds for manager when claim is assigned and submitted", async () => {
@@ -121,6 +133,12 @@ describe("travel expense approvals", () => {
 		);
 		expect(mockState.dbUpdate).not.toHaveBeenCalled();
 		expect(mockState.dbInsert).not.toHaveBeenCalled();
+		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).toHaveBeenCalledWith(
+			expect.objectContaining({ db: expect.any(Object), query: expect.any(Function) }),
+			"claim-1",
+			"manager-1",
+			"approve",
+		);
 	});
 
 	it("reject fails for manager when claim approverId differs", async () => {
@@ -144,6 +162,7 @@ describe("travel expense approvals", () => {
 		expect(mockState.dbUpdate).not.toHaveBeenCalled();
 		expect(mockState.dbInsert).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).not.toHaveBeenCalled();
 	});
 
 	it("approve allows an employee-role assigned approver to reach shared approval authorization", async () => {
@@ -172,6 +191,12 @@ describe("travel expense approvals", () => {
 			{ transactional: true },
 		);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
+		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).toHaveBeenCalledWith(
+			expect.objectContaining({ db: expect.any(Object), query: expect.any(Function) }),
+			"claim-1",
+			"employee-approver-1",
+			"approve",
+		);
 	});
 
 	it("reject allows an employee-role assigned approver to reach shared approval authorization", async () => {
@@ -203,6 +228,13 @@ describe("travel expense approvals", () => {
 			{ transactional: true },
 		);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
+		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).toHaveBeenCalledWith(
+			expect.objectContaining({ db: expect.any(Object), query: expect.any(Function) }),
+			"claim-1",
+			"employee-approver-1",
+			"reject",
+			"Missing receipt",
+		);
 	});
 
 	it("keeps random employee rejection in the shared approval path", async () => {
@@ -231,5 +263,6 @@ describe("travel expense approvals", () => {
 			{ transactional: true },
 		);
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).not.toHaveBeenCalled();
 	});
 });

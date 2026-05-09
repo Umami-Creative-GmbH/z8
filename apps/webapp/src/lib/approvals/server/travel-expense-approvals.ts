@@ -267,6 +267,27 @@ export function notifyTravelExpenseRequesterAfterDecision(
 	);
 }
 
+export function notifyTravelExpenseRequesterAfterDecisionForApprover(
+	dbService: ApprovalDbService,
+	claimId: string,
+	approverId: string,
+	action: "approve" | "reject",
+	reason?: string,
+) {
+	return loadTravelExpenseApprover(dbService, approverId).pipe(
+		Effect.flatMap((currentEmployee) =>
+			notifyTravelExpenseRequesterAfterDecision(
+				dbService,
+				claimId,
+				currentEmployee,
+				action,
+				reason,
+			),
+		),
+		Effect.catchAllCause(() => Effect.void),
+	);
+}
+
 export function persistTravelExpenseDecision(
 	dbService: ApprovalDbService,
 	claimId: string,
