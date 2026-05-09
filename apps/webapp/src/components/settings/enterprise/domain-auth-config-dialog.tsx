@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import type { AuthConfig } from "@/lib/domain";
 
 interface Domain {
@@ -52,6 +53,7 @@ export function DomainAuthConfigDialog({
 		ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
 		passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
 		turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
+		cookieConsentScript: domain?.authConfig.cookieConsentScript,
 	});
 	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
@@ -214,6 +216,34 @@ export function DomainAuthConfigDialog({
 								</p>
 							</div>
 						</div>
+					</div>
+
+					<Separator />
+
+					<div className="space-y-3">
+						<div>
+							<Label htmlFor="cookie-consent-script">Cookie Consent Script</Label>
+							<p className="text-sm text-muted-foreground">
+								Injected on authentication pages for this custom domain only. Leave empty to disable.
+							</p>
+						</div>
+						<Textarea
+							id="cookie-consent-script"
+							name="cookieConsentScript"
+							autoComplete="off"
+							spellCheck={false}
+							value={config.cookieConsentScript ?? ""}
+							onChange={(e) =>
+								setConfig((prev) => ({
+									...prev,
+									cookieConsentScript: e.target.value || undefined,
+								}))
+							}
+							rows={8}
+							className="font-mono text-sm"
+							placeholder={`<!-- Example: CookieBot -->
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="YOUR-ID" type="text/javascript" async></script>`}
+						/>
 					</div>
 				</ActionPanelBody>
 
