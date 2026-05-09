@@ -101,19 +101,14 @@ function getEmployeeName(calculation: SurchargeCalculationWithDetails) {
 }
 
 export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
+	const [defaultFilters] = useState(getDefaultFilters);
 	const [rows, setRows] = useState<SurchargeCalculationWithDetails[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [dateError, setDateError] = useState<string | null>(null);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const appliedFilters = useRef(defaultFilters);
 	const latestRequestId = useRef(0);
-
-	const form = useForm({
-		defaultValues: getDefaultFilters(),
-		onSubmit: async ({ value }) => {
-			await loadCalculations(value);
-		},
-	});
 
 	const loadCalculations = useCallback(
 		async (filters: FilterValues) => {
@@ -158,9 +153,17 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		[organizationId],
 	);
 
+	const form = useForm({
+		defaultValues: defaultFilters,
+		onSubmit: async ({ value }) => {
+			appliedFilters.current = value;
+			await loadCalculations(value);
+		},
+	});
+
 	useEffect(() => {
-		loadCalculations(form.state.values);
-	}, [form.state.values, loadCalculations]);
+		loadCalculations(appliedFilters.current);
+	}, [loadCalculations]);
 
 	const totals = rows.reduce(
 		(accumulator, row) => ({
@@ -280,7 +283,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				<CardContent>
 					{isLoading && rows.length === 0 ? (
 						<div className="py-8 text-center text-muted-foreground text-sm">
-							Loading calculations...
+							Loading calculations…
 						</div>
 					) : rows.length === 0 ? (
 						<Empty>
@@ -298,7 +301,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-10" />
+									<TableHead className="w-10">
+										<span className="sr-only">Details</span>
+									</TableHead>
 									<TableHead>Date</TableHead>
 									<TableHead>Employee</TableHead>
 									<TableHead>Base</TableHead>

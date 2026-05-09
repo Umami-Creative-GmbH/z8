@@ -156,6 +156,30 @@ describe("SurchargeReports", () => {
 		});
 	});
 
+	it("waits for apply before fetching edited filters", async () => {
+		getSurchargeCalculationsForPeriodMock.mockResolvedValue({ success: true, data: [] });
+
+		render(<SurchargeReports organizationId="org-1" />);
+
+		await screen.findByText("No surcharge calculations found");
+		expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1);
+		getSurchargeCalculationsForPeriodMock.mockClear();
+
+		const form = screen.getByTestId("surcharge-report-filters");
+		fireEvent.change(within(form).getByLabelText("Employee ID"), {
+			target: { value: "employee-2" },
+		});
+
+		await Promise.resolve();
+		expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(0);
+
+		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+
+		await waitFor(() => {
+			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	it("ignores stale responses from earlier requests", async () => {
 		const firstRequest = deferredResult([calculation]);
 		const secondRequest = deferredResult([laterCalculation]);
