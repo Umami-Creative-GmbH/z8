@@ -12,6 +12,7 @@ import { type DomainAuthContext, getDomainConfig } from "@/lib/domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { selectAuthCookieConsentScript } from "./cookie-consent-script";
 
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
@@ -56,7 +57,11 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	}
 
 	// Fetch cookie consent script for auth pages
-	const cookieConsentScript = await getCookieConsentScript();
+	const platformCookieConsentScript = customDomain ? null : await getCookieConsentScript();
+	const cookieConsentScript = selectAuthCookieConsentScript(
+		domainContext,
+		platformCookieConsentScript,
+	);
 
 	return (
 		<DomainAuthProvider domainContext={domainContext}>

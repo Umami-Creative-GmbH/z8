@@ -2,14 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { DomainAuthContext } from "@/lib/domain";
 import { selectAuthCookieConsentScript } from "./cookie-consent-script";
 
-type DomainAuthContextWithCookieConsentScript = DomainAuthContext & {
-	authConfig: DomainAuthContext["authConfig"] & {
-		cookieConsentScript?: string | null;
-	};
-};
-
 const domainContext = (cookieConsentScript?: string): DomainAuthContext => {
-	const context: DomainAuthContextWithCookieConsentScript = {
+	const context: DomainAuthContext = {
 		organizationId: "org_123",
 		domain: "login.acme.test",
 		authConfig: {

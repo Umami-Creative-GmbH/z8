@@ -1,9 +1,5 @@
 import type { DomainAuthContext } from "@/lib/domain";
 
-type AuthConfigWithCookieConsentScript = DomainAuthContext["authConfig"] & {
-	cookieConsentScript?: string | null;
-};
-
 export function selectAuthCookieConsentScript(
 	domainContext: DomainAuthContext | null,
 	platformCookieConsentScript: string | null,
@@ -16,9 +12,7 @@ export function selectAuthCookieConsentScript(
 }
 
 function getDomainCookieConsentScript(domainContext: DomainAuthContext): string | null {
-	const authConfig = domainContext.authConfig as AuthConfigWithCookieConsentScript;
-
-	return authConfig.cookieConsentScript ?? null;
+	return domainContext.authConfig.cookieConsentScript ?? null;
 }
 
 function normalizeScript(script: string | null): string | null {
