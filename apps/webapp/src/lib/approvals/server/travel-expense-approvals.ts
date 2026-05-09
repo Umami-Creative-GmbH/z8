@@ -12,6 +12,7 @@ import {
 	ConflictError,
 	NotFoundError,
 } from "@/lib/effect/errors";
+import { onTravelExpenseApproved, onTravelExpenseRejected } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
@@ -40,6 +41,17 @@ export function buildTravelExpenseApprovalPolicyContext(claim: {
 		employeeGroupIds: [],
 		entityType: "travel_expense_claim",
 		entityId: claim.id,
+	};
+}
+
+interface TravelExpenseNotificationContext {
+	id: string;
+	organizationId: string;
+	destinationCity: string | null;
+	calculatedAmount: string;
+	calculatedCurrency: string;
+	employee: {
+		userId: string;
 	};
 }
 
@@ -166,6 +178,75 @@ export function preflightTravelExpenseDecision(
 	});
 }
 
+function loadTravelExpenseNotificationContext(
+	dbService: ApprovalDbService,
+	claimId: string,
+	organizationId: string,
+) {
+	return dbService
+		.query("getTravelExpenseNotificationContext", async () => {
+			return await dbService.db.query.travelExpenseClaim.findFirst({
+				where: and(
+					eq(travelExpenseClaim.id, claimId),
+					eq(travelExpenseClaim.organizationId, organizationId),
+				),
+				with: {
+					employee: true,
+				},
+			});
+		})
+		.pipe(
+			Effect.flatMap((claim) =>
+				claim
+					? Effect.succeed(claim as unknown as TravelExpenseNotificationContext)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Travel expense claim not found",
+								entityType: "travel_expense_claim",
+								entityId: claimId,
+							}),
+						),
+			),
+		);
+}
+
+function notifyTravelExpenseRequester(
+	claim: TravelExpenseNotificationContext,
+	currentEmployee: CurrentApprover,
+	action: "approve" | "reject",
+	reason?: string,
+) {
+	const payload = {
+		claimId: claim.id,
+		requesterUserId: claim.employee.userId,
+		organizationId: claim.organizationId,
+		approverName: currentEmployee.user.name,
+		destinationCity: claim.destinationCity,
+		amount: claim.calculatedAmount,
+		currency: claim.calculatedCurrency,
+	};
+
+	if (action === "approve") {
+		try {
+			void Promise.resolve(onTravelExpenseApproved(payload)).catch(() => undefined);
+		} catch {
+			// Notification triggers are best-effort after durable decision persistence.
+		}
+		return;
+	}
+
+	try {
+		void Promise.resolve(
+			onTravelExpenseRejected({
+				...payload,
+				rejectionReason: reason,
+			}),
+		).catch(() => undefined);
+	} catch {
+		// Notification triggers are best-effort after durable decision persistence.
+	}
+}
+
 export function persistTravelExpenseDecision(
 	dbService: ApprovalDbService,
 	claimId: string,
@@ -228,6 +309,15 @@ export function persistTravelExpenseDecision(
 					createdAt: decidedAt,
 				});
 			}),
+		);
+
+		yield* _(
+			loadTravelExpenseNotificationContext(dbService, claimId, currentEmployee.organizationId).pipe(
+				Effect.flatMap((claim) =>
+					Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, commentOrReason)),
+				),
+				Effect.catchAllCause(() => Effect.void),
+			),
 		);
 	});
 }
