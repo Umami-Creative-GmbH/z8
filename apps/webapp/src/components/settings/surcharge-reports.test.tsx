@@ -61,7 +61,7 @@ describe("SurchargeReports", () => {
 		render(<SurchargeReports organizationId="org-1" />);
 
 		await waitFor(() => {
-			expect(screen.getByText("1 calculation")).toBeInTheDocument();
+			expect(screen.getByText("1 calculation")).toBeTruthy();
 		});
 		const [organizationId, startDate, endDate, employeeId] =
 			getSurchargeCalculationsForPeriodMock.mock.calls[0] ?? [];
@@ -70,11 +70,11 @@ describe("SurchargeReports", () => {
 		expect(endDate).toBeInstanceOf(Date);
 		expect(employeeId).toBeUndefined();
 
-		expect(screen.getByText("8h 0m")).toBeInTheDocument();
-		expect(screen.getByText("2h 0m")).toBeInTheDocument();
-		expect(screen.getByText("0h 30m")).toBeInTheDocument();
-		expect(screen.getByText("Mina Miller")).toBeInTheDocument();
-		expect(screen.getByText("25%")).toBeInTheDocument();
+		expect(screen.getByText("8h 0m")).toBeTruthy();
+		expect(screen.getByText("2h 0m")).toBeTruthy();
+		expect(screen.getByText("0h 30m")).toBeTruthy();
+		expect(screen.getByText("Mina Miller")).toBeTruthy();
+		expect(screen.getByText("25%")).toBeTruthy();
 	});
 
 	it("renders an empty state when no calculations match", async () => {
@@ -83,11 +83,11 @@ describe("SurchargeReports", () => {
 		render(<SurchargeReports organizationId="org-1" />);
 
 		await waitFor(() => {
-			expect(screen.getByText("No surcharge calculations found")).toBeInTheDocument();
+			expect(screen.getByText("No surcharge calculations found")).toBeTruthy();
 		});
 		expect(
 			screen.getByText("No surcharge calculations matched the selected filters."),
-		).toBeInTheDocument();
+		).toBeTruthy();
 	});
 
 	it("expands a calculation row to show audit details", async () => {
@@ -98,13 +98,15 @@ describe("SurchargeReports", () => {
 
 		render(<SurchargeReports organizationId="org-1" />);
 
-		const detailsButton = await screen.findByRole("button", { name: "Show details for Mina Miller" });
+		const detailsButton = await screen.findByRole("button", {
+			name: "Show details for Mina Miller",
+		});
 		fireEvent.click(detailsButton);
 
-		expect(screen.getByText("Applied rules")).toBeInTheDocument();
-		expect(screen.getByText("Night premium")).toBeInTheDocument();
-		expect(screen.getByText("time_window")).toBeInTheDocument();
-		expect(screen.getByText("Overlap policy: max_wins")).toBeInTheDocument();
+		expect(screen.getByText("Applied rules")).toBeTruthy();
+		expect(screen.getByText("Night premium")).toBeTruthy();
+		expect(screen.getByText("time_window")).toBeTruthy();
+		expect(screen.getByText("Overlap policy: max_wins")).toBeTruthy();
 	});
 
 	it("validates date ranges before fetching", async () => {
@@ -125,7 +127,7 @@ describe("SurchargeReports", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 
-		expect(await screen.findByText("Start date must be on or before end date.")).toBeInTheDocument();
+		expect(await screen.findByText("Start date must be on or before end date.")).toBeTruthy();
 		await Promise.resolve();
 		await waitFor(() => {
 			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(0);
