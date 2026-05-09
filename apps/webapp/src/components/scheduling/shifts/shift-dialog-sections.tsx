@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { cn } from "@/lib/utils";
 import type { ShiftDialogEmployee, ShiftDialogLocation } from "./use-shift-dialog-data";
 import type { ShiftDialogFormApi, ShiftDialogFormValues } from "./use-shift-dialog-form";
@@ -263,7 +264,7 @@ export function ShiftDialogSections({
 									{employees.map((employee) => (
 										<SelectItem key={employee.id} value={employee.id}>
 											<span className="flex items-center gap-2">
-												{employee.firstName} {employee.lastName}
+												{buildAuthUserDisplayName(employee.user) || employee.id}
 												{field.state.value === employee.id &&
 													skillValidation &&
 													!skillValidation.isQualified && (

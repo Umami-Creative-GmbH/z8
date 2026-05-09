@@ -12,13 +12,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/user-avatar";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 
 interface Manager {
 	id: string;
 	userId: string;
-	firstName: string | null;
-	lastName: string | null;
 	user: {
+		firstName?: string | null;
+		lastName?: string | null;
 		name: string;
 		email: string;
 		image: string | null;
@@ -160,10 +161,7 @@ export function ManagerAssignment({
 							) : (
 								availableManagers.map((manager) => {
 									const isSelected = selectedManagers.has(manager.id);
-									const displayName =
-										manager.firstName && manager.lastName
-											? `${manager.firstName} ${manager.lastName}`
-											: manager.user.name;
+									const displayName = buildAuthUserDisplayName(manager.user);
 
 									return (
 										<div
@@ -185,7 +183,7 @@ export function ManagerAssignment({
 												<UserAvatar
 													image={manager.user.image}
 													seed={manager.id}
-													name={manager.user.name}
+													name={displayName}
 													size="sm"
 												/>
 												<div className="flex-1">
@@ -213,10 +211,7 @@ export function ManagerAssignment({
 									const manager = availableManagers.find((m) => m.id === managerId);
 									if (!manager) return null;
 
-									const displayName =
-										manager.firstName && manager.lastName
-											? `${manager.firstName} ${manager.lastName}`
-											: manager.user.name;
+									const displayName = buildAuthUserDisplayName(manager.user);
 
 									return (
 										<div
@@ -231,7 +226,7 @@ export function ManagerAssignment({
 												<UserAvatar
 													image={manager.user.image}
 													seed={manager.id}
-													name={manager.user.name}
+													name={displayName}
 													size="sm"
 												/>
 												<div className="flex-1">
@@ -239,7 +234,7 @@ export function ManagerAssignment({
 													<div className="text-sm text-muted-foreground">{manager.user.email}</div>
 												</div>
 												{primaryManager === manager.id && (
-													<IconCheck className="size-5 text-primary" />
+													<IconCheck className="size-5 text-primary" aria-hidden="true" />
 												)}
 											</Label>
 										</div>
@@ -260,13 +255,13 @@ export function ManagerAssignment({
 				<div className="flex justify-end gap-2 pt-4">
 					{onCancel && (
 						<Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-							<IconX className="mr-2 size-4" />
+							<IconX className="mr-2 size-4" aria-hidden="true" />
 							{t("common.cancel", "Cancel")}
 						</Button>
 					)}
 					<Button onClick={handleSave} disabled={loading || !isChanged}>
-						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-						<IconCheck className="mr-2 size-4" />
+						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+						<IconCheck className="mr-2 size-4" aria-hidden="true" />
 						{t("settings.managerAssignment.save", "Save Managers")}
 					</Button>
 				</div>

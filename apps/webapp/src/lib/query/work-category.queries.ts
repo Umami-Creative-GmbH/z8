@@ -272,7 +272,10 @@ export async function getWorkCategorySetAssignments(
 		with: {
 			set: true,
 			team: true,
-			employee: true,
+			employee: {
+				columns: { id: true },
+				with: { user: { columns: { firstName: true, lastName: true } } },
+			},
 		},
 		orderBy: [
 			asc(workCategorySetAssignment.assignmentType),
@@ -308,8 +311,8 @@ export async function getWorkCategorySetAssignments(
 		employee: a.employee
 			? {
 					id: a.employee.id,
-					firstName: a.employee.firstName,
-					lastName: a.employee.lastName,
+					firstName: a.employee.user?.firstName ?? null,
+					lastName: a.employee.user?.lastName ?? null,
 				}
 			: null,
 	}));

@@ -2,19 +2,8 @@
 
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import {
-	changePolicy,
-	changePolicyAssignment,
-	employee,
-	team,
-	teamPermissions,
-} from "@/db/schema";
-import {
-	type AnyAppError,
-	AuthorizationError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { changePolicy, changePolicyAssignment, employee, team, teamPermissions } from "@/db/schema";
+import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import {
@@ -42,6 +31,7 @@ export type ChangePolicyAssignmentWithDetails = typeof changePolicyAssignment.$i
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		user?: { firstName: string | null; lastName: string | null } | null;
 	} | null;
 };
 
@@ -113,7 +103,7 @@ type ScopedChangePolicyAccessContext = {
 	manageableTeamIds: Set<string> | null;
 };
 
-function filterAssignmentsForManagerChangePolicyScope<T extends ChangePolicyScopeAssignment>(
+function _filterAssignmentsForManagerChangePolicyScope<T extends ChangePolicyScopeAssignment>(
 	assignments: T[],
 	manageableTeamIds: Set<string> | null,
 	managedEmployeeIds: Set<string> | null,
@@ -218,15 +208,11 @@ function getVisibleScopedChangePolicyIds(
 			),
 		);
 
-		return [
-			...new Set(visibleAssignments.map((assignment) => assignment.policyId)),
-		];
+		return [...new Set(visibleAssignments.map((assignment) => assignment.policyId))];
 	});
 }
 
-function getVisibleChangePolicyAssignmentsForManagerScope<
-	T extends ChangePolicyScopeAssignment,
->(
+function getVisibleChangePolicyAssignmentsForManagerScope<T extends ChangePolicyScopeAssignment>(
 	actor: ChangePolicyScopedActor,
 	organizationId: string,
 	assignments: T[],
@@ -275,7 +261,8 @@ function getVisibleChangePolicyAssignmentsForManagerScope<
 
 			if (assignment.assignmentType === "team") {
 				return assignment.teamId
-					? manageableTeamIds.has(assignment.teamId) || managedEmployeeTeamIds.has(assignment.teamId)
+					? manageableTeamIds.has(assignment.teamId) ||
+							managedEmployeeTeamIds.has(assignment.teamId)
 					: false;
 			}
 
@@ -325,7 +312,11 @@ function requireOrgAdminForChangePolicyMutation(
 	});
 }
 
-function getPolicyForActiveOrganization(policyId: string, actor: ChangePolicyScopedActor, queryName: string) {
+function getPolicyForActiveOrganization(
+	policyId: string,
+	actor: ChangePolicyScopedActor,
+	queryName: string,
+) {
 	return actor.dbService.query(queryName, async () => {
 		return await actor.dbService.db.query.changePolicy.findFirst({
 			where: and(
@@ -671,27 +662,45 @@ export async function getChangePolicyAssignments(
 							columns: { id: true, name: true },
 						},
 						employee: {
-							columns: { id: true, firstName: true, lastName: true },
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
 						},
 					},
 					orderBy: [desc(changePolicyAssignment.priority), desc(changePolicyAssignment.createdAt)],
 				});
 			}),
-		)) as ChangePolicyAssignmentWithDetails[];
+		)) as Array<
+			Omit<ChangePolicyAssignmentWithDetails, "employee"> & {
+				employee:
+					| ({ id: string } & {
+							user: { firstName: string | null; lastName: string | null } | null;
+					  })
+					| null;
+			}
+		>;
+		const assignmentsWithAuthNames = assignments.map((assignment) => ({
+			...assignment,
+			employee: assignment.employee
+				? {
+						id: assignment.employee.id,
+						firstName: assignment.employee.user?.firstName ?? null,
+						lastName: assignment.employee.user?.lastName ?? null,
+						user: assignment.employee.user,
+					}
+				: null,
+		})) satisfies ChangePolicyAssignmentWithDetails[];
 		const visibleAssignments = yield* _(
 			getVisibleChangePolicyAssignmentsForManagerScope(
 				actor,
 				organizationId,
-				assignments,
+				assignmentsWithAuthNames,
 				manageableTeamIds,
 				managedEmployeeIds,
 				"getChangePolicyAssignments:managedEmployees",
 			),
 		);
 
-		return sortAssignmentsByPriority(
-			visibleAssignments as ChangePolicyAssignmentWithDetails[],
-		);
+		return sortAssignmentsByPriority(visibleAssignments as ChangePolicyAssignmentWithDetails[]);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -862,11 +871,18 @@ export async function getEmployeesForAssignment(
 
 		const employees = yield* _(
 			actor.dbService.query("getEmployeesForAssignment", async () => {
-				return await actor.dbService.db.query.employee.findMany({
+				const rows = await actor.dbService.db.query.employee.findMany({
 					where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-					columns: { id: true, firstName: true, lastName: true },
-					orderBy: [employee.lastName, employee.firstName],
+					columns: { id: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
+					orderBy: (employeeRecord, { asc }) => [asc(employeeRecord.id)],
 				});
+
+				return rows.map((employeeRecord) => ({
+					id: employeeRecord.id,
+					firstName: employeeRecord.user?.firstName ?? null,
+					lastName: employeeRecord.user?.lastName ?? null,
+				}));
 			}),
 		);
 

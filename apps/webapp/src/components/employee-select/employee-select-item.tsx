@@ -4,6 +4,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { cn } from "@/lib/utils";
 import type { EmployeeSelectItemProps } from "./types";
 
@@ -20,16 +21,6 @@ const roleLabels = {
 } as const;
 
 /**
- * Get display name for an employee
- */
-function getEmployeeName(employee: EmployeeSelectItemProps["employee"]): string {
-	if (employee.firstName || employee.lastName) {
-		return `${employee.firstName || ""} ${employee.lastName || ""}`.trim();
-	}
-	return employee.user.name || employee.user.email.split("@")[0];
-}
-
-/**
  * Single employee row in the selection list
  */
 export function EmployeeSelectItem({
@@ -39,7 +30,7 @@ export function EmployeeSelectItem({
 	onClick,
 	disabled = false,
 }: EmployeeSelectItemProps) {
-	const name = getEmployeeName(employee);
+	const name = buildAuthUserDisplayName(employee.user);
 	const isInactive = !employee.isActive;
 
 	return (

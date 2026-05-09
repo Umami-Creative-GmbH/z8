@@ -3,16 +3,16 @@
 import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import {
 	employee,
 	locationEmployee,
 	projectManager,
+	subareaEmployee,
 	surchargeCalculation,
 	surchargeModel,
 	surchargeModelAssignment,
 	surchargeRule,
-	subareaEmployee,
 	team,
 	teamPermissions,
 	workPeriod,
@@ -84,14 +84,21 @@ async function getSurchargeSettingsActor(
 	}
 
 	const membershipRecord = await db.query.member.findFirst({
-		where: and(eq(member.userId, authContext.user.id), eq(member.organizationId, scopedOrganizationId)),
+		where: and(
+			eq(member.userId, authContext.user.id),
+			eq(member.organizationId, scopedOrganizationId),
+		),
 		columns: { role: true },
 	});
 	const employeeRole =
-		authContext.employee?.organizationId === scopedOrganizationId ? authContext.employee.role : null;
+		authContext.employee?.organizationId === scopedOrganizationId
+			? authContext.employee.role
+			: null;
 	const accessTier = resolveSettingsAccessTier({
 		activeOrganizationId: scopedOrganizationId,
-		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role) ? membershipRecord.role : null,
+		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
+			? membershipRecord.role
+			: null,
 		employeeRole,
 	});
 
@@ -108,7 +115,9 @@ async function getSurchargeSettingsActor(
 	};
 }
 
-async function getSurchargeScopeContext(organizationId: string): Promise<SurchargeScopeContext | null> {
+async function getSurchargeScopeContext(
+	organizationId: string,
+): Promise<SurchargeScopeContext | null> {
 	const actor = await getSurchargeSettingsActor(organizationId);
 
 	if (!actor) {
@@ -130,28 +139,32 @@ async function getSurchargeScopeContext(organizationId: string): Promise<Surchar
 		return null;
 	}
 
-	const [teamPermissionRows, managerLocationAssignments, managerSubareaAssignments, managedProjects] =
-		await Promise.all([
-			db.query.teamPermissions.findMany({
-				where: and(
-					eq(teamPermissions.employeeId, actor.currentEmployee.id),
-					eq(teamPermissions.organizationId, organizationId),
-				),
-				columns: { teamId: true, canManageTeamSettings: true },
-			}),
-			db.query.locationEmployee.findMany({
-				where: eq(locationEmployee.employeeId, actor.currentEmployee.id),
-				columns: { locationId: true },
-			}),
-			db.query.subareaEmployee.findMany({
-				where: eq(subareaEmployee.employeeId, actor.currentEmployee.id),
-				columns: { subareaId: true },
-			}),
-			db.query.projectManager.findMany({
-				where: eq(projectManager.employeeId, actor.currentEmployee.id),
-				columns: { projectId: true },
-			}),
-		]);
+	const [
+		teamPermissionRows,
+		managerLocationAssignments,
+		managerSubareaAssignments,
+		managedProjects,
+	] = await Promise.all([
+		db.query.teamPermissions.findMany({
+			where: and(
+				eq(teamPermissions.employeeId, actor.currentEmployee.id),
+				eq(teamPermissions.organizationId, organizationId),
+			),
+			columns: { teamId: true, canManageTeamSettings: true },
+		}),
+		db.query.locationEmployee.findMany({
+			where: eq(locationEmployee.employeeId, actor.currentEmployee.id),
+			columns: { locationId: true },
+		}),
+		db.query.subareaEmployee.findMany({
+			where: eq(subareaEmployee.employeeId, actor.currentEmployee.id),
+			columns: { subareaId: true },
+		}),
+		db.query.projectManager.findMany({
+			where: eq(projectManager.employeeId, actor.currentEmployee.id),
+			columns: { projectId: true },
+		}),
+	]);
 
 	const manageableTeamIds = new Set(
 		teamPermissionRows
@@ -250,7 +263,10 @@ async function getScopedWorkPeriodsById(
 	}
 
 	const workPeriods = await db.query.workPeriod.findMany({
-		where: and(eq(workPeriod.organizationId, organizationId), inArray(workPeriod.id, workPeriodIds)),
+		where: and(
+			eq(workPeriod.organizationId, organizationId),
+			inArray(workPeriod.id, workPeriodIds),
+		),
 		columns: {
 			id: true,
 			organizationId: true,
@@ -274,12 +290,16 @@ function canManagerAccessSurchargeWorkPeriod(
 	scopeContext: SurchargeScopeContext,
 	workPeriodSummary: ScopedWorkPeriodSummary | undefined,
 ) {
-	if (!workPeriodSummary || workPeriodSummary.organizationId !== scopeContext.actor.organizationId) {
+	if (
+		!workPeriodSummary ||
+		workPeriodSummary.organizationId !== scopeContext.actor.organizationId
+	) {
 		return false;
 	}
 
 	return Boolean(
-		(workPeriodSummary.projectId && scopeContext.managedProjectIds?.has(workPeriodSummary.projectId)) ||
+		(workPeriodSummary.projectId &&
+			scopeContext.managedProjectIds?.has(workPeriodSummary.projectId)) ||
 			(workPeriodSummary.locationId &&
 				scopeContext.manageableLocationIds?.has(workPeriodSummary.locationId)) ||
 			(workPeriodSummary.subareaId &&
@@ -293,18 +313,32 @@ async function getVisibleModelIdsForManagerScope(scopeContext: SurchargeScopeCon
 	}
 
 	const visibleModelIds = new Set<string>();
-	const assignments = await db.query.surchargeModelAssignment.findMany({
-		where: and(
-			eq(surchargeModelAssignment.organizationId, scopeContext.actor.organizationId),
-			eq(surchargeModelAssignment.isActive, true),
-		),
-		with: {
-			model: { columns: { id: true, name: true } },
-			team: { columns: { id: true, name: true } },
-			employee: { columns: { id: true, firstName: true, lastName: true } },
-		},
-		orderBy: [desc(surchargeModelAssignment.priority), desc(surchargeModelAssignment.createdAt)],
-	}) as SurchargeAssignmentWithDetails[];
+	const assignments = (
+		await db.query.surchargeModelAssignment.findMany({
+			where: and(
+				eq(surchargeModelAssignment.organizationId, scopeContext.actor.organizationId),
+				eq(surchargeModelAssignment.isActive, true),
+			),
+			with: {
+				model: { columns: { id: true, name: true } },
+				team: { columns: { id: true, name: true } },
+				employee: {
+					columns: { id: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
+				},
+			},
+			orderBy: [desc(surchargeModelAssignment.priority), desc(surchargeModelAssignment.createdAt)],
+		})
+	).map((assignment) => ({
+		...assignment,
+		employee: assignment.employee
+			? {
+					id: assignment.employee.id,
+					firstName: assignment.employee.user?.firstName ?? null,
+					lastName: assignment.employee.user?.lastName ?? null,
+				}
+			: null,
+	})) as SurchargeAssignmentWithDetails[];
 
 	for (const assignment of filterAssignmentsForManagerScope(
 		assignments,
@@ -376,7 +410,10 @@ async function getScopedSurchargeRuleRecord(organizationId: string, ruleId: stri
 	}
 
 	const model = await db.query.surchargeModel.findFirst({
-		where: and(eq(surchargeModel.id, rule.modelId), eq(surchargeModel.organizationId, organizationId)),
+		where: and(
+			eq(surchargeModel.id, rule.modelId),
+			eq(surchargeModel.organizationId, organizationId),
+		),
 		columns: { id: true },
 	});
 
@@ -460,7 +497,9 @@ export async function getSurchargeModel(
 
 		if (actor.accessTier === "manager") {
 			const scopeContext = await getSurchargeScopeContext(actor.organizationId);
-			const visibleModelIds = scopeContext ? await getVisibleModelIdsForManagerScope(scopeContext) : null;
+			const visibleModelIds = scopeContext
+				? await getVisibleModelIdsForManagerScope(scopeContext)
+				: null;
 			if (!visibleModelIds?.has(model.id)) {
 				return { success: false, error: "Unauthorized" };
 			}
@@ -670,12 +709,12 @@ export async function addSurchargeRule(
 				specificDate: rule.ruleType === "date_based" ? rule.specificDate : null,
 				dateRangeStart: rule.ruleType === "date_based" ? rule.dateRangeStart : null,
 				dateRangeEnd: rule.ruleType === "date_based" ? rule.dateRangeEnd : null,
-					priority: rule.priority ?? 0,
-					validFrom: rule.validFrom,
-					validUntil: rule.validUntil,
-					isActive: rule.isActive,
-					createdBy: actor.userId,
-				})
+				priority: rule.priority ?? 0,
+				validFrom: rule.validFrom,
+				validUntil: rule.validUntil,
+				isActive: rule.isActive,
+				createdBy: actor.userId,
+			})
 			.returning({ id: surchargeRule.id });
 
 		if (!newRule) {
@@ -832,22 +871,29 @@ export async function getSurchargeAssignments(
 					},
 				},
 				employee: {
-					columns: {
-						id: true,
-						firstName: true,
-						lastName: true,
-					},
+					columns: { id: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
 				},
 			},
 			orderBy: [desc(surchargeModelAssignment.priority), desc(surchargeModelAssignment.createdAt)],
 		});
+		const assignmentsWithAuthNames = assignments.map((assignment) => ({
+			...assignment,
+			employee: assignment.employee
+				? {
+						id: assignment.employee.id,
+						firstName: assignment.employee.user?.firstName ?? null,
+						lastName: assignment.employee.user?.lastName ?? null,
+					}
+				: null,
+		})) as SurchargeAssignmentWithDetails[];
 
 		if (scopeContext.actor.accessTier === "orgAdmin") {
-			return { success: true, data: assignments as SurchargeAssignmentWithDetails[] };
+			return { success: true, data: assignmentsWithAuthNames };
 		}
 
 		const scopedAssignments = filterAssignmentsForManagerScope(
-			assignments as SurchargeAssignmentWithDetails[],
+			assignmentsWithAuthNames,
 			scopeContext.manageableTeamIds,
 			scopeContext.scopedEmployeeIds,
 		);
@@ -980,8 +1026,7 @@ export async function getSurchargeCalculationsForPeriod(
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const targetEmployeeId =
-			scopeContext.actor.accessTier === "orgAdmin" ? employeeId : employeeId;
+		const targetEmployeeId = scopeContext.actor.accessTier === "orgAdmin" ? employeeId : employeeId;
 
 		const conditions = [
 			eq(surchargeCalculation.organizationId, organizationId),
@@ -997,25 +1042,32 @@ export async function getSurchargeCalculationsForPeriod(
 			where: and(...conditions),
 			with: {
 				employee: {
-					columns: {
-						id: true,
-						firstName: true,
-						lastName: true,
-					},
+					columns: { id: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
 				},
 			},
 			orderBy: [desc(surchargeCalculation.calculationDate)],
 		});
+		const calculationsWithAuthNames = calculations.map((calculation) => ({
+			...calculation,
+			employee: calculation.employee
+				? {
+						id: calculation.employee.id,
+						firstName: calculation.employee.user?.firstName ?? null,
+						lastName: calculation.employee.user?.lastName ?? null,
+					}
+				: calculation.employee,
+		})) as SurchargeCalculationWithDetails[];
 
 		if (scopeContext.actor.accessTier === "orgAdmin") {
-			return { success: true, data: calculations as SurchargeCalculationWithDetails[] };
+			return { success: true, data: calculationsWithAuthNames };
 		}
 
 		const scopedWorkPeriodsById = await getScopedWorkPeriodsById(
 			scopeContext.actor.organizationId,
 			calculations.map((calculation) => calculation.workPeriodId),
 		);
-		const scopedCalculations = calculations.filter((calculation) => {
+		const scopedCalculations = calculationsWithAuthNames.filter((calculation) => {
 			if (calculation.employeeId && scopeContext.scopedEmployeeIds?.has(calculation.employeeId)) {
 				return true;
 			}
@@ -1073,15 +1125,16 @@ export async function getEmployeesForAssignment(
 			return { success: false, error: "Unauthorized: Admin access required" };
 		}
 
-		const employees = await db.query.employee.findMany({
-			where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-			columns: {
-				id: true,
-				firstName: true,
-				lastName: true,
-			},
-			orderBy: [employee.lastName, employee.firstName],
-		});
+		const employees = await db
+			.select({
+				id: employee.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+			})
+			.from(employee)
+			.innerJoin(user, eq(employee.userId, user.id))
+			.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+			.orderBy(user.lastName, user.firstName);
 
 		return { success: true, data: employees };
 	} catch (error) {

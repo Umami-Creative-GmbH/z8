@@ -6,7 +6,11 @@ const mocks = vi.hoisted(() => ({
 	ensureSettingsActorCanAccessEmployeeTarget: vi.fn(),
 	getEmployeeSettingsActorContext: vi.fn(),
 	getTargetEmployee: vi.fn(),
+	getTargetUser: vi.fn(),
+	hasAppAccessChanges: vi.fn(),
+	parseHourlyRate: vi.fn(),
 	requireOrgAdminEmployeeSettingsAccess: vi.fn(),
+	revalidateEmployeesCache: vi.fn(),
 	runTracedEmployeeAction: vi.fn(),
 	validateInput: vi.fn(),
 }));
@@ -24,16 +28,200 @@ vi.mock("./employee-action-utils", () => ({
 	getEmployeeContext: vi.fn(),
 	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
 	getTargetEmployee: mocks.getTargetEmployee,
-	getTargetUser: vi.fn(),
-	hasAppAccessChanges: vi.fn(),
-	parseHourlyRate: vi.fn(),
+	getTargetUser: mocks.getTargetUser,
+	hasAppAccessChanges: mocks.hasAppAccessChanges,
+	parseHourlyRate: mocks.parseHourlyRate,
 	requireOrgAdminEmployeeSettingsAccess: mocks.requireOrgAdminEmployeeSettingsAccess,
-	revalidateEmployeesCache: vi.fn(),
+	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
 	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
 	validateInput: mocks.validateInput,
 }));
 
-import { assignManagersAction } from "./employee-mutations.actions";
+import {
+	createEmployeeSchema,
+	personalInformationSchema,
+	updateEmployeeSchema,
+} from "@/lib/validations/employee";
+import {
+	assignManagersAction,
+	createEmployeeAction,
+	updateEmployeeAction,
+} from "./employee-mutations.actions";
+
+const validUserId = "11111111-1111-4111-8111-111111111111";
+const validTeamId = "22222222-2222-4222-8222-222222222222";
+
+describe("employee mutation schemas", () => {
+	it("strips employee-owned names from create employee input", () => {
+		const result = createEmployeeSchema.safeParse({
+			userId: validUserId,
+			organizationId: "org-1",
+			teamId: validTeamId,
+			role: "employee",
+			firstName: "Ada",
+			lastName: "Lovelace",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).not.toHaveProperty("firstName");
+		expect(result.data).not.toHaveProperty("lastName");
+	});
+
+	it("strips employee-owned names from update employee input", () => {
+		const result = updateEmployeeSchema.safeParse({
+			position: "Engineer",
+			firstName: "Ada",
+			lastName: "Lovelace",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).not.toHaveProperty("firstName");
+		expect(result.data).not.toHaveProperty("lastName");
+	});
+
+	it("keeps structured names in self-service profile validation", () => {
+		const result = personalInformationSchema.safeParse({
+			firstName: "Ada",
+			lastName: "Lovelace",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data.firstName).toBe("Ada");
+		expect(result.data.lastName).toBe("Lovelace");
+	});
+});
+
+describe("createEmployeeAction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("does not write employee-owned names into the employee insert payload", async () => {
+		const returning = vi.fn().mockResolvedValue([
+			{
+				id: "employee-1",
+				userId: validUserId,
+				organizationId: "org-1",
+			},
+		]);
+		const values = vi.fn(() => ({ returning }));
+		const insert = vi.fn(() => ({ values }));
+		const dbService = {
+			db: {
+				insert,
+				query: {
+					employee: {
+						findFirst: vi.fn().mockResolvedValue(null),
+					},
+				},
+			},
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: { id: "employee-admin-1", role: "admin" },
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		mocks.getTargetUser.mockReturnValue(Effect.succeed({ id: validUserId }));
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				userId: validUserId,
+				organizationId: "org-1",
+				teamId: validTeamId,
+				role: "employee",
+				position: "Engineer",
+				firstName: "Ada",
+				lastName: "Lovelace",
+			}),
+		);
+
+		await createEmployeeAction({
+			userId: validUserId,
+			organizationId: "org-1",
+			teamId: validTeamId,
+			role: "employee",
+			firstName: "Ada",
+			lastName: "Lovelace",
+		} as Parameters<typeof createEmployeeAction>[0]);
+
+		expect(values).toHaveBeenCalledWith(
+			expect.not.objectContaining({
+				firstName: expect.anything(),
+				lastName: expect.anything(),
+			}),
+		);
+	});
+});
+
+describe("updateEmployeeAction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("does not write employee-owned names into the employee update payload", async () => {
+		const set = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
+		const update = vi.fn(() => ({ set }));
+		const dbService = {
+			db: { update },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
+				dbService,
+			}),
+		);
+		mocks.getTargetEmployee.mockReturnValue(
+			Effect.succeed({
+				id: "employee-1",
+				userId: validUserId,
+				organizationId: "org-1",
+				currentHourlyRate: null,
+				contractType: "fixed",
+			}),
+		);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.hasAppAccessChanges.mockReturnValue(false);
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				position: "Engineer",
+				firstName: "Ada",
+				lastName: "Lovelace",
+			}),
+		);
+
+		await updateEmployeeAction("employee-1", {
+			position: "Engineer",
+			firstName: "Ada",
+			lastName: "Lovelace",
+		} as Parameters<typeof updateEmployeeAction>[1]);
+
+		expect(set).toHaveBeenCalledWith(
+			expect.not.objectContaining({
+				firstName: expect.anything(),
+				lastName: expect.anything(),
+			}),
+		);
+	});
+});
 
 describe("assignManagersAction", () => {
 	beforeEach(() => {
@@ -79,11 +267,6 @@ describe("assignManagersAction", () => {
 			managers: [{ managerId: "manager-1", isPrimary: true }],
 		});
 
-		expect(assignManager).toHaveBeenCalledWith(
-			"employee-1",
-			"manager-1",
-			true,
-			"user-admin-1",
-		);
+		expect(assignManager).toHaveBeenCalledWith("employee-1", "manager-1", true, "user-admin-1");
 	});
 });

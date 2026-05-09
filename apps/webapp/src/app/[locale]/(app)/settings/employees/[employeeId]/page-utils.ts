@@ -1,9 +1,11 @@
-import type { FormAsyncValidateOrFn, FormValidateOrFn, ReactFormExtendedApi } from "@tanstack/react-form";
+import type {
+	FormAsyncValidateOrFn,
+	FormValidateOrFn,
+	ReactFormExtendedApi,
+} from "@tanstack/react-form";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 
 export interface EmployeeDetailFormValues {
-	firstName: string;
-	lastName: string;
 	gender: "male" | "female" | "other" | undefined;
 	position: string;
 	employeeNumber: string;
@@ -31,8 +33,6 @@ export type EmployeeDetailFormApi = ReactFormExtendedApi<
 >;
 
 export const defaultFormValues: EmployeeDetailFormValues = {
-	firstName: "",
-	lastName: "",
 	gender: undefined,
 	position: "",
 	employeeNumber: "",
@@ -58,8 +58,6 @@ export const scheduleDayKeys = [
 
 export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {
 	form.reset();
-	form.setFieldValue("firstName", employee.firstName || "");
-	form.setFieldValue("lastName", employee.lastName || "");
 	form.setFieldValue("gender", employee.gender || undefined);
 	form.setFieldValue("position", employee.position || "");
 	form.setFieldValue("employeeNumber", employee.employeeNumber || "");

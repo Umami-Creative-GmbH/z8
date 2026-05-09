@@ -30,17 +30,19 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 	return {
 		id: emp.id,
 		userId: emp.id, // Use same ID as seed for avatar
-		firstName: null,
-		lastName: null,
+		firstName: emp.firstName,
+		lastName: emp.lastName,
 		position: emp.position,
 		role: emp.role,
 		isActive: true,
 		teamId: null,
 		user: {
 			id: emp.id,
+			firstName: emp.firstName,
+			lastName: emp.lastName,
 			name: emp.name,
 			email: emp.email,
-			image: null,
+			image: emp.image,
 		},
 		team: null,
 	};

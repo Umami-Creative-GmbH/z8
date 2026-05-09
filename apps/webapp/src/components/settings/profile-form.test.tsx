@@ -149,14 +149,19 @@ describe("ProfileForm", () => {
 		);
 	});
 
-	it("submits structured names through updateProfileDetails", async () => {
+	it("initializes auth names and submits employee personal fields through updateProfileDetails", async () => {
 		renderProfileForm();
-		expect(await screen.findByDisplayValue("Employee")).toBeTruthy();
 
-		fireEvent.change(screen.getByLabelText("First Name"), {
+		const firstNameInput = await screen.findByLabelText("First Name");
+		const lastNameInput = screen.getByLabelText("Last Name");
+
+		expect((firstNameInput as HTMLInputElement).value).toBe("Auth");
+		expect((lastNameInput as HTMLInputElement).value).toBe("Fallback");
+
+		fireEvent.change(firstNameInput, {
 			target: { value: "Ada" },
 		});
-		fireEvent.change(screen.getByLabelText("Last Name"), {
+		fireEvent.change(lastNameInput, {
 			target: { value: "Lovelace" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));

@@ -1,7 +1,7 @@
-import { user } from "@/db/auth-schema";
-import { employee, type team } from "@/db/schema";
+import type { user } from "@/db/auth-schema";
+import type { employee, team } from "@/db/schema";
 
-export type EmployeeRole = typeof employee.$inferSelect["role"];
+export type EmployeeRole = (typeof employee.$inferSelect)["role"];
 
 export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	user: typeof user.$inferSelect;
@@ -33,6 +33,8 @@ export interface SelectableEmployee {
 	teamId: string | null;
 	user: {
 		id: string;
+		firstName: string | null;
+		lastName: string | null;
 		name: string;
 		email: string;
 		image: string | null;

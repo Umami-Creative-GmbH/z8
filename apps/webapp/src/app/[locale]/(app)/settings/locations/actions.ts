@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath, revalidateTag } from "next/cache";
 import {
@@ -10,9 +10,9 @@ import {
 	locationEmployee,
 	locationSubarea,
 	subareaEmployee,
-	teamPermissions,
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -22,18 +22,17 @@ import {
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { CACHE_TAGS } from "@/lib/cache/tags";
 import { logger } from "@/lib/logger";
-import { type SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 import {
-	createLocationSchema,
-	updateLocationSchema,
-	createSubareaSchema,
-	updateSubareaSchema,
 	type CreateLocation,
-	type UpdateLocation,
 	type CreateSubarea,
-	 type UpdateSubarea,
+	createLocationSchema,
+	createSubareaSchema,
+	type UpdateLocation,
+	type UpdateSubarea,
+	updateLocationSchema,
+	updateSubareaSchema,
 } from "@/lib/validations/location";
 import {
 	getLocationSettingsActorContext,
@@ -104,8 +103,8 @@ type LocationListRow = typeof location.$inferSelect & {
 };
 
 type LocationEmployeeRow = typeof locationEmployee.$inferSelect & {
-	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName"> & {
-		user: { name: string | null; email: string };
+	employee: Pick<typeof employee.$inferSelect, "id"> & {
+		user: { firstName: string | null; lastName: string | null; name: string | null; email: string };
 	};
 };
 
@@ -342,8 +341,8 @@ export async function getLocation(
 							isPrimary: e.isPrimary,
 							employee: {
 								id: e.employee.id,
-								firstName: e.employee.firstName,
-								lastName: e.employee.lastName,
+								firstName: e.employee.user.firstName,
+								lastName: e.employee.user.lastName,
 								user: {
 									name: e.employee.user.name,
 									email: e.employee.user.email,
@@ -357,8 +356,8 @@ export async function getLocation(
 						isPrimary: e.isPrimary,
 						employee: {
 							id: e.employee.id,
-							firstName: e.employee.firstName,
-							lastName: e.employee.lastName,
+							firstName: e.employee.user.firstName,
+							lastName: e.employee.user.lastName,
 							user: {
 								name: e.employee.user.name,
 								email: e.employee.user.email,
@@ -403,7 +402,10 @@ export async function createLocation(
 		(span) => {
 			return Effect.gen(function* (_) {
 				const actor = yield* _(
-					getLocationSettingsActorContext({ organizationId: input.organizationId, queryName: "createLocationActor" }),
+					getLocationSettingsActorContext({
+						organizationId: input.organizationId,
+						queryName: "createLocationActor",
+					}),
 				);
 
 				// Validate input
@@ -1031,7 +1033,9 @@ export async function deleteSubarea(subareaId: string): Promise<ServerActionResu
 				// Delete subarea (cascade handles employee assignments)
 				yield* _(
 					actor.dbService.query("deleteSubarea", async () => {
-						return await actor.dbService.db.delete(locationSubarea).where(eq(locationSubarea.id, subareaId));
+						return await actor.dbService.db
+							.delete(locationSubarea)
+							.where(eq(locationSubarea.id, subareaId));
 					}),
 				);
 
@@ -1080,7 +1084,10 @@ export async function getAvailableEmployees(
 		(span) => {
 			return Effect.gen(function* (_) {
 				const actor = yield* _(
-					getLocationSettingsActorContext({ organizationId, queryName: "getAvailableEmployeesActor" }),
+					getLocationSettingsActorContext({
+						organizationId,
+						queryName: "getAvailableEmployeesActor",
+					}),
 				);
 				yield* _(
 					requireLocationOrgAdminAccess(actor, {
@@ -1129,9 +1136,11 @@ export async function getAvailableEmployees(
 					.filter((e) => !assignedIds.includes(e.id))
 					.map((e) => ({
 						id: e.id,
-						firstName: e.firstName,
-						lastName: e.lastName,
+						firstName: e.user.firstName,
+						lastName: e.user.lastName,
 						user: {
+							firstName: e.user.firstName,
+							lastName: e.user.lastName,
 							name: e.user.name,
 							email: e.user.email,
 						},

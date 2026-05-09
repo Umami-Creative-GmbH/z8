@@ -194,8 +194,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			}
 
 			form.setFieldValue("image", user.image || "");
-			form.setFieldValue("firstName", emp?.firstName || user.firstName || "");
-			form.setFieldValue("lastName", emp?.lastName || user.lastName || "");
+			form.setFieldValue("firstName", user.firstName || "");
+			form.setFieldValue("lastName", user.lastName || "");
 			form.setFieldValue("gender", (emp?.gender as ProfileFormValues["gender"] | null) || "");
 			form.setFieldValue("birthday", emp?.birthday ? new Date(emp.birthday) : null);
 			setIsInitialLoading(false);

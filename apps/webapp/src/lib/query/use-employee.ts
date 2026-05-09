@@ -29,9 +29,9 @@ import { queryKeys } from "./keys";
 type Manager = {
 	id: string;
 	userId: string;
-	firstName: string | null;
-	lastName: string | null;
 	user: {
+		firstName: string | null;
+		lastName: string | null;
 		name: string;
 		email: string;
 		image: string | null;

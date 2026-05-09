@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { AlertTriangle, Check, Clock, Shield, X } from "lucide-react";
+import { Check, Clock, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -19,6 +19,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatDistance } from "@/lib/datetime/format";
 import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
 import { queryKeys } from "@/lib/query";
@@ -29,6 +30,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Label } from "../ui/label";
 import { Skeleton } from "../ui/skeleton";
 import { Textarea } from "../ui/textarea";
+
+function formatExceptionEmployeeName(employeeRecord: ExceptionWithDetails["employee"]) {
+	return buildAuthUserDisplayName(employeeRecord) || "Unknown";
+}
 
 interface ComplianceExceptionsManagerProps {
 	organizationId: string;
@@ -52,8 +57,8 @@ const exceptionTypeColors: Record<string, string> = {
 
 export function ComplianceExceptionsManager({
 	organizationId,
-	employeeId,
-	isAdmin,
+	employeeId: _employeeId,
+	isAdmin: _isAdmin,
 }: ComplianceExceptionsManagerProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -237,7 +242,7 @@ export function ComplianceExceptionsManager({
 						{rejectingException && (
 							<div className="rounded-lg border bg-muted/50 p-3">
 								<p className="text-sm font-medium">
-									{rejectingException.employee.firstName} {rejectingException.employee.lastName}
+									{formatExceptionEmployeeName(rejectingException.employee)}
 								</p>
 								<p className="text-sm text-muted-foreground">
 									{exceptionTypeLabels[rejectingException.exceptionType]}:{" "}
@@ -292,9 +297,7 @@ interface ExceptionCardProps {
 
 function ExceptionCard({ exception, onApprove, onReject, isApproving }: ExceptionCardProps) {
 	const { t } = useTranslate();
-	const employeeName =
-		`${exception.employee.firstName || ""} ${exception.employee.lastName || ""}`.trim() ||
-		"Unknown";
+	const employeeName = formatExceptionEmployeeName(exception.employee);
 	const initials = employeeName
 		.split(" ")
 		.map((n) => n[0])

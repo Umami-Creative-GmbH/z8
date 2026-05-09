@@ -32,6 +32,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { UserAvatar } from "@/components/user-avatar";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { Link } from "@/navigation";
 import {
@@ -49,7 +50,7 @@ type Translate = (
 type EmployeeManagerRelation = {
 	id: string;
 	isPrimary: boolean;
-	manager: { user: { name: string } };
+	manager: { user: { firstName?: string | null; lastName?: string | null; name: string } };
 };
 
 const defaultTranslate: Translate = (_key, defaultValue) => defaultValue;
@@ -125,6 +126,7 @@ export function EmployeeOverviewCard({
 		t("settings.employees.detailView.daySunday", "Sun"),
 	];
 	const managers = employee.managers as EmployeeManagerRelation[] | undefined;
+	const displayName = buildAuthUserDisplayName(employee.user);
 
 	return (
 		<Card>
@@ -138,11 +140,11 @@ export function EmployeeOverviewCard({
 					<UserAvatar
 						image={employee.user.image}
 						seed={employee.user.id}
-						name={employee.user.name}
+						name={displayName}
 						size="lg"
 					/>
 					<div>
-						<div className="font-medium">{employee.user.name}</div>
+						<div className="font-medium">{displayName}</div>
 						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
 					</div>
 				</div>
@@ -182,16 +184,20 @@ export function EmployeeOverviewCard({
 							{t("settings.employees.detailView.managers", "Managers")}
 						</div>
 						<div className="space-y-1">
-							{managers.map((manager) => (
-								<div key={manager.id} className="flex items-center gap-2">
-									<span>{manager.manager.user.name}</span>
-									{manager.isPrimary && (
-										<Badge variant="secondary" className="text-xs">
-											{t("settings.employees.detailView.primaryManager", "Primary")}
-										</Badge>
-									)}
-								</div>
-							))}
+							{managers.map((manager) => {
+								const managerName = buildAuthUserDisplayName(manager.manager.user);
+
+								return (
+									<div key={manager.id} className="flex items-center gap-2">
+										<span>{managerName}</span>
+										{manager.isPrimary && (
+											<Badge variant="secondary" className="text-xs">
+												{t("settings.employees.detailView.primaryManager", "Primary")}
+											</Badge>
+										)}
+									</div>
+								);
+							})}
 						</div>
 					</div>
 				)}
@@ -304,29 +310,6 @@ export function EmployeeEditFormCard({
 					}}
 					className="space-y-6"
 				>
-					<div className="grid gap-4 md:grid-cols-2">
-						<TextField
-							form={form}
-							name="firstName"
-							label={t("settings.employees.detailView.firstName", "First Name")}
-							placeholder={t(
-								"settings.employees.detailView.firstNamePlaceholder",
-								"Enter first name",
-							)}
-							disabled={!canEditManagerFields || isUpdating}
-						/>
-						<TextField
-							form={form}
-							name="lastName"
-							label={t("settings.employees.detailView.lastName", "Last Name")}
-							placeholder={t(
-								"settings.employees.detailView.lastNamePlaceholder",
-								"Enter last name",
-							)}
-							disabled={!canEditManagerFields || isUpdating}
-						/>
-					</div>
-
 					<form.Field name="gender">
 						{(field) => (
 							<TFormItem>
@@ -655,7 +638,7 @@ function TextField({
 	disabled,
 }: {
 	form: EmployeeDetailFormApi;
-	name: "firstName" | "lastName" | "position" | "employeeNumber";
+	name: "position" | "employeeNumber";
 	label: string;
 	placeholder: string;
 	description?: string;

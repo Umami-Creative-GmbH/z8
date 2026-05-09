@@ -265,8 +265,8 @@ const databaseSources: ManagerDailyBriefingSources = {
 			const rows = await db
 				.select({
 					id: employee.id,
-					firstName: employee.firstName,
-					lastName: employee.lastName,
+					firstName: user.firstName,
+					lastName: user.lastName,
 					userName: user.name,
 					teamName: team.name,
 				})
@@ -286,8 +286,8 @@ const databaseSources: ManagerDailyBriefingSources = {
 			const rows = await db
 				.select({
 					id: employee.id,
-					firstName: employee.firstName,
-					lastName: employee.lastName,
+					firstName: user.firstName,
+					lastName: user.lastName,
 					userName: user.name,
 					teamName: team.name,
 				})
@@ -313,8 +313,8 @@ const databaseSources: ManagerDailyBriefingSources = {
 		const rows = await db
 			.select({
 				id: employee.id,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
+				firstName: user.firstName,
+				lastName: user.lastName,
 				userName: user.name,
 				teamName: team.name,
 			})
@@ -348,8 +348,8 @@ const databaseSources: ManagerDailyBriefingSources = {
 			.select({
 				id: shift.id,
 				employeeId: shift.employeeId,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
+				firstName: user.firstName,
+				lastName: user.lastName,
 				userName: user.name,
 				teamName: team.name,
 				date: shift.date,
@@ -436,8 +436,8 @@ const databaseSources: ManagerDailyBriefingSources = {
 			.select({
 				id: absenceEntry.id,
 				employeeId: absenceEntry.employeeId,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
+				firstName: user.firstName,
+				lastName: user.lastName,
 				userName: user.name,
 				teamName: team.name,
 				categoryName: absenceCategory.name,

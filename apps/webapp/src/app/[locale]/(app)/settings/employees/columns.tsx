@@ -6,6 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { Link } from "@/navigation";
 import type { EmployeeWithRelations } from "./actions";
 
@@ -112,24 +113,29 @@ function ViewDetailsCell({ employeeId }: { employeeId: string }) {
 
 export const columns: ColumnDef<EmployeeWithRelations>[] = [
 	{
-		accessorKey: "user.name",
+		id: "employeeName",
+		accessorFn: (row) => buildAuthUserDisplayName(row.user),
 		header: ({ column }) => (
 			<EmployeeHeader onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
 		),
-		cell: ({ row }) => (
-			<div className="flex items-center gap-3">
-				<UserAvatar
-					image={row.original.user.image}
-					seed={row.original.user.id}
-					name={row.original.user.name}
-					size="sm"
-				/>
-				<div>
-					<div className="font-medium">{row.original.user.name}</div>
-					<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+		cell: ({ row }) => {
+			const displayName = buildAuthUserDisplayName(row.original.user);
+
+			return (
+				<div className="flex items-center gap-3">
+					<UserAvatar
+						image={row.original.user.image}
+						seed={row.original.user.id}
+						name={displayName}
+						size="sm"
+					/>
+					<div>
+						<div className="font-medium">{displayName}</div>
+						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+					</div>
 				</div>
-			</div>
-		),
+			);
+		},
 	},
 	{
 		accessorKey: "position",

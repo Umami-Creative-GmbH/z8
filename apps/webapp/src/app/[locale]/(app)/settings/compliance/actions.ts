@@ -3,19 +3,25 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
+import type {
+	ComplianceAlert,
+	ComplianceStatus,
+	OvertimeStats,
+	RestPeriodCheckResult,
+} from "@/db/schema";
 import { complianceException, employee, userSettings } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
 	type ExceptionWithDetails,
 } from "@/lib/effect/services/compliance-guardrail.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
-import type { ComplianceAlert, ComplianceStatus, OvertimeStats, RestPeriodCheckResult } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import {
 	onComplianceExceptionApproved,
@@ -26,7 +32,12 @@ import {
 const logger = createLogger("ComplianceActions");
 
 type EmployeeWithUser = typeof employee.$inferSelect & {
-	user: { name: string };
+	user: {
+		firstName?: string | null;
+		lastName?: string | null;
+		name: string;
+		email?: string | null;
+	};
 };
 
 type ComplianceExceptionWithEmployee = typeof complianceException.$inferSelect & {
@@ -294,7 +305,7 @@ export async function requestComplianceException(input: {
 				void onComplianceExceptionRequested({
 					exceptionId,
 					employeeId: emp.id,
-					employeeName: `${emp.firstName || ""} ${emp.lastName || ""}`.trim() || emp.user.name,
+					employeeName: buildAuthUserDisplayName(emp.user),
 					organizationId: emp.organizationId,
 					exceptionType: input.exceptionType,
 					reason: input.reason,
@@ -497,13 +508,10 @@ export async function approveComplianceException(
 					void onComplianceExceptionApproved({
 						exceptionId,
 						employeeUserId: exception.employee.userId,
-						employeeName:
-							`${exception.employee.firstName || ""} ${exception.employee.lastName || ""}`.trim() ||
-							exception.employee.user.name,
+						employeeName: buildAuthUserDisplayName(exception.employee.user),
 						organizationId: exception.organizationId,
 						exceptionType: exception.exceptionType,
-						approverName:
-							`${approver.firstName || ""} ${approver.lastName || ""}`.trim() || approver.user.name,
+						approverName: buildAuthUserDisplayName(approver.user),
 						validUntil: exception.validUntil,
 					});
 				}
@@ -609,13 +617,10 @@ export async function rejectComplianceException(
 					void onComplianceExceptionRejected({
 						exceptionId,
 						employeeUserId: exception.employee.userId,
-						employeeName:
-							`${exception.employee.firstName || ""} ${exception.employee.lastName || ""}`.trim() ||
-							exception.employee.user.name,
+						employeeName: buildAuthUserDisplayName(exception.employee.user),
 						organizationId: exception.organizationId,
 						exceptionType: exception.exceptionType,
-						approverName:
-							`${approver.firstName || ""} ${approver.lastName || ""}`.trim() || approver.user.name,
+						approverName: buildAuthUserDisplayName(approver.user),
 						reason,
 					});
 				}

@@ -10,6 +10,7 @@
 import { eq } from "drizzle-orm";
 import { dataExport, db, employee, organization } from "@/db";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/data-fetchers";
@@ -53,6 +54,8 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 			with: {
 				user: {
 					columns: {
+						firstName: true,
+						lastName: true,
 						email: true,
 						name: true,
 					},
@@ -75,7 +78,7 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 
 		return {
 			email: emp.user.email,
-			name: emp.user.name || emp.firstName || "Admin",
+			name: buildAuthUserDisplayName(emp.user) || "Admin",
 			organizationName: org?.name || "Your Organization",
 		};
 	} catch (error) {
