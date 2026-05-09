@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import {
 	deleteDomainAction,
 	regenerateVerificationTokenAction,
-	updateDomainAuthConfigAction,
 	storeTurnstileSecretAction,
+	updateDomainAuthConfigAction,
 	verifyDomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import {
@@ -69,6 +69,8 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 		domain: Domain | null;
 	}>({ isOpen: false, domain: null });
 	const [isVerifying, setIsVerifying] = useState(false);
+	const hasTurnstileSiteKey = Boolean(domain?.authConfig.turnstileSiteKey?.trim());
+	const hasCookieConsentScript = Boolean(domain?.authConfig.cookieConsentScript?.trim());
 
 	const handleDomainAdded = (newDomain: Domain) => {
 		setDomain(newDomain);
@@ -81,7 +83,9 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 		setIsVerifying(true);
 		const verified = await verifyDomainAction(domainId).catch(() => null);
 		if (verified) {
-			setDomain((prev) => (prev ? { ...prev, domainVerified: true, verificationToken: null } : null));
+			setDomain((prev) =>
+				prev ? { ...prev, domainVerified: true, verificationToken: null } : null,
+			);
 			toast.success("Domain verified successfully");
 			setVerificationDialog({ isOpen: false, domain: null });
 		} else {
@@ -248,11 +252,11 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 							<div className="p-4 bg-muted/50 rounded-lg">
 								<p className="text-sm font-medium mb-2">Domain Page Settings</p>
 								<div className="flex flex-wrap gap-2">
-									<Badge variant={domain.authConfig.turnstileSiteKey ? "outline" : "secondary"}>
-										Turnstile {domain.authConfig.turnstileSiteKey ? "configured" : "not configured"}
+									<Badge variant={hasTurnstileSiteKey ? "outline" : "secondary"}>
+										Turnstile site key {hasTurnstileSiteKey ? "configured" : "not configured"}
 									</Badge>
-									<Badge variant={domain.authConfig.cookieConsentScript ? "outline" : "secondary"}>
-										Cookie consent {domain.authConfig.cookieConsentScript ? "configured" : "not configured"}
+									<Badge variant={hasCookieConsentScript ? "outline" : "secondary"}>
+										Cookie consent {hasCookieConsentScript ? "configured" : "not configured"}
 									</Badge>
 								</div>
 							</div>
