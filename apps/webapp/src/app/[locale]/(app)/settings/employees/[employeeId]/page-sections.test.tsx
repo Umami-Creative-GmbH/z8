@@ -2,14 +2,24 @@
 
 import { render, screen } from "@testing-library/react";
 import type React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
+
+const userAvatarMock = vi.hoisted(() =>
+	vi.fn(({ name }: { name?: string | null }) => (
+		<div data-testid="user-avatar" data-name={name ?? ""} />
+	)),
+);
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
+}));
+
+vi.mock("@/components/user-avatar", () => ({
+	UserAvatar: userAvatarMock,
 }));
 
 global.ResizeObserver = class ResizeObserver {
@@ -27,8 +37,6 @@ const translations = new Map([
 	["settings.employees.detailView.assignedVia", "Zugewiesen über: {source}"],
 	["settings.employees.detailView.editTitle", "Mitarbeiter bearbeiten"],
 	["settings.employees.detailView.editDescription", "Freigegebene Mitarbeiterdaten aktualisieren"],
-	["settings.employees.detailView.firstName", "Vorname"],
-	["settings.employees.detailView.lastName", "Nachname"],
 	["settings.employees.detailView.gender", "Geschlecht"],
 	["settings.employees.detailView.genderMale", "Männlich"],
 	["settings.employees.detailView.position", "Position"],
@@ -98,6 +106,8 @@ const employee = {
 	managers: [],
 	user: {
 		id: "user-1",
+		firstName: "Johannes",
+		lastName: "Glier",
 		name: "Johannes Glier",
 		email: "johannes@umami-creative.de",
 		image: null,
@@ -106,8 +116,6 @@ const employee = {
 
 function createForm() {
 	const values = {
-		firstName: "Johannes",
-		lastName: "Glier",
 		gender: "male",
 		position: "",
 		employeeNumber: "EMP-001",
@@ -149,6 +157,10 @@ function createForm() {
 }
 
 describe("employee detail page sections", () => {
+	beforeEach(() => {
+		userAvatarMock.mockClear();
+	});
+
 	it("renders the detail view strings in German", () => {
 		render(
 			<EmployeeOverviewCard
@@ -171,6 +183,63 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByText("Work Schedule")).toBeNull();
 	});
 
+	it("renders the overview name and avatar name from auth structured user fields", () => {
+		const employeeWithStaleRootName = {
+			...employee,
+			firstName: "Stale",
+			lastName: "Employee",
+			user: {
+				...employee.user,
+				firstName: "Auth",
+				lastName: "Source",
+				name: "Fallback Person",
+			},
+		} as EmployeeDetail;
+
+		render(<EmployeeOverviewCard employee={employeeWithStaleRootName} schedule={null} t={t} />);
+
+		expect(screen.getByText("Auth Source")).toBeTruthy();
+		expect(screen.queryByText("Stale Employee")).toBeNull();
+		expect(screen.queryByText("Fallback Person")).toBeNull();
+		expect(userAvatarMock).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "Auth Source" }),
+			undefined,
+		);
+		expect(screen.getByTestId("user-avatar").getAttribute("data-name")).toBe("Auth Source");
+	});
+
+	it("renders manager names from auth structured user fields", () => {
+		const employeeWithManager = {
+			...employee,
+			managers: [
+				{
+					id: "manager-relation-1",
+					isPrimary: true,
+					manager: {
+						id: "manager-1",
+						userId: "manager-user-1",
+						firstName: "Stale",
+						lastName: "Manager",
+						user: {
+							id: "manager-user-1",
+							firstName: "Auth",
+							lastName: "Manager",
+							name: "Fallback Manager",
+							email: "manager@umami-creative.de",
+							image: null,
+						},
+					},
+				},
+			],
+		} as EmployeeDetail;
+
+		render(<EmployeeOverviewCard employee={employeeWithManager} schedule={null} t={t} />);
+
+		expect(screen.getByText("Auth Manager")).toBeTruthy();
+		expect(screen.queryByText("Stale Manager")).toBeNull();
+		expect(screen.queryByText("Fallback Manager")).toBeNull();
+	});
+
 	it("renders the edit form strings in German", () => {
 		render(
 			<EmployeeEditFormCard
@@ -185,7 +254,8 @@ describe("employee detail page sections", () => {
 
 		expect(screen.getByText("Mitarbeiter bearbeiten")).toBeTruthy();
 		expect(screen.getByText("Freigegebene Mitarbeiterdaten aktualisieren")).toBeTruthy();
-		expect(screen.getByText("Vorname")).toBeTruthy();
+		expect(screen.queryByText("Vorname")).toBeNull();
+		expect(screen.queryByText("Nachname")).toBeNull();
 		expect(screen.getByText("Systemrolle")).toBeTruthy();
 		expect(screen.getByText("Standardzugriff")).toBeTruthy();
 		expect(screen.getByText("Vertragsart")).toBeTruthy();

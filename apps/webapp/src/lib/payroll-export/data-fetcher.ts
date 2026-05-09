@@ -9,19 +9,15 @@ import {
 	db,
 	employee,
 	payrollExportConfig,
-	payrollExportFormat,
+	type payrollExportFormat,
 	payrollWageTypeMapping,
+	user,
 	workCategory,
 } from "@/db";
 import { timeRecord } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
-import type {
-	AbsenceData,
-	PayrollExportFilters,
-	WageTypeMapping,
-	WorkPeriodData,
-} from "./types";
+import type { AbsenceData, PayrollExportFilters, WageTypeMapping, WorkPeriodData } from "./types";
 
 const logger = createLogger("PayrollExportDataFetcher");
 
@@ -34,7 +30,10 @@ export async function fetchWorkPeriodsForExport(
 ): Promise<WorkPeriodData[]> {
 	await assertCanonicalCutoverReady(organizationId);
 
-	logger.info({ organizationId, filters: serializeFilters(filters) }, "Fetching work periods for payroll export");
+	logger.info(
+		{ organizationId, filters: serializeFilters(filters) },
+		"Fetching work periods for payroll export",
+	);
 
 	// Build where conditions
 	const whereConditions = [
@@ -58,13 +57,13 @@ export async function fetchWorkPeriodsForExport(
 				columns: {
 					id: true,
 					employeeNumber: true,
-					firstName: true,
-					lastName: true,
 					teamId: true,
 				},
 				with: {
 					user: {
 						columns: {
+							firstName: true,
+							lastName: true,
 							email: true,
 						},
 					},
@@ -125,8 +124,8 @@ export async function fetchWorkPeriodsForExport(
 		employeeId: p.employeeId,
 		employeeNumber: p.employee?.employeeNumber || null,
 		email: p.employee?.user?.email || null,
-		firstName: p.employee?.firstName || null,
-		lastName: p.employee?.lastName || null,
+		firstName: p.employee?.user?.firstName || null,
+		lastName: p.employee?.user?.lastName || null,
 		startTime: DateTime.fromJSDate(p.startAt),
 		endTime: p.endAt ? DateTime.fromJSDate(p.endAt) : null,
 		durationMinutes: p.durationMinutes,
@@ -155,7 +154,10 @@ export async function fetchAbsencesForExport(
 ): Promise<AbsenceData[]> {
 	await assertCanonicalCutoverReady(organizationId);
 
-	logger.info({ organizationId, filters: serializeFilters(filters) }, "Fetching absences for payroll export");
+	logger.info(
+		{ organizationId, filters: serializeFilters(filters) },
+		"Fetching absences for payroll export",
+	);
 
 	// Get employee IDs for this org (optionally filtered)
 	let employeeIds: string[] = [];
@@ -202,12 +204,12 @@ export async function fetchAbsencesForExport(
 				columns: {
 					id: true,
 					employeeNumber: true,
-					firstName: true,
-					lastName: true,
 				},
 				with: {
 					user: {
 						columns: {
+							firstName: true,
+							lastName: true,
 							email: true,
 						},
 					},
@@ -238,8 +240,8 @@ export async function fetchAbsencesForExport(
 		employeeId: a.employeeId,
 		employeeNumber: a.employee?.employeeNumber || null,
 		email: a.employee?.user?.email || null,
-		firstName: a.employee?.firstName || null,
-		lastName: a.employee?.lastName || null,
+		firstName: a.employee?.user?.firstName || null,
+		lastName: a.employee?.user?.lastName || null,
 		startDate: DateTime.fromJSDate(a.startAt, { zone: "utc" }).toISODate() || "",
 		endDate: DateTime.fromJSDate(a.endAt || a.startAt, { zone: "utc" }).toISODate() || "",
 		absenceCategoryId: a.absence?.absenceCategoryId || "",
@@ -365,16 +367,17 @@ export async function getAbsenceCategories(organizationId: string) {
  * Get employees for filter options
  */
 export async function getEmployeesForFilter(organizationId: string) {
-	return db.query.employee.findMany({
-		where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-		columns: {
-			id: true,
-			firstName: true,
-			lastName: true,
-			employeeNumber: true,
-		},
-		orderBy: (e, { asc }) => [asc(e.lastName), asc(e.firstName)],
-	});
+	return db
+		.select({
+			id: employee.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			employeeNumber: employee.employeeNumber,
+		})
+		.from(employee)
+		.innerJoin(user, eq(employee.userId, user.id))
+		.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+		.orderBy(asc(user.lastName), asc(user.firstName));
 }
 
 /**

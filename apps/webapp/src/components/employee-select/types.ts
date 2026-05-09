@@ -17,6 +17,8 @@ export interface SelectableEmployee {
 	teamId: string | null;
 	user: {
 		id: string;
+		firstName?: string | null;
+		lastName?: string | null;
 		name: string | null;
 		email: string;
 		image: string | null;

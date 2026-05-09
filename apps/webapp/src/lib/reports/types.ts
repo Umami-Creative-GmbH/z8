@@ -128,8 +128,11 @@ export interface ReportFilters {
 
 export interface AccessibleEmployee {
 	id: string;
+	firstName: string | null;
+	lastName: string | null;
 	name: string;
 	email: string;
+	image: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 }

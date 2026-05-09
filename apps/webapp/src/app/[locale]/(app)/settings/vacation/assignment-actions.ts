@@ -2,8 +2,9 @@
 
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { user } from "@/db/auth-schema";
 import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
-import { AuthorizationError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -31,7 +32,10 @@ export async function getVacationPolicies(
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPoliciesForAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getVacationPoliciesForAssignment:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 
@@ -69,7 +73,10 @@ export async function getVacationPolicyAssignments(
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getVacationPolicyAssignments:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getVacationPolicyAssignments:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
@@ -107,14 +114,15 @@ export async function getVacationPolicyAssignments(
 						},
 						employee: {
 							id: employee.id,
-							firstName: employee.firstName,
-							lastName: employee.lastName,
+							firstName: user.firstName,
+							lastName: user.lastName,
 						},
 					})
 					.from(vacationPolicyAssignment)
 					.innerJoin(vacationAllowance, eq(vacationPolicyAssignment.policyId, vacationAllowance.id))
 					.leftJoin(team, eq(vacationPolicyAssignment.teamId, team.id))
 					.leftJoin(employee, eq(vacationPolicyAssignment.employeeId, employee.id))
+					.leftJoin(user, eq(employee.userId, user.id))
 					.where(
 						and(
 							eq(vacationPolicyAssignment.organizationId, organizationId),
@@ -133,13 +141,23 @@ export async function getVacationPolicyAssignments(
 					}),
 			),
 		);
+		const normalizedAssignments = assignments.map((assignment) => {
+			const assignmentEmployee = assignment.employee?.id
+				? { ...assignment.employee, id: assignment.employee.id }
+				: null;
+
+			return {
+				...assignment,
+				employee: assignmentEmployee,
+			};
+		});
 
 		if (!managedEmployeeIds) {
-			return assignments;
+			return normalizedAssignments;
 		}
 
 		return filterItemsToManagedEmployees(
-			assignments.filter((assignment) => assignment.assignmentType === "employee"),
+			normalizedAssignments.filter((assignment) => assignment.assignmentType === "employee"),
 			managedEmployeeIds,
 		);
 	}).pipe(Effect.provide(AppLayer));
@@ -235,18 +253,18 @@ export async function createVacationPolicyAssignment(data: {
 
 		// Step 7: Create the assignment
 		const newAssignment = yield* _(
-				dbService.query("createVacationPolicyAssignment", async () => {
-					const [assignment] = await dbService.db
-						.insert(vacationPolicyAssignment)
-						.values({
-							policyId: data.policyId,
-							organizationId: actor.organizationId,
-							assignmentType: data.assignmentType,
-							teamId: data.teamId || null,
-							employeeId: data.employeeId || null,
-							priority,
-							createdBy: actor.session.user.id,
-						})
+			dbService.query("createVacationPolicyAssignment", async () => {
+				const [assignment] = await dbService.db
+					.insert(vacationPolicyAssignment)
+					.values({
+						policyId: data.policyId,
+						organizationId: actor.organizationId,
+						assignmentType: data.assignmentType,
+						teamId: data.teamId || null,
+						employeeId: data.employeeId || null,
+						priority,
+						createdBy: actor.session.user.id,
+					})
 					.returning();
 
 				return assignment;
@@ -275,7 +293,9 @@ export async function getEmployeePolicyAssignment(
 	employeeId: string,
 ): Promise<ServerActionResult<any | null>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "getEmployeePolicyAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "getEmployeePolicyAssignment:actor" }),
+		);
 		const targetEmployee = yield* _(
 			getTargetEmployee(employeeId, "getEmployeePolicyAssignment:getTargetEmployee"),
 		);
@@ -331,7 +351,9 @@ export async function setEmployeePolicyAssignment(
 	policyId: string | null,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "setEmployeePolicyAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "setEmployeePolicyAssignment:actor" }),
+		);
 		const targetEmployee = yield* _(
 			getTargetEmployee(employeeId, "setEmployeePolicyAssignment:getTargetEmployee"),
 		);
@@ -472,7 +494,10 @@ export async function deleteVacationPolicyAssignment(
 
 		if (existingAssignment.employeeId) {
 			const targetEmployee = yield* _(
-				getTargetEmployee(existingAssignment.employeeId, "deleteVacationPolicyAssignment:getTargetEmployee"),
+				getTargetEmployee(
+					existingAssignment.employeeId,
+					"deleteVacationPolicyAssignment:getTargetEmployee",
+				),
 			);
 			yield* _(
 				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
@@ -518,7 +543,10 @@ export async function getCompanyDefaultPolicies(organizationId: string): Promise
 > {
 	const effect = Effect.gen(function* (_) {
 		yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "getCompanyDefaultPolicies:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getCompanyDefaultPolicies:actor",
+			}),
 		);
 		const dbService = yield* _(DatabaseService);
 

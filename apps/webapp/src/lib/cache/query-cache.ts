@@ -10,9 +10,10 @@
  * Use `connection()` in routes that need fresh data on every request.
  */
 
-import { unstable_cache } from "next/cache";
 import { eq } from "drizzle-orm";
-import { db, employee, team, workPolicy, holidayPreset } from "@/db";
+import { unstable_cache } from "next/cache";
+import { db, employee, holidayPreset, team, workPolicy } from "@/db";
+import { user } from "@/db/auth-schema";
 
 // Cache tags for invalidation
 export const CACHE_TAGS = {
@@ -135,18 +136,19 @@ export const getCachedHolidayPresets = unstable_cache(
  */
 export const getCachedEmployeeList = unstable_cache(
 	async (organizationId: string) => {
-		return db.query.employee.findMany({
-			where: eq(employee.organizationId, organizationId),
-			columns: {
-				id: true,
-				firstName: true,
-				lastName: true,
-				employeeNumber: true,
-				isActive: true,
-				teamId: true,
-			},
-			orderBy: (employee, { asc }) => [asc(employee.lastName), asc(employee.firstName)],
-		});
+		return db
+			.select({
+				id: employee.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				employeeNumber: employee.employeeNumber,
+				isActive: employee.isActive,
+				teamId: employee.teamId,
+			})
+			.from(employee)
+			.innerJoin(user, eq(employee.userId, user.id))
+			.where(eq(employee.organizationId, organizationId))
+			.orderBy(user.lastName, user.firstName);
 	},
 	["employee-list"],
 	{

@@ -46,7 +46,34 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query";
+
+function formatEmployeeName(
+	employeeRecord:
+		| {
+				firstName?: string | null;
+				lastName?: string | null;
+				user?: {
+					firstName?: string | null;
+					lastName?: string | null;
+					name?: string | null;
+					email?: string | null;
+				} | null;
+		  }
+		| null
+		| undefined,
+	fallback: string,
+) {
+	return employeeRecord
+		? buildAuthUserDisplayName({
+				firstName: employeeRecord.user?.firstName,
+				lastName: employeeRecord.user?.lastName,
+				name: employeeRecord.user?.name,
+				email: employeeRecord.user?.email,
+			}) || fallback
+		: fallback;
+}
 
 interface WorkPolicyComplianceViewProps {
 	organizationId: string;
@@ -200,9 +227,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 		const pendingLabel = t("settings.workPolicies.pending", "Pending");
 
 		const rows = violations.map((v) => {
-			const employeeName = v.employee
-				? `${v.employee.firstName || ""} ${v.employee.lastName || ""}`.trim() || unknownLabel
-				: unknownLabel;
+			const employeeName = formatEmployeeName(v.employee, unknownLabel);
 
 			return [
 				employeeName,
@@ -409,10 +434,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 							{violations.map((violation) => (
 								<TableRow key={violation.id}>
 									<TableCell className="font-medium">
-										{violation.employee
-											? `${violation.employee.firstName || ""} ${violation.employee.lastName || ""}`.trim() ||
-												t("common.unknown", "Unknown")
-											: t("common.unknown", "Unknown")}
+										{formatEmployeeName(violation.employee, t("common.unknown", "Unknown"))}
 									</TableCell>
 									<TableCell>
 										{DateTime.fromJSDate(violation.violationDate).toFormat("LLL d, yyyy")}
@@ -480,10 +502,10 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 											{t("settings.workPolicies.employeeLabel", "Employee:")}
 										</span>{" "}
 										<span className="font-medium">
-											{selectedViolation.employee
-												? `${selectedViolation.employee.firstName || ""} ${selectedViolation.employee.lastName || ""}`.trim() ||
-													t("common.unknown", "Unknown")
-												: t("common.unknown", "Unknown")}
+											{formatEmployeeName(
+												selectedViolation.employee,
+												t("common.unknown", "Unknown"),
+											)}
 										</span>
 									</div>
 									<div>

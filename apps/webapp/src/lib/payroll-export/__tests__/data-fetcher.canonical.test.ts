@@ -107,9 +107,9 @@ describe("payroll export canonical data fetching", () => {
 				durationMinutes: 480,
 				employee: {
 					employeeNumber: "E-001",
-					firstName: "Ada",
-					lastName: "Lovelace",
 					user: {
+						firstName: "Ada",
+						lastName: "Lovelace",
 						email: "ada@example.com",
 					},
 					teamId: "team-1",
@@ -175,9 +175,9 @@ describe("payroll export canonical data fetching", () => {
 				approvalState: "approved",
 				employee: {
 					employeeNumber: "E-002",
-					firstName: "Grace",
-					lastName: "Hopper",
 					user: {
+						firstName: "Grace",
+						lastName: "Hopper",
 						email: "grace@example.com",
 					},
 				},

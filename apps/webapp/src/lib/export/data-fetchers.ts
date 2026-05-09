@@ -6,7 +6,6 @@ import { and, eq, inArray } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
-	auditLog,
 	db,
 	employee,
 	employeeManagers,
@@ -28,12 +27,13 @@ import {
 	workPeriod,
 	workPolicy,
 	workPolicyAssignment,
+	workPolicyBreakOption,
+	workPolicyBreakRule,
+	workPolicyRegulation,
 	workPolicySchedule,
 	workPolicyScheduleDay,
-	workPolicyRegulation,
-	workPolicyBreakRule,
-	workPolicyBreakOption,
 } from "@/db";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { createLogger } from "@/lib/logger";
 
 // Import types for internal use
@@ -58,6 +58,8 @@ export async function fetchEmployees(organizationId: string) {
 			user: {
 				columns: {
 					id: true,
+					firstName: true,
+					lastName: true,
 					name: true,
 					email: true,
 					image: true,
@@ -87,8 +89,8 @@ export async function fetchEmployees(organizationId: string) {
 	return {
 		employees: employees.map((emp) => ({
 			id: emp.id,
-			firstName: emp.firstName,
-			lastName: emp.lastName,
+			firstName: emp.user?.firstName ?? null,
+			lastName: emp.user?.lastName ?? null,
 			gender: emp.gender,
 			birthday: emp.birthday,
 			role: emp.role,
@@ -162,10 +164,9 @@ export async function fetchTimeEntries(organizationId: string) {
 			employee: {
 				columns: {
 					id: true,
-					firstName: true,
-					lastName: true,
 					employeeNumber: true,
 				},
+				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 			},
 		},
 	});
@@ -175,7 +176,7 @@ export async function fetchTimeEntries(organizationId: string) {
 	return filteredEntries.map((entry) => ({
 		id: entry.id,
 		employeeId: entry.employeeId,
-		employeeName: `${entry.employee?.firstName || ""} ${entry.employee?.lastName || ""}`.trim(),
+		employeeName: entry.employee?.user ? buildAuthUserDisplayName(entry.employee.user) : "",
 		employeeNumber: entry.employee?.employeeNumber,
 		type: entry.type,
 		timestamp: entry.timestamp,
@@ -202,10 +203,9 @@ export async function fetchWorkPeriods(organizationId: string) {
 			employee: {
 				columns: {
 					id: true,
-					firstName: true,
-					lastName: true,
 					employeeNumber: true,
 				},
+				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 			},
 		},
 	});
@@ -215,7 +215,7 @@ export async function fetchWorkPeriods(organizationId: string) {
 	return filteredPeriods.map((period) => ({
 		id: period.id,
 		employeeId: period.employeeId,
-		employeeName: `${period.employee?.firstName || ""} ${period.employee?.lastName || ""}`.trim(),
+		employeeName: period.employee?.user ? buildAuthUserDisplayName(period.employee.user) : "",
 		employeeNumber: period.employee?.employeeNumber,
 		startTime: period.startTime,
 		endTime: period.endTime,
@@ -257,10 +257,9 @@ export async function fetchAbsences(organizationId: string) {
 			employee: {
 				columns: {
 					id: true,
-					firstName: true,
-					lastName: true,
 					employeeNumber: true,
 				},
+				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 			},
 			category: true,
 		},
@@ -272,8 +271,7 @@ export async function fetchAbsences(organizationId: string) {
 		absences: filteredAbsences.map((absence) => ({
 			id: absence.id,
 			employeeId: absence.employeeId,
-			employeeName:
-				`${absence.employee?.firstName || ""} ${absence.employee?.lastName || ""}`.trim(),
+			employeeName: absence.employee?.user ? buildAuthUserDisplayName(absence.employee.user) : "",
 			employeeNumber: absence.employee?.employeeNumber,
 			categoryId: absence.categoryId,
 			categoryName: absence.category?.name,
@@ -594,10 +592,9 @@ export async function fetchShifts(organizationId: string) {
 			employee: {
 				columns: {
 					id: true,
-					firstName: true,
-					lastName: true,
 					employeeNumber: true,
 				},
+				with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 			},
 			template: true,
 		},
@@ -630,9 +627,7 @@ export async function fetchShifts(organizationId: string) {
 			templateId: s.templateId,
 			templateName: s.template?.name,
 			employeeId: s.employeeId,
-			employeeName: s.employee
-				? `${s.employee.firstName || ""} ${s.employee.lastName || ""}`.trim()
-				: null,
+			employeeName: s.employee?.user ? buildAuthUserDisplayName(s.employee.user) : null,
 			date: s.date,
 			startTime: s.startTime,
 			endTime: s.endTime,
@@ -809,10 +804,9 @@ export async function* streamTimeEntries(
 				employee: {
 					columns: {
 						id: true,
-						firstName: true,
-						lastName: true,
 						employeeNumber: true,
 					},
+					with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 				},
 			},
 			limit: BATCH_SIZE,
@@ -828,9 +822,7 @@ export async function* streamTimeEntries(
 		yield batch.map((e) => ({
 			id: e.id,
 			employeeId: e.employeeId,
-			employeeName: e.employee
-				? `${e.employee.firstName || ""} ${e.employee.lastName || ""}`.trim()
-				: null,
+			employeeName: e.employee?.user ? buildAuthUserDisplayName(e.employee.user) : null,
 			employeeNumber: e.employee?.employeeNumber || null,
 			type: e.type,
 			timestamp: e.timestamp,
@@ -883,10 +875,9 @@ export async function* streamWorkPeriods(
 				employee: {
 					columns: {
 						id: true,
-						firstName: true,
-						lastName: true,
 						employeeNumber: true,
 					},
+					with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 				},
 			},
 			limit: BATCH_SIZE,
@@ -902,9 +893,7 @@ export async function* streamWorkPeriods(
 		yield batch.map((p) => ({
 			id: p.id,
 			employeeId: p.employeeId,
-			employeeName: p.employee
-				? `${p.employee.firstName || ""} ${p.employee.lastName || ""}`.trim()
-				: null,
+			employeeName: p.employee?.user ? buildAuthUserDisplayName(p.employee.user) : null,
 			employeeNumber: p.employee?.employeeNumber || null,
 			startTime: p.startTime,
 			endTime: p.endTime,

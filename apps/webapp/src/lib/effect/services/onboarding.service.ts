@@ -9,13 +9,13 @@ import {
 	notificationPreference,
 	userSettings,
 	vacationAllowance,
-	vacationPolicyAssignment,
 	workPolicy,
 	workPolicyAssignment,
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { isTimeFormat } from "@/lib/user-preferences/time-format";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
@@ -27,8 +27,8 @@ import type {
 	OnboardingWorkScheduleFormValues,
 	OnboardingWorkTemplateFormValues,
 } from "@/lib/validations/onboarding";
-import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";
 import type { OrganizationFormValues } from "@/lib/validations/organization";
+import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";
 import {
 	type AuthenticationError,
 	type DatabaseError,
@@ -343,16 +343,23 @@ export const OnboardingServiceLive = Layer.effect(
 								})
 							: null;
 
-						// Fallback: find any employee record for this user
-						if (!emp) {
+						// Fallback only when there is no active organization to scope the employee lookup.
+						if (!emp && !activeOrgId) {
 							emp = await dbService.db.query.employee.findFirst({
 								where: eq(employee.userId, session.user.id),
 							});
 						}
 
+						await auth.api.updateUser({
+							body: toAuthStructuredName({
+								firstName: data.firstName,
+								lastName: data.lastName,
+								fallbackName: session.user.name,
+							}),
+							headers: await headers(),
+						});
+
 						const profileData = {
-							firstName: data.firstName,
-							lastName: data.lastName,
 							gender: data.gender || null,
 							birthday: data.birthday || null,
 						};
@@ -992,10 +999,7 @@ export const OnboardingServiceLive = Layer.effect(
 						// Check if user has an organization (scoped to active org if set)
 						const membership = await dbService.db.query.member.findFirst({
 							where: activeOrgId
-								? and(
-										eq(member.userId, session.user.id),
-										eq(member.organizationId, activeOrgId),
-									)
+								? and(eq(member.userId, session.user.id), eq(member.organizationId, activeOrgId))
 								: eq(member.userId, session.user.id),
 							with: {
 								organization: true,
@@ -1081,7 +1085,7 @@ export const OnboardingServiceLive = Layer.effect(
 						const summaryData: OnboardingSummary = {
 							hasOrganization: !!membership || wasInvited,
 							organizationName: membership?.organization?.name,
-							profileCompleted: !!(emp?.firstName && emp?.lastName),
+							profileCompleted: !!(session.user.firstName && session.user.lastName),
 							workPolicySet: hasWorkPolicy,
 							isAdmin,
 							vacationPolicyCreated: isAdmin ? hasVacationPolicy : undefined,
@@ -1133,7 +1137,7 @@ export const OnboardingServiceLive = Layer.effect(
 						const onboardingStep =
 							userSettingsData?.onboardingStep === "organization" && (membership || wasInvited)
 								? "profile"
-								: userSettingsData?.onboardingStep ?? null;
+								: (userSettingsData?.onboardingStep ?? null);
 
 						return {
 							onboardingComplete: userSettingsData?.onboardingComplete ?? false,

@@ -2,14 +2,14 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
-	complianceException,
-	employee,
-	workPeriod,
-	workPolicyViolation,
 	type ComplianceAlert,
 	type ComplianceStatus,
+	complianceException,
+	employee,
 	type OvertimeStats,
 	type RestPeriodCheckResult,
+	workPeriod,
+	workPolicyViolation,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
@@ -42,11 +42,19 @@ export interface ExceptionWithDetails {
 		firstName: string | null;
 		lastName: string | null;
 		userId: string;
+		user?: {
+			firstName: string | null;
+			lastName: string | null;
+		};
 	};
 	approver?: {
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		user?: {
+			firstName: string | null;
+			lastName: string | null;
+		};
 	};
 	createdAt: Date;
 }
@@ -541,7 +549,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					// Get policy for alerts
 					const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
 
-					let alerts: ComplianceAlert[] = [];
+					const alerts: ComplianceAlert[] = [];
 
 					// Get overtime stats
 					const stats = yield* _(
@@ -567,7 +575,10 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 									alertType: "overtime_daily",
 									severity: calculateAlertSeverity(percentOfLimit, alertThreshold),
 									message: `Daily overtime: ${formatMinutes(totalDailyWithSession)} of ${formatMinutes(regulation.overtimeDailyThresholdMinutes)} threshold`,
-									minutesRemaining: Math.max(0, regulation.overtimeDailyThresholdMinutes - totalDailyWithSession),
+									minutesRemaining: Math.max(
+										0,
+										regulation.overtimeDailyThresholdMinutes - totalDailyWithSession,
+									),
 									thresholdMinutes: regulation.overtimeDailyThresholdMinutes,
 									currentMinutes: totalDailyWithSession,
 									percentOfLimit,
@@ -808,17 +819,15 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 							employee: {
 								columns: {
 									id: true,
-									firstName: true,
-									lastName: true,
 									userId: true,
 								},
+								with: { user: { columns: { firstName: true, lastName: true } } },
 							},
 							approver: {
 								columns: {
 									id: true,
-									firstName: true,
-									lastName: true,
 								},
+								with: { user: { columns: { firstName: true, lastName: true } } },
 							},
 						},
 						orderBy: [desc(complianceException.createdAt)],
@@ -833,8 +842,20 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 						validFrom: e.validFrom,
 						validUntil: e.validUntil,
 						wasUsed: e.wasUsed,
-						employee: e.employee!,
-						approver: e.approver ?? undefined,
+						employee: e.employee
+							? {
+									...e.employee,
+									firstName: e.employee.user?.firstName ?? null,
+									lastName: e.employee.user?.lastName ?? null,
+								}
+							: e.employee!,
+						approver: e.approver
+							? {
+									...e.approver,
+									firstName: e.approver.user?.firstName ?? null,
+									lastName: e.approver.user?.lastName ?? null,
+								}
+							: undefined,
 						createdAt: e.createdAt,
 					})) as ExceptionWithDetails[];
 				}),
@@ -875,17 +896,15 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 							employee: {
 								columns: {
 									id: true,
-									firstName: true,
-									lastName: true,
 									userId: true,
 								},
+								with: { user: { columns: { firstName: true, lastName: true } } },
 							},
 							approver: {
 								columns: {
 									id: true,
-									firstName: true,
-									lastName: true,
 								},
+								with: { user: { columns: { firstName: true, lastName: true } } },
 							},
 						},
 						orderBy: [desc(complianceException.createdAt)],
@@ -901,8 +920,20 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 						validFrom: e.validFrom,
 						validUntil: e.validUntil,
 						wasUsed: e.wasUsed,
-						employee: e.employee!,
-						approver: e.approver ?? undefined,
+						employee: e.employee
+							? {
+									...e.employee,
+									firstName: e.employee.user?.firstName ?? null,
+									lastName: e.employee.user?.lastName ?? null,
+								}
+							: e.employee!,
+						approver: e.approver
+							? {
+									...e.approver,
+									firstName: e.approver.user?.firstName ?? null,
+									lastName: e.approver.user?.lastName ?? null,
+								}
+							: undefined,
 						createdAt: e.createdAt,
 					})) as ExceptionWithDetails[];
 				}),

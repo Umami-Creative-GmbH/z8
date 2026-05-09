@@ -24,6 +24,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
 import { EmployeeSelectList } from "./employee-select-list";
@@ -82,14 +83,15 @@ export function EmployeeSelectModal({
 		if (!localSearch) return preFilteredEmployees;
 
 		const searchLower = localSearch.toLowerCase();
-		return preFilteredEmployees.filter(
-			(emp) =>
-				emp.user.name?.toLowerCase().includes(searchLower) ||
+		return preFilteredEmployees.filter((emp) => {
+			const displayName = buildAuthUserDisplayName(emp.user).toLowerCase();
+
+			return (
+				displayName.includes(searchLower) ||
 				emp.user.email.toLowerCase().includes(searchLower) ||
-				emp.firstName?.toLowerCase().includes(searchLower) ||
-				emp.lastName?.toLowerCase().includes(searchLower) ||
-				emp.position?.toLowerCase().includes(searchLower),
-		);
+				emp.position?.toLowerCase().includes(searchLower)
+			);
+		});
 	}, [usePreFiltered, preFilteredEmployees, localSearch]);
 
 	// Select the appropriate data source
@@ -350,10 +352,7 @@ export function EmployeeSelectModal({
 											const emp =
 												selectedEmployeesMap.get(id) || employees.find((e) => e.id === id);
 											if (!emp) return null;
-											const name =
-												emp.firstName || emp.lastName
-													? `${emp.firstName || ""} ${emp.lastName || ""}`.trim()
-													: emp.user.email.split("@")[0];
+											const name = buildAuthUserDisplayName(emp.user);
 											return (
 												<Badge key={id} variant="secondary" className="text-xs pl-2 pr-1 gap-1 h-6">
 													<span className="truncate max-w-[60px]">{name}</span>

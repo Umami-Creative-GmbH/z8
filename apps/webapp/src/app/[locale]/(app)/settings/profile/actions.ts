@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { toAuthStructuredName, trimStructuredNamePart } from "@/lib/auth/derived-user-name";
+import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -142,8 +142,6 @@ function syncActiveEmployeeProfile(
 				await dbService.db
 					.update(employee)
 					.set({
-						firstName: trimStructuredNamePart(data.firstName) ?? null,
-						lastName: trimStructuredNamePart(data.lastName) ?? null,
 						gender: data.gender ?? null,
 						birthday: data.birthday ?? null,
 					})

@@ -69,6 +69,7 @@ export type WorkPolicyAssignmentWithDetails = typeof workPolicyAssignment.$infer
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		user?: { firstName: string | null; lastName: string | null } | null;
 	} | null;
 };
 
@@ -96,6 +97,12 @@ export type WorkPolicyViolationWithDetails = typeof workPolicyViolation.$inferSe
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		user?: {
+			firstName: string | null;
+			lastName: string | null;
+			name?: string | null;
+			email?: string | null;
+		} | null;
 	} | null;
 	policy: { id: string; name: string } | null;
 };
@@ -873,7 +880,8 @@ export async function getWorkPolicyAssignments(
 							columns: { id: true, name: true },
 						},
 						employee: {
-							columns: { id: true, firstName: true, lastName: true },
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
 						},
 					},
 					orderBy: [desc(workPolicyAssignment.createdAt)],
@@ -881,7 +889,17 @@ export async function getWorkPolicyAssignments(
 			}),
 		);
 
-		const typedAssignments = assignments as WorkPolicyAssignmentWithDetails[];
+		const typedAssignments = assignments.map((assignment) => ({
+			...assignment,
+			employee: assignment.employee
+				? {
+						id: assignment.employee.id,
+						firstName: assignment.employee.user?.firstName ?? null,
+						lastName: assignment.employee.user?.lastName ?? null,
+						user: assignment.employee.user,
+					}
+				: null,
+		})) satisfies WorkPolicyAssignmentWithDetails[];
 
 		if (!managedEmployeeIds) {
 			return typedAssignments;
@@ -1151,7 +1169,10 @@ export async function getWorkPolicyViolations(
 					),
 					with: {
 						employee: {
-							columns: { id: true, firstName: true, lastName: true },
+							columns: { id: true },
+							with: {
+								user: { columns: { firstName: true, lastName: true, name: true, email: true } },
+							},
 						},
 						policy: {
 							columns: { id: true, name: true },
@@ -1162,7 +1183,17 @@ export async function getWorkPolicyViolations(
 			}),
 		);
 
-		return violations as WorkPolicyViolationWithDetails[];
+		return violations.map((violation) => ({
+			...violation,
+			employee: violation.employee
+				? {
+						id: violation.employee.id,
+						firstName: violation.employee.user?.firstName ?? null,
+						lastName: violation.employee.user?.lastName ?? null,
+						user: violation.employee.user,
+					}
+				: null,
+		})) satisfies WorkPolicyViolationWithDetails[];
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -1570,7 +1601,10 @@ export async function getEmployeeEffectiveScheduleDetails(
 		const typedEmployeeAssignment =
 			employeeAssignment as unknown as EffectiveWorkPolicyAssignment | null;
 
-		if (typedEmployeeAssignment?.policy?.isActive && typedEmployeeAssignment.policy.scheduleEnabled) {
+		if (
+			typedEmployeeAssignment?.policy?.isActive &&
+			typedEmployeeAssignment.policy.scheduleEnabled
+		) {
 			const schedule = typedEmployeeAssignment.policy.schedule;
 			return {
 				policyName: typedEmployeeAssignment.policy.name,
@@ -1626,8 +1660,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 					});
 				}),
 			);
-			const typedTeamAssignment =
-				teamAssignment as unknown as EffectiveWorkPolicyAssignment | null;
+			const typedTeamAssignment = teamAssignment as unknown as EffectiveWorkPolicyAssignment | null;
 
 			if (typedTeamAssignment?.policy?.isActive && typedTeamAssignment.policy.scheduleEnabled) {
 				const schedule = typedTeamAssignment.policy.schedule;
@@ -1758,11 +1791,19 @@ export async function getEmployeesForAssignment(organizationId: string): Promise
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const employees = yield* _(
 			dbService.query("getEmployeesForAssignment", async () => {
-				return await dbService.db.query.employee.findMany({
+				const rows = await dbService.db.query.employee.findMany({
 					where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-					columns: { id: true, firstName: true, lastName: true, employeeNumber: true },
-					orderBy: (e, { asc }) => [asc(e.lastName), asc(e.firstName)],
+					columns: { id: true, employeeNumber: true },
+					with: { user: { columns: { firstName: true, lastName: true } } },
+					orderBy: (employeeRecord, { asc }) => [asc(employeeRecord.id)],
 				});
+
+				return rows.map((employeeRecord) => ({
+					id: employeeRecord.id,
+					firstName: employeeRecord.user?.firstName ?? null,
+					lastName: employeeRecord.user?.lastName ?? null,
+					employeeNumber: employeeRecord.employeeNumber,
+				}));
 			}),
 		);
 

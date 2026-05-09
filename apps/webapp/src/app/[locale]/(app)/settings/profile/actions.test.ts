@@ -114,7 +114,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 vi.mock("@/lib/effect/result", async () => {
 	const { Cause, Effect, Exit, Option } = await import("effect");
 
-	const toServerActionResult = <T>(exit: unknown) =>
+	const toServerActionResult = <_T>(exit: unknown) =>
 		Exit.match(exit as never, {
 			onFailure: (cause) => {
 				const defects = Cause.defects(cause);
@@ -148,7 +148,7 @@ vi.mock("@/lib/effect/result", async () => {
 		});
 
 	return {
-		runServerActionSafe: async <T>(effect: unknown) => {
+		runServerActionSafe: async <_T>(effect: unknown) => {
 			const exit = await Effect.runPromiseExit(effect as never);
 			return toServerActionResult(exit);
 		},
@@ -225,12 +225,12 @@ describe("profile actions", () => {
 		expect(mockState.employeeFindFirst).toHaveBeenCalledTimes(1);
 		expect(mockState.dbUpdate).toHaveBeenCalledTimes(1);
 		expect(mockState.employeeUpdateSet).toHaveBeenCalledWith({
-			firstName: "Grace",
-			lastName: "Hopper",
 			gender: "female",
 			birthday: new Date("1906-12-09T00:00:00.000Z"),
 		});
-		expect(JSON.stringify(mockState.employeeFindFirst.mock.calls[0][0])).toContain("employee.isActive");
+		expect(JSON.stringify(mockState.employeeFindFirst.mock.calls[0][0])).toContain(
+			"employee.isActive",
+		);
 		expect(mockState.employeeUpdateWhere).toHaveBeenCalledTimes(1);
 	});
 

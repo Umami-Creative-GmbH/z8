@@ -112,8 +112,8 @@ export async function searchOrgEmployees(
 							or(
 								ilike(user.name, pattern),
 								ilike(user.email, pattern),
-								ilike(employee.firstName, pattern),
-								ilike(employee.lastName, pattern),
+								ilike(user.firstName, pattern),
+								ilike(user.lastName, pattern),
 								ilike(employee.position, pattern),
 							),
 						),

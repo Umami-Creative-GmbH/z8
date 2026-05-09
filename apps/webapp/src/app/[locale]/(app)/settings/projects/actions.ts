@@ -16,12 +16,8 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import {
-	AuthorizationError,
-	DatabaseError,
-	NotFoundError,
-	ValidationError,
-} from "@/lib/effect/errors";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { AuthService, AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -298,7 +294,10 @@ export async function createProject(
 		(span) => {
 			return Effect.gen(function* (_) {
 				const actor = yield* _(
-					getProjectSettingsActorContext({ organizationId: input.organizationId, queryName: "createProject:actor" }),
+					getProjectSettingsActorContext({
+						organizationId: input.organizationId,
+						queryName: "createProject:actor",
+					}),
 				);
 				const session = actor.session;
 				const dbService = actor.dbService;
@@ -632,7 +631,9 @@ export async function addProjectManager(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const existingProject = yield* _(getProjectTarget(projectId, "addProjectManager:getProject"));
+				const existingProject = yield* _(
+					getProjectTarget(projectId, "addProjectManager:getProject"),
+				);
 				const actor = yield* _(
 					getProjectSettingsActorContext({
 						organizationId: existingProject.organizationId,
@@ -746,7 +747,9 @@ export async function removeProjectManager(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const existingProject = yield* _(getProjectTarget(projectId, "removeProjectManager:getProject"));
+				const existingProject = yield* _(
+					getProjectTarget(projectId, "removeProjectManager:getProject"),
+				);
 				const actor = yield* _(
 					getProjectSettingsActorContext({
 						organizationId: existingProject.organizationId,
@@ -754,7 +757,6 @@ export async function removeProjectManager(
 					}),
 				);
 				const session = actor.session;
-				const dbService = actor.dbService;
 
 				yield* _(
 					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
@@ -842,7 +844,9 @@ export async function addProjectAssignment(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const existingProject = yield* _(getProjectTarget(projectId, "addProjectAssignment:getProject"));
+				const existingProject = yield* _(
+					getProjectTarget(projectId, "addProjectAssignment:getProject"),
+				);
 				const actor = yield* _(
 					getProjectSettingsActorContext({
 						organizationId: existingProject.organizationId,
@@ -966,7 +970,9 @@ export async function removeProjectAssignment(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
-				const actor = yield* _(getProjectSettingsActorContext({ queryName: "removeProjectAssignment:actor" }));
+				const actor = yield* _(
+					getProjectSettingsActorContext({ queryName: "removeProjectAssignment:actor" }),
+				);
 				const session = actor.session;
 				const dbService = actor.dbService;
 
@@ -1138,17 +1144,17 @@ export async function getEmployeesForSelection(
 							where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
 							with: {
 								user: {
-									columns: { name: true },
+									columns: { firstName: true, lastName: true, name: true, email: true },
 								},
 							},
-							orderBy: [employee.firstName, employee.lastName],
+							orderBy: (employee, { asc }) => [asc(employee.userId)],
 						});
 					}),
 				);
 
 				const result = employees.map((e) => ({
 					id: e.id,
-					name: e.user?.name || `${e.firstName || ""} ${e.lastName || ""}`.trim() || "Unknown",
+					name: e.user ? buildAuthUserDisplayName(e.user) || "Unknown" : "Unknown",
 					role: e.role,
 				}));
 
