@@ -79,7 +79,7 @@ export async function onAbsenceRequestPendingApproval(
 			message: `${params.employeeName} requested ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}.`,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
-			actionUrl: "/approvals",
+			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger absence pending approval notification");
@@ -189,7 +189,7 @@ export async function onTimeCorrectionPendingApproval(
 			message: `${params.employeeName} submitted a time correction request.${params.reason ? ` Reason: ${params.reason}` : ""}`,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
-			actionUrl: "/approvals",
+			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
 		logger.error(
@@ -265,7 +265,7 @@ export async function onClockOutPendingApprovalToManager(
 			message: `${params.employeeName} clocked out (${formatTime(params.startTime)} - ${formatTime(params.endTime)}, ${formatDuration(params.durationMinutes)}). Approval required.`,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
-			actionUrl: "/approvals",
+			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger clock-out approval manager notification");
@@ -366,6 +366,71 @@ export async function onTimeCorrectionRejected(
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger time correction rejected notification");
+	}
+}
+
+interface TravelExpenseDecisionParams {
+	claimId: string;
+	requesterUserId: string;
+	organizationId: string;
+	approverName: string;
+	destinationCity: string | null;
+	amount: string;
+	currency: string;
+}
+
+interface TravelExpenseRejectionParams extends TravelExpenseDecisionParams {
+	rejectionReason?: string;
+}
+
+function formatTravelExpenseSummary(params: TravelExpenseDecisionParams): string {
+	const amount = `${params.currency} ${params.amount}`;
+	return params.destinationCity ? `${params.destinationCity} (${amount})` : amount;
+}
+
+/**
+ * Notify requester that their travel expense claim was approved.
+ */
+export async function onTravelExpenseApproved(
+	params: TravelExpenseDecisionParams,
+): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: "approval_request_approved",
+			title: "Travel expense approved",
+			message: `Your travel expense claim for ${formatTravelExpenseSummary(params)} was approved by ${params.approverName}.`,
+			entityType: "travel_expense_claim",
+			entityId: params.claimId,
+			actionUrl: "/travel-expenses",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger travel expense approved notification");
+	}
+}
+
+/**
+ * Notify requester that their travel expense claim was rejected.
+ */
+export async function onTravelExpenseRejected(
+	params: TravelExpenseRejectionParams,
+): Promise<void> {
+	try {
+		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: "approval_request_rejected",
+			title: "Travel expense rejected",
+			message: `Your travel expense claim for ${formatTravelExpenseSummary(params)} was rejected by ${params.approverName}.${reasonText}`,
+			entityType: "travel_expense_claim",
+			entityId: params.claimId,
+			actionUrl: "/travel-expenses",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger travel expense rejected notification");
 	}
 }
 
@@ -693,7 +758,7 @@ export async function onShiftSwapRequestedToManager(
 			message: `${params.requesterName} requested${targetText} for the shift on ${formatDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
 			entityType: "shift_request",
 			entityId: params.requestId,
-			actionUrl: "/approvals",
+			actionUrl: "/approvals/inbox",
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger shift swap request manager notification");
