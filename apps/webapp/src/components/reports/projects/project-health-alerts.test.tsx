@@ -7,6 +7,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { ProjectSummary } from "@/lib/reports/project-types";
 import { ProjectHealthAlerts } from "./project-health-alerts";
 
+const PROJECT_DEADLINE = new Date("2026-05-20T00:00:00.000Z");
+const FORECAST_EXHAUSTION_DATE = new Date("2026-05-15T00:00:00.000Z");
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, params?: Record<string, string | number>) =>
@@ -45,7 +48,7 @@ function buildProject(overrides: Partial<ProjectSummary>): ProjectSummary {
 		status: "active",
 		color: null,
 		budgetHours: 100,
-		deadline: new Date("2026-05-20T00:00:00.000Z"),
+		deadline: PROJECT_DEADLINE,
 		budgetSeverity: "none",
 		budgetAlertType: null,
 		deadlineSeverity: "none",
@@ -89,7 +92,7 @@ describe("ProjectHealthAlerts", () => {
 						budgetSeverity: "warning",
 						budgetAlertType: "budget_90",
 						forecastSeverity: "critical",
-						forecastBudgetExhaustionDate: new Date("2026-05-15T00:00:00.000Z"),
+						forecastBudgetExhaustionDate: FORECAST_EXHAUSTION_DATE,
 						forecastMessage,
 						percentBudgetUsed: 92,
 						daysUntilDeadline: 5,
