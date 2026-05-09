@@ -5,6 +5,7 @@ export interface EmployeeDetailFormValues {
 	firstName: string;
 	lastName: string;
 	gender: "male" | "female" | "other" | undefined;
+	pronouns: string;
 	position: string;
 	employeeNumber: string;
 	role: "admin" | "manager" | "employee" | undefined;
@@ -34,6 +35,7 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	firstName: "",
 	lastName: "",
 	gender: undefined,
+	pronouns: "",
 	position: "",
 	employeeNumber: "",
 	role: undefined,
@@ -61,6 +63,7 @@ export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: Employee
 	form.setFieldValue("firstName", employee.firstName || "");
 	form.setFieldValue("lastName", employee.lastName || "");
 	form.setFieldValue("gender", employee.gender || undefined);
+	form.setFieldValue("pronouns", employee.pronouns || "");
 	form.setFieldValue("position", employee.position || "");
 	form.setFieldValue("employeeNumber", employee.employeeNumber || "");
 	form.setFieldValue("role", employee.role || undefined);

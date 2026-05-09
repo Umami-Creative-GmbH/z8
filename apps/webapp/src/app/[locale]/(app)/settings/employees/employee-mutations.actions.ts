@@ -111,6 +111,7 @@ export async function createEmployeeAction(
 								firstName: validatedData.firstName || null,
 								lastName: validatedData.lastName || null,
 								gender: validatedData.gender || null,
+								pronouns: validatedData.pronouns || null,
 								birthday: validatedData.birthday || null,
 								startDate: validatedData.startDate || null,
 								endDate: validatedData.endDate || null,
@@ -339,6 +340,7 @@ export async function updateOwnProfileAction(
 								firstName: validatedData.firstName,
 								lastName: validatedData.lastName,
 								gender: validatedData.gender,
+								pronouns: validatedData.pronouns,
 								birthday: validatedData.birthday,
 								updatedAt: currentTimestamp(),
 							})

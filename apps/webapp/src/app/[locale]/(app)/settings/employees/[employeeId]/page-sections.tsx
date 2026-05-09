@@ -32,6 +32,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { UserAvatar } from "@/components/user-avatar";
+import { formatEmployeeIdentityName } from "@/lib/employee-identity";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { Link } from "@/navigation";
 import {
@@ -53,6 +54,8 @@ type EmployeeManagerRelation = {
 };
 
 const defaultTranslate: Translate = (_key, defaultValue) => defaultValue;
+const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"] as const;
+const CUSTOM_PRONOUN_VALUE = "__custom__";
 
 export function EmployeeDetailHeader({ t }: { t: Translate }) {
 	return (
@@ -125,6 +128,7 @@ export function EmployeeOverviewCard({
 		t("settings.employees.detailView.daySunday", "Sun"),
 	];
 	const managers = employee.managers as EmployeeManagerRelation[] | undefined;
+	const employeeDisplayName = formatEmployeeIdentityName(employee);
 
 	return (
 		<Card>
@@ -138,11 +142,11 @@ export function EmployeeOverviewCard({
 					<UserAvatar
 						image={employee.user.image}
 						seed={employee.user.id}
-						name={employee.user.name}
+						name={employeeDisplayName}
 						size="lg"
 					/>
 					<div>
-						<div className="font-medium">{employee.user.name}</div>
+						<div className="font-medium">{employeeDisplayName}</div>
 						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
 					</div>
 				</div>
@@ -366,6 +370,12 @@ export function EmployeeEditFormCard({
 							</TFormItem>
 						)}
 					</form.Field>
+
+					<PronounsEditField
+						form={form}
+						disabled={!canEditManagerFields || isUpdating}
+						t={t}
+					/>
 
 					<div className="grid gap-4 md:grid-cols-2">
 						<TextField
@@ -606,6 +616,86 @@ function EmployeeAppAccessFields({
 				/>
 			</div>
 		</>
+	);
+}
+
+function PronounsEditField({
+	form,
+	disabled,
+	t,
+}: {
+	form: EmployeeDetailFormApi;
+	disabled: boolean;
+	t: Translate;
+}) {
+	return (
+		<form.Field name="pronouns">
+			{(field) => {
+				const value = field.state.value;
+				const isPreset = PRONOUN_PRESETS.includes(value as (typeof PRONOUN_PRESETS)[number]);
+				const selectValue = isPreset ? value : "";
+				const hasError = fieldHasError(field);
+				const label = t("settings.employees.detailView.pronouns", "Pronouns");
+				const customLabel = t(
+					"settings.employees.detailView.pronounsCustom",
+					"Custom pronouns",
+				);
+
+				return (
+					<TFormItem>
+						<TFormLabel hasError={hasError}>{label}</TFormLabel>
+						<Select
+							value={selectValue}
+							disabled={disabled}
+							onValueChange={(nextValue) => {
+								field.handleChange(nextValue === CUSTOM_PRONOUN_VALUE ? "" : nextValue);
+							}}
+						>
+							<TFormControl hasError={hasError}>
+								<SelectTrigger aria-label={`${label} presets`}>
+									<SelectValue
+										placeholder={t(
+											"settings.employees.detailView.pronounsPlaceholder",
+											"Select pronouns",
+										)}
+									/>
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								<SelectItem value="she/her">she/her</SelectItem>
+								<SelectItem value="he/him">he/him</SelectItem>
+								<SelectItem value="they/them">they/them</SelectItem>
+								<SelectItem value={CUSTOM_PRONOUN_VALUE}>{customLabel}</SelectItem>
+							</SelectContent>
+						</Select>
+						{!isPreset ? (
+							<div className="space-y-2">
+								<label
+									htmlFor="employee-pronouns-custom"
+									className="text-xs text-muted-foreground"
+								>
+									{customLabel}
+								</label>
+								<Input
+									id="employee-pronouns-custom"
+									name="pronouns"
+									autoComplete="off"
+									value={value}
+									onChange={(event) => field.handleChange(event.target.value)}
+									onBlur={field.handleBlur}
+									placeholder={t(
+										"settings.employees.detailView.pronounsCustomPlaceholder",
+										"Enter pronouns",
+									)}
+									disabled={disabled}
+								/>
+							</div>
+						) : null}
+						<TFormMessage field={field} />
+					</TFormItem>
+				);
+			}}
+		</form.Field>
 	);
 }
 

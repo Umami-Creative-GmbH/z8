@@ -31,6 +31,10 @@ const translations = new Map([
 	["settings.employees.detailView.lastName", "Nachname"],
 	["settings.employees.detailView.gender", "Geschlecht"],
 	["settings.employees.detailView.genderMale", "Männlich"],
+	["settings.employees.detailView.pronouns", "Pronomen"],
+	["settings.employees.detailView.pronounsPlaceholder", "Pronomen auswählen"],
+	["settings.employees.detailView.pronounsCustom", "Eigene Pronomen"],
+	["settings.employees.detailView.pronounsCustomPlaceholder", "Pronomen eingeben"],
 	["settings.employees.detailView.position", "Position"],
 	["settings.employees.detailView.positionPlaceholder", "Position eingeben"],
 	["settings.employees.detailView.positionDescription", "Stellenbezeichnung oder Rolle"],
@@ -93,6 +97,7 @@ const employee = {
 	id: "employee-1",
 	organizationId: "org-1",
 	employeeNumber: "EMP-001",
+	pronouns: "he/him",
 	isActive: true,
 	team: { id: "team-1", name: "Umami" },
 	managers: [],
@@ -109,6 +114,7 @@ function createForm() {
 		firstName: "Johannes",
 		lastName: "Glier",
 		gender: "male",
+		pronouns: "he/him",
 		position: "",
 		employeeNumber: "EMP-001",
 		role: "employee",
@@ -165,6 +171,7 @@ describe("employee detail page sections", () => {
 		);
 
 		expect(screen.getByText("Mitarbeiterinformationen")).toBeTruthy();
+		expect(screen.getByText("Johannes Glier (he/him)")).toBeTruthy();
 		expect(screen.getByText("Aktiv")).toBeTruthy();
 		expect(screen.getByText("Arbeitszeitmodell")).toBeTruthy();
 		expect(screen.queryByText("Employee Information")).toBeNull();
@@ -186,6 +193,8 @@ describe("employee detail page sections", () => {
 		expect(screen.getByText("Mitarbeiter bearbeiten")).toBeTruthy();
 		expect(screen.getByText("Freigegebene Mitarbeiterdaten aktualisieren")).toBeTruthy();
 		expect(screen.getByText("Vorname")).toBeTruthy();
+		expect(screen.getByText("Pronomen")).toBeTruthy();
+		expect(screen.getByDisplayValue("he/him")).toBeTruthy();
 		expect(screen.getByText("Systemrolle")).toBeTruthy();
 		expect(screen.getByText("Standardzugriff")).toBeTruthy();
 		expect(screen.getByText("Vertragsart")).toBeTruthy();

@@ -4,6 +4,7 @@ const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = [
 	"firstName",
 	"lastName",
 	"gender",
+	"pronouns",
 	"position",
 ] as const;
 
