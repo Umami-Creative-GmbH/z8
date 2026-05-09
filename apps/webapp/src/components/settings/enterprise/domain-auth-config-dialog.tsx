@@ -206,6 +206,8 @@ export function DomainAuthConfigDialog({
 								<Label htmlFor="turnstile-site-key">Site Key</Label>
 								<Input
 									id="turnstile-site-key"
+									name="turnstileSiteKey"
+									autoComplete="off"
 									value={config.turnstileSiteKey ?? ""}
 									onChange={(e) =>
 										setConfig((prev) => ({
@@ -220,6 +222,8 @@ export function DomainAuthConfigDialog({
 								<Label htmlFor="turnstile-secret-key">Secret Key</Label>
 								<Input
 									id="turnstile-secret-key"
+									name="turnstileSecretKey"
+									autoComplete="new-password"
 									type="password"
 									value={turnstileSecretKey}
 									onChange={(e) => setTurnstileSecretKey(e.target.value)}
@@ -269,7 +273,7 @@ export function DomainAuthConfigDialog({
 						Cancel
 					</Button>
 					<Button onClick={handleSave} disabled={isSaving}>
-						{isSaving ? "Saving..." : "Save Configuration"}
+						{isSaving ? "Saving…" : "Save Configuration"}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>
