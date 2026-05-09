@@ -20,7 +20,7 @@ export function ProjectSelector({
     <div className="mt-3">
       <label
         htmlFor="project-select"
-        className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5"
+        className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-1.5"
       >
         <Folder className="w-3.5 h-3.5" aria-hidden="true" />
         <span>Project (optional)</span>
@@ -30,7 +30,7 @@ export function ProjectSelector({
         name="project"
         value={selectedId ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
-        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+        className="w-full px-3 py-2 text-sm text-slate-950 border border-slate-200 rounded-lg bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:border-transparent"
       >
         <option value="">No project</option>
         {projects.map((project) => (

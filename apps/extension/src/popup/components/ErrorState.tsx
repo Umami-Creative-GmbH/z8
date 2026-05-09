@@ -15,23 +15,23 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
       <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
         <AlertCircle className="w-6 h-6 text-red-500" aria-hidden="true" />
       </div>
-      <h3 className="text-sm font-semibold text-gray-900 mb-1">
+      <h3 className="text-sm font-semibold text-slate-950 mb-1">
         Connection Error
       </h3>
-      <p className="text-xs text-gray-500 mb-4 px-4">
+      <p className="text-xs text-slate-500 mb-4 px-4">
         {error?.message || "Failed to connect to the Z8 server."}
       </p>
       <div className="flex gap-2">
         <button
           onClick={onRetry}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
           <RefreshCw className="w-4 h-4" aria-hidden="true" />
           <span>Retry</span>
         </button>
         <button
           onClick={handleOpenOptions}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
           <Settings className="w-4 h-4" aria-hidden="true" />
           <span>Settings</span>
