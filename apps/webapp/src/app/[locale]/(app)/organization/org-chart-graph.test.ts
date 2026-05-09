@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
 	buildEdgeId,
@@ -161,5 +163,18 @@ describe("org chart graph helpers", () => {
 
 		expect(mergeOrgChartGraphs(complete, partial, "emp-1").partial).toBe(true);
 		expect(mergeOrgChartGraphs(partial, complete, "emp-1").partial).toBe(true);
+	});
+});
+
+describe("org chart server action source", () => {
+	it("keeps action queries scoped to active organization and active employees", () => {
+		const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
+
+		expect(source).toContain("activeOrganizationId");
+		expect(source).toContain("eq(employee.organizationId, organizationId)");
+		expect(source).toContain("eq(employee.isActive, true)");
+		expect(source).toContain("SMALL_ORG_EMPLOYEE_LIMIT");
+		expect(source).toContain("EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT");
+		expect(source).toContain("TEAM_NEIGHBORHOOD_MEMBER_LIMIT");
 	});
 });
