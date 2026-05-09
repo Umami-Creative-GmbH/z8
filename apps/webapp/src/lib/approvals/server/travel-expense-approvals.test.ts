@@ -1,5 +1,5 @@
 import { Cause, Effect, Exit, Option } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { ConflictError, DatabaseError } from "@/lib/effect/errors";
 
 const { onTravelExpenseApproved, onTravelExpenseRejected } = vi.hoisted(() => ({
@@ -59,6 +59,7 @@ import {
 	buildTravelExpenseApprovalPolicyContext,
 	createTravelExpenseApprovalWorkflow,
 	notifyTravelExpenseRequesterAfterDecision,
+	notifyTravelExpenseRequesterAfterDecisionForApprover,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
@@ -202,6 +203,15 @@ describe("preflightTravelExpenseDecision", () => {
 });
 
 describe("persistTravelExpenseDecision", () => {
+	it("keeps requester notification helpers runnable without an Effect environment", () => {
+		expectTypeOf<ReturnType<typeof notifyTravelExpenseRequesterAfterDecision>>().toEqualTypeOf<
+			Effect.Effect<void, never, never>
+		>();
+		expectTypeOf<ReturnType<typeof notifyTravelExpenseRequesterAfterDecisionForApprover>>().toEqualTypeOf<
+			Effect.Effect<void, never, never>
+		>();
+	});
+
 	it("keeps the submitted-status guard on the write path", async () => {
 		const returning = vi.fn().mockResolvedValue([{ id: "claim-1" }]);
 		const where = vi.fn().mockReturnValue({ returning });

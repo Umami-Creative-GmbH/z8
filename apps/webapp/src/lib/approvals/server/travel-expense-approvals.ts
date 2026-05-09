@@ -69,7 +69,10 @@ export function createTravelExpenseApprovalWorkflow(
 	});
 }
 
-export function loadTravelExpenseApprover(dbService: ApprovalDbService, approverId: string) {
+export function loadTravelExpenseApprover(
+	dbService: ApprovalDbService,
+	approverId: string,
+): Effect.Effect<CurrentApprover, AnyAppError, never> {
 	return dbService
 		.query("getTravelExpenseApprover", async () => {
 			return await dbService.db.query.employee.findFirst({
@@ -183,7 +186,7 @@ function loadTravelExpenseNotificationContext(
 	dbService: ApprovalDbService,
 	claimId: string,
 	organizationId: string,
-) {
+): Effect.Effect<TravelExpenseNotificationContext, AnyAppError, never> {
 	return dbService
 		.query("getTravelExpenseNotificationContext", async () => {
 			return await dbService.db.query.travelExpenseClaim.findFirst({
@@ -254,14 +257,12 @@ export function notifyTravelExpenseRequesterAfterDecision(
 	currentEmployee: CurrentApprover,
 	action: "approve" | "reject",
 	reason?: string,
-) {
+): Effect.Effect<void, never, never> {
 	return loadTravelExpenseNotificationContext(dbService, claimId, currentEmployee.organizationId).pipe(
-		Effect.filterOrElse(
-			(claim) => claim.status === (action === "approve" ? "approved" : "rejected"),
-			() => undefined,
-		),
 		Effect.flatMap((claim) =>
-			Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, reason)),
+			claim.status === (action === "approve" ? "approved" : "rejected")
+				? Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, reason))
+				: Effect.void,
 		),
 		Effect.catchAllCause(() => Effect.void),
 	);
@@ -273,7 +274,7 @@ export function notifyTravelExpenseRequesterAfterDecisionForApprover(
 	approverId: string,
 	action: "approve" | "reject",
 	reason?: string,
-) {
+): Effect.Effect<void, never, never> {
 	return loadTravelExpenseApprover(dbService, approverId).pipe(
 		Effect.flatMap((currentEmployee) =>
 			notifyTravelExpenseRequesterAfterDecision(
