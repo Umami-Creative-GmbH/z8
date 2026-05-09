@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockinClient } from "@/lib/clockin/client";
 import type {
@@ -142,8 +143,8 @@ export async function fetchZ8Employees(
 			.select({
 				id: employee.id,
 				userId: employee.userId,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
+				firstName: authSchema.user.firstName,
+				lastName: authSchema.user.lastName,
 				email: authSchema.user.email,
 				userName: authSchema.user.name,
 			})
@@ -156,10 +157,12 @@ export async function fetchZ8Employees(
 			data: employees.map((entry) => ({
 				id: entry.id,
 				userId: entry.userId,
-				name:
-					entry.firstName && entry.lastName
-						? `${entry.firstName} ${entry.lastName}`
-						: (entry.userName ?? entry.email),
+				name: buildAuthUserDisplayName({
+					firstName: entry.firstName,
+					lastName: entry.lastName,
+					name: entry.userName,
+					email: entry.email,
+				}),
 				email: entry.email,
 			})),
 		};

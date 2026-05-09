@@ -15,9 +15,9 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	type ChangePolicyAssignmentWithDetails,
 	deleteChangePolicyAssignment,
 	getChangePolicyAssignments,
-	type ChangePolicyAssignmentWithDetails,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import {
 	AlertDialog,
@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query";
 
 interface ChangePolicyAssignmentManagerProps {
@@ -79,8 +80,7 @@ const getEmployeeName = (
 	employee: { firstName: string | null; lastName: string | null } | null,
 ) => {
 	if (!employee) return "";
-	const name = [employee.firstName, employee.lastName].filter(Boolean).join(" ");
-	return name || "Unnamed";
+	return buildAuthUserDisplayName(employee) || "Unnamed";
 };
 
 export function ChangePolicyAssignmentManager({
@@ -262,12 +262,18 @@ export function ChangePolicyAssignmentManager({
 										</p>
 									</div>
 								</div>
-								{canManage ? <div className="flex justify-end">
-									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
-										{t("settings.changePolicies.setOrgDefault", "Set Organization Default")}
-									</Button>
-								</div> : null}
+								{canManage ? (
+									<div className="flex justify-end">
+										<Button
+											onClick={() => onAssignClick("organization")}
+											size="sm"
+											variant="outline"
+										>
+											<IconPlus className="mr-2 h-4 w-4" />
+											{t("settings.changePolicies.setOrgDefault", "Set Organization Default")}
+										</Button>
+									</div>
+								) : null}
 							</div>
 						)}
 					</CardContent>
@@ -297,12 +303,14 @@ export function ChangePolicyAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						{canManage ? <div className="flex justify-end mb-4">
-							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.changePolicies.assignToTeam", "Assign to Team")}
-							</Button>
-						</div> : null}
+						{canManage ? (
+							<div className="flex justify-end mb-4">
+								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.changePolicies.assignToTeam", "Assign to Team")}
+								</Button>
+							</div>
+						) : null}
 						{teamAssignments.length > 0 ? (
 							<div className="space-y-3">
 								{teamAssignments.map((assignment) => (
@@ -315,18 +323,18 @@ export function ChangePolicyAssignmentManager({
 												<IconUsers className="h-4 w-4 text-muted-foreground" />
 												<span className="font-medium">{assignment.team?.name}</span>
 											</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="h-4 w-4" />
-											<span className="sr-only">{t("common.remove", "Remove")}</span>
-										</Button>
-									) : null}
-								</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteClick(assignment)}
+												>
+													<IconTrash className="h-4 w-4" />
+													<span className="sr-only">{t("common.remove", "Remove")}</span>
+												</Button>
+											) : null}
+										</div>
 										<div className="mt-2 ml-7">
 											<div className="flex items-center gap-2 text-sm">
 												<Badge variant="outline" className="text-xs">
@@ -380,12 +388,14 @@ export function ChangePolicyAssignmentManager({
 						</div>
 					</CardHeader>
 					<CardContent>
-						{canManage ? <div className="flex justify-end mb-4">
-							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
-								{t("settings.changePolicies.assignToEmployee", "Assign to Employee")}
-							</Button>
-						</div> : null}
+						{canManage ? (
+							<div className="flex justify-end mb-4">
+								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
+									<IconPlus className="mr-2 h-4 w-4" />
+									{t("settings.changePolicies.assignToEmployee", "Assign to Employee")}
+								</Button>
+							</div>
+						) : null}
 						{employeeAssignments.length > 0 ? (
 							<div className="space-y-3">
 								{employeeAssignments.map((assignment) => (
@@ -398,18 +408,18 @@ export function ChangePolicyAssignmentManager({
 												<IconUser className="h-4 w-4 text-muted-foreground" />
 												<span className="font-medium">{getEmployeeName(assignment.employee)}</span>
 											</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
-											onClick={() => handleDeleteClick(assignment)}
-										>
-											<IconTrash className="h-4 w-4" />
-											<span className="sr-only">{t("common.remove", "Remove")}</span>
-										</Button>
-									) : null}
-								</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeleteClick(assignment)}
+												>
+													<IconTrash className="h-4 w-4" />
+													<span className="sr-only">{t("common.remove", "Remove")}</span>
+												</Button>
+											) : null}
+										</div>
 										<div className="mt-2 ml-7">
 											<div className="flex items-center gap-2 text-sm">
 												<Badge variant="outline" className="text-xs">

@@ -11,10 +11,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -84,9 +81,10 @@ export async function grantTeamPermissions(
 					}),
 				);
 
-				const grantedBy = actor.currentEmployee?.role === "admin"
-					? actor.currentEmployee.id
-					: actor.session.user.id;
+				const grantedBy =
+					actor.currentEmployee?.role === "admin"
+						? actor.currentEmployee.id
+						: actor.session.user.id;
 
 				span.setAttribute("currentEmployee.id", grantedBy);
 
@@ -96,10 +94,8 @@ export async function grantTeamPermissions(
 					return yield* _(
 						Effect.fail(
 							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "data",
+								message: validationResult.error.issues[0]?.message || "Invalid input",
+								field: validationResult.error.issues[0]?.path?.join(".") || "data",
 							}),
 						),
 					);
@@ -108,15 +104,15 @@ export async function grantTeamPermissions(
 				const validatedData = validationResult.data;
 
 				// Grant permissions using PermissionsService
-					yield* _(
-						permissionsService.grantPermissions(
-							validatedData.employeeId,
-							validatedData.organizationId,
-							validatedData.permissions,
-							validatedData.teamId || null,
-							grantedBy,
-						),
-					);
+				yield* _(
+					permissionsService.grantPermissions(
+						validatedData.employeeId,
+						validatedData.organizationId,
+						validatedData.permissions,
+						validatedData.teamId || null,
+						grantedBy,
+					),
+				);
 
 				logger.info(
 					{
@@ -181,19 +177,10 @@ export async function revokeTeamPermissions(
 					}),
 				);
 
-				span.setAttribute(
-					"currentEmployee.id",
-					actor.currentEmployee?.id ?? actor.session.user.id,
-				);
+				span.setAttribute("currentEmployee.id", actor.currentEmployee?.id ?? actor.session.user.id);
 
 				// Revoke permissions using PermissionsService
-				yield* _(
-					permissionsService.revokePermissions(
-						employeeId,
-						organizationId,
-						teamId || null,
-					),
-				);
+				yield* _(permissionsService.revokePermissions(employeeId, organizationId, teamId || null));
 
 				logger.info(
 					{
@@ -212,10 +199,7 @@ export async function revokeTeamPermissions(
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
-						logger.error(
-							{ error, employeeId, teamId },
-							"Failed to revoke permissions",
-						);
+						logger.error({ error, employeeId, teamId }, "Failed to revoke permissions");
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -238,7 +222,7 @@ export async function getEmployeePermissions(
 ): Promise<ServerActionResult<EmployeePermissions[]>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(getEmployeeSettingsActorContext());
-		const dbService = yield* _(DatabaseService);
+		const _dbService = yield* _(DatabaseService);
 		const permissionsService = yield* _(PermissionsService);
 
 		const isOrgAdmin = actor.accessTier === "orgAdmin";
@@ -258,9 +242,7 @@ export async function getEmployeePermissions(
 		}
 
 		// Get permissions using PermissionsService
-		const permissions = yield* _(
-			permissionsService.getEmployeePermissions(employeeId),
-		);
+		const permissions = yield* _(permissionsService.getEmployeePermissions(employeeId));
 
 		return permissions;
 	}).pipe(Effect.provide(AppLayer));
@@ -308,11 +290,7 @@ export async function hasTeamPermission(
 
 		// Check permission using PermissionsService
 		const hasPermission = yield* _(
-			permissionsService.hasTeamPermission(
-				employeeId,
-				permission,
-				teamId || null,
-			),
+			permissionsService.hasTeamPermission(employeeId, permission, teamId || null),
 		);
 
 		return hasPermission;
@@ -356,10 +334,7 @@ export async function listEmployeePermissions(organizationId?: string): Promise<
 					with: {
 						user: true,
 					},
-					orderBy: (employee, { asc }) => [
-						asc(employee.firstName),
-						asc(employee.lastName),
-					],
+					orderBy: (employee, { asc }) => [asc(employee.userId)],
 				});
 			}),
 		);
@@ -369,9 +344,7 @@ export async function listEmployeePermissions(organizationId?: string): Promise<
 			Effect.all(
 				employees.map((emp) =>
 					Effect.gen(function* (_) {
-						const permissions = yield* _(
-							permissionsService.getEmployeePermissions(emp.id),
-						);
+						const permissions = yield* _(permissionsService.getEmployeePermissions(emp.id));
 						return {
 							employee: emp,
 							permissions,

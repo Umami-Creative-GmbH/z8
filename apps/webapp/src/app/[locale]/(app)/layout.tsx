@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
+import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { setLanguage } from "@/tolgee/language";
@@ -35,9 +36,10 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	}
 
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [dbLocale, weekStartDay] = await Promise.all([
+	const [dbLocale, weekStartDay, timeFormat] = await Promise.all([
 		getUserLocaleRaw(session.user.id),
 		getUserWeekStartDay(session.user.id),
+		getUserTimeFormat(session.user.id),
 	]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
@@ -49,7 +51,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
 	return (
 		<PushPermissionProvider>
-			<UserPreferencesProvider weekStartDay={weekStartDay}>
+			<UserPreferencesProvider weekStartDay={weekStartDay} timeFormat={timeFormat}>
 				<OrganizationSettingsProvider>
 					<SidebarProvider
 						style={

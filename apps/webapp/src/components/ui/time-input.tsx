@@ -3,13 +3,75 @@
 import type * as React from "react";
 import { useEffect, useRef } from "react";
 import { TimepickerUI } from "timepicker-ui";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import {
+	formatTimeStringForPreference,
+	normalizeTimeFormat,
+	type TimeFormat,
+	timeFormatToPickerType,
+} from "@/lib/user-preferences/time-format";
 import { cn } from "@/lib/utils";
 
-type TimeInputProps = Omit<React.ComponentProps<"input">, "type">;
+type TimeInputProps = Omit<React.ComponentProps<"input">, "readOnly" | "type"> & {
+	timeFormat?: TimeFormat | string | null;
+};
 
-function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeInputProps) {
+type PickerConfirmData = {
+	hour?: string | null;
+	minutes?: string | null;
+	type?: string | null;
+};
+
+function normalizePickerConfirmTime(
+	data: PickerConfirmData,
+	timeFormat: TimeFormat,
+): string | null {
+	if (!data.hour || !data.minutes) {
+		return null;
+	}
+
+	const hour = Number(data.hour);
+	const minutes = Number(data.minutes);
+	if (!Number.isInteger(hour) || !Number.isInteger(minutes) || minutes < 0 || minutes > 59) {
+		return null;
+	}
+
+	const storedHour =
+		timeFormat === "12h" && (data.type === "AM" || data.type === "PM")
+			? data.type === "PM"
+				? hour === 12
+					? 12
+					: hour + 12
+				: hour === 12
+					? 0
+					: hour
+			: hour;
+
+	if (storedHour < 0 || storedHour > 23) {
+		return null;
+	}
+
+	return `${storedHour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+
+function TimeInput({
+	className,
+	onChange,
+	value,
+	defaultValue,
+	timeFormat,
+	...props
+}: TimeInputProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const onChangeRef = useRef(onChange);
+	const contextTimeFormat = useTimeFormat();
+	const pickerFormat = normalizeTimeFormat(timeFormat ?? contextTimeFormat);
+	const displayValue =
+		typeof value === "string" ? formatTimeStringForPreference(value, pickerFormat) : value;
+	const displayDefaultValue =
+		typeof defaultValue === "string"
+			? formatTimeStringForPreference(defaultValue, pickerFormat)
+			: defaultValue;
 
 	onChangeRef.current = onChange;
 
@@ -20,20 +82,25 @@ function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeI
 
 		const picker = new TimepickerUI(inputRef.current, {
 			clock: {
-				type: "24h",
+				type: timeFormatToPickerType(pickerFormat),
 			},
 			ui: {
-				editable: true,
+				editable: false,
 			},
 			callbacks: {
 				onConfirm: (data) => {
-					if (!inputRef.current || !data.hour || !data.minutes) {
+					const nextValue = normalizePickerConfirmTime(data, pickerFormat);
+					if (!inputRef.current || !nextValue) {
 						return;
 					}
 
-					inputRef.current.value = `${data.hour}:${data.minutes}`;
+					const input = inputRef.current;
+					input.value = formatTimeStringForPreference(nextValue, pickerFormat);
+					const changeTarget = { value: nextValue } as HTMLInputElement;
 					onChangeRef.current?.({
-						target: inputRef.current,
+						currentTarget: changeTarget,
+						target: changeTarget,
+						type: "change",
 					} as React.ChangeEvent<HTMLInputElement>);
 				},
 			},
@@ -41,8 +108,8 @@ function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeI
 
 		picker.create();
 
-		return () => picker.destroy();
-	}, []);
+		return () => picker.destroy({ keepInputValue: true });
+	}, [pickerFormat]);
 
 	return (
 		<input
@@ -52,13 +119,13 @@ function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeI
 				"aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
 				className,
 			)}
+			{...props}
 			data-slot="time-input"
-			defaultValue={defaultValue}
-			onChange={onChange}
+			defaultValue={displayDefaultValue}
+			readOnly
 			ref={inputRef}
 			type="text"
-			value={value}
-			{...props}
+			value={displayValue}
 		/>
 	);
 }

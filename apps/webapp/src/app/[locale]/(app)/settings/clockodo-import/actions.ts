@@ -14,6 +14,7 @@ import {
 	workPeriod,
 	workPolicy,
 } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockodoClient } from "@/lib/clockodo/client";
 import type { ImportUserMapping } from "@/lib/clockodo/import-orchestrator";
@@ -222,8 +223,8 @@ export async function fetchZ8Employees(
 			.select({
 				id: employee.id,
 				userId: employee.userId,
-				firstName: employee.firstName,
-				lastName: employee.lastName,
+				firstName: authSchema.user.firstName,
+				lastName: authSchema.user.lastName,
 				email: authSchema.user.email,
 				userName: authSchema.user.name,
 			})
@@ -236,7 +237,12 @@ export async function fetchZ8Employees(
 			data: employees.map((e) => ({
 				id: e.id,
 				userId: e.userId,
-				name: e.firstName && e.lastName ? `${e.firstName} ${e.lastName}` : (e.userName ?? e.email),
+				name: buildAuthUserDisplayName({
+					firstName: e.firstName,
+					lastName: e.lastName,
+					name: e.userName,
+					email: e.email,
+				}),
 				email: e.email,
 			})),
 		};
@@ -261,9 +267,7 @@ export async function saveUserMappings(
 		const authContext = await requireAdmin(organizationId);
 
 		// Validate that all referenced employee IDs belong to this organization
-		const employeeIds = mappings
-			.map((m) => m.employeeId)
-			.filter((id): id is string => id != null);
+		const employeeIds = mappings.map((m) => m.employeeId).filter((id): id is string => id != null);
 		await validateEmployeeOwnership(employeeIds, organizationId);
 
 		await Promise.all(

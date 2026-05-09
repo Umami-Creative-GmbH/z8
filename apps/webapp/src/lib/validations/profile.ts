@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { trimStructuredNamePart } from "../auth/derived-user-name";
-import { genderSchema } from "./employee";
+import { genderSchema, pronounsSchema } from "./employee";
 import { passwordSchema } from "./password";
 
 // Re-export passwordSchema for convenience
@@ -51,6 +51,7 @@ export const profileDetailsUpdateSchema = z.object({
 	firstName: structuredNamePartSchema,
 	lastName: structuredNamePartSchema,
 	gender: genderSchema.optional().nullable(),
+	pronouns: pronounsSchema,
 	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 	image: profileImageSchema,
 }).superRefine((data, ctx) => {

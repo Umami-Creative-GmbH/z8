@@ -98,6 +98,7 @@ vi.mock("drizzle-orm", () => ({
 	desc: vi.fn((value: unknown) => value),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
+	relations: vi.fn(() => ({})),
 	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
 }));
 

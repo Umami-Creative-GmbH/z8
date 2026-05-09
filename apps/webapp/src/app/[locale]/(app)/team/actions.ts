@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { employee, employeeManagers, team } from "@/db/schema";
+import { type employee, employeeManagers, type team } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -20,12 +20,15 @@ export interface ManagedEmployee {
 	userId: string;
 	firstName: string | null;
 	lastName: string | null;
+	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
 	isPrimaryManager: boolean;
 	user: {
 		id: string;
+		firstName: string | null;
+		lastName: string | null;
 		name: string;
 		email: string;
 		image: string | null;
@@ -36,9 +39,27 @@ export interface ManagedEmployee {
 	} | null;
 }
 
+export type CurrentTeamEmployee = typeof employee.$inferSelect & {
+	user: {
+		id: string;
+		firstName: string | null;
+		lastName: string | null;
+		name: string;
+		email: string;
+		image: string | null;
+	};
+};
+
 type ManagedEmployeeRecord = typeof employeeManagers.$inferSelect & {
 	employee: typeof employee.$inferSelect & {
-		user: { id: string; name: string; email: string; image: string | null };
+		user: {
+			id: string;
+			firstName: string | null;
+			lastName: string | null;
+			name: string;
+			email: string;
+			image: string | null;
+		};
 		team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
 	};
 };
@@ -50,7 +71,7 @@ type ManagedEmployeeRecord = typeof employeeManagers.$inferSelect & {
 /**
  * Get current employee from session (reuse pattern from absences)
  */
-export async function getCurrentEmployee() {
+export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return null;
@@ -62,15 +83,21 @@ export async function getCurrentEmployee() {
 		const emp = await db.query.employee.findFirst({
 			where: (e, { and, eq }) =>
 				and(eq(e.userId, session.user.id), eq(e.organizationId, activeOrgId), eq(e.isActive, true)),
+			with: {
+				user: true,
+			},
 		});
-		if (emp) return emp;
+		if (emp) return emp as CurrentTeamEmployee;
 	}
 
 	const emp = await db.query.employee.findFirst({
 		where: (e, { and, eq }) => and(eq(e.userId, session.user.id), eq(e.isActive, true)),
+		with: {
+			user: true,
+		},
 	});
 
-	return emp;
+	return emp as CurrentTeamEmployee | null;
 }
 
 /**
@@ -133,18 +160,22 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		);
 
 		// Transform to ManagedEmployee type
-		const typedManagedEmployeeRecords = managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
+		const typedManagedEmployeeRecords =
+			managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
 		const managedEmployees: ManagedEmployee[] = typedManagedEmployeeRecords.map((record) => ({
 			id: record.employee.id,
 			userId: record.employee.userId,
-			firstName: record.employee.firstName,
-			lastName: record.employee.lastName,
+			firstName: record.employee.user.firstName,
+			lastName: record.employee.user.lastName,
+			pronouns: record.employee.pronouns,
 			position: record.employee.position,
 			role: record.employee.role,
 			isActive: record.employee.isActive,
 			isPrimaryManager: record.isPrimary,
 			user: {
 				id: record.employee.user.id,
+				firstName: record.employee.user.firstName,
+				lastName: record.employee.user.lastName,
 				name: record.employee.user.name,
 				email: record.employee.user.email,
 				image: record.employee.user.image,

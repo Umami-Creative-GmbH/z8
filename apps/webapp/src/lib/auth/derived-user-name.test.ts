@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	buildAuthUserDisplayName,
 	buildDerivedUserName,
 	toAuthStructuredName,
 	trimStructuredNamePart,
@@ -72,5 +73,38 @@ describe("structured auth user name derivation", () => {
 		expect(trimStructuredNamePart("  ")).toBeUndefined();
 		expect(trimStructuredNamePart("  Hopper ")).toBe("Hopper");
 		expect(trimStructuredNamePart(undefined)).toBeUndefined();
+	});
+
+	it("prefers and trims structured auth names over fallback auth name and email", () => {
+		expect(
+			buildAuthUserDisplayName({
+				firstName: " Ada ",
+				lastName: " Lovelace ",
+				name: "Countess",
+				email: "ada@example.com",
+			}),
+		).toBe("Ada Lovelace");
+	});
+
+	it("falls back to auth name when structured auth names are null", () => {
+		expect(
+			buildAuthUserDisplayName({
+				firstName: null,
+				lastName: null,
+				name: " Countess ",
+				email: "ada@example.com",
+			}),
+		).toBe("Countess");
+	});
+
+	it("falls back to email when structured auth names and auth name are empty", () => {
+		expect(
+			buildAuthUserDisplayName({
+				firstName: " ",
+				lastName: "",
+				name: " ",
+				email: " ada@example.com ",
+			}),
+		).toBe("ada@example.com");
 	});
 });

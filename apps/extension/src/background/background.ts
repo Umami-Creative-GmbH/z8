@@ -2,6 +2,7 @@ import { storage } from "@/lib/storage";
 import { showNotification } from "@/lib/notifications";
 
 const DEFAULT_WEBAPP_URL = "http://localhost:3000";
+let isProcessingQueue = false;
 
 async function getWebappUrl(): Promise<string> {
   try {
@@ -27,10 +28,15 @@ async function updateBadge(isClockedIn: boolean, hasQueuedActions: boolean = fal
 async function checkStatus(): Promise<void> {
   const queuedActions = await storage.getQueuedActions();
   const hasQueuedActions = queuedActions.length > 0;
+  const optimisticState = await storage.getOptimisticState();
+
+  if (hasQueuedActions && optimisticState) {
+    await updateBadge(optimisticState.isClockedIn, hasQueuedActions);
+    return;
+  }
 
   // If offline, check optimistic state
   if (!navigator.onLine) {
-    const optimisticState = await storage.getOptimisticState();
     if (optimisticState) {
       await updateBadge(optimisticState.isClockedIn, hasQueuedActions);
     } else {
@@ -69,68 +75,88 @@ async function checkStatus(): Promise<void> {
 }
 
 async function processQueue(): Promise<void> {
-  if (!navigator.onLine) {
+  if (isProcessingQueue) {
     return;
   }
 
-  const queue = await storage.getQueuedActions();
-  if (queue.length === 0) {
-    return;
-  }
+  isProcessingQueue = true;
 
-  console.log(`Processing ${queue.length} queued actions...`);
-  const webappUrl = await getWebappUrl();
-  let processedCount = 0;
+  try {
+    if (!navigator.onLine) {
+      return;
+    }
 
-  for (const action of queue) {
-    try {
-      const body: Record<string, string | undefined> = {
-        type: action.type,
-        timestamp: action.timestamp,
-      };
-      if (action.projectId) {
-        body.projectId = action.projectId;
-      }
+    const queue = await storage.getQueuedActions();
+    if (queue.length === 0) {
+      return;
+    }
 
-      const response = await fetch(`${webappUrl}/api/time-entries`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+    console.log(`Processing ${queue.length} queued actions...`);
+    const webappUrl = await getWebappUrl();
+    let processedCount = 0;
 
-      if (response.ok || response.status === 400 || response.status === 401) {
-        // Success or client error - remove from queue
-        await storage.removeFromQueue(action.id);
-        processedCount++;
+    for (const action of queue) {
+      try {
+        const body: Record<string, string | undefined> = {
+          type: action.type,
+          timestamp: action.timestamp,
+        };
+        if (action.projectId) {
+          body.projectId = action.projectId;
+        }
 
-        if (response.ok) {
-          // Show notification for successful sync
-          const settings = await storage.getSettings();
-          if (settings.notificationsEnabled) {
-            if (action.type === "clock_in" && settings.notifyOnClockIn) {
-              await showNotification("clock_in", "Offline clock-in has been synced.");
-            } else if (action.type === "clock_out" && settings.notifyOnClockOut) {
-              await showNotification("clock_out", "Offline clock-out has been synced.");
+        const response = await fetch(`${webappUrl}/api/time-entries`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (response.status === 401) {
+          console.error(`Authentication required to process action ${action.id}`);
+          break;
+        }
+
+        if (response.ok || response.status === 400) {
+          // Success or client error - remove from queue
+          await storage.removeFromQueue(action.id);
+          processedCount++;
+
+          if (response.ok) {
+            await storage.markLastActionSynced({ type: action.type, timestamp: action.timestamp });
+
+            // Show notification for successful sync
+            const settings = await storage.getSettings();
+            if (settings.notificationsEnabled) {
+              if (action.type === "clock_in" && settings.notifyOnClockIn) {
+                await showNotification("clock_in", "Offline clock-in has been synced.");
+              } else if (action.type === "clock_out" && settings.notifyOnClockOut) {
+                await showNotification("clock_out", "Offline clock-out has been synced.");
+              }
             }
           }
+        } else {
+          // Server error - stop processing, will retry later
+          console.error(`Failed to process action ${action.id}:`, response.status);
+          break;
         }
-      } else {
-        // Server error - stop processing, will retry later
-        console.error(`Failed to process action ${action.id}:`, response.status);
-        break;
+      } catch (error) {
+        console.error(`Failed to process action ${action.id}:`, error);
+        break; // Network error - stop processing
       }
-    } catch (error) {
-      console.error(`Failed to process action ${action.id}:`, error);
-      break; // Network error - stop processing
     }
-  }
 
-  if (processedCount > 0) {
-    console.log(`Processed ${processedCount} queued actions`);
-    // Clear optimistic state and refresh status
-    await storage.setOptimisticState(null);
-    await checkStatus();
+    if (processedCount > 0) {
+      console.log(`Processed ${processedCount} queued actions`);
+      const remainingQueue = await storage.getQueuedActions();
+      if (remainingQueue.length === 0) {
+        // Clear optimistic state only after all queued actions have been resolved.
+        await storage.setOptimisticState(null);
+      }
+      await checkStatus();
+    }
+  } finally {
+    isProcessingQueue = false;
   }
 }
 

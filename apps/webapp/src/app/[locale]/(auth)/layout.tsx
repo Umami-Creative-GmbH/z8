@@ -9,9 +9,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
 import { type DomainAuthContext, getDomainConfig } from "@/lib/domain";
+import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
-import { DOMAIN_HEADERS } from "@/proxy";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { parseCookieConsentScript, selectAuthCookieConsentScript } from "./cookie-consent-script";
 
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
@@ -20,9 +21,9 @@ export async function generateStaticParams() {
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	// Get domain from proxy headers
+	// Derive custom domains from the trusted request Host header.
 	const headersList = await headers();
-	const customDomain = headersList.get(DOMAIN_HEADERS.DOMAIN);
+	const customDomain = getCustomDomainFromHeaders(headersList);
 
 	// Fetch domain config if on custom domain, otherwise use global config
 	let domainContext: DomainAuthContext | null = null;
@@ -56,18 +57,33 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	}
 
 	// Fetch cookie consent script for auth pages
-	const cookieConsentScript = await getCookieConsentScript();
+	const platformCookieConsentScript = customDomain ? null : await getCookieConsentScript();
+	const cookieConsentScript = selectAuthCookieConsentScript(
+		domainContext,
+		platformCookieConsentScript,
+	);
+	const parsedCookieConsentScript = parseCookieConsentScript(cookieConsentScript);
+	const { content: cookieConsentScriptContent, ...cookieConsentScriptProps } =
+		parsedCookieConsentScript ?? {};
 
 	return (
 		<DomainAuthProvider domainContext={domainContext}>
 			{/* Cookie consent script - injected on auth pages only */}
-			{cookieConsentScript && (
+			{cookieConsentScriptProps.src ? (
 				<Script
-					id="cookie-consent"
+					{...cookieConsentScriptProps}
+					id={cookieConsentScriptProps.id ?? "cookie-consent"}
 					strategy="afterInteractive"
-					dangerouslySetInnerHTML={{ __html: cookieConsentScript }}
 				/>
-			)}
+			) : cookieConsentScriptContent ? (
+				<Script
+					{...cookieConsentScriptProps}
+					id={cookieConsentScriptProps.id ?? "cookie-consent"}
+					strategy="afterInteractive"
+				>
+					{cookieConsentScriptContent}
+				</Script>
+			) : null}
 			<div className="min-h-svh bg-background lg:grid lg:grid-cols-2">
 				<section className="flex min-h-svh flex-col px-4 py-4 sm:px-8 sm:py-6 lg:h-svh lg:overflow-y-auto lg:px-10">
 					<div className="flex items-center justify-end gap-2">

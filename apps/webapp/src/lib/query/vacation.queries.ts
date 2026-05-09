@@ -6,6 +6,7 @@
 
 import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -267,12 +268,13 @@ export async function getAllEmployeeVacationAllowances(
 			updatedAt: employeeVacationAllowance.updatedAt,
 			employeeName: sql<
 				string | null
-			>`COALESCE(${employee.firstName} || ' ' || ${employee.lastName}, ${employee.firstName}, ${employee.lastName})`,
-			employeeFirstName: employee.firstName,
-			employeeLastName: employee.lastName,
+			>`COALESCE(NULLIF(concat_ws(' ', ${user.firstName}, ${user.lastName}), ''), ${user.name}, ${user.email})`,
+			employeeFirstName: user.firstName,
+			employeeLastName: user.lastName,
 		})
 		.from(employeeVacationAllowance)
 		.innerJoin(employee, eq(employeeVacationAllowance.employeeId, employee.id))
+		.innerJoin(user, eq(employee.userId, user.id))
 		.where(
 			and(eq(employee.organizationId, organizationId), eq(employeeVacationAllowance.year, year)),
 		);
@@ -438,8 +440,8 @@ export async function getPendingVacationRequests(
 		.select({
 			id: absenceEntry.id,
 			employeeId: absenceEntry.employeeId,
-			employeeFirstName: employee.firstName,
-			employeeLastName: employee.lastName,
+			employeeFirstName: user.firstName,
+			employeeLastName: user.lastName,
 			startDate: absenceEntry.startDate,
 			startPeriod: absenceEntry.startPeriod,
 			endDate: absenceEntry.endDate,
@@ -449,6 +451,7 @@ export async function getPendingVacationRequests(
 		})
 		.from(absenceEntry)
 		.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
+		.innerJoin(user, eq(employee.userId, user.id))
 		.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
 		.where(
 			and(
@@ -496,6 +499,7 @@ export async function getEmployeesWithVacationData(
 > {
 	const employees = await db.query.employee.findMany({
 		where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+		with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 	});
 
 	const allowances = await getAllEmployeeVacationAllowances(organizationId, year);
@@ -503,7 +507,11 @@ export async function getEmployeesWithVacationData(
 
 	return employees.map((emp) => ({
 		id: emp.id,
-		name: [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "Unknown",
+		name:
+			[emp.user?.firstName, emp.user?.lastName].filter(Boolean).join(" ") ||
+			emp.user?.name ||
+			emp.user?.email ||
+			"Unknown",
 		startDate: emp.startDate,
 		isActive: emp.isActive,
 		allowance: allowanceMap.get(emp.id) || null,
@@ -681,11 +689,12 @@ export async function getEmployeeAdjustments(
 			reason: vacationAdjustment.reason,
 			adjustedBy: vacationAdjustment.adjustedBy,
 			createdAt: vacationAdjustment.createdAt,
-			adjusterFirstName: employee.firstName,
-			adjusterLastName: employee.lastName,
+			adjusterFirstName: user.firstName,
+			adjusterLastName: user.lastName,
 		})
 		.from(vacationAdjustment)
 		.innerJoin(employee, eq(vacationAdjustment.adjustedBy, employee.id))
+		.innerJoin(user, eq(employee.userId, user.id))
 		.where(and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)))
 		.orderBy(desc(vacationAdjustment.createdAt));
 
@@ -748,10 +757,11 @@ export async function getOrganizationAdjustments(
 	const adjusterAlias = db
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			firstName: user.firstName,
+			lastName: user.lastName,
 		})
 		.from(employee)
+		.innerJoin(user, eq(employee.userId, user.id))
 		.as("adjuster");
 
 	const results = await db
@@ -763,13 +773,14 @@ export async function getOrganizationAdjustments(
 			reason: vacationAdjustment.reason,
 			adjustedBy: vacationAdjustment.adjustedBy,
 			createdAt: vacationAdjustment.createdAt,
-			employeeFirstName: employee.firstName,
-			employeeLastName: employee.lastName,
+			employeeFirstName: user.firstName,
+			employeeLastName: user.lastName,
 			adjusterFirstName: adjusterAlias.firstName,
 			adjusterLastName: adjusterAlias.lastName,
 		})
 		.from(vacationAdjustment)
 		.innerJoin(employee, eq(vacationAdjustment.employeeId, employee.id))
+		.innerJoin(user, eq(employee.userId, user.id))
 		.innerJoin(adjusterAlias, eq(vacationAdjustment.adjustedBy, adjusterAlias.id))
 		.where(
 			and(

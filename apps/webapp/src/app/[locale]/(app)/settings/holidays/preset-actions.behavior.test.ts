@@ -113,6 +113,7 @@ vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	isNull: vi.fn((value: unknown) => ({ isNull: value })),
+	relations: vi.fn(() => ({})),
 	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
 }));
 
@@ -166,14 +167,16 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 								innerJoin: vi.fn(() => ({
 									leftJoin: vi.fn(() => ({
 										leftJoin: vi.fn(() => ({
-											where: vi.fn((condition: any) => ({
-												orderBy: vi.fn(async () => {
-													const serialized = JSON.stringify(condition);
-													if (serialized.includes("preset-existing")) {
-														return [];
-													}
-													return mockState.presetAssignments;
-												}),
+											leftJoin: vi.fn(() => ({
+												where: vi.fn((condition: any) => ({
+													orderBy: vi.fn(async () => {
+														const serialized = JSON.stringify(condition);
+														if (serialized.includes("preset-existing")) {
+															return [];
+														}
+														return mockState.presetAssignments;
+													}),
+												})),
 											})),
 										})),
 									})),
@@ -265,14 +268,16 @@ vi.mock("@/lib/effect/runtime", async () => {
 				innerJoin: vi.fn(() => ({
 					leftJoin: vi.fn(() => ({
 						leftJoin: vi.fn(() => ({
-							where: vi.fn((condition: any) => ({
-								orderBy: vi.fn(async () => {
-									const serialized = JSON.stringify(condition);
-									if (serialized.includes("preset-existing")) {
-										return [];
-									}
-									return mockState.presetAssignments;
-								}),
+							leftJoin: vi.fn(() => ({
+								where: vi.fn((condition: any) => ({
+									orderBy: vi.fn(async () => {
+										const serialized = JSON.stringify(condition);
+										if (serialized.includes("preset-existing")) {
+											return [];
+										}
+										return mockState.presetAssignments;
+									}),
+								})),
 							})),
 						})),
 					})),

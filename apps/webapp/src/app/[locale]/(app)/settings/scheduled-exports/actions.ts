@@ -1,39 +1,38 @@
 "use server";
 
-import { and, desc, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import {
 	db,
 	payrollExportConfig,
-	payrollExportFormat,
+	type payrollExportFormat,
 	scheduledExport,
 	scheduledExportExecution,
 } from "@/db";
-import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import type {
 	ScheduledExport,
-	ScheduledExportExecution,
-	ScheduledExportReportConfig,
-	ScheduledExportFilters,
 	ScheduledExportCustomOffset,
+	ScheduledExportFilters,
+	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	calculateNextExecution,
-	validateCronExpression,
 	getNextExecutions,
+	validateCronExpression,
 } from "@/lib/scheduled-exports/domain/schedule-evaluator";
 import type {
+	DateRangeStrategy,
+	DeliveryMethod,
+	ReportType,
 	ScheduleConfig,
 	ScheduleType,
-	ReportType,
-	DeliveryMethod,
-	DateRangeStrategy,
 } from "@/lib/scheduled-exports/domain/types";
 
 // ============================================
@@ -125,9 +124,7 @@ export async function createScheduledExportAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -147,7 +144,9 @@ export async function createScheduledExportAction(
 			try {
 				validateCronExpression(input.cronExpression);
 			} catch (error) {
-				throw new Error(`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`);
+				throw new Error(
+					`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`,
+				);
 			}
 		}
 
@@ -238,9 +237,7 @@ export async function getScheduledExportsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -292,9 +289,7 @@ export async function getScheduledExportAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -337,9 +332,7 @@ export async function updateScheduledExportAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -359,7 +352,9 @@ export async function updateScheduledExportAction(
 			try {
 				validateCronExpression(input.cronExpression);
 			} catch (error) {
-				throw new Error(`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`);
+				throw new Error(
+					`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`,
+				);
 			}
 		}
 
@@ -379,11 +374,16 @@ export async function updateScheduledExportAction(
 		if (input.customOffset !== undefined) updates.customOffset = input.customOffset;
 		if (input.deliveryMethod !== undefined) updates.deliveryMethod = input.deliveryMethod;
 		if (input.emailRecipients !== undefined) updates.emailRecipients = input.emailRecipients;
-		if (input.emailSubjectTemplate !== undefined) updates.emailSubjectTemplate = input.emailSubjectTemplate;
+		if (input.emailSubjectTemplate !== undefined)
+			updates.emailSubjectTemplate = input.emailSubjectTemplate;
 		if (input.isActive !== undefined) updates.isActive = input.isActive;
 
 		// Recalculate next execution if schedule changed
-		if (input.scheduleType !== undefined || input.cronExpression !== undefined || input.timezone !== undefined) {
+		if (
+			input.scheduleType !== undefined ||
+			input.cronExpression !== undefined ||
+			input.timezone !== undefined
+		) {
 			const existing = yield* _(
 				Effect.promise(() =>
 					db.query.scheduledExport.findFirst({
@@ -394,7 +394,7 @@ export async function updateScheduledExportAction(
 
 			if (existing) {
 				const scheduleConfig: ScheduleConfig = {
-					type: input.scheduleType || existing.scheduleType as ScheduleType,
+					type: input.scheduleType || (existing.scheduleType as ScheduleType),
 					cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
 					timezone: input.timezone || existing.timezone,
 				};
@@ -458,9 +458,7 @@ export async function deleteScheduledExportAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -523,9 +521,7 @@ export async function getExecutionHistoryAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -587,7 +583,9 @@ export async function previewNextExecutionsAction(
 			try {
 				validateCronExpression(cronExpression);
 			} catch (error) {
-				throw new Error(`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`);
+				throw new Error(
+					`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`,
+				);
 			}
 		}
 
@@ -616,9 +614,7 @@ export async function runScheduledExportNowAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -686,9 +682,7 @@ export async function getFilterOptionsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(
@@ -704,23 +698,22 @@ export async function getFilterOptionsAction(
 		}
 
 		// Import employee, team, project tables
-		const { employee, team, project } = yield* _(
-			Effect.promise(() => import("@/db")),
-		);
+		const { employee, team, project, user } = yield* _(Effect.promise(() => import("@/db")));
 
 		// Fetch employees
 		const employees = yield* _(
 			Effect.promise(async () => {
-				return db.query.employee.findMany({
-					where: eq(employee.organizationId, organizationId),
-					columns: {
-						id: true,
-						firstName: true,
-						lastName: true,
-						employeeNumber: true,
-					},
-					orderBy: (emp, { asc }) => [asc(emp.lastName), asc(emp.firstName)],
-				});
+				return db
+					.select({
+						id: employee.id,
+						firstName: user.firstName,
+						lastName: user.lastName,
+						employeeNumber: employee.employeeNumber,
+					})
+					.from(employee)
+					.innerJoin(user, eq(employee.userId, user.id))
+					.where(eq(employee.organizationId, organizationId))
+					.orderBy(asc(user.lastName), asc(user.firstName));
 			}),
 		);
 
@@ -753,11 +746,11 @@ export async function getFilterOptionsAction(
 		);
 
 		return {
-			employees: employees.map((e) => ({
-				id: e.id,
-				firstName: e.firstName ?? "",
-				lastName: e.lastName ?? "",
-				employeeNumber: e.employeeNumber ?? undefined,
+			employees: employees.map((employeeRow) => ({
+				id: employeeRow.id,
+				firstName: employeeRow.firstName ?? "",
+				lastName: employeeRow.lastName ?? "",
+				employeeNumber: employeeRow.employeeNumber ?? undefined,
 			})),
 			teams: teams.map((t) => ({
 				id: t.id,
@@ -790,9 +783,7 @@ export async function getPayrollConfigsAction(
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		const hasPermission = yield* _(
-			Effect.promise(() => isOrgAdminCasl(organizationId)),
-		);
+		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
 
 		if (!hasPermission) {
 			yield* _(

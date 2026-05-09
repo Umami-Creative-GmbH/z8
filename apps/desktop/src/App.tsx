@@ -8,6 +8,7 @@ import { IdleDialog } from "./components/IdleDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { OrganizationSelector } from "./components/OrganizationSelector";
 import { Settings } from "./components/Settings";
+import { WorkLocationSelector } from "./components/WorkLocationSelector";
 
 import { useAuth } from "./hooks/useAuth";
 import { useClock } from "./hooks/useClock";
@@ -15,6 +16,7 @@ import { useIdle } from "./hooks/useIdle";
 import { useOrganizations } from "./hooks/useOrganizations";
 import { useSettings } from "./hooks/useSettings";
 import { useTheme } from "./hooks/useTheme";
+import { useWorkLocation } from "./hooks/useWorkLocation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +48,7 @@ function AppContent() {
   } = useClock();
   const { idleEvent, isIdleDialogOpen, dismissIdle } = useIdle();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { workLocationType, setWorkLocationType } = useWorkLocation();
   const {
     organizations,
     activeOrganizationId,
@@ -65,7 +68,7 @@ function AppContent() {
 
   const handleClockIn = async () => {
     try {
-      await clockIn();
+      await clockIn(workLocationType);
       toast.success("Clocked in successfully");
     } catch (error) {
       toast.error("Failed to clock in");
@@ -88,7 +91,10 @@ function AppContent() {
 
     setIsProcessingIdle(true);
     try {
-      await clockOutWithBreak(idleEvent.idleStartTime);
+      await clockOutWithBreak({
+        breakStartTime: idleEvent.idleStartTime,
+        workLocationType,
+      });
       toast.success("Break recorded, clocked back in");
       dismissIdle();
     } catch (error) {
@@ -134,7 +140,7 @@ function AppContent() {
         <div className="app-header-left">
           <div className="app-header-brand">
             <div className="app-logo">
-              <Clock size={18} color="white" />
+              <Clock size={18} color="white" aria-hidden="true" />
             </div>
             <div>
               <div className="app-title">z8 Timer</div>
@@ -153,7 +159,7 @@ function AppContent() {
         <div className="app-header-actions">
           {isError && (
             <div className="offline-badge">
-              <WifiOff size={14} />
+              <WifiOff size={14} aria-hidden="true" />
               <span>Offline</span>
             </div>
           )}
@@ -161,6 +167,7 @@ function AppContent() {
             onClick={cycleTheme}
             className="settings-button"
             title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
+            aria-label={`Change Theme. Current theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
           >
             <ThemeIcon size={18} />
           </button>
@@ -168,6 +175,7 @@ function AppContent() {
             onClick={() => setIsSettingsOpen(true)}
             className="settings-button"
             title="Settings"
+            aria-label="Open Settings"
           >
             <SettingsIcon size={18} />
           </button>
@@ -176,6 +184,13 @@ function AppContent() {
 
       {/* Main content */}
       <main className="app-main">
+        {!isClockedIn && (
+          <WorkLocationSelector
+            value={workLocationType}
+            onChange={setWorkLocationType}
+            disabled={isClockingIn || isClockingOut}
+          />
+        )}
         <ClockButton
           isClockedIn={isClockedIn}
           startTime={activeWorkPeriod?.startTime ?? null}

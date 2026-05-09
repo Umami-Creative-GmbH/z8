@@ -3,6 +3,16 @@ import * as z from "zod";
 // Gender enum matching database enum
 export const genderSchema = z.enum(["male", "female", "other"]);
 
+export const pronounsSchema = z.preprocess(
+	(value) => (typeof value === "string" ? value.trim() : value),
+	z
+		.string()
+		.max(50, "Pronouns must be 50 characters or less")
+		.transform((value) => value || null)
+		.optional()
+		.nullable(),
+);
+
 // Employee role enum
 export const employeeRoleSchema = z.enum(["employee", "manager", "admin"]);
 
@@ -16,7 +26,7 @@ export const hourlyRateSchema = z
 		(val) => {
 			if (!val || val === "") return true; // optional
 			const num = parseFloat(val);
-			return !isNaN(num) && num > 0;
+			return !Number.isNaN(num) && num > 0;
 		},
 		{ message: "Hourly rate must be a positive number" },
 	)
@@ -28,7 +38,7 @@ export const createRateHistorySchema = z.object({
 	hourlyRate: z.string().refine(
 		(val) => {
 			const num = parseFloat(val);
-			return !isNaN(num) && num > 0;
+			return !Number.isNaN(num) && num > 0;
 		},
 		{ message: "Hourly rate must be a positive number" },
 	),
@@ -46,6 +56,7 @@ export const personalInformationSchema = z.object({
 		.optional(),
 	lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long").optional(),
 	gender: genderSchema.optional(),
+	pronouns: pronounsSchema,
 	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 });
 
@@ -62,20 +73,9 @@ export const createEmployeeSchema = z.object({
 		.optional()
 		.nullable(),
 
-	// Personal information
-	firstName: z
-		.string()
-		.min(1, "First name is required")
-		.max(100, "First name is too long")
-		.optional()
-		.nullable(),
-	lastName: z
-		.string()
-		.min(1, "Last name is required")
-		.max(100, "Last name is too long")
-		.optional()
-		.nullable(),
+	// Personal information owned by the employee record
 	gender: genderSchema.optional().nullable(),
+	pronouns: pronounsSchema,
 	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
 	// Dates
@@ -95,20 +95,9 @@ export const updateEmployeeSchema = z
 		position: z.string().max(100, "Position is too long").optional().nullable(),
 		employeeNumber: z.string().max(50, "Employee number is too long").optional().nullable(),
 
-		// Personal information
-		firstName: z
-			.string()
-			.min(1, "First name is required")
-			.max(100, "First name is too long")
-			.optional()
-			.nullable(),
-		lastName: z
-			.string()
-			.min(1, "Last name is required")
-			.max(100, "Last name is too long")
-			.optional()
-			.nullable(),
+		// Personal information owned by the employee record
 		gender: genderSchema.optional().nullable(),
+		pronouns: pronounsSchema,
 		birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
 		// Dates

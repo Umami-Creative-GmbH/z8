@@ -2,6 +2,7 @@
 
 import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
+import { user } from "@/db/auth-schema";
 import {
 	employee,
 	holidayCategory,
@@ -10,17 +11,16 @@ import {
 	holidayPresetHoliday,
 	team,
 } from "@/db/schema";
-import {
-	AuthorizationError,
-	type AnyAppError,
-	ConflictError,
-	DatabaseError,
-	NotFoundError,
-} from "@/lib/effect/errors";
+import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import type {
+	HolidayPresetAssignmentFormValues,
+	HolidayPresetFormValues,
+	HolidayPresetHolidayFormValues,
+} from "@/lib/holidays/validation";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -29,11 +29,6 @@ import {
 	filterAssignmentsForManagerHolidayScope,
 	getScopedHolidayAccessContext,
 } from "./holiday-scope";
-import type {
-	HolidayPresetAssignmentFormValues,
-	HolidayPresetFormValues,
-	HolidayPresetHolidayFormValues,
-} from "@/lib/holidays/validation";
 
 // Type definitions for return values
 type HolidayPresetListItem = {
@@ -265,14 +260,15 @@ export async function getHolidayPreset(
 							},
 							employee: {
 								id: employee.id,
-								firstName: employee.firstName,
-								lastName: employee.lastName,
+								firstName: user.firstName,
+								lastName: user.lastName,
 							},
 						})
 						.from(holidayPresetAssignment)
 						.innerJoin(holidayPreset, eq(holidayPresetAssignment.presetId, holidayPreset.id))
 						.leftJoin(team, eq(holidayPresetAssignment.teamId, team.id))
 						.leftJoin(employee, eq(holidayPresetAssignment.employeeId, employee.id))
+						.leftJoin(user, eq(employee.userId, user.id))
 						.where(
 							and(
 								eq(holidayPresetAssignment.organizationId, actor.organizationId),
@@ -870,14 +866,15 @@ export async function getPresetAssignments(
 						},
 						employee: {
 							id: employee.id,
-							firstName: employee.firstName,
-							lastName: employee.lastName,
+							firstName: user.firstName,
+							lastName: user.lastName,
 						},
 					})
 					.from(holidayPresetAssignment)
 					.innerJoin(holidayPreset, eq(holidayPresetAssignment.presetId, holidayPreset.id))
 					.leftJoin(team, eq(holidayPresetAssignment.teamId, team.id))
 					.leftJoin(employee, eq(holidayPresetAssignment.employeeId, employee.id))
+					.leftJoin(user, eq(employee.userId, user.id))
 					.where(
 						and(
 							eq(holidayPresetAssignment.organizationId, organizationId),
@@ -920,7 +917,10 @@ export async function createPresetAssignment(
 ): Promise<ServerActionResult<typeof holidayPresetAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "createPresetAssignment:actor" }),
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "createPresetAssignment:actor",
+			}),
 		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -1101,13 +1101,14 @@ export async function getEmployeesForAssignment(
 				return await dbService.db
 					.select({
 						id: employee.id,
-						firstName: employee.firstName,
-						lastName: employee.lastName,
+						firstName: user.firstName,
+						lastName: user.lastName,
 						position: employee.position,
 					})
 					.from(employee)
+					.innerJoin(user, eq(employee.userId, user.id))
 					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
-					.orderBy(employee.firstName, employee.lastName);
+					.orderBy(user.firstName, user.lastName);
 			}),
 		);
 

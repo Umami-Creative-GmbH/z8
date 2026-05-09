@@ -1,12 +1,13 @@
 "use server";
 
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeRateHistory } from "@/db/schema";
-import { AppAccessService } from "@/lib/effect/services/app-access.service";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";
+import type { ServerActionResult } from "@/lib/effect/result";
+import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -19,10 +20,7 @@ import {
 	type UpdateEmployee,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
-import type { ServerActionResult } from "@/lib/effect/result";
-import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 import {
-	ensureCanAccessEmployeeSettingsTarget,
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext,
 	getEmployeeSettingsActorContext,
@@ -35,6 +33,7 @@ import {
 	runTracedEmployeeAction,
 	validateInput,
 } from "./employee-action-utils";
+import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
 
@@ -108,9 +107,8 @@ export async function createEmployeeAction(
 								teamId: validatedData.teamId || null,
 								role: validatedData.role,
 								position: validatedData.position || null,
-								firstName: validatedData.firstName || null,
-								lastName: validatedData.lastName || null,
 								gender: validatedData.gender || null,
+								pronouns: validatedData.pronouns || null,
 								birthday: validatedData.birthday || null,
 								startDate: validatedData.startDate || null,
 								endDate: validatedData.endDate || null,
@@ -194,7 +192,9 @@ export async function updateEmployeeAction(
 						: validatedData;
 
 				const newHourlyRate = parseHourlyRate(
-					"hourlyRate" in scopedData ? (scopedData.hourlyRate as string | null | undefined) : undefined,
+					"hourlyRate" in scopedData
+						? (scopedData.hourlyRate as string | null | undefined)
+						: undefined,
 				);
 				const currentRate = parseHourlyRate(targetEmployee.currentHourlyRate);
 
@@ -205,7 +205,17 @@ export async function updateEmployeeAction(
 					updatedAt: currentTimestamp(),
 				};
 
-				const { canUseWebapp, canUseDesktop, canUseMobile, ...employeeUpdateData } = updatePayload;
+				const {
+					canUseWebapp,
+					canUseDesktop,
+					canUseMobile,
+					firstName: _firstName,
+					lastName: _lastName,
+					...employeeUpdateData
+				} = updatePayload as typeof updatePayload & {
+					firstName?: unknown;
+					lastName?: unknown;
+				};
 
 				yield* _(
 					dbService.query("updateEmployee", async () => {
@@ -327,19 +337,19 @@ export async function updateOwnProfileAction(
 				const { dbService, currentEmployee } = yield* _(getEmployeeContext());
 				span.setAttribute("employee.id", currentEmployee.id);
 
-				const validatedData = yield* _(
-					validateInput(personalInformationSchema, data, "profile"),
-				);
+				const validatedData = yield* _(validateInput(personalInformationSchema, data, "profile"));
+				const {
+					firstName: _firstName,
+					lastName: _lastName,
+					...employeeProfileData
+				} = validatedData;
 
 				yield* _(
 					dbService.query("updateOwnProfile", async () => {
 						await dbService.db
 							.update(employee)
 							.set({
-								firstName: validatedData.firstName,
-								lastName: validatedData.lastName,
-								gender: validatedData.gender,
-								birthday: validatedData.birthday,
+								...employeeProfileData,
 								updatedAt: currentTimestamp(),
 							})
 							.where(eq(employee.id, currentEmployee.id));

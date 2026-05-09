@@ -27,7 +27,9 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export default function AdminBillingPage() {
+export default async function AdminBillingPage() {
+	await connection();
+
 	// Check if billing is enabled
 	if (process.env.BILLING_ENABLED !== "true") {
 		redirect("/platform-admin");

@@ -1,8 +1,9 @@
 "use server";
 
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { Effect } from "effect";
+import { revalidatePath } from "next/cache";
+import { user } from "@/db/auth-schema";
 import {
 	employee,
 	locationEmployee,
@@ -98,7 +99,11 @@ type SetAssignmentListItem = {
 type WorkCategorySetAssignmentWithRelations = typeof workCategorySetAssignment.$inferSelect & {
 	set: Pick<typeof workCategorySet.$inferSelect, "id" | "name" | "description">;
 	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
-	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName"> | null;
+	employee:
+		| (Pick<typeof employee.$inferSelect, "id"> & {
+				user: { firstName: string | null; lastName: string | null } | null;
+		  })
+		| null;
 };
 
 type EffectiveWorkCategorySetAssignment = typeof workCategorySetAssignment.$inferSelect & {
@@ -156,13 +161,14 @@ interface CreateSetAssignmentInput {
 	effectiveUntil?: Date | null;
 }
 
-type WorkCategorySettingsActor = Awaited<ReturnType<typeof getEmployeeSettingsActorContext>> extends Effect.Effect<
-	infer Success,
-	any,
-	any
->
-	? Success
-	: never;
+type WorkCategorySettingsActor =
+	Awaited<ReturnType<typeof getEmployeeSettingsActorContext>> extends Effect.Effect<
+		infer Success,
+		any,
+		any
+	>
+		? Success
+		: never;
 
 type WorkCategoryAccessContext = {
 	actor: WorkCategorySettingsActor;
@@ -183,12 +189,7 @@ function getScopedOrganizationWorkCategory(
 		const [category] = await dbService.db
 			.select({ id: workCategory.id })
 			.from(workCategory)
-			.where(
-				and(
-					eq(workCategory.id, categoryId),
-					eq(workCategory.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(workCategory.id, categoryId), eq(workCategory.organizationId, organizationId)))
 			.limit(1);
 
 		return category ?? null;
@@ -205,9 +206,7 @@ function getScopedOrganizationWorkCategorySet(
 		const [set] = await dbService.db
 			.select({ id: workCategorySet.id })
 			.from(workCategorySet)
-			.where(
-				and(eq(workCategorySet.id, setId), eq(workCategorySet.organizationId, organizationId)),
-			)
+			.where(and(eq(workCategorySet.id, setId), eq(workCategorySet.organizationId, organizationId)))
 			.limit(1);
 
 		return set ?? null;
@@ -292,40 +291,44 @@ function getScopedWorkCategoryAccessContext(organizationId: string | undefined, 
 		}
 
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
-		const [teamPermissionRows, managedProjects, managerLocationAssignments, managerSubareaAssignments] =
-			actor.currentEmployee
-				? yield* _(
-						Effect.all([
-							actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-								return await actor.dbService.db.query.teamPermissions.findMany({
-									where: and(
-										eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
-										eq(teamPermissions.organizationId, scopedOrganizationId),
-									),
-									columns: { teamId: true, canManageTeamSettings: true },
-								});
-							}),
-							actor.dbService.query(`${queryName}:managedProjects`, async () => {
-								return await actor.dbService.db.query.projectManager.findMany({
-									where: eq(projectManager.employeeId, actor.currentEmployee?.id ?? ""),
-									columns: { projectId: true },
-								});
-							}),
-							actor.dbService.query(`${queryName}:locationAssignments`, async () => {
-								return await actor.dbService.db.query.locationEmployee.findMany({
-									where: eq(locationEmployee.employeeId, actor.currentEmployee?.id ?? ""),
-									columns: { locationId: true },
-								});
-							}),
-							actor.dbService.query(`${queryName}:subareaAssignments`, async () => {
-								return await actor.dbService.db.query.subareaEmployee.findMany({
-									where: eq(subareaEmployee.employeeId, actor.currentEmployee?.id ?? ""),
-									columns: { subareaId: true },
-								});
-							}),
-						]),
-				  )
-				: [[], [], [], []];
+		const [
+			teamPermissionRows,
+			managedProjects,
+			managerLocationAssignments,
+			managerSubareaAssignments,
+		] = actor.currentEmployee
+			? yield* _(
+					Effect.all([
+						actor.dbService.query(`${queryName}:teamPermissions`, async () => {
+							return await actor.dbService.db.query.teamPermissions.findMany({
+								where: and(
+									eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
+									eq(teamPermissions.organizationId, scopedOrganizationId),
+								),
+								columns: { teamId: true, canManageTeamSettings: true },
+							});
+						}),
+						actor.dbService.query(`${queryName}:managedProjects`, async () => {
+							return await actor.dbService.db.query.projectManager.findMany({
+								where: eq(projectManager.employeeId, actor.currentEmployee?.id ?? ""),
+								columns: { projectId: true },
+							});
+						}),
+						actor.dbService.query(`${queryName}:locationAssignments`, async () => {
+							return await actor.dbService.db.query.locationEmployee.findMany({
+								where: eq(locationEmployee.employeeId, actor.currentEmployee?.id ?? ""),
+								columns: { locationId: true },
+							});
+						}),
+						actor.dbService.query(`${queryName}:subareaAssignments`, async () => {
+							return await actor.dbService.db.query.subareaEmployee.findMany({
+								where: eq(subareaEmployee.employeeId, actor.currentEmployee?.id ?? ""),
+								columns: { subareaId: true },
+							});
+						}),
+					]),
+				)
+			: [[], [], [], []];
 
 		const manageableLocationIds = new Set(
 			managerLocationAssignments
@@ -360,37 +363,41 @@ function getScopedEmployeeIds(accessContext: WorkCategoryAccessContext, queryNam
 		}
 
 		const teamIds = accessContext.manageableTeamIds ? [...accessContext.manageableTeamIds] : [];
-		const locationIds = accessContext.manageableLocationIds ? [...accessContext.manageableLocationIds] : [];
-		const subareaIds = accessContext.manageableSubareaIds ? [...accessContext.manageableSubareaIds] : [];
+		const locationIds = accessContext.manageableLocationIds
+			? [...accessContext.manageableLocationIds]
+			: [];
+		const subareaIds = accessContext.manageableSubareaIds
+			? [...accessContext.manageableSubareaIds]
+			: [];
 
 		const [teamEmployees, locationAreaEmployees, subareaAreaEmployees] = yield* _(
 			Effect.all([
 				teamIds.length > 0
 					? accessContext.actor.dbService.query(`${queryName}:teamEmployees`, async () => {
-						return await accessContext.actor.dbService.db.query.employee.findMany({
-							where: and(
-								eq(employee.organizationId, accessContext.actor.organizationId),
-								inArray(employee.teamId, teamIds),
-							),
-							columns: { id: true },
-						});
-					})
+							return await accessContext.actor.dbService.db.query.employee.findMany({
+								where: and(
+									eq(employee.organizationId, accessContext.actor.organizationId),
+									inArray(employee.teamId, teamIds),
+								),
+								columns: { id: true },
+							});
+						})
 					: Effect.succeed([] as Array<{ id: string }>),
 				locationIds.length > 0
 					? accessContext.actor.dbService.query(`${queryName}:locationAreaEmployees`, async () => {
-						return await accessContext.actor.dbService.db.query.locationEmployee.findMany({
-							where: inArray(locationEmployee.locationId, locationIds),
-							columns: { employeeId: true },
-						});
-					})
+							return await accessContext.actor.dbService.db.query.locationEmployee.findMany({
+								where: inArray(locationEmployee.locationId, locationIds),
+								columns: { employeeId: true },
+							});
+						})
 					: Effect.succeed([] as Array<{ employeeId: string }>),
 				subareaIds.length > 0
 					? accessContext.actor.dbService.query(`${queryName}:subareaAreaEmployees`, async () => {
-						return await accessContext.actor.dbService.db.query.subareaEmployee.findMany({
-							where: inArray(subareaEmployee.subareaId, subareaIds),
-							columns: { employeeId: true },
-						});
-					})
+							return await accessContext.actor.dbService.db.query.subareaEmployee.findMany({
+								where: inArray(subareaEmployee.subareaId, subareaIds),
+								columns: { employeeId: true },
+							});
+						})
 					: Effect.succeed([] as Array<{ employeeId: string }>),
 			]),
 		);
@@ -410,7 +417,9 @@ function getVisibleCategoryIds(accessContext: WorkCategoryAccessContext, queryNa
 			return null as Set<string> | null;
 		}
 
-		const scopedEmployeeIds = yield* _(getScopedEmployeeIds(accessContext, `${queryName}:employees`));
+		const scopedEmployeeIds = yield* _(
+			getScopedEmployeeIds(accessContext, `${queryName}:employees`),
+		);
 		const employeeIds = scopedEmployeeIds ? [...scopedEmployeeIds] : [];
 		const projectIds = accessContext.managedProjectIds ? [...accessContext.managedProjectIds] : [];
 
@@ -418,29 +427,29 @@ function getVisibleCategoryIds(accessContext: WorkCategoryAccessContext, queryNa
 			Effect.all([
 				employeeIds.length > 0
 					? accessContext.actor.dbService.query(`${queryName}:employeeCategoryIds`, async () => {
-						return await accessContext.actor.dbService.db
-							.select({ workCategoryId: workPeriod.workCategoryId })
-							.from(workPeriod)
-							.where(
-								and(
-									eq(workPeriod.organizationId, accessContext.actor.organizationId),
-									inArray(workPeriod.employeeId, employeeIds),
-								),
-							);
-					})
+							return await accessContext.actor.dbService.db
+								.select({ workCategoryId: workPeriod.workCategoryId })
+								.from(workPeriod)
+								.where(
+									and(
+										eq(workPeriod.organizationId, accessContext.actor.organizationId),
+										inArray(workPeriod.employeeId, employeeIds),
+									),
+								);
+						})
 					: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
 				projectIds.length > 0
 					? accessContext.actor.dbService.query(`${queryName}:projectCategoryIds`, async () => {
-						return await accessContext.actor.dbService.db
-							.select({ workCategoryId: workPeriod.workCategoryId })
-							.from(workPeriod)
-							.where(
-								and(
-									eq(workPeriod.organizationId, accessContext.actor.organizationId),
-									inArray(workPeriod.projectId, projectIds),
-								),
-							);
-					})
+							return await accessContext.actor.dbService.db
+								.select({ workCategoryId: workPeriod.workCategoryId })
+								.from(workPeriod)
+								.where(
+									and(
+										eq(workPeriod.organizationId, accessContext.actor.organizationId),
+										inArray(workPeriod.projectId, projectIds),
+									),
+								);
+						})
 					: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
 			]),
 		);
@@ -459,7 +468,9 @@ function getVisibleSetIds(accessContext: WorkCategoryAccessContext, queryName: s
 			return null as Set<string> | null;
 		}
 
-		const visibleCategoryIds = yield* _(getVisibleCategoryIds(accessContext, `${queryName}:categories`));
+		const visibleCategoryIds = yield* _(
+			getVisibleCategoryIds(accessContext, `${queryName}:categories`),
+		);
 		const categoryIds = visibleCategoryIds ? [...visibleCategoryIds] : [];
 
 		if (categoryIds.length === 0) {
@@ -469,7 +480,10 @@ function getVisibleSetIds(accessContext: WorkCategoryAccessContext, queryName: s
 		const setLinks = yield* _(
 			accessContext.actor.dbService.query(`${queryName}:setLinks`, async () => {
 				return await accessContext.actor.dbService.db
-					.select({ setId: workCategorySetCategory.setId, categoryId: workCategorySetCategory.categoryId })
+					.select({
+						setId: workCategorySetCategory.setId,
+						categoryId: workCategorySetCategory.categoryId,
+					})
 					.from(workCategorySetCategory)
 					.where(inArray(workCategorySetCategory.categoryId, categoryIds));
 			}),
@@ -486,11 +500,13 @@ function filterAssignmentsByManagerScope(
 ) {
 	return assignments.filter((assignment) => {
 		if (assignment.assignmentType === "team") {
-			return assignment.teamId ? manageableTeamIds?.has(assignment.teamId) ?? false : false;
+			return assignment.teamId ? (manageableTeamIds?.has(assignment.teamId) ?? false) : false;
 		}
 
 		if (assignment.assignmentType === "employee") {
-			return assignment.employeeId ? scopedEmployeeIds?.has(assignment.employeeId) ?? false : false;
+			return assignment.employeeId
+				? (scopedEmployeeIds?.has(assignment.employeeId) ?? false)
+				: false;
 		}
 
 		return false;
@@ -681,7 +697,9 @@ export async function updateOrganizationCategory(
 	input: UpdateOrganizationCategoryInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateOrganizationCategory:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateOrganizationCategory:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to update work categories",
@@ -783,7 +801,9 @@ export async function deleteOrganizationCategory(
 	categoryId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteOrganizationCategory:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteOrganizationCategory:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to delete work categories",
@@ -969,7 +989,9 @@ export async function getWorkCategorySetDetail(
 		const visibleCategoryIds =
 			accessContext.actor.accessTier === "orgAdmin"
 				? null
-				: yield* _(getVisibleCategoryIds(accessContext, "getWorkCategorySetDetail:visibleCategories"));
+				: yield* _(
+						getVisibleCategoryIds(accessContext, "getWorkCategorySetDetail:visibleCategories"),
+					);
 
 		const [set] = yield* _(
 			dbService.query("getWorkCategorySet", async () =>
@@ -1015,17 +1037,18 @@ export async function getWorkCategorySetDetail(
 
 			const visibleSetIds = visibleCategoryIds
 				? new Set(
-						(
-							yield* _(
-								accessContext.actor.dbService.query("getWorkCategorySetDetail:visibleSetLinks", async () => {
+						(yield* _(
+							accessContext.actor.dbService.query(
+								"getWorkCategorySetDetail:visibleSetLinks",
+								async () => {
 									return await accessContext.actor.dbService.db
 										.select({ setId: workCategorySetCategory.setId })
 										.from(workCategorySetCategory)
 										.where(inArray(workCategorySetCategory.categoryId, [...visibleCategoryIds]));
-								}),
-							)
-						).map((link) => link.setId),
-				)
+								},
+							),
+						)).map((link) => link.setId),
+					)
 				: new Set<string>();
 
 			if (!visibleSetIds?.has(setId)) {
@@ -1207,7 +1230,9 @@ export async function updateWorkCategorySet(
 	input: UpdateWorkCategorySetInput,
 ): Promise<ServerActionResult<{ id: string }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateWorkCategorySet:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateWorkCategorySet:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to update work category sets",
@@ -1292,7 +1317,9 @@ export async function deleteWorkCategorySet(
 	setId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteWorkCategorySet:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteWorkCategorySet:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to delete work category sets",
@@ -1399,7 +1426,9 @@ export async function updateSetCategories(
 	categoryIds: string[],
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "updateSetCategories:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "updateSetCategories:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to update set categories",
@@ -1493,7 +1522,9 @@ export async function reorderSetCategories(
 	categoryIds: string[],
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "reorderSetCategories:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "reorderSetCategories:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to reorder categories",
@@ -1591,7 +1622,10 @@ export async function getWorkCategorySetAssignments(
 					with: {
 						set: true,
 						team: true,
-						employee: true,
+						employee: {
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
+						},
 					},
 					orderBy: [
 						asc(workCategorySetAssignment.assignmentType),
@@ -1626,8 +1660,8 @@ export async function getWorkCategorySetAssignments(
 					employee: a.employee
 						? {
 								id: a.employee.id,
-								firstName: a.employee.firstName,
-								lastName: a.employee.lastName,
+								firstName: a.employee.user?.firstName ?? null,
+								lastName: a.employee.user?.lastName ?? null,
 							}
 						: null,
 				}));
@@ -1753,7 +1787,9 @@ export async function deleteSetAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteSetAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteSetAssignment:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Admin access required to delete set assignments",
@@ -1874,13 +1910,14 @@ export async function getEmployeesForAssignment(
 				dbService.db
 					.select({
 						id: employee.id,
-						firstName: employee.firstName,
-						lastName: employee.lastName,
+						firstName: user.firstName,
+						lastName: user.lastName,
 						position: employee.position,
 					})
 					.from(employee)
+					.innerJoin(user, eq(employee.userId, user.id))
 					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
-					.orderBy(asc(employee.firstName), asc(employee.lastName)),
+					.orderBy(asc(user.firstName), asc(user.lastName)),
 			),
 			Effect.mapError(
 				() =>

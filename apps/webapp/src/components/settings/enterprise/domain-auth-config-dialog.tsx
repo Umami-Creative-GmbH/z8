@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import type { AuthConfig } from "@/lib/domain";
 
 interface Domain {
@@ -39,6 +40,15 @@ const SOCIAL_PROVIDERS = [
 	{ id: "apple", label: "Apple" },
 ];
 
+const getInitialConfig = (domain: Domain | null): AuthConfig => ({
+	emailPasswordEnabled: domain?.authConfig.emailPasswordEnabled ?? true,
+	socialProvidersEnabled: domain?.authConfig.socialProvidersEnabled ?? [],
+	ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
+	passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
+	turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
+	cookieConsentScript: domain?.authConfig.cookieConsentScript,
+});
+
 export function DomainAuthConfigDialog({
 	open,
 	onOpenChange,
@@ -46,19 +56,27 @@ export function DomainAuthConfigDialog({
 	organizationId: _organizationId,
 	onSave,
 }: DomainAuthConfigDialogProps) {
-	const [config, setConfig] = useState<AuthConfig>({
-		emailPasswordEnabled: domain?.authConfig.emailPasswordEnabled ?? true,
-		socialProvidersEnabled: domain?.authConfig.socialProvidersEnabled ?? [],
-		ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
-		passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
-		turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
-	});
+	const [config, setConfig] = useState<AuthConfig>(() => getInitialConfig(domain));
 	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
+	const lastResetKeyRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		const resetKey = open && domain ? domain.id : null;
+
+		if (lastResetKeyRef.current === resetKey) return;
+
+		lastResetKeyRef.current = resetKey;
+
+		if (!resetKey || !domain) return;
+
+		setConfig(getInitialConfig(domain));
+		setTurnstileSecretKey("");
+	}, [open, domain]);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen && domain) {
-			setConfig(domain.authConfig);
+			setConfig(getInitialConfig(domain));
 			setTurnstileSecretKey("");
 		}
 		onOpenChange(nextOpen);
@@ -188,6 +206,8 @@ export function DomainAuthConfigDialog({
 								<Label htmlFor="turnstile-site-key">Site Key</Label>
 								<Input
 									id="turnstile-site-key"
+									name="turnstileSiteKey"
+									autoComplete="off"
 									value={config.turnstileSiteKey ?? ""}
 									onChange={(e) =>
 										setConfig((prev) => ({
@@ -202,6 +222,8 @@ export function DomainAuthConfigDialog({
 								<Label htmlFor="turnstile-secret-key">Secret Key</Label>
 								<Input
 									id="turnstile-secret-key"
+									name="turnstileSecretKey"
+									autoComplete="new-password"
 									type="password"
 									value={turnstileSecretKey}
 									onChange={(e) => setTurnstileSecretKey(e.target.value)}
@@ -215,6 +237,35 @@ export function DomainAuthConfigDialog({
 							</div>
 						</div>
 					</div>
+
+					<Separator />
+
+					<div className="space-y-3">
+						<div>
+							<Label htmlFor="cookie-consent-script">Cookie Consent Script</Label>
+							<p className="text-sm text-muted-foreground">
+								Injected on authentication pages for this custom domain only. Leave empty to
+								disable.
+							</p>
+						</div>
+						<Textarea
+							id="cookie-consent-script"
+							name="cookieConsentScript"
+							autoComplete="off"
+							spellCheck={false}
+							value={config.cookieConsentScript ?? ""}
+							onChange={(e) =>
+								setConfig((prev) => ({
+									...prev,
+									cookieConsentScript: e.target.value || undefined,
+								}))
+							}
+							rows={8}
+							className="font-mono text-sm"
+							placeholder={`<!-- Example: CookieBot -->
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="YOUR-ID" type="text/javascript" async></script>`}
+						/>
+					</div>
 				</ActionPanelBody>
 
 				<ActionPanelFooter>
@@ -222,7 +273,7 @@ export function DomainAuthConfigDialog({
 						Cancel
 					</Button>
 					<Button onClick={handleSave} disabled={isSaving}>
-						{isSaving ? "Saving..." : "Save Configuration"}
+						{isSaving ? "Saving…" : "Save Configuration"}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>

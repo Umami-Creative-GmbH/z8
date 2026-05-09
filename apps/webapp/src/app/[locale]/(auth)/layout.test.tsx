@@ -1,11 +1,18 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import AuthLayout from "./layout";
 
-vi.mock("next/headers", () => ({
+const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers()),
+	getCookieConsentScript: vi.fn(async () => null),
+	getDomainConfig: vi.fn(),
+	env: {},
+}));
+
+vi.mock("next/headers", () => ({
+	headers: mockState.headers,
 }));
 
 vi.mock("next/image", () => ({
@@ -15,7 +22,7 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("next/script", () => ({
-	default: ({ id }: { id: string }) => <script data-testid={id} />,
+	default: (props: Record<string, unknown>) => <div data-testid={String(props.id)} {...props} />,
 }));
 
 vi.mock("next/server", () => ({
@@ -35,7 +42,7 @@ vi.mock("@/components/theme-toggle", () => ({
 }));
 
 vi.mock("@/env", () => ({
-	env: {},
+	env: mockState.env,
 }));
 
 vi.mock("@/lib/auth/domain-auth-context", () => ({
@@ -43,15 +50,11 @@ vi.mock("@/lib/auth/domain-auth-context", () => ({
 }));
 
 vi.mock("@/lib/domain", () => ({
-	getDomainConfig: vi.fn(),
+	getDomainConfig: mockState.getDomainConfig,
 }));
 
 vi.mock("@/lib/platform-settings", () => ({
-	getCookieConsentScript: vi.fn(async () => null),
-}));
-
-vi.mock("@/proxy", () => ({
-	DOMAIN_HEADERS: { DOMAIN: "x-domain" },
+	getCookieConsentScript: mockState.getCookieConsentScript,
 }));
 
 vi.mock("@/tolgee/shared", () => ({
@@ -59,6 +62,14 @@ vi.mock("@/tolgee/shared", () => ({
 }));
 
 describe("AuthLayout", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.headers.mockResolvedValue(new Headers());
+		mockState.getCookieConsentScript.mockResolvedValue(null);
+		mockState.getDomainConfig.mockResolvedValue(null);
+		mockState.env.MAIN_DOMAIN = "app.z8.test";
+	});
+
 	it("keeps the image panel fixed while the left side scrolls", async () => {
 		render(
 			await AuthLayout({
@@ -75,5 +86,51 @@ describe("AuthLayout", () => {
 		expect(imagePanel?.className).toContain("fixed");
 		expect(imagePanel?.className).toContain("right-0");
 		expect(imagePanel?.className).toContain("h-svh");
+	});
+
+	it("does not fall back to the platform cookie script on custom domains", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ host: "login.acme.test" }));
+		mockState.getCookieConsentScript.mockResolvedValue("platform()");
+		mockState.getDomainConfig.mockResolvedValue({
+			organizationId: "org_123",
+			domain: "login.acme.test",
+			authConfig: {
+				emailPasswordEnabled: true,
+				socialProvidersEnabled: [],
+				ssoEnabled: false,
+				passkeyEnabled: true,
+			},
+			branding: null,
+			socialOAuthConfigured: {
+				google: false,
+				github: false,
+				linkedin: false,
+				apple: false,
+			},
+			turnstile: {
+				enabled: false,
+				siteKey: null,
+				isEnterprise: true,
+			},
+		});
+
+		render(await AuthLayout({ children: <div>Auth content</div> }));
+
+		expect(mockState.getDomainConfig).toHaveBeenCalledWith("login.acme.test");
+		expect(mockState.getCookieConsentScript).not.toHaveBeenCalled();
+		expect(screen.queryByTestId("cookie-consent")).toBeNull();
+	});
+
+	it("renders external cookie consent snippets as src scripts", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ host: "app.z8.test" }));
+		mockState.getCookieConsentScript.mockResolvedValue(
+			'<script id="Cookiebot" src="https://consent.example/uc.js" data-cbid="abc" async></script>',
+		);
+
+		render(await AuthLayout({ children: <div>Auth content</div> }));
+
+		const script = screen.getByTestId("Cookiebot");
+		expect(script.getAttribute("src")).toBe("https://consent.example/uc.js");
+		expect(script.getAttribute("data-cbid")).toBe("abc");
 	});
 });

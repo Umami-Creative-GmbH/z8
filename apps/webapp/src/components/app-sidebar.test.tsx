@@ -110,6 +110,19 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
+	it("renders Org Explorer as a primary personal navigation item", () => {
+		render(<AppSidebar />);
+
+		expect(screen.getByRole("link", { name: "Org Explorer" }).getAttribute("href")).toBe(
+			"/organization",
+		);
+		expect(navMainSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Org Explorer", url: "/organization" }),
+			]),
+		);
+	});
+
 	it("renders the compliance entry in secondary nav only when enabled", () => {
 		const { rerender } = render(<AppSidebar showComplianceNav />);
 

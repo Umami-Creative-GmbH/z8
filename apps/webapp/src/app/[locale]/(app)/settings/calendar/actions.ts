@@ -15,12 +15,13 @@ import {
 	subareaEmployee,
 	teamPermissions,
 } from "@/db/schema";
-import { AuthorizationError, DatabaseError, ValidationError } from "@/lib/effect/errors";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { getSupportedProviders, isProviderSupported } from "@/lib/calendar-sync/providers";
+import { AuthorizationError, type DatabaseError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { getSupportedProviders, isProviderSupported } from "@/lib/calendar-sync/providers";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
@@ -71,7 +72,16 @@ export interface CalendarConnectionSummary {
 }
 
 type CalendarConnectionWithEmployee = typeof calendarConnection.$inferSelect & {
-	employee: Pick<typeof employee.$inferSelect, "id" | "firstName" | "lastName"> | null;
+	employee:
+		| (Pick<typeof employee.$inferSelect, "id"> & {
+				user: {
+					firstName: string | null;
+					lastName: string | null;
+					name: string | null;
+					email: string | null;
+				} | null;
+		  })
+		| null;
 };
 
 export interface ManagerCalendarReadView {
@@ -216,37 +226,38 @@ function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: s
 
 		const currentEmployee = actor.currentEmployee;
 
-		const [teamPermissionRows, managerLocationRows, managerSubareaRows, managedProjectRows] = yield* _(
-			Effect.all([
-				actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-					return actor.dbService.db.query.teamPermissions.findMany({
-						where: and(
-							eq(teamPermissions.employeeId, currentEmployee.id),
-							eq(teamPermissions.organizationId, actor.organizationId),
-						),
-						columns: { teamId: true, canManageTeamSettings: true },
-					});
-				}),
-				actor.dbService.query(`${queryName}:managerLocations`, async () => {
-					return actor.dbService.db.query.locationEmployee.findMany({
-						where: eq(locationEmployee.employeeId, currentEmployee.id),
-						columns: { locationId: true },
-					});
-				}),
-				actor.dbService.query(`${queryName}:managerSubareas`, async () => {
-					return actor.dbService.db.query.subareaEmployee.findMany({
-						where: eq(subareaEmployee.employeeId, currentEmployee.id),
-						columns: { subareaId: true },
-					});
-				}),
-				actor.dbService.query(`${queryName}:managedProjects`, async () => {
-					return actor.dbService.db.query.projectManager.findMany({
-						where: eq(projectManager.employeeId, currentEmployee.id),
-						columns: { projectId: true },
-					});
-				}),
-			]),
-		);
+		const [teamPermissionRows, managerLocationRows, managerSubareaRows, managedProjectRows] =
+			yield* _(
+				Effect.all([
+					actor.dbService.query(`${queryName}:teamPermissions`, async () => {
+						return actor.dbService.db.query.teamPermissions.findMany({
+							where: and(
+								eq(teamPermissions.employeeId, currentEmployee.id),
+								eq(teamPermissions.organizationId, actor.organizationId),
+							),
+							columns: { teamId: true, canManageTeamSettings: true },
+						});
+					}),
+					actor.dbService.query(`${queryName}:managerLocations`, async () => {
+						return actor.dbService.db.query.locationEmployee.findMany({
+							where: eq(locationEmployee.employeeId, currentEmployee.id),
+							columns: { locationId: true },
+						});
+					}),
+					actor.dbService.query(`${queryName}:managerSubareas`, async () => {
+						return actor.dbService.db.query.subareaEmployee.findMany({
+							where: eq(subareaEmployee.employeeId, currentEmployee.id),
+							columns: { subareaId: true },
+						});
+					}),
+					actor.dbService.query(`${queryName}:managedProjects`, async () => {
+						return actor.dbService.db.query.projectManager.findMany({
+							where: eq(projectManager.employeeId, currentEmployee.id),
+							columns: { projectId: true },
+						});
+					}),
+				]),
+			);
 
 		const manageableTeamIds = new Set(
 			teamPermissionRows
@@ -302,31 +313,31 @@ function getScopedCalendarEmployeeIds(actor: CalendarSettingsActor, queryName: s
 			Effect.all([
 				teamIdsToLoad.size
 					? actor.dbService.query(`${queryName}:teamEmployees`, async () => {
-						return actor.dbService.db.query.employee.findMany({
-							where: and(
-								eq(employee.organizationId, actor.organizationId),
-								eq(employee.isActive, true),
-								inArray(employee.teamId, [...teamIdsToLoad]),
-							),
-							columns: { id: true },
-						});
-					})
+							return actor.dbService.db.query.employee.findMany({
+								where: and(
+									eq(employee.organizationId, actor.organizationId),
+									eq(employee.isActive, true),
+									inArray(employee.teamId, [...teamIdsToLoad]),
+								),
+								columns: { id: true },
+							});
+						})
 					: Effect.succeed([]),
 				manageableLocationIds.length
 					? actor.dbService.query(`${queryName}:locationEmployees`, async () => {
-						return actor.dbService.db.query.locationEmployee.findMany({
-							where: inArray(locationEmployee.locationId, manageableLocationIds),
-							columns: { employeeId: true },
-						});
-					})
+							return actor.dbService.db.query.locationEmployee.findMany({
+								where: inArray(locationEmployee.locationId, manageableLocationIds),
+								columns: { employeeId: true },
+							});
+						})
 					: Effect.succeed([]),
 				manageableSubareaIds.length
 					? actor.dbService.query(`${queryName}:subareaEmployees`, async () => {
-						return actor.dbService.db.query.subareaEmployee.findMany({
-							where: inArray(subareaEmployee.subareaId, manageableSubareaIds),
-							columns: { employeeId: true },
-						});
-					})
+							return actor.dbService.db.query.subareaEmployee.findMany({
+								where: inArray(subareaEmployee.subareaId, manageableSubareaIds),
+								columns: { employeeId: true },
+							});
+						})
 					: Effect.succeed([]),
 			]),
 		);
@@ -354,7 +365,10 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 					where: eq(calendarConnection.organizationId, actor.organizationId),
 					with: {
 						employee: {
-							columns: { id: true, firstName: true, lastName: true },
+							columns: { id: true },
+							with: {
+								user: { columns: { firstName: true, lastName: true, name: true, email: true } },
+							},
 						},
 					},
 				});
@@ -364,13 +378,15 @@ function getRelevantCalendarConnections(actor: CalendarSettingsActor, queryName:
 		const typedConnections = connections as unknown as CalendarConnectionWithEmployee[];
 
 		return typedConnections
-			.filter((connection) => scopedEmployeeIds === null || scopedEmployeeIds.has(connection.employeeId))
+			.filter(
+				(connection) => scopedEmployeeIds === null || scopedEmployeeIds.has(connection.employeeId),
+			)
 			.map((connection) => ({
 				id: connection.id,
 				employeeId: connection.employeeId,
-				employeeName:
-					[connection.employee?.firstName, connection.employee?.lastName].filter(Boolean).join(" ") ||
-					connection.providerAccountId,
+				employeeName: connection.employee?.user
+					? buildAuthUserDisplayName(connection.employee.user) || connection.providerAccountId
+					: connection.providerAccountId,
 				provider: connection.provider,
 				providerLabel: providerLabels.get(connection.provider) ?? connection.provider,
 				providerAccountId: connection.providerAccountId,
@@ -431,7 +447,9 @@ export async function getCalendarSettings(): Promise<ServerActionResult<Calendar
 	return runServerActionSafe(effect);
 }
 
-export async function getManagerCalendarReadView(): Promise<ServerActionResult<ManagerCalendarReadView>> {
+export async function getManagerCalendarReadView(): Promise<
+	ServerActionResult<ManagerCalendarReadView>
+> {
 	const effect = Effect.gen(function* (_) {
 		const actor = yield* _(getCalendarSettingsActorContext("getManagerCalendarReadView"));
 		const relevantConnections = yield* _(
@@ -525,7 +543,7 @@ export async function getProviderStatus(): Promise<
 > {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		yield* _(authService.getSession());
 
 		const providers = getSupportedProviders();
 

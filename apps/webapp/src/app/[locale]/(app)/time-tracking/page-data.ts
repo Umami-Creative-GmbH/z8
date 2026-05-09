@@ -10,6 +10,7 @@ import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import { normalizeTimeFormat } from "@/lib/user-preferences/time-format";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getTranslate } from "@/tolgee/server";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
@@ -33,7 +34,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		}),
 		db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, session.user.id),
-			columns: { timezone: true, weekStartDay: true },
+			columns: { timezone: true, weekStartDay: true, timeFormat: true },
 		}),
 	]);
 
@@ -43,6 +44,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 
 	const timezone = settings?.timezone || "UTC";
 	const weekStartDay = normalizeWeekStartDay(settings?.weekStartDay);
+	const timeFormat = normalizeTimeFormat(settings?.timeFormat);
 	const { start, end } = getWeekRangeInTimezone(new Date(), timezone, weekStartDay);
 	const startDate = dateToDB(start)!;
 	const endDate = dateToDB(end)!;
@@ -64,6 +66,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			timezone,
+			timeFormat,
 			dateParam: searchParams.date,
 		}),
 	]);
@@ -72,6 +75,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		session,
 		currentEmployee,
 		timezone,
+		timeFormat,
 		activeWorkPeriod,
 		workPeriods,
 		canApproveTimeEntries,

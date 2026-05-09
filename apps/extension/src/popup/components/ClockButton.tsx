@@ -30,12 +30,13 @@ export function ClockButton({
       onClick={handleClick}
       disabled={isLoading || disabled}
       className={cn(
-        "w-full py-3 px-4 rounded-lg font-semibold text-white transition-all",
+        "w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors",
         "flex items-center justify-center gap-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         isClockedIn
           ? "bg-red-500 hover:bg-red-600 active:bg-red-700"
-          : "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700"
+          : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
       )}
     >
       {isLoading ? (

@@ -89,6 +89,7 @@ vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	desc: vi.fn((value: unknown) => value),
+	relations: vi.fn(() => ({})),
 }));
 
 vi.mock("next/cache", () => ({

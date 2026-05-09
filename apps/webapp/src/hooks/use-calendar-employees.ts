@@ -3,11 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
+	type CurrentTeamEmployee,
 	getCurrentEmployee,
 	getManagedEmployees,
 	type ManagedEmployee,
 } from "@/app/[locale]/(app)/team/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
@@ -31,14 +33,17 @@ function transformManagedEmployee(emp: ManagedEmployee): SelectableEmployee {
 	return {
 		id: emp.id,
 		userId: emp.userId,
-		firstName: emp.firstName,
-		lastName: emp.lastName,
+		firstName: emp.user.firstName,
+		lastName: emp.user.lastName,
+		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
 		teamId: emp.team?.id ?? null,
 		user: {
 			id: emp.user.id,
+			firstName: emp.user.firstName,
+			lastName: emp.user.lastName,
 			name: emp.user.name,
 			email: emp.user.email,
 			image: emp.user.image,
@@ -50,31 +55,24 @@ function transformManagedEmployee(emp: ManagedEmployee): SelectableEmployee {
 /**
  * Transform a raw employee record to SelectableEmployee format
  */
-function transformCurrentEmployee(emp: {
-	id: string;
-	userId: string;
-	firstName: string | null;
-	lastName: string | null;
-	position: string | null;
-	role: "admin" | "manager" | "employee";
-	isActive: boolean;
-	teamId: string | null;
-}): SelectableEmployee {
+function transformCurrentEmployee(emp: CurrentTeamEmployee): SelectableEmployee {
 	return {
 		id: emp.id,
 		userId: emp.userId,
-		firstName: emp.firstName,
-		lastName: emp.lastName,
+		firstName: emp.user.firstName,
+		lastName: emp.user.lastName,
+		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
 		teamId: emp.teamId,
-		// We don't have full user data here, so create a minimal version
 		user: {
-			id: emp.userId,
-			name: emp.firstName && emp.lastName ? `${emp.firstName} ${emp.lastName}` : null,
-			email: "", // Will be filled from session or context elsewhere
-			image: null,
+			id: emp.user.id,
+			firstName: emp.user.firstName,
+			lastName: emp.user.lastName,
+			name: emp.user.name,
+			email: emp.user.email,
+			image: emp.user.image,
 		},
 		team: null, // Will be enhanced if needed
 	};
@@ -147,9 +145,9 @@ export function useCalendarEmployees(currentEmployeeId?: string): UseCalendarEmp
 
 		// Add managed employees (sorted alphabetically)
 		const sortedManaged = [...data.managedEmployees].sort((a, b) => {
-			const nameA = a.firstName || a.user.name || a.user.email;
-			const nameB = b.firstName || b.user.name || b.user.email;
-			return (nameA ?? "").localeCompare(nameB ?? "");
+			const nameA = buildAuthUserDisplayName(a.user);
+			const nameB = buildAuthUserDisplayName(b.user);
+			return nameA.localeCompare(nameB);
 		});
 
 		list.push(...sortedManaged);

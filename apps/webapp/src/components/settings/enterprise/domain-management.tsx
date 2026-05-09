@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import {
 	deleteDomainAction,
 	regenerateVerificationTokenAction,
-	updateDomainAuthConfigAction,
 	storeTurnstileSecretAction,
+	updateDomainAuthConfigAction,
 	verifyDomainAction,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import {
@@ -69,6 +69,8 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 		domain: Domain | null;
 	}>({ isOpen: false, domain: null });
 	const [isVerifying, setIsVerifying] = useState(false);
+	const hasTurnstileSiteKey = Boolean(domain?.authConfig.turnstileSiteKey?.trim());
+	const hasCookieConsentScript = Boolean(domain?.authConfig.cookieConsentScript?.trim());
 
 	const handleDomainAdded = (newDomain: Domain) => {
 		setDomain(newDomain);
@@ -81,7 +83,9 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 		setIsVerifying(true);
 		const verified = await verifyDomainAction(domainId).catch(() => null);
 		if (verified) {
-			setDomain((prev) => (prev ? { ...prev, domainVerified: true, verificationToken: null } : null));
+			setDomain((prev) =>
+				prev ? { ...prev, domainVerified: true, verificationToken: null } : null,
+			);
 			toast.success("Domain verified successfully");
 			setVerificationDialog({ isOpen: false, domain: null });
 		} else {
@@ -212,18 +216,20 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 										</Button>
 									)}
 									<Button
+										aria-label={`Edit authentication settings for ${domain.domain}`}
 										variant="outline"
 										size="sm"
 										onClick={() => setAuthConfigDialog({ isOpen: true, domain })}
 									>
-										<IconSettings className="h-4 w-4" />
+										<IconSettings className="h-4 w-4" aria-hidden="true" />
 									</Button>
 									<Button
+										aria-label={`Delete custom domain ${domain.domain}`}
 										variant="outline"
 										size="sm"
 										onClick={() => setDeleteDialog({ isOpen: true, domain })}
 									>
-										<IconTrash className="h-4 w-4 text-destructive" />
+										<IconTrash className="h-4 w-4 text-destructive" aria-hidden="true" />
 									</Button>
 								</div>
 							</div>
@@ -242,6 +248,18 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 										</Badge>
 									)}
 									{domain.authConfig.passkeyEnabled && <Badge variant="outline">Passkey</Badge>}
+								</div>
+							</div>
+
+							<div className="p-4 bg-muted/50 rounded-lg">
+								<p className="text-sm font-medium mb-2">Domain Page Settings</p>
+								<div className="flex flex-wrap gap-2">
+									<Badge variant={hasTurnstileSiteKey ? "outline" : "secondary"}>
+										Turnstile site key {hasTurnstileSiteKey ? "configured" : "not configured"}
+									</Badge>
+									<Badge variant={hasCookieConsentScript ? "outline" : "secondary"}>
+										Cookie consent {hasCookieConsentScript ? "configured" : "not configured"}
+									</Badge>
 								</div>
 							</div>
 						</div>

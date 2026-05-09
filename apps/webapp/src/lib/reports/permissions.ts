@@ -107,8 +107,12 @@ export async function getAccessibleEmployees(
 		// Ensure current employee is first in the list
 		const currentEmployeeData = {
 			id: currentEmp.id,
+			firstName: currentEmp.user.firstName,
+			lastName: currentEmp.user.lastName,
 			name: currentEmp.user.name || currentEmp.user.email,
 			email: currentEmp.user.email,
+			image: currentEmp.user.image,
+			pronouns: currentEmp.pronouns,
 			position: currentEmp.position,
 			role: currentEmp.role,
 		};
@@ -117,8 +121,12 @@ export async function getAccessibleEmployees(
 			.filter((emp) => emp.id !== currentEmployeeId)
 			.map((emp) => ({
 				id: emp.id,
+				firstName: emp.user.firstName,
+				lastName: emp.user.lastName,
 				name: emp.user.name || emp.user.email,
 				email: emp.user.email,
+				image: emp.user.image,
+				pronouns: emp.pronouns,
 				position: emp.position,
 				role: emp.role,
 			}));
@@ -143,15 +151,23 @@ export async function getAccessibleEmployees(
 		return [
 			{
 				id: currentEmp.id,
+				firstName: currentEmp.user.firstName,
+				lastName: currentEmp.user.lastName,
 				name: currentEmp.user.name || currentEmp.user.email,
 				email: currentEmp.user.email,
+				image: currentEmp.user.image,
+				pronouns: currentEmp.pronouns,
 				position: currentEmp.position,
 				role: currentEmp.role,
 			},
 			...managerRelations.map((rel) => ({
 				id: rel.employee.id,
+				firstName: rel.employee.user.firstName,
+				lastName: rel.employee.user.lastName,
 				name: rel.employee.user.name || rel.employee.user.email,
 				email: rel.employee.user.email,
+				image: rel.employee.user.image,
+				pronouns: rel.employee.pronouns,
 				position: rel.employee.position,
 				role: rel.employee.role,
 			})),
@@ -162,8 +178,12 @@ export async function getAccessibleEmployees(
 	return [
 		{
 			id: currentEmp.id,
+			firstName: currentEmp.user.firstName,
+			lastName: currentEmp.user.lastName,
 			name: currentEmp.user.name || currentEmp.user.email,
 			email: currentEmp.user.email,
+			image: currentEmp.user.image,
+			pronouns: currentEmp.pronouns,
 			position: currentEmp.position,
 			role: currentEmp.role,
 		},

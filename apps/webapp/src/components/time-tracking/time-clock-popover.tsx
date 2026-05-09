@@ -2,7 +2,7 @@
 
 import { IconCheck, IconClock, IconClockPause, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,19 +13,18 @@ import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
+import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelector } from "./project-selector";
 import { WorkCategorySelector } from "./work-category-selector";
 
-// Hoist DateTimeFormat to avoid recreation on each render (js-hoist-regexp)
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-	hour: "2-digit",
-	minute: "2-digit",
-});
-
-export function TimeClockPopover() {
+export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
+	const timeFormatter = useMemo(
+		() => new Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat)),
+		[timeFormat],
+	);
 
 	const {
 		hasEmployee,

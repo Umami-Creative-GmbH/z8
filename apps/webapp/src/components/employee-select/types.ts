@@ -11,12 +11,15 @@ export interface SelectableEmployee {
 	userId: string;
 	firstName: string | null;
 	lastName: string | null;
+	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
 	teamId: string | null;
 	user: {
 		id: string;
+		firstName?: string | null;
+		lastName?: string | null;
 		name: string | null;
 		email: string;
 		image: string | null;

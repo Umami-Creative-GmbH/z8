@@ -9,6 +9,7 @@ import {
 	IconDashboard,
 	IconFileDescription,
 	IconHelp,
+	IconHierarchy,
 	IconReceipt,
 	IconReport,
 	IconSettings,
@@ -72,6 +73,11 @@ export function AppSidebar({
 			title: t("nav.calendar", "Calendar"),
 			url: "/calendar",
 			icon: IconCalendarEvent,
+		},
+		{
+			title: t("nav.org-explorer", "Org Explorer"),
+			url: "/organization",
+			icon: IconHierarchy,
 		},
 		{
 			title: t("nav.absences", "Absences"),

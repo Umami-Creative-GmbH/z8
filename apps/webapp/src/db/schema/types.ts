@@ -13,6 +13,8 @@ export type AuthConfig = {
 	// Site key is public, stored here. Secret key stored in Vault at:
 	// secret/organizations/{orgId}/turnstile/secret_key
 	turnstileSiteKey?: string;
+	// Cookie consent script injected on auth pages for this custom domain only.
+	cookieConsentScript?: string;
 };
 
 // Type definitions for JSON fields

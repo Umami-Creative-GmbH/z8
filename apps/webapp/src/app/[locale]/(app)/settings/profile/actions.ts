@@ -6,12 +6,18 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { toAuthStructuredName, trimStructuredNamePart } from "@/lib/auth/derived-user-name";
+import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	isTimeFormat,
+	normalizeTimeFormat,
+	type TimeFormat,
+} from "@/lib/user-preferences/time-format";
+import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { isWeekStartDay, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
@@ -31,6 +37,7 @@ type StructuredProfileDetailsInput = {
 	firstName: string;
 	lastName: string;
 	gender?: "male" | "female" | "other" | null;
+	pronouns?: string | null;
 	birthday?: Date | null;
 	image?: string | null;
 };
@@ -136,9 +143,8 @@ function syncActiveEmployeeProfile(
 				await dbService.db
 					.update(employee)
 					.set({
-						firstName: trimStructuredNamePart(data.firstName) ?? null,
-						lastName: trimStructuredNamePart(data.lastName) ?? null,
 						gender: data.gender ?? null,
+						pronouns: data.pronouns ?? null,
 						birthday: data.birthday ?? null,
 					})
 					.where(
@@ -159,6 +165,7 @@ export async function updateProfileDetails(data: {
 	firstName: string;
 	lastName: string;
 	gender?: "male" | "female" | "other" | null;
+	pronouns?: string | null;
 	birthday?: Date | null;
 	image?: string | null;
 }): Promise<ServerActionResult<void>> {
@@ -469,4 +476,48 @@ export async function getWeekStartDay(): Promise<WeekStartDay> {
 	}
 
 	return getUserWeekStartDay(session.user.id);
+}
+
+export async function updateTimeFormat(timeFormat: TimeFormat): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		const session = yield* _(authService.getSession());
+		const dbService = yield* _(DatabaseService);
+		if (!isTimeFormat(timeFormat)) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Time format must be 12h or 24h",
+						field: "timeFormat",
+					}),
+				),
+			);
+		}
+
+		yield* _(
+			dbService.query("updateTimeFormat", async () => {
+				await dbService.db
+					.insert(userSettings)
+					.values({
+						userId: session.user.id,
+						timeFormat,
+					})
+					.onConflictDoUpdate({
+						target: userSettings.userId,
+						set: { timeFormat },
+					});
+			}),
+		);
+	}).pipe(Effect.provide(AppLayer));
+
+	return runServerActionSafe(effect);
+}
+
+export async function getTimeFormat(): Promise<TimeFormat> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return normalizeTimeFormat(null);
+	}
+
+	return getUserTimeFormat(session.user.id);
 }

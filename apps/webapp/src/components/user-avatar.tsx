@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { generateAvatarDataUri, getInitials } from "@/lib/avatar";
+import { generateAvatarDataUri, getInitials, type UserAvatarGender } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 const sizeConfig = {
@@ -29,6 +29,7 @@ export interface UserAvatarProps {
 	seed: string;
 	/** User's display name for alt text */
 	name?: string | null;
+	gender?: UserAvatarGender | null;
 	/** Predefined size variant */
 	size?: UserAvatarSize;
 	/** Shape variant */
@@ -51,6 +52,7 @@ export function UserAvatar({
 	image,
 	seed,
 	name,
+	gender,
 	size = "sm",
 	shape = "circle",
 	className,
@@ -63,8 +65,8 @@ export function UserAvatar({
 	// Generate DiceBear fallback - memoized for performance
 	// Using 2x pixels for retina displays
 	const dicebearAvatar = useMemo(
-		() => generateAvatarDataUri({ seed, size: pixels * 2 }),
-		[seed, pixels],
+		() => generateAvatarDataUri({ seed, size: pixels * 2, gender }),
+		[seed, pixels, gender],
 	);
 
 	const initials = useMemo(() => getInitials(name), [name]);

@@ -63,7 +63,9 @@ vi.mock("@/hooks/use-image-upload", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ name }: { name: string }) => <div>{name}</div>,
+	UserAvatar: ({ gender, name }: { gender?: string | null; name: string }) => (
+		<div data-avatar-gender={gender ?? ""}>{name}</div>
+	),
 }));
 
 vi.mock("@/components/ui/popover", () => ({
@@ -120,6 +122,7 @@ describe("ProfileForm", () => {
 			firstName: "Employee",
 			lastName: "Record",
 			gender: "female",
+			pronouns: "she/her",
 			birthday: "2020-01-02T00:00:00.000Z",
 		});
 		updateProfileDetailsMock.mockResolvedValue({ success: true, data: undefined });
@@ -149,14 +152,19 @@ describe("ProfileForm", () => {
 		);
 	});
 
-	it("submits structured names through updateProfileDetails", async () => {
+	it("initializes auth names and submits employee personal fields through updateProfileDetails", async () => {
 		renderProfileForm();
-		expect(await screen.findByDisplayValue("Employee")).toBeTruthy();
 
-		fireEvent.change(screen.getByLabelText("First Name"), {
+		const firstNameInput = await screen.findByLabelText("First Name");
+		const lastNameInput = screen.getByLabelText("Last Name");
+
+		expect((firstNameInput as HTMLInputElement).value).toBe("Auth");
+		expect((lastNameInput as HTMLInputElement).value).toBe("Fallback");
+
+		fireEvent.change(firstNameInput, {
 			target: { value: "Ada" },
 		});
-		fireEvent.change(screen.getByLabelText("Last Name"), {
+		fireEvent.change(lastNameInput, {
 			target: { value: "Lovelace" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
@@ -166,11 +174,20 @@ describe("ProfileForm", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				gender: "female",
+				pronouns: "she/her",
 				birthday: new Date("2020-01-02T00:00:00.000Z"),
 				image: "/avatar.png",
 			});
 		});
 		expect(updateProfileImageMock).not.toHaveBeenCalled();
+	});
+
+	it("passes selected gender to the profile picture preview", async () => {
+		renderProfileForm();
+
+		expect((await screen.findByText("Auth Fallback")).getAttribute("data-avatar-gender")).toBe(
+			"female",
+		);
 	});
 
 	it("falls back to auth-level first and last names when no employee record exists", async () => {
@@ -195,10 +212,50 @@ describe("ProfileForm", () => {
 				firstName: "Auth",
 				lastName: "User",
 				gender: null,
+				pronouns: null,
 				birthday: null,
 				image: "/avatar.png",
 			});
 		});
+	});
+
+	it("submits custom pronouns through updateProfileDetails", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "xe/xem" } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		await waitFor(() => {
+			expect(updateProfileDetailsMock).toHaveBeenCalledWith(
+				expect.objectContaining({ pronouns: "xe/xem" }),
+			);
+		});
+	});
+
+	it("shows an inline error when custom pronouns are longer than 50 characters", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "x".repeat(51) } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		expect(await screen.findByText("Pronouns must be 50 characters or less")).toBeTruthy();
+		expect(updateProfileDetailsMock).not.toHaveBeenCalled();
+	});
+
+	it("focuses custom pronouns when it is the first invalid profile field", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "x".repeat(51) } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		await waitFor(() => {
+			expect(document.activeElement).toBe(pronounsInput);
+		});
+		expect(pronounsInput.getAttribute("name")).toBe("pronouns");
+		expect(updateProfileDetailsMock).not.toHaveBeenCalled();
 	});
 
 	it("shows field errors and focuses the first invalid field when both name fields are blank on submit", async () => {
@@ -246,6 +303,9 @@ describe("ProfileForm", () => {
 
 		expect(firstNameInput.getAttribute("placeholder")).toBe("Ada…");
 		expect(lastNameInput.getAttribute("placeholder")).toBe("Lovelace…");
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("placeholder")).toBe(
+			"e.g., xe/xem…",
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
 

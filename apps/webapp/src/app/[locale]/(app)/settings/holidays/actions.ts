@@ -4,16 +4,13 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { holiday, holidayAssignment, holidayCategory } from "@/db/schema";
 import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
-import {
-	AuthorizationError,
-	type AnyAppError,
-	ConflictError,
-	DatabaseError,
-	NotFoundError,
-} from "@/lib/effect/errors";
+import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess } from "../employees/employee-action-utils";
+import {
+	getEmployeeSettingsActorContext,
+	requireOrgAdminEmployeeSettingsAccess,
+} from "../employees/employee-action-utils";
 import {
 	filterAssignmentsForManagerHolidayScope,
 	getScopedHolidayAccessContext,
@@ -62,7 +59,12 @@ type HolidayAssignmentRecord = {
 		recurrenceType: string;
 	};
 	team: { id: string; name: string } | null;
-	employee: { id: string; firstName: string | null; lastName: string | null } | null;
+	employee: {
+		id: string;
+		firstName: string | null;
+		lastName: string | null;
+		user?: { firstName: string | null; lastName: string | null } | null;
+	} | null;
 };
 
 type HolidayCategoryItem = typeof holidayCategory.$inferSelect;
@@ -104,13 +106,15 @@ function getVisibleScopedHolidayIds(
 			}),
 		)) as HolidayAssignmentRecord[];
 
-		return [...new Set(
-			filterAssignmentsForManagerHolidayScope(
-				assignmentRows,
-				manageableTeamIds,
-				managedEmployeeIds,
-			).map((assignment) => assignment.holidayId),
-		)];
+		return [
+			...new Set(
+				filterAssignmentsForManagerHolidayScope(
+					assignmentRows,
+					manageableTeamIds,
+					managedEmployeeIds,
+				).map((assignment) => assignment.holidayId),
+			),
+		];
 	});
 }
 
@@ -316,12 +320,7 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 				const [h] = await actor.dbService.db
 					.select()
 					.from(holiday)
-					.where(
-						and(
-							eq(holiday.id, holidayId),
-							eq(holiday.organizationId, actor.organizationId),
-						),
-					)
+					.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)))
 					.limit(1);
 
 				if (!h) {
@@ -369,7 +368,9 @@ export async function bulkDeleteHolidays(
 	holidayIds: string[],
 ): Promise<ServerActionResult<{ deleted: number }>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "bulkDeleteHolidays:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "bulkDeleteHolidays:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Only org admins can delete holidays",
@@ -384,10 +385,7 @@ export async function bulkDeleteHolidays(
 					.update(holiday)
 					.set({ isActive: false, updatedBy: actor.session.user.id })
 					.where(
-						and(
-							inArray(holiday.id, holidayIds),
-							eq(holiday.organizationId, actor.organizationId),
-						),
+						and(inArray(holiday.id, holidayIds), eq(holiday.organizationId, actor.organizationId)),
 					)
 					.returning({ id: holiday.id });
 
@@ -531,7 +529,10 @@ export async function getHolidayAssignments(
 							},
 						},
 						team: { columns: { id: true, name: true } },
-						employee: { columns: { id: true, firstName: true, lastName: true } },
+						employee: {
+							columns: { id: true },
+							with: { user: { columns: { firstName: true, lastName: true } } },
+						},
 					},
 				});
 			}),
@@ -546,8 +547,20 @@ export async function getHolidayAssignments(
 			),
 		);
 
+		const assignmentsWithAuthNames = assignments.map((assignment) => ({
+			...assignment,
+			employee: assignment.employee
+				? {
+						id: assignment.employee.id,
+						firstName: assignment.employee.user?.firstName ?? null,
+						lastName: assignment.employee.user?.lastName ?? null,
+						user: assignment.employee.user,
+					}
+				: null,
+		})) satisfies HolidayAssignmentRecord[];
+
 		return filterAssignmentsForManagerHolidayScope(
-			assignments as HolidayAssignmentRecord[],
+			assignmentsWithAuthNames,
 			manageableTeamIds,
 			managedEmployeeIds,
 		);
@@ -566,7 +579,9 @@ export async function createHolidayAssignment(data: {
 	employeeId?: string;
 }): Promise<ServerActionResult<typeof holidayAssignment.$inferSelect>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "createHolidayAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "createHolidayAssignment:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Only org admins can create holiday assignments",
@@ -645,7 +660,9 @@ export async function deleteHolidayAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ queryName: "deleteHolidayAssignment:actor" }));
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({ queryName: "deleteHolidayAssignment:actor" }),
+		);
 		yield* _(
 			requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Only org admins can delete holiday assignments",

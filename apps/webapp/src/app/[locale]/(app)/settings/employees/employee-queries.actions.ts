@@ -25,8 +25,9 @@ const DEFAULT_LIMIT = 20;
 
 const employeeSortName = sql<string>`
 	coalesce(
+		nullif(concat_ws(' ', ${user.firstName}, ${user.lastName}), ''),
 		nullif(${user.name}, ''),
-		nullif(concat_ws(' ', ${employee.firstName}, ${employee.lastName}), '')
+		${user.email}
 	)
 `;
 
@@ -75,10 +76,10 @@ function buildEmployeeFilters(
 		const pattern = `%${normalizedSearch}%`;
 		conditions.push(
 			or(
+				ilike(user.firstName, pattern),
+				ilike(user.lastName, pattern),
 				ilike(user.name, pattern),
 				ilike(user.email, pattern),
-				ilike(employee.firstName, pattern),
-				ilike(employee.lastName, pattern),
 				ilike(employee.position, pattern),
 			)!,
 		);
@@ -102,15 +103,20 @@ function mapEmployeeRow(row: {
 type SelectableEmployeeRow = {
 	employee: Pick<
 		typeof employee.$inferSelect,
-		"id" | "userId" | "firstName" | "lastName" | "position" | "role" | "isActive" | "teamId"
+		"id" | "userId" | "pronouns" | "position" | "role" | "isActive" | "teamId"
 	>;
-	user: Pick<typeof user.$inferSelect, "id" | "name" | "email" | "image">;
+	user: Pick<
+		typeof user.$inferSelect,
+		"id" | "firstName" | "lastName" | "name" | "email" | "image"
+	>;
 	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
 };
 
 function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmployee {
 	return {
 		...row.employee,
+		firstName: row.user.firstName,
+		lastName: row.user.lastName,
 		user: row.user,
 		team: row.team?.id ? row.team : null,
 	};
@@ -196,8 +202,7 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 							employee: {
 								id: employee.id,
 								userId: employee.userId,
-								firstName: employee.firstName,
-								lastName: employee.lastName,
+								pronouns: employee.pronouns,
 								position: employee.position,
 								role: employee.role,
 								isActive: employee.isActive,
@@ -205,6 +210,8 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 							},
 							user: {
 								id: user.id,
+								firstName: user.firstName,
+								lastName: user.lastName,
 								name: user.name,
 								email: user.email,
 								image: user.image,
@@ -376,8 +383,7 @@ export async function getEmployeesByIdsAction(
 						employee: {
 							id: employee.id,
 							userId: employee.userId,
-							firstName: employee.firstName,
-							lastName: employee.lastName,
+							pronouns: employee.pronouns,
 							position: employee.position,
 							role: employee.role,
 							isActive: employee.isActive,
@@ -385,6 +391,8 @@ export async function getEmployeesByIdsAction(
 						},
 						user: {
 							id: user.id,
+							firstName: user.firstName,
+							lastName: user.lastName,
 							name: user.name,
 							email: user.email,
 							image: user.image,

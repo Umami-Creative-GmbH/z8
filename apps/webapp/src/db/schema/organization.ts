@@ -143,6 +143,7 @@ export const employee = pgTable(
 		firstName: text("first_name"),
 		lastName: text("last_name"),
 		gender: genderEnum("gender"),
+		pronouns: text("pronouns"),
 		birthday: timestamp("birthday", { mode: "date" }),
 
 		// Job information
