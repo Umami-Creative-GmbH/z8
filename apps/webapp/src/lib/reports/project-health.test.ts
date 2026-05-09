@@ -51,7 +51,7 @@ describe("buildProjectHealthFields", () => {
 		).toMatchObject({ budgetSeverity: "critical", budgetAlertType: "budget_100" });
 	});
 
-	it("sets deadline alerts for 14 days, today, and overdue", () => {
+	it("sets deadline alerts for 14 days, 7 days, 1 day, today, and overdue", () => {
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline 14",
@@ -63,6 +63,28 @@ describe("buildProjectHealthFields", () => {
 				rangeEnd,
 			}),
 		).toMatchObject({ deadlineSeverity: "warning", deadlineAlertType: "deadline_14d" });
+		expect(
+			buildProjectHealthFields({
+				projectName: "Deadline 7",
+				totalHours: 0,
+				budgetHours: null,
+				deadline: new Date("2026-05-16T18:00:00.000Z"),
+				now,
+				rangeStart,
+				rangeEnd,
+			}),
+		).toMatchObject({ deadlineSeverity: "warning", deadlineAlertType: "deadline_7d" });
+		expect(
+			buildProjectHealthFields({
+				projectName: "Deadline 1",
+				totalHours: 0,
+				budgetHours: null,
+				deadline: new Date("2026-05-10T18:00:00.000Z"),
+				now,
+				rangeStart,
+				rangeEnd,
+			}),
+		).toMatchObject({ deadlineSeverity: "critical", deadlineAlertType: "deadline_1d" });
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline Today",
