@@ -2,29 +2,39 @@ import { describe, expect, it } from "vitest";
 import type { DomainAuthContext } from "@/lib/domain";
 import { selectAuthCookieConsentScript } from "./cookie-consent-script";
 
-const domainContext = (cookieConsentScript?: string): DomainAuthContext => ({
-	organizationId: "org_123",
-	domain: "login.acme.test",
-	authConfig: {
-		emailPasswordEnabled: true,
-		socialProvidersEnabled: [],
-		ssoEnabled: false,
-		passkeyEnabled: true,
-		cookieConsentScript,
-	},
-	branding: null,
-	socialOAuthConfigured: {
-		google: false,
-		github: false,
-		linkedin: false,
-		apple: false,
-	},
-	turnstile: {
-		enabled: false,
-		siteKey: null,
-		isEnterprise: true,
-	},
-});
+type DomainAuthContextWithCookieConsentScript = DomainAuthContext & {
+	authConfig: DomainAuthContext["authConfig"] & {
+		cookieConsentScript?: string | null;
+	};
+};
+
+const domainContext = (cookieConsentScript?: string): DomainAuthContext => {
+	const context: DomainAuthContextWithCookieConsentScript = {
+		organizationId: "org_123",
+		domain: "login.acme.test",
+		authConfig: {
+			emailPasswordEnabled: true,
+			socialProvidersEnabled: [],
+			ssoEnabled: false,
+			passkeyEnabled: true,
+			cookieConsentScript,
+		},
+		branding: null,
+		socialOAuthConfigured: {
+			google: false,
+			github: false,
+			linkedin: false,
+			apple: false,
+		},
+		turnstile: {
+			enabled: false,
+			siteKey: null,
+			isEnterprise: true,
+		},
+	};
+
+	return context;
+};
 
 describe("selectAuthCookieConsentScript", () => {
 	it("uses the platform script on the main auth domain", () => {
