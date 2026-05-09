@@ -76,8 +76,19 @@ export async function getProjectsOverview(
 					),
 				);
 
-				// Only admins and managers can view project reports
-				if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
+				const managedProjectRows = yield* _(
+					dbService.query("getManagedProjectIdsForProjectReports", async () => {
+						return await dbService.db.query.projectManager.findMany({
+							where: eq(projectManager.employeeId, currentEmployee.id),
+							columns: { projectId: true },
+						});
+					}),
+				);
+				const managedProjectIds = new Set(managedProjectRows.map((row) => row.projectId));
+				const canViewPortfolio =
+					currentEmployee.role === "admin" || currentEmployee.role === "manager" || managedProjectIds.size > 0;
+
+				if (!canViewPortfolio) {
 					return yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -96,6 +107,7 @@ export async function getProjectsOverview(
 				const projects = yield* _(
 					dbService.query("getProjects", async () => {
 						const whereConditions = [eq(project.organizationId, organizationId)];
+						const isOrgWideReportViewer = currentEmployee.role === "admin" || currentEmployee.role === "manager";
 
 						if (statusFilter && statusFilter.length > 0) {
 							whereConditions.push(
@@ -104,6 +116,10 @@ export async function getProjectsOverview(
 									statusFilter as ("planned" | "active" | "paused" | "completed" | "archived")[],
 								),
 							);
+						}
+
+						if (!isOrgWideReportViewer) {
+							whereConditions.push(inArray(project.id, [...managedProjectIds]));
 						}
 
 						return await dbService.db.query.project.findMany({
