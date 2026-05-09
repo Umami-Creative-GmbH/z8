@@ -58,6 +58,9 @@ vi.mock("@/db/schema", async () => {
 			organizationId: "employee.organizationId",
 			firstName: "employee.firstName",
 			lastName: "employee.lastName",
+			gender: "employee.gender",
+			pronouns: "employee.pronouns",
+			birthday: "employee.birthday",
 		},
 	};
 });
@@ -175,6 +178,7 @@ describe("profile actions", () => {
 			firstName: "  Ada ",
 			lastName: " Lovelace  ",
 			gender: "female",
+			pronouns: "she/her",
 			birthday: new Date("1815-12-10T00:00:00.000Z"),
 			image: "/avatars/ada.png",
 		});
@@ -217,6 +221,7 @@ describe("profile actions", () => {
 			firstName: "Grace",
 			lastName: "Hopper",
 			gender: "female",
+			pronouns: "she/her",
 			birthday: new Date("1906-12-09T00:00:00.000Z"),
 			image: "/avatars/grace.png",
 		});
@@ -226,6 +231,7 @@ describe("profile actions", () => {
 		expect(mockState.dbUpdate).toHaveBeenCalledTimes(1);
 		expect(mockState.employeeUpdateSet).toHaveBeenCalledWith({
 			gender: "female",
+			pronouns: "she/her",
 			birthday: new Date("1906-12-09T00:00:00.000Z"),
 		});
 		expect(JSON.stringify(mockState.employeeFindFirst.mock.calls[0][0])).toContain(
@@ -239,6 +245,7 @@ describe("profile actions", () => {
 			firstName: "   ",
 			lastName: "   ",
 			gender: null,
+			pronouns: null,
 			birthday: null,
 			image: "/avatars/blank.png",
 		});
@@ -246,6 +253,25 @@ describe("profile actions", () => {
 		expect(result).toEqual({
 			success: false,
 			error: "Enter a first or last name",
+			code: "ValidationError",
+		});
+		expect(mockState.updateUser).not.toHaveBeenCalled();
+		expect(mockState.dbUpdate).not.toHaveBeenCalled();
+	});
+
+	it("rejects profile pronouns longer than 50 characters", async () => {
+		const result = await updateProfileDetails({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			gender: null,
+			pronouns: "a".repeat(51),
+			birthday: null,
+			image: null,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Pronouns must be 50 characters or less",
 			code: "ValidationError",
 		});
 		expect(mockState.updateUser).not.toHaveBeenCalled();
@@ -278,6 +304,7 @@ describe("profile actions", () => {
 			firstName: "Grace",
 			lastName: "Hopper",
 			gender: "female",
+			pronouns: "she/her",
 			birthday: new Date("1906-12-09T00:00:00.000Z"),
 			image: "/avatars/grace.png",
 		});

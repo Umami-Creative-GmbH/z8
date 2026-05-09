@@ -15,6 +15,7 @@ import "@xyflow/react/dist/style.css";
 import { useTranslate } from "@tolgee/react";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { normalizePronouns } from "@/lib/employee-identity";
 import { getEmployeeNeighborhood, getTeamNeighborhood, searchOrgEmployees } from "./actions";
 import { mergeOrgChartGraphs } from "./org-chart-graph";
 import type {
@@ -228,20 +229,25 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 									{t("organization.orgChart.searching", "Searching…")}
 								</p>
 							) : null}
-							{searchResults.map((result) => (
-								<button
-									aria-label={`${result.name} ${result.email}`}
-									className="flex w-full flex-col items-start px-3 py-2 text-left text-sm outline-none transition hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
-									key={result.employeeId}
-									onClick={() => {
-										void focusEmployee(result.employeeId);
-									}}
-									type="button"
-								>
-									<span className="font-medium">{result.name}</span>
-									<span className="text-muted-foreground">{result.email}</span>
-								</button>
-							))}
+							{searchResults.map((result) => {
+								const pronouns = normalizePronouns(result.pronouns);
+								const displayName = pronouns ? `${result.name} (${pronouns})` : result.name;
+
+								return (
+									<button
+										aria-label={`${displayName} ${result.email}`}
+										className="flex w-full flex-col items-start px-3 py-2 text-left text-sm outline-none transition hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+										key={result.employeeId}
+										onClick={() => {
+											void focusEmployee(result.employeeId);
+										}}
+										type="button"
+									>
+										<span className="font-medium">{displayName}</span>
+										<span className="text-muted-foreground">{result.email}</span>
+									</button>
+								);
+							})}
 							{!isSearching && searchResults.length === 0 ? (
 								<p className="px-3 py-2 text-sm text-muted-foreground">
 									{t("organization.orgChart.noSearchResults", "No employees found")}
@@ -355,6 +361,8 @@ function getEdgeStyle(edge: OrgChartEdge): Edge["style"] {
 function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 	const node = data.orgNode as OrgChartEmployeeNode;
 	const canExpand = node.expandable.managers || node.expandable.reports || node.expandable.teams;
+	const pronouns = normalizePronouns(node.pronouns);
+	const displayName = pronouns ? `${node.name} (${pronouns})` : node.name;
 
 	return (
 		<div
@@ -367,7 +375,7 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 					{getInitials(node.name)}
 				</div>
 				<div className="min-w-0 flex-1">
-					<p className="truncate text-sm font-semibold">{node.name}</p>
+					<p className="truncate text-sm font-semibold">{displayName}</p>
 					<p className="truncate text-xs text-muted-foreground">{node.email}</p>
 					{node.position ? (
 						<p className="mt-1 truncate text-xs text-muted-foreground">{node.position}</p>
@@ -380,7 +388,7 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 				</span>
 				{canExpand ? (
 					<button
-						aria-label={`Expand ${node.name} neighborhood`}
+						aria-label={`Expand ${displayName} neighborhood`}
 						className="rounded-md border px-2 py-1 text-xs font-medium transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 						onClick={() => data.onExpandEmployee(node.employeeId)}
 						type="button"

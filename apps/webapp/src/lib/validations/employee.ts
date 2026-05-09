@@ -3,6 +3,16 @@ import * as z from "zod";
 // Gender enum matching database enum
 export const genderSchema = z.enum(["male", "female", "other"]);
 
+export const pronounsSchema = z.preprocess(
+	(value) => (typeof value === "string" ? value.trim() : value),
+	z
+		.string()
+		.max(50, "Pronouns must be 50 characters or less")
+		.transform((value) => value || null)
+		.optional()
+		.nullable(),
+);
+
 // Employee role enum
 export const employeeRoleSchema = z.enum(["employee", "manager", "admin"]);
 
@@ -46,6 +56,7 @@ export const personalInformationSchema = z.object({
 		.optional(),
 	lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long").optional(),
 	gender: genderSchema.optional(),
+	pronouns: pronounsSchema,
 	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 });
 
@@ -64,6 +75,7 @@ export const createEmployeeSchema = z.object({
 
 	// Personal information owned by the employee record
 	gender: genderSchema.optional().nullable(),
+	pronouns: pronounsSchema,
 	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
 	// Dates
@@ -85,6 +97,7 @@ export const updateEmployeeSchema = z
 
 		// Personal information owned by the employee record
 		gender: genderSchema.optional().nullable(),
+		pronouns: pronounsSchema,
 		birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 
 		// Dates

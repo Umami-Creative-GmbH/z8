@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { normalizePronouns } from "@/lib/employee-identity";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { Link } from "@/navigation";
 import {
@@ -54,6 +55,9 @@ type EmployeeManagerRelation = {
 };
 
 const defaultTranslate: Translate = (_key, defaultValue) => defaultValue;
+const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"] as const;
+const CUSTOM_PRONOUN_VALUE = "__custom__";
+const PRONOUNS_MAX_LENGTH_MESSAGE = "Pronouns must be 50 characters or less";
 
 export function EmployeeDetailHeader({ t }: { t: Translate }) {
 	return (
@@ -127,6 +131,8 @@ export function EmployeeOverviewCard({
 	];
 	const managers = employee.managers as EmployeeManagerRelation[] | undefined;
 	const displayName = buildAuthUserDisplayName(employee.user);
+	const employeePronouns = normalizePronouns(employee.pronouns);
+	const employeeDisplayName = employeePronouns ? `${displayName} (${employeePronouns})` : displayName;
 
 	return (
 		<Card>
@@ -140,13 +146,13 @@ export function EmployeeOverviewCard({
 					<UserAvatar
 						image={employee.user.image}
 						seed={employee.user.id}
-						name={displayName}
+						name={employeeDisplayName}
 						gender={employee.gender}
 						size="lg"
 					/>
-					<div>
-						<div className="font-medium">{displayName}</div>
-						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
+					<div className="min-w-0">
+						<div className="truncate font-medium">{employeeDisplayName}</div>
+						<div className="truncate text-sm text-muted-foreground">{employee.user.email}</div>
 					</div>
 				</div>
 
@@ -350,6 +356,8 @@ export function EmployeeEditFormCard({
 							</TFormItem>
 						)}
 					</form.Field>
+
+					<PronounsEditField form={form} disabled={!canEditManagerFields || isUpdating} t={t} />
 
 					<div className="grid gap-4 md:grid-cols-2">
 						<TextField
@@ -593,6 +601,89 @@ function EmployeeAppAccessFields({
 	);
 }
 
+function PronounsEditField({
+	form,
+	disabled,
+	t,
+}: {
+	form: EmployeeDetailFormApi;
+	disabled: boolean;
+	t: Translate;
+}) {
+	return (
+		<form.Field
+			name="pronouns"
+			validators={{
+				onBlur: ({ value }) => (value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined),
+				onChange: ({ value }) =>
+					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+				onSubmit: ({ value }) =>
+					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+			}}
+		>
+			{(field) => {
+				const value = field.state.value;
+				const isPreset = PRONOUN_PRESETS.includes(value as (typeof PRONOUN_PRESETS)[number]);
+				const selectValue = isPreset ? value : "";
+				const hasError = fieldHasError(field);
+				const label = t("settings.employees.detailView.pronouns", "Pronouns");
+				const customLabel = t("settings.employees.detailView.pronounsCustom", "Custom pronouns");
+
+				return (
+					<TFormItem>
+						<TFormLabel hasError={hasError}>{label}</TFormLabel>
+						<Select
+							value={selectValue}
+							disabled={disabled}
+							onValueChange={(nextValue) => {
+								field.handleChange(nextValue === CUSTOM_PRONOUN_VALUE ? "" : nextValue);
+							}}
+						>
+							<TFormControl hasError={hasError}>
+								<SelectTrigger aria-label={`${label} presets`}>
+									<SelectValue
+										placeholder={t(
+											"settings.employees.detailView.pronounsPlaceholder",
+											"Select pronouns",
+										)}
+									/>
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								<SelectItem value="she/her">she/her</SelectItem>
+								<SelectItem value="he/him">he/him</SelectItem>
+								<SelectItem value="they/them">they/them</SelectItem>
+								<SelectItem value={CUSTOM_PRONOUN_VALUE}>{customLabel}</SelectItem>
+							</SelectContent>
+						</Select>
+						{!isPreset ? (
+							<div className="space-y-2">
+								<label htmlFor="employee-pronouns-custom" className="text-xs text-muted-foreground">
+									{customLabel}
+								</label>
+								<Input
+									id="employee-pronouns-custom"
+									name="pronouns"
+									autoComplete="off"
+									value={value}
+									onChange={(event) => field.handleChange(event.target.value)}
+									onBlur={field.handleBlur}
+									placeholder={t(
+										"settings.employees.detailView.pronounsCustomPlaceholder",
+										"e.g., xe/xem…",
+									)}
+									disabled={disabled}
+								/>
+							</div>
+						) : null}
+						<TFormMessage field={field} />
+					</TFormItem>
+				);
+			}}
+		</form.Field>
+	);
+}
+
 function AccessSwitchField({
 	form,
 	name,
@@ -652,6 +743,7 @@ function TextField({
 					<TFormLabel hasError={fieldHasError(field)}>{label}</TFormLabel>
 					<TFormControl hasError={fieldHasError(field)}>
 						<Input
+							name={name}
 							placeholder={placeholder}
 							value={field.state.value || ""}
 							onChange={(event) => field.handleChange(event.target.value)}

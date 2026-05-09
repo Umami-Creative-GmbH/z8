@@ -5,11 +5,15 @@ import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { normalizePronouns } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
 import type { EmployeeSelectTriggerProps, SelectableEmployee } from "./types";
 
 function getEmployeeName(employee: SelectableEmployee): string {
-	return buildAuthUserDisplayName(employee.user);
+	const name = buildAuthUserDisplayName(employee.user);
+	const pronouns = normalizePronouns(employee.pronouns);
+
+	return pronouns ? `${name} (${pronouns})` : name;
 }
 
 /**

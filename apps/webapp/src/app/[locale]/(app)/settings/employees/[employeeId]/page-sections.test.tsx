@@ -5,6 +5,7 @@ import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
+import { focusFirstInvalidEmployeeDetailField } from "./page-utils";
 
 const userAvatarMock = vi.hoisted(() =>
 	vi.fn(({ name }: { name?: string | null }) => (
@@ -39,6 +40,10 @@ const translations = new Map([
 	["settings.employees.detailView.editDescription", "Freigegebene Mitarbeiterdaten aktualisieren"],
 	["settings.employees.detailView.gender", "Geschlecht"],
 	["settings.employees.detailView.genderMale", "Männlich"],
+	["settings.employees.detailView.pronouns", "Pronomen"],
+	["settings.employees.detailView.pronounsPlaceholder", "Pronomen auswählen"],
+	["settings.employees.detailView.pronounsCustom", "Eigene Pronomen"],
+	["settings.employees.detailView.pronounsCustomPlaceholder", "Pronomen eingeben"],
 	["settings.employees.detailView.position", "Position"],
 	["settings.employees.detailView.positionPlaceholder", "Position eingeben"],
 	["settings.employees.detailView.positionDescription", "Stellenbezeichnung oder Rolle"],
@@ -101,6 +106,7 @@ const employee = {
 	id: "employee-1",
 	organizationId: "org-1",
 	employeeNumber: "EMP-001",
+	pronouns: "he/him",
 	isActive: true,
 	team: { id: "team-1", name: "Umami" },
 	managers: [],
@@ -114,34 +120,44 @@ const employee = {
 	},
 } as EmployeeDetail;
 
-function createForm() {
-	const values = {
-		gender: "male",
-		position: "",
-		employeeNumber: "EMP-001",
-		role: "employee",
-		contractType: "fixed",
-		hourlyRate: "",
-		canUseWebapp: true,
-		canUseDesktop: true,
-		canUseMobile: true,
-	};
+const formValues = {
+	gender: "male",
+	pronouns: "he/him",
+	position: "",
+	employeeNumber: "EMP-001",
+	role: "employee",
+	contractType: "fixed",
+	hourlyRate: "",
+	canUseWebapp: true,
+	canUseDesktop: true,
+	canUseMobile: true,
+};
+
+function createForm(overrides: Partial<typeof formValues> = {}) {
+	const values = { ...formValues, ...overrides };
 
 	return {
 		handleSubmit: vi.fn(),
 		Field: ({
 			name,
 			children,
+			validators,
 		}: {
 			name: keyof typeof values;
 			children: (field: unknown) => React.ReactNode;
-		}) =>
-			children({
+			validators?: {
+				onSubmit?: (props: { value: string }) => string | undefined;
+			};
+		}) => {
+			const error = validators?.onSubmit?.({ value: String(values[name] ?? "") });
+
+			return children({
 				name,
-				state: { value: values[name], meta: { errors: [] } },
+				state: { value: values[name], meta: { errors: error ? [error] : [] } },
 				handleChange: vi.fn(),
 				handleBlur: vi.fn(),
-			}),
+			});
+		},
 		Subscribe: ({
 			selector,
 			children,
@@ -177,6 +193,10 @@ describe("employee detail page sections", () => {
 		);
 
 		expect(screen.getByText("Mitarbeiterinformationen")).toBeTruthy();
+		const displayName = screen.getByText("Johannes Glier (he/him)");
+		expect(displayName).toBeTruthy();
+		expect(displayName.className).toContain("truncate");
+		expect(displayName.parentElement?.className).toContain("min-w-0");
 		expect(screen.getByText("Aktiv")).toBeTruthy();
 		expect(screen.getByText("Arbeitszeitmodell")).toBeTruthy();
 		expect(screen.queryByText("Employee Information")).toBeNull();
@@ -198,14 +218,16 @@ describe("employee detail page sections", () => {
 
 		render(<EmployeeOverviewCard employee={employeeWithStaleRootName} schedule={null} t={t} />);
 
-		expect(screen.getByText("Auth Source")).toBeTruthy();
+		expect(screen.getByText("Auth Source (he/him)")).toBeTruthy();
 		expect(screen.queryByText("Stale Employee")).toBeNull();
 		expect(screen.queryByText("Fallback Person")).toBeNull();
 		expect(userAvatarMock).toHaveBeenCalledWith(
-			expect.objectContaining({ name: "Auth Source" }),
+			expect.objectContaining({ name: "Auth Source (he/him)" }),
 			undefined,
 		);
-		expect(screen.getByTestId("user-avatar").getAttribute("data-name")).toBe("Auth Source");
+		expect(screen.getByTestId("user-avatar").getAttribute("data-name")).toBe(
+			"Auth Source (he/him)",
+		);
 	});
 
 	it("renders manager names from auth structured user fields", () => {
@@ -240,6 +262,25 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByText("Fallback Manager")).toBeNull();
 	});
 
+	it("preserves the user display name when pronouns are absent", () => {
+		render(
+			<EmployeeOverviewCard
+				employee={{
+					...employee,
+					firstName: "Stale",
+					lastName: "Employee",
+					pronouns: null,
+					user: { ...employee.user, firstName: "Auth", lastName: "Source", name: "Jo Glier" },
+				}}
+				schedule={null}
+				t={t}
+			/>,
+		);
+
+		expect(screen.getByText("Auth Source")).toBeTruthy();
+		expect(screen.queryByText("Stale Employee")).toBeNull();
+	});
+
 	it("renders the edit form strings in German", () => {
 		render(
 			<EmployeeEditFormCard
@@ -256,6 +297,8 @@ describe("employee detail page sections", () => {
 		expect(screen.getByText("Freigegebene Mitarbeiterdaten aktualisieren")).toBeTruthy();
 		expect(screen.queryByText("Vorname")).toBeNull();
 		expect(screen.queryByText("Nachname")).toBeNull();
+		expect(screen.getByText("Pronomen")).toBeTruthy();
+		expect(screen.getByDisplayValue("he/him")).toBeTruthy();
 		expect(screen.getByText("Systemrolle")).toBeTruthy();
 		expect(screen.getByText("Standardzugriff")).toBeTruthy();
 		expect(screen.getByText("Vertragsart")).toBeTruthy();
@@ -265,5 +308,50 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByText("Edit Employee")).toBeNull();
 		expect(screen.queryByText("System Role")).toBeNull();
 		expect(screen.queryByText("Contract Type")).toBeNull();
+	});
+
+	it("shows an inline error when employee pronouns are longer than 50 characters", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm({ pronouns: "x".repeat(51) }) as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				isUpdating={false}
+				onCancel={vi.fn()}
+				t={t}
+			/>,
+		);
+
+		expect(screen.getByText("Pronouns must be 50 characters or less")).toBeTruthy();
+	});
+
+	it("uses an example-style custom pronouns placeholder by default", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm({ pronouns: "xe/xem" }) as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("placeholder")).toBe(
+			"e.g., xe/xem…",
+		);
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("name")).toBe("pronouns");
+	});
+
+	it("focuses custom pronouns when it is the first invalid employee detail field", () => {
+		render(<input aria-label="Custom pronouns" name="pronouns" />);
+		const pronounsInput = screen.getByLabelText("Custom pronouns");
+
+		focusFirstInvalidEmployeeDetailField({
+			getFieldMeta: (fieldName: string) => ({
+				errors: fieldName === "pronouns" ? ["Pronouns must be 50 characters or less"] : [],
+			}),
+		} as never);
+
+		expect(document.activeElement).toBe(pronounsInput);
 	});
 });

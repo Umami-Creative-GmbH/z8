@@ -7,6 +7,7 @@ import type { EmployeeDetail } from "@/lib/query/use-employee";
 
 export interface EmployeeDetailFormValues {
 	gender: "male" | "female" | "other" | undefined;
+	pronouns: string;
 	position: string;
 	employeeNumber: string;
 	role: "admin" | "manager" | "employee" | undefined;
@@ -32,8 +33,11 @@ export type EmployeeDetailFormApi = ReactFormExtendedApi<
 	unknown
 >;
 
+type EmployeeDetailFormMetaApi = Pick<EmployeeDetailFormApi, "getFieldMeta">;
+
 export const defaultFormValues: EmployeeDetailFormValues = {
 	gender: undefined,
+	pronouns: "",
 	position: "",
 	employeeNumber: "",
 	role: undefined,
@@ -56,9 +60,19 @@ export const scheduleDayKeys = [
 	"sunday",
 ] as const;
 
+export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormMetaApi) {
+	for (const fieldName of ["pronouns"] as const) {
+		if (formApi.getFieldMeta(fieldName)?.errors.length) {
+			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
+			break;
+		}
+	}
+}
+
 export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {
 	form.reset();
 	form.setFieldValue("gender", employee.gender || undefined);
+	form.setFieldValue("pronouns", employee.pronouns || "");
 	form.setFieldValue("position", employee.position || "");
 	form.setFieldValue("employeeNumber", employee.employeeNumber || "");
 	form.setFieldValue("role", employee.role || undefined);

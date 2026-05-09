@@ -12,6 +12,7 @@ export type OrgChartEmployeeNode = {
 	employeeId: string;
 	userId: string;
 	name: string;
+	pronouns: string | null;
 	email: string;
 	image: string | null;
 	position: string | null;
@@ -62,6 +63,7 @@ export type OrgChartGraph = {
 export type OrgChartSearchResult = {
 	employeeId: string;
 	name: string;
+	pronouns: string | null;
 	email: string;
 	position: string | null;
 	image: string | null;

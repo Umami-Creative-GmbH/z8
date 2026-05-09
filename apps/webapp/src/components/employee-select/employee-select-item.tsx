@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { normalizePronouns } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
 import type { EmployeeSelectItemProps } from "./types";
 
@@ -31,6 +32,8 @@ export function EmployeeSelectItem({
 	disabled = false,
 }: EmployeeSelectItemProps) {
 	const name = buildAuthUserDisplayName(employee.user);
+	const pronouns = normalizePronouns(employee.pronouns);
+	const displayName = pronouns ? `${name} (${pronouns})` : name;
 	const isInactive = !employee.isActive;
 
 	return (
@@ -48,8 +51,8 @@ export function EmployeeSelectItem({
 			}}
 			className={cn(
 				"flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer select-none",
-				"transition-all duration-100",
-				"hover:bg-accent focus:bg-accent focus:outline-none",
+				"transition-colors duration-100",
+				"hover:bg-accent focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 				isSelected && "bg-primary/10 text-primary",
 				disabled && "opacity-50 cursor-not-allowed",
 				isInactive && "opacity-60",
@@ -70,12 +73,12 @@ export function EmployeeSelectItem({
 			)}
 
 			{/* Avatar */}
-			<UserAvatar seed={employee.userId} image={employee.user.image} name={name} size="sm" />
+			<UserAvatar seed={employee.userId} image={employee.user.image} name={displayName} size="sm" />
 
 			{/* Employee info */}
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2">
-					<span className="font-medium truncate">{name}</span>
+					<span className="font-medium truncate">{displayName}</span>
 					{isInactive && (
 						<Badge variant="secondary" className="text-xs shrink-0">
 							Inactive

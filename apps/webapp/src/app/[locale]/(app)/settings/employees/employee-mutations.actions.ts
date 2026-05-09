@@ -108,6 +108,7 @@ export async function createEmployeeAction(
 								role: validatedData.role,
 								position: validatedData.position || null,
 								gender: validatedData.gender || null,
+								pronouns: validatedData.pronouns || null,
 								birthday: validatedData.birthday || null,
 								startDate: validatedData.startDate || null,
 								endDate: validatedData.endDate || null,

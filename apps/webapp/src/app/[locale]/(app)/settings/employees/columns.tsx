@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { normalizePronouns } from "@/lib/employee-identity";
 import { Link } from "@/navigation";
 import type { EmployeeWithRelations } from "./actions";
 
@@ -119,10 +120,12 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 			<EmployeeHeader onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
 		),
 		cell: ({ row }) => {
-			const displayName = buildAuthUserDisplayName(row.original.user);
+			const name = buildAuthUserDisplayName(row.original.user);
+			const pronouns = normalizePronouns(row.original.pronouns);
+			const displayName = pronouns ? `${name} (${pronouns})` : name;
 
 			return (
-				<div className="flex items-center gap-3">
+				<div className="flex min-w-0 items-center gap-3">
 					<UserAvatar
 						image={row.original.user.image}
 						seed={row.original.user.id}
@@ -130,9 +133,9 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 						gender={row.original.gender}
 						size="sm"
 					/>
-					<div>
-						<div className="font-medium">{displayName}</div>
-						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+					<div className="min-w-0">
+						<div className="truncate font-medium">{displayName}</div>
+						<div className="truncate text-sm text-muted-foreground">{row.original.user.email}</div>
 					</div>
 				</div>
 			);

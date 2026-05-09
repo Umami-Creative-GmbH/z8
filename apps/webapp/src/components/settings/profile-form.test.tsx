@@ -122,6 +122,7 @@ describe("ProfileForm", () => {
 			firstName: "Employee",
 			lastName: "Record",
 			gender: "female",
+			pronouns: "she/her",
 			birthday: "2020-01-02T00:00:00.000Z",
 		});
 		updateProfileDetailsMock.mockResolvedValue({ success: true, data: undefined });
@@ -173,6 +174,7 @@ describe("ProfileForm", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				gender: "female",
+				pronouns: "she/her",
 				birthday: new Date("2020-01-02T00:00:00.000Z"),
 				image: "/avatar.png",
 			});
@@ -183,7 +185,7 @@ describe("ProfileForm", () => {
 	it("passes selected gender to the profile picture preview", async () => {
 		renderProfileForm();
 
-		expect((await screen.findByText("Employee Record")).getAttribute("data-avatar-gender")).toBe(
+		expect((await screen.findByText("Auth Fallback")).getAttribute("data-avatar-gender")).toBe(
 			"female",
 		);
 	});
@@ -210,10 +212,50 @@ describe("ProfileForm", () => {
 				firstName: "Auth",
 				lastName: "User",
 				gender: null,
+				pronouns: null,
 				birthday: null,
 				image: "/avatar.png",
 			});
 		});
+	});
+
+	it("submits custom pronouns through updateProfileDetails", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "xe/xem" } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		await waitFor(() => {
+			expect(updateProfileDetailsMock).toHaveBeenCalledWith(
+				expect.objectContaining({ pronouns: "xe/xem" }),
+			);
+		});
+	});
+
+	it("shows an inline error when custom pronouns are longer than 50 characters", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "x".repeat(51) } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		expect(await screen.findByText("Pronouns must be 50 characters or less")).toBeTruthy();
+		expect(updateProfileDetailsMock).not.toHaveBeenCalled();
+	});
+
+	it("focuses custom pronouns when it is the first invalid profile field", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "x".repeat(51) } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		await waitFor(() => {
+			expect(document.activeElement).toBe(pronounsInput);
+		});
+		expect(pronounsInput.getAttribute("name")).toBe("pronouns");
+		expect(updateProfileDetailsMock).not.toHaveBeenCalled();
 	});
 
 	it("shows field errors and focuses the first invalid field when both name fields are blank on submit", async () => {
@@ -261,6 +303,9 @@ describe("ProfileForm", () => {
 
 		expect(firstNameInput.getAttribute("placeholder")).toBe("Ada…");
 		expect(lastNameInput.getAttribute("placeholder")).toBe("Lovelace…");
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("placeholder")).toBe(
+			"e.g., xe/xem…",
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
 

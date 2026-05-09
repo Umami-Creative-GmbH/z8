@@ -103,7 +103,7 @@ function mapEmployeeRow(row: {
 type SelectableEmployeeRow = {
 	employee: Pick<
 		typeof employee.$inferSelect,
-		"id" | "userId" | "position" | "role" | "isActive" | "teamId"
+		"id" | "userId" | "pronouns" | "position" | "role" | "isActive" | "teamId"
 	>;
 	user: Pick<
 		typeof user.$inferSelect,
@@ -202,6 +202,7 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 							employee: {
 								id: employee.id,
 								userId: employee.userId,
+								pronouns: employee.pronouns,
 								position: employee.position,
 								role: employee.role,
 								isActive: employee.isActive,
@@ -382,6 +383,7 @@ export async function getEmployeesByIdsAction(
 						employee: {
 							id: employee.id,
 							userId: employee.userId,
+							pronouns: employee.pronouns,
 							position: employee.position,
 							role: employee.role,
 							isActive: employee.isActive,

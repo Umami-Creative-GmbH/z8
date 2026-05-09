@@ -133,6 +133,7 @@ export interface AccessibleEmployee {
 	name: string;
 	email: string;
 	image: string | null;
+	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 }

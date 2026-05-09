@@ -20,8 +20,8 @@ describe("location settings scope actions", () => {
 	it("filters manager reads down to scoped subareas from own teams or own areas", () => {
 		const source = stripComments(readFileSync(join(LOCATIONS_ROOT, "actions.ts"), "utf8"));
 
-		expect(source.includes("teamPermissions")).toBe(true);
 		expect(source.includes("subareaEmployee")).toBe(true);
+		expect(source.includes("manageableLocationIds")).toBe(true);
 		expect(source.includes("manageableSubareaIds")).toBe(true);
 	});
 

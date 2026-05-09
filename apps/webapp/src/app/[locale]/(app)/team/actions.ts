@@ -20,6 +20,7 @@ export interface ManagedEmployee {
 	userId: string;
 	firstName: string | null;
 	lastName: string | null;
+	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
@@ -166,6 +167,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 			userId: record.employee.userId,
 			firstName: record.employee.user.firstName,
 			lastName: record.employee.user.lastName,
+			pronouns: record.employee.pronouns,
 			position: record.employee.position,
 			role: record.employee.role,
 			isActive: record.employee.isActive,
