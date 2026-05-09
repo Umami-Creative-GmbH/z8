@@ -35,8 +35,54 @@ struct ApiResponse<T> {
     pub error: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WorkLocationType {
+    Office,
+    Home,
+    Remote,
+    Other,
+}
+
+impl WorkLocationType {
+    pub fn from_str(value: &str) -> Option<Self> {
+        match value {
+            "office" => Some(Self::Office),
+            "home" => Some(Self::Home),
+            "remote" => Some(Self::Remote),
+            "other" => Some(Self::Other),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Office => "office",
+            Self::Home => "home",
+            Self::Remote => "remote",
+            Self::Other => "other",
+        }
+    }
+}
+
 pub struct ClockService {
     client: reqwest::Client,
+}
+
+fn clock_in_body(
+    work_location_type: WorkLocationType,
+    timestamp: Option<&str>,
+) -> serde_json::Value {
+    let mut body = serde_json::json!({
+        "type": "clock_in",
+        "workLocationType": work_location_type.as_str(),
+    });
+
+    if let Some(timestamp) = timestamp {
+        body["timestamp"] = serde_json::Value::String(timestamp.to_string());
+    }
+
+    body
 }
 
 impl ClockService {
@@ -72,12 +118,16 @@ impl ClockService {
     }
 
     /// Clocks in the user
-    pub async fn clock_in(&self, webapp_url: &str, token: &str) -> Result<TimeEntry> {
+    pub async fn clock_in(
+        &self,
+        webapp_url: &str,
+        token: &str,
+        work_location_type: WorkLocationType,
+        timestamp: Option<&str>,
+    ) -> Result<TimeEntry> {
         let url = format!("{}/api/time-entries", webapp_url.trim_end_matches('/'));
 
-        let body = serde_json::json!({
-            "type": "clock_in",
-        });
+        let body = clock_in_body(work_location_type, timestamp);
 
         let response = self
             .client
@@ -131,6 +181,8 @@ impl ClockService {
         webapp_url: &str,
         token: &str,
         break_start_time: DateTime<Utc>,
+        work_location_type: WorkLocationType,
+        resume_timestamp: Option<&str>,
     ) -> Result<()> {
         let url = format!("{}/api/time-entries", webapp_url.trim_end_matches('/'));
 
@@ -154,10 +206,8 @@ impl ClockService {
             return Err(anyhow::anyhow!("Clock out for break failed: {}", error_text));
         }
 
-        // Then, clock back in at current time
-        let clock_in_body = serde_json::json!({
-            "type": "clock_in",
-        });
+        // Then, clock back in at current time unless replaying a queued resume.
+        let clock_in_body = clock_in_body(work_location_type, resume_timestamp);
 
         let response = self
             .client
@@ -177,5 +227,51 @@ impl ClockService {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{clock_in_body, WorkLocationType};
+
+    #[test]
+    fn work_location_type_accepts_only_supported_values() {
+        assert_eq!(
+            WorkLocationType::from_str("office").map(WorkLocationType::as_str),
+            Some("office")
+        );
+        assert_eq!(
+            WorkLocationType::from_str("home").map(WorkLocationType::as_str),
+            Some("home")
+        );
+        assert_eq!(
+            WorkLocationType::from_str("remote").map(WorkLocationType::as_str),
+            Some("remote")
+        );
+        assert_eq!(
+            WorkLocationType::from_str("other").map(WorkLocationType::as_str),
+            Some("other")
+        );
+        assert!(WorkLocationType::from_str("invalid").is_none());
+    }
+
+    #[test]
+    fn clock_in_body_includes_timestamp_only_when_provided() {
+        assert_eq!(
+            clock_in_body(WorkLocationType::Remote, None),
+            serde_json::json!({
+                "type": "clock_in",
+                "workLocationType": "remote",
+            })
+        );
+
+        assert_eq!(
+            clock_in_body(WorkLocationType::Remote, Some("2026-05-01T00:00:00+00:00")),
+            serde_json::json!({
+                "type": "clock_in",
+                "workLocationType": "remote",
+                "timestamp": "2026-05-01T00:00:00+00:00",
+            })
+        );
     }
 }

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 use crate::auth;
-use crate::clock::{ClockService, ClockStatus};
+use crate::clock::{ClockService, ClockStatus, WorkLocationType};
 use crate::offline::ActionType;
 use crate::settings::Settings;
 use crate::startup;
@@ -58,7 +58,10 @@ pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, Stri
 
 /// Clocks in the user
 #[tauri::command]
-pub async fn clock_in(app_handle: AppHandle) -> Result<ClockStatus, String> {
+pub async fn clock_in(
+    app_handle: AppHandle,
+    work_location_type: String,
+) -> Result<ClockStatus, String> {
     let state = app_handle.state::<Arc<AppState>>();
 
     let token = match state.get_session_token() {
@@ -71,10 +74,16 @@ pub async fn clock_in(app_handle: AppHandle) -> Result<ClockStatus, String> {
         return Err("Webapp URL not configured".to_string());
     }
 
+    let work_location_type = WorkLocationType::from_str(&work_location_type)
+        .ok_or("Invalid work location type".to_string())?;
+
     let clock_service = ClockService::new();
 
     // Try to clock in
-    match clock_service.clock_in(&webapp_url, &token).await {
+    match clock_service
+        .clock_in(&webapp_url, &token, work_location_type, None)
+        .await
+    {
         Ok(_entry) => {
             // Fetch updated status
             let status = clock_service
@@ -94,7 +103,11 @@ pub async fn clock_in(app_handle: AppHandle) -> Result<ClockStatus, String> {
                 || e.to_string().contains("network")
             {
                 let mut queue = state.offline_queue.lock();
-                let _ = queue.enqueue(ActionType::ClockIn, Utc::now().timestamp(), None);
+                let _ = queue.enqueue(
+                    ActionType::ClockIn,
+                    Utc::now().timestamp(),
+                    Some(work_location_type.as_str().to_string()),
+                );
 
                 // Optimistically update local state
                 state.set_clocked_in(true);
@@ -171,6 +184,7 @@ pub async fn clock_out(app_handle: AppHandle) -> Result<ClockStatus, String> {
 pub async fn clock_out_with_break(
     app_handle: AppHandle,
     break_start_time: String,
+    work_location_type: String,
 ) -> Result<ClockStatus, String> {
     let state = app_handle.state::<Arc<AppState>>();
 
@@ -188,10 +202,13 @@ pub async fn clock_out_with_break(
         .map_err(|e| format!("Invalid break time: {}", e))?
         .with_timezone(&Utc);
 
+    let work_location_type = WorkLocationType::from_str(&work_location_type)
+        .ok_or("Invalid work location type".to_string())?;
+
     let clock_service = ClockService::new();
 
     match clock_service
-        .clock_out_with_break(&webapp_url, &token, break_time)
+        .clock_out_with_break(&webapp_url, &token, break_time, work_location_type, None)
         .await
     {
         Ok(_) => {
@@ -214,7 +231,13 @@ pub async fn clock_out_with_break(
                 let _ = queue.enqueue(
                     ActionType::ClockOutWithBreak,
                     Utc::now().timestamp(),
-                    Some(break_start_time),
+                    Some(
+                        serde_json::json!({
+                            "breakStartTime": break_start_time,
+                            "workLocationType": work_location_type.as_str(),
+                        })
+                        .to_string(),
+                    ),
                 );
 
                 // Remain clocked in since we'll clock back in after break

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback } from "react";
-import type { ClockStatus } from "../types";
+import type { ClockStatus, WorkLocationType } from "../types";
 
 export function useClock() {
   const queryClient = useQueryClient();
@@ -15,7 +15,8 @@ export function useClock() {
   });
 
   const clockInMutation = useMutation({
-    mutationFn: () => invoke<ClockStatus>("clock_in"),
+    mutationFn: (workLocationType: WorkLocationType) =>
+      invoke<ClockStatus>("clock_in", { workLocationType }),
     onSuccess: (data) => {
       queryClient.setQueryData(["clock-status"], data);
     },
@@ -29,8 +30,13 @@ export function useClock() {
   });
 
   const clockOutWithBreakMutation = useMutation({
-    mutationFn: (breakStartTime: string) =>
-      invoke<ClockStatus>("clock_out_with_break", { breakStartTime }),
+    mutationFn: ({
+      breakStartTime,
+      workLocationType,
+    }: {
+      breakStartTime: string;
+      workLocationType: WorkLocationType;
+    }) => invoke<ClockStatus>("clock_out_with_break", { breakStartTime, workLocationType }),
     onSuccess: (data) => {
       queryClient.setQueryData(["clock-status"], data);
     },
