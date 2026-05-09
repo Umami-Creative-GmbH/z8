@@ -3,6 +3,7 @@
 import type * as React from "react";
 import { useEffect, useRef } from "react";
 import { TimepickerUI } from "timepicker-ui";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import {
 	normalizeTimeFormat,
 	type TimeFormat,
@@ -62,7 +63,8 @@ function TimeInput({
 }: TimeInputProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const onChangeRef = useRef(onChange);
-	const pickerFormat = normalizeTimeFormat(timeFormat);
+	const contextTimeFormat = useTimeFormat();
+	const pickerFormat = normalizeTimeFormat(timeFormat ?? contextTimeFormat);
 
 	onChangeRef.current = onChange;
 

@@ -33,6 +33,7 @@ vi.mock("timepicker-ui", () => ({
 	}),
 }));
 
+import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import { TimeInput } from "./time-input";
 
 describe("TimeInput", () => {
@@ -58,6 +59,26 @@ describe("TimeInput", () => {
 		render(<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="12h" value="09:00" />);
 
 		expect(instances[0]?.options.clock?.type).toBe("12h");
+	});
+
+	it("uses the provider time format when no explicit time format is passed", () => {
+		render(
+			<UserPreferencesProvider timeFormat="12h" weekStartDay="sunday">
+				<TimeInput aria-label="Start time" onChange={vi.fn()} value="09:00" />
+			</UserPreferencesProvider>,
+		);
+
+		expect(instances[0]?.options.clock?.type).toBe("12h");
+	});
+
+	it("uses an explicit time format over the provider time format", () => {
+		render(
+			<UserPreferencesProvider timeFormat="12h" weekStartDay="sunday">
+				<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="24h" value="09:00" />
+			</UserPreferencesProvider>,
+		);
+
+		expect(instances[0]?.options.clock?.type).toBe("24h");
 	});
 
 	it("emits standard change events when a 24-hour time is confirmed", () => {
