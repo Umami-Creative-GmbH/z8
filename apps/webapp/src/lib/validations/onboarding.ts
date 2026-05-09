@@ -6,6 +6,7 @@ export const onboardingProfileSchema = z.object({
 	gender: z.enum(["male", "female", "other"]).optional(),
 	birthday: z.date().optional(),
 	weekStartDay: z.enum(["sunday", "monday"]).default("sunday"),
+	timeFormat: z.enum(["24h", "12h"]).default("24h"),
 });
 
 export const onboardingWorkScheduleSchema = z.object({

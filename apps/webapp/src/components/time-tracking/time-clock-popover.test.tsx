@@ -1,5 +1,7 @@
 /* @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
@@ -76,9 +78,7 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
 		fireEvent.click(screen.getAllByRole("button", { name: "Clock In" }).at(-1)!);
 
-		await waitFor(() =>
-			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }),
-		);
+		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }));
 	});
 
 	it("submits remote when selected before quick clock-in", async () => {
@@ -88,8 +88,22 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
 		fireEvent.click(screen.getAllByRole("button", { name: "Clock In" }).at(-1)!);
 
-		await waitFor(() =>
-			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }),
+		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
+	});
+
+	it("memoizes time formatter creation in timer-driven render paths", () => {
+		const popoverSource = readFileSync(
+			join(process.cwd(), "src/components/time-tracking/time-clock-popover.tsx"),
+			"utf8",
 		);
+		const partsSource = readFileSync(
+			join(process.cwd(), "src/components/time-tracking/clock-in-out-widget-parts.tsx"),
+			"utf8",
+		);
+
+		expect(popoverSource).toContain("useMemo");
+		expect(partsSource).toContain("useMemo");
+		expect(popoverSource).toContain("[timeFormat]");
+		expect(partsSource).toContain("[timeFormat]");
 	});
 });

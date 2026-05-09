@@ -30,6 +30,7 @@ export default async function TimeTrackingPage({ searchParams }: TimeTrackingPag
 				<ClockInOutWidget
 					activeWorkPeriod={pageData.activeWorkPeriod}
 					employeeName={pageData.session.user.name || pageData.t("common.employee", "Employee")}
+					timeFormat={pageData.timeFormat}
 				/>
 			</div>
 
@@ -45,6 +46,7 @@ export default async function TimeTrackingPage({ searchParams }: TimeTrackingPag
 					hasManager={!!pageData.currentEmployee.managerId}
 					canApproveTimeEntries={pageData.canApproveTimeEntries}
 					employeeTimezone={pageData.timezone}
+					timeFormat={pageData.timeFormat}
 					employeeId={pageData.currentEmployee.id}
 				/>
 			</div>

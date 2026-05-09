@@ -1,18 +1,28 @@
 import { ProfileForm } from "@/components/settings/profile-form";
+import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
 import { WeekStartSettings } from "@/components/settings/week-start-settings";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getCurrentTimezone, getWeekStartDay, updateTimezone, updateWeekStartDay } from "./actions";
+import {
+	getCurrentTimezone,
+	getTimeFormat,
+	getWeekStartDay,
+	updateTimeFormat,
+	updateTimezone,
+	updateWeekStartDay,
+} from "./actions";
 
 export default async function ProfilePage() {
 	// Parallelize auth, timezone, and translation fetches
-	const [authContext, currentTimezone, currentWeekStartDay, t] = await Promise.all([
-		requireUser(),
-		getCurrentTimezone(),
-		getWeekStartDay(),
-		getTranslate(),
-	]);
+	const [authContext, currentTimezone, currentWeekStartDay, currentTimeFormat, t] =
+		await Promise.all([
+			requireUser(),
+			getCurrentTimezone(),
+			getWeekStartDay(),
+			getTimeFormat(),
+			getTranslate(),
+		]);
 
 	return (
 		<div className="p-6">
@@ -33,6 +43,7 @@ export default async function ProfilePage() {
 					currentWeekStartDay={currentWeekStartDay}
 					onUpdate={updateWeekStartDay}
 				/>
+				<TimeFormatSettings currentTimeFormat={currentTimeFormat} onUpdate={updateTimeFormat} />
 			</div>
 		</div>
 	);

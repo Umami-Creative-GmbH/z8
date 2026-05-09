@@ -28,6 +28,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { format } from "@/lib/datetime/luxon-utils";
+import { TIME_FORMAT_OPTIONS, type TimeFormat } from "@/lib/user-preferences/time-format";
 import { WEEK_START_OPTIONS, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
@@ -39,6 +40,7 @@ const defaultValues = {
 	gender: undefined as "male" | "female" | "other" | undefined,
 	birthday: undefined as Date | undefined,
 	weekStartDay: "sunday" as WeekStartDay,
+	timeFormat: "24h" as TimeFormat,
 };
 
 export default function ProfilePage() {
@@ -286,6 +288,40 @@ export default function ProfilePage() {
 											{t(
 												"onboarding.profile.weekStartDayDesc",
 												"This controls how calendars and weekly summaries are displayed.",
+											)}
+										</p>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field name="timeFormat">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="time-format">
+											{t("onboarding.profile.timeFormat", "Time format")}
+										</Label>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => field.handleChange(value as TimeFormat)}
+											disabled={loading}
+										>
+											<SelectTrigger id="time-format" className="w-full">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{TIME_FORMAT_OPTIONS.map((option) => (
+													<SelectItem key={option.value} value={option.value}>
+														{option.value === "24h"
+															? t("onboarding.profile.timeFormat24h", "24-hour (08:00)")
+															: t("onboarding.profile.timeFormat12h", "12-hour (8:00 AM)")}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"onboarding.profile.timeFormatDesc",
+												"This controls how clock times are displayed.",
 											)}
 										</p>
 									</div>

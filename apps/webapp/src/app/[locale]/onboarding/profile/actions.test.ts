@@ -49,7 +49,7 @@ describe("updateProfileOnboarding", () => {
 		updateProfileMock.mockReset();
 	});
 
-	it("applies the week start default before updating the profile", async () => {
+	it("applies preference defaults before updating the profile", async () => {
 		updateProfileMock.mockReturnValue(Effect.succeed({ nextStep: "/onboarding/wellness" }));
 
 		await updateProfileOnboarding({
@@ -58,7 +58,7 @@ describe("updateProfileOnboarding", () => {
 		} as OnboardingProfileFormValues);
 
 		expect(updateProfileMock).toHaveBeenCalledWith(
-			expect.objectContaining({ weekStartDay: "sunday" }),
+			expect.objectContaining({ weekStartDay: "sunday", timeFormat: "24h" }),
 		);
 	});
 
@@ -67,6 +67,17 @@ describe("updateProfileOnboarding", () => {
 			firstName: "Ada",
 			lastName: "Lovelace",
 			weekStartDay: "friday",
+		} as unknown as OnboardingProfileFormValues);
+
+		expect(result.success).toBe(false);
+		expect(updateProfileMock).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid time format values before updating the profile", async () => {
+		const result = await updateProfileOnboarding({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			timeFormat: "locale",
 		} as unknown as OnboardingProfileFormValues);
 
 		expect(result.success).toBe(false);
