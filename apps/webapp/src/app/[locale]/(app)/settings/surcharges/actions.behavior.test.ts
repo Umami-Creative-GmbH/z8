@@ -316,8 +316,10 @@ vi.mock("@/db/schema", () => ({
 	projectManager: { employeeId: "employeeId", projectId: "projectId" },
 	subareaEmployee: { employeeId: "employeeId", subareaId: "subareaId" },
 	surchargeCalculation: {
+		id: "id",
 		organizationId: "organizationId",
 		calculationDate: "calculationDate",
+		createdAt: "createdAt",
 		employeeId: "employeeId",
 	},
 	surchargeModel: {
@@ -560,6 +562,62 @@ describe("surcharge settings scope behavior", () => {
 		} finally {
 			mockState.surchargeCalculations = previousCalculations;
 		}
+	});
+
+	it("bounds manager surcharge report scanning when visible rows are sparse", async () => {
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = Array.from({ length: 5500 }, (_, index) => ({
+			...previousCalculations[3],
+			id: `calc-other-${index}`,
+			calculationDate: new Date(
+				`2026-02-${String((index % 28) + 1).padStart(2, "0")}T00:00:00.000Z`,
+			),
+		}));
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toEqual([]);
+			}
+			expect(mockState.surchargeCalculationFindManyCalls).toHaveLength(10);
+			expect(mockState.surchargeCalculationFindManyCalls.at(-1)).toMatchObject({
+				limit: 500,
+				offset: 4500,
+			});
+			expect(mockState.workPeriodFindManyCalls).toBe(10);
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
+	it("uses deterministic surcharge report ordering for tied calculation dates", async () => {
+		mockState.settingsActorAccessTier = "orgAdmin";
+		mockState.membershipRole = "admin";
+		mockState.authContext.employee = {
+			id: "admin-1",
+			organizationId: "org-1",
+			role: "admin",
+			teamId: null,
+		};
+
+		const result = await getSurchargeCalculationsForPeriod(
+			"org-1",
+			new Date("2026-02-01T00:00:00.000Z"),
+			new Date("2026-02-28T23:59:59.999Z"),
+		);
+
+		expect(result.success).toBe(true);
+		expect(mockState.surchargeCalculationFindManyCalls[0]?.orderBy).toEqual([
+			"calculationDate",
+			"createdAt",
+			"id",
+		]);
 	});
 
 	it("includes auth fallback names for surcharge calculation employee display", async () => {

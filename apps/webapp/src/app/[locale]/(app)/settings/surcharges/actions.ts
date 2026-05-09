@@ -1013,6 +1013,7 @@ export async function deleteSurchargeAssignment(
 
 const SURCHARGE_REPORT_ROW_LIMIT = 500;
 const SURCHARGE_REPORT_BATCH_SIZE = 500;
+const SURCHARGE_REPORT_MANAGER_SCAN_LIMIT = SURCHARGE_REPORT_ROW_LIMIT * 10;
 
 /**
  * Get surcharge calculations for a period
@@ -1052,7 +1053,11 @@ export async function getSurchargeCalculationsForPeriod(
 						},
 					},
 				},
-				orderBy: [desc(surchargeCalculation.calculationDate)],
+				orderBy: [
+					desc(surchargeCalculation.calculationDate),
+					desc(surchargeCalculation.createdAt),
+					desc(surchargeCalculation.id),
+				],
 				limit: SURCHARGE_REPORT_BATCH_SIZE,
 				...(offset === undefined ? {} : { offset }),
 			});
@@ -1079,7 +1084,10 @@ export async function getSurchargeCalculationsForPeriod(
 		const scopedCalculations: SurchargeCalculationWithDetails[] = [];
 		let offset = 0;
 
-		while (scopedCalculations.length < SURCHARGE_REPORT_ROW_LIMIT) {
+		while (
+			scopedCalculations.length < SURCHARGE_REPORT_ROW_LIMIT &&
+			offset < SURCHARGE_REPORT_MANAGER_SCAN_LIMIT
+		) {
 			const calculationsWithAuthNames = await fetchCalculationBatch(offset);
 			if (calculationsWithAuthNames.length === 0) {
 				break;
