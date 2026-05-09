@@ -149,9 +149,9 @@ export function EmployeeOverviewCard({
 						name={employeeDisplayName}
 						size="lg"
 					/>
-					<div>
-						<div className="font-medium">{employeeDisplayName}</div>
-						<div className="text-sm text-muted-foreground">{employee.user.email}</div>
+					<div className="min-w-0">
+						<div className="truncate font-medium">{employeeDisplayName}</div>
+						<div className="truncate text-sm text-muted-foreground">{employee.user.email}</div>
 					</div>
 				</div>
 
@@ -375,11 +375,7 @@ export function EmployeeEditFormCard({
 						)}
 					</form.Field>
 
-					<PronounsEditField
-						form={form}
-						disabled={!canEditManagerFields || isUpdating}
-						t={t}
-					/>
+					<PronounsEditField form={form} disabled={!canEditManagerFields || isUpdating} t={t} />
 
 					<div className="grid gap-4 md:grid-cols-2">
 						<TextField
@@ -636,8 +632,7 @@ function PronounsEditField({
 		<form.Field
 			name="pronouns"
 			validators={{
-				onBlur: ({ value }) =>
-					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+				onBlur: ({ value }) => (value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined),
 				onChange: ({ value }) =>
 					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
 				onSubmit: ({ value }) =>
@@ -650,10 +645,7 @@ function PronounsEditField({
 				const selectValue = isPreset ? value : "";
 				const hasError = fieldHasError(field);
 				const label = t("settings.employees.detailView.pronouns", "Pronouns");
-				const customLabel = t(
-					"settings.employees.detailView.pronounsCustom",
-					"Custom pronouns",
-				);
+				const customLabel = t("settings.employees.detailView.pronounsCustom", "Custom pronouns");
 
 				return (
 					<TFormItem>
@@ -684,10 +676,7 @@ function PronounsEditField({
 						</Select>
 						{!isPreset ? (
 							<div className="space-y-2">
-								<label
-									htmlFor="employee-pronouns-custom"
-									className="text-xs text-muted-foreground"
-								>
+								<label htmlFor="employee-pronouns-custom" className="text-xs text-muted-foreground">
 									{customLabel}
 								</label>
 								<Input
@@ -699,7 +688,7 @@ function PronounsEditField({
 									onBlur={field.handleBlur}
 									placeholder={t(
 										"settings.employees.detailView.pronounsCustomPlaceholder",
-										"Enter pronouns",
+										"e.g., xe/xem…",
 									)}
 									disabled={disabled}
 								/>
@@ -772,6 +761,7 @@ function TextField({
 					<TFormLabel hasError={fieldHasError(field)}>{label}</TFormLabel>
 					<TFormControl hasError={fieldHasError(field)}>
 						<Input
+							name={name}
 							placeholder={placeholder}
 							value={field.state.value || ""}
 							onChange={(event) => field.handleChange(event.target.value)}

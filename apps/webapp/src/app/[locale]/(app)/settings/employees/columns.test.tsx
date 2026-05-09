@@ -74,7 +74,10 @@ describe("employee directory columns", () => {
 	it("appends pronouns to the user name when present", () => {
 		renderEmployeeCell(createEmployee({ pronouns: "they/them" }));
 
-		expect(screen.getByText("Directory Name (they/them)")).toBeTruthy();
+		const displayName = screen.getByText("Directory Name (they/them)");
+		expect(displayName).toBeTruthy();
+		expect(displayName.className).toContain("truncate");
+		expect(displayName.parentElement?.className).toContain("min-w-0");
 		expect(
 			screen.getByText("", { selector: '[data-avatar-name="Directory Name (they/them)"]' }),
 		).toBeTruthy();

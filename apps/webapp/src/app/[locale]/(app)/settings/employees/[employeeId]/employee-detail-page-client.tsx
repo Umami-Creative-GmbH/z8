@@ -15,7 +15,11 @@ import { useEmployee } from "@/lib/query/use-employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
-import { defaultFormValues, syncEmployeeForm } from "./page-utils";
+import {
+	defaultFormValues,
+	focusFirstInvalidEmployeeDetailField,
+	syncEmployeeForm,
+} from "./page-utils";
 
 export function EmployeeDetailPageClient({
 	params,
@@ -59,6 +63,7 @@ export function EmployeeDetailPageClient({
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
+		onSubmitInvalid: ({ formApi }) => focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
 			const result = await updateEmployee(value).catch(() => null);
 

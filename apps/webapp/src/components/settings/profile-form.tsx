@@ -92,7 +92,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	const form = useForm({
 		defaultValues,
 		onSubmitInvalid: ({ formApi }) => {
-			for (const fieldName of ["firstName", "lastName"] as const) {
+			for (const fieldName of ["firstName", "lastName", "pronouns"] as const) {
 				if (formApi.getFieldMeta(fieldName)?.errors.length) {
 					document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
 					break;
@@ -147,8 +147,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		[form.store],
 	);
 	const validatePronouns = useCallback(
-		(value: string) =>
-			value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+		(value: string) => (value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined),
 		[],
 	);
 
@@ -626,7 +625,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											<TFormItem>
 												<div
 													className={
-														hasError ? "text-sm font-medium text-destructive" : "text-sm font-medium"
+														hasError
+															? "text-sm font-medium text-destructive"
+															: "text-sm font-medium"
 													}
 												>
 													{label}
@@ -656,7 +657,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													</SelectContent>
 												</Select>
 												<div className="space-y-2">
-													<Label htmlFor="pronouns-custom" className="text-xs text-muted-foreground">
+													<Label
+														htmlFor="pronouns-custom"
+														className="text-xs text-muted-foreground"
+													>
 														{customLabel}
 													</Label>
 													<Input
@@ -668,7 +672,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 														onBlur={field.handleBlur}
 														placeholder={t(
 															"settings.profile.pronouns.customPlaceholder",
-															"Enter pronouns",
+															"e.g., xe/xem…",
 														)}
 														disabled={isSubmitting}
 													/>

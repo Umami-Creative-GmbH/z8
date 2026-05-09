@@ -124,16 +124,16 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 				: row.original.user.name;
 
 			return (
-				<div className="flex items-center gap-3">
+				<div className="flex min-w-0 items-center gap-3">
 					<UserAvatar
 						image={row.original.user.image}
 						seed={row.original.user.id}
 						name={displayName}
 						size="sm"
 					/>
-					<div>
-						<div className="font-medium">{displayName}</div>
-						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+					<div className="min-w-0">
+						<div className="truncate font-medium">{displayName}</div>
+						<div className="truncate text-sm text-muted-foreground">{row.original.user.email}</div>
 					</div>
 				</div>
 			);

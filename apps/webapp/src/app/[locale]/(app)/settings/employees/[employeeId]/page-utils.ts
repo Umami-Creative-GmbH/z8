@@ -1,4 +1,8 @@
-import type { FormAsyncValidateOrFn, FormValidateOrFn, ReactFormExtendedApi } from "@tanstack/react-form";
+import type {
+	FormAsyncValidateOrFn,
+	FormValidateOrFn,
+	ReactFormExtendedApi,
+} from "@tanstack/react-form";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 
 export interface EmployeeDetailFormValues {
@@ -57,6 +61,15 @@ export const scheduleDayKeys = [
 	"saturday",
 	"sunday",
 ] as const;
+
+export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormApi) {
+	for (const fieldName of ["firstName", "lastName", "pronouns"] as const) {
+		if (formApi.getFieldMeta(fieldName)?.errors.length) {
+			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
+			break;
+		}
+	}
+}
 
 export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {
 	form.reset();

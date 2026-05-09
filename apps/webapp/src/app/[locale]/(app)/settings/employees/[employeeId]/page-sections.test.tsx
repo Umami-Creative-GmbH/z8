@@ -5,6 +5,7 @@ import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
+import { focusFirstInvalidEmployeeDetailField } from "./page-utils";
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -180,7 +181,10 @@ describe("employee detail page sections", () => {
 		);
 
 		expect(screen.getByText("Mitarbeiterinformationen")).toBeTruthy();
-		expect(screen.getByText("Johannes Glier (he/him)")).toBeTruthy();
+		const displayName = screen.getByText("Johannes Glier (he/him)");
+		expect(displayName).toBeTruthy();
+		expect(displayName.className).toContain("truncate");
+		expect(displayName.parentElement?.className).toContain("min-w-0");
 		expect(screen.getByText("Aktiv")).toBeTruthy();
 		expect(screen.getByText("Arbeitszeitmodell")).toBeTruthy();
 		expect(screen.queryByText("Employee Information")).toBeNull();
@@ -247,5 +251,35 @@ describe("employee detail page sections", () => {
 		);
 
 		expect(screen.getByText("Pronouns must be 50 characters or less")).toBeTruthy();
+	});
+
+	it("uses an example-style custom pronouns placeholder by default", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm({ pronouns: "xe/xem" }) as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				isUpdating={false}
+				onCancel={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("placeholder")).toBe(
+			"e.g., xe/xem…",
+		);
+		expect(screen.getByLabelText("Custom pronouns").getAttribute("name")).toBe("pronouns");
+	});
+
+	it("focuses custom pronouns when it is the first invalid employee detail field", () => {
+		render(<input aria-label="Custom pronouns" name="pronouns" />);
+		const pronounsInput = screen.getByLabelText("Custom pronouns");
+
+		focusFirstInvalidEmployeeDetailField({
+			getFieldMeta: (fieldName: string) => ({
+				errors: fieldName === "pronouns" ? ["Pronouns must be 50 characters or less"] : [],
+			}),
+		} as never);
+
+		expect(document.activeElement).toBe(pronounsInput);
 	});
 });
