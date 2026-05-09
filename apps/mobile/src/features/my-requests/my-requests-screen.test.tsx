@@ -43,6 +43,13 @@ function createRequest(overrides: Partial<MobileRequestItem>): MobileRequestItem
   };
 }
 
+function getSectionHtml(html: string, title: string, nextTitle: string) {
+  const sectionStart = html.indexOf(title);
+  const sectionEnd = html.indexOf(nextTitle, sectionStart);
+
+  return html.slice(sectionStart, sectionEnd);
+}
+
 const requestsData: MobileMyRequestsData = {
   items: [
     createRequest({ id: "absence:pending-1", title: "Vacation", status: "pending" }),
@@ -80,8 +87,18 @@ const requestsData: MobileMyRequestsData = {
 };
 
 describe("MyRequestsScreen", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-15T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("renders summary counts, source warning, grouped sections, and decision reason", () => {
     const html = renderToStaticMarkup(React.createElement(MyRequestsScreen, { requests: requestsData }));
+    const recentlyDecidedSectionHtml = getSectionHtml(html, "Recently decided", "All requests");
 
     expect(html).toContain("My Requests");
     expect(html).toContain("Pending");
@@ -97,6 +114,9 @@ describe("MyRequestsScreen", () => {
     expect(html).toContain("In review");
     expect(html).toContain("Recently decided");
     expect(html).toContain("All requests");
+    expect(recentlyDecidedSectionHtml).toContain("Client visit mileage");
+    expect(recentlyDecidedSectionHtml).toContain("Resolved Apr 13, 2026");
+    expect(recentlyDecidedSectionHtml).not.toContain("Vacation");
     expect(html).toContain("Absence");
     expect(html).toContain("Time Correction");
     expect(html).toContain("Travel Expense");
