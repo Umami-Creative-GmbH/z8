@@ -5,10 +5,10 @@ import {
 	buildEdgeId,
 	buildEmployeeNodeId,
 	buildOrgChartGraph,
+	buildScopedOrgChartGraph,
 	buildTeamNodeId,
 	capTeamMembershipsPerTeam,
 	mergeOrgChartGraphs,
-	scopeOrgChartGraphInput,
 } from "./org-chart-graph";
 
 const employee = {
@@ -52,9 +52,13 @@ describe("org chart graph helpers", () => {
 		);
 	});
 
-	it("filters graph inputs to active employees and teams in the active organization", () => {
-		const scoped = scopeOrgChartGraphInput(
+	it("builds graphs only from active employees and teams in the active organization", () => {
+		const graph = buildScopedOrgChartGraph(
 			{
+				mode: "full",
+				focusedEmployeeId: "emp-1",
+				employeeCount: 4,
+				partial: false,
 				employees: [
 					{ ...employee, organizationId: "org-1" },
 					{ ...manager, organizationId: "org-1" },
@@ -79,12 +83,14 @@ describe("org chart graph helpers", () => {
 			"org-1",
 		);
 
-		expect(scoped.employees.map((row) => row.id)).toEqual(["emp-1", "emp-2"]);
-		expect(scoped.teams.map((row) => row.id)).toEqual(["team-1"]);
-		expect(scoped.managerLinks).toEqual([{ managerId: "emp-2", employeeId: "emp-1" }]);
-		expect(scoped.teamMemberships).toEqual([
-			{ organizationId: "org-1", teamId: "team-1", employeeId: "emp-1" },
-		]);
+		expect(graph.nodes.map((node) => node.id)).toEqual(["employee:emp-1", "employee:emp-2", "team:team-1"]);
+		expect(graph.edges).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ kind: "manager", source: "employee:emp-2", target: "employee:emp-1" }),
+				expect.objectContaining({ kind: "team-membership", source: "team:team-1", target: "employee:emp-1" }),
+			]),
+		);
+		expect(graph.edges).toHaveLength(3);
 	});
 
 	it("caps ordered team memberships per team without dropping other teams", () => {
@@ -233,5 +239,6 @@ describe("org chart server action source", () => {
 		expect(source).toContain("SMALL_ORG_EMPLOYEE_LIMIT");
 		expect(source).toContain("EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT");
 		expect(source).toContain("TEAM_NEIGHBORHOOD_MEMBER_LIMIT");
+		expect(source).toContain("buildScopedOrgChartGraph");
 	});
 });

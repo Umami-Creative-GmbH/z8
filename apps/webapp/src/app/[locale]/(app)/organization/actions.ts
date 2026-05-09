@@ -10,7 +10,7 @@ import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { buildOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
+import { buildScopedOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
 	EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
 	SMALL_ORG_EMPLOYEE_LIMIT,
@@ -23,6 +23,7 @@ type DatabaseServiceInstance = typeof DatabaseService.Service;
 
 type EmployeeGraphRow = {
 	id: string;
+	organizationId: string;
 	userId: string;
 	name: string;
 	email: string;
@@ -35,6 +36,7 @@ type EmployeeGraphRow = {
 
 type TeamGraphRow = {
 	id: string;
+	organizationId: string;
 	name: string;
 	description: string | null;
 	memberCount: number;
@@ -47,6 +49,7 @@ type ManagerLinkRow = {
 };
 
 type TeamMembershipRow = {
+	organizationId: string;
 	teamId: string;
 	employeeId: string;
 };
@@ -239,16 +242,19 @@ function loadFullGraph(
 		const managerLinks = yield* _(loadManagerLinks(dbService, activeEmployeeIds));
 		const teamMemberships = yield* _(loadTeamMemberships(dbService, organizationId));
 
-		return buildOrgChartGraph({
-			mode: "full",
-			focusedEmployeeId,
-			employeeCount,
-			partial: false,
-			employees,
-			teams,
-			managerLinks,
-			teamMemberships,
-		});
+		return buildScopedOrgChartGraph(
+			{
+				mode: "full",
+				focusedEmployeeId,
+				employeeCount,
+				partial: false,
+				employees,
+				teams,
+				managerLinks,
+				teamMemberships,
+			},
+			organizationId,
+		);
 	});
 }
 
@@ -286,16 +292,19 @@ function loadEmployeeNeighborhood(
 		]);
 		const employees = yield* _(loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]));
 
-		return buildOrgChartGraph({
-			mode: "focused",
-			focusedEmployeeId: targetEmployee.id,
-			employeeCount,
-			partial: options.partial,
-			employees,
-			teams,
-			managerLinks: [...directManagerLinks, ...directReportLinks],
-			teamMemberships: dedupeMemberships([...targetTeamMemberships, ...teamMemberMemberships]),
-		});
+		return buildScopedOrgChartGraph(
+			{
+				mode: "focused",
+				focusedEmployeeId: targetEmployee.id,
+				employeeCount,
+				partial: options.partial,
+				employees,
+				teams,
+				managerLinks: [...directManagerLinks, ...directReportLinks],
+				teamMemberships: dedupeMemberships([...targetTeamMemberships, ...teamMemberMemberships]),
+			},
+			organizationId,
+		);
 	});
 }
 
@@ -328,16 +337,19 @@ function loadTeamNeighborhood(
 		}
 		const employees = yield* _(loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]));
 
-		return buildOrgChartGraph({
-			mode: "focused",
-			focusedEmployeeId: null,
-			employeeCount,
-			partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
-			employees,
-			teams: [targetTeam],
-			managerLinks: [],
-			teamMemberships: memberships,
-		});
+		return buildScopedOrgChartGraph(
+			{
+				mode: "focused",
+				focusedEmployeeId: null,
+				employeeCount,
+				partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
+				employees,
+				teams: [targetTeam],
+				managerLinks: [],
+				teamMemberships: memberships,
+			},
+			organizationId,
+		);
 	});
 }
 
@@ -380,6 +392,7 @@ function loadActiveEmployees(dbService: DatabaseServiceInstance, organizationId:
 		const rows = await dbService.db
 			.select({
 				id: employee.id,
+				organizationId: employee.organizationId,
 				userId: employee.userId,
 				name: user.name,
 				email: user.email,
@@ -410,6 +423,7 @@ function loadActiveEmployeesByIds(
 		const rows = await dbService.db
 			.select({
 				id: employee.id,
+				organizationId: employee.organizationId,
 				userId: employee.userId,
 				name: user.name,
 				email: user.email,
@@ -444,6 +458,7 @@ async function withEmployeeTeamIds(
 
 	const memberships = await dbService.db
 		.select({
+			organizationId: teamMembership.organizationId,
 			employeeId: teamMembership.employeeId,
 			teamId: teamMembership.teamId,
 		})
@@ -477,6 +492,7 @@ function loadTeams(dbService: DatabaseServiceInstance, organizationId: string) {
 		const rows = await dbService.db
 			.select({
 				id: team.id,
+				organizationId: team.organizationId,
 				name: team.name,
 				description: team.description,
 				primaryManagerId: team.primaryManagerId,
@@ -498,6 +514,7 @@ function loadTeamsByIds(dbService: DatabaseServiceInstance, organizationId: stri
 		const rows = await dbService.db
 			.select({
 				id: team.id,
+				organizationId: team.organizationId,
 				name: team.name,
 				description: team.description,
 				primaryManagerId: team.primaryManagerId,
@@ -619,6 +636,7 @@ function loadTeamMemberships(dbService: DatabaseServiceInstance, organizationId:
 	return dbService.query("loadOrgChartTeamMemberships", async () => {
 		return await dbService.db
 			.select({
+				organizationId: teamMembership.organizationId,
 				teamId: teamMembership.teamId,
 				employeeId: teamMembership.employeeId,
 			})
@@ -644,6 +662,7 @@ function loadEmployeeTeamMemberships(
 	return dbService.query("loadOrgChartEmployeeTeamMemberships", async () => {
 		return await dbService.db
 			.select({
+				organizationId: teamMembership.organizationId,
 				teamId: teamMembership.teamId,
 				employeeId: teamMembership.employeeId,
 			})
@@ -672,6 +691,7 @@ function loadLimitedActiveTeamMemberships(
 	return dbService.query("loadOrgChartLimitedActiveTeamMemberships", async () => {
 		const rows = await dbService.db
 			.select({
+				organizationId: teamMembership.organizationId,
 				teamId: teamMembership.teamId,
 				employeeId: teamMembership.employeeId,
 			})

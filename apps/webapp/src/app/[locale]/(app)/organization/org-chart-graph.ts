@@ -75,6 +75,9 @@ type BuildOrgChartGraphInput = {
 	teamMemberships: OrgChartTeamMembershipInput[];
 };
 
+type BuildScopedOrgChartGraphInput = Omit<BuildOrgChartGraphInput, keyof ScopeOrgChartGraphInput> &
+	ScopeOrgChartGraphInput;
+
 export function buildEmployeeNodeId(employeeId: string) {
 	return `employee:${employeeId}`;
 }
@@ -193,6 +196,24 @@ export function scopeOrgChartGraphInput(
 				employeeIds.has(membership.employeeId),
 		),
 	};
+}
+
+export function buildScopedOrgChartGraph(
+	input: BuildScopedOrgChartGraphInput,
+	organizationId: string,
+): OrgChartGraph {
+	const scopedInput = scopeOrgChartGraphInput(input, organizationId);
+
+	return buildOrgChartGraph({
+		mode: input.mode,
+		focusedEmployeeId: input.focusedEmployeeId,
+		employeeCount: input.employeeCount,
+		partial: input.partial,
+		employees: scopedInput.employees,
+		teams: scopedInput.teams,
+		managerLinks: scopedInput.managerLinks,
+		teamMemberships: scopedInput.teamMemberships,
+	});
 }
 
 export function capTeamMembershipsPerTeam<T extends OrgChartTeamMembershipInput>(
