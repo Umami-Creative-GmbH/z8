@@ -16,21 +16,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
-
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-	hour: "2-digit",
-	minute: "2-digit",
-});
+import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
 
 export function ActiveSessionSummary({
 	elapsedSeconds,
 	startTime,
 	t,
+	timeFormat = "24h",
 }: {
 	elapsedSeconds: number;
 	startTime: Date;
 	t: TFnType;
+	timeFormat?: TimeFormat;
 }) {
+	const timeFormatter = new Intl.DateTimeFormat(
+		undefined,
+		getTimeFormatDateTimeOptions(timeFormat),
+	);
+
 	return (
 		<div className="flex flex-col gap-2">
 			<div className="font-bold text-3xl tabular-nums">
