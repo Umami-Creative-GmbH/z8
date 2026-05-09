@@ -10,7 +10,7 @@ import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { buildOrgChartGraph } from "./org-chart-graph";
+import { buildOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
 	EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
 	SMALL_ORG_EMPLOYEE_LIMIT,
@@ -670,32 +670,27 @@ function loadLimitedActiveTeamMemberships(
 	}
 
 	return dbService.query("loadOrgChartLimitedActiveTeamMemberships", async () => {
-		const rows = await Promise.all(
-			teamIds.map((teamId) =>
-				dbService.db
-					.select({
-						teamId: teamMembership.teamId,
-						employeeId: teamMembership.employeeId,
-					})
-					.from(teamMembership)
-					.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
-					.innerJoin(team, eq(teamMembership.teamId, team.id))
-					.innerJoin(user, eq(employee.userId, user.id))
-					.where(
-						and(
-							eq(teamMembership.organizationId, organizationId),
-							eq(teamMembership.teamId, teamId),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-							eq(team.organizationId, organizationId),
-						),
-					)
-					.orderBy(asc(user.name), asc(user.email))
-					.limit(limitPerTeam),
-			),
-		);
+		const rows = await dbService.db
+			.select({
+				teamId: teamMembership.teamId,
+				employeeId: teamMembership.employeeId,
+			})
+			.from(teamMembership)
+			.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
+			.innerJoin(team, eq(teamMembership.teamId, team.id))
+			.innerJoin(user, eq(employee.userId, user.id))
+			.where(
+				and(
+					eq(teamMembership.organizationId, organizationId),
+					inArray(teamMembership.teamId, teamIds),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+					eq(team.organizationId, organizationId),
+				),
+			)
+			.orderBy(asc(teamMembership.teamId), asc(user.name), asc(user.email), asc(employee.id));
 
-		return rows.flat();
+		return capTeamMembershipsPerTeam(rows, limitPerTeam);
 	});
 }
 

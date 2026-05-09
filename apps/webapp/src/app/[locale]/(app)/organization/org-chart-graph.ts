@@ -45,6 +45,25 @@ type OrgChartTeamMembershipInput = {
 	employeeId: string;
 };
 
+type ScopedOrgChartEmployeeInput = OrgChartEmployeeInput & {
+	organizationId: string;
+};
+
+type ScopedOrgChartTeamInput = OrgChartTeamInput & {
+	organizationId: string;
+};
+
+type ScopedOrgChartTeamMembershipInput = OrgChartTeamMembershipInput & {
+	organizationId: string;
+};
+
+type ScopeOrgChartGraphInput = {
+	employees: ScopedOrgChartEmployeeInput[];
+	teams: ScopedOrgChartTeamInput[];
+	managerLinks: OrgChartManagerLinkInput[];
+	teamMemberships: ScopedOrgChartTeamMembershipInput[];
+};
+
 type BuildOrgChartGraphInput = {
 	mode: OrgChartLoadMode;
 	focusedEmployeeId: string | null;
@@ -148,6 +167,52 @@ export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGrap
 		edges: dedupeById(edges),
 		partial: input.partial,
 	};
+}
+
+export function scopeOrgChartGraphInput(
+	input: ScopeOrgChartGraphInput,
+	organizationId: string,
+): ScopeOrgChartGraphInput {
+	const employees = input.employees.filter(
+		(employee) => employee.organizationId === organizationId && employee.isActive,
+	);
+	const employeeIds = new Set(employees.map((employee) => employee.id));
+	const teams = input.teams.filter((team) => team.organizationId === organizationId);
+	const teamIds = new Set(teams.map((team) => team.id));
+
+	return {
+		employees,
+		teams,
+		managerLinks: input.managerLinks.filter(
+			(link) => employeeIds.has(link.managerId) && employeeIds.has(link.employeeId),
+		),
+		teamMemberships: input.teamMemberships.filter(
+			(membership) =>
+				membership.organizationId === organizationId &&
+				teamIds.has(membership.teamId) &&
+				employeeIds.has(membership.employeeId),
+		),
+	};
+}
+
+export function capTeamMembershipsPerTeam<T extends OrgChartTeamMembershipInput>(
+	memberships: T[],
+	limitPerTeam: number,
+): T[] {
+	const countsByTeamId = new Map<string, number>();
+	const cappedMemberships: T[] = [];
+
+	for (const membership of memberships) {
+		const count = countsByTeamId.get(membership.teamId) ?? 0;
+		if (count >= limitPerTeam) {
+			continue;
+		}
+
+		countsByTeamId.set(membership.teamId, count + 1);
+		cappedMemberships.push(membership);
+	}
+
+	return cappedMemberships;
 }
 
 export function mergeOrgChartGraphs(

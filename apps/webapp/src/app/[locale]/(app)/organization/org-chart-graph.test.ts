@@ -6,7 +6,9 @@ import {
 	buildEmployeeNodeId,
 	buildOrgChartGraph,
 	buildTeamNodeId,
+	capTeamMembershipsPerTeam,
 	mergeOrgChartGraphs,
+	scopeOrgChartGraphInput,
 } from "./org-chart-graph";
 
 const employee = {
@@ -48,6 +50,61 @@ describe("org chart graph helpers", () => {
 		expect(buildEdgeId("manager", "employee:emp-2", "employee:emp-1")).toBe(
 			"manager:employee:emp-2->employee:emp-1",
 		);
+	});
+
+	it("filters graph inputs to active employees and teams in the active organization", () => {
+		const scoped = scopeOrgChartGraphInput(
+			{
+				employees: [
+					{ ...employee, organizationId: "org-1" },
+					{ ...manager, organizationId: "org-1" },
+					{ ...employee, id: "inactive", organizationId: "org-1", isActive: false },
+					{ ...employee, id: "other-org", organizationId: "org-2" },
+				],
+				teams: [
+					{ ...team, organizationId: "org-1" },
+					{ ...team, id: "team-2", organizationId: "org-2" },
+				],
+				managerLinks: [
+					{ managerId: "emp-2", employeeId: "emp-1" },
+					{ managerId: "emp-2", employeeId: "inactive" },
+					{ managerId: "other-org", employeeId: "emp-1" },
+				],
+				teamMemberships: [
+					{ organizationId: "org-1", teamId: "team-1", employeeId: "emp-1" },
+					{ organizationId: "org-1", teamId: "team-1", employeeId: "inactive" },
+					{ organizationId: "org-2", teamId: "team-2", employeeId: "other-org" },
+				],
+			},
+			"org-1",
+		);
+
+		expect(scoped.employees.map((row) => row.id)).toEqual(["emp-1", "emp-2"]);
+		expect(scoped.teams.map((row) => row.id)).toEqual(["team-1"]);
+		expect(scoped.managerLinks).toEqual([{ managerId: "emp-2", employeeId: "emp-1" }]);
+		expect(scoped.teamMemberships).toEqual([
+			{ organizationId: "org-1", teamId: "team-1", employeeId: "emp-1" },
+		]);
+	});
+
+	it("caps ordered team memberships per team without dropping other teams", () => {
+		expect(
+			capTeamMembershipsPerTeam(
+				[
+					{ teamId: "team-1", employeeId: "emp-1" },
+					{ teamId: "team-1", employeeId: "emp-2" },
+					{ teamId: "team-1", employeeId: "emp-3" },
+					{ teamId: "team-2", employeeId: "emp-4" },
+					{ teamId: "team-2", employeeId: "emp-5" },
+				],
+				2,
+			),
+		).toEqual([
+			{ teamId: "team-1", employeeId: "emp-1" },
+			{ teamId: "team-1", employeeId: "emp-2" },
+			{ teamId: "team-2", employeeId: "emp-4" },
+			{ teamId: "team-2", employeeId: "emp-5" },
+		]);
 	});
 
 	it("builds employee, team, manager, membership, and primary-manager graph elements", () => {
