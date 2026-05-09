@@ -26,6 +26,7 @@ type EmployeeGraphRow = {
 	organizationId: string;
 	userId: string;
 	name: string;
+	pronouns: string | null;
 	email: string;
 	image: string | null;
 	position: string | null;
@@ -98,6 +99,7 @@ export async function searchOrgEmployees(
 					.select({
 						employeeId: employee.id,
 						name: user.name,
+						pronouns: employee.pronouns,
 						email: user.email,
 						position: employee.position,
 						image: user.image,
@@ -414,6 +416,7 @@ function loadActiveEmployees(dbService: DatabaseServiceInstance, organizationId:
 				organizationId: employee.organizationId,
 				userId: employee.userId,
 				name: user.name,
+				pronouns: employee.pronouns,
 				email: user.email,
 				image: user.image,
 				position: employee.position,
@@ -445,6 +448,7 @@ function loadActiveEmployeesByIds(
 				organizationId: employee.organizationId,
 				userId: employee.userId,
 				name: user.name,
+				pronouns: employee.pronouns,
 				email: user.email,
 				image: user.image,
 				position: employee.position,

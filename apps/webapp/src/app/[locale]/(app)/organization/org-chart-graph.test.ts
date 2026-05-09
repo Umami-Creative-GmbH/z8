@@ -15,6 +15,7 @@ const employee = {
 	id: "emp-1",
 	userId: "user-1",
 	name: "Ada Lovelace",
+	pronouns: "she/her",
 	email: "ada@example.com",
 	image: null,
 	position: "Engineer",
@@ -27,6 +28,7 @@ const manager = {
 	id: "emp-2",
 	userId: "user-2",
 	name: "Grace Hopper",
+	pronouns: null,
 	email: "grace@example.com",
 	image: null,
 	position: "Manager",
@@ -142,7 +144,12 @@ describe("org chart graph helpers", () => {
 
 		expect(graph.nodes).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ id: "employee:emp-1", kind: "employee", isFocused: true }),
+				expect.objectContaining({
+					id: "employee:emp-1",
+					kind: "employee",
+					isFocused: true,
+					pronouns: "she/her",
+				}),
 				expect.objectContaining({ id: "employee:emp-2", kind: "employee" }),
 				expect.objectContaining({ id: "team:team-1", kind: "team", memberCount: 2 }),
 			]),

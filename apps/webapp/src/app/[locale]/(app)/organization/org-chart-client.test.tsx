@@ -76,6 +76,7 @@ const graph: OrgChartGraph = {
 			employeeId: "emp-1",
 			userId: "user-1",
 			name: "Ada Lovelace",
+			pronouns: " she/her ",
 			email: "ada@example.com",
 			image: null,
 			position: "Engineer",
@@ -155,7 +156,10 @@ describe("OrgChartClient", () => {
 		const { OrgChartClient } = await import("./org-chart-client");
 		render(<OrgChartClient initialGraph={teamGraph} />);
 
-		expect(screen.getByRole("button", { name: "Expand Ada Lovelace neighborhood" })).toBeTruthy();
+		expect(screen.getByText("Ada Lovelace (she/her)")).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Expand Ada Lovelace (she/her) neighborhood" }),
+		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Expand Platform team" })).toBeTruthy();
 		expect(screen.getByTestId("edge-styles").textContent).toContain("strokeDasharray");
 	});
@@ -167,6 +171,7 @@ describe("OrgChartClient", () => {
 				{
 					employeeId: "emp-2",
 					name: "Grace Hopper",
+					pronouns: null,
 					email: "grace@example.com",
 					position: "Manager",
 					image: null,
@@ -185,6 +190,7 @@ describe("OrgChartClient", () => {
 						id: "employee:emp-2",
 						employeeId: "emp-2",
 						name: "Grace Hopper",
+						pronouns: null,
 						isFocused: true,
 					},
 				],
@@ -206,6 +212,7 @@ describe("OrgChartClient", () => {
 			data: Array<{
 				employeeId: string;
 				name: string;
+				pronouns: string | null;
 				email: string;
 				position: string | null;
 				image: string | null;
@@ -217,6 +224,7 @@ describe("OrgChartClient", () => {
 			data: Array<{
 				employeeId: string;
 				name: string;
+				pronouns: string | null;
 				email: string;
 				position: string | null;
 				image: string | null;
@@ -237,6 +245,7 @@ describe("OrgChartClient", () => {
 				{
 					employeeId: "emp-2",
 					name: "Grace Hopper",
+					pronouns: null,
 					email: "grace@example.com",
 					position: null,
 					image: null,
@@ -254,6 +263,7 @@ describe("OrgChartClient", () => {
 				{
 					employeeId: "emp-3",
 					name: "Stale Result",
+					pronouns: null,
 					email: "stale@example.com",
 					position: null,
 					image: null,
@@ -273,6 +283,7 @@ describe("OrgChartClient", () => {
 			data: Array<{
 				employeeId: string;
 				name: string;
+				pronouns: string | null;
 				email: string;
 				position: string | null;
 				image: string | null;
@@ -292,6 +303,7 @@ describe("OrgChartClient", () => {
 				{
 					employeeId: "emp-2",
 					name: "Grace Hopper",
+					pronouns: null,
 					email: "grace@example.com",
 					position: null,
 					image: null,
@@ -316,6 +328,7 @@ describe("OrgChartClient", () => {
 						id: "employee:emp-2",
 						employeeId: "emp-2",
 						name: "Grace Hopper",
+						pronouns: null,
 						email: "grace@example.com",
 						isFocused: true,
 					},
@@ -326,11 +339,13 @@ describe("OrgChartClient", () => {
 		const { OrgChartClient } = await import("./org-chart-client");
 		render(<OrgChartClient initialGraph={graph} />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Expand Ada Lovelace neighborhood" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Expand Ada Lovelace (she/her) neighborhood" }),
+		);
 
 		await waitFor(() => expect(employeeNeighborhoodMock).toHaveBeenCalledWith("emp-1"));
 		await waitFor(() => expect(screen.getByTestId("node-count").textContent).toBe("2"));
-		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+		expect(screen.getByText("Ada Lovelace (she/her)")).toBeTruthy();
 		expect(screen.getByText("Grace Hopper")).toBeTruthy();
 	});
 
@@ -345,6 +360,7 @@ describe("OrgChartClient", () => {
 						id: "employee:emp-2",
 						employeeId: "emp-2",
 						name: "Grace Hopper",
+						pronouns: null,
 						email: "grace@example.com",
 					},
 				],
@@ -362,7 +378,7 @@ describe("OrgChartClient", () => {
 
 		await waitFor(() => expect(teamNeighborhoodMock).toHaveBeenCalledWith("team-1"));
 		await waitFor(() => expect(screen.getByTestId("node-count").textContent).toBe("3"));
-		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+		expect(screen.getByText("Ada Lovelace (she/her)")).toBeTruthy();
 		expect(screen.getByText("Platform")).toBeTruthy();
 		expect(screen.getByText("Grace Hopper")).toBeTruthy();
 	});

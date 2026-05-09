@@ -10,6 +10,7 @@ type OrgChartEmployeeInput = {
 	id: string;
 	userId: string;
 	name: string;
+	pronouns: string | null;
 	email: string;
 	image: string | null;
 	position: string | null;
@@ -99,6 +100,7 @@ export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGrap
 		employeeId: employee.id,
 		userId: employee.userId,
 		name: employee.name,
+		pronouns: employee.pronouns,
 		email: employee.email,
 		image: employee.image,
 		position: employee.position,
