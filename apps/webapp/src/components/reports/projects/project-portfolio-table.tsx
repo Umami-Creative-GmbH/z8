@@ -160,6 +160,11 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 								value={Math.min(project.percentBudgetUsed ?? 0, 100)}
 								className={cn("h-2", getBudgetProgressColor(project.percentBudgetUsed))}
 							/>
+							{project.forecastSeverity !== "none" && (
+								<Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
+									{t("reports.projects.table.forecastRisk", "Forecast risk")}
+								</Badge>
+							)}
 						</div>
 					);
 				},
