@@ -17,14 +17,24 @@ test("root test script runs docker tracer tests", async () => {
 });
 
 test("collectTarget lists traced worker runtime files and packages", async () => {
-  const result = await collectTarget("worker");
+	const result = await collectTarget("worker");
 
   assert.ok(Array.isArray(result.files));
   assert.ok(Array.isArray(result.packages));
   assert.ok(result.files.includes("src/worker.ts"));
-  assert.ok(result.files.includes("tsconfig.json"));
-  assert.ok(result.packages.includes("bullmq"));
-  assert.ok(result.packages.includes("dotenv"));
+	assert.ok(result.files.includes("tsconfig.json"));
+	assert.ok(result.packages.includes("bullmq"));
+	assert.ok(result.packages.includes("dotenv"));
+	assert.ok(result.files.some((filePath) => filePath.endsWith(".tsx")));
+	assert.ok(result.packages.includes("react"));
+});
+
+test("generated worker manifest includes React for TSX email templates", async () => {
+	const packageJson = JSON.parse(
+		await fs.readFile(new URL("../targets/worker/package.json", import.meta.url), "utf8"),
+	);
+
+	assert.equal(packageJson.dependencies.react, "19.2.6");
 });
 
 test("collectTarget lists traced migration runtime files and packages", async () => {
@@ -49,13 +59,19 @@ test("collectTarget lists traced db-seed runtime files and packages", async () =
 });
 
 test("generated non-web manifests exclude obvious web-only type overrides", async () => {
-  await execFileAsync(process.execPath, ["docker/scripts/prepare-target-runtime.mjs", "manifest", "migration"], {
-    cwd: new URL("../../", import.meta.url),
-  });
+  const manifestUrl = new URL("../targets/migration/package.json", import.meta.url);
+  const originalManifest = await fs.readFile(manifestUrl, "utf8");
 
-  const packageJson = JSON.parse(
-    await fs.readFile(new URL("../targets/migration/package.json", import.meta.url), "utf8"),
-  );
+  let packageJson;
+  try {
+    await execFileAsync(process.execPath, ["docker/scripts/prepare-target-runtime.mjs", "manifest", "migration"], {
+      cwd: new URL("../../", import.meta.url),
+    });
+
+    packageJson = JSON.parse(await fs.readFile(manifestUrl, "utf8"));
+  } finally {
+    await fs.writeFile(manifestUrl, originalManifest);
+  }
 
   assert.equal(packageJson.pnpm.overrides["@types/react"], undefined);
   assert.equal(packageJson.pnpm.overrides["@types/react-dom"], undefined);
