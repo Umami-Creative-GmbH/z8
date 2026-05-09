@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -40,6 +40,15 @@ const SOCIAL_PROVIDERS = [
 	{ id: "apple", label: "Apple" },
 ];
 
+const getInitialConfig = (domain: Domain | null): AuthConfig => ({
+	emailPasswordEnabled: domain?.authConfig.emailPasswordEnabled ?? true,
+	socialProvidersEnabled: domain?.authConfig.socialProvidersEnabled ?? [],
+	ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
+	passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
+	turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
+	cookieConsentScript: domain?.authConfig.cookieConsentScript,
+});
+
 export function DomainAuthConfigDialog({
 	open,
 	onOpenChange,
@@ -47,20 +56,27 @@ export function DomainAuthConfigDialog({
 	organizationId: _organizationId,
 	onSave,
 }: DomainAuthConfigDialogProps) {
-	const [config, setConfig] = useState<AuthConfig>({
-		emailPasswordEnabled: domain?.authConfig.emailPasswordEnabled ?? true,
-		socialProvidersEnabled: domain?.authConfig.socialProvidersEnabled ?? [],
-		ssoEnabled: domain?.authConfig.ssoEnabled ?? false,
-		passkeyEnabled: domain?.authConfig.passkeyEnabled ?? true,
-		turnstileSiteKey: domain?.authConfig.turnstileSiteKey,
-		cookieConsentScript: domain?.authConfig.cookieConsentScript,
-	});
+	const [config, setConfig] = useState<AuthConfig>(() => getInitialConfig(domain));
 	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
+	const lastResetKeyRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		const resetKey = open && domain ? domain.id : null;
+
+		if (lastResetKeyRef.current === resetKey) return;
+
+		lastResetKeyRef.current = resetKey;
+
+		if (!resetKey || !domain) return;
+
+		setConfig(getInitialConfig(domain));
+		setTurnstileSecretKey("");
+	}, [open, domain]);
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen && domain) {
-			setConfig(domain.authConfig);
+			setConfig(getInitialConfig(domain));
 			setTurnstileSecretKey("");
 		}
 		onOpenChange(nextOpen);
@@ -224,7 +240,8 @@ export function DomainAuthConfigDialog({
 						<div>
 							<Label htmlFor="cookie-consent-script">Cookie Consent Script</Label>
 							<p className="text-sm text-muted-foreground">
-								Injected on authentication pages for this custom domain only. Leave empty to disable.
+								Injected on authentication pages for this custom domain only. Leave empty to
+								disable.
 							</p>
 						</div>
 						<Textarea
