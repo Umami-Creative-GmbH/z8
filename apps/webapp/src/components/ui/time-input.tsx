@@ -19,7 +19,7 @@ type TimeInputProps = Omit<React.ComponentProps<"input">, "readOnly" | "type"> &
 type PickerConfirmData = {
 	hour?: string | null;
 	minutes?: string | null;
-	type?: "AM" | "PM" | null;
+	type?: string | null;
 };
 
 function normalizePickerConfirmTime(
@@ -37,7 +37,7 @@ function normalizePickerConfirmTime(
 	}
 
 	const storedHour =
-		timeFormat === "12h" && data.type
+		timeFormat === "12h" && (data.type === "AM" || data.type === "PM")
 			? data.type === "PM"
 				? hour === 12
 					? 12

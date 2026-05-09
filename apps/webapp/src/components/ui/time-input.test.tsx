@@ -16,7 +16,7 @@ const { createMock, destroyMock, instances } = vi.hoisted(() => ({
 				onConfirm?: (data: {
 					hour?: string | null;
 					minutes?: string | null;
-					type?: "AM" | "PM" | null;
+					type?: string | null;
 				}) => void;
 			};
 		};
@@ -130,6 +130,18 @@ describe("TimeInput", () => {
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("00:00");
+	});
+
+	it("treats unknown marker types as 24-hour values", () => {
+		const handleChange = vi.fn();
+		render(
+			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
+		);
+
+		instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "unknown" });
+
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("12:00");
 	});
 
 	it("preserves the input value when recreating the picker", () => {
