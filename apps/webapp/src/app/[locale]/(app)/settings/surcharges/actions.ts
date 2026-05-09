@@ -1011,6 +1011,34 @@ export async function deleteSurchargeAssignment(
 // CALCULATIONS / REPORTS
 // ============================================
 
+const SURCHARGE_REPORT_ROW_LIMIT = 500;
+const SURCHARGE_REPORT_BATCH_SIZE = 500;
+const SURCHARGE_REPORT_MANAGER_SCAN_LIMIT = SURCHARGE_REPORT_ROW_LIMIT * 10;
+
+function normalizeSurchargeCalculationDetails(
+	details: unknown,
+): SurchargeCalculationWithDetails["calculationDetails"] {
+	if (typeof details !== "string") {
+		return details as SurchargeCalculationWithDetails["calculationDetails"];
+	}
+
+	try {
+		const parsedDetails = JSON.parse(details) as unknown;
+		if (
+			parsedDetails &&
+			typeof parsedDetails === "object" &&
+			!Array.isArray(parsedDetails) &&
+			Array.isArray((parsedDetails as { rulesApplied?: unknown }).rulesApplied)
+		) {
+			return parsedDetails as SurchargeCalculationWithDetails["calculationDetails"];
+		}
+	} catch {
+		return null;
+	}
+
+	return null;
+}
+
 /**
  * Get surcharge calculations for a period
  */
@@ -1038,47 +1066,90 @@ export async function getSurchargeCalculationsForPeriod(
 			conditions.push(eq(surchargeCalculation.employeeId, targetEmployeeId));
 		}
 
-		const calculations = await db.query.surchargeCalculation.findMany({
-			where: and(...conditions),
-			with: {
-				employee: {
-					columns: { id: true },
-					with: { user: { columns: { firstName: true, lastName: true } } },
+		const fetchCalculationBatch = async (offset?: number) => {
+			const calculations = await db.query.surchargeCalculation.findMany({
+				where: and(...conditions),
+				with: {
+					employee: {
+						columns: { id: true },
+						with: {
+							user: { columns: { firstName: true, lastName: true, name: true, email: true } },
+						},
+					},
 				},
-			},
-			orderBy: [desc(surchargeCalculation.calculationDate)],
-		});
-		const calculationsWithAuthNames = calculations.map((calculation) => ({
-			...calculation,
-			employee: calculation.employee
-				? {
-						id: calculation.employee.id,
-						firstName: calculation.employee.user?.firstName ?? null,
-						lastName: calculation.employee.user?.lastName ?? null,
-					}
-				: calculation.employee,
-		})) as SurchargeCalculationWithDetails[];
+				orderBy: [
+					desc(surchargeCalculation.calculationDate),
+					desc(surchargeCalculation.createdAt),
+					desc(surchargeCalculation.id),
+				],
+				limit: SURCHARGE_REPORT_BATCH_SIZE,
+				...(offset === undefined ? {} : { offset }),
+			});
+
+			return calculations.map((calculation) => ({
+				...calculation,
+				calculationDetails: normalizeSurchargeCalculationDetails(calculation.calculationDetails),
+				employee: calculation.employee
+					? {
+							id: calculation.employee.id,
+							firstName: calculation.employee.user?.firstName ?? null,
+							lastName: calculation.employee.user?.lastName ?? null,
+							name: calculation.employee.user?.name ?? null,
+							email: calculation.employee.user?.email ?? null,
+						}
+					: calculation.employee,
+			})) as SurchargeCalculationWithDetails[];
+		};
 
 		if (scopeContext.actor.accessTier === "orgAdmin") {
+			const calculationsWithAuthNames = await fetchCalculationBatch();
 			return { success: true, data: calculationsWithAuthNames };
 		}
 
-		const scopedWorkPeriodsById = await getScopedWorkPeriodsById(
-			scopeContext.actor.organizationId,
-			calculations.map((calculation) => calculation.workPeriodId),
-		);
-		const scopedCalculations = calculationsWithAuthNames.filter((calculation) => {
-			if (calculation.employeeId && scopeContext.scopedEmployeeIds?.has(calculation.employeeId)) {
-				return true;
+		const scopedCalculations: SurchargeCalculationWithDetails[] = [];
+		let offset = 0;
+
+		while (
+			scopedCalculations.length < SURCHARGE_REPORT_ROW_LIMIT &&
+			offset < SURCHARGE_REPORT_MANAGER_SCAN_LIMIT
+		) {
+			const calculationsWithAuthNames = await fetchCalculationBatch(offset);
+			if (calculationsWithAuthNames.length === 0) {
+				break;
 			}
 
-			return canManagerAccessSurchargeWorkPeriod(
-				scopeContext,
-				scopedWorkPeriodsById.get(calculation.workPeriodId),
+			const scopedWorkPeriodsById = await getScopedWorkPeriodsById(
+				scopeContext.actor.organizationId,
+				calculationsWithAuthNames.map((calculation) => calculation.workPeriodId),
 			);
-		});
+			for (const calculation of calculationsWithAuthNames) {
+				if (scopedCalculations.length >= SURCHARGE_REPORT_ROW_LIMIT) {
+					break;
+				}
 
-		return { success: true, data: scopedCalculations as SurchargeCalculationWithDetails[] };
+				if (calculation.employeeId && scopeContext.scopedEmployeeIds?.has(calculation.employeeId)) {
+					scopedCalculations.push(calculation);
+					continue;
+				}
+
+				if (
+					canManagerAccessSurchargeWorkPeriod(
+						scopeContext,
+						scopedWorkPeriodsById.get(calculation.workPeriodId),
+					)
+				) {
+					scopedCalculations.push(calculation);
+				}
+			}
+
+			if (calculationsWithAuthNames.length < SURCHARGE_REPORT_BATCH_SIZE) {
+				break;
+			}
+
+			offset += SURCHARGE_REPORT_BATCH_SIZE;
+		}
+
+		return { success: true, data: scopedCalculations };
 	} catch (error) {
 		console.error("Error fetching surcharge calculations:", error);
 		return { success: false, error: "Failed to fetch calculations" };

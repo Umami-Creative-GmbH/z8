@@ -258,6 +258,7 @@ const mockState = vi.hoisted(() => ({
 	deleteWhereCalls: [] as any[],
 	workPeriodFindFirstCalls: 0,
 	workPeriodFindManyCalls: 0,
+	surchargeCalculationFindManyCalls: [] as any[],
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -300,7 +301,7 @@ vi.mock("../employees/employee-action-utils", async () => {
 							resource: options.resource,
 							action: options.action,
 						}),
-				  ),
+					),
 		),
 	};
 });
@@ -315,11 +316,18 @@ vi.mock("@/db/schema", () => ({
 	projectManager: { employeeId: "employeeId", projectId: "projectId" },
 	subareaEmployee: { employeeId: "employeeId", subareaId: "subareaId" },
 	surchargeCalculation: {
+		id: "id",
 		organizationId: "organizationId",
 		calculationDate: "calculationDate",
+		createdAt: "createdAt",
 		employeeId: "employeeId",
 	},
-	surchargeModel: { id: "id", organizationId: "organizationId", createdAt: "createdAt", isActive: "isActive" },
+	surchargeModel: {
+		id: "id",
+		organizationId: "organizationId",
+		createdAt: "createdAt",
+		isActive: "isActive",
+	},
 	surchargeModelAssignment: {
 		id: "id",
 		modelId: "modelId",
@@ -336,7 +344,13 @@ vi.mock("@/db/schema", () => ({
 		teamId: "teamId",
 		canManageTeamSettings: "canManageTeamSettings",
 	},
-	workPeriod: { id: "id", organizationId: "organizationId", projectId: "projectId", locationId: "locationId", subareaId: "subareaId" },
+	workPeriod: {
+		id: "id",
+		organizationId: "organizationId",
+		projectId: "projectId",
+		locationId: "locationId",
+		subareaId: "subareaId",
+	},
 }));
 
 vi.mock("@/db", () => ({
@@ -350,7 +364,7 @@ vi.mock("@/db", () => ({
 				findFirst: vi.fn(async () =>
 					mockState.surchargeModelDetail !== undefined
 						? mockState.surchargeModelDetail
-						: mockState.surchargeModels[0] ?? null,
+						: (mockState.surchargeModels[0] ?? null),
 				),
 			},
 			surchargeModelAssignment: {
@@ -382,7 +396,12 @@ vi.mock("@/db", () => ({
 				findMany: vi.fn(async () => mockState.managedEmployees),
 			},
 			surchargeCalculation: {
-				findMany: vi.fn(async () => mockState.surchargeCalculations),
+				findMany: vi.fn(async (options: { limit?: number; offset?: number } | undefined) => {
+					mockState.surchargeCalculationFindManyCalls.push(options);
+					const offset = options?.offset ?? 0;
+					const limit = options?.limit ?? mockState.surchargeCalculations.length;
+					return mockState.surchargeCalculations.slice(offset, offset + limit);
+				}),
 			},
 			workPeriod: {
 				findMany: vi.fn(async () => {
@@ -392,7 +411,10 @@ vi.mock("@/db", () => ({
 				findFirst: vi.fn(async ({ where }: { where?: { eq?: [unknown, string] } }) => {
 					mockState.workPeriodFindFirstCalls += 1;
 					const workPeriodId = where?.eq?.[1];
-					return workPeriodId ? mockState.workPeriodsById[workPeriodId as keyof typeof mockState.workPeriodsById] ?? null : null;
+					return workPeriodId
+						? (mockState.workPeriodsById[workPeriodId as keyof typeof mockState.workPeriodsById] ??
+								null)
+						: null;
 				}),
 			},
 		},
@@ -454,6 +476,7 @@ describe("surcharge settings scope behavior", () => {
 		mockState.deleteWhereCalls = [];
 		mockState.workPeriodFindFirstCalls = 0;
 		mockState.workPeriodFindManyCalls = 0;
+		mockState.surchargeCalculationFindManyCalls = [];
 	});
 
 	it("lets managers read surcharge models applied to their teams, areas, and projects", async () => {
@@ -485,6 +508,226 @@ describe("surcharge settings scope behavior", () => {
 				"calc-managed",
 				"calc-project",
 			]);
+		}
+	});
+
+	it("limits surcharge report queries to a bounded row count", async () => {
+		const result = await getSurchargeCalculationsForPeriod(
+			"org-1",
+			new Date("2026-02-01T00:00:00.000Z"),
+			new Date("2026-02-28T23:59:59.999Z"),
+		);
+
+		expect(result.success).toBe(true);
+		expect(mockState.surchargeCalculationFindManyCalls[0]).toMatchObject({ limit: 500 });
+	});
+
+	it("applies the manager surcharge report cap after visibility filtering", async () => {
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			...Array.from({ length: 500 }, (_, index) => ({
+				...previousCalculations[3],
+				id: `calc-other-${index}`,
+				calculationDate: new Date(`2026-02-04T${String(index % 24).padStart(2, "0")}:00:00.000Z`),
+			})),
+			{
+				...previousCalculations[0],
+				id: "calc-managed-after-first-batch",
+				calculationDate: new Date("2026-02-01T00:00:00.000Z"),
+			},
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.map((calculation) => calculation.id)).toEqual([
+					"calc-managed-after-first-batch",
+				]);
+			}
+			expect(mockState.surchargeCalculationFindManyCalls).toHaveLength(2);
+			expect(mockState.surchargeCalculationFindManyCalls[0]).toMatchObject({
+				limit: 500,
+				offset: 0,
+			});
+			expect(mockState.surchargeCalculationFindManyCalls[1]).toMatchObject({
+				limit: 500,
+				offset: 500,
+			});
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
+	it("bounds manager surcharge report scanning when visible rows are sparse", async () => {
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = Array.from({ length: 5500 }, (_, index) => ({
+			...previousCalculations[3],
+			id: `calc-other-${index}`,
+			calculationDate: new Date(
+				`2026-02-${String((index % 28) + 1).padStart(2, "0")}T00:00:00.000Z`,
+			),
+		}));
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data).toEqual([]);
+			}
+			expect(mockState.surchargeCalculationFindManyCalls).toHaveLength(10);
+			expect(mockState.surchargeCalculationFindManyCalls.at(-1)).toMatchObject({
+				limit: 500,
+				offset: 4500,
+			});
+			expect(mockState.workPeriodFindManyCalls).toBe(10);
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
+	it("uses deterministic surcharge report ordering for tied calculation dates", async () => {
+		mockState.settingsActorAccessTier = "orgAdmin";
+		mockState.membershipRole = "admin";
+		mockState.authContext.employee = {
+			id: "admin-1",
+			organizationId: "org-1",
+			role: "admin",
+			teamId: null,
+		};
+
+		const result = await getSurchargeCalculationsForPeriod(
+			"org-1",
+			new Date("2026-02-01T00:00:00.000Z"),
+			new Date("2026-02-28T23:59:59.999Z"),
+		);
+
+		expect(result.success).toBe(true);
+		expect(mockState.surchargeCalculationFindManyCalls[0]?.orderBy).toEqual([
+			"calculationDate",
+			"createdAt",
+			"id",
+		]);
+	});
+
+	it("returns JSON string surcharge calculation details as an object", async () => {
+		mockState.settingsActorAccessTier = "orgAdmin";
+		mockState.membershipRole = "admin";
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			{
+				...previousCalculations[0],
+				calculationDetails: JSON.stringify({
+					workPeriodStartTime: "2026-02-01T08:00:00.000Z",
+					workPeriodEndTime: "2026-02-01T10:00:00.000Z",
+					rulesApplied: [
+						{
+							ruleId: "rule-1",
+							ruleName: "Night work",
+							ruleType: "time_window",
+							percentage: 25,
+							qualifyingMinutes: 60,
+							surchargeMinutes: 15,
+						},
+					],
+					overlapPolicy: "highest",
+					calculatedAt: "2026-02-01T10:00:00.000Z",
+				}),
+			} as (typeof previousCalculations)[number],
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data[0]?.calculationDetails).toMatchObject({
+					workPeriodStartTime: "2026-02-01T08:00:00.000Z",
+					rulesApplied: [{ ruleId: "rule-1" }],
+				});
+			}
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
+	it("returns null surcharge calculation details for invalid JSON without throwing", async () => {
+		mockState.settingsActorAccessTier = "orgAdmin";
+		mockState.membershipRole = "admin";
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			{
+				...previousCalculations[0],
+				calculationDetails: "{invalid-json",
+			} as (typeof previousCalculations)[number],
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data[0]?.calculationDetails).toBeNull();
+			}
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
+	it("includes auth fallback names for surcharge calculation employee display", async () => {
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			{
+				...previousCalculations[0],
+				employee: {
+					id: "employee-managed",
+					user: {
+						firstName: " ",
+						lastName: "",
+						name: "Managed Fallback",
+						email: "managed@example.com",
+					},
+				},
+			},
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data[0]?.employee).toMatchObject({
+					id: "employee-managed",
+					firstName: " ",
+					lastName: "",
+					name: "Managed Fallback",
+					email: "managed@example.com",
+				});
+			}
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
 		}
 	});
 

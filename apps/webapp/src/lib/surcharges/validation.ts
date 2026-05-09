@@ -257,5 +257,7 @@ export type SurchargeCalculationWithDetails = {
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		name: string | null;
+		email: string | null;
 	};
 };
