@@ -166,6 +166,7 @@ async function EmployeeAllowancesContent() {
 															image={emp.user.image}
 															seed={emp.id}
 															name={emp.user.name}
+															gender={emp.gender}
 															size="sm"
 														/>
 														<div>

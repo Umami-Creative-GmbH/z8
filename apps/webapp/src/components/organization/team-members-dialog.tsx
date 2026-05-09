@@ -141,6 +141,7 @@ export function TeamMembersDialog({
 															seed={member.user.id}
 															image={member.user.image}
 															name={member.user.name}
+															gender={member.employee?.gender ?? null}
 															size="xs"
 														/>
 														<span>{member.user.name}</span>
@@ -201,6 +202,7 @@ export function TeamMembersDialog({
 													seed={member.user.id}
 													image={member.user.image}
 													name={member.user.name}
+													gender={member.employee?.gender ?? null}
 													size="sm"
 												/>
 												<div className="flex-1 min-w-0">

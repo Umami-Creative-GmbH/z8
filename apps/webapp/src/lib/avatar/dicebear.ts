@@ -1,22 +1,33 @@
 import { lorelei } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
 
+export type UserAvatarGender = "male" | "female" | "other";
+
 export interface DiceBearAvatarOptions {
 	seed: string;
 	size?: number;
+	gender?: UserAvatarGender | null;
+}
+
+function getDiceBearSex(gender: UserAvatarGender | null | undefined): ["male"] | ["female"] | undefined {
+	if (gender === "male") return ["male"];
+	if (gender === "female") return ["female"];
+	return undefined;
 }
 
 /**
  * Generate a DiceBear Lorelei avatar as a data URI
  * Uses deterministic seed (user.id recommended) for consistent avatars
  */
-export function generateAvatarDataUri({ seed, size = 128 }: DiceBearAvatarOptions): string {
+export function generateAvatarDataUri({ seed, size = 128, gender }: DiceBearAvatarOptions): string {
+	const sex = getDiceBearSex(gender);
 	const avatar = createAvatar(lorelei, {
 		seed,
 		size,
 		backgroundColor: ["b6e3f4", "c0aede", "d1d4f9", "ffd5dc", "ffdfbf"],
 		backgroundType: ["solid"],
 		radius: 50, // Circular avatar
+		...(sex ? { sex } : {}),
 	});
 
 	return avatar.toDataUri();

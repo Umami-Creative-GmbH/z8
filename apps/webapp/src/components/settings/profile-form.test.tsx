@@ -63,7 +63,9 @@ vi.mock("@/hooks/use-image-upload", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ name }: { name: string }) => <div>{name}</div>,
+	UserAvatar: ({ gender, name }: { gender?: string | null; name: string }) => (
+		<div data-avatar-gender={gender ?? ""}>{name}</div>
+	),
 }));
 
 vi.mock("@/components/ui/popover", () => ({
@@ -171,6 +173,14 @@ describe("ProfileForm", () => {
 			});
 		});
 		expect(updateProfileImageMock).not.toHaveBeenCalled();
+	});
+
+	it("passes selected gender to the profile picture preview", async () => {
+		renderProfileForm();
+
+		expect((await screen.findByText("Employee Record")).getAttribute("data-avatar-gender")).toBe(
+			"female",
+		);
 	});
 
 	it("falls back to auth-level first and last names when no employee record exists", async () => {

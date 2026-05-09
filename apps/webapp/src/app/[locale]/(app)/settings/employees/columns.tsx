@@ -122,6 +122,7 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 					image={row.original.user.image}
 					seed={row.original.user.id}
 					name={row.original.user.name}
+					gender={row.original.gender}
 					size="sm"
 				/>
 				<div>
