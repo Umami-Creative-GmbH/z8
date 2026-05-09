@@ -7,10 +7,9 @@ import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { ProjectSelector } from "@/components/time-tracking/project-selector";
 import { WorkCategorySelector } from "@/components/time-tracking/work-category-selector";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -22,7 +21,8 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
 	fieldHasError,
 	TFormControl,
@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
-import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import { useRouter } from "@/navigation";
 
 interface Props {
@@ -60,6 +60,7 @@ export function ManualTimeEntryDialog({
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
 	const router = useRouter();
+	const timeFormat = useTimeFormat();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
 
 	// Default to today's date
@@ -125,12 +126,18 @@ export function ManualTimeEntryDialog({
 			if (result.success) {
 				// Show adjusted times info if times were modified
 				if (result.data?.wasAdjusted && result.data.adjustedTimes) {
-					const adjustedIn = DateTime.fromISO(result.data.adjustedTimes.clockIn)
-						.setZone(employeeTimezone)
-						.toFormat("HH:mm");
-					const adjustedOut = DateTime.fromISO(result.data.adjustedTimes.clockOut)
-						.setZone(employeeTimezone)
-						.toFormat("HH:mm");
+					const adjustedIn = formatTimeInZone(
+						result.data.adjustedTimes.clockIn,
+						employeeTimezone,
+						false,
+						timeFormat,
+					);
+					const adjustedOut = formatTimeInZone(
+						result.data.adjustedTimes.clockOut,
+						employeeTimezone,
+						false,
+						timeFormat,
+					);
 					toast.info(
 						t(
 							"timeTracking.manualEntry.success.adjusted",
@@ -186,7 +193,9 @@ export function ManualTimeEntryDialog({
 			</ActionPanelTrigger>
 			<ActionPanelContent size="compact">
 				<ActionPanelHeader>
-					<ActionPanelTitle>{t("timeTracking.manualEntry.title", "Add Manual Time Entry")}</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("timeTracking.manualEntry.title", "Add Manual Time Entry")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
 							"timeTracking.manualEntry.description",

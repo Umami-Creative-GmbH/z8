@@ -11,6 +11,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -29,9 +30,9 @@ export function ActiveSessionSummary({
 	t: TFnType;
 	timeFormat?: TimeFormat;
 }) {
-	const timeFormatter = new Intl.DateTimeFormat(
-		undefined,
-		getTimeFormatDateTimeOptions(timeFormat),
+	const timeFormatter = useMemo(
+		() => new Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat)),
+		[timeFormat],
 	);
 
 	return (

@@ -2,7 +2,7 @@
 
 import { IconCheck, IconClock, IconClockPause, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,9 +21,9 @@ import { WorkCategorySelector } from "./work-category-selector";
 export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
-	const timeFormatter = new Intl.DateTimeFormat(
-		undefined,
-		getTimeFormatDateTimeOptions(timeFormat),
+	const timeFormatter = useMemo(
+		() => new Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat)),
+		[timeFormat],
 	);
 
 	const {
