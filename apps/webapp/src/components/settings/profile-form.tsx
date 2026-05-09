@@ -53,6 +53,7 @@ import { useRouter } from "@/navigation";
 
 const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"] as const;
 const CUSTOM_PRONOUN_VALUE = "__custom__";
+const PRONOUNS_MAX_LENGTH_MESSAGE = "Pronouns must be 50 characters or less";
 
 interface ProfileFormProps {
 	user: {
@@ -144,6 +145,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				lastName: value,
 			}),
 		[form.store],
+	);
+	const validatePronouns = useCallback(
+		(value: string) =>
+			value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+		[],
 	);
 
 	const avatarImage = useStore(form.store, (state) => state.values.image);
@@ -598,7 +604,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
 									</div>
 								</div>
 
-								<form.Field name="pronouns">
+								<form.Field
+									name="pronouns"
+									validators={{
+										onBlur: ({ value }) => validatePronouns(value),
+										onChange: ({ value }) => validatePronouns(value),
+										onSubmit: ({ value }) => validatePronouns(value),
+									}}
+								>
 									{(field) => {
 										const value = field.state.value;
 										const isPreset = PRONOUN_PRESETS.includes(

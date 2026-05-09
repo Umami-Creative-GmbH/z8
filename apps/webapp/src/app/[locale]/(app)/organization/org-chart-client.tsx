@@ -229,20 +229,25 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 									{t("organization.orgChart.searching", "Searching…")}
 								</p>
 							) : null}
-							{searchResults.map((result) => (
-								<button
-									aria-label={`${result.name} ${result.email}`}
-									className="flex w-full flex-col items-start px-3 py-2 text-left text-sm outline-none transition hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
-									key={result.employeeId}
-									onClick={() => {
-										void focusEmployee(result.employeeId);
-									}}
-									type="button"
-								>
-									<span className="font-medium">{result.name}</span>
-									<span className="text-muted-foreground">{result.email}</span>
-								</button>
-							))}
+							{searchResults.map((result) => {
+								const pronouns = normalizePronouns(result.pronouns);
+								const displayName = pronouns ? `${result.name} (${pronouns})` : result.name;
+
+								return (
+									<button
+										aria-label={`${displayName} ${result.email}`}
+										className="flex w-full flex-col items-start px-3 py-2 text-left text-sm outline-none transition hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
+										key={result.employeeId}
+										onClick={() => {
+											void focusEmployee(result.employeeId);
+										}}
+										type="button"
+									>
+										<span className="font-medium">{displayName}</span>
+										<span className="text-muted-foreground">{result.email}</span>
+									</button>
+								);
+							})}
 							{!isSearching && searchResults.length === 0 ? (
 								<p className="px-3 py-2 text-sm text-muted-foreground">
 									{t("organization.orgChart.noSearchResults", "No employees found")}

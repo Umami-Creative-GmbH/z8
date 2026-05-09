@@ -171,7 +171,7 @@ describe("OrgChartClient", () => {
 				{
 					employeeId: "emp-2",
 					name: "Grace Hopper",
-					pronouns: null,
+					pronouns: " she/her ",
 					email: "grace@example.com",
 					position: "Manager",
 					image: null,
@@ -201,9 +201,37 @@ describe("OrgChartClient", () => {
 		render(<OrgChartClient initialGraph={graph} />);
 
 		fireEvent.change(screen.getByLabelText("Search employees"), { target: { value: "Grace" } });
-		fireEvent.click(await screen.findByRole("button", { name: "Grace Hopper grace@example.com" }));
+		expect(await screen.findByText("Grace Hopper (she/her)")).toBeTruthy();
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Grace Hopper (she/her) grace@example.com" }),
+		);
 
 		await waitFor(() => expect(employeeNeighborhoodMock).toHaveBeenCalledWith("emp-2"));
+	});
+
+	it("preserves search result names when pronouns are absent", async () => {
+		searchMock.mockResolvedValueOnce({
+			success: true,
+			data: [
+				{
+					employeeId: "emp-2",
+					name: "Grace Hopper",
+					pronouns: null,
+					email: "grace@example.com",
+					position: "Manager",
+					image: null,
+					role: "manager",
+				},
+			],
+		});
+
+		const { OrgChartClient } = await import("./org-chart-client");
+		render(<OrgChartClient initialGraph={graph} />);
+
+		fireEvent.change(screen.getByLabelText("Search employees"), { target: { value: "Grace" } });
+
+		expect(await screen.findByText("Grace Hopper")).toBeTruthy();
+		expect(screen.queryByText("Grace Hopper ()")).toBeNull();
 	});
 
 	it("ignores stale search responses after a newer query resolves", async () => {

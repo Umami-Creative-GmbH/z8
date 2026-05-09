@@ -3,13 +3,15 @@ import * as z from "zod";
 // Gender enum matching database enum
 export const genderSchema = z.enum(["male", "female", "other"]);
 
-export const pronounsSchema = z
-	.string()
-	.max(50, "Pronouns must be 50 characters or less")
-	.transform((value) => value.trim())
-	.transform((value) => value || null)
-	.optional()
-	.nullable();
+export const pronounsSchema = z.preprocess(
+	(value) => (typeof value === "string" ? value.trim() : value),
+	z
+		.string()
+		.max(50, "Pronouns must be 50 characters or less")
+		.transform((value) => value || null)
+		.optional()
+		.nullable(),
+);
 
 // Employee role enum
 export const employeeRoleSchema = z.enum(["employee", "manager", "admin"]);

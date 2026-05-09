@@ -218,6 +218,17 @@ describe("ProfileForm", () => {
 		});
 	});
 
+	it("shows an inline error when custom pronouns are longer than 50 characters", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "x".repeat(51) } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		expect(await screen.findByText("Pronouns must be 50 characters or less")).toBeTruthy();
+		expect(updateProfileDetailsMock).not.toHaveBeenCalled();
+	});
+
 	it("shows field errors and focuses the first invalid field when both name fields are blank on submit", async () => {
 		getCurrentEmployeeMock.mockResolvedValue(null);
 

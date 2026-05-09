@@ -32,7 +32,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { UserAvatar } from "@/components/user-avatar";
-import { formatEmployeeIdentityName } from "@/lib/employee-identity";
+import { normalizePronouns } from "@/lib/employee-identity";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { Link } from "@/navigation";
 import {
@@ -56,6 +56,7 @@ type EmployeeManagerRelation = {
 const defaultTranslate: Translate = (_key, defaultValue) => defaultValue;
 const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"] as const;
 const CUSTOM_PRONOUN_VALUE = "__custom__";
+const PRONOUNS_MAX_LENGTH_MESSAGE = "Pronouns must be 50 characters or less";
 
 export function EmployeeDetailHeader({ t }: { t: Translate }) {
 	return (
@@ -128,7 +129,10 @@ export function EmployeeOverviewCard({
 		t("settings.employees.detailView.daySunday", "Sun"),
 	];
 	const managers = employee.managers as EmployeeManagerRelation[] | undefined;
-	const employeeDisplayName = formatEmployeeIdentityName(employee);
+	const employeePronouns = normalizePronouns(employee.pronouns);
+	const employeeDisplayName = employeePronouns
+		? `${employee.user.name} (${employeePronouns})`
+		: employee.user.name;
 
 	return (
 		<Card>
@@ -629,7 +633,17 @@ function PronounsEditField({
 	t: Translate;
 }) {
 	return (
-		<form.Field name="pronouns">
+		<form.Field
+			name="pronouns"
+			validators={{
+				onBlur: ({ value }) =>
+					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+				onChange: ({ value }) =>
+					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+				onSubmit: ({ value }) =>
+					value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined,
+			}}
+		>
 			{(field) => {
 				const value = field.state.value;
 				const isPreset = PRONOUN_PRESETS.includes(value as (typeof PRONOUN_PRESETS)[number]);

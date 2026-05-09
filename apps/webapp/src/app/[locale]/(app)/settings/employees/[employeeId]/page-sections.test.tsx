@@ -109,37 +109,46 @@ const employee = {
 	},
 } as EmployeeDetail;
 
-function createForm() {
-	const values = {
-		firstName: "Johannes",
-		lastName: "Glier",
-		gender: "male",
-		pronouns: "he/him",
-		position: "",
-		employeeNumber: "EMP-001",
-		role: "employee",
-		contractType: "fixed",
-		hourlyRate: "",
-		canUseWebapp: true,
-		canUseDesktop: true,
-		canUseMobile: true,
-	};
+const formValues = {
+	firstName: "Johannes",
+	lastName: "Glier",
+	gender: "male",
+	pronouns: "he/him",
+	position: "",
+	employeeNumber: "EMP-001",
+	role: "employee",
+	contractType: "fixed",
+	hourlyRate: "",
+	canUseWebapp: true,
+	canUseDesktop: true,
+	canUseMobile: true,
+};
+
+function createForm(overrides: Partial<typeof formValues> = {}) {
+	const values = { ...formValues, ...overrides };
 
 	return {
 		handleSubmit: vi.fn(),
 		Field: ({
 			name,
 			children,
+			validators,
 		}: {
 			name: keyof typeof values;
 			children: (field: unknown) => React.ReactNode;
-		}) =>
-			children({
+			validators?: {
+				onSubmit?: (props: { value: string }) => string | undefined;
+			};
+		}) => {
+			const error = validators?.onSubmit?.({ value: String(values[name] ?? "") });
+
+			return children({
 				name,
-				state: { value: values[name], meta: { errors: [] } },
+				state: { value: values[name], meta: { errors: error ? [error] : [] } },
 				handleChange: vi.fn(),
 				handleBlur: vi.fn(),
-			}),
+			});
+		},
 		Subscribe: ({
 			selector,
 			children,
@@ -178,6 +187,25 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByText("Work Schedule")).toBeNull();
 	});
 
+	it("preserves the user display name when pronouns are absent", () => {
+		render(
+			<EmployeeOverviewCard
+				employee={{
+					...employee,
+					firstName: "Johannes",
+					lastName: "Glier",
+					pronouns: null,
+					user: { ...employee.user, name: "Jo Glier" },
+				}}
+				schedule={null}
+				t={t}
+			/>,
+		);
+
+		expect(screen.getByText("Jo Glier")).toBeTruthy();
+		expect(screen.queryByText("Johannes Glier")).toBeNull();
+	});
+
 	it("renders the edit form strings in German", () => {
 		render(
 			<EmployeeEditFormCard
@@ -204,5 +232,20 @@ describe("employee detail page sections", () => {
 		expect(screen.queryByText("Edit Employee")).toBeNull();
 		expect(screen.queryByText("System Role")).toBeNull();
 		expect(screen.queryByText("Contract Type")).toBeNull();
+	});
+
+	it("shows an inline error when employee pronouns are longer than 50 characters", () => {
+		render(
+			<EmployeeEditFormCard
+				form={createForm({ pronouns: "x".repeat(51) }) as never}
+				canEditManagerFields={true}
+				canEditOrgAdminFields={true}
+				isUpdating={false}
+				onCancel={vi.fn()}
+				t={t}
+			/>,
+		);
+
+		expect(screen.getByText("Pronouns must be 50 characters or less")).toBeTruthy();
 	});
 });
