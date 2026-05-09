@@ -1,5 +1,10 @@
 import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { onTimeCorrectionApproved, onTimeCorrectionRejected } = vi.hoisted(() => ({
+	onTimeCorrectionApproved: vi.fn(),
+	onTimeCorrectionRejected: vi.fn(),
+}));
 
 vi.mock("@/env", () => ({
 	env: {
@@ -15,13 +20,26 @@ vi.mock("@/env", () => ({
 	},
 }));
 
+vi.mock("@/lib/notifications/triggers", () => ({
+	onTimeCorrectionApproved,
+	onTimeCorrectionRejected,
+}));
+
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
+import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import {
+	approveTimeCorrectionWithCurrentApproverEffect,
 	buildTimeCorrectionApprovalPolicyContext,
 	calculateCorrectedDurationMinutes,
 	createTimeCorrectionApprovalWorkflow,
+	rejectTimeCorrectionWithCurrentApproverEffect,
 } from "@/lib/approvals/server/time-correction-approvals";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
+
+beforeEach(() => {
+	onTimeCorrectionApproved.mockClear();
+	onTimeCorrectionRejected.mockClear();
+});
 
 function createPolicyResolutionDbService(policies: unknown[]) {
 	const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = [];
@@ -69,6 +87,84 @@ const timePolicyContext = buildTimeCorrectionApprovalPolicyContext({
 	overtimeRisk: "warning",
 });
 
+const timeCorrectionCurrentApprover: CurrentApprover = {
+	id: "emp-manager",
+	userId: "user-manager",
+	organizationId: "org-1",
+	user: {
+		id: "user-manager",
+		name: "Morgan Manager",
+		email: "morgan@example.com",
+		image: null,
+	},
+};
+
+const period = {
+	id: "period-1",
+	employeeId: "emp-requester",
+	clockInId: "entry-original",
+	clockOutId: null,
+	organizationId: "org-1",
+	canonicalRecordId: null,
+	startTime: new Date("2026-05-11T08:00:00.000Z"),
+	endTime: new Date("2026-05-11T16:00:00.000Z"),
+	durationMinutes: 480,
+	employee: {
+		userId: "user-requester",
+		organizationId: "org-1",
+		user: { name: "Avery Requester", email: "avery@example.com", image: null },
+	},
+};
+
+const correction = {
+	id: "entry-correction",
+	timestamp: new Date("2026-05-11T08:15:00.000Z"),
+	replacesEntryId: "entry-original",
+};
+
+function createTimeCorrectionDecisionDbService() {
+	const db = {
+		query: {
+			approvalRequest: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: "approval-1",
+					organizationId: "org-1",
+					entityType: "time_entry",
+					entityId: "period-1",
+					requestedBy: "emp-requester",
+					approverId: "emp-manager",
+					status: "pending",
+				}),
+			},
+			approvalChainStageInstance: { findFirst: vi.fn().mockResolvedValue(null) },
+			workPeriod: { findFirst: vi.fn().mockResolvedValue(period) },
+			timeEntry: { findFirst: vi.fn().mockResolvedValue(null) },
+		},
+		select: vi.fn().mockReturnValue({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
+		}),
+		update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn() }) }),
+		insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+		transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn(db)),
+	};
+
+	return {
+		db,
+		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+	} as unknown as ApprovalDbService;
+}
+
+function runTimeCorrectionDecisionEffect(effect: Effect.Effect<unknown, unknown, unknown>) {
+	return Effect.runPromise(
+		effect.pipe(
+			Effect.provideService(ApprovalAuditLogger, {
+				log: vi.fn(() => Effect.void),
+				logBatch: vi.fn(() => Effect.void),
+			}),
+		),
+	);
+}
+
 describe("calculateCorrectedDurationMinutes", () => {
 	it("returns minutes when corrected clock-in and clock-out exist", () => {
 		const result = calculateCorrectedDurationMinutes(
@@ -77,6 +173,55 @@ describe("calculateCorrectedDurationMinutes", () => {
 		);
 
 		expect(result).toBe(510);
+	});
+});
+
+describe("time correction requester decision notifications", () => {
+	it("notifies the requester after approving a time correction request", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(onTimeCorrectionApproved).toHaveBeenCalledWith({
+			workPeriodId: "period-1",
+			employeeUserId: "user-requester",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
+			originalTime: period.startTime,
+			correctedTime: correction.timestamp,
+			approverName: "Morgan Manager",
+		});
+		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
+	});
+
+	it("notifies the requester after rejecting a time correction request", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+
+		await runTimeCorrectionDecisionEffect(
+			rejectTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+				"Incorrect correction",
+			),
+		);
+
+		expect(onTimeCorrectionRejected).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: "period-1",
+				employeeUserId: "user-requester",
+				organizationId: "org-1",
+				approverName: "Morgan Manager",
+				rejectionReason: "Incorrect correction",
+			}),
+		);
+		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 	});
 });
 

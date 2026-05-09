@@ -2,6 +2,11 @@ import { Cause, Effect, Exit, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { ConflictError, DatabaseError } from "@/lib/effect/errors";
 
+const { onTravelExpenseApproved, onTravelExpenseRejected } = vi.hoisted(() => ({
+	onTravelExpenseApproved: vi.fn(),
+	onTravelExpenseRejected: vi.fn(),
+}));
+
 vi.mock("drizzle-orm", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("drizzle-orm")>();
 	return {
@@ -32,6 +37,10 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "organizationId",
 		approverId: "approverId",
 		status: "status",
+		employeeId: "employeeId",
+		destinationCity: "destinationCity",
+		calculatedAmount: "calculatedAmount",
+		calculatedCurrency: "calculatedCurrency",
 	},
 	travelExpenseDecisionLog: {},
 	employee: {
@@ -39,11 +48,17 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
+vi.mock("@/lib/notifications/triggers", () => ({
+	onTravelExpenseApproved,
+	onTravelExpenseRejected,
+}));
+
 import { and, eq } from "drizzle-orm";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
 	buildTravelExpenseApprovalPolicyContext,
 	createTravelExpenseApprovalWorkflow,
+	notifyTravelExpenseRequesterAfterDecision,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
@@ -192,9 +207,22 @@ describe("persistTravelExpenseDecision", () => {
 		const where = vi.fn().mockReturnValue({ returning });
 		const set = vi.fn().mockReturnValue({ where });
 		const values = vi.fn().mockResolvedValue(undefined);
+		const findFirst = vi.fn().mockResolvedValue({
+			id: "claim-1",
+			organizationId: "org-1",
+			employeeId: "emp-requester",
+			status: "approved",
+			destinationCity: "Berlin",
+			calculatedAmount: "120.50",
+			calculatedCurrency: "EUR",
+			employee: { userId: "user-requester" },
+		});
 
 		const dbService = {
 			db: {
+				query: {
+					travelExpenseClaim: { findFirst },
+				},
 				update: vi.fn().mockReturnValue({ set }),
 				insert: vi.fn().mockReturnValue({ values }),
 			},
@@ -223,6 +251,200 @@ describe("persistTravelExpenseDecision", () => {
 			expect.objectContaining({ eq: ["organizationId", "org-1"] }),
 			expect.objectContaining({ eq: ["status", "submitted"] }),
 		);
+	});
+
+	it("notifies the requester after an approved travel expense operation succeeds", async () => {
+		onTravelExpenseApproved.mockClear();
+		onTravelExpenseRejected.mockClear();
+		const findFirst = vi.fn().mockResolvedValue({
+			id: "claim-1",
+			organizationId: "org-1",
+			employeeId: "emp-requester",
+			status: "approved",
+			destinationCity: "Berlin",
+			calculatedAmount: "120.50",
+			calculatedCurrency: "EUR",
+			employee: {
+				userId: "user-requester",
+			},
+		});
+
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: { findFirst },
+				},
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+
+		const currentEmployee: CurrentApprover = {
+			id: "employee-1",
+			userId: "user-1",
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Morgan Reviewer",
+				email: "morgan@example.com",
+				image: null,
+			},
+		};
+
+		await Effect.runPromise(
+			notifyTravelExpenseRequesterAfterDecision(dbService, "claim-1", currentEmployee, "approve"),
+		);
+
+		expect(onTravelExpenseApproved).toHaveBeenCalledWith({
+			claimId: "claim-1",
+			requesterUserId: "user-requester",
+			organizationId: "org-1",
+			approverName: "Morgan Reviewer",
+			destinationCity: "Berlin",
+			amount: "120.50",
+			currency: "EUR",
+		});
+		expect(onTravelExpenseRejected).not.toHaveBeenCalled();
+	});
+
+	it("notifies the requester after a rejected travel expense operation succeeds", async () => {
+		onTravelExpenseApproved.mockClear();
+		onTravelExpenseRejected.mockClear();
+		const findFirst = vi.fn().mockResolvedValue({
+			id: "claim-1",
+			organizationId: "org-1",
+			employeeId: "emp-requester",
+			status: "rejected",
+			destinationCity: null,
+			calculatedAmount: "120.50",
+			calculatedCurrency: "EUR",
+			employee: {
+				userId: "user-requester",
+			},
+		});
+
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: { findFirst },
+				},
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+
+		const currentEmployee: CurrentApprover = {
+			id: "employee-1",
+			userId: "user-1",
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Morgan Reviewer",
+				email: "morgan@example.com",
+				image: null,
+			},
+		};
+
+		await Effect.runPromise(
+			notifyTravelExpenseRequesterAfterDecision(
+				dbService,
+				"claim-1",
+				currentEmployee,
+				"reject",
+				"Missing receipt",
+			),
+		);
+
+		expect(onTravelExpenseRejected).toHaveBeenCalledWith({
+			claimId: "claim-1",
+			requesterUserId: "user-requester",
+			organizationId: "org-1",
+			approverName: "Morgan Reviewer",
+			destinationCity: null,
+			amount: "120.50",
+			currency: "EUR",
+			rejectionReason: "Missing receipt",
+		});
+		expect(onTravelExpenseApproved).not.toHaveBeenCalled();
+	});
+
+	it("does not notify the requester when a travel expense write is stale", async () => {
+		onTravelExpenseApproved.mockClear();
+		onTravelExpenseRejected.mockClear();
+		const where = vi.fn().mockReturnValue({
+			returning: vi.fn().mockResolvedValue([]),
+		});
+		const set = vi.fn().mockReturnValue({ where });
+		const values = vi.fn().mockResolvedValue(undefined);
+		const findFirst = vi.fn().mockResolvedValue({
+			id: "claim-1",
+			organizationId: "org-1",
+			employee: { userId: "user-requester" },
+		});
+
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: { findFirst },
+				},
+				update: vi.fn().mockReturnValue({ set }),
+				insert: vi.fn().mockReturnValue({ values }),
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+
+		const currentEmployee: CurrentApprover = {
+			id: "employee-1",
+			userId: "user-1",
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Morgan Reviewer",
+				email: "morgan@example.com",
+				image: null,
+			},
+		};
+
+		await Effect.runPromiseExit(
+			persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve", "looks good"),
+		);
+
+		expect(onTravelExpenseApproved).not.toHaveBeenCalled();
+		expect(onTravelExpenseRejected).not.toHaveBeenCalled();
+	});
+
+	it("does not fail a successful operation when notification context lookup fails", async () => {
+		onTravelExpenseApproved.mockClear();
+		onTravelExpenseRejected.mockClear();
+		const findFirst = vi.fn().mockRejectedValue(new Error("lookup failed"));
+
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: { findFirst },
+				},
+			},
+			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+
+		const currentEmployee: CurrentApprover = {
+			id: "employee-1",
+			userId: "user-1",
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Morgan Reviewer",
+				email: "morgan@example.com",
+				image: null,
+			},
+		};
+
+		await expect(
+			Effect.runPromise(
+				notifyTravelExpenseRequesterAfterDecision(dbService, "claim-1", currentEmployee, "approve"),
+			),
+		).resolves.toBeUndefined();
+
+		expect(onTravelExpenseApproved).not.toHaveBeenCalled();
+		expect(onTravelExpenseRejected).not.toHaveBeenCalled();
 	});
 
 	it("fails stale writes before inserting a decision log", async () => {

@@ -115,7 +115,7 @@ export function AppSidebar({
 			: []),
 		{
 			title: t("nav.approvals", "Approvals"),
-			url: "/approvals",
+			url: "/approvals/inbox",
 			icon: IconClipboardCheck,
 		},
 	];

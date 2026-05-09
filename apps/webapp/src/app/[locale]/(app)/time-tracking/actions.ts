@@ -787,7 +787,7 @@ export async function requestTimeCorrectionEffect(
 					correctedClockIn: formatTime(correctedClockInDate),
 					correctedClockOut: correctedClockOutDate ? formatTime(correctedClockOutDate) : "—",
 					reason: data.reason,
-					approvalUrl: `${appUrl}/approvals`,
+					approvalUrl: `${appUrl}/approvals/inbox`,
 				}),
 			),
 		);
