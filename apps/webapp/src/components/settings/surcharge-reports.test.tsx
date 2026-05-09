@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SurchargeReports } from "./surcharge-reports";
 
@@ -46,6 +46,23 @@ const calculation = {
 	createdAt: new Date("2026-02-11T04:05:00.000Z"),
 	employee: { id: "employee-1", firstName: "Mina", lastName: "Miller" },
 };
+
+const laterCalculation = {
+	...calculation,
+	id: "calc-2",
+	employeeId: "employee-2",
+	organizationId: "org-2",
+	employee: { id: "employee-2", firstName: "Nora", lastName: "Nguyen" },
+};
+
+function deferredResult(data: unknown[]) {
+	let resolve: (value: { success: true; data: unknown[] }) => void = () => {};
+	const promise = new Promise<{ success: true; data: unknown[] }>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+
+	return { promise, resolve: () => resolve({ success: true, data }) };
+}
 
 describe("SurchargeReports", () => {
 	beforeEach(() => {
@@ -101,8 +118,13 @@ describe("SurchargeReports", () => {
 		const detailsButton = await screen.findByRole("button", {
 			name: "Show details for Mina Miller",
 		});
+		expect(detailsButton.getAttribute("aria-expanded")).toBe("false");
 		fireEvent.click(detailsButton);
+		const detailsId = detailsButton.getAttribute("aria-controls");
 
+		expect(detailsButton.getAttribute("aria-expanded")).toBe("true");
+		expect(detailsId).toBeTruthy();
+		expect(document.getElementById(detailsId ?? "")).toBeTruthy();
 		expect(screen.getByText("Applied rules")).toBeTruthy();
 		expect(screen.getByText("Night premium")).toBeTruthy();
 		expect(screen.getByText("time_window")).toBeTruthy();
@@ -132,5 +154,30 @@ describe("SurchargeReports", () => {
 		await waitFor(() => {
 			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(0);
 		});
+	});
+
+	it("ignores stale responses from earlier requests", async () => {
+		const firstRequest = deferredResult([calculation]);
+		const secondRequest = deferredResult([laterCalculation]);
+		getSurchargeCalculationsForPeriodMock
+			.mockReturnValueOnce(firstRequest.promise)
+			.mockReturnValueOnce(secondRequest.promise);
+
+		const { rerender } = render(<SurchargeReports organizationId="org-1" />);
+		rerender(<SurchargeReports organizationId="org-2" />);
+
+		await act(async () => {
+			secondRequest.resolve();
+			await secondRequest.promise;
+		});
+		expect(await screen.findByText("Nora Nguyen")).toBeTruthy();
+
+		await act(async () => {
+			firstRequest.resolve();
+			await firstRequest.promise;
+		});
+
+		expect(screen.getByText("Nora Nguyen")).toBeTruthy();
+		expect(screen.queryByText("Mina Miller")).toBeNull();
 	});
 });

@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { DateTime } from "luxon";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +106,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [dateError, setDateError] = useState<string | null>(null);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const latestRequestId = useRef(0);
 
 	const form = useForm({
 		defaultValues: getDefaultFilters(),
@@ -116,6 +117,8 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 	const loadCalculations = useCallback(
 		async (filters: FilterValues) => {
+			const requestId = latestRequestId.current + 1;
+			latestRequestId.current = requestId;
 			const startDate = parseFilterDate(filters.startDate, "start");
 			const endDate = parseFilterDate(filters.endDate, "end");
 
@@ -136,6 +139,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				endDate.toJSDate(),
 				employeeId,
 			).catch(() => ({ success: false as const, error: "Failed to load surcharge calculations." }));
+
+			if (requestId !== latestRequestId.current) {
+				return;
+			}
 
 			if (result.success) {
 				setRows(result.data);
@@ -299,6 +306,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 								{rows.map((calculation) => {
 									const employeeName = getEmployeeName(calculation);
 									const isExpanded = expandedId === calculation.id;
+									const detailsId = `surcharge-calculation-${calculation.id}-details`;
 
 									return (
 										<Fragment key={calculation.id}>
@@ -308,6 +316,8 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 														type="button"
 														variant="ghost"
 														size="icon"
+														aria-controls={detailsId}
+														aria-expanded={isExpanded}
 														aria-label={`${isExpanded ? "Hide" : "Show"} details for ${employeeName}`}
 														onClick={() => setExpandedId(isExpanded ? null : calculation.id)}
 													>
@@ -326,7 +336,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 												<TableCell>{formatPercentage(calculation.appliedPercentage)}</TableCell>
 												<TableCell>{formatTimestamp(calculation.createdAt)}</TableCell>
 											</TableRow>
-											{isExpanded ? <CalculationDetails calculation={calculation} /> : null}
+											{isExpanded ? (
+												<CalculationDetails calculation={calculation} detailsId={detailsId} />
+											) : null}
 										</Fragment>
 									);
 								})}
@@ -350,11 +362,17 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
 	);
 }
 
-function CalculationDetails({ calculation }: { calculation: SurchargeCalculationWithDetails }) {
+function CalculationDetails({
+	calculation,
+	detailsId,
+}: {
+	calculation: SurchargeCalculationWithDetails;
+	detailsId: string;
+}) {
 	const details = calculation.calculationDetails;
 
 	return (
-		<TableRow className="bg-muted/30 hover:bg-muted/30">
+		<TableRow id={detailsId} className="bg-muted/30 hover:bg-muted/30">
 			<TableCell />
 			<TableCell colSpan={7} className="whitespace-normal">
 				<div className="grid gap-4 py-2 text-sm">
