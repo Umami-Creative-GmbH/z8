@@ -79,6 +79,30 @@ describe("org chart graph helpers", () => {
 		);
 	});
 
+	it("skips edges whose endpoints are not loaded", () => {
+		const graph = buildOrgChartGraph({
+			mode: "focused",
+			focusedEmployeeId: "emp-1",
+			employeeCount: 2,
+			partial: true,
+			employees: [employee],
+			teams: [team],
+			managerLinks: [{ managerId: "emp-2", employeeId: "emp-1" }],
+			teamMemberships: [
+				{ teamId: "team-1", employeeId: "emp-1" },
+				{ teamId: "team-1", employeeId: "emp-2" },
+			],
+		});
+
+		expect(graph.edges).toEqual([
+			expect.objectContaining({
+				kind: "team-membership",
+				source: "team:team-1",
+				target: "employee:emp-1",
+			}),
+		]);
+	});
+
 	it("deduplicates nodes and edges when merging expanded graph payloads", () => {
 		const first = buildOrgChartGraph({
 			mode: "focused",
@@ -108,5 +132,34 @@ describe("org chart graph helpers", () => {
 			expect.objectContaining({ isFocused: true }),
 		);
 		expect(new Set(merged.edges.map((edge) => edge.id)).size).toBe(merged.edges.length);
+	});
+
+	it("preserves partial mode when either merged graph is partial", () => {
+		const complete = buildOrgChartGraph({
+			mode: "focused",
+			focusedEmployeeId: "emp-1",
+			employeeCount: 2,
+			partial: false,
+			employees: [employee, manager],
+			teams: [team],
+			managerLinks: [{ managerId: "emp-2", employeeId: "emp-1" }],
+			teamMemberships: [
+				{ teamId: "team-1", employeeId: "emp-1" },
+				{ teamId: "team-1", employeeId: "emp-2" },
+			],
+		});
+		const partial = buildOrgChartGraph({
+			mode: "focused",
+			focusedEmployeeId: "emp-1",
+			employeeCount: 101,
+			partial: true,
+			employees: [employee],
+			teams: [],
+			managerLinks: [],
+			teamMemberships: [],
+		});
+
+		expect(mergeOrgChartGraphs(complete, partial, "emp-1").partial).toBe(true);
+		expect(mergeOrgChartGraphs(partial, complete, "emp-1").partial).toBe(true);
 	});
 });
