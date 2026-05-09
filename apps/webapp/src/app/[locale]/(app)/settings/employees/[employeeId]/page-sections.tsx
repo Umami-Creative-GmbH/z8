@@ -139,6 +139,7 @@ export function EmployeeOverviewCard({
 						image={employee.user.image}
 						seed={employee.user.id}
 						name={employee.user.name}
+						gender={employee.gender}
 						size="lg"
 					/>
 					<div>
