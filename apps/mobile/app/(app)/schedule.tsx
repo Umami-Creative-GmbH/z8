@@ -7,7 +7,7 @@ import { getMobileSessionRouteState } from "@/src/features/session/mobile-sessio
 import { useMobileSession } from "@/src/features/session/use-mobile-session";
 
 export default function ScheduleRoute() {
-  const router = useRouter();
+	const { push } = useRouter();
   const sessionQuery = useMobileSession();
   const session = sessionQuery.data;
   const routeState = getMobileSessionRouteState({
@@ -45,11 +45,11 @@ export default function ScheduleRoute() {
     return <MobileSessionErrorState onRetry={() => void scheduleQuery.refetch()} />;
   }
 
-  return (
-    <ScheduleScreen
-      onRequestAbsence={() => router.push("/(app)/absences/request")}
-      onViewRequests={() => router.push("/(app)/my-requests")}
-      schedule={scheduleQuery.data}
-    />
-  );
+	return (
+		<ScheduleScreen
+			onRequestAbsence={() => push("/(app)/absences/request")}
+			onViewRequests={() => push("/(app)/my-requests")}
+			schedule={scheduleQuery.data}
+		/>
+	);
 }
