@@ -188,7 +188,7 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
   color: var(--color-muted-foreground);
 }
 
@@ -200,8 +200,10 @@ body {
 .app-main {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 22px;
   padding: 24px;
 }
 
@@ -359,6 +361,78 @@ body {
 
 .clock-action-stop {
   color: var(--color-destructive);
+}
+
+/* Work Location Selector */
+.work-location-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 320px);
+}
+
+.work-location-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.work-location-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.work-location-option {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-card);
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 10px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.work-location-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.work-location-option:hover:not(.work-location-option-disabled) {
+  background: var(--color-muted);
+  color: var(--color-foreground);
+}
+
+.work-location-option:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.work-location-option-active {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-card));
+  color: var(--color-primary);
+  box-shadow: 0 1px 8px color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.work-location-option-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Login Screen */
