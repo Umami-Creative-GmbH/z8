@@ -35,6 +35,8 @@ export type EmployeeDetailFormApi = ReactFormExtendedApi<
 	unknown
 >;
 
+type EmployeeDetailFormMetaApi = Pick<EmployeeDetailFormApi, "getFieldMeta">;
+
 export const defaultFormValues: EmployeeDetailFormValues = {
 	firstName: "",
 	lastName: "",
@@ -62,7 +64,7 @@ export const scheduleDayKeys = [
 	"sunday",
 ] as const;
 
-export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormApi) {
+export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormMetaApi) {
 	for (const fieldName of ["firstName", "lastName", "pronouns"] as const) {
 		if (formApi.getFieldMeta(fieldName)?.errors.length) {
 			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
