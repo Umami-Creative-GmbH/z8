@@ -58,6 +58,7 @@ import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-s
 import {
 	buildTravelExpenseApprovalPolicyContext,
 	createTravelExpenseApprovalWorkflow,
+	notifyTravelExpenseRequesterAfterDecision,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
@@ -251,13 +252,9 @@ describe("persistTravelExpenseDecision", () => {
 		);
 	});
 
-	it("notifies the requester after an approved travel expense decision succeeds", async () => {
+	it("notifies the requester after an approved travel expense operation succeeds", async () => {
 		onTravelExpenseApproved.mockClear();
 		onTravelExpenseRejected.mockClear();
-		const returning = vi.fn().mockResolvedValue([{ id: "claim-1" }]);
-		const where = vi.fn().mockReturnValue({ returning });
-		const set = vi.fn().mockReturnValue({ where });
-		const values = vi.fn().mockResolvedValue(undefined);
 		const findFirst = vi.fn().mockResolvedValue({
 			id: "claim-1",
 			organizationId: "org-1",
@@ -275,8 +272,6 @@ describe("persistTravelExpenseDecision", () => {
 				query: {
 					travelExpenseClaim: { findFirst },
 				},
-				update: vi.fn().mockReturnValue({ set }),
-				insert: vi.fn().mockReturnValue({ values }),
 			},
 			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 		} as unknown as ApprovalDbService;
@@ -294,7 +289,7 @@ describe("persistTravelExpenseDecision", () => {
 		};
 
 		await Effect.runPromise(
-			persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve", "looks good"),
+			notifyTravelExpenseRequesterAfterDecision(dbService, "claim-1", currentEmployee, "approve"),
 		);
 
 		expect(onTravelExpenseApproved).toHaveBeenCalledWith({
@@ -309,13 +304,9 @@ describe("persistTravelExpenseDecision", () => {
 		expect(onTravelExpenseRejected).not.toHaveBeenCalled();
 	});
 
-	it("notifies the requester after a rejected travel expense decision succeeds", async () => {
+	it("notifies the requester after a rejected travel expense operation succeeds", async () => {
 		onTravelExpenseApproved.mockClear();
 		onTravelExpenseRejected.mockClear();
-		const returning = vi.fn().mockResolvedValue([{ id: "claim-1" }]);
-		const where = vi.fn().mockReturnValue({ returning });
-		const set = vi.fn().mockReturnValue({ where });
-		const values = vi.fn().mockResolvedValue(undefined);
 		const findFirst = vi.fn().mockResolvedValue({
 			id: "claim-1",
 			organizationId: "org-1",
@@ -333,8 +324,6 @@ describe("persistTravelExpenseDecision", () => {
 				query: {
 					travelExpenseClaim: { findFirst },
 				},
-				update: vi.fn().mockReturnValue({ set }),
-				insert: vi.fn().mockReturnValue({ values }),
 			},
 			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 		} as unknown as ApprovalDbService;
@@ -352,7 +341,13 @@ describe("persistTravelExpenseDecision", () => {
 		};
 
 		await Effect.runPromise(
-			persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "reject", "Missing receipt"),
+			notifyTravelExpenseRequesterAfterDecision(
+				dbService,
+				"claim-1",
+				currentEmployee,
+				"reject",
+				"Missing receipt",
+			),
 		);
 
 		expect(onTravelExpenseRejected).toHaveBeenCalledWith({
@@ -413,13 +408,9 @@ describe("persistTravelExpenseDecision", () => {
 		expect(onTravelExpenseRejected).not.toHaveBeenCalled();
 	});
 
-	it("does not fail a successful decision when notification context lookup fails", async () => {
+	it("does not fail a successful operation when notification context lookup fails", async () => {
 		onTravelExpenseApproved.mockClear();
 		onTravelExpenseRejected.mockClear();
-		const returning = vi.fn().mockResolvedValue([{ id: "claim-1" }]);
-		const where = vi.fn().mockReturnValue({ returning });
-		const set = vi.fn().mockReturnValue({ where });
-		const values = vi.fn().mockResolvedValue(undefined);
 		const findFirst = vi.fn().mockRejectedValue(new Error("lookup failed"));
 
 		const dbService = {
@@ -427,8 +418,6 @@ describe("persistTravelExpenseDecision", () => {
 				query: {
 					travelExpenseClaim: { findFirst },
 				},
-				update: vi.fn().mockReturnValue({ set }),
-				insert: vi.fn().mockReturnValue({ values }),
 			},
 			query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 		} as unknown as ApprovalDbService;
@@ -447,11 +436,10 @@ describe("persistTravelExpenseDecision", () => {
 
 		await expect(
 			Effect.runPromise(
-				persistTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve", "looks good"),
+				notifyTravelExpenseRequesterAfterDecision(dbService, "claim-1", currentEmployee, "approve"),
 			),
 		).resolves.toBeUndefined();
 
-		expect(values).toHaveBeenCalledTimes(1);
 		expect(onTravelExpenseApproved).not.toHaveBeenCalled();
 		expect(onTravelExpenseRejected).not.toHaveBeenCalled();
 	});

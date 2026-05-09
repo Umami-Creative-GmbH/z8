@@ -247,6 +247,21 @@ function notifyTravelExpenseRequester(
 	}
 }
 
+export function notifyTravelExpenseRequesterAfterDecision(
+	dbService: ApprovalDbService,
+	claimId: string,
+	currentEmployee: CurrentApprover,
+	action: "approve" | "reject",
+	reason?: string,
+) {
+	return loadTravelExpenseNotificationContext(dbService, claimId, currentEmployee.organizationId).pipe(
+		Effect.flatMap((claim) =>
+			Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, reason)),
+		),
+		Effect.catchAllCause(() => Effect.void),
+	);
+}
+
 export function persistTravelExpenseDecision(
 	dbService: ApprovalDbService,
 	claimId: string,
@@ -309,15 +324,6 @@ export function persistTravelExpenseDecision(
 					createdAt: decidedAt,
 				});
 			}),
-		);
-
-		yield* _(
-			loadTravelExpenseNotificationContext(dbService, claimId, currentEmployee.organizationId).pipe(
-				Effect.flatMap((claim) =>
-					Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, commentOrReason)),
-				),
-				Effect.catchAllCause(() => Effect.void),
-			),
 		);
 	});
 }

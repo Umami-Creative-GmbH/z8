@@ -17,6 +17,7 @@ import type {
 import { processApprovalWithCurrentEmployee } from "../server/shared";
 import {
 	loadTravelExpenseApprover,
+	notifyTravelExpenseRequesterAfterDecision,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "../server/travel-expense-approvals";
@@ -373,6 +374,9 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 					{ ...options, transactional: true },
 				),
 			);
+			yield* _(
+				notifyTravelExpenseRequesterAfterDecision(dbService, entityId, currentEmployee, "approve"),
+			);
 		}),
 
 	reject: (entityId, approverId, reason, options) =>
@@ -404,6 +408,15 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 							actionOptions,
 						),
 					{ ...options, transactional: true },
+				),
+			);
+			yield* _(
+				notifyTravelExpenseRequesterAfterDecision(
+					dbService,
+					entityId,
+					currentEmployee,
+					"reject",
+					reason,
 				),
 			);
 		}),
