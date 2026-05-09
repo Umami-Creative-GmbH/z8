@@ -47,10 +47,14 @@ describe("selectAuthCookieConsentScript", () => {
 	});
 
 	it("does not fall back to the platform script for custom domains", () => {
-		expect(selectAuthCookieConsentScript(domainContext(undefined), "<script>platform()</script>")).toBeNull();
+		expect(
+			selectAuthCookieConsentScript(domainContext(undefined), "<script>platform()</script>"),
+		).toBeNull();
 	});
 
 	it("treats whitespace custom-domain scripts as disabled", () => {
-		expect(selectAuthCookieConsentScript(domainContext("   \n\t"), "<script>platform()</script>")).toBeNull();
+		expect(
+			selectAuthCookieConsentScript(domainContext("   \n\t"), "<script>platform()</script>"),
+		).toBeNull();
 	});
 });
