@@ -265,9 +265,15 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					label="Calculations"
 					value={`${rows.length} calculation${rows.length === 1 ? "" : "s"}`}
 				/>
-				<SummaryCard label="Base minutes" value={formatMinutes(totals.baseMinutes)} />
-				<SummaryCard label="Qualifying minutes" value={formatMinutes(totals.qualifyingMinutes)} />
-				<SummaryCard label="Surcharge minutes" value={formatMinutes(totals.surchargeMinutes)} />
+				<SummaryCard label="Base hours" value={formatMinutes(totals.baseMinutes)} />
+				<SummaryCard
+					label="Qualifying surcharge hours"
+					value={formatMinutes(totals.qualifyingMinutes)}
+				/>
+				<SummaryCard
+					label="Credited surcharge hours"
+					value={formatMinutes(totals.surchargeMinutes)}
+				/>
 			</div>
 
 			<Card>
