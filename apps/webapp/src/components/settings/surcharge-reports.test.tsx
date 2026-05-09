@@ -59,6 +59,12 @@ describe("SurchargeReports", () => {
 		await waitFor(() => {
 			expect(screen.getByText("1 calculation")).toBeInTheDocument();
 		});
+		const [organizationId, startDate, endDate, employeeId] =
+			getSurchargeCalculationsForPeriodMock.mock.calls[0] ?? [];
+		expect(organizationId).toBe("org-1");
+		expect(startDate).toBeInstanceOf(Date);
+		expect(endDate).toBeInstanceOf(Date);
+		expect(employeeId).toBeUndefined();
 
 		expect(screen.getByText("8h 0m")).toBeInTheDocument();
 		expect(screen.getByText("2h 0m")).toBeInTheDocument();
@@ -114,7 +120,9 @@ describe("SurchargeReports", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 
-		expect(screen.getByText("Start date must be on or before end date.")).toBeInTheDocument();
-		expect(getSurchargeCalculationsForPeriodMock).not.toHaveBeenCalled();
+		expect(await screen.findByText("Start date must be on or before end date.")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(getSurchargeCalculationsForPeriodMock).not.toHaveBeenCalled();
+		});
 	});
 });
