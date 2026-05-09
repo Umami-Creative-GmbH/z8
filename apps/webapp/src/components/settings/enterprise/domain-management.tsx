@@ -216,6 +216,7 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 										</Button>
 									)}
 									<Button
+										aria-label={`Edit authentication settings for ${domain.domain}`}
 										variant="outline"
 										size="sm"
 										onClick={() => setAuthConfigDialog({ isOpen: true, domain })}
@@ -223,6 +224,7 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 										<IconSettings className="h-4 w-4" />
 									</Button>
 									<Button
+										aria-label={`Delete custom domain ${domain.domain}`}
 										variant="outline"
 										size="sm"
 										onClick={() => setDeleteDialog({ isOpen: true, domain })}

@@ -1,9 +1,8 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { verifyTurnstileToken } from "@/lib/turnstile";
 import { getDomainConfig } from "@/lib/domain";
+import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
-import { DOMAIN_HEADERS } from "@/proxy";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 interface TurnstileVerifyRequest {
 	token: string;
@@ -26,10 +25,9 @@ export async function POST(request: Request) {
 			return NextResponse.json({ success: false, error: "Token is required" }, { status: 400 });
 		}
 
-		// Determine organization context from domain header (set by middleware)
+		// Determine organization context from the trusted Host header.
 		// Don't trust client-supplied organizationId - derive it from the request context
-		const headersList = await headers();
-		const customDomain = headersList.get(DOMAIN_HEADERS.DOMAIN);
+		const customDomain = getCustomDomainFromHeaders(request.headers);
 
 		let organizationId: string | undefined;
 		let isEnterprise = false;
@@ -51,9 +49,6 @@ export async function POST(request: Request) {
 		return NextResponse.json({ success: false, error: result.error }, { status: 400 });
 	} catch (error) {
 		console.error("Turnstile verification error:", error);
-		return NextResponse.json(
-			{ success: false, error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
 	}
 }
