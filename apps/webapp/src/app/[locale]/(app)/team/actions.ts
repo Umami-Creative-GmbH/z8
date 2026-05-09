@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { employee, employeeManagers, team } from "@/db/schema";
+import { type employee, employeeManagers, type team } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -20,6 +20,7 @@ export interface ManagedEmployee {
 	userId: string;
 	firstName: string | null;
 	lastName: string | null;
+	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
@@ -133,12 +134,14 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		);
 
 		// Transform to ManagedEmployee type
-		const typedManagedEmployeeRecords = managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
+		const typedManagedEmployeeRecords =
+			managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
 		const managedEmployees: ManagedEmployee[] = typedManagedEmployeeRecords.map((record) => ({
 			id: record.employee.id,
 			userId: record.employee.userId,
 			firstName: record.employee.firstName,
 			lastName: record.employee.lastName,
+			pronouns: record.employee.pronouns,
 			position: record.employee.position,
 			role: record.employee.role,
 			isActive: record.employee.isActive,

@@ -4,6 +4,7 @@ import { IconChevronDown, IconUsers, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
+import { formatEmployeeIdentityName } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
 import type { EmployeeSelectTriggerProps, SelectableEmployee } from "./types";
 
@@ -11,10 +12,7 @@ import type { EmployeeSelectTriggerProps, SelectableEmployee } from "./types";
  * Get display name for an employee
  */
 function getEmployeeName(employee: SelectableEmployee): string {
-	if (employee.firstName || employee.lastName) {
-		return `${employee.firstName || ""} ${employee.lastName || ""}`.trim();
-	}
-	return employee.user.name || employee.user.email.split("@")[0];
+	return formatEmployeeIdentityName(employee);
 }
 
 /**

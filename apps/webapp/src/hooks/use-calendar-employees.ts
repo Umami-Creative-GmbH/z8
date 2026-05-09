@@ -33,6 +33,7 @@ function transformManagedEmployee(emp: ManagedEmployee): SelectableEmployee {
 		userId: emp.userId,
 		firstName: emp.firstName,
 		lastName: emp.lastName,
+		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
@@ -55,6 +56,7 @@ function transformCurrentEmployee(emp: {
 	userId: string;
 	firstName: string | null;
 	lastName: string | null;
+	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
@@ -65,6 +67,7 @@ function transformCurrentEmployee(emp: {
 		userId: emp.userId,
 		firstName: emp.firstName,
 		lastName: emp.lastName,
+		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,

@@ -32,6 +32,7 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 		userId: emp.id, // Use same ID as seed for avatar
 		firstName: null,
 		lastName: null,
+		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
 		isActive: true,
