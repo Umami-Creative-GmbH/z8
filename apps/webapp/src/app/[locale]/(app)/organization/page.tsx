@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getTranslate } from "@/tolgee/server";
@@ -5,6 +6,8 @@ import { getOrgChartInitialGraph } from "./actions";
 import { OrgChartClient } from "./org-chart-client";
 
 export default async function OrganizationPage() {
+	await connection();
+
 	const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);
 
 	if (!result.success) {
