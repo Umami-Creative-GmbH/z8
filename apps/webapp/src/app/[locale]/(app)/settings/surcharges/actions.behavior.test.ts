@@ -394,9 +394,11 @@ vi.mock("@/db", () => ({
 				findMany: vi.fn(async () => mockState.managedEmployees),
 			},
 			surchargeCalculation: {
-				findMany: vi.fn(async (options: unknown) => {
+				findMany: vi.fn(async (options: { limit?: number; offset?: number } | undefined) => {
 					mockState.surchargeCalculationFindManyCalls.push(options);
-					return mockState.surchargeCalculations;
+					const offset = options?.offset ?? 0;
+					const limit = options?.limit ?? mockState.surchargeCalculations.length;
+					return mockState.surchargeCalculations.slice(offset, offset + limit);
 				}),
 			},
 			workPeriod: {
@@ -516,6 +518,48 @@ describe("surcharge settings scope behavior", () => {
 
 		expect(result.success).toBe(true);
 		expect(mockState.surchargeCalculationFindManyCalls[0]).toMatchObject({ limit: 500 });
+	});
+
+	it("applies the manager surcharge report cap after visibility filtering", async () => {
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			...Array.from({ length: 500 }, (_, index) => ({
+				...previousCalculations[3],
+				id: `calc-other-${index}`,
+				calculationDate: new Date(`2026-02-04T${String(index % 24).padStart(2, "0")}:00:00.000Z`),
+			})),
+			{
+				...previousCalculations[0],
+				id: "calc-managed-after-first-batch",
+				calculationDate: new Date("2026-02-01T00:00:00.000Z"),
+			},
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data.map((calculation) => calculation.id)).toEqual([
+					"calc-managed-after-first-batch",
+				]);
+			}
+			expect(mockState.surchargeCalculationFindManyCalls).toHaveLength(2);
+			expect(mockState.surchargeCalculationFindManyCalls[0]).toMatchObject({
+				limit: 500,
+				offset: 0,
+			});
+			expect(mockState.surchargeCalculationFindManyCalls[1]).toMatchObject({
+				limit: 500,
+				offset: 500,
+			});
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
 	});
 
 	it("includes auth fallback names for surcharge calculation employee display", async () => {
