@@ -217,7 +217,7 @@ export function PendingApprovalsWidget() {
 
 					{/* Action Button */}
 					<Button className="w-full group" asChild>
-						<Link href="/approvals">
+						<Link href="/approvals/inbox">
 							{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
 							<IconArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
 						</Link>

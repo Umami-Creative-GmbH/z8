@@ -164,7 +164,7 @@ export function RecentlyApprovedWidget() {
 						)}
 
 						<Button className="w-full" variant="outline" asChild>
-							<Link href="/approvals">
+							<Link href="/approvals/inbox">
 								{t("dashboard.recently-approved.view-all", "View All Approvals")}
 							</Link>
 						</Button>
