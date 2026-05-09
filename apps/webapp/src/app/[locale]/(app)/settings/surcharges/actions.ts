@@ -1011,6 +1011,8 @@ export async function deleteSurchargeAssignment(
 // CALCULATIONS / REPORTS
 // ============================================
 
+const SURCHARGE_REPORT_ROW_LIMIT = 500;
+
 /**
  * Get surcharge calculations for a period
  */
@@ -1047,6 +1049,7 @@ export async function getSurchargeCalculationsForPeriod(
 				},
 			},
 			orderBy: [desc(surchargeCalculation.calculationDate)],
+			limit: SURCHARGE_REPORT_ROW_LIMIT,
 		});
 		const calculationsWithAuthNames = calculations.map((calculation) => ({
 			...calculation,

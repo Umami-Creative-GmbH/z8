@@ -258,6 +258,7 @@ const mockState = vi.hoisted(() => ({
 	deleteWhereCalls: [] as any[],
 	workPeriodFindFirstCalls: 0,
 	workPeriodFindManyCalls: 0,
+	surchargeCalculationFindManyCalls: [] as any[],
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -393,7 +394,10 @@ vi.mock("@/db", () => ({
 				findMany: vi.fn(async () => mockState.managedEmployees),
 			},
 			surchargeCalculation: {
-				findMany: vi.fn(async () => mockState.surchargeCalculations),
+				findMany: vi.fn(async (options: unknown) => {
+					mockState.surchargeCalculationFindManyCalls.push(options);
+					return mockState.surchargeCalculations;
+				}),
 			},
 			workPeriod: {
 				findMany: vi.fn(async () => {
@@ -468,6 +472,7 @@ describe("surcharge settings scope behavior", () => {
 		mockState.deleteWhereCalls = [];
 		mockState.workPeriodFindFirstCalls = 0;
 		mockState.workPeriodFindManyCalls = 0;
+		mockState.surchargeCalculationFindManyCalls = [];
 	});
 
 	it("lets managers read surcharge models applied to their teams, areas, and projects", async () => {
@@ -500,6 +505,17 @@ describe("surcharge settings scope behavior", () => {
 				"calc-project",
 			]);
 		}
+	});
+
+	it("limits surcharge report queries to a bounded row count", async () => {
+		const result = await getSurchargeCalculationsForPeriod(
+			"org-1",
+			new Date("2026-02-01T00:00:00.000Z"),
+			new Date("2026-02-28T23:59:59.999Z"),
+		);
+
+		expect(result.success).toBe(true);
+		expect(mockState.surchargeCalculationFindManyCalls[0]).toMatchObject({ limit: 500 });
 	});
 
 	it("includes auth fallback names for surcharge calculation employee display", async () => {

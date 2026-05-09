@@ -67,6 +67,16 @@ const laterCalculation = {
 	},
 };
 
+const rowLimitCalculations = Array.from({ length: 500 }, (_, index) => ({
+	...calculation,
+	id: `calc-limit-${index}`,
+	employeeId: `employee-limit-${index}`,
+	employee: {
+		...calculation.employee,
+		id: `employee-limit-${index}`,
+	},
+}));
+
 function deferredResult(data: unknown[]) {
 	let resolve: (value: { success: true; data: unknown[] }) => void = () => {};
 	const promise = new Promise<{ success: true; data: unknown[] }>((promiseResolve) => {
@@ -144,11 +154,18 @@ describe("SurchargeReports", () => {
 	});
 
 	it("validates date ranges before fetching", async () => {
-		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({ success: true, data: [] });
+		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({
+			success: true,
+			data: [calculation],
+		});
 
 		render(<SurchargeReports organizationId="org-1" />);
 
-		await screen.findByText("No surcharge calculations found");
+		const detailsButton = await screen.findByRole("button", {
+			name: "Show details for Mina Miller",
+		});
+		fireEvent.click(detailsButton);
+		expect(screen.getByText("Night premium")).toBeTruthy();
 		expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1);
 		getSurchargeCalculationsForPeriodMock.mockClear();
 
@@ -162,10 +179,43 @@ describe("SurchargeReports", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 
 		expect(await screen.findByText("Start date must be on or before end date.")).toBeTruthy();
+		expect(screen.queryByText("Mina Miller")).toBeNull();
+		expect(screen.queryByText("Night premium")).toBeNull();
+		expect(screen.getByText("No surcharge calculations found")).toBeTruthy();
 		await Promise.resolve();
 		await waitFor(() => {
 			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(0);
 		});
+	});
+
+	it("preserves previous same-organization rows when a later load fails", async () => {
+		getSurchargeCalculationsForPeriodMock
+			.mockResolvedValueOnce({ success: true, data: [calculation] })
+			.mockResolvedValueOnce({ success: false, error: "Failed to fetch calculations" });
+
+		render(<SurchargeReports organizationId="org-1" />);
+
+		expect(await screen.findByText("Mina Miller")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+
+		expect(await screen.findByText("Showing previous results.")).toBeTruthy();
+		expect(screen.getByText("Mina Miller")).toBeTruthy();
+	});
+
+	it("shows a notice when the returned report reaches the row limit", async () => {
+		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({
+			success: true,
+			data: rowLimitCalculations,
+		});
+
+		render(<SurchargeReports organizationId="org-1" />);
+
+		expect(
+			await screen.findByText(
+				"Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
+			),
+		).toBeTruthy();
 	});
 
 	it("waits for apply before fetching edited filters", async () => {

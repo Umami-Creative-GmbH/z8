@@ -7,6 +7,7 @@ import {
 	IconFileAnalytics,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
@@ -45,6 +46,7 @@ type FilterValues = {
 };
 
 const DATE_FORMAT = "yyyy-MM-dd";
+const SURCHARGE_REPORT_ROW_LIMIT = 500;
 
 function getDefaultFilters(): FilterValues {
 	const now = DateTime.now();
@@ -98,14 +100,19 @@ function getEmployeeName(calculation: SurchargeCalculationWithDetails) {
 }
 
 export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
+	const { t } = useTranslate();
 	const [defaultFilters] = useState(getDefaultFilters);
 	const [rows, setRows] = useState<SurchargeCalculationWithDetails[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [dateError, setDateError] = useState<string | null>(null);
+	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const appliedFilters = useRef(defaultFilters);
+	const loadedRowsOrganizationId = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
+	const tRef = useRef(t);
+	tRef.current = t;
 
 	const loadCalculations = useCallback(
 		async (filters: FilterValues) => {
@@ -115,13 +122,28 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			const endDate = parseFilterDate(filters.endDate, "end");
 
 			if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
-				setDateError("Start date must be on or before end date.");
+				setRows([]);
+				setExpandedId(null);
+				loadedRowsOrganizationId.current = null;
+				setError(null);
+				setIsShowingPreviousResults(false);
+				setDateError(
+					tRef.current(
+						"surcharges.reports.errors.invalidDateRange",
+						"Start date must be on or before end date.",
+					),
+				);
 				setIsLoading(false);
 				return;
 			}
 
 			setDateError(null);
 			setError(null);
+			setIsShowingPreviousResults(false);
+			if (loadedRowsOrganizationId.current !== organizationId) {
+				setRows([]);
+				setExpandedId(null);
+			}
 			setIsLoading(true);
 
 			const employeeId = filters.employeeId.trim() || undefined;
@@ -138,11 +160,24 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 			if (result.success) {
 				setRows(result.data);
+				loadedRowsOrganizationId.current = organizationId;
 				setExpandedId((current) =>
 					result.data.some((row) => row.id === current) ? current : null,
 				);
 			} else {
-				setError(result.error || "Failed to load surcharge calculations.");
+				if (loadedRowsOrganizationId.current === organizationId) {
+					setIsShowingPreviousResults(true);
+				} else {
+					setRows([]);
+					setExpandedId(null);
+				}
+				setError(
+					result.error ||
+						tRef.current(
+							"surcharges.reports.errors.loadFailed",
+							"Failed to load surcharge calculations.",
+						),
+				);
 			}
 
 			setIsLoading(false);
@@ -175,7 +210,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		<div className="space-y-4">
 			<Card>
 				<CardHeader>
-					<CardTitle>Surcharge reports</CardTitle>
+					<CardTitle>{t("surcharges.reports.title", "Surcharge reports")}</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<form
@@ -190,7 +225,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						<form.Field name="startDate">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor={field.name}>Start date</Label>
+									<Label htmlFor={field.name}>
+										{t("surcharges.reports.filters.startDate", "Start date")}
+									</Label>
 									<Input
 										id={field.name}
 										name={field.name}
@@ -207,7 +244,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						<form.Field name="endDate">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor={field.name}>End date</Label>
+									<Label htmlFor={field.name}>
+										{t("surcharges.reports.filters.endDate", "End date")}
+									</Label>
 									<Input
 										id={field.name}
 										name={field.name}
@@ -224,7 +263,9 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						<form.Field name="employeeId">
 							{(field) => (
 								<div className="grid gap-2">
-									<Label htmlFor={field.name}>Employee ID</Label>
+									<Label htmlFor={field.name}>
+										{t("surcharges.reports.filters.employeeId", "Employee ID")}
+									</Label>
 									<Input
 										id={field.name}
 										name={field.name}
@@ -240,11 +281,11 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 						<div className="flex items-end">
 							<Button type="submit" disabled={isLoading}>
-								Apply filters
+								{t("surcharges.reports.filters.apply", "Apply filters")}
 							</Button>
 						</div>
 						{dateError ? (
-							<p aria-live="polite" className="text-destructive text-sm md:col-span-4">
+							<p role="alert" className="text-destructive text-sm md:col-span-4">
 								{dateError}
 							</p>
 						) : null}
@@ -255,23 +296,56 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			{error ? (
 				<Alert variant="destructive">
 					<IconAlertCircle aria-hidden="true" />
-					<AlertTitle>Unable to load calculations</AlertTitle>
+					<AlertTitle>
+						{t("surcharges.reports.errors.loadTitle", "Unable to load calculations")}
+					</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
+			) : null}
+			{isShowingPreviousResults ? (
+				<Alert role="status" aria-live="polite">
+					<AlertTitle>
+						{t("surcharges.reports.previousResults.title", "Showing previous results.")}
+					</AlertTitle>
+					<AlertDescription>
+						{t(
+							"surcharges.reports.previousResults.description",
+							"The latest request failed, so the previous successful results remain visible.",
+						)}
+					</AlertDescription>
+				</Alert>
+			) : null}
+			{rows.length >= SURCHARGE_REPORT_ROW_LIMIT ? (
+				<Alert role="status" aria-live="polite">
+					<AlertDescription>
+						{t(
+							"surcharges.reports.rowLimitNotice",
+							"Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
+						)}
+					</AlertDescription>
+				</Alert>
+			) : null}
+			{isLoading && rows.length > 0 ? (
+				<div role="status" aria-live="polite" className="sr-only">
+					{t("surcharges.reports.loading", "Loading calculations…")}
+				</div>
 			) : null}
 
 			<div className="grid gap-4 md:grid-cols-4">
 				<SummaryCard
-					label="Calculations"
+					label={t("surcharges.reports.summary.calculations", "Calculations")}
 					value={`${rows.length} calculation${rows.length === 1 ? "" : "s"}`}
 				/>
-				<SummaryCard label="Base hours" value={formatMinutes(totals.baseMinutes)} />
 				<SummaryCard
-					label="Qualifying surcharge hours"
+					label={t("surcharges.reports.summary.baseHours", "Base hours")}
+					value={formatMinutes(totals.baseMinutes)}
+				/>
+				<SummaryCard
+					label={t("surcharges.reports.summary.qualifyingHours", "Qualifying surcharge hours")}
 					value={formatMinutes(totals.qualifyingMinutes)}
 				/>
 				<SummaryCard
-					label="Credited surcharge hours"
+					label={t("surcharges.reports.summary.creditedHours", "Credited surcharge hours")}
 					value={formatMinutes(totals.surchargeMinutes)}
 				/>
 			</div>
@@ -279,8 +353,12 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			<Card>
 				<CardContent>
 					{isLoading && rows.length === 0 ? (
-						<div className="py-8 text-center text-muted-foreground text-sm">
-							Loading calculations…
+						<div
+							role="status"
+							aria-live="polite"
+							className="py-8 text-center text-muted-foreground text-sm"
+						>
+							{t("surcharges.reports.loading", "Loading calculations…")}
 						</div>
 					) : rows.length === 0 ? (
 						<Empty>
@@ -288,9 +366,14 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 								<EmptyMedia variant="icon">
 									<IconFileAnalytics aria-hidden="true" />
 								</EmptyMedia>
-								<EmptyTitle>No surcharge calculations found</EmptyTitle>
+								<EmptyTitle>
+									{t("surcharges.reports.empty.title", "No surcharge calculations found")}
+								</EmptyTitle>
 								<EmptyDescription>
-									No surcharge calculations matched the selected filters.
+									{t(
+										"surcharges.reports.empty.description",
+										"No surcharge calculations matched the selected filters.",
+									)}
 								</EmptyDescription>
 							</EmptyHeader>
 						</Empty>
@@ -299,15 +382,17 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 							<TableHeader>
 								<TableRow>
 									<TableHead className="w-10">
-										<span className="sr-only">Details</span>
+										<span className="sr-only">
+											{t("surcharges.reports.table.details", "Details")}
+										</span>
 									</TableHead>
-									<TableHead>Date</TableHead>
-									<TableHead>Employee</TableHead>
-									<TableHead>Base</TableHead>
-									<TableHead>Qualifying</TableHead>
-									<TableHead>Credit</TableHead>
-									<TableHead>Percentage</TableHead>
-									<TableHead>Created</TableHead>
+									<TableHead>{t("surcharges.reports.table.date", "Date")}</TableHead>
+									<TableHead>{t("surcharges.reports.table.employee", "Employee")}</TableHead>
+									<TableHead>{t("surcharges.reports.table.base", "Base")}</TableHead>
+									<TableHead>{t("surcharges.reports.table.qualifying", "Qualifying")}</TableHead>
+									<TableHead>{t("surcharges.reports.table.credit", "Credit")}</TableHead>
+									<TableHead>{t("surcharges.reports.table.percentage", "Percentage")}</TableHead>
+									<TableHead>{t("surcharges.reports.table.created", "Created")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -326,7 +411,12 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 														size="icon"
 														aria-controls={detailsId}
 														aria-expanded={isExpanded}
-														aria-label={`${isExpanded ? "Hide" : "Show"} details for ${employeeName}`}
+														aria-label={t(
+															isExpanded
+																? "surcharges.reports.details.hideForEmployee"
+																: "surcharges.reports.details.showForEmployee",
+															`${isExpanded ? "Hide" : "Show"} details for ${employeeName}`,
+														)}
 														onClick={() => setExpandedId(isExpanded ? null : calculation.id)}
 													>
 														{isExpanded ? (
