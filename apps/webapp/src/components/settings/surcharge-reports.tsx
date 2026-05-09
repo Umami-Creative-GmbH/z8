@@ -31,6 +31,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { SurchargeCalculationWithDetails } from "@/lib/surcharges/validation";
 
 type SurchargeReportsProps = {
@@ -93,11 +94,7 @@ function formatPercentage(value: number | string) {
 }
 
 function getEmployeeName(calculation: SurchargeCalculationWithDetails) {
-	const firstName = calculation.employee.firstName?.trim();
-	const lastName = calculation.employee.lastName?.trim();
-	const name = [firstName, lastName].filter(Boolean).join(" ");
-
-	return name || calculation.employee.id;
+	return buildAuthUserDisplayName(calculation.employee) || calculation.employee.id;
 }
 
 export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
