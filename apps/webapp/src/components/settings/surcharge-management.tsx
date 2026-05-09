@@ -28,6 +28,7 @@ import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
 import { SurchargeAssignmentDialog } from "./surcharge-assignment-dialog";
 import { SurchargeAssignmentManager } from "./surcharge-assignment-manager";
 import { SurchargeModelDialog } from "./surcharge-model-dialog";
+import { SurchargeReports } from "./surcharge-reports";
 
 interface SurchargeManagementProps {
 	organizationId: string;
@@ -216,28 +217,28 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 													</CardDescription>
 												)}
 											</div>
-										{canManage ? (
-											<div className="flex items-center gap-1 ml-2">
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-8 w-8"
-													onClick={() => handleEditModel(model)}
-												>
-													<IconPencil className="h-4 w-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-8 w-8 text-destructive hover:text-destructive"
-													onClick={() => setDeleteModelId(model.id)}
-												>
-													<IconTrash className="h-4 w-4" />
-												</Button>
-											</div>
-										) : null}
-									</div>
-								</CardHeader>
+											{canManage ? (
+												<div className="flex items-center gap-1 ml-2">
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8"
+														onClick={() => handleEditModel(model)}
+													>
+														<IconPencil className="h-4 w-4" />
+													</Button>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 text-destructive hover:text-destructive"
+														onClick={() => setDeleteModelId(model.id)}
+													>
+														<IconTrash className="h-4 w-4" />
+													</Button>
+												</div>
+											) : null}
+										</div>
+									</CardHeader>
 									<CardContent>
 										<div className="space-y-2">
 											<div className="text-muted-foreground text-sm">
@@ -285,21 +286,7 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 				</TabsContent>
 
 				<TabsContent value="reports" className="space-y-4">
-					<Card>
-						<CardContent className="flex flex-col items-center justify-center py-12">
-							<h3 className="mb-2 text-lg font-semibold">
-								{t("settings.surcharges.reports", "Surcharge Reports")}
-							</h3>
-							<p className="text-muted-foreground text-center">
-								{t(
-									"settings.surcharges.reportsDescription",
-									"View surcharge calculations and summaries for your employees.",
-								)}
-								<br />
-								{t("settings.surcharges.comingSoon", "Coming soon...")}
-							</p>
-						</CardContent>
-					</Card>
+					<SurchargeReports organizationId={organizationId} />
 				</TabsContent>
 			</Tabs>
 

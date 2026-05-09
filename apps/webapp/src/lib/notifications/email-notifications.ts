@@ -141,7 +141,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						absenceType: String(metadata.absenceType || ""),
 						days: Number(metadata.days || 0),
 						notes: metadata.notes ? String(metadata.notes) : undefined,
-						approvalUrl: `${appUrl}/approvals`,
+						approvalUrl: `${appUrl}/approvals/inbox`,
 					};
 				}
 				break;
@@ -160,7 +160,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 						correctedClockIn: String(metadata.correctedClockIn || ""),
 						correctedClockOut: String(metadata.correctedClockOut || ""),
 						reason: String(metadata.reason || ""),
-						approvalUrl: `${appUrl}/approvals`,
+						approvalUrl: `${appUrl}/approvals/inbox`,
 					};
 				}
 				break;

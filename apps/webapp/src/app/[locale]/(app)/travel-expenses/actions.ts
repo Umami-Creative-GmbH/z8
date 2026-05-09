@@ -8,6 +8,7 @@ import { employee, travelExpenseClaim } from "@/db/schema";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
 	createTravelExpenseApprovalWorkflow,
+	notifyTravelExpenseRequesterAfterDecisionForApprover,
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
@@ -290,6 +291,20 @@ export async function approveTravelExpenseClaim(input: {
 			return result;
 		}
 
+		const approvalDbService = {
+			db,
+			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+		} satisfies ApprovalDbService;
+
+		await Effect.runPromise(
+			notifyTravelExpenseRequesterAfterDecisionForApprover(
+				approvalDbService,
+				input.claimId,
+				authContext.employee.id,
+				"approve",
+			),
+		);
+
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { status: "approved" } };
 	} catch (error) {
@@ -323,6 +338,21 @@ export async function rejectTravelExpenseClaim(input: {
 		if (!result.success) {
 			return result;
 		}
+
+		const approvalDbService = {
+			db,
+			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+		} satisfies ApprovalDbService;
+
+		await Effect.runPromise(
+			notifyTravelExpenseRequesterAfterDecisionForApprover(
+				approvalDbService,
+				input.claimId,
+				authContext.employee.id,
+				"reject",
+				input.reason,
+			),
+		);
 
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { status: "rejected" } };

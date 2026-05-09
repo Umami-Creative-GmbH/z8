@@ -138,7 +138,7 @@ export function approvalToBriefingItem(approval: BriefingApproval): BriefingAppr
 					: "warning",
 		title: `${approval.requester.name} needs ${approval.typeName} approval`,
 		description: approval.display.summary,
-		href: "/approvals",
+		href: "/approvals/inbox",
 		approvalId: approval.id,
 		approvalType: approval.approvalType,
 		entityId: approval.entityId,

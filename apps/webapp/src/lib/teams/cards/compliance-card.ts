@@ -358,7 +358,7 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 						{
 							type: "Action.OpenUrl",
 							title: "Review Exceptions",
-							url: `${appUrl}/approvals`,
+							url: `${appUrl}/approvals/inbox`,
 						},
 					]
 				: []),

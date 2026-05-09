@@ -10,7 +10,7 @@ import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
 ## Overview
 
-Project Reports provide comprehensive analytics for tracking project health, budget utilization, and team performance. Two report views are available:
+Project Reports provide comprehensive analytics for tracking project health, budget utilization, deadline risk, and team performance. After a report is generated, Z8 highlights budget alerts from current budget consumption, forecast risk from selected-period burn rate and remaining budget, and deadline alerts based on each project's current deadline status.
 
 - **Portfolio Overview** - Aggregate metrics across all projects
 - **Project Details** - Deep dive into a single project
@@ -51,6 +51,27 @@ Five key metrics are displayed at the top:
 | **Total Hours** | Sum of all hours logged across projects |
 | **Over Budget** | Count of projects exceeding their budget |
 | **Overdue** | Count of projects past their deadline |
+
+### Project Health Alerts
+
+The health alert panel highlights projects that need review:
+
+- **Budget threshold alerts** when current project budget consumption reaches 70%, 90%, or 100% of budgeted hours
+- **Deadline alerts** when a project is currently due within 14 days, 7 days, 1 day, due today, or overdue
+- **Forecast risks** when the selected period's average daily hours indicate the budget may be exhausted before the project deadline
+
+Forecast risk uses a simple burn-rate calculation based on the generated report range and the remaining budget from current cumulative usage. Projects without both a budget and a deadline are excluded from forecast risk, but they can still show budget or deadline threshold alerts when applicable.
+
+### Budget Utilization Summary
+
+The budget utilization summary shows how many projects are:
+
+- At or above 70% budget used
+- At or above 90% budget used
+- Over budget
+- Forecast at risk
+
+Admins and managers can review all projects in their organization. Assigned project managers can review health data for projects they manage.
 
 <Callout type="warn">
 Projects showing as "Over Budget" or "Overdue" are highlighted in red and should be reviewed.

@@ -18,6 +18,7 @@ vi.mock("@/env", () => ({
 const testState = vi.hoisted(() => ({
 	approvalFindMany: vi.fn(),
 	approvalFindFirst: vi.fn(),
+	approvalChainFindFirst: vi.fn(),
 	approvalChainStageFindFirst: vi.fn(),
 	travelExpenseFindMany: vi.fn(),
 	travelExpenseFindFirst: vi.fn(),
@@ -25,13 +26,17 @@ const testState = vi.hoisted(() => ({
 	countWhere: vi.fn(),
 	dbUpdate: vi.fn(),
 	dbTransaction: vi.fn(),
+	auditLog: vi.fn(),
 	updateReturning: vi.fn(),
 	updateWhere: vi.fn(),
 	updateSet: vi.fn(),
 	insertValues: vi.fn(),
+	insertReturning: vi.fn(),
 	query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
 	committedUpdates: [] as unknown[],
 	committedInserts: [] as unknown[],
+	onTravelExpenseApproved: vi.fn(),
+	onTravelExpenseRejected: vi.fn(),
 }));
 
 vi.mock("@/lib/effect/services/database.service", async () => {
@@ -48,22 +53,28 @@ vi.mock("../infrastructure/audit-logger", async () => {
 	const ApprovalAuditLogger = Context.GenericTag<any>("ApprovalAuditLogger");
 	const createApprovalAuditLogger = vi.fn(() =>
 		ApprovalAuditLogger.of({
-			log: vi.fn(() => Effect.void),
+			log: testState.auditLog,
 			logBatch: vi.fn(() => Effect.void),
 		}),
 	);
 	return {
 		ApprovalAuditLogger,
 		createApprovalAuditLogger,
+		logApprovalPolicyEvent: vi.fn(() => Effect.void),
 		ApprovalAuditLoggerLive: Layer.succeed(
 			ApprovalAuditLogger,
 			ApprovalAuditLogger.of({
-				log: vi.fn(() => Effect.void),
+				log: testState.auditLog,
 				logBatch: vi.fn(() => Effect.void),
 			}),
 		),
 	};
 });
+
+vi.mock("@/lib/notifications/triggers", () => ({
+	onTravelExpenseApproved: testState.onTravelExpenseApproved,
+	onTravelExpenseRejected: testState.onTravelExpenseRejected,
+}));
 
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { getApprovalHandler } from "../domain/registry";
@@ -82,6 +93,9 @@ function createDatabaseService() {
 			},
 			approvalChainStageInstance: {
 				findFirst: testState.approvalChainStageFindFirst,
+			},
+			approvalChainInstance: {
+				findFirst: testState.approvalChainFindFirst,
 			},
 			travelExpenseClaim: {
 				findMany: testState.travelExpenseFindMany,
@@ -106,7 +120,7 @@ function createDatabaseService() {
 
 function createAuditLogger() {
 	return ApprovalAuditLogger.of({
-		log: vi.fn(() => Effect.void),
+		log: testState.auditLog,
 		logBatch: vi.fn(() => Effect.void),
 	});
 }
@@ -123,6 +137,7 @@ describe("TravelExpenseClaimHandler", () => {
 		vi.setSystemTime(new Date("2026-04-11T09:00:00.000Z"));
 		testState.approvalFindMany.mockReset();
 		testState.approvalFindFirst.mockReset();
+		testState.approvalChainFindFirst.mockReset();
 		testState.approvalChainStageFindFirst.mockReset();
 		testState.travelExpenseFindMany.mockReset();
 		testState.travelExpenseFindFirst.mockReset();
@@ -130,17 +145,24 @@ describe("TravelExpenseClaimHandler", () => {
 		testState.countWhere.mockReset();
 		testState.dbUpdate.mockReset();
 		testState.dbTransaction.mockReset();
+		testState.auditLog.mockReset();
+		testState.auditLog.mockReturnValue(Effect.void);
 		testState.updateReturning.mockReset();
 		testState.updateWhere.mockReset();
 		testState.updateSet.mockReset();
 		testState.insertValues.mockReset();
+		testState.insertReturning.mockReset();
 		testState.query.mockClear();
 		testState.committedUpdates.length = 0;
 		testState.committedInserts.length = 0;
+		testState.onTravelExpenseApproved.mockClear();
+		testState.onTravelExpenseRejected.mockClear();
 		testState.dbUpdate.mockImplementation(() => createUpdateBuilder());
 		testState.updateSet.mockReturnValue({ where: testState.updateWhere });
 		testState.updateWhere.mockReturnValue({ returning: testState.updateReturning });
 		testState.approvalChainStageFindFirst.mockResolvedValue(null);
+		testState.approvalChainFindFirst.mockResolvedValue(null);
+		testState.insertReturning.mockResolvedValue([{ id: "insert-1" }]);
 		testState.dbTransaction.mockImplementation(async (run) => {
 			const pendingUpdates: unknown[] = [];
 			const pendingInserts: unknown[] = [];
@@ -155,6 +177,9 @@ describe("TravelExpenseClaimHandler", () => {
 					},
 					approvalChainStageInstance: {
 						findFirst: testState.approvalChainStageFindFirst,
+					},
+					approvalChainInstance: {
+						findFirst: testState.approvalChainFindFirst,
 					},
 					travelExpenseClaim: {
 						findMany: testState.travelExpenseFindMany,
@@ -177,9 +202,15 @@ describe("TravelExpenseClaimHandler", () => {
 					};
 				}),
 				insert: vi.fn((table) => ({
-					values: vi.fn(async (values) => {
-						await testState.insertValues(values);
-						pendingInserts.push({ table, values });
+					values: vi.fn((values) => {
+						const result = Promise.resolve(testState.insertValues(values)).then(() => {
+							pendingInserts.push({ table, values });
+							return { returning: testState.insertReturning };
+						});
+						return {
+							returning: testState.insertReturning,
+							then: result.then.bind(result),
+						};
 					}),
 				})),
 			};
@@ -567,6 +598,26 @@ describe("TravelExpenseClaimHandler", () => {
 			],
 		});
 
+		testState.travelExpenseFindFirst
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				status: "submitted",
+			})
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				status: "approved",
+				destinationCity: "Berlin",
+				calculatedAmount: "120.50",
+				calculatedCurrency: "EUR",
+				employee: {
+					userId: "user-1",
+				},
+			});
+
 		await expect(
 			Effect.runPromise(
 				handler
@@ -602,6 +653,16 @@ describe("TravelExpenseClaimHandler", () => {
 				reason: null,
 			}),
 		);
+		expect(testState.onTravelExpenseApproved).toHaveBeenCalledWith({
+			claimId: "claim-1",
+			requesterUserId: "user-1",
+			organizationId: "org-1",
+			approverName: "Morgan Reviewer",
+			destinationCity: "Berlin",
+			amount: "120.50",
+			currency: "EUR",
+		});
+		expect(testState.onTravelExpenseRejected).not.toHaveBeenCalled();
 
 		testState.updateReturning.mockResolvedValueOnce([{ id: "claim-1" }]);
 		testState.approvalFindFirst.mockResolvedValueOnce({
@@ -614,6 +675,27 @@ describe("TravelExpenseClaimHandler", () => {
 			rejectionReason: null,
 			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
 		});
+		testState.onTravelExpenseApproved.mockClear();
+		testState.onTravelExpenseRejected.mockClear();
+		testState.travelExpenseFindFirst
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				status: "submitted",
+			})
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				status: "rejected",
+				destinationCity: null,
+				calculatedAmount: "120.50",
+				calculatedCurrency: "EUR",
+				employee: {
+					userId: "user-1",
+				},
+			});
 
 		await expect(
 			Effect.runPromise(
@@ -650,6 +732,185 @@ describe("TravelExpenseClaimHandler", () => {
 				reason: "Missing receipt",
 			}),
 		);
+		expect(testState.onTravelExpenseRejected).toHaveBeenCalledWith({
+			claimId: "claim-1",
+			requesterUserId: "user-1",
+			organizationId: "org-1",
+			approverName: "Morgan Reviewer",
+			destinationCity: null,
+			amount: "120.50",
+			currency: "EUR",
+			rejectionReason: "Missing receipt",
+		});
+		expect(testState.onTravelExpenseApproved).not.toHaveBeenCalled();
+	});
+
+	it("does not notify the requester when audit logging fails after the travel expense decision", async () => {
+		const handler = getApprovalHandler("travel_expense_claim");
+
+		expect(handler).toBeDefined();
+		if (!handler) {
+			return;
+		}
+
+		testState.employeeFindFirst.mockResolvedValue({
+			id: "manager-1",
+			userId: "user-manager-1",
+			organizationId: "org-1",
+			user: {
+				id: "user-manager-1",
+				name: "Morgan Reviewer",
+				email: "morgan@example.com",
+				image: null,
+			},
+		});
+		testState.approvalFindFirst.mockResolvedValue({
+			id: "approval-1",
+			entityId: "claim-1",
+			entityType: "travel_expense_claim",
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending",
+			approvedAt: null,
+			rejectionReason: null,
+			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
+		});
+		testState.travelExpenseFindFirst
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				status: "submitted",
+			})
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				destinationCity: "Berlin",
+				calculatedAmount: "120.50",
+				calculatedCurrency: "EUR",
+				employee: {
+					userId: "user-1",
+				},
+			});
+		testState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
+		testState.insertValues.mockResolvedValue(undefined);
+		testState.auditLog.mockReturnValueOnce(Effect.fail(new Error("audit failed")));
+
+		await expect(
+			Effect.runPromise(
+				handler
+					.approve("claim-1", "manager-1")
+					.pipe(
+						Effect.provideService(DatabaseService, createDatabaseService()),
+						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+					),
+			),
+		).rejects.toThrow("audit failed");
+
+		expect(testState.onTravelExpenseApproved).not.toHaveBeenCalled();
+		expect(testState.onTravelExpenseRejected).not.toHaveBeenCalled();
+		expect(testState.committedUpdates).toHaveLength(0);
+		expect(testState.committedInserts).toHaveLength(0);
+	});
+
+	it("does not notify the requester for intermediate travel expense approval chain stages", async () => {
+		const handler = getApprovalHandler("travel_expense_claim");
+
+		expect(handler).toBeDefined();
+		if (!handler) {
+			return;
+		}
+
+		testState.employeeFindFirst.mockResolvedValue({
+			id: "manager-1",
+			userId: "user-manager-1",
+			organizationId: "org-1",
+			user: {
+				id: "user-manager-1",
+				name: "Morgan Reviewer",
+				email: "morgan@example.com",
+				image: null,
+			},
+		});
+		testState.approvalFindFirst.mockResolvedValue({
+			id: "approval-1",
+			entityId: "claim-1",
+			entityType: "travel_expense_claim",
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending",
+			approvedAt: null,
+			rejectionReason: null,
+			updatedAt: new Date("2026-04-09T09:30:00.000Z"),
+		});
+		testState.travelExpenseFindFirst
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				status: "submitted",
+			})
+			.mockResolvedValueOnce({
+				id: "claim-1",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				status: "submitted",
+				destinationCity: "Berlin",
+				calculatedAmount: "120.50",
+				calculatedCurrency: "EUR",
+				employee: {
+					userId: "user-1",
+				},
+			});
+		testState.approvalChainStageFindFirst
+			.mockResolvedValueOnce({
+				id: "stage-1",
+				chainInstanceId: "chain-1",
+				organizationId: "org-1",
+				status: "pending",
+				stepOrder: 1,
+			})
+			.mockResolvedValueOnce({
+				id: "stage-2",
+				chainInstanceId: "chain-1",
+				organizationId: "org-1",
+				status: "cancelled",
+				stepOrder: 2,
+				resolvedApproverEmployeeId: "manager-2",
+			});
+		testState.approvalChainFindFirst.mockResolvedValue({
+			id: "chain-1",
+			organizationId: "org-1",
+			entityType: "travel_expense_claim",
+			entityId: "claim-1",
+			requesterEmployeeId: "employee-1",
+			status: "pending",
+			currentStageOrder: 1,
+		});
+		testState.updateReturning.mockResolvedValue([{ id: "updated-row" }]);
+		testState.insertValues.mockResolvedValue(undefined);
+		testState.insertReturning.mockResolvedValue([{ id: "approval-2" }]);
+
+		await expect(
+			Effect.runPromise(
+				handler
+					.approve("claim-1", "manager-1")
+					.pipe(
+						Effect.provideService(DatabaseService, createDatabaseService()),
+						Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
+					),
+			),
+		).resolves.toBeUndefined();
+
+		expect(testState.insertValues).not.toHaveBeenCalledWith(
+			expect.objectContaining({
+				claimId: "claim-1",
+				action: "approved",
+			}),
+		);
+		expect(testState.onTravelExpenseApproved).not.toHaveBeenCalled();
+		expect(testState.onTravelExpenseRejected).not.toHaveBeenCalled();
 	});
 
 	it("does not move the shared approval request when travel expense preflight fails", async () => {

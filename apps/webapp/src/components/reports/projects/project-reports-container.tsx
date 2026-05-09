@@ -19,7 +19,9 @@ import type {
 	ProjectPortfolioData,
 } from "@/lib/reports/project-types";
 import { ProjectBudgetProgress } from "./project-budget-progress";
+import { ProjectBudgetUtilizationSummary } from "./project-budget-utilization-summary";
 import { ProjectFilters } from "./project-filters";
+import { ProjectHealthAlerts } from "./project-health-alerts";
 import { ProjectHoursChart } from "./project-hours-chart";
 import { ProjectPortfolioTable } from "./project-portfolio-table";
 import { ProjectSummaryCards } from "./project-summary-cards";
@@ -165,6 +167,13 @@ export function ProjectReportsContainer() {
 					<TabsContent value="portfolio" className="space-y-6">
 						{/* Summary Cards */}
 						<ProjectSummaryCards data={portfolioData.totals} />
+
+						<ProjectHealthAlerts
+							projects={portfolioData.projects}
+							onProjectSelect={handleSelectProject}
+						/>
+
+						<ProjectBudgetUtilizationSummary totals={portfolioData.totals.budgetHealth} />
 
 						{/* Portfolio Table */}
 						<ProjectPortfolioTable

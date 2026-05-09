@@ -334,7 +334,7 @@ export function buildDailyDigestCard(
 						{
 							type: "Action.OpenUrl",
 							title: "View Approvals",
-							url: `${appUrl}/approvals`,
+							url: `${appUrl}/approvals/inbox`,
 						},
 					]
 				: []),
