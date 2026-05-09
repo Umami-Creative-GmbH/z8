@@ -5,6 +5,7 @@ metadata:
   namespace: app-prod
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: app-prod-deploy-webhook-rate-limit@kubernetescrd,app-prod-deploy-webhook-request-buffer@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

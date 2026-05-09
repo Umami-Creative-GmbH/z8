@@ -21,6 +21,8 @@ resources:
   - app/marketing-service.yaml
   - app/deploy-webhook-service.yaml
   - app/marketing-ip-allowlist-middleware.yaml
+  - app/deploy-webhook-rate-limit-middleware.yaml
+  - app/deploy-webhook-request-buffer-middleware.yaml
   - app/web-forwarded-headers-middleware.yaml
   - app/www-redirect-middleware.yaml
   - app/web-ingress.yaml
