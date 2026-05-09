@@ -1015,6 +1015,30 @@ const SURCHARGE_REPORT_ROW_LIMIT = 500;
 const SURCHARGE_REPORT_BATCH_SIZE = 500;
 const SURCHARGE_REPORT_MANAGER_SCAN_LIMIT = SURCHARGE_REPORT_ROW_LIMIT * 10;
 
+function normalizeSurchargeCalculationDetails(
+	details: unknown,
+): SurchargeCalculationWithDetails["calculationDetails"] {
+	if (typeof details !== "string") {
+		return details as SurchargeCalculationWithDetails["calculationDetails"];
+	}
+
+	try {
+		const parsedDetails = JSON.parse(details) as unknown;
+		if (
+			parsedDetails &&
+			typeof parsedDetails === "object" &&
+			!Array.isArray(parsedDetails) &&
+			Array.isArray((parsedDetails as { rulesApplied?: unknown }).rulesApplied)
+		) {
+			return parsedDetails as SurchargeCalculationWithDetails["calculationDetails"];
+		}
+	} catch {
+		return null;
+	}
+
+	return null;
+}
+
 /**
  * Get surcharge calculations for a period
  */
@@ -1064,6 +1088,7 @@ export async function getSurchargeCalculationsForPeriod(
 
 			return calculations.map((calculation) => ({
 				...calculation,
+				calculationDetails: normalizeSurchargeCalculationDetails(calculation.calculationDetails),
 				employee: calculation.employee
 					? {
 							id: calculation.employee.id,

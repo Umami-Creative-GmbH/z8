@@ -620,6 +620,78 @@ describe("surcharge settings scope behavior", () => {
 		]);
 	});
 
+	it("returns JSON string surcharge calculation details as an object", async () => {
+		mockState.settingsActorAccessTier = "orgAdmin";
+		mockState.membershipRole = "admin";
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			{
+				...previousCalculations[0],
+				calculationDetails: JSON.stringify({
+					workPeriodStartTime: "2026-02-01T08:00:00.000Z",
+					workPeriodEndTime: "2026-02-01T10:00:00.000Z",
+					rulesApplied: [
+						{
+							ruleId: "rule-1",
+							ruleName: "Night work",
+							ruleType: "time_window",
+							percentage: 25,
+							qualifyingMinutes: 60,
+							surchargeMinutes: 15,
+						},
+					],
+					overlapPolicy: "highest",
+					calculatedAt: "2026-02-01T10:00:00.000Z",
+				}),
+			} as (typeof previousCalculations)[number],
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data[0]?.calculationDetails).toMatchObject({
+					workPeriodStartTime: "2026-02-01T08:00:00.000Z",
+					rulesApplied: [{ ruleId: "rule-1" }],
+				});
+			}
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
+	it("returns null surcharge calculation details for invalid JSON without throwing", async () => {
+		mockState.settingsActorAccessTier = "orgAdmin";
+		mockState.membershipRole = "admin";
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			{
+				...previousCalculations[0],
+				calculationDetails: "{invalid-json",
+			} as (typeof previousCalculations)[number],
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data[0]?.calculationDetails).toBeNull();
+			}
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
 	it("includes auth fallback names for surcharge calculation employee display", async () => {
 		const previousCalculations = mockState.surchargeCalculations;
 		mockState.surchargeCalculations = [
