@@ -5,8 +5,8 @@ import { useEffect, useRef } from "react";
 import { TimepickerUI } from "timepicker-ui";
 import {
 	normalizeTimeFormat,
-	timeFormatToPickerType,
 	type TimeFormat,
+	timeFormatToPickerType,
 } from "@/lib/user-preferences/time-format";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,52 @@ type TimeInputProps = Omit<React.ComponentProps<"input">, "readOnly" | "type"> &
 	timeFormat?: TimeFormat | string | null;
 };
 
-function TimeInput({ className, onChange, value, defaultValue, timeFormat, ...props }: TimeInputProps) {
+type PickerConfirmData = {
+	hour?: string | null;
+	minutes?: string | null;
+	type?: "AM" | "PM" | null;
+};
+
+function normalizePickerConfirmTime(
+	data: PickerConfirmData,
+	timeFormat: TimeFormat,
+): string | null {
+	if (!data.hour || !data.minutes) {
+		return null;
+	}
+
+	const hour = Number(data.hour);
+	const minutes = Number(data.minutes);
+	if (!Number.isInteger(hour) || !Number.isInteger(minutes) || minutes < 0 || minutes > 59) {
+		return null;
+	}
+
+	const storedHour =
+		timeFormat === "12h" && data.type
+			? data.type === "PM"
+				? hour === 12
+					? 12
+					: hour + 12
+				: hour === 12
+					? 0
+					: hour
+			: hour;
+
+	if (storedHour < 0 || storedHour > 23) {
+		return null;
+	}
+
+	return `${storedHour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+
+function TimeInput({
+	className,
+	onChange,
+	value,
+	defaultValue,
+	timeFormat,
+	...props
+}: TimeInputProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const onChangeRef = useRef(onChange);
 	const pickerFormat = normalizeTimeFormat(timeFormat);
@@ -35,12 +80,13 @@ function TimeInput({ className, onChange, value, defaultValue, timeFormat, ...pr
 			},
 			callbacks: {
 				onConfirm: (data) => {
-					if (!inputRef.current || !data.hour || !data.minutes) {
+					const nextValue = normalizePickerConfirmTime(data, pickerFormat);
+					if (!inputRef.current || !nextValue) {
 						return;
 					}
 
 					const input = inputRef.current;
-					input.value = `${data.hour}:${data.minutes}`;
+					input.value = nextValue;
 					onChangeRef.current?.({
 						currentTarget: input,
 						target: input,

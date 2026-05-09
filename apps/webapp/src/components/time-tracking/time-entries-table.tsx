@@ -19,6 +19,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { useRouter } from "@/navigation";
 
 const TimeCorrectionDialog = dynamic(
@@ -36,6 +37,7 @@ interface Props {
 	hasManager: boolean;
 	canApproveTimeEntries: boolean;
 	employeeTimezone: string;
+	timeFormat: TimeFormat;
 	employeeId: string;
 }
 
@@ -44,6 +46,7 @@ export function TimeEntriesTable({
 	hasManager,
 	canApproveTimeEntries,
 	employeeTimezone,
+	timeFormat,
 	employeeId,
 }: Props) {
 	const { t } = useTranslate();
@@ -74,6 +77,7 @@ export function TimeEntriesTable({
 			getTimeEntriesColumns({
 				t,
 				employeeTimezone,
+				timeFormat,
 				hasManager,
 				renderAdminAction: canApproveTimeEntries
 					? (period) => (
@@ -95,6 +99,7 @@ export function TimeEntriesTable({
 		[
 			t,
 			employeeTimezone,
+			timeFormat,
 			hasManager,
 			canApproveTimeEntries,
 			approvingWorkPeriodId,

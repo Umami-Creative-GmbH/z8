@@ -2,8 +2,8 @@ import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import type { SelectedWorkdayDate } from "./workday-timeline.types";
 import {
-	normalizeWorkdayTimeline,
 	type NormalizeWorkdayTimelineInput,
+	normalizeWorkdayTimeline,
 } from "./workday-timeline-normalize";
 
 const selectedDate: SelectedWorkdayDate = {
@@ -58,11 +58,7 @@ describe("normalizeWorkdayTimeline", () => {
 			pendingRequests: [],
 		});
 
-		expect(result.items.map((item) => item.type)).toEqual([
-			"absence",
-			"shift",
-			"work-period",
-		]);
+		expect(result.items.map((item) => item.type)).toEqual(["absence", "shift", "work-period"]);
 		expect(result.hasScheduledContext).toBe(true);
 		expect(result.hasRecordedActivity).toBe(true);
 	});
@@ -78,7 +74,7 @@ describe("normalizeWorkdayTimeline", () => {
 					endTime: null,
 					durationMinutes: null,
 					approvalStatus: "pending",
-					pendingChanges: "{\"reason\":\"corrected clock out\"}",
+					pendingChanges: '{"reason":"corrected clock out"}',
 					wasAutoAdjusted: true,
 					autoAdjustmentReason: {
 						breakInsertedMinutes: 30,
@@ -250,5 +246,52 @@ describe("normalizeWorkdayTimeline", () => {
 			type: "pending-request",
 			sourceType: "time_correction",
 		});
+	});
+
+	it("formats work periods and pending requests with the selected time format", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			timeFormat: "12h",
+			workPeriods: [
+				{
+					id: "period-1",
+					startTime: new Date("2026-05-03T12:05:00.000Z"),
+					endTime: new Date("2026-05-03T14:30:00.000Z"),
+					durationMinutes: 145,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					wasAutoAdjusted: false,
+					autoAdjustmentReason: null,
+				},
+			],
+			shifts: [],
+			absences: [],
+			pendingRequests: [
+				{
+					id: "time_correction:req-1",
+					sourceType: "time_correction",
+					status: "pending",
+					title: "time_correction",
+					subtitle: "time_entry_correction",
+					submittedAt: new Date("2026-05-03T08:00:00.000Z"),
+					sourceHref: "/time-tracking",
+				},
+			],
+		});
+
+		expect(result.items).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "work-period:period-1",
+					startLabel: "2:05 PM",
+					endLabel: "4:30 PM",
+				}),
+				expect.objectContaining({
+					id: "pending-request:time_correction:req-1",
+					startLabel: "10:00 AM",
+				}),
+			]),
+		);
 	});
 });

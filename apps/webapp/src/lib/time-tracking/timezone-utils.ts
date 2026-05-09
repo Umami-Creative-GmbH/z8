@@ -1,5 +1,10 @@
 import { DateTime } from "luxon";
 import { fromJSDate, parseISO } from "@/lib/datetime/luxon-utils";
+import {
+	getTimeFormatDateTimeOptions,
+	normalizeTimeFormat,
+	type TimeFormat,
+} from "@/lib/user-preferences/time-format";
 import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
 
 /**
@@ -75,6 +80,7 @@ export function formatTimeInZone(
 	date: string | Date | DateTime,
 	timezone: string,
 	showIndicator = false,
+	timeFormat: TimeFormat = "24h",
 ): string {
 	let dt: DateTime;
 
@@ -87,7 +93,11 @@ export function formatTimeInZone(
 	}
 
 	const inUserTz = dt.setZone(timezone);
-	const time = inUserTz.toFormat("HH:mm");
+	const normalizedTimeFormat = normalizeTimeFormat(timeFormat);
+	const time =
+		normalizedTimeFormat === "12h"
+			? inUserTz.toLocaleString(getTimeFormatDateTimeOptions(normalizedTimeFormat))
+			: inUserTz.toFormat("HH:mm");
 
 	if (showIndicator) {
 		const abbr = inUserTz.offsetNameShort || timezone;

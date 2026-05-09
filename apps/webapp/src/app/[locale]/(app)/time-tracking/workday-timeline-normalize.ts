@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { formatTimeInZone } from "@/lib/time-tracking/timezone-utils";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import type {
 	SelectedWorkdayDate,
 	WorkdayTimelineData,
@@ -57,6 +58,7 @@ export interface WorkdayPendingRequestSource {
 export interface NormalizeWorkdayTimelineInput {
 	selectedDate: SelectedWorkdayDate;
 	timezone: string;
+	timeFormat?: TimeFormat;
 	workPeriods: WorkdayWorkPeriodSource[];
 	shifts: WorkdayShiftSource[];
 	absences: WorkdayAbsenceSource[];
@@ -66,6 +68,7 @@ export interface NormalizeWorkdayTimelineInput {
 export function normalizeWorkdayTimeline({
 	selectedDate,
 	timezone,
+	timeFormat = "24h",
 	workPeriods,
 	shifts,
 	absences,
@@ -106,26 +109,27 @@ export function normalizeWorkdayTimeline({
 			subtitle: formatDuration(period.durationMinutes),
 			startTime: period.startTime,
 			endTime: period.endTime,
-			startLabel: formatTimeInZone(period.startTime, timezone),
-			endLabel: period.endTime ? formatTimeInZone(period.endTime, timezone) : undefined,
+			startLabel: formatTimeInZone(period.startTime, timezone, false, timeFormat),
+			endLabel: period.endTime
+				? formatTimeInZone(period.endTime, timezone, false, timeFormat)
+				: undefined,
 			badge: period.endTime ? period.approvalStatus : "Active",
 			isActive: period.endTime === null,
 			durationMinutes: period.durationMinutes,
 			approvalStatus: period.approvalStatus,
 			wasAutoAdjusted: period.wasAutoAdjusted,
-			autoAdjustmentReason: period.autoAdjustmentReason as WorkdayTimelineWorkPeriodItem["autoAdjustmentReason"],
+			autoAdjustmentReason:
+				period.autoAdjustmentReason as WorkdayTimelineWorkPeriodItem["autoAdjustmentReason"],
 		})),
 		...pendingRequests
-			.filter(
-				(request) => request.status === "pending" && request.sourceType !== "travel_expense",
-			)
+			.filter((request) => request.status === "pending" && request.sourceType !== "travel_expense")
 			.map<WorkdayTimelinePendingRequestItem>((request) => ({
 				id: `pending-request:${request.id}`,
 				type: "pending-request",
 				title: request.title,
 				subtitle: request.subtitle,
 				startTime: request.submittedAt,
-				startLabel: formatTimeInZone(request.submittedAt, timezone),
+				startLabel: formatTimeInZone(request.submittedAt, timezone, false, timeFormat),
 				badge: request.status,
 				severity: "info",
 				link: { label: "Review request", href: request.sourceHref },
@@ -146,7 +150,7 @@ export function normalizeWorkdayTimeline({
 function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimelineWarningItem[] {
 	const warnings: WorkdayTimelineWarningItem[] = [];
 
-	if (period.approvalStatus === "pending" || Boolean(period.pendingChanges)) {
+	if (period.approvalStatus === "pending" || period.pendingChanges) {
 		warnings.push({
 			id: `warning:pending-edit:${period.id}`,
 			type: "warning",
@@ -187,9 +191,7 @@ function getShiftDateTimes(
 	const startDateTime = getShiftDateTime(shift.date, shift.startTime, timezone);
 	const parsedEndDateTime = getShiftDateTime(shift.date, shift.endTime, timezone);
 	const endDateTime =
-		parsedEndDateTime <= startDateTime
-			? parsedEndDateTime.plus({ days: 1 })
-			: parsedEndDateTime;
+		parsedEndDateTime <= startDateTime ? parsedEndDateTime.plus({ days: 1 }) : parsedEndDateTime;
 
 	return {
 		startTime: startDateTime.toJSDate(),

@@ -13,7 +13,11 @@ const { createMock, destroyMock, instances } = vi.hoisted(() => ({
 				type?: "12h" | "24h";
 			};
 			callbacks?: {
-				onConfirm?: (data: { hour?: string | null; minutes?: string | null }) => void;
+				onConfirm?: (data: {
+					hour?: string | null;
+					minutes?: string | null;
+					type?: "AM" | "PM" | null;
+				}) => void;
 			};
 		};
 	}>,
@@ -56,7 +60,7 @@ describe("TimeInput", () => {
 		expect(instances[0]?.options.clock?.type).toBe("12h");
 	});
 
-	it("emits standard change events when a time is confirmed", () => {
+	it("emits standard change events when a 24-hour time is confirmed", () => {
 		const handleChange = vi.fn();
 		render(<TimeInput aria-label="Start time" value="09:00" onChange={handleChange} />);
 
@@ -68,8 +72,34 @@ describe("TimeInput", () => {
 		expect(handleChange.mock.calls[0]?.[0].type).toBe("change");
 	});
 
+	it("converts confirmed PM times to stored 24-hour values in 12-hour mode", () => {
+		const handleChange = vi.fn();
+		render(
+			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
+		);
+
+		instances[0]?.options.callbacks?.onConfirm?.({ hour: "2", minutes: "05", type: "PM" });
+
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:05");
+	});
+
+	it("converts confirmed AM midnight to stored 24-hour values in 12-hour mode", () => {
+		const handleChange = vi.fn();
+		render(
+			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
+		);
+
+		instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "AM" });
+
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("00:00");
+	});
+
 	it("preserves the input value when recreating the picker", () => {
-		const { rerender } = render(<TimeInput aria-label="Start time" timeFormat="24h" value="09:00" />);
+		const { rerender } = render(
+			<TimeInput aria-label="Start time" timeFormat="24h" value="09:00" />,
+		);
 
 		rerender(<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" />);
 

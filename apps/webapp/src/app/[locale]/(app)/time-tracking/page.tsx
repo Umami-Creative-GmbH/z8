@@ -46,6 +46,7 @@ export default async function TimeTrackingPage({ searchParams }: TimeTrackingPag
 					hasManager={!!pageData.currentEmployee.managerId}
 					canApproveTimeEntries={pageData.canApproveTimeEntries}
 					employeeTimezone={pageData.timezone}
+					timeFormat={pageData.timeFormat}
 					employeeId={pageData.currentEmployee.id}
 				/>
 			</div>

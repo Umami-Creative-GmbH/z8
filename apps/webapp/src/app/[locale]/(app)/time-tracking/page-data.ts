@@ -66,6 +66,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 			employeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 			timezone,
+			timeFormat,
 			dateParam: searchParams.date,
 		}),
 	]);

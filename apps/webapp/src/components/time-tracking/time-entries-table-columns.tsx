@@ -11,6 +11,7 @@ import {
 	formatTimeInZone,
 	getTimezoneAbbreviation,
 } from "@/lib/time-tracking/timezone-utils";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 
 interface TimeEntry {
 	id: string;
@@ -111,12 +112,14 @@ function DurationCell({ row, t }: { row: WorkPeriodData; t: TFnType }) {
 export function getTimeEntriesColumns({
 	t,
 	employeeTimezone,
+	timeFormat,
 	hasManager,
 	renderEditAction,
 	renderAdminAction,
 }: {
 	t: TFnType;
 	employeeTimezone: string;
+	timeFormat: TimeFormat;
 	hasManager: boolean;
 	renderEditAction: (period: WorkPeriodData, isSameDay: boolean) => ReactNode;
 	renderAdminAction?: (period: WorkPeriodData) => ReactNode;
@@ -139,7 +142,9 @@ export function getTimeEntriesColumns({
 			),
 			cell: ({ row }) => (
 				<div className="flex flex-col gap-1">
-					<span>{formatTimeInZone(row.original.startTime, employeeTimezone)}</span>
+					<span>
+						{formatTimeInZone(row.original.startTime, employeeTimezone, false, timeFormat)}
+					</span>
 					{row.original.clockIn?.isSuperseded ? (
 						<Badge variant="outline" className="w-fit text-xs">
 							{t("timeTracking.table.corrected", "Corrected")}
@@ -163,7 +168,9 @@ export function getTimeEntriesColumns({
 
 				return (
 					<div className="flex flex-col gap-1">
-						<span>{formatTimeInZone(row.original.endTime, employeeTimezone)}</span>
+						<span>
+							{formatTimeInZone(row.original.endTime, employeeTimezone, false, timeFormat)}
+						</span>
 						{row.original.clockOut?.isSuperseded ? (
 							<Badge variant="outline" className="w-fit text-xs">
 								{t("timeTracking.table.corrected", "Corrected")}
