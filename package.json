@@ -79,7 +79,7 @@
 		"@esbuild/win32-x64": "^0.28.0",
 		"puppeteer-core": "^24.43.0",
 		"shadcn": "^4.7.0",
-		"turbo": "^2.9.9"
+		"turbo": "^2.9.10"
 	},
 	"packageManager": "pnpm@10.33.2"
 }

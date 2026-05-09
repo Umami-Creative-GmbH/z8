@@ -615,7 +615,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 												selected={selectedBirthday || undefined}
 												onSelect={(date) => form.setFieldValue("birthday", date || null)}
 												disabled={(date) => date > new Date()}
-												initialFocus
+												autoFocus
 												captionLayout="dropdown"
 												startMonth={new Date(1940, 0)}
 												endMonth={new Date()}

@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import type { DayButton } from "react-day-picker";
+import type { DayButton } from "@daypicker/react";
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import type { CalendarEvent } from "@/lib/calendar/types";
 

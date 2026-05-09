@@ -246,7 +246,7 @@ export default function ProfilePage() {
 													startMonth={new Date(1900, 0)}
 													endMonth={new Date()}
 													defaultMonth={field.state.value || new Date(2000, 0)}
-													initialFocus
+													autoFocus
 												/>
 											</PopoverContent>
 										</Popover>

@@ -121,7 +121,7 @@ export function ShiftDialogSections({
 									mode="single"
 									selected={field.state.value}
 									onSelect={(date) => date && field.handleChange(date)}
-									initialFocus
+									autoFocus
 								/>
 							</PopoverContent>
 						</Popover>

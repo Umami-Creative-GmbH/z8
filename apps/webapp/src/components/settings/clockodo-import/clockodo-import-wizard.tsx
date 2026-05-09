@@ -19,7 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
-import type { DateRange } from "react-day-picker";
+import type { DateRange } from "@daypicker/react";
 import { toast } from "sonner";
 import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import {
