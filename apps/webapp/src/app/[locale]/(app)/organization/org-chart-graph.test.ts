@@ -83,11 +83,23 @@ describe("org chart graph helpers", () => {
 			"org-1",
 		);
 
-		expect(graph.nodes.map((node) => node.id)).toEqual(["employee:emp-1", "employee:emp-2", "team:team-1"]);
+		expect(graph.nodes.map((node) => node.id)).toEqual([
+			"employee:emp-1",
+			"employee:emp-2",
+			"team:team-1",
+		]);
 		expect(graph.edges).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ kind: "manager", source: "employee:emp-2", target: "employee:emp-1" }),
-				expect.objectContaining({ kind: "team-membership", source: "team:team-1", target: "employee:emp-1" }),
+				expect.objectContaining({
+					kind: "manager",
+					source: "employee:emp-2",
+					target: "employee:emp-1",
+				}),
+				expect.objectContaining({
+					kind: "team-membership",
+					source: "team:team-1",
+					target: "employee:emp-1",
+				}),
 			]),
 		);
 		expect(graph.edges).toHaveLength(3);
@@ -137,9 +149,93 @@ describe("org chart graph helpers", () => {
 		);
 		expect(graph.edges).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ kind: "manager", source: "employee:emp-2", target: "employee:emp-1" }),
-				expect.objectContaining({ kind: "team-membership", source: "team:team-1", target: "employee:emp-1" }),
-				expect.objectContaining({ kind: "team-primary-manager", source: "employee:emp-2", target: "team:team-1" }),
+				expect.objectContaining({
+					kind: "manager",
+					source: "employee:emp-2",
+					target: "employee:emp-1",
+				}),
+				expect.objectContaining({
+					kind: "team-membership",
+					source: "team:team-1",
+					target: "employee:emp-1",
+				}),
+				expect.objectContaining({
+					kind: "team-primary-manager",
+					source: "employee:emp-2",
+					target: "team:team-1",
+				}),
+			]),
+		);
+	});
+
+	it("marks partial focused graph nodes expandable when more data can be loaded", () => {
+		const graph = buildOrgChartGraph({
+			mode: "focused",
+			focusedEmployeeId: "emp-1",
+			employeeCount: 101,
+			partial: true,
+			employees: [employee],
+			teams: [{ ...team, memberCount: 3, primaryManagerId: "emp-2" }],
+			managerLinks: [],
+			teamMemberships: [{ teamId: "team-1", employeeId: "emp-1" }],
+		});
+
+		expect(graph.nodes.find((node) => node.id === "employee:emp-1")).toEqual(
+			expect.objectContaining({
+				expandable: { managers: true, reports: true, teams: true },
+			}),
+		);
+		expect(graph.nodes.find((node) => node.id === "team:team-1")).toEqual(
+			expect.objectContaining({
+				expandable: { members: true, primaryManager: true },
+			}),
+		);
+	});
+
+	it("keeps capped teams expandable when member count exceeds loaded members", () => {
+		const graph = buildOrgChartGraph({
+			mode: "focused",
+			focusedEmployeeId: null,
+			employeeCount: 101,
+			partial: true,
+			employees: [employee, manager],
+			teams: [{ ...team, memberCount: 3 }],
+			managerLinks: [],
+			teamMemberships: [
+				{ teamId: "team-1", employeeId: "emp-1" },
+				{ teamId: "team-1", employeeId: "emp-2" },
+			],
+		});
+
+		expect(graph.nodes.find((node) => node.id === "team:team-1")).toEqual(
+			expect.objectContaining({
+				expandable: expect.objectContaining({ members: true }),
+			}),
+		);
+	});
+
+	it("includes manager edges in team neighborhood payloads when both endpoints are loaded", () => {
+		const graph = buildOrgChartGraph({
+			mode: "focused",
+			focusedEmployeeId: null,
+			employeeCount: 2,
+			partial: false,
+			employees: [employee, manager],
+			teams: [team],
+			managerLinks: [{ managerId: "emp-2", employeeId: "emp-1" }],
+			teamMemberships: [
+				{ teamId: "team-1", employeeId: "emp-1" },
+				{ teamId: "team-1", employeeId: "emp-2" },
+			],
+		});
+
+		expect(graph.edges).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					kind: "manager",
+					source: "employee:emp-2",
+					target: "employee:emp-1",
+				}),
 			]),
 		);
 	});
@@ -240,5 +336,15 @@ describe("org chart server action source", () => {
 		expect(source).toContain("EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT");
 		expect(source).toContain("TEAM_NEIGHBORHOOD_MEMBER_LIMIT");
 		expect(source).toContain("buildScopedOrgChartGraph");
+	});
+
+	it("loads team-neighborhood manager links for loaded employees", () => {
+		const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
+
+		expect(source).toContain(
+			"const managerLinks = yield* _(loadManagerLinks(dbService, activeEmployeeIds));",
+		);
+		expect(source).toContain("managerLinks,");
+		expect(source).not.toContain("managerLinks: [],");
 	});
 });

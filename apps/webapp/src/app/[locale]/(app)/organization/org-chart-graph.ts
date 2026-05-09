@@ -91,6 +91,8 @@ export function buildEdgeId(kind: OrgChartEdgeKind, source: string, target: stri
 }
 
 export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGraph {
+	const loadedEmployeeIds = new Set(input.employees.map((employee) => employee.id));
+	const loadedMemberCountsByTeamId = countLoadedMembershipsByTeamId(input.teamMemberships);
 	const nodes = input.employees.map<OrgChartNode>((employee) => ({
 		id: buildEmployeeNodeId(employee.id),
 		kind: "employee",
@@ -105,9 +107,9 @@ export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGrap
 		teamIds: employee.teamIds,
 		isFocused: employee.id === input.focusedEmployeeId ? true : undefined,
 		expandable: {
-			managers: employee.expandable?.managers ?? false,
-			reports: employee.expandable?.reports ?? false,
-			teams: employee.expandable?.teams ?? false,
+			managers: employee.expandable?.managers ?? isPartialFocusedGraph(input),
+			reports: employee.expandable?.reports ?? isPartialFocusedGraph(input),
+			teams: employee.expandable?.teams ?? isPartialFocusedGraph(input),
 		},
 	}));
 
@@ -121,8 +123,13 @@ export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGrap
 			memberCount: team.memberCount,
 			primaryManagerId: team.primaryManagerId,
 			expandable: {
-				members: team.expandable?.members ?? false,
-				primaryManager: team.expandable?.primaryManager ?? false,
+				members:
+					team.expandable?.members ??
+					(input.partial && team.memberCount > (loadedMemberCountsByTeamId.get(team.id) ?? 0)),
+				primaryManager:
+					team.expandable?.primaryManager ??
+					(input.partial &&
+						Boolean(team.primaryManagerId && !loadedEmployeeIds.has(team.primaryManagerId))),
 			},
 		})),
 	);
@@ -170,6 +177,20 @@ export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGrap
 		edges: dedupeById(edges),
 		partial: input.partial,
 	};
+}
+
+function isPartialFocusedGraph(input: BuildOrgChartGraphInput) {
+	return input.partial && input.mode === "focused";
+}
+
+function countLoadedMembershipsByTeamId(memberships: OrgChartTeamMembershipInput[]) {
+	const countsByTeamId = new Map<string, number>();
+
+	for (const membership of memberships) {
+		countsByTeamId.set(membership.teamId, (countsByTeamId.get(membership.teamId) ?? 0) + 1);
+	}
+
+	return countsByTeamId;
 }
 
 export function scopeOrgChartGraphInput(

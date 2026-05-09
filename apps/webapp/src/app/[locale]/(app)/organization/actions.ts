@@ -13,10 +13,10 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { buildScopedOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
 	EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
-	SMALL_ORG_EMPLOYEE_LIMIT,
-	TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
 	type OrgChartGraph,
 	type OrgChartSearchResult,
+	SMALL_ORG_EMPLOYEE_LIMIT,
+	TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
 } from "./org-chart-types";
 
 type DatabaseServiceInstance = typeof DatabaseService.Service;
@@ -147,7 +147,9 @@ export async function getEmployeeNeighborhood(
 	return runServerActionSafe(effect);
 }
 
-export async function getTeamNeighborhood(teamId: string): Promise<ServerActionResult<OrgChartGraph>> {
+export async function getTeamNeighborhood(
+	teamId: string,
+): Promise<ServerActionResult<OrgChartGraph>> {
 	const effect = Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
 		const { organizationId } = yield* _(resolveOrgChartContext(dbService));
@@ -267,9 +269,15 @@ function loadEmployeeNeighborhood(
 ) {
 	return Effect.gen(function* (_) {
 		const targetEmployee = yield* _(ensureActiveEmployee(dbService, organizationId, employeeId));
-		const directManagerLinks = yield* _(loadDirectManagerLinks(dbService, organizationId, employeeId));
-		const directReportLinks = yield* _(loadDirectReportLinks(dbService, organizationId, employeeId));
-		const targetTeamMemberships = yield* _(loadEmployeeTeamMemberships(dbService, organizationId, employeeId));
+		const directManagerLinks = yield* _(
+			loadDirectManagerLinks(dbService, organizationId, employeeId),
+		);
+		const directReportLinks = yield* _(
+			loadDirectReportLinks(dbService, organizationId, employeeId),
+		);
+		const targetTeamMemberships = yield* _(
+			loadEmployeeTeamMemberships(dbService, organizationId, employeeId),
+		);
 		const connectedTeamIds = targetTeamMemberships.map((membership) => membership.teamId);
 		const teams = yield* _(loadTeamsByIds(dbService, organizationId, connectedTeamIds));
 		const primaryManagerIds = teams
@@ -290,7 +298,9 @@ function loadEmployeeNeighborhood(
 			...teamMemberMemberships.map((membership) => membership.employeeId),
 			...primaryManagerIds,
 		]);
-		const employees = yield* _(loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]));
+		const employees = yield* _(
+			loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]),
+		);
 
 		return buildScopedOrgChartGraph(
 			{
@@ -329,13 +339,22 @@ function loadTeamNeighborhood(
 		}
 
 		const memberships = yield* _(
-			loadLimitedActiveTeamMemberships(dbService, organizationId, [teamId], TEAM_NEIGHBORHOOD_MEMBER_LIMIT),
+			loadLimitedActiveTeamMemberships(
+				dbService,
+				organizationId,
+				[teamId],
+				TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
+			),
 		);
 		const employeeIds = new Set<string>(memberships.map((membership) => membership.employeeId));
 		if (targetTeam.primaryManagerId) {
 			employeeIds.add(targetTeam.primaryManagerId);
 		}
-		const employees = yield* _(loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]));
+		const employees = yield* _(
+			loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]),
+		);
+		const activeEmployeeIds = employees.map((row) => row.id);
+		const managerLinks = yield* _(loadManagerLinks(dbService, activeEmployeeIds));
 
 		return buildScopedOrgChartGraph(
 			{
@@ -345,7 +364,7 @@ function loadTeamNeighborhood(
 				partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
 				employees,
 				teams: [targetTeam],
-				managerLinks: [],
+				managerLinks,
 				teamMemberships: memberships,
 			},
 			organizationId,
@@ -505,7 +524,11 @@ function loadTeams(dbService: DatabaseServiceInstance, organizationId: string) {
 	});
 }
 
-function loadTeamsByIds(dbService: DatabaseServiceInstance, organizationId: string, teamIds: string[]) {
+function loadTeamsByIds(
+	dbService: DatabaseServiceInstance,
+	organizationId: string,
+	teamIds: string[],
+) {
 	if (teamIds.length === 0) {
 		return Effect.succeed([] satisfies TeamGraphRow[]);
 	}
@@ -716,6 +739,11 @@ function loadLimitedActiveTeamMemberships(
 
 function dedupeMemberships(memberships: TeamMembershipRow[]) {
 	return Array.from(
-		new Map(memberships.map((membership) => [`${membership.teamId}:${membership.employeeId}`, membership])).values(),
+		new Map(
+			memberships.map((membership) => [
+				`${membership.teamId}:${membership.employeeId}`,
+				membership,
+			]),
+		).values(),
 	);
 }
