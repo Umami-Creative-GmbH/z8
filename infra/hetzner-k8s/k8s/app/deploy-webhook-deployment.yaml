@@ -15,6 +15,12 @@ spec:
     spec:
       enableServiceLinks: false
       serviceAccountName: deploy-webhook
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: ghcr-credentials
       containers:
@@ -50,6 +56,12 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           readinessProbe:
             httpGet:
               path: /healthz

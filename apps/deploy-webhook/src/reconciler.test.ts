@@ -7,6 +7,7 @@ import type { DeployState } from "./state.js";
 function createState(state: Partial<DeployState>): DeployState {
   return {
     observed: {},
+    deliveryIds: [],
     observedAt: {},
     deployed: {},
     deployedAt: {},
@@ -75,7 +76,7 @@ describe("Reconciler", () => {
 
     await reconciler.reconcile(appObservation("z8-worker"));
 
-    expect(dependencies.state.recordObservation).toHaveBeenCalledWith(appObservation("z8-worker"));
+    expect(dependencies.state.update).toHaveBeenCalledWith(expect.any(Function));
     expect(dependencies.registry.hasTag).not.toHaveBeenCalled();
     expect(dependencies.kube.runMigration).not.toHaveBeenCalled();
     expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
@@ -114,7 +115,7 @@ describe("Reconciler", () => {
       "set:docs/docs:ghcr.io/umami-creative-gmbh/z8-docs:sha-abc123",
       "wait:docs:60000"
     ]);
-    expect(dependencies.state.recordObservation).toHaveBeenCalledWith(appObservation("z8-docs"));
+    expect(dependencies.state.update).toHaveBeenCalledWith(expect.any(Function));
   });
 
   it("rolls out marketing independently", async () => {
@@ -258,8 +259,20 @@ describe("Reconciler", () => {
 
     await reconciler.recordObservation(appObservation("z8-docs"));
 
-    expect(dependencies.state.recordObservation).toHaveBeenCalledWith(appObservation("z8-docs"));
+    expect(dependencies.state.update).toHaveBeenCalledWith(expect.any(Function));
     expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
+  });
+
+  it("records a delivery id and skips duplicate delivery rollout work", async () => {
+    const dependencies = createDependencies({ observed: {}, deployed: {}, failures: {} });
+    const reconciler = new Reconciler(dependencies);
+
+    const first = await reconciler.recordObservation(appObservation("z8-docs"), "delivery-1");
+    const second = await reconciler.recordObservation(appObservation("z8-docs"), "delivery-1");
+
+    expect(first.duplicateDelivery).toBe(false);
+    expect(second.duplicateDelivery).toBe(true);
+    expect(dependencies.getState().deliveryIds).toEqual(["delivery-1"]);
   });
 
   it("does not re-run migration when retrying after migration succeeded but app rollout failed", async () => {
@@ -302,6 +315,7 @@ describe("Reconciler", () => {
     expect(dependencies.state.write).not.toHaveBeenCalled();
     expect(dependencies.getState()).toEqual({
       observed: { "sha-abc123": ["z8-docs", "z8-marketing", "z8-migration", "z8-webapp", "z8-worker"] },
+      deliveryIds: [],
       observedAt: {
         "sha-abc123": {
           "z8-docs": "2026-05-08T10:00:00.000Z",

@@ -33,3 +33,41 @@ describe("reconcileWithRetry", () => {
     expect(sleep).toHaveBeenCalledWith(5);
   });
 });
+
+describe("validateWebhookHeaders", () => {
+  beforeEach(() => {
+    process.env.GITHUB_WEBHOOK_SECRET = "test-secret";
+  });
+
+  it("rejects requests without a GitHub package event header before body parsing", async () => {
+    const { validateWebhookHeaders } = await import("./server.js");
+
+    expect(validateWebhookHeaders({ "x-hub-signature-256": "sha256=abc" })).toEqual({
+      body: "unsupported event",
+      ok: false,
+      statusCode: 400
+    });
+  });
+
+  it("rejects requests without a signature before body parsing", async () => {
+    const { validateWebhookHeaders } = await import("./server.js");
+
+    expect(validateWebhookHeaders({ "x-github-event": "package" })).toEqual({
+      body: "missing signature",
+      ok: false,
+      statusCode: 401
+    });
+  });
+
+  it("accepts package events with signature and delivery identifiers", async () => {
+    const { validateWebhookHeaders } = await import("./server.js");
+
+    expect(
+      validateWebhookHeaders({
+        "x-github-delivery": "delivery-1",
+        "x-github-event": "package",
+        "x-hub-signature-256": "sha256=abc"
+      })
+    ).toEqual({ deliveryId: "delivery-1", ok: true, signatureHeader: "sha256=abc" });
+  });
+});

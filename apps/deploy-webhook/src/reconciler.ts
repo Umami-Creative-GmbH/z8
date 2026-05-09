@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import type { DeploymentTarget } from "./kubernetes.js";
 import type { ImageObservation } from "./github-event.js";
-import type { DeployState } from "./state.js";
+import { addDeliveryId, addObservation, type DeployState } from "./state.js";
 
 type AppPackageName = "z8-webapp" | "z8-worker" | "z8-migration";
 
@@ -35,6 +35,11 @@ export type ReconcilerDependencies = {
   migrationTimeoutMs: number;
 };
 
+export type RecordedObservation = {
+  duplicateDelivery: boolean;
+  state: DeployState;
+};
+
 const appPackages: AppPackageName[] = ["z8-webapp", "z8-worker", "z8-migration"];
 
 const independentDeployments: Partial<Record<ImageObservation["packageName"], DeploymentSpec>> = {
@@ -59,8 +64,16 @@ export class Reconciler {
     await this.reconcileRecorded(observation);
   }
 
-  async recordObservation(observation: ImageObservation): Promise<DeployState> {
-    return this.dependencies.state.recordObservation(observation);
+  async recordObservation(observation: ImageObservation, deliveryId?: string): Promise<RecordedObservation> {
+    let duplicateDelivery = false;
+    const state = await this.dependencies.state.update((currentState) => {
+      if (!deliveryId) return addObservation(currentState, observation);
+      const deliveryResult = addDeliveryId(currentState, deliveryId);
+      duplicateDelivery = deliveryResult.duplicate;
+      if (deliveryResult.duplicate) return deliveryResult.state;
+      return addObservation(deliveryResult.state, observation);
+    });
+    return { duplicateDelivery, state };
   }
 
   async reconcileRecorded(observation: ImageObservation): Promise<void> {

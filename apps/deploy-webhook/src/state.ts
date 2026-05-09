@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import type { ImageObservation } from "./github-event.js";
 
 export type DeployState = {
+  deliveryIds: string[];
   observed: Record<string, ImageObservation["packageName"][]>;
   observedAt: Record<string, Partial<Record<ImageObservation["packageName"], string>>>;
   deployed: Record<string, string>;
@@ -27,7 +28,7 @@ const recordObservationAttempts = 3;
 const updateAttempts = 3;
 
 function emptyState(): DeployState {
-  return { observed: {}, observedAt: {}, deployed: {}, deployedAt: {}, failures: {}, latestAcceptedAt: {} };
+  return { deliveryIds: [], observed: {}, observedAt: {}, deployed: {}, deployedAt: {}, failures: {}, latestAcceptedAt: {} };
 }
 
 function loadKubeConfig(): KubeConfig {
@@ -54,12 +55,19 @@ function parseState(raw: string | undefined): DeployState {
   const parsed = JSON.parse(raw) as Partial<DeployState>;
   return {
     observed: parsed.observed ?? {},
+    deliveryIds: parsed.deliveryIds ?? [],
     observedAt: parsed.observedAt ?? {},
     deployed: parsed.deployed ?? {},
     deployedAt: parsed.deployedAt ?? {},
     failures: parsed.failures ?? {},
     latestAcceptedAt: parsed.latestAcceptedAt ?? {}
   };
+}
+
+export function addDeliveryId(state: DeployState, deliveryId: string, limit = 100): { duplicate: boolean; state: DeployState } {
+  const deliveryIds = state.deliveryIds ?? [];
+  if (deliveryIds.includes(deliveryId)) return { duplicate: true, state };
+  return { duplicate: false, state: { ...state, deliveryIds: [...deliveryIds, deliveryId].slice(-limit) } };
 }
 
 function deploymentGroup(packageName: ImageObservation["packageName"]): "app" | "docs" | "marketing" {

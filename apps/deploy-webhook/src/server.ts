@@ -1,4 +1,4 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer, type IncomingHttpHeaders, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
 import { loadConfig } from "./config.js";
 import { parseGitHubPackageEvent } from "./github-event.js";
@@ -17,6 +17,10 @@ type RetryOptions = {
   delayMs: number;
   sleep: (delayMs: number) => Promise<void>;
 };
+
+type WebhookHeaderValidation =
+  | { deliveryId: string; ok: true; signatureHeader: string }
+  | { body: string; ok: false; statusCode: number };
 
 function sleep(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -44,6 +48,25 @@ export async function reconcileWithRetry(
 function send(response: ServerResponse, statusCode: number, body: string): void {
   response.writeHead(statusCode, { "content-type": "text/plain; charset=utf-8" });
   response.end(body);
+}
+
+function firstHeader(headers: IncomingHttpHeaders, name: string): string | undefined {
+  const value = headers[name];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export function validateWebhookHeaders(headers: IncomingHttpHeaders): WebhookHeaderValidation {
+  if (firstHeader(headers, "x-github-event") !== "package") {
+    return { body: "unsupported event", ok: false, statusCode: 400 };
+  }
+
+  const signatureHeader = firstHeader(headers, "x-hub-signature-256");
+  if (!signatureHeader) return { body: "missing signature", ok: false, statusCode: 401 };
+
+  const deliveryId = firstHeader(headers, "x-github-delivery");
+  if (!deliveryId) return { body: "missing delivery id", ok: false, statusCode: 400 };
+
+  return { deliveryId, ok: true, signatureHeader };
 }
 
 function readRawBody(request: IncomingMessage): Promise<Buffer> {
@@ -94,6 +117,12 @@ export function startServer(): void {
       return;
     }
 
+    const headerValidation = validateWebhookHeaders(request.headers);
+    if (!headerValidation.ok) {
+      send(response, headerValidation.statusCode, headerValidation.body);
+      return;
+    }
+
     let rawBody: Buffer;
     try {
       rawBody = await readRawBody(request);
@@ -102,9 +131,7 @@ export function startServer(): void {
       return;
     }
 
-    const signature = request.headers["x-hub-signature-256"];
-    const signatureHeader = Array.isArray(signature) ? signature[0] : signature;
-    if (!verifyGitHubSignature(rawBody, signatureHeader, config.githubWebhookSecret)) {
+    if (!verifyGitHubSignature(rawBody, headerValidation.signatureHeader, config.githubWebhookSecret)) {
       send(response, 401, "invalid signature");
       return;
     }
@@ -124,7 +151,11 @@ export function startServer(): void {
     }
 
     try {
-      await reconciler.recordObservation(observation);
+      const recorded = await reconciler.recordObservation(observation, headerValidation.deliveryId);
+      if (recorded.duplicateDelivery) {
+        send(response, 202, "duplicate");
+        return;
+      }
     } catch (error) {
       console.error("Deploy webhook observation recording failed", error);
       send(response, 500, "failed to record observation");

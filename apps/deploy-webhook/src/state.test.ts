@@ -6,6 +6,7 @@ describe("addObservation", () => {
   it("adds observed packages once and keeps them sorted", () => {
     const state: DeployState = {
       observed: { "sha-abcdef1": ["z8-worker"] },
+      deliveryIds: [],
       observedAt: {},
       deployed: { web: "sha-old" },
       deployedAt: {},
@@ -15,6 +16,7 @@ describe("addObservation", () => {
 
     expect(addObservation(state, { tag: "sha-abcdef1", packageName: "z8-webapp", publishedAt: "2026-05-08T10:00:00.000Z" })).toEqual({
       observed: { "sha-abcdef1": ["z8-webapp", "z8-worker"] },
+      deliveryIds: [],
       observedAt: { "sha-abcdef1": { "z8-webapp": "2026-05-08T10:00:00.000Z" } },
       deployed: { web: "sha-old" },
       deployedAt: {},
@@ -31,7 +33,7 @@ describe("StateStore", () => {
   it("retries updates on conflicts and preserves concurrent deployed markers", async () => {
     let stored: { resourceVersion: string; state: DeployState } = {
       resourceVersion: "1",
-      state: { observed: {}, observedAt: {}, deployed: { docs: "sha-docs" }, deployedAt: {}, failures: {}, latestAcceptedAt: {} }
+      state: { observed: {}, deliveryIds: [], observedAt: {}, deployed: { docs: "sha-docs" }, deployedAt: {}, failures: {}, latestAcceptedAt: {} }
     };
     let injectedConcurrentUpdate = false;
     const coreApi = {
@@ -46,6 +48,7 @@ describe("StateStore", () => {
             resourceVersion: "2",
             state: {
               observed: {},
+              deliveryIds: [],
               observedAt: {},
               deployed: { docs: "sha-docs", marketing: "sha-marketing" },
               deployedAt: {},
@@ -74,6 +77,7 @@ describe("StateStore", () => {
       store.update((state) => ({ ...state, deployed: { ...state.deployed, app: "sha-app" } }))
     ).resolves.toEqual({
       observed: {},
+      deliveryIds: [],
       observedAt: {},
       deployed: { app: "sha-app", docs: "sha-docs", marketing: "sha-marketing" },
       deployedAt: {},
@@ -89,6 +93,7 @@ describe("StateStore", () => {
       resourceVersion: "1",
       state: {
         observed: { "sha-abcdef1": ["z8-worker"] },
+        deliveryIds: [],
         observedAt: {},
         deployed: {},
         deployedAt: {},
@@ -104,6 +109,7 @@ describe("StateStore", () => {
         resourceVersion: "2",
         state: {
           observed: { "sha-abcdef1": ["z8-docs", "z8-worker"] },
+          deliveryIds: [],
           observedAt: {},
           deployed: {},
           deployedAt: {},
@@ -140,6 +146,7 @@ describe("StateStore", () => {
 
     await expect(store.recordObservation({ tag: "sha-abcdef1", packageName: "z8-webapp", publishedAt: "2026-05-08T10:00:00.000Z" })).resolves.toEqual({
       observed: { "sha-abcdef1": ["z8-docs", "z8-webapp", "z8-worker"] },
+      deliveryIds: [],
       observedAt: { "sha-abcdef1": { "z8-webapp": "2026-05-08T10:00:00.000Z" } },
       deployed: {},
       deployedAt: {},
@@ -150,6 +157,7 @@ describe("StateStore", () => {
     expect(coreApi.replaceNamespacedConfigMap).toHaveBeenCalledTimes(2);
     expect(stored.state).toEqual({
       observed: { "sha-abcdef1": ["z8-docs", "z8-webapp", "z8-worker"] },
+      deliveryIds: [],
       observedAt: { "sha-abcdef1": { "z8-webapp": "2026-05-08T10:00:00.000Z" } },
       deployed: {},
       deployedAt: {},
