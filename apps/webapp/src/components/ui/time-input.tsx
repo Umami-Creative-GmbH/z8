@@ -39,9 +39,12 @@ function TimeInput({ className, onChange, value, defaultValue, timeFormat, ...pr
 						return;
 					}
 
-					inputRef.current.value = `${data.hour}:${data.minutes}`;
+					const input = inputRef.current;
+					input.value = `${data.hour}:${data.minutes}`;
 					onChangeRef.current?.({
-						target: inputRef.current,
+						currentTarget: input,
+						target: input,
+						type: "change",
 					} as React.ChangeEvent<HTMLInputElement>);
 				},
 			},
@@ -49,7 +52,7 @@ function TimeInput({ className, onChange, value, defaultValue, timeFormat, ...pr
 
 		picker.create();
 
-		return () => picker.destroy();
+		return () => picker.destroy({ keepInputValue: true });
 	}, [pickerFormat]);
 
 	return (

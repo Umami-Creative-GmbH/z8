@@ -64,6 +64,16 @@ describe("TimeInput", () => {
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:30");
+		expect(handleChange.mock.calls[0]?.[0].currentTarget.value).toBe("14:30");
+		expect(handleChange.mock.calls[0]?.[0].type).toBe("change");
+	});
+
+	it("preserves the input value when recreating the picker", () => {
+		const { rerender } = render(<TimeInput aria-label="Start time" timeFormat="24h" value="09:00" />);
+
+		rerender(<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" />);
+
+		expect(destroyMock).toHaveBeenCalledWith({ keepInputValue: true });
 	});
 
 	it("does not emit changes from manual typing", () => {
