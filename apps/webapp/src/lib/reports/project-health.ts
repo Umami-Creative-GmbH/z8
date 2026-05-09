@@ -2,8 +2,6 @@ import { DateTime } from "luxon";
 
 import type { ProjectHealthFields, ProjectSummary, ProjectBudgetHealthTotals } from "./project-types";
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 interface BuildProjectHealthFieldsParams {
 	projectName: string;
 	totalHours: number;
@@ -155,7 +153,7 @@ function buildForecastFields({
 		return { forecastSeverity: "none", forecastBudgetExhaustionDate: null, forecastMessage: null };
 	}
 
-	const rangeDays = Math.max(1, (rangeEnd.getTime() - rangeStart.getTime()) / MS_PER_DAY);
+	const rangeDays = Math.max(1, DateTime.fromJSDate(rangeEnd).diff(DateTime.fromJSDate(rangeStart), "days").days);
 	const averageDailyHours = totalHours / rangeDays;
 	const remainingBudgetHours = budgetHours - totalHours;
 	const daysUntilExhaustion = remainingBudgetHours / averageDailyHours;
@@ -187,5 +185,12 @@ function severityRank(project: ProjectSummary): number {
 }
 
 function riskDateTime(project: ProjectSummary): number {
-	return (project.deadline ?? project.forecastBudgetExhaustionDate)?.getTime() ?? Number.POSITIVE_INFINITY;
+	const riskDates = [
+		project.deadlineSeverity !== "none" ? project.deadline : null,
+		project.forecastSeverity !== "none" ? project.forecastBudgetExhaustionDate : null,
+	]
+		.filter((date): date is Date => date !== null)
+		.map((date) => date.getTime());
+
+	return riskDates.length > 0 ? Math.min(...riskDates) : Number.POSITIVE_INFINITY;
 }

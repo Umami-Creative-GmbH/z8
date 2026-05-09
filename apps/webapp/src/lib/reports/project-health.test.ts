@@ -194,4 +194,26 @@ describe("project health totals and alerts", () => {
 		expect(hasProjectHealthAlert(lowBudget)).toBe(true);
 		expect(hasProjectHealthAlert(buildSummary({ id: "healthy" }))).toBe(false);
 	});
+
+	it("sorts an earlier forecast risk before a later deadline-only warning", () => {
+		const forecastRisk = buildSummary({
+			id: "forecast-risk",
+			name: "Forecast Risk",
+			deadline: new Date("2026-05-30T00:00:00.000Z"),
+			forecastSeverity: "warning",
+			forecastBudgetExhaustionDate: new Date("2026-05-11T18:00:00.000Z"),
+		});
+		const deadlineWarning = buildSummary({
+			id: "deadline-warning",
+			name: "Deadline Warning",
+			deadline: new Date("2026-05-16T00:00:00.000Z"),
+			deadlineSeverity: "warning",
+			deadlineAlertType: "deadline_7d",
+		});
+
+		expect(sortProjectHealthAlerts([deadlineWarning, forecastRisk]).map((project) => project.id)).toEqual([
+			"forecast-risk",
+			"deadline-warning",
+		]);
+	});
 });

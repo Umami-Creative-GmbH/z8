@@ -13,6 +13,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
 import type {
 	ProjectDetailedReport,
 	ProjectPortfolioData,
@@ -116,6 +117,7 @@ export async function getProjectsOverview(
 				const projectSummaries: ProjectSummary[] = yield* _(
 					dbService.query("getProjectStats", async () => {
 						const summaries: ProjectSummary[] = [];
+						const now = new Date();
 
 						for (const p of projects) {
 							// Get total hours and unique employees for this project in the date range
@@ -144,10 +146,19 @@ export async function getProjectsOverview(
 							// Calculate days until deadline
 							let daysUntilDeadline: number | null = null;
 							if (p.deadline) {
-								const now = new Date();
 								const diffMs = p.deadline.getTime() - now.getTime();
 								daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 							}
+
+							const healthFields = buildProjectHealthFields({
+								projectName: p.name,
+								budgetHours,
+								totalHours,
+								deadline: p.deadline,
+								now,
+								rangeStart: startDate,
+								rangeEnd: endDate,
+							});
 
 							summaries.push({
 								id: p.id,
@@ -157,6 +168,7 @@ export async function getProjectsOverview(
 								color: p.color,
 								budgetHours,
 								deadline: p.deadline,
+								...healthFields,
 								totalHours,
 								totalMinutes,
 								percentBudgetUsed,
@@ -171,6 +183,7 @@ export async function getProjectsOverview(
 				);
 
 				// Calculate totals
+				const budgetHealth = buildProjectHealthTotals(projectSummaries);
 				const totals = {
 					totalProjects: projectSummaries.length,
 					activeProjects: projectSummaries.filter((p) => p.status === "active").length,
@@ -181,6 +194,7 @@ export async function getProjectsOverview(
 					projectsOverdue: projectSummaries.filter(
 						(p) => p.daysUntilDeadline !== null && p.daysUntilDeadline < 0,
 					).length,
+					budgetHealth,
 				};
 
 				span.setAttribute("projects.count", totals.totalProjects);
