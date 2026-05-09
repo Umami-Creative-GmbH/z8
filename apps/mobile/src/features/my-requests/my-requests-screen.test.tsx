@@ -88,6 +88,10 @@ describe("MyRequestsScreen", () => {
     expect(html).toContain("Required Fixes");
     expect(html).toContain("Recent Decisions");
     expect(html).toContain("Total");
+    expect(html).toMatch(/<span[^>]*>1<\/span><span[^>]*>Pending<\/span>/);
+    expect(html).toMatch(/<span[^>]*>1<\/span><span[^>]*>Required Fixes<\/span>/);
+    expect(html).toMatch(/<span[^>]*>2<\/span><span[^>]*>Recent Decisions<\/span>/);
+    expect(html).toMatch(/<span[^>]*>3<\/span><span[^>]*>Total<\/span>/);
     expect(html).toContain("Some requests could not be loaded");
     expect(html).toContain("Needs attention");
     expect(html).toContain("In review");
