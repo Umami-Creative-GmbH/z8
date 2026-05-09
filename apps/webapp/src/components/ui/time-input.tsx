@@ -3,13 +3,21 @@
 import type * as React from "react";
 import { useEffect, useRef } from "react";
 import { TimepickerUI } from "timepicker-ui";
+import {
+	normalizeTimeFormat,
+	timeFormatToPickerType,
+	type TimeFormat,
+} from "@/lib/user-preferences/time-format";
 import { cn } from "@/lib/utils";
 
-type TimeInputProps = Omit<React.ComponentProps<"input">, "type">;
+type TimeInputProps = Omit<React.ComponentProps<"input">, "readOnly" | "type"> & {
+	timeFormat?: TimeFormat | string | null;
+};
 
-function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeInputProps) {
+function TimeInput({ className, onChange, value, defaultValue, timeFormat, ...props }: TimeInputProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const onChangeRef = useRef(onChange);
+	const pickerFormat = normalizeTimeFormat(timeFormat);
 
 	onChangeRef.current = onChange;
 
@@ -20,10 +28,10 @@ function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeI
 
 		const picker = new TimepickerUI(inputRef.current, {
 			clock: {
-				type: "24h",
+				type: timeFormatToPickerType(pickerFormat),
 			},
 			ui: {
-				editable: true,
+				editable: false,
 			},
 			callbacks: {
 				onConfirm: (data) => {
@@ -42,7 +50,7 @@ function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeI
 		picker.create();
 
 		return () => picker.destroy();
-	}, []);
+	}, [pickerFormat]);
 
 	return (
 		<input
@@ -52,13 +60,13 @@ function TimeInput({ className, onChange, value, defaultValue, ...props }: TimeI
 				"aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
 				className,
 			)}
+			{...props}
 			data-slot="time-input"
 			defaultValue={defaultValue}
-			onChange={onChange}
+			readOnly
 			ref={inputRef}
 			type="text"
 			value={value}
-			{...props}
 		/>
 	);
 }
