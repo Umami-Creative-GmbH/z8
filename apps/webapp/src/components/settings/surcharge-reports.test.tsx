@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SurchargeReports } from "./surcharge-reports";
 
 const getSurchargeCalculationsForPeriodMock = vi.fn();
@@ -48,6 +48,10 @@ const calculation = {
 };
 
 describe("SurchargeReports", () => {
+	beforeEach(() => {
+		getSurchargeCalculationsForPeriodMock.mockReset();
+	});
+
 	it("loads calculations and renders summary totals", async () => {
 		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({
 			success: true,
@@ -109,6 +113,7 @@ describe("SurchargeReports", () => {
 		render(<SurchargeReports organizationId="org-1" />);
 
 		await screen.findByText("No surcharge calculations found");
+		expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1);
 		getSurchargeCalculationsForPeriodMock.mockClear();
 
 		const form = screen.getByTestId("surcharge-report-filters");
@@ -121,8 +126,9 @@ describe("SurchargeReports", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
 
 		expect(await screen.findByText("Start date must be on or before end date.")).toBeInTheDocument();
+		await Promise.resolve();
 		await waitFor(() => {
-			expect(getSurchargeCalculationsForPeriodMock).not.toHaveBeenCalled();
+			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(0);
 		});
 	});
 });
