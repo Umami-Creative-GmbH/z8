@@ -38,7 +38,8 @@ export function parseCookieConsentScript(script: string | null): CookieConsentSc
 		return null;
 	}
 
-	const scriptTagMatch = normalizedScript.match(/^\s*<script\b([^>]*)>([\s\S]*)<\/script>\s*$/i);
+	const scriptSnippet = stripSurroundingHtmlComments(normalizedScript);
+	const scriptTagMatch = scriptSnippet.match(/^\s*<script\b([^>]*)>([\s\S]*)<\/script>\s*$/i);
 	if (!scriptTagMatch) {
 		return { content: normalizedScript };
 	}
@@ -61,6 +62,13 @@ export function parseCookieConsentScript(script: string | null): CookieConsentSc
 	}
 
 	return config;
+}
+
+function stripSurroundingHtmlComments(script: string): string {
+	return script
+		.replace(/^\s*(?:<!--[\s\S]*?-->\s*)+/g, "")
+		.replace(/(?:\s*<!--[\s\S]*?-->)+\s*$/g, "")
+		.trim();
 }
 
 function parseScriptAttributes(attributes: string): Record<string, string> {

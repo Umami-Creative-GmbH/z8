@@ -86,4 +86,16 @@ describe("parseCookieConsentScript", () => {
 			"data-cbid": "abc",
 		});
 	});
+
+	it("extracts external script tags surrounded by HTML comments", () => {
+		expect(
+			parseCookieConsentScript(`<!-- Example: CookieBot -->
+<script id="Cookiebot" src="https://consent.example/uc.js" data-cbid="abc" async></script>`),
+		).toEqual({
+			id: "Cookiebot",
+			src: "https://consent.example/uc.js",
+			async: true,
+			"data-cbid": "abc",
+		});
+	});
 });
