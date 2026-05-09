@@ -81,26 +81,26 @@ export function Options() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" aria-hidden="true" />
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-950" role="status">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" aria-hidden="true" />
         <span className="sr-only">Loading…</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-slate-100 py-12 text-slate-950">
       <div className="max-w-lg mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
               <span className="text-white text-lg font-bold">Z8</span>
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">
+              <h1 className="text-lg font-semibold text-slate-950">
                 Z8 Time Tracker
               </h1>
-              <p className="text-sm text-gray-500">Extension Settings</p>
+              <p className="text-sm text-slate-500">Extension Settings</p>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export function Options() {
             <div>
               <label
                 htmlFor="webapp-url"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
+                className="block text-sm font-medium text-slate-700 mb-1.5"
               >
                 Webapp URL
               </label>
@@ -121,23 +121,31 @@ export function Options() {
                 onChange={(e) => setWebappUrl(e.target.value)}
                 placeholder="https://app.example.com"
                 autoComplete="url"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                aria-invalid={error ? "true" : undefined}
+                aria-describedby="webapp-url-help webapp-url-error"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1.5">
+              <p id="webapp-url-help" className="text-xs text-slate-500 mt-1.5">
                 Enter the URL of your Z8 webapp installation.
               </p>
-              {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+              <p
+                id="webapp-url-error"
+                className="text-xs text-red-500 mt-1"
+                aria-live="polite"
+              >
+                {error}
+              </p>
             </div>
 
             {/* Notifications Section */}
-            <div className="border-t border-gray-100 pt-6">
+            <div className="border-t border-slate-100 pt-6">
               <div className="flex items-center gap-2 mb-4">
                 {notificationsEnabled ? (
-                  <Bell className="w-4 h-4 text-emerald-500" aria-hidden="true" />
+                  <Bell className="w-4 h-4 text-blue-600" aria-hidden="true" />
                 ) : (
-                  <BellOff className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                  <BellOff className="w-4 h-4 text-slate-400" aria-hidden="true" />
                 )}
-                <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                <h2 className="text-sm font-medium text-slate-950">Notifications</h2>
               </div>
 
               <div className="space-y-3">
@@ -146,9 +154,9 @@ export function Options() {
                     type="checkbox"
                     checked={notificationsEnabled}
                     onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
                   />
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-slate-700">
                     Enable notifications
                   </span>
                 </label>
@@ -160,9 +168,9 @@ export function Options() {
                         type="checkbox"
                         checked={notifyOnClockIn}
                         onChange={(e) => setNotifyOnClockIn(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
                       />
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-slate-600">
                         Notify on clock in
                       </span>
                     </label>
@@ -172,9 +180,9 @@ export function Options() {
                         type="checkbox"
                         checked={notifyOnClockOut}
                         onChange={(e) => setNotifyOnClockOut(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
                       />
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-slate-600">
                         Notify on clock out
                       </span>
                     </label>
@@ -182,7 +190,7 @@ export function Options() {
                     <button
                       type="button"
                       onClick={handleTestNotification}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 mt-1"
+                      className="text-xs text-blue-600 hover:text-blue-700 mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 rounded"
                     >
                       Send test notification
                     </button>
@@ -196,7 +204,7 @@ export function Options() {
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -207,20 +215,23 @@ export function Options() {
               </button>
               <button
                 onClick={handleTest}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 <span>Test</span>
                 <ExternalLink className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
+            <p className="sr-only" aria-live="polite">
+              {saved ? "Settings saved." : ""}
+            </p>
           </div>
 
           {/* Instructions */}
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <h2 className="text-sm font-medium text-slate-950 mb-2">
               How to use
-            </h3>
-            <ol className="text-xs text-gray-600 space-y-1.5 list-decimal list-inside">
+            </h2>
+            <ol className="text-xs text-slate-600 space-y-1.5 list-decimal list-inside">
               <li>Enter your Z8 webapp URL above and save</li>
               <li>Sign in to the webapp in your browser</li>
               <li>Click the extension icon to clock in/out</li>
@@ -228,18 +239,18 @@ export function Options() {
           </div>
 
           {/* Offline Support Info */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <h2 className="text-sm font-medium text-slate-950 mb-2">
               Offline Support
-            </h3>
-            <p className="text-xs text-gray-600">
+            </h2>
+            <p className="text-xs text-slate-600">
               If you're offline, you can still clock in and out. Actions will be
               queued and automatically synced when you're back online.
             </p>
           </div>
         </div>
 
-        <p className="text-xs text-center text-gray-400 mt-4">
+        <p className="text-xs text-center text-slate-400 mt-4">
           Z8 Time Tracker Extension v1.0.1
         </p>
       </div>

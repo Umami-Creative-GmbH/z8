@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatElapsedTime } from "@/lib/time";
 
 export function useTimer(startTime: string | null) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -25,13 +26,4 @@ export function useTimer(startTime: string | null) {
   return elapsedSeconds;
 }
 
-// Hoisted outside component - no recreation per call
-const pad = (n: number) => n.toString().padStart(2, "0");
-
-export function formatTime(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-}
+export const formatTime = formatElapsedTime;

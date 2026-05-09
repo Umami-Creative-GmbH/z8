@@ -11,6 +11,7 @@ import { NoEmployee } from "./components/NoEmployee";
 import { ErrorState } from "./components/ErrorState";
 import { Loading } from "./components/Loading";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { StatusCard } from "./components/StatusCard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,7 @@ function PopupContent() {
     isOffline,
     isNetworkError,
     queueLength,
+    lastAction,
     error,
     isClockedIn,
     hasEmployee,
@@ -57,8 +59,8 @@ function PopupContent() {
     return <ErrorState error={error} onRetry={() => refetch()} />;
   }
 
-  // When offline without any state, show a minimal error
-  if (isNetworkError && !isClockedIn && queueLength === 0) {
+  // Online connection failures without usable state still need a blocking retry state.
+  if (isNetworkError && !isOffline && !isClockedIn && queueLength === 0) {
     return (
       <>
         <OfflineBanner queueLength={queueLength} />
@@ -96,14 +98,16 @@ function PopupContent() {
       {isOffline && <OfflineBanner queueLength={queueLength} />}
 
       <div className="p-4">
+        <StatusCard
+          isClockedIn={isClockedIn}
+          isOffline={isOffline}
+          queueLength={queueLength}
+          startTime={activeWorkPeriod?.startTime}
+          lastAction={lastAction}
+        />
+
         {isClockedIn && activeWorkPeriod && (
           <Timer startTime={activeWorkPeriod.startTime} />
-        )}
-
-        {!isClockedIn && (
-          <div className="py-3 text-center text-sm text-gray-500">
-            {isOffline ? "Offline - actions will sync later" : "Ready to start working?"}
-          </div>
         )}
 
         <ClockButton
@@ -134,7 +138,7 @@ function PopupContent() {
 export function Popup() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="w-72 bg-white">
+      <div className="w-80 bg-slate-50 text-slate-950">
         <Header />
         <PopupContent />
       </div>

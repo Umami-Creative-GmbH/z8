@@ -8,6 +8,12 @@ export interface QueuedAction {
   createdAt: string;
 }
 
+export interface LastAction {
+  type: "clock_in" | "clock_out";
+  timestamp: string;
+  syncState: "synced" | "queued";
+}
+
 export interface ExtensionSettings {
   webappUrl: string;
   notificationsEnabled: boolean;
@@ -120,6 +126,37 @@ export const storage = {
       await chrome.storage.local.remove(["optimisticState"]);
     } else {
       await chrome.storage.local.set({ optimisticState: state });
+    }
+  },
+
+  async getLastAction(): Promise<LastAction | null> {
+    try {
+      const result = (await chrome.storage.local.get(["lastAction"])) as {
+        lastAction?: LastAction | null;
+      };
+      return result.lastAction || null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setLastAction(action: LastAction | null): Promise<void> {
+    if (action === null) {
+      await chrome.storage.local.remove(["lastAction"]);
+      return;
+    }
+
+    await chrome.storage.local.set({ lastAction: action });
+  },
+
+  async markLastActionSynced(action: Pick<LastAction, "type" | "timestamp">): Promise<void> {
+    const lastAction = await this.getLastAction();
+    if (
+      lastAction?.syncState === "queued" &&
+      lastAction.type === action.type &&
+      lastAction.timestamp === action.timestamp
+    ) {
+      await this.setLastAction({ ...lastAction, syncState: "synced" });
     }
   },
 };

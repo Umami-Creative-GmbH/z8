@@ -27,4 +27,4 @@ export interface ApiError {
 }
 
 // Re-export storage types
-export type { QueuedAction, ExtensionSettings } from "@/lib/storage";
+export type { QueuedAction, ExtensionSettings, LastAction } from "@/lib/storage";
