@@ -1,5 +1,10 @@
 import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { onAbsenceRequestApproved, onAbsenceRequestRejected } = vi.hoisted(() => ({
+	onAbsenceRequestApproved: vi.fn(),
+	onAbsenceRequestRejected: vi.fn(),
+}));
 
 vi.mock("@/env", () => ({
 	env: {
@@ -15,13 +20,46 @@ vi.mock("@/env", () => ({
 	},
 }));
 
+vi.mock("@/lib/app-url", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/app-url")>();
+	return {
+		...actual,
+		getOrganizationBaseUrl: vi.fn().mockResolvedValue("https://app.example.com"),
+	};
+});
+
+vi.mock("@/lib/email/render", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/email/render")>();
+	return {
+		...actual,
+		renderAbsenceRequestApproved: vi.fn().mockResolvedValue("<p>approved</p>"),
+		renderAbsenceRequestRejected: vi.fn().mockResolvedValue("<p>rejected</p>"),
+	};
+});
+
+vi.mock("@/lib/notifications/triggers", () => ({
+	onAbsenceRequestApproved,
+	onAbsenceRequestRejected,
+}));
+
+vi.mock("@/lib/queue", () => ({
+	addCalendarSyncJob: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
 	buildAbsenceApprovalPolicyContext,
 	createAbsenceApprovalWorkflow,
 	formatAbsenceDateForEmail,
 } from "@/lib/approvals/server/absence-approvals";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
+import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
+import { EmailService } from "@/lib/effect/services/email.service";
+
+beforeEach(() => {
+	onAbsenceRequestApproved.mockClear();
+	onAbsenceRequestRejected.mockClear();
+});
 
 function createPolicyResolutionDbService(policies: unknown[]) {
 	const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = [];
@@ -69,9 +107,187 @@ const absencePolicyContext = buildAbsenceApprovalPolicyContext({
 	employee: { teamId: "team-1" },
 });
 
+const absenceCurrentApprover: CurrentApprover = {
+	id: "emp-manager",
+	userId: "user-manager",
+	organizationId: "org-1",
+	user: {
+		id: "user-manager",
+		name: "Morgan Manager",
+		email: "morgan@example.com",
+		image: null,
+	},
+};
+
+function createAbsenceDecisionDbService() {
+	const db = {
+		query: {
+			approvalRequest: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: "approval-1",
+					organizationId: "org-1",
+					entityType: "absence_entry",
+					entityId: "absence-1",
+					requestedBy: "emp-requester",
+					approverId: "emp-manager",
+					status: "pending",
+				}),
+			},
+			approvalChainStageInstance: { findFirst: vi.fn().mockResolvedValue(null) },
+			absenceEntry: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: "absence-1",
+					employeeId: "emp-requester",
+					organizationId: "org-1",
+					canonicalRecordId: null,
+					startDate: "2026-05-11",
+					endDate: "2026-05-12",
+					status: "approved",
+					rejectionReason: null,
+					category: { name: "Vacation", type: "vacation", color: null },
+					employee: {
+						userId: "user-requester",
+						organizationId: "org-1",
+						user: {
+							name: "Avery Requester",
+							email: "avery@example.com",
+							image: null,
+						},
+					},
+				}),
+			},
+			holiday: { findMany: vi.fn().mockResolvedValue([]) },
+		},
+		update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn() }) }),
+		insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+		transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn(db)),
+	};
+
+	return {
+		db,
+		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+	} as unknown as ApprovalDbService;
+}
+
+function runAbsenceDecisionEffect(effect: Effect.Effect<unknown, unknown, unknown>) {
+	return Effect.runPromise(
+		effect.pipe(
+			Effect.provideService(EmailService, {
+				send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
+			}),
+			Effect.provideService(ApprovalAuditLogger, {
+				log: vi.fn(() => Effect.void),
+				logBatch: vi.fn(() => Effect.void),
+			}),
+		),
+	);
+}
+
 describe("formatAbsenceDateForEmail", () => {
 	it("formats dates for absence emails", () => {
 		expect(formatAbsenceDateForEmail(new Date("2026-03-09T00:00:00.000Z"))).toBe("Mar 9, 2026");
+	});
+});
+
+describe("absence requester decision notifications", () => {
+	it("notifies the requester after approving an absence request", async () => {
+		vi.resetModules();
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) =>
+					updateEntity(dbService, entityId, currentEmployee).pipe(
+						Effect.provideService(EmailService, {
+							send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
+						}),
+					),
+			),
+		}));
+		const { approveAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService();
+
+		await runAbsenceDecisionEffect(
+			approveAbsenceWithCurrentApproverEffect(dbService, absenceCurrentApprover, "absence-1"),
+		);
+
+		expect(onAbsenceRequestApproved).toHaveBeenCalledWith(
+			expect.objectContaining({
+				absenceId: "absence-1",
+				employeeUserId: "user-requester",
+				organizationId: "org-1",
+				categoryName: "Vacation",
+				approverName: "Morgan Manager",
+			}),
+		);
+		expect(onAbsenceRequestRejected).not.toHaveBeenCalled();
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("notifies the requester after rejecting an absence request", async () => {
+		vi.resetModules();
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) =>
+					updateEntity(dbService, entityId, currentEmployee).pipe(
+						Effect.provideService(EmailService, {
+							send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
+						}),
+					),
+			),
+		}));
+		const { rejectAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService();
+
+		await runAbsenceDecisionEffect(
+			rejectAbsenceWithCurrentApproverEffect(
+				dbService,
+				absenceCurrentApprover,
+				"absence-1",
+				"Insufficient balance",
+			),
+		);
+
+		expect(onAbsenceRequestRejected).toHaveBeenCalledWith(
+			expect.objectContaining({
+				absenceId: "absence-1",
+				employeeUserId: "user-requester",
+				organizationId: "org-1",
+				categoryName: "Vacation",
+				approverName: "Morgan Manager",
+				rejectionReason: "Insufficient balance",
+			}),
+		);
+		expect(onAbsenceRequestApproved).not.toHaveBeenCalled();
+		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 });
 
