@@ -73,6 +73,11 @@ export function ProjectHealthAlerts({ projects, onProjectSelect }: ProjectHealth
 										type="button"
 										variant="outline"
 										size="sm"
+										aria-label={t(
+											"reports.projects.healthAlerts.viewDetailsForProject",
+											"View details for {projectName}",
+											{ projectName: project.name },
+										)}
 										onClick={() => onProjectSelect(project.id)}
 										className="self-start"
 									>

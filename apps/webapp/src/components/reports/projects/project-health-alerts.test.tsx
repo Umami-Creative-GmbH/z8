@@ -109,7 +109,7 @@ describe("ProjectHealthAlerts", () => {
 		expect(screen.getByText("5d left")).toBeTruthy();
 		expect(screen.getByText(forecastMessage)).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: "View details" }));
+		fireEvent.click(screen.getByRole("button", { name: "View details for Migration Rollout" }));
 
 		expect(onProjectSelect).toHaveBeenCalledWith("migration-rollout");
 	});
