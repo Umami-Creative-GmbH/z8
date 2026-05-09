@@ -44,7 +44,13 @@ const calculation = {
 		calculatedAt: "2026-02-11T04:05:00.000Z",
 	},
 	createdAt: new Date("2026-02-11T04:05:00.000Z"),
-	employee: { id: "employee-1", firstName: "Mina", lastName: "Miller" },
+	employee: {
+		id: "employee-1",
+		firstName: "Mina",
+		lastName: "Miller",
+		name: "Mina Miller",
+		email: "mina@example.com",
+	},
 };
 
 const laterCalculation = {
@@ -52,7 +58,13 @@ const laterCalculation = {
 	id: "calc-2",
 	employeeId: "employee-2",
 	organizationId: "org-2",
-	employee: { id: "employee-2", firstName: "Nora", lastName: "Nguyen" },
+	employee: {
+		id: "employee-2",
+		firstName: "Nora",
+		lastName: "Nguyen",
+		name: "Nora Nguyen",
+		email: "nora@example.com",
+	},
 };
 
 function deferredResult(data: unknown[]) {

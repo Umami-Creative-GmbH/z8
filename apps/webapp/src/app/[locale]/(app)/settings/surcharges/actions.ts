@@ -1043,7 +1043,7 @@ export async function getSurchargeCalculationsForPeriod(
 			with: {
 				employee: {
 					columns: { id: true },
-					with: { user: { columns: { firstName: true, lastName: true } } },
+					with: { user: { columns: { firstName: true, lastName: true, name: true, email: true } } },
 				},
 			},
 			orderBy: [desc(surchargeCalculation.calculationDate)],
@@ -1055,6 +1055,8 @@ export async function getSurchargeCalculationsForPeriod(
 						id: calculation.employee.id,
 						firstName: calculation.employee.user?.firstName ?? null,
 						lastName: calculation.employee.user?.lastName ?? null,
+						name: calculation.employee.user?.name ?? null,
+						email: calculation.employee.user?.email ?? null,
 					}
 				: calculation.employee,
 		})) as SurchargeCalculationWithDetails[];

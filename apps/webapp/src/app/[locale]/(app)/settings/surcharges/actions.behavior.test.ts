@@ -502,6 +502,45 @@ describe("surcharge settings scope behavior", () => {
 		}
 	});
 
+	it("includes auth fallback names for surcharge calculation employee display", async () => {
+		const previousCalculations = mockState.surchargeCalculations;
+		mockState.surchargeCalculations = [
+			{
+				...previousCalculations[0],
+				employee: {
+					id: "employee-managed",
+					user: {
+						firstName: " ",
+						lastName: "",
+						name: "Managed Fallback",
+						email: "managed@example.com",
+					},
+				},
+			},
+		];
+
+		try {
+			const result = await getSurchargeCalculationsForPeriod(
+				"org-1",
+				new Date("2026-02-01T00:00:00.000Z"),
+				new Date("2026-02-28T23:59:59.999Z"),
+			);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data[0]?.employee).toMatchObject({
+					id: "employee-managed",
+					firstName: " ",
+					lastName: "",
+					name: "Managed Fallback",
+					email: "managed@example.com",
+				});
+			}
+		} finally {
+			mockState.surchargeCalculations = previousCalculations;
+		}
+	});
+
 	it("lets managers read only surcharge assignments inside their visible team and employee scope", async () => {
 		const result = await getSurchargeAssignments("org-1");
 
