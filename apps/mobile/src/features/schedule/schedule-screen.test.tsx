@@ -15,6 +15,8 @@ vi.mock("react-native", () => ({
       },
       children,
     ),
+  ScrollView: ({ children, ...props }: any) =>
+    React.createElement("main", { ...props, "data-scroll-view": true }, children),
   StyleSheet: {
     create: <T,>(styles: T) => styles,
   },
@@ -60,6 +62,18 @@ const scheduleData: MobileScheduleData = {
 };
 
 describe("ScheduleScreen", () => {
+  it("renders content inside a scroll view", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ScheduleScreen, {
+        schedule: scheduleData,
+        onRequestAbsence: vi.fn(),
+        onViewRequests: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("data-scroll-view=\"true\"");
+  });
+
   it("renders upcoming shifts and the usual schedule", () => {
     const html = renderToStaticMarkup(
       React.createElement(ScheduleScreen, {

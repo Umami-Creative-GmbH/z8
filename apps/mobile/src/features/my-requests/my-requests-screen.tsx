@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DateTime } from "luxon";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import type { MobileMyRequestsData, MobileRequestItem, MobileRequestSourceType, MobileRequestStatus } from "./use-my-requests-query";
 
@@ -58,7 +58,7 @@ export function MyRequestsScreen({ requests }: MyRequestsScreenProps) {
   const recentlyDecidedRequests = filteredRequests.filter(isRecentlyDecided);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
       <View style={styles.headerSurface}>
         <Text style={styles.eyebrow}>Requests</Text>
         <Text style={styles.title}>My Requests</Text>
@@ -125,7 +125,7 @@ export function MyRequestsScreen({ requests }: MyRequestsScreenProps) {
           <RequestSection emptyLabel="No requests match these filters" requests={filteredRequests} title="All requests" />
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -263,9 +263,11 @@ function getStatusBadgeStyle(status: MobileRequestStatus) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  content: {
     padding: 20,
     gap: 16,
-    backgroundColor: "#f8fafc",
   },
   headerSurface: {
     padding: 18,

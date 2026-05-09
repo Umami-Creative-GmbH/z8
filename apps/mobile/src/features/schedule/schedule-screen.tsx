@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import type { MobileEffectiveScheduleDay, MobileScheduleData, MobileScheduleShift } from "./use-schedule-query";
 
@@ -20,7 +20,7 @@ export function ScheduleScreen({ schedule, onRequestAbsence, onViewRequests }: S
   const nextShift = schedule.shifts[0] ?? null;
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
       <View style={styles.headerSurface}>
         <Text style={styles.eyebrow}>Schedule</Text>
         <Text style={styles.title}>{nextShift ? `Next shift: ${formatShiftRange(nextShift)}` : "No upcoming shifts"}</Text>
@@ -78,7 +78,7 @@ export function ScheduleScreen({ schedule, onRequestAbsence, onViewRequests }: S
           <Text style={styles.emptyState}>No usual schedule configured</Text>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -159,9 +159,11 @@ function formatHomeOfficeDays(days: number | null) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  content: {
     padding: 20,
     gap: 16,
-    backgroundColor: "#f8fafc",
   },
   headerSurface: {
     padding: 18,

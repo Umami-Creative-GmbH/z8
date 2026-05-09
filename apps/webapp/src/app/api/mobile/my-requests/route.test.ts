@@ -44,6 +44,21 @@ describe("GET /api/mobile/my-requests", () => {
 		mockState.getSelfServiceRequests.mockResolvedValue({
 			items: [
 				{
+					id: "absence:absence-pending-1",
+					sourceType: "absence",
+					sourceId: "absence-pending-1",
+					organizationId: "org-1",
+					employeeId: "emp-1",
+					status: "pending",
+					submittedAt: new Date("2026-04-09T08:30:00.000Z"),
+					resolvedAt: null,
+					title: "Pending vacation",
+					subtitle: "2026-04-20 to 2026-04-21",
+					decisionReason: null,
+					availableActions: ["cancel", "view"],
+					sourceHref: "/absences",
+				},
+				{
 					id: "absence:absence-1",
 					sourceType: "absence",
 					sourceId: "absence-1",
@@ -81,6 +96,21 @@ describe("GET /api/mobile/my-requests", () => {
 		expect(mockState.getSelfServiceRequests).toHaveBeenCalledOnce();
 		expect(await response.json()).toEqual({
 			items: [
+				{
+					id: "absence:absence-pending-1",
+					sourceType: "absence",
+					sourceId: "absence-pending-1",
+					organizationId: "org-1",
+					employeeId: "emp-1",
+					status: "pending",
+					submittedAt: "2026-04-09T08:30:00.000Z",
+					resolvedAt: null,
+					title: "Pending vacation",
+					subtitle: "2026-04-20 to 2026-04-21",
+					decisionReason: null,
+					availableActions: ["view"],
+					sourceHref: "/absences",
+				},
 				{
 					id: "absence:absence-1",
 					sourceType: "absence",

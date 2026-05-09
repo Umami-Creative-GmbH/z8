@@ -21,7 +21,10 @@ export async function GET(request: Request) {
 		});
 
 		return NextResponse.json({
-			items: result.items,
+			items: result.items.map((item) => ({
+				...item,
+				availableActions: item.availableActions.filter((action) => action !== "cancel"),
+			})),
 			counts: result.counts,
 			sourceErrors: result.sourceErrors,
 		});

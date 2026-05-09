@@ -17,6 +17,8 @@ vi.mock("react-native", () => ({
       },
       children,
     ),
+  ScrollView: ({ children, ...props }: any) =>
+    React.createElement("main", { ...props, "data-scroll-view": true }, children),
   StyleSheet: {
     create: <T,>(styles: T) => styles,
   },
@@ -94,6 +96,12 @@ describe("MyRequestsScreen", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("renders content inside a scroll view", () => {
+    const html = renderToStaticMarkup(React.createElement(MyRequestsScreen, { requests: requestsData }));
+
+    expect(html).toContain("data-scroll-view=\"true\"");
   });
 
   it("renders summary counts, source warning, grouped sections, and decision reason", () => {
