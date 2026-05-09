@@ -120,6 +120,7 @@ describe("ProfileForm", () => {
 			firstName: "Employee",
 			lastName: "Record",
 			gender: "female",
+			pronouns: "she/her",
 			birthday: "2020-01-02T00:00:00.000Z",
 		});
 		updateProfileDetailsMock.mockResolvedValue({ success: true, data: undefined });
@@ -166,6 +167,7 @@ describe("ProfileForm", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				gender: "female",
+				pronouns: "she/her",
 				birthday: new Date("2020-01-02T00:00:00.000Z"),
 				image: "/avatar.png",
 			});
@@ -195,9 +197,24 @@ describe("ProfileForm", () => {
 				firstName: "Auth",
 				lastName: "User",
 				gender: null,
+				pronouns: null,
 				birthday: null,
 				image: "/avatar.png",
 			});
+		});
+	});
+
+	it("submits custom pronouns through updateProfileDetails", async () => {
+		renderProfileForm();
+
+		const pronounsInput = await screen.findByLabelText("Custom pronouns");
+		fireEvent.change(pronounsInput, { target: { value: "xe/xem" } });
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		await waitFor(() => {
+			expect(updateProfileDetailsMock).toHaveBeenCalledWith(
+				expect.objectContaining({ pronouns: "xe/xem" }),
+			);
 		});
 	});
 

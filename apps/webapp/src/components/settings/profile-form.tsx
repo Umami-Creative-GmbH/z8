@@ -28,6 +28,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	fieldHasError,
@@ -43,6 +50,9 @@ import { queryKeys } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { validateStructuredProfileNameField } from "@/lib/validations/profile";
 import { useRouter } from "@/navigation";
+
+const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"] as const;
+const CUSTOM_PRONOUN_VALUE = "__custom__";
 
 interface ProfileFormProps {
 	user: {
@@ -60,6 +70,7 @@ type ProfileFormValues = {
 	firstName: string;
 	lastName: string;
 	gender: "" | "male" | "female" | "other";
+	pronouns: string;
 	birthday: Date | null;
 };
 
@@ -73,6 +84,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		firstName: user.firstName || "",
 		lastName: user.lastName || "",
 		gender: "",
+		pronouns: "",
 		birthday: null,
 	};
 
@@ -92,6 +104,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 					firstName: value.firstName,
 					lastName: value.lastName,
 					gender: value.gender || null,
+					pronouns: value.pronouns || null,
 					birthday: value.birthday,
 					image: value.image || null,
 				});
@@ -197,6 +210,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			form.setFieldValue("firstName", emp?.firstName || user.firstName || "");
 			form.setFieldValue("lastName", emp?.lastName || user.lastName || "");
 			form.setFieldValue("gender", (emp?.gender as ProfileFormValues["gender"] | null) || "");
+			form.setFieldValue("pronouns", emp?.pronouns || "");
 			form.setFieldValue("birthday", emp?.birthday ? new Date(emp.birthday) : null);
 			setIsInitialLoading(false);
 		}
@@ -583,6 +597,74 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										</button>
 									</div>
 								</div>
+
+								<form.Field name="pronouns">
+									{(field) => {
+										const value = field.state.value;
+										const isPreset = PRONOUN_PRESETS.includes(
+											value as (typeof PRONOUN_PRESETS)[number],
+										);
+										const selectValue = isPreset ? value : "";
+										const hasError = fieldHasError(field);
+										const label = t("settings.profile.pronouns", "Pronouns");
+										const customLabel = t("settings.profile.pronouns.custom", "Custom pronouns");
+
+										return (
+											<TFormItem>
+												<div
+													className={
+														hasError ? "text-sm font-medium text-destructive" : "text-sm font-medium"
+													}
+												>
+													{label}
+												</div>
+												<Select
+													value={selectValue}
+													disabled={isSubmitting}
+													onValueChange={(nextValue) => {
+														field.handleChange(nextValue === CUSTOM_PRONOUN_VALUE ? "" : nextValue);
+													}}
+												>
+													<TFormControl hasError={hasError}>
+														<SelectTrigger aria-label={`${label} presets`}>
+															<SelectValue
+																placeholder={t(
+																	"settings.profile.pronouns.placeholder",
+																	"Select pronouns",
+																)}
+															/>
+														</SelectTrigger>
+													</TFormControl>
+													<SelectContent>
+														<SelectItem value="she/her">she/her</SelectItem>
+														<SelectItem value="he/him">he/him</SelectItem>
+														<SelectItem value="they/them">they/them</SelectItem>
+														<SelectItem value={CUSTOM_PRONOUN_VALUE}>{customLabel}</SelectItem>
+													</SelectContent>
+												</Select>
+												<div className="space-y-2">
+													<Label htmlFor="pronouns-custom" className="text-xs text-muted-foreground">
+														{customLabel}
+													</Label>
+													<Input
+														id="pronouns-custom"
+														name="pronouns"
+														autoComplete="off"
+														value={value}
+														onChange={(event) => field.handleChange(event.target.value)}
+														onBlur={field.handleBlur}
+														placeholder={t(
+															"settings.profile.pronouns.customPlaceholder",
+															"Enter pronouns",
+														)}
+														disabled={isSubmitting}
+													/>
+												</div>
+												<TFormMessage field={field} />
+											</TFormItem>
+										);
+									}}
+								</form.Field>
 
 								{/* Birthday */}
 								<div className="space-y-2">

@@ -37,6 +37,7 @@ type StructuredProfileDetailsInput = {
 	firstName: string;
 	lastName: string;
 	gender?: "male" | "female" | "other" | null;
+	pronouns?: string | null;
 	birthday?: Date | null;
 	image?: string | null;
 };
@@ -145,6 +146,7 @@ function syncActiveEmployeeProfile(
 						firstName: trimStructuredNamePart(data.firstName) ?? null,
 						lastName: trimStructuredNamePart(data.lastName) ?? null,
 						gender: data.gender ?? null,
+						pronouns: data.pronouns ?? null,
 						birthday: data.birthday ?? null,
 					})
 					.where(
@@ -165,6 +167,7 @@ export async function updateProfileDetails(data: {
 	firstName: string;
 	lastName: string;
 	gender?: "male" | "female" | "other" | null;
+	pronouns?: string | null;
 	birthday?: Date | null;
 	image?: string | null;
 }): Promise<ServerActionResult<void>> {
