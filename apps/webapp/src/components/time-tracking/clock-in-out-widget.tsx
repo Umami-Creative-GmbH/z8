@@ -15,6 +15,7 @@ import {
 import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
 import { useClockInOutWidget } from "@/components/time-tracking/use-clock-in-out-widget";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -25,9 +26,10 @@ interface ActiveWorkPeriodData {
 interface Props {
 	activeWorkPeriod: ActiveWorkPeriodData | null;
 	employeeName: string;
+	timeFormat: TimeFormat;
 }
 
-export function ClockInOutWidget({ activeWorkPeriod, employeeName }: Props) {
+export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
 
 	return (
@@ -48,6 +50,7 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName }: Props) {
 						elapsedSeconds={widget.elapsedSeconds}
 						startTime={widget.activeWorkPeriod.startTime}
 						t={widget.t}
+						timeFormat={timeFormat}
 					/>
 				) : null}
 

@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { NotificationBell } from "@/components/notifications";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -9,6 +10,7 @@ import { usePathname } from "@/navigation";
 
 export function SiteHeader() {
 	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
 	const pathname = usePathname();
 
 	// Map routes to title translation keys
@@ -58,7 +60,7 @@ export function SiteHeader() {
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
 					<NotificationBell />
-					<TimeClockPopover />
+					<TimeClockPopover timeFormat={timeFormat} />
 				</div>
 			</div>
 		</header>
