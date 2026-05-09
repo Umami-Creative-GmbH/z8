@@ -46,7 +46,7 @@ export interface EmailTemplateDefinition<
 }
 
 const appUrl = "https://app.z8-time.app";
-const approvalUrl = `${appUrl}/approvals`;
+const approvalUrl = `${appUrl}/approvals/inbox`;
 
 const variableExamples: Record<string, string> = {
 	absenceType: "Vacation",

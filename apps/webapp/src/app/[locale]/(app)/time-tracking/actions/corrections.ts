@@ -555,7 +555,7 @@ export async function requestTimeCorrectionEffect(
 							})
 						: "—",
 					reason: data.reason,
-					approvalUrl: `${appUrl}/approvals`,
+					approvalUrl: `${appUrl}/approvals/inbox`,
 				}),
 			),
 		);

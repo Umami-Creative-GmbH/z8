@@ -382,7 +382,7 @@ function renderApprovalEmails(params: {
 						absenceType: categoryName,
 						days: businessDays,
 						notes: data.notes || undefined,
-						approvalUrl: `${appUrl}/approvals`,
+						approvalUrl: `${appUrl}/approvals/inbox`,
 					}),
 				),
 			]),

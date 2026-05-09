@@ -47,6 +47,7 @@ export function buildTravelExpenseApprovalPolicyContext(claim: {
 interface TravelExpenseNotificationContext {
 	id: string;
 	organizationId: string;
+	status: "draft" | "submitted" | "approved" | "rejected";
 	destinationCity: string | null;
 	calculatedAmount: string;
 	calculatedCurrency: string;
@@ -255,6 +256,10 @@ export function notifyTravelExpenseRequesterAfterDecision(
 	reason?: string,
 ) {
 	return loadTravelExpenseNotificationContext(dbService, claimId, currentEmployee.organizationId).pipe(
+		Effect.filterOrElse(
+			(claim) => claim.status === (action === "approve" ? "approved" : "rejected"),
+			() => undefined,
+		),
 		Effect.flatMap((claim) =>
 			Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, reason)),
 		),

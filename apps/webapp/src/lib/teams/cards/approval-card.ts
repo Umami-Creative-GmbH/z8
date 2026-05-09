@@ -123,7 +123,7 @@ export function buildApprovalCard(
 			{
 				type: "Action.OpenUrl",
 				title: "View in Z8",
-				url: `${getDefaultAppBaseUrl()}/approvals/${data.approvalId}`,
+				url: `${getDefaultAppBaseUrl()}/approvals/inbox`,
 			},
 		],
 	};
