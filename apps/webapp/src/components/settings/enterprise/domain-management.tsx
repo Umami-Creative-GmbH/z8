@@ -244,6 +244,18 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 									{domain.authConfig.passkeyEnabled && <Badge variant="outline">Passkey</Badge>}
 								</div>
 							</div>
+
+							<div className="p-4 bg-muted/50 rounded-lg">
+								<p className="text-sm font-medium mb-2">Domain Page Settings</p>
+								<div className="flex flex-wrap gap-2">
+									<Badge variant={domain.authConfig.turnstileSiteKey ? "outline" : "secondary"}>
+										Turnstile {domain.authConfig.turnstileSiteKey ? "configured" : "not configured"}
+									</Badge>
+									<Badge variant={domain.authConfig.cookieConsentScript ? "outline" : "secondary"}>
+										Cookie consent {domain.authConfig.cookieConsentScript ? "configured" : "not configured"}
+									</Badge>
+								</div>
+							</div>
 						</div>
 					)}
 				</CardContent>
