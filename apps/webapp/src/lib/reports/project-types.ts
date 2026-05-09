@@ -4,6 +4,34 @@
 
 import type { DateRange, PeriodPreset } from "./types";
 
+export type ProjectHealthSeverity = "none" | "warning" | "critical";
+
+export type ProjectBudgetAlertType = "budget_70" | "budget_90" | "budget_100";
+
+export type ProjectDeadlineAlertType =
+	| "deadline_14d"
+	| "deadline_7d"
+	| "deadline_1d"
+	| "deadline_today"
+	| "deadline_overdue";
+
+export interface ProjectHealthFields {
+	budgetSeverity: ProjectHealthSeverity;
+	budgetAlertType: ProjectBudgetAlertType | null;
+	deadlineSeverity: ProjectHealthSeverity;
+	deadlineAlertType: ProjectDeadlineAlertType | null;
+	forecastSeverity: ProjectHealthSeverity;
+	forecastBudgetExhaustionDate: Date | null;
+	forecastMessage: string | null;
+}
+
+export interface ProjectBudgetHealthTotals {
+	projectsAtOrAbove70Budget: number;
+	projectsAtOrAbove90Budget: number;
+	projectsOverBudget: number;
+	projectsForecastAtRisk: number;
+}
+
 export interface ProjectInfo {
 	id: string;
 	name: string;
@@ -13,8 +41,7 @@ export interface ProjectInfo {
 	budgetHours: number | null;
 	deadline: Date | null;
 }
-
-export interface ProjectSummary extends ProjectInfo {
+export interface ProjectSummary extends ProjectInfo, ProjectHealthFields {
 	totalHours: number;
 	totalMinutes: number;
 	percentBudgetUsed: number | null;
@@ -77,6 +104,7 @@ export interface ProjectPortfolioData {
 		totalHours: number;
 		projectsOverBudget: number;
 		projectsOverdue: number;
+		budgetHealth: ProjectBudgetHealthTotals;
 	};
 }
 

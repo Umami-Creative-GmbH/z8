@@ -13,6 +13,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
 import type {
 	ProjectDetailedReport,
 	ProjectPortfolioData,
@@ -75,8 +76,19 @@ export async function getProjectsOverview(
 					),
 				);
 
-				// Only admins and managers can view project reports
-				if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
+				const managedProjectRows = yield* _(
+					dbService.query("getManagedProjectIdsForProjectReports", async () => {
+						return await dbService.db.query.projectManager.findMany({
+							where: eq(projectManager.employeeId, currentEmployee.id),
+							columns: { projectId: true },
+						});
+					}),
+				);
+				const managedProjectIds = new Set(managedProjectRows.map((row) => row.projectId));
+				const canViewPortfolio =
+					currentEmployee.role === "admin" || currentEmployee.role === "manager" || managedProjectIds.size > 0;
+
+				if (!canViewPortfolio) {
 					return yield* _(
 						Effect.fail(
 							new AuthorizationError({
@@ -95,6 +107,7 @@ export async function getProjectsOverview(
 				const projects = yield* _(
 					dbService.query("getProjects", async () => {
 						const whereConditions = [eq(project.organizationId, organizationId)];
+						const isOrgWideReportViewer = currentEmployee.role === "admin" || currentEmployee.role === "manager";
 
 						if (statusFilter && statusFilter.length > 0) {
 							whereConditions.push(
@@ -103,6 +116,10 @@ export async function getProjectsOverview(
 									statusFilter as ("planned" | "active" | "paused" | "completed" | "archived")[],
 								),
 							);
+						}
+
+						if (!isOrgWideReportViewer) {
+							whereConditions.push(inArray(project.id, [...managedProjectIds]));
 						}
 
 						return await dbService.db.query.project.findMany({
@@ -116,6 +133,7 @@ export async function getProjectsOverview(
 				const projectSummaries: ProjectSummary[] = yield* _(
 					dbService.query("getProjectStats", async () => {
 						const summaries: ProjectSummary[] = [];
+						const now = new Date();
 
 						for (const p of projects) {
 							// Get total hours and unique employees for this project in the date range
@@ -136,18 +154,36 @@ export async function getProjectsOverview(
 									),
 								);
 
+							const cumulativeStats = await dbService.db
+								.select({
+									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+								})
+								.from(workPeriod)
+								.where(eq(workPeriod.projectId, p.id));
+
 							const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
 							const totalHours = totalMinutes / 60;
+							const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
 							const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
-							const percentBudgetUsed = budgetHours ? (totalHours / budgetHours) * 100 : null;
+							const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null;
 
 							// Calculate days until deadline
 							let daysUntilDeadline: number | null = null;
 							if (p.deadline) {
-								const now = new Date();
 								const diffMs = p.deadline.getTime() - now.getTime();
 								daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 							}
+
+							const healthFields = buildProjectHealthFields({
+								projectName: p.name,
+								budgetHours,
+								rangeHours: totalHours,
+								cumulativeHours,
+								deadline: p.deadline,
+								now,
+								rangeStart: startDate,
+								rangeEnd: endDate,
+							});
 
 							summaries.push({
 								id: p.id,
@@ -157,6 +193,7 @@ export async function getProjectsOverview(
 								color: p.color,
 								budgetHours,
 								deadline: p.deadline,
+								...healthFields,
 								totalHours,
 								totalMinutes,
 								percentBudgetUsed,
@@ -171,6 +208,7 @@ export async function getProjectsOverview(
 				);
 
 				// Calculate totals
+				const budgetHealth = buildProjectHealthTotals(projectSummaries);
 				const totals = {
 					totalProjects: projectSummaries.length,
 					activeProjects: projectSummaries.filter((p) => p.status === "active").length,
@@ -181,6 +219,7 @@ export async function getProjectsOverview(
 					projectsOverdue: projectSummaries.filter(
 						(p) => p.daysUntilDeadline !== null && p.daysUntilDeadline < 0,
 					).length,
+					budgetHealth,
 				};
 
 				span.setAttribute("projects.count", totals.totalProjects);
@@ -542,4 +581,26 @@ export async function getCurrentEmployeeForReports(): Promise<typeof employee.$i
 	});
 
 	return emp || null;
+}
+
+export async function getCurrentEmployeeProjectReportAccess(): Promise<{
+	employee: typeof employee.$inferSelect;
+	canViewProjectReports: boolean;
+} | null> {
+	const emp = await getCurrentEmployeeForReports();
+
+	if (!emp) {
+		return null;
+	}
+
+	if (emp.role === "admin" || emp.role === "manager") {
+		return { employee: emp, canViewProjectReports: true };
+	}
+
+	const assignedProjectManager = await db.query.projectManager.findFirst({
+		where: eq(projectManager.employeeId, emp.id),
+		columns: { projectId: true },
+	});
+
+	return { employee: emp, canViewProjectReports: Boolean(assignedProjectManager) };
 }
