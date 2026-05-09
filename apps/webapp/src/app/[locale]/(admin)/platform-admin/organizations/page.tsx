@@ -102,7 +102,7 @@ export default function OrganizationsPage() {
 	const [deleteSkipNotification, setDeleteSkipNotification] = useState(false);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 
-	const { data, isLoading } = useQuery({
+	const { data, error, isError, isLoading } = useQuery({
 		queryKey: ["admin-organizations", search, status, page],
 		queryFn: async () => {
 			const result = await listOrganizationsAction({ search, status }, page, PAGE_SIZE);
@@ -115,6 +115,7 @@ export default function OrganizationsPage() {
 	});
 
 	const organizations = data?.data ?? [];
+	const loadErrorMessage = error instanceof Error ? error.message : null;
 	const total = data?.total ?? 0;
 
 	// Debounced search with immediate status change
@@ -302,6 +303,19 @@ export default function OrganizationsPage() {
 							{LOADING_ROW_KEYS.map((key) => (
 								<Skeleton key={key} className="h-14 w-full rounded-lg" />
 							))}
+						</div>
+					) : isError ? (
+						<div className="flex items-start gap-3 p-6 text-sm">
+							<IconAlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
+							<div className="space-y-1">
+								<p className="font-medium">
+									{t(
+										"admin:admin.organizations.table.loadErrorTitle",
+										"Unable to load organizations",
+									)}
+								</p>
+								{loadErrorMessage && <p className="text-muted-foreground">{loadErrorMessage}</p>}
+							</div>
 						</div>
 					) : (
 						<Table>

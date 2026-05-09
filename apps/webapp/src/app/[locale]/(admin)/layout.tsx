@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	}
 
 	const t = await getTranslate();
+	const billingEnabled = process.env.BILLING_ENABLED === "true";
 
 	const navItems = [
 		{
@@ -47,11 +48,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 			icon: IconBuilding,
 			label: t("admin:admin.layout.nav.organizations", "Organizations"),
 		},
-		{
-			href: "/platform-admin/billing",
-			icon: IconCreditCard,
-			label: t("admin:admin.layout.nav.billing", "Billing"),
-		},
+		...(billingEnabled
+			? [
+					{
+						href: "/platform-admin/billing",
+						icon: IconCreditCard,
+						label: t("admin:admin.layout.nav.billing", "Billing"),
+					},
+				]
+			: []),
 		{
 			href: "/platform-admin/settings",
 			icon: IconSettings,
