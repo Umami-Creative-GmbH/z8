@@ -10,7 +10,7 @@ Use **pnpm** (not npm or bun).
 
 ```bash
 pnpm dev              # Start dev server
-pnpm build            # Production build
+CI=true pnpm build    # Production build (CI=true is required to pass)
 pnpm test             # Run tests (vitest)
 pnpm drizzle-kit push # Push schema to database
 ```
