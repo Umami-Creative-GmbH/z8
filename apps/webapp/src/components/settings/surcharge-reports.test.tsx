@@ -5,9 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SurchargeReports } from "./surcharge-reports";
 
 const getSurchargeCalculationsForPeriodMock = vi.fn();
+const translateMock = vi.fn((_key: string, fallback?: string) => fallback ?? _key);
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+	useTranslate: () => ({ t: translateMock }),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/surcharges/actions", () => ({
@@ -89,6 +90,7 @@ function deferredResult(data: unknown[]) {
 describe("SurchargeReports", () => {
 	beforeEach(() => {
 		getSurchargeCalculationsForPeriodMock.mockReset();
+		translateMock.mockClear();
 	});
 
 	it("loads calculations and renders summary totals", async () => {
@@ -151,6 +153,56 @@ describe("SurchargeReports", () => {
 		expect(screen.getByText("Night premium")).toBeTruthy();
 		expect(screen.getByText("time_window")).toBeTruthy();
 		expect(screen.getByText("Overlap policy: max_wins")).toBeTruthy();
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.workPeriod",
+			"Work period",
+		);
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.calculatedAt",
+			"Calculated at",
+		);
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.overlapPolicy",
+			"Overlap policy",
+		);
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.appliedRules",
+			"Applied rules",
+		);
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.qualifying",
+			"Qualifying",
+		);
+		expect(translateMock).toHaveBeenCalledWith("surcharges.reports.details.surcharge", "Surcharge");
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.percentage",
+			"Percentage",
+		);
+	});
+
+	it("translates the no applied rules detail fallback", async () => {
+		getSurchargeCalculationsForPeriodMock.mockResolvedValueOnce({
+			success: true,
+			data: [
+				{
+					...calculation,
+					calculationDetails: { ...calculation.calculationDetails, rulesApplied: [] },
+				},
+			],
+		});
+
+		render(<SurchargeReports organizationId="org-1" />);
+
+		const detailsButton = await screen.findByRole("button", {
+			name: "Show details for Mina Miller",
+		});
+		fireEvent.click(detailsButton);
+
+		expect(screen.getByText("No applied rules recorded.")).toBeTruthy();
+		expect(translateMock).toHaveBeenCalledWith(
+			"surcharges.reports.details.noAppliedRules",
+			"No applied rules recorded.",
+		);
 	});
 
 	it("validates date ranges before fetching", async () => {
@@ -265,5 +317,23 @@ describe("SurchargeReports", () => {
 
 		expect(screen.getByText("Nora Nguyen")).toBeTruthy();
 		expect(screen.queryByText("Mina Miller")).toBeNull();
+	});
+
+	it("does not render previous organization rows during an organization change", async () => {
+		getSurchargeCalculationsForPeriodMock.mockResolvedValue({
+			success: true,
+			data: [calculation],
+		});
+
+		const { rerender } = render(<SurchargeReports organizationId="org-1" />);
+
+		expect(await screen.findByText("Mina Miller")).toBeTruthy();
+
+		act(() => {
+			rerender(<SurchargeReports organizationId="org-2" />);
+		});
+
+		expect(screen.queryByText("Mina Miller")).toBeNull();
+		expect(screen.getByText("0 calculations")).toBeTruthy();
 	});
 });

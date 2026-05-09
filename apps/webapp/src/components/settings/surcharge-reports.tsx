@@ -197,7 +197,8 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		loadCalculations(appliedFilters.current);
 	}, [loadCalculations]);
 
-	const totals = rows.reduce(
+	const displayRows = loadedRowsOrganizationId.current === organizationId ? rows : [];
+	const totals = displayRows.reduce(
 		(accumulator, row) => ({
 			baseMinutes: accumulator.baseMinutes + row.baseMinutes,
 			qualifyingMinutes: accumulator.qualifyingMinutes + row.qualifyingMinutes,
@@ -315,7 +316,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					</AlertDescription>
 				</Alert>
 			) : null}
-			{rows.length >= SURCHARGE_REPORT_ROW_LIMIT ? (
+			{displayRows.length >= SURCHARGE_REPORT_ROW_LIMIT ? (
 				<Alert role="status" aria-live="polite">
 					<AlertDescription>
 						{t(
@@ -325,7 +326,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					</AlertDescription>
 				</Alert>
 			) : null}
-			{isLoading && rows.length > 0 ? (
+			{isLoading && displayRows.length > 0 ? (
 				<div role="status" aria-live="polite" className="sr-only">
 					{t("surcharges.reports.loading", "Loading calculations…")}
 				</div>
@@ -334,7 +335,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			<div className="grid gap-4 md:grid-cols-4">
 				<SummaryCard
 					label={t("surcharges.reports.summary.calculations", "Calculations")}
-					value={`${rows.length} calculation${rows.length === 1 ? "" : "s"}`}
+					value={`${displayRows.length} calculation${displayRows.length === 1 ? "" : "s"}`}
 				/>
 				<SummaryCard
 					label={t("surcharges.reports.summary.baseHours", "Base hours")}
@@ -352,7 +353,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 			<Card>
 				<CardContent>
-					{isLoading && rows.length === 0 ? (
+					{isLoading && displayRows.length === 0 ? (
 						<div
 							role="status"
 							aria-live="polite"
@@ -360,7 +361,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 						>
 							{t("surcharges.reports.loading", "Loading calculations…")}
 						</div>
-					) : rows.length === 0 ? (
+					) : displayRows.length === 0 ? (
 						<Empty>
 							<EmptyHeader>
 								<EmptyMedia variant="icon">
@@ -396,7 +397,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{rows.map((calculation) => {
+								{displayRows.map((calculation) => {
 									const employeeName = getEmployeeName(calculation);
 									const isExpanded = expandedId === calculation.id;
 									const detailsId = `surcharge-calculation-${calculation.id}-details`;
@@ -467,6 +468,7 @@ function CalculationDetails({
 	calculation: SurchargeCalculationWithDetails;
 	detailsId: string;
 }) {
+	const { t } = useTranslate();
 	const details = calculation.calculationDetails;
 
 	return (
@@ -476,7 +478,9 @@ function CalculationDetails({
 				<div className="grid gap-4 py-2 text-sm">
 					<div className="grid gap-2 md:grid-cols-3">
 						<div>
-							<div className="font-medium">Work period</div>
+							<div className="font-medium">
+								{t("surcharges.reports.details.workPeriod", "Work period")}
+							</div>
 							<div className="text-muted-foreground">
 								{details
 									? `${formatTimestamp(details.workPeriodStartTime)} - ${formatTimestamp(details.workPeriodEndTime)}`
@@ -484,18 +488,25 @@ function CalculationDetails({
 							</div>
 						</div>
 						<div>
-							<div className="font-medium">Calculated at</div>
+							<div className="font-medium">
+								{t("surcharges.reports.details.calculatedAt", "Calculated at")}
+							</div>
 							<div className="text-muted-foreground">
 								{details ? formatTimestamp(details.calculatedAt) : "-"}
 							</div>
 						</div>
 						<div>
-							<div className="font-medium">Overlap policy: {details?.overlapPolicy ?? "-"}</div>
+							<div className="font-medium">
+								{t("surcharges.reports.details.overlapPolicy", "Overlap policy")}:{" "}
+								{details?.overlapPolicy ?? "-"}
+							</div>
 						</div>
 					</div>
 
 					<div className="space-y-2">
-						<div className="font-medium">Applied rules</div>
+						<div className="font-medium">
+							{t("surcharges.reports.details.appliedRules", "Applied rules")}
+						</div>
 						{details?.rulesApplied.length ? (
 							<div className="grid gap-2">
 								{details.rulesApplied.map((rule) => (
@@ -505,15 +516,26 @@ function CalculationDetails({
 											<Badge variant="secondary">{rule.ruleType}</Badge>
 										</div>
 										<div className="mt-2 grid gap-2 text-muted-foreground text-sm md:grid-cols-3">
-											<div>Qualifying: {formatMinutes(rule.qualifyingMinutes)}</div>
-											<div>Surcharge: {formatMinutes(rule.surchargeMinutes)}</div>
-											<div>Percentage: {formatPercentage(rule.percentage)}</div>
+											<div>
+												{t("surcharges.reports.details.qualifying", "Qualifying")}:{" "}
+												{formatMinutes(rule.qualifyingMinutes)}
+											</div>
+											<div>
+												{t("surcharges.reports.details.surcharge", "Surcharge")}:{" "}
+												{formatMinutes(rule.surchargeMinutes)}
+											</div>
+											<div>
+												{t("surcharges.reports.details.percentage", "Percentage")}:{" "}
+												{formatPercentage(rule.percentage)}
+											</div>
 										</div>
 									</div>
 								))}
 							</div>
 						) : (
-							<div className="text-muted-foreground">No applied rules recorded.</div>
+							<div className="text-muted-foreground">
+								{t("surcharges.reports.details.noAppliedRules", "No applied rules recorded.")}
+							</div>
 						)}
 					</div>
 				</div>
