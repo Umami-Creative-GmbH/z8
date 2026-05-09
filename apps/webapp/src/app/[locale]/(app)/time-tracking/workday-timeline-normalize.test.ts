@@ -153,6 +153,33 @@ describe("normalizeWorkdayTimeline", () => {
 		});
 	});
 
+	it("formats shift labels with the selected time format", () => {
+		const result = normalizeWorkdayTimeline({
+			selectedDate,
+			timezone: "Europe/Berlin",
+			timeFormat: "12h",
+			workPeriods: [],
+			shifts: [
+				{
+					id: "shift-1",
+					date: "2026-05-03",
+					startTime: "08:00",
+					endTime: "16:00",
+					status: "published",
+					notes: null,
+				},
+			],
+			absences: [],
+			pendingRequests: [],
+		});
+
+		expect(result.items[0]).toMatchObject({
+			id: "shift:shift-1",
+			startLabel: "8:00 AM",
+			endLabel: "4:00 PM",
+		});
+	});
+
 	it("orders same-start timed items by type priority then id", () => {
 		const sameStart = new Date("2026-05-03T08:00:00.000Z");
 		const input: NormalizeWorkdayTimelineInput = {

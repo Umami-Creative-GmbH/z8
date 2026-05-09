@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { formatTimeInZone } from "@/lib/time-tracking/timezone-utils";
-import type { TimeFormat } from "@/lib/user-preferences/time-format";
+import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-preferences/time-format";
 import type {
 	SelectedWorkdayDate,
 	WorkdayTimelineData,
@@ -96,8 +96,8 @@ export function normalizeWorkdayTimeline({
 				subtitle: shift.notes ?? undefined,
 				startTime,
 				endTime,
-				startLabel: shift.startTime,
-				endLabel: shift.endTime,
+				startLabel: formatTimeStringForPreference(shift.startTime, timeFormat),
+				endLabel: formatTimeStringForPreference(shift.endTime, timeFormat),
 				badge: shift.status,
 				status: shift.status,
 			};
