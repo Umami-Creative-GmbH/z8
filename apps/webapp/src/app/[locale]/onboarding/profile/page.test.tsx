@@ -35,7 +35,7 @@ vi.mock("./actions", () => ({
 import ProfilePage from "./page";
 
 describe("ProfilePage", () => {
-	it("renders the week start preference and submits the default value", async () => {
+	it("renders the profile preferences and submits the default values", async () => {
 		updateProfileOnboardingMock.mockResolvedValue({
 			success: true,
 			data: { nextStep: "/onboarding/organization" },
@@ -47,6 +47,8 @@ describe("ProfilePage", () => {
 		expect(
 			screen.getByText("This controls how calendars and weekly summaries are displayed."),
 		).toBeTruthy();
+		expect(screen.getByText("Time format")).toBeTruthy();
+		expect(screen.getByText("This controls how clock times are displayed.")).toBeTruthy();
 
 		fireEvent.change(screen.getByPlaceholderText("John"), { target: { value: "Ada" } });
 		fireEvent.change(screen.getByPlaceholderText("Doe"), { target: { value: "Lovelace" } });
@@ -58,6 +60,7 @@ describe("ProfilePage", () => {
 					firstName: "Ada",
 					lastName: "Lovelace",
 					weekStartDay: "sunday",
+					timeFormat: "24h",
 				}),
 			);
 		});

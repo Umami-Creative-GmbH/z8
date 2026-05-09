@@ -16,6 +16,7 @@ import {
 	workPolicyScheduleDay,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { isTimeFormat } from "@/lib/user-preferences/time-format";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	OnboardingHolidaySetupFormValues,
@@ -322,6 +323,15 @@ export const OnboardingServiceLive = Layer.effect(
 						);
 					}
 
+					if (!isTimeFormat(data.timeFormat)) {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Time format must be 12h or 24h",
+								field: "timeFormat",
+							}),
+						);
+					}
+
 					const nextStep = yield* dbService.query("updateProfile", async () => {
 						// Find employee record - prioritize the one with the active organization
 						let emp = activeOrgId
@@ -379,12 +389,14 @@ export const OnboardingServiceLive = Layer.effect(
 								userId: session.user.id,
 								onboardingStep: nextStep,
 								weekStartDay: data.weekStartDay,
+								timeFormat: data.timeFormat,
 							})
 							.onConflictDoUpdate({
 								target: userSettings.userId,
 								set: {
 									onboardingStep: nextStep,
 									weekStartDay: data.weekStartDay,
+									timeFormat: data.timeFormat,
 								},
 							});
 

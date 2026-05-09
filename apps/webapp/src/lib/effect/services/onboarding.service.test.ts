@@ -14,7 +14,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 describe("OnboardingService.updateProfile", () => {
-	it("persists the selected week start day in user settings", async () => {
+	it("persists selected profile preferences in user settings", async () => {
 		const insertedValues = vi.fn();
 		const conflictUpdate = vi.fn();
 		const mockDb = {
@@ -63,16 +63,17 @@ describe("OnboardingService.updateProfile", () => {
 					firstName: "Ada",
 					lastName: "Lovelace",
 					weekStartDay: "monday",
+					timeFormat: "12h",
 				});
 			}).pipe(Effect.provide(layer)),
 		);
 
 		expect(insertedValues).toHaveBeenCalledWith(
-			expect.objectContaining({ weekStartDay: "monday" }),
+			expect.objectContaining({ weekStartDay: "monday", timeFormat: "12h" }),
 		);
 		expect(conflictUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({
-				set: expect.objectContaining({ weekStartDay: "monday" }),
+				set: expect.objectContaining({ weekStartDay: "monday", timeFormat: "12h" }),
 			}),
 		);
 	});
@@ -128,6 +129,63 @@ describe("OnboardingService.updateProfile", () => {
 			left: {
 				message: "Week start day must be Sunday or Monday",
 				field: "weekStartDay",
+			},
+		});
+		expect(mockDb.insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid time format values before writing", async () => {
+		const mockDb = {
+			query: {
+				employee: {
+					findFirst: vi.fn(async () => null),
+				},
+			},
+			insert: vi.fn(),
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: mockDb as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+
+					return yield* service.updateProfile({
+						firstName: "Ada",
+						lastName: "Lovelace",
+						weekStartDay: "sunday",
+						timeFormat: "locale",
+					} as never);
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(ValidationError),
+		});
+		expect(result).toMatchObject({
+			left: {
+				message: "Time format must be 12h or 24h",
+				field: "timeFormat",
 			},
 		});
 		expect(mockDb.insert).not.toHaveBeenCalled();
