@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ProjectReportsContainer } from "@/components/reports/projects/project-reports-container";
 import { getTranslate } from "@/tolgee/server";
-import { getCurrentEmployeeForReports } from "./actions";
+import { getCurrentEmployeeProjectReportAccess } from "./actions";
 
 export default async function ProjectReportsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
@@ -10,9 +10,9 @@ export default async function ProjectReportsPage() {
 	// Auth is checked in layout
 	const t = await getTranslate();
 
-	const employee = await getCurrentEmployeeForReports();
+	const access = await getCurrentEmployeeProjectReportAccess();
 
-	if (!employee) {
+	if (!access) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError feature={t("reports.projects.page.feature", "view project reports")} />
@@ -20,8 +20,7 @@ export default async function ProjectReportsPage() {
 		);
 	}
 
-	// Only admins and managers can view project reports
-	if (employee.role !== "admin" && employee.role !== "manager") {
+	if (!access.canViewProjectReports) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
 				<div className="text-center">

@@ -4,7 +4,8 @@ import type { ProjectHealthFields, ProjectSummary, ProjectBudgetHealthTotals } f
 
 interface BuildProjectHealthFieldsParams {
 	projectName: string;
-	totalHours: number;
+	rangeHours: number;
+	cumulativeHours: number;
 	budgetHours: number | null;
 	deadline: Date | null;
 	now: Date;
@@ -14,17 +15,18 @@ interface BuildProjectHealthFieldsParams {
 
 export function buildProjectHealthFields({
 	projectName,
-	totalHours,
+	rangeHours,
+	cumulativeHours,
 	budgetHours,
 	deadline,
 	now,
 	rangeStart,
 	rangeEnd,
 }: BuildProjectHealthFieldsParams): ProjectHealthFields {
-	const percentBudgetUsed = budgetHours && budgetHours > 0 ? (totalHours / budgetHours) * 100 : null;
+	const percentBudgetUsed = budgetHours && budgetHours > 0 ? (cumulativeHours / budgetHours) * 100 : null;
 	const budgetFields = buildBudgetFields(percentBudgetUsed);
 	const deadlineFields = buildDeadlineFields(deadline, now);
-	const forecastFields = buildForecastFields({ projectName, totalHours, budgetHours, deadline, now, rangeStart, rangeEnd });
+	const forecastFields = buildForecastFields({ projectName, rangeHours, cumulativeHours, budgetHours, deadline, now, rangeStart, rangeEnd });
 
 	return {
 		...budgetFields,
@@ -139,7 +141,8 @@ function buildDeadlineFields(deadline: Date | null, now: Date): Pick<ProjectHeal
 
 function buildForecastFields({
 	projectName,
-	totalHours,
+	rangeHours,
+	cumulativeHours,
 	budgetHours,
 	deadline,
 	now,
@@ -149,13 +152,13 @@ function buildForecastFields({
 	ProjectHealthFields,
 	"forecastSeverity" | "forecastBudgetExhaustionDate" | "forecastMessage"
 > {
-	if (!budgetHours || !deadline || totalHours <= 0 || totalHours >= budgetHours) {
+	if (!budgetHours || !deadline || rangeHours <= 0 || cumulativeHours >= budgetHours) {
 		return { forecastSeverity: "none", forecastBudgetExhaustionDate: null, forecastMessage: null };
 	}
 
 	const rangeDays = Math.max(1, DateTime.fromJSDate(rangeEnd).diff(DateTime.fromJSDate(rangeStart), "days").days);
-	const averageDailyHours = totalHours / rangeDays;
-	const remainingBudgetHours = budgetHours - totalHours;
+	const averageDailyHours = rangeHours / rangeDays;
+	const remainingBudgetHours = budgetHours - cumulativeHours;
 	const daysUntilExhaustion = remainingBudgetHours / averageDailyHours;
 	const forecastBudgetExhaustionDate = DateTime.fromJSDate(now).plus({ days: daysUntilExhaustion }).toJSDate();
 

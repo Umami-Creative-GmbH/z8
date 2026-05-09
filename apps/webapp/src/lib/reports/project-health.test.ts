@@ -41,13 +41,13 @@ function buildSummary(overrides: Partial<ProjectSummary>): ProjectSummary {
 describe("buildProjectHealthFields", () => {
 	it("sets budget alerts at 70, 90, and 100 percent thresholds", () => {
 		expect(
-			buildProjectHealthFields({ projectName: "Budget 70", totalHours: 70, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
+			buildProjectHealthFields({ projectName: "Budget 70", rangeHours: 0, cumulativeHours: 70, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
 		).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_70" });
 		expect(
-			buildProjectHealthFields({ projectName: "Budget 90", totalHours: 90, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
+			buildProjectHealthFields({ projectName: "Budget 90", rangeHours: 0, cumulativeHours: 90, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
 		).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_90" });
 		expect(
-			buildProjectHealthFields({ projectName: "Budget 100", totalHours: 100, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
+			buildProjectHealthFields({ projectName: "Budget 100", rangeHours: 0, cumulativeHours: 100, budgetHours: 100, deadline: null, now, rangeStart, rangeEnd }),
 		).toMatchObject({ budgetSeverity: "critical", budgetAlertType: "budget_100" });
 	});
 
@@ -55,7 +55,8 @@ describe("buildProjectHealthFields", () => {
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline 14",
-				totalHours: 0,
+				rangeHours: 0,
+				cumulativeHours: 0,
 				budgetHours: null,
 				deadline: new Date("2026-05-23T18:00:00.000Z"),
 				now,
@@ -66,7 +67,8 @@ describe("buildProjectHealthFields", () => {
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline 7",
-				totalHours: 0,
+				rangeHours: 0,
+				cumulativeHours: 0,
 				budgetHours: null,
 				deadline: new Date("2026-05-16T18:00:00.000Z"),
 				now,
@@ -77,7 +79,8 @@ describe("buildProjectHealthFields", () => {
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline 1",
-				totalHours: 0,
+				rangeHours: 0,
+				cumulativeHours: 0,
 				budgetHours: null,
 				deadline: new Date("2026-05-10T18:00:00.000Z"),
 				now,
@@ -88,7 +91,8 @@ describe("buildProjectHealthFields", () => {
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline Today",
-				totalHours: 0,
+				rangeHours: 0,
+				cumulativeHours: 0,
 				budgetHours: null,
 				deadline: new Date("2026-05-09T18:00:00.000Z"),
 				now,
@@ -99,7 +103,8 @@ describe("buildProjectHealthFields", () => {
 		expect(
 			buildProjectHealthFields({
 				projectName: "Deadline Overdue",
-				totalHours: 0,
+				rangeHours: 0,
+				cumulativeHours: 0,
 				budgetHours: null,
 				deadline: new Date("2026-05-08T18:00:00.000Z"),
 				now,
@@ -112,7 +117,8 @@ describe("buildProjectHealthFields", () => {
 	it("forecasts selected-range burn rate budget exhaustion before deadline", () => {
 		const result = buildProjectHealthFields({
 			projectName: "Forecast Risk",
-			totalHours: 80,
+			rangeHours: 80,
+			cumulativeHours: 80,
 			budgetHours: 100,
 			deadline: new Date("2026-05-20T00:00:00.000Z"),
 			now,
@@ -127,20 +133,37 @@ describe("buildProjectHealthFields", () => {
 		);
 	});
 
+	it("uses cumulative hours for remaining budget and selected-range hours for forecast burn rate", () => {
+		const result = buildProjectHealthFields({
+			projectName: "Cumulative Forecast Risk",
+			rangeHours: 18,
+			cumulativeHours: 95,
+			budgetHours: 100,
+			deadline: new Date("2026-05-20T00:00:00.000Z"),
+			now,
+			rangeStart,
+			rangeEnd,
+		});
+
+		expect(result).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_90" });
+		expect(result.forecastSeverity).toBe("warning");
+		expect(result.forecastBudgetExhaustionDate?.toISOString()).toBe("2026-05-12T00:00:00.000Z");
+	});
+
 	it("does not forecast without average daily hours, budget, or deadline", () => {
 		const base = { projectName: "No Forecast", now, rangeStart, rangeEnd };
 
-		expect(buildProjectHealthFields({ ...base, totalHours: 0, budgetHours: 100, deadline: new Date("2026-05-20") })).toMatchObject({
+		expect(buildProjectHealthFields({ ...base, rangeHours: 0, cumulativeHours: 10, budgetHours: 100, deadline: new Date("2026-05-20") })).toMatchObject({
 			forecastSeverity: "none",
 			forecastBudgetExhaustionDate: null,
 			forecastMessage: null,
 		});
-		expect(buildProjectHealthFields({ ...base, totalHours: 10, budgetHours: null, deadline: new Date("2026-05-20") })).toMatchObject({
+		expect(buildProjectHealthFields({ ...base, rangeHours: 10, cumulativeHours: 10, budgetHours: null, deadline: new Date("2026-05-20") })).toMatchObject({
 			forecastSeverity: "none",
 			forecastBudgetExhaustionDate: null,
 			forecastMessage: null,
 		});
-		expect(buildProjectHealthFields({ ...base, totalHours: 10, budgetHours: 100, deadline: null })).toMatchObject({
+		expect(buildProjectHealthFields({ ...base, rangeHours: 10, cumulativeHours: 10, budgetHours: 100, deadline: null })).toMatchObject({
 			forecastSeverity: "none",
 			forecastBudgetExhaustionDate: null,
 			forecastMessage: null,

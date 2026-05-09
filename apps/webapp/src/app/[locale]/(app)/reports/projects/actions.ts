@@ -154,10 +154,18 @@ export async function getProjectsOverview(
 									),
 								);
 
+							const cumulativeStats = await dbService.db
+								.select({
+									totalMinutes: sql<number>`COALESCE(SUM(${workPeriod.durationMinutes}), 0)`,
+								})
+								.from(workPeriod)
+								.where(eq(workPeriod.projectId, p.id));
+
 							const totalMinutes = Number(stats[0]?.totalMinutes ?? 0);
 							const totalHours = totalMinutes / 60;
+							const cumulativeHours = Number(cumulativeStats[0]?.totalMinutes ?? 0) / 60;
 							const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
-							const percentBudgetUsed = budgetHours ? (totalHours / budgetHours) * 100 : null;
+							const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null;
 
 							// Calculate days until deadline
 							let daysUntilDeadline: number | null = null;
@@ -169,7 +177,8 @@ export async function getProjectsOverview(
 							const healthFields = buildProjectHealthFields({
 								projectName: p.name,
 								budgetHours,
-								totalHours,
+								rangeHours: totalHours,
+								cumulativeHours,
 								deadline: p.deadline,
 								now,
 								rangeStart: startDate,
@@ -572,4 +581,26 @@ export async function getCurrentEmployeeForReports(): Promise<typeof employee.$i
 	});
 
 	return emp || null;
+}
+
+export async function getCurrentEmployeeProjectReportAccess(): Promise<{
+	employee: typeof employee.$inferSelect;
+	canViewProjectReports: boolean;
+} | null> {
+	const emp = await getCurrentEmployeeForReports();
+
+	if (!emp) {
+		return null;
+	}
+
+	if (emp.role === "admin" || emp.role === "manager") {
+		return { employee: emp, canViewProjectReports: true };
+	}
+
+	const assignedProjectManager = await db.query.projectManager.findFirst({
+		where: eq(projectManager.employeeId, emp.id),
+		columns: { projectId: true },
+	});
+
+	return { employee: emp, canViewProjectReports: Boolean(assignedProjectManager) };
 }
