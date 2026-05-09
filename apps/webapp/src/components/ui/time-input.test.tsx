@@ -61,6 +61,18 @@ describe("TimeInput", () => {
 		expect(instances[0]?.options.clock?.type).toBe("12h");
 	});
 
+	it("displays controlled values with the 12-hour preference", () => {
+		render(<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="12h" value="14:05" />);
+
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("2:05 PM");
+	});
+
+	it("displays controlled values with the 24-hour preference", () => {
+		render(<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="24h" value="14:05" />);
+
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("14:05");
+	});
+
 	it("uses the provider time format when no explicit time format is passed", () => {
 		render(
 			<UserPreferencesProvider timeFormat="12h" weekStartDay="sunday">
@@ -103,6 +115,9 @@ describe("TimeInput", () => {
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:05");
+		expect(handleChange.mock.calls[0]?.[0].currentTarget.value).toBe("14:05");
+		expect(handleChange.mock.calls[0]?.[0].type).toBe("change");
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("2:05 PM");
 	});
 
 	it("converts confirmed AM midnight to stored 24-hour values in 12-hour mode", () => {

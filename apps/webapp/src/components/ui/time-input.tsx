@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { TimepickerUI } from "timepicker-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import {
+	formatTimeStringForPreference,
 	normalizeTimeFormat,
 	type TimeFormat,
 	timeFormatToPickerType,
@@ -65,6 +66,12 @@ function TimeInput({
 	const onChangeRef = useRef(onChange);
 	const contextTimeFormat = useTimeFormat();
 	const pickerFormat = normalizeTimeFormat(timeFormat ?? contextTimeFormat);
+	const displayValue =
+		typeof value === "string" ? formatTimeStringForPreference(value, pickerFormat) : value;
+	const displayDefaultValue =
+		typeof defaultValue === "string"
+			? formatTimeStringForPreference(defaultValue, pickerFormat)
+			: defaultValue;
 
 	onChangeRef.current = onChange;
 
@@ -88,10 +95,11 @@ function TimeInput({
 					}
 
 					const input = inputRef.current;
-					input.value = nextValue;
+					input.value = formatTimeStringForPreference(nextValue, pickerFormat);
+					const changeTarget = { value: nextValue } as HTMLInputElement;
 					onChangeRef.current?.({
-						currentTarget: input,
-						target: input,
+						currentTarget: changeTarget,
+						target: changeTarget,
 						type: "change",
 					} as React.ChangeEvent<HTMLInputElement>);
 				},
@@ -113,11 +121,11 @@ function TimeInput({
 			)}
 			{...props}
 			data-slot="time-input"
-			defaultValue={defaultValue}
+			defaultValue={displayDefaultValue}
 			readOnly
 			ref={inputRef}
 			type="text"
-			value={value}
+			value={displayValue}
 		/>
 	);
 }
