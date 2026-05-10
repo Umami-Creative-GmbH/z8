@@ -3,7 +3,6 @@ import { DateTime } from "luxon";
 
 import { db } from "@/db";
 import { systemConfig } from "@/db/schema";
-import { getCookieConsentScript } from "@/lib/platform-settings";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
 
 import type { DiagnosticsItem, PlatformDiagnosticsSnapshot, QueueSummary } from "./types";
@@ -26,6 +25,8 @@ const STRIPE_KEYS = [
 	"STRIPE_PRICE_MONTHLY_ID",
 	"STRIPE_PRICE_YEARLY_ID",
 ] as const;
+
+const COOKIE_CONSENT_SCRIPT_KEY = "cookie_consent_script";
 
 function isConfigured(value: string | undefined): boolean {
 	return typeof value === "string" && value.trim().length > 0;
@@ -136,8 +137,13 @@ export const defaultPlatformDiagnosticsDependencies: PlatformDiagnosticsDependen
 		return row?.value ?? null;
 	},
 	getCookieConsentConfigured: async () => {
-		const script = await getCookieConsentScript();
-		return isConfigured(script ?? undefined);
+		const [row] = await db
+			.select({ value: systemConfig.value })
+			.from(systemConfig)
+			.where(eq(systemConfig.key, COOKIE_CONSENT_SCRIPT_KEY))
+			.limit(1);
+
+		return isConfigured(row?.value);
 	},
 	checkDatabase: async () => {
 		await db.select({ key: systemConfig.key }).from(systemConfig).limit(1);
