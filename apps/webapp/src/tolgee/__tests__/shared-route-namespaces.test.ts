@@ -7,6 +7,10 @@ describe("route namespaces", () => {
 		expect(getNamespacesForRoute("/platform-admin")).toEqual(["common", "admin"]);
 	});
 
+	it("loads admin namespaces for /platform-admin/analytics", () => {
+		expect(getNamespacesForRoute("/platform-admin/analytics")).toEqual(["common", "admin"]);
+	});
+
 	it("loads admin+settings namespaces for /platform-admin/worker-queue", () => {
 		expect(getNamespacesForRoute("/platform-admin/worker-queue")).toEqual([
 			"common",

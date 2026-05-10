@@ -19,6 +19,13 @@ describe("platform admin layout", () => {
 		expect(source.indexOf(billingEnabledCheck)).toBeLessThan(source.indexOf(billingLink));
 	});
 
+	it("links to the platform analytics page", () => {
+		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+
+		expect(source).toContain('href: "/platform-admin/analytics"');
+		expect(source).toContain("admin:admin.layout.nav.analytics");
+	});
+
 	it("checks the billing flag at request time on the billing page", () => {
 		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "billing/page.tsx"), "utf8"));
 		const dynamicBoundary = "await connection()";
