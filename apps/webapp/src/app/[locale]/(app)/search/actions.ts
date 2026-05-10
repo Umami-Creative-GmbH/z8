@@ -28,8 +28,8 @@ export async function searchAppRecordsAction(
 
 		for (const [teamId, permission] of principal.permissions.byTeamId.entries()) {
 			permissionsByTeamId.set(teamId, {
-				canManageTeamMembers: permission.canManageTeamMembers,
-				canManageTeamSettings: permission.canManageTeamSettings,
+				canManageTeamMembers: Boolean(permission.canManageTeamMembers),
+				canManageTeamSettings: Boolean(permission.canManageTeamSettings),
 			});
 		}
 

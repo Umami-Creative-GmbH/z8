@@ -145,13 +145,18 @@ export async function searchLiveAppResults(
 	input: SearchLiveAppResultsInput,
 ): Promise<LiveAppSearchResults> {
 	const normalizedQuery = normalizeAppSearchQuery(input.query);
+	const organizationId = input.organizationId;
 
-	if (!normalizedQuery || !input.organizationId) {
+	if (!normalizedQuery || !organizationId) {
 		return EMPTY_LIVE_APP_SEARCH_RESULTS;
 	}
 
 	const searchPattern = `%${normalizedQuery}%`;
-	const employeeConditions = buildEmployeeSearchConditions(input);
+	const employeeConditions = buildEmployeeSearchConditions({
+		accessTier: input.accessTier,
+		organizationId,
+		currentEmployeeId: input.currentEmployeeId,
+	});
 	const searchablePermissionTeamIds = getSearchableTeamIds({
 		accessTier: input.accessTier,
 		teams: [...input.permissionsByTeamId.keys()].map((id) => ({ id })),
@@ -201,7 +206,7 @@ export async function searchLiveAppResults(
 					.from(team)
 					.where(
 						and(
-							eq(team.organizationId, input.organizationId),
+							eq(team.organizationId, organizationId),
 							input.accessTier === "manager"
 								? inArray(team.id, searchablePermissionTeamIds)
 								: undefined,
