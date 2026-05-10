@@ -5,6 +5,7 @@ import {
 	mapEmployeeSearchRow,
 	mapTeamSearchRow,
 	normalizeAppSearchQuery,
+	searchLiveAppResults,
 } from "./live-results";
 
 vi.mock("@/db", () => ({ db: {} }));
@@ -177,5 +178,19 @@ describe("buildEmployeeSearchConditions", () => {
 
 		expect(conditions).not.toBeNull();
 		expect(conditions).toHaveLength(2);
+	});
+});
+
+describe("searchLiveAppResults", () => {
+	it("returns empty results without querying when organizationId is missing", async () => {
+		await expect(
+			searchLiveAppResults({
+				query: "maria",
+				accessTier: "orgAdmin",
+				organizationId: null,
+				currentEmployeeId: null,
+				permissionsByTeamId: new Map(),
+			}),
+		).resolves.toEqual({ employees: [], teams: [] });
 	});
 });

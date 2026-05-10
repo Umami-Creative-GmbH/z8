@@ -36,7 +36,7 @@ export interface TeamSearchPermission {
 export interface SearchLiveAppResultsInput {
 	query: string;
 	accessTier: SettingsAccessTier;
-	organizationId: string;
+	organizationId: string | null;
 	currentEmployeeId: string | null;
 	permissionsByTeamId: Map<string, TeamSearchPermission>;
 }
@@ -146,7 +146,7 @@ export async function searchLiveAppResults(
 ): Promise<LiveAppSearchResults> {
 	const normalizedQuery = normalizeAppSearchQuery(input.query);
 
-	if (!normalizedQuery) {
+	if (!normalizedQuery || !input.organizationId) {
 		return EMPTY_LIVE_APP_SEARCH_RESULTS;
 	}
 
