@@ -2,6 +2,7 @@ import {
 	IconActivityHeartbeat,
 	IconBuilding,
 	IconChartBar,
+	IconChartLine,
 	IconCreditCard,
 	IconLogout,
 	IconServer,
@@ -38,6 +39,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 			href: "/platform-admin",
 			icon: IconChartBar,
 			label: t("admin:admin.layout.nav.overview", "Overview"),
+		},
+		{
+			href: "/platform-admin/analytics",
+			icon: IconChartLine,
+			label: t("admin:admin.layout.nav.analytics", "Analytics"),
 		},
 		{
 			href: "/platform-admin/users",
