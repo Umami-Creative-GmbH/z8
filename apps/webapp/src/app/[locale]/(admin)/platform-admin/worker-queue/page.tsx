@@ -1,4 +1,5 @@
 import {
+	IconActivity,
 	IconAlertCircle,
 	IconCheck,
 	IconClock,
@@ -8,6 +9,7 @@ import {
 	IconServer,
 	IconX,
 } from "@tabler/icons-react";
+import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -23,16 +25,19 @@ import {
 } from "@/components/ui/table";
 import { getTranslate } from "@/tolgee/server";
 import { getWorkerQueueStats } from "./actions";
+import type { ReliabilityHealth } from "./reliability";
+import { WorkerReliabilityCharts } from "./reliability-charts";
 
 interface StatCardProps {
 	title: string;
 	value: number | string;
+	locale: string;
 	description?: string;
 	icon: React.ReactNode;
 	variant?: "default" | "success" | "warning" | "destructive";
 }
 
-function StatCard({ title, value, description, icon, variant = "default" }: StatCardProps) {
+function StatCard({ title, value, locale, description, icon, variant = "default" }: StatCardProps) {
 	const variantStyles = {
 		default: "",
 		success: "border-green-500/50",
@@ -44,11 +49,13 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 		<Card className={variantStyles[variant]}>
 			<CardHeader className="flex flex-row items-center justify-between pb-2">
 				<CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-				<div className="text-muted-foreground">{icon}</div>
+				<div className="text-muted-foreground" aria-hidden="true">
+					{icon}
+				</div>
 			</CardHeader>
 			<CardContent>
 				<div className="text-2xl font-bold">
-					{typeof value === "number" ? value.toLocaleString() : value}
+					{typeof value === "number" ? value.toLocaleString(locale) : value}
 				</div>
 				{description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
 			</CardContent>
@@ -56,34 +63,34 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 	);
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, labels }: { status: string; labels: Record<string, string> }) {
 	switch (status) {
 		case "completed":
 			return (
 				<Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
-					<IconCheck className="size-3 mr-1" />
-					Completed
+					<IconCheck className="size-3 mr-1" aria-hidden="true" />
+					{labels.completed}
 				</Badge>
 			);
 		case "failed":
 			return (
 				<Badge variant="outline" className="border-red-500 text-red-700 dark:text-red-400">
-					<IconX className="size-3 mr-1" />
-					Failed
+					<IconX className="size-3 mr-1" aria-hidden="true" />
+					{labels.failed}
 				</Badge>
 			);
 		case "running":
 			return (
 				<Badge variant="outline" className="border-blue-500 text-blue-700 dark:text-blue-400">
-					<IconLoader className="size-3 mr-1 animate-spin" />
-					Running
+					<IconLoader className="size-3 mr-1 animate-spin" aria-hidden="true" />
+					{labels.running}
 				</Badge>
 			);
 		case "pending":
 			return (
 				<Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400">
-					<IconClock className="size-3 mr-1" />
-					Pending
+					<IconClock className="size-3 mr-1" aria-hidden="true" />
+					{labels.pending}
 				</Badge>
 			);
 		default:
@@ -91,11 +98,96 @@ function StatusBadge({ status }: { status: string }) {
 	}
 }
 
-async function WorkerQueueContent() {
+function formatPercent(value: number | null, unknownLabel: string, locale: string): string {
+	if (value === null) {
+		return unknownLabel;
+	}
+
+	return (value / 100).toLocaleString(locale, {
+		style: "percent",
+		maximumFractionDigits: 1,
+		minimumFractionDigits: 1,
+	});
+}
+
+function formatDuration(value: number | null, unknownLabel: string, locale: string): string {
+	if (value === null) {
+		return unknownLabel;
+	}
+
+	if (value >= 1000) {
+		return (value / 1000).toLocaleString(locale, {
+			style: "unit",
+			unit: "second",
+			unitDisplay: "short",
+			maximumFractionDigits: 1,
+			minimumFractionDigits: 1,
+		});
+	}
+
+	return value.toLocaleString(locale, {
+		style: "unit",
+		unit: "millisecond",
+		unitDisplay: "short",
+		maximumFractionDigits: 0,
+	});
+}
+
+function formatDateTime(value: string | null, locale: string): string {
+	if (value === null) {
+		return "-";
+	}
+
+	const dateTime = DateTime.fromISO(value).setLocale(locale);
+
+	return dateTime.isValid ? dateTime.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) : "-";
+}
+
+function HealthBadge({
+	health,
+	labels,
+}: {
+	health: ReliabilityHealth;
+	labels: Record<ReliabilityHealth, string>;
+}) {
+	switch (health) {
+		case "healthy":
+			return (
+				<Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
+					<IconCheck className="size-3 mr-1" aria-hidden="true" />
+					{labels.healthy}
+				</Badge>
+			);
+		case "warning":
+			return (
+				<Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400">
+					<IconAlertCircle className="size-3 mr-1" aria-hidden="true" />
+					{labels.warning}
+				</Badge>
+			);
+		case "failing":
+			return (
+				<Badge variant="outline" className="border-red-500 text-red-700 dark:text-red-400">
+					<IconX className="size-3 mr-1" aria-hidden="true" />
+					{labels.failing}
+				</Badge>
+			);
+		case "stale":
+			return (
+				<Badge variant="outline" className="border-orange-500 text-orange-700 dark:text-orange-400">
+					<IconClock className="size-3 mr-1" aria-hidden="true" />
+					{labels.stale}
+				</Badge>
+			);
+		case "unknown":
+			return <Badge variant="outline">{labels.unknown}</Badge>;
+	}
+}
+
+async function WorkerQueueContent({ locale }: { locale: string }) {
 	await connection();
 
-	const t = await getTranslate();
-	const statsResult = await getWorkerQueueStats();
+	const [t, statsResult] = await Promise.all([getTranslate(), getWorkerQueueStats()]);
 
 	if (!statsResult.success) {
 		return (
@@ -114,8 +206,7 @@ async function WorkerQueueContent() {
 				<Card className="border-destructive">
 					<CardContent className="pt-6">
 						<p className="text-destructive">
-							{t("settings.workerQueue.loadError", "Failed to load queue status")}: {" "}
-							{statsResult.error}
+							{`${t("settings.workerQueue.loadError", "Failed to load queue status")}: ${statsResult.error}`}
 						</p>
 					</CardContent>
 				</Card>
@@ -124,6 +215,20 @@ async function WorkerQueueContent() {
 	}
 
 	const stats = statsResult.data;
+	const unknownLabel = t("settings.workerQueue.common.unknown", "Unknown");
+	const statusLabels = {
+		completed: t("settings.workerQueue.status.completed", "Completed"),
+		failed: t("settings.workerQueue.status.failed", "Failed"),
+		running: t("settings.workerQueue.status.running", "Running"),
+		pending: t("settings.workerQueue.status.pending", "Pending"),
+	};
+	const healthLabels = {
+		healthy: t("settings.workerQueue.reliability.healthy", "Healthy"),
+		warning: t("settings.workerQueue.reliability.warning", "Warning"),
+		failing: t("settings.workerQueue.reliability.failing", "Failing"),
+		stale: t("settings.workerQueue.reliability.stale", "Stale"),
+		unknown: t("settings.workerQueue.reliability.unknown", "Unknown"),
+	} satisfies Record<ReliabilityHealth, string>;
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -148,32 +253,32 @@ async function WorkerQueueContent() {
 					>
 						{stats.isConnected ? (
 							<>
-								<IconCheck className="size-3 mr-1" />
+								<IconCheck className="size-3 mr-1" aria-hidden="true" />
 								{t("settings.workerQueue.connected", "Connected")}
 							</>
 						) : (
 							<>
-								<IconAlertCircle className="size-3 mr-1" />
+								<IconAlertCircle className="size-3 mr-1" aria-hidden="true" />
 								{t("settings.workerQueue.disconnected", "Disconnected")}
 							</>
 						)}
 					</Badge>
 					<p className="text-xs text-muted-foreground">
-						{t("settings.workerQueue.lastUpdated", "Last updated")}: {" "}
-						{new Date(stats.fetchedAt).toLocaleString()}
+						{`${t("settings.workerQueue.lastUpdated", "Last updated")}: ${formatDateTime(stats.fetchedAt, locale)}`}
 					</p>
 				</div>
 			</div>
 
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconServer className="size-5" />
+					<IconServer className="size-5" aria-hidden="true" />
 					{t("settings.workerQueue.sections.queueCounts", "Queue Status")}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 					<StatCard
 						title={t("settings.workerQueue.cards.waiting", "Waiting")}
 						value={stats.counts.waiting}
+						locale={locale}
 						description={t(
 							"settings.workerQueue.cards.waitingDescription",
 							"Jobs waiting to be processed",
@@ -183,6 +288,7 @@ async function WorkerQueueContent() {
 					<StatCard
 						title={t("settings.workerQueue.cards.active", "Active")}
 						value={stats.counts.active}
+						locale={locale}
 						description={t("settings.workerQueue.cards.activeDescription", "Currently processing")}
 						icon={<IconLoader className="size-4" />}
 						variant={stats.counts.active > 0 ? "success" : "default"}
@@ -190,6 +296,7 @@ async function WorkerQueueContent() {
 					<StatCard
 						title={t("settings.workerQueue.cards.completed", "Completed")}
 						value={stats.counts.completed}
+						locale={locale}
 						description={t("settings.workerQueue.cards.completedDescription", "Recently completed")}
 						icon={<IconCheck className="size-4" />}
 						variant="success"
@@ -197,6 +304,7 @@ async function WorkerQueueContent() {
 					<StatCard
 						title={t("settings.workerQueue.cards.failed", "Failed")}
 						value={stats.counts.failed}
+						locale={locale}
 						description={t("settings.workerQueue.cards.failedDescription", "Recently failed")}
 						icon={<IconX className="size-4" />}
 						variant={stats.counts.failed > 0 ? "destructive" : "default"}
@@ -204,12 +312,14 @@ async function WorkerQueueContent() {
 					<StatCard
 						title={t("settings.workerQueue.cards.delayed", "Delayed")}
 						value={stats.counts.delayed}
+						locale={locale}
 						description={t("settings.workerQueue.cards.delayedDescription", "Scheduled for later")}
 						icon={<IconClock className="size-4" />}
 					/>
 					<StatCard
 						title={t("settings.workerQueue.cards.paused", "Paused")}
 						value={stats.counts.paused}
+						locale={locale}
 						description={t("settings.workerQueue.cards.pausedDescription", "Paused jobs")}
 						icon={<IconPlayerPause className="size-4" />}
 						variant={stats.counts.paused > 0 ? "warning" : "default"}
@@ -219,7 +329,132 @@ async function WorkerQueueContent() {
 
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconRefresh className="size-5" />
+					<IconActivity className="size-5" aria-hidden="true" />
+					{t("settings.workerQueue.reliability.title", "Reliability")}
+				</h2>
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+					<StatCard
+						title={t("settings.workerQueue.reliability.successRate", "Success Rate")}
+						value={formatPercent(stats.reliability.summary.successRate, unknownLabel, locale)}
+						locale={locale}
+						description={t(
+							"settings.workerQueue.reliability.successRateDescription",
+							"Terminal cron executions",
+						)}
+						icon={<IconCheck className="size-4" />}
+						variant={
+							stats.reliability.summary.successRate !== null &&
+							stats.reliability.summary.successRate >= 95
+								? "success"
+								: "default"
+						}
+					/>
+					<StatCard
+						title={t("settings.workerQueue.reliability.failedRuns", "Failed Runs")}
+						value={stats.reliability.summary.failedRuns}
+						locale={locale}
+						description={t(
+							"settings.workerQueue.reliability.failedRunsDescription",
+							"Last 30 days",
+						)}
+						icon={<IconX className="size-4" />}
+						variant={stats.reliability.summary.failedRuns > 0 ? "destructive" : "default"}
+					/>
+					<StatCard
+						title={t("settings.workerQueue.reliability.staleJobs", "Stale Jobs")}
+						value={stats.reliability.summary.staleJobs}
+						locale={locale}
+						description={t(
+							"settings.workerQueue.reliability.staleJobsDescription",
+							"Past expected schedule",
+						)}
+						icon={<IconAlertCircle className="size-4" />}
+						variant={stats.reliability.summary.staleJobs > 0 ? "warning" : "default"}
+					/>
+					<StatCard
+						title={t("settings.workerQueue.reliability.avgDuration", "Avg Duration")}
+						value={formatDuration(
+							stats.reliability.summary.averageDurationMs,
+							unknownLabel,
+							locale,
+						)}
+						locale={locale}
+						description={t(
+							"settings.workerQueue.reliability.avgDurationDescription",
+							"Executions with duration data",
+						)}
+						icon={<IconActivity className="size-4" />}
+					/>
+				</div>
+
+				<div className="mt-4">
+					<WorkerReliabilityCharts reliability={stats.reliability} />
+				</div>
+
+				<Card className="mt-4">
+					<CardHeader>
+						<CardTitle>{t("settings.workerQueue.reliability.jobHealth", "Job Health")}</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.workerQueue.reliability.jobHealthDescription",
+								"Per-job reliability based on recent executions and repeatable schedules.",
+							)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{stats.reliability.jobs.length === 0 ? (
+							<p className="text-muted-foreground text-sm">
+								{t("settings.workerQueue.reliability.noJobs", "No reliability data found")}
+							</p>
+						) : (
+							<div className="overflow-x-auto">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.health", "Health")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.lastRun", "Last Run")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.successRate", "Success Rate")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.failed", "Failed")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
+											</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{stats.reliability.jobs.map((job) => (
+											<TableRow key={job.jobName}>
+												<TableCell className="font-mono text-sm">{job.jobName}</TableCell>
+												<TableCell>
+													<HealthBadge health={job.health} labels={healthLabels} />
+												</TableCell>
+												<TableCell>{formatDateTime(job.lastRunAt, locale)}</TableCell>
+												<TableCell>{formatDateTime(job.nextRunAt, locale)}</TableCell>
+												<TableCell className="text-right">
+													{formatPercent(job.successRate, unknownLabel, locale)}
+												</TableCell>
+												<TableCell className="text-right text-red-600">{job.failedRuns}</TableCell>
+												<TableCell className="text-right">
+													{formatDuration(job.averageDurationMs, unknownLabel, locale)}
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			</section>
+
+			<section>
+				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+					<IconRefresh className="size-5" aria-hidden="true" />
 					{t("settings.workerQueue.sections.scheduledJobs", "Scheduled Cron Jobs")}
 				</h2>
 				<Card>
@@ -237,24 +472,26 @@ async function WorkerQueueContent() {
 								{t("settings.workerQueue.noScheduledJobs", "No scheduled jobs found")}
 							</p>
 						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.schedule", "Schedule")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{stats.repeatableJobs.map((job) => (
-										<TableRow key={`${job.name}-${job.pattern}`}>
-											<TableCell className="font-mono text-sm">{job.name}</TableCell>
-											<TableCell className="font-mono text-sm">{job.pattern}</TableCell>
-											<TableCell>{job.next ? new Date(job.next).toLocaleString() : "-"}</TableCell>
+							<div className="overflow-x-auto">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.schedule", "Schedule")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
+									</TableHeader>
+									<TableBody>
+										{stats.repeatableJobs.map((job) => (
+											<TableRow key={`${job.name}-${job.pattern}`}>
+												<TableCell className="font-mono text-sm">{job.name}</TableCell>
+												<TableCell className="font-mono text-sm">{job.pattern}</TableCell>
+												<TableCell>{formatDateTime(job.next, locale)}</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</div>
 						)}
 					</CardContent>
 				</Card>
@@ -263,61 +500,65 @@ async function WorkerQueueContent() {
 			{stats.jobMetrics.length > 0 && (
 				<section>
 					<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-						<IconServer className="size-5" />
+						<IconServer className="size-5" aria-hidden="true" />
 						{t("settings.workerQueue.sections.jobMetrics", "Job Metrics (Last 30 Days)")}
 					</h2>
 					<Card>
 						<CardContent className="pt-6">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-										<TableHead className="text-right">
-											{t("settings.workerQueue.table.totalRuns", "Total Runs")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.workerQueue.table.successful", "Successful")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.workerQueue.table.failed", "Failed")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.workerQueue.table.successRate", "Success Rate")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
-										</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{stats.jobMetrics.map((metric) => (
-										<TableRow key={metric.jobName}>
-											<TableCell className="font-mono text-sm">{metric.jobName}</TableCell>
-											<TableCell className="text-right">{metric.totalRuns}</TableCell>
-											<TableCell className="text-right text-green-600">
-												{metric.successfulRuns}
-											</TableCell>
-											<TableCell className="text-right text-red-600">{metric.failedRuns}</TableCell>
-											<TableCell className="text-right">
-												<span
-													className={
-														metric.successRate >= 95
-															? "text-green-600"
-															: metric.successRate >= 80
-																? "text-yellow-600"
-																: "text-red-600"
-													}
-												>
-													{metric.successRate.toFixed(1)}%
-												</span>
-											</TableCell>
-											<TableCell className="text-right">
-												{metric.avgDurationMs ? `${metric.avgDurationMs}ms` : "-"}
-											</TableCell>
+							<div className="overflow-x-auto">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.totalRuns", "Total Runs")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.successful", "Successful")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.failed", "Failed")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.successRate", "Success Rate")}
+											</TableHead>
+											<TableHead className="text-right">
+												{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
+											</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
+									</TableHeader>
+									<TableBody>
+										{stats.jobMetrics.map((metric) => (
+											<TableRow key={metric.jobName}>
+												<TableCell className="font-mono text-sm">{metric.jobName}</TableCell>
+												<TableCell className="text-right">{metric.totalRuns}</TableCell>
+												<TableCell className="text-right text-green-600">
+													{metric.successfulRuns}
+												</TableCell>
+												<TableCell className="text-right text-red-600">
+													{metric.failedRuns}
+												</TableCell>
+												<TableCell className="text-right">
+													<span
+														className={
+															metric.successRate >= 95
+																? "text-green-600"
+																: metric.successRate >= 80
+																	? "text-yellow-600"
+																	: "text-red-600"
+														}
+													>
+														{formatPercent(metric.successRate, unknownLabel, locale)}
+													</span>
+												</TableCell>
+												<TableCell className="text-right">
+													{formatDuration(metric.avgDurationMs, unknownLabel, locale)}
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</div>
 						</CardContent>
 					</Card>
 				</section>
@@ -325,7 +566,7 @@ async function WorkerQueueContent() {
 
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-					<IconClock className="size-5" />
+					<IconClock className="size-5" aria-hidden="true" />
 					{t("settings.workerQueue.sections.recentExecutions", "Recent Executions")}
 				</h2>
 				<Card>
@@ -343,35 +584,41 @@ async function WorkerQueueContent() {
 								{t("settings.workerQueue.noExecutions", "No recent executions found")}
 							</p>
 						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.status", "Status")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.startedAt", "Started At")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.duration", "Duration")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.error", "Error")}</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{stats.recentExecutions.map((exec) => (
-										<TableRow key={exec.id}>
-											<TableCell className="font-mono text-sm">{exec.jobName}</TableCell>
-											<TableCell>
-												<StatusBadge status={exec.status} />
-											</TableCell>
-											<TableCell>{new Date(exec.startedAt).toLocaleString()}</TableCell>
-											<TableCell>{exec.durationMs ? `${exec.durationMs}ms` : "-"}</TableCell>
-											<TableCell
-												className="max-w-xs truncate text-red-600"
-												title={exec.error ?? undefined}
-											>
-												{exec.error ?? "-"}
-											</TableCell>
+							<div className="overflow-x-auto">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.status", "Status")}</TableHead>
+											<TableHead>
+												{t("settings.workerQueue.table.startedAt", "Started At")}
+											</TableHead>
+											<TableHead>{t("settings.workerQueue.table.duration", "Duration")}</TableHead>
+											<TableHead>{t("settings.workerQueue.table.error", "Error")}</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
+									</TableHeader>
+									<TableBody>
+										{stats.recentExecutions.map((exec) => (
+											<TableRow key={exec.id}>
+												<TableCell className="font-mono text-sm">{exec.jobName}</TableCell>
+												<TableCell>
+													<StatusBadge status={exec.status} labels={statusLabels} />
+												</TableCell>
+												<TableCell>{formatDateTime(exec.startedAt, locale)}</TableCell>
+												<TableCell>
+													{formatDuration(exec.durationMs, unknownLabel, locale)}
+												</TableCell>
+												<TableCell
+													className="max-w-xs truncate text-red-600"
+													title={exec.error ?? undefined}
+												>
+													{exec.error ?? "-"}
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</div>
 						)}
 					</CardContent>
 				</Card>
@@ -381,6 +628,9 @@ async function WorkerQueueContent() {
 }
 
 function WorkerQueueLoading() {
+	const queueSkeletonKeys = ["waiting", "active", "completed", "failed", "delayed", "paused"];
+	const reliabilitySkeletonKeys = ["success-rate", "failed-runs", "stale-jobs", "avg-duration"];
+
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="space-y-2">
@@ -391,9 +641,8 @@ function WorkerQueueLoading() {
 			<section>
 				<Skeleton className="h-6 w-32 mb-4" />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-					{[...Array(6)].map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: Static loading skeleton
-						<Card key={i}>
+					{queueSkeletonKeys.map((key) => (
+						<Card key={key}>
 							<CardHeader className="pb-2">
 								<Skeleton className="h-4 w-24" />
 							</CardHeader>
@@ -404,6 +653,52 @@ function WorkerQueueLoading() {
 						</Card>
 					))}
 				</div>
+			</section>
+
+			<section>
+				<Skeleton className="h-6 w-36 mb-4" />
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+					{reliabilitySkeletonKeys.map((key) => (
+						<Card key={key}>
+							<CardHeader className="pb-2">
+								<Skeleton className="h-4 w-24" />
+							</CardHeader>
+							<CardContent>
+								<Skeleton className="h-8 w-16" />
+								<Skeleton className="h-3 w-32 mt-2" />
+							</CardContent>
+						</Card>
+					))}
+				</div>
+				<div className="grid gap-4 lg:grid-cols-2 mt-4">
+					<Card>
+						<CardHeader>
+							<Skeleton className="h-5 w-36" />
+							<Skeleton className="h-4 w-64" />
+						</CardHeader>
+						<CardContent>
+							<Skeleton className="h-[300px] w-full" />
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<Skeleton className="h-5 w-36" />
+							<Skeleton className="h-4 w-64" />
+						</CardHeader>
+						<CardContent>
+							<Skeleton className="h-[300px] w-full" />
+						</CardContent>
+					</Card>
+				</div>
+				<Card className="mt-4">
+					<CardHeader>
+						<Skeleton className="h-5 w-28" />
+						<Skeleton className="h-4 w-72" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton className="h-32 w-full" />
+					</CardContent>
+				</Card>
 			</section>
 
 			<section>
@@ -421,10 +716,12 @@ function WorkerQueueLoading() {
 	);
 }
 
-export default function WorkerQueuePage() {
+export default async function WorkerQueuePage({ params }: { params: Promise<{ locale: string }> }) {
+	const { locale } = await params;
+
 	return (
 		<Suspense fallback={<WorkerQueueLoading />}>
-			<WorkerQueueContent />
+			<WorkerQueueContent locale={locale} />
 		</Suspense>
 	);
 }
