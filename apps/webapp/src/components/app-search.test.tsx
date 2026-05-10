@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSearchResult } from "@/lib/app-search/types";
@@ -64,6 +64,8 @@ const staticResults: AppSearchResult[] = [
 	},
 ];
 
+const searchPlaceholder = "Search pages, settings, people, and teams…";
+
 function renderAppSearch(results = staticResults) {
 	return render(
 		<SidebarProvider>
@@ -74,7 +76,7 @@ function renderAppSearch(results = staticResults) {
 
 describe("AppSearch", () => {
 	beforeEach(() => {
-		vi.useRealTimers();
+		vi.useFakeTimers();
 		window.matchMedia = vi.fn().mockReturnValue({
 			addEventListener: vi.fn(),
 			matches: false,
@@ -103,6 +105,7 @@ describe("AppSearch", () => {
 	});
 
 	afterEach(() => {
+		vi.runOnlyPendingTimers();
 		vi.useRealTimers();
 	});
 
@@ -113,9 +116,7 @@ describe("AppSearch", () => {
 		fireEvent.click(screen.getByText("Dashboard"));
 
 		expect(pushMock).toHaveBeenCalledWith("/dashboard");
-		expect(
-			screen.queryByPlaceholderText("Search pages, settings, people, and teams..."),
-		).toBeNull();
+		expect(screen.queryByPlaceholderText(searchPlaceholder)).toBeNull();
 	});
 
 	it("registers Mod+K with preventDefault", () => {
@@ -136,9 +137,18 @@ describe("AppSearch", () => {
 			hotkeyRegistrations.at(-1)?.callback();
 		});
 
-		expect(
-			screen.getByPlaceholderText("Search pages, settings, people, and teams..."),
-		).not.toBeNull();
+		expect(screen.getByPlaceholderText(searchPlaceholder)).not.toBeNull();
+	});
+
+	it("shows the empty state when the current query filters out all results", () => {
+		renderAppSearch();
+
+		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
+			target: { value: "zzzz" },
+		});
+
+		expect(screen.getByText("No results found.")).not.toBeNull();
 	});
 
 	it("loads live results after typing and navigates to an employee result", async () => {
@@ -160,14 +170,16 @@ describe("AppSearch", () => {
 		renderAppSearch();
 
 		fireEvent.click(screen.getByRole("button", { name: /search/i }));
-		fireEvent.change(screen.getByPlaceholderText("Search pages, settings, people, and teams..."), {
+		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "al" },
 		});
 		expect(searchAppRecordsActionMock).not.toHaveBeenCalled();
-		await new Promise((resolve) => setTimeout(resolve, 260));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(250);
+		});
 
-		await waitFor(() => expect(searchAppRecordsActionMock).toHaveBeenCalledWith("al"));
-		fireEvent.click(await screen.findByText("Alex Morgan"));
+		expect(searchAppRecordsActionMock).toHaveBeenCalledWith("al");
+		fireEvent.click(screen.getByText("Alex Morgan"));
 
 		expect(pushMock).toHaveBeenCalledWith("/settings/employees/employee-1");
 	});
@@ -180,13 +192,15 @@ describe("AppSearch", () => {
 		renderAppSearch();
 
 		fireEvent.click(screen.getByRole("button", { name: /search/i }));
-		fireEvent.change(screen.getByPlaceholderText("Search pages, settings, people, and teams..."), {
+		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "em" },
 		});
 		expect(searchAppRecordsActionMock).not.toHaveBeenCalled();
-		await new Promise((resolve) => setTimeout(resolve, 260));
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(250);
+		});
 
-		expect(await screen.findByText("Could not load people or teams")).not.toBeNull();
+		expect(screen.getByText("Could not load people or teams")).not.toBeNull();
 		expect(screen.getByText("Employees")).not.toBeNull();
 	});
 });

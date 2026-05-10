@@ -109,8 +109,6 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 
 	const pageResults = staticResults.filter((result) => result.type === "page");
 	const settingResults = staticResults.filter((result) => result.type === "setting");
-	const hasResults =
-		staticResults.length > 0 || liveResults.employees.length > 0 || liveResults.teams.length > 0;
 
 	function handleSelect(result: AppSearchResult) {
 		setOpen(false);
@@ -133,11 +131,11 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 				<CommandInput
 					aria-label="Search pages, settings, people, and teams"
 					onValueChange={setQuery}
-					placeholder="Search pages, settings, people, and teams..."
+					placeholder="Search pages, settings, people, and teams…"
 					value={query}
 				/>
 				<CommandList>
-					{hasResults ? null : <CommandEmpty>No results found.</CommandEmpty>}
+					<CommandEmpty>No results found.</CommandEmpty>
 					<ResultGroup
 						label={getGroupLabel("page")}
 						onSelect={handleSelect}
