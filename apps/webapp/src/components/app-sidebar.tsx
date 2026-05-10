@@ -10,6 +10,7 @@ import {
 	IconFileDescription,
 	IconHelp,
 	IconHierarchy,
+	IconMessageCircle,
 	IconReceipt,
 	IconReport,
 	IconSettings,
@@ -137,8 +138,13 @@ export function AppSidebar({
 		},
 		{
 			title: t("nav.get-help", "Get Help"),
-			url: "#",
+			url: "https://docs.z8-time.app/docs",
 			icon: IconHelp,
+		},
+		{
+			title: t("nav.feedback", "Feedback"),
+			url: "https://feedback.z8-time.app/",
+			icon: IconMessageCircle,
 		},
 	];
 

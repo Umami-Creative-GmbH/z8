@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { IconShieldCheck } from "@tabler/icons-react";
+import { IconHelp, IconMessageCircle, IconShieldCheck } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -119,6 +119,31 @@ describe("app sidebar compliance navigation", () => {
 		expect(navMainSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Org Explorer", url: "/organization" }),
+			]),
+		);
+	});
+
+	it("renders help and feedback entries in secondary navigation", () => {
+		render(<AppSidebar />);
+
+		expect(screen.getByRole("link", { name: "Get Help" }).getAttribute("href")).toBe(
+			"https://docs.z8-time.app/docs",
+		);
+		expect(screen.getByRole("link", { name: "Feedback" }).getAttribute("href")).toBe(
+			"https://feedback.z8-time.app/",
+		);
+		expect(navSecondarySpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Get Help",
+					url: "https://docs.z8-time.app/docs",
+					icon: IconHelp,
+				}),
+				expect.objectContaining({
+					title: "Feedback",
+					url: "https://feedback.z8-time.app/",
+					icon: IconMessageCircle,
+				}),
 			]),
 		);
 	});
