@@ -37,4 +37,22 @@ describe("platform admin layout", () => {
 		expect(overviewSource).toContain('href="/platform-admin/diagnostics"');
 		expect(overviewSource).toContain('"Deployment Diagnostics"');
 	});
+
+	it("localizes deployment diagnostics page copy and hides decorative overview icon", () => {
+		const diagnosticsSource = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "diagnostics/page.tsx"), "utf8"),
+		);
+		const overviewSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"));
+
+		expect(diagnosticsSource).toContain("getTranslate");
+		expect(diagnosticsSource).toContain("admin:admin.diagnostics.title");
+		expect(diagnosticsSource).toContain('"Deployment Diagnostics"');
+		expect(diagnosticsSource).toContain("admin:admin.diagnostics.description");
+		expect(diagnosticsSource).toContain(
+			'"Safe platform configuration and app-only deployment health checks."',
+		);
+		expect(overviewSource).toContain(
+			'<IconActivityHeartbeat className="size-5" aria-hidden="true" />',
+		);
+	});
 });

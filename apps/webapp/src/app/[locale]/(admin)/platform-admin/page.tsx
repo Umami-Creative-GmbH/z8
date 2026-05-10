@@ -313,7 +313,7 @@ export default async function AdminDashboardPage() {
 							"Review safe config and app health checks",
 						)}
 						href="/platform-admin/diagnostics"
-						icon={<IconActivityHeartbeat className="size-5" />}
+						icon={<IconActivityHeartbeat className="size-5" aria-hidden="true" />}
 					/>
 					{process.env.BILLING_ENABLED === "true" && (
 						<QuickActionCard
