@@ -100,4 +100,18 @@ describe("buildStaticAppSearchResults", () => {
 		const keys = results.map((result) => `${result.type}:${result.href}`);
 		expect(new Set(keys).size).toBe(keys.length);
 	});
+
+	it("returns globally unique result ids", () => {
+		const results = buildStaticAppSearchResults({
+			t,
+			employeeRole: "admin",
+			settingsAccessTier: "orgAdmin",
+			billingEnabled: true,
+			showComplianceNav: true,
+			featureFlags: enabledFeatures,
+		});
+
+		const ids = results.map((result) => result.id);
+		expect(new Set(ids).size).toBe(ids.length);
+	});
 });

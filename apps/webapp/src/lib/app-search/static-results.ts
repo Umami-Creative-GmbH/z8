@@ -102,7 +102,7 @@ export function buildStaticAppSearchResults({
 }: StaticAppSearchInput): AppSearchResult[] {
 	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map((destination) => ({
 		type: "page",
-		id: destination.id,
+		id: `page:${destination.id}`,
 		title: t(destination.titleKey, destination.titleDefault),
 		href: destination.href,
 	}));
@@ -111,7 +111,7 @@ export function buildStaticAppSearchResults({
 		pageResults.push(
 			...TEAM_PAGE_DESTINATIONS.map((destination) => ({
 				type: "page" as const,
-				id: destination.id,
+				id: `page:${destination.id}`,
 				title: t(destination.titleKey, destination.titleDefault),
 				href: destination.href,
 			})),
@@ -120,7 +120,7 @@ export function buildStaticAppSearchResults({
 		if (featureFlags?.shiftsEnabled) {
 			pageResults.push({
 				type: "page",
-				id: "scheduling",
+				id: "page:scheduling",
 				title: t("nav.scheduling", "Scheduling"),
 				href: "/scheduling",
 			});
@@ -130,7 +130,7 @@ export function buildStaticAppSearchResults({
 	if (showComplianceNav) {
 		pageResults.push({
 			type: "page",
-			id: "compliance",
+			id: "page:compliance",
 			title: t("nav.compliance", "Compliance"),
 			href: "/compliance",
 		});
@@ -138,7 +138,7 @@ export function buildStaticAppSearchResults({
 
 	pageResults.push({
 		type: "page",
-		id: SETTINGS_PAGE_DESTINATION.id,
+		id: `page:${SETTINGS_PAGE_DESTINATION.id}`,
 		title: t(SETTINGS_PAGE_DESTINATION.titleKey, SETTINGS_PAGE_DESTINATION.titleDefault),
 		href: SETTINGS_PAGE_DESTINATION.href,
 	});
@@ -151,7 +151,7 @@ export function buildStaticAppSearchResults({
 
 	const settingsResults: AppSearchResult[] = visibleSettings.map((setting) => ({
 		type: "setting",
-		id: setting.id,
+		id: `setting:${setting.id}`,
 		title: t(setting.titleKey, setting.titleDefault),
 		subtitle: t(setting.descriptionKey, setting.descriptionDefault),
 		href: setting.href,
