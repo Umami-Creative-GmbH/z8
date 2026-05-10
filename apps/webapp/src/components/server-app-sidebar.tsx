@@ -19,7 +19,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 	const featureFlags = {
 		shiftsEnabled: currentOrganization?.shiftsEnabled ?? false,
 		projectsEnabled: currentOrganization?.projectsEnabled ?? false,
-		surchargesEnabled: currentOrganization?.surchargesEnabled ?? false,
+		surchargesEnabled: false,
 		demoDataEnabled: currentOrganization?.demoDataEnabled ?? true,
 	};
 
