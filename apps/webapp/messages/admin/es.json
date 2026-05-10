@@ -117,7 +117,7 @@
       "pagination": {
         "showing": "Mostrando del {from} al {to} de {total} usuarios"
       },
-      "searchPlaceholder": "Buscar por nombre o correo electrónico…",
+      "searchPlaceholder": "Buscar por correo electrónico…",
       "sessionsDialog": {
         "description": "Sesiones activas para {email}",
         "noSessions": "No hay sesiones activas",
