@@ -1,4 +1,5 @@
 import {
+	IconActivityHeartbeat,
 	IconAlertTriangle,
 	IconArrowUpRight,
 	IconBuilding,
@@ -280,7 +281,7 @@ export default async function AdminDashboardPage() {
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
 					{t("admin:admin.overview.quickActions.title", "Quick Actions")}
 				</h2>
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<QuickActionCard
 						title={t("admin:admin.overview.quickActions.users.title", "User Management")}
 						description={t(
@@ -301,6 +302,18 @@ export default async function AdminDashboardPage() {
 						)}
 						href="/platform-admin/organizations"
 						icon={<IconBuilding className="size-5" />}
+					/>
+					<QuickActionCard
+						title={t(
+							"admin:admin.overview.quickActions.diagnostics.title",
+							"Deployment Diagnostics",
+						)}
+						description={t(
+							"admin:admin.overview.quickActions.diagnostics.description",
+							"Review safe config and app health checks",
+						)}
+						href="/platform-admin/diagnostics"
+						icon={<IconActivityHeartbeat className="size-5" aria-hidden="true" />}
 					/>
 					{process.env.BILLING_ENABLED === "true" && (
 						<QuickActionCard
