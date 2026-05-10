@@ -46,6 +46,8 @@ Use `/platform-admin/diagnostics` to review safe deployment configuration and ap
 
 Diagnostics are read-only. They do not inspect Kubernetes state and do not provide restart, rollout, or scaling controls.
 
+Deployment diagnostics are not a deployment gate: operators must still verify runtime secrets such as BETTER_AUTH_SECRET through Phase or the deployment environment, because build verification can use a build-only auth secret fallback.
+
 ## What Platform Admins Do Not Replace
 
 Platform admin access does not replace normal organization settings workflows. Day-to-day payroll export, scheduling, member management, enterprise auth, and employee administration remain organization-scoped tasks handled inside that organization's own settings.
