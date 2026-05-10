@@ -1,4 +1,8 @@
-import { getAuthContext, getCurrentSettingsAccessTier, getUserOrganizations } from "@/lib/auth-helpers";
+import {
+	getAuthContext,
+	getCurrentSettingsAccessTier,
+	getUserOrganizations,
+} from "@/lib/auth-helpers";
 import { AppSidebar } from "./app-sidebar";
 
 export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
@@ -12,6 +16,12 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 	const currentOrganization = authContext?.employee?.organizationId
 		? organizations.find((org) => org.id === authContext.employee?.organizationId) || null
 		: null;
+	const featureFlags = {
+		shiftsEnabled: currentOrganization?.shiftsEnabled ?? false,
+		projectsEnabled: currentOrganization?.projectsEnabled ?? false,
+		surchargesEnabled: false,
+		demoDataEnabled: currentOrganization?.demoDataEnabled ?? true,
+	};
 
 	return (
 		<AppSidebar
@@ -21,6 +31,9 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			employeeRole={authContext?.employee?.role ?? null}
 			shiftsEnabled={currentOrganization?.shiftsEnabled ?? false}
 			showComplianceNav={settingsAccessTier === "orgAdmin"}
+			settingsAccessTier={settingsAccessTier ?? "member"}
+			billingEnabled={process.env.BILLING_ENABLED === "true"}
+			featureFlags={featureFlags}
 		/>
 	);
 }

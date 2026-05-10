@@ -82,6 +82,10 @@ function getInitialFilters(): { search: string; status: UserStatusFilter } {
 	};
 }
 
+function getRedactedUserLabel(userId: string): string {
+	return `User ${userId.replace(/^usr_/, "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6) || "redacted"}`;
+}
+
 export default function UsersPage() {
 	const { t } = useTranslate();
 	const router = useRouter();
@@ -265,7 +269,8 @@ export default function UsersPage() {
 						aria-hidden="true"
 					/>
 					<Input
-						placeholder={t("admin:admin.users.searchPlaceholder", "Search by name or email…")}
+						aria-label={t("admin:admin.users.searchLabel", "Search users by email")}
+						placeholder={t("admin:admin.users.searchPlaceholder", "Search by email…")}
 						name="search"
 						autoComplete="off"
 						value={search}
@@ -325,20 +330,10 @@ export default function UsersPage() {
 											<TableCell>
 												<div className="flex items-center gap-3">
 													<div className="size-8 rounded-full bg-muted flex items-center justify-center">
-														{user.image ? (
-															<img
-																src={user.image}
-																alt={user.name}
-																width={32}
-																height={32}
-																className="size-8 rounded-full"
-															/>
-														) : (
-															<IconUser className="size-4" aria-hidden="true" />
-														)}
+														<IconUser className="size-4" aria-hidden="true" />
 													</div>
 													<div>
-														<div className="font-medium">{user.name}</div>
+														<div className="font-medium">{getRedactedUserLabel(user.id)}</div>
 														<div className="text-sm text-muted-foreground">{user.email}</div>
 													</div>
 												</div>

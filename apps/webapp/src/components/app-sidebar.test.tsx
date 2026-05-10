@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
 	navMainSpy,
 	navSecondarySpy,
+	appSearchSpy,
 	appSidebarSpy,
 	getUserOrganizationsMock,
 	getAuthContextMock,
@@ -15,6 +16,7 @@ const {
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
+	appSearchSpy: vi.fn(),
 	appSidebarSpy: vi.fn(),
 	getUserOrganizationsMock: vi.fn(),
 	getAuthContextMock: vi.fn(),
@@ -46,6 +48,13 @@ vi.mock("@/components/nav-main", () => ({
 				))}
 			</nav>
 		);
+	},
+}));
+
+vi.mock("@/components/app-search", () => ({
+	AppSearch: ({ staticResults }: { staticResults: Array<{ href: string; title: string }> }) => {
+		appSearchSpy(staticResults);
+		return <button type="button">Search</button>;
 	},
 }));
 
@@ -90,6 +99,7 @@ describe("app sidebar compliance navigation", () => {
 	beforeEach(() => {
 		navMainSpy.mockClear();
 		navSecondarySpy.mockClear();
+		appSearchSpy.mockClear();
 		appSidebarSpy.mockReset();
 		getUserOrganizationsMock.mockReset();
 		getAuthContextMock.mockReset();
@@ -119,6 +129,35 @@ describe("app sidebar compliance navigation", () => {
 		expect(navMainSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Org Explorer", url: "/organization" }),
+			]),
+		);
+	});
+
+	it("renders search with member-safe static results for employees", () => {
+		render(
+			<AppSidebar
+				employeeRole="employee"
+				featureFlags={{
+					shiftsEnabled: false,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: false,
+				}}
+				settingsAccessTier="member"
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Search" })).toBeTruthy();
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Dashboard", href: "/" }),
+				expect.objectContaining({ title: "Profile", href: "/settings/profile" }),
+			]),
+		);
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.not.arrayContaining([
+				expect.objectContaining({ href: "/settings/employees" }),
+				expect.objectContaining({ href: "/settings/organizations" }),
 			]),
 		);
 	});
@@ -210,6 +249,14 @@ describe("app sidebar compliance navigation", () => {
 				showComplianceNav: true,
 				employeeRole: "admin",
 				shiftsEnabled: true,
+				settingsAccessTier: "orgAdmin",
+				billingEnabled: false,
+				featureFlags: {
+					shiftsEnabled: true,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: true,
+				},
 			}),
 		);
 
@@ -221,6 +268,14 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: false,
+				settingsAccessTier: "member",
+				billingEnabled: false,
+				featureFlags: {
+					shiftsEnabled: true,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: true,
+				},
 			}),
 		);
 	});

@@ -1,4 +1,5 @@
 import {
+	IconActivityHeartbeat,
 	IconAlertTriangle,
 	IconArrowUpRight,
 	IconBuilding,
@@ -12,11 +13,14 @@ import {
 import { count, eq, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { PlatformAnalyticsPreviewCharts } from "@/components/platform-admin/platform-analytics-charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { organizationSuspension, subscription } from "@/db/schema";
+import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
+import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -54,7 +58,7 @@ function StatCard({ title, value, description, icon, href, variant = "default" }
 					variantStyles[variant],
 				)}
 			>
-				<CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+				<CardHeader className="flex flex-row items-start justify-between gap-0 pb-3">
 					<div
 						className={cn(
 							"flex size-10 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
@@ -200,11 +204,15 @@ async function DashboardStats() {
 function DashboardStatsLoading() {
 	const billingEnabled = process.env.BILLING_ENABLED === "true";
 	const cardCount = billingEnabled ? 6 : 4;
+	const skeletonCardKeys = Array.from(
+		{ length: cardCount },
+		(_, index) => `dashboard-stat-skeleton-${index}`,
+	);
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-			{[...Array(cardCount)].map((_, i) => (
-				<Card key={i}>
+			{skeletonCardKeys.map((key) => (
+				<Card key={key}>
 					<CardHeader className="pb-3">
 						<Skeleton className="size-10 rounded-lg" />
 					</CardHeader>
@@ -216,6 +224,46 @@ function DashboardStatsLoading() {
 				</Card>
 			))}
 		</div>
+	);
+}
+
+async function DashboardAnalyticsPreview() {
+	await connection();
+
+	const params = parsePlatformAnalyticsParams({ range: "30d", bucket: "week" });
+	const data = await getPlatformAnalyticsData(params, undefined, {
+		includeBilling: false,
+		includeTimeRecords: false,
+	});
+
+	return <PlatformAnalyticsPreviewCharts data={data} />;
+}
+
+function DashboardAnalyticsPreviewLoading() {
+	return (
+		<Card>
+			<CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="space-y-2">
+					<Skeleton className="h-5 w-36" />
+					<Skeleton className="h-4 w-72 max-w-full" />
+				</div>
+				<Skeleton className="h-5 w-28" />
+			</CardHeader>
+			<CardContent className="grid gap-4 lg:grid-cols-2">
+				{["analytics-preview-growth", "analytics-preview-engagement"].map((key) => (
+					<Card key={key} className="gap-4 border-muted/80 shadow-none">
+						<CardHeader className="space-y-2">
+							<Skeleton className="h-5 w-32" />
+							<Skeleton className="h-4 w-56 max-w-full" />
+						</CardHeader>
+						<CardContent className="space-y-3">
+							<Skeleton className="h-4 w-48" />
+							<Skeleton className="h-[180px] w-full" />
+						</CardContent>
+					</Card>
+				))}
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -275,12 +323,22 @@ export default async function AdminDashboardPage() {
 				</Suspense>
 			</section>
 
+			{/* Analytics Preview */}
+			<section className="space-y-4">
+				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+					{t("admin:admin.overview.analytics.title", "Analytics Trends")}
+				</h2>
+				<Suspense fallback={<DashboardAnalyticsPreviewLoading />}>
+					<DashboardAnalyticsPreview />
+				</Suspense>
+			</section>
+
 			{/* Quick Actions */}
 			<section className="space-y-4">
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
 					{t("admin:admin.overview.quickActions.title", "Quick Actions")}
 				</h2>
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<QuickActionCard
 						title={t("admin:admin.overview.quickActions.users.title", "User Management")}
 						description={t(
@@ -301,6 +359,18 @@ export default async function AdminDashboardPage() {
 						)}
 						href="/platform-admin/organizations"
 						icon={<IconBuilding className="size-5" />}
+					/>
+					<QuickActionCard
+						title={t(
+							"admin:admin.overview.quickActions.diagnostics.title",
+							"Deployment Diagnostics",
+						)}
+						description={t(
+							"admin:admin.overview.quickActions.diagnostics.description",
+							"Review safe config and app health checks",
+						)}
+						href="/platform-admin/diagnostics"
+						icon={<IconActivityHeartbeat className="size-5" aria-hidden="true" />}
 					/>
 					{process.env.BILLING_ENABLED === "true" && (
 						<QuickActionCard

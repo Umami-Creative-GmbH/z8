@@ -166,6 +166,16 @@ export async function getRecentExecutions(limit = 100): Promise<CronJobExecution
 	});
 }
 
+/**
+ * Get executions since a cutoff date across all job types.
+ */
+export async function getExecutionsSince(cutoffDate: Date): Promise<CronJobExecution[]> {
+	return db.query.cronJobExecution.findMany({
+		where: gte(cronJobExecution.startedAt, cutoffDate),
+		orderBy: [desc(cronJobExecution.startedAt)],
+	});
+}
+
 // ============================================
 // METRICS FUNCTIONS
 // ============================================

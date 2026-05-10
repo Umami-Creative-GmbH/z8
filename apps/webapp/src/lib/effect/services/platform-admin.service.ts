@@ -15,7 +15,6 @@ import {
 // Types
 export interface PlatformUser {
 	id: string;
-	name: string;
 	email: string;
 	emailVerified: boolean;
 	role: string | null;
@@ -23,7 +22,6 @@ export interface PlatformUser {
 	banReason: string | null;
 	banExpires: Date | null;
 	createdAt: Date;
-	image: string | null;
 }
 
 export interface PlatformUserFilters {
@@ -217,12 +215,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 						const conditions = [];
 
 						if (search) {
-							conditions.push(
-								or(
-									ilike(user.name, `%${search}%`),
-									ilike(user.email, `%${search}%`),
-								),
-							);
+							conditions.push(ilike(user.email, `%${search}%`));
 						}
 
 						if (status === "active") {
@@ -246,7 +239,6 @@ export const PlatformAdminServiceLive = Layer.effect(
 						const users = await db
 							.select({
 								id: user.id,
-								name: user.name,
 								email: user.email,
 								emailVerified: user.emailVerified,
 								role: user.role,
@@ -254,7 +246,6 @@ export const PlatformAdminServiceLive = Layer.effect(
 								banReason: user.banReason,
 								banExpires: user.banExpires,
 								createdAt: user.createdAt,
-								image: user.image,
 							})
 							.from(user)
 							.where(whereClause)
