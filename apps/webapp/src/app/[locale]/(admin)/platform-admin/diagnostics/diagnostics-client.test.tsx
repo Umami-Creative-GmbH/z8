@@ -13,7 +13,7 @@ vi.mock("./actions", () => ({
 }));
 
 vi.mock("@/components/ui/badge", () => ({
-	Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+	Badge: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement>) => <span {...props}>{children}</span>,
 }));
 
 vi.mock("@/components/ui/button", () => ({
@@ -23,11 +23,11 @@ vi.mock("@/components/ui/button", () => ({
 }));
 
 vi.mock("@/components/ui/card", () => ({
-	Card: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
-	CardContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
-	CardHeader: ({ children }: { children: React.ReactNode }) => <header>{children}</header>,
-	CardTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+	Card: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <section {...props}>{children}</section>,
+	CardContent: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+	CardDescription: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => <p {...props}>{children}</p>,
+	CardHeader: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <header {...props}>{children}</header>,
+	CardTitle: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props}>{children}</h2>,
 }));
 
 vi.mock("@/navigation", () => ({
@@ -70,11 +70,20 @@ describe("DiagnosticsClient", () => {
 		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
 
 		expect(screen.getByText("Deployment Diagnostics")).toBeTruthy();
-		expect(screen.getByText("Healthy")).toBeTruthy();
+		expect(screen.getAllByText("Healthy").length).toBeGreaterThan(0);
 		expect(screen.getByText("Billing")).toBeTruthy();
-		expect(screen.getByText("Disabled")).toBeTruthy();
+		expect(screen.getAllByText("Disabled").length).toBeGreaterThan(0);
 		expect(screen.getByText("Database")).toBeTruthy();
 		expect(screen.getByText("Connected")).toBeTruthy();
+	});
+
+	it("keeps item status labels accessible when the visual label is hidden", () => {
+		const { container } = render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+
+		const hiddenStatusLabels = Array.from(container.querySelectorAll(".sr-only")).map((element) => element.textContent);
+
+		expect(hiddenStatusLabels).toContain("Disabled");
+		expect(hiddenStatusLabels).toContain("Healthy");
 	});
 
 	it("refreshes the snapshot when the refresh action succeeds", async () => {
@@ -98,7 +107,10 @@ describe("DiagnosticsClient", () => {
 		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
 		fireEvent.click(screen.getByRole("button", { name: "Refresh diagnostics" }));
 
-		await waitFor(() => expect(screen.getByText("Warning")).toBeTruthy());
+		await waitFor(() => expect(screen.getAllByText("Warning").length).toBeGreaterThan(0));
+		expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
+		expect(screen.getByRole("status").textContent).toContain("Warning");
+		expect(screen.getByRole("status").textContent).toContain("2026-05-10T12:05:00.000Z");
 		expect(screen.getByText("Queue / Valkey")).toBeTruthy();
 		expect(screen.getByText("Unavailable")).toBeTruthy();
 		expect(screen.getByText("Check Valkey/Redis connectivity and worker queue configuration.")).toBeTruthy();

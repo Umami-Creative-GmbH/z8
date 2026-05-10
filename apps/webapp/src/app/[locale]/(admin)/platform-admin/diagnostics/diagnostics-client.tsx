@@ -38,9 +38,9 @@ function StatusIcon({ status }: { status: DiagnosticsStatus }) {
 
 function StatusBadge({ status, showLabel = true }: { status: DiagnosticsStatus; showLabel?: boolean }) {
 	return (
-		<Badge variant="outline" className={cn("capitalize", statusStyles[status])} aria-label={statusLabels[status]}>
+		<Badge variant="outline" className={cn("capitalize", statusStyles[status])}>
 			<StatusIcon status={status} />
-			{showLabel ? statusLabels[status] : null}
+			{showLabel ? statusLabels[status] : <span className="sr-only">{statusLabels[status]}</span>}
 		</Badge>
 	);
 }
@@ -112,6 +112,9 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 						<CardDescription>
 							Safe platform configuration and app-level service health. Last refreshed {snapshot.fetchedAt}.
 						</CardDescription>
+						<p className="sr-only" role="status" aria-live="polite">
+							Diagnostics status {statusLabels[snapshot.overallStatus]}. Last refreshed {snapshot.fetchedAt}.
+						</p>
 					</div>
 					<Button onClick={refreshDiagnostics} disabled={isPending} aria-label="Refresh diagnostics">
 						{isPending ? (
