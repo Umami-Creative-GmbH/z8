@@ -6,6 +6,21 @@ on:
       - main
     tags:
       - "v*.*.*"
+    paths:
+      - "apps/webapp/**"
+      - "docker/Dockerfile.webapp"
+      - "docker/Dockerfile.webapp.dockerignore"
+      - "docker/Dockerfile.worker"
+      - "docker/Dockerfile.worker.dockerignore"
+      - "docker/Dockerfile.migration"
+      - "docker/Dockerfile.migration.dockerignore"
+      - "docker/scripts/**"
+      - "docker/targets/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
   workflow_dispatch:
 
 permissions:
