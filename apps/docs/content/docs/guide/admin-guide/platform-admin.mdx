@@ -24,7 +24,7 @@ Platform admin access is separate from organization administration. Organization
 
 ## Accessing The Dashboard
 
-Open `/platform-admin` to reach the platform-scoped admin area. The current route set includes an overview dashboard plus dedicated pages for users, organizations, worker queue operations, settings, and optional billing views.
+Open `/platform-admin` to reach the platform-scoped admin area. The current route set includes an overview dashboard plus dedicated pages for users, organizations, deployment diagnostics, worker queue operations, settings, and optional billing views.
 
 The overview dashboard highlights platform-wide metrics such as total users, banned users, active organizations, and suspended organizations, with links into the related management pages.
 
@@ -39,6 +39,12 @@ These actions are platform-scoped. They are not the same as adjusting a member's
 Use `/platform-admin/organizations` to review organizations across the tenant base, search by name or slug, suspend organizations into read-only mode, restore them, or schedule deletion.
 
 Suspension is useful when the organization should keep read-only visibility while changes are paused. Deletion is a separate action and should be treated as an operational decision with higher risk.
+
+## Deployment Diagnostics
+
+Use `/platform-admin/diagnostics` to review safe deployment configuration and app-only service health. The page reports configuration presence, database connectivity, queue/Valkey health, worker queue summary, and billing readiness without exposing secret values.
+
+Diagnostics are read-only. They do not inspect Kubernetes state and do not provide restart, rollout, or scaling controls.
 
 ## What Platform Admins Do Not Replace
 
