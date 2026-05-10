@@ -27,4 +27,14 @@ describe("platform admin layout", () => {
 		expect(source).toContain(dynamicBoundary);
 		expect(source.indexOf(dynamicBoundary)).toBeLessThan(source.indexOf(billingEnabledCheck));
 	});
+
+	it("links to deployment diagnostics from platform-admin navigation and overview", () => {
+		const layoutSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+		const overviewSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"));
+
+		expect(layoutSource).toContain('href: "/platform-admin/diagnostics"');
+		expect(layoutSource).toContain('"Deployment Diagnostics"');
+		expect(overviewSource).toContain('href="/platform-admin/diagnostics"');
+		expect(overviewSource).toContain('"Deployment Diagnostics"');
+	});
 });

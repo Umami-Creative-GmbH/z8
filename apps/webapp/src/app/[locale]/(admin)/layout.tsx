@@ -1,4 +1,5 @@
 import {
+	IconActivityHeartbeat,
 	IconBuilding,
 	IconChartBar,
 	IconCreditCard,
@@ -66,6 +67,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 			href: "/platform-admin/worker-queue",
 			icon: IconServer,
 			label: t("admin:admin.layout.nav.workerQueue", "Worker Queue"),
+		},
+		{
+			href: "/platform-admin/diagnostics",
+			icon: IconActivityHeartbeat,
+			label: t("admin:admin.layout.nav.diagnostics", "Deployment Diagnostics"),
 		},
 	];
 
