@@ -82,6 +82,22 @@ describe("Reconciler", () => {
     expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
   });
 
+  it("does not deploy app runtime until webapp worker and migration share the same tag", async () => {
+    const dependencies = createDependencies({
+      observed: { "sha-app123": ["z8-webapp", "z8-worker"] },
+      deployed: {},
+      failures: {}
+    });
+    const reconciler = new Reconciler(dependencies);
+
+    await reconciler.reconcile(appObservation("z8-webapp", "sha-app123", "2026-05-08T10:00:00.000Z"));
+
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalled();
+    expect(dependencies.kube.runMigration).not.toHaveBeenCalled();
+    expect(dependencies.kube.setDeploymentImage).not.toHaveBeenCalled();
+    expect(dependencies.kube.waitForDeploymentRollout).not.toHaveBeenCalled();
+  });
+
   it("runs migration before patching and waiting for web and worker", async () => {
     const dependencies = createDependencies({
       observed: { "sha-abc123": ["z8-webapp", "z8-worker"] },
@@ -118,6 +134,23 @@ describe("Reconciler", () => {
     expect(dependencies.state.update).toHaveBeenCalledWith(expect.any(Function));
   });
 
+  it("deploys docs without requiring app or marketing tags for the same commit", async () => {
+    const dependencies = createDependencies({ observed: {}, deployed: {}, failures: {} });
+    const reconciler = new Reconciler(dependencies);
+
+    await reconciler.reconcile(appObservation("z8-docs", "sha-docs123", "2026-05-08T10:00:00.000Z"));
+
+    expect(dependencies.calls).toEqual([
+      "hasTag:z8-docs:sha-docs123",
+      "set:docs/docs:ghcr.io/umami-creative-gmbh/z8-docs:sha-docs123",
+      "wait:docs:60000"
+    ]);
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-webapp", "sha-docs123");
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-worker", "sha-docs123");
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-migration", "sha-docs123");
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-marketing", "sha-docs123");
+  });
+
   it("rolls out marketing independently", async () => {
     const dependencies = createDependencies({ observed: {}, deployed: {}, failures: {} });
     const reconciler = new Reconciler(dependencies);
@@ -129,6 +162,23 @@ describe("Reconciler", () => {
       "set:marketing/marketing:ghcr.io/umami-creative-gmbh/z8-marketing:sha-abc123",
       "wait:marketing:60000"
     ]);
+  });
+
+  it("deploys marketing without requiring app or docs tags for the same commit", async () => {
+    const dependencies = createDependencies({ observed: {}, deployed: {}, failures: {} });
+    const reconciler = new Reconciler(dependencies);
+
+    await reconciler.reconcile(appObservation("z8-marketing", "sha-market123", "2026-05-08T10:00:00.000Z"));
+
+    expect(dependencies.calls).toEqual([
+      "hasTag:z8-marketing:sha-market123",
+      "set:marketing/marketing:ghcr.io/umami-creative-gmbh/z8-marketing:sha-market123",
+      "wait:marketing:60000"
+    ]);
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-webapp", "sha-market123");
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-worker", "sha-market123");
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-migration", "sha-market123");
+    expect(dependencies.registry.hasTag).not.toHaveBeenCalledWith("z8-docs", "sha-market123");
   });
 
   it("skips deployment when the registry tag is missing", async () => {

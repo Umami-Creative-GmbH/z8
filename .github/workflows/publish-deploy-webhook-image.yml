@@ -6,6 +6,15 @@ on:
       - main
     tags:
       - "v*.*.*"
+    paths:
+      - ".dockerignore"
+      - "apps/deploy-webhook/**"
+      - "docker/Dockerfile.deploy-webhook"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
   workflow_dispatch:
 
 permissions:

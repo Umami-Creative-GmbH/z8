@@ -56,6 +56,77 @@ function includesAll(text, snippets, context) {
 	}
 }
 
+function getPushBlock() {
+	const lines = workflow.split(/\r?\n/);
+	const startIndex = lines.findIndex((line) => line === "  push:");
+	if (startIndex === -1) {
+		return "";
+	}
+
+	let endIndex = lines.length;
+	for (let index = startIndex + 1; index < lines.length; index += 1) {
+		if (/^ {2}[a-zA-Z0-9_-]+:$/.test(lines[index])) {
+			endIndex = index;
+			break;
+		}
+	}
+
+	return lines.slice(startIndex, endIndex).join("\n");
+}
+
+function getPushPaths(pushBlock) {
+	const lines = pushBlock.split(/\r?\n/);
+	const startIndex = lines.findIndex((line) => line === "    paths:");
+	if (startIndex === -1) {
+		return [];
+	}
+
+	const paths = [];
+	for (let index = startIndex + 1; index < lines.length; index += 1) {
+		const line = lines[index];
+		const match = line.match(/^ {6}- (?:"([^"]+)"|(.+?))\s*$/);
+		if (match) {
+			paths.push(match[1] ?? match[2].trim());
+			continue;
+		}
+
+		if (/^ {0,6}\S/.test(line) || line.trim() === "") {
+			break;
+		}
+	}
+
+	return paths;
+}
+
+function expectPushPathFilters(expectedPaths) {
+	const pushBlock = getPushBlock();
+
+	includesAll(
+		pushBlock,
+		[
+			"  push:",
+			"    branches:",
+			"      - main",
+			"    tags:",
+			'      - "v*.*.*"',
+			"    paths:",
+		],
+		"push trigger path filters",
+	);
+
+	const actualPaths = getPushPaths(pushBlock);
+	const expectedPathSet = new Set(expectedPaths);
+	const actualPathSet = new Set(actualPaths);
+
+	for (const expectedPath of [...expectedPathSet].sort()) {
+		expect(actualPathSet.has(expectedPath), `push trigger paths missing: ${expectedPath}`);
+	}
+
+	for (const actualPath of [...actualPathSet].sort()) {
+		expect(expectedPathSet.has(actualPath), `push trigger paths extra: ${actualPath}`);
+	}
+}
+
 const publishTargetsJob = getJobBlock("publish-targets");
 const publishManifestsJob = getJobBlock("publish-manifests");
 const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
@@ -63,6 +134,23 @@ const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
 expect(publishTargetsJob, "Missing publish-targets job");
 expect(publishManifestsJob, "Missing publish-manifests job");
 expect(cleanupPackageVersionsJob, "Missing cleanup-package-versions job");
+
+expectPushPathFilters([
+	"apps/webapp/**",
+	"docker/Dockerfile.webapp",
+	"docker/Dockerfile.webapp.dockerignore",
+	"docker/Dockerfile.worker",
+	"docker/Dockerfile.worker.dockerignore",
+	"docker/Dockerfile.migration",
+	"docker/Dockerfile.migration.dockerignore",
+	"docker/scripts/**",
+	"docker/targets/**",
+	"packages/**",
+	"package.json",
+	"pnpm-lock.yaml",
+	"pnpm-workspace.yaml",
+	"turbo.json",
+]);
 
 if (publishTargetsJob) {
 	const verifyStep = getStepBlock(publishTargetsJob, "Verify workflow contract");

@@ -6,6 +6,15 @@ on:
       - main
     tags:
       - "v*.*.*"
+    paths:
+      - "apps/docs/**"
+      - "docker/Dockerfile.docs"
+      - "docker/Dockerfile.docs.dockerignore"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
   workflow_dispatch:
 
 permissions:
