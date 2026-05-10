@@ -30,7 +30,9 @@ The overview dashboard highlights platform-wide metrics such as total users, ban
 
 ## Users
 
-Use `/platform-admin/users` to search platform accounts, filter by status, ban or unban users, and inspect or revoke active sessions.
+Use `/platform-admin/users` to search platform accounts by email, filter by status, ban or unban users, and inspect or revoke active sessions.
+
+To support data protection, full user names are redacted by default in this cross-tenant view. Platform admins see a stable redacted user label plus the account email needed for operational lookup.
 
 These actions are platform-scoped. They are not the same as adjusting a member's permissions inside one organization.
 
