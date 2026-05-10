@@ -1,12 +1,13 @@
 "use server";
 
 import { Effect } from "effect";
-import { getAllJobMetrics, getRecentExecutions } from "@/lib/cron/tracking";
+import { getAllJobMetrics, getExecutionsSince, getRecentExecutions } from "@/lib/cron/tracking";
 import { DatabaseError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
+import { buildReliabilityData, type WorkerReliabilityData } from "./reliability";
 
 export interface QueueCounts {
 	waiting: number;
@@ -48,10 +49,12 @@ export interface WorkerQueueStats {
 	repeatableJobs: RepeatableJob[];
 	recentExecutions: RecentExecution[];
 	jobMetrics: JobMetric[];
+	reliability: WorkerReliabilityData;
 	fetchedAt: string;
 }
 
 const HIDDEN_WORKER_NAMES = new Set(["cron:telemetry"]);
+const RELIABILITY_WINDOW_DAYS = 30;
 
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
@@ -150,12 +153,42 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				avgDurationMs: m.avgDurationMs,
 			}));
 
+		const reliabilityCutoff = new Date();
+		reliabilityCutoff.setDate(reliabilityCutoff.getDate() - RELIABILITY_WINDOW_DAYS);
+
+		const reliabilityExecutions = yield* Effect.tryPromise({
+			try: () => getExecutionsSince(reliabilityCutoff),
+			catch: () =>
+				new DatabaseError({
+					message: "Failed to fetch reliability execution history",
+					operation: "query",
+					table: "cron_job_execution",
+				}),
+		});
+
+		const reliability = buildReliabilityData({
+			now: new Date(),
+			windowDays: RELIABILITY_WINDOW_DAYS,
+			executions: reliabilityExecutions
+				.filter((exec) => !HIDDEN_WORKER_NAMES.has(exec.jobName))
+				.map((exec) => ({
+					id: exec.id,
+					jobName: exec.jobName,
+					status: exec.status,
+					startedAt: exec.startedAt.toISOString(),
+					completedAt: exec.completedAt?.toISOString() ?? null,
+					durationMs: exec.durationMs,
+				})),
+			repeatableJobs,
+		});
+
 		return {
 			isConnected,
 			counts,
 			repeatableJobs,
 			recentExecutions,
 			jobMetrics,
+			reliability,
 			fetchedAt: new Date().toISOString(),
 		};
 	});
