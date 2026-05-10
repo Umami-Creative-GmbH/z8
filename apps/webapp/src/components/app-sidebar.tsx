@@ -19,14 +19,18 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type * as React from "react";
+import { AppSearch } from "@/components/app-search";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
+import type { FeatureFlagState } from "@/components/settings/settings-config";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
+import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
 import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	organizations?: UserOrganization[];
@@ -34,6 +38,9 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	shiftsEnabled?: boolean;
 	showComplianceNav?: boolean;
+	settingsAccessTier?: SettingsAccessTier;
+	billingEnabled?: boolean;
+	featureFlags?: FeatureFlagState;
 }
 
 const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefined): boolean => {
@@ -48,10 +55,21 @@ export function AppSidebar({
 	employeeRole = null,
 	shiftsEnabled = false,
 	showComplianceNav = false,
+	settingsAccessTier = "member",
+	billingEnabled = false,
+	featureFlags,
 	...props
 }: AppSidebarProps) {
 	const { t } = useTranslate();
 	const { data: session, isPending } = useSession();
+	const staticSearchResults = buildStaticAppSearchResults({
+		t: (key, defaultValue) => t(key, defaultValue),
+		employeeRole,
+		settingsAccessTier,
+		billingEnabled,
+		showComplianceNav,
+		featureFlags,
+	});
 
 	// Personal section - visible to ALL users
 	const navPersonal = [
@@ -160,6 +178,7 @@ export function AppSidebar({
 				/>
 			</SidebarHeader>
 			<SidebarContent>
+				<AppSearch staticResults={staticSearchResults} />
 				<NavMain items={navPersonal} label="z8 app" />
 				{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
 				<NavSecondary className="mt-auto" items={navSecondary} />
