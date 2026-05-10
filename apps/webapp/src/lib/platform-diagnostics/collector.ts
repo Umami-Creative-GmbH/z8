@@ -112,7 +112,7 @@ function getRecommendedActions(items: DiagnosticsItem[]): string[] {
 		actions.add("Verify system_config persistence so telemetry can identify this deployment consistently.");
 	}
 
-	if (items.some((item) => item.title.includes("Queue") && item.status === "warning")) {
+	if (items.some((item) => item.title.toLowerCase().includes("queue") && item.status === "warning")) {
 		actions.add("Check Valkey/Redis connectivity and worker queue configuration.");
 	}
 
