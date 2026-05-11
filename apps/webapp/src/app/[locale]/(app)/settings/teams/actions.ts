@@ -1,13 +1,14 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { revalidateTag } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { revalidateTag } from "next/cache";
 import * as z from "zod";
-import { member, user as authUser } from "@/db/auth-schema";
+import { type user as authUser, member } from "@/db/auth-schema";
 import { employee, team, teamMembership, teamPermissions } from "@/db/schema";
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
+import { CACHE_TAGS } from "@/lib/cache/tags";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	type AnyAppError,
@@ -20,7 +21,6 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
-import { CACHE_TAGS } from "@/lib/cache/tags";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 import {
@@ -40,6 +40,7 @@ const createTeamSchema = z.object({
 	organizationId: z.string().min(1, "Organization ID is required"),
 	name: z.string().min(1, "Team name is required").max(100, "Team name is too long"),
 	description: z.string().max(500, "Description is too long").optional().nullable(),
+	primaryManagerId: z.string().uuid().nullable().optional(),
 });
 
 const updateTeamSchema = z.object({
@@ -150,9 +151,9 @@ function validatePrimaryManager(
 	});
 }
 
-function withMembershipEmployees<T extends { memberships?: Array<{ employee: OrganizationEmployeeWithUser }> }>(
-	teamRecord: T,
-) {
+function withMembershipEmployees<
+	T extends { memberships?: Array<{ employee: OrganizationEmployeeWithUser }> },
+>(teamRecord: T) {
 	return {
 		...teamRecord,
 		employees: teamRecord.memberships?.map((membership) => membership.employee) ?? [],
@@ -345,6 +346,13 @@ export async function createTeam(
 				}
 
 				const validatedData = validationResult.data;
+				yield* _(
+					validatePrimaryManager(
+						dbService,
+						validatedData.organizationId,
+						validatedData.primaryManagerId,
+					),
+				);
 
 				// Check for duplicate team name in organization
 				const existing = yield* _(
@@ -379,6 +387,7 @@ export async function createTeam(
 								organizationId: validatedData.organizationId,
 								name: validatedData.name,
 								description: validatedData.description || null,
+								primaryManagerId: validatedData.primaryManagerId ?? null,
 							})
 							.returning();
 					}),
@@ -477,8 +486,12 @@ export async function updateTeam(
 					actor.accessTier === "orgAdmin"
 						? true
 						: yield* _(
-							permissionsService.hasTeamPermission(actor.actorId, "canManageTeamSettings", teamId),
-						);
+								permissionsService.hasTeamPermission(
+									actor.actorId,
+									"canManageTeamSettings",
+									teamId,
+								),
+							);
 
 				if (!canManage) {
 					yield* _(
@@ -507,7 +520,13 @@ export async function updateTeam(
 				}
 
 				const validatedData = validationResult.data;
-				yield* _(validatePrimaryManager(dbService, targetTeam.organizationId, validatedData.primaryManagerId));
+				yield* _(
+					validatePrimaryManager(
+						dbService,
+						targetTeam.organizationId,
+						validatedData.primaryManagerId,
+					),
+				);
 
 				// Check for duplicate name if name is being changed
 				if (validatedData.name && validatedData.name !== targetTeam.name) {
@@ -538,7 +557,9 @@ export async function updateTeam(
 				// Update team
 				const updateValues = {
 					...(validatedData.name !== undefined ? { name: validatedData.name } : {}),
-					...(validatedData.description !== undefined ? { description: validatedData.description } : {}),
+					...(validatedData.description !== undefined
+						? { description: validatedData.description }
+						: {}),
 					...(validatedData.primaryManagerId !== undefined
 						? { primaryManagerId: validatedData.primaryManagerId }
 						: {}),
@@ -547,10 +568,7 @@ export async function updateTeam(
 
 				yield* _(
 					dbService.query("updateTeam", async () => {
-						await dbService.db
-							.update(team)
-							.set(updateValues)
-							.where(eq(team.id, teamId));
+						await dbService.db.update(team).set(updateValues).where(eq(team.id, teamId));
 					}),
 				);
 
@@ -657,8 +675,12 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 					actor.accessTier === "orgAdmin"
 						? true
 						: yield* _(
-							permissionsService.hasTeamPermission(actor.actorId, "canManageTeamSettings", teamId),
-						);
+								permissionsService.hasTeamPermission(
+									actor.actorId,
+									"canManageTeamSettings",
+									teamId,
+								),
+							);
 
 				if (!canManage) {
 					yield* _(
@@ -736,7 +758,11 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
  */
 export async function getTeam(
 	teamId: string,
-): Promise<ServerActionResult<ScopedTeam & { employees?: Array<typeof employee.$inferSelect & { user: unknown }> }>> {
+): Promise<
+	ServerActionResult<
+		ScopedTeam & { employees?: Array<typeof employee.$inferSelect & { user: unknown }> }
+	>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -790,7 +816,9 @@ export async function getTeam(
 		}
 
 		const scopedPermissions = actor.employeeRecord
-			? yield* _(loadScopedPermissions(dbService, actor.employeeRecord.id, targetTeam.organizationId))
+			? yield* _(
+					loadScopedPermissions(dbService, actor.employeeRecord.id, targetTeam.organizationId),
+				)
 			: { orgWide: null, byTeamId: new Map() };
 		const scopedFlags = getScopedTeamFlags({
 			accessTier: actor.accessTier,
@@ -959,8 +987,8 @@ export async function addTeamMember(
 					actor.accessTier === "orgAdmin"
 						? true
 						: yield* _(
-							permissionsService.hasTeamPermission(actor.actorId, "canManageTeamMembers", teamId),
-						);
+								permissionsService.hasTeamPermission(actor.actorId, "canManageTeamMembers", teamId),
+							);
 
 				if (!canManage) {
 					yield* _(
@@ -1027,7 +1055,9 @@ export async function addTeamMember(
 
 					if (
 						!scopedPermissions.orgWide?.canManageTeamMembers &&
-						Array.from(currentTeamIds).some((currentTeamId) => !manageableTeamIds.has(currentTeamId))
+						Array.from(currentTeamIds).some(
+							(currentTeamId) => !manageableTeamIds.has(currentTeamId),
+						)
 					) {
 						yield* _(
 							Effect.fail(
@@ -1162,8 +1192,8 @@ export async function removeTeamMember(
 					actor.accessTier === "orgAdmin"
 						? true
 						: yield* _(
-							permissionsService.hasTeamPermission(actor.actorId, "canManageTeamMembers", teamId),
-						);
+								permissionsService.hasTeamPermission(actor.actorId, "canManageTeamMembers", teamId),
+							);
 
 				if (!canManage) {
 					yield* _(

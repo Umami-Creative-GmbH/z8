@@ -67,7 +67,13 @@ vi.mock("@/db/schema", () => ({
 		isActive: "isActive",
 		role: "role",
 	},
-	team: { id: "id", organizationId: "organizationId", name: "name", primaryManagerId: "primaryManagerId", $inferSelect: {} },
+	team: {
+		id: "id",
+		organizationId: "organizationId",
+		name: "name",
+		primaryManagerId: "primaryManagerId",
+		$inferSelect: {},
+	},
 	teamMembership: {
 		organizationId: "organizationId",
 		teamId: "teamId",
@@ -115,14 +121,30 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 	const DatabaseService = Context.GenericTag<{
 		readonly db: {
 			query: {
-				employee: { findFirst: (input: unknown) => Promise<any>; findMany: (input: unknown) => Promise<any[]> };
+				employee: {
+					findFirst: (input: unknown) => Promise<any>;
+					findMany: (input: unknown) => Promise<any[]>;
+				};
 				member: { findFirst: (input: unknown) => Promise<any> };
-				team: { findFirst: (input: unknown) => Promise<any>; findMany: (input: unknown) => Promise<any[]> };
-				teamMembership: { findFirst: (input: unknown) => Promise<any>; findMany: (input: unknown) => Promise<any[]> };
+				team: {
+					findFirst: (input: unknown) => Promise<any>;
+					findMany: (input: unknown) => Promise<any[]>;
+				};
+				teamMembership: {
+					findFirst: (input: unknown) => Promise<any>;
+					findMany: (input: unknown) => Promise<any[]>;
+				};
 				teamPermissions: { findMany: (input: unknown) => Promise<any[]> };
 			};
-			insert: (table: unknown) => { values: (input: unknown) => { onConflictDoNothing: () => Promise<void>; returning: () => Promise<any[]> } };
-			update: (table: unknown) => { set: (input: unknown) => { where: (input: unknown) => Promise<void> } };
+			insert: (table: unknown) => {
+				values: (input: unknown) => {
+					onConflictDoNothing: () => Promise<void>;
+					returning: () => Promise<any[]>;
+				};
+			};
+			update: (table: unknown) => {
+				set: (input: unknown) => { where: (input: unknown) => Promise<void> };
+			};
 			delete: (table: unknown) => { where: (input: unknown) => Promise<void> };
 		};
 		readonly query: <T>(key: string, fn: () => Promise<T>) => unknown;
@@ -185,7 +207,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	});
 
 	const permissionsLayer = Layer.succeed(PermissionsService, {
-		hasTeamPermission: (...args: unknown[]) => Effect.promise(() => mockState.hasTeamPermission(...args)),
+		hasTeamPermission: (...args: unknown[]) =>
+			Effect.promise(() => mockState.hasTeamPermission(...args)),
 	});
 
 	return {
@@ -196,7 +219,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 vi.mock("@/lib/effect/result", async () => {
 	const { Cause, Effect, Exit, Option } = await import("effect");
 
-	const toServerActionResult = <T>(exit: unknown) =>
+	const toServerActionResult = (exit: unknown) =>
 		Exit.match(exit as never, {
 			onFailure: (cause) => {
 				const defects = Cause.defects(cause);
@@ -229,7 +252,8 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { addTeamMember, createTeam, deleteTeam, getTeam, listTeams, removeTeamMember, updateTeam } = await import("./actions");
+const { addTeamMember, createTeam, deleteTeam, getTeam, listTeams, removeTeamMember, updateTeam } =
+	await import("./actions");
 
 describe("team settings server scope", () => {
 	const employeePrimaryManagerId = "11111111-1111-4111-8111-111111111111";
@@ -292,9 +316,50 @@ describe("team settings server scope", () => {
 		});
 	});
 
+	it("allows organization admins to create a team with a primary manager", async () => {
+		mockState.employeeQueue = [
+			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
+			{
+				id: managerPrimaryManagerId,
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "manager",
+				isActive: true,
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
+		mockState.insertReturning.mockResolvedValue([
+			{
+				id: "team-new",
+				organizationId: "org-1",
+				name: "Gamma",
+				description: null,
+				primaryManagerId: managerPrimaryManagerId,
+			},
+		]);
+
+		const result = await createTeam({
+			organizationId: "org-1",
+			name: "Gamma",
+			description: null,
+			primaryManagerId: managerPrimaryManagerId,
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({ primaryManagerId: managerPrimaryManagerId }),
+		);
+	});
+
 	it("rejects non-manager employees from reading scoped team settings even with team permissions", async () => {
 		mockState.employeeQueue = [
-			{ id: "emp-1", userId: "user-1", organizationId: "org-1", role: "employee", teamId: "team-a" },
+			{
+				id: "emp-1",
+				userId: "user-1",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-a",
+			},
 		];
 		mockState.teamQueue = [
 			{
@@ -433,14 +498,16 @@ describe("team settings server scope", () => {
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [{ id: "team-a", organizationId: "org-1", name: "Alpha" }];
-		mockState.teamMembershipRows = [[
-			{ organizationId: "org-1", teamId: "team-a", employeeId: "target-1" },
-		]];
+		mockState.teamMembershipRows = [
+			[{ organizationId: "org-1", teamId: "team-a", employeeId: "target-1" }],
+		];
 
 		const result = await deleteTeam("team-a");
 
 		expect(result.success).toBe(false);
-		expect(result.error).toBe("Cannot delete team with active members. Please reassign members first.");
+		expect(result.error).toBe(
+			"Cannot delete team with active members. Please reassign members first.",
+		);
 		expect(mockState.deleteWhere).not.toHaveBeenCalled();
 	});
 
@@ -499,7 +566,14 @@ describe("team settings server scope", () => {
 	it("adds team membership without moving an employee out of another team", async () => {
 		mockState.employeeQueue = [
 			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
-			{ id: "target-1", userId: "user-2", organizationId: "org-1", role: "employee", teamId: "team-a", user: { id: "user-2", name: "Target", email: "target@example.com" } },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-a",
+				user: { id: "user-2", name: "Target", email: "target@example.com" },
+			},
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
@@ -509,9 +583,15 @@ describe("team settings server scope", () => {
 
 		expect(result.success).toBe(true);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
+			expect.objectContaining({
+				teamId: "team-b",
+				employeeId: "target-1",
+				organizationId: "org-1",
+			}),
 		);
-		expect(mockState.updateSet).not.toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
+		expect(mockState.updateSet).not.toHaveBeenCalledWith(
+			expect.objectContaining({ teamId: "team-b" }),
+		);
 	});
 
 	it("adds team membership and sets compatibility team when employee has none", async () => {
@@ -534,7 +614,11 @@ describe("team settings server scope", () => {
 
 		expect(result.success).toBe(true);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
+			expect.objectContaining({
+				teamId: "team-b",
+				employeeId: "target-1",
+				organizationId: "org-1",
+			}),
 		);
 		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
 	});
@@ -575,9 +659,9 @@ describe("team settings server scope", () => {
 				canApproveTeamRequests: false,
 			},
 		];
-		mockState.teamMembershipRows = [[
-			{ organizationId: "org-1", teamId: "team-a", employeeId: "emp-target" },
-		]];
+		mockState.teamMembershipRows = [
+			[{ organizationId: "org-1", teamId: "team-a", employeeId: "emp-target" }],
+		];
 
 		const result = await addTeamMember("team-b", "emp-target");
 
@@ -585,7 +669,9 @@ describe("team settings server scope", () => {
 		expect(result.code).toBe("AuthorizationError");
 		expect(result.error).toBe("Cannot move employees from teams outside your scope");
 		expect(mockState.insertValues).not.toHaveBeenCalled();
-		expect(mockState.updateSet).not.toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
+		expect(mockState.updateSet).not.toHaveBeenCalledWith(
+			expect.objectContaining({ teamId: "team-b" }),
+		);
 	});
 
 	it("allows scoped manager adding employee with no memberships and no legacy team", async () => {
@@ -630,7 +716,11 @@ describe("team settings server scope", () => {
 
 		expect(result.success).toBe(true);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: "team-b", employeeId: "emp-target", organizationId: "org-1" }),
+			expect.objectContaining({
+				teamId: "team-b",
+				employeeId: "emp-target",
+				organizationId: "org-1",
+			}),
 		);
 		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ teamId: "team-b" }));
 	});
@@ -654,7 +744,11 @@ describe("team settings server scope", () => {
 
 		expect(result.success).toBe(true);
 		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ teamId: "team-b", employeeId: "target-1", organizationId: "org-1" }),
+			expect.objectContaining({
+				teamId: "team-b",
+				employeeId: "target-1",
+				organizationId: "org-1",
+			}),
 		);
 		expect(mockState.onConflictDoNothing).toHaveBeenCalledOnce();
 	});
@@ -662,14 +756,23 @@ describe("team settings server scope", () => {
 	it("removes only selected team membership and reassigns compatibility team to another remaining membership", async () => {
 		mockState.employeeQueue = [
 			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
-			{ id: "target-1", userId: "user-2", organizationId: "org-1", role: "employee", teamId: "team-b", user: { name: "Target" } },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-b",
+				user: { name: "Target" },
+			},
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
-		mockState.teamMembershipRows = [[
-			{ organizationId: "org-1", teamId: "team-c", employeeId: "target-1" },
-			{ organizationId: "org-1", teamId: "team-a", employeeId: "target-1" },
-		]];
+		mockState.teamMembershipRows = [
+			[
+				{ organizationId: "org-1", teamId: "team-c", employeeId: "target-1" },
+				{ organizationId: "org-1", teamId: "team-a", employeeId: "target-1" },
+			],
+		];
 
 		const result = await removeTeamMember("team-b", "target-1");
 
@@ -681,7 +784,14 @@ describe("team settings server scope", () => {
 	it("removes only selected team membership without changing a different compatibility team", async () => {
 		mockState.employeeQueue = [
 			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
-			{ id: "target-1", userId: "user-2", organizationId: "org-1", role: "employee", teamId: "team-a", user: { name: "Target" } },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-a",
+				user: { name: "Target" },
+			},
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
@@ -696,15 +806,25 @@ describe("team settings server scope", () => {
 	it("rejects primary manager assignment for employee role", async () => {
 		mockState.employeeQueue = [
 			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
-			{ id: employeePrimaryManagerId, userId: "user-2", organizationId: "org-1", role: "employee", isActive: true },
+			{
+				id: employeePrimaryManagerId,
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				isActive: true,
+			},
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
-		mockState.teamQueue = [{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null }];
+		mockState.teamQueue = [
+			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null },
+		];
 
 		const result = await updateTeam("team-a", { primaryManagerId: employeePrimaryManagerId });
 
 		expect(result.success).toBe(false);
-		expect(result.error).toBe("Primary manager must be an active manager or admin in this organization");
+		expect(result.error).toBe(
+			"Primary manager must be an active manager or admin in this organization",
+		);
 	});
 
 	it("clears primary manager assignment", async () => {
@@ -713,48 +833,81 @@ describe("team settings server scope", () => {
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [
-			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: managerPrimaryManagerId },
+			{
+				id: "team-a",
+				organizationId: "org-1",
+				name: "Alpha",
+				primaryManagerId: managerPrimaryManagerId,
+			},
 			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null },
 		];
 
 		const result = await updateTeam("team-a", { primaryManagerId: null });
 
 		expect(result.success).toBe(true);
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ primaryManagerId: null }));
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({ primaryManagerId: null }),
+		);
 	});
 
 	it("allows active manager primary manager assignment", async () => {
 		mockState.employeeQueue = [
 			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
-			{ id: managerPrimaryManagerId, userId: "user-2", organizationId: "org-1", role: "manager", isActive: true },
+			{
+				id: managerPrimaryManagerId,
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "manager",
+				isActive: true,
+			},
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [
 			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null },
-			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: managerPrimaryManagerId },
+			{
+				id: "team-a",
+				organizationId: "org-1",
+				name: "Alpha",
+				primaryManagerId: managerPrimaryManagerId,
+			},
 		];
 
 		const result = await updateTeam("team-a", { primaryManagerId: managerPrimaryManagerId });
 
 		expect(result.success).toBe(true);
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ primaryManagerId: managerPrimaryManagerId }));
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({ primaryManagerId: managerPrimaryManagerId }),
+		);
 	});
 
 	it("allows active admin primary manager assignment", async () => {
 		mockState.employeeQueue = [
 			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
-			{ id: adminPrimaryManagerId, userId: "user-2", organizationId: "org-1", role: "admin", isActive: true },
+			{
+				id: adminPrimaryManagerId,
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "admin",
+				isActive: true,
+			},
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [
 			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null },
-			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: adminPrimaryManagerId },
+			{
+				id: "team-a",
+				organizationId: "org-1",
+				name: "Alpha",
+				primaryManagerId: adminPrimaryManagerId,
+			},
 		];
 
 		const result = await updateTeam("team-a", { primaryManagerId: adminPrimaryManagerId });
 
 		expect(result.success).toBe(true);
-		expect(mockState.updateSet).toHaveBeenCalledWith(expect.objectContaining({ primaryManagerId: adminPrimaryManagerId }));
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({ primaryManagerId: adminPrimaryManagerId }),
+		);
 	});
 
 	it("rejects inactive or cross-org primary manager assignment", async () => {
@@ -763,11 +916,15 @@ describe("team settings server scope", () => {
 			null,
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
-		mockState.teamQueue = [{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null }];
+		mockState.teamQueue = [
+			{ id: "team-a", organizationId: "org-1", name: "Alpha", primaryManagerId: null },
+		];
 
 		const result = await updateTeam("team-a", { primaryManagerId: foreignPrimaryManagerId });
 
 		expect(result.success).toBe(false);
-		expect(result.error).toBe("Primary manager must be an active manager or admin in this organization");
+		expect(result.error).toBe(
+			"Primary manager must be an active manager or admin in this organization",
+		);
 	});
 });

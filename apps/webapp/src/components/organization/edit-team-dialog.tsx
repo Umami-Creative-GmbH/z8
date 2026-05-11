@@ -16,20 +16,46 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { team } from "@/db/schema";
+import type { TeamManagerOption } from "./create-team-dialog";
+
+const NO_MANAGER_VALUE = "none";
 
 interface EditTeamDialogProps {
 	team: typeof team.$inferSelect | null;
+	managerOptions: TeamManagerOption[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSuccess?: (updatedTeam: typeof team.$inferSelect) => void;
 }
 
-export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeamDialogProps) {
+export function EditTeamDialog({
+	team,
+	managerOptions,
+	open,
+	onOpenChange,
+	onSuccess,
+}: EditTeamDialogProps) {
 	const updateMutation = useMutation({
-		mutationFn: (data: { teamId: string; name?: string; description?: string }) =>
-			updateTeam(data.teamId, { name: data.name, description: data.description }),
+		mutationFn: (data: {
+			teamId: string;
+			name?: string;
+			description?: string;
+			primaryManagerId?: string | null;
+		}) =>
+			updateTeam(data.teamId, {
+				name: data.name,
+				description: data.description,
+				primaryManagerId: data.primaryManagerId,
+			}),
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(result.error || "Failed to update team");
@@ -51,11 +77,15 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 		const formData = new FormData(e.currentTarget as HTMLFormElement);
 		const name = String(formData.get("name") ?? "").trim();
 		const description = String(formData.get("description") ?? "").trim();
+		const selectedPrimaryManagerId = String(formData.get("primaryManagerId") ?? NO_MANAGER_VALUE);
+		const primaryManagerId =
+			selectedPrimaryManagerId === NO_MANAGER_VALUE ? null : selectedPrimaryManagerId;
 
 		updateMutation.mutate({
 			teamId: team.id,
 			name: name !== team.name ? name : undefined,
 			description: description !== (team.description || "") ? description : undefined,
+			primaryManagerId: primaryManagerId !== team.primaryManagerId ? primaryManagerId : undefined,
 		});
 	};
 
@@ -91,6 +121,30 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
 								placeholder="A brief description of this team"
 								rows={3}
 							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="primaryManagerId">Fallback Manager</Label>
+							<Select
+								name="primaryManagerId"
+								defaultValue={team.primaryManagerId ?? NO_MANAGER_VALUE}
+							>
+								<SelectTrigger id="primaryManagerId">
+									<SelectValue placeholder="Select a fallback manager" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value={NO_MANAGER_VALUE}>No fallback manager</SelectItem>
+									{managerOptions.map((manager) => (
+										<SelectItem key={manager.employeeId} value={manager.employeeId}>
+											{manager.name}
+											{manager.position ? ` (${manager.position})` : ""}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-xs text-muted-foreground">
+								Used for approvals when a team member has no direct manager.
+							</p>
 						</div>
 					</ActionPanelBody>
 

@@ -88,7 +88,10 @@ export function TeamMembersDialog({
 
 	// Get current team members - must have employee record in this org
 	const teamMembers = allMembers.filter(
-		(m) => m.employee?.teamId === team.id && m.employee?.organizationId === team.organizationId,
+		(m) =>
+			m.employee?.organizationId === team.organizationId &&
+			(m.employee.teamId === team.id ||
+				m.teamMemberships?.some((membership) => membership.teamId === team.id)),
 	);
 
 	// Get available employees (not in this team, but have employee record in this org)
@@ -96,7 +99,8 @@ export function TeamMembersDialog({
 		(m) =>
 			m.employee &&
 			m.employee.organizationId === team.organizationId &&
-			(!m.employee.teamId || m.employee.teamId !== team.id),
+			m.employee.teamId !== team.id &&
+			!m.teamMemberships?.some((membership) => membership.teamId === team.id),
 	);
 
 	const handleAddMember = () => {
