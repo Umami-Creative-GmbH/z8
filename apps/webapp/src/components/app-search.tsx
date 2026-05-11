@@ -12,7 +12,13 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import { SidebarMenuButton } from "@/components/ui/sidebar";
+import {
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import type { AppSearchResult, LiveAppSearchResults } from "@/lib/app-search/types";
 import { useRouter } from "@/navigation";
 
@@ -118,10 +124,18 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 
 	return (
 		<>
-			<SidebarMenuButton onClick={() => setOpen(true)} tooltip="Search" type="button">
-				<SearchIcon />
-				<span>Search</span>
-			</SidebarMenuButton>
+			<SidebarGroup>
+				<SidebarGroupContent>
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton onClick={() => setOpen(true)} tooltip="Search" type="button">
+								<SearchIcon />
+								<span>Search</span>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarGroupContent>
+			</SidebarGroup>
 			<CommandDialog
 				description="Search pages, settings, people, and teams"
 				onOpenChange={setOpen}
@@ -137,16 +151,6 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 				<CommandList>
 					<CommandEmpty>No results found.</CommandEmpty>
 					<ResultGroup
-						label={getGroupLabel("page")}
-						onSelect={handleSelect}
-						results={pageResults}
-					/>
-					<ResultGroup
-						label={getGroupLabel("setting")}
-						onSelect={handleSelect}
-						results={settingResults}
-					/>
-					<ResultGroup
 						label={getGroupLabel("employee")}
 						onSelect={handleSelect}
 						results={liveResults.employees}
@@ -155,6 +159,16 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 						label={getGroupLabel("team")}
 						onSelect={handleSelect}
 						results={liveResults.teams}
+					/>
+					<ResultGroup
+						label={getGroupLabel("page")}
+						onSelect={handleSelect}
+						results={pageResults}
+					/>
+					<ResultGroup
+						label={getGroupLabel("setting")}
+						onSelect={handleSelect}
+						results={settingResults}
 					/>
 					{liveError ? (
 						<p aria-live="polite" className="px-3 py-2 text-destructive text-sm">

@@ -184,6 +184,45 @@ describe("AppSearch", () => {
 		expect(pushMock).toHaveBeenCalledWith("/settings/employees/employee-1");
 	});
 
+	it("orders live people and team results before pages and settings", async () => {
+		searchAppRecordsActionMock.mockResolvedValue({
+			success: true,
+			data: {
+				employees: [
+					{
+						type: "employee",
+						id: "employee-1",
+						title: "Alex Morgan",
+						href: "/settings/employees/employee-1",
+					},
+				],
+				teams: [
+					{
+						type: "team",
+						id: "team-1",
+						title: "Operations",
+						href: "/settings/teams/team-1",
+					},
+				],
+			},
+		});
+		renderAppSearch();
+
+		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
+			target: { value: "op" },
+		});
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(250);
+		});
+
+		const groupHeadings = screen.getAllByText(/^(People|Teams|Pages|Settings)$/).map((heading) =>
+			heading.textContent,
+		);
+
+		expect(groupHeadings).toEqual(["People", "Teams", "Pages", "Settings"]);
+	});
+
 	it("keeps static results available and shows the live search error when loading fails", async () => {
 		searchAppRecordsActionMock.mockResolvedValue({
 			success: false,
