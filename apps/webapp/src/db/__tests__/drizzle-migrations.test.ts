@@ -9,6 +9,10 @@ const migration0008 = readFileSync(
 	new URL("../../../drizzle/0008_demo_data_feature_flag.sql", import.meta.url),
 	"utf8",
 );
+const migration0014 = readFileSync(
+	new URL("../../../drizzle/0014_team_membership_primary_manager.sql", import.meta.url),
+	"utf8",
+);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -35,5 +39,25 @@ describe("drizzle follow-up migrations", () => {
 		expect(
 			migration0008Snapshot.tables["public.organization"].columns.demo_data_enabled?.default,
 		).toBe(true);
+	});
+
+	it("creates composite uniqueness before migration 0014 composite foreign keys", () => {
+		const employeeUniquePosition = migration0014.indexOf(
+			'ADD CONSTRAINT "employee_id_organizationId_idx" UNIQUE("id","organization_id")',
+		);
+		const teamUniquePosition = migration0014.indexOf(
+			'ADD CONSTRAINT "team_id_organizationId_idx" UNIQUE("id","organization_id")',
+		);
+		const teamPrimaryManagerFkPosition = migration0014.indexOf(
+			'ADD CONSTRAINT "team_primary_manager_id_organization_id_employee_id_organization_id_fk"',
+		);
+		const teamMembershipTeamFkPosition = migration0014.indexOf(
+			'ADD CONSTRAINT "team_membership_team_id_organization_id_team_id_organization_id_fk"',
+		);
+
+		expect(employeeUniquePosition).toBeGreaterThanOrEqual(0);
+		expect(teamUniquePosition).toBeGreaterThanOrEqual(0);
+		expect(employeeUniquePosition).toBeLessThan(teamPrimaryManagerFkPosition);
+		expect(teamUniquePosition).toBeLessThan(teamMembershipTeamFkPosition);
 	});
 });
