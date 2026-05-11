@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS "team_membership" (
 	"created_by" text
 );
 
+ALTER TABLE "employee" ADD CONSTRAINT "employee_id_organizationId_idx" UNIQUE("id","organization_id");
+
+ALTER TABLE "team" ADD CONSTRAINT "team_id_organizationId_idx" UNIQUE("id","organization_id");
+
 ALTER TABLE "team" ADD CONSTRAINT "team_primary_manager_id_organization_id_employee_id_organization_id_fk"
 	FOREIGN KEY ("primary_manager_id", "organization_id")
 	REFERENCES "employee"("id", "organization_id");
