@@ -12,7 +12,19 @@ const { searchMock, employeeNeighborhoodMock, teamNeighborhoodMock } = vi.hoiste
 }));
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string, values?: Record<string, string | number>) => {
+			const message = fallback ?? _key;
+
+			return message.replace(/\{(\w+)\}/g, (placeholder, name: string) => {
+				if (!values || !(name in values)) {
+					throw new Error(`Missing value for ${placeholder}`);
+				}
+
+				return String(values[name]);
+			});
+		},
+	}),
 }));
 
 vi.mock("./actions", () => ({
@@ -198,6 +210,7 @@ describe("OrgChartClient", () => {
 
 		expect(screen.getByTestId("react-flow")).toBeTruthy();
 		expect(screen.getByTestId("node-count").textContent).toBe("1");
+		expect(screen.getByText("101 active employees")).toBeTruthy();
 		expect(
 			screen.getByText("Showing part of a large organization. Expand nodes or search to continue."),
 		);

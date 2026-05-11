@@ -141,6 +141,7 @@ export const ApprovalQueryServiceLive = Layer.effect(
 			getApprovals: (params) =>
 				Effect.gen(function* (_) {
 					const handlers = getAllApprovalHandlers();
+					const shouldRequireEveryHandler = Boolean(params.types);
 
 					// Filter handlers by type if specified
 					const activeHandlers = params.types
@@ -151,7 +152,13 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					const allItems: UnifiedApprovalItem[] = [];
 
 					for (const handler of activeHandlers) {
-						const items = yield* _(handler.getApprovals(params));
+						const items = yield* _(
+							handler.getApprovals(params).pipe(
+								Effect.catchAll((error) =>
+									shouldRequireEveryHandler ? Effect.fail(error) : Effect.succeed([]),
+								),
+							),
+						);
 						allItems.push(...items);
 					}
 

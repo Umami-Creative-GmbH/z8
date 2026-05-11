@@ -361,32 +361,7 @@ export const ChangePolicyServiceLive = Layer.effect(
 					};
 				}),
 
-			checkClockOutNeedsApproval: (employeeId) =>
-				Effect.gen(function* (_) {
-					// Use the helper function directly instead of ChangePolicyService.pipe()
-					const policy = yield* _(resolvePolicyImpl(employeeId));
-
-					// No policy = no approval needed
-					if (!policy) {
-						return false;
-					}
-
-					// Trust mode = no approval needed
-					if (policy.noApprovalRequired) {
-						return false;
-					}
-
-					// 0-day policy: selfServiceDays=0 AND approvalDays=0 means every clock-out triggers approval
-					// But if approvalDays > 0, same-day is self-service
-					// Actually, the 0-day policy scenario is when selfServiceDays=0 and we want clock-out approval
-					// Let's interpret: if selfServiceDays=0 AND approvalDays >= 0, clock-out needs approval
-					// because even same-day edits require approval when selfServiceDays=0
-
-					// For 0-day policy where clock-out itself requires approval:
-					// selfServiceDays=0 means same-day changes need approval
-					// This creates immediate approval trigger on clock-out
-					return policy.selfServiceDays === 0;
-				}),
+			checkClockOutNeedsApproval: () => Effect.succeed(false),
 
 			getManagersForApproval: (employeeId, notifyAll) =>
 				Effect.gen(function* (_) {

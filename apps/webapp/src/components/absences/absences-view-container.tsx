@@ -1,8 +1,9 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Calendar, Table as TableIcon } from "lucide-react";
+import { Calendar, Plus, Table as TableIcon } from "lucide-react";
 import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toLocalDateString } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, Holiday } from "@/lib/absences/types";
@@ -57,19 +58,30 @@ export function AbsencesViewContainer({
 		}
 	}, []);
 
+	const handleAddAbsence = useCallback(() => {
+		setPrefilledDate(undefined);
+		setRequestDialogOpen(true);
+	}, []);
+
 	return (
 		<div className="space-y-4">
 			<Tabs value={activeView} onValueChange={(v) => setActiveView(v as ViewType)}>
-				<TabsList>
-					<TabsTrigger value="calendar" className="gap-2">
-						<Calendar className="h-4 w-4" />
-						{t("absences.view.calendar", "Calendar")}
-					</TabsTrigger>
-					<TabsTrigger value="table" className="gap-2">
-						<TableIcon className="h-4 w-4" />
-						{t("absences.view.table", "Table")}
-					</TabsTrigger>
-				</TabsList>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<TabsList>
+						<TabsTrigger value="calendar" className="gap-2">
+							<Calendar className="h-4 w-4" />
+							{t("absences.view.calendar", "Calendar")}
+						</TabsTrigger>
+						<TabsTrigger value="table" className="gap-2">
+							<TableIcon className="h-4 w-4" />
+							{t("absences.view.table", "Table")}
+						</TabsTrigger>
+					</TabsList>
+					<Button className="w-full gap-2 sm:w-auto" onClick={handleAddAbsence}>
+						<Plus className="h-4 w-4" />
+						{t("absences.addAbsence", "Add absence")}
+					</Button>
+				</div>
 
 				<TabsContent value="calendar" className="mt-4">
 					<AbsenceYearCalendar

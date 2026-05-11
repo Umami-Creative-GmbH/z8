@@ -207,10 +207,9 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 						{t("organization.orgChart.explorer", "Org Chart Explorer")}
 					</p>
 					<p className="text-sm text-muted-foreground">
-						{t("organization.orgChart.employeeCount", "{count} active employees").replace(
-							"{count}",
-							new Intl.NumberFormat().format(graph.employeeCount),
-						)}
+						{t("organization.orgChart.employeeCount", "{count} active employees", {
+							count: new Intl.NumberFormat().format(graph.employeeCount),
+						})}
 					</p>
 				</div>
 				<div className="relative w-full md:max-w-sm">

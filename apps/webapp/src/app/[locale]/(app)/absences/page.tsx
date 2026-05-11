@@ -1,9 +1,7 @@
 import { connection } from "next/server";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
-import { RequestAbsenceDialog } from "@/components/absences/request-absence-dialog";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Button } from "@/components/ui/button";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getAbsenceCategories,
@@ -73,20 +71,13 @@ export default async function AbsencesPage() {
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Header with Vacation Balance */}
 			<div className="px-4 lg:px-6">
-				<div className="flex items-center justify-between mb-4">
+				<div className="mb-4">
 					<div>
 						<h1 className="text-2xl font-semibold">{t("absences.title", "Absences")}</h1>
 						<p className="text-muted-foreground">
 							{t("absences.subtitle", "Manage your time off and vacation days")}
 						</p>
 					</div>
-					<RequestAbsenceDialog
-						categories={categories}
-						organizationId={employee.organizationId}
-						remainingDays={vacationBalance.remainingDays}
-						holidays={holidays}
-						trigger={<Button>{t("absences.requestAbsence", "Request Absence")}</Button>}
-					/>
 				</div>
 				<VacationBalanceCard balance={vacationBalance} />
 			</div>
