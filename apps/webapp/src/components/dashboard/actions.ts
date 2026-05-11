@@ -600,14 +600,30 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 			}
 		}
 
+		const elapsedWeekMs = Math.max(
+			0,
+			Math.min(now.getTime() - weekStart.getTime(), weekEnd.getTime() - weekStart.getTime()),
+		);
+		const totalWeekMs = Math.max(1, weekEnd.getTime() - weekStart.getTime());
+		const weekExpectedToDate = weekExpected * (elapsedWeekMs / totalWeekMs);
+
+		const elapsedMonthMs = Math.max(
+			0,
+			Math.min(now.getTime() - monthStart.getTime(), monthEnd.getTime() - monthStart.getTime()),
+		);
+		const totalMonthMs = Math.max(1, monthEnd.getTime() - monthStart.getTime());
+		const monthExpectedToDate = monthExpected * (elapsedMonthMs / totalMonthMs);
+
 		return {
 			thisWeek: {
 				actual: weekActual,
 				expected: weekExpected,
+				expectedToDate: weekExpectedToDate,
 			},
 			thisMonth: {
 				actual: monthActual,
 				expected: monthExpected,
+				expectedToDate: monthExpectedToDate,
 			},
 		};
 	}).pipe(Effect.provide(AppLayer));

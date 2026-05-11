@@ -27,12 +27,31 @@ type QuickStats = {
 	thisWeek: {
 		actual: number;
 		expected: number;
+		expectedToDate: number;
 	};
 	thisMonth: {
 		actual: number;
 		expected: number;
+		expectedToDate: number;
 	};
 };
+
+export type QuickStatsStatus = "on-track" | "good-pace" | "behind";
+
+export function getQuickStatsStatus({
+	actual,
+	expectedToDate,
+}: {
+	actual: number;
+	expectedToDate: number;
+}): QuickStatsStatus {
+	if (expectedToDate <= 0) return "good-pace";
+
+	const percentage = (actual / expectedToDate) * 100;
+	if (percentage >= 90) return "on-track";
+	if (percentage < 75) return "behind";
+	return "good-pace";
+}
 
 function CircularProgress({
 	progress,
@@ -118,18 +137,21 @@ function StatCard({
 	icon: Icon,
 	actual,
 	expected,
+	expectedToDate,
 	color,
 }: {
 	title: string;
 	icon: React.ElementType;
 	actual: number;
 	expected: number;
+	expectedToDate: number;
 	color: "blue" | "purple";
 }) {
 	const { t } = useTranslate();
 	const percentage = expected > 0 ? (actual / expected) * 100 : 0;
-	const isOnTrack = percentage >= 90;
-	const isBehind = percentage < 75;
+	const status = getQuickStatsStatus({ actual, expectedToDate });
+	const isOnTrack = status === "on-track";
+	const isBehind = status === "behind";
 
 	return (
 		<div className="flex items-center gap-4 rounded-xl border bg-card p-4">
@@ -221,6 +243,7 @@ export function QuickStatsWidget() {
 							icon={IconCalendarWeek}
 							actual={stats.thisWeek.actual}
 							expected={stats.thisWeek.expected}
+							expectedToDate={stats.thisWeek.expectedToDate}
 							color="blue"
 						/>
 						<StatCard
@@ -228,6 +251,7 @@ export function QuickStatsWidget() {
 							icon={IconClock}
 							actual={stats.thisMonth.actual}
 							expected={stats.thisMonth.expected}
+							expectedToDate={stats.thisMonth.expectedToDate}
 							color="purple"
 						/>
 					</div>
