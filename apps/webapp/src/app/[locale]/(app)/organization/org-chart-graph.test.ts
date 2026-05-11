@@ -94,6 +94,7 @@ describe("org chart graph helpers", () => {
 			expect.arrayContaining([
 				expect.objectContaining({
 					kind: "manager",
+					label: "Manages",
 					source: "employee:emp-2",
 					target: "employee:emp-1",
 				}),

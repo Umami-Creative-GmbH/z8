@@ -4,6 +4,7 @@ import {
 	Background,
 	Controls,
 	type Edge,
+	MarkerType,
 	MiniMap,
 	type Node,
 	type NodeProps,
@@ -43,6 +44,8 @@ const NODE_WIDTH = 260;
 const NODE_HEIGHT = 140;
 const COLUMN_GAP = 120;
 const ROW_GAP = 72;
+const FLOW_WIDGET_CLASSNAME =
+	"border border-border bg-card text-card-foreground shadow-sm [&_.react-flow__controls-button]:border-border [&_.react-flow__controls-button]:bg-card [&_.react-flow__controls-button]:text-card-foreground [&_.react-flow__controls-button:hover]:bg-accent [&_.react-flow__controls-button:hover]:text-accent-foreground [&_.react-flow__controls-button_svg]:fill-current";
 
 const nodeTypes = {
 	employee: EmployeeFlowNode,
@@ -286,8 +289,16 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 					proOptions={{ hideAttribution: true }}
 				>
 					<Background />
-					<Controls />
-					<MiniMap pannable zoomable />
+					<Controls className={FLOW_WIDGET_CLASSNAME} position="bottom-left" />
+					<MiniMap
+						bgColor="hsl(var(--card))"
+						className="border border-border bg-card shadow-sm"
+						maskColor="hsl(var(--background) / 0.72)"
+						nodeColor={(node) => (node.type === "team" ? "hsl(var(--muted))" : "hsl(var(--primary))")}
+						pannable
+						position="top-left"
+						zoomable
+					/>
 				</ReactFlow>
 			</div>
 		</section>
@@ -332,6 +343,19 @@ function buildFlowEdges(edges: OrgChartEdge[]): Edge[] {
 		source: edge.source,
 		target: edge.target,
 		style: getEdgeStyle(edge),
+		labelBgStyle: {
+			fill: "hsl(var(--card))",
+			fillOpacity: 0.92,
+		},
+		labelStyle: {
+			fill: "hsl(var(--card-foreground))",
+			fontSize: 12,
+			fontWeight: 600,
+		},
+		markerEnd: {
+			type: MarkerType.ArrowClosed,
+			color: edge.kind === "team-membership" ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))",
+		},
 		animated: edge.kind === "team-primary-manager",
 	}));
 }
@@ -363,6 +387,7 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 	const canExpand = node.expandable.managers || node.expandable.reports || node.expandable.teams;
 	const pronouns = normalizePronouns(node.pronouns);
 	const displayName = pronouns ? `${node.name} (${pronouns})` : node.name;
+	const avatarUrl = node.image || buildDicebearAvatarUrl(node.userId || node.employeeId);
 
 	return (
 		<div
@@ -371,9 +396,11 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 			}`}
 		>
 			<div className="flex items-start gap-3">
-				<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-					{getInitials(node.name)}
-				</div>
+				<img
+					alt={`${node.name} avatar`}
+					className="size-10 shrink-0 rounded-full border border-border bg-primary/10 object-cover"
+					src={avatarUrl}
+				/>
 				<div className="min-w-0 flex-1">
 					<p className="truncate text-sm font-semibold">{displayName}</p>
 					<p className="truncate text-xs text-muted-foreground">{node.email}</p>
@@ -433,11 +460,6 @@ function TeamFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 	);
 }
 
-function getInitials(name: string) {
-	return name
-		.split(" ")
-		.map((part) => part[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
+function buildDicebearAvatarUrl(seed: string) {
+	return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`;
 }
