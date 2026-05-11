@@ -188,6 +188,16 @@ describe("RequestAbsenceDialog", () => {
 		expect(screen.getByLabelText("End Period")).toBeTruthy();
 	});
 
+	it("stacks request form fields with compact vertical spacing", () => {
+		renderDialog();
+
+		const body = document.querySelector('[data-slot="action-panel-body"]');
+
+		expect(body).toBeTruthy();
+		expect(body?.classList.contains("space-y-4")).toBe(true);
+		expect(body?.classList.contains("grid")).toBe(false);
+	});
+
 	it("does not require an open change handler in controlled mode", () => {
 		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
