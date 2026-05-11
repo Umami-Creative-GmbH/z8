@@ -4,8 +4,8 @@ import { IconPlus, IconRefresh, IconUsers } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
-import { CreateTeamDialog } from "./create-team-dialog";
+import { CreateTeamDialog, type TeamManagerOption } from "./create-team-dialog";
 import { EditTeamDialog } from "./edit-team-dialog";
 import type { MemberWithUserAndEmployee } from "./organizations-page-client";
 import { TeamCard } from "./team-card";
@@ -59,9 +59,7 @@ export function TeamsTab({
 	const queryClient = useQueryClient();
 	const router = useRouter();
 	const [isRefreshing, startRefreshTransition] = useTransition();
-	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() =>
-		emptyTeamPatches(initialTeams),
-	);
+	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() => emptyTeamPatches(initialTeams));
 
 	// Dialog states
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -81,15 +79,41 @@ export function TeamsTab({
 			.map((team) => activeTeamPatches.updatedTeamsById[team.id] ?? team),
 		...activeTeamPatches.createdTeams
 			.filter(
-				(team) =>
-					!initialTeamIds.has(team.id) && !activeTeamPatches.deletedTeamIds.has(team.id),
+				(team) => !initialTeamIds.has(team.id) && !activeTeamPatches.deletedTeamIds.has(team.id),
 			)
 			.map((team) => activeTeamPatches.updatedTeamsById[team.id] ?? team),
 	];
 
 	// Get employees for a specific team
 	const getTeamEmployees = (teamId: string) => {
-		return members.filter((m) => m.employee?.teamId === teamId);
+		return members.filter(
+			(m) =>
+				m.employee?.teamId === teamId ||
+				m.teamMemberships?.some((membership) => membership.teamId === teamId),
+		);
+	};
+
+	const managerOptions: TeamManagerOption[] = members
+		.filter(
+			(member) =>
+				member.employee?.organizationId === organizationId &&
+				member.employee.isActive &&
+				(member.employee.role === "manager" || member.employee.role === "admin"),
+		)
+		.map((member) => ({
+			employeeId: member.employee!.id,
+			name: member.user.name,
+			email: member.user.email,
+			position: member.employee!.position,
+		}))
+		.toSorted((a, b) => a.name.localeCompare(b.name));
+
+	const getPrimaryManager = (primaryManagerId: string | null) => {
+		if (!primaryManagerId) {
+			return null;
+		}
+
+		return managerOptions.find((manager) => manager.employeeId === primaryManagerId) ?? null;
 	};
 
 	const refreshTeams = () => {
@@ -258,6 +282,7 @@ export function TeamsTab({
 									key={t.id}
 									team={t}
 									employees={getTeamEmployees(t.id)}
+									primaryManager={getPrimaryManager(t.primaryManagerId)}
 									canManageMembers={t.canManageMembers}
 									canManageSettings={t.canManageSettings}
 									onEdit={() => handleEdit(t)}
@@ -273,6 +298,7 @@ export function TeamsTab({
 			{/* Create Team Dialog */}
 			<CreateTeamDialog
 				organizationId={organizationId}
+				managerOptions={managerOptions}
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
 				onSuccess={handleTeamCreated}
@@ -281,19 +307,20 @@ export function TeamsTab({
 			{/* Edit Team Dialog */}
 			<EditTeamDialog
 				team={selectedTeam}
+				managerOptions={managerOptions}
 				open={editDialogOpen}
 				onOpenChange={setEditDialogOpen}
 				onSuccess={handleTeamUpdated}
 			/>
 
 			{/* Team Members Dialog */}
-				<TeamMembersDialog
-					team={selectedTeam}
-					allMembers={members}
-					open={membersDialogOpen}
-					onOpenChange={setMembersDialogOpen}
-					canManageMembers={selectedTeam?.canManageMembers ?? false}
-				/>
+			<TeamMembersDialog
+				team={selectedTeam}
+				allMembers={members}
+				open={membersDialogOpen}
+				onOpenChange={setMembersDialogOpen}
+				canManageMembers={selectedTeam?.canManageMembers ?? false}
+			/>
 
 			{/* Delete Confirmation Dialog */}
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

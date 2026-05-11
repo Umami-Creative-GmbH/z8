@@ -70,6 +70,10 @@ import {
 import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
+import {
+	calculatePresenceStatusCounts,
+	type PresenceDayOfWeek,
+} from "./actions/presence-status";
 import type { WorkPeriodWithEntries } from "./types";
 
 const logger = createLogger("TimeTrackingActionsEffect");
@@ -3164,25 +3168,18 @@ export async function getPresenceStatus(employeeId: string): Promise<
 			}),
 		);
 
-		// Count on-site days
-		const onsiteDates = new Set<string>();
-		for (const period of periods) {
-			if (period.workLocationType === "office") {
-				const dateStr = DateTime.fromJSDate(period.startTime).toISODate();
-				if (dateStr) onsiteDates.add(dateStr);
-			}
-		}
-
-		const required =
-			presenceConfig.presenceMode === "minimum_count"
-				? (presenceConfig.requiredOnsiteDays ?? 0)
-				: presenceConfig.requiredOnsiteFixedDays
-					? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as string[]).length
-					: 0;
+		const { actual, required } = calculatePresenceStatusCounts({
+			presenceMode: presenceConfig.presenceMode,
+			requiredOnsiteDays: presenceConfig.requiredOnsiteDays,
+			requiredOnsiteFixedDays: presenceConfig.requiredOnsiteFixedDays
+				? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as PresenceDayOfWeek[])
+				: null,
+			workPeriods: periods,
+		});
 
 		return {
 			required,
-			actual: onsiteDates.size,
+			actual,
 			period: presenceConfig.evaluationPeriod,
 			mode: presenceConfig.presenceMode,
 			presenceEnabled: true,

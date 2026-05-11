@@ -17,11 +17,28 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { team } from "@/db/schema";
 
+const NO_MANAGER_VALUE = "none";
+
+export interface TeamManagerOption {
+	employeeId: string;
+	name: string;
+	email: string;
+	position?: string | null;
+}
+
 interface CreateTeamDialogProps {
 	organizationId: string;
+	managerOptions: TeamManagerOption[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSuccess?: (createdTeam: typeof team.$inferSelect) => void;
@@ -29,6 +46,7 @@ interface CreateTeamDialogProps {
 
 export function CreateTeamDialog({
 	organizationId,
+	managerOptions,
 	open,
 	onOpenChange,
 	onSuccess,
@@ -36,18 +54,23 @@ export function CreateTeamDialog({
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
+		primaryManagerId: NO_MANAGER_VALUE,
 	});
 
 	const createMutation = useMutation({
-		mutationFn: (data: { organizationId: string; name: string; description?: string }) =>
-			createTeam(data),
+		mutationFn: (data: {
+			organizationId: string;
+			name: string;
+			description?: string;
+			primaryManagerId?: string | null;
+		}) => createTeam(data),
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(result.error || "Failed to create team");
 				return;
 			}
 			toast.success("Team created successfully");
-			setFormData({ name: "", description: "" });
+			setFormData({ name: "", description: "", primaryManagerId: NO_MANAGER_VALUE });
 			onOpenChange(false);
 			onSuccess?.(result.data);
 		},
@@ -62,6 +85,8 @@ export function CreateTeamDialog({
 			organizationId,
 			name: formData.name,
 			description: formData.description || undefined,
+			primaryManagerId:
+				formData.primaryManagerId === NO_MANAGER_VALUE ? null : formData.primaryManagerId,
 		});
 	};
 
@@ -97,6 +122,30 @@ export function CreateTeamDialog({
 								placeholder="A brief description of this team"
 								rows={3}
 							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="primary-manager">Fallback Manager</Label>
+							<Select
+								value={formData.primaryManagerId}
+								onValueChange={(primaryManagerId) => setFormData({ ...formData, primaryManagerId })}
+							>
+								<SelectTrigger id="primary-manager">
+									<SelectValue placeholder="Select a fallback manager" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value={NO_MANAGER_VALUE}>No fallback manager</SelectItem>
+									{managerOptions.map((manager) => (
+										<SelectItem key={manager.employeeId} value={manager.employeeId}>
+											{manager.name}
+											{manager.position ? ` (${manager.position})` : ""}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-xs text-muted-foreground">
+								Used for approvals when a team member has no direct manager.
+							</p>
 						</div>
 					</ActionPanelBody>
 

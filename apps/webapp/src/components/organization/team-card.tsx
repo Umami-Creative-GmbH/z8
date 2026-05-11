@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDots, IconEdit, IconTrash, IconUsers } from "@tabler/icons-react";
+import { IconDots, IconEdit, IconShieldCheck, IconTrash, IconUsers } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +18,7 @@ interface TeamCardProps {
 	employees?: Array<{
 		user: { id: string; name: string; image: string | null };
 	}>;
+	primaryManager?: { name: string; position?: string | null } | null;
 	canManageMembers: boolean;
 	canManageSettings: boolean;
 	onEdit?: () => void;
@@ -28,6 +29,7 @@ interface TeamCardProps {
 export function TeamCard({
 	team,
 	employees = [],
+	primaryManager = null,
 	canManageMembers,
 	canManageSettings,
 	onEdit,
@@ -56,17 +58,17 @@ export function TeamCard({
 								<IconDots className="h-4 w-4" />
 							</Button>
 						</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						{canManageMembers && (
-							<DropdownMenuItem onClick={onManageMembers}>
-								<IconUsers className="mr-2 h-4 w-4" />
-								Manage Members
-							</DropdownMenuItem>
-						)}
-						{canManageSettings && (
-							<>
-								{canManageMembers && <DropdownMenuSeparator />}
-								<DropdownMenuItem onClick={onEdit}>
+						<DropdownMenuContent align="end">
+							{canManageMembers && (
+								<DropdownMenuItem onClick={onManageMembers}>
+									<IconUsers className="mr-2 h-4 w-4" />
+									Manage Members
+								</DropdownMenuItem>
+							)}
+							{canManageSettings && (
+								<>
+									{canManageMembers && <DropdownMenuSeparator />}
+									<DropdownMenuItem onClick={onEdit}>
 										<IconEdit className="mr-2 h-4 w-4" />
 										Edit Team
 									</DropdownMenuItem>
@@ -83,6 +85,18 @@ export function TeamCard({
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-4">
+					<div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm">
+						<IconShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+						<div className="min-w-0">
+							<div className="font-medium">Fallback manager</div>
+							<div className="truncate text-muted-foreground">
+								{primaryManager
+									? `${primaryManager.name}${primaryManager.position ? ` - ${primaryManager.position}` : ""}`
+									: "Not assigned"}
+							</div>
+						</div>
+					</div>
+
 					{/* Member Count */}
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<IconUsers className="h-4 w-4" />
