@@ -245,7 +245,7 @@ export function RequestAbsenceDialog({
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
-					<ActionPanelBody className="grid gap-4">
+					<ActionPanelBody className="space-y-4">
 						{/* Category Select */}
 						<form.Field name="categoryId">
 							{(field) => (

@@ -43,32 +43,77 @@ function getEligibleManagerIds(input: {
 	return result.ok ? result.managerIds : [];
 }
 
+function hasPgErrorCode(error: unknown, codes: Set<string>): boolean {
+	if (typeof error !== "object" || error === null) {
+		return false;
+	}
+
+	const code = "code" in error ? error.code : undefined;
+	if (typeof code === "string" && codes.has(code)) {
+		return true;
+	}
+
+	const cause = "cause" in error ? error.cause : undefined;
+	return hasPgErrorCode(cause, codes);
+}
+
+const MISSING_TEAM_ELIGIBILITY_SCHEMA_CODES = new Set(["42P01", "42703"]);
+
+async function getTeamEligibilityInputs(input: {
+	db: ApprovalEligibilityDb;
+	organizationId: string;
+	requesterEmployeeIds?: string[];
+}) {
+	try {
+		const [memberships, teams] = await Promise.all([
+			input.db.query.teamMembership.findMany({
+				where: input.requesterEmployeeIds
+					? and(
+							eq(teamMembership.organizationId, input.organizationId),
+							inArray(teamMembership.employeeId, input.requesterEmployeeIds),
+						)
+					: eq(teamMembership.organizationId, input.organizationId),
+			}),
+			input.db.query.team.findMany({ where: eq(team.organizationId, input.organizationId) }),
+		]);
+
+		return {
+			memberships: memberships as EligibleTeamMembership[],
+			teams: teams as EligibleTeam[],
+		};
+	} catch (error) {
+		if (hasPgErrorCode(error, MISSING_TEAM_ELIGIBILITY_SCHEMA_CODES)) {
+			return { memberships: [], teams: [] };
+		}
+
+		throw error;
+	}
+}
+
 export async function getEligibleManagerIdsForRequester(input: {
 	db: ApprovalEligibilityDb;
 	requesterEmployeeId: string;
 	organizationId: string;
 }) {
-	const [employees, managerLinks, memberships, teams] = await Promise.all([
+	const [employees, managerLinks] = await Promise.all([
 		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),
-		input.db.query.teamMembership.findMany({
-			where: and(
-				eq(teamMembership.organizationId, input.organizationId),
-				eq(teamMembership.employeeId, input.requesterEmployeeId),
-			),
-		}),
-		input.db.query.team.findMany({ where: eq(team.organizationId, input.organizationId) }),
 	]);
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+		requesterEmployeeIds: [input.requesterEmployeeId],
+	});
 
 	return getEligibleManagerIds({
 		organizationId: input.organizationId,
 		requesterEmployeeId: input.requesterEmployeeId,
 		employees: employees as EligibleManagerEmployee[],
 		managerLinks: managerLinks as EligibleManagerLink[],
-		teamMemberships: memberships as EligibleTeamMembership[],
-		teams: teams as EligibleTeam[],
+		teamMemberships: memberships,
+		teams,
 	});
 }
 
@@ -116,15 +161,13 @@ export async function getEligibleApprovalScopesForManager(input: {
 		return [];
 	}
 
-	const [managerLinks, memberships, teams] = await Promise.all([
-		input.db.query.employeeManagers.findMany({
-			where: inArray(employeeManagers.employeeId, requesterIds),
-		}),
-		input.db.query.teamMembership.findMany({
-			where: eq(teamMembership.organizationId, input.organizationId),
-		}),
-		input.db.query.team.findMany({ where: eq(team.organizationId, input.organizationId) }),
-	]);
+	const managerLinks = await input.db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, requesterIds),
+	});
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+	});
 
 	return typedEmployees.flatMap((requester: { id: string }) => {
 		const eligibleManagerIds = getEligibleManagerIds({
@@ -132,8 +175,8 @@ export async function getEligibleApprovalScopesForManager(input: {
 			requesterEmployeeId: requester.id,
 			employees: typedEmployees,
 			managerLinks: managerLinks as EligibleManagerLink[],
-			teamMemberships: memberships as EligibleTeamMembership[],
-			teams: teams as EligibleTeam[],
+			teamMemberships: memberships,
+			teams,
 		});
 
 		return eligibleManagerIds.includes(input.managerEmployeeId)

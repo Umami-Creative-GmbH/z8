@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { selectMock, executeMock } = vi.hoisted(() => ({
 	selectMock: vi.fn(),
@@ -34,8 +34,14 @@ function queueCurrentTotal(rows: unknown[]) {
 
 describe("getPlatformAnalyticsData", () => {
 	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-10T12:00:00.000Z"));
 		selectMock.mockReset();
 		executeMock.mockReset();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 
 	it("returns aggregate platform analytics with billing disabled", async () => {

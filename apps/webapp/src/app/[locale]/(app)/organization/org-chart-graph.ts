@@ -145,7 +145,7 @@ export function buildOrgChartGraph(input: BuildOrgChartGraphInput): OrgChartGrap
 			kind: "manager",
 			source: buildEmployeeNodeId(link.managerId),
 			target: buildEmployeeNodeId(link.employeeId),
-			label: "Manager",
+			label: "Manages",
 		});
 	}
 

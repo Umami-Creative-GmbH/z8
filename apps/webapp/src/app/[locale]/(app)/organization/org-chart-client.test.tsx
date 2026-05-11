@@ -29,25 +29,40 @@ type MockFlowNode = {
 
 type MockFlowEdge = {
 	id: string;
+	label?: string;
 	style?: Record<string, unknown>;
 };
 
 vi.mock("@xyflow/react", () => ({
 	Background: () => <div data-testid="flow-background" />,
-	Controls: () => <div data-testid="flow-controls" />,
-	MiniMap: () => <div data-testid="flow-minimap" />,
+	Controls: (props: { className?: string; position?: string }) => (
+		<div data-position={props.position} data-testid="flow-controls" className={props.className} />
+	),
+	MiniMap: (props: { className?: string; position?: string; maskColor?: string; bgColor?: string }) => (
+		<div
+			data-bg-color={props.bgColor}
+			data-mask-color={props.maskColor}
+			data-position={props.position}
+			data-testid="flow-minimap"
+			className={props.className}
+		/>
+	),
+	MarkerType: { ArrowClosed: "arrowclosed" },
 	ReactFlow: ({
 		nodes,
 		edges,
 		nodeTypes,
+		children,
 	}: {
 		nodes: MockFlowNode[];
 		edges: MockFlowEdge[];
 		nodeTypes: Record<string, (props: { data: unknown }) => ReactNode>;
+		children?: ReactNode;
 	}) => (
 		<div data-testid="react-flow">
 			<div data-testid="node-count">{nodes.length}</div>
 			<div data-testid="edge-count">{edges.length}</div>
+			<div data-testid="edge-labels">{JSON.stringify(edges.map((edge) => edge.label))}</div>
 			<div data-testid="edge-styles">{JSON.stringify(edges.map((edge) => edge.style))}</div>
 			{nodes.map((node) => {
 				const NodeComponent = nodeTypes[node.type ?? ""];
@@ -58,6 +73,7 @@ vi.mock("@xyflow/react", () => ({
 					</div>
 				) : null;
 			})}
+			{children}
 		</div>
 	),
 	ReactFlowProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -116,6 +132,41 @@ const teamGraph: OrgChartGraph = {
 	],
 };
 
+const managerGraph: OrgChartGraph = {
+	...graph,
+	nodes: [
+		{
+			...graph.nodes[0],
+			id: "employee:manager-1",
+			employeeId: "manager-1",
+			userId: "user-manager-1",
+			name: "Katherine Johnson",
+			pronouns: null,
+			email: "katherine@example.com",
+			image: "https://cdn.example.com/katherine.png",
+			role: "manager",
+			isFocused: undefined,
+		},
+		{
+			...graph.nodes[0],
+			id: "employee:emp-1",
+			employeeId: "emp-1",
+			userId: "user-1",
+			name: "Ada Lovelace",
+			image: null,
+		},
+	],
+	edges: [
+		{
+			id: "manager:employee:manager-1->employee:emp-1",
+			kind: "manager",
+			source: "employee:manager-1",
+			target: "employee:emp-1",
+			label: "Manages",
+		},
+	],
+};
+
 function deferred<T>() {
 	let resolve: (value: T) => void;
 	const promise = new Promise<T>((promiseResolve) => {
@@ -162,6 +213,33 @@ describe("OrgChartClient", () => {
 		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Expand Platform team" })).toBeTruthy();
 		expect(screen.getByTestId("edge-styles").textContent).toContain("strokeDasharray");
+	});
+
+	it("themes React Flow controls and overview for dark mode", async () => {
+		const { OrgChartClient } = await import("./org-chart-client");
+		render(<OrgChartClient initialGraph={graph} />);
+
+		expect(screen.getByTestId("flow-controls").getAttribute("class")).toContain("bg-card");
+		expect(screen.getByTestId("flow-controls").getAttribute("data-position")).toBe("bottom-left");
+		expect(screen.getByTestId("flow-minimap").getAttribute("class")).toContain("bg-card");
+		expect(screen.getByTestId("flow-minimap").getAttribute("data-position")).toBe("top-left");
+		expect(screen.getByTestId("flow-minimap").getAttribute("data-mask-color")).toContain(
+			"--background",
+		);
+	});
+
+	it("renders manager relationships and employee avatars with deterministic fallback", async () => {
+		const { OrgChartClient } = await import("./org-chart-client");
+		render(<OrgChartClient initialGraph={managerGraph} />);
+
+		expect(screen.getByTestId("edge-count").textContent).toBe("1");
+		expect(screen.getByTestId("edge-labels").textContent).toContain("Manages");
+		expect(screen.getByRole("img", { name: "Katherine Johnson avatar" }).getAttribute("src")).toBe(
+			"https://cdn.example.com/katherine.png",
+		);
+		expect(screen.getByRole("img", { name: "Ada Lovelace avatar" }).getAttribute("src")).toContain(
+			"https://api.dicebear.com/9.x/initials/svg?seed=user-1",
+		);
 	});
 
 	it("searches employees and focuses the selected result", async () => {

@@ -12,6 +12,12 @@
       "skillPath": ".agents/skills/hetzner-server/SKILL.md",
       "computedHash": "c09b8a469c98344ecf02a0dc21b37881b50e53ec43358b05ff83d66c069a7aad"
     },
+    "migrate-to-temporal-api": {
+      "source": "Umami-Creative-GmbH/Agent-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-to-temporal-api/SKILL.md",
+      "computedHash": "6737d96abddd8669f7a02a829fd941623e52de1e13b110f99a1823c1a89392fa"
+    },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
       "sourceType": "github",
