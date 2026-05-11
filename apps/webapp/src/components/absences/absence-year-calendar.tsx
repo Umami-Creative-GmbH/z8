@@ -281,7 +281,7 @@ export function AbsenceYearCalendar({
 
 			{/* 12 month grid */}
 			<TooltipProvider delayDuration={150}>
-				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 flex-1 overflow-auto">
 					{MONTHS.map((monthName, monthIndex) => (
 						<MiniMonth
 							key={monthName}
