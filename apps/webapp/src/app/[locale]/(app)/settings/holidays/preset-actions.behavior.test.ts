@@ -30,7 +30,7 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-01T00:00:00.000Z"),
-			preset: { id: "preset-1", name: "Org preset", color: null, countryCode: "DE", stateCode: null },
+			preset: { id: "preset-1", name: "Org preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
 			team: null,
 			employee: null,
 		},
@@ -45,7 +45,7 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-02T00:00:00.000Z"),
-			preset: { id: "preset-2", name: "Team preset", color: null, countryCode: "DE", stateCode: null },
+			preset: { id: "preset-2", name: "Team preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
 			team: { id: "team-managed", name: "Managed Team" },
 			employee: null,
 		},
@@ -60,7 +60,7 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-03T00:00:00.000Z"),
-			preset: { id: "preset-3", name: "Employee preset", color: null, countryCode: "DE", stateCode: null },
+			preset: { id: "preset-3", name: "Employee preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
 			team: null,
 			employee: { id: "employee-managed", firstName: "Mina", lastName: "Miller" },
 		},
@@ -75,7 +75,7 @@ const mockState = vi.hoisted(() => ({
 			effectiveUntil: null,
 			isActive: true,
 			createdAt: new Date("2026-01-04T00:00:00.000Z"),
-			preset: { id: "preset-4", name: "Other preset", color: null, countryCode: "DE", stateCode: null },
+			preset: { id: "preset-4", name: "Other preset", year: 2026, color: null, countryCode: "DE", stateCode: null },
 			team: { id: "team-other", name: "Other Team" },
 			employee: null,
 		},
@@ -88,6 +88,7 @@ const mockState = vi.hoisted(() => ({
 		countryCode: "DE",
 		stateCode: "BY",
 		regionCode: null,
+		year: null,
 		color: null,
 		isActive: true,
 		createdBy: "user-1",
@@ -101,26 +102,32 @@ const mockState = vi.hoisted(() => ({
 			countryCode: "DE",
 			stateCode: null,
 			regionCode: null,
+			year: null,
 			color: null,
 			isActive: true,
 		},
 		holidays: [],
 	},
 	insertCalls: [] as Array<any>,
+	updateCalls: [] as Array<any>,
+	deleteConditions: [] as Array<any>,
+	actorContextCalls: [] as Array<any>,
+	selectCalls: [] as Array<any>,
 }));
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	isNull: vi.fn((value: unknown) => ({ isNull: value })),
+	ne: vi.fn((left: unknown, right: unknown) => ({ ne: [left, right] })),
 	relations: vi.fn(() => ({})),
 	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
 }));
 
 vi.mock("@/db/schema", () => ({
 	employee: { id: "id", userId: "userId", isActive: "isActive", organizationId: "organizationId", firstName: "firstName", lastName: "lastName", position: "position" },
-	holidayCategory: { id: "id", name: "name", color: "color" },
-	holidayPreset: { id: "id", organizationId: "organizationId", countryCode: "countryCode", stateCode: "stateCode", regionCode: "regionCode", name: "name", color: "color", createdAt: "createdAt" },
+	holidayCategory: { id: "id", organizationId: "organizationId", name: "name", color: "color" },
+	holidayPreset: { id: "id", organizationId: "organizationId", countryCode: "countryCode", stateCode: "stateCode", regionCode: "regionCode", year: "year", name: "name", color: "color", createdAt: "createdAt" },
 	holidayPresetAssignment: { id: "id", presetId: "presetId", organizationId: "organizationId", assignmentType: "assignmentType", teamId: "teamId", employeeId: "employeeId", priority: "priority", effectiveFrom: "effectiveFrom", effectiveUntil: "effectiveUntil", isActive: "isActive", createdAt: "createdAt" },
 	holidayPresetHoliday: { presetId: "presetId" },
 	team: { id: "id", name: "name", organizationId: "organizationId" },
@@ -132,8 +139,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 	const { AuthorizationError } = await import("@/lib/effect/errors");
 
 	return {
-		getEmployeeSettingsActorContext: vi.fn(() =>
-			Effect.succeed({
+		getEmployeeSettingsActorContext: vi.fn((options?: any) => {
+			mockState.actorContextCalls.push(options);
+			return Effect.succeed({
 				...mockState.actor,
 				dbService: {
 					db: {
@@ -141,7 +149,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 							teamPermissions: { findMany: vi.fn(async () => mockState.teamPermissionsRows) },
 							holidayPresetAssignment: { findMany: vi.fn(async () => mockState.presetAssignments) },
 						},
-						select: vi.fn(() => ({
+						select: vi.fn((selection?: unknown) => {
+							mockState.selectCalls.push(selection);
+							return {
 							from: vi.fn((table: any) => ({
 								where: vi.fn((condition: any) => ({
 									limit: vi.fn(async () => {
@@ -149,11 +159,17 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 										if (serialized.includes("countryCode")) {
 											return [];
 										}
+										if (serialized.includes("category-other")) {
+											return [];
+										}
 										if (serialized.includes("preset-existing") || table?.organizationId === "organizationId") {
 											return [mockState.presetDetail.preset];
 										}
 										return [];
 									}),
+								})),
+								innerJoin: vi.fn(() => ({
+									where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
 								})),
 								leftJoin: vi.fn(() => ({
 									where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
@@ -165,6 +181,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 									return [];
 								}),
 								innerJoin: vi.fn(() => ({
+									where: vi.fn(() => ({ limit: vi.fn(async () => [{ id: "owned-row" }]) })),
 									leftJoin: vi.fn(() => ({
 										leftJoin: vi.fn(() => ({
 											leftJoin: vi.fn(() => ({
@@ -182,7 +199,8 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 									})),
 								})),
 							})),
-						})),
+						};
+						}),
 						leftJoin: vi.fn(() => ({
 							where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
 						})),
@@ -195,15 +213,23 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 							})),
 						})),
 						update: vi.fn(() => ({
-							set: vi.fn(() => ({
-								where: vi.fn(() => ({ returning: vi.fn(async () => [mockState.insertedPreset]) })),
+							set: vi.fn((value: unknown) => ({
+								where: vi.fn((condition: unknown) => {
+									mockState.updateCalls.push({ value, condition });
+									return { returning: vi.fn(async () => [mockState.insertedPreset]) };
+								}),
 							})),
+						})),
+						delete: vi.fn(() => ({
+							where: vi.fn((condition: unknown) => {
+								mockState.deleteConditions.push(condition);
+							}),
 						})),
 					},
 					query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 				},
-			}),
-		),
+			});
+		}),
 		getManagedEmployeeIdsForSettingsActor: vi.fn(() => Effect.succeed(mockState.managedEmployeeIds)),
 		requireOrgAdminEmployeeSettingsAccess: vi.fn((actor: any, options: any) =>
 			actor.accessTier === "orgAdmin"
@@ -242,7 +268,9 @@ vi.mock("@/lib/effect/runtime", async () => {
 			teamPermissions: { findMany: vi.fn(async () => mockState.teamPermissionsRows) },
 			holidayPresetAssignment: { findMany: vi.fn(async () => mockState.presetAssignments) },
 		},
-		select: vi.fn(() => ({
+		select: vi.fn((selection?: unknown) => {
+			mockState.selectCalls.push(selection);
+			return {
 			from: vi.fn((table: any) => ({
 				where: vi.fn((condition: any) => ({
 					limit: vi.fn(async () => {
@@ -286,7 +314,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 			leftJoin: vi.fn(() => ({
 				where: vi.fn(() => ({ orderBy: vi.fn(async () => mockState.presetDetail.holidays) })),
 			})),
-		})),
+		};
+		}),
 		insert: vi.fn(() => ({
 			values: vi.fn((value: unknown) => ({
 				returning: vi.fn(async () => {
@@ -296,9 +325,17 @@ vi.mock("@/lib/effect/runtime", async () => {
 			})),
 		})),
 		update: vi.fn(() => ({
-			set: vi.fn(() => ({
-				where: vi.fn(() => ({ returning: vi.fn(async () => [mockState.insertedPreset]) })),
+			set: vi.fn((value: unknown) => ({
+				where: vi.fn((condition: unknown) => {
+					mockState.updateCalls.push({ value, condition });
+					return { returning: vi.fn(async () => [mockState.insertedPreset]) };
+				}),
 			})),
+		})),
+		delete: vi.fn(() => ({
+			where: vi.fn((condition: unknown) => {
+				mockState.deleteConditions.push(condition);
+			}),
 		})),
 	};
 
@@ -341,8 +378,21 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { createHolidayPreset, getPresetAssignments } = await import("./preset-actions");
-const { getHolidayPreset } = await import("./preset-actions");
+const { assignmentRangesOverlap, buildPresetLocationConflictConditions } = await import("./preset-scheduling");
+const {
+	createHolidayPreset,
+	createPresetAssignment,
+	addHolidayToPreset,
+	bulkAddHolidaysToPreset,
+	deleteHolidayFromPreset,
+	deletePresetAssignment,
+	getEmployeesForAssignment,
+	getHolidayPreset,
+	getHolidayPresets,
+	getPresetAssignments,
+	getTeamsForAssignment,
+	updateHolidayPreset,
+} = await import("./preset-actions");
 
 describe("holiday preset settings scope behavior", () => {
 	beforeEach(() => {
@@ -355,6 +405,10 @@ describe("holiday preset settings scope behavior", () => {
 		mockState.managedEmployeeIds = new Set(["employee-managed"]);
 		mockState.teamPermissionsRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
 		mockState.insertCalls = [];
+		mockState.updateCalls = [];
+		mockState.deleteConditions = [];
+		mockState.actorContextCalls = [];
+		mockState.selectCalls = [];
 	});
 
 	it("lets managers read only organization, managed-team, and managed-employee preset assignments", async () => {
@@ -367,7 +421,13 @@ describe("holiday preset settings scope behavior", () => {
 				"preset-team",
 				"preset-employee",
 			]);
+			expect(result.data[0]?.preset.year).toBe(2026);
 		}
+		expect(mockState.selectCalls).toContainEqual(
+			expect.objectContaining({
+				preset: expect.objectContaining({ year: "year" }),
+			}),
+		);
 	});
 
 	it("lets owners create holiday presets with org-admin parity even without an admin employee row", async () => {
@@ -413,5 +473,172 @@ describe("holiday preset settings scope behavior", () => {
 		if (result.success) {
 			expect(result.data.preset.id).toBe("preset-existing");
 		}
+	});
+
+	it("uses actor organization context for preset and assignment helper reads", async () => {
+		await getHolidayPresets("org-1");
+		await getTeamsForAssignment("org-1");
+		await getEmployeesForAssignment("org-1");
+
+		expect(mockState.actorContextCalls).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ organizationId: "org-1", queryName: "getHolidayPresets:actor" }),
+				expect.objectContaining({ organizationId: "org-1", queryName: "getTeamsForAssignment:actor" }),
+				expect.objectContaining({ organizationId: "org-1", queryName: "getEmployeesForAssignment:actor" }),
+			]),
+		);
+	});
+
+	it("persists the existing preset year when updating preset details", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const result = await updateHolidayPreset("preset-existing", {
+			name: "Existing preset",
+			description: "",
+			countryCode: "DE",
+			stateCode: "",
+			regionCode: "",
+			year: 2027,
+			color: "",
+			isActive: true,
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.updateCalls[0]?.value).toEqual(expect.objectContaining({ year: 2027 }));
+	});
+
+	it("verifies preset assignments and deletes against the actor organization", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		await createPresetAssignment("org-1", {
+			presetId: "preset-existing",
+			assignmentType: "team",
+			teamId: "team-managed",
+			employeeId: null,
+			effectiveFrom: null,
+			effectiveUntil: null,
+			isActive: true,
+		});
+		await deletePresetAssignment("assignment-1");
+
+		expect(JSON.stringify(mockState.updateCalls.at(-1)?.condition)).toContain("org-1");
+	});
+
+	it("verifies preset holiday ownership before deleting", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		await deleteHolidayFromPreset("holiday-1");
+
+		expect(mockState.deleteConditions).toHaveLength(1);
+		expect(mockState.selectCalls.length).toBeGreaterThan(0);
+	});
+
+	it("rejects adding preset holidays with a category from another organization", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const result = await addHolidayToPreset("preset-existing", {
+			name: "Holiday",
+			description: "",
+			month: 1,
+			day: 1,
+			durationDays: 1,
+			holidayType: "public",
+			isFloating: false,
+			floatingRule: null,
+			categoryId: "category-other",
+			isActive: true,
+		});
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe("Holiday category not found");
+		expect(mockState.insertCalls).toHaveLength(0);
+	});
+
+	it("rejects bulk adding preset holidays with a category from another organization", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const result = await bulkAddHolidaysToPreset(
+			"preset-existing",
+			[
+				{
+					name: "Holiday",
+					description: "",
+					month: 1,
+					day: 1,
+					durationDays: 1,
+					holidayType: "public",
+					isFloating: false,
+					floatingRule: null,
+					isActive: true,
+				},
+			],
+			"category-other",
+		);
+
+		expect(result.success).toBe(false);
+		expect(result.error).toBe("Holiday category not found");
+		expect(mockState.insertCalls).toHaveLength(0);
+	});
+});
+
+describe("holiday preset scheduling behavior", () => {
+	it("treats adjacent calendar-year assignment ranges as non-overlapping", () => {
+		expect(
+			assignmentRangesOverlap(
+				new Date("2026-01-01T00:00:00.000Z"),
+				new Date("2026-12-31T23:59:59.999Z"),
+				new Date("2027-01-01T00:00:00.000Z"),
+				new Date("2027-12-31T23:59:59.999Z"),
+			),
+		).toBe(false);
+	});
+
+	it("treats overlapping assignment ranges as overlapping", () => {
+		expect(
+			assignmentRangesOverlap(
+				new Date("2026-01-01T00:00:00.000Z"),
+				new Date("2026-12-31T23:59:59.999Z"),
+				new Date("2026-06-01T00:00:00.000Z"),
+				new Date("2027-05-31T23:59:59.999Z"),
+			),
+		).toBe(true);
+	});
+
+	it("treats open-ended ranges as unbounded", () => {
+		expect(
+			assignmentRangesOverlap(
+				new Date("2026-01-01T00:00:00.000Z"),
+				null,
+				new Date("2027-01-01T00:00:00.000Z"),
+				new Date("2027-12-31T23:59:59.999Z"),
+			),
+		).toBe(true);
+	});
+
+	it("includes year in imported preset location conflict checks", () => {
+		const conditions = buildPresetLocationConflictConditions("org-1", {
+			countryCode: "DE",
+			stateCode: "BY",
+			regionCode: undefined,
+			year: 2027,
+		});
+
+		expect(conditions).toHaveLength(5);
+		expect(conditions).toContainEqual({ eq: ["year", 2027] });
+	});
+
+	it("excludes the current preset from update location conflict checks", () => {
+		const conditions = buildPresetLocationConflictConditions(
+			"org-1",
+			{
+				countryCode: "DE",
+				stateCode: "BY",
+				regionCode: undefined,
+				year: 2027,
+			},
+			{ excludePresetId: "preset-current" },
+		);
+
+		expect(conditions).toContainEqual({ ne: ["id", "preset-current"] });
 	});
 });

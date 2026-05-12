@@ -4,6 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -22,6 +23,7 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -54,6 +56,47 @@ interface TeamOption {
 	name: string;
 }
 
+function formatDateInputValue(date: DateTime) {
+	return date.toFormat("yyyy-LL-dd");
+}
+
+function parseDateInputValue(value: string) {
+	if (!value) {
+		return null;
+	}
+
+	const date = DateTime.fromISO(value, { zone: "utc" }).startOf("day");
+	return date.isValid ? date.toJSDate() : null;
+}
+
+function parseDateInputEndValue(value: string) {
+	if (!value) {
+		return null;
+	}
+
+	const date = DateTime.fromISO(value, { zone: "utc" }).endOf("day");
+	return date.isValid ? date.toJSDate() : null;
+}
+
+function getDefaultAssignmentDates() {
+	const year = DateTime.utc().year;
+	return {
+		effectiveFrom: formatDateInputValue(DateTime.utc(year, 1, 1)),
+		effectiveUntil: formatDateInputValue(DateTime.utc(year, 12, 31)),
+	};
+}
+
+function getDefaultAssignmentValues() {
+	const defaultAssignmentDates = getDefaultAssignmentDates();
+	return {
+		presetId: "",
+		teamId: "",
+		employeeId: "",
+		effectiveFrom: defaultAssignmentDates.effectiveFrom,
+		effectiveUntil: defaultAssignmentDates.effectiveUntil,
+	};
+}
+
 export function AssignmentDialog({
 	open,
 	onOpenChange,
@@ -66,11 +109,7 @@ export function AssignmentDialog({
 	const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
 	const form = useForm({
-		defaultValues: {
-			presetId: "",
-			teamId: "",
-			employeeId: "",
-		},
+		defaultValues: getDefaultAssignmentValues(),
 		onSubmit: async ({ value }) => {
 			// Validate target based on assignment type
 			const errors: Record<string, string> = {};
@@ -82,6 +121,13 @@ export function AssignmentDialog({
 			}
 			if (assignmentType === "employee" && !value.employeeId) {
 				errors.employeeId = "Please select an employee";
+			}
+			if (
+				value.effectiveFrom &&
+				value.effectiveUntil &&
+				value.effectiveUntil < value.effectiveFrom
+			) {
+				errors.effectiveUntil = "End date must be after start date";
 			}
 
 			if (Object.keys(errors).length > 0) {
@@ -96,7 +142,7 @@ export function AssignmentDialog({
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (!nextOpen) {
-			form.reset();
+			form.reset(getDefaultAssignmentValues());
 			setValidationErrors({});
 		}
 		onOpenChange(nextOpen);
@@ -130,12 +176,20 @@ export function AssignmentDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (values: { presetId: string; teamId: string; employeeId: string }) =>
+		mutationFn: (values: {
+			presetId: string;
+			teamId: string;
+			employeeId: string;
+			effectiveFrom: string;
+			effectiveUntil: string;
+		}) =>
 			createPresetAssignment(organizationId, {
 				presetId: values.presetId,
 				assignmentType,
 				teamId: assignmentType === "team" ? values.teamId : undefined,
 				employeeId: assignmentType === "employee" ? values.employeeId : undefined,
+				effectiveFrom: parseDateInputValue(values.effectiveFrom),
+				effectiveUntil: parseDateInputEndValue(values.effectiveUntil),
 				isActive: true,
 			}),
 		onSuccess: (result) => {
@@ -145,7 +199,7 @@ export function AssignmentDialog({
 					queryKey: queryKeys.holidayPresetAssignments.list(organizationId),
 				});
 				onSuccess();
-				onOpenChange(false);
+				handleOpenChange(false);
 			} else {
 				toast.error(
 					result.error ||
@@ -262,6 +316,61 @@ export function AssignmentDialog({
 								)}
 							</form.Field>
 
+							<div className="grid gap-4 sm:grid-cols-2">
+								<form.Field name="effectiveFrom">
+									{(field) => (
+										<div className="space-y-2">
+											<Label htmlFor="assignment-effective-from">
+												{t("settings.holidays.assignments.effectiveFrom", "Effective from")}
+											</Label>
+											<Input
+												id="assignment-effective-from"
+												name="effectiveFrom"
+												type="date"
+												autoComplete="off"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(event) => field.handleChange(event.target.value)}
+											/>
+										</div>
+									)}
+								</form.Field>
+
+								<form.Field name="effectiveUntil">
+									{(field) => (
+										<div className="space-y-2">
+											<Label htmlFor="assignment-effective-until">
+												{t("settings.holidays.assignments.effectiveUntil", "Effective until")}
+											</Label>
+											<Input
+												id="assignment-effective-until"
+												name="effectiveUntil"
+												type="date"
+												autoComplete="off"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(event) => field.handleChange(event.target.value)}
+												aria-invalid={!!validationErrors.effectiveUntil}
+												aria-describedby={
+													validationErrors.effectiveUntil
+														? "assignment-effective-until-error"
+														: undefined
+												}
+											/>
+											{validationErrors.effectiveUntil && (
+												<p
+													id="assignment-effective-until-error"
+													className="text-sm text-destructive"
+													aria-live="polite"
+												>
+													{validationErrors.effectiveUntil}
+												</p>
+											)}
+										</div>
+									)}
+								</form.Field>
+							</div>
+
 							{/* Team Selection (for team assignment) */}
 							{assignmentType === "team" && (
 								<form.Field name="teamId">
@@ -330,7 +439,7 @@ export function AssignmentDialog({
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => onOpenChange(false)}
+								onClick={() => handleOpenChange(false)}
 								disabled={createMutation.isPending}
 							>
 								{t("common.cancel", "Cancel")}

@@ -73,6 +73,7 @@ export const holidayPresetFormSchema = z.object({
 	countryCode: z.string().length(2, "Country code must be 2 characters").optional(),
 	stateCode: z.string().optional(),
 	regionCode: z.string().optional(),
+	year: z.number().min(2000).max(2100).optional().nullable(),
 	color: z
 		.string()
 		.regex(/^#[0-9A-F]{6}$/i, "Invalid hex color")

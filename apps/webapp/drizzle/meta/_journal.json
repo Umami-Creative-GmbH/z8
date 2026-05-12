@@ -127,6 +127,13 @@
       "when": 1778330000000,
       "tag": "0017_employee_pronouns",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778614513000,
+      "tag": "0018_year_specific_holiday_presets",
+      "breakpoints": true
     }
   ]
 }
