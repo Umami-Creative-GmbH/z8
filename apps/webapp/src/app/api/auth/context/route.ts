@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 
 /**
  * GET /api/auth/context
@@ -44,7 +45,7 @@ export async function GET() {
 					surchargesEnabled: org.surchargesEnabled ?? false,
 					demoDataEnabled: org.demoDataEnabled ?? true,
 					timezone: org.timezone ?? "UTC",
-					fiscalYearStartMonth: org.fiscalYearStartMonth ?? 1,
+					fiscalYearStartMonth: normalizeFiscalYearStartMonth(org.fiscalYearStartMonth),
 					deletedAt: org.deletedAt?.toISOString() ?? null,
 				};
 			}

@@ -455,7 +455,7 @@ export const auth = betterAuth({
 							type: "number",
 							required: false,
 							defaultValue: 1,
-							input: true,
+							input: false,
 						},
 						deletedAt: {
 							type: "date",

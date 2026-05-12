@@ -7,7 +7,7 @@ export type FiscalYearRange = {
 };
 
 export function normalizeFiscalYearStartMonth(month: number | null | undefined): number {
-	if (!Number.isInteger(month) || month < 1 || month > 12) {
+	if (typeof month !== "number" || !Number.isInteger(month) || month < 1 || month > 12) {
 		return 1;
 	}
 
