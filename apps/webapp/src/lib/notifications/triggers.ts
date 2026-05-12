@@ -123,6 +123,13 @@ export async function onAbsenceRecordedByManager(
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
+			metadata: {
+				managerRecorded: true,
+				managerName: params.managerName,
+				startDate: params.startDate,
+				endDate: params.endDate,
+				absenceType: params.categoryName,
+			},
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger manager-recorded absence notification");

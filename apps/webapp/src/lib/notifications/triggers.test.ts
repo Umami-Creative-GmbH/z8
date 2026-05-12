@@ -70,7 +70,31 @@ describe("approval notification triggers", () => {
 			entityType: "absence_entry",
 			entityId: "absence-1",
 			actionUrl: "/absences",
+			metadata: {
+				managerRecorded: true,
+				managerName: "Morgan Manager",
+				startDate: "2026-05-11",
+				endDate: "2026-05-12",
+				absenceType: "Sick Leave",
+			},
 		});
+	});
+
+	it("swallows manager-recorded absence notification failures", async () => {
+		createNotification.mockRejectedValueOnce(new Error("notification failed"));
+
+		await expect(
+			onAbsenceRecordedByManager({
+				absenceId: "absence-1",
+				employeeUserId: "user-employee",
+				employeeName: "Avery Employee",
+				organizationId: "org-1",
+				categoryName: "Sick Leave",
+				startDate: "2026-05-11",
+				endDate: "2026-05-12",
+				managerName: "Morgan Manager",
+			}),
+		).resolves.toBeUndefined();
 	});
 
 	it("links manager time-correction approval notifications to the unified inbox", async () => {
