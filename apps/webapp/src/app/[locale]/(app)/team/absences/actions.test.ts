@@ -5,14 +5,16 @@ import {
 } from "./manager-absence-permissions";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import {
+	getManagerAbsenceEmployees,
+	recordAbsenceForEmployee,
+} from "./actions";
+import {
 	buildCanonicalAbsenceRecordValues,
 	getAbsenceOverlapConflictMessage,
-	getManagerAbsenceEmployees,
 	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
-	recordAbsenceForEmployee,
 	validateRecordAbsenceDateRange,
-} from "./actions";
+} from "./manager-absence-action-helpers";
 
 describe("manager absence server action contracts", () => {
 	it("exports the list and record actions", () => {

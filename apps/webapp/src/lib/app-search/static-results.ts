@@ -133,7 +133,7 @@ export function buildStaticAppSearchResults({
 				return {
 					...result,
 					subtitle: t(destination.descriptionKey, destination.descriptionDefault),
-					keywords: destination.keywords,
+					keywords: [...destination.keywords],
 				};
 			}),
 		);
