@@ -35,6 +35,7 @@ export function calculateVacationBalance({
 	currentDate,
 	year,
 	adjustmentTotal = 0,
+	fiscalYearStartMonth = 1,
 }: {
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
@@ -42,6 +43,7 @@ export function calculateVacationBalance({
 	currentDate: Date | DateTime;
 	year: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
+	fiscalYearStartMonth?: number | null;
 }): VacationBalance {
 	// Convert currentDate to DateTime if needed
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
@@ -62,6 +64,7 @@ export function calculateVacationBalance({
 			const carryoverExpiryDT = calculateCarryoverExpiryDate(
 				year,
 				organizationAllowance.carryoverExpiryMonths,
+				fiscalYearStartMonth,
 			);
 
 			// Only add carryover if not expired
@@ -83,14 +86,14 @@ export function calculateVacationBalance({
 	totalDays += adjustmentTotal;
 
 	// 4. Calculate used days (approved absences that count against vacation)
-	const { start, end } = getYearRange(year);
+	const { start, end } = getYearRange(year, fiscalYearStartMonth);
 	const usedDays = absences
 		.filter((absence) => {
 			const isApproved = absence.status === "approved";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
 
 			// Absence dates are now YYYY-MM-DD strings
-			const absenceStart = DateTime.fromISO(absence.startDate);
+			const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
 			const inYear = absenceStart >= start && absenceStart <= end;
 
 			return isApproved && countsAgainstVacation && inYear;
@@ -114,7 +117,7 @@ export function calculateVacationBalance({
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
 
 			// Absence dates are now YYYY-MM-DD strings
-			const absenceStart = DateTime.fromISO(absence.startDate);
+			const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
 			const inYear = absenceStart >= start && absenceStart <= end;
 
 			return isPending && countsAgainstVacation && inYear;

@@ -155,6 +155,7 @@ export async function getEnhancedVacationBalance(input: {
 		currentDate,
 		year,
 		adjustmentTotal,
+		fiscalYearStartMonth,
 	});
 
 	// Calculate carryover expiry details

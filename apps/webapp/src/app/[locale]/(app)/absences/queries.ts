@@ -95,6 +95,7 @@ export async function getVacationBalance(
 		absences: absencesWithCategory,
 		currentDate: currentTimestamp(),
 		year,
+		fiscalYearStartMonth,
 	});
 }
 

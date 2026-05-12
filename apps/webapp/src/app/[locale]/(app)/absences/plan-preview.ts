@@ -3,6 +3,7 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, coverageRule, shift } from "@/db/schema";
 import {
 	type AbsencePlanPreview,
@@ -11,6 +12,7 @@ import {
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { getCurrentEmployee } from "./current-employee";
 import { getHolidays, getVacationBalance } from "./queries";
 
@@ -72,8 +74,15 @@ export async function getAbsencePlanPreview(
 			return { success: false, error: "Absence category not found" };
 		}
 
+		const org = await db.query.organization.findFirst({
+			where: eq(organization.id, currentEmployee.organizationId),
+			columns: { fiscalYearStartMonth: true },
+		});
+		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
+		const fiscalLabelYear = getCurrentFiscalYearLabel(range.start, fiscalYearStartMonth);
+
 		const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
-			getVacationBalance(currentEmployee.id, range.start.year),
+			getVacationBalance(currentEmployee.id, fiscalLabelYear, fiscalYearStartMonth),
 			getHolidays(currentEmployee.id, range.startDate, range.endDate),
 			db.query.absenceEntry.findMany({
 				where: and(
