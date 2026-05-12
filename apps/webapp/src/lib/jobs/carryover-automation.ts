@@ -271,14 +271,25 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 		for (const org of organizations) {
 			try {
 				const fiscalYearStartMonth = org.fiscalYearStartMonth ?? 1;
+				const fiscalLabelYear = getCurrentFiscalYearLabel(
+					DateTime.utc(targetYear, targetMonth, 1),
+					fiscalYearStartMonth,
+				);
 				// Check if organization uses monthly/biweekly accrual
-				const policy = await getVacationAllowance(org.id, targetYear, fiscalYearStartMonth);
+				const policy = await getVacationAllowance(org.id, fiscalLabelYear, fiscalYearStartMonth);
 
 				if (!policy || policy.accrualType === "annual") {
 					continue;
 				}
 
-				const result = await accrueVacationDays(org.id, targetMonth, targetYear, SYSTEM_USER_ID);
+				const result = await accrueVacationDays(
+					org.id,
+					targetMonth,
+					fiscalLabelYear,
+					SYSTEM_USER_ID,
+					fiscalYearStartMonth,
+					targetYear,
+				);
 
 				totalEmployeesProcessed += result.employeesProcessed;
 				totalDaysAccrued += result.totalDaysAccrued;
@@ -341,11 +352,8 @@ export async function runVacationAutomation(): Promise<{
 		accrual?: AccrualJobResult;
 	} = {};
 
-	// Run annual carryover on January 1st
-	if (currentMonth === 1 && currentDay === 1) {
-		logger.info("Running annual carryover (January 1st)");
-		results.carryover = await runAnnualCarryover(currentYear - 1);
-	}
+	// Run annual carryover daily; per-organization fiscal-year gating decides due orgs.
+	results.carryover = await runAnnualCarryover();
 
 	// Run expiry check daily
 	results.expiry = await runCarryoverExpiry();

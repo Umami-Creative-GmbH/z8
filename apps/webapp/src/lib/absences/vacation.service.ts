@@ -445,11 +445,13 @@ export async function accrueVacationDays(
 	month: number,
 	year: number,
 	performedBy: string,
+	fiscalYearStartMonth: number | null | undefined = 1,
+	calendarYear: number = year,
 ): Promise<{
 	employeesProcessed: number;
 	totalDaysAccrued: number;
 }> {
-	const policy = await getVacationAllowance(organizationId, year);
+	const policy = await getVacationAllowance(organizationId, year, fiscalYearStartMonth);
 
 	if (!policy) {
 		throw new Error(`No vacation policy found for year ${year}`);
@@ -481,7 +483,7 @@ export async function accrueVacationDays(
 		// Handle proration for new employees
 		if (emp.startDate) {
 			const hireDate = DateTime.fromJSDate(emp.startDate);
-			const accrualMonth = DateTime.utc(year, month, 1);
+			const accrualMonth = DateTime.utc(calendarYear, month, 1);
 
 			// If hired after this month, no accrual
 			if (hireDate > accrualMonth.endOf("month")) {
@@ -489,7 +491,7 @@ export async function accrueVacationDays(
 			}
 
 			// If hired during this month, prorate
-			if (hireDate.year === year && hireDate.month === month) {
+			if (hireDate.year === calendarYear && hireDate.month === month) {
 				const daysInMonth = accrualMonth.daysInMonth ?? 30;
 				const daysWorked = daysInMonth - hireDate.day + 1;
 				monthlyAccrual = (monthlyAccrual / daysInMonth) * daysWorked;
@@ -501,7 +503,7 @@ export async function accrueVacationDays(
 			employeeId: emp.id,
 			year,
 			days: monthlyAccrual.toFixed(2),
-			reason: `Monthly accrual for ${DateTime.utc(year, month, 1).toFormat("MMMM yyyy")}: +${monthlyAccrual.toFixed(2)} days`,
+			reason: `Monthly accrual for ${DateTime.utc(calendarYear, month, 1).toFormat("MMMM yyyy")}: +${monthlyAccrual.toFixed(2)} days`,
 			adjustedBy: performedBy,
 		});
 
