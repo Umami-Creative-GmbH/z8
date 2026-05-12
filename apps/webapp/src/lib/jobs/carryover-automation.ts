@@ -15,7 +15,7 @@ import {
 	expireCarryoverDays,
 } from "@/lib/absences/vacation.service";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { getCurrentFiscalYearLabel } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { createLogger } from "@/lib/logger";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 
@@ -71,7 +71,7 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 
 		for (const org of organizations) {
 			try {
-				const fiscalYearStartMonth = org.fiscalYearStartMonth ?? 1;
+				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
 				const isFiscalYearStart =
 					currentDate.month === fiscalYearStartMonth && currentDate.day === 1;
 				const organizationFromYear =
@@ -203,11 +203,12 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 
 		for (const org of organizations) {
 			try {
+				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
 				const expiryResult = await expireCarryoverDays(
 					org.id,
 					SYSTEM_USER_ID,
 					currentDate,
-					org.fiscalYearStartMonth ?? 1,
+					fiscalYearStartMonth,
 				);
 
 				if (expiryResult.employeesAffected > 0) {
@@ -270,7 +271,7 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 
 		for (const org of organizations) {
 			try {
-				const fiscalYearStartMonth = org.fiscalYearStartMonth ?? 1;
+				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
 				const fiscalLabelYear = getCurrentFiscalYearLabel(
 					DateTime.utc(targetYear, targetMonth, 1),
 					fiscalYearStartMonth,

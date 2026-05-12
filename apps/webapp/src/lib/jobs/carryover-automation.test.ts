@@ -115,6 +115,24 @@ describe("runAnnualCarryover fiscal-year scheduling", () => {
 			4,
 		);
 	});
+
+	it("falls back to January when the persisted fiscal month is invalid", async () => {
+		vi.setSystemTime(new Date("2026-01-01T10:00:00.000Z"));
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-1", name: "Invalid Month Org", fiscalYearStartMonth: 13 },
+		]);
+
+		const { runAnnualCarryover } = await import("./carryover-automation");
+		await runAnnualCarryover();
+
+		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2025, 1);
+		expect(calculateAnnualCarryoverMock).toHaveBeenCalledWith(
+			"org-1",
+			2025,
+			"system-automation",
+			1,
+		);
+	});
 });
 
 describe("runVacationAutomation fiscal-year scheduling", () => {
