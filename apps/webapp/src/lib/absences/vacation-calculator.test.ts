@@ -6,13 +6,14 @@ function vacationAbsence(
 	id: string,
 	startDate: string,
 	status: AbsenceWithCategory["status"] = "approved",
+	endDate = startDate,
 ): AbsenceWithCategory {
 	return {
 		id,
 		employeeId: "employee-1",
 		startDate,
 		startPeriod: "full_day",
-		endDate: startDate,
+		endDate,
 		endPeriod: "full_day",
 		status,
 		notes: null,
@@ -76,5 +77,45 @@ describe("calculateVacationBalance fiscal year ranges", () => {
 		expect(balance.carryoverDays).toBe(5);
 		expect(balance.totalDays).toBe(35);
 		expect(balance.carryoverExpiryDate?.toISOString()).toBe("2026-06-30T23:59:59.999Z");
+	});
+
+	it("clips boundary-spanning absences to the fiscal range", () => {
+		const spanningAbsence = vacationAbsence(
+			"boundary-spanning",
+			"2026-03-30",
+			"approved",
+			"2026-04-02",
+		);
+
+		const previousFiscalYear = calculateVacationBalance({
+			organizationAllowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [spanningAbsence],
+			currentDate: new Date("2026-03-31T00:00:00.000Z"),
+			year: 2025,
+			fiscalYearStartMonth: 4,
+		});
+
+		const nextFiscalYear = calculateVacationBalance({
+			organizationAllowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [spanningAbsence],
+			currentDate: new Date("2026-04-01T00:00:00.000Z"),
+			year: 2026,
+			fiscalYearStartMonth: 4,
+		});
+
+		expect(previousFiscalYear.usedDays).toBe(2);
+		expect(nextFiscalYear.usedDays).toBe(2);
 	});
 });

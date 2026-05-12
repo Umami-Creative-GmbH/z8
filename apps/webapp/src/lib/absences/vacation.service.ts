@@ -351,10 +351,15 @@ export async function expireCarryoverDays(
 	performedBy: string,
 	currentDate: Date = new Date(),
 	fiscalYearStartMonth?: number | null,
+	timezone = "UTC",
 ): Promise<ExpiryResult> {
 	const fiscalStartMonth =
 		fiscalYearStartMonth ?? (await getOrganizationFiscalYearStartMonth(organizationId));
-	const currentYear = getCurrentFiscalYearLabel(DateTime.fromJSDate(currentDate), fiscalStartMonth);
+	const currentYear = getCurrentFiscalYearLabel(
+		DateTime.fromJSDate(currentDate),
+		fiscalStartMonth,
+		timezone,
+	);
 
 	logger.info({ organizationId, currentYear }, "Checking for expired carryover");
 

@@ -361,18 +361,20 @@ export async function getVacationTakenInYear(
 				eq(absenceEntry.employeeId, employeeId),
 				eq(absenceEntry.status, "approved"),
 				eq(absenceCategory.countsAgainstVacation, true),
-				gte(absenceEntry.startDate, startOfYear),
 				lte(absenceEntry.startDate, endOfYear),
+				gte(absenceEntry.endDate, startOfYear),
 			),
 		);
 
 	const result = entries.map((entry) => {
+		const clippedStartDate = entry.startDate < startOfYear ? startOfYear : entry.startDate;
+		const clippedEndDate = entry.endDate > endOfYear ? endOfYear : entry.endDate;
 		// Use half-day aware calculation
 		const days = calculateBusinessDaysWithHalfDays(
-			entry.startDate,
-			entry.startPeriod,
-			entry.endDate,
-			entry.endPeriod,
+			clippedStartDate,
+			clippedStartDate === entry.startDate ? entry.startPeriod : "full_day",
+			clippedEndDate,
+			clippedEndDate === entry.endDate ? entry.endPeriod : "full_day",
 			[], // holidays handled upstream
 		);
 		return {

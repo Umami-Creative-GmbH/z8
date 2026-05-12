@@ -84,7 +84,25 @@ describe("runAnnualCarryover fiscal-year scheduling", () => {
 	it("processes the previous fiscal label year on the organization's fiscal year start", async () => {
 		vi.setSystemTime(new Date("2026-04-01T10:00:00.000Z"));
 		findManyOrganizationsMock.mockResolvedValue([
-			{ id: "org-1", name: "April Org", fiscalYearStartMonth: 4 },
+			{ id: "org-1", name: "April Org", fiscalYearStartMonth: 4, timezone: "UTC" },
+		]);
+
+		const { runAnnualCarryover } = await import("./carryover-automation");
+		await runAnnualCarryover();
+
+		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2025, 4);
+		expect(calculateAnnualCarryoverMock).toHaveBeenCalledWith(
+			"org-1",
+			2025,
+			"system-automation",
+			4,
+		);
+	});
+
+	it("uses the organization timezone for fiscal-start due checks", async () => {
+		vi.setSystemTime(new Date("2026-03-31T22:30:00.000Z"));
+		findManyOrganizationsMock.mockResolvedValue([
+			{ id: "org-1", name: "Berlin Org", fiscalYearStartMonth: 4, timezone: "Europe/Berlin" },
 		]);
 
 		const { runAnnualCarryover } = await import("./carryover-automation");

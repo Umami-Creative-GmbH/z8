@@ -6,7 +6,7 @@ import { VacationBalanceCard } from "@/components/absences/vacation-balance-card
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { getFiscalYearRangeForDate } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getAbsenceCategories,
@@ -33,25 +33,28 @@ export default async function AbsencesPage() {
 
 	const org = await db.query.organization.findFirst({
 		where: eq(organization.id, employee.organizationId),
-		columns: { fiscalYearStartMonth: true },
+		columns: { fiscalYearStartMonth: true, timezone: true },
 	});
-	const currentFiscalYear = getFiscalYearRangeForDate(
-		DateTime.utc(),
-		org?.fiscalYearStartMonth ?? 1,
-	);
-	const currentYear = currentFiscalYear.labelYear;
+	const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
+	const timezone = org?.timezone || "UTC";
+	const now = DateTime.now().setZone(timezone);
+	const calendarYear = now.year;
+	const fiscalYearLabel = getCurrentFiscalYearLabel(now, fiscalYearStartMonth, timezone);
 
-	// Fetch full business-year data while keeping the visual calendar labelled by fiscal year.
-	const startOfYear = currentFiscalYear.start.toISODate() ?? `${currentYear}-01-01`;
-	const endOfYear = currentFiscalYear.end.toISODate() ?? `${currentYear}-12-31`;
-	const yearStart = currentFiscalYear.start.toJSDate();
-	const yearEnd = currentFiscalYear.end.toJSDate();
+	// Fetch calendar-year data for the visual year calendar/table.
+	const calendarStart = DateTime.fromObject(
+		{ year: calendarYear, month: 1, day: 1 },
+		{ zone: timezone },
+	).startOf("day");
+	const calendarEnd = calendarStart.endOf("year");
+	const calendarStartDate = calendarStart.toISODate() ?? `${calendarYear}-01-01`;
+	const calendarEndDate = calendarEnd.toISODate() ?? `${calendarYear}-12-31`;
 
 	// Fetch all data in parallel
 	const [vacationBalance, absences, holidays, categories] = await Promise.all([
-		getVacationBalance(employee.id, currentYear, org?.fiscalYearStartMonth ?? 1),
-		getAbsenceEntries(employee.id, startOfYear, endOfYear),
-		getHolidays(employee.id, yearStart, yearEnd),
+		getVacationBalance(employee.id, fiscalYearLabel, fiscalYearStartMonth),
+		getAbsenceEntries(employee.id, calendarStartDate, calendarEndDate),
+		getHolidays(employee.id, calendarStart.toJSDate(), calendarEnd.toJSDate()),
 		getAbsenceCategories(employee.organizationId),
 	]);
 
@@ -67,7 +70,7 @@ export default async function AbsencesPage() {
 						{t(
 							"absences.errors.allowanceNotConfiguredMessage",
 							"Your organization hasn't set up vacation allowances for {currentYear} yet.",
-							{ currentYear },
+							{ currentYear: fiscalYearLabel },
 						)}
 						<br />
 						{t(
@@ -103,7 +106,7 @@ export default async function AbsencesPage() {
 					categories={categories}
 					organizationId={employee.organizationId}
 					remainingDays={vacationBalance.remainingDays}
-					currentYear={currentYear}
+					currentYear={calendarYear}
 				/>
 			</div>
 		</div>

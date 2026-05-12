@@ -73,8 +73,8 @@ export async function getVacationBalance(
 		db.query.absenceEntry.findMany({
 			where: and(
 				eq(absenceEntry.employeeId, employeeId),
-				gte(absenceEntry.startDate, startOfYear),
-				lte(absenceEntry.endDate, endOfYear),
+				lte(absenceEntry.startDate, endOfYear),
+				gte(absenceEntry.endDate, startOfYear),
 			),
 			with: {
 				category: true,
@@ -107,8 +107,8 @@ export async function getAbsenceEntries(
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			gte(absenceEntry.startDate, startDate),
-			lte(absenceEntry.endDate, endDate),
+			lte(absenceEntry.startDate, endDate),
+			gte(absenceEntry.endDate, startDate),
 		),
 		with: {
 			category: true,

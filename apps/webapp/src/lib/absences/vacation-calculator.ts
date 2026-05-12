@@ -91,20 +91,20 @@ export function calculateVacationBalance({
 		.filter((absence) => {
 			const isApproved = absence.status === "approved";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
-
-			// Absence dates are now YYYY-MM-DD strings
-			const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
-			const inYear = absenceStart >= start && absenceStart <= end;
+			const inYear = absenceOverlapsRange(absence, start, end);
 
 			return isApproved && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
+			const clippedAbsence = clipAbsenceToRange(absence, start, end);
+			if (!clippedAbsence) return sum;
+
 			// Use half-day aware calculation
 			const days = calculateBusinessDaysWithHalfDays(
-				absence.startDate,
-				absence.startPeriod,
-				absence.endDate,
-				absence.endPeriod,
+				clippedAbsence.startDate,
+				clippedAbsence.startPeriod,
+				clippedAbsence.endDate,
+				clippedAbsence.endPeriod,
 				[], // holidays not applied at this level - they're handled upstream
 			);
 			return sum + days;
@@ -115,20 +115,20 @@ export function calculateVacationBalance({
 		.filter((absence) => {
 			const isPending = absence.status === "pending";
 			const countsAgainstVacation = absence.category.countsAgainstVacation;
-
-			// Absence dates are now YYYY-MM-DD strings
-			const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
-			const inYear = absenceStart >= start && absenceStart <= end;
+			const inYear = absenceOverlapsRange(absence, start, end);
 
 			return isPending && countsAgainstVacation && inYear;
 		})
 		.reduce((sum, absence) => {
+			const clippedAbsence = clipAbsenceToRange(absence, start, end);
+			if (!clippedAbsence) return sum;
+
 			// Use half-day aware calculation
 			const days = calculateBusinessDaysWithHalfDays(
-				absence.startDate,
-				absence.startPeriod,
-				absence.endDate,
-				absence.endPeriod,
+				clippedAbsence.startDate,
+				clippedAbsence.startPeriod,
+				clippedAbsence.endDate,
+				clippedAbsence.endPeriod,
 				[], // holidays not applied at this level - they're handled upstream
 			);
 			return sum + days;
@@ -145,6 +145,37 @@ export function calculateVacationBalance({
 		remainingDays,
 		carryoverDays: carryoverDays > 0 ? carryoverDays : undefined,
 		carryoverExpiryDate,
+	};
+}
+
+function absenceOverlapsRange(
+	absence: AbsenceWithCategory,
+	rangeStart: DateTime,
+	rangeEnd: DateTime,
+) {
+	const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
+	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
+
+	return absenceStart <= rangeEnd && absenceEnd >= rangeStart;
+}
+
+function clipAbsenceToRange(
+	absence: AbsenceWithCategory,
+	rangeStart: DateTime,
+	rangeEnd: DateTime,
+): Pick<AbsenceWithCategory, "startDate" | "startPeriod" | "endDate" | "endPeriod"> | null {
+	const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
+	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
+	const clippedStart = absenceStart < rangeStart ? rangeStart : absenceStart;
+	const clippedEnd = absenceEnd > rangeEnd ? rangeEnd : absenceEnd;
+
+	if (clippedStart > clippedEnd) return null;
+
+	return {
+		startDate: clippedStart.toISODate() ?? absence.startDate,
+		startPeriod: clippedStart.hasSame(absenceStart, "day") ? absence.startPeriod : "full_day",
+		endDate: clippedEnd.toISODate() ?? absence.endDate,
+		endPeriod: clippedEnd.hasSame(absenceEnd, "day") ? absence.endPeriod : "full_day",
 	};
 }
 

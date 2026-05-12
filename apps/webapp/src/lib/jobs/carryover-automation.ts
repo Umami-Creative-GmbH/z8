@@ -72,10 +72,12 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 		for (const org of organizations) {
 			try {
 				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
+				const timezone = org.timezone || "UTC";
+				const zonedCurrentDate = currentDate.setZone(timezone);
 				const isFiscalYearStart =
-					currentDate.month === fiscalYearStartMonth && currentDate.day === 1;
+					zonedCurrentDate.month === fiscalYearStartMonth && zonedCurrentDate.day === 1;
 				const organizationFromYear =
-					fromYear ?? getCurrentFiscalYearLabel(currentDate, fiscalYearStartMonth) - 1;
+					fromYear ?? getCurrentFiscalYearLabel(currentDate, fiscalYearStartMonth, timezone) - 1;
 				logger.info(
 					{ organizationId: org.id, organizationName: org.name },
 					"Processing organization",
@@ -204,11 +206,13 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 		for (const org of organizations) {
 			try {
 				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
+				const timezone = org.timezone || "UTC";
 				const expiryResult = await expireCarryoverDays(
 					org.id,
 					SYSTEM_USER_ID,
 					currentDate,
 					fiscalYearStartMonth,
+					timezone,
 				);
 
 				if (expiryResult.employeesAffected > 0) {
@@ -272,9 +276,11 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 		for (const org of organizations) {
 			try {
 				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
+				const timezone = org.timezone || "UTC";
 				const fiscalLabelYear = getCurrentFiscalYearLabel(
-					DateTime.utc(targetYear, targetMonth, 1),
+					DateTime.fromObject({ year: targetYear, month: targetMonth, day: 1 }, { zone: timezone }),
 					fiscalYearStartMonth,
+					timezone,
 				);
 				// Check if organization uses monthly/biweekly accrual
 				const policy = await getVacationAllowance(org.id, fiscalLabelYear, fiscalYearStartMonth);

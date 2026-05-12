@@ -46,11 +46,12 @@ export async function GET(request: Request) {
 		const employeeRecord = await requireMobileEmployee(session.user.id, activeOrganizationId);
 		const org = await db.query.organization.findFirst({
 			where: eq(organization.id, activeOrganizationId),
-			columns: { fiscalYearStartMonth: true },
+			columns: { fiscalYearStartMonth: true, timezone: true },
 		});
 		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
-		const now = DateTime.now();
-		const year = getCurrentFiscalYearLabel(now, fiscalYearStartMonth);
+		const timezone = org?.timezone || "UTC";
+		const now = DateTime.now().setZone(timezone);
+		const year = getCurrentFiscalYearLabel(now, fiscalYearStartMonth, timezone);
 		const startOfYear = `${year - 1}-01-01`;
 		const endOfYear = `${year + 1}-12-31`;
 

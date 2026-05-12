@@ -1088,14 +1088,16 @@ export async function getVacationBalance(): Promise<
 			dbService.query("getVacationBalanceOrganizationFiscalYear", async () => {
 				return await dbService.db.query.organization.findFirst({
 					where: eq(organization.id, currentEmployee.organizationId),
-					columns: { fiscalYearStartMonth: true },
+					columns: { fiscalYearStartMonth: true, timezone: true },
 				});
 			}),
 		);
 		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
+		const timezone = org?.timezone || "UTC";
 		const currentYear = getCurrentFiscalYearLabel(
-			DateTime.fromJSDate(currentTimestamp()),
+			DateTime.fromJSDate(currentTimestamp()).setZone(timezone),
 			fiscalYearStartMonth,
+			timezone,
 		);
 
 		// Check if organization has a vacation policy

@@ -32,6 +32,8 @@ describe("getVacationBalance fiscal ranges", () => {
 		expect(source).toContain("fiscalYearStartMonth: number | null | undefined = 1");
 		expect(source).toContain("getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth)");
 		expect(source).toContain("fiscalYearStartMonth,");
+		expect(source).toContain("lte(absenceEntry.startDate, endOfYear)");
+		expect(source).toContain("gte(absenceEntry.endDate, startOfYear)");
 		expect(source).not.toContain(`const startOfYear = \`\${year}-01-01\``);
 		expect(source).not.toContain(`const endOfYear = \`\${year}-12-31\``);
 	});
