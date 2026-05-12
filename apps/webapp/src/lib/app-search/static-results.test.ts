@@ -34,7 +34,10 @@ describe("buildStaticAppSearchResults", () => {
 
 	it("shows manager navigation and manager settings without org-admin settings", () => {
 		const results = buildStaticAppSearchResults({
-			t,
+			t: (key, defaultValue) =>
+				key === "appSearch.teamAbsences.description"
+					? "Translated team absence search description"
+					: t(key, defaultValue),
 			employeeRole: "manager",
 			settingsAccessTier: "manager",
 			billingEnabled: true,
@@ -47,7 +50,7 @@ describe("buildStaticAppSearchResults", () => {
 			type: "page",
 			id: "page:team-absences",
 			title: "Team Absences",
-			subtitle: "Review employee absence metrics and record absences",
+			subtitle: "Translated team absence search description",
 			keywords: ["team", "absence", "sick", "vacation", "manager"],
 		});
 		expect(results.some((result) => result.href === "/approvals/inbox")).toBe(true);

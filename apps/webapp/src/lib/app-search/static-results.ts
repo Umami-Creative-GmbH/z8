@@ -64,6 +64,7 @@ const TEAM_PAGE_DESTINATIONS = [
 		titleKey: "nav.teamAbsences",
 		titleDefault: "Team Absences",
 		href: "/team/absences",
+		descriptionKey: "appSearch.teamAbsences.description",
 		descriptionDefault: "Review employee absence metrics and record absences",
 		keywords: ["team", "absence", "sick", "vacation", "manager"],
 	},
@@ -131,7 +132,7 @@ export function buildStaticAppSearchResults({
 
 				return {
 					...result,
-					subtitle: destination.descriptionDefault,
+					subtitle: t(destination.descriptionKey, destination.descriptionDefault),
 					keywords: destination.keywords,
 				};
 			}),

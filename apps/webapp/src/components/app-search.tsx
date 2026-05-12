@@ -40,6 +40,16 @@ function getGroupLabel(type: AppSearchResult["type"]) {
 	}
 }
 
+function getResultSearchValue(result: AppSearchResult) {
+	return [
+		result.type,
+		result.id,
+		result.title,
+		result.subtitle ?? "",
+		result.keywords?.join(" ") ?? "",
+	].join(":");
+}
+
 function ResultGroup({
 	label,
 	results,
@@ -59,7 +69,7 @@ function ResultGroup({
 				<CommandItem
 					key={`${result.type}:${result.id}`}
 					onSelect={() => onSelect(result)}
-					value={`${result.type}:${result.id}:${result.title}:${result.subtitle ?? ""}`}
+					value={getResultSearchValue(result)}
 				>
 					<div className="flex min-w-0 flex-col gap-0.5">
 						<span className="truncate font-medium">{result.title}</span>

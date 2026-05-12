@@ -8,6 +8,7 @@ export interface AppSearchResult {
 	id: string;
 	title: string;
 	subtitle?: string;
+	keywords?: string[];
 	href: string;
 }
 
