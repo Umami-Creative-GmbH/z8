@@ -178,4 +178,87 @@ describe("manager absence metrics", () => {
 			sickDays: 1,
 		});
 	});
+
+	it("calculates half-day sick metrics", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [
+				{
+					id: "sick-half-day",
+					employeeId: "employee-1",
+					startDate: "2026-05-04",
+					startPeriod: "am",
+					endDate: "2026-05-04",
+					endPeriod: "am",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toEqual({
+			vacationAllowance: 30,
+			usedVacationDays: 0,
+			pendingVacationDays: 0,
+			remainingVacationDays: 30,
+			sickDays: 0.5,
+		});
+	});
+
+	it("returns zero vacation metrics without an allowance while retaining sick metrics", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: null,
+			employeeAllowance: null,
+			absences: [
+				{
+					id: "sick-without-allowance",
+					employeeId: "employee-1",
+					startDate: "2026-06-01",
+					startPeriod: "full_day",
+					endDate: "2026-06-01",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toEqual({
+			vacationAllowance: 0,
+			usedVacationDays: 0,
+			pendingVacationDays: 0,
+			remainingVacationDays: 0,
+			sickDays: 1,
+		});
+	});
 });
