@@ -1,12 +1,13 @@
 "use client";
 
 import { FileBarChart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
-import { useOrganizationFiscalYearStartMonth } from "@/stores/organization-settings-store";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "./date-range-picker";
 import { ReportEmployeeSelector } from "./report-employee-selector";
 
@@ -21,11 +22,30 @@ export function ReportFilters({
 	onGenerate,
 	isGenerating = false,
 }: ReportFiltersProps) {
-	const fiscalYearStartMonth = useOrganizationFiscalYearStartMonth();
+	const { fiscalYearStartMonth, isHydrated } = useOrganizationSettings(
+		useShallow((state) => ({
+			fiscalYearStartMonth: state.fiscalYearStartMonth,
+			isHydrated: state.isHydrated,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
 	const [dateRange, setDateRange] = useState<DateRange>(() =>
 		getDateRangeForPreset("current_month", { fiscalYearStartMonth }),
 	);
+
+	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		setDateRange(getDateRangeForPreset("current_month", { fiscalYearStartMonth }));
+	}, [fiscalYearStartMonth, isHydrated]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
 
 	const handleGenerate = () => {
 		if (selectedEmployeeId) {
@@ -49,7 +69,7 @@ export function ReportFilters({
 						{/* Date Range Picker */}
 						<div className="space-y-2">
 							<label className="text-sm font-medium leading-none">Period</label>
-							<DateRangePicker value={dateRange} onChange={setDateRange} />
+							<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 						</div>
 					</div>
 

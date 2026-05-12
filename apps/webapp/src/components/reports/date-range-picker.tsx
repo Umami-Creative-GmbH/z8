@@ -3,6 +3,7 @@
 import { CalendarIcon } from "lucide-react";
 import { DateTime } from "luxon";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,7 +18,7 @@ import { format } from "@/lib/datetime/luxon-utils";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange, PeriodPreset } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
-import { useOrganizationFiscalYearStartMonth } from "@/stores/organization-settings-store";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface DateRangePickerProps {
 	value: DateRange;
@@ -25,7 +26,12 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
-	const fiscalYearStartMonth = useOrganizationFiscalYearStartMonth();
+	const { fiscalYearStartMonth, isHydrated } = useOrganizationSettings(
+		useShallow((state) => ({
+			fiscalYearStartMonth: state.fiscalYearStartMonth,
+			isHydrated: state.isHydrated,
+		})),
+	);
 	const [preset, setPreset] = useState<PeriodPreset>("current_month");
 	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -55,7 +61,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 	return (
 		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
 			{/* Preset Selector */}
-			<Select value={preset} onValueChange={(v) => handlePresetChange(v as PeriodPreset)}>
+			<Select
+				value={preset}
+				onValueChange={(v) => handlePresetChange(v as PeriodPreset)}
+				disabled={!isHydrated}
+			>
 				<SelectTrigger className="w-full sm:w-[200px]">
 					<SelectValue placeholder="Select period" />
 				</SelectTrigger>
