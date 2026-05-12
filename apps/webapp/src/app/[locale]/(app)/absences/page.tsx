@@ -1,7 +1,12 @@
+import { eq } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import { getFiscalYearRangeForDate } from "@/lib/fiscal-year";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getAbsenceCategories,
@@ -26,13 +31,21 @@ export default async function AbsencesPage() {
 		);
 	}
 
-	const currentYear = new Date().getFullYear();
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, employee.organizationId),
+		columns: { fiscalYearStartMonth: true },
+	});
+	const currentFiscalYear = getFiscalYearRangeForDate(
+		DateTime.utc(),
+		org?.fiscalYearStartMonth ?? 1,
+	);
+	const currentYear = currentFiscalYear.labelYear;
 
-	// Fetch full year data for the year calendar view
-	const startOfYear = `${currentYear}-01-01`;
-	const endOfYear = `${currentYear}-12-31`;
-	const yearStart = new Date(currentYear, 0, 1);
-	const yearEnd = new Date(currentYear, 11, 31);
+	// Fetch full business-year data while keeping the visual calendar labelled by fiscal year.
+	const startOfYear = currentFiscalYear.start.toISODate() ?? `${currentYear}-01-01`;
+	const endOfYear = currentFiscalYear.end.toISODate() ?? `${currentYear}-12-31`;
+	const yearStart = currentFiscalYear.start.toJSDate();
+	const yearEnd = currentFiscalYear.end.toJSDate();
 
 	// Fetch all data in parallel
 	const [vacationBalance, absences, holidays, categories] = await Promise.all([

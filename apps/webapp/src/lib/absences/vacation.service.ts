@@ -8,8 +8,10 @@
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { employee, employeeVacationAllowance } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { createLogger } from "@/lib/logger";
 import {
 	createVacationAdjustment,
@@ -26,6 +28,15 @@ import type { AbsenceWithCategory, VacationBalance } from "./types";
 import { calculateVacationBalance } from "./vacation-calculator";
 
 const logger = createLogger("vacation-service");
+
+async function getOrganizationFiscalYearStartMonth(organizationId: string): Promise<number> {
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { fiscalYearStartMonth: true },
+	});
+
+	return normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
+}
 
 export interface EnhancedVacationBalance extends VacationBalance {
 	baseAllowance: number;
@@ -84,8 +95,10 @@ export async function getEnhancedVacationBalance(input: {
 		return null;
 	}
 
+	const fiscalYearStartMonth = await getOrganizationFiscalYearStartMonth(emp.organizationId);
+
 	// Get organization policy
-	const policy = await getVacationAllowance(emp.organizationId, year);
+	const policy = await getVacationAllowance(emp.organizationId, year, fiscalYearStartMonth);
 
 	if (!policy) {
 		logger.warn({ organizationId: emp.organizationId, year }, "No vacation policy found");
@@ -99,7 +112,7 @@ export async function getEnhancedVacationBalance(input: {
 	const adjustmentTotal = await getAdjustmentTotal(employeeId, year);
 
 	// Get absences
-	const absencesResult = await getVacationTakenInYear(employeeId, year);
+	const absencesResult = await getVacationTakenInYear(employeeId, year, fiscalYearStartMonth);
 
 	// Build absences array for calculator (simplified)
 	const absences: AbsenceWithCategory[] = absencesResult.entries.map((e) => ({
@@ -149,7 +162,11 @@ export async function getEnhancedVacationBalance(input: {
 	let carryoverExpiryDaysRemaining: number | null = null;
 
 	if (baseBalance.carryoverDays && baseBalance.carryoverDays > 0 && policy.carryoverExpiryMonths) {
-		const expiryDate = calculateCarryoverExpiryDate(year, policy.carryoverExpiryMonths);
+		const expiryDate = calculateCarryoverExpiryDate(
+			year,
+			policy.carryoverExpiryMonths,
+			fiscalYearStartMonth,
+		);
 		const currentDT = DateTime.fromJSDate(currentDate);
 
 		if (currentDT < expiryDate) {
@@ -182,16 +199,19 @@ export async function calculateAnnualCarryover(
 	organizationId: string,
 	fromYear: number,
 	performedBy: string,
+	fiscalYearStartMonth?: number | null,
 ): Promise<CarryoverSummary> {
 	const toYear = fromYear + 1;
+	const fiscalStartMonth =
+		fiscalYearStartMonth ?? (await getOrganizationFiscalYearStartMonth(organizationId));
 	const results: CarryoverResult[] = [];
 	const errors: Array<{ employeeId: string; error: string }> = [];
 
 	logger.info({ organizationId, fromYear, toYear }, "Starting annual carryover calculation");
 
 	// Get vacation policy for fromYear (to calculate remaining)
-	const fromYearPolicy = await getVacationAllowance(organizationId, fromYear);
-	const toYearPolicy = await getVacationAllowance(organizationId, toYear);
+	const fromYearPolicy = await getVacationAllowance(organizationId, fromYear, fiscalStartMonth);
+	const toYearPolicy = await getVacationAllowance(organizationId, toYear, fiscalStartMonth);
 
 	if (!fromYearPolicy) {
 		throw new Error(`No vacation policy found for year ${fromYear}`);
@@ -217,7 +237,7 @@ export async function calculateAnnualCarryover(
 	for (const emp of employees) {
 		try {
 			// Get vacation taken in fromYear
-			const vacationTaken = await getVacationTakenInYear(emp.id, fromYear);
+			const vacationTaken = await getVacationTakenInYear(emp.id, fromYear, fiscalStartMonth);
 
 			// Calculate total allowance for fromYear
 			const baseAllowance = emp.allowance?.customAnnualDays
@@ -227,7 +247,7 @@ export async function calculateAnnualCarryover(
 			// Include previous carryover if still valid
 			let previousCarryover = 0;
 			if (emp.allowance?.customCarryoverDays) {
-				const carryoverBalance = await getCarryoverBalance(emp.id, fromYear);
+				const carryoverBalance = await getCarryoverBalance(emp.id, fromYear, fiscalStartMonth);
 				previousCarryover = carryoverBalance.balance;
 			}
 
@@ -247,7 +267,11 @@ export async function calculateAnnualCarryover(
 			// Calculate expiry date
 			let expiryDate: Date | null = null;
 			if (toYearPolicy?.carryoverExpiryMonths) {
-				const expiryDT = calculateCarryoverExpiryDate(toYear, toYearPolicy.carryoverExpiryMonths);
+				const expiryDT = calculateCarryoverExpiryDate(
+					toYear,
+					toYearPolicy.carryoverExpiryMonths,
+					fiscalStartMonth,
+				);
 				expiryDate = expiryDT.toJSDate();
 			}
 
@@ -325,20 +349,27 @@ export async function expireCarryoverDays(
 	organizationId: string,
 	performedBy: string,
 	currentDate: Date = new Date(),
+	fiscalYearStartMonth?: number | null,
 ): Promise<ExpiryResult> {
-	const currentYear = currentDate.getFullYear();
+	const fiscalStartMonth =
+		fiscalYearStartMonth ?? (await getOrganizationFiscalYearStartMonth(organizationId));
+	const currentYear = getCurrentFiscalYearLabel(DateTime.fromJSDate(currentDate), fiscalStartMonth);
 
 	logger.info({ organizationId, currentYear }, "Checking for expired carryover");
 
 	// Get vacation policy
-	const policy = await getVacationAllowance(organizationId, currentYear);
+	const policy = await getVacationAllowance(organizationId, currentYear, fiscalStartMonth);
 
 	if (!policy?.allowCarryover || !policy.carryoverExpiryMonths) {
 		return { employeesAffected: 0, daysExpired: 0, details: [] };
 	}
 
 	// Calculate expiry date
-	const expiryDate = calculateCarryoverExpiryDate(currentYear, policy.carryoverExpiryMonths);
+	const expiryDate = calculateCarryoverExpiryDate(
+		currentYear,
+		policy.carryoverExpiryMonths,
+		fiscalStartMonth,
+	);
 	const currentDT = DateTime.fromJSDate(currentDate);
 
 	// If expiry date hasn't passed, nothing to do

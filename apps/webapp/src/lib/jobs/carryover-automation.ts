@@ -68,13 +68,14 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 
 		for (const org of organizations) {
 			try {
+				const fiscalYearStartMonth = org.fiscalYearStartMonth ?? 1;
 				logger.info(
 					{ organizationId: org.id, organizationName: org.name },
 					"Processing organization",
 				);
 
 				// Check if organization has a vacation policy
-				const policy = await getVacationAllowance(org.id, fromYear);
+				const policy = await getVacationAllowance(org.id, fromYear, fiscalYearStartMonth);
 
 				if (!policy) {
 					logger.info({ organizationId: org.id }, "No vacation policy found, skipping");
@@ -97,7 +98,12 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 				}
 
 				// Run carryover calculation
-				const carryoverResult = await calculateAnnualCarryover(org.id, fromYear, SYSTEM_USER_ID);
+				const carryoverResult = await calculateAnnualCarryover(
+					org.id,
+					fromYear,
+					SYSTEM_USER_ID,
+					fiscalYearStartMonth,
+				);
 
 				results.push({
 					organizationId: org.id,
@@ -178,7 +184,12 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 
 		for (const org of organizations) {
 			try {
-				const expiryResult = await expireCarryoverDays(org.id, SYSTEM_USER_ID, currentDate);
+				const expiryResult = await expireCarryoverDays(
+					org.id,
+					SYSTEM_USER_ID,
+					currentDate,
+					org.fiscalYearStartMonth ?? 1,
+				);
 
 				if (expiryResult.employeesAffected > 0) {
 					results.push({
@@ -240,8 +251,9 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 
 		for (const org of organizations) {
 			try {
+				const fiscalYearStartMonth = org.fiscalYearStartMonth ?? 1;
 				// Check if organization uses monthly/biweekly accrual
-				const policy = await getVacationAllowance(org.id, targetYear);
+				const policy = await getVacationAllowance(org.id, targetYear, fiscalYearStartMonth);
 
 				if (!policy || policy.accrualType === "annual") {
 					continue;
