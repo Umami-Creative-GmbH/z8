@@ -4,6 +4,71 @@ import {
 	canUseManagerAbsencePage,
 } from "./manager-absence-permissions";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
+import {
+	getManagerAbsenceEmployees,
+	normalizeManagerAbsenceListParams,
+	recordAbsenceForEmployee,
+	validateRecordAbsenceDateRange,
+} from "./actions";
+
+describe("manager absence server action contracts", () => {
+	it("exports the list and record actions", () => {
+		expect(typeof getManagerAbsenceEmployees).toBe("function");
+		expect(typeof recordAbsenceForEmployee).toBe("function");
+	});
+});
+
+describe("manager absence server action helpers", () => {
+	it("normalizes list params to safe server-backed pagination defaults", () => {
+		expect(
+			normalizeManagerAbsenceListParams({
+				search: "  E-123  ",
+				page: -2,
+				pageSize: 999,
+				year: 1999,
+			}),
+		).toEqual({
+			search: "E-123",
+			page: 1,
+			pageSize: 25,
+			year: 1999,
+		});
+
+		expect(normalizeManagerAbsenceListParams({ page: 2, pageSize: 50 })).toMatchObject({
+			page: 2,
+			pageSize: 50,
+		});
+	});
+
+	it("validates record absence date ranges", () => {
+		expect(
+			validateRecordAbsenceDateRange({
+				startDate: "2026-04-10",
+				startPeriod: "full_day",
+				endDate: "2026-04-09",
+				endPeriod: "full_day",
+			}),
+		).toBe("Start date must be before end date");
+
+		expect(
+			validateRecordAbsenceDateRange({
+				startDate: "2026-04-10",
+				startPeriod: "pm",
+				endDate: "2026-04-10",
+				endPeriod: "am",
+			}),
+		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+
+		expect(
+			validateRecordAbsenceDateRange({
+				startDate: "2026-04-10",
+				startPeriod: "am",
+				endDate: "2026-04-10",
+				endPeriod: "pm",
+			}),
+		).toBeNull();
+	});
+});
 
 describe("manager absence permissions", () => {
 	it("allows managers to manage assigned employees", () => {
