@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { IconHelp, IconMessageCircle, IconShieldCheck } from "@tabler/icons-react";
+import { IconBeach, IconHelp, IconMessageCircle, IconShieldCheck } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
 	navMainSpy,
 	navSecondarySpy,
+	navTeamSpy,
 	appSearchSpy,
 	appSidebarSpy,
 	getUserOrganizationsMock,
@@ -16,6 +17,7 @@ const {
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
+	navTeamSpy: vi.fn(),
 	appSearchSpy: vi.fn(),
 	appSidebarSpy: vi.fn(),
 	getUserOrganizationsMock: vi.fn(),
@@ -59,7 +61,10 @@ vi.mock("@/components/app-search", () => ({
 }));
 
 vi.mock("@/components/nav-team", () => ({
-	NavTeam: () => <div data-testid="nav-team" />,
+	NavTeam: ({ items }: { items: Array<{ title: string; url: string; icon: unknown }> }) => {
+		navTeamSpy(items);
+		return <div data-testid="nav-team" />;
+	},
 }));
 
 vi.mock("@/components/nav-user", () => ({
@@ -99,6 +104,7 @@ describe("app sidebar compliance navigation", () => {
 	beforeEach(() => {
 		navMainSpy.mockClear();
 		navSecondarySpy.mockClear();
+		navTeamSpy.mockClear();
 		appSearchSpy.mockClear();
 		appSidebarSpy.mockReset();
 		getUserOrganizationsMock.mockReset();
@@ -160,6 +166,25 @@ describe("app sidebar compliance navigation", () => {
 				expect.objectContaining({ href: "/settings/organizations" }),
 			]),
 		);
+	});
+
+	it("renders Team Absences after Team for managers only", () => {
+		const { rerender } = render(<AppSidebar employeeRole="manager" />);
+
+		expect(navTeamSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Team Absences", url: "/team/absences", icon: IconBeach }),
+			]),
+		);
+		expect(navTeamSpy.mock.lastCall?.[0].map((item) => item.url).slice(0, 2)).toEqual([
+			"/team",
+			"/team/absences",
+		]);
+
+		navTeamSpy.mockClear();
+		rerender(<AppSidebar employeeRole="employee" />);
+
+		expect(navTeamSpy).not.toHaveBeenCalled();
 	});
 
 	it("renders help and feedback entries in secondary navigation", () => {

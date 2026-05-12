@@ -27,6 +27,7 @@ describe("buildStaticAppSearchResults", () => {
 		expect(results.some((result) => result.href === "/settings/employees")).toBe(false);
 		expect(results.some((result) => result.href === "/settings/organizations")).toBe(false);
 		expect(results.some((result) => result.href === "/team")).toBe(false);
+		expect(results.some((result) => result.href === "/team/absences")).toBe(false);
 		const settingsResult = results.find((result) => result.href === "/settings/profile");
 		expect(settingsResult).toMatchObject({ type: "setting", title: "Profile" });
 	});
@@ -42,6 +43,13 @@ describe("buildStaticAppSearchResults", () => {
 		});
 
 		expect(results.some((result) => result.href === "/team")).toBe(true);
+		expect(results.find((result) => result.href === "/team/absences")).toMatchObject({
+			type: "page",
+			id: "page:team-absences",
+			title: "Team Absences",
+			subtitle: "Review employee absence metrics and record absences",
+			keywords: ["team", "absence", "sick", "vacation", "manager"],
+		});
 		expect(results.some((result) => result.href === "/approvals/inbox")).toBe(true);
 		expect(results.some((result) => result.href === "/settings/employees")).toBe(true);
 		expect(results.some((result) => result.href === "/settings/teams")).toBe(true);

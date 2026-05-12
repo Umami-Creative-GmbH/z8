@@ -60,6 +60,14 @@ const TEAM_PAGE_DESTINATIONS = [
 		href: "/team",
 	},
 	{
+		id: "team-absences",
+		titleKey: "nav.teamAbsences",
+		titleDefault: "Team Absences",
+		href: "/team/absences",
+		descriptionDefault: "Review employee absence metrics and record absences",
+		keywords: ["team", "absence", "sick", "vacation", "manager"],
+	},
+	{
 		id: "approvals",
 		titleKey: "nav.approvals",
 		titleDefault: "Approvals",
@@ -109,12 +117,24 @@ export function buildStaticAppSearchResults({
 
 	if (isManagerOrAdmin(employeeRole)) {
 		pageResults.push(
-			...TEAM_PAGE_DESTINATIONS.map((destination) => ({
-				type: "page" as const,
-				id: `page:${destination.id}`,
-				title: t(destination.titleKey, destination.titleDefault),
-				href: destination.href,
-			})),
+			...TEAM_PAGE_DESTINATIONS.map((destination) => {
+				const result = {
+					type: "page" as const,
+					id: `page:${destination.id}`,
+					title: t(destination.titleKey, destination.titleDefault),
+					href: destination.href,
+				};
+
+				if (!("descriptionDefault" in destination)) {
+					return result;
+				}
+
+				return {
+					...result,
+					subtitle: destination.descriptionDefault,
+					keywords: destination.keywords,
+				};
+			}),
 		);
 
 		if (featureFlags?.shiftsEnabled) {
