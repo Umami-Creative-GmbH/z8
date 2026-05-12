@@ -31,10 +31,14 @@ import {
 import type { VacationTrendsData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationFiscalYearStartMonth } from "@/stores/organization-settings-store";
 import { getVacationTrendsData } from "../actions";
 
 export default function VacationTrendsPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_year"));
+	const fiscalYearStartMonth = useOrganizationFiscalYearStartMonth();
+	const [dateRange, setDateRange] = useState<DateRange>(() =>
+		getDateRangeForPreset("current_year", { fiscalYearStartMonth }),
+	);
 	const [loading, setLoading] = useState(true);
 	const [vacationData, setVacationData] = useState<VacationTrendsData | null>(null);
 

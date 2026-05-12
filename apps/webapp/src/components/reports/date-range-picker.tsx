@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarIcon } from "lucide-react";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -16,6 +17,7 @@ import { format } from "@/lib/datetime/luxon-utils";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange, PeriodPreset } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
+import { useOrganizationFiscalYearStartMonth } from "@/stores/organization-settings-store";
 
 interface DateRangePickerProps {
 	value: DateRange;
@@ -23,6 +25,7 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
+	const fiscalYearStartMonth = useOrganizationFiscalYearStartMonth();
 	const [preset, setPreset] = useState<PeriodPreset>("current_month");
 	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -30,7 +33,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		setPreset(newPreset);
 
 		if (newPreset !== "custom") {
-			const range = getDateRangeForPreset(newPreset);
+			const range = getDateRangeForPreset(newPreset, { fiscalYearStartMonth });
 			onChange(range);
 			setIsCalendarOpen(false);
 		} else {
@@ -47,7 +50,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		}
 	};
 
-	const currentYear = new Date().getFullYear();
+	const currentYear = DateTime.now().year;
 
 	return (
 		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -60,7 +63,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 					<SelectItem value="last_month">Last Month</SelectItem>
 					<SelectItem value="current_month">Current Month</SelectItem>
 					<SelectItem value="last_year">Last Year</SelectItem>
-					<SelectItem value="current_year">Current Year (YTD)</SelectItem>
+					<SelectItem value="current_year">Current Year</SelectItem>
 					<SelectItem value="ytd">Year to Date</SelectItem>
 					<SelectItem value="q1">Q1 {currentYear}</SelectItem>
 					<SelectItem value="q2">Q2 {currentYear}</SelectItem>

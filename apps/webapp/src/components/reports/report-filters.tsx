@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationFiscalYearStartMonth } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "./date-range-picker";
 import { ReportEmployeeSelector } from "./report-employee-selector";
 
@@ -20,8 +21,11 @@ export function ReportFilters({
 	onGenerate,
 	isGenerating = false,
 }: ReportFiltersProps) {
+	const fiscalYearStartMonth = useOrganizationFiscalYearStartMonth();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const [dateRange, setDateRange] = useState<DateRange>(() =>
+		getDateRangeForPreset("current_month", { fiscalYearStartMonth }),
+	);
 
 	const handleGenerate = () => {
 		if (selectedEmployeeId) {
