@@ -5,6 +5,7 @@ import {
 	getCurrentFiscalYearLabel,
 	getFiscalYearRangeForDate,
 	getFiscalYearToDateRange,
+	getPreviousFiscalYearRange,
 	normalizeFiscalYearStartMonth,
 } from "./fiscal-year";
 
@@ -57,9 +58,34 @@ describe("fiscal-year utilities", () => {
 		expect(range.end.toISO()).toBe("2026-05-12T15:30:00.000Z");
 	});
 
+	it("uses organization timezone boundaries for fiscal years", () => {
+		const range = getFiscalYearRangeForDate(DateTime.fromISO("2026-03-31T22:30:00", { zone: "UTC" }), 4, "Europe/Berlin");
+
+		expect(range.labelYear).toBe(2026);
+		expect(range.start.toISO()).toBe("2026-03-31T22:00:00.000Z");
+		expect(range.end.toISO()).toBe("2027-03-31T21:59:59.999Z");
+	});
+
+	it("returns fiscal year-to-date through the provided instant with organization timezone boundaries", () => {
+		const range = getFiscalYearToDateRange(DateTime.fromISO("2026-03-31T22:30:00", { zone: "UTC" }), 4, "Europe/Berlin");
+
+		expect(range.labelYear).toBe(2026);
+		expect(range.start.toISO()).toBe("2026-03-31T22:00:00.000Z");
+		expect(range.end.toISO()).toBe("2026-03-31T22:30:00.000Z");
+	});
+
+	it("returns the previous fiscal year range", () => {
+		const range = getPreviousFiscalYearRange(DateTime.fromISO("2026-05-12", { zone: "UTC" }), 4);
+
+		expect(range.labelYear).toBe(2025);
+		expect(range.start.toISO()).toBe("2025-04-01T00:00:00.000Z");
+		expect(range.end.toISO()).toBe("2026-03-31T23:59:59.999Z");
+	});
+
 	it("returns the current fiscal year label", () => {
 		expect(getCurrentFiscalYearLabel(DateTime.fromISO("2026-03-31", { zone: "UTC" }), 4)).toBe(2025);
 		expect(getCurrentFiscalYearLabel(DateTime.fromISO("2026-04-01", { zone: "UTC" }), 4)).toBe(2026);
+		expect(getCurrentFiscalYearLabel(DateTime.fromISO("2026-03-31T22:30:00", { zone: "UTC" }), 4, "Europe/Berlin")).toBe(2026);
 	});
 
 	it("calculates carryover expiry from fiscal year start", () => {

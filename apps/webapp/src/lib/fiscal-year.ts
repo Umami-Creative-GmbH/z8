@@ -14,21 +14,26 @@ export function normalizeFiscalYearStartMonth(month: number | null | undefined):
 	return month;
 }
 
-export function getFiscalYearRangeForDate(date: DateTime, fiscalYearStartMonth: number | null | undefined): FiscalYearRange {
+export function getFiscalYearRangeForDate(
+	date: DateTime,
+	fiscalYearStartMonth: number | null | undefined,
+	timezone = "UTC",
+): FiscalYearRange {
 	const startMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth);
-	const utcDate = date.toUTC();
-	const labelYear = utcDate.month >= startMonth ? utcDate.year : utcDate.year - 1;
+	const zonedDate = date.setZone(timezone);
+	const labelYear = zonedDate.month >= startMonth ? zonedDate.year : zonedDate.year - 1;
 
-	return getFiscalYearRangeForLabelYear(labelYear, startMonth);
+	return getFiscalYearRangeForLabelYear(labelYear, startMonth, timezone);
 }
 
 export function getFiscalYearRangeForLabelYear(
 	labelYear: number,
 	fiscalYearStartMonth: number | null | undefined,
+	timezone = "UTC",
 ): FiscalYearRange {
 	const startMonth = normalizeFiscalYearStartMonth(fiscalYearStartMonth);
-	const start = DateTime.utc(labelYear, startMonth, 1).startOf("day");
-	const end = start.plus({ years: 1 }).minus({ milliseconds: 1 });
+	const start = getFiscalYearStart(labelYear, startMonth, timezone);
+	const end = getFiscalYearStart(labelYear + 1, startMonth, timezone).minus({ milliseconds: 1 });
 
 	return {
 		labelYear,
@@ -37,8 +42,12 @@ export function getFiscalYearRangeForLabelYear(
 	};
 }
 
-export function getFiscalYearToDateRange(date: DateTime, fiscalYearStartMonth: number | null | undefined): FiscalYearRange {
-	const range = getFiscalYearRangeForDate(date, fiscalYearStartMonth);
+export function getFiscalYearToDateRange(
+	date: DateTime,
+	fiscalYearStartMonth: number | null | undefined,
+	timezone = "UTC",
+): FiscalYearRange {
+	const range = getFiscalYearRangeForDate(date, fiscalYearStartMonth, timezone);
 
 	return {
 		...range,
@@ -46,8 +55,22 @@ export function getFiscalYearToDateRange(date: DateTime, fiscalYearStartMonth: n
 	};
 }
 
-export function getCurrentFiscalYearLabel(date: DateTime, fiscalYearStartMonth: number | null | undefined): number {
-	return getFiscalYearRangeForDate(date, fiscalYearStartMonth).labelYear;
+export function getPreviousFiscalYearRange(
+	date: DateTime,
+	fiscalYearStartMonth: number | null | undefined,
+	timezone = "UTC",
+): FiscalYearRange {
+	const currentRange = getFiscalYearRangeForDate(date, fiscalYearStartMonth, timezone);
+
+	return getFiscalYearRangeForLabelYear(currentRange.labelYear - 1, fiscalYearStartMonth, timezone);
+}
+
+export function getCurrentFiscalYearLabel(
+	date: DateTime,
+	fiscalYearStartMonth: number | null | undefined,
+	timezone = "UTC",
+): number {
+	return getFiscalYearRangeForDate(date, fiscalYearStartMonth, timezone).labelYear;
 }
 
 export function calculateFiscalCarryoverExpiryDate(
@@ -56,4 +79,8 @@ export function calculateFiscalCarryoverExpiryDate(
 	carryoverMonths: number,
 ): DateTime {
 	return getFiscalYearRangeForLabelYear(labelYear, fiscalYearStartMonth).start.plus({ months: carryoverMonths }).minus({ milliseconds: 1 });
+}
+
+function getFiscalYearStart(labelYear: number, fiscalYearStartMonth: number, timezone: string): DateTime {
+	return DateTime.fromObject({ year: labelYear, month: fiscalYearStartMonth, day: 1 }, { zone: timezone }).startOf("day").toUTC();
 }
