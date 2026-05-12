@@ -58,6 +58,7 @@ describe("approval notification triggers", () => {
 			categoryName: "Sick Leave",
 			startDate: "2026-05-11",
 			endDate: "2026-05-12",
+			days: 2,
 			managerName: "Morgan Manager",
 		});
 
@@ -76,6 +77,7 @@ describe("approval notification triggers", () => {
 				startDate: "2026-05-11",
 				endDate: "2026-05-12",
 				absenceType: "Sick Leave",
+				days: 2,
 			},
 		});
 	});
@@ -92,6 +94,7 @@ describe("approval notification triggers", () => {
 				categoryName: "Sick Leave",
 				startDate: "2026-05-11",
 				endDate: "2026-05-12",
+				days: 2,
 				managerName: "Morgan Manager",
 			}),
 		).resolves.toBeUndefined();

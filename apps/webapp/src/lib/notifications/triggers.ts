@@ -46,6 +46,7 @@ interface AbsenceSubmittedToManagerParams extends AbsenceRequestParams {
 
 interface AbsenceRecordedByManagerParams extends AbsenceRequestParams {
 	managerName: string;
+	days: number;
 }
 
 /**
@@ -129,6 +130,7 @@ export async function onAbsenceRecordedByManager(
 				startDate: params.startDate,
 				endDate: params.endDate,
 				absenceType: params.categoryName,
+				days: params.days,
 			},
 		});
 	} catch (error) {
