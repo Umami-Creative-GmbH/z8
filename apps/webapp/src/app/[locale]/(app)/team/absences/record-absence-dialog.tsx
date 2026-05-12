@@ -3,6 +3,8 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -72,6 +74,31 @@ function requiredMessage(label: string) {
 	return `${label} is required`;
 }
 
+export function validateRecordAbsenceFormDateRange(
+	input: Pick<RecordAbsenceFormValues, "startDate" | "startPeriod" | "endDate" | "endPeriod">,
+): string | null {
+	if (!input.startDate || !input.endDate) {
+		return null;
+	}
+
+	const start = DateTime.fromISO(input.startDate);
+	const end = DateTime.fromISO(input.endDate);
+
+	if (!start.isValid || !end.isValid) {
+		return "Invalid date format";
+	}
+
+	if (start > end) {
+		return "Start date must be before end date";
+	}
+
+	if (input.startDate === input.endDate && input.startPeriod === "pm" && input.endPeriod === "am") {
+		return "Cannot end in the morning if starting in the afternoon on the same day";
+	}
+
+	return null;
+}
+
 export function RecordAbsenceDialog({
 	open,
 	onOpenChange,
@@ -80,6 +107,7 @@ export function RecordAbsenceDialog({
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
+	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 	const title = employee
 		? `Record absence for ${employee.name}`
 		: t("team.absences.recordDialog.title", "Record absence");
@@ -87,6 +115,15 @@ export function RecordAbsenceDialog({
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			const rangeError = validateRecordAbsenceFormDateRange(value);
+			if (rangeError) {
+				setDateRangeError(rangeError);
+				toast.error(rangeError);
+				return;
+			}
+
+			setDateRangeError(null);
+
 			if (!employee) {
 				toast.error(
 					t(
@@ -110,6 +147,7 @@ export function RecordAbsenceDialog({
 			if (result.success) {
 				toast.success(t("team.absences.recordDialog.success", "Absence recorded"));
 				form.reset(defaultValues);
+				setDateRangeError(null);
 				onOpenChange(false);
 				router.refresh();
 				return;
@@ -124,6 +162,7 @@ export function RecordAbsenceDialog({
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen) {
 			form.reset(defaultValues);
+			setDateRangeError(null);
 		}
 		onOpenChange(nextOpen);
 	}
@@ -342,6 +381,12 @@ export function RecordAbsenceDialog({
 							</TFormItem>
 						)}
 					</form.Field>
+
+					{dateRangeError ? (
+						<p role="alert" aria-live="polite" className="text-destructive text-sm">
+							{dateRangeError}
+						</p>
+					) : null}
 
 					<DialogFooter>
 						<DialogClose asChild>

@@ -1,5 +1,8 @@
+// @vitest-environment jsdom
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { validateRecordAbsenceFormDateRange } from "./record-absence-dialog";
 import { TeamAbsencesTable } from "./team-absences-table";
 
 vi.mock("@tolgee/react", () => ({
@@ -13,6 +16,10 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+}));
+
+vi.mock("./actions", () => ({
+	recordAbsenceForEmployee: vi.fn(),
 }));
 
 describe("TeamAbsencesTable", () => {
@@ -57,9 +64,31 @@ describe("TeamAbsencesTable", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
-		expect(screen.getByText("24")).toBeInTheDocument();
+		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+		expect(screen.getByText("24")).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: /record absence/i }));
-		expect(screen.getByText("Record absence for Ada Lovelace")).toBeInTheDocument();
+		expect(screen.getByText("Record absence for Ada Lovelace")).toBeTruthy();
+	});
+});
+
+describe("validateRecordAbsenceFormDateRange", () => {
+	it("rejects reversed dates and same-day afternoon-to-morning ranges", () => {
+		expect(
+			validateRecordAbsenceFormDateRange({
+				startDate: "2026-05-13",
+				startPeriod: "am",
+				endDate: "2026-05-12",
+				endPeriod: "pm",
+			}),
+		).toBe("Start date must be before end date");
+
+		expect(
+			validateRecordAbsenceFormDateRange({
+				startDate: "2026-05-12",
+				startPeriod: "pm",
+				endDate: "2026-05-12",
+				endPeriod: "am",
+			}),
+		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
 	});
 });
