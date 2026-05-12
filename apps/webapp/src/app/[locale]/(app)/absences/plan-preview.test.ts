@@ -5,6 +5,7 @@ const mockState = vi.hoisted(() => ({
 	getHolidays: vi.fn(),
 	getVacationBalance: vi.fn(),
 	categoryFindFirst: vi.fn(),
+	organizationFindFirst: vi.fn(),
 	absenceFindMany: vi.fn(),
 	shiftFindMany: vi.fn(),
 	coverageRuleFindMany: vi.fn(),
@@ -30,6 +31,7 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			absenceCategory: { findFirst: mockState.categoryFindFirst },
+			organization: { findFirst: mockState.organizationFindFirst },
 			absenceEntry: { findMany: mockState.absenceFindMany },
 			shift: { findMany: mockState.shiftFindMany },
 			coverageRule: { findMany: mockState.coverageRuleFindMany },
@@ -70,6 +72,7 @@ describe("getAbsencePlanPreview", () => {
 			requiresApproval: true,
 			countsAgainstVacation: true,
 		});
+		mockState.organizationFindFirst.mockResolvedValue({ fiscalYearStartMonth: 1 });
 		mockState.getVacationBalance.mockResolvedValue({
 			year: 2026,
 			totalDays: 20,
@@ -94,10 +97,22 @@ describe("getAbsencePlanPreview", () => {
 		}
 	});
 
-	it("calls getVacationBalance with the current employee id and request year", async () => {
+	it("calls getVacationBalance with the current employee id, fiscal label year, and fiscal month", async () => {
 		await getAbsencePlanPreview(previewRequest);
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, 1);
+	});
+
+	it("uses the organization fiscal month to resolve the vacation balance fiscal label", async () => {
+		mockState.organizationFindFirst.mockResolvedValueOnce({ fiscalYearStartMonth: 4 });
+
+		await getAbsencePlanPreview({
+			...previewRequest,
+			startDate: "2026-03-04",
+			endDate: "2026-03-05",
+		});
+
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2025, 4);
 	});
 
 	it("returns an error when no active employee exists", async () => {
@@ -116,7 +131,7 @@ describe("getAbsencePlanPreview", () => {
 			organizationId: "org-client",
 		} as typeof previewRequest & { employeeId: string; organizationId: string });
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, 1);
 		expect(mockState.getHolidays).toHaveBeenCalledWith(
 			"emp-current",
 			expect.any(Date),
