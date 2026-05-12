@@ -49,7 +49,7 @@ export default async function AbsencesPage() {
 
 	// Fetch all data in parallel
 	const [vacationBalance, absences, holidays, categories] = await Promise.all([
-		getVacationBalance(employee.id, currentYear),
+		getVacationBalance(employee.id, currentYear, org?.fiscalYearStartMonth ?? 1),
 		getAbsenceEntries(employee.id, startOfYear, endOfYear),
 		getHolidays(employee.id, yearStart, yearEnd),
 		getAbsenceCategories(employee.organizationId),

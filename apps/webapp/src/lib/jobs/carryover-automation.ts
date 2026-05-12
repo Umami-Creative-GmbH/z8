@@ -5,6 +5,7 @@
  * Designed to run via cron (Vercel Cron, external scheduler, etc.)
  */
 
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	accrueVacationDays,
@@ -14,6 +15,7 @@ import {
 	expireCarryoverDays,
 } from "@/lib/absences/vacation.service";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { getCurrentFiscalYearLabel } from "@/lib/fiscal-year";
 import { createLogger } from "@/lib/logger";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 
@@ -55,7 +57,8 @@ export interface AccrualJobResult {
  */
 export async function runAnnualCarryover(targetYear?: number): Promise<CarryoverJobResult> {
 	const startedAt = new Date();
-	const fromYear = targetYear ?? new Date().getFullYear() - 1;
+	const currentDate = DateTime.fromJSDate(startedAt);
+	const fromYear = targetYear;
 
 	logger.info({ fromYear }, "Starting annual carryover job");
 
@@ -69,13 +72,29 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 		for (const org of organizations) {
 			try {
 				const fiscalYearStartMonth = org.fiscalYearStartMonth ?? 1;
+				const isFiscalYearStart =
+					currentDate.month === fiscalYearStartMonth && currentDate.day === 1;
+				const organizationFromYear =
+					fromYear ?? getCurrentFiscalYearLabel(currentDate, fiscalYearStartMonth) - 1;
 				logger.info(
 					{ organizationId: org.id, organizationName: org.name },
 					"Processing organization",
 				);
 
+				if (!fromYear && !isFiscalYearStart) {
+					logger.info(
+						{ organizationId: org.id, fiscalYearStartMonth },
+						"Carryover not due for organization",
+					);
+					continue;
+				}
+
 				// Check if organization has a vacation policy
-				const policy = await getVacationAllowance(org.id, fromYear, fiscalYearStartMonth);
+				const policy = await getVacationAllowance(
+					org.id,
+					organizationFromYear,
+					fiscalYearStartMonth,
+				);
 
 				if (!policy) {
 					logger.info({ organizationId: org.id }, "No vacation policy found, skipping");
@@ -100,7 +119,7 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 				// Run carryover calculation
 				const carryoverResult = await calculateAnnualCarryover(
 					org.id,
-					fromYear,
+					organizationFromYear,
 					SYSTEM_USER_ID,
 					fiscalYearStartMonth,
 				);
@@ -135,7 +154,7 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 			timestamp: completedAt,
 			metadata: {
 				jobType: "annual_carryover",
-				fromYear,
+				fromYear: fromYear ?? null,
 				organizationsProcessed: organizations.length,
 				successCount: results.filter((r) => !r.error).length,
 				errorCount: errors.length,
