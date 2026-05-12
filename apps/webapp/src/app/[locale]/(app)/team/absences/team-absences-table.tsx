@@ -124,7 +124,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 			</div>
 
 			{hasRows ? (
-				<div className="overflow-hidden rounded-lg border bg-card">
+				<div className="rounded-lg border bg-card">
 					<Table>
 						<TableHeader>
 							<TableRow>
@@ -170,6 +170,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 											type="button"
 											variant="outline"
 											size="sm"
+											aria-label={`Record absence for ${employee.name}`}
 											onClick={() => setSelectedEmployee(employee)}
 										>
 											Record absence

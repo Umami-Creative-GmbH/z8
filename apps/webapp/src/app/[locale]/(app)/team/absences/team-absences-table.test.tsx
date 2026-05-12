@@ -120,7 +120,12 @@ describe("TeamAbsencesTable", () => {
 
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
 		expect(screen.getByText("24")).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: /record absence/i }));
+		const recordButton = screen.getByRole("button", {
+			name: "Record absence for Ada Lovelace",
+		});
+		expect(recordButton.closest("div.rounded-lg")?.className).not.toContain("overflow-hidden");
+
+		fireEvent.click(recordButton);
 		expect(screen.getByText("Record absence for Ada Lovelace")).toBeTruthy();
 	});
 
