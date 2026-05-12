@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, eq, ilike, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, count, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { db } from "@/db";
@@ -12,6 +12,8 @@ import {
 	employeeManagers,
 	employeeVacationAllowance,
 	team,
+	timeRecord,
+	timeRecordAbsence,
 	vacationAllowance,
 } from "@/db/schema";
 import {
@@ -24,7 +26,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { syncAbsenceRequestToCanonicalRecord } from "../../absences/actions.canonical";
+import { mapAbsenceRangeToCanonicalTimestamps } from "../../absences/actions.canonical";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
 import type {
@@ -54,6 +56,18 @@ type ListedEmployee = Pick<
 
 type TargetEmployee = typeof employee.$inferSelect & {
 	user: { name: string; email: string };
+};
+
+type ApprovedCanonicalAbsenceInput = {
+	organizationId: string;
+	employeeId: string;
+	categoryId: string;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+	countsAgainstVacation: boolean;
+	createdBy: string;
 };
 
 export function normalizeManagerAbsenceListParams(
@@ -96,6 +110,48 @@ export function validateRecordAbsenceDateRange(input: {
 	}
 
 	return null;
+}
+
+export function managerAbsenceAdvisoryLockKey(employeeId: string): string {
+	return `manager_absence:${employeeId}`;
+}
+
+export function getAbsenceOverlapConflictMessage(status: "pending" | "approved"): string {
+	return status === "pending"
+		? "Absence request overlaps with an existing pending request"
+		: "Absence request overlaps with an existing approved absence";
+}
+
+export function buildCanonicalAbsenceRecordValues(input: ApprovedCanonicalAbsenceInput) {
+	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps({
+		startDate: input.startDate,
+		startPeriod: input.startPeriod,
+		endDate: input.endDate,
+		endPeriod: input.endPeriod,
+	});
+
+	return {
+		timeRecord: {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			recordKind: "absence" as const,
+			startAt,
+			endAt,
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			approvalState: "approved" as const,
+			origin: "manual" as const,
+			createdBy: input.createdBy,
+			updatedBy: input.createdBy,
+		},
+		timeRecordAbsence: {
+			organizationId: input.organizationId,
+			recordKind: "absence" as const,
+			absenceCategoryId: input.categoryId,
+			startPeriod: input.startPeriod,
+			endPeriod: input.endPeriod,
+			countsAgainstVacation: input.countsAgainstVacation,
+		},
+	};
 }
 
 export async function getManagerAbsenceEmployees(
@@ -188,68 +244,108 @@ export async function recordAbsenceForEmployee(
 			return { success: false, error: "Invalid absence category", code: "NotFoundError" };
 		}
 
-		const overlap = await findOverlappingAbsence(target.id, input.startDate, input.endDate);
-		if (overlap) {
-			return {
-				success: false,
-				error:
-					overlap.status === "pending"
-						? "Absence request overlaps with an existing pending request"
-						: "Absence request overlaps with an existing approved absence",
-				code: "ConflictError",
-			};
-		}
+		const transactionResult = await db.transaction(async (tx) => {
+			await tx.execute(
+				sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
+			);
 
-		const [absence] = await db
-			.insert(absenceEntry)
-			.values({
-				employeeId: target.id,
+			const existingAbsences = await tx
+				.select({
+					id: absenceEntry.id,
+					status: absenceEntry.status,
+					startDate: absenceEntry.startDate,
+					endDate: absenceEntry.endDate,
+				})
+				.from(absenceEntry)
+				.where(
+					and(
+						eq(absenceEntry.employeeId, target.id),
+						eq(absenceEntry.organizationId, actor.organizationId),
+						or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
+					),
+				);
+
+			const overlap = existingAbsences.find((absence) =>
+				dateRangesOverlap(input.startDate, input.endDate, absence.startDate, absence.endDate),
+			);
+			if (overlap && overlap.status !== "rejected") {
+				return {
+					success: false as const,
+					error: getAbsenceOverlapConflictMessage(overlap.status),
+				};
+			}
+
+			const [absence] = await tx
+				.insert(absenceEntry)
+				.values({
+					employeeId: target.id,
+					organizationId: actor.organizationId,
+					categoryId: input.categoryId,
+					startDate: input.startDate,
+					startPeriod: input.startPeriod,
+					endDate: input.endDate,
+					endPeriod: input.endPeriod,
+					notes: input.notes,
+					status: "approved",
+					approvedBy: actor.id,
+					approvedAt: currentTimestamp(),
+				})
+				.returning({ id: absenceEntry.id });
+
+			const canonicalValues = buildCanonicalAbsenceRecordValues({
 				organizationId: actor.organizationId,
+				employeeId: target.id,
 				categoryId: input.categoryId,
 				startDate: input.startDate,
 				startPeriod: input.startPeriod,
 				endDate: input.endDate,
 				endPeriod: input.endPeriod,
-				notes: input.notes,
-				status: "approved",
-				approvedBy: actor.id,
-				approvedAt: currentTimestamp(),
-			})
-			.returning({ id: absenceEntry.id });
+				countsAgainstVacation: category.countsAgainstVacation,
+				createdBy: actor.userId,
+			});
 
-		const canonicalRecordId = await syncAbsenceRequestToCanonicalRecord({
-			organizationId: actor.organizationId,
-			employeeId: target.id,
-			absenceCategoryId: input.categoryId,
-			startDate: input.startDate,
-			startPeriod: input.startPeriod,
-			endDate: input.endDate,
-			endPeriod: input.endPeriod,
-			countsAgainstVacation: category.countsAgainstVacation,
-			requiresApproval: false,
-			createdBy: actor.userId,
+			const [canonicalRecord] = await tx
+				.insert(timeRecord)
+				.values(canonicalValues.timeRecord)
+				.returning({ id: timeRecord.id });
+
+			await tx.insert(timeRecordAbsence).values({
+				...canonicalValues.timeRecordAbsence,
+				recordId: canonicalRecord.id,
+			});
+
+			await tx
+				.update(absenceEntry)
+				.set({ canonicalRecordId: canonicalRecord.id })
+				.where(and(eq(absenceEntry.id, absence.id), eq(absenceEntry.organizationId, actor.organizationId)));
+
+			return { success: true as const, absenceId: absence.id };
 		});
 
-		await db
-			.update(absenceEntry)
-			.set({ canonicalRecordId })
-			.where(and(eq(absenceEntry.id, absence.id), eq(absenceEntry.organizationId, actor.organizationId)));
+		if (!transactionResult.success) {
+			return { success: false, error: transactionResult.error, code: "ConflictError" };
+		}
 
 		void addCalendarSyncJob({
-			absenceId: absence.id,
+			absenceId: transactionResult.absenceId,
 			employeeId: target.id,
 			action: "create",
-		}).catch((error) => logger.error({ error, absenceId: absence.id }, "Failed to queue calendar sync"));
+		}).catch((error) =>
+			logger.error(
+				{ error, absenceId: transactionResult.absenceId },
+				"Failed to queue calendar sync",
+			),
+		);
 
 		void notifyEmployeeOfManagerRecordedAbsence({
-			absenceId: absence.id,
+			absenceId: transactionResult.absenceId,
 			actor,
 			target,
 			categoryName: category.name,
 			input,
 		});
 
-		return { success: true, data: { absenceId: absence.id } };
+		return { success: true, data: { absenceId: transactionResult.absenceId } };
 	} catch (error) {
 		logger.error({ error }, "Failed to record absence for employee");
 		return { success: false, error: "Failed to record absence", code: "UNKNOWN_ERROR" };
@@ -441,30 +537,6 @@ async function resolveAccessibleTarget(
 	}
 
 	return { success: true, data: target };
-}
-
-async function findOverlappingAbsence(
-	employeeId: string,
-	startDate: string,
-	endDate: string,
-): Promise<{ id: string; status: "pending" | "approved" } | null> {
-	const existingAbsences = await db.query.absenceEntry.findMany({
-		where: and(
-			eq(absenceEntry.employeeId, employeeId),
-			or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
-		),
-		columns: { id: true, status: true, startDate: true, endDate: true },
-	});
-
-	const overlap = existingAbsences.find((absence) =>
-		dateRangesOverlap(startDate, endDate, absence.startDate, absence.endDate),
-	);
-
-	if (!overlap || overlap.status === "rejected") {
-		return null;
-	}
-
-	return { id: overlap.id, status: overlap.status };
 }
 
 async function notifyEmployeeOfManagerRecordedAbsence(params: {

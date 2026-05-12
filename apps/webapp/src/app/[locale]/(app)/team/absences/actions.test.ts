@@ -5,7 +5,10 @@ import {
 } from "./manager-absence-permissions";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import {
+	buildCanonicalAbsenceRecordValues,
+	getAbsenceOverlapConflictMessage,
 	getManagerAbsenceEmployees,
+	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
 	recordAbsenceForEmployee,
 	validateRecordAbsenceDateRange,
@@ -67,6 +70,49 @@ describe("manager absence server action helpers", () => {
 				endPeriod: "pm",
 			}),
 		).toBeNull();
+	});
+
+	it("builds approved canonical absence record values", () => {
+		const values = buildCanonicalAbsenceRecordValues({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			categoryId: "category-1",
+			startDate: "2026-04-10",
+			startPeriod: "pm",
+			endDate: "2026-04-10",
+			endPeriod: "pm",
+			countsAgainstVacation: true,
+			createdBy: "user-1",
+		});
+
+		expect(values.timeRecord).toMatchObject({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			recordKind: "absence",
+			approvalState: "approved",
+			origin: "manual",
+			createdBy: "user-1",
+			updatedBy: "user-1",
+		});
+		expect(values.timeRecord.durationMinutes).toBe(719);
+		expect(values.timeRecordAbsence).toEqual({
+			organizationId: "org-1",
+			recordKind: "absence",
+			absenceCategoryId: "category-1",
+			startPeriod: "pm",
+			endPeriod: "pm",
+			countsAgainstVacation: true,
+		});
+	});
+
+	it("uses deterministic employee advisory lock keys and conflict messages", () => {
+		expect(managerAbsenceAdvisoryLockKey("employee-1")).toBe("manager_absence:employee-1");
+		expect(getAbsenceOverlapConflictMessage("pending")).toBe(
+			"Absence request overlaps with an existing pending request",
+		);
+		expect(getAbsenceOverlapConflictMessage("approved")).toBe(
+			"Absence request overlaps with an existing approved absence",
+		);
 	});
 });
 
