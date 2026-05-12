@@ -31,6 +31,7 @@ export async function GET() {
 					surchargesEnabled: true,
 					demoDataEnabled: true,
 					timezone: true,
+					fiscalYearStartMonth: true,
 					deletedAt: true,
 				},
 			});
@@ -43,6 +44,7 @@ export async function GET() {
 					surchargesEnabled: org.surchargesEnabled ?? false,
 					demoDataEnabled: org.demoDataEnabled ?? true,
 					timezone: org.timezone ?? "UTC",
+					fiscalYearStartMonth: org.fiscalYearStartMonth ?? 1,
 					deletedAt: org.deletedAt?.toISOString() ?? null,
 				};
 			}

@@ -451,6 +451,12 @@ export const auth = betterAuth({
 							defaultValue: "UTC",
 							input: true, // admin can set organization timezone
 						},
+						fiscalYearStartMonth: {
+							type: "number",
+							required: false,
+							defaultValue: 1,
+							input: true,
+						},
 						deletedAt: {
 							type: "date",
 							required: false,

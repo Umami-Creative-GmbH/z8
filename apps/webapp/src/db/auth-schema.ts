@@ -112,6 +112,7 @@ export const organization = pgTable(
     surchargesEnabled: boolean("surcharges_enabled").default(false),
     demoDataEnabled: boolean("demo_data_enabled").default(true),
     timezone: text("timezone").default("UTC"),
+    fiscalYearStartMonth: integer("fiscal_year_start_month").default(1),
     deletedAt: timestamp("deleted_at"),
     deletedBy: text("deleted_by"),
     ssoRequiresApproval: boolean("sso_requires_approval").default(true),
