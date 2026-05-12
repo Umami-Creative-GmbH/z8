@@ -3,6 +3,7 @@ import {
 	canActorManageTarget,
 	canUseManagerAbsencePage,
 } from "./manager-absence-permissions";
+import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 
 describe("manager absence permissions", () => {
 	it("allows managers to manage assigned employees", () => {
@@ -69,8 +70,6 @@ describe("manager absence permissions", () => {
 		expect(canUseManagerAbsencePage("employee")).toBe(false);
 	});
 });
-
-import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 
 describe("manager absence metrics", () => {
 	it("calculates vacation and sick metrics for the selected year", () => {
@@ -139,6 +138,27 @@ describe("manager absence metrics", () => {
 					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
 					rejectionReason: null,
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
+				},
+				{
+					id: "sick-approved-previous-year",
+					employeeId: "employee-1",
+					startDate: "2025-04-07",
+					startPeriod: "full_day",
+					endDate: "2025-04-07",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2025-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2025-01-01T00:00:00.000Z"),
 					category: {
 						id: "category-sick",
 						name: "Sick Leave",
