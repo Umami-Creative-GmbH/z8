@@ -14,6 +14,7 @@ import type { DateRange, PeriodPreset } from "./types";
 type DateRangePresetOptions = {
 	year?: number;
 	fiscalYearStartMonth?: number;
+	timezone?: string;
 };
 
 /**
@@ -29,6 +30,7 @@ export function getDateRangeForPreset(
 	const now = DateTime.now();
 	const year = typeof options === "number" ? options : options?.year;
 	const fiscalYearStartMonth = typeof options === "number" ? 1 : options?.fiscalYearStartMonth;
+	const timezone = typeof options === "number" ? "UTC" : (options?.timezone ?? "UTC");
 	const targetYear = year ?? now.year;
 
 	switch (preset) {
@@ -47,7 +49,7 @@ export function getDateRangeForPreset(
 			};
 
 		case "last_year": {
-			const lastYear = getPreviousFiscalYearRange(now, fiscalYearStartMonth);
+			const lastYear = getPreviousFiscalYearRange(now, fiscalYearStartMonth, timezone);
 			return {
 				start: lastYear.start.toJSDate(),
 				end: lastYear.end.toJSDate(),
@@ -55,7 +57,7 @@ export function getDateRangeForPreset(
 		}
 
 		case "current_year": {
-			const currentYear = getFiscalYearRangeForDate(now, fiscalYearStartMonth);
+			const currentYear = getFiscalYearRangeForDate(now, fiscalYearStartMonth, timezone);
 			return {
 				start: currentYear.start.toJSDate(),
 				end: currentYear.end.toJSDate(),
@@ -63,7 +65,7 @@ export function getDateRangeForPreset(
 		}
 
 		case "ytd": {
-			const yearToDate = getFiscalYearToDateRange(now, fiscalYearStartMonth);
+			const yearToDate = getFiscalYearToDateRange(now, fiscalYearStartMonth, timezone);
 			return {
 				start: yearToDate.start.toJSDate(),
 				end: yearToDate.end.toJSDate(),

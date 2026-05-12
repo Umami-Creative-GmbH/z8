@@ -2,7 +2,7 @@
 
 import { CalendarIcon } from "lucide-react";
 import { DateTime } from "luxon";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -26,12 +26,14 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
-	const { fiscalYearStartMonth, isHydrated } = useOrganizationSettings(
+	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			fiscalYearStartMonth: state.fiscalYearStartMonth,
 			isHydrated: state.isHydrated,
+			timezone: state.timezone,
 		})),
 	);
+	const loadingDescriptionId = useId();
 	const [preset, setPreset] = useState<PeriodPreset>("current_month");
 	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -39,7 +41,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		setPreset(newPreset);
 
 		if (newPreset !== "custom") {
-			const range = getDateRangeForPreset(newPreset, { fiscalYearStartMonth });
+			const range = getDateRangeForPreset(newPreset, { fiscalYearStartMonth, timezone });
 			onChange(range);
 			setIsCalendarOpen(false);
 		} else {
@@ -66,7 +68,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 				onValueChange={(v) => handlePresetChange(v as PeriodPreset)}
 				disabled={!isHydrated}
 			>
-				<SelectTrigger className="w-full sm:w-[200px]">
+				<SelectTrigger
+					aria-describedby={!isHydrated ? loadingDescriptionId : undefined}
+					aria-label="Period"
+					className="w-full sm:w-[200px]"
+				>
 					<SelectValue placeholder="Select period" />
 				</SelectTrigger>
 				<SelectContent>
@@ -82,6 +88,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 					<SelectItem value="custom">Custom Range</SelectItem>
 				</SelectContent>
 			</Select>
+			{!isHydrated && (
+				<p id={loadingDescriptionId} className="text-sm text-muted-foreground">
+					Loading organization settings before enabling presets.
+				</p>
+			)}
 
 			{/* Calendar Picker for Custom Range */}
 			{preset === "custom" && (

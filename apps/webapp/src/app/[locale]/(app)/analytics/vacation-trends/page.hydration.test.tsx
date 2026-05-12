@@ -48,7 +48,7 @@ vi.mock("../actions", () => ({
 
 import VacationTrendsPage from "./page";
 
-function hydrateFiscalSettings(fiscalYearStartMonth: number) {
+function hydrateFiscalSettings(fiscalYearStartMonth: number, timezone = "UTC") {
 	act(() => {
 		useOrganizationSettings.getState().hydrate({
 			organizationId: "org-1",
@@ -56,7 +56,7 @@ function hydrateFiscalSettings(fiscalYearStartMonth: number) {
 			projectsEnabled: false,
 			surchargesEnabled: false,
 			demoDataEnabled: true,
-			timezone: "UTC",
+			timezone,
 			fiscalYearStartMonth,
 			deletedAt: null,
 		});
@@ -102,6 +102,33 @@ describe("VacationTrendsPage fiscal range hydration", () => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(
 				expect.objectContaining({ start: new Date("2026-04-01T00:00:00.000Z") }),
 			);
+		});
+	});
+
+	it("uses hydrated organization timezone for the default current fiscal year", async () => {
+		render(<VacationTrendsPage />);
+
+		hydrateFiscalSettings(4, "Europe/Berlin");
+
+		await waitFor(() => {
+			expect(screen.getByTestId("date-range-start").textContent).toBe(
+				"2026-03-31T22:00:00.000Z",
+			);
+		});
+		await waitFor(() => {
+			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(
+				expect.objectContaining({ start: new Date("2026-03-31T22:00:00.000Z") }),
+			);
+		});
+	});
+
+	it("does not fetch twice when hydration recomputes an equivalent default range", async () => {
+		render(<VacationTrendsPage />);
+
+		hydrateFiscalSettings(1);
+
+		await waitFor(() => {
+			expect(getVacationTrendsDataMock).toHaveBeenCalledTimes(1);
 		});
 	});
 

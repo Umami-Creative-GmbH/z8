@@ -22,16 +22,17 @@ export function ReportFilters({
 	onGenerate,
 	isGenerating = false,
 }: ReportFiltersProps) {
-	const { fiscalYearStartMonth, isHydrated } = useOrganizationSettings(
+	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			fiscalYearStartMonth: state.fiscalYearStartMonth,
 			isHydrated: state.isHydrated,
+			timezone: state.timezone,
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
 	const [dateRange, setDateRange] = useState<DateRange>(() =>
-		getDateRangeForPreset("current_month", { fiscalYearStartMonth }),
+		getDateRangeForPreset("current_month", { fiscalYearStartMonth, timezone }),
 	);
 
 	useEffect(() => {
@@ -39,8 +40,8 @@ export function ReportFilters({
 			return;
 		}
 
-		setDateRange(getDateRangeForPreset("current_month", { fiscalYearStartMonth }));
-	}, [fiscalYearStartMonth, isHydrated]);
+		setDateRange(getDateRangeForPreset("current_month", { fiscalYearStartMonth, timezone }));
+	}, [fiscalYearStartMonth, isHydrated, timezone]);
 
 	const handleDateRangeChange = (range: DateRange) => {
 		hasUserChangedRange.current = true;

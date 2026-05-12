@@ -11,7 +11,7 @@ describe("DateRangePicker", () => {
 		useOrganizationSettings.getState().reset();
 	});
 
-	it("disables preset selection until organization settings are hydrated", () => {
+	it("disables and explains preset selection until organization settings are hydrated", () => {
 		render(
 			<DateRangePicker
 				value={getDateRangeForPreset("current_year")}
@@ -19,6 +19,9 @@ describe("DateRangePicker", () => {
 			/>,
 		);
 
-		expect((screen.getByRole("combobox") as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByRole("combobox", { name: "Period" }) as HTMLButtonElement).disabled).toBe(
+			true,
+		);
+		expect(screen.getByText("Loading organization settings before enabling presets.")).toBeTruthy();
 	});
 });

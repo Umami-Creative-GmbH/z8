@@ -43,15 +43,16 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 }
 
 export default function VacationTrendsPage() {
-	const { fiscalYearStartMonth, isHydrated } = useOrganizationSettings(
+	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			fiscalYearStartMonth: state.fiscalYearStartMonth,
 			isHydrated: state.isHydrated,
+			timezone: state.timezone,
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<DateRange>(() =>
-		getDateRangeForPreset("current_year", { fiscalYearStartMonth }),
+		getDateRangeForPreset("current_year", { fiscalYearStartMonth, timezone }),
 	);
 	const [loading, setLoading] = useState(true);
 	const [vacationData, setVacationData] = useState<VacationTrendsData | null>(null);
@@ -61,8 +62,14 @@ export default function VacationTrendsPage() {
 			return;
 		}
 
-		setDateRange(getDateRangeForPreset("current_year", { fiscalYearStartMonth }));
-	}, [fiscalYearStartMonth, isHydrated]);
+		const nextDateRange = getDateRangeForPreset("current_year", {
+			fiscalYearStartMonth,
+			timezone,
+		});
+		setDateRange((currentDateRange) =>
+			areDateRangesEqual(currentDateRange, nextDateRange) ? currentDateRange : nextDateRange,
+		);
+	}, [fiscalYearStartMonth, isHydrated, timezone]);
 
 	const handleDateRangeChange = (range: DateRange) => {
 		hasUserChangedRange.current = true;
@@ -78,7 +85,7 @@ export default function VacationTrendsPage() {
 			!hasUserChangedRange.current &&
 			!areDateRangesEqual(
 				dateRange,
-				getDateRangeForPreset("current_year", { fiscalYearStartMonth }),
+				getDateRangeForPreset("current_year", { fiscalYearStartMonth, timezone }),
 			)
 		) {
 			return;
@@ -102,7 +109,7 @@ export default function VacationTrendsPage() {
 		}
 
 		loadData();
-	}, [dateRange, fiscalYearStartMonth, isHydrated]);
+	}, [dateRange, fiscalYearStartMonth, isHydrated, timezone]);
 
 	const overallData = vacationData?.overall || {
 		totalDaysAllocated: 0,
