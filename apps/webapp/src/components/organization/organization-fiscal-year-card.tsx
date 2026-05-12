@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationFiscalYearStartMonth } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,34 +47,47 @@ export function OrganizationFiscalYearCard({
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [month, setMonth] = useState(fiscalYearStartMonth);
+	const [isSaving, setIsSaving] = useState(false);
+	const isSavingRef = useRef(false);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 	const canEdit = currentMemberRole === "owner";
+	const fiscalYearStartMonthLabel = t(
+		"organization.fiscalYear.startMonth",
+		"Fiscal year start month",
+	);
 
 	const handleMonthChange = async (value: string) => {
-		if (!canEdit) return;
+		if (!canEdit || isSavingRef.current) return;
 
 		const nextMonth = Number(value);
 		const previousMonth = month;
 
 		setMonth(nextMonth);
+		isSavingRef.current = true;
+		setIsSaving(true);
 		setOrgSettings({ fiscalYearStartMonth: nextMonth });
 
-		const result = await updateOrganizationFiscalYearStartMonth(organizationId, nextMonth);
+		try {
+			const result = await updateOrganizationFiscalYearStartMonth(organizationId, nextMonth);
 
-		if (result.success) {
-			toast.success(t("organization.fiscalYear.updated", "Fiscal year setting updated"));
-			startTransition(() => {
-				router.refresh();
-			});
-			return;
+			if (result.success) {
+				toast.success(t("organization.fiscalYear.updated", "Fiscal year setting updated"));
+				startTransition(() => {
+					router.refresh();
+				});
+				return;
+			}
+
+			setMonth(previousMonth);
+			setOrgSettings({ fiscalYearStartMonth: previousMonth });
+			toast.error(
+				result.error ||
+					t("organization.fiscalYear.updateFailed", "Failed to update fiscal year setting"),
+			);
+		} finally {
+			isSavingRef.current = false;
+			setIsSaving(false);
 		}
-
-		setMonth(previousMonth);
-		setOrgSettings({ fiscalYearStartMonth: previousMonth });
-		toast.error(
-			result.error ||
-				t("organization.fiscalYear.updateFailed", "Failed to update fiscal year setting"),
-		);
 	};
 
 	return (
@@ -91,19 +104,17 @@ export function OrganizationFiscalYearCard({
 			<CardContent className="space-y-4">
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center justify-between">
-						<Label htmlFor="fiscal-year-start-month">
-							{t("organization.fiscalYear.startMonth", "Fiscal year start month")}
-						</Label>
-						{isPending && (
+						<Label htmlFor="fiscal-year-start-month">{fiscalYearStartMonthLabel}</Label>
+						{(isPending || isSaving) && (
 							<IconLoader2 aria-hidden="true" className="h-4 w-4 animate-spin text-muted-foreground" />
 						)}
 					</div>
 					<Select
 						value={String(month)}
 						onValueChange={handleMonthChange}
-						disabled={!canEdit || isPending}
+						disabled={!canEdit || isPending || isSaving}
 					>
-						<SelectTrigger id="fiscal-year-start-month" aria-label="Fiscal year start month">
+						<SelectTrigger id="fiscal-year-start-month">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>

@@ -80,6 +80,38 @@ describe("OrganizationFiscalYearCard", () => {
 		expect(refreshMock).toHaveBeenCalled();
 	});
 
+	it("disables the picker while saving and prevents overlapping saves", async () => {
+		let resolveSave: (value: { success: true; data: undefined }) => void = () => undefined;
+		updateOrganizationFiscalYearStartMonthMock.mockReturnValueOnce(
+			new Promise((resolve) => {
+				resolveSave = resolve;
+			}),
+		);
+
+		renderCard("owner", 1);
+
+		fireEvent.click(screen.getByRole("combobox", { name: "Fiscal year start month" }));
+		fireEvent.click(screen.getByRole("option", { name: "April" }));
+
+		await waitFor(() => {
+			expect(
+				(screen.getByRole("combobox", {
+					name: "Fiscal year start month",
+				}) as HTMLButtonElement).disabled,
+			).toBe(true);
+		});
+
+		fireEvent.click(screen.getByRole("combobox", { name: "Fiscal year start month" }));
+		expect(screen.queryByRole("option", { name: "October" })).toBeNull();
+		expect(updateOrganizationFiscalYearStartMonthMock).toHaveBeenCalledTimes(1);
+
+		resolveSave({ success: true, data: undefined });
+
+		await waitFor(() => {
+			expect(toastSuccessMock).toHaveBeenCalled();
+		});
+	});
+
 	it("reverts local and stored month when saving fails", async () => {
 		updateOrganizationFiscalYearStartMonthMock.mockResolvedValueOnce({
 			success: false,
