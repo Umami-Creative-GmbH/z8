@@ -22,26 +22,40 @@ type TeamAbsencesTableProps = {
 
 export function TeamAbsencesTable({ data, categories }: TeamAbsencesTableProps) {
 	const [selectedEmployee, setSelectedEmployee] = useState<ManagerAbsenceEmployeeRow | null>(null);
+	const hasRows = data.rows.length > 0;
 
 	return (
 		<div className="space-y-4">
-			<div className="rounded-lg border">
-				{data.rows.map((employee) => (
-					<div
-						key={employee.id}
-						className="flex flex-col gap-3 border-b p-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
-					>
-						<div className="min-w-0">
-							<p className="truncate font-medium">{employee.name}</p>
-							<p className="text-muted-foreground text-sm">Remaining vacation days</p>
-							<p className="font-semibold tabular-nums">{employee.remainingVacationDays}</p>
+			{hasRows ? (
+				<div className="rounded-lg border">
+					{data.rows.map((employee) => (
+						<div
+							key={employee.id}
+							className="flex flex-col gap-3 border-b p-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+						>
+							<div className="min-w-0">
+								<p className="truncate font-medium">{employee.name}</p>
+								<p className="text-muted-foreground text-sm">Remaining vacation days</p>
+								<p className="font-semibold tabular-nums">{employee.remainingVacationDays}</p>
+							</div>
+							<Button type="button" onClick={() => setSelectedEmployee(employee)}>
+								Record absence
+							</Button>
 						</div>
-						<Button type="button" onClick={() => setSelectedEmployee(employee)}>
-							Record absence
-						</Button>
-					</div>
-				))}
-			</div>
+					))}
+				</div>
+			) : (
+				<div
+					role="status"
+					aria-label="No employees found"
+					className="rounded-lg border bg-card p-6 text-center"
+				>
+					<p className="font-medium">No employees found</p>
+					<p className="mt-1 text-muted-foreground text-sm">
+						Try adjusting filters or search to find team members.
+					</p>
+				</div>
+			)}
 
 			<RecordAbsenceDialog
 				open={selectedEmployee !== null}

@@ -23,6 +23,26 @@ vi.mock("./actions", () => ({
 }));
 
 describe("TeamAbsencesTable", () => {
+	it("renders an empty state when no employees match", () => {
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [],
+					total: 0,
+					page: 1,
+					pageSize: 10,
+					year: 2026,
+					pageCount: 0,
+				}}
+				categories={[]}
+				search=""
+			/>,
+		);
+
+		expect(screen.getByRole("status", { name: /no employees found/i })).toBeTruthy();
+		expect(screen.getByText(/try adjusting filters/i)).toBeTruthy();
+	});
+
 	it("renders metrics and opens the record absence dialog", async () => {
 		render(
 			<TeamAbsencesTable
