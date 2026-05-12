@@ -69,3 +69,93 @@ describe("manager absence permissions", () => {
 		expect(canUseManagerAbsencePage("employee")).toBe(false);
 	});
 });
+
+import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
+
+describe("manager absence metrics", () => {
+	it("calculates vacation and sick metrics for the selected year", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [
+				{
+					id: "vacation-approved",
+					employeeId: "employee-1",
+					startDate: "2026-02-02",
+					startPeriod: "full_day",
+					endDate: "2026-02-03",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+				{
+					id: "vacation-pending",
+					employeeId: "employee-1",
+					startDate: "2026-03-02",
+					startPeriod: "full_day",
+					endDate: "2026-03-02",
+					endPeriod: "full_day",
+					status: "pending",
+					notes: null,
+					approvedBy: null,
+					approvedAt: null,
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+				{
+					id: "sick-approved",
+					employeeId: "employee-1",
+					startDate: "2026-04-06",
+					startPeriod: "full_day",
+					endDate: "2026-04-06",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toEqual({
+			vacationAllowance: 30,
+			usedVacationDays: 2,
+			pendingVacationDays: 1,
+			remainingVacationDays: 27,
+			sickDays: 1,
+		});
+	});
+});
