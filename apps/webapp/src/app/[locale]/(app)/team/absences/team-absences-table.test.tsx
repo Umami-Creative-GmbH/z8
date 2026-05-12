@@ -120,6 +120,10 @@ describe("TeamAbsencesTable", () => {
 
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
 		expect(screen.getByText("24")).toBeTruthy();
+		expect(screen.getByRole("columnheader", { name: "Pending" }).className).not.toContain(
+			"hidden",
+		);
+		expect(screen.getByRole("columnheader", { name: "Sick" }).className).not.toContain("hidden");
 		const recordButton = screen.getByRole("button", {
 			name: "Record absence for Ada Lovelace",
 		});

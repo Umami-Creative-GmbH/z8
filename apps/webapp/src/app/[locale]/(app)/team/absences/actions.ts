@@ -21,7 +21,6 @@ import {
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
@@ -547,12 +546,7 @@ async function notifyEmployeeOfManagerRecordedAbsence(params: {
 	input: RecordAbsenceForEmployeeInput;
 }) {
 	try {
-		const [{ renderAbsenceRecordedByManager }, { sendEmail }, { onAbsenceRecordedByManager }] =
-			await Promise.all([
-				import("@/lib/email/render"),
-				import("@/lib/email/email-service"),
-				import("@/lib/notifications/triggers"),
-			]);
+		const { onAbsenceRecordedByManager } = await import("@/lib/notifications/triggers");
 		const days = calculateBusinessDaysWithHalfDays(
 			params.input.startDate,
 			params.input.startPeriod,
@@ -560,23 +554,6 @@ async function notifyEmployeeOfManagerRecordedAbsence(params: {
 			params.input.endPeriod,
 			[],
 		);
-		const appUrl = await getOrganizationBaseUrl(params.actor.organizationId);
-		const html = await renderAbsenceRecordedByManager({
-			employeeName: params.target.user.name,
-			managerName: params.actor.name,
-			startDate: formatDisplayDate(params.input.startDate),
-			endDate: formatDisplayDate(params.input.endDate),
-			absenceType: params.categoryName,
-			days,
-			appUrl,
-		});
-
-		await sendEmail({
-			to: params.target.user.email,
-			subject: "Absence recorded",
-			html,
-			organizationId: params.actor.organizationId,
-		});
 
 		await onAbsenceRecordedByManager({
 			absenceId: params.absenceId,
@@ -595,8 +572,4 @@ async function notifyEmployeeOfManagerRecordedAbsence(params: {
 			"Failed to notify employee about manager-recorded absence",
 		);
 	}
-}
-
-function formatDisplayDate(dateStr: string) {
-	return DateTime.fromISO(dateStr).toLocaleString({ month: "short", day: "numeric", year: "numeric" });
 }

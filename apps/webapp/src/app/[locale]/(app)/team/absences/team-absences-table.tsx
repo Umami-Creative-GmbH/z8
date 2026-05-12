@@ -125,61 +125,63 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 
 			{hasRows ? (
 				<div className="rounded-lg border bg-card">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Employee</TableHead>
-								<TableHead>Team or Position</TableHead>
-								<TableHead className="text-right">Allowance</TableHead>
-								<TableHead className="text-right">Used</TableHead>
-								<TableHead className="hidden text-right md:table-cell">Pending</TableHead>
-								<TableHead className="text-right">Left</TableHead>
-								<TableHead className="hidden text-right lg:table-cell">Sick</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{data.rows.map((employee) => (
-								<TableRow key={employee.id}>
-									<TableCell>
-										<div className="min-w-0">
-											<p className="truncate font-medium">{employee.name}</p>
-											<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
-										</div>
-									</TableCell>
-									<TableCell className="text-muted-foreground text-sm">
-										{employee.teamName ?? employee.position ?? "-"}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{employee.vacationAllowance}
-									</TableCell>
-									<TableCell className="text-right tabular-nums">
-										{employee.usedVacationDays}
-									</TableCell>
-									<TableCell className="hidden text-right tabular-nums md:table-cell">
-										{employee.pendingVacationDays}
-									</TableCell>
-									<TableCell className="text-right font-medium tabular-nums">
-										{employee.remainingVacationDays}
-									</TableCell>
-									<TableCell className="hidden text-right tabular-nums lg:table-cell">
-										{employee.sickDays}
-									</TableCell>
-									<TableCell className="text-right">
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											aria-label={`Record absence for ${employee.name}`}
-											onClick={() => setSelectedEmployee(employee)}
-										>
-											Record absence
-										</Button>
-									</TableCell>
+					<div className="overflow-x-auto">
+						<Table className="min-w-[760px]">
+							<TableHeader>
+								<TableRow>
+									<TableHead>Employee</TableHead>
+									<TableHead>Team or Position</TableHead>
+									<TableHead className="text-right">Allowance</TableHead>
+									<TableHead className="text-right">Used</TableHead>
+									<TableHead className="text-right">Pending</TableHead>
+									<TableHead className="text-right">Left</TableHead>
+									<TableHead className="text-right">Sick</TableHead>
+									<TableHead className="text-right">Actions</TableHead>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+							</TableHeader>
+							<TableBody>
+								{data.rows.map((employee) => (
+									<TableRow key={employee.id}>
+										<TableCell>
+											<div className="min-w-0">
+												<p className="truncate font-medium">{employee.name}</p>
+												<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
+											</div>
+										</TableCell>
+										<TableCell className="text-muted-foreground text-sm">
+											{employee.teamName ?? employee.position ?? "-"}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{employee.vacationAllowance}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{employee.usedVacationDays}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{employee.pendingVacationDays}
+										</TableCell>
+										<TableCell className="text-right font-medium tabular-nums">
+											{employee.remainingVacationDays}
+										</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{employee.sickDays}
+										</TableCell>
+										<TableCell className="text-right">
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												aria-label={`Record absence for ${employee.name}`}
+												onClick={() => setSelectedEmployee(employee)}
+											>
+												Record absence
+											</Button>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
 				</div>
 			) : (
 				<div

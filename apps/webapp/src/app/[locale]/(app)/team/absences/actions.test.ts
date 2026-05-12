@@ -183,6 +183,113 @@ describe("manager absence permissions", () => {
 });
 
 describe("manager absence metrics", () => {
+	it("clips vacation and sick metrics to absences overlapping the selected year", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [
+				{
+					id: "vacation-approved-from-previous-year",
+					employeeId: "employee-1",
+					startDate: "2025-12-29",
+					startPeriod: "full_day",
+					endDate: "2026-01-02",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+				{
+					id: "vacation-pending-into-next-year",
+					employeeId: "employee-1",
+					startDate: "2026-12-31",
+					startPeriod: "full_day",
+					endDate: "2027-01-04",
+					endPeriod: "full_day",
+					status: "pending",
+					notes: null,
+					approvedBy: null,
+					approvedAt: null,
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+				{
+					id: "sick-approved-from-previous-year",
+					employeeId: "employee-1",
+					startDate: "2025-12-30",
+					startPeriod: "full_day",
+					endDate: "2026-01-05",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
+				},
+				{
+					id: "sick-approved-into-next-year",
+					employeeId: "employee-1",
+					startDate: "2026-12-30",
+					startPeriod: "full_day",
+					endDate: "2027-01-05",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-sick",
+						name: "Sick Leave",
+						type: "sick",
+						color: null,
+						countsAgainstVacation: false,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toEqual({
+			vacationAllowance: 30,
+			usedVacationDays: 2,
+			pendingVacationDays: 1,
+			remainingVacationDays: 27,
+			sickDays: 5,
+		});
+	});
+
 	it("calculates vacation and sick metrics for the selected year", () => {
 		const metrics = calculateManagerAbsenceMetrics({
 			year: 2026,
