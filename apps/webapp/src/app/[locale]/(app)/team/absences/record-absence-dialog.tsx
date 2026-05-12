@@ -258,7 +258,7 @@ export function RecordAbsenceDialog({
 											value={field.state.value}
 											onChange={(value) => field.handleChange(value)}
 											onBlur={field.handleBlur}
-											placeholder={t("team.absences.recordDialog.pickStartDate", "Pick start date")}
+											placeholder={t("team.absences.recordDialog.pickStartDate", "Pick start date…")}
 											required
 										/>
 									</TFormControl>
@@ -318,7 +318,7 @@ export function RecordAbsenceDialog({
 											value={field.state.value}
 											onChange={(value) => field.handleChange(value)}
 											onBlur={field.handleBlur}
-											placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date")}
+											placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date…")}
 											required
 										/>
 									</TFormControl>

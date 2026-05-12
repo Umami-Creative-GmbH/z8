@@ -29,11 +29,16 @@ export default async function TeamAbsencesPage({ searchParams }: TeamAbsencesPag
 		getCurrentEmployee(),
 		searchParams,
 	]);
+	const title = t("team.absences.title", "Team absences");
+	const description = t(
+		"team.absences.description",
+		"Review allowances and record approved absences for your team.",
+	);
 
 	if (!currentEmployee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="manage team absences" />
+				<NoEmployeeError feature={t("team.absences.feature", "manage team absences")} />
 			</div>
 		);
 	}
@@ -57,10 +62,8 @@ export default async function TeamAbsencesPage({ searchParams }: TeamAbsencesPag
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 				<div className="px-4 lg:px-6">
-					<h1 className="text-pretty text-2xl font-semibold">Team absences</h1>
-					<p className="text-muted-foreground">
-						Review allowances and record approved absences for your team.
-					</p>
+					<h1 className="text-pretty text-2xl font-semibold">{title}</h1>
+					<p className="text-muted-foreground">{description}</p>
 				</div>
 				<div className="px-4 lg:px-6">
 					<div className="rounded-lg border bg-card p-6 text-center">
@@ -78,10 +81,8 @@ export default async function TeamAbsencesPage({ searchParams }: TeamAbsencesPag
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<div className="px-4 lg:px-6">
-				<h1 className="text-pretty text-2xl font-semibold">Team absences</h1>
-				<p className="text-muted-foreground">
-					Review allowances and record approved absences for your team.
-				</p>
+				<h1 className="text-pretty text-2xl font-semibold">{title}</h1>
+				<p className="text-muted-foreground">{description}</p>
 			</div>
 
 			<div className="px-4 lg:px-6">
