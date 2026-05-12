@@ -44,6 +44,10 @@ interface AbsenceSubmittedToManagerParams extends AbsenceRequestParams {
 	managerName: string;
 }
 
+interface AbsenceRecordedByManagerParams extends AbsenceRequestParams {
+	managerName: string;
+}
+
 /**
  * Notify employee that their absence request was submitted
  */
@@ -103,6 +107,25 @@ export async function onAbsenceRequestApproved(params: AbsenceApprovalParams): P
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger absence approved notification");
+	}
+}
+
+export async function onAbsenceRecordedByManager(
+	params: AbsenceRecordedByManagerParams,
+): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.employeeUserId,
+			organizationId: params.organizationId,
+			type: "absence_request_approved",
+			title: "Absence recorded",
+			message: `${params.managerName} recorded ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} on your behalf.`,
+			entityType: "absence_entry",
+			entityId: params.absenceId,
+			actionUrl: "/absences",
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger manager-recorded absence notification");
 	}
 }
 
