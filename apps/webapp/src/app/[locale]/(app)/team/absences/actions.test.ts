@@ -35,6 +35,16 @@ describe("manager absence permissions", () => {
 		).toBe(true);
 	});
 
+	it("blocks employees from managing active same-organization targets", () => {
+		expect(
+			canActorManageTarget({
+				actor: { id: "employee-1", role: "employee", organizationId: "org-1" },
+				target: { id: "employee-2", organizationId: "org-1", isActive: true },
+				managerIdsForTarget: [],
+			}),
+		).toBe(false);
+	});
+
 	it("blocks cross-organization and inactive targets", () => {
 		expect(
 			canActorManageTarget({
