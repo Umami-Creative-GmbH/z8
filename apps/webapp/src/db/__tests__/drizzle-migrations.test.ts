@@ -13,6 +13,10 @@ const migration0014 = readFileSync(
 	new URL("../../../drizzle/0014_team_membership_primary_manager.sql", import.meta.url),
 	"utf8",
 );
+const migration0019 = readFileSync(
+	new URL("../../../drizzle/0019_regular_sandman.sql", import.meta.url),
+	"utf8",
+);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -59,5 +63,12 @@ describe("drizzle follow-up migrations", () => {
 		expect(teamUniquePosition).toBeGreaterThanOrEqual(0);
 		expect(employeeUniquePosition).toBeLessThan(teamPrimaryManagerFkPosition);
 		expect(teamUniquePosition).toBeLessThan(teamMembershipTeamFkPosition);
+	});
+
+	it("registers the organization fiscal year start migration", () => {
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0019_regular_sandman")).toBe(true);
+		expect(migration0019.trim()).toBe(
+			'ALTER TABLE "organization" ADD COLUMN "fiscal_year_start_month" integer DEFAULT 1;',
+		);
 	});
 });
