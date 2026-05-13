@@ -18,7 +18,7 @@ spec:
         - name: ghcr-credentials
       containers:
         - name: marketing
-          image: ghcr.io/umami-creative-gmbh/z8-marketing:sha-321dde6
+          image: ghcr.io/umami-creative-gmbh/z8-marketing:sha-b7a1083
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
