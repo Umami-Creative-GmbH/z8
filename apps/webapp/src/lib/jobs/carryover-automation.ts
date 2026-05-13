@@ -5,6 +5,7 @@
  * Designed to run via cron (Vercel Cron, external scheduler, etc.)
  */
 
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	accrueVacationDays,
@@ -14,6 +15,7 @@ import {
 	expireCarryoverDays,
 } from "@/lib/absences/vacation.service";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { createLogger } from "@/lib/logger";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 
@@ -55,7 +57,8 @@ export interface AccrualJobResult {
  */
 export async function runAnnualCarryover(targetYear?: number): Promise<CarryoverJobResult> {
 	const startedAt = new Date();
-	const fromYear = targetYear ?? new Date().getFullYear() - 1;
+	const currentDate = DateTime.fromJSDate(startedAt);
+	const fromYear = targetYear;
 
 	logger.info({ fromYear }, "Starting annual carryover job");
 
@@ -68,13 +71,32 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 
 		for (const org of organizations) {
 			try {
+				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
+				const timezone = org.timezone || "UTC";
+				const zonedCurrentDate = currentDate.setZone(timezone);
+				const isFiscalYearStart =
+					zonedCurrentDate.month === fiscalYearStartMonth && zonedCurrentDate.day === 1;
+				const organizationFromYear =
+					fromYear ?? getCurrentFiscalYearLabel(currentDate, fiscalYearStartMonth, timezone) - 1;
 				logger.info(
 					{ organizationId: org.id, organizationName: org.name },
 					"Processing organization",
 				);
 
+				if (!fromYear && !isFiscalYearStart) {
+					logger.info(
+						{ organizationId: org.id, fiscalYearStartMonth },
+						"Carryover not due for organization",
+					);
+					continue;
+				}
+
 				// Check if organization has a vacation policy
-				const policy = await getVacationAllowance(org.id, fromYear);
+				const policy = await getVacationAllowance(
+					org.id,
+					organizationFromYear,
+					fiscalYearStartMonth,
+				);
 
 				if (!policy) {
 					logger.info({ organizationId: org.id }, "No vacation policy found, skipping");
@@ -97,7 +119,12 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 				}
 
 				// Run carryover calculation
-				const carryoverResult = await calculateAnnualCarryover(org.id, fromYear, SYSTEM_USER_ID);
+				const carryoverResult = await calculateAnnualCarryover(
+					org.id,
+					organizationFromYear,
+					SYSTEM_USER_ID,
+					fiscalYearStartMonth,
+				);
 
 				results.push({
 					organizationId: org.id,
@@ -129,7 +156,7 @@ export async function runAnnualCarryover(targetYear?: number): Promise<Carryover
 			timestamp: completedAt,
 			metadata: {
 				jobType: "annual_carryover",
-				fromYear,
+				fromYear: fromYear ?? null,
 				organizationsProcessed: organizations.length,
 				successCount: results.filter((r) => !r.error).length,
 				errorCount: errors.length,
@@ -178,7 +205,15 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 
 		for (const org of organizations) {
 			try {
-				const expiryResult = await expireCarryoverDays(org.id, SYSTEM_USER_ID, currentDate);
+				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
+				const timezone = org.timezone || "UTC";
+				const expiryResult = await expireCarryoverDays(
+					org.id,
+					SYSTEM_USER_ID,
+					currentDate,
+					fiscalYearStartMonth,
+					timezone,
+				);
 
 				if (expiryResult.employeesAffected > 0) {
 					results.push({
@@ -240,14 +275,28 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 
 		for (const org of organizations) {
 			try {
+				const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org.fiscalYearStartMonth);
+				const timezone = org.timezone || "UTC";
+				const fiscalLabelYear = getCurrentFiscalYearLabel(
+					DateTime.fromObject({ year: targetYear, month: targetMonth, day: 1 }, { zone: timezone }),
+					fiscalYearStartMonth,
+					timezone,
+				);
 				// Check if organization uses monthly/biweekly accrual
-				const policy = await getVacationAllowance(org.id, targetYear);
+				const policy = await getVacationAllowance(org.id, fiscalLabelYear, fiscalYearStartMonth);
 
 				if (!policy || policy.accrualType === "annual") {
 					continue;
 				}
 
-				const result = await accrueVacationDays(org.id, targetMonth, targetYear, SYSTEM_USER_ID);
+				const result = await accrueVacationDays(
+					org.id,
+					targetMonth,
+					fiscalLabelYear,
+					SYSTEM_USER_ID,
+					fiscalYearStartMonth,
+					targetYear,
+				);
 
 				totalEmployeesProcessed += result.employeesProcessed;
 				totalDaysAccrued += result.totalDaysAccrued;
@@ -310,11 +359,8 @@ export async function runVacationAutomation(): Promise<{
 		accrual?: AccrualJobResult;
 	} = {};
 
-	// Run annual carryover on January 1st
-	if (currentMonth === 1 && currentDay === 1) {
-		logger.info("Running annual carryover (January 1st)");
-		results.carryover = await runAnnualCarryover(currentYear - 1);
-	}
+	// Run annual carryover daily; per-organization fiscal-year gating decides due orgs.
+	results.carryover = await runAnnualCarryover();
 
 	// Run expiry check daily
 	results.expiry = await runCarryoverExpiry();

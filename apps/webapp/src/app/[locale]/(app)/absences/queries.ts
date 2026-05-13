@@ -7,16 +7,17 @@ import {
 	absenceEntry,
 	employee,
 	employeeVacationAllowance,
-	holiday,
+	type holiday,
 	holidayAssignment,
-	holidayPreset,
+	type holidayPreset,
 	holidayPresetAssignment,
-	holidayPresetHoliday,
+	type holidayPresetHoliday,
 	vacationAllowance,
 } from "@/db/schema";
 import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { getFiscalYearRangeForLabelYear } from "@/lib/fiscal-year";
 import { expandPresetHolidayForYear } from "./holiday-expansion";
 import { mapAbsenceWithCategory } from "./mappers";
 
@@ -38,6 +39,7 @@ type HolidayPresetAssignmentWithPreset = {
 export async function getVacationBalance(
 	employeeId: string,
 	year: number,
+	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationBalance | null> {
 	const emp = await db.query.employee.findFirst({
 		where: eq(employee.id, employeeId),
@@ -47,8 +49,9 @@ export async function getVacationBalance(
 		return null;
 	}
 
-	const startOfYear = `${year}-01-01`;
-	const endOfYear = `${year}-12-31`;
+	const yearRange = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
+	const startOfYear = yearRange.start.toISODate() ?? `${year}-01-01`;
+	const endOfYear = yearRange.end.toISODate() ?? `${year}-12-31`;
 
 	const [orgAllowance, empAllowance, absences] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
@@ -70,8 +73,8 @@ export async function getVacationBalance(
 		db.query.absenceEntry.findMany({
 			where: and(
 				eq(absenceEntry.employeeId, employeeId),
-				gte(absenceEntry.startDate, startOfYear),
-				lte(absenceEntry.endDate, endOfYear),
+				lte(absenceEntry.startDate, endOfYear),
+				gte(absenceEntry.endDate, startOfYear),
 			),
 			with: {
 				category: true,
@@ -92,6 +95,7 @@ export async function getVacationBalance(
 		absences: absencesWithCategory,
 		currentDate: currentTimestamp(),
 		year,
+		fiscalYearStartMonth,
 	});
 }
 
@@ -103,8 +107,8 @@ export async function getAbsenceEntries(
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
-			gte(absenceEntry.startDate, startDate),
-			lte(absenceEntry.endDate, endDate),
+			lte(absenceEntry.startDate, endDate),
+			gte(absenceEntry.endDate, startDate),
 		),
 		with: {
 			category: true,

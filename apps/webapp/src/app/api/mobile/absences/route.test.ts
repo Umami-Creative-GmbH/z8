@@ -15,6 +15,15 @@ const mockState = vi.hoisted(() => ({
 	getAbsenceEntries: vi.fn(),
 	getVacationBalance: vi.fn(),
 	requestAbsenceForEmployee: vi.fn(),
+	organizationFindFirst: vi.fn(),
+}));
+
+vi.mock("@/db", () => ({
+	db: {
+		query: {
+			organization: { findFirst: mockState.organizationFindFirst },
+		},
+	},
 }));
 
 vi.mock("@/app/api/mobile/shared", () => ({
@@ -47,6 +56,7 @@ describe("/api/mobile/absences", () => {
 			id: "emp-1",
 			organizationId: "org-1",
 		});
+		mockState.organizationFindFirst.mockResolvedValue({ fiscalYearStartMonth: 1 });
 	});
 
 	it("returns categories and the current employee's absences with vacation balance", async () => {
@@ -99,7 +109,8 @@ describe("/api/mobile/absences", () => {
 		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
 		expect(mockState.getAbsenceCategories).toHaveBeenCalledWith("org-1");
 		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2025-01-01", "2027-12-31");
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-1", 2026);
+		expect(mockState.organizationFindFirst).toHaveBeenCalled();
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-1", 2026, 1);
 		expect(await response.json()).toEqual({
 			categories: [
 				{
@@ -192,12 +203,12 @@ describe("/api/mobile/absences", () => {
 		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
 		expect(mockState.requestAbsenceForEmployee).toHaveBeenCalledWith(
 			{
-			categoryId: "11111111-1111-1111-1111-111111111111",
-			startDate: "2026-04-20",
-			startPeriod: "full_day",
-			endDate: "2026-04-21",
-			endPeriod: "full_day",
-			notes: "Family trip",
+				categoryId: "11111111-1111-1111-1111-111111111111",
+				startDate: "2026-04-20",
+				startPeriod: "full_day",
+				endDate: "2026-04-21",
+				endPeriod: "full_day",
+				notes: "Family trip",
 			},
 			{
 				id: "emp-1",

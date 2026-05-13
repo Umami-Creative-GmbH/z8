@@ -2,8 +2,9 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 
 // Dynamic imports for recharts to reduce initial bundle size
 const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
@@ -31,14 +32,65 @@ import {
 import type { VacationTrendsData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getVacationTrendsData } from "../actions";
 
+function areDateRangesEqual(left: DateRange, right: DateRange) {
+	return (
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
+	);
+}
+
 export default function VacationTrendsPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_year"));
+	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			fiscalYearStartMonth: state.fiscalYearStartMonth,
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
+	const [dateRange, setDateRange] = useState<DateRange>(() =>
+		getDateRangeForPreset("current_year", { fiscalYearStartMonth, timezone }),
+	);
 	const [loading, setLoading] = useState(true);
 	const [vacationData, setVacationData] = useState<VacationTrendsData | null>(null);
 
 	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		const nextDateRange = getDateRangeForPreset("current_year", {
+			fiscalYearStartMonth,
+			timezone,
+		});
+		setDateRange((currentDateRange) =>
+			areDateRangesEqual(currentDateRange, nextDateRange) ? currentDateRange : nextDateRange,
+		);
+	}, [fiscalYearStartMonth, isHydrated, timezone]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
+
+	useEffect(() => {
+		if (!isHydrated) {
+			return;
+		}
+
+		if (
+			!hasUserChangedRange.current &&
+			!areDateRangesEqual(
+				dateRange,
+				getDateRangeForPreset("current_year", { fiscalYearStartMonth, timezone }),
+			)
+		) {
+			return;
+		}
+
 		async function loadData() {
 			setLoading(true);
 			try {
@@ -57,7 +109,7 @@ export default function VacationTrendsPage() {
 		}
 
 		loadData();
-	}, [dateRange]);
+	}, [dateRange, fiscalYearStartMonth, isHydrated, timezone]);
 
 	const overallData = vacationData?.overall || {
 		totalDaysAllocated: 0,
@@ -76,7 +128,7 @@ export default function VacationTrendsPage() {
 		<div className="space-y-6 px-4 lg:px-6">
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<DateRangePicker value={dateRange} onChange={setDateRange} />
+				<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 				<ExportButton
 					data={{
 						data: employees,

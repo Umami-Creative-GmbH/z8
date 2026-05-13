@@ -14,6 +14,7 @@ import { MembersTable } from "./members-table";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
+import { OrganizationFiscalYearCard } from "./organization-fiscal-year-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
 import { PendingMembersCard } from "./pending-members-card";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
@@ -82,6 +83,13 @@ export function OrganizationTab({
 			<OrganizationTimezoneCard
 				organizationId={organization.id}
 				timezone={organization.timezone ?? "UTC"}
+				currentMemberRole={currentMemberRole}
+			/>
+
+			{/* Organization Fiscal Year Card */}
+			<OrganizationFiscalYearCard
+				organizationId={organization.id}
+				fiscalYearStartMonth={organization.fiscalYearStartMonth ?? 1}
 				currentMemberRole={currentMemberRole}
 			/>
 

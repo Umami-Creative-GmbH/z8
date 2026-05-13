@@ -17,6 +17,10 @@ import {
 } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays } from "@/lib/absences/date-utils";
 import type { DayPeriod } from "@/lib/absences/types";
+import {
+	calculateFiscalCarryoverExpiryDate,
+	getFiscalYearRangeForLabelYear,
+} from "@/lib/fiscal-year";
 
 export interface VacationAllowanceRecord {
 	id: string;
@@ -207,10 +211,10 @@ export async function getVacationPolicyById(
 export async function getVacationAllowance(
 	organizationId: string,
 	year: number,
+	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationAllowanceRecord | null> {
-	// Legacy compatibility: find policy active on Jan 1 of the given year
-	const startOfYear = `${year}-01-01`;
-	return getActivePolicyForDate(organizationId, startOfYear);
+	const range = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
+	return getActivePolicyForDate(organizationId, range.start.toISODate() ?? `${year}-01-01`);
 }
 
 /**
@@ -221,9 +225,12 @@ export async function getVacationAllowanceRange(
 	organizationId: string,
 	startYear: number,
 	endYear: number,
+	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationAllowanceRecord[]> {
-	const startDate = `${startYear}-01-01`;
-	const endDate = `${endYear}-12-31`;
+	const startRange = getFiscalYearRangeForLabelYear(startYear, fiscalYearStartMonth);
+	const endRange = getFiscalYearRangeForLabelYear(endYear, fiscalYearStartMonth);
+	const startDate = startRange.start.toISODate() ?? `${startYear}-01-01`;
+	const endDate = endRange.end.toISODate() ?? `${endYear}-12-31`;
 	return getPoliciesInDateRange(organizationId, startDate, endDate);
 }
 
@@ -331,10 +338,11 @@ export async function upsertEmployeeVacationAllowance(input: {
 export async function getVacationTakenInYear(
 	employeeId: string,
 	year: number,
+	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationTakenResult> {
-	// Date range as YYYY-MM-DD strings for comparison
-	const startOfYear = `${year}-01-01`;
-	const endOfYear = `${year}-12-31`;
+	const range = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
+	const startOfYear = range.start.toISODate() ?? `${year}-01-01`;
+	const endOfYear = range.end.toISODate() ?? `${year}-12-31`;
 
 	const entries = await db
 		.select({
@@ -353,18 +361,20 @@ export async function getVacationTakenInYear(
 				eq(absenceEntry.employeeId, employeeId),
 				eq(absenceEntry.status, "approved"),
 				eq(absenceCategory.countsAgainstVacation, true),
-				gte(absenceEntry.startDate, startOfYear),
 				lte(absenceEntry.startDate, endOfYear),
+				gte(absenceEntry.endDate, startOfYear),
 			),
 		);
 
 	const result = entries.map((entry) => {
+		const clippedStartDate = entry.startDate < startOfYear ? startOfYear : entry.startDate;
+		const clippedEndDate = entry.endDate > endOfYear ? endOfYear : entry.endDate;
 		// Use half-day aware calculation
 		const days = calculateBusinessDaysWithHalfDays(
-			entry.startDate,
-			entry.startPeriod,
-			entry.endDate,
-			entry.endPeriod,
+			clippedStartDate,
+			clippedStartDate === entry.startDate ? entry.startPeriod : "full_day",
+			clippedEndDate,
+			clippedEndDate === entry.endDate ? entry.endPeriod : "full_day",
 			[], // holidays handled upstream
 		);
 		return {
@@ -390,8 +400,17 @@ export async function getVacationTakenInYear(
 export async function getCarryoverBalance(
 	employeeId: string,
 	year: number,
-	currentDate: Date = new Date(),
+	currentDateOrFiscalYearStartMonth: Date | number | null | undefined = new Date(),
+	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<CarryoverBalanceResult> {
+	const currentDate =
+		currentDateOrFiscalYearStartMonth instanceof Date
+			? currentDateOrFiscalYearStartMonth
+			: new Date();
+	const fiscalStartMonth =
+		currentDateOrFiscalYearStartMonth instanceof Date
+			? fiscalYearStartMonth
+			: currentDateOrFiscalYearStartMonth;
 	const allowance = await getEmployeeVacationAllowance(employeeId, year);
 
 	if (!allowance?.customCarryoverDays) {
@@ -407,7 +426,7 @@ export async function getCarryoverBalance(
 		return { balance: 0, expiresAt: null, isExpired: false };
 	}
 
-	const policy = await getVacationAllowance(emp.organizationId, year);
+	const policy = await getVacationAllowance(emp.organizationId, year, fiscalStartMonth);
 	const carryoverDays = parseFloat(allowance.customCarryoverDays);
 
 	if (!policy?.carryoverExpiryMonths) {
@@ -415,11 +434,11 @@ export async function getCarryoverBalance(
 		return { balance: carryoverDays, expiresAt: null, isExpired: false };
 	}
 
-	// Calculate expiry date (carryoverExpiryMonths months after Jan 1)
-	const expiresAt = new Date(year, policy.carryoverExpiryMonths - 1, 1);
-	expiresAt.setMonth(expiresAt.getMonth() + 1);
-	expiresAt.setDate(0); // Last day of the expiry month
-	expiresAt.setHours(23, 59, 59, 999);
+	const expiresAt = calculateFiscalCarryoverExpiryDate(
+		year,
+		fiscalStartMonth,
+		policy.carryoverExpiryMonths,
+	).toJSDate();
 
 	const isExpired = currentDate > expiresAt;
 
@@ -525,6 +544,7 @@ export async function getEmployeesWithExpiringCarryover(
 	organizationId: string,
 	year: number,
 	daysUntilExpiry: number = 30,
+	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<
 	Array<{
 		employeeId: string;
@@ -534,17 +554,17 @@ export async function getEmployeesWithExpiringCarryover(
 		daysUntilExpiry: number;
 	}>
 > {
-	const policy = await getVacationAllowance(organizationId, year);
+	const policy = await getVacationAllowance(organizationId, year, fiscalYearStartMonth);
 
 	if (!policy?.allowCarryover || !policy.carryoverExpiryMonths) {
 		return [];
 	}
 
-	// Calculate expiry date
-	const expiresAt = new Date(year, policy.carryoverExpiryMonths - 1, 1);
-	expiresAt.setMonth(expiresAt.getMonth() + 1);
-	expiresAt.setDate(0);
-	expiresAt.setHours(23, 59, 59, 999);
+	const expiresAt = calculateFiscalCarryoverExpiryDate(
+		year,
+		fiscalYearStartMonth,
+		policy.carryoverExpiryMonths,
+	).toJSDate();
 
 	const now = new Date();
 	const maxDate = new Date(now);
