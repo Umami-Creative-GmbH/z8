@@ -135,6 +135,24 @@ Use this when the user says a new image was published to GHCR.
 
 Why: `:latest` tags only become real after new pods are created, and the migration job must be recreated to pull the new image.
 
+### Fix GHCR tag or manifest pull failures
+
+Use this when pods show `ErrImagePull`, `ImagePullBackOff`, or GHCR reports `manifest ... not found`. Do not assume all images share one valid tag; Z8 images are built only when their workflow paths change.
+
+1. Identify the broken image and exact error with `kubectl describe pod` and recent events.
+2. Find the latest successful workflow run for that image family:
+   - app images and migration: `gh run list --workflow "Publish Docker Images" --branch main --status success`
+   - marketing: `gh run list --workflow "Publish Marketing Image" --branch main --status success`
+3. Derive the expected tag from the run head SHA: `sha-<first 7 chars>`.
+4. Validate the candidate tag before changing production with a short-lived pull-check pod in `app-prod` using `ghcr-credentials` and `imagePullPolicy: Always`.
+5. If the SHA tag or a downloaded workflow digest still fails with a missing child manifest, treat the GHCR package version as broken. Trigger the relevant workflow with `gh workflow run ... --ref main`, wait for success, and use the new run's `sha-<first 7 chars>` tag.
+6. Persist the fixed image in the manifest under `infra/hetzner-k8s/k8s/app`, apply it, and verify rollout or job completion plus live image digest.
+
+Notes:
+- `gh api /orgs/.../packages/container/.../versions` may require `read:packages`; if unavailable, use successful workflow runs and artifacts instead.
+- For `drizzle-migrate`, update `app/migration-job.yaml`, delete the old job, recreate it from the manifest, and wait for `Complete`.
+- For `marketing`, update `app/marketing-deployment.yaml`, apply it, and wait for `deployment/marketing` rollout.
+
 ### Scale workloads
 
 1. Inspect the current deployment state.
