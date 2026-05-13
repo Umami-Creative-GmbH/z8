@@ -9,6 +9,7 @@ vi.mock("./notification-service", () => ({
 }));
 
 import {
+	onAbsenceRecordedByManager,
 	onAbsenceRequestPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onShiftSwapRequestedToManager,
@@ -46,6 +47,57 @@ describe("approval notification triggers", () => {
 				actionUrl: "/approvals/inbox",
 			}),
 		);
+	});
+
+	it("notifies employees when a manager records an absence on their behalf", async () => {
+		await onAbsenceRecordedByManager({
+			absenceId: "absence-1",
+			employeeUserId: "user-employee",
+			employeeName: "Avery Employee",
+			organizationId: "org-1",
+			categoryName: "Sick Leave",
+			startDate: "2026-05-11",
+			endDate: "2026-05-12",
+			days: 2,
+			managerName: "Morgan Manager",
+		});
+
+		expect(createNotification).toHaveBeenCalledWith({
+			userId: "user-employee",
+			organizationId: "org-1",
+			type: "absence_request_approved",
+			title: "Absence recorded",
+			message: "Morgan Manager recorded Sick Leave for May 11 - May 12 on your behalf.",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			actionUrl: "/absences",
+			metadata: {
+				managerRecorded: true,
+				managerName: "Morgan Manager",
+				startDate: "2026-05-11",
+				endDate: "2026-05-12",
+				absenceType: "Sick Leave",
+				days: 2,
+			},
+		});
+	});
+
+	it("swallows manager-recorded absence notification failures", async () => {
+		createNotification.mockRejectedValueOnce(new Error("notification failed"));
+
+		await expect(
+			onAbsenceRecordedByManager({
+				absenceId: "absence-1",
+				employeeUserId: "user-employee",
+				employeeName: "Avery Employee",
+				organizationId: "org-1",
+				categoryName: "Sick Leave",
+				startDate: "2026-05-11",
+				endDate: "2026-05-12",
+				days: 2,
+				managerName: "Morgan Manager",
+			}),
+		).resolves.toBeUndefined();
 	});
 
 	it("links manager time-correction approval notifications to the unified inbox", async () => {

@@ -114,6 +114,40 @@ describe("sendEmailNotification", () => {
 		});
 	});
 
+	it("routes manager-recorded approved absence notifications to the manager-recorded template", async () => {
+		const result = await sendEmailNotification({
+			userId: "user_123",
+			type: "absence_request_approved",
+			title: "Absence recorded",
+			message: "Original message",
+			organizationId: "org_123",
+			metadata: {
+				managerRecorded: true,
+				managerName: "Morgan",
+				startDate: "2026-05-01",
+				endDate: "2026-05-02",
+				absenceType: "Sick Leave",
+				days: 2,
+			},
+		});
+
+		expect(result).toBe(true);
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith({
+			organizationId: "org_123",
+			templateKey: "absence-recorded-by-manager",
+			data: {
+				employeeName: "Alex",
+				managerName: "Morgan",
+				startDate: "2026-05-01",
+				endDate: "2026-05-02",
+				absenceType: "Sick Leave",
+				days: 2,
+				appUrl: "https://org.example.com",
+			},
+			subjectOverride: "Absence Recorded",
+		});
+	});
+
 	it("preserves dynamic team member notification subjects as template subject overrides", async () => {
 		renderOrganizationEmailTemplateMock.mockResolvedValue({
 			subject: "You've been added to Support",

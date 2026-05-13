@@ -1,4 +1,5 @@
 import { render } from "react-email";
+import { AbsenceRecordedByManager } from "./templates/absence-recorded-by-manager";
 import { AbsenceRequestApproved } from "./templates/absence-request-approved";
 import { AbsenceRequestPendingApproval } from "./templates/absence-request-pending-approval";
 import { AbsenceRequestRejected } from "./templates/absence-request-rejected";
@@ -63,6 +64,18 @@ export async function renderAbsenceRequestRejected(props: {
 	appUrl: string;
 }) {
 	return render(AbsenceRequestRejected(props));
+}
+
+export async function renderAbsenceRecordedByManager(props: {
+	employeeName: string;
+	managerName: string;
+	startDate: string;
+	endDate: string;
+	absenceType: string;
+	days: number;
+	appUrl: string;
+}) {
+	return render(AbsenceRecordedByManager(props));
 }
 
 export async function renderTimeCorrectionPendingApproval(props: {
