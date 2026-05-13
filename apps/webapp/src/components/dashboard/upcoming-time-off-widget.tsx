@@ -5,7 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
-import { differenceInDays, format } from "@/lib/datetime/luxon-utils";
+import { differenceInDays, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
 import { cn, pluralize } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getUpcomingAbsences } from "./actions";
@@ -72,9 +72,15 @@ function TimelineMarker({ daysUntil }: { daysUntil: number }) {
 	);
 }
 
+function getCalendarDaysUntil(date: Date): number {
+	return Math.floor(
+		startOfDay(fromJSDate(date)).diff(startOfDay(fromJSDate(new Date())), "days").days,
+	);
+}
+
 function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 	const { t } = useTranslate();
-	const daysUntil = differenceInDays(new Date(absence.startDate), new Date());
+	const daysUntil = getCalendarDaysUntil(new Date(absence.startDate));
 	const duration = differenceInDays(new Date(absence.endDate), new Date(absence.startDate)) + 1;
 	const name = absence.employee.user.name || t("common.unknown", "Unknown");
 

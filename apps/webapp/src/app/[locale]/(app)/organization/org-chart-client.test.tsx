@@ -228,17 +228,14 @@ describe("OrgChartClient", () => {
 		expect(screen.getByTestId("edge-styles").textContent).toContain("strokeDasharray");
 	});
 
-	it("themes React Flow controls and overview for dark mode", async () => {
+	it("renders dark-mode friendly React Flow controls without a minimap", async () => {
 		const { OrgChartClient } = await import("./org-chart-client");
 		render(<OrgChartClient initialGraph={graph} />);
 
 		expect(screen.getByTestId("flow-controls").getAttribute("class")).toContain("bg-card");
+		expect(screen.getByTestId("flow-controls").getAttribute("class")).toContain("stroke-current");
 		expect(screen.getByTestId("flow-controls").getAttribute("data-position")).toBe("bottom-left");
-		expect(screen.getByTestId("flow-minimap").getAttribute("class")).toContain("bg-card");
-		expect(screen.getByTestId("flow-minimap").getAttribute("data-position")).toBe("top-left");
-		expect(screen.getByTestId("flow-minimap").getAttribute("data-mask-color")).toContain(
-			"--background",
-		);
+		expect(screen.queryByTestId("flow-minimap")).toBeNull();
 	});
 
 	it("renders manager relationships and employee avatars with deterministic fallback", async () => {
@@ -251,7 +248,16 @@ describe("OrgChartClient", () => {
 			"https://cdn.example.com/katherine.png",
 		);
 		expect(screen.getByRole("img", { name: "Ada Lovelace avatar" }).getAttribute("src")).toContain(
-			"https://api.dicebear.com/9.x/initials/svg?seed=user-1",
+			"data:image/svg+xml",
+		);
+	});
+
+	it("lets the org chart viewport fill the remaining screen height", async () => {
+		const { OrgChartClient } = await import("./org-chart-client");
+		render(<OrgChartClient initialGraph={graph} />);
+
+		expect(screen.getByTestId("react-flow").parentElement?.getAttribute("class")).toContain(
+			"min-h-[calc(100dvh-18rem)]",
 		);
 	});
 
