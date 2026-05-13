@@ -103,7 +103,13 @@
       "skip": "Omitir por ahora",
       "subtitle": "Ayuda a tu equipo a reconocerte agregando información personal.",
       "success": "¡Perfil actualizado con éxito!",
-      "title": "Completa tu perfil"
+      "timeFormat": "Formato de hora",
+      "timeFormat12h": "12 horas (8:00 a. m.)",
+      "timeFormat24h": "24 horas (08:00)",
+      "timeFormatDesc": "Esto controla cómo se muestran las horas del reloj.",
+      "title": "Completa tu perfil",
+      "weekStartDay": "Primer día de la semana",
+      "weekStartDayDesc": "Esto controla cómo se muestran los calendarios y los resúmenes semanales."
     },
     "steps": {
       "complete": "Completo",

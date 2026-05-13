@@ -103,7 +103,13 @@
       "skip": "Skip for now",
       "subtitle": "Help your team recognize you by adding some personal information.",
       "success": "Profile updated successfully!",
-      "title": "Complete your profile"
+      "timeFormat": "Time format",
+      "timeFormat12h": "12-hour (8:00 AM)",
+      "timeFormat24h": "24-hour (08:00)",
+      "timeFormatDesc": "This controls how clock times are displayed.",
+      "title": "Complete your profile",
+      "weekStartDay": "First day of the week",
+      "weekStartDayDesc": "This controls how calendars and weekly summaries are displayed."
     },
     "steps": {
       "complete": "Complete",

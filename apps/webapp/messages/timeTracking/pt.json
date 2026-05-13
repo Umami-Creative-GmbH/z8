@@ -7,14 +7,6 @@
         "title": "Pausa adicionada automaticamente para conformidade"
       }
     },
-    "breakReminder": {
-      "breakNeeded": "Pausa necessária: restam {remaining} minutos de um total de {total}",
-      "overLimitMessage": "Você excedeu o tempo máximo de trabalho ininterrupto. Faça uma pausa em breve.",
-      "overLimitTitle": "Pausa Necessária",
-      "title": "Lembrete de Pausa",
-      "uninterrupted": "Trabalho ininterrupto",
-      "warningMessage": "Você tem {minutes} minutos até que uma pausa seja necessária."
-    },
     "budget": "Orçamento",
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
@@ -99,6 +91,22 @@
     "readyToClockIn": "Pronto para começar a trabalhar?",
     "selectCategory": "Selecione uma categoria",
     "selectProject": "Selecione um projeto",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min de intervalo restantes",
+      "breakRequired": "Intervalo necessário agora",
+      "breakRequiredMessage": "Faça uma pausa antes de continuar sua sessão.",
+      "breakSoon": "Pausa em breve",
+      "dismissBreak": "Dispensar lembrete de intervalo",
+      "dismissHydration": "Dispensar lembrete de hidratação",
+      "hydration": "Hidratação",
+      "hydrationProgress": "{intake}/{goal} copos hoje",
+      "logOneGlass": "+1 copo",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min para a pausa",
+      "snoozeToday": "Adiar hoje",
+      "subtitle": "Durante este turno",
+      "title": "Lembretes de sessão"
+    },
     "startedAt": "Iniciado às",
     "summary": {
       "baseWorked": "Base trabalhada",
@@ -136,15 +144,8 @@
       "goalMet": "Meta diária alcançada! Continue assim!",
       "logError": "Falha ao registrar a ingestão de água",
       "logged": "Água registrada! {progress}% da meta diária",
-      "logOne": "+1 Copo",
-      "logTwo": "+2 Copos",
-      "reminderMessage": "Mantenha-se saudável - beba água. Você bebeu {intake} de {goal} copos hoje.",
-      "reminderTitle": "Hora de se hidratar!",
       "snoozed": "Lembretes de água adiados para hoje",
-      "snoozeError": "Falha ao adiar lembretes",
-      "snoozeToday": "Adiar hoje",
-      "streak": "Sequência atual: {days} dias",
-      "todayProgress": "Progresso de hoje"
+      "snoozeError": "Falha ao adiar lembretes"
     }
   }
 }

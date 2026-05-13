@@ -76,6 +76,38 @@
       },
       "generate": "Générer le rapport",
       "generating": "Génération du rapport...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% du budget utilisé",
+        "critical": "Critique",
+        "daysLeft": "{days} j restants",
+        "daysOverdue": "{days} j de retard",
+        "description": "Risques liés au budget et aux délais nécessitant une attention particulière au cours de cette période de rapport.",
+        "dueToday": "Échéance aujourd'hui",
+        "empty": "Aucun risque lié au budget ou aux délais pour cette période de rapport.",
+        "reason": {
+          "budget70": "Le projet a utilisé au moins 70 % de son budget.",
+          "budget90": "Le projet a utilisé au moins 90 % de son budget.",
+          "deadline": "L'échéance du projet approche.",
+          "default": "Le projet nécessite une attention particulière.",
+          "dueToday": "L'échéance du projet est aujourd'hui.",
+          "overBudget": "Le projet dépasse le budget.",
+          "overdue": "L'échéance du projet est dépassée."
+        },
+        "title": "Alertes sur la santé du projet",
+        "viewDetails": "Voir les détails",
+        "viewDetailsForProject": "Voir les détails pour {projectName}",
+        "warning": "Avertissement"
+      },
+      "healthSummary": {
+        "atOrAbove70": "À 70 % ou plus",
+        "atOrAbove70Description": "Utilisation du budget élevée",
+        "atOrAbove90": "À 90 % ou plus",
+        "atOrAbove90Description": "Proche de la limite budgétaire",
+        "forecastAtRisk": "Prévisions à risque",
+        "forecastAtRiskDescription": "Dépassement prévu du plan",
+        "overBudget": "Budget dépassé",
+        "overBudgetDescription": "Budget excédé"
+      },
       "page": {
         "accessDenied": "Accès refusé",
         "description": "Analysez les heures de projet, l'utilisation du budget et les contributions de l'équipe",
@@ -96,6 +128,7 @@
         "daysOverdue": "{days}j de retard",
         "deadline": "Date limite",
         "dueToday": "À rendre aujourd'hui",
+        "forecastRisk": "Risque sur les prévisions",
         "hours": "Heures",
         "noProjectsFound": "Aucun projet trouvé",
         "noProjectsMatch": "Aucun projet ne correspond aux filtres sélectionnés",

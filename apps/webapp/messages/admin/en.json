@@ -1,9 +1,21 @@
 {
   "admin": {
+    "analytics": {
+      "description": "Monitor platform growth, engagement, operational activity, and billing trends.",
+      "sectionDescription": "Updated from current platform data for the selected range and bucket.",
+      "sectionTitle": "Analytics Trends",
+      "title": "Platform Analytics"
+    },
+    "diagnostics": {
+      "description": "Safe platform configuration and app-only deployment health checks.",
+      "title": "Deployment Diagnostics"
+    },
     "layout": {
       "exitAdmin": "Exit Admin",
       "nav": {
+        "analytics": "Analytics",
         "billing": "Billing",
+        "diagnostics": "Deployment Diagnostics",
         "organizations": "Organizations",
         "overview": "Overview",
         "settings": "Settings",
@@ -47,6 +59,7 @@
       "table": {
         "created": "Created",
         "employees": "Employees",
+        "loadErrorTitle": "Unable to load organizations",
         "members": "Members",
         "noOrganizationsFound": "No organizations found",
         "organization": "Organization"
@@ -60,6 +73,9 @@
       }
     },
     "overview": {
+      "analytics": {
+        "title": "Analytics Trends"
+      },
       "description": "Platform metrics and quick actions",
       "metrics": {
         "bannedUsers": "Banned Users",
@@ -80,6 +96,10 @@
         "billing": {
           "description": "Revenue metrics and subscription status",
           "title": "Billing & Subscriptions"
+        },
+        "diagnostics": {
+          "description": "Review safe config and app health checks",
+          "title": "Deployment Diagnostics"
         },
         "organizations": {
           "description": "Suspend, delete, or review organizations",
@@ -117,7 +137,8 @@
       "pagination": {
         "showing": "Showing {from} to {to} of {total} users"
       },
-      "searchPlaceholder": "Search by email…",
+      "searchLabel": "Search users by email",
+      "searchPlaceholder": "Search by name or email…",
       "sessionsDialog": {
         "description": "Active sessions for {email}",
         "noSessions": "No active sessions",

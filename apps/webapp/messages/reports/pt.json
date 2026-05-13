@@ -76,6 +76,38 @@
       },
       "generate": "Gerar Relatório",
       "generating": "A gerar relatório...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% do orçamento utilizado",
+        "critical": "Crítico",
+        "daysLeft": "{days}d restantes",
+        "daysOverdue": "{days}d atrasado",
+        "description": "Riscos de orçamento e prazo que precisam de atenção neste período de relatório.",
+        "dueToday": "Vence hoje",
+        "empty": "Nenhum risco de orçamento ou prazo neste período de relatório.",
+        "reason": {
+          "budget70": "O projeto utilizou pelo menos 70% do seu orçamento.",
+          "budget90": "O projeto utilizou pelo menos 90% do seu orçamento.",
+          "deadline": "O prazo do projeto está se aproximando.",
+          "default": "O projeto precisa de atenção.",
+          "dueToday": "O projeto vence hoje.",
+          "overBudget": "O projeto está acima do orçamento.",
+          "overdue": "O prazo do projeto expirou."
+        },
+        "title": "Alertas de Saúde do Projeto",
+        "viewDetails": "Ver detalhes",
+        "viewDetailsForProject": "Ver detalhes de {projectName}",
+        "warning": "Aviso"
+      },
+      "healthSummary": {
+        "atOrAbove70": "Em ou acima de 70%",
+        "atOrAbove70Description": "Uso do orçamento elevado",
+        "atOrAbove90": "Em ou acima de 90%",
+        "atOrAbove90Description": "Perto do limite do orçamento",
+        "forecastAtRisk": "Previsão em risco",
+        "forecastAtRiskDescription": "Projetado para exceder o plano",
+        "overBudget": "Acima do orçamento",
+        "overBudgetDescription": "Orçamento excedido"
+      },
       "page": {
         "accessDenied": "Acesso negado",
         "description": "Analise horas do projeto, utilização do orçamento e contribuições da equipa",
@@ -96,6 +128,7 @@
         "daysOverdue": "{days}d em atraso",
         "deadline": "Prazo",
         "dueToday": "Vence hoje",
+        "forecastRisk": "Risco de previsão",
         "hours": "Horas",
         "noProjectsFound": "Nenhum projeto encontrado",
         "noProjectsMatch": "Nenhum projeto corresponde aos filtros selecionados",

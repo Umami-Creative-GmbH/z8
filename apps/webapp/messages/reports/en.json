@@ -76,6 +76,38 @@
       },
       "generate": "Generate Report",
       "generating": "Generating Report...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% budget used",
+        "critical": "Critical",
+        "daysLeft": "{days}d left",
+        "daysOverdue": "{days}d overdue",
+        "description": "Budget and deadline risks that need attention in this report period.",
+        "dueToday": "Due today",
+        "empty": "No budget or deadline risks in this report period.",
+        "reason": {
+          "budget70": "Project has used at least 70% of its budget.",
+          "budget90": "Project has used at least 90% of its budget.",
+          "deadline": "Project deadline is approaching.",
+          "default": "Project needs attention.",
+          "dueToday": "Project is due today.",
+          "overBudget": "Project is over budget.",
+          "overdue": "Project deadline has passed."
+        },
+        "title": "Project Health Alerts",
+        "viewDetails": "View details",
+        "viewDetailsForProject": "View details for {projectName}",
+        "warning": "Warning"
+      },
+      "healthSummary": {
+        "atOrAbove70": "At or above 70%",
+        "atOrAbove70Description": "Budget usage elevated",
+        "atOrAbove90": "At or above 90%",
+        "atOrAbove90Description": "Near budget limit",
+        "forecastAtRisk": "Forecast at risk",
+        "forecastAtRiskDescription": "Projected to exceed plan",
+        "overBudget": "Over budget",
+        "overBudgetDescription": "Budget exceeded"
+      },
       "page": {
         "accessDenied": "Access Denied",
         "description": "Analyze project hours, budget usage, and team contributions",
@@ -96,6 +128,7 @@
         "daysOverdue": "{days}d overdue",
         "deadline": "Deadline",
         "dueToday": "Due today",
+        "forecastRisk": "Forecast risk",
         "hours": "Hours",
         "noProjectsFound": "No projects found",
         "noProjectsMatch": "No projects match the selected filters",

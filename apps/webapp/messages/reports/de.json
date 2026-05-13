@@ -76,6 +76,38 @@
       },
       "generate": "Bericht generieren",
       "generating": "Bericht wird generiert...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% des Budgets verbraucht",
+        "critical": "Kritisch",
+        "daysLeft": "{days} T. verbleibend",
+        "daysOverdue": "{days} T. überfällig",
+        "description": "Budget- und Terminrisiken, die in diesem Berichtszeitraum Aufmerksamkeit erfordern.",
+        "dueToday": "Heute fällig",
+        "empty": "Keine Budget- oder Terminrisiken in diesem Berichtszeitraum.",
+        "reason": {
+          "budget70": "Das Projekt hat mindestens 70 % seines Budgets verbraucht.",
+          "budget90": "Das Projekt hat mindestens 90 % seines Budgets verbraucht.",
+          "deadline": "Die Projektfrist nähert sich.",
+          "default": "Das Projekt erfordert Aufmerksamkeit.",
+          "dueToday": "Das Projekt ist heute fällig.",
+          "overBudget": "Das Projekt überschreitet das Budget.",
+          "overdue": "Die Projektfrist ist abgelaufen."
+        },
+        "title": "Projekt-Gesundheitswarnungen",
+        "viewDetails": "Details anzeigen",
+        "viewDetailsForProject": "Details für {projectName} anzeigen",
+        "warning": "Warnung"
+      },
+      "healthSummary": {
+        "atOrAbove70": "Bei oder über 70 %",
+        "atOrAbove70Description": "Budgetauslastung erhöht",
+        "atOrAbove90": "Bei oder über 90 %",
+        "atOrAbove90Description": "Nahe Budgetgrenze",
+        "forecastAtRisk": "Prognose gefährdet",
+        "forecastAtRiskDescription": "Überschreitung des Plans prognostiziert",
+        "overBudget": "Über Budget",
+        "overBudgetDescription": "Budget überschritten"
+      },
       "page": {
         "accessDenied": "Zugriff verweigert",
         "description": "Analysieren Sie Projektstunden, Budgetnutzung und Teambeiträge",
@@ -96,6 +128,7 @@
         "daysOverdue": "{days}T überfällig",
         "deadline": "Frist",
         "dueToday": "Heute fällig",
+        "forecastRisk": "Prognoserisiko",
         "hours": "Stunden",
         "noProjectsFound": "Keine Projekte gefunden",
         "noProjectsMatch": "Keine Projekte entsprechen den ausgewählten Filtern",

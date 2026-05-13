@@ -1,9 +1,21 @@
 {
   "admin": {
+    "analytics": {
+      "description": "Surveillez la croissance de la plateforme, l'engagement, l'activité opérationnelle et les tendances de facturation.",
+      "sectionDescription": "Mis à jour à partir des données actuelles de la plateforme pour la plage et le compartiment sélectionnés.",
+      "sectionTitle": "Tendances analytiques",
+      "title": "Analytique de la plateforme"
+    },
+    "diagnostics": {
+      "description": "Configuration sécurisée de la plateforme et vérifications de l'état du déploiement des applications uniquement.",
+      "title": "Diagnostics de déploiement"
+    },
     "layout": {
       "exitAdmin": "Quitter l'administration",
       "nav": {
+        "analytics": "Analytique",
         "billing": "Facturation",
+        "diagnostics": "Diagnostics de déploiement",
         "organizations": "Organisations",
         "overview": "Vue d'ensemble",
         "settings": "Paramètres",
@@ -47,6 +59,7 @@
       "table": {
         "created": "Créé",
         "employees": "Employés",
+        "loadErrorTitle": "Impossible de charger les organisations",
         "members": "Membres",
         "noOrganizationsFound": "Aucune organisation trouvée",
         "organization": "Organisation"
@@ -60,6 +73,9 @@
       }
     },
     "overview": {
+      "analytics": {
+        "title": "Tendances analytiques"
+      },
       "description": "Métriques de la plateforme et actions rapides",
       "metrics": {
         "bannedUsers": "Utilisateurs bannis",
@@ -80,6 +96,10 @@
         "billing": {
           "description": "Métriques de revenus et statut des abonnements",
           "title": "Facturation et abonnements"
+        },
+        "diagnostics": {
+          "description": "Examiner la configuration sécurisée et les vérifications de l'état des applications",
+          "title": "Diagnostics de déploiement"
         },
         "organizations": {
           "description": "Suspendre, supprimer ou examiner les organisations",
@@ -117,7 +137,8 @@
       "pagination": {
         "showing": "Affichage de {from} à {to} sur {total} utilisateurs"
       },
-      "searchPlaceholder": "Rechercher par e-mail…",
+      "searchLabel": "Rechercher des utilisateurs par e-mail",
+      "searchPlaceholder": "Rechercher par nom ou e-mail…",
       "sessionsDialog": {
         "description": "Sessions actives pour {email}",
         "noSessions": "Aucune session active",

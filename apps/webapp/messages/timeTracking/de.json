@@ -7,14 +7,6 @@
         "title": "Pause automatisch hinzugefügt für Compliance"
       }
     },
-    "breakReminder": {
-      "breakNeeded": "Pause erforderlich: {remaining} Minuten verbleiben von insgesamt {total}",
-      "overLimitMessage": "Sie haben die maximale ununterbrochene Arbeitszeit überschritten. Bitte machen Sie bald eine Pause.",
-      "overLimitTitle": "Pause erforderlich",
-      "title": "Pausenerinnerung",
-      "uninterrupted": "Ununterbrochene Arbeit",
-      "warningMessage": "Sie haben noch {minutes} Minuten, bis eine Pause erforderlich ist."
-    },
     "budget": "Budget",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
     "clockIn": "Einstempeln",
@@ -99,6 +91,22 @@
     "readyToClockIn": "Bereit zum Arbeiten?",
     "selectCategory": "Kategorie auswählen",
     "selectProject": "Projekt auswählen",
+    "sessionReminders": {
+      "breakOpen": "{remaining} Min. Pause verbleibend",
+      "breakRequired": "Pause jetzt erforderlich",
+      "breakRequiredMessage": "Machen Sie eine Pause, bevor Sie Ihre Sitzung fortsetzen.",
+      "breakSoon": "Bald Pause",
+      "dismissBreak": "Pausenerinnerung schließen",
+      "dismissHydration": "Trinkerinnerung schließen",
+      "hydration": "Flüssigkeitszufuhr",
+      "hydrationProgress": "{intake}/{goal} Gläser heute",
+      "logOneGlass": "+1 Glas",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} Min. bis zur Pause",
+      "snoozeToday": "Heute pausieren",
+      "subtitle": "Während dieser Schicht",
+      "title": "Sitzungserinnerungen"
+    },
     "startedAt": "Begonnen um",
     "summary": {
       "baseWorked": "Grundarbeitszeit",
@@ -129,26 +137,15 @@
     },
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
-    "workCategory": "Arbeitskategorie",
-    "workLocationHome": "Zuhause",
-    "workLocationOffice": "Büro",
-    "workLocationOther": "Andere",
-    "workLocationRemote": "Remote"
+    "workCategory": "Arbeitskategorie"
   },
   "wellness": {
     "water": {
       "goalMet": "Tagesziel erreicht! Weiter so!",
       "logError": "Fehler beim Protokollieren der Wasseraufnahme",
       "logged": "Wasser protokolliert! {progress}% des Tagesziels",
-      "logOne": "+1 Glas",
-      "logTwo": "+2 Gläser",
-      "reminderMessage": "Bleiben Sie gesund - trinken Sie etwas Wasser. Sie haben heute {intake} von {goal} Gläsern getrunken.",
-      "reminderTitle": "Zeit zu trinken!",
       "snoozed": "Wassererinnerungen für heute stummgeschaltet",
-      "snoozeError": "Fehler beim Stummschalten der Erinnerungen",
-      "snoozeToday": "Heute stummschalten",
-      "streak": "Aktuelle Serie: {days} Tage",
-      "todayProgress": "Heutiger Fortschritt"
+      "snoozeError": "Fehler beim Stummschalten der Erinnerungen"
     }
   }
 }

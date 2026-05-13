@@ -7,14 +7,6 @@
         "title": "Pausa aggiunta automaticamente per conformità"
       }
     },
-    "breakReminder": {
-      "breakNeeded": "Pausa richiesta: {remaining} minuti rimanenti su un totale di {total}",
-      "overLimitMessage": "Hai superato il tempo massimo di lavoro ininterrotto. Per favore fai una pausa presto.",
-      "overLimitTitle": "Pausa richiesta",
-      "title": "Promemoria pausa",
-      "uninterrupted": "Lavoro ininterrotto",
-      "warningMessage": "Hai {minutes} minuti prima che sia richiesta una pausa."
-    },
     "budget": "Budget",
     "clockedOutSuccess": "Hai timbrato l'uscita!",
     "clockIn": "Entrata",
@@ -99,6 +91,22 @@
     "readyToClockIn": "Pronto a lavorare?",
     "selectCategory": "Seleziona una categoria",
     "selectProject": "Seleziona un progetto",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min di pausa rimanenti",
+      "breakRequired": "Pausa richiesta ora",
+      "breakRequiredMessage": "Fai una pausa prima di continuare la sessione.",
+      "breakSoon": "Pausa a breve",
+      "dismissBreak": "Ignora promemoria pausa",
+      "dismissHydration": "Ignora promemoria idratazione",
+      "hydration": "Idratazione",
+      "hydrationProgress": "{intake}/{goal} bicchieri oggi",
+      "logOneGlass": "+1 bicchiere",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min alla pausa",
+      "snoozeToday": "Posticipa oggi",
+      "subtitle": "Durante questo turno",
+      "title": "Promemoria sessione"
+    },
     "startedAt": "Iniziato alle",
     "summary": {
       "baseWorked": "Base lavorata",
@@ -136,15 +144,8 @@
       "goalMet": "Obiettivo giornaliero raggiunto! Continua così!",
       "logError": "Impossibile registrare l'assunzione di acqua",
       "logged": "Acqua registrata! {progress}% dell'obiettivo giornaliero",
-      "logOne": "+1 Bicchiere",
-      "logTwo": "+2 Bicchieri",
-      "reminderMessage": "Resta in salute - bevi un po' d'acqua. Hai bevuto {intake} di {goal} bicchieri oggi.",
-      "reminderTitle": "È ora di idratarsi!",
       "snoozed": "Promemoria acqua posticipati per oggi",
-      "snoozeError": "Impossibile posticipare i promemoria",
-      "snoozeToday": "Posticipa oggi",
-      "streak": "Serie attuale: {days} giorni",
-      "todayProgress": "Progresso di oggi"
+      "snoozeError": "Impossibile posticipare i promemoria"
     }
   }
 }
