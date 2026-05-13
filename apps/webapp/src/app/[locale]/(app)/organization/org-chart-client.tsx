@@ -5,7 +5,6 @@ import {
 	Controls,
 	type Edge,
 	MarkerType,
-	MiniMap,
 	type Node,
 	type NodeProps,
 	ReactFlow,
@@ -16,6 +15,7 @@ import "@xyflow/react/dist/style.css";
 import { useTranslate } from "@tolgee/react";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { generateAvatarDataUri } from "@/lib/avatar";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { getEmployeeNeighborhood, getTeamNeighborhood, searchOrgEmployees } from "./actions";
 import { mergeOrgChartGraphs } from "./org-chart-graph";
@@ -45,7 +45,7 @@ const NODE_HEIGHT = 140;
 const COLUMN_GAP = 120;
 const ROW_GAP = 72;
 const FLOW_WIDGET_CLASSNAME =
-	"border border-border bg-card text-card-foreground shadow-sm [&_.react-flow__controls-button]:border-border [&_.react-flow__controls-button]:bg-card [&_.react-flow__controls-button]:text-card-foreground [&_.react-flow__controls-button:hover]:bg-accent [&_.react-flow__controls-button:hover]:text-accent-foreground [&_.react-flow__controls-button_svg]:fill-current";
+	"border border-border bg-card text-card-foreground shadow-sm [&_.react-flow__controls-button]:border-border [&_.react-flow__controls-button]:bg-card [&_.react-flow__controls-button]:text-card-foreground [&_.react-flow__controls-button:hover]:bg-accent [&_.react-flow__controls-button:hover]:text-accent-foreground [&_.react-flow__controls-button_path]:stroke-current [&_.react-flow__controls-button_svg]:fill-current [&_.react-flow__controls-button_svg]:stroke-current";
 
 const nodeTypes = {
 	employee: EmployeeFlowNode,
@@ -279,7 +279,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 				</p>
 			) : null}
 
-			<div className="h-[680px] overflow-hidden rounded-lg border bg-background">
+			<div className="h-[680px] min-h-[calc(100dvh-18rem)] overflow-hidden rounded-lg border bg-background">
 				<ReactFlow
 					edges={flowEdges}
 					fitView
@@ -289,15 +289,6 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 				>
 					<Background />
 					<Controls className={FLOW_WIDGET_CLASSNAME} position="bottom-left" />
-					<MiniMap
-						bgColor="hsl(var(--card))"
-						className="border border-border bg-card shadow-sm"
-						maskColor="hsl(var(--background) / 0.72)"
-						nodeColor={(node) => (node.type === "team" ? "hsl(var(--muted))" : "hsl(var(--primary))")}
-						pannable
-						position="top-left"
-						zoomable
-					/>
 				</ReactFlow>
 			</div>
 		</section>
@@ -386,7 +377,7 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 	const canExpand = node.expandable.managers || node.expandable.reports || node.expandable.teams;
 	const pronouns = normalizePronouns(node.pronouns);
 	const displayName = pronouns ? `${node.name} (${pronouns})` : node.name;
-	const avatarUrl = node.image || buildDicebearAvatarUrl(node.userId || node.employeeId);
+	const avatarUrl = node.image || generateAvatarDataUri({ seed: node.userId || node.employeeId, size: 80 });
 
 	return (
 		<div
@@ -457,8 +448,4 @@ function TeamFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 			) : null}
 		</div>
 	);
-}
-
-function buildDicebearAvatarUrl(seed: string) {
-	return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`;
 }
