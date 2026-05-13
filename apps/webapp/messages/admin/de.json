@@ -1,9 +1,21 @@
 {
   "admin": {
+    "analytics": {
+      "description": "Überwachen Sie Plattformwachstum, Engagement, operative Aktivitäten und Abrechnungstrends.",
+      "sectionDescription": "Aktualisiert anhand aktueller Plattformdaten für den ausgewählten Bereich und Zeitraum.",
+      "sectionTitle": "Analysetrends",
+      "title": "Plattform-Analysen"
+    },
+    "diagnostics": {
+      "description": "Sichere Plattformkonfiguration und Integritätsprüfungen für App-only-Bereitstellungen.",
+      "title": "Bereitstellungsdiagnose"
+    },
     "layout": {
       "exitAdmin": "Admin-Modus beenden",
       "nav": {
+        "analytics": "Analysen",
         "billing": "Abrechnung",
+        "diagnostics": "Bereitstellungsdiagnose",
         "organizations": "Organisationen",
         "overview": "Übersicht",
         "settings": "Einstellungen",
@@ -47,6 +59,7 @@
       "table": {
         "created": "Erstellt",
         "employees": "Mitarbeiter",
+        "loadErrorTitle": "Organisationen konnten nicht geladen werden",
         "members": "Mitglieder",
         "noOrganizationsFound": "Keine Organisationen gefunden",
         "organization": "Organisation"
@@ -60,6 +73,9 @@
       }
     },
     "overview": {
+      "analytics": {
+        "title": "Analysetrends"
+      },
       "description": "Plattform-Metriken und Schnellaktionen",
       "metrics": {
         "bannedUsers": "Gesperrte Benutzer",
@@ -80,6 +96,10 @@
         "billing": {
           "description": "Umsatzkennzahlen und Abonnementstatus",
           "title": "Abrechnung & Abonnements"
+        },
+        "diagnostics": {
+          "description": "Sichere Konfiguration und App-Integritätsprüfungen überprüfen",
+          "title": "Bereitstellungsdiagnose"
         },
         "organizations": {
           "description": "Organisationen sperren, löschen oder überprüfen",
@@ -117,7 +137,8 @@
       "pagination": {
         "showing": "Zeige {from} bis {to} von {total} Benutzern"
       },
-      "searchPlaceholder": "Nach E-Mail suchen…",
+      "searchLabel": "Benutzer nach E-Mail suchen",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen…",
       "sessionsDialog": {
         "description": "Aktive Sitzungen für {email}",
         "noSessions": "Keine aktiven Sitzungen",

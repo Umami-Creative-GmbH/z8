@@ -76,6 +76,38 @@
       },
       "generate": "Genera report",
       "generating": "Generazione report...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% di budget utilizzato",
+        "critical": "Critico",
+        "daysLeft": "{days}g rimanenti",
+        "daysOverdue": "{days}g di ritardo",
+        "description": "Rischi di budget e scadenze che richiedono attenzione in questo periodo di report.",
+        "dueToday": "In scadenza oggi",
+        "empty": "Nessun rischio di budget o scadenza in questo periodo di report.",
+        "reason": {
+          "budget70": "Il progetto ha utilizzato almeno il 70% del suo budget.",
+          "budget90": "Il progetto ha utilizzato almeno il 90% del suo budget.",
+          "deadline": "La scadenza del progetto si sta avvicinando.",
+          "default": "Il progetto richiede attenzione.",
+          "dueToday": "Il progetto scade oggi.",
+          "overBudget": "Il progetto ha superato il budget.",
+          "overdue": "La scadenza del progetto è passata."
+        },
+        "title": "Avvisi sullo stato del progetto",
+        "viewDetails": "Visualizza dettagli",
+        "viewDetailsForProject": "Visualizza dettagli per {projectName}",
+        "warning": "Avviso"
+      },
+      "healthSummary": {
+        "atOrAbove70": "Pari o superiore al 70%",
+        "atOrAbove70Description": "Utilizzo del budget elevato",
+        "atOrAbove90": "Pari o superiore al 90%",
+        "atOrAbove90Description": "Vicino al limite di budget",
+        "forecastAtRisk": "Previsione a rischio",
+        "forecastAtRiskDescription": "Previsto superamento del piano",
+        "overBudget": "Oltre il budget",
+        "overBudgetDescription": "Budget superato"
+      },
       "page": {
         "accessDenied": "Accesso negato",
         "description": "Analizza le ore del progetto, l'utilizzo del budget e i contributi del team",
@@ -96,6 +128,7 @@
         "daysOverdue": "{days}g di ritardo",
         "deadline": "Scadenza",
         "dueToday": "Scade oggi",
+        "forecastRisk": "Rischio di previsione",
         "hours": "Ore",
         "noProjectsFound": "Nessun progetto trovato",
         "noProjectsMatch": "Nessun progetto corrisponde ai filtri selezionati",

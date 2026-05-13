@@ -7,14 +7,6 @@
         "title": "Descanso agregado automáticamente por cumplimiento"
       }
     },
-    "breakReminder": {
-      "breakNeeded": "Descanso requerido: restan {remaining} minutos de un total de {total}",
-      "overLimitMessage": "Has excedido el tiempo máximo de trabajo ininterrumpido. Por favor, toma un descanso pronto.",
-      "overLimitTitle": "Descanso requerido",
-      "title": "Recordatorio de descanso",
-      "uninterrupted": "Trabajo ininterrumpido",
-      "warningMessage": "Tienes {minutes} minutos hasta que se requiera un descanso."
-    },
     "budget": "Presupuesto",
     "clockedOutSuccess": "Has marcado salida!",
     "clockIn": "Entrada",
@@ -99,6 +91,22 @@
     "readyToClockIn": "¿Listo para empezar a trabajar?",
     "selectCategory": "Seleccione una categoría",
     "selectProject": "Seleccionar un proyecto",
+    "sessionReminders": {
+      "breakOpen": "Quedan {remaining} min de descanso",
+      "breakRequired": "Descanso obligatorio ahora",
+      "breakRequiredMessage": "Tómese un descanso antes de continuar su sesión.",
+      "breakSoon": "Descanso pronto",
+      "dismissBreak": "Descartar recordatorio de descanso",
+      "dismissHydration": "Descartar recordatorio de hidratación",
+      "hydration": "Hidratación",
+      "hydrationProgress": "{intake}/{goal} vasos hoy",
+      "logOneGlass": "+1 vaso",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min para el descanso",
+      "snoozeToday": "Posponer hoy",
+      "subtitle": "Durante este turno",
+      "title": "Recordatorios de sesión"
+    },
     "startedAt": "Iniciado a las",
     "summary": {
       "baseWorked": "Base trabajada",
@@ -136,15 +144,8 @@
       "goalMet": "¡Meta diaria alcanzada! ¡Sigue así!",
       "logError": "Error al registrar la ingesta de agua",
       "logged": "¡Agua registrada! {progress}% de la meta diaria",
-      "logOne": "+1 Vaso",
-      "logTwo": "+2 Vasos",
-      "reminderMessage": "Mantente saludable - bebe un poco de agua. Has bebido {intake} de {goal} vasos hoy.",
-      "reminderTitle": "¡Es hora de hidratarse!",
       "snoozed": "Recordatorios de agua pospuestos por hoy",
-      "snoozeError": "Error al posponer los recordatorios",
-      "snoozeToday": "Posponer hoy",
-      "streak": "Racha actual: {days} días",
-      "todayProgress": "Progreso de hoy"
+      "snoozeError": "Error al posponer los recordatorios"
     }
   }
 }

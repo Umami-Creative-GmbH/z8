@@ -7,14 +7,6 @@
         "title": "Pause ajoutée automatiquement pour conformité"
       }
     },
-    "breakReminder": {
-      "breakNeeded": "Pause requise : {remaining} minutes restantes sur {total} au total",
-      "overLimitMessage": "Vous avez dépassé le temps de travail ininterrompu maximum. Veuillez faire une pause bientôt.",
-      "overLimitTitle": "Pause requise",
-      "title": "Rappel de pause",
-      "uninterrupted": "Travail ininterrompu",
-      "warningMessage": "Il vous reste {minutes} minutes avant qu'une pause soit requise."
-    },
     "budget": "Budget",
     "clockedOutSuccess": "Vous avez pointé votre départ !",
     "clockIn": "Pointer l'entrée",
@@ -99,6 +91,22 @@
     "readyToClockIn": "Prêt à travailler ?",
     "selectCategory": "Sélectionner une catégorie",
     "selectProject": "Sélectionner un projet",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min de pause restante",
+      "breakRequired": "Pause requise maintenant",
+      "breakRequiredMessage": "Faites une pause avant de poursuivre votre session.",
+      "breakSoon": "Pause bientôt",
+      "dismissBreak": "Ignorer le rappel de pause",
+      "dismissHydration": "Ignorer le rappel d'hydratation",
+      "hydration": "Hydratation",
+      "hydrationProgress": "{intake}/{goal} verres aujourd'hui",
+      "logOneGlass": "+1 verre",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min avant la pause",
+      "snoozeToday": "Reporter aujourd'hui",
+      "subtitle": "Pendant ce service",
+      "title": "Rappels de session"
+    },
     "startedAt": "Commencé à",
     "summary": {
       "baseWorked": "Base travaillée",
@@ -136,15 +144,8 @@
       "goalMet": "Objectif quotidien atteint ! Continuez comme ça !",
       "logError": "Échec de l'enregistrement de la consommation d'eau",
       "logged": "Eau enregistrée ! {progress}% de l'objectif quotidien",
-      "logOne": "+1 Verre",
-      "logTwo": "+2 Verres",
-      "reminderMessage": "Restez en bonne santé - buvez de l'eau. Vous avez bu {intake} verres sur {goal} aujourd'hui.",
-      "reminderTitle": "Il est temps de s'hydrater !",
       "snoozed": "Rappels d'eau mis en pause pour aujourd'hui",
-      "snoozeError": "Échec de la mise en pause des rappels",
-      "snoozeToday": "Mettre en pause aujourd'hui",
-      "streak": "Série actuelle : {days} jours",
-      "todayProgress": "Progrès d'aujourd'hui"
+      "snoozeError": "Échec de la mise en pause des rappels"
     }
   }
 }

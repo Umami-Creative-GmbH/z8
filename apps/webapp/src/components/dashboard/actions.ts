@@ -17,6 +17,7 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
+import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -29,6 +30,7 @@ import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manage
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
 
 export type ManagerTodaySummaryResult = {
 	role: "admin" | "manager" | "employee" | null;
@@ -530,6 +532,8 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		const weekEnd = weekEndDateTime.toJSDate();
 		const monthStart = nowDT.startOf("month").toJSDate();
 		const monthEnd = nowDT.endOf("month").toJSDate();
+		const monthStartStr = nowDT.startOf("month").toISODate()!;
+		const monthEndStr = nowDT.endOf("month").toISODate()!;
 
 		// Get all work periods for this month (includes this week)
 		const monthPeriods = yield* _(
@@ -542,6 +546,60 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 						lte(workPeriod.startTime, monthEnd),
 					),
 				});
+			}),
+		);
+
+		const approvedAbsences = yield* _(
+			dbService.query("getMonthApprovedAbsences", async () => {
+				return await dbService.db.query.absenceEntry.findMany({
+					where: and(
+						eq(absenceEntry.employeeId, currentEmployee.id),
+						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+						eq(absenceEntry.status, "approved"),
+						lte(absenceEntry.startDate, monthEndStr),
+						gte(absenceEntry.endDate, monthStartStr),
+					),
+					with: {
+						category: {
+							columns: { requiresWorkTime: true },
+						},
+					},
+				});
+			}),
+		);
+
+		const excludedDates = yield* _(
+			Effect.promise(async () => {
+				const dates = new Set<string>();
+				const rangeStart = DateTime.fromJSDate(monthStart).startOf("day");
+				const rangeEnd = DateTime.fromJSDate(monthEnd).startOf("day");
+
+				for (const absence of approvedAbsences) {
+					if (absence.category?.requiresWorkTime) continue;
+
+					let current = DateTime.fromISO(absence.startDate);
+					const last = DateTime.fromISO(absence.endDate);
+					if (!current.isValid || !last.isValid) continue;
+
+					if (current < rangeStart) current = rangeStart;
+
+					while (current <= last && current <= rangeEnd) {
+						const dateKey = current.toISODate();
+						if (dateKey) dates.add(dateKey);
+						current = current.plus({ days: 1 });
+					}
+				}
+
+				let current = rangeStart;
+				while (current <= rangeEnd) {
+					if (await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())) {
+						const dateKey = current.toISODate();
+						if (dateKey) dates.add(dateKey);
+					}
+					current = current.plus({ days: 1 });
+				}
+
+				return dates;
 			}),
 		);
 
@@ -573,48 +631,31 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 		const weekActual = weekMinutes / 60;
 		const monthActual = monthMinutes / 60;
 
-		// Get expected hours from work schedule
-		let weekExpected = 40; // Default
-		let monthExpected = 160; // Default
-
-		if (currentEmployee.workPolicyAssignments && currentEmployee.workPolicyAssignments.length > 0) {
-			const assignment = currentEmployee.workPolicyAssignments[0];
-			const schedule = assignment.policy?.schedule;
-			if (schedule && schedule.scheduleType === "simple" && schedule.hoursPerCycle) {
-				// Convert hoursPerCycle to weekly hours based on scheduleCycle
-				const hoursPerCycle = Number.parseFloat(schedule.hoursPerCycle);
-				if (schedule.scheduleCycle === "weekly") {
-					weekExpected = hoursPerCycle;
-				} else if (schedule.scheduleCycle === "biweekly") {
-					weekExpected = hoursPerCycle / 2;
-				} else if (schedule.scheduleCycle === "monthly") {
-					weekExpected = (hoursPerCycle * 12) / 52;
-				} else {
-					weekExpected = hoursPerCycle; // default to treating as weekly
-				}
-				// Estimate monthly hours based on weekly hours
-				const daysInMonth = DateTime.fromJSDate(monthEnd).diff(
-					DateTime.fromJSDate(monthStart),
-					"days",
-				).days;
-				const weeksInMonth = daysInMonth / 7;
-				monthExpected = weekExpected * weeksInMonth;
-			}
-		}
-
-		const elapsedWeekMs = Math.max(
-			0,
-			Math.min(now.getTime() - weekStart.getTime(), weekEnd.getTime() - weekStart.getTime()),
-		);
-		const totalWeekMs = Math.max(1, weekEnd.getTime() - weekStart.getTime());
-		const weekExpectedToDate = weekExpected * (elapsedWeekMs / totalWeekMs);
-
-		const elapsedMonthMs = Math.max(
-			0,
-			Math.min(now.getTime() - monthStart.getTime(), monthEnd.getTime() - monthStart.getTime()),
-		);
-		const totalMonthMs = Math.max(1, monthEnd.getTime() - monthStart.getTime());
-		const monthExpectedToDate = monthExpected * (elapsedMonthMs / totalMonthMs);
+		const schedule = currentEmployee.workPolicyAssignments?.[0]?.policy?.schedule ?? null;
+		const weekExpected = calculateAdjustedExpectedHoursForRange({
+			schedule,
+			start: weekStartDateTime,
+			end: weekEndDateTime,
+			excludedDates,
+		});
+		const weekExpectedToDate = calculateAdjustedExpectedHoursForRange({
+			schedule,
+			start: weekStartDateTime,
+			end: nowDT < weekEndDateTime ? nowDT : weekEndDateTime,
+			excludedDates,
+		});
+		const monthExpected = calculateAdjustedExpectedHoursForRange({
+			schedule,
+			start: DateTime.fromJSDate(monthStart),
+			end: DateTime.fromJSDate(monthEnd),
+			excludedDates,
+		});
+		const monthExpectedToDate = calculateAdjustedExpectedHoursForRange({
+			schedule,
+			start: DateTime.fromJSDate(monthStart),
+			end: nowDT < DateTime.fromJSDate(monthEnd) ? nowDT : DateTime.fromJSDate(monthEnd),
+			excludedDates,
+		});
 
 		return {
 			thisWeek: {

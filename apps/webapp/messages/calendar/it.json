@@ -1,5 +1,6 @@
 {
   "absences": {
+    "addAbsence": "Aggiungi assenza",
     "balance": {
       "carryoverDays": "Hai {count} giorni riportati",
       "carryoverExpiry": "che scadranno il",

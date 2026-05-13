@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ghcr.io/umami-creative-gmbh/z8-migration:sha-b7a1083
+          image: ghcr.io/umami-creative-gmbh/z8-migration:latest
           imagePullPolicy: Always
           env:
             - name: VALKEY_HOST

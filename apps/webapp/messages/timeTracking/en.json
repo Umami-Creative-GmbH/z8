@@ -7,14 +7,6 @@
         "title": "Break auto-added for compliance"
       }
     },
-    "breakReminder": {
-      "breakNeeded": "Break required: {remaining} minutes remaining of {total} total",
-      "overLimitMessage": "You've exceeded the maximum uninterrupted working time. Please take a break soon.",
-      "overLimitTitle": "Break Required",
-      "title": "Break Reminder",
-      "uninterrupted": "Uninterrupted work",
-      "warningMessage": "You have {minutes} minutes until a break is required."
-    },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
@@ -99,6 +91,22 @@
     "readyToClockIn": "Ready to start working?",
     "selectCategory": "Select a category",
     "selectProject": "Select a project",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min break remaining",
+      "breakRequired": "Break required now",
+      "breakRequiredMessage": "Take a break before continuing your session.",
+      "breakSoon": "Break soon",
+      "dismissBreak": "Dismiss break reminder",
+      "dismissHydration": "Dismiss hydration reminder",
+      "hydration": "Hydration",
+      "hydrationProgress": "{intake}/{goal} glasses today",
+      "logOneGlass": "+1 glass",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min until break",
+      "snoozeToday": "Snooze today",
+      "subtitle": "During this shift",
+      "title": "Session reminders"
+    },
     "startedAt": "Started at",
     "summary": {
       "baseWorked": "Base worked",
@@ -129,26 +137,15 @@
     },
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
-    "workCategory": "Work Category",
-    "workLocationHome": "Home",
-    "workLocationOffice": "Office",
-    "workLocationOther": "Other",
-    "workLocationRemote": "Remote"
+    "workCategory": "Work Category"
   },
   "wellness": {
     "water": {
       "goalMet": "Daily goal reached! Keep up the great work!",
       "logError": "Failed to log water intake",
       "logged": "Water logged! {progress}% of daily goal",
-      "logOne": "+1 Glass",
-      "logTwo": "+2 Glasses",
-      "reminderMessage": "Stay healthy - drink some water. You've had {intake} of {goal} glasses today.",
-      "reminderTitle": "Time to hydrate!",
       "snoozed": "Water reminders snoozed for today",
-      "snoozeError": "Failed to snooze reminders",
-      "snoozeToday": "Snooze today",
-      "streak": "Current streak: {days} days",
-      "todayProgress": "Today's progress"
+      "snoozeError": "Failed to snooze reminders"
     }
   }
 }

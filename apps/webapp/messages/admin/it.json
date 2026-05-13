@@ -1,9 +1,21 @@
 {
   "admin": {
+    "analytics": {
+      "description": "Monitora la crescita della piattaforma, il coinvolgimento, l'attività operativa e i trend di fatturazione.",
+      "sectionDescription": "Aggiornato dai dati correnti della piattaforma per l'intervallo e il bucket selezionati.",
+      "sectionTitle": "Trend analitici",
+      "title": "Analisi piattaforma"
+    },
+    "diagnostics": {
+      "description": "Configurazione sicura della piattaforma e controlli di integrità del deployment solo app.",
+      "title": "Diagnostica di deployment"
+    },
     "layout": {
       "exitAdmin": "Esci da Admin",
       "nav": {
+        "analytics": "Analisi",
         "billing": "Fatturazione",
+        "diagnostics": "Diagnostica di deployment",
         "organizations": "Organizzazioni",
         "overview": "Panoramica",
         "settings": "Impostazioni",
@@ -47,6 +59,7 @@
       "table": {
         "created": "Data di creazione",
         "employees": "Dipendenti",
+        "loadErrorTitle": "Impossibile caricare le organizzazioni",
         "members": "Membri",
         "noOrganizationsFound": "Nessuna organizzazione trovata",
         "organization": "Organizzazione"
@@ -60,6 +73,9 @@
       }
     },
     "overview": {
+      "analytics": {
+        "title": "Trend analitici"
+      },
       "description": "Metriche della piattaforma e azioni rapide",
       "metrics": {
         "bannedUsers": "Utenti bannati",
@@ -80,6 +96,10 @@
         "billing": {
           "description": "Metriche sui ricavi e stato dell'abbonamento",
           "title": "Fatturazione e abbonamenti"
+        },
+        "diagnostics": {
+          "description": "Revisione della configurazione sicura e controlli di integrità dell'app",
+          "title": "Diagnostica di deployment"
         },
         "organizations": {
           "description": "Sospendi, elimina o revisiona le organizzazioni",
@@ -117,7 +137,8 @@
       "pagination": {
         "showing": "Visualizzazione da {from} a {to} di {total} utenti"
       },
-      "searchPlaceholder": "Cerca per email…",
+      "searchLabel": "Cerca utenti tramite email",
+      "searchPlaceholder": "Cerca per nome o email…",
       "sessionsDialog": {
         "description": "Sessioni attive per {email}",
         "noSessions": "Nessuna sessione attiva",

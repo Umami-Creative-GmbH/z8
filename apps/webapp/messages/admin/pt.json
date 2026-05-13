@@ -1,9 +1,21 @@
 {
   "admin": {
+    "analytics": {
+      "description": "Monitore o crescimento da plataforma, engajamento, atividade operacional e tendências de faturamento.",
+      "sectionDescription": "Atualizado a partir dos dados atuais da plataforma para o intervalo e grupo selecionados.",
+      "sectionTitle": "Tendências de análise",
+      "title": "Análise da plataforma"
+    },
+    "diagnostics": {
+      "description": "Configuração segura da plataforma e verificações de integridade de implantação apenas de aplicativos.",
+      "title": "Diagnóstico de implantação"
+    },
     "layout": {
       "exitAdmin": "Sair do Admin",
       "nav": {
+        "analytics": "Análise",
         "billing": "Faturamento",
+        "diagnostics": "Diagnóstico de implantação",
         "organizations": "Organizações",
         "overview": "Visão geral",
         "settings": "Configurações",
@@ -47,6 +59,7 @@
       "table": {
         "created": "Criado",
         "employees": "Funcionários",
+        "loadErrorTitle": "Não foi possível carregar as organizações",
         "members": "Membros",
         "noOrganizationsFound": "Nenhuma organização encontrada",
         "organization": "Organização"
@@ -60,6 +73,9 @@
       }
     },
     "overview": {
+      "analytics": {
+        "title": "Tendências de análise"
+      },
       "description": "Métricas da plataforma e ações rápidas",
       "metrics": {
         "bannedUsers": "Usuários banidos",
@@ -80,6 +96,10 @@
         "billing": {
           "description": "Métricas de receita e status da assinatura",
           "title": "Faturamento e Assinaturas"
+        },
+        "diagnostics": {
+          "description": "Revisar configuração segura e verificações de integridade do aplicativo",
+          "title": "Diagnóstico de implantação"
         },
         "organizations": {
           "description": "Suspender, excluir ou revisar organizações",
@@ -117,7 +137,8 @@
       "pagination": {
         "showing": "Exibindo de {from} a {to} de {total} usuários"
       },
-      "searchPlaceholder": "Pesquisar por e-mail…",
+      "searchLabel": "Pesquisar usuários por e-mail",
+      "searchPlaceholder": "Pesquisar por nome ou e-mail…",
       "sessionsDialog": {
         "description": "Sessões ativas para {email}",
         "noSessions": "Nenhuma sessão ativa",

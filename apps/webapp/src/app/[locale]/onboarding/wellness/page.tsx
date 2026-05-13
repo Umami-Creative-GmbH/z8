@@ -34,7 +34,7 @@ export default function WellnessPage() {
 
 	const form = useForm({
 		defaultValues: {
-			enableWaterReminder: false,
+			enableWaterReminder: true,
 			waterReminderPreset: "moderate" as WaterReminderPreset,
 			waterReminderIntervalMinutes: 45,
 			waterReminderDailyGoal: 8,
@@ -72,7 +72,7 @@ export default function WellnessPage() {
 	}
 
 	// Track form values for conditional rendering
-	const [isEnabled, setIsEnabled] = useState(false);
+	const [isEnabled, setIsEnabled] = useState(true);
 	const [selectedPreset, setSelectedPreset] = useState<WaterReminderPreset>("moderate");
 	const isCustom = selectedPreset === "custom";
 

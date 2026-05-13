@@ -76,6 +76,38 @@
       },
       "generate": "Generar informe",
       "generating": "Generando informe...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% del presupuesto utilizado",
+        "critical": "Crítico",
+        "daysLeft": "{days}d restantes",
+        "daysOverdue": "{days}d de retraso",
+        "description": "Riesgos de presupuesto y fecha límite que requieren atención en este periodo de informe.",
+        "dueToday": "Vence hoy",
+        "empty": "No hay riesgos de presupuesto o fecha límite en este periodo de informe.",
+        "reason": {
+          "budget70": "El proyecto ha utilizado al menos el 70% de su presupuesto.",
+          "budget90": "El proyecto ha utilizado al menos el 90% de su presupuesto.",
+          "deadline": "La fecha límite del proyecto se acerca.",
+          "default": "El proyecto necesita atención.",
+          "dueToday": "El proyecto vence hoy.",
+          "overBudget": "El proyecto ha superado el presupuesto.",
+          "overdue": "La fecha límite del proyecto ha pasado."
+        },
+        "title": "Alertas de salud del proyecto",
+        "viewDetails": "Ver detalles",
+        "viewDetailsForProject": "Ver detalles de {projectName}",
+        "warning": "Advertencia"
+      },
+      "healthSummary": {
+        "atOrAbove70": "En o por encima del 70%",
+        "atOrAbove70Description": "Uso del presupuesto elevado",
+        "atOrAbove90": "En o por encima del 90%",
+        "atOrAbove90Description": "Cerca del límite presupuestario",
+        "forecastAtRisk": "Previsión en riesgo",
+        "forecastAtRiskDescription": "Se prevé que exceda el plan",
+        "overBudget": "Por encima del presupuesto",
+        "overBudgetDescription": "Presupuesto excedido"
+      },
       "page": {
         "accessDenied": "Acceso denegado",
         "description": "Analice horas del proyecto, uso del presupuesto y contribuciones del equipo",
@@ -96,6 +128,7 @@
         "daysOverdue": "{days}d de retraso",
         "deadline": "Plazo",
         "dueToday": "Vence hoy",
+        "forecastRisk": "Riesgo de previsión",
         "hours": "Horas",
         "noProjectsFound": "No se encontraron proyectos",
         "noProjectsMatch": "Ningún proyecto coincide con los filtros seleccionados",
