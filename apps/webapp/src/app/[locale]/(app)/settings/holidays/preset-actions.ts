@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
+import { and, eq, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import {
@@ -14,8 +14,6 @@ import {
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
 	HolidayPresetAssignmentFormValues,
 	HolidayPresetFormValues,
@@ -29,6 +27,10 @@ import {
 	filterAssignmentsForManagerHolidayScope,
 	getScopedHolidayAccessContext,
 } from "./holiday-scope";
+import {
+	assignmentRangesOverlap,
+	buildPresetLocationConflictConditions,
+} from "./preset-scheduling";
 
 // Type definitions for return values
 type HolidayPresetListItem = {
@@ -38,6 +40,7 @@ type HolidayPresetListItem = {
 	countryCode: string | null;
 	stateCode: string | null;
 	regionCode: string | null;
+	year: number | null;
 	color: string | null;
 	isActive: boolean;
 	createdAt: Date;
@@ -79,6 +82,7 @@ type PresetAssignmentListItem = {
 	preset: {
 		id: string;
 		name: string;
+		year: number | null;
 		color: string | null;
 		countryCode: string | null;
 		stateCode: string | null;
@@ -122,14 +126,16 @@ export async function getHolidayPresets(
 	organizationId: string,
 ): Promise<ServerActionResult<HolidayPresetListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getHolidayPresets:actor",
+			}),
+		);
 
 		const presets = yield* _(
-			dbService.query("getHolidayPresets", async () => {
-				const results = await dbService.db
+			actor.dbService.query("getHolidayPresets", async () => {
+				const results = await actor.dbService.db
 					.select({
 						id: holidayPreset.id,
 						name: holidayPreset.name,
@@ -137,27 +143,29 @@ export async function getHolidayPresets(
 						countryCode: holidayPreset.countryCode,
 						stateCode: holidayPreset.stateCode,
 						regionCode: holidayPreset.regionCode,
+						year: holidayPreset.year,
 						color: holidayPreset.color,
 						isActive: holidayPreset.isActive,
 						createdAt: holidayPreset.createdAt,
 					})
 					.from(holidayPreset)
-					.where(eq(holidayPreset.organizationId, organizationId))
+					.where(eq(holidayPreset.organizationId, actor.organizationId))
 					.orderBy(holidayPreset.name);
 
 				// Get holiday counts and assignment counts for each preset
 				const presetsWithCounts = await Promise.all(
 					results.map(async (preset) => {
-						const [holidayCountResult] = await dbService.db
+						const [holidayCountResult] = await actor.dbService.db
 							.select({ count: sql<number>`count(*)::int` })
 							.from(holidayPresetHoliday)
 							.where(eq(holidayPresetHoliday.presetId, preset.id));
 
-						const [assignmentCountResult] = await dbService.db
+						const [assignmentCountResult] = await actor.dbService.db
 							.select({ count: sql<number>`count(*)::int` })
 							.from(holidayPresetAssignment)
 							.where(
 								and(
+									eq(holidayPresetAssignment.organizationId, actor.organizationId),
 									eq(holidayPresetAssignment.presetId, preset.id),
 									eq(holidayPresetAssignment.isActive, true),
 								),
@@ -250,6 +258,7 @@ export async function getHolidayPreset(
 							preset: {
 								id: holidayPreset.id,
 								name: holidayPreset.name,
+								year: holidayPreset.year,
 								color: holidayPreset.color,
 								countryCode: holidayPreset.countryCode,
 								stateCode: holidayPreset.stateCode,
@@ -357,47 +366,31 @@ export async function createHolidayPreset(
 			}),
 		);
 
-		// Check for existing preset with same location
-		if (data.countryCode) {
-			const existingConditions = [
-				eq(holidayPreset.organizationId, organizationId),
-				eq(holidayPreset.countryCode, data.countryCode),
-			];
+		const existingConditions = buildPresetLocationConflictConditions(organizationId, data);
 
-			if (data.stateCode) {
-				existingConditions.push(eq(holidayPreset.stateCode, data.stateCode));
-			} else {
-				existingConditions.push(isNull(holidayPreset.stateCode));
-			}
+		const existing = yield* _(
+			actor.dbService.query("checkExisting", async () => {
+				const [p] = await actor.dbService.db
+					.select()
+					.from(holidayPreset)
+					.where(and(...existingConditions))
+					.limit(1);
+				return p;
+			}),
+		);
 
-			if (data.regionCode) {
-				existingConditions.push(eq(holidayPreset.regionCode, data.regionCode));
-			} else {
-				existingConditions.push(isNull(holidayPreset.regionCode));
-			}
-
-			const existing = yield* _(
-				actor.dbService.query("checkExisting", async () => {
-					const [p] = await actor.dbService.db
-						.select()
-						.from(holidayPreset)
-						.where(and(...existingConditions))
-						.limit(1);
-					return p;
-				}),
+		if (existing) {
+			yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: data.year
+							? "A preset for this location and year already exists"
+							: "A preset for this location already exists",
+						conflictType: "duplicate_location",
+						details: { existingId: existing.id, year: data.year ?? null },
+					}),
+				),
 			);
-
-			if (existing) {
-				yield* _(
-					Effect.fail(
-						new ConflictError({
-							message: "A preset for this location already exists",
-							conflictType: "duplicate_location",
-							details: { existingId: existing.id },
-						}),
-					),
-				);
-			}
 		}
 
 		// Create preset
@@ -412,6 +405,7 @@ export async function createHolidayPreset(
 						countryCode: data.countryCode || null,
 						stateCode: data.stateCode || null,
 						regionCode: data.regionCode || null,
+						year: data.year ?? null,
 						color: data.color || null,
 						isActive: data.isActive ?? true,
 						createdBy: actor.session.user.id,
@@ -482,6 +476,35 @@ export async function updateHolidayPreset(
 			),
 		);
 
+		const existingConditions = buildPresetLocationConflictConditions(actor.organizationId, data, {
+			excludePresetId: presetId,
+		});
+
+		const existing = yield* _(
+			actor.dbService.query("checkExistingUpdate", async () => {
+				const [p] = await actor.dbService.db
+					.select()
+					.from(holidayPreset)
+					.where(and(...existingConditions))
+					.limit(1);
+				return p;
+			}),
+		);
+
+		if (existing) {
+			yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: data.year
+							? "A preset for this location and year already exists"
+							: "A preset for this location already exists",
+						conflictType: "duplicate_location",
+						details: { existingId: existing.id, year: data.year ?? null },
+					}),
+				),
+			);
+		}
+
 		// Update preset
 		const updatedPreset = yield* _(
 			actor.dbService.query("updatePreset", async () => {
@@ -493,6 +516,7 @@ export async function updateHolidayPreset(
 						countryCode: data.countryCode || null,
 						stateCode: data.stateCode || null,
 						regionCode: data.regionCode || null,
+						year: data.year ?? null,
 						color: data.color || null,
 						isActive: data.isActive ?? true,
 						updatedBy: actor.session.user.id,
@@ -662,6 +686,37 @@ export async function addHolidayToPreset(
 			),
 		);
 
+		if (data.categoryId) {
+			const categoryId = data.categoryId;
+			const category = yield* _(
+				actor.dbService.query("verifyHolidayCategory", async () => {
+					const [row] = await actor.dbService.db
+						.select({ id: holidayCategory.id })
+						.from(holidayCategory)
+						.where(
+							and(
+								eq(holidayCategory.id, categoryId),
+								eq(holidayCategory.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+					return row;
+				}),
+			);
+
+			if (!category) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Holiday category not found",
+							entityType: "holiday_category",
+							entityId: categoryId,
+						}),
+					),
+				);
+			}
+		}
+
 		// Create holiday
 		const newHoliday = yield* _(
 			actor.dbService.query("createHoliday", async () => {
@@ -747,6 +802,37 @@ export async function bulkAddHolidaysToPreset(
 			),
 		);
 
+		if (categoryId) {
+			const holidayCategoryId = categoryId;
+			const category = yield* _(
+				actor.dbService.query("verifyHolidayCategory", async () => {
+					const [row] = await actor.dbService.db
+						.select({ id: holidayCategory.id })
+						.from(holidayCategory)
+						.where(
+							and(
+								eq(holidayCategory.id, holidayCategoryId),
+								eq(holidayCategory.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+					return row;
+				}),
+			);
+
+			if (!category) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Holiday category not found",
+							entityType: "holiday_category",
+							entityId: holidayCategoryId,
+						}),
+					),
+				);
+			}
+		}
+
 		// Bulk insert holidays
 		const result = yield* _(
 			actor.dbService.query("bulkInsert", async () => {
@@ -802,6 +888,43 @@ export async function deleteHolidayFromPreset(
 			}),
 		);
 
+		const presetHoliday = yield* _(
+			actor.dbService.query("verifyPresetHoliday", async () => {
+				const [row] = await actor.dbService.db
+					.select({ id: holidayPresetHoliday.id })
+					.from(holidayPresetHoliday)
+					.innerJoin(holidayPreset, eq(holidayPresetHoliday.presetId, holidayPreset.id))
+					.where(
+						and(
+							eq(holidayPresetHoliday.id, holidayId),
+							eq(holidayPreset.organizationId, actor.organizationId),
+						),
+					)
+					.limit(1);
+				return row;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Preset holiday not found",
+						entityType: "holiday_preset_holiday",
+						entityId: holidayId,
+					}),
+			),
+		);
+
+		if (!presetHoliday) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset holiday not found",
+						entityType: "holiday_preset_holiday",
+						entityId: holidayId,
+					}),
+				),
+			);
+		}
+
 		// Delete (hard delete since it's a preset holiday)
 		yield* _(
 			actor.dbService.query("deleteHoliday", async () => {
@@ -856,6 +979,7 @@ export async function getPresetAssignments(
 						preset: {
 							id: holidayPreset.id,
 							name: holidayPreset.name,
+							year: holidayPreset.year,
 							color: holidayPreset.color,
 							countryCode: holidayPreset.countryCode,
 							stateCode: holidayPreset.stateCode,
@@ -930,42 +1054,156 @@ export async function createPresetAssignment(
 			}),
 		);
 
+		const preset = yield* _(
+			actor.dbService.query("verifyAssignmentPreset", async () => {
+				const [p] = await actor.dbService.db
+					.select({ id: holidayPreset.id })
+					.from(holidayPreset)
+					.where(
+						and(
+							eq(holidayPreset.id, data.presetId),
+							eq(holidayPreset.organizationId, actor.organizationId),
+						),
+					)
+					.limit(1);
+				return p;
+			}),
+			Effect.mapError(
+				() =>
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "holiday_preset",
+						entityId: data.presetId,
+					}),
+			),
+		);
+
+		if (!preset) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "holiday_preset",
+						entityId: data.presetId,
+					}),
+				),
+			);
+		}
+
+		if (data.assignmentType === "team") {
+			const targetTeam = yield* _(
+				actor.dbService.query("verifyAssignmentTeam", async () => {
+					const [row] = await actor.dbService.db
+						.select({ id: team.id })
+						.from(team)
+						.where(
+							and(eq(team.id, data.teamId ?? ""), eq(team.organizationId, actor.organizationId)),
+						)
+						.limit(1);
+					return row;
+				}),
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Team not found",
+							entityType: "team",
+							entityId: data.teamId ?? "",
+						}),
+				),
+			);
+
+			if (!targetTeam) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Team not found",
+							entityType: "team",
+							entityId: data.teamId ?? "",
+						}),
+					),
+				);
+			}
+		}
+
+		if (data.assignmentType === "employee") {
+			const targetEmployee = yield* _(
+				actor.dbService.query("verifyAssignmentEmployee", async () => {
+					const [row] = await actor.dbService.db
+						.select({ id: employee.id })
+						.from(employee)
+						.where(
+							and(
+								eq(employee.id, data.employeeId ?? ""),
+								eq(employee.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+					return row;
+				}),
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: data.employeeId ?? "",
+						}),
+				),
+			);
+
+			if (!targetEmployee) {
+				yield* _(
+					Effect.fail(
+						new NotFoundError({
+							message: "Employee not found",
+							entityType: "employee",
+							entityId: data.employeeId ?? "",
+						}),
+					),
+				);
+			}
+		}
+
 		// Calculate priority based on assignment type
 		const priority =
 			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
-		// Check for existing assignment based on type
-		const existingConditions: SQL[] = [
-			eq(holidayPresetAssignment.organizationId, organizationId),
+		const targetConditions: SQL[] = [
+			eq(holidayPresetAssignment.organizationId, actor.organizationId),
+			eq(holidayPresetAssignment.assignmentType, data.assignmentType),
 			eq(holidayPresetAssignment.isActive, true),
 		];
 
-		if (data.assignmentType === "organization") {
-			existingConditions.push(eq(holidayPresetAssignment.assignmentType, "organization"));
-		} else if (data.assignmentType === "team" && data.teamId) {
-			existingConditions.push(eq(holidayPresetAssignment.teamId, data.teamId));
+		if (data.assignmentType === "team" && data.teamId) {
+			targetConditions.push(eq(holidayPresetAssignment.teamId, data.teamId));
 		} else if (data.assignmentType === "employee" && data.employeeId) {
-			existingConditions.push(eq(holidayPresetAssignment.employeeId, data.employeeId));
+			targetConditions.push(eq(holidayPresetAssignment.employeeId, data.employeeId));
 		}
 
-		const existing = yield* _(
-			actor.dbService.query("checkExisting", async () => {
-				const [a] = await actor.dbService.db
+		const existingAssignments = yield* _(
+			actor.dbService.query("checkExistingRange", async () => {
+				return await actor.dbService.db
 					.select()
 					.from(holidayPresetAssignment)
-					.where(and(...existingConditions))
-					.limit(1);
-				return a;
+					.where(and(...targetConditions));
 			}),
 		);
 
-		if (existing) {
+		const overlappingAssignment = existingAssignments.find((assignment) =>
+			assignmentRangesOverlap(
+				assignment.effectiveFrom,
+				assignment.effectiveUntil,
+				data.effectiveFrom,
+				data.effectiveUntil,
+			),
+		);
+
+		if (overlappingAssignment) {
 			yield* _(
 				Effect.fail(
 					new ConflictError({
-						message: "An assignment already exists for this target",
-						conflictType: "duplicate_assignment",
-						details: { existingId: existing.id },
+						message: "An assignment already exists for this target in the selected date range",
+						conflictType: "duplicate_assignment_range",
+						details: { existingId: overlappingAssignment.id },
 					}),
 				),
 			);
@@ -978,7 +1216,7 @@ export async function createPresetAssignment(
 					.insert(holidayPresetAssignment)
 					.values({
 						presetId: data.presetId,
-						organizationId,
+						organizationId: actor.organizationId,
 						assignmentType: data.assignmentType,
 						teamId: data.teamId || null,
 						employeeId: data.employeeId || null,
@@ -1027,12 +1265,19 @@ export async function deletePresetAssignment(
 		);
 
 		// Soft delete
-		yield* _(
+		const deletedAssignment = yield* _(
 			actor.dbService.query("deleteAssignment", async () => {
-				await actor.dbService.db
+				const [assignment] = await actor.dbService.db
 					.update(holidayPresetAssignment)
 					.set({ isActive: false })
-					.where(eq(holidayPresetAssignment.id, assignmentId));
+					.where(
+						and(
+							eq(holidayPresetAssignment.id, assignmentId),
+							eq(holidayPresetAssignment.organizationId, actor.organizationId),
+						),
+					)
+					.returning({ id: holidayPresetAssignment.id });
+				return assignment;
 			}),
 			Effect.mapError(
 				(error) =>
@@ -1044,6 +1289,18 @@ export async function deletePresetAssignment(
 					}),
 			),
 		);
+
+		if (!deletedAssignment) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Preset assignment not found",
+						entityType: "holiday_preset_assignment",
+						entityId: assignmentId,
+					}),
+				),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runPresetServerAction(effect);
@@ -1060,20 +1317,22 @@ export async function getTeamsForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<TeamListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getTeamsForAssignment:actor",
+			}),
+		);
 
 		const teams = yield* _(
-			dbService.query("getTeams", async () => {
-				return await dbService.db
+			actor.dbService.query("getTeams", async () => {
+				return await actor.dbService.db
 					.select({
 						id: team.id,
 						name: team.name,
 					})
 					.from(team)
-					.where(eq(team.organizationId, organizationId))
+					.where(eq(team.organizationId, actor.organizationId))
 					.orderBy(team.name);
 			}),
 		);
@@ -1091,14 +1350,16 @@ export async function getEmployeesForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<EmployeeListItem[]>> {
 	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
-
-		const dbService = yield* _(DatabaseService);
+		const actor = yield* _(
+			getEmployeeSettingsActorContext({
+				organizationId,
+				queryName: "getEmployeesForAssignment:actor",
+			}),
+		);
 
 		const employees = yield* _(
-			dbService.query("getEmployees", async () => {
-				return await dbService.db
+			actor.dbService.query("getEmployees", async () => {
+				return await actor.dbService.db
 					.select({
 						id: employee.id,
 						firstName: user.firstName,
@@ -1107,7 +1368,7 @@ export async function getEmployeesForAssignment(
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
-					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+					.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)))
 					.orderBy(user.firstName, user.lastName);
 			}),
 		);

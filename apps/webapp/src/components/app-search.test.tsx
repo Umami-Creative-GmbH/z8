@@ -151,6 +151,26 @@ describe("AppSearch", () => {
 		expect(screen.getByText("No results found.")).not.toBeNull();
 	});
 
+	it("matches static results by keywords", () => {
+		renderAppSearch([
+			{
+				type: "page",
+				id: "team-absences",
+				title: "Team Absences",
+				subtitle: "Review employee absence metrics and record absences",
+				href: "/team/absences",
+				keywords: ["team", "absence", "sick", "vacation", "manager"],
+			},
+		]);
+
+		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
+			target: { value: "vacation" },
+		});
+
+		expect(screen.getByText("Team Absences")).not.toBeNull();
+	});
+
 	it("loads live results after typing and navigates to an employee result", async () => {
 		searchAppRecordsActionMock.mockResolvedValue({
 			success: true,

@@ -102,6 +102,8 @@ const mockState = vi.hoisted(() => ({
 		},
 	],
 	countResult: 4,
+	holidayRows: [{ id: "holiday-org", organizationId: "org-1" }],
+	deleteCalls: [] as Array<any>,
 	updateCalls: [] as Array<any>,
 }));
 
@@ -158,6 +160,28 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 								findMany: vi.fn(async () => mockState.holidayAssignments),
 							},
 						},
+						select: vi.fn(() => ({
+							from: vi.fn(() => ({
+								where: vi.fn(() => ({
+									limit: vi.fn(async () => mockState.holidayRows),
+								})),
+							})),
+						})),
+						delete: vi.fn((table: unknown) => ({
+							where: vi.fn((condition: unknown) => {
+								mockState.deleteCalls.push({ table, condition });
+								return {
+									returning: vi.fn(async () => [{ id: "holiday-org" }, { id: "holiday-team" }]),
+								};
+							}),
+						})),
+						update: vi.fn(() => ({
+							set: vi.fn((value: unknown) => ({
+								where: vi.fn(async () => {
+									mockState.updateCalls.push(value);
+								}),
+							})),
+						})),
 					},
 					query: (_key: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 				},
@@ -324,7 +348,7 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { deleteHoliday, getHolidayAssignments } = await import("./actions");
+const { bulkDeleteHolidays, deleteHoliday, getHolidayAssignments } = await import("./actions");
 
 describe("holiday settings scope behavior", () => {
 	beforeEach(() => {
@@ -346,6 +370,8 @@ describe("holiday settings scope behavior", () => {
 		};
 		mockState.managedEmployeeIds = new Set(["employee-managed"]);
 		mockState.teamPermissionsRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
+		mockState.holidayRows = [{ id: "holiday-org", organizationId: "org-1" }];
+		mockState.deleteCalls = [];
 		mockState.updateCalls = [];
 	});
 
@@ -368,6 +394,29 @@ describe("holiday settings scope behavior", () => {
 		expect(result.success).toBe(false);
 		expect(result.code).toBe("AuthorizationError");
 		expect(result.error).toBe("Only org admins can delete holidays");
+		expect(mockState.updateCalls).toEqual([]);
+	});
+
+	it("hard deletes holidays for org admins", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const result = await deleteHoliday("holiday-org");
+
+		expect(result.success).toBe(true);
+		expect(mockState.deleteCalls).toHaveLength(1);
+		expect(mockState.updateCalls).toEqual([]);
+	});
+
+	it("hard deletes multiple holidays for org admins", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+
+		const result = await bulkDeleteHolidays(["holiday-org", "holiday-team"]);
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.deleted).toBe(2);
+		}
+		expect(mockState.deleteCalls).toHaveLength(1);
 		expect(mockState.updateCalls).toEqual([]);
 	});
 });

@@ -1,5 +1,9 @@
 import { DateTime } from "luxon";
 import { eachDayOfInterval, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
+import {
+	calculateFiscalCarryoverExpiryDate,
+	getFiscalYearRangeForLabelYear,
+} from "@/lib/fiscal-year";
 import type { DayPeriod, Holiday } from "./types";
 
 /**
@@ -173,10 +177,15 @@ export function calculateBusinessDaysWithHalfDays(
  * @param year - Calendar year
  * @returns Start and end dates as DateTime objects
  */
-export function getYearRange(year: number): { start: DateTime; end: DateTime } {
+export function getYearRange(
+	year: number,
+	fiscalYearStartMonth: number | null | undefined = 1,
+): { start: DateTime; end: DateTime } {
+	const range = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
+
 	return {
-		start: DateTime.utc(year, 1, 1).startOf("day"), // January 1st
-		end: DateTime.utc(year, 12, 31).endOf("day"), // December 31st
+		start: range.start,
+		end: range.end,
 	};
 }
 
@@ -187,20 +196,12 @@ export function getYearRange(year: number): { start: DateTime; end: DateTime } {
  * @param expiryMonths - Number of months until expiry
  * @returns Expiry date as DateTime
  */
-export function calculateCarryoverExpiryDate(year: number, expiryMonths: number): DateTime {
-	// Start at January 1st of current year
-	let expiryDate = DateTime.utc(year, 1, 1);
-
-	// Add months
-	expiryDate = expiryDate.plus({ months: expiryMonths });
-
-	// Go to last day of previous month
-	expiryDate = expiryDate.minus({ days: 1 });
-
-	// Set to end of day
-	expiryDate = expiryDate.endOf("day");
-
-	return expiryDate;
+export function calculateCarryoverExpiryDate(
+	year: number,
+	expiryMonths: number,
+	fiscalYearStartMonth: number | null | undefined = 1,
+): DateTime {
+	return calculateFiscalCarryoverExpiryDate(year, fiscalYearStartMonth, expiryMonths);
 }
 
 /**

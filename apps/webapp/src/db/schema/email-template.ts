@@ -18,6 +18,7 @@ export const EMAIL_TEMPLATE_KEYS = [
 	"absence-request-submitted",
 	"absence-request-pending-approval",
 	"absence-request-approved",
+	"absence-recorded-by-manager",
 	"absence-request-rejected",
 	"time-correction-pending-approval",
 	"time-correction-approved",

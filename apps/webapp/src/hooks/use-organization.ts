@@ -31,6 +31,7 @@ interface OrganizationSettingsResponse {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	timezone: string;
+	fiscalYearStartMonth: number;
 	deletedAt: string | null;
 }
 

@@ -39,6 +39,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
 
+const assignmentDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const holidayDateFormatter = new Intl.DateTimeFormat(undefined, {
+	month: "short",
+	day: "numeric",
+});
+
 interface AssignmentManagerProps {
 	organizationId: string;
 	canManage: boolean;
@@ -60,6 +66,7 @@ interface PresetAssignmentData {
 	preset: {
 		id: string;
 		name: string;
+		year: number | null;
 		color: string | null;
 		countryCode: string | null;
 		stateCode: string | null;
@@ -228,9 +235,25 @@ export function AssignmentManager({
 
 	// Group preset assignments by type
 	const presets = presetAssignments || [];
-	const orgPresetAssignment = presets.find((a) => a.assignmentType === "organization");
+	const orgPresetAssignments = presets.filter((a) => a.assignmentType === "organization");
 	const teamPresetAssignments = presets.filter((a) => a.assignmentType === "team");
 	const employeePresetAssignments = presets.filter((a) => a.assignmentType === "employee");
+	function formatPresetYear(year: number | null) {
+		return year ? t("settings.holidays.presets.yearValue", "Year {year}", { year }) : null;
+	}
+
+	function formatAssignmentRange(effectiveFrom: Date | null, effectiveUntil: Date | null) {
+		if (!effectiveFrom && !effectiveUntil) {
+			return t("settings.holidays.assignments.always", "Always");
+		}
+		const from = effectiveFrom
+			? assignmentDateFormatter.format(effectiveFrom)
+			: t("common.start", "Start");
+		const until = effectiveUntil
+			? assignmentDateFormatter.format(effectiveUntil)
+			: t("common.openEnded", "Open ended");
+		return t("settings.holidays.assignments.range", "{from} to {until}", { from, until });
+	}
 
 	// Group holiday assignments by type
 	const holidays = holidayAssignments || [];
@@ -272,15 +295,14 @@ export function AssignmentManager({
 	}
 
 	const formatDateRange = (startDate: Date | string, endDate: Date | string) => {
-		const start = new Date(startDate).toLocaleDateString("default", {
-			month: "short",
-			day: "numeric",
-		});
-		const end = new Date(endDate).toLocaleDateString("default", {
-			month: "short",
-			day: "numeric",
-		});
-		return start === end ? start : `${start} - ${end}`;
+		const start = holidayDateFormatter.format(new Date(startDate));
+		const end = holidayDateFormatter.format(new Date(endDate));
+		return start === end
+			? start
+			: t("settings.holidays.assignments.range", "{from} to {until}", {
+					from: start,
+					until: end,
+				});
 	};
 
 	return (
@@ -311,44 +333,62 @@ export function AssignmentManager({
 								<h4 className="text-sm font-medium text-muted-foreground">
 									{t("settings.holidays.assignments.presetSection", "Holiday Preset")}
 								</h4>
-								{canManage && !orgPresetAssignment && (
+								{canManage && (
 									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
 										<IconPlus className="mr-2 h-4 w-4" />
 										{t("settings.holidays.assignments.setDefault", "Set Default")}
 									</Button>
 								)}
 							</div>
-							{orgPresetAssignment ? (
-								<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
-									<div className="flex items-center gap-3">
-										{orgPresetAssignment.preset.color && (
-											<div
-												className="w-3 h-3 rounded-full flex-shrink-0"
-												style={{ backgroundColor: orgPresetAssignment.preset.color }}
-											/>
-										)}
-										<div>
-											<span className="font-medium">{orgPresetAssignment.preset.name}</span>
-											{orgPresetAssignment.preset.countryCode && (
-												<span className="text-sm text-muted-foreground ml-2">
-													({orgPresetAssignment.preset.countryCode}
-													{orgPresetAssignment.preset.stateCode &&
-														`-${orgPresetAssignment.preset.stateCode}`}
-													)
-												</span>
-											)}
+							{orgPresetAssignments.length > 0 ? (
+								<div className="space-y-2">
+									{orgPresetAssignments.map((assignment) => (
+										<div
+											key={assignment.id}
+											className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+										>
+											<div className="flex items-center gap-3">
+												{assignment.preset.color && (
+													<div
+														className="w-3 h-3 rounded-full flex-shrink-0"
+														style={{ backgroundColor: assignment.preset.color }}
+													/>
+												)}
+												<div>
+													<span className="font-medium">{assignment.preset.name}</span>
+													{formatPresetYear(assignment.preset.year) && (
+														<Badge variant="outline" className="ml-2">
+															{formatPresetYear(assignment.preset.year)}
+														</Badge>
+													)}
+													{assignment.preset.countryCode && (
+														<span className="text-sm text-muted-foreground ml-2">
+															({assignment.preset.countryCode}
+															{assignment.preset.stateCode && `-${assignment.preset.stateCode}`})
+														</span>
+													)}
+													<p className="text-sm text-muted-foreground">
+														{formatAssignmentRange(assignment.effectiveFrom, assignment.effectiveUntil)}
+													</p>
+												</div>
+											</div>
+											{canManage ? (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													onClick={() => handleDeletePresetClick(assignment)}
+													aria-label={t(
+														"settings.holidays.assignments.removePresetAssignment",
+														'Remove preset assignment for "{preset}"',
+														{ preset: assignment.preset.name },
+													)}
+												>
+													<IconTrash className="h-4 w-4" />
+												</Button>
+											) : null}
 										</div>
-									</div>
-									{canManage ? (
-										<Button
-											variant="ghost"
-										size="icon"
-										className="h-8 w-8 text-muted-foreground hover:text-destructive"
-										onClick={() => handleDeletePresetClick(orgPresetAssignment)}
-									>
-										<IconTrash className="h-4 w-4" />
-										</Button>
-									) : null}
+									))}
 								</div>
 							) : (
 								<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
@@ -406,9 +446,14 @@ export function AssignmentManager({
 										<Button
 											variant="ghost"
 												size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteHolidayClick(assignment)}
-											>
+											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											onClick={() => handleDeleteHolidayClick(assignment)}
+											aria-label={t(
+												"settings.holidays.assignments.removeHolidayAssignment",
+												'Remove holiday assignment for "{holiday}"',
+												{ holiday: assignment.holiday.name },
+											)}
+										>
 												<IconTrash className="h-4 w-4" />
 										</Button>
 									) : null}
@@ -491,6 +536,11 @@ export function AssignmentManager({
 														<span className="text-muted-foreground mx-2">→</span>
 														<span className="text-sm">
 															{assignment.preset.name}
+															{formatPresetYear(assignment.preset.year) && (
+																<Badge variant="outline" className="ml-2">
+																	{formatPresetYear(assignment.preset.year)}
+																</Badge>
+															)}
 															{assignment.preset.color && (
 																<span
 																	className="inline-block w-2 h-2 rounded-full ml-2"
@@ -498,15 +548,23 @@ export function AssignmentManager({
 																/>
 															)}
 														</span>
+														<p className="text-sm text-muted-foreground">
+															{formatAssignmentRange(assignment.effectiveFrom, assignment.effectiveUntil)}
+														</p>
 													</div>
 												</div>
 										{canManage ? (
 											<Button
 												variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeletePresetClick(assignment)}
-												>
+												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeletePresetClick(assignment)}
+												aria-label={t(
+													"settings.holidays.assignments.removeTeamPresetAssignment",
+													'Remove preset assignment for team "{team}"',
+													{ team: assignment.team?.name ?? "" },
+												)}
+											>
 													<IconTrash className="h-4 w-4" />
 											</Button>
 										) : null}
@@ -555,9 +613,14 @@ export function AssignmentManager({
 											<Button
 												variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeleteHolidayClick(assignment)}
-												>
+												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeleteHolidayClick(assignment)}
+												aria-label={t(
+													"settings.holidays.assignments.removeTeamHolidayAssignment",
+													'Remove holiday assignment for team "{team}"',
+													{ team: assignment.team?.name ?? "" },
+												)}
+											>
 													<IconTrash className="h-4 w-4" />
 											</Button>
 										) : null}
@@ -644,6 +707,11 @@ export function AssignmentManager({
 														<span className="text-muted-foreground mx-2">→</span>
 														<span className="text-sm">
 															{assignment.preset.name}
+															{formatPresetYear(assignment.preset.year) && (
+																<Badge variant="outline" className="ml-2">
+																	{formatPresetYear(assignment.preset.year)}
+																</Badge>
+															)}
 															{assignment.preset.color && (
 																<span
 																	className="inline-block w-2 h-2 rounded-full ml-2"
@@ -651,15 +719,25 @@ export function AssignmentManager({
 																/>
 															)}
 														</span>
+														<p className="text-sm text-muted-foreground">
+															{formatAssignmentRange(assignment.effectiveFrom, assignment.effectiveUntil)}
+														</p>
 													</div>
 												</div>
 										{canManage ? (
 											<Button
 												variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeletePresetClick(assignment)}
-												>
+												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeletePresetClick(assignment)}
+												aria-label={t(
+													"settings.holidays.assignments.removeEmployeePresetAssignment",
+													'Remove preset assignment for employee "{employee}"',
+													{
+														employee: `${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
+													},
+												)}
+											>
 													<IconTrash className="h-4 w-4" />
 											</Button>
 										) : null}
@@ -717,9 +795,16 @@ export function AssignmentManager({
 											<Button
 												variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
-													onClick={() => handleDeleteHolidayClick(assignment)}
-												>
+												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												onClick={() => handleDeleteHolidayClick(assignment)}
+												aria-label={t(
+													"settings.holidays.assignments.removeEmployeeHolidayAssignment",
+													'Remove holiday assignment for employee "{employee}"',
+													{
+														employee: `${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`.trim(),
+													},
+												)}
+											>
 													<IconTrash className="h-4 w-4" />
 											</Button>
 										) : null}

@@ -78,7 +78,7 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 		let subjectOverride = title;
 
 		// Generate email content based on notification type
-		switch (type) {
+			switch (type) {
 			case "absence_request_submitted":
 				if (metadata) {
 					templateKey = "absence-request-submitted";
@@ -97,17 +97,31 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 
 			case "absence_request_approved":
 				if (metadata) {
-					templateKey = "absence-request-approved";
-					subjectOverride = "Absence Request Approved";
-					templateData = {
-						employeeName: userName,
-						approverName: String(metadata.approverName || ""),
-						startDate: String(metadata.startDate || ""),
-						endDate: String(metadata.endDate || ""),
-						absenceType: String(metadata.absenceType || ""),
-						days: Number(metadata.days || 0),
-						appUrl,
-					};
+					if (metadata.managerRecorded === true) {
+						templateKey = "absence-recorded-by-manager";
+						subjectOverride = "Absence Recorded";
+						templateData = {
+							employeeName: userName,
+							managerName: String(metadata.managerName || ""),
+							startDate: String(metadata.startDate || ""),
+							endDate: String(metadata.endDate || ""),
+							absenceType: String(metadata.absenceType || ""),
+							days: Number(metadata.days || 0),
+							appUrl,
+						};
+					} else {
+						templateKey = "absence-request-approved";
+						subjectOverride = "Absence Request Approved";
+						templateData = {
+							employeeName: userName,
+							approverName: String(metadata.approverName || ""),
+							startDate: String(metadata.startDate || ""),
+							endDate: String(metadata.endDate || ""),
+							absenceType: String(metadata.absenceType || ""),
+							days: Number(metadata.days || 0),
+							appUrl,
+						};
+					}
 				}
 				break;
 

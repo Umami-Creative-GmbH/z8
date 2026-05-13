@@ -38,6 +38,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 
+const holidayDateFormatter = new Intl.DateTimeFormat(undefined, {
+	month: "long",
+	day: "numeric",
+	timeZone: "UTC",
+});
+
 interface PresetDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -63,20 +69,19 @@ interface PresetHoliday {
 	} | null;
 }
 
-const MONTH_NAMES = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-];
+interface PresetDetails {
+	preset: {
+		name: string;
+		description: string | null;
+		countryCode: string | null;
+		stateCode: string | null;
+		regionCode: string | null;
+		year: number | null;
+		color: string | null;
+		isActive: boolean;
+	};
+	holidays: PresetHoliday[];
+}
 
 export function PresetDialog({
 	open,
@@ -95,6 +100,7 @@ export function PresetDialog({
 			countryCode: "",
 			stateCode: "",
 			regionCode: "",
+			year: null as number | null,
 			color: "",
 			isActive: true,
 		},
@@ -112,7 +118,7 @@ export function PresetDialog({
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch preset");
 			}
-			return result.data as { preset: any; holidays: PresetHoliday[] };
+			return result.data as PresetDetails;
 		},
 		enabled: !!presetId && open,
 	});
@@ -125,6 +131,7 @@ export function PresetDialog({
 			form.setFieldValue("countryCode", data.preset.countryCode || "");
 			form.setFieldValue("stateCode", data.preset.stateCode || "");
 			form.setFieldValue("regionCode", data.preset.regionCode || "");
+			form.setFieldValue("year", data.preset.year);
 			form.setFieldValue("color", data.preset.color || "");
 			form.setFieldValue("isActive", data.preset.isActive);
 		}
@@ -138,6 +145,7 @@ export function PresetDialog({
 			countryCode: string;
 			stateCode: string;
 			regionCode: string;
+			year: number | null;
 			color: string;
 			isActive: boolean;
 		}) => updateHolidayPreset(presetId!, values),
@@ -176,7 +184,7 @@ export function PresetDialog({
 	});
 
 	const formatDate = (month: number, day: number) => {
-		return `${MONTH_NAMES[month - 1]} ${day}`;
+		return holidayDateFormatter.format(new Date(Date.UTC(2000, month - 1, day)));
 	};
 
 	const formatLocation = () => {
@@ -291,6 +299,15 @@ export function PresetDialog({
 								</div>
 							)}
 
+							{data?.preset?.year && (
+								<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+									<IconCalendar className="h-4 w-4" />
+									<span>
+										{t("settings.holidays.presets.year", "Year")}: {data.preset.year}
+									</span>
+								</div>
+							)}
+
 							<form.Field name="isActive">
 								{(field) => (
 									<div className="flex items-center justify-between rounded-lg border p-3">
@@ -366,6 +383,11 @@ export function PresetDialog({
 															className="h-8 w-8 text-muted-foreground hover:text-destructive"
 															onClick={() => deleteHolidayMutation.mutate(holiday.id)}
 															disabled={deleteHolidayMutation.isPending}
+															aria-label={t(
+																"settings.holidays.presets.removeHoliday",
+																'Remove holiday "{holiday}" from preset',
+																{ holiday: holiday.name },
+															)}
 														>
 															<IconTrash className="h-4 w-4" />
 														</Button>

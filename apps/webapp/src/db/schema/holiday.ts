@@ -100,6 +100,7 @@ export const holidayPreset = pgTable(
 		countryCode: text("country_code"), // ISO 3166-1 alpha-2 (e.g., "DE")
 		stateCode: text("state_code"), // ISO 3166-2 subdivision (e.g., "BY")
 		regionCode: text("region_code"), // Further subdivision if applicable
+		year: integer("year"), // Import year for year-specific presets, e.g. 2027
 		color: text("color"), // Hex color for UI display
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -113,12 +114,13 @@ export const holidayPreset = pgTable(
 	},
 	(table) => [
 		index("holidayPreset_organizationId_idx").on(table.organizationId),
-		// Unique constraint for same location within organization
-		uniqueIndex("holidayPreset_org_location_idx").on(
+		// SQL migration is authoritative for the COALESCE expression index.
+		uniqueIndex("holidayPreset_org_location_year_idx").on(
 			table.organizationId,
-			table.countryCode,
-			table.stateCode,
-			table.regionCode,
+			sql`COALESCE(${table.countryCode}, '')`,
+			sql`COALESCE(${table.stateCode}, '')`,
+			sql`COALESCE(${table.regionCode}, '')`,
+			sql`COALESCE(${table.year}, 0)`,
 		),
 	],
 );
@@ -184,18 +186,8 @@ export const holidayPresetAssignment = pgTable(
 		index("holidayPresetAssignment_organizationId_idx").on(table.organizationId),
 		index("holidayPresetAssignment_teamId_idx").on(table.teamId),
 		index("holidayPresetAssignment_employeeId_idx").on(table.employeeId),
-		// One org default per organization
-		uniqueIndex("holidayPresetAssignment_org_default_idx")
-			.on(table.organizationId, table.assignmentType)
-			.where(sql`assignment_type = 'organization' AND is_active = true`),
-		// One assignment per team
-		uniqueIndex("holidayPresetAssignment_team_idx")
-			.on(table.teamId)
-			.where(sql`team_id IS NOT NULL AND is_active = true`),
-		// One assignment per employee
-		uniqueIndex("holidayPresetAssignment_employee_idx")
-			.on(table.employeeId)
-			.where(sql`employee_id IS NOT NULL AND is_active = true`),
+		// Active assignment range exclusion constraints live in migration 0018;
+		// Drizzle does not model PostgreSQL EXCLUDE constraints here.
 	],
 );
 

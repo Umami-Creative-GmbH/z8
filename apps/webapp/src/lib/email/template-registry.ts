@@ -1,5 +1,6 @@
 import type { EmailTemplateKey } from "@/db/schema";
 import {
+	renderAbsenceRecordedByManager,
 	renderAbsenceRequestApproved,
 	renderAbsenceRequestPendingApproval,
 	renderAbsenceRequestRejected,
@@ -244,6 +245,32 @@ export const EMAIL_TEMPLATE_REGISTRY = [
 			appUrl,
 		},
 		renderDefault: renderAbsenceRequestApproved,
+	},
+	{
+		key: "absence-recorded-by-manager",
+		category: "absences",
+		label: "Absence recorded by manager",
+		description: "Notifies an employee that a manager recorded an absence on their behalf.",
+		defaultSubject: "Absence recorded",
+		variables: [
+			variable("employeeName", "Employee name", "Name of the employee with the recorded absence."),
+			variable("managerName", "Manager name", "Name of the manager who recorded the absence."),
+			variable("startDate", "Start date", "First day of the recorded absence."),
+			variable("endDate", "End date", "Last day of the recorded absence."),
+			variable("absenceType", "Absence type", "Type of recorded absence."),
+			variable("days", "Days", "Total number of recorded absence days."),
+			variable("appUrl", "App URL", "Base URL for the Z8 app."),
+		],
+		previewData: {
+			employeeName: "Alex Morgan",
+			managerName: "Jordan Lee",
+			startDate: "May 12, 2026",
+			endDate: "May 14, 2026",
+			absenceType: "Sick Leave",
+			days: 3,
+			appUrl,
+		},
+		renderDefault: renderAbsenceRecordedByManager,
 	},
 	{
 		key: "absence-request-rejected",

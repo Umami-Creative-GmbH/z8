@@ -122,6 +122,11 @@ export function AppSidebar({
 			url: "/team",
 			icon: IconUsers,
 		},
+		{
+			title: t("nav.teamAbsences", "Team Absences"),
+			url: "/team/absences",
+			icon: IconBeach,
+		},
 		// Only show Scheduling when shifts are enabled for the organization
 		...(shiftsEnabled
 			? [

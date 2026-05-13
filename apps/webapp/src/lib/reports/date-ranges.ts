@@ -4,16 +4,33 @@
  */
 
 import { DateTime } from "luxon";
+import {
+	getFiscalYearRangeForDate,
+	getFiscalYearToDateRange,
+	getPreviousFiscalYearRange,
+} from "@/lib/fiscal-year";
 import type { DateRange, PeriodPreset } from "./types";
+
+type DateRangePresetOptions = {
+	year?: number;
+	fiscalYearStartMonth?: number;
+	timezone?: string;
+};
 
 /**
  * Get date range for a preset period
  * @param preset - The preset period type
- * @param year - Optional year for quarter presets (defaults to current year)
+ * @param options - Optional year for quarter presets, or fiscal year settings for year presets
  * @returns Date range with start and end DateTime objects
  */
-export function getDateRangeForPreset(preset: PeriodPreset, year?: number): DateRange {
+export function getDateRangeForPreset(
+	preset: PeriodPreset,
+	options?: number | DateRangePresetOptions,
+): DateRange {
 	const now = DateTime.now();
+	const year = typeof options === "number" ? options : options?.year;
+	const fiscalYearStartMonth = typeof options === "number" ? 1 : options?.fiscalYearStartMonth;
+	const timezone = typeof options === "number" ? "UTC" : (options?.timezone ?? "UTC");
 	const targetYear = year ?? now.year;
 
 	switch (preset) {
@@ -32,19 +49,28 @@ export function getDateRangeForPreset(preset: PeriodPreset, year?: number): Date
 			};
 
 		case "last_year": {
-			const lastYear = now.minus({ years: 1 });
+			const lastYear = getPreviousFiscalYearRange(now, fiscalYearStartMonth, timezone);
 			return {
-				start: lastYear.startOf("year").toJSDate(),
-				end: lastYear.endOf("year").toJSDate(),
+				start: lastYear.start.toJSDate(),
+				end: lastYear.end.toJSDate(),
 			};
 		}
 
-		case "current_year":
-		case "ytd":
+		case "current_year": {
+			const currentYear = getFiscalYearRangeForDate(now, fiscalYearStartMonth, timezone);
 			return {
-				start: now.startOf("year").toJSDate(),
-				end: now.toJSDate(),
+				start: currentYear.start.toJSDate(),
+				end: currentYear.end.toJSDate(),
 			};
+		}
+
+		case "ytd": {
+			const yearToDate = getFiscalYearToDateRange(now, fiscalYearStartMonth, timezone);
+			return {
+				start: yearToDate.start.toJSDate(),
+				end: yearToDate.end.toJSDate(),
+			};
+		}
 
 		case "q1": {
 			const qStart = DateTime.local(targetYear, 1, 1);
@@ -103,7 +129,7 @@ export function getPresetLabel(preset: PeriodPreset, year?: number): string {
 		case "last_year":
 			return `${targetYear - 1}`;
 		case "current_year":
-			return `${targetYear} (Year to Date)`;
+			return `${targetYear}`;
 		case "ytd":
 			return "Year to Date";
 		case "q1":

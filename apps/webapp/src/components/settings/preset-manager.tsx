@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteHolidayPreset,
@@ -53,6 +53,7 @@ interface PresetData {
 	countryCode: string | null;
 	stateCode: string | null;
 	regionCode: string | null;
+	year: number | null;
 	color: string | null;
 	isActive: boolean;
 	createdAt: Date;
@@ -109,11 +110,14 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 		}
 	};
 
-	// Memoized to prevent recreation on every render
-	const formatLocation = useCallback((preset: PresetData) => {
+	function formatLocation(preset: PresetData) {
 		const parts = [preset.countryCode, preset.stateCode, preset.regionCode].filter(Boolean);
 		return parts.length > 0 ? parts.join(" - ") : null;
-	}, []);
+	}
+
+	function formatPresetYear(year: number) {
+		return t("settings.holidays.presets.yearValue", "Year {year}", { year });
+	}
 
 	if (isLoading) {
 		return (
@@ -208,6 +212,11 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 												)}
 												<h4 className="font-medium truncate">{preset.name}</h4>
 											</div>
+											{preset.year && (
+												<Badge variant="outline" className="mt-2">
+													{formatPresetYear(preset.year)}
+												</Badge>
+											)}
 											{formatLocation(preset) && (
 												<div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
 													<IconMapPin className="h-3 w-3" />
@@ -217,7 +226,12 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 										</div>
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="icon" className="h-8 w-8">
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8"
+													aria-label={t("settings.holidays.presets.actions", "Preset actions")}
+												>
 													<IconDotsVertical className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>

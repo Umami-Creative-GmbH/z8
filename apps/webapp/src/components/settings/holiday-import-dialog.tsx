@@ -9,6 +9,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -82,6 +83,27 @@ const HOLIDAY_TYPES: { value: HolidayType; label: string }[] = [
 	{ value: "public", label: "Public Holidays" },
 	{ value: "bank", label: "Bank Holidays" },
 ];
+
+const holidayPreviewDateFormatter = new Intl.DateTimeFormat(undefined, {
+	dateStyle: "medium",
+	timeZone: "UTC",
+});
+
+function formatHolidayPreviewDate(date: string) {
+	return holidayPreviewDateFormatter.format(DateTime.fromISO(date, { zone: "utc" }).toJSDate());
+}
+
+function getPresetNameWithYear(baseName: string, year: number) {
+	const trimmedName = baseName.trim();
+	return trimmedName.endsWith(year.toString()) ? trimmedName : `${trimmedName} ${year}`;
+}
+
+function getYearAssignmentRange(year: number) {
+	return {
+		effectiveFrom: DateTime.utc(year, 1, 1).startOf("day").toJSDate(),
+		effectiveUntil: DateTime.utc(year, 12, 31).endOf("day").toJSDate(),
+	};
+}
 
 export function HolidayImportDialog({
 	open,
@@ -271,7 +293,7 @@ export function HolidayImportDialog({
 		const nameParts = [countryName];
 		if (stateName) nameParts.push(stateName);
 		if (regionName) nameParts.push(regionName);
-		setPresetName(nameParts.join(" - "));
+		setPresetName(getPresetNameWithYear(nameParts.join(" - "), selectedYear));
 
 		setStep(2);
 		setPreviewLoading(false);
@@ -286,6 +308,7 @@ export function HolidayImportDialog({
 			countryCode: selectedCountry,
 			stateCode: selectedState || undefined,
 			regionCode: selectedRegion || undefined,
+			year: selectedYear,
 			color: presetColor,
 			isActive: true,
 		}).catch((error) => {
@@ -322,6 +345,8 @@ export function HolidayImportDialog({
 				};
 			});
 
+		const assignmentRange = getYearAssignmentRange(selectedYear);
+
 		// Step 2 & 3: Run in parallel - adding holidays and creating assignment are independent
 		const parallelOperations: Promise<{ success: boolean; error?: string }>[] = [];
 
@@ -336,6 +361,8 @@ export function HolidayImportDialog({
 				createPresetAssignment(organizationId, {
 					presetId,
 					assignmentType: "organization",
+					effectiveFrom: assignmentRange.effectiveFrom,
+					effectiveUntil: assignmentRange.effectiveUntil,
 					isActive: true,
 				}),
 			);
@@ -690,7 +717,7 @@ export function HolidayImportDialog({
 													/>
 												</TableCell>
 												<TableCell className="font-medium">{holiday.name}</TableCell>
-												<TableCell>{new Date(holiday.startDate).toLocaleDateString()}</TableCell>
+												<TableCell>{formatHolidayPreviewDate(holiday.startDate)}</TableCell>
 												<TableCell>
 													<Badge variant="outline" className="capitalize">
 														{holiday.type}

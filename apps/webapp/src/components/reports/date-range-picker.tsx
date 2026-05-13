@@ -1,7 +1,9 @@
 "use client";
 
 import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { DateTime } from "luxon";
+import { useId, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,6 +18,7 @@ import { format } from "@/lib/datetime/luxon-utils";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange, PeriodPreset } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
 interface DateRangePickerProps {
 	value: DateRange;
@@ -23,6 +26,14 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
+	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			fiscalYearStartMonth: state.fiscalYearStartMonth,
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const loadingDescriptionId = useId();
 	const [preset, setPreset] = useState<PeriodPreset>("current_month");
 	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -30,7 +41,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		setPreset(newPreset);
 
 		if (newPreset !== "custom") {
-			const range = getDateRangeForPreset(newPreset);
+			const range = getDateRangeForPreset(newPreset, { fiscalYearStartMonth, timezone });
 			onChange(range);
 			setIsCalendarOpen(false);
 		} else {
@@ -47,20 +58,28 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		}
 	};
 
-	const currentYear = new Date().getFullYear();
+	const currentYear = DateTime.now().year;
 
 	return (
 		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
 			{/* Preset Selector */}
-			<Select value={preset} onValueChange={(v) => handlePresetChange(v as PeriodPreset)}>
-				<SelectTrigger className="w-full sm:w-[200px]">
+			<Select
+				value={preset}
+				onValueChange={(v) => handlePresetChange(v as PeriodPreset)}
+				disabled={!isHydrated}
+			>
+				<SelectTrigger
+					aria-describedby={!isHydrated ? loadingDescriptionId : undefined}
+					aria-label="Period"
+					className="w-full sm:w-[200px]"
+				>
 					<SelectValue placeholder="Select period" />
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="last_month">Last Month</SelectItem>
 					<SelectItem value="current_month">Current Month</SelectItem>
 					<SelectItem value="last_year">Last Year</SelectItem>
-					<SelectItem value="current_year">Current Year (YTD)</SelectItem>
+					<SelectItem value="current_year">Current Year</SelectItem>
 					<SelectItem value="ytd">Year to Date</SelectItem>
 					<SelectItem value="q1">Q1 {currentYear}</SelectItem>
 					<SelectItem value="q2">Q2 {currentYear}</SelectItem>
@@ -69,6 +88,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 					<SelectItem value="custom">Custom Range</SelectItem>
 				</SelectContent>
 			</Select>
+			{!isHydrated && (
+				<p id={loadingDescriptionId} className="text-sm text-muted-foreground">
+					Loading organization settings before enabling presets.
+				</p>
+			)}
 
 			{/* Calendar Picker for Custom Range */}
 			{preset === "custom" && (

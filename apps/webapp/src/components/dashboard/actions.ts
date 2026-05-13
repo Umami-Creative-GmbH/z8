@@ -3,6 +3,7 @@
 import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { organization } from "@/db/auth-schema";
 import type { DashboardWidgetOrder } from "@/db/schema";
 import {
 	absenceEntry,
@@ -23,6 +24,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
@@ -1058,12 +1060,16 @@ export async function getVacationBalance(): Promise<
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+		const activeOrganizationId = session.session.activeOrganizationId;
 
 		// Get current employee
 		const currentEmployee = yield* _(
 			dbService.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, activeOrganizationId ?? ""),
+					),
 				});
 			}),
 			Effect.flatMap((emp) =>
@@ -1078,12 +1084,27 @@ export async function getVacationBalance(): Promise<
 			),
 		);
 
-		const currentYear = new Date().getFullYear();
+		const org = yield* _(
+			dbService.query("getVacationBalanceOrganizationFiscalYear", async () => {
+				return await dbService.db.query.organization.findFirst({
+					where: eq(organization.id, currentEmployee.organizationId),
+					columns: { fiscalYearStartMonth: true, timezone: true },
+				});
+			}),
+		);
+		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
+		const timezone = org?.timezone || "UTC";
+		const currentYear = getCurrentFiscalYearLabel(
+			DateTime.fromJSDate(currentTimestamp()).setZone(timezone),
+			fiscalYearStartMonth,
+			timezone,
+		);
 
 		// Check if organization has a vacation policy
 		const policy = yield* _(
 			Effect.tryPromise({
-				try: () => getVacationAllowance(currentEmployee.organizationId, currentYear),
+				try: () =>
+					getVacationAllowance(currentEmployee.organizationId, currentYear, fiscalYearStartMonth),
 				catch: () =>
 					new NotFoundError({
 						message: "Vacation policy not found",

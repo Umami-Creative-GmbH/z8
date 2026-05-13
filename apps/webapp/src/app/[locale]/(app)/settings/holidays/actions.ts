@@ -302,7 +302,7 @@ export async function getHolidayCategories(
 }
 
 /**
- * Delete a holiday (soft delete by setting isActive = false) using Effect pattern
+ * Delete a holiday using Effect pattern
  */
 export async function deleteHoliday(holidayId: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
@@ -342,15 +342,14 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 		yield* _(
 			actor.dbService.query("deleteHoliday", async () => {
 				await actor.dbService.db
-					.update(holiday)
-					.set({ isActive: false, updatedBy: actor.session.user.id })
-					.where(eq(holiday.id, holidayId));
+					.delete(holiday)
+					.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)));
 			}),
 			Effect.mapError(
 				(error) =>
 					new DatabaseError({
 						message: "Failed to delete holiday",
-						operation: "update",
+						operation: "delete",
 						table: "holiday",
 						cause: error,
 					}),
@@ -362,7 +361,7 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 }
 
 /**
- * Bulk delete holidays (soft delete by setting isActive = false) using Effect pattern
+ * Bulk delete holidays using Effect pattern
  */
 export async function bulkDeleteHolidays(
 	holidayIds: string[],
@@ -381,21 +380,20 @@ export async function bulkDeleteHolidays(
 
 		const result = yield* _(
 			actor.dbService.query("bulkDeleteHolidays", async () => {
-				const updateResult = await actor.dbService.db
-					.update(holiday)
-					.set({ isActive: false, updatedBy: actor.session.user.id })
+				const deleteResult = await actor.dbService.db
+					.delete(holiday)
 					.where(
 						and(inArray(holiday.id, holidayIds), eq(holiday.organizationId, actor.organizationId)),
 					)
 					.returning({ id: holiday.id });
 
-				return { deleted: updateResult.length };
+				return { deleted: deleteResult.length };
 			}),
 			Effect.mapError(
 				(error) =>
 					new DatabaseError({
 						message: "Failed to bulk delete holidays",
-						operation: "update",
+						operation: "delete",
 						table: "holiday",
 						cause: error,
 					}),
