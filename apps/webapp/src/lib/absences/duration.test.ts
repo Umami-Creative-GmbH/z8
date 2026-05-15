@@ -175,4 +175,29 @@ describe("absence duration helpers", () => {
 			}),
 		).toBe("Invalid date format");
 	});
+
+	it("throws when mapping invalid date-shaped input", () => {
+		expect(() =>
+			mapAbsenceDurationToCanonicalTimestamps({
+				categoryId: "category-1",
+				startDate: "2026-02-31",
+				endDate: "2026-02-31",
+				durationKind: "full_day",
+				notes: "",
+			}),
+		).toThrow("Invalid date format");
+	});
+
+	it("throws when mapping explicit partial-day input with only one time", () => {
+		expect(() =>
+			mapAbsenceDurationToCanonicalTimestamps({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-15",
+				durationKind: "partial_day",
+				startTime: "09:00",
+				notes: "",
+			}),
+		).toThrow("Enter a start time and end time for a partial-day absence.");
+	});
 });

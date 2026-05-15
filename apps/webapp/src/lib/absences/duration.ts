@@ -158,22 +158,39 @@ export function mapAbsenceDurationToCanonicalTimestamps(input: AbsenceDurationIn
 	startAt: Date;
 	endAt: Date;
 } {
+	const validationError = validateAbsenceDurationInput(input);
+
+	if (validationError) {
+		throw new Error(validationError);
+	}
+
 	const normalized = normalizeAbsenceDurationInput(input);
 
 	if (normalized.durationKind === "partial_day" && hasExplicitPartialTimes(normalized)) {
+		const startAt = DateTime.fromISO(`${normalized.startDate}T${normalized.startTime}`, {
+			zone: "utc",
+		});
+		const endAt = DateTime.fromISO(`${normalized.endDate}T${normalized.endTime}`, {
+			zone: "utc",
+		});
+
+		if (!startAt.isValid || !endAt.isValid) {
+			throw new Error("Invalid date format");
+		}
+
 		return {
-			startAt: DateTime.fromISO(`${normalized.startDate}T${normalized.startTime}`, {
-				zone: "utc",
-			}).toJSDate(),
-			endAt: DateTime.fromISO(`${normalized.endDate}T${normalized.endTime}`, {
-				zone: "utc",
-			}).toJSDate(),
+			startAt: startAt.toJSDate(),
+			endAt: endAt.toJSDate(),
 		};
 	}
 
 	if (normalized.durationKind === "partial_day") {
 		const startOfStartDate = DateTime.fromISO(normalized.startDate, { zone: "utc" }).startOf("day");
 		const endOfEndDate = DateTime.fromISO(normalized.endDate, { zone: "utc" }).endOf("day");
+
+		if (!startOfStartDate.isValid || !endOfEndDate.isValid) {
+			throw new Error("Invalid date format");
+		}
 
 		return {
 			startAt: (normalized.startPeriod === "pm"
@@ -187,9 +204,16 @@ export function mapAbsenceDurationToCanonicalTimestamps(input: AbsenceDurationIn
 		};
 	}
 
+	const startAt = DateTime.fromISO(normalized.startDate, { zone: "utc" }).startOf("day");
+	const endAt = DateTime.fromISO(normalized.endDate, { zone: "utc" }).endOf("day");
+
+	if (!startAt.isValid || !endAt.isValid) {
+		throw new Error("Invalid date format");
+	}
+
 	return {
-		startAt: DateTime.fromISO(normalized.startDate, { zone: "utc" }).startOf("day").toJSDate(),
-		endAt: DateTime.fromISO(normalized.endDate, { zone: "utc" }).endOf("day").toJSDate(),
+		startAt: startAt.toJSDate(),
+		endAt: endAt.toJSDate(),
 	};
 }
 
