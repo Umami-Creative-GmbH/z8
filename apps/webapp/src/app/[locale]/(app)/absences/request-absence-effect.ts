@@ -4,8 +4,19 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { absenceCategory, absenceEntry, employee } from "@/db/schema";
+import {
+	absenceCategory,
+	absenceEntry,
+	employee,
+	timeRecord,
+	timeRecordAbsence,
+} from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
+import {
+	adjustVacationAbsencesForSickness,
+	getBlockingOverlapMessage,
+} from "@/lib/absences/sick-vacation-override";
+import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
@@ -27,7 +38,7 @@ import {
 } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import {
-	syncAbsenceRequestToCanonicalRecord,
+	buildCanonicalAbsenceRecordValues,
 	syncCanonicalAbsenceApprovalState,
 } from "./actions.canonical";
 
@@ -45,6 +56,13 @@ type EmployeeWithUserContact = {
 	userId: string;
 	organizationId: string;
 };
+
+export function validateAbsenceSickDetail(input: {
+	categoryType: string;
+	sickDetail?: AbsenceRequest["sickDetail"] | null;
+}): string | null {
+	return validateSickDetailForCategory(input);
+}
 
 function validateRequestDates(data: AbsenceRequest) {
 	if (data.startDate > data.endDate) {
@@ -72,30 +90,42 @@ function validateRequestDates(data: AbsenceRequest) {
 
 function checkForOverlappingAbsences(
 	dbService: typeof DatabaseService.Service,
-	currentEmployeeId: string,
+	currentEmployee: RequestAbsenceEmployeeContext,
 	data: AbsenceRequest,
+	category: { type: string },
 ) {
 	return Effect.gen(function* (_) {
 		const overlappingAbsences = yield* _(
 			dbService.query("checkAbsenceOverlaps", async () => {
 				return await dbService.db.query.absenceEntry.findMany({
 					where: and(
-						eq(absenceEntry.employeeId, currentEmployeeId),
+						eq(absenceEntry.employeeId, currentEmployee.id),
+						eq(absenceEntry.organizationId, currentEmployee.organizationId),
 						or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
 					),
+					with: { category: true },
 				});
 			}),
 		);
 
 		for (const existing of overlappingAbsences) {
-			if (dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)) {
-				const isPending = existing.status === "pending";
+			if (!dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)) {
+				continue;
+			}
+
+			const message = getBlockingOverlapMessage({
+				newCategoryType: category.type,
+				newStartPeriod: data.startPeriod,
+				newEndPeriod: data.endPeriod,
+				existingStatus: existing.status,
+				existingCountsAgainstVacation: existing.category.countsAgainstVacation,
+			});
+
+			if (message) {
 				yield* _(
 					Effect.fail(
 						new ConflictError({
-							message: isPending
-								? "Absence request overlaps with an existing pending request"
-								: "Absence request overlaps with an existing approved absence",
+							message,
 							conflictType: "absence_overlap",
 							details: {
 								existingAbsenceId: existing.id,
@@ -172,89 +202,83 @@ function getRequestingEmployee(
 		);
 }
 
-function insertAbsenceEntry(
-	dbService: typeof DatabaseService.Service,
-	currentEmployee: RequestAbsenceEmployeeContext,
-	data: AbsenceRequest,
-) {
-	return dbService.query("insertAbsenceEntry", async () => {
-		const [newAbsence] = await dbService.db
-			.insert(absenceEntry)
-			.values({
-				employeeId: currentEmployee.id,
+function createRequestedAbsenceRecordsInTransaction(params: {
+	dbService: typeof DatabaseService.Service;
+	currentEmployee: RequestAbsenceEmployeeContext;
+	data: AbsenceRequest;
+	category: { countsAgainstVacation: boolean; requiresApproval: boolean; type: string };
+	createdBy: string;
+}) {
+	const { dbService, currentEmployee, data, category, createdBy } = params;
+
+	return dbService.query("createRequestedAbsenceRecords", async () => {
+		return await dbService.db.transaction(async (tx) => {
+			if (
+				category.type === "sick" &&
+				data.startPeriod === "full_day" &&
+				data.endPeriod === "full_day"
+			) {
+				await adjustVacationAbsencesForSickness({
+					tx,
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					sickStartDate: data.startDate,
+					sickEndDate: data.endDate,
+					updatedBy: createdBy,
+				});
+			}
+
+			const [newAbsence] = await tx
+				.insert(absenceEntry)
+				.values({
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					categoryId: data.categoryId,
+					startDate: data.startDate,
+					startPeriod: data.startPeriod,
+					endDate: data.endDate,
+					endPeriod: data.endPeriod,
+					notes: data.notes,
+					sickDetail: data.sickDetail ?? null,
+					status: "pending",
+				})
+				.returning();
+
+			const canonicalValues = buildCanonicalAbsenceRecordValues({
 				organizationId: currentEmployee.organizationId,
-				categoryId: data.categoryId,
+				employeeId: currentEmployee.id,
+				absenceCategoryId: data.categoryId,
 				startDate: data.startDate,
 				startPeriod: data.startPeriod,
 				endDate: data.endDate,
 				endPeriod: data.endPeriod,
-				notes: data.notes,
-				status: "pending",
-			})
-			.returning();
+				countsAgainstVacation: category.countsAgainstVacation,
+				requiresApproval: category.requiresApproval,
+				createdBy,
+			});
 
-		return newAbsence;
-	});
-}
+			const [canonicalRecord] = await tx
+				.insert(timeRecord)
+				.values(canonicalValues.timeRecord)
+				.returning({ id: timeRecord.id });
 
-function createCanonicalAbsenceRecord(params: {
-	currentEmployee: RequestAbsenceEmployeeContext;
-	absenceId: string;
-	data: AbsenceRequest;
-	countsAgainstVacation: boolean;
-	requiresApproval: boolean;
-	createdBy: string;
-}) {
-	const { currentEmployee, absenceId, data, countsAgainstVacation, requiresApproval, createdBy } =
-		params;
+			await tx.insert(timeRecordAbsence).values({
+				recordId: canonicalRecord.id,
+				...canonicalValues.timeRecordAbsence,
+			});
 
-	return Effect.promise(() =>
-		syncAbsenceRequestToCanonicalRecord({
-			organizationId: currentEmployee.organizationId,
-			employeeId: currentEmployee.id,
-			absenceCategoryId: data.categoryId,
-			startDate: data.startDate,
-			startPeriod: data.startPeriod,
-			endDate: data.endDate,
-			endPeriod: data.endPeriod,
-			countsAgainstVacation,
-			requiresApproval,
-			createdBy,
-		}),
-	).pipe(
-		Effect.tapError((error) =>
-			Effect.sync(() => {
-				logger.error(
-					{
-						error,
-						absenceId,
-						organizationId: currentEmployee.organizationId,
-					},
-					"Failed to sync absence request to canonical model",
+			await tx
+				.update(absenceEntry)
+				.set({ canonicalRecordId: canonicalRecord.id })
+				.where(
+					and(
+						eq(absenceEntry.id, newAbsence.id),
+						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					),
 				);
-			}),
-		),
-		Effect.mapError(
-			() =>
-				new ValidationError({
-					message: "Failed to persist canonical absence record",
-					field: "canonicalRecordId",
-					value: absenceId,
-				}),
-		),
-	);
-}
 
-function linkCanonicalRecord(
-	dbService: typeof DatabaseService.Service,
-	absenceId: string,
-	canonicalRecordId: string,
-) {
-	return dbService.query("linkAbsenceCanonicalRecord", async () => {
-		return await dbService.db
-			.update(absenceEntry)
-			.set({ canonicalRecordId })
-			.where(eq(absenceEntry.id, absenceId));
+			return { ...newAbsence, canonicalRecordId: canonicalRecord.id };
+		});
 	});
 }
 
@@ -500,11 +524,27 @@ function requestAbsenceWithResolverEffect(
 				);
 
 				yield* _(validateRequestDates(data));
-				yield* _(checkForOverlappingAbsences(dbService, currentEmployee.id, data));
-
 				const category = yield* _(
 					getAbsenceCategory(dbService, data.categoryId, currentEmployee.organizationId),
 				);
+
+				const sickDetailError = validateAbsenceSickDetail({
+					categoryType: category.type,
+					sickDetail: data.sickDetail,
+				});
+				if (sickDetailError) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: sickDetailError,
+								field: "sickDetail",
+								value: data.sickDetail,
+							}),
+						),
+					);
+				}
+
+				yield* _(checkForOverlappingAbsences(dbService, currentEmployee, data, category));
 
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);
@@ -528,23 +568,19 @@ function requestAbsenceWithResolverEffect(
 					"Absence request validated",
 				);
 
-				const newAbsence = yield* _(insertAbsenceEntry(dbService, currentEmployee, data));
-
-				span.setAttribute("absence.id", newAbsence.id);
-				span.setAttribute("absence.status", newAbsence.status);
-
-				const canonicalRecordId = yield* _(
-					createCanonicalAbsenceRecord({
+				const newAbsence = yield* _(
+					createRequestedAbsenceRecordsInTransaction({
+						dbService,
 						currentEmployee,
-						absenceId: newAbsence.id,
 						data,
-						countsAgainstVacation: category.countsAgainstVacation,
-						requiresApproval: category.requiresApproval,
+						category,
 						createdBy: userId,
 					}),
 				);
 
-				yield* _(linkCanonicalRecord(dbService, newAbsence.id, canonicalRecordId));
+				span.setAttribute("absence.id", newAbsence.id);
+				span.setAttribute("absence.status", newAbsence.status);
+				const canonicalRecordId = newAbsence.canonicalRecordId;
 
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 
