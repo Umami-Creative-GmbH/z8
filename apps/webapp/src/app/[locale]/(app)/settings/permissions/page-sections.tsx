@@ -24,6 +24,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import type { SelectableEmployee } from "../employees/actions";
 import type { TeamItem } from "./page-utils";
 
@@ -65,6 +66,10 @@ export function PermissionsTableCard(props: {
 }) {
 	const { t } = useTranslate();
 	const { loading, searchQuery, onSearchChange, onRefresh, employees, onEdit, getSummary } = props;
+	const presence = useEmployeeClockStatuses(
+		employees.map((employee) => employee.id),
+		{ polling: false },
+	);
 
 	return (
 		<Card>
@@ -139,6 +144,7 @@ export function PermissionsTableCard(props: {
 														seed={employee.id}
 														name={employee.user.name}
 														size="sm"
+														clockStatus={presence.getStatus(employee.id)}
 													/>
 													<div>
 														<div className="font-medium">{employee.user.name}</div>

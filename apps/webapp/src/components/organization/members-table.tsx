@@ -55,7 +55,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
-import { queryKeys } from "@/lib/query";
+import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface MembersTableProps {
@@ -85,6 +85,10 @@ export function MembersTable({
 	const [memberToRemove, setMemberToRemove] = useState<MemberWithUserAndEmployee | null>(null);
 	const [memberSearch, setMemberSearch] = useState("");
 	const [invitationSearch, setInvitationSearch] = useState("");
+	const presence = useEmployeeClockStatuses(
+		members.map((member) => member.employee?.id ?? ""),
+		{ polling: false },
+	);
 
 	// Sync local state when server-provided props change
 	useEffect(() => {
@@ -392,6 +396,11 @@ export function MembersTable({
 								name={row.original.user.name}
 								gender={row.original.employee?.gender ?? null}
 								size="sm"
+								clockStatus={
+									row.original.employee?.id
+										? presence.getStatus(row.original.employee.id)
+										: "unknown"
+								}
 							/>
 							<div>
 								<div className="font-medium">
@@ -548,6 +557,7 @@ export function MembersTable({
 			canManageMembers,
 			canManageEmployees,
 			isActioning,
+			presence,
 			getRoleBadgeColor,
 			handleRoleChange,
 			handleToggleStatus,

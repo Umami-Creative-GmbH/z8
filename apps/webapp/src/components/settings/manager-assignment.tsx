@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { useEmployeeClockStatuses } from "@/lib/query";
 
 interface Manager {
 	id: string;
@@ -63,6 +64,10 @@ export function ManagerAssignment({
 		() => initialManagerState.primaryManager,
 	);
 	const [loading, setLoading] = useState(false);
+	const presence = useEmployeeClockStatuses(
+		availableManagers.map((manager) => manager.id),
+		{ polling: false },
+	);
 
 	const handleManagerToggle = (managerId: string, checked: boolean) => {
 		const newSelected = new Set(selectedManagers);
@@ -185,6 +190,7 @@ export function ManagerAssignment({
 													seed={manager.id}
 													name={displayName}
 													size="sm"
+													clockStatus={presence.getStatus(manager.id)}
 												/>
 												<div className="flex-1">
 													<div className="font-medium">{displayName}</div>
@@ -228,6 +234,7 @@ export function ManagerAssignment({
 													seed={manager.id}
 													name={displayName}
 													size="sm"
+													clockStatus={presence.getStatus(manager.id)}
 												/>
 												<div className="flex-1">
 													<div className="font-medium">{displayName}</div>

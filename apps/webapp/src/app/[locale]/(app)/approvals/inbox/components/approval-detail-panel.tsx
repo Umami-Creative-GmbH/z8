@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import type { ApprovalType, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import { format, formatRelative } from "@/lib/datetime/luxon-utils";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
 	useApproveApproval,
@@ -91,6 +92,9 @@ export function ApprovalDetailPanel({
 	const { data: detail } = useApprovalDetail(approval?.id ?? null);
 	const approveMutation = useApproveApproval();
 	const rejectMutation = useRejectApproval();
+	const presence = useEmployeeClockStatuses(approval ? [approval.requester.id] : [], {
+		polling: false,
+	});
 
 	const handleApprove = async () => {
 		if (!approval) return;
@@ -161,6 +165,7 @@ export function ApprovalDetailPanel({
 								seed={approval.requester.userId}
 								name={approval.requester.name}
 								size="md"
+								clockStatus={presence.getStatus(approval.requester.id)}
 							/>
 							<div>
 								<div className="font-medium">{approval.requester.name}</div>
@@ -312,6 +317,7 @@ export function ApprovalDetailPanel({
 													seed={event.performedBy.name}
 													name={event.performedBy.name}
 													size="sm"
+													clockStatus="unknown"
 												/>
 											)}
 											<div className="flex-1 min-w-0">

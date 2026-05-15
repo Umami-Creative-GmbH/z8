@@ -166,6 +166,7 @@ export function AbsenceApprovalsTable() {
 							seed={row.original.requester.user.id}
 							name={row.original.requester.user.name}
 							size="sm"
+							clockStatus="unknown"
 						/>
 						<div>
 							<div className="font-medium">{row.original.requester.user.name}</div>

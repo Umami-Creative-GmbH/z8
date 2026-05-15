@@ -168,6 +168,7 @@ async function EmployeeAllowancesContent() {
 															name={emp.user.name}
 															gender={emp.gender}
 															size="sm"
+															clockStatus="unknown"
 														/>
 														<div>
 															<div className="font-medium">{emp.user.name}</div>

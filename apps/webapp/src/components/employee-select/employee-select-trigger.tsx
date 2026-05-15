@@ -66,6 +66,7 @@ export function EmployeeSelectTrigger({
 							image={employee.user.image}
 							name={getEmployeeName(employee)}
 							size="xs"
+							clockStatus={employee.clockStatus ?? "unknown"}
 						/>
 						<span className="truncate">{getEmployeeName(employee)}</span>
 					</div>
@@ -135,6 +136,7 @@ export function EmployeeSelectTrigger({
 							name={getEmployeeName(employee)}
 							size="xs"
 							bordered
+							clockStatus={employee.clockStatus ?? "unknown"}
 						/>
 					))}
 				</div>
@@ -195,6 +197,7 @@ export function EmployeeChips({
 						image={employee.user.image}
 						name={getEmployeeName(employee)}
 						size="xs"
+						clockStatus={employee.clockStatus ?? "unknown"}
 					/>
 					<span className="truncate max-w-[120px]">{getEmployeeName(employee)}</span>
 					{!disabled && (

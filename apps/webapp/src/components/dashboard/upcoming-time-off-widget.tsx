@@ -4,8 +4,9 @@ import { IconCalendar, IconCalendarEvent, IconClock } from "@tabler/icons-react"
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
 import { differenceInDays, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn, pluralize } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getUpcomingAbsences } from "./actions";
@@ -18,6 +19,7 @@ type UpcomingAbsence = {
 	startDate: Date;
 	endDate: Date;
 	employee: {
+		id: string;
 		user: {
 			id: string;
 			name: string | null;
@@ -28,6 +30,7 @@ type UpcomingAbsence = {
 		name: string;
 		color: string | null;
 	};
+	clockStatus?: EmployeeClockStatus;
 };
 
 function TimelineMarker({ daysUntil }: { daysUntil: number }) {
@@ -99,6 +102,7 @@ function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 					image={absence.employee.user.image}
 					name={name}
 					size="sm"
+					clockStatus={absence.clockStatus ?? "unknown"}
 				/>
 
 				<div className="flex-1 min-w-0">
@@ -145,6 +149,13 @@ export function UpcomingTimeOffWidget() {
 	} = useWidgetData<UpcomingAbsence[]>(() => getUpcomingAbsences(5), {
 		errorMessage: t("dashboard.upcoming-time-off.error", "Failed to load upcoming time off"),
 	});
+	const presence = useEmployeeClockStatuses(absences?.map((absence) => absence.employee.id) ?? [], {
+		polling: false,
+	});
+	const absencesWithPresence = absences?.map((absence) => ({
+		...absence,
+		clockStatus: presence.getStatus(absence.employee.id),
+	}));
 
 	if (!loading && (!absences || absences.length === 0)) return null;
 
@@ -166,11 +177,11 @@ export function UpcomingTimeOffWidget() {
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{absences && (
+				{absencesWithPresence && (
 					<div className="space-y-3">
 						{/* Timeline View */}
 						<div className="space-y-2">
-							{absences.map((absence) => (
+							{absencesWithPresence.map((absence) => (
 								<AbsenceCard key={absence.id} absence={absence} />
 							))}
 						</div>

@@ -15,6 +15,7 @@ import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import type {
 	ApprovalPriority,
 	ApprovalType,
@@ -101,6 +102,10 @@ export function ApprovalInboxTable({
 	onSelectItemRef.current = onSelectItem;
 
 	const ariaLabel = t("approvals:approvals.selectRow", "Select row");
+	const presence = useEmployeeClockStatuses(
+		items.map((item) => item.requester.id),
+		{ polling: false },
+	);
 
 	const columns = useMemo<ColumnDef<UnifiedApprovalItem>[]>(
 		() => [
@@ -146,6 +151,7 @@ export function ApprovalInboxTable({
 							seed={row.original.requester.userId}
 							name={row.original.requester.name}
 							size="sm"
+							clockStatus={presence.getStatus(row.original.requester.id)}
 						/>
 						<div className="min-w-0">
 							<div className="font-medium truncate">{row.original.requester.name}</div>
@@ -221,7 +227,7 @@ export function ApprovalInboxTable({
 				size: 120,
 			},
 		],
-		[t, ariaLabel],
+		[t, ariaLabel, presence],
 	);
 
 	// Stable callback for row className that reads from ref

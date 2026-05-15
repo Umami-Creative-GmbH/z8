@@ -73,7 +73,13 @@ export function EmployeeSelectItem({
 			)}
 
 			{/* Avatar */}
-			<UserAvatar seed={employee.userId} image={employee.user.image} name={displayName} size="sm" />
+			<UserAvatar
+				seed={employee.userId}
+				image={employee.user.image}
+				name={displayName}
+				size="sm"
+				clockStatus={employee.clockStatus ?? "unknown"}
+			/>
 
 			{/* Employee info */}
 			<div className="flex-1 min-w-0">

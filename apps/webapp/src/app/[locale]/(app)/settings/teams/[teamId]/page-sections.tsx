@@ -46,6 +46,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
 import type { SelectableEmployee } from "../../employees/actions";
 
@@ -307,6 +308,10 @@ export function TeamMembersCard(props: {
 }) {
 	const { team, canManageMembers, onOpenAddMember, onRemoveMember } = props;
 	const { t } = useTranslate();
+	const presence = useEmployeeClockStatuses(
+		team.employees?.map((employee: { id: string }) => employee.id) ?? [],
+		{ polling: false },
+	);
 
 	return (
 		<Card className="lg:col-span-2">
@@ -347,6 +352,7 @@ export function TeamMembersCard(props: {
 										seed={employee.id}
 										name={employee.user.name}
 										size="md"
+										clockStatus={presence.getStatus(employee.id)}
 									/>
 									<div>
 										<div className="font-medium">{employee.user.name}</div>

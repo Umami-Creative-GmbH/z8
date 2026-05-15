@@ -26,7 +26,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/user-avatar";
 import type { team } from "@/db/schema";
-import { queryKeys } from "@/lib/query";
+import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import type { MemberWithUserAndEmployee } from "./organizations-page-client";
 
 interface TeamMembersDialogProps {
@@ -46,6 +46,10 @@ export function TeamMembersDialog({
 }: TeamMembersDialogProps) {
 	const queryClient = useQueryClient();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+	const presence = useEmployeeClockStatuses(
+		allMembers.map((member) => member.employee?.id ?? ""),
+		{ polling: false },
+	);
 
 	// Add member mutation
 	const addMutation = useMutation({
@@ -147,6 +151,7 @@ export function TeamMembersDialog({
 															name={member.user.name}
 															gender={member.employee?.gender ?? null}
 															size="xs"
+															clockStatus={presence.getStatus(member.employee!.id)}
 														/>
 														<span>{member.user.name}</span>
 														{member.employee?.position && (
@@ -208,6 +213,7 @@ export function TeamMembersDialog({
 													name={member.user.name}
 													gender={member.employee?.gender ?? null}
 													size="sm"
+													clockStatus={presence.getStatus(member.employee!.id)}
 												/>
 												<div className="flex-1 min-w-0">
 													<div className="font-medium truncate">{member.user.name}</div>
