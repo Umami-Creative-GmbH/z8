@@ -5,7 +5,18 @@ import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query/keys";
 import { getUserSettings, updateWidgetOrder } from "./actions";
-import { DEFAULT_WIDGET_ORDER, normalizeWidgetOrder, type WidgetId } from "./widget-registry";
+import {
+	DEFAULT_WIDGET_ORDER,
+	mergeVisibleWidgetOrder,
+	normalizeWidgetLayout,
+	type WidgetId,
+} from "./widget-registry";
+
+type WidgetLayout = {
+	order: WidgetId[];
+	hidden: WidgetId[];
+	version: 1;
+};
 
 /**
  * Hook for managing dashboard widget order with persistence.
@@ -26,18 +37,17 @@ export function useWidgetOrder() {
 		},
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
-	const hiddenWidgets = settings?.dashboardWidgetOrder?.hidden ?? [];
 
-	// Mutation for saving widget order
-	const { mutate: saveOrder, isPending: isSaving } = useMutation({
-		mutationFn: async (order: WidgetId[]) => {
-			const result = await updateWidgetOrder({ order, hidden: hiddenWidgets });
+	// Mutation for saving widget layout
+	const { mutate: saveLayout, isPending: isSaving } = useMutation({
+		mutationFn: async (layout: WidgetLayout) => {
+			const result = await updateWidgetOrder(layout);
 			if (!result.success) {
 				throw new Error(result.error);
 			}
 			return result.data;
 		},
-		onMutate: async (newOrder) => {
+		onMutate: async (newLayout) => {
 			// Cancel any outgoing refetches
 			await queryClient.cancelQueries({ queryKey: queryKeys.dashboard.widgetOrder() });
 
@@ -46,17 +56,17 @@ export function useWidgetOrder() {
 
 			// Optimistically update the cache
 			queryClient.setQueryData(queryKeys.dashboard.widgetOrder(), {
-				dashboardWidgetOrder: { order: newOrder, hidden: hiddenWidgets, version: 1 },
+				dashboardWidgetOrder: newLayout,
 			});
 
 			return { previousSettings };
 		},
-		onError: (_error, _newOrder, context) => {
+		onError: (_error, _newLayout, context) => {
 			// Rollback on error
 			if (context?.previousSettings) {
 				queryClient.setQueryData(queryKeys.dashboard.widgetOrder(), context.previousSettings);
 			}
-			toast.error("Failed to save widget order", {
+			toast.error("Failed to save dashboard layout", {
 				description: "Your changes could not be saved. Please try again.",
 			});
 		},
@@ -67,37 +77,65 @@ export function useWidgetOrder() {
 		// Only refetch on error (handled in onError with rollback)
 	});
 
-	// Get the current widget order, normalized to handle new/removed widgets
-	const widgetOrder = useMemo<WidgetId[]>(() => {
-		const savedOrder = settings?.dashboardWidgetOrder?.order;
-		if (savedOrder && savedOrder.length > 0) {
-			return normalizeWidgetOrder(savedOrder);
-		}
-		return DEFAULT_WIDGET_ORDER;
-	}, [settings?.dashboardWidgetOrder?.order]);
+	const layout = useMemo<WidgetLayout>(() => {
+		return normalizeWidgetLayout(
+			settings?.dashboardWidgetOrder ?? { order: DEFAULT_WIDGET_ORDER, hidden: [], version: 1 },
+		);
+	}, [settings?.dashboardWidgetOrder]);
+
+	const hiddenSet = useMemo(() => new Set(layout.hidden), [layout.hidden]);
+
+	const visibleWidgetOrder = useMemo<WidgetId[]>(() => {
+		return layout.order.filter((widgetId) => !hiddenSet.has(widgetId));
+	}, [hiddenSet, layout.order]);
 
 	// Handler for when widgets are reordered
 	const onReorder = useCallback(
-		(newOrder: WidgetId[]) => {
-			saveOrder(newOrder);
+		(newVisibleOrder: WidgetId[]) => {
+			saveLayout({
+				order: mergeVisibleWidgetOrder(layout.order, newVisibleOrder, layout.hidden),
+				hidden: layout.hidden,
+				version: 1,
+			});
 		},
-		[saveOrder],
+		[layout.hidden, layout.order, saveLayout],
+	);
+
+	const onVisibilityChange = useCallback(
+		(widgetId: WidgetId, visible: boolean) => {
+			const nextHidden = visible
+				? layout.hidden.filter((hiddenWidgetId) => hiddenWidgetId !== widgetId)
+				: [...layout.hidden, widgetId].filter(
+						(hiddenWidgetId, index, hiddenWidgets) =>
+							hiddenWidgets.indexOf(hiddenWidgetId) === index,
+					);
+
+			saveLayout({
+				order: layout.order,
+				hidden: nextHidden,
+				version: 1,
+			});
+		},
+		[layout.hidden, layout.order, saveLayout],
 	);
 
 	// Reset to default order
 	const resetOrder = useCallback(() => {
-		saveOrder(DEFAULT_WIDGET_ORDER);
-	}, [saveOrder]);
+		saveLayout({ order: DEFAULT_WIDGET_ORDER, hidden: [], version: 1 });
+	}, [saveLayout]);
 
 	return {
 		/** Current widget order */
-		widgetOrder,
+		widgetOrder: layout.order,
+		visibleWidgetOrder,
+		hiddenWidgets: layout.hidden,
 		/** Loading state for initial fetch */
 		isLoading,
 		/** Saving state for persistence */
 		isSaving,
 		/** Handler to call when widgets are reordered */
 		onReorder,
+		onVisibilityChange,
 		/** Reset to default widget order */
 		resetOrder,
 	};
