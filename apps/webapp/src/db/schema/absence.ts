@@ -13,7 +13,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
 import { organization } from "../auth-schema";
-import { absenceTypeEnum, approvalStatusEnum, dayPeriodEnum } from "./enums";
+import { absenceTypeEnum, approvalStatusEnum, dayPeriodEnum, sickDetailEnum } from "./enums";
 import { employee } from "./organization";
 import { timeRecord } from "./time-record";
 
@@ -68,6 +68,7 @@ export const absenceEntry = pgTable(
 
 		status: approvalStatusEnum("status").default("pending").notNull(),
 		notes: text("notes"),
+		sickDetail: sickDetailEnum("sick_detail"),
 		organizationId: text("organization_id").references(() => organization.id, {
 			onDelete: "set null",
 		}),

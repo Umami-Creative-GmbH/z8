@@ -1,5 +1,6 @@
 // Day period for half-day absences
 export type DayPeriod = "full_day" | "am" | "pm";
+export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
 
 export interface VacationBalance {
 	year: number;
@@ -18,6 +19,7 @@ export interface AbsenceRequest {
 	endDate: string; // YYYY-MM-DD format
 	endPeriod: DayPeriod;
 	notes?: string;
+	sickDetail?: SickDetail;
 }
 
 export interface EmployeeAllowanceUpdate {
@@ -38,6 +40,7 @@ export interface AbsenceWithCategory {
 	endPeriod: DayPeriod;
 	status: "pending" | "approved" | "rejected";
 	notes: string | null;
+	sickDetail: SickDetail | null;
 	category: {
 		id: string;
 		name: string;
