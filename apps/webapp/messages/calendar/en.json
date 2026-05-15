@@ -42,24 +42,25 @@
       "businessDays": "Business days:",
       "daysRemaining": "Days remaining:",
       "description": "Submit a request for time off. Your manager will be notified for approval.",
+      "duration": "Absence duration",
+      "duration.fullDay": "Full day",
+      "duration.partialDay": "Partial day",
       "endDate": "End Date *",
-      "endPeriod": "End Period",
+      "endDateHelper": "Leave empty for a same-day absence.",
+      "endTime": "End time",
       "errors": {
         "fillRequiredFields": "Please fill in all required fields",
         "insufficientBalance": "Insufficient vacation balance",
         "insufficientBalanceForRequest": "Insufficient vacation balance for this request",
-        "invalidSameDayPeriod": "Cannot end in the morning if starting in the afternoon on the same day"
+        "invalidSelection": "Please check your selection and try again"
       },
       "notesOptional": "Notes (Optional)",
       "notesPlaceholder": "Add any additional information...",
-      "period": {
-        "afternoonOnly": "Afternoon Only",
-        "fullDay": "Full Day",
-        "morningOnly": "Morning Only"
-      },
       "selectAbsenceType": "Select absence type",
+      "sickDetail": "Sick detail *",
+      "sickDetailPlaceholder": "Select sick detail",
       "startDate": "Start Date *",
-      "startPeriod": "Start Period",
+      "startTime": "Start time",
       "submitRequest": "Submit Request",
       "title": "Request Absence"
     },

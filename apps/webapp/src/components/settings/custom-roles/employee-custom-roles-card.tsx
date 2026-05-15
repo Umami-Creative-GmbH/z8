@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconPlus, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -33,6 +34,7 @@ export function EmployeeCustomRolesCard({
 	organizationId,
 	isAdmin,
 }: EmployeeCustomRolesCardProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [isAssignOpen, setIsAssignOpen] = useState(false);
 
@@ -61,7 +63,7 @@ export function EmployeeCustomRolesCard({
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
-			toast.success("Role assigned");
+			toast.success(t("settings.roles.toast.assigned", "Role assigned"));
 			queryClient.invalidateQueries({
 				queryKey: ["employee-custom-roles", employeeId],
 			});
@@ -76,7 +78,7 @@ export function EmployeeCustomRolesCard({
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
-			toast.success("Role removed");
+			toast.success(t("settings.roles.toast.removed", "Role removed"));
 			queryClient.invalidateQueries({
 				queryKey: ["employee-custom-roles", employeeId],
 			});
@@ -92,13 +94,18 @@ export function EmployeeCustomRolesCard({
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div>
-						<CardTitle>Custom Roles</CardTitle>
-						<CardDescription>Additional permission roles assigned to this employee</CardDescription>
+						<CardTitle>{t("settings.roles.title", "Custom Roles")}</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.roles.employeeCard.description",
+								"Additional permission roles assigned to this employee",
+							)}
+						</CardDescription>
 					</div>
 					{isAdmin && (
 						<Button variant="outline" size="sm" onClick={() => setIsAssignOpen(true)}>
 							<IconPlus className="mr-1 h-4 w-4" />
-							Assign Role
+							{t("settings.roles.actions.assign", "Assign Role")}
 						</Button>
 					)}
 				</div>
@@ -109,7 +116,9 @@ export function EmployeeCustomRolesCard({
 						<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
 					</div>
 				) : !assignedRoles?.length ? (
-					<p className="text-sm text-muted-foreground">No custom roles assigned.</p>
+					<p className="text-sm text-muted-foreground">
+						{t("settings.roles.employeeCard.empty", "No custom roles assigned.")}
+					</p>
 				) : (
 					<div className="flex flex-wrap gap-2">
 						{assignedRoles.map((role) => (
@@ -128,13 +137,20 @@ export function EmployeeCustomRolesCard({
 								/>
 								{role.name}
 								<span className="text-xs text-muted-foreground ml-1">
-									({role.permissions.length} perm
-									{role.permissions.length !== 1 ? "s" : ""})
+									{role.permissions.length === 1
+										? t("settings.roles.employeeCard.permissionCount.one", "({count} perm)", {
+												count: role.permissions.length,
+											})
+										: t("settings.roles.employeeCard.permissionCount.other", "({count} perms)", {
+												count: role.permissions.length,
+											})}
 								</span>
 								{isAdmin && (
 									<button
 										type="button"
-										aria-label={`Remove ${role.name}`}
+										aria-label={t("settings.roles.actions.removeNamed", "Remove {name}", {
+											name: role.name,
+										})}
 										className="ml-1 rounded-full p-0.5 hover:bg-muted"
 										onClick={() => unassignMutation.mutate(role.id)}
 										disabled={unassignMutation.isPending}
@@ -152,16 +168,23 @@ export function EmployeeCustomRolesCard({
 			<ActionPanel open={isAssignOpen} onOpenChange={setIsAssignOpen}>
 				<ActionPanelContent>
 					<ActionPanelHeader>
-						<ActionPanelTitle>Assign Custom Role</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.roles.assignPanel.title", "Assign Custom Role")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Select a role to assign to this employee.
+							{t(
+								"settings.roles.assignPanel.description",
+								"Select a role to assign to this employee.",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-2">
 						{!availableRoles.length ? (
 							<p className="text-sm text-muted-foreground py-4 text-center">
-								No available roles to assign. All roles are already assigned or none have been
-								created.
+								{t(
+									"settings.roles.assignPanel.empty",
+									"No available roles to assign. All roles are already assigned or none have been created.",
+								)}
 							</p>
 						) : (
 							availableRoles.map((role) => (
@@ -183,7 +206,9 @@ export function EmployeeCustomRolesCard({
 										)}
 									</div>
 									<Badge variant="outline" className="text-xs">
-										{role.permissions.length} perms
+										{t("settings.roles.assignPanel.permissionCount", "{count} perms", {
+											count: role.permissions.length,
+										})}
 									</Badge>
 								</button>
 							))

@@ -9,6 +9,8 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
+	holiday,
+	holidayCategory,
 	hydrationStats,
 	team,
 	userSettings,
@@ -25,11 +27,19 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
+import {
+	type EffectiveWorkPolicy,
+	WorkPolicyService,
+} from "@/lib/effect/services/work-policy.service";
 import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
+import {
+	type AbsenceRange,
+	getNextAvailableReturnDate,
+} from "./return-date-calculations";
 
 export type ManagerTodaySummaryResult = {
 	role: "admin" | "manager" | "employee" | null;
@@ -591,7 +601,9 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 
 				let current = rangeStart;
 				while (current <= rangeEnd) {
-					if (await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())) {
+					if (
+						await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())
+					) {
 						const dateKey = current.toISODate();
 						if (dateKey) dates.add(dateKey);
 					}
@@ -919,6 +931,7 @@ export async function getWhosOutToday(): Promise<
 			category: string;
 			categoryColor: string | null;
 			endsToday: boolean;
+			returnsTomorrow: boolean;
 			returnDate: string;
 		}>;
 		returningTomorrow: Array<{
@@ -929,6 +942,7 @@ export async function getWhosOutToday(): Promise<
 			category: string;
 			categoryColor: string | null;
 			endsToday: boolean;
+			returnsTomorrow: boolean;
 			returnDate: string;
 		}>;
 		totalOut: number;
@@ -938,6 +952,7 @@ export async function getWhosOutToday(): Promise<
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 		const dbService = yield* _(DatabaseService);
+		const workPolicyService = yield* _(WorkPolicyService);
 
 		// Get current employee with organization
 		const currentEmployee = yield* _(
@@ -961,6 +976,8 @@ export async function getWhosOutToday(): Promise<
 		// Get today's date as YYYY-MM-DD string
 		const todayDT = DateTime.now();
 		const todayStr = todayDT.toFormat("yyyy-MM-dd");
+		const returnSearchStart = todayDT.plus({ days: 1 }).startOf("day");
+		const returnSearchEnd = todayDT.plus({ days: 366 }).endOf("day");
 		// Get all employee IDs in this organization
 		const orgEmployees = yield* _(
 			dbService.query("getOrgEmployeeIds", async () => {
@@ -1017,6 +1034,7 @@ export async function getWhosOutToday(): Promise<
 				category: string;
 				categoryColor: string | null;
 				endsToday: boolean;
+				returnsTomorrow: boolean;
 				returnDate: string;
 			}
 		>();
@@ -1031,17 +1049,123 @@ export async function getWhosOutToday(): Promise<
 				category: string;
 				categoryColor: string | null;
 				endsToday: boolean;
+				returnsTomorrow: boolean;
 				returnDate: string;
 			}
 		>();
 
 		const typedTodayAbsences = todayAbsences as unknown as DashboardTodayAbsenceRow[];
+		const futureAbsences = yield* _(
+			dbService.query("getReturnDateAbsences", async () => {
+				if (orgEmployeeIds.length === 0) return [];
+				return await dbService.db.query.absenceEntry.findMany({
+					where: and(
+						inArray(absenceEntry.employeeId, orgEmployeeIds),
+						eq(absenceEntry.status, "approved"),
+						gte(absenceEntry.endDate, returnSearchStart.toISODate()!),
+						lte(absenceEntry.startDate, returnSearchEnd.toISODate()!),
+					),
+					columns: {
+						employeeId: true,
+						startDate: true,
+						endDate: true,
+					},
+				});
+			}),
+		);
+		const absenceRangesByEmployee = new Map<string, AbsenceRange[]>();
+		for (const absence of futureAbsences) {
+			const ranges = absenceRangesByEmployee.get(absence.employeeId) ?? [];
+			ranges.push({ startDate: absence.startDate, endDate: absence.endDate });
+			absenceRangesByEmployee.set(absence.employeeId, ranges);
+		}
+
+		const holidayRows = yield* _(
+			dbService.query("getReturnDateHolidays", async () => {
+				return await dbService.db
+					.select({
+						startDate: holiday.startDate,
+						endDate: holiday.endDate,
+						recurrenceType: holiday.recurrenceType,
+						recurrenceRule: holiday.recurrenceRule,
+						recurrenceEndDate: holiday.recurrenceEndDate,
+					})
+					.from(holiday)
+					.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
+					.where(
+						and(
+							eq(holiday.organizationId, currentEmployee.organizationId),
+							eq(holiday.isActive, true),
+							eq(holidayCategory.isActive, true),
+							eq(holidayCategory.excludeFromCalculations, true),
+							or(
+								eq(holiday.recurrenceType, "yearly"),
+								and(
+									eq(holiday.recurrenceType, "none"),
+									lte(holiday.startDate, returnSearchEnd.toJSDate()),
+									gte(holiday.endDate, returnSearchStart.toJSDate()),
+								),
+							),
+						),
+					);
+			}),
+		);
+
+		const holidayDates = new Set<string>();
+		for (const holidayRow of holidayRows) {
+			if (holidayRow.recurrenceType === "yearly") {
+				if (!holidayRow.recurrenceRule) continue;
+				try {
+					const rule = JSON.parse(holidayRow.recurrenceRule) as { month?: number; day?: number };
+					if (!rule.month || !rule.day) continue;
+
+					for (let year = returnSearchStart.year; year <= returnSearchEnd.year; year++) {
+						const instance = DateTime.utc(year, rule.month, rule.day);
+						if (instance < returnSearchStart || instance > returnSearchEnd) continue;
+						if (holidayRow.recurrenceEndDate) {
+							const recurrenceEnd = DateTime.fromJSDate(holidayRow.recurrenceEndDate);
+							if (instance > recurrenceEnd) continue;
+						}
+						const dateKey = instance.toISODate();
+						if (dateKey) holidayDates.add(dateKey);
+					}
+				} catch {
+					continue;
+				}
+				continue;
+			}
+
+			let current = DateTime.fromJSDate(holidayRow.startDate).startOf("day");
+			const last = DateTime.fromJSDate(holidayRow.endDate).startOf("day");
+			while (current <= last && current <= returnSearchEnd) {
+				if (current >= returnSearchStart) {
+					const dateKey = current.toISODate();
+					if (dateKey) holidayDates.add(dateKey);
+				}
+				current = current.plus({ days: 1 });
+			}
+		}
+
+		const schedulesByEmployee = new Map<string, EffectiveWorkPolicy | null>();
+		for (const employeeId of new Set(typedTodayAbsences.map((absence) => absence.employee.id))) {
+			const policy = yield* _(
+				workPolicyService.getEffectivePolicy(employeeId).pipe(Effect.catchAll(() => Effect.succeed(null))),
+			);
+			schedulesByEmployee.set(employeeId, policy);
+		}
 
 		for (const absence of typedTodayAbsences) {
 			const employeeId = absence.employee.id;
 			const endsToday = absence.endDate === todayStr;
-			const endDT = DateTime.fromISO(absence.endDate);
-			const returnDate = endDT.plus({ days: 1 }).toFormat("MMM d");
+			const returnInfo = getNextAvailableReturnDate({
+				absenceEndDate: absence.endDate,
+				today: todayStr,
+				schedule: schedulesByEmployee.get(employeeId)?.schedule ?? null,
+				holidayDates,
+				absenceRanges: absenceRangesByEmployee.get(employeeId) ?? [],
+			});
+			const returnsTomorrow = returnInfo.returnsTomorrow;
+			const returnDate = DateTime.fromISO(returnInfo.returnDate).toFormat("MMM d");
 
 			const employeeData = {
 				id: employeeId,
@@ -1051,6 +1175,7 @@ export async function getWhosOutToday(): Promise<
 				category: absence.category.name,
 				categoryColor: absence.category.color,
 				endsToday,
+				returnsTomorrow,
 				returnDate,
 			};
 
@@ -1059,7 +1184,7 @@ export async function getWhosOutToday(): Promise<
 				outTodayMap.set(employeeId, employeeData);
 			}
 
-			if (endsToday && !returningTomorrowMap.has(employeeId)) {
+			if (endsToday && returnsTomorrow && !returningTomorrowMap.has(employeeId)) {
 				returningTomorrowMap.set(employeeId, employeeData);
 			}
 		}
@@ -1324,10 +1449,10 @@ export async function getUserSettings(): Promise<
 }
 
 /**
- * Update dashboard widget order
+ * Update dashboard widget order and visibility.
  */
 export async function updateWidgetOrder(
-	order: string[],
+	layout: Pick<DashboardWidgetOrder, "order" | "hidden">,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -1335,7 +1460,8 @@ export async function updateWidgetOrder(
 		const dbService = yield* _(DatabaseService);
 
 		const widgetOrder: DashboardWidgetOrder = {
-			order,
+			order: layout.order,
+			hidden: layout.hidden ?? [],
 			version: 1,
 		};
 
@@ -1364,7 +1490,7 @@ export async function updateWidgetOrder(
 				},
 				catch: (error) =>
 					new NotFoundError({
-						message: `Failed to update widget order: ${error}`,
+						message: `Failed to update widget layout: ${error}`,
 						entityType: "userSettings",
 					}),
 			}),

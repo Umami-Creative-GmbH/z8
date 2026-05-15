@@ -42,24 +42,25 @@
       "businessDays": "Giorni lavorativi:",
       "daysRemaining": "Giorni rimanenti:",
       "description": "Invia una richiesta di ferie. Il tuo manager riceverà una notifica per l'approvazione.",
+      "duration": "Durata assenza",
+      "duration.fullDay": "Giornata intera",
+      "duration.partialDay": "Giornata parziale",
       "endDate": "Data di fine *",
-      "endPeriod": "Fine periodo",
+      "endDateHelper": "Lasciare vuoto per un'assenza nella stessa giornata.",
+      "endTime": "Ora di fine",
       "errors": {
         "fillRequiredFields": "Si prega di compilare tutti i campi obbligatori",
         "insufficientBalance": "Saldo ferie insufficiente",
         "insufficientBalanceForRequest": "Saldo ferie insufficiente per questa richiesta",
-        "invalidSameDayPeriod": "Non può terminare al mattino se inizia al pomeriggio dello stesso giorno"
+        "invalidSelection": "Controlla la selezione e riprova"
       },
       "notesOptional": "Note (Opzionale)",
       "notesPlaceholder": "Aggiungi ulteriori informazioni...",
-      "period": {
-        "afternoonOnly": "Solo pomeriggio",
-        "fullDay": "Giornata intera",
-        "morningOnly": "Solo mattina"
-      },
       "selectAbsenceType": "Seleziona tipo di assenza",
+      "sickDetail": "Dettaglio malattia *",
+      "sickDetailPlaceholder": "Seleziona dettaglio malattia",
       "startDate": "Data di inizio *",
-      "startPeriod": "Inizio periodo",
+      "startTime": "Ora di inizio",
       "submitRequest": "Invia richiesta",
       "title": "Richiedi assenza"
     },

@@ -174,6 +174,35 @@
       "deleteFailed": "Could not delete category",
       "deleteTitle": "Delete Absence Category",
       "editCategory": "Edit \"{name}\"",
+      "form": {
+        "active": "Active",
+        "activeHelp": "Active categories are available for new absence requests.",
+        "color": "Color",
+        "colorHelp": "Calendar marker",
+        "countsAgainstVacation": "Counts Against Vacation Balance",
+        "countsAgainstVacationHelp": "Deduct approved days from the employee vacation allowance.",
+        "description": "Description",
+        "descriptionHelp": "Optional guidance shown to admins and reviewers.",
+        "descriptionPlaceholder": "e.g., Use for approved training or certification days…",
+        "descriptionTranslation": "{locale} description",
+        "descriptionTranslationPlaceholder": "Localized description",
+        "name": "Name",
+        "nameHelp": "Use a clear label employees and approvers will recognize.",
+        "nameMaxLength": "Use 100 characters or fewer",
+        "namePlaceholder": "e.g., Training Day…",
+        "nameRequired": "Category name is required",
+        "nameTranslation": "{locale} name",
+        "nameTranslationPlaceholder": "Localized name",
+        "requiresApproval": "Requires Approval",
+        "requiresApprovalHelp": "Managers must approve requests before they become active.",
+        "requiresWorkTime": "Requires Work Time",
+        "requiresWorkTimeHelp": "Employees must record work time for this absence category.",
+        "translations": "Translations",
+        "translationsHelp": "Optional localized labels for employees using another app language.",
+        "type": "Type",
+        "typeHelp": "Groups reports and downstream absence workflows.",
+        "typePlaceholder": "Select category type"
+      },
       "header": {
         "approval": "Approval",
         "name": "Name",
@@ -2580,6 +2609,96 @@
       "updated": "Project updated",
       "updateFailed": "Failed to update project"
     },
+    "roles": {
+      "actions": {
+        "assign": "Assign Role",
+        "create": "Create Role",
+        "deleteNamed": "Delete {name}",
+        "editNamed": "Edit {name}",
+        "removeNamed": "Remove {name}",
+        "saveChanges": "Save Changes"
+      },
+      "assignPanel": {
+        "description": "Select a role to assign to this employee.",
+        "empty": "No available roles to assign. All roles are already assigned or none have been created.",
+        "permissionCount": "{count} perms",
+        "title": "Assign Custom Role"
+      },
+      "baseTiers": {
+        "admin": "Admin",
+        "employee": "Employee",
+        "manager": "Manager"
+      },
+      "createPanel": {
+        "description": "Define a new role with specific permissions for your organization.",
+        "title": "Create Custom Role"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "This role is currently assigned to {count} employee. They will lose the permissions granted by this role.",
+          "other": "This role is currently assigned to {count} employees. They will lose the permissions granted by this role."
+        },
+        "confirm": "Are you sure you want to delete \"{name}\"?",
+        "title": "Delete Role"
+      },
+      "editor": {
+        "baseTier": "Base Tier",
+        "color": "Color",
+        "description": "Description",
+        "descriptionPlaceholder": "What this role is foru2026",
+        "errors": {
+          "createFailed": "Failed to create role",
+          "nameRequired": "Role name is required",
+          "permissionsFailed": "Failed to save role permissions",
+          "updateFailed": "Failed to update role"
+        },
+        "inherited": "Inherited",
+        "name": "Name",
+        "namePlaceholder": "e.g. Team Lead, HR Manageru2026",
+        "permissions": "Permissions",
+        "permissionsHelp": "Select additional permissions for this role. Permissions inherited from the base tier are shown as locked.",
+        "selectColor": "Select color {color}"
+      },
+      "editPanel": {
+        "description": "Update the role details and permissions.",
+        "title": "Edit Custom Role"
+      },
+      "employeeCard": {
+        "description": "Additional permission roles assigned to this employee",
+        "empty": "No custom roles assigned.",
+        "permissionCount": {
+          "one": "({count} perm)",
+          "other": "({count} perms)"
+        }
+      },
+      "empty": {
+        "description": "Create one to get started.",
+        "title": "No custom roles yet"
+      },
+      "introduction": "Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
+      "table": {
+        "actions": "Actions",
+        "assigned": "Assigned",
+        "assignedCount": {
+          "one": "{count} employee",
+          "other": "{count} employees"
+        },
+        "baseTier": "Base Tier",
+        "name": "Name",
+        "permissionCount": {
+          "one": "{count} permission",
+          "other": "{count} permissions"
+        },
+        "permissions": "Permissions"
+      },
+      "toast": {
+        "assigned": "Role assigned",
+        "created": "Role created",
+        "deleted": "Role deleted",
+        "removed": "Role removed",
+        "updated": "Role updated"
+      }
+    },
     "scheduledExports": {
       "actions": {
         "delete": "Delete",
@@ -4057,14 +4176,12 @@
       },
       "feature": "manage team absences",
       "recordDialog": {
-        "afternoon": "Afternoon",
         "category": "Category",
         "categoryPlaceholder": "Select an absence category…",
         "description": "Record an approved absence directly for the selected employee.",
         "endDate": "End date",
-        "endPeriod": "End period",
+        "endDateHelper": "Leave empty for a same-day absence.",
         "failure": "Failed to record absence",
-        "morning": "Morning",
         "noCategories": "No categories available",
         "noEmployee": "Select an employee before recording an absence",
         "notes": "Notes",
@@ -4072,8 +4189,9 @@
         "pickEndDate": "Pick end date…",
         "pickStartDate": "Pick start date…",
         "recording": "Recording…",
+        "sickDetail": "Sick detail",
+        "sickDetailPlaceholder": "Select sick detail…",
         "startDate": "Start date",
-        "startPeriod": "Start period",
         "submit": "Record absence",
         "success": "Absence recorded",
         "title": "Record absence"

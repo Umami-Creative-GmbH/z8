@@ -42,24 +42,25 @@
       "businessDays": "Jours ouvrables :",
       "daysRemaining": "Jours restants :",
       "description": "Soumettez une demande de congé. Votre responsable sera notifié pour approbation.",
+      "duration": "Durée de l'absence",
+      "duration.fullDay": "Journée complète",
+      "duration.partialDay": "Journée partielle",
       "endDate": "Date de fin *",
-      "endPeriod": "Période de fin",
+      "endDateHelper": "Laissez vide pour une absence d'une journée.",
+      "endTime": "Heure de fin",
       "errors": {
         "fillRequiredFields": "Veuillez remplir tous les champs obligatoires",
         "insufficientBalance": "Solde de vacances insuffisant",
         "insufficientBalanceForRequest": "Solde de vacances insuffisant pour cette demande",
-        "invalidSameDayPeriod": "Ne peut pas se terminer le matin si cela commence l'après-midi le même jour"
+        "invalidSelection": "Veuillez vérifier votre sélection et réessayer"
       },
       "notesOptional": "Notes (Facultatif)",
       "notesPlaceholder": "Ajouter des informations supplémentaires...",
-      "period": {
-        "afternoonOnly": "Après-midi seulement",
-        "fullDay": "Journée complète",
-        "morningOnly": "Matin seulement"
-      },
       "selectAbsenceType": "Sélectionner le type d'absence",
+      "sickDetail": "Détails de l'arrêt maladie *",
+      "sickDetailPlaceholder": "Sélectionner les détails de l'arrêt maladie",
       "startDate": "Date de début *",
-      "startPeriod": "Période de début",
+      "startTime": "Heure de début",
       "submitRequest": "Soumettre la demande",
       "title": "Demander une absence"
     },

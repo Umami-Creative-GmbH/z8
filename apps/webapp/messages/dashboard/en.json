@@ -13,6 +13,13 @@
       "today": "Today!",
       "tomorrow": "Tomorrow"
     },
+    "customize": {
+      "empty-description": "Use the dashboard customization icon to re-enable individual widgets, or reset the layout to show every widget again.",
+      "empty-title": "All dashboard widgets are hidden",
+      "reset": "Reset layout",
+      "title": "Dashboard widgets",
+      "trigger": "Customize dashboard"
+    },
     "hydration": {
       "description": "Track your daily water intake",
       "error": "Failed to load hydration stats",

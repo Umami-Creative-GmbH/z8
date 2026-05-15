@@ -42,24 +42,25 @@
       "businessDays": "Dias úteis:",
       "daysRemaining": "Dias restantes:",
       "description": "Envie um pedido de folga. O seu gerente será notificado para aprovação.",
+      "duration": "Duração da ausência",
+      "duration.fullDay": "Dia inteiro",
+      "duration.partialDay": "Parte do dia",
       "endDate": "Data de fim *",
-      "endPeriod": "Período final",
+      "endDateHelper": "Deixe vazio para uma ausência no mesmo dia.",
+      "endTime": "Hora de término",
       "errors": {
         "fillRequiredFields": "Preencha todos os campos obrigatórios",
         "insufficientBalance": "Saldo de férias insuficiente",
         "insufficientBalanceForRequest": "Saldo de férias insuficiente para este pedido",
-        "invalidSameDayPeriod": "Não pode terminar de manhã se começar à tarde no mesmo dia"
+        "invalidSelection": "Por favor, verifique sua seleção e tente novamente"
       },
       "notesOptional": "Notas (Opcional)",
       "notesPlaceholder": "Adicionar informações adicionais...",
-      "period": {
-        "afternoonOnly": "Apenas tarde",
-        "fullDay": "Dia inteiro",
-        "morningOnly": "Apenas manhã"
-      },
       "selectAbsenceType": "Selecionar tipo de ausência",
+      "sickDetail": "Detalhes da licença médica *",
+      "sickDetailPlaceholder": "Selecione os detalhes da licença médica",
       "startDate": "Data de início *",
-      "startPeriod": "Período inicial",
+      "startTime": "Hora de início",
       "submitRequest": "Submeter pedido",
       "title": "Pedir ausência"
     },

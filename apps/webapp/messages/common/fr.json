@@ -5,6 +5,11 @@
     "signOut": "Déconnexion",
     "title": "Accès restreint"
   },
+  "actions": {
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "refresh": "Actualiser"
+  },
   "colors": {
     "blue": "Bleu",
     "green": "Vert",

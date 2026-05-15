@@ -18,9 +18,9 @@ import type { WidgetId } from "./widget-registry";
 import { useVisibleWidgets } from "./widget-visibility-context";
 
 interface SortableWidgetGridProps {
-	/** Full widget order (including hidden ones for persistence) */
+	/** Current order for widgets rendered by the dashboard grid */
 	widgetOrder: WidgetId[];
-	/** Called when widgets are reordered */
+	/** Called when rendered widgets are reordered */
 	onReorder: (newOrder: WidgetId[]) => void;
 	/** Children (widget components that wrap themselves in DashboardWidget) */
 	children: ReactNode;

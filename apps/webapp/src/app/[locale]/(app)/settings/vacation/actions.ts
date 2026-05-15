@@ -16,6 +16,7 @@ import {
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
+import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -50,6 +51,8 @@ type AbsenceCategoryWriteData = {
 	type: AbsenceCategoryType;
 	name: string;
 	description?: string | null;
+	nameTranslations?: LocaleTranslationMap | null;
+	descriptionTranslations?: LocaleTranslationMap | null;
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
@@ -62,12 +65,35 @@ function normalizeOptionalText(value: string | null | undefined) {
 	return trimmed ? trimmed : null;
 }
 
+const unsafeTranslationKeys = new Set(["__proto__", "constructor", "prototype"]);
+
+function normalizeTranslationMap(value: unknown) {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return null;
+	}
+
+	const entries = Object.entries(value)
+		.filter(
+			(entry): entry is [string, string] =>
+				typeof entry[0] === "string" && typeof entry[1] === "string",
+		)
+		.map(([locale, translation]) => [locale.trim(), translation.trim()] as const)
+		.filter(
+			([locale, translation]) =>
+				locale && translation && !unsafeTranslationKeys.has(locale),
+		);
+
+	return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
 function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 	const name = data.name.trim();
 	return {
 		...data,
 		name,
 		description: normalizeOptionalText(data.description),
+		nameTranslations: normalizeTranslationMap(data.nameTranslations),
+		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
 		color: normalizeOptionalText(data.color),
 	};
 }
@@ -849,6 +875,8 @@ export async function createAbsenceCategory(
 						type: normalized.type,
 						name: normalized.name,
 						description: normalized.description,
+						nameTranslations: normalized.nameTranslations,
+						descriptionTranslations: normalized.descriptionTranslations,
 						requiresWorkTime: normalized.requiresWorkTime,
 						requiresApproval: normalized.requiresApproval,
 						countsAgainstVacation: normalized.countsAgainstVacation,
@@ -930,6 +958,8 @@ export async function updateAbsenceCategory(
 							type: normalized.type,
 							name: normalized.name,
 							description: normalized.description,
+							nameTranslations: normalized.nameTranslations,
+							descriptionTranslations: normalized.descriptionTranslations,
 							requiresWorkTime: normalized.requiresWorkTime,
 							requiresApproval: normalized.requiresApproval,
 							countsAgainstVacation: normalized.countsAgainstVacation,

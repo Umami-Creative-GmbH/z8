@@ -5,6 +5,11 @@
     "signOut": "Disconnetti",
     "title": "Accesso limitato"
   },
+  "actions": {
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "refresh": "Aggiorna"
+  },
   "colors": {
     "blue": "Blu",
     "green": "Verde",

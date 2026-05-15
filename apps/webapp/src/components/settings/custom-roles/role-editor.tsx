@@ -1,9 +1,14 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-
+import {
+	createCustomRole,
+	setRolePermissions,
+	updateCustomRole,
+} from "@/app/[locale]/(app)/settings/roles/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,21 +22,14 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
+import { defineAbilityFor } from "@/lib/authorization/ability";
 import {
-	createCustomRole,
-	updateCustomRole,
-	setRolePermissions,
-} from "@/app/[locale]/(app)/settings/roles/actions";
-import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
-import {
-	getPermissionsByCategory,
 	getPermissionCategories,
 	getPermissionKey,
-	type PermissionDefinition,
+	getPermissionsByCategory,
 } from "@/lib/authorization/permission-registry";
-import { defineAbilityFor } from "@/lib/authorization/ability";
-import type { PrincipalContext, Action, Subject } from "@/lib/authorization/types";
+import type { PrincipalContext } from "@/lib/authorization/types";
+import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
 
 // ============================================
 // INHERITED PERMISSIONS HELPER
@@ -41,9 +39,7 @@ import type { PrincipalContext, Action, Subject } from "@/lib/authorization/type
  * Compute which permissions a base tier inherits (from ability.ts logic)
  * so we can show them as disabled checked checkboxes.
  */
-function getInheritedPermissions(
-	baseTier: "admin" | "manager" | "employee",
-): Set<string> {
+function getInheritedPermissions(baseTier: "admin" | "manager" | "employee"): Set<string> {
 	const principal: PrincipalContext = {
 		userId: "placeholder",
 		isPlatformAdmin: false,
@@ -101,6 +97,7 @@ interface RoleEditorProps {
 }
 
 export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
+	const { t } = useTranslate();
 	const isEditing = !!role;
 
 	const [name, setName] = useState(role?.name ?? "");
@@ -109,14 +106,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 		role?.baseTier ?? "employee",
 	);
 	const [color, setColor] = useState(role?.color ?? "#6366f1");
-	const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
-		() => {
-			if (!role) return new Set();
-			return new Set(
-				role.permissions.map((p) => getPermissionKey(p.action, p.subject)),
-			);
-		},
-	);
+	const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(() => {
+		if (!role) return new Set();
+		return new Set(role.permissions.map((p) => getPermissionKey(p.action, p.subject)));
+	});
 	const [isSaving, setIsSaving] = useState(false);
 
 	const inherited = useMemo(() => getInheritedPermissions(baseTier), [baseTier]);
@@ -137,7 +130,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 
 	const handleSave = async () => {
 		if (!name.trim()) {
-			toast.error("Role name is required");
+			toast.error(t("settings.roles.editor.errors.nameRequired", "Role name is required"));
 			return;
 		}
 
@@ -152,7 +145,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 				color,
 			}).catch(() => null);
 			if (!updateResult?.success) {
-				toast.error(updateResult?.error ?? "Failed to update role");
+				toast.error(
+					updateResult?.error ??
+						t("settings.roles.editor.errors.updateFailed", "Failed to update role"),
+				);
 				setIsSaving(false);
 				return;
 			}
@@ -164,7 +160,10 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 				color,
 			}).catch(() => null);
 			if (!createResult?.success) {
-				toast.error(createResult?.error ?? "Failed to create role");
+				toast.error(
+					createResult?.error ??
+						t("settings.roles.editor.errors.createFailed", "Failed to create role"),
+				);
 				setIsSaving(false);
 				return;
 			}
@@ -181,12 +180,19 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 
 		const permResult = await setRolePermissions(roleId!, permsToSave).catch(() => null);
 		if (!permResult?.success) {
-			toast.error(permResult?.error ?? "Failed to save role permissions");
+			toast.error(
+				permResult?.error ??
+					t("settings.roles.editor.errors.permissionsFailed", "Failed to save role permissions"),
+			);
 			setIsSaving(false);
 			return;
 		}
 
-		toast.success(isEditing ? "Role updated" : "Role created");
+		toast.success(
+			isEditing
+				? t("settings.roles.toast.updated", "Role updated")
+				: t("settings.roles.toast.created", "Role created"),
+		);
 		onSaved();
 		setIsSaving(false);
 	};
@@ -196,52 +202,61 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			{/* Basic Info */}
 			<div className="grid grid-cols-2 gap-4">
 				<div className="space-y-2">
-					<Label htmlFor="role-name">Name</Label>
+					<Label htmlFor="role-name">{t("settings.roles.editor.name", "Name")}</Label>
 					<Input
 						id="role-name"
 						value={name}
 						onChange={(e) => setName(e.target.value)}
-						placeholder="e.g. Team Lead, HR Manager\u2026"
+						placeholder={t(
+							"settings.roles.editor.namePlaceholder",
+							"e.g. Team Lead, HR Manager\u2026",
+						)}
 					/>
 				</div>
 				<div className="space-y-2">
-					<Label htmlFor="role-tier">Base Tier</Label>
-					<Select
-						value={baseTier}
-						onValueChange={(v) => setBaseTier(v as typeof baseTier)}
-					>
+					<Label htmlFor="role-tier">{t("settings.roles.editor.baseTier", "Base Tier")}</Label>
+					<Select value={baseTier} onValueChange={(v) => setBaseTier(v as typeof baseTier)}>
 						<SelectTrigger id="role-tier">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="employee">Employee</SelectItem>
-							<SelectItem value="manager">Manager</SelectItem>
-							<SelectItem value="admin">Admin</SelectItem>
+							<SelectItem value="employee">
+								{t("settings.roles.baseTiers.employee", "Employee")}
+							</SelectItem>
+							<SelectItem value="manager">
+								{t("settings.roles.baseTiers.manager", "Manager")}
+							</SelectItem>
+							<SelectItem value="admin">{t("settings.roles.baseTiers.admin", "Admin")}</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
 			</div>
 
 			<div className="space-y-2">
-				<Label htmlFor="role-desc">Description</Label>
+				<Label htmlFor="role-desc">{t("settings.roles.editor.description", "Description")}</Label>
 				<Textarea
 					id="role-desc"
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
-					placeholder="What this role is for\u2026"
+					placeholder={t(
+						"settings.roles.editor.descriptionPlaceholder",
+						"What this role is for\u2026",
+					)}
 					rows={2}
 				/>
 			</div>
 
 			{/* Color Picker */}
 			<div className="space-y-2">
-				<Label>Color</Label>
+				<Label>{t("settings.roles.editor.color", "Color")}</Label>
 				<div className="flex gap-2">
 					{COLOR_PRESETS.map((c) => (
 						<button
 							key={c}
 							type="button"
-							aria-label={`Select color ${c}`}
+							aria-label={t("settings.roles.editor.selectColor", "Select color {color}", {
+								color: c,
+							})}
 							className="h-7 w-7 rounded-full border-2 transition-[border-color,box-shadow]"
 							style={{
 								backgroundColor: c,
@@ -257,10 +272,14 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			{/* Permission Matrix */}
 			<div className="space-y-4">
 				<div>
-					<Label className="text-base">Permissions</Label>
+					<Label className="text-base">
+						{t("settings.roles.editor.permissions", "Permissions")}
+					</Label>
 					<p className="text-sm text-muted-foreground">
-						Select additional permissions for this role. Permissions inherited
-						from the base tier are shown as locked.
+						{t(
+							"settings.roles.editor.permissionsHelp",
+							"Select additional permissions for this role. Permissions inherited from the base tier are shown as locked.",
+						)}
 					</p>
 				</div>
 
@@ -270,7 +289,9 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 
 					return (
 						<div key={cat.id} className="space-y-2">
-							<h4 className="text-sm font-semibold">{cat.label}</h4>
+							<h4 className="text-sm font-semibold">
+								{t(`settings.roles.permissionCategories.${cat.id}`, cat.label)}
+							</h4>
 							<div className="grid gap-2">
 								{perms.map((perm) => {
 									const key = getPermissionKey(perm.action, perm.subject);
@@ -293,16 +314,22 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 											<div className="flex-1 space-y-0.5">
 												<div className="flex items-center gap-2">
 													<span className="text-sm font-medium">
-														{perm.label}
+														{t(
+															`settings.roles.permissions.${perm.action}.${perm.subject}.label`,
+															perm.label,
+														)}
 													</span>
 													{isInherited && (
 														<Badge variant="outline" className="text-xs">
-															Inherited
+															{t("settings.roles.editor.inherited", "Inherited")}
 														</Badge>
 													)}
 												</div>
 												<p className="text-xs text-muted-foreground">
-													{perm.description}
+													{t(
+														`settings.roles.permissions.${perm.action}.${perm.subject}.description`,
+														perm.description,
+													)}
 												</p>
 											</div>
 										</label>
@@ -317,11 +344,13 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 			{/* Actions */}
 			<div className="flex justify-end gap-2 pt-2">
 				<Button variant="outline" onClick={onCancel}>
-					Cancel
+					{t("common:actions.cancel", "Cancel")}
 				</Button>
 				<Button onClick={handleSave} disabled={isSaving}>
 					{isSaving && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-					{isEditing ? "Save Changes" : "Create Role"}
+					{isEditing
+						? t("settings.roles.actions.saveChanges", "Save Changes")
+						: t("settings.roles.actions.create", "Create Role")}
 				</Button>
 			</div>
 		</div>

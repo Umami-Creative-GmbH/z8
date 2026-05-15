@@ -174,6 +174,35 @@
       "deleteFailed": "Impossibile eliminare la categoria",
       "deleteTitle": "Elimina categoria di assenza",
       "editCategory": "Modifica \"{name}\"",
+      "form": {
+        "active": "Attivo",
+        "activeHelp": "Le categorie attive sono disponibili per le nuove richieste di assenza.",
+        "color": "Colore",
+        "colorHelp": "Indicatore calendario",
+        "countsAgainstVacation": "Detrae dal saldo ferie",
+        "countsAgainstVacationHelp": "Detrae i giorni approvati dal monte ferie del dipendente.",
+        "description": "Descrizione",
+        "descriptionHelp": "Guida facoltativa mostrata ad amministratori e revisori.",
+        "descriptionPlaceholder": "es., utilizzare per giorni di formazione o certificazione approvati…",
+        "descriptionTranslation": "Descrizione {locale}",
+        "descriptionTranslationPlaceholder": "Descrizione localizzata",
+        "name": "Nome",
+        "nameHelp": "Utilizza un'etichetta chiara che dipendenti e approvatori possano riconoscere.",
+        "nameMaxLength": "Utilizza 100 caratteri o meno",
+        "namePlaceholder": "es., Giorno di formazione…",
+        "nameRequired": "Il nome della categoria è obbligatorio",
+        "nameTranslation": "Nome {locale}",
+        "nameTranslationPlaceholder": "Nome localizzato",
+        "requiresApproval": "Richiede approvazione",
+        "requiresApprovalHelp": "I manager devono approvare le richieste prima che diventino attive.",
+        "requiresWorkTime": "Richiede orario di lavoro",
+        "requiresWorkTimeHelp": "I dipendenti devono registrare l'orario di lavoro per questa categoria di assenza.",
+        "translations": "Traduzioni",
+        "translationsHelp": "Etichette localizzate facoltative per i dipendenti che utilizzano un'altra lingua dell'app.",
+        "type": "Tipo",
+        "typeHelp": "Raggruppa report e flussi di lavoro di assenza a valle.",
+        "typePlaceholder": "Seleziona il tipo di categoria"
+      },
       "header": {
         "approval": "Approvazione",
         "name": "Nome",
@@ -2580,6 +2609,96 @@
       "updated": "Progetto aggiornato",
       "updateFailed": "Aggiornamento progetto fallito"
     },
+    "roles": {
+      "actions": {
+        "assign": "Assegna ruolo",
+        "create": "Crea ruolo",
+        "deleteNamed": "Elimina {name}",
+        "editNamed": "Modifica {name}",
+        "removeNamed": "Rimuovi {name}",
+        "saveChanges": "Salva modifiche"
+      },
+      "assignPanel": {
+        "description": "Seleziona un ruolo da assegnare a questo dipendente.",
+        "empty": "Nessun ruolo disponibile da assegnare. Tutti i ruoli sono già stati assegnati o non ne è stato creato alcuno.",
+        "permissionCount": "{count} permessi",
+        "title": "Assegna ruolo personalizzato"
+      },
+      "baseTiers": {
+        "admin": "Amministratore",
+        "employee": "Dipendente",
+        "manager": "Manager"
+      },
+      "createPanel": {
+        "description": "Definisci un nuovo ruolo con permessi specifici per la tua organizzazione.",
+        "title": "Crea ruolo personalizzato"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Questo ruolo è attualmente assegnato a {count} dipendente. Perderà i permessi concessi da questo ruolo.",
+          "other": "Questo ruolo è attualmente assegnato a {count} dipendenti. Perderanno i permessi concessi da questo ruolo."
+        },
+        "confirm": "Sei sicuro di voler eliminare \"{name}\"?",
+        "title": "Elimina ruolo"
+      },
+      "editor": {
+        "baseTier": "Livello base",
+        "color": "Colore",
+        "description": "Descrizione",
+        "descriptionPlaceholder": "A cosa serve questo ruolo...",
+        "errors": {
+          "createFailed": "Creazione del ruolo non riuscita",
+          "nameRequired": "Il nome del ruolo è obbligatorio",
+          "permissionsFailed": "Salvataggio dei permessi del ruolo non riuscito",
+          "updateFailed": "Aggiornamento del ruolo non riuscito"
+        },
+        "inherited": "Ereditato",
+        "name": "Nome",
+        "namePlaceholder": "es. Team Lead, Responsabile HR...",
+        "permissions": "Autorizzazioni",
+        "permissionsHelp": "Seleziona autorizzazioni aggiuntive per questo ruolo. Le autorizzazioni ereditate dal livello base sono mostrate come bloccate.",
+        "selectColor": "Seleziona colore {color}"
+      },
+      "editPanel": {
+        "description": "Aggiorna i dettagli e i permessi del ruolo.",
+        "title": "Modifica ruolo personalizzato"
+      },
+      "employeeCard": {
+        "description": "Ruoli di autorizzazione aggiuntivi assegnati a questo dipendente",
+        "empty": "Nessun ruolo personalizzato assegnato.",
+        "permissionCount": {
+          "one": "({count} perm)",
+          "other": "({count} perm)"
+        }
+      },
+      "empty": {
+        "description": "Creane uno per iniziare.",
+        "title": "Ancora nessun ruolo personalizzato"
+      },
+      "introduction": "Crea ruoli di autorizzazione personalizzati che possono essere assegnati ai dipendenti. I ruoli personalizzati aggiungono autorizzazioni oltre al livello base.",
+      "table": {
+        "actions": "Azioni",
+        "assigned": "Assegnato",
+        "assignedCount": {
+          "one": "{count} dipendente",
+          "other": "{count} dipendenti"
+        },
+        "baseTier": "Livello base",
+        "name": "Nome",
+        "permissionCount": {
+          "one": "{count} autorizzazione",
+          "other": "{count} autorizzazioni"
+        },
+        "permissions": "Autorizzazioni"
+      },
+      "toast": {
+        "assigned": "Ruolo assegnato",
+        "created": "Ruolo creato",
+        "deleted": "Ruolo eliminato",
+        "removed": "Ruolo rimosso",
+        "updated": "Ruolo aggiornato"
+      }
+    },
     "scheduledExports": {
       "actions": {
         "delete": "Elimina",
@@ -4057,14 +4176,12 @@
       },
       "feature": "gestisci le assenze del team",
       "recordDialog": {
-        "afternoon": "Pomeriggio",
         "category": "Categoria",
         "categoryPlaceholder": "Seleziona una categoria di assenza…",
         "description": "Registra un'assenza approvata direttamente per il dipendente selezionato.",
         "endDate": "Data di fine",
-        "endPeriod": "Periodo di fine",
+        "endDateHelper": "Lascia vuoto per un'assenza in giornata.",
         "failure": "Impossibile registrare l'assenza",
-        "morning": "Mattina",
         "noCategories": "Nessuna categoria disponibile",
         "noEmployee": "Seleziona un dipendente prima di registrare un'assenza",
         "notes": "Note",
@@ -4072,8 +4189,9 @@
         "pickEndDate": "Seleziona data di fine…",
         "pickStartDate": "Seleziona data di inizio…",
         "recording": "Registrazione in corso…",
+        "sickDetail": "Dettaglio malattia",
+        "sickDetailPlaceholder": "Seleziona dettaglio malattia…",
         "startDate": "Data di inizio",
-        "startPeriod": "Periodo di inizio",
         "submit": "Registra assenza",
         "success": "Assenza registrata",
         "title": "Registra assenza"

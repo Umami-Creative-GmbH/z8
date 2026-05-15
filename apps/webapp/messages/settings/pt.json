@@ -174,6 +174,35 @@
       "deleteFailed": "Não foi possível excluir a categoria",
       "deleteTitle": "Excluir Categoria de Ausência",
       "editCategory": "Editar \"{name}\"",
+      "form": {
+        "active": "Ativo",
+        "activeHelp": "Categorias ativas estão disponíveis para novas solicitações de ausência.",
+        "color": "Cor",
+        "colorHelp": "Marcador de calendário",
+        "countsAgainstVacation": "Desconta do saldo de férias",
+        "countsAgainstVacationHelp": "Deduzir dias aprovados do saldo de férias do funcionário.",
+        "description": "Descrição",
+        "descriptionHelp": "Orientação opcional exibida para administradores e revisores.",
+        "descriptionPlaceholder": "ex.: Use para dias de treinamento aprovados ou certificação…",
+        "descriptionTranslation": "Descrição em {locale}",
+        "descriptionTranslationPlaceholder": "Descrição localizada",
+        "name": "Nome",
+        "nameHelp": "Use um rótulo claro que funcionários e aprovadores reconhecerão.",
+        "nameMaxLength": "Use 100 caracteres ou menos",
+        "namePlaceholder": "ex.: Dia de Treinamento…",
+        "nameRequired": "O nome da categoria é obrigatório",
+        "nameTranslation": "Nome em {locale}",
+        "nameTranslationPlaceholder": "Nome localizado",
+        "requiresApproval": "Requer Aprovação",
+        "requiresApprovalHelp": "Os gerentes devem aprovar as solicitações antes que se tornem ativas.",
+        "requiresWorkTime": "Requer Tempo de Trabalho",
+        "requiresWorkTimeHelp": "Os funcionários devem registrar o tempo de trabalho para esta categoria de ausência.",
+        "translations": "Traduções",
+        "translationsHelp": "Rótulos localizados opcionais para funcionários que usam outro idioma no aplicativo.",
+        "type": "Tipo",
+        "typeHelp": "Agrupa relatórios e fluxos de trabalho de ausência subsequentes.",
+        "typePlaceholder": "Selecione o tipo de categoria"
+      },
       "header": {
         "approval": "Aprovação",
         "name": "Nome",
@@ -2580,6 +2609,96 @@
       "updated": "Projeto atualizado",
       "updateFailed": "Falha ao atualizar projeto"
     },
+    "roles": {
+      "actions": {
+        "assign": "Atribuir Função",
+        "create": "Criar Função",
+        "deleteNamed": "Excluir {name}",
+        "editNamed": "Editar {name}",
+        "removeNamed": "Remover {name}",
+        "saveChanges": "Salvar alterações"
+      },
+      "assignPanel": {
+        "description": "Selecione uma função para atribuir a este funcionário.",
+        "empty": "Não há funções disponíveis para atribuir. Todas as funções já foram atribuídas ou nenhuma foi criada.",
+        "permissionCount": "{count} permissões",
+        "title": "Atribuir função personalizada"
+      },
+      "baseTiers": {
+        "admin": "Administrador",
+        "employee": "Funcionário",
+        "manager": "Gerente"
+      },
+      "createPanel": {
+        "description": "Defina uma nova função com permissões específicas para sua organização.",
+        "title": "Criar função personalizada"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Esta função está atualmente atribuída a {count} funcionário. Ele perderá as permissões concedidas por esta função.",
+          "other": "Esta função está atualmente atribuída a {count} funcionários. Eles perderão as permissões concedidas por esta função."
+        },
+        "confirm": "Tem certeza de que deseja excluir \"{name}\"?",
+        "title": "Excluir função"
+      },
+      "editor": {
+        "baseTier": "Nível base",
+        "color": "Cor",
+        "description": "Descrição",
+        "descriptionPlaceholder": "Para que serve esta função…",
+        "errors": {
+          "createFailed": "Falha ao criar função",
+          "nameRequired": "O nome da função é obrigatório",
+          "permissionsFailed": "Falha ao salvar permissões da função",
+          "updateFailed": "Falha ao atualizar função"
+        },
+        "inherited": "Herdado",
+        "name": "Nome",
+        "namePlaceholder": "ex.: Líder de Equipe, Gerente de RH...",
+        "permissions": "Permissões",
+        "permissionsHelp": "Selecione permissões adicionais para esta função. As permissões herdadas do nível base são exibidas como bloqueadas.",
+        "selectColor": "Selecionar cor {color}"
+      },
+      "editPanel": {
+        "description": "Atualize os detalhes e as permissões da função.",
+        "title": "Editar função personalizada"
+      },
+      "employeeCard": {
+        "description": "Funções de permissão adicionais atribuídas a este funcionário",
+        "empty": "Nenhuma função personalizada atribuída.",
+        "permissionCount": {
+          "one": "({count} perm)",
+          "other": "({count} perms)"
+        }
+      },
+      "empty": {
+        "description": "Crie uma para começar.",
+        "title": "Ainda não há funções personalizadas"
+      },
+      "introduction": "Crie funções de permissão personalizadas que podem ser atribuídas aos funcionários. Funções personalizadas adicionam permissões além do nível base.",
+      "table": {
+        "actions": "Ações",
+        "assigned": "Atribuído",
+        "assignedCount": {
+          "one": "{count} funcionário",
+          "other": "{count} funcionários"
+        },
+        "baseTier": "Nível Base",
+        "name": "Nome",
+        "permissionCount": {
+          "one": "{count} permissão",
+          "other": "{count} permissões"
+        },
+        "permissions": "Permissões"
+      },
+      "toast": {
+        "assigned": "Função atribuída",
+        "created": "Função criada",
+        "deleted": "Função excluída",
+        "removed": "Função removida",
+        "updated": "Cargo atualizado"
+      }
+    },
     "scheduledExports": {
       "actions": {
         "delete": "Excluir",
@@ -4057,14 +4176,12 @@
       },
       "feature": "gerenciar ausências da equipe",
       "recordDialog": {
-        "afternoon": "Tarde",
         "category": "Categoria",
         "categoryPlaceholder": "Selecione uma categoria de ausência…",
         "description": "Registre uma ausência aprovada diretamente para o funcionário selecionado.",
         "endDate": "Data de término",
-        "endPeriod": "Período de término",
+        "endDateHelper": "Deixe vazio para uma ausência no mesmo dia.",
         "failure": "Falha ao registrar ausência",
-        "morning": "Manhã",
         "noCategories": "Nenhuma categoria disponível",
         "noEmployee": "Selecione um funcionário antes de registrar uma ausência",
         "notes": "Observações",
@@ -4072,8 +4189,9 @@
         "pickEndDate": "Escolha a data de término…",
         "pickStartDate": "Escolha a data de início…",
         "recording": "Registrando…",
+        "sickDetail": "Detalhe de doença",
+        "sickDetailPlaceholder": "Selecione o detalhe de doença…",
         "startDate": "Data de início",
-        "startPeriod": "Período de início",
         "submit": "Registrar ausência",
         "success": "Ausência registrada",
         "title": "Registrar ausência"

@@ -13,6 +13,13 @@
       "today": "Oggi!",
       "tomorrow": "Domani"
     },
+    "customize": {
+      "empty-description": "Usa l'icona di personalizzazione della dashboard per riabilitare i singoli widget o ripristina il layout per mostrare di nuovo tutti i widget.",
+      "empty-title": "Tutti i widget della dashboard sono nascosti",
+      "reset": "Ripristina layout",
+      "title": "Widget dashboard",
+      "trigger": "Personalizza dashboard"
+    },
     "hydration": {
       "description": "Monitora la tua assunzione giornaliera di acqua",
       "error": "Impossibile caricare le statistiche di idratazione",

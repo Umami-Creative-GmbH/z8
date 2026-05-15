@@ -42,24 +42,25 @@
       "businessDays": "Días laborables:",
       "daysRemaining": "Días restantes:",
       "description": "Envíe una solicitud de tiempo libre. Su gerente será notificado para su aprobación.",
+      "duration": "Duración de la ausencia",
+      "duration.fullDay": "Día completo",
+      "duration.partialDay": "Día parcial",
       "endDate": "Fecha de finalización *",
-      "endPeriod": "Período final",
+      "endDateHelper": "Déjelo vacío para una ausencia de un solo día.",
+      "endTime": "Hora de finalización",
       "errors": {
         "fillRequiredFields": "Por favor, complete todos los campos obligatorios",
         "insufficientBalance": "Saldo de vacaciones insuficiente",
         "insufficientBalanceForRequest": "Saldo de vacaciones insuficiente para esta solicitud",
-        "invalidSameDayPeriod": "No puede terminar por la mañana si comienza por la tarde el mismo día"
+        "invalidSelection": "Por favor, compruebe su selección e inténtelo de nuevo"
       },
       "notesOptional": "Notas (Opcional)",
       "notesPlaceholder": "Añadir información adicional...",
-      "period": {
-        "afternoonOnly": "Solo tarde",
-        "fullDay": "Día completo",
-        "morningOnly": "Solo mañana"
-      },
       "selectAbsenceType": "Seleccionar tipo de ausencia",
+      "sickDetail": "Detalle de enfermedad *",
+      "sickDetailPlaceholder": "Seleccionar detalle de enfermedad",
       "startDate": "Fecha de inicio *",
-      "startPeriod": "Período inicial",
+      "startTime": "Hora de inicio",
       "submitRequest": "Enviar solicitud",
       "title": "Solicitar ausencia"
     },

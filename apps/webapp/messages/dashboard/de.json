@@ -13,6 +13,13 @@
       "today": "Heute!",
       "tomorrow": "Morgen"
     },
+    "customize": {
+      "empty-description": "Verwenden Sie das Symbol zur Dashboard-Anpassung, um einzelne Widgets wieder zu aktivieren oder das Layout zurückzusetzen, damit alle Widgets wieder angezeigt werden.",
+      "empty-title": "Alle Dashboard-Widgets sind ausgeblendet",
+      "reset": "Layout zurücksetzen",
+      "title": "Dashboard-Widgets",
+      "trigger": "Dashboard anpassen"
+    },
     "hydration": {
       "description": "Verfolgen Sie Ihre tägliche Wasseraufnahme",
       "error": "Fehler beim Laden der Wasseraufnahme-Statistiken",
