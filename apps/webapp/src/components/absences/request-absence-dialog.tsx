@@ -112,24 +112,26 @@ export function RequestAbsenceDialog({
 		defaultValues: createDefaultValues(initialDate),
 		onSubmit: async ({ value }) => {
 			const selectedCategory = categories.find((c) => c.id === value.categoryId);
+			const requiredFieldsMessage = t(
+				"absences.form.errors.fillRequiredFields",
+				"Please fill in all required fields",
+			);
 
 			if (!value.categoryId || !value.startDate || !value.endDate) {
-				toast.error(
-					t("absences.form.errors.fillRequiredFields", "Please fill in all required fields"),
-				);
+				toast.error(requiredFieldsMessage);
 				return;
 			}
 
 			if (selectedCategory?.type === "sick" && !value.sickDetail) {
-				toast.error(t("absences.form.errors.sickDetailRequired", "Sick detail is required"));
+				toast.error(requiredFieldsMessage);
 				return;
 			}
 
 			if (selectedCategory?.type !== "sick" && value.sickDetail) {
 				toast.error(
 					t(
-						"absences.form.errors.sickDetailOnlyForSick",
-						"Sick detail can only be used for sick absences",
+						"absences.form.errors.invalidSelection",
+						"Please check your selection and try again",
 					),
 				);
 				return;

@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
+import { toast } from "sonner";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
 
 vi.mock("@tolgee/react", () => ({
@@ -21,6 +22,13 @@ vi.mock("@/navigation", () => ({
 vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	requestAbsence: vi.fn(),
 	getAbsencePlanPreview: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: vi.fn(),
+		success: vi.fn(),
+	},
 }));
 
 vi.mock("@/components/ui/date-picker", () => ({
@@ -102,6 +110,7 @@ vi.mock("@/components/ui/select", async () => {
 
 const requestAbsenceMock = vi.mocked(requestAbsence);
 const getAbsencePlanPreviewMock = vi.mocked(getAbsencePlanPreview);
+const toastMock = vi.mocked(toast);
 
 const categories = [
 	{
@@ -285,13 +294,35 @@ describe("RequestAbsenceDialog", () => {
 		expect(screen.queryByText("Sick detail *")).toBeNull();
 	});
 
-	it("blocks sick absence submission until sick detail is selected", async () => {
+	it("shows the generic required fields error when sick detail is missing", async () => {
 		renderDialog();
 
 		fillRequiredFieldsForSickCategory();
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
-		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith("Please fill in all required fields"),
+		);
+		expect(requestAbsenceMock).not.toHaveBeenCalled();
+	});
+
+	it("submits sick detail when selected for a sick absence", async () => {
+		renderDialog();
+
+		fillRequiredFieldsForSickCategory();
+		fireEvent.change(screen.getByLabelText("Sick detail *"), {
+			target: { value: "with_certificate" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(requestAbsenceMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					categoryId: "sick",
+					sickDetail: "with_certificate",
+				}),
+			),
+		);
 	});
 
 	it("keeps loading and error states non-blocking for submission", async () => {
