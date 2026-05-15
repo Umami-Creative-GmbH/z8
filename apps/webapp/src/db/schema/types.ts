@@ -89,6 +89,7 @@ export type SurchargeCalculationDetails = {
 // Type for dashboard widget order preferences
 export type DashboardWidgetOrder = {
 	order: string[];
+	hidden?: string[];
 	version: number;
 };
 
