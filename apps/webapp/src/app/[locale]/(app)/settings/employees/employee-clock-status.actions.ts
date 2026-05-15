@@ -3,7 +3,7 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
-import { workPeriod } from "@/db/schema";
+import { employee, workPeriod } from "@/db/schema";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import {
@@ -34,11 +34,32 @@ export async function getEmployeeClockStatuses(
 		const actor = yield* _(
 			getEmployeeSettingsActorContext({ queryName: "getEmployeeClockStatuses" }),
 		);
+		const organizationEmployeeRows = yield* _(
+			resolveQueryEffect(
+				actor.dbService.query("getEmployeeClockStatuses:organizationEmployees", async () => {
+					return await actor.dbService.db
+						.select({ id: employee.id })
+						.from(employee)
+						.where(
+							and(
+								eq(employee.organizationId, actor.organizationId),
+								inArray(employee.id, normalizedEmployeeIds),
+							),
+						);
+				}),
+			),
+		);
+		const organizationEmployeeIds = new Set(
+			organizationEmployeeRows.map((row) => row.id),
+		);
 		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
 		const accessibleEmployeeIds =
 			managedEmployeeIds === null
-				? normalizedEmployeeIds
-				: normalizedEmployeeIds.filter((employeeId) => managedEmployeeIds.has(employeeId));
+				? normalizedEmployeeIds.filter((employeeId) => organizationEmployeeIds.has(employeeId))
+				: normalizedEmployeeIds.filter(
+						(employeeId) =>
+							organizationEmployeeIds.has(employeeId) && managedEmployeeIds.has(employeeId),
+					);
 
 		if (accessibleEmployeeIds.length === 0) {
 			return {} satisfies EmployeeClockStatusMap;

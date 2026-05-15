@@ -44,13 +44,29 @@ vi.mock("@/lib/effect/result", async () => {
 
 import { getEmployeeClockStatuses } from "./employee-clock-status.actions";
 
-function createDbService(activeRows: Array<{ employeeId: string }>) {
+function createDbService({
+	activeRows,
+	organizationEmployeeRows,
+}: {
+	activeRows: Array<{ employeeId: string }>;
+	organizationEmployeeRows: Array<{ id: string }>;
+}) {
 	return {
-		query: vi.fn((_name: string, fn: () => unknown) => fn()),
+		query: vi.fn((name: string, fn: () => unknown) => {
+			if (name === "getEmployeeClockStatuses:organizationEmployees") {
+				return Promise.resolve(organizationEmployeeRows);
+			}
+
+			if (name === "getEmployeeClockStatuses:activeWorkPeriods") {
+				return Promise.resolve(activeRows);
+			}
+
+			return fn();
+		}),
 		db: {
 			select: vi.fn(() => ({
 				from: vi.fn(() => ({
-					where: vi.fn(() => Promise.resolve(activeRows)),
+					where: vi.fn(() => Promise.resolve([])),
 				})),
 			})),
 		},
@@ -63,7 +79,10 @@ describe("getEmployeeClockStatuses", () => {
 	});
 
 	it("returns clocked-in only for requested employees with active work periods", async () => {
-		const dbService = createDbService([{ employeeId: "emp-1" }]);
+		const dbService = createDbService({
+			activeRows: [{ employeeId: "emp-1" }],
+			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
+		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
 			Effect.succeed({
 				dbService,
@@ -86,7 +105,10 @@ describe("getEmployeeClockStatuses", () => {
 	});
 
 	it("filters manager requests to managed employees", async () => {
-		const dbService = createDbService([{ employeeId: "emp-1" }, { employeeId: "emp-2" }]);
+		const dbService = createDbService({
+			activeRows: [{ employeeId: "emp-1" }, { employeeId: "emp-2" }],
+			organizationEmployeeRows: [{ id: "emp-1" }, { id: "emp-2" }],
+		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
 			Effect.succeed({
 				dbService,
@@ -106,7 +128,10 @@ describe("getEmployeeClockStatuses", () => {
 	});
 
 	it("deduplicates and ignores empty employee ids", async () => {
-		const dbService = createDbService([]);
+		const dbService = createDbService({
+			activeRows: [],
+			organizationEmployeeRows: [{ id: "emp-1" }],
+		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
 			Effect.succeed({
 				dbService,
@@ -123,5 +148,28 @@ describe("getEmployeeClockStatuses", () => {
 		expect(result.success).toBe(true);
 		if (!result.success) return;
 		expect(result.data).toEqual({ "emp-1": "clocked-out" });
+	});
+
+	it("does not expose requested employee ids outside the active organization", async () => {
+		const dbService = createDbService({
+			activeRows: [{ employeeId: "emp-1" }, { employeeId: "emp-outside-org" }],
+			organizationEmployeeRows: [{ id: "emp-1" }],
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				dbService,
+				organizationId: "org-1",
+				accessTier: "orgAdmin",
+				currentEmployee: { id: "admin-1", role: "admin" },
+				session: { user: { id: "user-1" } },
+			}),
+		);
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+
+		const result = await getEmployeeClockStatuses(["emp-1", "emp-outside-org"]);
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toEqual({ "emp-1": "clocked-in" });
 	});
 });
