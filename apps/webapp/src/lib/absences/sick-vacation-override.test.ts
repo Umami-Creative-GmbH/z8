@@ -248,7 +248,7 @@ describe("adjustVacationAbsencesForSickness", () => {
 		);
 	});
 
-	it("deletes fully covered vacation approval and linked canonical record", async () => {
+	it("deletes fully covered vacation approval, absence, and then linked canonical record", async () => {
 		const { tx, calls } = createFakeTx({ absences: [vacation()] });
 
 		await adjustVacationAbsencesForSickness({
@@ -262,8 +262,8 @@ describe("adjustVacationAbsencesForSickness", () => {
 
 		expect(calls.deletes.map((call) => call.table)).toEqual([
 			approvalRequest,
-			timeRecord,
 			absenceEntry,
+			timeRecord,
 		]);
 	});
 

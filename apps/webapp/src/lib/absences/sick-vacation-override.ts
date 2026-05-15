@@ -228,6 +228,9 @@ export async function adjustVacationAbsencesForSickness(input: {
 					eq(approvalRequest.organizationId, input.organizationId),
 				),
 			);
+			await input.tx.delete(absenceEntry).where(
+				and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)),
+			);
 			if (vacation.canonicalRecordId) {
 				await input.tx.delete(timeRecord).where(
 					and(
@@ -237,9 +240,6 @@ export async function adjustVacationAbsencesForSickness(input: {
 					),
 				);
 			}
-			await input.tx.delete(absenceEntry).where(
-				and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)),
-			);
 			summary.deletedAbsenceIds.push(vacation.id);
 			continue;
 		}
