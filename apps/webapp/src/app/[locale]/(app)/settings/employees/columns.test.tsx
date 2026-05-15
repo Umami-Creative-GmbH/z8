@@ -12,7 +12,13 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ name }: { name?: string | null }) => <span data-avatar-name={name ?? ""} />,
+	UserAvatar: ({
+		name,
+		clockStatus,
+	}: {
+		name?: string | null;
+		clockStatus?: "clocked-in" | "clocked-out" | "unknown";
+	}) => <span data-avatar-name={name ?? ""} data-clock-status={clockStatus ?? "unknown"} />,
 }));
 
 vi.mock("@/navigation", () => ({
@@ -81,5 +87,11 @@ describe("employee directory columns", () => {
 		expect(
 			screen.getByText("", { selector: '[data-avatar-name="Directory Name (they/them)"]' }),
 		).toBeTruthy();
+	});
+
+	it("passes clock status to the directory avatar", () => {
+		renderEmployeeCell(createEmployee({ clockStatus: "clocked-in" } as Partial<EmployeeWithRelations>));
+
+		expect(screen.getByText("", { selector: '[data-clock-status="clocked-in"]' })).toBeTruthy();
 	});
 });

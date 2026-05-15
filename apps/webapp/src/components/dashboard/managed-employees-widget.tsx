@@ -12,8 +12,8 @@ import { useTranslate } from "@tolgee/react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/user-avatar";
-import { cn } from "@/lib/utils";
+import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
 import { getManagedEmployees } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
@@ -31,6 +31,7 @@ type ManagedEmployee = {
 	team: {
 		name: string;
 	} | null;
+	clockStatus?: EmployeeClockStatus;
 };
 
 function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
@@ -40,15 +41,13 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 			className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20"
 		>
 			{/* Avatar */}
-			<div className="relative">
-				<UserAvatar
-					image={employee.user.image}
-					seed={employee.user.id}
-					name={employee.user.name}
-					size="md"
-				/>
-				<div className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-background bg-emerald-500" />
-			</div>
+			<UserAvatar
+				image={employee.user.image}
+				seed={employee.user.id}
+				name={employee.user.name}
+				clockStatus={employee.clockStatus ?? "unknown"}
+				size="md"
+			/>
 
 			{/* Info */}
 			<div className="flex-1 min-w-0">
@@ -125,6 +124,14 @@ export function ManagedEmployeesWidget() {
 	});
 
 	const employees = managedEmployeesQuery.data?.employees ?? [];
+	const presence = useEmployeeClockStatuses(
+		employees.map((employee) => employee.id),
+		{ polling: true },
+	);
+	const employeesWithPresence = employees.map((employee) => ({
+		...employee,
+		clockStatus: presence.getStatus(employee.id),
+	}));
 	const isManager = managedEmployeesQuery.data?.isManager ?? false;
 	const loading = managedEmployeesQuery.isLoading;
 	const refreshing = managedEmployeesQuery.isFetching && !managedEmployeesQuery.isLoading;
@@ -165,7 +172,7 @@ export function ManagedEmployeesWidget() {
 					<EmptyState />
 				) : (
 					<div className="space-y-2">
-						{employees.slice(0, 4).map((emp) => (
+						{employeesWithPresence.slice(0, 4).map((emp) => (
 							<EmployeeCard key={emp.id} employee={emp} />
 						))}
 
