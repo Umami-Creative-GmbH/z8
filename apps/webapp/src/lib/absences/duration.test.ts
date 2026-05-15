@@ -138,6 +138,19 @@ describe("absence duration helpers", () => {
 		).toBeNull();
 	});
 
+	it("rejects same-day legacy pm to am periods", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-15",
+				startPeriod: "pm",
+				endPeriod: "am",
+				notes: "",
+			}),
+		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+	});
+
 	it("maps legacy pm periods without explicit times to noon through end of day", () => {
 		const mapped = mapAbsenceDurationToCanonicalTimestamps({
 			categoryId: "category-1",

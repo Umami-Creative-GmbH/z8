@@ -99,6 +99,10 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 		return null;
 	}
 
+	if (hasInvalidSameDayLegacyPeriodRange(input, normalized)) {
+		return "Cannot end in the morning if starting in the afternoon on the same day";
+	}
+
 	if (hasLegacyPeriodOnlyIntent(input)) {
 		return null;
 	}
@@ -234,6 +238,18 @@ function hasLegacyPeriodOnlyIntent(input: AbsenceDurationInput): boolean {
 			input.endPeriod === "pm") &&
 		!hasText(input.startTime) &&
 		!hasText(input.endTime)
+	);
+}
+
+function hasInvalidSameDayLegacyPeriodRange(
+	input: AbsenceDurationInput,
+	normalized: NormalizedAbsenceDurationInput,
+): boolean {
+	return (
+		hasLegacyPeriodOnlyIntent(input) &&
+		normalized.startDate === normalized.endDate &&
+		normalized.startPeriod === "pm" &&
+		normalized.endPeriod === "am"
 	);
 }
 

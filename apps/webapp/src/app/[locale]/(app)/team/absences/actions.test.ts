@@ -95,6 +95,21 @@ describe("manager absence server action helpers", () => {
 		).toBeNull();
 	});
 
+	it("rejects same-day legacy pm to am manager ranges", () => {
+		expect(
+			validateRecordAbsenceDateRange({
+				categoryId: "category-1",
+				startDate: "2026-04-10",
+				startPeriod: "pm",
+				endDate: "2026-04-10",
+				endPeriod: "am",
+				durationKind: undefined,
+				startTime: "",
+				endTime: "",
+			}),
+		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+	});
+
 	it("builds approved canonical absence record values", () => {
 		const values = buildCanonicalAbsenceRecordValues({
 			organizationId: "org-1",
