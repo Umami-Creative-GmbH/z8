@@ -21,6 +21,7 @@ type AbsentEmployee = {
 	category: string;
 	categoryColor: string | null;
 	endsToday: boolean;
+	returnsTomorrow: boolean;
 	returnDate: string;
 	clockStatus?: EmployeeClockStatus;
 };
@@ -46,7 +47,7 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 			<div className="flex-1 min-w-0">
 				<div className="font-medium text-sm truncate">{employee.name}</div>
 				<div className="flex items-center gap-1 text-xs text-muted-foreground">
-					{employee.endsToday ? (
+					{employee.returnsTomorrow ? (
 						<span className="text-emerald-600 dark:text-emerald-400">
 							{t("dashboard.whos-out.returns-tomorrow", "Returns tomorrow")}
 						</span>
