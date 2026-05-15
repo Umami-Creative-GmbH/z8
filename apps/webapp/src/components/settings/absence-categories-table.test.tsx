@@ -25,6 +25,7 @@ vi.mock("@/app/[locale]/(app)/settings/vacation/actions", () => ({
 }));
 
 vi.mock("@tolgee/react", () => ({
+	useLocale: () => "de",
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
@@ -76,6 +77,8 @@ const categories = [
 		type: "sick",
 		name: "Sick leave",
 		description: "Medical absence",
+		nameTranslations: null,
+		descriptionTranslations: null,
 		requiresWorkTime: false,
 		requiresApproval: true,
 		countsAgainstVacation: false,
@@ -87,6 +90,8 @@ const categories = [
 		type: "custom",
 		name: "Training",
 		description: null,
+		nameTranslations: null,
+		descriptionTranslations: null,
 		requiresWorkTime: true,
 		requiresApproval: false,
 		countsAgainstVacation: true,
@@ -148,6 +153,48 @@ describe("AbsenceCategoriesTable", () => {
 		renderTable(true);
 
 		expect(await screen.findByPlaceholderText("Search categories…")).toBeTruthy();
+	});
+
+	it("shows custom category translations for the active locale", async () => {
+		mocks.getAbsenceCategoriesForSettings.mockResolvedValue({
+			success: true,
+			data: [
+				{
+					...categories[1],
+					nameTranslations: { de: "Schulung" },
+					descriptionTranslations: { de: "Weiterbildungstag" },
+				},
+			],
+		});
+
+		renderTable(true);
+
+		expect(await screen.findByText("Schulung")).toBeTruthy();
+		expect(screen.getByText("Weiterbildungstag")).toBeTruthy();
+		expect(screen.queryByText("Training")).toBeNull();
+	});
+
+	it("searches categories by localized display name", async () => {
+		mocks.getAbsenceCategoriesForSettings.mockResolvedValue({
+			success: true,
+			data: [
+				categories[0],
+				{
+					...categories[1],
+					nameTranslations: { de: "Schulung" },
+					descriptionTranslations: { de: "Weiterbildungstag" },
+				},
+			],
+		});
+
+		renderTable(true);
+
+		fireEvent.change(await screen.findByPlaceholderText("Search categories…"), {
+			target: { value: "schulung" },
+		});
+
+		expect(await screen.findByText("Schulung")).toBeTruthy();
+		expect(screen.queryByText("Sick leave")).toBeNull();
 	});
 
 	it("shows the server conflict message when delete is rejected", async () => {

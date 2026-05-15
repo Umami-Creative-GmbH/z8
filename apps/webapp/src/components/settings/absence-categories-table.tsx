@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useTranslate } from "@tolgee/react";
+import { useLocale, useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -40,6 +40,10 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	getAbsenceCategoryDisplayDescription,
+	getAbsenceCategoryDisplayName,
+} from "@/lib/absences/category-display";
 import { queryKeys } from "@/lib/query/keys";
 import { AbsenceCategoryForm, type AbsenceCategoryForSettings } from "./absence-category-form";
 
@@ -68,6 +72,7 @@ export function AbsenceCategoriesTable({
 	canManageCategories,
 }: AbsenceCategoriesTableProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [categoryToDelete, setCategoryToDelete] = useState<AbsenceCategoryForSettings | null>(null);
@@ -137,39 +142,56 @@ export function AbsenceCategoriesTable({
 	});
 	const toggleActive = toggleActiveMutation.mutate;
 	const toggleActivePending = toggleActiveMutation.isPending;
+	const categoryToDeleteName = categoryToDelete
+		? getAbsenceCategoryDisplayName(categoryToDelete, locale, t)
+		: undefined;
 
 	const filteredCategories = useMemo(() => {
 		if (!categories) return [];
 		if (!search) return categories;
 
 		const searchLower = search.toLowerCase();
-		return categories.filter((category) => category.name.toLowerCase().includes(searchLower));
-	}, [categories, search]);
+		return categories.filter((category) => {
+			const searchableValues = [
+				category.name,
+				category.description,
+				getAbsenceCategoryDisplayName(category, locale, t),
+				getAbsenceCategoryDisplayDescription(category, locale, t),
+			];
+
+			return searchableValues.some((value) => value?.toLowerCase().includes(searchLower));
+		});
+	}, [categories, locale, search, t]);
 
 	const columns = useMemo<ColumnDef<AbsenceCategoryForSettings>[]>(
 		() => [
 			{
 				accessorKey: "name",
 				header: t("settings.absenceCategories.header.name", "Name"),
-				cell: ({ row }) => (
-					<div className="flex items-center gap-2">
-						{row.original.color ? (
-							<span
-								className="h-3 w-3 shrink-0 rounded-full border"
-								style={{ backgroundColor: row.original.color }}
-								title={t("settings.absenceCategories.colorIndicator", "Category color")}
-							/>
-						) : null}
-						<div className="min-w-0">
-							<div className="font-medium">{row.original.name}</div>
-							{row.original.description ? (
-								<div className="break-words text-muted-foreground text-sm">
-									{row.original.description}
-								</div>
+				cell: ({ row }) => {
+					const displayName = getAbsenceCategoryDisplayName(row.original, locale, t);
+					const displayDescription = getAbsenceCategoryDisplayDescription(row.original, locale, t);
+
+					return (
+						<div className="flex items-center gap-2">
+							{row.original.color ? (
+								<span
+									className="h-3 w-3 shrink-0 rounded-full border"
+									style={{ backgroundColor: row.original.color }}
+									title={t("settings.absenceCategories.colorIndicator", "Category color")}
+								/>
 							) : null}
+							<div className="min-w-0">
+								<div className="font-medium">{displayName}</div>
+								{displayDescription ? (
+									<div className="break-words text-muted-foreground text-sm">
+										{displayDescription}
+									</div>
+								) : null}
+							</div>
 						</div>
-					</div>
-				),
+					);
+				},
 			},
 			{
 				accessorKey: "type",
@@ -222,52 +244,56 @@ export function AbsenceCategoriesTable({
 				? [
 						{
 							id: "actions",
-							cell: ({ row }: { row: { original: AbsenceCategoryForSettings } }) => (
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8"
-											aria-label={`${t("common.openMenu", "Open menu")} ${row.original.name}`}
-										>
-											<IconDots aria-hidden="true" className="h-4 w-4" />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem onClick={() => setEditingCategory(row.original)}>
-											<IconPencil aria-hidden="true" className="mr-2 h-4 w-4" />
-											{t("common.edit", "Edit")}
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => toggleActive(row.original)}
-											disabled={toggleActivePending}
-										>
-											{row.original.isActive ? (
-												<IconX aria-hidden="true" className="mr-2 h-4 w-4" />
-											) : (
-												<IconCheck aria-hidden="true" className="mr-2 h-4 w-4" />
-											)}
-											{row.original.isActive
-												? t("settings.absenceCategories.deactivate", "Deactivate")
-												: t("settings.absenceCategories.reactivate", "Reactivate")}
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											className="text-destructive"
-											onClick={() => setCategoryToDelete(row.original)}
-										>
-											<IconTrash aria-hidden="true" className="mr-2 h-4 w-4" />
-											{t("common.delete", "Delete")}
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							),
+							cell: ({ row }: { row: { original: AbsenceCategoryForSettings } }) => {
+								const displayName = getAbsenceCategoryDisplayName(row.original, locale, t);
+
+								return (
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8"
+												aria-label={`${t("common.openMenu", "Open menu")} ${displayName}`}
+											>
+												<IconDots aria-hidden="true" className="h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem onClick={() => setEditingCategory(row.original)}>
+												<IconPencil aria-hidden="true" className="mr-2 h-4 w-4" />
+												{t("common.edit", "Edit")}
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() => toggleActive(row.original)}
+												disabled={toggleActivePending}
+											>
+												{row.original.isActive ? (
+													<IconX aria-hidden="true" className="mr-2 h-4 w-4" />
+												) : (
+													<IconCheck aria-hidden="true" className="mr-2 h-4 w-4" />
+												)}
+												{row.original.isActive
+													? t("settings.absenceCategories.deactivate", "Deactivate")
+													: t("settings.absenceCategories.reactivate", "Reactivate")}
+											</DropdownMenuItem>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												className="text-destructive"
+												onClick={() => setCategoryToDelete(row.original)}
+											>
+												<IconTrash aria-hidden="true" className="mr-2 h-4 w-4" />
+												{t("common.delete", "Delete")}
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								);
+							},
 						},
 					]
 				: []),
 		],
-		[t, canManageCategories, toggleActive, toggleActivePending],
+		[t, locale, canManageCategories, toggleActive, toggleActivePending],
 	);
 
 	const handleFormClose = (open: boolean) => {
@@ -366,7 +392,7 @@ export function AbsenceCategoriesTable({
 							{t(
 								"settings.absenceCategories.deleteDescription",
 								'Are you sure you want to delete "{name}"? Categories used by existing absences cannot be deleted and should be deactivated instead.',
-								{ name: categoryToDelete?.name },
+								{ name: categoryToDeleteName },
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>

@@ -173,7 +173,78 @@
       "deleteDescription": "Tem certeza de que deseja excluir \"{name}\"? Categorias usadas por ausências existentes não podem ser excluídas e devem ser desativadas.",
       "deleteFailed": "Não foi possível excluir a categoria",
       "deleteTitle": "Excluir Categoria de Ausência",
+      "defaults": {
+        "bereavement": {
+          "description": "Licença por luto",
+          "name": "Luto"
+        },
+        "home_office": {
+          "description": "Dia de trabalho remoto",
+          "name": "Home Office"
+        },
+        "parental": {
+          "description": "Ausência por licença parental",
+          "name": "Licença parental"
+        },
+        "personal": {
+          "description": "Folga pessoal",
+          "name": "Dia pessoal"
+        },
+        "sick": {
+          "description": "Dia de doença",
+          "name": "Licença médica"
+        },
+        "unpaid": {
+          "description": "Ausência não remunerada",
+          "name": "Licença não remunerada"
+        },
+        "vacation": {
+          "description": "Folga remunerada",
+          "name": "Férias"
+        }
+      },
       "editCategory": "Editar \"{name}\"",
+      "form": {
+        "active": "Ativo",
+        "activeHelp": "Categorias ativas estão disponíveis para novas solicitações de ausência.",
+        "color": "Cor",
+        "colorHelp": "Marcador de calendário",
+        "countsAgainstVacation": "Conta contra o saldo de férias",
+        "countsAgainstVacationHelp": "Deduzir dias aprovados do direito de férias do funcionário.",
+        "description": "Descrição",
+        "descriptionHelp": "Orientação opcional exibida para administradores e revisores.",
+        "descriptionPlaceholder": "ex: Use para dias aprovados de treinamento ou certificação…",
+        "descriptionTranslation": "Descrição em {locale}",
+        "descriptionTranslationPlaceholder": "Descrição localizada",
+        "name": "Nome",
+        "nameHelp": "Use um rótulo claro que funcionários e aprovadores reconheçam.",
+        "nameMaxLength": "Use 100 caracteres ou menos",
+        "namePlaceholder": "ex: Dia de treinamento…",
+        "nameRequired": "O nome da categoria é obrigatório",
+        "nameTranslation": "Nome em {locale}",
+        "nameTranslationPlaceholder": "Nome localizado",
+        "requiresApproval": "Requer aprovação",
+        "requiresApprovalHelp": "Gerentes devem aprovar solicitações antes que fiquem ativas.",
+        "requiresWorkTime": "Requer tempo de trabalho",
+        "requiresWorkTimeHelp": "Funcionários devem registrar tempo de trabalho para esta categoria de ausência.",
+        "translatedDescription": "Descrição em {locale}",
+        "translatedDescriptionPlaceholder": "Descrição localizada",
+        "translatedName": "Nome em {locale}",
+        "translatedNamePlaceholder": "Nome localizado",
+        "translations": "Traduções",
+        "translationsHelp": "Rótulos localizados opcionais para funcionários que usam outro idioma do aplicativo.",
+        "type": "Tipo",
+        "typeBereavement": "Luto",
+        "typeCustom": "Personalizado",
+        "typeHelp": "Agrupa relatórios e fluxos de ausência posteriores.",
+        "typeHomeOffice": "Home Office",
+        "typeParental": "Licença parental",
+        "typePersonal": "Pessoal",
+        "typePlaceholder": "Selecionar tipo de categoria",
+        "typeSick": "Licença médica",
+        "typeUnpaid": "Não remunerado",
+        "typeVacation": "Férias"
+      },
       "header": {
         "approval": "Aprovação",
         "name": "Nome",

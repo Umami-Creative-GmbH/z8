@@ -173,7 +173,78 @@
       "deleteDescription": "Are you sure you want to delete \"{name}\"? Categories used by existing absences cannot be deleted and should be deactivated instead.",
       "deleteFailed": "Could not delete category",
       "deleteTitle": "Delete Absence Category",
+      "defaults": {
+        "bereavement": {
+          "description": "Bereavement leave",
+          "name": "Bereavement"
+        },
+        "home_office": {
+          "description": "Remote work day",
+          "name": "Home Office"
+        },
+        "parental": {
+          "description": "Parental leave absence",
+          "name": "Parental Leave"
+        },
+        "personal": {
+          "description": "Personal time off",
+          "name": "Personal Day"
+        },
+        "sick": {
+          "description": "Sick day",
+          "name": "Sick Leave"
+        },
+        "unpaid": {
+          "description": "Unpaid absence",
+          "name": "Unpaid Leave"
+        },
+        "vacation": {
+          "description": "Paid time off",
+          "name": "Vacation"
+        }
+      },
       "editCategory": "Edit \"{name}\"",
+      "form": {
+        "active": "Active",
+        "activeHelp": "Active categories are available for new absence requests.",
+        "color": "Color",
+        "colorHelp": "Calendar marker",
+        "countsAgainstVacation": "Counts Against Vacation Balance",
+        "countsAgainstVacationHelp": "Deduct approved days from the employee vacation allowance.",
+        "description": "Description",
+        "descriptionHelp": "Optional guidance shown to admins and reviewers.",
+        "descriptionPlaceholder": "e.g., Use for approved training or certification days…",
+        "descriptionTranslation": "{locale} description",
+        "descriptionTranslationPlaceholder": "Localized description",
+        "name": "Name",
+        "nameHelp": "Use a clear label employees and approvers will recognize.",
+        "nameMaxLength": "Use 100 characters or fewer",
+        "namePlaceholder": "e.g., Training Day…",
+        "nameRequired": "Category name is required",
+        "nameTranslation": "{locale} name",
+        "nameTranslationPlaceholder": "Localized name",
+        "requiresApproval": "Requires Approval",
+        "requiresApprovalHelp": "Managers must approve requests before they become active.",
+        "requiresWorkTime": "Requires Work Time",
+        "requiresWorkTimeHelp": "Employees must record work time for this absence category.",
+        "translatedDescription": "{locale} description",
+        "translatedDescriptionPlaceholder": "Localized description",
+        "translatedName": "{locale} name",
+        "translatedNamePlaceholder": "Localized name",
+        "translations": "Translations",
+        "translationsHelp": "Optional localized labels for employees using another app language.",
+        "type": "Type",
+        "typeBereavement": "Bereavement",
+        "typeCustom": "Custom",
+        "typeHelp": "Groups reports and downstream absence workflows.",
+        "typeHomeOffice": "Home Office",
+        "typeParental": "Parental Leave",
+        "typePersonal": "Personal",
+        "typePlaceholder": "Select category type",
+        "typeSick": "Sick Leave",
+        "typeUnpaid": "Unpaid",
+        "typeVacation": "Vacation"
+      },
       "header": {
         "approval": "Approval",
         "name": "Name",

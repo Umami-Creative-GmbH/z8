@@ -173,7 +173,78 @@
       "deleteDescription": "Êtes-vous sûr de vouloir supprimer « {name} » ? Les catégories utilisées par des absences existantes ne peuvent pas être supprimées et doivent être désactivées à la place.",
       "deleteFailed": "Impossible de supprimer la catégorie",
       "deleteTitle": "Supprimer la catégorie d'absence",
+      "defaults": {
+        "bereavement": {
+          "description": "Congé pour décès",
+          "name": "Congé pour décès"
+        },
+        "home_office": {
+          "description": "Journée de télétravail",
+          "name": "Télétravail"
+        },
+        "parental": {
+          "description": "Absence pour congé parental",
+          "name": "Congé parental"
+        },
+        "personal": {
+          "description": "Congé personnel",
+          "name": "Jour personnel"
+        },
+        "sick": {
+          "description": "Jour de maladie",
+          "name": "Congé maladie"
+        },
+        "unpaid": {
+          "description": "Absence non rémunérée",
+          "name": "Congé non rémunéré"
+        },
+        "vacation": {
+          "description": "Congé payé",
+          "name": "Vacances"
+        }
+      },
       "editCategory": "Modifier « {name} »",
+      "form": {
+        "active": "Actif",
+        "activeHelp": "Les catégories actives sont disponibles pour les nouvelles demandes d'absence.",
+        "color": "Couleur",
+        "colorHelp": "Repère de calendrier",
+        "countsAgainstVacation": "Déduit du solde de congés",
+        "countsAgainstVacationHelp": "Déduire les jours approuvés du droit aux congés de l'employé.",
+        "description": "Description",
+        "descriptionHelp": "Indications facultatives affichées aux administrateurs et aux réviseurs.",
+        "descriptionPlaceholder": "ex. : À utiliser pour les jours de formation ou de certification approuvés…",
+        "descriptionTranslation": "Description {locale}",
+        "descriptionTranslationPlaceholder": "Description localisée",
+        "name": "Nom",
+        "nameHelp": "Utilisez un libellé clair que les employés et approbateurs reconnaîtront.",
+        "nameMaxLength": "Utilisez 100 caractères ou moins",
+        "namePlaceholder": "ex. : Journée de formation…",
+        "nameRequired": "Le nom de la catégorie est requis",
+        "nameTranslation": "Nom {locale}",
+        "nameTranslationPlaceholder": "Nom localisé",
+        "requiresApproval": "Approbation requise",
+        "requiresApprovalHelp": "Les managers doivent approuver les demandes avant qu'elles deviennent actives.",
+        "requiresWorkTime": "Temps de travail requis",
+        "requiresWorkTimeHelp": "Les employés doivent enregistrer du temps de travail pour cette catégorie d'absence.",
+        "translatedDescription": "Description {locale}",
+        "translatedDescriptionPlaceholder": "Description localisée",
+        "translatedName": "Nom {locale}",
+        "translatedNamePlaceholder": "Nom localisé",
+        "translations": "Traductions",
+        "translationsHelp": "Libellés localisés facultatifs pour les employés utilisant une autre langue de l'application.",
+        "type": "Type",
+        "typeBereavement": "Congé pour décès",
+        "typeCustom": "Personnalisé",
+        "typeHelp": "Regroupe les rapports et les flux d'absence en aval.",
+        "typeHomeOffice": "Télétravail",
+        "typeParental": "Congé parental",
+        "typePersonal": "Personnel",
+        "typePlaceholder": "Sélectionner le type de catégorie",
+        "typeSick": "Congé maladie",
+        "typeUnpaid": "Non rémunéré",
+        "typeVacation": "Vacances"
+      },
       "header": {
         "approval": "Approbation",
         "name": "Nom",
