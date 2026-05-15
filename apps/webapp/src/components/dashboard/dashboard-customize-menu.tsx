@@ -36,7 +36,6 @@ export function DashboardCustomizeMenu({
 				<Button
 					aria-label={t("dashboard.customize.trigger", "Customize dashboard")}
 					className="size-9"
-					onClick={() => setOpen((currentOpen) => !currentOpen)}
 					size="icon"
 					variant="outline"
 				>

@@ -32,7 +32,7 @@ describe("DashboardCustomizeMenu", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Customize dashboard" }));
+		fireEvent.pointerDown(screen.getByRole("button", { name: "Customize dashboard" }));
 		fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Time Tracking" }));
 
 		expect(onVisibilityChange).toHaveBeenCalledWith("quick-stats", true);
@@ -45,7 +45,7 @@ describe("DashboardCustomizeMenu", () => {
 			<DashboardCustomizeMenu hiddenWidgets={[]} onReset={onReset} onVisibilityChange={vi.fn()} />,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Customize dashboard" }));
+		fireEvent.pointerDown(screen.getByRole("button", { name: "Customize dashboard" }));
 		fireEvent.click(screen.getByRole("menuitem", { name: "Reset layout" }));
 
 		expect(onReset).toHaveBeenCalledTimes(1);
