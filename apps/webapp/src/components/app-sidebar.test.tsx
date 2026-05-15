@@ -3,7 +3,7 @@
 import { IconBeach, IconHelp, IconMessageCircle, IconShieldCheck } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
 	navMainSpy,
@@ -111,6 +111,10 @@ describe("app sidebar compliance navigation", () => {
 		getAuthContextMock.mockReset();
 		getCurrentSettingsAccessTierMock.mockReset();
 		vi.resetModules();
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
 	});
 
 	it("renders My Requests as a primary personal navigation item", () => {
@@ -242,6 +246,7 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
 		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: true }]);
 		getAuthContextMock.mockResolvedValue({
 			employee: {
