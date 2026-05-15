@@ -1,5 +1,6 @@
 "use client";
 
+import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
@@ -107,11 +108,13 @@ function DashboardWidgetLayout({
 	resetOrder: () => void;
 }) {
 	const renderedWidgets = useVisibleWidgets();
+	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
 	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(false);
 	const visibleWidgetKey = visibleWidgetOrder.join("|");
 	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
 	const shouldShowEmptyState =
-		!hasConfiguredWidgets || (hasCheckedRenderedWidgets && renderedWidgets.length === 0);
+		!hasConfiguredWidgets ||
+		(hasCheckedRenderedWidgets && fetchingDashboardWidgets === 0 && renderedWidgets.length === 0);
 
 	useEffect(() => {
 		if (!visibleWidgetKey) {
