@@ -23,6 +23,10 @@ vi.mock("@/components/user-avatar", () => ({
 	UserAvatar: userAvatarMock,
 }));
 
+vi.mock("@/lib/query", () => ({
+	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+}));
+
 global.ResizeObserver = class ResizeObserver {
 	observe() {}
 	unobserve() {}

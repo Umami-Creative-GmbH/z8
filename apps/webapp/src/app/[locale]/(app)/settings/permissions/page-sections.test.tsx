@@ -70,6 +70,10 @@ vi.mock("@/components/user-avatar", () => ({
 	UserAvatar: () => <div data-testid="user-avatar" />,
 }));
 
+vi.mock("@/lib/query", () => ({
+	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+}));
+
 const translations: Record<string, string> = {
 	"settings.permissions.adminRequired": "Adminzugriff erforderlich",
 	"settings.permissions.employeePermissions.title": "Mitarbeitendenberechtigungen",

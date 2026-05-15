@@ -111,6 +111,10 @@ vi.mock("@/components/user-avatar", () => ({
 	UserAvatar: () => <div data-testid="user-avatar" />,
 }));
 
+vi.mock("@/lib/query", () => ({
+	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+}));
+
 const translations: Record<string, string> = {
 	"settings.teams.detail.info.title": "Teaminformationen",
 	"settings.teams.detail.info.teamName": "Teamname",
