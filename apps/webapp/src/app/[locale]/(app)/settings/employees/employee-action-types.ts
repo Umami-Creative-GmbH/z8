@@ -1,5 +1,6 @@
 import type { user } from "@/db/auth-schema";
 import type { employee, team } from "@/db/schema";
+import type { EmployeeClockStatus } from "@/components/user-avatar";
 
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
 
@@ -31,6 +32,7 @@ export interface SelectableEmployee {
 	position: string | null;
 	role: EmployeeRole;
 	isActive: boolean;
+	clockStatus?: EmployeeClockStatus;
 	teamId: string | null;
 	user: {
 		id: string;

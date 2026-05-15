@@ -36,6 +36,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { Link } from "@/navigation";
@@ -62,6 +63,14 @@ export function EmployeesPageClient(props: {
 		pageCount,
 		refresh,
 	} = useEmployees({ accessTier: props.accessTier, organizationId: props.organizationId });
+	const presence = useEmployeeClockStatuses(
+		employees.map((employee) => employee.id),
+		{ polling: true },
+	);
+	const employeesWithPresence = employees.map((employee) => ({
+		...employee,
+		clockStatus: presence.getStatus(employee.id),
+	}));
 
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [searchInput, setSearchInput] = useState("");
@@ -74,7 +83,7 @@ export function EmployeesPageClient(props: {
 	}, [searchInput, setSearch]);
 
 	const table = useReactTable({
-		data: employees,
+		data: employeesWithPresence,
 		columns,
 		state: { sorting, pagination },
 		onSortingChange: setSorting,

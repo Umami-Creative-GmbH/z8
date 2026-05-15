@@ -9,6 +9,7 @@ import {
 	listEmployeesForSelect,
 	type SelectableEmployee,
 } from "@/app/[locale]/(app)/settings/employees/actions";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { queryKeys } from "@/lib/query/keys";
 import type { EmployeeSelectFilters } from "./types";
 
@@ -130,6 +131,15 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 		staleTime: 30 * 1000,
 		placeholderData: (prev) => prev,
 	});
+	const employees = employeesQuery.data?.employees ?? [];
+	const presence = useEmployeeClockStatuses(
+		employees.map((employee) => employee.id),
+		{ polling: false },
+	);
+	const employeesWithPresence = employees.map((employee) => ({
+		...employee,
+		clockStatus: presence.getStatus(employee.id),
+	}));
 
 	// Setters with page reset
 	const setSearch = useCallback((value: string) => {
@@ -160,7 +170,7 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 
 	return {
 		// Data
-		employees: employeesQuery.data?.employees ?? [],
+		employees: employeesWithPresence,
 		total: employeesQuery.data?.total ?? 0,
 		hasMore: employeesQuery.data?.hasMore ?? false,
 
@@ -224,9 +234,18 @@ export function useSelectedEmployees(employeeIds: string[]) {
 		enabled: hasEmployee && sortedIds.length > 0,
 		staleTime: 5 * 60 * 1000,
 	});
+	const selectedEmployees = query.data ?? [];
+	const presence = useEmployeeClockStatuses(
+		selectedEmployees.map((employee) => employee.id),
+		{ polling: false },
+	);
+	const selectedEmployeesWithPresence = selectedEmployees.map((employee) => ({
+		...employee,
+		clockStatus: presence.getStatus(employee.id),
+	}));
 
 	return {
-		employees: query.data ?? [],
+		employees: selectedEmployeesWithPresence,
 		isLoading: query.isLoading,
 		isError: query.isError,
 	};

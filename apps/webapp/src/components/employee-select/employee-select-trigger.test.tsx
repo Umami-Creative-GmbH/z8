@@ -12,7 +12,13 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ name }: { name?: string | null }) => <span data-avatar-name={name ?? ""} />,
+	UserAvatar: ({
+		clockStatus,
+		name,
+	}: {
+		clockStatus?: "clocked-in" | "clocked-out" | "unknown";
+		name?: string | null;
+	}) => <span data-avatar-name={name ?? ""} data-clock-status={clockStatus ?? "unknown"} />,
 }));
 
 const employee: SelectableEmployee = {
@@ -37,13 +43,18 @@ const employee: SelectableEmployee = {
 describe("EmployeeSelectTrigger", () => {
 	it("shows pronouns for a selected single employee", () => {
 		render(
-			<EmployeeSelectTrigger mode="single" selectedEmployees={[employee]} onClick={vi.fn()} />,
+			<EmployeeSelectTrigger
+				mode="single"
+				selectedEmployees={[{ ...employee, clockStatus: "clocked-in" }]}
+				onClick={vi.fn()}
+			/>,
 		);
 
 		expect(screen.getByText("Ada Lovelace (she/her)")).toBeTruthy();
 		expect(
 			screen.getByText("", { selector: '[data-avatar-name="Ada Lovelace (she/her)"]' }),
 		).toBeTruthy();
+		expect(screen.getByText("", { selector: '[data-clock-status="clocked-in"]' })).toBeTruthy();
 	});
 
 	it("shows pronouns in selected employee chips", () => {
