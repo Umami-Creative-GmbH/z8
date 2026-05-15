@@ -112,6 +112,14 @@ const categories = [
 		requiresApproval: true,
 		countsAgainstVacation: true,
 	},
+	{
+		id: "sick",
+		name: "Sick leave",
+		type: "sick",
+		color: null,
+		requiresApproval: true,
+		countsAgainstVacation: false,
+	},
 ];
 
 const riskyPreview: AbsencePlanPreview = {
@@ -161,6 +169,12 @@ function renderDialog({
 
 function fillRequiredFields() {
 	fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
+	fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
+	fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-12" } });
+}
+
+function fillRequiredFieldsForSickCategory() {
+	fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "sick" } });
 	fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
 	fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-12" } });
 }
@@ -253,6 +267,31 @@ describe("RequestAbsenceDialog", () => {
 		).toBeTruthy();
 		expect(await screen.findByRole("heading", { name: "Smart planner" })).toBeTruthy();
 		expect(screen.getByText("Coverage may be tight for this request.")).toBeTruthy();
+	});
+
+	it("shows the sick detail field when the sick category is selected", () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "sick" } });
+
+		expect(screen.getByText("Sick detail *")).toBeTruthy();
+	});
+
+	it("hides the sick detail field when a non-sick category is selected", () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
+
+		expect(screen.queryByText("Sick detail *")).toBeNull();
+	});
+
+	it("blocks sick absence submission until sick detail is selected", async () => {
+		renderDialog();
+
+		fillRequiredFieldsForSickCategory();
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
 	});
 
 	it("keeps loading and error states non-blocking for submission", async () => {

@@ -30,7 +30,8 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateBusinessDaysWithHalfDays, formatDays } from "@/lib/absences/date-utils";
-import type { DayPeriod, Holiday } from "@/lib/absences/types";
+import { sickDetailOptions } from "@/lib/absences/sick-details";
+import type { DayPeriod, Holiday, SickDetail } from "@/lib/absences/types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
@@ -64,6 +65,7 @@ const createDefaultValues = (initialDate?: string) => ({
 	endDate: initialDate || "",
 	endPeriod: "full_day" as DayPeriod,
 	notes: "",
+	sickDetail: "" as SickDetail | "",
 });
 
 const EMPTY_HOLIDAYS: Holiday[] = [];
@@ -109,6 +111,8 @@ export function RequestAbsenceDialog({
 	const form = useForm({
 		defaultValues: createDefaultValues(initialDate),
 		onSubmit: async ({ value }) => {
+			const selectedCategory = categories.find((c) => c.id === value.categoryId);
+
 			if (!value.categoryId || !value.startDate || !value.endDate) {
 				toast.error(
 					t("absences.form.errors.fillRequiredFields", "Please fill in all required fields"),
@@ -116,8 +120,21 @@ export function RequestAbsenceDialog({
 				return;
 			}
 
-			// Get selected category for validation
-			const selectedCategory = categories.find((c) => c.id === value.categoryId);
+			if (selectedCategory?.type === "sick" && !value.sickDetail) {
+				toast.error(t("absences.form.errors.sickDetailRequired", "Sick detail is required"));
+				return;
+			}
+
+			if (selectedCategory?.type !== "sick" && value.sickDetail) {
+				toast.error(
+					t(
+						"absences.form.errors.sickDetailOnlyForSick",
+						"Sick detail can only be used for sick absences",
+					),
+				);
+				return;
+			}
+
 			const requestedDays = calculateBusinessDaysWithHalfDays(
 				value.startDate,
 				value.startPeriod,
@@ -157,6 +174,7 @@ export function RequestAbsenceDialog({
 				endDate: value.endDate,
 				endPeriod: value.endPeriod,
 				notes: value.notes || undefined,
+				sickDetail: value.sickDetail || undefined,
 			});
 
 			if (result.success) {
@@ -182,6 +200,9 @@ export function RequestAbsenceDialog({
 		endDate: state.values.endDate,
 		endPeriod: state.values.endPeriod,
 	}));
+	const selectedCategoryId = useStore(form.store, (state) => state.values.categoryId);
+	const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+	const showSickDetail = selectedCategory?.type === "sick";
 	const canLoadPlanPreview = Boolean(
 		open &&
 			planPreviewValues.categoryId &&
@@ -255,7 +276,13 @@ export function RequestAbsenceDialog({
 									</TFormLabel>
 									<Select
 										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value)}
+										onValueChange={(value) => {
+											field.handleChange(value);
+											const nextCategory = categories.find((category) => category.id === value);
+											if (nextCategory?.type !== "sick") {
+												form.setFieldValue("sickDetail", "");
+											}
+										}}
 									>
 										<TFormControl hasError={field.state.meta.errors.length > 0}>
 											<SelectTrigger aria-label={t("absences.form.absenceType", "Absence Type *")}>
@@ -287,6 +314,43 @@ export function RequestAbsenceDialog({
 								</TFormItem>
 							)}
 						</form.Field>
+
+						{showSickDetail && (
+							<form.Field name="sickDetail">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={field.state.meta.errors.length > 0}>
+											{t("absences.form.sickDetail", "Sick detail *")}
+										</TFormLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) =>
+												field.handleChange(value as typeof field.state.value)
+											}
+										>
+											<TFormControl hasError={field.state.meta.errors.length > 0}>
+												<SelectTrigger aria-label={t("absences.form.sickDetail", "Sick detail *")}>
+													<SelectValue
+														placeholder={t(
+															"absences.form.sickDetailPlaceholder",
+															"Select sick detail",
+														)}
+													/>
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												{sickDetailOptions.map((option) => (
+													<SelectItem key={option.value} value={option.value}>
+														{t(`absences.sickDetail.${option.value}`, option.label)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						)}
 
 						{/* Start Date and Period */}
 						<div className="grid gap-2">
