@@ -120,7 +120,11 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 		return "Enter times in HH:mm format.";
 	}
 
-	if (hasExplicitPartialTimes(normalized) && end.diff(start, "days").days > 1) {
+	const dateDeltaDays = end.diff(start, "days").days;
+	if (
+		hasExplicitPartialTimes(normalized) &&
+		(dateDeltaDays > 1 || (dateDeltaDays === 1 && normalized.endTime > normalized.startTime))
+	) {
 		return "Partial-day absences can only be same-day or overnight.";
 	}
 
