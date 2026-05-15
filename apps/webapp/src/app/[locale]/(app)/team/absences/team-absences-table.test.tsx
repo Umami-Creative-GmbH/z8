@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	buildRecordAbsenceForEmployeeInput,
+	getDefaultRecordAbsenceFormValues,
 	validateRecordAbsenceFormDateRange,
 } from "./record-absence-dialog";
 import { TeamAbsencesTable } from "./team-absences-table";
@@ -203,6 +204,22 @@ describe("validateRecordAbsenceFormDateRange", () => {
 });
 
 describe("buildRecordAbsenceForEmployeeInput", () => {
+	it("submits manager absence defaults as full-day ranges", () => {
+		expect(
+			buildRecordAbsenceForEmployeeInput("employee-1", {
+				...getDefaultRecordAbsenceFormValues(),
+				categoryId: "category-sick",
+				startDate: "2026-05-18",
+				endDate: "2026-05-18",
+				sickDetail: "with_certificate",
+			}),
+		).toMatchObject({
+			startPeriod: "full_day",
+			endPeriod: "full_day",
+			sickDetail: "with_certificate",
+		});
+	});
+
 	it("includes sick detail for manager-recorded sick absences", () => {
 		expect(
 			buildRecordAbsenceForEmployeeInput("employee-1", {

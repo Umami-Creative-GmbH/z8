@@ -67,9 +67,9 @@ type RecordAbsenceFormValues = {
 const defaultValues: RecordAbsenceFormValues = {
 	categoryId: "",
 	startDate: "",
-	startPeriod: "am",
+	startPeriod: "full_day",
 	endDate: "",
-	endPeriod: "pm",
+	endPeriod: "full_day",
 	notes: "",
 	sickDetail: "",
 };
@@ -101,6 +101,10 @@ export function validateRecordAbsenceFormDateRange(
 	}
 
 	return null;
+}
+
+export function getDefaultRecordAbsenceFormValues(): RecordAbsenceFormValues {
+	return { ...defaultValues };
 }
 
 export function buildRecordAbsenceForEmployeeInput(
@@ -357,6 +361,9 @@ export function RecordAbsenceDialog({
 											</SelectTrigger>
 										</TFormControl>
 										<SelectContent>
+											<SelectItem value="full_day">
+												{t("team.absences.recordDialog.fullDay", "Full day")}
+											</SelectItem>
 											<SelectItem value="am">
 												{t("team.absences.recordDialog.morning", "Morning")}
 											</SelectItem>
@@ -417,6 +424,9 @@ export function RecordAbsenceDialog({
 											</SelectTrigger>
 										</TFormControl>
 										<SelectContent>
+											<SelectItem value="full_day">
+												{t("team.absences.recordDialog.fullDay", "Full day")}
+											</SelectItem>
 											<SelectItem value="am">
 												{t("team.absences.recordDialog.morning", "Morning")}
 											</SelectItem>
