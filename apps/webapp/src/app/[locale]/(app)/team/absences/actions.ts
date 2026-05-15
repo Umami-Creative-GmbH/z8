@@ -19,6 +19,11 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
+import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
+import {
+	adjustVacationAbsencesForSickness,
+	getBlockingOverlapMessage,
+} from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -26,7 +31,6 @@ import { createLogger } from "@/lib/logger";
 import { addCalendarSyncJob } from "@/lib/queue";
 import {
 	buildCanonicalAbsenceRecordValues,
-	getAbsenceOverlapConflictMessage,
 	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
 	validateRecordAbsenceDateRange,
@@ -43,6 +47,13 @@ import type {
 
 const logger = createLogger("ManagerAbsenceActions");
 const ACCESS_ERROR = "Employee not found or not accessible";
+
+export function validateManagerAbsenceSickDetail(input: {
+	categoryType: string;
+	sickDetail?: RecordAbsenceForEmployeeInput["sickDetail"] | null;
+}): string | null {
+	return validateSickDetailForCategory(input);
+}
 
 type ActorEmployee = typeof employee.$inferSelect & {
 	user: { name: string; email: string };
@@ -151,36 +162,59 @@ export async function recordAbsenceForEmployee(
 			return { success: false, error: "Invalid absence category", code: "NotFoundError" };
 		}
 
+		const sickDetailError = validateManagerAbsenceSickDetail({
+			categoryType: category.type,
+			sickDetail: input.sickDetail,
+		});
+		if (sickDetailError) {
+			return { success: false, error: sickDetailError, code: "ValidationError" };
+		}
+
 		const transactionResult = await db.transaction(async (tx) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
 			);
 
-			const existingAbsences = await tx
-				.select({
-					id: absenceEntry.id,
-					status: absenceEntry.status,
-					startDate: absenceEntry.startDate,
-					endDate: absenceEntry.endDate,
-				})
-				.from(absenceEntry)
-				.where(
-					and(
-						eq(absenceEntry.employeeId, target.id),
-						eq(absenceEntry.organizationId, actor.organizationId),
-						or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
-					),
-				);
+			const existingAbsences = await tx.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, target.id),
+					eq(absenceEntry.organizationId, actor.organizationId),
+					or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
+				),
+				with: { category: true },
+			});
 
-			const overlap = existingAbsences.find((absence) =>
-				dateRangesOverlap(input.startDate, input.endDate, absence.startDate, absence.endDate),
-			);
-			if (overlap && overlap.status !== "rejected") {
-				return {
-					success: false as const,
-					error: getAbsenceOverlapConflictMessage(overlap.status),
-				};
+			for (const absence of existingAbsences) {
+				if (!dateRangesOverlap(input.startDate, input.endDate, absence.startDate, absence.endDate)) {
+					continue;
+				}
+
+				const overlapMessage = getBlockingOverlapMessage({
+					newCategoryType: category.type,
+					newStartPeriod: input.startPeriod,
+					newEndPeriod: input.endPeriod,
+					existingStartPeriod: absence.startPeriod,
+					existingEndPeriod: absence.endPeriod,
+					existingStatus: absence.status,
+					existingCountsAgainstVacation: absence.category.countsAgainstVacation,
+				});
+
+				if (overlapMessage) {
+					return { success: false as const, error: overlapMessage };
+				}
 			}
+
+			const vacationOverrideSummary =
+				category.type === "sick" && input.startPeriod === "full_day" && input.endPeriod === "full_day"
+					? await adjustVacationAbsencesForSickness({
+							tx,
+							organizationId: actor.organizationId,
+							employeeId: target.id,
+							sickStartDate: input.startDate,
+							sickEndDate: input.endDate,
+							updatedBy: actor.userId,
+						})
+					: { updatedAbsenceIds: [], createdAbsenceIds: [], deletedAbsenceIds: [] };
 
 			const [absence] = await tx
 				.insert(absenceEntry)
@@ -193,6 +227,7 @@ export async function recordAbsenceForEmployee(
 					endDate: input.endDate,
 					endPeriod: input.endPeriod,
 					notes: input.notes,
+					sickDetail: input.sickDetail ?? null,
 					status: "approved",
 					approvedBy: actor.id,
 					approvedAt: currentTimestamp(),
@@ -226,7 +261,7 @@ export async function recordAbsenceForEmployee(
 				.set({ canonicalRecordId: canonicalRecord.id })
 				.where(and(eq(absenceEntry.id, absence.id), eq(absenceEntry.organizationId, actor.organizationId)));
 
-			return { success: true as const, absenceId: absence.id };
+			return { success: true as const, absenceId: absence.id, vacationOverrideSummary };
 		});
 
 		if (!transactionResult.success) {
@@ -243,6 +278,24 @@ export async function recordAbsenceForEmployee(
 				"Failed to queue calendar sync",
 			),
 		);
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.updatedAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "update" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.createdAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "create" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.deletedAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "delete" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
 
 		void notifyEmployeeOfManagerRecordedAbsence({
 			absenceId: transactionResult.absenceId,

@@ -7,6 +7,7 @@ import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import {
 	getManagerAbsenceEmployees,
 	recordAbsenceForEmployee,
+	validateManagerAbsenceSickDetail,
 } from "./actions";
 import {
 	buildCanonicalAbsenceRecordValues,
@@ -115,6 +116,20 @@ describe("manager absence server action helpers", () => {
 		expect(getAbsenceOverlapConflictMessage("approved")).toBe(
 			"Absence request overlaps with an existing approved absence",
 		);
+	});
+});
+
+describe("manager sick absence detail validation", () => {
+	it("requires sick detail for manager-recorded sick absence", () => {
+		expect(validateManagerAbsenceSickDetail({ categoryType: "sick", sickDetail: undefined })).toBe(
+			"Sick detail is required for sick absences",
+		);
+	});
+
+	it("rejects sick detail for manager-recorded vacation", () => {
+		expect(
+			validateManagerAbsenceSickDetail({ categoryType: "vacation", sickDetail: "with_certificate" }),
+		).toBe("Sick detail can only be used for sick absences");
 	});
 });
 

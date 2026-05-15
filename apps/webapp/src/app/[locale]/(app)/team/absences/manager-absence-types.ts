@@ -1,4 +1,4 @@
-import type { DayPeriod } from "@/lib/absences/types";
+import type { DayPeriod, SickDetail } from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
@@ -56,4 +56,5 @@ export interface RecordAbsenceForEmployeeInput {
 	endDate: string;
 	endPeriod: DayPeriod;
 	notes?: string;
+	sickDetail?: SickDetail;
 }
