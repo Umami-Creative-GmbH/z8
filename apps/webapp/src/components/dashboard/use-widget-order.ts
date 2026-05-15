@@ -78,9 +78,7 @@ export function useWidgetOrder() {
 	});
 
 	const layout = useMemo<WidgetLayout>(() => {
-		return normalizeWidgetLayout(
-			settings?.dashboardWidgetOrder ?? { order: DEFAULT_WIDGET_ORDER, hidden: [], version: 1 },
-		);
+		return normalizeWidgetLayout(settings?.dashboardWidgetOrder ?? null);
 	}, [settings?.dashboardWidgetOrder]);
 
 	const hiddenSet = useMemo(() => new Set(layout.hidden), [layout.hidden]);
