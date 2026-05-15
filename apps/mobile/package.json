@@ -14,21 +14,21 @@
   },
   "dependencies": {
     "@react-native-community/datetimepicker": "9.1.0",
-    "@tanstack/react-form": "^1.29.3",
-    "@tanstack/react-query": "^5.100.9",
-    "expo": "~55.0.23",
+    "@tanstack/react-form": "^1.32.0",
+    "@tanstack/react-query": "^5.100.10",
+    "expo": "~55.0.24",
     "expo-constants": "~55.0.16",
     "expo-linking": "~55.0.15",
     "expo-router": "~55.0.14",
-    "expo-secure-store": "~55.0.13",
+    "expo-secure-store": "~55.0.14",
     "expo-status-bar": "~55.0.6",
-    "expo-web-browser": "~55.0.15",
+    "expo-web-browser": "~55.0.16",
     "luxon": "^3.7.2",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-native": "0.85.3",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.24.0",
+    "react-native-screens": "~4.25.0",
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {
@@ -36,6 +36,6 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "19.2.14",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   }
 }
