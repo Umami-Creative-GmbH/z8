@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowsSort, IconCalendarPlus, IconSearch } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowUp, IconArrowsSort, IconCalendarPlus, IconSearch } from "@tabler/icons-react";
 import { useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
@@ -22,7 +22,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { getSickDetailLabel } from "@/lib/absences/sick-details";
 import { useRouter } from "@/navigation";
 import type {
 	ManagerAbsenceEmployeeRow,
@@ -104,6 +103,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 	) {
 		const isActive = data.sort === sort;
 		const directionLabel = data.direction === "asc" ? "ascending" : "descending";
+		const SortIcon = !isActive ? IconArrowsSort : data.direction === "asc" ? IconArrowUp : IconArrowDown;
 
 		return (
 			<TableHead className={className} aria-sort={isActive ? directionLabel : undefined}>
@@ -117,10 +117,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 					disabled={isPending}
 				>
 					<span>{label}</span>
-					{isActive ? (
-						<span className="text-muted-foreground text-xs">{directionLabel}</span>
-					) : null}
-					<IconArrowsSort className="size-4 text-muted-foreground" aria-hidden="true" />
+					<SortIcon className="size-4 text-muted-foreground" aria-hidden="true" />
 				</Button>
 			</TableHead>
 		);
@@ -218,24 +215,10 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 													name={employee.name}
 													size="sm"
 												/>
-												<div className="min-w-0">
-													<p className="truncate font-medium">{employee.name}</p>
-													<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
-												{employee.absences?.length ? (
-													<div className="mt-2 flex flex-col gap-1">
-														{employee.absences.map((absence) => (
-															<div key={absence.id} className="flex flex-col text-sm">
-																<span>{absence.category.name}</span>
-																{absence.category.type === "sick" && absence.sickDetail && (
-																	<span className="text-muted-foreground text-xs">
-																		{getSickDetailLabel(absence.sickDetail)}
-																	</span>
-																)}
-															</div>
-														))}
-													</div>
-												) : null}
-												</div>
+								<div className="min-w-0">
+									<p className="truncate font-medium">{employee.name}</p>
+									<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
+								</div>
 											</div>
 										</TableCell>
 										<TableCell className="text-muted-foreground text-sm">

@@ -174,7 +174,7 @@ describe("TeamAbsencesTable", () => {
 		expect(document.querySelector('[data-slot="action-panel-content"]')).toBeTruthy();
 	});
 
-	it("shows sick detail labels for sick absences in employee rows", () => {
+	it("does not render absence entries below employee email addresses", () => {
 		render(
 			<TeamAbsencesTable
 				data={{
@@ -218,7 +218,52 @@ describe("TeamAbsencesTable", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Child sick")).toBeTruthy();
+		expect(screen.queryByText("Sick Leave")).toBeNull();
+		expect(screen.queryByText("Child sick")).toBeNull();
+	});
+
+	it("uses icon state instead of visible direction text for active sorting", () => {
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+						},
+					],
+					teams: [{ id: "team-ops", name: "Operations" }],
+					total: 1,
+					page: 1,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "desc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search=""
+			/>,
+		);
+
+		const employeeHeader = screen.getByRole("columnheader", { name: /employee/i });
+
+		expect(employeeHeader.getAttribute("aria-sort")).toBe("descending");
+		expect(employeeHeader.textContent).not.toMatch(/ascending|descending/i);
+		expect(screen.getByRole("button", { name: /sort by employee \(descending\)/i })).toBeTruthy();
 	});
 
 	it("disables pagination controls at boundaries and routes to the next page", () => {
