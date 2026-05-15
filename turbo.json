@@ -10,7 +10,8 @@
       "persistent": true
     },
     "test": {
-      "cache": false
+      "cache": false,
+      "env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS"]
     },
     "test:watch": {
       "cache": false,
