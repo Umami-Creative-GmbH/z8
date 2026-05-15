@@ -123,7 +123,7 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 	const dateDeltaDays = end.diff(start, "days").days;
 	if (
 		hasExplicitPartialTimes(normalized) &&
-		(dateDeltaDays > 1 || (dateDeltaDays === 1 && normalized.endTime > normalized.startTime))
+		(dateDeltaDays > 1 || (dateDeltaDays === 1 && normalized.endTime >= normalized.startTime))
 	) {
 		return "Partial-day absences can only be same-day or overnight.";
 	}

@@ -144,6 +144,20 @@ describe("absence duration helpers", () => {
 		).toBe("Partial-day absences can only be same-day or overnight.");
 	});
 
+	it("rejects next-day explicit partial-day ranges with equal times", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-16",
+				durationKind: "partial_day",
+				startTime: "09:00",
+				endTime: "09:00",
+				notes: "Twenty four hours",
+			}),
+		).toBe("Partial-day absences can only be same-day or overnight.");
+	});
+
 	it("accepts next-day explicit partial-day ranges that are truly overnight", () => {
 		expect(
 			validateAbsenceDurationInput({
