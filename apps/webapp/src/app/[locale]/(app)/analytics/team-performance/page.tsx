@@ -2,8 +2,9 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 
 // Dynamic imports for recharts to reduce initial bundle size
 const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
@@ -29,33 +30,94 @@ import {
 import type { TeamPerformanceData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getTeamPerformanceData } from "../actions";
 
+function areDateRangesEqual(left: DateRange, right: DateRange) {
+	return (
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
+	);
+}
+
 export default function TeamPerformancePage() {
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const { isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [teamData, setTeamData] = useState<TeamPerformanceData | null>(null);
 
 	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		const nextDateRange = getDateRangeForPreset("current_month", { timezone });
+		setDateRange((currentDateRange) =>
+			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
+				? currentDateRange
+				: nextDateRange,
+		);
+	}, [isHydrated, timezone]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
+
+	useEffect(() => {
+		if (!isHydrated || !dateRange) {
+			return;
+		}
+
+		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
+		if (
+			!hasUserChangedRange.current &&
+			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+		) {
+			return;
+		}
+		const range = dateRange;
+		let isCurrent = true;
+
 		async function loadData() {
 			setLoading(true);
 			try {
 				// Organization ID is now derived server-side from authenticated session
-				const result = await getTeamPerformanceData(dateRange);
+				const result = await getTeamPerformanceData(range);
+
+				if (!isCurrent) {
+					return;
+				}
 
 				if (result.success && result.data) {
 					setTeamData(result.data);
 				}
 			} catch (error) {
+				if (!isCurrent) {
+					return;
+				}
+
 				console.error("Failed to load team performance data:", error);
 				toast.error("Failed to load team performance data");
 			} finally {
-				setLoading(false);
+				if (isCurrent) {
+					setLoading(false);
+				}
 			}
 		}
 
 		loadData();
-	}, [dateRange]);
+
+		return () => {
+			isCurrent = false;
+		};
+	}, [dateRange, isHydrated, timezone]);
 
 	const teams = teamData?.teams || [];
 
@@ -78,7 +140,13 @@ export default function TeamPerformancePage() {
 		<div className="space-y-6 px-4 lg:px-6">
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<DateRangePicker value={dateRange} onChange={setDateRange} />
+				{dateRange ? (
+					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+				) : (
+					<p className="text-sm text-muted-foreground">
+						Loading organization settings before enabling presets.
+					</p>
+				)}
 				<ExportButton
 					data={{
 						data: teams,
@@ -88,9 +156,9 @@ export default function TeamPerformancePage() {
 							{ key: "avgHoursPerEmployee", label: "Avg per Employee" },
 							{ key: "employeeCount", label: "Employee Count" },
 						],
-						filename: `team-performance-${dateRange.start.toISOString().split("T")[0]}`,
+						filename: `team-performance-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
-					disabled={!teamData}
+					disabled={!teamData || !dateRange}
 				/>
 			</div>
 

@@ -68,14 +68,6 @@
       "work-shifts": "Turni di lavoro",
       "work-shifts-description": "Abilita i turni di lavoro con pianificazione drag-and-drop, turni aperti e richieste di scambio."
     },
-    "fiscalYear": {
-      "description": "I report, i saldi delle ferie e i calcoli dei riporti utilizzano questa impostazione.",
-      "ownerOnly": "Solo i proprietari dell'organizzazione possono modificare l'impostazione dell'anno fiscale.",
-      "startMonth": "Mese di inizio dell'anno fiscale",
-      "title": "Anno fiscale",
-      "updated": "Impostazione dell'anno fiscale aggiornata",
-      "updateFailed": "Aggiornamento dell'impostazione dell'anno fiscale non riuscito"
-    },
     "joinOrCreate": "Unisciti o crea",
     "logo-uploaded": "Logo caricato con successo",
     "logo-upload-failed": "Caricamento del logo fallito",

@@ -2,7 +2,8 @@
 
 import { useTranslate } from "@tolgee/react";
 import { FileBarChart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "../date-range-picker";
 
 interface ProjectFiltersProps {
@@ -23,8 +25,28 @@ interface ProjectFiltersProps {
 
 export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFiltersProps) {
 	const { t } = useTranslate();
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const { isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [statusFilter, setStatusFilter] = useState<string>("all");
+
+	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		setDateRange(getDateRangeForPreset("current_month", { timezone }));
+	}, [isHydrated, timezone]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
 
 	const STATUS_OPTIONS = [
 		{ value: "all", label: t("reports.projects.filter.allStatuses", "All Statuses") },
@@ -38,6 +60,10 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 	];
 
 	const handleGenerate = () => {
+		if (!dateRange) {
+			return;
+		}
+
 		const statusArray = statusFilter === "all" ? undefined : statusFilter.split(",");
 		onGenerate(dateRange, statusArray);
 	};
@@ -52,7 +78,13 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 							<label className="text-sm font-medium leading-none">
 								{t("reports.projects.filter.period", "Period")}
 							</label>
-							<DateRangePicker value={dateRange} onChange={setDateRange} />
+							{dateRange ? (
+								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+							) : (
+								<p className="text-sm text-muted-foreground">
+									Loading organization settings before enabling presets.
+								</p>
+							)}
 						</div>
 
 						{/* Status Filter */}
@@ -81,7 +113,7 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 					<div className="flex justify-end">
 						<Button
 							onClick={handleGenerate}
-							disabled={isGenerating}
+							disabled={isGenerating || !dateRange}
 							size="lg"
 							className="w-full sm:w-auto"
 						>

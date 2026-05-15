@@ -66,10 +66,10 @@ describe("absence action wrappers", () => {
 		expect(mockState.getVacationBalance).not.toHaveBeenCalled();
 	});
 
-	it("loads vacation balance for the current employee fiscal year", async () => {
-		const result = await actions.getVacationBalance("emp-current", 2026, 4);
+	it("loads vacation balance for the current employee calendar year", async () => {
+		const result = await actions.getVacationBalance("emp-current", 2026);
 
 		expect(result).toEqual({ year: 2026, remainingDays: 10 });
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, 4);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026);
 	});
 });

@@ -2,8 +2,9 @@
 
 import { IconCalendarOff, IconCheck, IconClock, IconLoader2, IconUsers } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 
 // Dynamic imports for recharts to reduce initial bundle size
 const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
@@ -26,6 +27,7 @@ import type {
 } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import {
 	getAbsencePatternsData,
 	getManagerEffectivenessData,
@@ -45,10 +47,22 @@ type BottleneckListRow = Pick<
 	"id" | "label" | "pendingCount" | "pendingSlaWarnings" | "avgDecisionTimeHours" | "approvalRate"
 >;
 
-export default function AnalyticsOverviewPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(() =>
-		getDateRangeForPreset("current_month"),
+function areDateRangesEqual(left: DateRange, right: DateRange) {
+	return (
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
 	);
+}
+
+export default function AnalyticsOverviewPage() {
+	const { isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [analyticsData, setAnalyticsData] = useState<AnalyticsPageData>({
 		loading: true,
 		teamData: null,
@@ -59,6 +73,36 @@ export default function AnalyticsOverviewPage() {
 	const { loading, teamData, absenceData, managerData, managerDataUnavailable } = analyticsData;
 
 	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		const nextDateRange = getDateRangeForPreset("current_month", { timezone });
+		setDateRange((currentDateRange) =>
+			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
+				? currentDateRange
+				: nextDateRange,
+		);
+	}, [isHydrated, timezone]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
+
+	useEffect(() => {
+		if (!isHydrated || !dateRange) {
+			return;
+		}
+
+		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
+		if (
+			!hasUserChangedRange.current &&
+			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+		) {
+			return;
+		}
+
 		let canceled = false;
 
 		setAnalyticsData((current) => ({ ...current, loading: true }));
@@ -125,7 +169,7 @@ export default function AnalyticsOverviewPage() {
 		return () => {
 			canceled = true;
 		};
-	}, [dateRange]);
+	}, [dateRange, isHydrated, timezone]);
 
 	// Calculate KPIs from loaded data
 	const kpiData = {
@@ -171,7 +215,13 @@ export default function AnalyticsOverviewPage() {
 		<div className="space-y-6 px-4 lg:px-6">
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<DateRangePicker value={dateRange} onChange={setDateRange} />
+				{dateRange ? (
+					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+				) : (
+					<p className="text-sm text-muted-foreground">
+						Loading organization settings before enabling presets.
+					</p>
+				)}
 				<ExportButton
 					data={{
 						data: teamData?.teams || [],
@@ -180,9 +230,9 @@ export default function AnalyticsOverviewPage() {
 							{ key: "totalHours", label: "Total Hours" },
 							{ key: "employeeCount", label: "Employees" },
 						],
-						filename: `analytics-overview-${dateRange.start.toISOString().split("T")[0]}`,
+						filename: `analytics-overview-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
-					disabled={!teamData}
+					disabled={!teamData || !dateRange}
 				/>
 			</div>
 

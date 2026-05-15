@@ -56,17 +56,15 @@ export async function getHolidays(employeeId: string, startDate: Date, endDate: 
 	return getHolidaysAction(employeeId, startDate, endDate);
 }
 
-export async function getVacationBalance(
-	employeeId: string,
-	year: number,
-	fiscalYearStartMonth?: number | null,
-) {
+export async function getVacationBalance(employeeId: string, year: number, timezone?: string) {
 	const currentEmployee = await getCurrentEmployeeAction();
 	if (!currentEmployee || currentEmployee.id !== employeeId) {
 		return null;
 	}
 
-	return getVacationBalanceAction(employeeId, year, fiscalYearStartMonth);
+	return timezone === undefined
+		? getVacationBalanceAction(employeeId, year)
+		: getVacationBalanceAction(employeeId, year, timezone);
 }
 
 export async function getAbsencePlanPreview(

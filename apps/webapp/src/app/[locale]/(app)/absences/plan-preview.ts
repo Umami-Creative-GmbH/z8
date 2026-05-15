@@ -12,7 +12,6 @@ import {
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
 import type { AbsenceRequest } from "@/lib/absences/types";
-import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { getCurrentEmployee } from "./current-employee";
 import { getHolidays, getVacationBalance } from "./queries";
 
@@ -76,13 +75,12 @@ export async function getAbsencePlanPreview(
 
 		const org = await db.query.organization.findFirst({
 			where: eq(organization.id, currentEmployee.organizationId),
-			columns: { fiscalYearStartMonth: true },
+			columns: { timezone: true },
 		});
-		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
-		const fiscalLabelYear = getCurrentFiscalYearLabel(range.start, fiscalYearStartMonth);
+		const timezone = org?.timezone || "UTC";
 
 		const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
-			getVacationBalance(currentEmployee.id, fiscalLabelYear, fiscalYearStartMonth),
+			getVacationBalance(currentEmployee.id, range.start.year, timezone),
 			getHolidays(currentEmployee.id, range.startDate, range.endDate),
 			db.query.absenceEntry.findMany({
 				where: and(

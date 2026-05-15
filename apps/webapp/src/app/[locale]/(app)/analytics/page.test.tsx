@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -77,6 +77,21 @@ vi.mock("./actions", () => ({
 }));
 
 import AnalyticsOverviewPage from "./page";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
+
+function hydrateOrganizationSettings(timezone = "UTC") {
+	act(() => {
+		useOrganizationSettings.getState().hydrate({
+			organizationId: "org-1",
+			shiftsEnabled: false,
+			projectsEnabled: false,
+			surchargesEnabled: false,
+			demoDataEnabled: true,
+			timezone,
+			deletedAt: null,
+		});
+	});
+}
 
 function createTeamData(teamName = "Operations", totalHours = 320) {
 	return {
@@ -188,6 +203,8 @@ function deferred<T>() {
 describe("AnalyticsOverviewPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		useOrganizationSettings.getState().reset();
+		hydrateOrganizationSettings();
 		getTeamPerformanceDataMock.mockResolvedValue({
 			success: true,
 			data: createTeamData(),
@@ -200,6 +217,16 @@ describe("AnalyticsOverviewPage", () => {
 			success: true,
 			data: createManagerData(),
 		});
+	});
+
+	it("does not fetch analytics before organization settings hydrate", () => {
+		useOrganizationSettings.getState().reset();
+
+		render(<AnalyticsOverviewPage />);
+
+		expect(getTeamPerformanceDataMock).not.toHaveBeenCalled();
+		expect(getAbsencePatternsDataMock).not.toHaveBeenCalled();
+		expect(getManagerEffectivenessDataMock).not.toHaveBeenCalled();
 	});
 
 	it("renders real approval analytics and bottlenecks", async () => {

@@ -5,6 +5,9 @@
  */
 
 import { DateTime } from "luxon";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { getEnhancedVacationBalance, getVacationSummary } from "@/lib/absences/vacation.service";
 import { format } from "@/lib/datetime/luxon-utils";
 import {
@@ -150,9 +153,16 @@ export async function generateAccrualProjection(
 		return [];
 	}
 
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	const timezone = org?.timezone || "UTC";
+
 	const balance = await getEnhancedVacationBalance({
 		employeeId,
 		year,
+		timezone,
 	});
 
 	const annualDays = balance?.totalDays || parseFloat(policy.defaultAnnualDays);

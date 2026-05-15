@@ -15,7 +15,6 @@ import {
 } from "@/app/api/mobile/shared";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 
 function isRealIsoDate(value: string) {
 	return DateTime.fromISO(value, { zone: "utc" }).toISODate() === value;
@@ -46,19 +45,18 @@ export async function GET(request: Request) {
 		const employeeRecord = await requireMobileEmployee(session.user.id, activeOrganizationId);
 		const org = await db.query.organization.findFirst({
 			where: eq(organization.id, activeOrganizationId),
-			columns: { fiscalYearStartMonth: true, timezone: true },
+			columns: { timezone: true },
 		});
-		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
 		const timezone = org?.timezone || "UTC";
 		const now = DateTime.now().setZone(timezone);
-		const year = getCurrentFiscalYearLabel(now, fiscalYearStartMonth, timezone);
-		const startOfYear = `${year - 1}-01-01`;
-		const endOfYear = `${year + 1}-12-31`;
+		const year = now.year;
+		const startOfYear = `${year}-01-01`;
+		const endOfYear = `${year}-12-31`;
 
 		const [categories, absences, vacationBalance] = await Promise.all([
 			getAbsenceCategories(activeOrganizationId),
 			getAbsenceEntries(employeeRecord.id, startOfYear, endOfYear),
-			getVacationBalance(employeeRecord.id, year, fiscalYearStartMonth),
+			getVacationBalance(employeeRecord.id, year, timezone),
 		]);
 
 		return NextResponse.json({

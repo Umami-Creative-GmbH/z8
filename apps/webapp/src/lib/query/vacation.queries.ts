@@ -6,7 +6,7 @@
 
 import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -15,12 +15,11 @@ import {
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
-import { calculateBusinessDaysWithHalfDays } from "@/lib/absences/date-utils";
-import type { DayPeriod } from "@/lib/absences/types";
 import {
-	calculateFiscalCarryoverExpiryDate,
-	getFiscalYearRangeForLabelYear,
-} from "@/lib/fiscal-year";
+	calculateBusinessDaysWithHalfDays,
+	calculateCarryoverExpiryDate,
+} from "@/lib/absences/date-utils";
+import type { DayPeriod } from "@/lib/absences/types";
 
 export interface VacationAllowanceRecord {
 	id: string;
@@ -211,10 +210,8 @@ export async function getVacationPolicyById(
 export async function getVacationAllowance(
 	organizationId: string,
 	year: number,
-	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationAllowanceRecord | null> {
-	const range = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
-	return getActivePolicyForDate(organizationId, range.start.toISODate() ?? `${year}-01-01`);
+	return getActivePolicyForDate(organizationId, `${year}-01-01`);
 }
 
 /**
@@ -225,12 +222,9 @@ export async function getVacationAllowanceRange(
 	organizationId: string,
 	startYear: number,
 	endYear: number,
-	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationAllowanceRecord[]> {
-	const startRange = getFiscalYearRangeForLabelYear(startYear, fiscalYearStartMonth);
-	const endRange = getFiscalYearRangeForLabelYear(endYear, fiscalYearStartMonth);
-	const startDate = startRange.start.toISODate() ?? `${startYear}-01-01`;
-	const endDate = endRange.end.toISODate() ?? `${endYear}-12-31`;
+	const startDate = `${startYear}-01-01`;
+	const endDate = `${endYear}-12-31`;
 	return getPoliciesInDateRange(organizationId, startDate, endDate);
 }
 
@@ -338,11 +332,9 @@ export async function upsertEmployeeVacationAllowance(input: {
 export async function getVacationTakenInYear(
 	employeeId: string,
 	year: number,
-	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<VacationTakenResult> {
-	const range = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
-	const startOfYear = range.start.toISODate() ?? `${year}-01-01`;
-	const endOfYear = range.end.toISODate() ?? `${year}-12-31`;
+	const startOfYear = `${year}-01-01`;
+	const endOfYear = `${year}-12-31`;
 
 	const entries = await db
 		.select({
@@ -400,17 +392,9 @@ export async function getVacationTakenInYear(
 export async function getCarryoverBalance(
 	employeeId: string,
 	year: number,
-	currentDateOrFiscalYearStartMonth: Date | number | null | undefined = new Date(),
-	fiscalYearStartMonth: number | null | undefined = 1,
+	currentDate: Date = new Date(),
+	timezone = "UTC",
 ): Promise<CarryoverBalanceResult> {
-	const currentDate =
-		currentDateOrFiscalYearStartMonth instanceof Date
-			? currentDateOrFiscalYearStartMonth
-			: new Date();
-	const fiscalStartMonth =
-		currentDateOrFiscalYearStartMonth instanceof Date
-			? fiscalYearStartMonth
-			: currentDateOrFiscalYearStartMonth;
 	const allowance = await getEmployeeVacationAllowance(employeeId, year);
 
 	if (!allowance?.customCarryoverDays) {
@@ -426,7 +410,7 @@ export async function getCarryoverBalance(
 		return { balance: 0, expiresAt: null, isExpired: false };
 	}
 
-	const policy = await getVacationAllowance(emp.organizationId, year, fiscalStartMonth);
+	const policy = await getVacationAllowance(emp.organizationId, year);
 	const carryoverDays = parseFloat(allowance.customCarryoverDays);
 
 	if (!policy?.carryoverExpiryMonths) {
@@ -434,10 +418,10 @@ export async function getCarryoverBalance(
 		return { balance: carryoverDays, expiresAt: null, isExpired: false };
 	}
 
-	const expiresAt = calculateFiscalCarryoverExpiryDate(
+	const expiresAt = calculateCarryoverExpiryDate(
 		year,
-		fiscalStartMonth,
 		policy.carryoverExpiryMonths,
+		timezone,
 	).toJSDate();
 
 	const isExpired = currentDate > expiresAt;
@@ -544,7 +528,6 @@ export async function getEmployeesWithExpiringCarryover(
 	organizationId: string,
 	year: number,
 	daysUntilExpiry: number = 30,
-	fiscalYearStartMonth: number | null | undefined = 1,
 ): Promise<
 	Array<{
 		employeeId: string;
@@ -554,16 +537,21 @@ export async function getEmployeesWithExpiringCarryover(
 		daysUntilExpiry: number;
 	}>
 > {
-	const policy = await getVacationAllowance(organizationId, year, fiscalYearStartMonth);
+	const policy = await getVacationAllowance(organizationId, year);
 
 	if (!policy?.allowCarryover || !policy.carryoverExpiryMonths) {
 		return [];
 	}
 
-	const expiresAt = calculateFiscalCarryoverExpiryDate(
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	const timezone = org?.timezone || "UTC";
+	const expiresAt = calculateCarryoverExpiryDate(
 		year,
-		fiscalYearStartMonth,
 		policy.carryoverExpiryMonths,
+		timezone,
 	).toJSDate();
 
 	const now = new Date();

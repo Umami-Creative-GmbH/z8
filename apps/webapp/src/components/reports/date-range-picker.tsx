@@ -15,7 +15,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { format } from "@/lib/datetime/luxon-utils";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
+import { formatDateRangeLabel, getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange, PeriodPreset } from "@/lib/reports/types";
 import { cn } from "@/lib/utils";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
@@ -26,9 +26,8 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
-	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
+	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
-			fiscalYearStartMonth: state.fiscalYearStartMonth,
 			isHydrated: state.isHydrated,
 			timezone: state.timezone,
 		})),
@@ -38,10 +37,14 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 	const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
 	const handlePresetChange = (newPreset: PeriodPreset) => {
+		if (!isHydrated) {
+			return;
+		}
+
 		setPreset(newPreset);
 
 		if (newPreset !== "custom") {
-			const range = getDateRangeForPreset(newPreset, { fiscalYearStartMonth, timezone });
+			const range = getDateRangeForPreset(newPreset, { timezone });
 			onChange(range);
 			setIsCalendarOpen(false);
 		} else {
@@ -58,7 +61,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 		}
 	};
 
-	const currentYear = DateTime.now().year;
+	const currentYear = DateTime.now().setZone(timezone).year;
 
 	return (
 		<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -139,7 +142,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{preset !== "custom" && (
 				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
 					<CalendarIcon className="mr-2 h-4 w-4" />
-					{format(value.start, "MMM d, yyyy")} – {format(value.end, "MMM d, yyyy")}
+					{formatDateRangeLabel(value.start, value.end, timezone)}
 				</div>
 			)}
 		</div>

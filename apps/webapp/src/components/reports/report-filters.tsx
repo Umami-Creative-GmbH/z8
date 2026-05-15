@@ -22,26 +22,23 @@ export function ReportFilters({
 	onGenerate,
 	isGenerating = false,
 }: ReportFiltersProps) {
-	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
+	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
-			fiscalYearStartMonth: state.fiscalYearStartMonth,
 			isHydrated: state.isHydrated,
 			timezone: state.timezone,
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
-	const [dateRange, setDateRange] = useState<DateRange>(() =>
-		getDateRangeForPreset("current_month", { fiscalYearStartMonth, timezone }),
-	);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		setDateRange(getDateRangeForPreset("current_month", { fiscalYearStartMonth, timezone }));
-	}, [fiscalYearStartMonth, isHydrated, timezone]);
+		setDateRange(getDateRangeForPreset("current_month", { timezone }));
+	}, [isHydrated, timezone]);
 
 	const handleDateRangeChange = (range: DateRange) => {
 		hasUserChangedRange.current = true;
@@ -49,7 +46,7 @@ export function ReportFilters({
 	};
 
 	const handleGenerate = () => {
-		if (selectedEmployeeId) {
+		if (selectedEmployeeId && dateRange) {
 			onGenerate(selectedEmployeeId, dateRange);
 		}
 	};
@@ -70,7 +67,13 @@ export function ReportFilters({
 						{/* Date Range Picker */}
 						<div className="space-y-2">
 							<label className="text-sm font-medium leading-none">Period</label>
-							<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+							{dateRange ? (
+								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+							) : (
+								<p className="text-sm text-muted-foreground">
+									Loading organization settings before enabling presets.
+								</p>
+							)}
 						</div>
 					</div>
 
@@ -78,7 +81,7 @@ export function ReportFilters({
 					<div className="flex justify-end">
 						<Button
 							onClick={handleGenerate}
-							disabled={isGenerating || !selectedEmployeeId}
+							disabled={isGenerating || !selectedEmployeeId || !dateRange}
 							size="lg"
 							className="w-full sm:w-auto"
 						>

@@ -72,7 +72,7 @@ describe("getAbsencePlanPreview", () => {
 			requiresApproval: true,
 			countsAgainstVacation: true,
 		});
-		mockState.organizationFindFirst.mockResolvedValue({ fiscalYearStartMonth: 1 });
+		mockState.organizationFindFirst.mockResolvedValue({ timezone: "Europe/Berlin" });
 		mockState.getVacationBalance.mockResolvedValue({
 			year: 2026,
 			totalDays: 20,
@@ -97,22 +97,28 @@ describe("getAbsencePlanPreview", () => {
 		}
 	});
 
-	it("calls getVacationBalance with the current employee id, fiscal label year, and fiscal month", async () => {
+	it("calls getVacationBalance with the current employee id and calendar year", async () => {
 		await getAbsencePlanPreview(previewRequest);
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, 1);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
+			"emp-current",
+			2026,
+			"Europe/Berlin",
+		);
 	});
 
-	it("uses the organization fiscal month to resolve the vacation balance fiscal label", async () => {
-		mockState.organizationFindFirst.mockResolvedValueOnce({ fiscalYearStartMonth: 4 });
-
+	it("uses the request start date calendar year for vacation balance", async () => {
 		await getAbsencePlanPreview({
 			...previewRequest,
 			startDate: "2026-03-04",
 			endDate: "2026-03-05",
 		});
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2025, 4);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
+			"emp-current",
+			2026,
+			"Europe/Berlin",
+		);
 	});
 
 	it("returns an error when no active employee exists", async () => {
@@ -131,7 +137,11 @@ describe("getAbsencePlanPreview", () => {
 			organizationId: "org-client",
 		} as typeof previewRequest & { employeeId: string; organizationId: string });
 
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-current", 2026, 1);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith(
+			"emp-current",
+			2026,
+			"Europe/Berlin",
+		);
 		expect(mockState.getHolidays).toHaveBeenCalledWith(
 			"emp-current",
 			expect.any(Date),

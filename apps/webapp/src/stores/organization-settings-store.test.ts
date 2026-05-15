@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import { useOrganizationSettings } from "./organization-settings-store";
 
 describe("organization settings store", () => {
-	it("defaults fiscal year start month to January", () => {
+	it("defaults organization settings", () => {
 		useOrganizationSettings.getState().reset();
 
-		expect(useOrganizationSettings.getState().fiscalYearStartMonth).toBe(1);
+		expect(useOrganizationSettings.getState().timezone).toBe("UTC");
+		expect(useOrganizationSettings.getState().isHydrated).toBe(false);
 	});
 
-	it("hydrates fiscal year start month", () => {
+	it("hydrates organization settings", () => {
 		useOrganizationSettings.getState().hydrate({
 			organizationId: "org_1",
 			shiftsEnabled: false,
@@ -16,11 +17,10 @@ describe("organization settings store", () => {
 			surchargesEnabled: false,
 			demoDataEnabled: true,
 			timezone: "UTC",
-			fiscalYearStartMonth: 4,
 			deletedAt: null,
 		});
 
-		expect(useOrganizationSettings.getState().fiscalYearStartMonth).toBe(4);
+		expect(useOrganizationSettings.getState().timezone).toBe("UTC");
 		expect(useOrganizationSettings.getState().isHydrated).toBe(true);
 	});
 });

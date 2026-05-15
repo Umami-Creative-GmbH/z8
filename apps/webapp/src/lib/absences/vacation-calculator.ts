@@ -35,7 +35,7 @@ export function calculateVacationBalance({
 	currentDate,
 	year,
 	adjustmentTotal = 0,
-	fiscalYearStartMonth = 1,
+	timezone = "UTC",
 }: {
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
@@ -43,7 +43,7 @@ export function calculateVacationBalance({
 	currentDate: Date | DateTime;
 	year: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
-	fiscalYearStartMonth?: number | null;
+	timezone?: string;
 }): VacationBalance {
 	// Convert currentDate to DateTime if needed
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
@@ -64,7 +64,7 @@ export function calculateVacationBalance({
 			const carryoverExpiryDT = calculateCarryoverExpiryDate(
 				year,
 				organizationAllowance.carryoverExpiryMonths,
-				fiscalYearStartMonth,
+				timezone,
 			);
 
 			// Only add carryover if not expired
@@ -86,7 +86,7 @@ export function calculateVacationBalance({
 	totalDays += adjustmentTotal;
 
 	// 4. Calculate used days (approved absences that count against vacation)
-	const { start, end } = getYearRange(year, fiscalYearStartMonth);
+	const { start, end } = getYearRange(year);
 	const usedDays = absences
 		.filter((absence) => {
 			const isApproved = absence.status === "approved";

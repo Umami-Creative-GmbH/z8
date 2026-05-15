@@ -68,14 +68,6 @@
       "work-shifts": "Arbeitsschichten",
       "work-shifts-description": "Aktivieren Sie Arbeitsschichten mit Drag-and-Drop-Planung, offenen Schichten und Tauschanfragen."
     },
-    "fiscalYear": {
-      "description": "Berichte, Urlaubssalden und Übertragsberechnungen verwenden diese Einstellung.",
-      "ownerOnly": "Nur Organisationsinhaber können die Einstellung für das Geschäftsjahr ändern.",
-      "startMonth": "Startmonat des Geschäftsjahres",
-      "title": "Geschäftsjahr",
-      "updated": "Einstellung für das Geschäftsjahr aktualisiert",
-      "updateFailed": "Fehler beim Aktualisieren der Einstellung für das Geschäftsjahr"
-    },
     "joinOrCreate": "Beitreten oder erstellen",
     "logo-uploaded": "Logo erfolgreich hochgeladen",
     "logo-upload-failed": "Hochladen des Logos fehlgeschlagen",
