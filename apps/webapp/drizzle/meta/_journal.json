@@ -141,6 +141,13 @@
       "when": 1778661516751,
       "tag": "0019_regular_sandman",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1778827536858,
+      "tag": "0020_sick_detail",
+      "breakpoints": true
     }
   ]
 }
