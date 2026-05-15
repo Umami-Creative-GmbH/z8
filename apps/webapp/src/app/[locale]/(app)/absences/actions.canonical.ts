@@ -5,6 +5,10 @@ import { timeRecord, timeRecordAbsence } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 type DayPeriod = "full_day" | "am" | "pm";
+type CanonicalAbsenceTransaction = Pick<
+	Parameters<Parameters<typeof db.transaction>[0]>[0],
+	"update"
+>;
 
 export function mapAbsenceRangeToCanonicalTimestamps(input: {
 	startDate: string;
@@ -101,6 +105,57 @@ export const canonicalAbsenceRecordClient = {
 	},
 };
 
+export async function updateCanonicalAbsenceRangeInTransaction(
+	tx: CanonicalAbsenceTransaction,
+	input: {
+		organizationId: string;
+		canonicalRecordId: string | null;
+		startDate: string;
+		startPeriod: DayPeriod;
+		endDate: string;
+		endPeriod: DayPeriod;
+		updatedBy: string;
+	},
+): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	const canonicalRecordId = input.canonicalRecordId;
+	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
+
+	await tx
+		.update(timeRecord)
+		.set({
+			startAt,
+			endAt,
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+
+	await tx
+		.update(timeRecordAbsence)
+		.set({
+			startPeriod: input.startPeriod,
+			endPeriod: input.endPeriod,
+		})
+		.where(
+			and(
+				eq(timeRecordAbsence.recordId, canonicalRecordId),
+				eq(timeRecordAbsence.organizationId, input.organizationId),
+				eq(timeRecordAbsence.recordKind, "absence"),
+			),
+		);
+}
+
 export async function updateCanonicalAbsenceRange(input: {
 	organizationId: string;
 	canonicalRecordId: string | null;
@@ -114,40 +169,8 @@ export async function updateCanonicalAbsenceRange(input: {
 		return;
 	}
 
-	const canonicalRecordId = input.canonicalRecordId;
-	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
-
 	await db.transaction(async (tx) => {
-		await tx
-			.update(timeRecord)
-			.set({
-				startAt,
-				endAt,
-				durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
-				updatedAt: currentTimestamp(),
-				updatedBy: input.updatedBy,
-			})
-			.where(
-				and(
-					eq(timeRecord.id, canonicalRecordId),
-					eq(timeRecord.organizationId, input.organizationId),
-					eq(timeRecord.recordKind, "absence"),
-				),
-			);
-
-		await tx
-			.update(timeRecordAbsence)
-			.set({
-				startPeriod: input.startPeriod,
-				endPeriod: input.endPeriod,
-			})
-			.where(
-				and(
-					eq(timeRecordAbsence.recordId, canonicalRecordId),
-					eq(timeRecordAbsence.organizationId, input.organizationId),
-					eq(timeRecordAbsence.recordKind, "absence"),
-				),
-			);
+		await updateCanonicalAbsenceRangeInTransaction(tx, input);
 	});
 }
 

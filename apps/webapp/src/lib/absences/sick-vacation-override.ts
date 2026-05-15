@@ -1,7 +1,8 @@
 import { and, eq, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { db } from "@/db";
-import { absenceEntry, approvalRequest } from "@/db/schema";
+import { absenceEntry, approvalRequest, timeRecord, timeRecordAbsence } from "@/db/schema";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { dateRangesOverlap } from "./date-utils";
 import type { DayPeriod } from "./types";
 
@@ -18,8 +19,115 @@ type AbsenceTransaction = Pick<
 	"delete" | "insert" | "query" | "update"
 >;
 
+type CanonicalAbsenceRangeInput = {
+	organizationId: string;
+	canonicalRecordId: string | null;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+	updatedBy: string;
+};
+
 function isoDatePlusDays(date: string, days: number): string {
 	return DateTime.fromISO(date).plus({ days }).toISODate() ?? date;
+}
+
+function mapAbsenceRangeToCanonicalTimestamps(input: {
+	startDate: string;
+	endDate: string;
+	startPeriod: DayPeriod;
+	endPeriod: DayPeriod;
+}): { startAt: Date; endAt: Date } {
+	const startOfStartDate = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day");
+	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
+
+	const startAt = input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
+	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+
+	return { startAt: startAt.toJSDate(), endAt: endAt.toJSDate() };
+}
+
+async function updateCanonicalAbsenceRangeInTransaction(
+	tx: AbsenceTransaction,
+	input: CanonicalAbsenceRangeInput,
+): Promise<void> {
+	if (!input.canonicalRecordId) return;
+
+	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
+
+	await tx
+		.update(timeRecord)
+		.set({
+			startAt,
+			endAt,
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+
+	await tx
+		.update(timeRecordAbsence)
+		.set({ startPeriod: input.startPeriod, endPeriod: input.endPeriod })
+		.where(
+			and(
+				eq(timeRecordAbsence.recordId, input.canonicalRecordId),
+				eq(timeRecordAbsence.organizationId, input.organizationId),
+				eq(timeRecordAbsence.recordKind, "absence"),
+			),
+		);
+}
+
+async function createCanonicalAbsenceInTransaction(
+	tx: AbsenceTransaction,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		absenceCategoryId: string;
+		startDate: string;
+		startPeriod: DayPeriod;
+		endDate: string;
+		endPeriod: DayPeriod;
+		countsAgainstVacation: boolean;
+		requiresApproval: boolean;
+		createdBy: string;
+	},
+): Promise<string> {
+	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
+	const [record] = await tx
+		.insert(timeRecord)
+		.values({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			recordKind: "absence",
+			startAt,
+			endAt,
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			approvalState: input.requiresApproval ? "pending" : "approved",
+			origin: "manual",
+			createdBy: input.createdBy,
+			updatedBy: input.createdBy,
+		})
+		.returning({ id: timeRecord.id });
+
+	await tx.insert(timeRecordAbsence).values({
+		recordId: record.id,
+		organizationId: input.organizationId,
+		recordKind: "absence",
+		absenceCategoryId: input.absenceCategoryId,
+		startPeriod: input.startPeriod,
+		endPeriod: input.endPeriod,
+		countsAgainstVacation: input.countsAgainstVacation,
+	});
+
+	return record.id;
 }
 
 export function splitVacationAroundSickRange(input: {
@@ -120,6 +228,15 @@ export async function adjustVacationAbsencesForSickness(input: {
 					eq(approvalRequest.organizationId, input.organizationId),
 				),
 			);
+			if (vacation.canonicalRecordId) {
+				await input.tx.delete(timeRecord).where(
+					and(
+						eq(timeRecord.id, vacation.canonicalRecordId),
+						eq(timeRecord.organizationId, input.organizationId),
+						eq(timeRecord.recordKind, "absence"),
+					),
+				);
+			}
 			await input.tx.delete(absenceEntry).where(
 				and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)),
 			);
@@ -137,9 +254,30 @@ export async function adjustVacationAbsencesForSickness(input: {
 				endPeriod: "full_day",
 			})
 			.where(and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)));
+		await updateCanonicalAbsenceRangeInTransaction(input.tx, {
+			organizationId: input.organizationId,
+			canonicalRecordId: vacation.canonicalRecordId,
+			startDate: firstSegment.startDate,
+			startPeriod: "full_day",
+			endDate: firstSegment.endDate,
+			endPeriod: "full_day",
+			updatedBy: input.updatedBy,
+		});
 		summary.updatedAbsenceIds.push(vacation.id);
 
 		if (secondSegment) {
+			const canonicalRecordId = await createCanonicalAbsenceInTransaction(input.tx, {
+				organizationId: input.organizationId,
+				employeeId: vacation.employeeId,
+				absenceCategoryId: vacation.categoryId,
+				startDate: secondSegment.startDate,
+				startPeriod: "full_day",
+				endDate: secondSegment.endDate,
+				endPeriod: "full_day",
+				countsAgainstVacation: vacation.category.countsAgainstVacation,
+				requiresApproval: vacation.category.requiresApproval,
+				createdBy: input.updatedBy,
+			});
 			const [created] = await input.tx
 				.insert(absenceEntry)
 				.values({
@@ -154,9 +292,36 @@ export async function adjustVacationAbsencesForSickness(input: {
 					notes: vacation.notes,
 					approvedBy: vacation.approvedBy,
 					approvedAt: vacation.approvedAt,
+					canonicalRecordId,
 				})
 				.returning({ id: absenceEntry.id });
 			summary.createdAbsenceIds.push(created.id);
+
+			if (vacation.status === "pending") {
+				const existingApproval = await input.tx.query.approvalRequest.findFirst({
+					where: and(
+						eq(approvalRequest.organizationId, input.organizationId),
+						eq(approvalRequest.entityType, "absence_entry"),
+						eq(approvalRequest.entityId, vacation.id),
+					),
+				});
+
+				if (existingApproval) {
+					await input.tx.insert(approvalRequest).values({
+						organizationId: input.organizationId,
+						entityType: existingApproval.entityType,
+						entityId: created.id,
+						canonicalRecordId,
+						requestedBy: existingApproval.requestedBy,
+						approverId: existingApproval.approverId,
+						status: existingApproval.status,
+						reason: existingApproval.reason,
+						notes: existingApproval.notes,
+						approvedAt: existingApproval.approvedAt,
+						rejectionReason: existingApproval.rejectionReason,
+					});
+				}
+			}
 		}
 	}
 
