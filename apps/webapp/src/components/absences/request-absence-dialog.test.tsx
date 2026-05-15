@@ -162,12 +162,6 @@ function renderDialog({
 function fillRequiredFields() {
 	fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
 	fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
-	fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-12" } });
-}
-
-function setInvalidSameDayPeriods() {
-	fireEvent.change(screen.getByLabelText("Start Period"), { target: { value: "pm" } });
-	fireEvent.change(screen.getByLabelText("End Period"), { target: { value: "am" } });
 }
 
 describe("RequestAbsenceDialog", () => {
@@ -183,9 +177,10 @@ describe("RequestAbsenceDialog", () => {
 		expect(screen.getByRole("heading", { name: "Request Absence" })).toBeTruthy();
 		expect(screen.getByLabelText("Absence Type *")).toBeTruthy();
 		expect(screen.getByLabelText("Start Date *")).toBeTruthy();
-		expect(screen.getByLabelText("Start Period")).toBeTruthy();
-		expect(screen.getByLabelText("End Date *")).toBeTruthy();
-		expect(screen.getByLabelText("End Period")).toBeTruthy();
+		expect(screen.getByLabelText("End Date")).toBeTruthy();
+		expect(screen.getByLabelText("Absence Duration")).toBeTruthy();
+		expect(screen.queryByLabelText("Start Period")).toBeNull();
+		expect(screen.queryByLabelText("End Period")).toBeNull();
 	});
 
 	it("stacks request form fields with compact vertical spacing", () => {
@@ -232,8 +227,11 @@ describe("RequestAbsenceDialog", () => {
 				categoryId: "vacation",
 				startDate: "2026-05-11",
 				startPeriod: "full_day",
-				endDate: "2026-05-12",
+				endDate: "2026-05-11",
 				endPeriod: "full_day",
+				durationKind: "full_day",
+				startTime: undefined,
+				endTime: undefined,
 			});
 		});
 		expect(
@@ -245,8 +243,11 @@ describe("RequestAbsenceDialog", () => {
 						categoryId: "vacation",
 						startDate: "2026-05-11",
 						startPeriod: "full_day",
-						endDate: "2026-05-12",
+						endDate: "2026-05-11",
 						endPeriod: "full_day",
+						durationKind: "full_day",
+						startTime: undefined,
+						endTime: undefined,
 					},
 				],
 			}),
@@ -282,23 +283,53 @@ describe("RequestAbsenceDialog", () => {
 		await waitFor(() => expect(requestAbsenceMock).toHaveBeenCalledTimes(1));
 	});
 
-	it("blocks invalid same-day periods before submission", async () => {
+	it("blocks invalid same-day partial-day times before submission", async () => {
 		renderDialog();
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-11" } });
-		setInvalidSameDayPeriods();
+		fireEvent.change(screen.getByLabelText("Absence Duration"), {
+			target: { value: "partial_day" },
+		});
+		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "13:00" } });
+		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "09:00" } });
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
 	});
 
+	it("submits partial-day times with an empty end date as a same-day request", async () => {
+		renderDialog();
+
+		fillRequiredFields();
+		fireEvent.change(screen.getByLabelText("Absence Duration"), {
+			target: { value: "partial_day" },
+		});
+		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "09:00" } });
+		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "13:00" } });
+
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() => {
+			expect(requestAbsenceMock).toHaveBeenCalledWith({
+				categoryId: "vacation",
+				startDate: "2026-05-11",
+				startPeriod: "am",
+				endDate: "2026-05-11",
+				endPeriod: "am",
+				durationKind: "partial_day",
+				startTime: "09:00",
+				endTime: "13:00",
+				notes: undefined,
+			});
+		});
+	});
+
 	it("blocks insufficient vacation balance before submission", async () => {
 		renderDialog({ remainingDays: 1 });
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-14" } });
+		fireEvent.change(screen.getByLabelText("End Date"), { target: { value: "2026-05-14" } });
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
