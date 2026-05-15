@@ -591,7 +591,9 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 
 				let current = rangeStart;
 				while (current <= rangeEnd) {
-					if (await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())) {
+					if (
+						await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())
+					) {
 						const dateKey = current.toISODate();
 						if (dateKey) dates.add(dateKey);
 					}
@@ -1324,10 +1326,10 @@ export async function getUserSettings(): Promise<
 }
 
 /**
- * Update dashboard widget order
+ * Update dashboard widget order and visibility.
  */
 export async function updateWidgetOrder(
-	order: string[],
+	layout: Pick<DashboardWidgetOrder, "order" | "hidden">,
 ): Promise<ServerActionResult<{ success: boolean }>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -1335,7 +1337,8 @@ export async function updateWidgetOrder(
 		const dbService = yield* _(DatabaseService);
 
 		const widgetOrder: DashboardWidgetOrder = {
-			order,
+			order: layout.order,
+			hidden: layout.hidden ?? [],
 			version: 1,
 		};
 
@@ -1364,7 +1367,7 @@ export async function updateWidgetOrder(
 				},
 				catch: (error) =>
 					new NotFoundError({
-						message: `Failed to update widget order: ${error}`,
+						message: `Failed to update widget layout: ${error}`,
 						entityType: "userSettings",
 					}),
 			}),
