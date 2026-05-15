@@ -591,9 +591,7 @@ export async function getQuickStats(): Promise<ServerActionResult<any>> {
 
 				let current = rangeStart;
 				while (current <= rangeEnd) {
-					if (
-						await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())
-					) {
+					if (await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())) {
 						const dateKey = current.toISODate();
 						if (dateKey) dates.add(dateKey);
 					}

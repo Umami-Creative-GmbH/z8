@@ -26,11 +26,12 @@ export function useWidgetOrder() {
 		},
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
+	const hiddenWidgets = settings?.dashboardWidgetOrder?.hidden ?? [];
 
 	// Mutation for saving widget order
 	const { mutate: saveOrder, isPending: isSaving } = useMutation({
 		mutationFn: async (order: WidgetId[]) => {
-			const result = await updateWidgetOrder(order);
+			const result = await updateWidgetOrder({ order, hidden: hiddenWidgets });
 			if (!result.success) {
 				throw new Error(result.error);
 			}
@@ -45,7 +46,7 @@ export function useWidgetOrder() {
 
 			// Optimistically update the cache
 			queryClient.setQueryData(queryKeys.dashboard.widgetOrder(), {
-				dashboardWidgetOrder: { order: newOrder, version: 1 },
+				dashboardWidgetOrder: { order: newOrder, hidden: hiddenWidgets, version: 1 },
 			});
 
 			return { previousSettings };
