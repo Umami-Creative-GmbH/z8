@@ -2,10 +2,11 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { syncCanonicalAbsenceApprovalState } from "@/app/[locale]/(app)/absences/actions.canonical";
+import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { absenceEntry, approvalRequest, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
 import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
-import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
+import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
@@ -50,31 +51,37 @@ interface AbsenceRecord {
 	};
 }
 
+type ApprovedAbsenceResult = {
+	absence: AbsenceRecord;
+	vacationOverrideSummary: VacationOverrideSummary;
+};
+
+const emptyVacationOverrideSummary = (): VacationOverrideSummary => ({
+	updatedAbsenceIds: [],
+	createdAbsenceIds: [],
+	deletedAbsenceIds: [],
+});
+
 async function applySickVacationOverrideOnApproval(
 	dbService: ApprovalDbService,
 	absence: AbsenceRecord,
 	currentEmployee: CurrentApprover,
-) {
+): Promise<VacationOverrideSummary> {
 	if (
 		absence.category.type !== "sick" ||
 		absence.startPeriod !== "full_day" ||
 		absence.endPeriod !== "full_day"
 	) {
-		return;
+		return emptyVacationOverrideSummary();
 	}
 
-	const summary = await adjustVacationAbsencesForSickness({
+	return await adjustVacationAbsencesForSickness({
 		tx: dbService.db,
 		organizationId: absence.organizationId,
 		employeeId: absence.employeeId,
 		sickStartDate: absence.startDate,
 		sickEndDate: absence.endDate,
 		updatedBy: currentEmployee.user.id,
-	});
-
-	enqueueVacationOverrideCalendarSyncJobs({
-		employeeId: absence.employeeId,
-		summary,
 	});
 }
 
@@ -205,6 +212,17 @@ export function approveAbsenceWithCurrentApproverEffect(
 		handleApprovedAbsence,
 		undefined,
 		{ ...options, transactional: true },
+	).pipe(
+		Effect.tap((result) =>
+			result
+				? Effect.sync(() =>
+						enqueueVacationOverrideCalendarSyncJobs({
+							employeeId: result.absence.employeeId,
+							summary: result.vacationOverrideSummary,
+						}),
+					)
+				: Effect.void,
+		),
 	);
 }
 
@@ -301,7 +319,9 @@ function handleApprovedAbsence(
 	return Effect.gen(function* (_) {
 		const emailService = yield* _(EmailService);
 		const absence = yield* _(updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"));
-		yield* _(Effect.promise(() => applySickVacationOverrideOnApproval(dbService, absence, currentEmployee)));
+		const vacationOverrideSummary = yield* _(
+			Effect.promise(() => applySickVacationOverrideOnApproval(dbService, absence, currentEmployee)),
+		);
 		yield* _(
 			Effect.promise(() =>
 				syncCanonicalAbsenceApprovalState({
@@ -330,7 +350,7 @@ function handleApprovedAbsence(
 		);
 
 		notifyApprovedAbsence(absence, entityId, currentEmployee);
-		return absence;
+		return { absence, vacationOverrideSummary };
 	});
 }
 
@@ -385,7 +405,7 @@ function handleRejectedAbsence(
 }
 
 export async function approveAbsenceEffect(absenceId: string): Promise<ServerActionResult<void>> {
-	return processApproval(
+	const result = await processApproval(
 		"absence_entry",
 		absenceId,
 		"approve",
@@ -394,13 +414,21 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 		undefined,
 		{ transactional: true },
 	);
+	if (!result) return { success: true, data: undefined };
+	if (result.success && result.data) {
+		enqueueVacationOverrideCalendarSyncJobs({
+			employeeId: result.data.absence.employeeId,
+			summary: result.data.vacationOverrideSummary,
+		});
+	}
+	return result.success ? { success: true, data: undefined } : result;
 }
 
 export async function rejectAbsenceEffect(
 	absenceId: string,
 	reason: string,
 ): Promise<ServerActionResult<void>> {
-	return processApproval(
+	const result = await processApproval(
 		"absence_entry",
 		absenceId,
 		"reject",
@@ -410,4 +438,7 @@ export async function rejectAbsenceEffect(
 		undefined,
 		{ transactional: true },
 	);
+
+	if (!result) return { success: true, data: undefined };
+	return result.success ? { success: true, data: undefined } : result;
 }

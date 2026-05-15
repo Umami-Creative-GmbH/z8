@@ -226,7 +226,25 @@ describe("absence requester decision notifications", () => {
 						entityId: string,
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
-				) => updateEntity(dbService, entityId, currentEmployee),
+				) => Effect.gen(function* (_) {
+					const result = yield* _(updateEntity(dbService, entityId, currentEmployee));
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "vacation-updated",
+						employeeId: "emp-requester",
+						action: "update",
+					});
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "vacation-created",
+						employeeId: "emp-requester",
+						action: "create",
+					});
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "vacation-deleted",
+						employeeId: "emp-requester",
+						action: "delete",
+					});
+					return result;
+				}),
 			),
 		}));
 		const { approveAbsenceWithCurrentApproverEffect } = await import(

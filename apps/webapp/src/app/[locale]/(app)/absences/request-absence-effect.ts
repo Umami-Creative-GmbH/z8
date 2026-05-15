@@ -91,7 +91,7 @@ function checkForOverlappingAbsences(
 	dbService: typeof DatabaseService.Service,
 	currentEmployee: RequestAbsenceEmployeeContext,
 	data: AbsenceRequest,
-	category: { type: string },
+	category: { type: string; requiresApproval: boolean },
 ) {
 	return Effect.gen(function* (_) {
 		const overlappingAbsences = yield* _(
