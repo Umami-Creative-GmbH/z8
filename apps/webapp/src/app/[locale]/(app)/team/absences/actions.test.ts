@@ -80,6 +80,21 @@ describe("manager absence server action helpers", () => {
 		);
 	});
 
+	it("keeps legacy period-only partial-day ranges valid without explicit times", () => {
+		expect(
+			validateRecordAbsenceDateRange({
+				categoryId: "category-1",
+				startDate: "2026-04-10",
+				startPeriod: "pm",
+				endDate: "2026-04-10",
+				endPeriod: "pm",
+				durationKind: undefined,
+				startTime: "",
+				endTime: "",
+			}),
+		).toBeNull();
+	});
+
 	it("builds approved canonical absence record values", () => {
 		const values = buildCanonicalAbsenceRecordValues({
 			organizationId: "org-1",
