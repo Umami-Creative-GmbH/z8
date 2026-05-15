@@ -10,11 +10,15 @@ import {
 } from "./actions";
 import {
 	buildCanonicalAbsenceRecordValues,
+	buildInaccessibleTeamAbsenceListResult,
+	clampManagerAbsencePage,
 	getAbsenceOverlapConflictMessage,
+	isManagerAbsenceMetricSort,
 	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
+import type { ManagerAbsenceListParams } from "./manager-absence-types";
 
 describe("manager absence server action contracts", () => {
 	it("exports the list and record actions", () => {
@@ -32,7 +36,7 @@ describe("manager absence server action helpers", () => {
 				pageSize: 999,
 				year: 1999,
 			}),
-		).toEqual({
+		).toMatchObject({
 			search: "E-123",
 			page: 1,
 			pageSize: 25,
@@ -42,6 +46,30 @@ describe("manager absence server action helpers", () => {
 		expect(normalizeManagerAbsenceListParams({ page: 2, pageSize: 50 })).toMatchObject({
 			page: 2,
 			pageSize: 50,
+		});
+
+		expect(
+			normalizeManagerAbsenceListParams({
+				teamId: "  team-1  ",
+				sort: "usedVacationDays",
+				direction: "desc",
+			}),
+		).toMatchObject({
+			teamId: "team-1",
+			sort: "usedVacationDays",
+			direction: "desc",
+		});
+
+		expect(
+			normalizeManagerAbsenceListParams({
+				teamId: "   ",
+				sort: "not-a-sort-key",
+				direction: "sideways",
+			} as Partial<ManagerAbsenceListParams>),
+		).toMatchObject({
+			teamId: null,
+			sort: "employee",
+			direction: "asc",
 		});
 	});
 
@@ -115,6 +143,47 @@ describe("manager absence server action helpers", () => {
 		expect(getAbsenceOverlapConflictMessage("approved")).toBe(
 			"Absence request overlaps with an existing approved absence",
 		);
+	});
+
+	it("clamps requested pages after total rows are known", () => {
+		expect(clampManagerAbsencePage({ requestedPage: 4, pageSize: 10, total: 21 })).toBe(3);
+		expect(clampManagerAbsencePage({ requestedPage: 2, pageSize: 10, total: 0 })).toBe(1);
+	});
+
+	it("clears inaccessible team selections while preserving visible metadata", () => {
+		const normalized = normalizeManagerAbsenceListParams({
+			page: 3,
+			pageSize: 10,
+			year: 2026,
+			teamId: "hidden-team",
+			sort: "sickDays",
+			direction: "desc",
+		});
+
+		expect(
+			buildInaccessibleTeamAbsenceListResult(normalized, [{ id: "team-ops", name: "Operations" }]),
+		).toEqual({
+			rows: [],
+			teams: [{ id: "team-ops", name: "Operations" }],
+			total: 0,
+			page: 1,
+			pageSize: 10,
+			year: 2026,
+			teamId: null,
+			sort: "sickDays",
+			direction: "desc",
+			pageCount: 0,
+		});
+	});
+
+	it("classifies metric sorts separately from database-pageable sorts", () => {
+		expect(isManagerAbsenceMetricSort("vacationAllowance")).toBe(true);
+		expect(isManagerAbsenceMetricSort("usedVacationDays")).toBe(true);
+		expect(isManagerAbsenceMetricSort("pendingVacationDays")).toBe(true);
+		expect(isManagerAbsenceMetricSort("remainingVacationDays")).toBe(true);
+		expect(isManagerAbsenceMetricSort("sickDays")).toBe(true);
+		expect(isManagerAbsenceMetricSort("employee")).toBe(false);
+		expect(isManagerAbsenceMetricSort("team")).toBe(false);
 	});
 });
 

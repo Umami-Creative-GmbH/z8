@@ -1,9 +1,10 @@
 "use client";
 
-import { IconSearch } from "@tabler/icons-react";
+import { IconArrowsSort, IconCalendarPlus, IconSearch } from "@tabler/icons-react";
 import { useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
+import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +23,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useRouter } from "@/navigation";
-import type { ManagerAbsenceEmployeeRow, ManagerAbsenceListResult } from "./manager-absence-types";
+import type {
+	ManagerAbsenceEmployeeRow,
+	ManagerAbsenceListResult,
+	ManagerAbsenceSortKey,
+} from "./manager-absence-types";
 import { RecordAbsenceDialog } from "./record-absence-dialog";
 
 type AbsenceCategoryOption = {
@@ -56,6 +61,11 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 
 	function pushParams(updates: Record<string, string | number | null>) {
 		const params = new URLSearchParams(searchParams.toString());
+		const updatesTeamId = Object.prototype.hasOwnProperty.call(updates, "teamId");
+
+		if (data.teamId === null && !updatesTeamId) {
+			params.delete("teamId");
+		}
 
 		Object.entries(updates).forEach(([key, value]) => {
 			if (value === null || value === "") {
@@ -78,6 +88,41 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 		const nextSearch = String(formData.get("search") ?? "").trim();
 
 		pushParams({ search: nextSearch || null, page: 1 });
+	}
+
+	function handleSort(sort: ManagerAbsenceSortKey) {
+		const nextDirection = data.sort === sort && data.direction === "asc" ? "desc" : "asc";
+
+		pushParams({ sort, direction: nextDirection, page: 1 });
+	}
+
+	function renderSortableHeader(
+		label: string,
+		sort: ManagerAbsenceSortKey,
+		className?: string,
+	) {
+		const isActive = data.sort === sort;
+		const directionLabel = data.direction === "asc" ? "ascending" : "descending";
+
+		return (
+			<TableHead className={className} aria-sort={isActive ? directionLabel : undefined}>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="h-auto gap-1 px-0 font-medium hover:bg-transparent"
+					aria-label={isActive ? `Sort by ${label} (${directionLabel})` : `Sort by ${label}`}
+					onClick={() => handleSort(sort)}
+					disabled={isPending}
+				>
+					<span>{label}</span>
+					{isActive ? (
+						<span className="text-muted-foreground text-xs">{directionLabel}</span>
+					) : null}
+					<IconArrowsSort className="size-4 text-muted-foreground" aria-hidden="true" />
+				</Button>
+			</TableHead>
+		);
 	}
 
 	return (
@@ -105,22 +150,44 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 					</Button>
 				</form>
 
-				<Select
-					value={String(data.year)}
-					onValueChange={(year) => pushParams({ year, page: 1 })}
-					disabled={isPending}
-				>
-					<SelectTrigger className="w-full sm:w-36" aria-label="Filter by year">
-						<SelectValue placeholder="Year" />
-					</SelectTrigger>
-					<SelectContent>
-						{years.map((year) => (
-							<SelectItem key={year} value={String(year)}>
-								{year}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+					<Select
+						value={data.teamId ?? "all"}
+						onValueChange={(teamId) =>
+							pushParams({ teamId: teamId === "all" ? null : teamId, page: 1 })
+						}
+						disabled={isPending}
+					>
+						<SelectTrigger className="w-full sm:w-44" aria-label="Filter by team">
+							<SelectValue placeholder="Team" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">All teams</SelectItem>
+							{data.teams.map((team) => (
+								<SelectItem key={team.id} value={team.id}>
+									{team.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+
+					<Select
+						value={String(data.year)}
+						onValueChange={(year) => pushParams({ year, page: 1 })}
+						disabled={isPending}
+					>
+						<SelectTrigger className="w-full sm:w-36" aria-label="Filter by year">
+							<SelectValue placeholder="Year" />
+						</SelectTrigger>
+						<SelectContent>
+							{years.map((year) => (
+								<SelectItem key={year} value={String(year)}>
+									{year}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 			</div>
 
 			{hasRows ? (
@@ -129,13 +196,13 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 						<Table className="min-w-[760px]">
 							<TableHeader>
 								<TableRow>
-									<TableHead>Employee</TableHead>
-									<TableHead>Team or Position</TableHead>
-									<TableHead className="text-right">Allowance</TableHead>
-									<TableHead className="text-right">Used</TableHead>
-									<TableHead className="text-right">Pending</TableHead>
-									<TableHead className="text-right">Left</TableHead>
-									<TableHead className="text-right">Sick</TableHead>
+									{renderSortableHeader("Employee", "employee")}
+									{renderSortableHeader("Team or Position", "team")}
+									{renderSortableHeader("Allowance", "vacationAllowance", "text-right")}
+									{renderSortableHeader("Used", "usedVacationDays", "text-right")}
+									{renderSortableHeader("Pending", "pendingVacationDays", "text-right")}
+									{renderSortableHeader("Left", "remainingVacationDays", "text-right")}
+									{renderSortableHeader("Sick", "sickDays", "text-right")}
 									<TableHead className="text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -143,9 +210,17 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 								{data.rows.map((employee) => (
 									<TableRow key={employee.id}>
 										<TableCell>
-											<div className="min-w-0">
-												<p className="truncate font-medium">{employee.name}</p>
-												<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
+											<div className="flex min-w-0 items-center gap-3">
+												<UserAvatar
+													image={employee.image}
+													seed={employee.userId}
+													name={employee.name}
+													size="sm"
+												/>
+												<div className="min-w-0">
+													<p className="truncate font-medium">{employee.name}</p>
+													<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
+												</div>
 											</div>
 										</TableCell>
 										<TableCell className="text-muted-foreground text-sm">
@@ -170,11 +245,11 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 											<Button
 												type="button"
 												variant="outline"
-												size="sm"
+												size="icon"
 												aria-label={`Record absence for ${employee.name}`}
 												onClick={() => setSelectedEmployee(employee)}
 											>
-												Record absence
+												<IconCalendarPlus className="size-4" aria-hidden="true" />
 											</Button>
 										</TableCell>
 									</TableRow>

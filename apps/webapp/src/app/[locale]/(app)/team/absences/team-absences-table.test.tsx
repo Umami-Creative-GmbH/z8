@@ -6,6 +6,7 @@ import { validateRecordAbsenceFormDateRange } from "./record-absence-dialog";
 import { TeamAbsencesTable } from "./team-absences-table";
 
 const routerPush = vi.fn();
+let mockedSearchParams = "search=old&page=2&pageSize=10&year=2026";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -20,8 +21,19 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
+vi.mock("@/components/user-avatar", () => ({
+	UserAvatar: ({ image, name, seed }: { image?: string | null; name?: string | null; seed: string }) => (
+		<span
+			data-testid="user-avatar"
+			data-image={image ?? ""}
+			data-name={name ?? ""}
+			data-seed={seed}
+		/>
+	),
+}));
+
 vi.mock("next/navigation", () => ({
-	useSearchParams: () => new URLSearchParams("search=old&page=2&pageSize=10&year=2026"),
+	useSearchParams: () => new URLSearchParams(mockedSearchParams),
 }));
 
 vi.mock("./actions", () => ({
@@ -31,6 +43,7 @@ vi.mock("./actions", () => ({
 describe("TeamAbsencesTable", () => {
 	beforeEach(() => {
 		routerPush.mockClear();
+		mockedSearchParams = "search=old&page=2&pageSize=10&year=2026";
 	});
 
 	it("submits search through URL params and resets to the first page", () => {
@@ -38,10 +51,14 @@ describe("TeamAbsencesTable", () => {
 			<TeamAbsencesTable
 				data={{
 					rows: [],
+					teams: [{ id: "team-ops", name: "Operations" }],
 					total: 0,
 					page: 2,
 					pageSize: 10,
 					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
 					pageCount: 0,
 				}}
 				categories={[]}
@@ -62,10 +79,14 @@ describe("TeamAbsencesTable", () => {
 			<TeamAbsencesTable
 				data={{
 					rows: [],
+					teams: [{ id: "team-ops", name: "Operations" }],
 					total: 0,
 					page: 1,
 					pageSize: 10,
 					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
 					pageCount: 0,
 				}}
 				categories={[]}
@@ -87,6 +108,7 @@ describe("TeamAbsencesTable", () => {
 							userId: "user-1",
 							name: "Ada Lovelace",
 							email: "ada@example.com",
+							image: "https://example.com/ada.png",
 							employeeNumber: "E-001",
 							position: "Engineer",
 							role: "employee",
@@ -98,10 +120,14 @@ describe("TeamAbsencesTable", () => {
 							sickDays: 1,
 						},
 					],
+					teams: [{ id: "team-ops", name: "Operations" }],
 					total: 1,
 					page: 1,
 					pageSize: 10,
 					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
 					pageCount: 1,
 				}}
 				categories={[
@@ -119,14 +145,22 @@ describe("TeamAbsencesTable", () => {
 		);
 
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+		expect(screen.getByTestId("user-avatar").getAttribute("data-image")).toBe(
+			"https://example.com/ada.png",
+		);
+		expect(screen.getByTestId("user-avatar").getAttribute("data-seed")).toBe("user-1");
 		expect(screen.getByText("24")).toBeTruthy();
-		expect(screen.getByRole("columnheader", { name: "Pending" }).className).not.toContain(
+		expect(screen.getByRole("columnheader", { name: /employee/i }).getAttribute("aria-sort")).toBe(
+			"ascending",
+		);
+		expect(screen.getByRole("columnheader", { name: /pending/i }).className).not.toContain(
 			"hidden",
 		);
-		expect(screen.getByRole("columnheader", { name: "Sick" }).className).not.toContain("hidden");
+		expect(screen.getByRole("columnheader", { name: /sick/i }).className).not.toContain("hidden");
 		const recordButton = screen.getByRole("button", {
 			name: "Record absence for Ada Lovelace",
 		});
+		expect(recordButton.textContent).not.toContain("Record absence");
 		expect(recordButton.closest("div.rounded-lg")?.className).not.toContain("overflow-hidden");
 
 		fireEvent.click(recordButton);
@@ -143,6 +177,7 @@ describe("TeamAbsencesTable", () => {
 							userId: "user-1",
 							name: "Ada Lovelace",
 							email: "ada@example.com",
+							image: "https://example.com/ada.png",
 							employeeNumber: "E-001",
 							position: "Engineer",
 							role: "employee",
@@ -154,10 +189,14 @@ describe("TeamAbsencesTable", () => {
 							sickDays: 1,
 						},
 					],
+					teams: [{ id: "team-ops", name: "Operations" }],
 					total: 15,
 					page: 1,
 					pageSize: 10,
 					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
 					pageCount: 2,
 				}}
 				categories={[]}
@@ -174,6 +213,157 @@ describe("TeamAbsencesTable", () => {
 		fireEvent.click(nextButton);
 
 		expect(routerPush).toHaveBeenCalledWith("/team/absences?search=old&page=2&pageSize=10&year=2026");
+	});
+
+	it("filters by team through URL params and resets to the first page", () => {
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: "https://example.com/ada.png",
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+						},
+					],
+					teams: [{ id: "team-ops", name: "Operations" }],
+					total: 1,
+					page: 2,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search="old"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("combobox", { name: /filter by team/i }));
+		fireEvent.click(screen.getByRole("option", { name: "Operations" }));
+
+		expect(routerPush).toHaveBeenCalledWith(
+			"/team/absences?search=old&page=1&pageSize=10&year=2026&teamId=team-ops",
+		);
+	});
+
+	it("sorts by header through URL params and resets to the first page", () => {
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: "https://example.com/ada.png",
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+						},
+					],
+					teams: [{ id: "team-ops", name: "Operations" }],
+					total: 1,
+					page: 2,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search="old"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /sort by used/i }));
+
+		expect(routerPush).toHaveBeenCalledWith(
+			"/team/absences?search=old&page=1&pageSize=10&year=2026&sort=usedVacationDays&direction=asc",
+		);
+	});
+
+	it("drops stale team ids from URL updates when server canonical state has no team", () => {
+		mockedSearchParams = "search=old&page=2&pageSize=10&year=2026&teamId=stale";
+
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+						},
+					],
+					teams: [{ id: "team-ops", name: "Operations" }],
+					total: 1,
+					page: 2,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search="old"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /sort by used/i }));
+
+		expect(routerPush).toHaveBeenCalledWith(
+			"/team/absences?search=old&page=1&pageSize=10&year=2026&sort=usedVacationDays&direction=asc",
+		);
+
+		fireEvent.change(screen.getByRole("searchbox", { name: /search employees/i }), {
+			target: { value: "Grace" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+
+		expect(routerPush).toHaveBeenLastCalledWith(
+			"/team/absences?search=Grace&page=1&pageSize=10&year=2026",
+		);
+
+		fireEvent.click(screen.getByRole("combobox", { name: /filter by year/i }));
+		fireEvent.click(screen.getByRole("option", { name: "2025" }));
+
+		expect(routerPush).toHaveBeenLastCalledWith(
+			"/team/absences?search=old&page=1&pageSize=10&year=2025",
+		);
 	});
 });
 

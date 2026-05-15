@@ -2,6 +2,22 @@ import type { DayPeriod } from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
+export type ManagerAbsenceSortKey =
+	| "employee"
+	| "team"
+	| "vacationAllowance"
+	| "usedVacationDays"
+	| "pendingVacationDays"
+	| "remainingVacationDays"
+	| "sickDays";
+
+export type ManagerAbsenceSortDirection = "asc" | "desc";
+
+export interface ManagerAbsenceTeamOption {
+	id: string;
+	name: string;
+}
+
 export interface ManagerAbsenceActor {
 	id: string;
 	userId: string;
@@ -21,6 +37,7 @@ export interface ManagerAbsenceEmployeeRow {
 	userId: string;
 	name: string;
 	email: string;
+	image: string | null;
 	employeeNumber: string | null;
 	position: string | null;
 	role: ManagerAbsenceRole;
@@ -37,14 +54,21 @@ export interface ManagerAbsenceListParams {
 	page: number;
 	pageSize: number;
 	year: number;
+	teamId: string | null;
+	sort: ManagerAbsenceSortKey;
+	direction: ManagerAbsenceSortDirection;
 }
 
 export interface ManagerAbsenceListResult {
 	rows: ManagerAbsenceEmployeeRow[];
+	teams: ManagerAbsenceTeamOption[];
 	total: number;
 	page: number;
 	pageSize: number;
 	year: number;
+	teamId: string | null;
+	sort: ManagerAbsenceSortKey;
+	direction: ManagerAbsenceSortDirection;
 	pageCount: number;
 }
 
