@@ -11,6 +11,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest, employee } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import type { SickDetail } from "@/lib/absences/types";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailServiceLive } from "@/lib/effect/services/email.service";
@@ -55,6 +56,7 @@ interface AbsenceWithRelations {
 	endDate: string;
 	endPeriod: "full_day" | "am" | "pm";
 	notes: string | null;
+	sickDetail: SickDetail | null;
 	status: "pending" | "approved" | "rejected";
 	createdAt: Date;
 	employee: {

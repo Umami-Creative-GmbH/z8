@@ -1,5 +1,6 @@
 import type { Effect } from "effect";
 import type { db } from "@/db";
+import type { SickDetail } from "@/lib/absences/types";
 import type { AnyAppError } from "@/lib/effect/errors";
 
 export type ApprovalDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -25,6 +26,7 @@ export interface ApprovalWithAbsence {
 		endDate: string;
 		endPeriod: "full_day" | "am" | "pm";
 		notes: string | null;
+		sickDetail: SickDetail | null;
 		category: {
 			name: string;
 			type: string;
