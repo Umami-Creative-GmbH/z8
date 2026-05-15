@@ -100,6 +100,31 @@ describe("absence duration helpers", () => {
 		).toBe("Enter a start time and end time for a partial-day absence.");
 	});
 
+	it("rejects explicit partial-day absences without any times", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-15",
+				durationKind: "partial_day",
+				notes: "",
+			}),
+		).toBe("Enter a start time and end time for a partial-day absence.");
+	});
+
+	it("calculates legacy multi-day period-only absences with half-day semantics", () => {
+		expect(
+			calculateAbsenceDurationDays({
+				categoryId: "category-1",
+				startDate: "2026-05-11",
+				startPeriod: "pm",
+				endDate: "2026-05-12",
+				endPeriod: "am",
+				notes: "",
+			}),
+		).toBe(1);
+	});
+
 	it("validates legacy half-day periods without explicit times", () => {
 		expect(
 			validateAbsenceDurationInput({

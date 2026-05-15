@@ -40,6 +40,13 @@ export function normalizeAbsenceDurationInput(
 	const startTime = input.startTime?.trim() ?? "";
 	const endTime = input.endTime?.trim() ?? "";
 	const hasTimes = hasExplicitPartialTimes({ ...input, startTime, endTime });
+	const isLegacyPeriodOnly = hasLegacyPeriodOnlyIntent({
+		...input,
+		startPeriod,
+		endPeriod,
+		startTime,
+		endTime,
+	});
 
 	if (durationKind === "full_day") {
 		return {
@@ -58,8 +65,8 @@ export function normalizeAbsenceDurationInput(
 		startDate,
 		endDate,
 		durationKind,
-		startPeriod: hasTimes ? "am" : startPeriod,
-		endPeriod: hasTimes ? "am" : endPeriod,
+		startPeriod: hasTimes || !isLegacyPeriodOnly ? "am" : startPeriod,
+		endPeriod: hasTimes || !isLegacyPeriodOnly ? "am" : endPeriod,
 		startTime,
 		endTime,
 		notes: input.notes,
@@ -92,7 +99,7 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 		return null;
 	}
 
-	if (!hasExplicitPartialTimes(normalized)) {
+	if (hasLegacyPeriodOnlyIntent(input)) {
 		return null;
 	}
 
@@ -124,8 +131,18 @@ export function calculateAbsenceDurationDays(
 ): number {
 	const normalized = normalizeAbsenceDurationInput(input);
 
-	if (normalized.durationKind === "partial_day") {
+	if (normalized.durationKind === "partial_day" && hasExplicitPartialTimes(normalized)) {
 		return 0.5;
+	}
+
+	if (normalized.durationKind === "partial_day") {
+		return calculateBusinessDaysWithHalfDays(
+			normalized.startDate,
+			normalized.startPeriod,
+			normalized.endDate,
+			normalized.endPeriod,
+			holidays,
+		);
 	}
 
 	return calculateBusinessDaysWithHalfDays(
@@ -181,7 +198,23 @@ function inferDurationKind(startPeriod: DayPeriod, endPeriod: DayPeriod): Absenc
 }
 
 function hasExplicitPartialTimes(input: Pick<AbsenceDurationInput, "durationKind" | "startTime" | "endTime">): boolean {
-	return input.durationKind === "partial_day" && (!!input.startTime || !!input.endTime);
+	return input.durationKind === "partial_day" && (hasText(input.startTime) || hasText(input.endTime));
+}
+
+function hasLegacyPeriodOnlyIntent(input: AbsenceDurationInput): boolean {
+	return (
+		input.durationKind === undefined &&
+		(input.startPeriod === "am" ||
+			input.startPeriod === "pm" ||
+			input.endPeriod === "am" ||
+			input.endPeriod === "pm") &&
+		!hasText(input.startTime) &&
+		!hasText(input.endTime)
+	);
+}
+
+function hasText(value: string | undefined): boolean {
+	return !!value?.trim();
 }
 
 function isDateOnly(value: string): boolean {
