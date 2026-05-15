@@ -12,24 +12,38 @@ import { WidgetCard } from "./widget-card";
 export function PresenceStatusWidget() {
 	const { t } = useTranslate();
 	const [employeeId, setEmployeeId] = useState<string | undefined>(undefined);
+	const [employeeResolved, setEmployeeResolved] = useState(false);
 
 	useEffect(() => {
-		getCurrentEmployee().then((emp) => {
-			if (emp) setEmployeeId(emp.id);
-		});
+		let mounted = true;
+
+		async function loadEmployee() {
+			try {
+				const emp = await getCurrentEmployee();
+				if (mounted && emp) setEmployeeId(emp.id);
+			} catch {
+				// Treat lookup failures like unavailable presence and resolve the loading state.
+			} finally {
+				if (mounted) setEmployeeResolved(true);
+			}
+		}
+
+		void loadEmployee();
+
+		return () => {
+			mounted = false;
+		};
 	}, []);
 
 	const { data: status, isLoading } = usePresenceStatus(employeeId);
 
 	// Don't render if presence is not enabled or no data
-	if (!isLoading && (!status || !status.presenceEnabled)) {
+	if (employeeResolved && !isLoading && !status?.presenceEnabled) {
 		return null;
 	}
 
 	const percentage =
-		status && status.required > 0
-			? Math.min((status.actual / status.required) * 100, 100)
-			: 100;
+		status && status.required > 0 ? Math.min((status.actual / status.required) * 100, 100) : 100;
 	const isBehind = status ? status.actual < status.required : false;
 
 	const periodLabel = status
@@ -44,12 +58,9 @@ export function PresenceStatusWidget() {
 		<DashboardWidget id="presence-status">
 			<WidgetCard
 				title={t("dashboard.presenceStatus", "Presence")}
-				description={t(
-					"dashboard.presenceDescription",
-					"On-site attendance tracking",
-				)}
+				description={t("dashboard.presenceDescription", "On-site attendance tracking")}
 				icon={<IconMapPin className="size-4 text-teal-500" />}
-				loading={isLoading || !employeeId}
+				loading={isLoading || !employeeResolved || !employeeId}
 			>
 				{status && (
 					<div className="space-y-3">
