@@ -7,11 +7,11 @@ import { generateAvatarDataUri, getInitials, type UserAvatarGender } from "@/lib
 import { cn } from "@/lib/utils";
 
 const sizeConfig = {
-	xs: { class: "size-6", pixels: 24, spinner: "size-3" },
-	sm: { class: "size-8", pixels: 32, spinner: "size-3" },
-	md: { class: "size-10", pixels: 40, spinner: "size-4" },
-	lg: { class: "size-16", pixels: 64, spinner: "size-5" },
-	xl: { class: "size-24", pixels: 96, spinner: "size-6" },
+	xs: { class: "size-6", pixels: 24, spinner: "size-3", badge: "size-2" },
+	sm: { class: "size-8", pixels: 32, spinner: "size-3", badge: "size-2.5" },
+	md: { class: "size-10", pixels: 40, spinner: "size-4", badge: "size-3" },
+	lg: { class: "size-16", pixels: 64, spinner: "size-5", badge: "size-4" },
+	xl: { class: "size-24", pixels: 96, spinner: "size-6", badge: "size-5" },
 } as const;
 
 const shapeConfig = {
@@ -21,6 +21,19 @@ const shapeConfig = {
 
 export type UserAvatarSize = keyof typeof sizeConfig;
 export type UserAvatarShape = keyof typeof shapeConfig;
+export type EmployeeClockStatus = "clocked-in" | "clocked-out" | "unknown";
+
+function getClockStatusBadge(clockStatus?: EmployeeClockStatus) {
+	if (clockStatus === "clocked-in") {
+		return { label: "Clocked in", className: "bg-emerald-500" };
+	}
+
+	if (clockStatus === "clocked-out") {
+		return { label: "Clocked out", className: "bg-red-500" };
+	}
+
+	return null;
+}
 
 export interface UserAvatarProps {
 	/** User's uploaded image URL */
@@ -38,6 +51,10 @@ export interface UserAvatarProps {
 	className?: string;
 	/** Border styling (for stacked avatars) */
 	bordered?: boolean;
+	/** Employee clock status indicator */
+	clockStatus?: EmployeeClockStatus;
+	/** Whether to render a known employee clock status indicator */
+	showClockStatus?: boolean;
 }
 
 /**
@@ -57,10 +74,13 @@ export function UserAvatar({
 	shape = "circle",
 	className,
 	bordered = false,
+	clockStatus,
+	showClockStatus = true,
 }: UserAvatarProps) {
 	const [isLoading, setIsLoading] = useState(true);
-	const { class: sizeClass, pixels, spinner: spinnerClass } = sizeConfig[size];
+	const { class: sizeClass, pixels, spinner: spinnerClass, badge: badgeClass } = sizeConfig[size];
 	const shapeClass = shapeConfig[shape];
+	const clockStatusBadge = showClockStatus ? getClockStatusBadge(clockStatus) : null;
 
 	// Generate DiceBear fallback - memoized for performance
 	// Using 2x pixels for retina displays
@@ -92,6 +112,16 @@ export function UserAvatar({
 					initials
 				)}
 			</AvatarFallback>
+			{clockStatusBadge ? (
+				<span
+					aria-label={clockStatusBadge.label}
+					className={cn(
+						"absolute right-0 bottom-0 rounded-full border-2 border-background",
+						badgeClass,
+						clockStatusBadge.className,
+					)}
+				/>
+			) : null}
 		</Avatar>
 	);
 }
