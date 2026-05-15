@@ -181,6 +181,8 @@ describe("RequestAbsenceDialog", () => {
 		expect(screen.getByLabelText("Absence Duration")).toBeTruthy();
 		expect(screen.queryByLabelText("Start Period")).toBeNull();
 		expect(screen.queryByLabelText("End Period")).toBeNull();
+		expect(screen.queryByText("Category is required")).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 
 	it("stacks request form fields with compact vertical spacing", () => {

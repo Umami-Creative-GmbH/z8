@@ -76,6 +76,11 @@ const createDefaultValues = (initialDate?: string) => ({
 });
 
 const EMPTY_HOLIDAYS: Holiday[] = [];
+const PARTIAL_DAY_TIME_ERRORS = new Set([
+	"Enter a start time and end time for a partial-day absence.",
+	"Enter times in HH:mm format.",
+	"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+]);
 
 export function RequestAbsenceDialog({
 	categories,
@@ -418,7 +423,13 @@ export function RequestAbsenceDialog({
 							{(values) => {
 								const validationError = validateAbsenceDurationInput(values);
 
-								if (!validationError) return null;
+								if (
+									values.durationKind !== "partial_day" ||
+									!validationError ||
+									!PARTIAL_DAY_TIME_ERRORS.has(validationError)
+								) {
+									return null;
+								}
 
 								return (
 									<p
