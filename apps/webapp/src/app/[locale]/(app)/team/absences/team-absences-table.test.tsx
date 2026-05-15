@@ -2,7 +2,10 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { validateRecordAbsenceFormDateRange } from "./record-absence-dialog";
+import {
+	buildRecordAbsenceForEmployeeInput,
+	validateRecordAbsenceFormDateRange,
+} from "./record-absence-dialog";
 import { TeamAbsencesTable } from "./team-absences-table";
 
 const routerPush = vi.fn();
@@ -196,5 +199,24 @@ describe("validateRecordAbsenceFormDateRange", () => {
 				endPeriod: "am",
 			}),
 		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+	});
+});
+
+describe("buildRecordAbsenceForEmployeeInput", () => {
+	it("includes sick detail for manager-recorded sick absences", () => {
+		expect(
+			buildRecordAbsenceForEmployeeInput("employee-1", {
+				categoryId: "category-sick",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-18",
+				endPeriod: "full_day",
+				notes: "",
+				sickDetail: "with_certificate",
+			}),
+		).toMatchObject({
+			employeeId: "employee-1",
+			sickDetail: "with_certificate",
+		});
 	});
 });

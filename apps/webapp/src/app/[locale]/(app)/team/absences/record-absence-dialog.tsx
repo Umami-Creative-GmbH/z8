@@ -32,9 +32,11 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import type { DayPeriod } from "@/lib/absences/types";
+import { sickDetailOptions } from "@/lib/absences/sick-details";
+import type { DayPeriod, SickDetail } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { recordAbsenceForEmployee } from "./actions";
+import type { RecordAbsenceForEmployeeInput } from "./manager-absence-types";
 
 type AbsenceCategoryOption = {
 	id: string;
@@ -59,6 +61,7 @@ type RecordAbsenceFormValues = {
 	endDate: string;
 	endPeriod: DayPeriod;
 	notes: string;
+	sickDetail: SickDetail | "";
 };
 
 const defaultValues: RecordAbsenceFormValues = {
@@ -68,6 +71,7 @@ const defaultValues: RecordAbsenceFormValues = {
 	endDate: "",
 	endPeriod: "pm",
 	notes: "",
+	sickDetail: "",
 };
 
 function requiredMessage(label: string) {
@@ -97,6 +101,22 @@ export function validateRecordAbsenceFormDateRange(
 	}
 
 	return null;
+}
+
+export function buildRecordAbsenceForEmployeeInput(
+	employeeId: string,
+	value: RecordAbsenceFormValues,
+): RecordAbsenceForEmployeeInput {
+	return {
+		employeeId,
+		categoryId: value.categoryId,
+		startDate: value.startDate,
+		startPeriod: value.startPeriod,
+		endDate: value.endDate,
+		endPeriod: value.endPeriod,
+		notes: value.notes.trim() || undefined,
+		sickDetail: value.sickDetail || undefined,
+	};
 }
 
 export function RecordAbsenceDialog({
@@ -134,15 +154,9 @@ export function RecordAbsenceDialog({
 				return;
 			}
 
-			const result = await recordAbsenceForEmployee({
-				employeeId: employee.id,
-				categoryId: value.categoryId,
-				startDate: value.startDate,
-				startPeriod: value.startPeriod,
-				endDate: value.endDate,
-				endPeriod: value.endPeriod,
-				notes: value.notes.trim() || undefined,
-			});
+			const result = await recordAbsenceForEmployee(
+				buildRecordAbsenceForEmployeeInput(employee.id, value),
+			);
 
 			if (result.success) {
 				toast.success(t("team.absences.recordDialog.success", "Absence recorded"));
@@ -205,7 +219,13 @@ export function RecordAbsenceDialog({
 								<Select
 									name="categoryId"
 									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value)}
+									onValueChange={(value) => {
+										field.handleChange(value);
+										const nextCategory = categories.find((category) => category.id === value);
+										if (nextCategory?.type !== "sick") {
+											form.setFieldValue("sickDetail", "");
+										}
+									}}
 									disabled={categories.length === 0}
 								>
 									<TFormControl hasError={fieldHasError(field)}>
@@ -236,6 +256,59 @@ export function RecordAbsenceDialog({
 							</TFormItem>
 						)}
 					</form.Field>
+
+					<form.Subscribe selector={(state) => state.values.categoryId}>
+						{(categoryId) => {
+							const selectedCategory = categories.find((category) => category.id === categoryId);
+							if (selectedCategory?.type !== "sick") return null;
+
+							return (
+								<form.Field
+									name="sickDetail"
+									validators={{
+										onChange: ({ value }) =>
+											value
+												? undefined
+												: requiredMessage(
+														t("team.absences.recordDialog.sickDetail", "Sick detail"),
+													),
+									}}
+								>
+									{(field) => (
+										<TFormItem>
+											<TFormLabel hasError={fieldHasError(field)} required>
+												{t("team.absences.recordDialog.sickDetail", "Sick detail")}
+											</TFormLabel>
+											<Select
+												name="sickDetail"
+												value={field.state.value}
+												onValueChange={(value) => field.handleChange(value as SickDetail)}
+											>
+												<TFormControl hasError={fieldHasError(field)}>
+													<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+														<SelectValue
+															placeholder={t(
+																"team.absences.recordDialog.sickDetailPlaceholder",
+																"Select sick detail…",
+															)}
+														/>
+													</SelectTrigger>
+												</TFormControl>
+												<SelectContent>
+													{sickDetailOptions.map((option) => (
+														<SelectItem key={option.value} value={option.value}>
+															{option.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<TFormMessage field={field} />
+										</TFormItem>
+									)}
+								</form.Field>
+							);
+						}}
+					</form.Subscribe>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<form.Field

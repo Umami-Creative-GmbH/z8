@@ -296,10 +296,10 @@ describe("adjustVacationAbsencesForSickness", () => {
 		expect(calls.deletes).toEqual([]);
 	});
 
-	it("deletes fully covered vacation approval, absence, and then linked canonical record", async () => {
+	it("rejects fully covered vacation without removing the row needed for calendar deletion", async () => {
 		const { tx, calls } = createFakeTx({ absences: [vacation()] });
 
-		await adjustVacationAbsencesForSickness({
+		const summary = await adjustVacationAbsencesForSickness({
 			tx,
 			organizationId: "org-1",
 			employeeId: "employee-1",
@@ -308,11 +308,27 @@ describe("adjustVacationAbsencesForSickness", () => {
 			updatedBy: "user-1",
 		});
 
-		expect(calls.deletes.map((call) => call.table)).toEqual([
-			approvalRequest,
-			absenceEntry,
-			timeRecord,
-		]);
+		expect(summary.deletedAbsenceIds).toEqual(["vacation-1"]);
+		expect(calls.deletes.map((call) => call.table)).toEqual([approvalRequest]);
+		expect(calls.updates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					table: absenceEntry,
+					set: expect.objectContaining({
+						status: "rejected",
+						rejectionReason: "Overridden by sick absence",
+					}),
+				}),
+				expect.objectContaining({
+					table: timeRecord,
+					set: expect.objectContaining({ approvalState: "rejected", updatedBy: "user-1" }),
+				}),
+				expect.objectContaining({
+					table: timeRecordAbsence,
+					set: expect.objectContaining({ countsAgainstVacation: false }),
+				}),
+			]),
+		);
 	});
 
 	it("splits vacation with a canonical record for the second segment", async () => {

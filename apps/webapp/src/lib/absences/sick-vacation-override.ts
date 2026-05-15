@@ -85,6 +85,43 @@ async function updateCanonicalAbsenceRangeInTransaction(
 		);
 }
 
+async function rejectCanonicalAbsenceInTransaction(
+	tx: AbsenceTransaction,
+	input: {
+		organizationId: string;
+		canonicalRecordId: string | null;
+		updatedBy: string;
+	},
+): Promise<void> {
+	if (!input.canonicalRecordId) return;
+
+	await tx
+		.update(timeRecord)
+		.set({
+			approvalState: "rejected",
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+
+	await tx
+		.update(timeRecordAbsence)
+		.set({ countsAgainstVacation: false })
+		.where(
+			and(
+				eq(timeRecordAbsence.recordId, input.canonicalRecordId),
+				eq(timeRecordAbsence.organizationId, input.organizationId),
+				eq(timeRecordAbsence.recordKind, "absence"),
+			),
+		);
+}
+
 async function createCanonicalAbsenceInTransaction(
 	tx: AbsenceTransaction,
 	input: {
@@ -234,18 +271,18 @@ export async function adjustVacationAbsencesForSickness(input: {
 					eq(approvalRequest.organizationId, input.organizationId),
 				),
 			);
-			await input.tx.delete(absenceEntry).where(
-				and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)),
-			);
-			if (vacation.canonicalRecordId) {
-				await input.tx.delete(timeRecord).where(
-					and(
-						eq(timeRecord.id, vacation.canonicalRecordId),
-						eq(timeRecord.organizationId, input.organizationId),
-						eq(timeRecord.recordKind, "absence"),
-					),
-				);
-			}
+			await input.tx
+				.update(absenceEntry)
+				.set({
+					status: "rejected",
+					rejectionReason: "Overridden by sick absence",
+				})
+				.where(and(eq(absenceEntry.id, vacation.id), eq(absenceEntry.organizationId, input.organizationId)));
+			await rejectCanonicalAbsenceInTransaction(input.tx, {
+				organizationId: input.organizationId,
+				canonicalRecordId: vacation.canonicalRecordId,
+				updatedBy: input.updatedBy,
+			});
 			summary.deletedAbsenceIds.push(vacation.id);
 			continue;
 		}
