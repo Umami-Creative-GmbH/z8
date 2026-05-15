@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -42,6 +42,7 @@ import type {
 	ManagerAbsenceEmployeeRow,
 	ManagerAbsenceListParams,
 	ManagerAbsenceListResult,
+	ManagerAbsenceRowAbsence,
 	RecordAbsenceForEmployeeInput,
 } from "./manager-absence-types";
 
@@ -53,6 +54,26 @@ export function validateManagerAbsenceSickDetail(input: {
 	sickDetail?: RecordAbsenceForEmployeeInput["sickDetail"] | null;
 }): string | null {
 	return validateSickDetailForCategory(input);
+}
+
+export function buildManagerAbsenceRowAbsences(
+	absences: AbsenceWithCategory[],
+	year: number,
+): ManagerAbsenceRowAbsence[] {
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
+
+	return absences
+		.filter((absence) => dateRangesOverlap(yearStart, yearEnd, absence.startDate, absence.endDate))
+		.map((absence) => ({
+			id: absence.id,
+			category: {
+				name: absence.category.name,
+				type: absence.category.type,
+				color: absence.category.color,
+			},
+			sickDetail: absence.sickDetail,
+		}));
 }
 
 type ActorEmployee = typeof employee.$inferSelect & {
@@ -401,6 +422,8 @@ async function addMetricsToRows(
 	}
 
 	const employeeIds = rows.map((row) => row.id);
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
 	const [allowance, employeeAllowances, absences] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
@@ -420,6 +443,8 @@ async function addMetricsToRows(
 			where: and(
 				eq(absenceEntry.organizationId, organizationId),
 				inArray(absenceEntry.employeeId, employeeIds),
+				lte(absenceEntry.startDate, yearEnd),
+				gte(absenceEntry.endDate, yearStart),
 			),
 			with: { category: true },
 		}),
@@ -460,6 +485,7 @@ async function addMetricsToRows(
 			role: row.role,
 			teamName: row.teamName,
 			...metrics,
+			absences: buildManagerAbsenceRowAbsences(absencesByEmployeeId.get(row.id) ?? [], year),
 		};
 	});
 }

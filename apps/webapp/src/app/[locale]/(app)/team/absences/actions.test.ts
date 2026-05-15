@@ -5,6 +5,7 @@ import {
 } from "./manager-absence-permissions";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import {
+	buildManagerAbsenceRowAbsences,
 	getManagerAbsenceEmployees,
 	recordAbsenceForEmployee,
 	validateManagerAbsenceSickDetail,
@@ -25,6 +26,63 @@ describe("manager absence server action contracts", () => {
 });
 
 describe("manager absence server action helpers", () => {
+	it("builds visible year-overlapping absence row payloads with sick detail", () => {
+		const rows = buildManagerAbsenceRowAbsences([
+			{
+				id: "absence-sick",
+				employeeId: "employee-1",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-18",
+				endPeriod: "full_day",
+				status: "approved",
+				notes: null,
+				sickDetail: "child_sick",
+				approvedBy: "manager-1",
+				approvedAt: new Date("2026-05-18T00:00:00.000Z"),
+				rejectionReason: null,
+				createdAt: new Date("2026-05-01T00:00:00.000Z"),
+				category: {
+					id: "category-sick",
+					name: "Sick Leave",
+					type: "sick",
+					color: "#f97316",
+					countsAgainstVacation: false,
+				},
+			},
+			{
+				id: "absence-old",
+				employeeId: "employee-1",
+				startDate: "2025-05-18",
+				startPeriod: "full_day",
+				endDate: "2025-05-18",
+				endPeriod: "full_day",
+				status: "approved",
+				notes: null,
+				sickDetail: "with_certificate",
+				approvedBy: "manager-1",
+				approvedAt: new Date("2025-05-18T00:00:00.000Z"),
+				rejectionReason: null,
+				createdAt: new Date("2025-05-01T00:00:00.000Z"),
+				category: {
+					id: "category-sick",
+					name: "Old Sick Leave",
+					type: "sick",
+					color: null,
+					countsAgainstVacation: false,
+				},
+			},
+		], 2026);
+
+		expect(rows).toEqual([
+			{
+				id: "absence-sick",
+				category: { name: "Sick Leave", type: "sick", color: "#f97316" },
+				sickDetail: "child_sick",
+			},
+		]);
+	});
+
 	it("normalizes list params to safe server-backed pagination defaults", () => {
 		expect(
 			normalizeManagerAbsenceListParams({
