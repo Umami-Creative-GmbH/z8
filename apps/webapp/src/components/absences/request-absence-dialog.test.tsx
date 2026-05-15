@@ -3,10 +3,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
-import { toast } from "sonner";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
 
 vi.mock("@tolgee/react", () => ({

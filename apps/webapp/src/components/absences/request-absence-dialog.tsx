@@ -129,10 +129,7 @@ export function RequestAbsenceDialog({
 
 			if (selectedCategory?.type !== "sick" && value.sickDetail) {
 				toast.error(
-					t(
-						"absences.form.errors.invalidSelection",
-						"Please check your selection and try again",
-					),
+					t("absences.form.errors.invalidSelection", "Please check your selection and try again"),
 				);
 				return;
 			}
