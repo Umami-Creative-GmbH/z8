@@ -25,6 +25,7 @@ import {
 	formatDateRange,
 	formatDays,
 } from "@/lib/absences/date-utils";
+import { getSickDetailLabel } from "@/lib/absences/sick-details";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
@@ -137,11 +138,18 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 				accessorKey: "type",
 				header: t("absences.table.headers.type", "Type"),
 				cell: ({ row }) => (
-					<CategoryBadge
-						name={row.original.category.name}
-						type={row.original.category.type}
-						color={row.original.category.color}
-					/>
+					<div className="flex flex-col items-start gap-1">
+						<CategoryBadge
+							name={row.original.category.name}
+							type={row.original.category.type}
+							color={row.original.category.color}
+						/>
+						{row.original.category.type === "sick" && row.original.sickDetail && (
+							<span className="text-muted-foreground text-xs">
+								{getSickDetailLabel(row.original.sickDetail)}
+							</span>
+						)}
+					</div>
 				),
 			},
 			{

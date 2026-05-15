@@ -5,11 +5,15 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { Link } from "@/navigation";
 import type { EmployeeWithRelations } from "./actions";
+
+type EmployeeDirectoryRow = EmployeeWithRelations & {
+	clockStatus?: EmployeeClockStatus;
+};
 
 // Hoisted static JSX elements (rendering-hoist-jsx)
 const SortIcon = <IconArrowsSort className="ml-2 size-4" aria-hidden="true" />;
@@ -120,6 +124,7 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 			<EmployeeHeader onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
 		),
 		cell: ({ row }) => {
+			const employee = row.original as EmployeeDirectoryRow;
 			const name = buildAuthUserDisplayName(row.original.user);
 			const pronouns = normalizePronouns(row.original.pronouns);
 			const displayName = pronouns ? `${name} (${pronouns})` : name;
@@ -131,6 +136,7 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 						seed={row.original.user.id}
 						name={displayName}
 						gender={row.original.gender}
+						clockStatus={employee.clockStatus ?? "unknown"}
 						size="sm"
 					/>
 					<div className="min-w-0">

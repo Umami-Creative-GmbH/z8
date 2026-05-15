@@ -9,7 +9,6 @@ export interface OrganizationSettings {
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
 	timezone: string;
-	fiscalYearStartMonth: number;
 	deletedAt: string | null;
 	isHydrated: boolean;
 }
@@ -29,7 +28,6 @@ const initialState: OrganizationSettings = {
 	surchargesEnabled: false,
 	demoDataEnabled: true,
 	timezone: "UTC",
-	fiscalYearStartMonth: 1,
 	deletedAt: null,
 	isHydrated: false,
 };
@@ -60,6 +58,4 @@ export const useSurchargesEnabled = () =>
 export const useDemoDataEnabled = () =>
 	useOrganizationSettings((state) => state.demoDataEnabled);
 export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);
-export const useOrganizationFiscalYearStartMonth = () =>
-	useOrganizationSettings((state) => state.fiscalYearStartMonth);
 export const useOrganizationDeletedAt = () => useOrganizationSettings((state) => state.deletedAt);

@@ -48,7 +48,7 @@ vi.mock("../actions", () => ({
 
 import VacationTrendsPage from "./page";
 
-function hydrateFiscalSettings(fiscalYearStartMonth: number, timezone = "UTC") {
+function hydrateOrganizationSettings(timezone = "UTC") {
 	act(() => {
 		useOrganizationSettings.getState().hydrate({
 			organizationId: "org-1",
@@ -57,13 +57,12 @@ function hydrateFiscalSettings(fiscalYearStartMonth: number, timezone = "UTC") {
 			surchargesEnabled: false,
 			demoDataEnabled: true,
 			timezone,
-			fiscalYearStartMonth,
 			deletedAt: null,
 		});
 	});
 }
 
-describe("VacationTrendsPage fiscal range hydration", () => {
+describe("VacationTrendsPage range hydration", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		Settings.defaultZone = "utc";
@@ -90,55 +89,70 @@ describe("VacationTrendsPage fiscal range hydration", () => {
 		Settings.defaultZone = "system";
 	});
 
-	it("recomputes the default current year after fiscal settings hydrate", async () => {
+	it("keeps the default current calendar year after organization settings hydrate", async () => {
 		render(<VacationTrendsPage />);
 
-		hydrateFiscalSettings(4);
+		expect(getVacationTrendsDataMock).not.toHaveBeenCalled();
+		expect(screen.queryByTestId("date-range-start")).toBeNull();
+
+		hydrateOrganizationSettings();
 
 		await waitFor(() => {
-			expect(screen.getByTestId("date-range-start").textContent).toBe("2026-04-01T00:00:00.000Z");
+			expect(screen.getByTestId("date-range-start").textContent).toBe("2026-01-01T00:00:00.000Z");
 		});
 		await waitFor(() => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(
-				expect.objectContaining({ start: new Date("2026-04-01T00:00:00.000Z") }),
+				expect.objectContaining({ start: new Date("2026-01-01T00:00:00.000Z") }),
 			);
 		});
 	});
 
-	it("uses hydrated organization timezone for the default current fiscal year", async () => {
+	it("uses hydrated organization timezone for the default current calendar year", async () => {
 		render(<VacationTrendsPage />);
 
-		hydrateFiscalSettings(4, "Europe/Berlin");
+		hydrateOrganizationSettings("Europe/Berlin");
 
 		await waitFor(() => {
 			expect(screen.getByTestId("date-range-start").textContent).toBe(
-				"2026-03-31T22:00:00.000Z",
+				"2025-12-31T23:00:00.000Z",
 			);
 		});
 		await waitFor(() => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledWith(
-				expect.objectContaining({ start: new Date("2026-03-31T22:00:00.000Z") }),
+				expect.objectContaining({
+					start: new Date("2025-12-31T23:00:00.000Z"),
+					end: new Date("2026-12-31T22:59:59.999Z"),
+				}),
 			);
 		});
+		expect(getVacationTrendsDataMock).not.toHaveBeenCalledWith(
+			expect.objectContaining({
+				start: new Date("2026-01-01T00:00:00.000Z"),
+				end: new Date("2026-12-31T23:59:59.999Z"),
+			}),
+		);
 	});
 
 	it("does not fetch twice when hydration recomputes an equivalent default range", async () => {
 		render(<VacationTrendsPage />);
 
-		hydrateFiscalSettings(1);
+		hydrateOrganizationSettings();
 
 		await waitFor(() => {
 			expect(getVacationTrendsDataMock).toHaveBeenCalledTimes(1);
 		});
 	});
 
-	it("does not overwrite a manually changed range when fiscal settings hydrate", async () => {
+	it("does not overwrite a manually changed range when organization settings update", async () => {
 		render(<VacationTrendsPage />);
+		hydrateOrganizationSettings();
+
+		await screen.findByTestId("date-range-start");
 
 		fireEvent.click(screen.getByRole("button", { name: "Choose Custom Range" }));
 		expect(screen.getByTestId("date-range-start").textContent).toBe("2026-06-01T00:00:00.000Z");
 
-		hydrateFiscalSettings(4);
+		hydrateOrganizationSettings("Europe/Berlin");
 
 		expect(screen.getByTestId("date-range-start").textContent).toBe("2026-06-01T00:00:00.000Z");
 	});

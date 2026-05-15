@@ -117,6 +117,7 @@ export function TeamCard({
 										name={emp.user.name}
 										size="sm"
 										bordered
+										clockStatus="unknown"
 									/>
 								))}
 								{remainingCount > 0 && (

@@ -43,17 +43,14 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 }
 
 export default function VacationTrendsPage() {
-	const { fiscalYearStartMonth, isHydrated, timezone } = useOrganizationSettings(
+	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
-			fiscalYearStartMonth: state.fiscalYearStartMonth,
 			isHydrated: state.isHydrated,
 			timezone: state.timezone,
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
-	const [dateRange, setDateRange] = useState<DateRange>(() =>
-		getDateRangeForPreset("current_year", { fiscalYearStartMonth, timezone }),
-	);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [vacationData, setVacationData] = useState<VacationTrendsData | null>(null);
 
@@ -62,14 +59,13 @@ export default function VacationTrendsPage() {
 			return;
 		}
 
-		const nextDateRange = getDateRangeForPreset("current_year", {
-			fiscalYearStartMonth,
-			timezone,
-		});
+		const nextDateRange = getDateRangeForPreset("current_year", { timezone });
 		setDateRange((currentDateRange) =>
-			areDateRangesEqual(currentDateRange, nextDateRange) ? currentDateRange : nextDateRange,
+			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
+				? currentDateRange
+				: nextDateRange,
 		);
-	}, [fiscalYearStartMonth, isHydrated, timezone]);
+	}, [isHydrated, timezone]);
 
 	const handleDateRangeChange = (range: DateRange) => {
 		hasUserChangedRange.current = true;
@@ -77,39 +73,53 @@ export default function VacationTrendsPage() {
 	};
 
 	useEffect(() => {
-		if (!isHydrated) {
+		if (!isHydrated || !dateRange) {
 			return;
 		}
 
+		const expectedDefaultDateRange = getDateRangeForPreset("current_year", { timezone });
 		if (
 			!hasUserChangedRange.current &&
-			!areDateRangesEqual(
-				dateRange,
-				getDateRangeForPreset("current_year", { fiscalYearStartMonth, timezone }),
-			)
+			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
 		) {
 			return;
 		}
+		const range = dateRange;
+		let isCurrent = true;
 
 		async function loadData() {
 			setLoading(true);
 			try {
 				// Organization ID is now derived server-side from authenticated session
-				const result = await getVacationTrendsData(dateRange);
+				const result = await getVacationTrendsData(range);
+
+				if (!isCurrent) {
+					return;
+				}
 
 				if (result.success && result.data) {
 					setVacationData(result.data);
 				}
 			} catch (error) {
+				if (!isCurrent) {
+					return;
+				}
+
 				console.error("Failed to load vacation trends data:", error);
 				toast.error("Failed to load vacation trends data");
 			} finally {
-				setLoading(false);
+				if (isCurrent) {
+					setLoading(false);
+				}
 			}
 		}
 
 		loadData();
-	}, [dateRange, fiscalYearStartMonth, isHydrated, timezone]);
+
+		return () => {
+			isCurrent = false;
+		};
+	}, [dateRange, isHydrated, timezone]);
 
 	const overallData = vacationData?.overall || {
 		totalDaysAllocated: 0,
@@ -128,7 +138,13 @@ export default function VacationTrendsPage() {
 		<div className="space-y-6 px-4 lg:px-6">
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+				{dateRange ? (
+					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+				) : (
+					<p className="text-sm text-muted-foreground">
+						Loading organization settings before enabling presets.
+					</p>
+				)}
 				<ExportButton
 					data={{
 						data: employees,
@@ -139,9 +155,9 @@ export default function VacationTrendsPage() {
 							{ key: "remaining", label: "Remaining" },
 							{ key: "utilizationRate", label: "Utilization %" },
 						],
-						filename: `vacation-trends-${dateRange.start.toISOString().split("T")[0]}`,
+						filename: `vacation-trends-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
-					disabled={!vacationData}
+					disabled={!vacationData || !dateRange}
 				/>
 			</div>
 

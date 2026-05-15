@@ -56,7 +56,7 @@ describe("/api/mobile/absences", () => {
 			id: "emp-1",
 			organizationId: "org-1",
 		});
-		mockState.organizationFindFirst.mockResolvedValue({ fiscalYearStartMonth: 1 });
+		mockState.organizationFindFirst.mockResolvedValue({ timezone: "UTC" });
 	});
 
 	it("returns categories and the current employee's absences with vacation balance", async () => {
@@ -108,9 +108,9 @@ describe("/api/mobile/absences", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
 		expect(mockState.getAbsenceCategories).toHaveBeenCalledWith("org-1");
-		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2025-01-01", "2027-12-31");
+		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2026-01-01", "2026-12-31");
 		expect(mockState.organizationFindFirst).toHaveBeenCalled();
-		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-1", 2026, 1);
+		expect(mockState.getVacationBalance).toHaveBeenCalledWith("emp-1", 2026, "UTC");
 		expect(await response.json()).toEqual({
 			categories: [
 				{
@@ -157,7 +157,7 @@ describe("/api/mobile/absences", () => {
 		});
 	});
 
-	it("uses a cross-year query window so upcoming absences stay visible around year end", async () => {
+	it("uses the current calendar-year query window around year end", async () => {
 		vi.setSystemTime(new Date("2026-12-31T10:00:00.000Z"));
 		mockState.getAbsenceCategories.mockResolvedValue([]);
 		mockState.getAbsenceEntries.mockResolvedValue([]);
@@ -173,7 +173,7 @@ describe("/api/mobile/absences", () => {
 		const response = await GET(new Request("https://app.example.com/api/mobile/absences"));
 
 		expect(response.status).toBe(200);
-		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2025-01-01", "2027-12-31");
+		expect(mockState.getAbsenceEntries).toHaveBeenCalledWith("emp-1", "2026-01-01", "2026-12-31");
 	});
 
 	it("creates a new absence request", async () => {

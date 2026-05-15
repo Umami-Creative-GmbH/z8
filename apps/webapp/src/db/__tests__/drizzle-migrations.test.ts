@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration0004 = readFileSync(
@@ -17,6 +17,7 @@ const migration0019 = readFileSync(
 	new URL("../../../drizzle/0019_regular_sandman.sql", import.meta.url),
 	"utf8",
 );
+const migration0020Url = new URL("../../../drizzle/0020_drop_organization_fiscal_year.sql", import.meta.url);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -69,6 +70,19 @@ describe("drizzle follow-up migrations", () => {
 		expect(migrationJournal.entries.some((entry) => entry.tag === "0019_regular_sandman")).toBe(true);
 		expect(migration0019.trim()).toBe(
 			'ALTER TABLE "organization" ADD COLUMN "fiscal_year_start_month" integer DEFAULT 1;',
+		);
+	});
+
+	it("registers the fiscal year start column drop migration", () => {
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0020_drop_organization_fiscal_year")).toBe(
+			true,
+		);
+		expect(existsSync(migration0020Url)).toBe(true);
+
+		const migration0020 = readFileSync(migration0020Url, "utf8");
+
+		expect(migration0020.trim()).toBe(
+			'ALTER TABLE "organization" DROP COLUMN "fiscal_year_start_month";',
 		);
 	});
 });

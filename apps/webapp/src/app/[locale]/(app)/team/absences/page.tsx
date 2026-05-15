@@ -13,6 +13,9 @@ type TeamAbsencesPageProps = {
 		page?: string;
 		pageSize?: string;
 		year?: string;
+		teamId?: string;
+		sort?: string;
+		direction?: string;
 	}>;
 };
 
@@ -54,6 +57,9 @@ export default async function TeamAbsencesPage({ searchParams }: TeamAbsencesPag
 			page: parsePositiveInteger(params.page),
 			pageSize: parsePositiveInteger(params.pageSize),
 			year: parsePositiveInteger(params.year),
+			teamId: params.teamId,
+			sort: params.sort,
+			direction: params.direction,
 		}),
 		getAbsenceCategories(currentEmployee.organizationId),
 	]);

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -29,8 +30,14 @@ import {
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { calculateBusinessDaysWithHalfDays, formatDays } from "@/lib/absences/date-utils";
-import type { DayPeriod, Holiday } from "@/lib/absences/types";
+import { formatDays } from "@/lib/absences/date-utils";
+import {
+	calculateAbsenceDurationDays,
+	normalizeAbsenceDurationInput,
+	validateAbsenceDurationInput,
+} from "@/lib/absences/duration";
+import { sickDetailOptions } from "@/lib/absences/sick-details";
+import type { AbsenceDurationKind, DayPeriod, Holiday, SickDetail } from "@/lib/absences/types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
@@ -50,23 +57,30 @@ interface RequestAbsenceDialogProps {
 	holidays?: Holiday[];
 	trigger?: React.ReactNode;
 	onSuccess?: () => void;
-	// Props for controlled mode
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
-	initialDate?: string; // YYYY-MM-DD format
+	initialDate?: string;
 }
 
-// Define default values with explicit types
 const createDefaultValues = (initialDate?: string) => ({
 	categoryId: "",
 	startDate: initialDate || "",
 	startPeriod: "full_day" as DayPeriod,
 	endDate: initialDate || "",
 	endPeriod: "full_day" as DayPeriod,
+	durationKind: "full_day" as AbsenceDurationKind,
+	startTime: "",
+	endTime: "",
 	notes: "",
+	sickDetail: "" as SickDetail | "",
 });
 
 const EMPTY_HOLIDAYS: Holiday[] = [];
+const PARTIAL_DAY_TIME_ERRORS = new Set([
+	"Enter a start time and end time for a partial-day absence.",
+	"Enter times in HH:mm format.",
+	"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+]);
 
 export function RequestAbsenceDialog({
 	categories,
@@ -83,17 +97,14 @@ export function RequestAbsenceDialog({
 	const { refresh } = useRouter();
 	const [internalOpen, setInternalOpen] = useState(false);
 
-	// Memoize period options to avoid recreating on every render
-	const periodOptions = useMemo<Array<{ value: DayPeriod; label: string }>>(
+	const durationOptions = useMemo<Array<{ value: AbsenceDurationKind; label: string }>>(
 		() => [
-			{ value: "full_day", label: t("absences.form.period.fullDay", "Full Day") },
-			{ value: "am", label: t("absences.form.period.morningOnly", "Morning Only") },
-			{ value: "pm", label: t("absences.form.period.afternoonOnly", "Afternoon Only") },
+			{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
+			{ value: "partial_day", label: t("absences.form.duration.partialDay", "Partial day") },
 		],
 		[t],
 	);
 
-	// Support both controlled and uncontrolled modes
 	const isControlled = controlledOpen !== undefined;
 	const open = isControlled ? controlledOpen : internalOpen;
 	const setOpen = (nextOpen: boolean) => {
@@ -105,26 +116,36 @@ export function RequestAbsenceDialog({
 		setInternalOpen(nextOpen);
 	};
 
-	// Initialize form with TanStack Form
 	const form = useForm({
 		defaultValues: createDefaultValues(initialDate),
 		onSubmit: async ({ value }) => {
-			if (!value.categoryId || !value.startDate || !value.endDate) {
+			const validationError = validateAbsenceDurationInput(value);
+
+			if (validationError) {
+				toast.error(validationError);
+				return;
+			}
+
+			const normalized = normalizeAbsenceDurationInput(value);
+			const selectedCategory = categories.find((c) => c.id === normalized.categoryId);
+			const requiredFieldsMessage = t(
+				"absences.form.errors.fillRequiredFields",
+				"Please fill in all required fields",
+			);
+
+			if (selectedCategory?.type === "sick" && !value.sickDetail) {
+				toast.error(requiredFieldsMessage);
+				return;
+			}
+
+			if (selectedCategory?.type !== "sick" && value.sickDetail) {
 				toast.error(
-					t("absences.form.errors.fillRequiredFields", "Please fill in all required fields"),
+					t("absences.form.errors.invalidSelection", "Please check your selection and try again"),
 				);
 				return;
 			}
 
-			// Get selected category for validation
-			const selectedCategory = categories.find((c) => c.id === value.categoryId);
-			const requestedDays = calculateBusinessDaysWithHalfDays(
-				value.startDate,
-				value.startPeriod,
-				value.endDate,
-				value.endPeriod,
-				holidays,
-			);
+			const requestedDays = calculateAbsenceDurationDays(normalized, holidays);
 			const balanceAfterRequest = selectedCategory?.countsAgainstVacation
 				? remainingDays - requestedDays
 				: remainingDays;
@@ -136,27 +157,17 @@ export function RequestAbsenceDialog({
 				return;
 			}
 
-			// Validate same-day period logic
-			const invalidSameDayPeriod =
-				value.startDate === value.endDate && value.startPeriod === "pm" && value.endPeriod === "am";
-
-			if (invalidSameDayPeriod) {
-				toast.error(
-					t(
-						"absences.form.errors.invalidSameDayPeriod",
-						"Cannot end in the morning if starting in the afternoon on the same day",
-					),
-				);
-				return;
-			}
-
 			const result = await requestAbsence({
-				categoryId: value.categoryId,
-				startDate: value.startDate,
-				startPeriod: value.startPeriod,
-				endDate: value.endDate,
-				endPeriod: value.endPeriod,
-				notes: value.notes || undefined,
+				categoryId: normalized.categoryId,
+				startDate: normalized.startDate,
+				startPeriod: normalized.startPeriod,
+				endDate: normalized.endDate,
+				endPeriod: normalized.endPeriod,
+				durationKind: normalized.durationKind,
+				startTime: normalized.startTime,
+				endTime: normalized.endTime,
+				notes: normalized.notes || undefined,
+				...(value.sickDetail ? { sickDetail: value.sickDetail } : {}),
 			});
 
 			if (result.success) {
@@ -165,7 +176,6 @@ export function RequestAbsenceDialog({
 				);
 				setOpen(false);
 				form.reset();
-				// Revalidate the page data to show the new absence
 				refresh();
 				onSuccess?.();
 			} else {
@@ -175,13 +185,24 @@ export function RequestAbsenceDialog({
 			}
 		},
 	});
-	const planPreviewValues = useStore(form.store, (state) => ({
-		categoryId: state.values.categoryId,
-		startDate: state.values.startDate,
-		startPeriod: state.values.startPeriod,
-		endDate: state.values.endDate,
-		endPeriod: state.values.endPeriod,
-	}));
+
+	const planPreviewValues = useStore(form.store, (state) => {
+		const normalized = normalizeAbsenceDurationInput(state.values);
+
+		return {
+			categoryId: normalized.categoryId,
+			startDate: normalized.startDate,
+			startPeriod: normalized.startPeriod,
+			endDate: normalized.endDate,
+			endPeriod: normalized.endPeriod,
+			durationKind: normalized.durationKind,
+			startTime: normalized.startTime,
+			endTime: normalized.endTime,
+		};
+	});
+	const selectedCategoryId = useStore(form.store, (state) => state.values.categoryId);
+	const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+	const showSickDetail = selectedCategory?.type === "sick";
 	const canLoadPlanPreview = Boolean(
 		open &&
 			planPreviewValues.categoryId &&
@@ -202,7 +223,6 @@ export function RequestAbsenceDialog({
 		enabled: canLoadPlanPreview,
 	});
 
-	// Update form when initialDate changes (for controlled mode)
 	useEffect(() => {
 		if (initialDate && open) {
 			form.setFieldValue("startDate", initialDate);
@@ -210,14 +230,12 @@ export function RequestAbsenceDialog({
 		}
 	}, [initialDate, open, form]);
 
-	// Reset form when dialog closes
 	useEffect(() => {
 		if (!open) {
 			form.reset();
 		}
 	}, [open, form]);
 
-	// In controlled mode without a trigger, don't render ActionPanelTrigger
 	const showTrigger = !isControlled || trigger;
 
 	return (
@@ -246,7 +264,6 @@ export function RequestAbsenceDialog({
 					</ActionPanelHeader>
 
 					<ActionPanelBody className="space-y-4">
-						{/* Category Select */}
 						<form.Field name="categoryId">
 							{(field) => (
 								<TFormItem>
@@ -255,7 +272,13 @@ export function RequestAbsenceDialog({
 									</TFormLabel>
 									<Select
 										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value)}
+										onValueChange={(value) => {
+											field.handleChange(value);
+											const nextCategory = categories.find((category) => category.id === value);
+											if (nextCategory?.type !== "sick") {
+												form.setFieldValue("sickDetail", "");
+											}
+										}}
 									>
 										<TFormControl hasError={field.state.meta.errors.length > 0}>
 											<SelectTrigger aria-label={t("absences.form.absenceType", "Absence Type *")}>
@@ -288,129 +311,202 @@ export function RequestAbsenceDialog({
 							)}
 						</form.Field>
 
-						{/* Start Date and Period */}
-						<div className="grid gap-2">
-							<div className="font-medium text-sm">
-								{t("absences.form.startDate", "Start Date *")}
-							</div>
-							<div className="grid grid-cols-2 gap-2">
-								<form.Field name="startDate">
-									{(field) => (
-										<TFormItem className="gap-0">
-											<TFormControl hasError={field.state.meta.errors.length > 0}>
-												<DatePicker
-													aria-label={t("absences.form.startDate", "Start Date *")}
-													value={field.state.value}
-													onChange={field.handleChange}
-													onBlur={field.handleBlur}
-													required
-												/>
-											</TFormControl>
-											<TFormMessage field={field} />
-										</TFormItem>
-									)}
-								</form.Field>
-								<form.Field name="startPeriod">
-									{(field) => (
+						{showSickDetail && (
+							<form.Field name="sickDetail">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={field.state.meta.errors.length > 0}>
+											{t("absences.form.sickDetail", "Sick detail *")}
+										</TFormLabel>
 										<Select
 											value={field.state.value}
-											onValueChange={(value) => field.handleChange(value as DayPeriod)}
+											onValueChange={(value) => field.handleChange(value as typeof field.state.value)}
 										>
-											<SelectTrigger aria-label={t("absences.form.startPeriod", "Start Period")}>
-												<SelectValue />
-											</SelectTrigger>
+											<TFormControl hasError={field.state.meta.errors.length > 0}>
+												<SelectTrigger aria-label={t("absences.form.sickDetail", "Sick detail *")}>
+													<SelectValue
+														placeholder={t(
+															"absences.form.sickDetailPlaceholder",
+															"Select sick detail",
+														)}
+													/>
+												</SelectTrigger>
+											</TFormControl>
 											<SelectContent>
-												{periodOptions.map((option) => (
+												{sickDetailOptions.map((option) => (
 													<SelectItem key={option.value} value={option.value}>
-														{option.label}
+														{t(`absences.sickDetail.${option.value}`, option.label)}
 													</SelectItem>
 												))}
 											</SelectContent>
 										</Select>
-									)}
-								</form.Field>
-							</div>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						)}
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<form.Field name="startDate">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={field.state.meta.errors.length > 0}>
+											{t("absences.form.startDate", "Start Date *")}
+										</TFormLabel>
+										<TFormControl hasError={field.state.meta.errors.length > 0}>
+											<DatePicker
+												aria-label={t("absences.form.startDate", "Start Date *")}
+												value={field.state.value}
+												onChange={field.handleChange}
+												onBlur={field.handleBlur}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Subscribe selector={(state) => state.values.startDate}>
+								{(startDate) => (
+									<form.Field name="endDate">
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={field.state.meta.errors.length > 0}>
+													{t("absences.form.endDate", "End Date")}
+												</TFormLabel>
+												<TFormControl hasError={field.state.meta.errors.length > 0}>
+													<DatePicker
+														aria-label={t("absences.form.endDate", "End Date")}
+														value={field.state.value}
+														min={startDate}
+														onChange={field.handleChange}
+														onBlur={field.handleBlur}
+													/>
+												</TFormControl>
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"absences.form.endDateHelper",
+														"Leave empty for a same-day absence.",
+													)}
+												</p>
+												<TFormMessage field={field} />
+											</TFormItem>
+										)}
+									</form.Field>
+								)}
+							</form.Subscribe>
 						</div>
 
-						{/* End Date and Period */}
+						<form.Field name="durationKind">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel>{t("absences.form.duration", "Absence Duration")}</TFormLabel>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value as AbsenceDurationKind)}
+									>
+										<TFormControl>
+											<SelectTrigger aria-label={t("absences.form.duration", "Absence Duration")}>
+												<SelectValue />
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{durationOptions.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+
+						<form.Subscribe selector={(state) => state.values.durationKind}>
+							{(durationKind) =>
+								durationKind === "partial_day" ? (
+									<div className="grid gap-4 sm:grid-cols-2">
+										<form.Field name="startTime">
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={field.state.meta.errors.length > 0}>
+														{t("absences.form.startTime", "Start Time *")}
+													</TFormLabel>
+													<TFormControl hasError={field.state.meta.errors.length > 0}>
+														<Input
+															aria-label={t("absences.form.startTime", "Start Time *")}
+															type="time"
+															value={field.state.value}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+															required
+														/>
+													</TFormControl>
+													<TFormMessage field={field} />
+												</TFormItem>
+											)}
+										</form.Field>
+										<form.Field name="endTime">
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={field.state.meta.errors.length > 0}>
+														{t("absences.form.endTime", "End Time *")}
+													</TFormLabel>
+													<TFormControl hasError={field.state.meta.errors.length > 0}>
+														<Input
+															aria-label={t("absences.form.endTime", "End Time *")}
+															type="time"
+															value={field.state.value}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+															required
+														/>
+													</TFormControl>
+													<TFormMessage field={field} />
+												</TFormItem>
+											)}
+										</form.Field>
+									</div>
+								) : null
+							}
+						</form.Subscribe>
+
 						<form.Subscribe selector={(state) => state.values}>
 							{(values) => {
-								const invalidSameDayPeriod =
-									values.startDate === values.endDate &&
-									values.startPeriod === "pm" &&
-									values.endPeriod === "am";
+								const validationError = validateAbsenceDurationInput(values);
+
+								if (
+									values.durationKind !== "partial_day" ||
+									!validationError ||
+									!PARTIAL_DAY_TIME_ERRORS.has(validationError)
+								) {
+									return null;
+								}
 
 								return (
-									<div className="grid gap-2">
-										<div className="font-medium text-sm">
-											{t("absences.form.endDate", "End Date *")}
-										</div>
-										<div className="grid grid-cols-2 gap-2">
-											<form.Field name="endDate">
-												{(field) => (
-													<TFormItem className="gap-0">
-														<TFormControl hasError={field.state.meta.errors.length > 0}>
-															<DatePicker
-																aria-label={t("absences.form.endDate", "End Date *")}
-																value={field.state.value}
-																min={values.startDate}
-																onChange={field.handleChange}
-																onBlur={field.handleBlur}
-																required
-															/>
-														</TFormControl>
-														<TFormMessage field={field} />
-													</TFormItem>
-												)}
-											</form.Field>
-											<form.Field name="endPeriod">
-												{(field) => (
-													<Select
-														value={field.state.value}
-														onValueChange={(value) => field.handleChange(value as DayPeriod)}
-													>
-														<SelectTrigger aria-label={t("absences.form.endPeriod", "End Period")}>
-															<SelectValue />
-														</SelectTrigger>
-														<SelectContent>
-															{periodOptions.map((option) => (
-																<SelectItem key={option.value} value={option.value}>
-																	{option.label}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-												)}
-											</form.Field>
-										</div>
-										{invalidSameDayPeriod && (
-											<p className="text-xs text-destructive">
-												{t(
-													"absences.form.errors.invalidSameDayPeriod",
-													"Cannot end in the morning if starting in the afternoon on the same day",
-												)}
-											</p>
-										)}
-									</div>
+									<p
+										aria-live="polite"
+										className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
+										role="alert"
+									>
+										{validationError}
+									</p>
 								);
 							}}
 						</form.Subscribe>
 
-						{/* Business Days Calculation */}
 						<form.Subscribe selector={(state) => state.values}>
 							{(values) => {
+								const normalizedValues = normalizeAbsenceDurationInput(values);
+								const validationError = validateAbsenceDurationInput(values);
 								const requestedDays =
-									values.startDate && values.endDate
-										? calculateBusinessDaysWithHalfDays(
-												values.startDate,
-												values.startPeriod,
-												values.endDate,
-												values.endPeriod,
-												holidays,
-											)
+									values.categoryId && values.startDate && !validationError
+										? calculateAbsenceDurationDays(normalizedValues, holidays)
 										: 0;
 
-								const selectedCategory = categories.find((c) => c.id === values.categoryId);
+								const selectedCategory = categories.find((c) => c.id === normalizedValues.categoryId);
 								const balanceAfterRequest = selectedCategory?.countsAgainstVacation
 									? remainingDays - requestedDays
 									: remainingDays;
@@ -472,7 +568,6 @@ export function RequestAbsenceDialog({
 							/>
 						)}
 
-						{/* Notes */}
 						<form.Field name="notes">
 							{(field) => (
 								<TFormItem>
@@ -495,7 +590,6 @@ export function RequestAbsenceDialog({
 						</form.Field>
 					</ActionPanelBody>
 
-					{/* Footer with submit button that uses form.Subscribe for dirty/submitting state */}
 					<form.Subscribe
 						selector={(state) => ({
 							isSubmitting: state.isSubmitting,
@@ -503,28 +597,19 @@ export function RequestAbsenceDialog({
 						})}
 					>
 						{({ isSubmitting, values }) => {
+							const normalizedValues = normalizeAbsenceDurationInput(values);
+							const validationError = validateAbsenceDurationInput(values);
 							const requestedDays =
-								values.startDate && values.endDate
-									? calculateBusinessDaysWithHalfDays(
-											values.startDate,
-											values.startPeriod,
-											values.endDate,
-											values.endPeriod,
-											holidays,
-										)
+								values.categoryId && values.startDate && !validationError
+									? calculateAbsenceDurationDays(normalizedValues, holidays)
 									: 0;
-							const selectedCategory = categories.find((c) => c.id === values.categoryId);
+							const selectedCategory = categories.find((c) => c.id === normalizedValues.categoryId);
 							const balanceAfterRequest = selectedCategory?.countsAgainstVacation
 								? remainingDays - requestedDays
 								: remainingDays;
 							const insufficientBalance =
 								selectedCategory?.countsAgainstVacation && balanceAfterRequest < 0;
-							const invalidSameDayPeriod =
-								values.startDate === values.endDate &&
-								values.startPeriod === "pm" &&
-								values.endPeriod === "am";
-
-							return (
+			return (
 								<ActionPanelFooter>
 									<Button
 										type="button"
@@ -534,10 +619,10 @@ export function RequestAbsenceDialog({
 									>
 										{t("common.cancel", "Cancel")}
 									</Button>
-									<Button
-										type="submit"
-										disabled={isSubmitting || insufficientBalance || invalidSameDayPeriod}
-									>
+					<Button
+						type="submit"
+						disabled={isSubmitting || insufficientBalance || Boolean(validationError)}
+					>
 										{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 										{t("absences.form.submitRequest", "Submit Request")}
 									</Button>

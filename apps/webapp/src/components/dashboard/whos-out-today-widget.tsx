@@ -4,7 +4,8 @@ import { IconBeach, IconCalendar, IconCheck, IconSunHigh, IconUsers } from "@tab
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn, pluralize } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getWhosOutToday } from "./actions";
@@ -21,6 +22,7 @@ type AbsentEmployee = {
 	categoryColor: string | null;
 	endsToday: boolean;
 	returnDate: string;
+	clockStatus?: EmployeeClockStatus;
 };
 
 type WhosOutData = {
@@ -33,13 +35,13 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 	const { t } = useTranslate();
 	return (
 		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20">
-			<div className="relative">
-				<UserAvatar seed={employee.userId} image={employee.image} name={employee.name} size="sm" />
-				<div
-					className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-background"
-					style={{ backgroundColor: employee.categoryColor || "#94a3b8" }}
-				/>
-			</div>
+			<UserAvatar
+				seed={employee.userId}
+				image={employee.image}
+				name={employee.name}
+				size="sm"
+				clockStatus={employee.clockStatus ?? "unknown"}
+			/>
 
 			<div className="flex-1 min-w-0">
 				<div className="font-medium text-sm truncate">{employee.name}</div>
@@ -74,10 +76,13 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 function ReturningBadge({ employee }: { employee: AbsentEmployee }) {
 	return (
 		<div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-2.5 py-1.5 dark:bg-emerald-950/30">
-			<div className="relative">
-				<UserAvatar seed={employee.userId} image={employee.image} name={employee.name} size="xs" />
-				<div className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-emerald-500 border border-background" />
-			</div>
+			<UserAvatar
+				seed={employee.userId}
+				image={employee.image}
+				name={employee.name}
+				size="xs"
+				clockStatus={employee.clockStatus ?? "unknown"}
+			/>
 			<span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
 				{employee.name.split(" ")[0]}
 			</span>
@@ -115,20 +120,37 @@ export function WhosOutTodayWidget() {
 			errorMessage: t("dashboard.whos-out.error", "Failed to load today's absences"),
 		},
 	);
+	const presenceEmployeeIds = data
+		? [...data.outToday, ...data.returningTomorrow].map((employee) => employee.id)
+		: [];
+	const presence = useEmployeeClockStatuses(presenceEmployeeIds, { polling: false });
+	const dataWithPresence = data
+		? {
+				...data,
+				outToday: data.outToday.map((employee) => ({
+					...employee,
+					clockStatus: presence.getStatus(employee.id),
+				})),
+				returningTomorrow: data.returningTomorrow.map((employee) => ({
+					...employee,
+					clockStatus: presence.getStatus(employee.id),
+				})),
+			}
+		: null;
 
-	const isEmpty = !loading && data && data.totalOut === 0;
+	const isEmpty = !loading && dataWithPresence && dataWithPresence.totalOut === 0;
 
 	return (
 		<DashboardWidget id="whos-out-today">
 			<WidgetCard
 				title={t("dashboard.whos-out.title", "Who's Out Today")}
 				description={
-					data
-						? data.totalOut === 0
+					dataWithPresence
+						? dataWithPresence.totalOut === 0
 							? t("dashboard.whos-out.everyones-in", "Everyone's in!")
 							: t("dashboard.whos-out.members-out", "{count} team {member} out", {
-									count: data.totalOut,
-									member: pluralize(data.totalOut, "member"),
+									count: dataWithPresence.totalOut,
+									member: pluralize(dataWithPresence.totalOut, "member"),
 								})
 						: t("dashboard.whos-out.team-availability", "Team availability")
 				}
@@ -137,40 +159,42 @@ export function WhosOutTodayWidget() {
 				refreshing={refreshing}
 				onRefresh={refetch}
 				action={
-					data && data.totalOut > 0 ? (
+					dataWithPresence && dataWithPresence.totalOut > 0 ? (
 						<Badge
 							variant="secondary"
 							className="bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
 						>
-							{t("dashboard.whos-out.out-count", "{count} out", { count: data.totalOut })}
+							{t("dashboard.whos-out.out-count", "{count} out", {
+								count: dataWithPresence.totalOut,
+							})}
 						</Badge>
 					) : undefined
 				}
 			>
-				{data && (
+				{dataWithPresence && (
 					<div className="space-y-4">
 						{isEmpty ? (
 							<EmptyState />
 						) : (
 							<>
 								{/* Currently Out */}
-								{data.outToday.length > 0 && (
+								{dataWithPresence.outToday.length > 0 && (
 									<div className="space-y-2">
 										<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
 											<IconBeach className="size-3.5 text-amber-500" />
 											<span>{t("dashboard.whos-out.out-today", "Out Today")}</span>
 											<span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
-												{data.outToday.length}
+												{dataWithPresence.outToday.length}
 											</span>
 										</div>
 										<div className="space-y-2">
-											{data.outToday.slice(0, 4).map((emp) => (
+											{dataWithPresence.outToday.slice(0, 4).map((emp) => (
 												<AbsenceCard key={emp.id} employee={emp} />
 											))}
-											{data.outToday.length > 4 && (
+											{dataWithPresence.outToday.length > 4 && (
 												<div className="flex items-center justify-center rounded-lg border border-dashed py-2 text-xs text-muted-foreground">
 													{t("dashboard.whos-out.more-members", "+{count} more team members", {
-														count: data.outToday.length - 4,
+														count: dataWithPresence.outToday.length - 4,
 													})}
 												</div>
 											)}
@@ -179,7 +203,7 @@ export function WhosOutTodayWidget() {
 								)}
 
 								{/* Returning Tomorrow */}
-								{data.returningTomorrow.length > 0 && (
+								{dataWithPresence.returningTomorrow.length > 0 && (
 									<div className="space-y-2">
 										<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
 											<IconCalendar className="size-3.5 text-emerald-500" />
@@ -188,12 +212,12 @@ export function WhosOutTodayWidget() {
 											</span>
 										</div>
 										<div className="flex flex-wrap gap-2">
-											{data.returningTomorrow.slice(0, 4).map((emp) => (
+											{dataWithPresence.returningTomorrow.slice(0, 4).map((emp) => (
 												<ReturningBadge key={emp.id} employee={emp} />
 											))}
-											{data.returningTomorrow.length > 4 && (
+											{dataWithPresence.returningTomorrow.length > 4 && (
 												<div className="flex items-center rounded-lg bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
-													+{data.returningTomorrow.length - 4}
+													+{dataWithPresence.returningTomorrow.length - 4}
 												</div>
 											)}
 										</div>

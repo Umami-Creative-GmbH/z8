@@ -68,14 +68,6 @@
       "work-shifts": "Work Shifts",
       "work-shifts-description": "Enable work shifts with drag-and-drop planning, open shifts, and swap requests."
     },
-    "fiscalYear": {
-      "description": "Reports, vacation balances, and carryover calculations use this setting.",
-      "ownerOnly": "Only organization owners can change the fiscal year setting.",
-      "startMonth": "Fiscal year start month",
-      "title": "Fiscal year",
-      "updated": "Fiscal year setting updated",
-      "updateFailed": "Failed to update fiscal year setting"
-    },
     "joinOrCreate": "Join or create one",
     "logo-uploaded": "Logo uploaded successfully",
     "logo-upload-failed": "Failed to upload logo",

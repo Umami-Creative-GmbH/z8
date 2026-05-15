@@ -50,11 +50,10 @@ describe("GET /api/auth/context", () => {
 		});
 	});
 
-	it("normalizes invalid persisted fiscal year start months before hydration", async () => {
+	it("returns organization settings for hydration", async () => {
 		mockState.findFirst.mockResolvedValue({
 			deletedAt: null,
 			demoDataEnabled: true,
-			fiscalYearStartMonth: 13,
 			id: "org_1",
 			projectsEnabled: false,
 			shiftsEnabled: false,
@@ -65,6 +64,14 @@ describe("GET /api/auth/context", () => {
 		const response = await GET();
 		const body = await response.json();
 
-		expect(body.organizationSettings.fiscalYearStartMonth).toBe(1);
+		expect(body.organizationSettings).toEqual({
+			deletedAt: null,
+			demoDataEnabled: true,
+			organizationId: "org_1",
+			projectsEnabled: false,
+			shiftsEnabled: false,
+			surchargesEnabled: false,
+			timezone: "UTC",
+		});
 	});
 });

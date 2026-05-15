@@ -33,9 +33,14 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
 import type { ManagedEmployee } from "./actions";
+
+type ManagedEmployeeWithPresence = ManagedEmployee & {
+	clockStatus?: EmployeeClockStatus;
+};
 
 interface TeamMembersListProps {
 	employees: ManagedEmployee[];
@@ -46,8 +51,16 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 	const [sorting, setSorting] = useState<SortingState>([]);
+	const presence = useEmployeeClockStatuses(
+		employees.map((employee) => employee.id),
+		{ polling: true },
+	);
+	const employeesWithPresence = employees.map((employee) => ({
+		...employee,
+		clockStatus: presence.getStatus(employee.id),
+	}));
 
-	const filteredEmployees = employees.filter((emp) => {
+	const filteredEmployees = employeesWithPresence.filter((emp) => {
 		const search = searchQuery.toLowerCase();
 		const name = emp.user.name?.toLowerCase() || "";
 		const email = emp.user.email?.toLowerCase() || "";
@@ -62,7 +75,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	});
 
 	// Table columns
-	const columns: ColumnDef<ManagedEmployee>[] = [
+	const columns: ColumnDef<ManagedEmployeeWithPresence>[] = [
 		{
 			accessorKey: "user.name",
 			header: t("team.table.employee", "Employee"),
@@ -75,6 +88,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						image={row.original.user.image}
 						seed={row.original.user.id}
 						name={row.original.user.name}
+						clockStatus={row.original.clockStatus ?? "unknown"}
 						size="sm"
 					/>
 					<div>
@@ -212,6 +226,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 												image={emp.user.image}
 												seed={emp.user.id}
 												name={emp.user.name}
+												clockStatus={emp.clockStatus ?? "unknown"}
 												size="md"
 											/>
 											<div className="min-w-0 flex-1">

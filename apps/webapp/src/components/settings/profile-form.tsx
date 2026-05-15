@@ -46,7 +46,7 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { format } from "@/lib/datetime/luxon-utils";
-import { queryKeys } from "@/lib/query";
+import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { validateStructuredProfileNameField } from "@/lib/validations/profile";
 import { useRouter } from "@/navigation";
@@ -80,6 +80,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
+	const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
+	const presence = useEmployeeClockStatuses(currentEmployeeId ? [currentEmployeeId] : [], {
+		polling: false,
+	});
 	const defaultValues: ProfileFormValues = {
 		image: user.image || "",
 		firstName: user.firstName || "",
@@ -217,6 +221,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			form.setFieldValue("gender", (emp?.gender as ProfileFormValues["gender"] | null) || "");
 			form.setFieldValue("pronouns", emp?.pronouns || "");
 			form.setFieldValue("birthday", emp?.birthday ? new Date(emp.birthday) : null);
+			setCurrentEmployeeId(emp?.id ?? null);
 			setIsInitialLoading(false);
 		}
 
@@ -378,6 +383,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											name={displayName}
 											gender={selectedGender || null}
 											size="xl"
+											clockStatus={
+												currentEmployeeId ? presence.getStatus(currentEmployeeId) : "unknown"
+											}
 										/>
 										{isUploadingAvatar && (
 											<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">

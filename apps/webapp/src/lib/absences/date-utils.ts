@@ -1,9 +1,5 @@
 import { DateTime } from "luxon";
 import { eachDayOfInterval, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
-import {
-	calculateFiscalCarryoverExpiryDate,
-	getFiscalYearRangeForLabelYear,
-} from "@/lib/fiscal-year";
 import type { DayPeriod, Holiday } from "./types";
 
 /**
@@ -177,15 +173,10 @@ export function calculateBusinessDaysWithHalfDays(
  * @param year - Calendar year
  * @returns Start and end dates as DateTime objects
  */
-export function getYearRange(
-	year: number,
-	fiscalYearStartMonth: number | null | undefined = 1,
-): { start: DateTime; end: DateTime } {
-	const range = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
-
+export function getYearRange(year: number): { start: DateTime; end: DateTime } {
 	return {
-		start: range.start,
-		end: range.end,
+		start: DateTime.utc(year, 1, 1).startOf("day"),
+		end: DateTime.utc(year, 12, 31).endOf("day"),
 	};
 }
 
@@ -199,9 +190,12 @@ export function getYearRange(
 export function calculateCarryoverExpiryDate(
 	year: number,
 	expiryMonths: number,
-	fiscalYearStartMonth: number | null | undefined = 1,
+	timezone = "UTC",
 ): DateTime {
-	return calculateFiscalCarryoverExpiryDate(year, fiscalYearStartMonth, expiryMonths);
+	return DateTime.fromObject({ year, month: 1, day: 1 }, { zone: timezone })
+		.startOf("day")
+		.plus({ months: expiryMonths })
+		.minus({ milliseconds: 1 });
 }
 
 /**

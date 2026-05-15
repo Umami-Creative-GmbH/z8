@@ -2,9 +2,10 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { ExportButton } from "@/components/analytics/export-button";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import {
 import type { OvertimeBurnDownData, OvertimeBurnDownGroupedRow, TrendDirection } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getOvertimeBurnDownData } from "../actions";
 
 const ALL_FILTER_VALUE = "all";
@@ -37,8 +39,22 @@ function formatTrendDirection(trendDirection: TrendDirection): string {
 	return "Flat";
 }
 
+function areDateRangesEqual(left: DateRange, right: DateRange) {
+	return (
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
+	);
+}
+
 export default function OvertimeBurnDownPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const { isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [data, setData] = useState<OvertimeBurnDownData | null>(null);
 	const [teamId, setTeamId] = useState(ALL_FILTER_VALUE);
@@ -49,6 +65,37 @@ export default function OvertimeBurnDownPage() {
 	);
 
 	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		const nextDateRange = getDateRangeForPreset("current_month", { timezone });
+		setDateRange((currentDateRange) =>
+			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
+				? currentDateRange
+				: nextDateRange,
+		);
+	}, [isHydrated, timezone]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
+
+	useEffect(() => {
+		if (!isHydrated || !dateRange) {
+			return;
+		}
+
+		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
+		if (
+			!hasUserChangedRange.current &&
+			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+		) {
+			return;
+		}
+
+		const range = dateRange;
 		let isMounted = true;
 
 		async function loadData() {
@@ -73,7 +120,7 @@ export default function OvertimeBurnDownPage() {
 				}
 
 				const result = await getOvertimeBurnDownData(
-					dateRange,
+					range,
 					Object.keys(filters).length > 0 ? filters : undefined,
 				);
 
@@ -106,7 +153,7 @@ export default function OvertimeBurnDownPage() {
 		return () => {
 			isMounted = false;
 		};
-	}, [dateRange, teamId, costCenterId, managerId]);
+	}, [dateRange, teamId, costCenterId, managerId, isHydrated, timezone]);
 
 	const summary = data?.summary ?? {
 		currentOvertimeHours: 0,
@@ -156,9 +203,9 @@ export default function OvertimeBurnDownPage() {
 				{ key: "weekOverWeek" as const, label: "Week-over-Week" },
 				{ key: "trendDirection" as const, label: "Trend Direction" },
 			],
-			filename: `overtime-burndown-${breakdownDimension}-${DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd")}`,
+			filename: `overtime-burndown-${breakdownDimension}-${dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"}`,
 		};
-	}, [selectedBreakdownRows, breakdownLabel, breakdownDimension, dateRange.start]);
+	}, [selectedBreakdownRows, breakdownLabel, breakdownDimension, dateRange]);
 
 	return (
 		<div className="space-y-6 px-4 lg:px-6">
@@ -170,7 +217,13 @@ export default function OvertimeBurnDownPage() {
 			</div>
 
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<DateRangePicker value={dateRange} onChange={setDateRange} />
+				{dateRange ? (
+					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+				) : (
+					<p className="text-sm text-muted-foreground">
+						Loading organization settings before enabling presets.
+					</p>
+				)}
 				<div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
 					<div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2 lg:grid-cols-4">
 						<div className="space-y-1">
@@ -242,7 +295,7 @@ export default function OvertimeBurnDownPage() {
 					</div>
 					<ExportButton
 						data={exportData}
-						disabled={loading || selectedBreakdownRows.length === 0}
+						disabled={loading || selectedBreakdownRows.length === 0 || !dateRange}
 					/>
 				</div>
 			</div>

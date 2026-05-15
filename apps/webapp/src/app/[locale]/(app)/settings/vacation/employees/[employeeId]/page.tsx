@@ -272,6 +272,7 @@ export default function EmployeeAllowanceEditPage({
 								name={employee.user.name}
 								gender={employee.gender}
 								size="lg"
+								clockStatus="unknown"
 							/>
 							<div>
 								<div className="font-medium">{employee.user.name}</div>

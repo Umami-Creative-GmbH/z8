@@ -152,6 +152,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			if (result.success && !("queued" in result)) {
 				// Only invalidate for non-queued success (server confirmed)
 				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
 			}
 		},
 	});
@@ -199,6 +200,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			if (result.success && !("queued" in result)) {
 				// Only invalidate for non-queued success (server confirmed)
 				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
 			}
 		},
 	});

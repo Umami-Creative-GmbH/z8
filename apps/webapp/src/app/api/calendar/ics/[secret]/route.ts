@@ -197,6 +197,7 @@ async function fetchEmployeeAbsences(
 		endPeriod: absence.endPeriod,
 		status: absence.status as "pending" | "approved" | "rejected",
 		notes: absence.notes,
+		sickDetail: absence.sickDetail,
 		category: {
 			id: category.id,
 			name: category.name,
@@ -262,6 +263,7 @@ async function fetchTeamAbsences(
 		endPeriod: absence.endPeriod,
 		status: absence.status as "pending" | "approved" | "rejected",
 		notes: absence.notes,
+		sickDetail: absence.sickDetail,
 		category: {
 			id: category.id,
 			name: category.name,

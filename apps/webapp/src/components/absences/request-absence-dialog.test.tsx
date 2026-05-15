@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
@@ -21,6 +22,13 @@ vi.mock("@/navigation", () => ({
 vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	requestAbsence: vi.fn(),
 	getAbsencePlanPreview: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: vi.fn(),
+		success: vi.fn(),
+	},
 }));
 
 vi.mock("@/components/ui/date-picker", () => ({
@@ -102,6 +110,7 @@ vi.mock("@/components/ui/select", async () => {
 
 const requestAbsenceMock = vi.mocked(requestAbsence);
 const getAbsencePlanPreviewMock = vi.mocked(getAbsencePlanPreview);
+const toastMock = vi.mocked(toast);
 
 const categories = [
 	{
@@ -111,6 +120,14 @@ const categories = [
 		color: null,
 		requiresApproval: true,
 		countsAgainstVacation: true,
+	},
+	{
+		id: "sick",
+		name: "Sick leave",
+		type: "sick",
+		color: null,
+		requiresApproval: true,
+		countsAgainstVacation: false,
 	},
 ];
 
@@ -162,12 +179,11 @@ function renderDialog({
 function fillRequiredFields() {
 	fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
 	fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
-	fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-12" } });
 }
 
-function setInvalidSameDayPeriods() {
-	fireEvent.change(screen.getByLabelText("Start Period"), { target: { value: "pm" } });
-	fireEvent.change(screen.getByLabelText("End Period"), { target: { value: "am" } });
+function fillRequiredFieldsForSickCategory() {
+	fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "sick" } });
+	fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
 }
 
 describe("RequestAbsenceDialog", () => {
@@ -183,9 +199,12 @@ describe("RequestAbsenceDialog", () => {
 		expect(screen.getByRole("heading", { name: "Request Absence" })).toBeTruthy();
 		expect(screen.getByLabelText("Absence Type *")).toBeTruthy();
 		expect(screen.getByLabelText("Start Date *")).toBeTruthy();
-		expect(screen.getByLabelText("Start Period")).toBeTruthy();
-		expect(screen.getByLabelText("End Date *")).toBeTruthy();
-		expect(screen.getByLabelText("End Period")).toBeTruthy();
+		expect(screen.getByLabelText("End Date")).toBeTruthy();
+		expect(screen.getByLabelText("Absence Duration")).toBeTruthy();
+		expect(screen.queryByLabelText("Start Period")).toBeNull();
+		expect(screen.queryByLabelText("End Period")).toBeNull();
+		expect(screen.queryByText("Category is required")).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 
 	it("stacks request form fields with compact vertical spacing", () => {
@@ -232,8 +251,11 @@ describe("RequestAbsenceDialog", () => {
 				categoryId: "vacation",
 				startDate: "2026-05-11",
 				startPeriod: "full_day",
-				endDate: "2026-05-12",
+				endDate: "2026-05-11",
 				endPeriod: "full_day",
+				durationKind: "full_day",
+				startTime: undefined,
+				endTime: undefined,
 			});
 		});
 		expect(
@@ -245,14 +267,64 @@ describe("RequestAbsenceDialog", () => {
 						categoryId: "vacation",
 						startDate: "2026-05-11",
 						startPeriod: "full_day",
-						endDate: "2026-05-12",
+						endDate: "2026-05-11",
 						endPeriod: "full_day",
+						durationKind: "full_day",
+						startTime: undefined,
+						endTime: undefined,
 					},
 				],
 			}),
 		).toBeTruthy();
 		expect(await screen.findByRole("heading", { name: "Smart planner" })).toBeTruthy();
 		expect(screen.getByText("Coverage may be tight for this request.")).toBeTruthy();
+	});
+
+	it("shows the sick detail field when the sick category is selected", () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "sick" } });
+
+		expect(screen.getByText("Sick detail *")).toBeTruthy();
+	});
+
+	it("hides the sick detail field when a non-sick category is selected", () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "vacation" } });
+
+		expect(screen.queryByText("Sick detail *")).toBeNull();
+	});
+
+	it("shows the generic required fields error when sick detail is missing", async () => {
+		renderDialog();
+
+		fillRequiredFieldsForSickCategory();
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith("Please fill in all required fields"),
+		);
+		expect(requestAbsenceMock).not.toHaveBeenCalled();
+	});
+
+	it("submits sick detail when selected for a sick absence", async () => {
+		renderDialog();
+
+		fillRequiredFieldsForSickCategory();
+		fireEvent.change(screen.getByLabelText("Sick detail *"), {
+			target: { value: "with_certificate" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(requestAbsenceMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					categoryId: "sick",
+					sickDetail: "with_certificate",
+				}),
+			),
+		);
 	});
 
 	it("keeps loading and error states non-blocking for submission", async () => {
@@ -282,23 +354,62 @@ describe("RequestAbsenceDialog", () => {
 		await waitFor(() => expect(requestAbsenceMock).toHaveBeenCalledTimes(1));
 	});
 
-	it("blocks invalid same-day periods before submission", async () => {
+	it("blocks invalid same-day partial-day times before submission", async () => {
 		renderDialog();
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-11" } });
-		setInvalidSameDayPeriods();
+		fireEvent.change(screen.getByLabelText("Absence Duration"), {
+			target: { value: "partial_day" },
+		});
+		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "13:00" } });
+		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "09:00" } });
+
+		const validationError = screen.getByRole("alert");
+		expect(validationError.getAttribute("aria-live")).toBe("polite");
+		expect(validationError.textContent).toContain(
+			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		);
+		expect(screen.getByRole("button", { name: "Submit Request" }).hasAttribute("disabled")).toBe(
+			true,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
 	});
 
+	it("submits partial-day times with an empty end date as a same-day request", async () => {
+		renderDialog();
+
+		fillRequiredFields();
+		fireEvent.change(screen.getByLabelText("Absence Duration"), {
+			target: { value: "partial_day" },
+		});
+		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "09:00" } });
+		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "13:00" } });
+
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() => {
+			expect(requestAbsenceMock).toHaveBeenCalledWith({
+				categoryId: "vacation",
+				startDate: "2026-05-11",
+				startPeriod: "am",
+				endDate: "2026-05-11",
+				endPeriod: "am",
+				durationKind: "partial_day",
+				startTime: "09:00",
+				endTime: "13:00",
+				notes: undefined,
+			});
+		});
+	});
+
 	it("blocks insufficient vacation balance before submission", async () => {
 		renderDialog({ remainingDays: 1 });
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End Date *"), { target: { value: "2026-05-14" } });
+		fireEvent.change(screen.getByLabelText("End Date"), { target: { value: "2026-05-14" } });
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 

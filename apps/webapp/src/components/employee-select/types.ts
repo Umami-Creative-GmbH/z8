@@ -15,6 +15,7 @@ export interface SelectableEmployee {
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
+	clockStatus?: "clocked-in" | "clocked-out" | "unknown";
 	teamId: string | null;
 	user: {
 		id: string;

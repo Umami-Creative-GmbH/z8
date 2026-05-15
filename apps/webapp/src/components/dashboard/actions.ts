@@ -25,7 +25,6 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
-import { getCurrentFiscalYearLabel, normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
@@ -1126,26 +1125,20 @@ export async function getVacationBalance(): Promise<
 		);
 
 		const org = yield* _(
-			dbService.query("getVacationBalanceOrganizationFiscalYear", async () => {
+			dbService.query("getVacationBalanceOrganizationTimezone", async () => {
 				return await dbService.db.query.organization.findFirst({
 					where: eq(organization.id, currentEmployee.organizationId),
-					columns: { fiscalYearStartMonth: true, timezone: true },
+					columns: { timezone: true },
 				});
 			}),
 		);
-		const fiscalYearStartMonth = normalizeFiscalYearStartMonth(org?.fiscalYearStartMonth);
 		const timezone = org?.timezone || "UTC";
-		const currentYear = getCurrentFiscalYearLabel(
-			DateTime.fromJSDate(currentTimestamp()).setZone(timezone),
-			fiscalYearStartMonth,
-			timezone,
-		);
+		const currentYear = DateTime.fromJSDate(currentTimestamp()).setZone(timezone).year;
 
 		// Check if organization has a vacation policy
 		const policy = yield* _(
 			Effect.tryPromise({
-				try: () =>
-					getVacationAllowance(currentEmployee.organizationId, currentYear, fiscalYearStartMonth),
+				try: () => getVacationAllowance(currentEmployee.organizationId, currentYear),
 				catch: () =>
 					new NotFoundError({
 						message: "Vacation policy not found",
@@ -1174,6 +1167,7 @@ export async function getVacationBalance(): Promise<
 					getEnhancedVacationBalance({
 						employeeId: currentEmployee.id,
 						year: currentYear,
+						timezone,
 					}),
 				catch: (error) =>
 					new NotFoundError({

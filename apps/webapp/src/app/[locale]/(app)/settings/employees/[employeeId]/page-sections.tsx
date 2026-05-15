@@ -34,6 +34,7 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { Link } from "@/navigation";
 import {
@@ -132,7 +133,10 @@ export function EmployeeOverviewCard({
 	const managers = employee.managers as EmployeeManagerRelation[] | undefined;
 	const displayName = buildAuthUserDisplayName(employee.user);
 	const employeePronouns = normalizePronouns(employee.pronouns);
-	const employeeDisplayName = employeePronouns ? `${displayName} (${employeePronouns})` : displayName;
+	const employeeDisplayName = employeePronouns
+		? `${displayName} (${employeePronouns})`
+		: displayName;
+	const presence = useEmployeeClockStatuses([employee.id], { polling: false });
 
 	return (
 		<Card>
@@ -149,6 +153,7 @@ export function EmployeeOverviewCard({
 						name={employeeDisplayName}
 						gender={employee.gender}
 						size="lg"
+						clockStatus={presence.getStatus(employee.id)}
 					/>
 					<div className="min-w-0">
 						<div className="truncate font-medium">{employeeDisplayName}</div>

@@ -3,8 +3,9 @@
 import { IconCake, IconConfetti, IconGift, IconSparkles } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
-import { UserAvatar } from "@/components/user-avatar";
+import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
 import { format } from "@/lib/datetime/luxon-utils";
+import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn, pluralize } from "@/lib/utils";
 import { getUpcomingBirthdays } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
@@ -21,6 +22,7 @@ type UpcomingBirthday = {
 	birthday: Date;
 	nextBirthday: Date;
 	daysUntil: number;
+	clockStatus?: EmployeeClockStatus;
 };
 
 function useDaysLabel() {
@@ -60,7 +62,13 @@ function BirthdayCard({ birthday, isToday }: { birthday: UpcomingBirthday; isTod
 
 			{/* Avatar with celebration ring for today */}
 			<div className={cn("relative", isToday && "ring-2 ring-pink-400 ring-offset-2 rounded-full")}>
-				<UserAvatar seed={birthday.userId} image={birthday.image} name={name} size="sm" />
+				<UserAvatar
+					seed={birthday.userId}
+					image={birthday.image}
+					name={name}
+					size="sm"
+					clockStatus={birthday.clockStatus ?? "unknown"}
+				/>
 				{isToday && (
 					<div className="absolute -bottom-1 -right-1 rounded-full bg-pink-500 p-0.5">
 						<IconCake className="size-3 text-white" />
@@ -125,11 +133,18 @@ export function BirthdayRemindersWidget() {
 		() => getUpcomingBirthdays(30),
 		{ errorMessage: t("dashboard.birthday.error", "Failed to load upcoming birthdays") },
 	);
+	const presence = useEmployeeClockStatuses(birthdays?.map((birthday) => birthday.id) ?? [], {
+		polling: false,
+	});
+	const birthdaysWithPresence = birthdays?.map((birthday) => ({
+		...birthday,
+		clockStatus: presence.getStatus(birthday.id),
+	}));
 
 	if (!loading && (!birthdays || birthdays.length === 0)) return null;
 
-	const todayBirthdays = birthdays?.filter((b) => b.daysUntil === 0) ?? [];
-	const upcomingBirthdays = birthdays?.filter((b) => b.daysUntil > 0).slice(0, 5) ?? [];
+	const todayBirthdays = birthdaysWithPresence?.filter((b) => b.daysUntil === 0) ?? [];
+	const upcomingBirthdays = birthdaysWithPresence?.filter((b) => b.daysUntil > 0).slice(0, 5) ?? [];
 	const displayBirthdays = [...todayBirthdays, ...upcomingBirthdays];
 
 	return (
@@ -151,7 +166,7 @@ export function BirthdayRemindersWidget() {
 				icon={<IconCake className="size-4 text-pink-500" />}
 				loading={loading}
 			>
-				{birthdays && (
+				{birthdaysWithPresence && (
 					<div className="space-y-3">
 						{/* Today's celebration banner */}
 						{todayBirthdays.length > 0 && <TodaysCelebration count={todayBirthdays.length} />}
@@ -168,12 +183,12 @@ export function BirthdayRemindersWidget() {
 						</div>
 
 						{/* More indicator */}
-						{birthdays.length > 5 + todayBirthdays.length && (
+						{birthdaysWithPresence.length > 5 + todayBirthdays.length && (
 							<div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 py-2 text-xs text-muted-foreground">
 								<IconGift className="size-3" />
 								<span>
 									{t("dashboard.birthday.more-celebrations", "+{count} more celebrations", {
-										count: birthdays.length - 5 - todayBirthdays.length,
+										count: birthdaysWithPresence.length - 5 - todayBirthdays.length,
 									})}
 								</span>
 							</div>

@@ -4,34 +4,31 @@
  */
 
 import { DateTime } from "luxon";
-import {
-	getFiscalYearRangeForDate,
-	getFiscalYearToDateRange,
-	getPreviousFiscalYearRange,
-} from "@/lib/fiscal-year";
 import type { DateRange, PeriodPreset } from "./types";
 
 type DateRangePresetOptions = {
 	year?: number;
-	fiscalYearStartMonth?: number;
 	timezone?: string;
 };
 
 /**
  * Get date range for a preset period
  * @param preset - The preset period type
- * @param options - Optional year for quarter presets, or fiscal year settings for year presets
+ * @param options - Optional year for quarter presets
  * @returns Date range with start and end DateTime objects
  */
 export function getDateRangeForPreset(
 	preset: PeriodPreset,
 	options?: number | DateRangePresetOptions,
 ): DateRange {
-	const now = DateTime.now();
+	const timezone = typeof options === "number" ? undefined : options?.timezone;
+	const now = timezone ? DateTime.now().setZone(timezone) : DateTime.now();
 	const year = typeof options === "number" ? options : options?.year;
-	const fiscalYearStartMonth = typeof options === "number" ? 1 : options?.fiscalYearStartMonth;
-	const timezone = typeof options === "number" ? "UTC" : (options?.timezone ?? "UTC");
 	const targetYear = year ?? now.year;
+	const dateInZone = (month: number) =>
+		timezone
+			? DateTime.fromObject({ year: targetYear, month, day: 1 }, { zone: timezone })
+			: DateTime.local(targetYear, month, 1);
 
 	switch (preset) {
 		case "last_month": {
@@ -49,31 +46,29 @@ export function getDateRangeForPreset(
 			};
 
 		case "last_year": {
-			const lastYear = getPreviousFiscalYearRange(now, fiscalYearStartMonth, timezone);
+			const lastYear = now.minus({ years: 1 });
 			return {
-				start: lastYear.start.toJSDate(),
-				end: lastYear.end.toJSDate(),
+				start: lastYear.startOf("year").toJSDate(),
+				end: lastYear.endOf("year").toJSDate(),
 			};
 		}
 
 		case "current_year": {
-			const currentYear = getFiscalYearRangeForDate(now, fiscalYearStartMonth, timezone);
 			return {
-				start: currentYear.start.toJSDate(),
-				end: currentYear.end.toJSDate(),
+				start: now.startOf("year").toJSDate(),
+				end: now.endOf("year").toJSDate(),
 			};
 		}
 
 		case "ytd": {
-			const yearToDate = getFiscalYearToDateRange(now, fiscalYearStartMonth, timezone);
 			return {
-				start: yearToDate.start.toJSDate(),
-				end: yearToDate.end.toJSDate(),
+				start: now.startOf("year").toJSDate(),
+				end: now.toJSDate(),
 			};
 		}
 
 		case "q1": {
-			const qStart = DateTime.local(targetYear, 1, 1);
+			const qStart = dateInZone(1);
 			return {
 				start: qStart.startOf("quarter").toJSDate(),
 				end: qStart.endOf("quarter").toJSDate(),
@@ -81,7 +76,7 @@ export function getDateRangeForPreset(
 		}
 
 		case "q2": {
-			const qStart = DateTime.local(targetYear, 4, 1);
+			const qStart = dateInZone(4);
 			return {
 				start: qStart.startOf("quarter").toJSDate(),
 				end: qStart.endOf("quarter").toJSDate(),
@@ -89,7 +84,7 @@ export function getDateRangeForPreset(
 		}
 
 		case "q3": {
-			const qStart = DateTime.local(targetYear, 7, 1);
+			const qStart = dateInZone(7);
 			return {
 				start: qStart.startOf("quarter").toJSDate(),
 				end: qStart.endOf("quarter").toJSDate(),
@@ -97,7 +92,7 @@ export function getDateRangeForPreset(
 		}
 
 		case "q4": {
-			const qStart = DateTime.local(targetYear, 10, 1);
+			const qStart = dateInZone(10);
 			return {
 				start: qStart.startOf("quarter").toJSDate(),
 				end: qStart.endOf("quarter").toJSDate(),
@@ -153,10 +148,14 @@ export function getPresetLabel(preset: PeriodPreset, year?: number): string {
  * @param end - End date (Date or DateTime)
  * @returns Formatted date range string
  */
-export function formatDateRangeLabel(start: Date | DateTime, end: Date | DateTime): string {
+export function formatDateRangeLabel(
+	start: Date | DateTime,
+	end: Date | DateTime,
+	timezone?: string,
+): string {
 	// Convert to DateTime if needed
-	const startDT = start instanceof Date ? DateTime.fromJSDate(start) : start;
-	const endDT = end instanceof Date ? DateTime.fromJSDate(end) : end;
+	const startDT = (start instanceof Date ? DateTime.fromJSDate(start) : start).setZone(timezone);
+	const endDT = (end instanceof Date ? DateTime.fromJSDate(end) : end).setZone(timezone);
 
 	const startStr = startDT.toLocaleString({ year: "numeric", month: "short", day: "numeric" });
 	const endStr = endDT.toLocaleString({ year: "numeric", month: "short", day: "numeric" });

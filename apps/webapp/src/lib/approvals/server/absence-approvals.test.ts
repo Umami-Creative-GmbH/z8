@@ -1,7 +1,8 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { onAbsenceRequestApproved, onAbsenceRequestRejected } = vi.hoisted(() => ({
+const { addCalendarSyncJob, onAbsenceRequestApproved, onAbsenceRequestRejected } = vi.hoisted(() => ({
+	addCalendarSyncJob: vi.fn().mockResolvedValue(undefined),
 	onAbsenceRequestApproved: vi.fn(),
 	onAbsenceRequestRejected: vi.fn(),
 }));
@@ -43,7 +44,7 @@ vi.mock("@/lib/notifications/triggers", () => ({
 }));
 
 vi.mock("@/lib/queue", () => ({
-	addCalendarSyncJob: vi.fn().mockResolvedValue(undefined),
+	addCalendarSyncJob,
 }));
 
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
@@ -57,6 +58,7 @@ import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/
 import { EmailService } from "@/lib/effect/services/email.service";
 
 beforeEach(() => {
+	addCalendarSyncJob.mockClear();
 	onAbsenceRequestApproved.mockClear();
 	onAbsenceRequestRejected.mockClear();
 });
@@ -119,7 +121,13 @@ const absenceCurrentApprover: CurrentApprover = {
 	},
 };
 
-function createAbsenceDecisionDbService() {
+function createAbsenceDecisionDbService(
+	absenceOverrides: Partial<{
+		startPeriod: "full_day" | "am" | "pm";
+		endPeriod: "full_day" | "am" | "pm";
+		category: { name: string; type: string; color: string | null };
+	}> = {},
+) {
 	const db = {
 		query: {
 			approvalRequest: {
@@ -141,10 +149,12 @@ function createAbsenceDecisionDbService() {
 					organizationId: "org-1",
 					canonicalRecordId: null,
 					startDate: "2026-05-11",
+					startPeriod: absenceOverrides.startPeriod ?? "full_day",
 					endDate: "2026-05-12",
+					endPeriod: absenceOverrides.endPeriod ?? "full_day",
 					status: "approved",
 					rejectionReason: null,
-					category: { name: "Vacation", type: "vacation", color: null },
+					category: absenceOverrides.category ?? { name: "Vacation", type: "vacation", color: null },
 					employee: {
 						userId: "user-requester",
 						organizationId: "org-1",
@@ -190,6 +200,169 @@ describe("formatAbsenceDateForEmail", () => {
 });
 
 describe("absence requester decision notifications", () => {
+	it("applies sick vacation overrides when approving a full-day sick absence", async () => {
+		vi.resetModules();
+		const syncCanonicalAbsenceApprovalState = vi.fn().mockResolvedValue(undefined);
+		const syncCanonicalAbsenceApprovalStateInTransaction = vi.fn().mockResolvedValue(undefined);
+		const adjustVacationAbsencesForSickness = vi.fn().mockResolvedValue({
+			updatedAbsenceIds: ["vacation-updated"],
+			createdAbsenceIds: ["vacation-created"],
+			deletedAbsenceIds: ["vacation-deleted"],
+		});
+		vi.doMock("@/app/[locale]/(app)/absences/actions.canonical", async (importOriginal) => {
+			const actual = await importOriginal<typeof import("@/app/[locale]/(app)/absences/actions.canonical")>();
+			return {
+				...actual,
+				syncCanonicalAbsenceApprovalState,
+				syncCanonicalAbsenceApprovalStateInTransaction,
+			};
+		});
+		vi.doMock("@/lib/absences/sick-vacation-override", async (importOriginal) => {
+			const actual = await importOriginal<typeof import("@/lib/absences/sick-vacation-override")>();
+			return { ...actual, adjustVacationAbsencesForSickness };
+		});
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) => Effect.gen(function* (_) {
+					const result = yield* _(updateEntity(dbService, entityId, currentEmployee));
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "absence-1",
+						employeeId: "emp-requester",
+						action: "create",
+					});
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "vacation-updated",
+						employeeId: "emp-requester",
+						action: "update",
+					});
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "vacation-created",
+						employeeId: "emp-requester",
+						action: "create",
+					});
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "vacation-deleted",
+						employeeId: "emp-requester",
+						action: "delete",
+					});
+					return result;
+				}),
+			),
+		}));
+		const { approveAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService({
+			category: { name: "Sick", type: "sick", color: null },
+			startPeriod: "full_day",
+			endPeriod: "full_day",
+		});
+
+		await runAbsenceDecisionEffect(
+			approveAbsenceWithCurrentApproverEffect(dbService, absenceCurrentApprover, "absence-1"),
+		);
+
+		expect(adjustVacationAbsencesForSickness).toHaveBeenCalledWith({
+			tx: dbService.db,
+			organizationId: "org-1",
+			employeeId: "emp-requester",
+			sickStartDate: "2026-05-11",
+			sickEndDate: "2026-05-12",
+			updatedBy: "user-manager",
+		});
+		expect(syncCanonicalAbsenceApprovalState).not.toHaveBeenCalled();
+		expect(syncCanonicalAbsenceApprovalStateInTransaction).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			canonicalRecordId: null,
+			approvalState: "approved",
+			updatedBy: "user-manager",
+		});
+		expect(addCalendarSyncJob).toHaveBeenCalledWith({
+			absenceId: "absence-1",
+			employeeId: "emp-requester",
+			action: "create",
+		});
+		expect(addCalendarSyncJob).toHaveBeenCalledWith({
+			absenceId: "vacation-updated",
+			employeeId: "emp-requester",
+			action: "update",
+		});
+		expect(addCalendarSyncJob).toHaveBeenCalledWith({
+			absenceId: "vacation-created",
+			employeeId: "emp-requester",
+			action: "create",
+		});
+		expect(addCalendarSyncJob).toHaveBeenCalledWith({
+			absenceId: "vacation-deleted",
+			employeeId: "emp-requester",
+			action: "delete",
+		});
+		vi.doUnmock("@/app/[locale]/(app)/absences/actions.canonical");
+		vi.doUnmock("@/lib/absences/sick-vacation-override");
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
+	it("does not apply sick vacation overrides when rejecting a sick absence", async () => {
+		vi.resetModules();
+		const adjustVacationAbsencesForSickness = vi.fn();
+		vi.doMock("@/lib/absences/sick-vacation-override", async (importOriginal) => {
+			const actual = await importOriginal<typeof import("@/lib/absences/sick-vacation-override")>();
+			return { ...actual, adjustVacationAbsencesForSickness };
+		});
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) => updateEntity(dbService, entityId, currentEmployee),
+			),
+		}));
+		const { rejectAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService({
+			category: { name: "Sick", type: "sick", color: null },
+			startPeriod: "full_day",
+			endPeriod: "full_day",
+		});
+
+		await runAbsenceDecisionEffect(
+			rejectAbsenceWithCurrentApproverEffect(
+				dbService,
+				absenceCurrentApprover,
+				"absence-1",
+				"Not eligible",
+			),
+		);
+
+		expect(adjustVacationAbsencesForSickness).not.toHaveBeenCalled();
+		vi.doUnmock("@/lib/absences/sick-vacation-override");
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("notifies the requester after approving an absence request", async () => {
 		vi.resetModules();
 		vi.doMock("@/lib/approvals/server/shared", () => ({

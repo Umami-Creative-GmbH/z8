@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Area,
 	AreaChart,
@@ -14,6 +14,7 @@ import {
 	YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { ExportButton } from "@/components/analytics/export-button";
 import { DateRangePicker } from "@/components/reports/date-range-picker";
 import { Badge } from "@/components/ui/badge";
@@ -30,33 +31,94 @@ import {
 import type { WorkHoursAnalyticsData } from "@/lib/analytics/types";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getWorkHoursAnalyticsData } from "../actions";
 
+function areDateRangesEqual(left: DateRange, right: DateRange) {
+	return (
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
+	);
+}
+
 export default function WorkHoursPage() {
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const { isHydrated, timezone } = useOrganizationSettings(
+		useShallow((state) => ({
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
+	);
+	const hasUserChangedRange = useRef(false);
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [workHoursData, setWorkHoursData] = useState<WorkHoursAnalyticsData | null>(null);
 
 	useEffect(() => {
+		if (!isHydrated || hasUserChangedRange.current) {
+			return;
+		}
+
+		const nextDateRange = getDateRangeForPreset("current_month", { timezone });
+		setDateRange((currentDateRange) =>
+			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
+				? currentDateRange
+				: nextDateRange,
+		);
+	}, [isHydrated, timezone]);
+
+	const handleDateRangeChange = (range: DateRange) => {
+		hasUserChangedRange.current = true;
+		setDateRange(range);
+	};
+
+	useEffect(() => {
+		if (!isHydrated || !dateRange) {
+			return;
+		}
+
+		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
+		if (
+			!hasUserChangedRange.current &&
+			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+		) {
+			return;
+		}
+		const range = dateRange;
+		let isCurrent = true;
+
 		async function loadData() {
 			setLoading(true);
 			try {
 				// Organization ID is now derived server-side from authenticated session
-				const result = await getWorkHoursAnalyticsData(dateRange);
+				const result = await getWorkHoursAnalyticsData(range);
+
+				if (!isCurrent) {
+					return;
+				}
 
 				if (result.success && result.data) {
 					setWorkHoursData(result.data);
 				}
 			} catch (error) {
+				if (!isCurrent) {
+					return;
+				}
+
 				console.error("Failed to load work hours analytics data:", error);
 				toast.error("Failed to load work hours analytics data");
 			} finally {
-				setLoading(false);
+				if (isCurrent) {
+					setLoading(false);
+				}
 			}
 		}
 
 		loadData();
-	}, [dateRange]);
+
+		return () => {
+			isCurrent = false;
+		};
+	}, [dateRange, isHydrated, timezone]);
 
 	const employees = workHoursData?.byEmployee || [];
 
@@ -72,7 +134,13 @@ export default function WorkHoursPage() {
 		<div className="space-y-6 px-4 lg:px-6">
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<DateRangePicker value={dateRange} onChange={setDateRange} />
+				{dateRange ? (
+					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+				) : (
+					<p className="text-sm text-muted-foreground">
+						Loading organization settings before enabling presets.
+					</p>
+				)}
 				<ExportButton
 					data={{
 						data: employees,
@@ -83,9 +151,9 @@ export default function WorkHoursPage() {
 							{ key: "undertimeHours", label: "Undertime Hours" },
 							{ key: "avgHoursPerWeek", label: "Avg Hours/Week" },
 						],
-						filename: `work-hours-${dateRange.start.toISOString().split("T")[0]}`,
+						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
-					disabled={!workHoursData}
+					disabled={!workHoursData || !dateRange}
 				/>
 			</div>
 

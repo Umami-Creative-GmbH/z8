@@ -2,6 +2,7 @@ import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, workPeriod } from "@/db/schema";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/absences/actions";
+import type { SickDetail } from "@/lib/absences/types";
 import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./types";
 
 interface PendingRequestRecord {
@@ -27,6 +28,7 @@ interface AbsenceLookupRecord {
 	endDate: string;
 	endPeriod: "full_day" | "am" | "pm";
 	notes: string | null;
+	sickDetail: SickDetail | null;
 	category: {
 		name: string;
 		type: string;
@@ -94,6 +96,7 @@ export function buildPendingApprovalResult({
 					endDate: absence.endDate,
 					endPeriod: absence.endPeriod,
 					notes: absence.notes,
+					sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
 					category: {
 						name: absence.category.name,
 						type: absence.category.type,

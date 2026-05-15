@@ -163,6 +163,37 @@ describe("absence canonical action routing", () => {
 		expect(whereUpdate).toHaveBeenCalledTimes(1);
 	});
 
+	it("updates canonical absence range using an existing transaction", async () => {
+		const whereRecord = vi.fn().mockResolvedValue(undefined);
+		const whereAbsence = vi.fn().mockResolvedValue(undefined);
+		const setRecord = vi.fn().mockReturnValue({ where: whereRecord });
+		const setAbsence = vi.fn().mockReturnValue({ where: whereAbsence });
+		const tx = {
+			update: vi.fn().mockReturnValueOnce({ set: setRecord }).mockReturnValueOnce({ set: setAbsence }),
+		};
+
+		await canonicalActions.updateCanonicalAbsenceRangeInTransaction(tx as never, {
+			canonicalRecordId: "record-1",
+			organizationId: "org-1",
+			startDate: "2026-02-10",
+			startPeriod: "full_day",
+			endDate: "2026-02-12",
+			endPeriod: "full_day",
+			updatedBy: "user-1",
+		});
+
+		expect(mockState.dbTransaction).not.toHaveBeenCalled();
+		expect(tx.update).toHaveBeenCalledTimes(2);
+		expect(setRecord).toHaveBeenCalledWith(
+			expect.objectContaining({
+				startAt: new Date("2026-02-10T00:00:00.000Z"),
+				endAt: new Date("2026-02-12T23:59:59.999Z"),
+				updatedBy: "user-1",
+			}),
+		);
+		expect(setAbsence).toHaveBeenCalledWith({ startPeriod: "full_day", endPeriod: "full_day" });
+	});
+
 	it("deletes canonical absence record on cancellation when linked", async () => {
 		const whereDelete = vi.fn().mockResolvedValue(undefined);
 		mockState.dbDelete.mockReturnValue({ where: whereDelete });

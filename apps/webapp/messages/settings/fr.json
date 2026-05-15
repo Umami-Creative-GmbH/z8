@@ -68,14 +68,6 @@
       "work-shifts": "Quarts de travail",
       "work-shifts-description": "Activez les quarts de travail avec planification par glisser-déposer, quarts ouverts et demandes d'échange."
     },
-    "fiscalYear": {
-      "description": "Les rapports, les soldes de congés et les calculs de report utilisent ce paramètre.",
-      "ownerOnly": "Seuls les propriétaires de l'organisation peuvent modifier le paramètre de l'exercice fiscal.",
-      "startMonth": "Mois de début de l'exercice fiscal",
-      "title": "Exercice fiscal",
-      "updated": "Paramètre de l'exercice fiscal mis à jour",
-      "updateFailed": "Échec de la mise à jour du paramètre de l'exercice fiscal"
-    },
     "joinOrCreate": "Rejoindre ou créer",
     "logo-uploaded": "Logo téléchargé avec succès",
     "logo-upload-failed": "Échec du téléchargement du logo",

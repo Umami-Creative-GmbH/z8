@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { normalizeFiscalYearStartMonth } from "@/lib/fiscal-year";
 
 /**
  * GET /api/auth/context
@@ -29,12 +28,11 @@ export async function GET() {
 					id: true,
 					shiftsEnabled: true,
 					projectsEnabled: true,
-					surchargesEnabled: true,
-					demoDataEnabled: true,
-					timezone: true,
-					fiscalYearStartMonth: true,
-					deletedAt: true,
-				},
+						surchargesEnabled: true,
+						demoDataEnabled: true,
+						timezone: true,
+						deletedAt: true,
+					},
 			});
 
 			if (org) {
@@ -42,12 +40,11 @@ export async function GET() {
 					organizationId: org.id,
 					shiftsEnabled: org.shiftsEnabled ?? false,
 					projectsEnabled: org.projectsEnabled ?? false,
-					surchargesEnabled: org.surchargesEnabled ?? false,
-					demoDataEnabled: org.demoDataEnabled ?? true,
-					timezone: org.timezone ?? "UTC",
-					fiscalYearStartMonth: normalizeFiscalYearStartMonth(org.fiscalYearStartMonth),
-					deletedAt: org.deletedAt?.toISOString() ?? null,
-				};
+						surchargesEnabled: org.surchargesEnabled ?? false,
+						demoDataEnabled: org.demoDataEnabled ?? true,
+						timezone: org.timezone ?? "UTC",
+						deletedAt: org.deletedAt?.toISOString() ?? null,
+					};
 			}
 		}
 

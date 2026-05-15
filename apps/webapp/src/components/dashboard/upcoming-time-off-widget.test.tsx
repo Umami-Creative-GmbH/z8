@@ -27,6 +27,9 @@ vi.mock("@/navigation", () => ({
 		<a href={href}>{children}</a>
 	),
 }));
+vi.mock("@/lib/query", () => ({
+	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+}));
 
 vi.mock("./actions", () => ({ getUpcomingAbsences: vi.fn() }));
 vi.mock("./dashboard-widget", () => ({
@@ -52,6 +55,7 @@ describe("UpcomingTimeOffWidget", () => {
 					startDate: new Date(Date.UTC(2026, 4, 15)),
 					endDate: new Date(Date.UTC(2026, 4, 15)),
 					employee: {
+						id: "employee-1",
 						user: { id: "user-1", name: "Ada Lovelace", image: null },
 					},
 					category: { name: "Vacation", color: null },

@@ -138,6 +138,7 @@ export function NavUser({
 									name={user.name}
 									size="sm"
 									shape="rounded"
+									clockStatus="unknown"
 								/>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">{user.name}</span>
@@ -160,6 +161,7 @@ export function NavUser({
 										name={user.name}
 										size="sm"
 										shape="rounded"
+										clockStatus="unknown"
 									/>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-medium">{user.name}</span>

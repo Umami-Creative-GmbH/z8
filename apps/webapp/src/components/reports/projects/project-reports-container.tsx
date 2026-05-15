@@ -12,7 +12,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type {
 	DateRange,
 	ProjectDetailedReport,
@@ -33,7 +32,7 @@ export function ProjectReportsContainer() {
 	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPreset("current_month"));
+	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [_selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<"portfolio" | "project">("portfolio");
 
@@ -73,6 +72,10 @@ export function ProjectReportsContainer() {
 	};
 
 	const handleSelectProject = async (projectId: string) => {
+		if (!dateRange) {
+			return;
+		}
+
 		setIsLoading(true);
 		setError(null);
 		setSelectedProjectId(projectId);

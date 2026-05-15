@@ -11,6 +11,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest, employee } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import type { SickDetail } from "@/lib/absences/types";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailServiceLive } from "@/lib/effect/services/email.service";
@@ -55,6 +56,7 @@ interface AbsenceWithRelations {
 	endDate: string;
 	endPeriod: "full_day" | "am" | "pm";
 	notes: string | null;
+	sickDetail: SickDetail | null;
 	status: "pending" | "approved" | "rejected";
 	createdAt: Date;
 	employee: {
@@ -74,6 +76,13 @@ interface AbsenceWithRelations {
 		name: string;
 		type: string;
 		color: string | null;
+	};
+}
+
+export function redactNonSickAbsenceSickDetail<T extends AbsenceWithRelations>(absence: T): T {
+	return {
+		...absence,
+		sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
 	};
 }
 
@@ -108,7 +117,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 
 					const map = new Map<string, AbsenceWithRelations>();
 					for (const absence of absences) {
-						map.set(absence.id, absence as AbsenceWithRelations);
+						map.set(absence.id, redactNonSickAbsenceSickDetail(absence as AbsenceWithRelations));
 					}
 					return map;
 				}),
@@ -298,7 +307,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 					sla: buildSLAInfo(slaDeadline),
 					display: AbsenceRequestHandler.getDisplayMetadata(absence),
 				},
-				entity: absence,
+				entity: redactNonSickAbsenceSickDetail(absence),
 				timeline,
 			} as ApprovalDetail<AbsenceWithRelations>;
 		}),

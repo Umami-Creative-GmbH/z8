@@ -14,10 +14,10 @@ import {
 	type holidayPresetHoliday,
 	vacationAllowance,
 } from "@/db/schema";
+import { getYearRange } from "@/lib/absences/date-utils";
 import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { getFiscalYearRangeForLabelYear } from "@/lib/fiscal-year";
 import { expandPresetHolidayForYear } from "./holiday-expansion";
 import { mapAbsenceWithCategory } from "./mappers";
 
@@ -39,7 +39,7 @@ type HolidayPresetAssignmentWithPreset = {
 export async function getVacationBalance(
 	employeeId: string,
 	year: number,
-	fiscalYearStartMonth: number | null | undefined = 1,
+	timezone = "UTC",
 ): Promise<VacationBalance | null> {
 	const emp = await db.query.employee.findFirst({
 		where: eq(employee.id, employeeId),
@@ -49,7 +49,7 @@ export async function getVacationBalance(
 		return null;
 	}
 
-	const yearRange = getFiscalYearRangeForLabelYear(year, fiscalYearStartMonth);
+	const yearRange = getYearRange(year);
 	const startOfYear = yearRange.start.toISODate() ?? `${year}-01-01`;
 	const endOfYear = yearRange.end.toISODate() ?? `${year}-12-31`;
 
@@ -95,7 +95,7 @@ export async function getVacationBalance(
 		absences: absencesWithCategory,
 		currentDate: currentTimestamp(),
 		year,
-		fiscalYearStartMonth,
+		timezone,
 	});
 }
 

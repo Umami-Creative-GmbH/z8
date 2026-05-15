@@ -68,14 +68,6 @@
       "work-shifts": "Turnos de trabalho",
       "work-shifts-description": "Ative turnos de trabalho com planeamento arrastar e largar, turnos abertos e pedidos de troca."
     },
-    "fiscalYear": {
-      "description": "Relatórios, saldos de férias e cálculos de saldo remanescente usam esta configuração.",
-      "ownerOnly": "Apenas os proprietários da organização podem alterar a configuração do ano fiscal.",
-      "startMonth": "Mês de início do ano fiscal",
-      "title": "Ano fiscal",
-      "updated": "Configuração do ano fiscal atualizada",
-      "updateFailed": "Falha ao atualizar a configuração do ano fiscal"
-    },
     "joinOrCreate": "Juntar-se ou criar",
     "logo-uploaded": "Logótipo carregado com sucesso",
     "logo-upload-failed": "Falha ao carregar o logótipo",

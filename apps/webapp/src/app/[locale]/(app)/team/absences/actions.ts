@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -19,6 +19,14 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
+import {
+	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
+} from "@/lib/absences/duration";
+import {
+	adjustVacationAbsencesForSickness,
+	getBlockingOverlapMessage,
+} from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -26,9 +34,14 @@ import { createLogger } from "@/lib/logger";
 import { addCalendarSyncJob } from "@/lib/queue";
 import {
 	buildCanonicalAbsenceRecordValues,
-	getAbsenceOverlapConflictMessage,
+	buildInaccessibleTeamAbsenceListResult,
+	clampManagerAbsencePage,
+	isManagerAbsenceMetricSort,
+	buildManagerAbsenceRowAbsences,
 	managerAbsenceAdvisoryLockKey,
+	type ManagerAbsenceListInput,
 	normalizeManagerAbsenceListParams,
+	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
@@ -38,6 +51,9 @@ import type {
 	ManagerAbsenceEmployeeRow,
 	ManagerAbsenceListParams,
 	ManagerAbsenceListResult,
+	ManagerAbsenceSortDirection,
+	ManagerAbsenceSortKey,
+	ManagerAbsenceTeamOption,
 	RecordAbsenceForEmployeeInput,
 } from "./manager-absence-types";
 
@@ -54,6 +70,8 @@ type ListedEmployee = Pick<
 > & {
 	userName: string;
 	userEmail: string;
+	userImage: string | null;
+	teamId: string | null;
 	teamName: string | null;
 };
 
@@ -62,7 +80,7 @@ type TargetEmployee = typeof employee.$inferSelect & {
 };
 
 export async function getManagerAbsenceEmployees(
-	params: Partial<ManagerAbsenceListParams>,
+	params: ManagerAbsenceListInput,
 ): Promise<ServerActionResult<ManagerAbsenceListResult>> {
 	try {
 		const actorResult = await resolveActor();
@@ -81,8 +99,19 @@ export async function getManagerAbsenceEmployees(
 				or(ilike(employee.employeeNumber, search), ilike(user.name, search), ilike(user.email, search))!,
 			);
 		}
+		if (normalized.teamId) {
+			baseConditions.push(eq(employee.teamId, normalized.teamId));
+		}
 
-		const offset = (normalized.page - 1) * normalized.pageSize;
+		const teams = await selectVisibleTeams(actor);
+		const accessibleTeamIds = new Set(teams.map((teamOption) => teamOption.id));
+		if (normalized.teamId && !accessibleTeamIds.has(normalized.teamId)) {
+			return {
+				success: true,
+				data: buildInaccessibleTeamAbsenceListResult(normalized, teams),
+			};
+		}
+
 		const totalRows =
 			actor.role === "manager"
 				? await db
@@ -96,24 +125,50 @@ export async function getManagerAbsenceEmployees(
 						.from(employee)
 						.innerJoin(user, eq(employee.userId, user.id))
 						.where(and(...baseConditions));
-
-		const rows =
-			actor.role === "manager"
-				? await selectVisibleEmployees(baseConditions, normalized.pageSize, offset, actor.id)
-				: await selectVisibleEmployees(baseConditions, normalized.pageSize, offset);
-
-		const rowsWithMetrics = await addMetricsToRows(rows, normalized.year, actor.organizationId);
 		const total = totalRows[0]?.value ?? 0;
+		const pageCount = Math.ceil(total / normalized.pageSize);
+		const effectivePage = clampManagerAbsencePage({
+			requestedPage: normalized.page,
+			pageSize: normalized.pageSize,
+			total,
+		});
+		const offset = (effectivePage - 1) * normalized.pageSize;
+
+		const rowsWithMetrics = isManagerAbsenceMetricSort(normalized.sort)
+			? await selectMetricSortedRows({
+					baseConditions,
+					managerId: actor.role === "manager" ? actor.id : undefined,
+					year: normalized.year,
+					organizationId: actor.organizationId,
+					sort: normalized.sort,
+					direction: normalized.direction,
+					offset,
+					pageSize: normalized.pageSize,
+				})
+			: await selectNonMetricSortedRows({
+					baseConditions,
+					managerId: actor.role === "manager" ? actor.id : undefined,
+					year: normalized.year,
+					organizationId: actor.organizationId,
+					sort: normalized.sort,
+					direction: normalized.direction,
+					offset,
+					pageSize: normalized.pageSize,
+				});
 
 		return {
 			success: true,
 			data: {
 				rows: rowsWithMetrics,
+				teams,
 				total,
-				page: normalized.page,
+				page: effectivePage,
 				pageSize: normalized.pageSize,
 				year: normalized.year,
-				pageCount: Math.ceil(total / normalized.pageSize),
+				teamId: normalized.teamId,
+				sort: normalized.sort,
+				direction: normalized.direction,
+				pageCount,
 			},
 		};
 	} catch (error) {
@@ -130,7 +185,17 @@ export async function recordAbsenceForEmployee(
 		if (!actorResult.success) return actorResult;
 
 		const actor = actorResult.data;
-		const dateError = validateRecordAbsenceDateRange(input);
+		const normalizedInput = normalizeAbsenceDurationInput(input);
+		const dateError = validateRecordAbsenceDateRange({
+			categoryId: normalizedInput.categoryId,
+			startDate: normalizedInput.startDate,
+			startPeriod: normalizedInput.startPeriod,
+			endDate: normalizedInput.endDate,
+			endPeriod: normalizedInput.endPeriod,
+			durationKind: input.durationKind,
+			startTime: normalizedInput.startTime,
+			endTime: normalizedInput.endTime,
+		});
 		if (dateError) {
 			return { success: false, error: dateError, code: "ValidationError" };
 		}
@@ -141,7 +206,7 @@ export async function recordAbsenceForEmployee(
 		const target = targetResult.data;
 		const category = await db.query.absenceCategory.findFirst({
 			where: and(
-				eq(absenceCategory.id, input.categoryId),
+				eq(absenceCategory.id, normalizedInput.categoryId),
 				eq(absenceCategory.organizationId, actor.organizationId),
 				eq(absenceCategory.isActive, true),
 			),
@@ -151,48 +216,82 @@ export async function recordAbsenceForEmployee(
 			return { success: false, error: "Invalid absence category", code: "NotFoundError" };
 		}
 
+		const sickDetailError = validateManagerAbsenceSickDetail({
+			categoryType: category.type,
+			sickDetail: input.sickDetail,
+		});
+		if (sickDetailError) {
+			return { success: false, error: sickDetailError, code: "ValidationError" };
+		}
+
 		const transactionResult = await db.transaction(async (tx) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
 			);
 
-			const existingAbsences = await tx
-				.select({
-					id: absenceEntry.id,
-					status: absenceEntry.status,
-					startDate: absenceEntry.startDate,
-					endDate: absenceEntry.endDate,
-				})
-				.from(absenceEntry)
-				.where(
-					and(
-						eq(absenceEntry.employeeId, target.id),
-						eq(absenceEntry.organizationId, actor.organizationId),
-						or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
-					),
-				);
+			const existingAbsences = await tx.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, target.id),
+					eq(absenceEntry.organizationId, actor.organizationId),
+					or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
+				),
+				with: { category: true },
+			});
 
-			const overlap = existingAbsences.find((absence) =>
-				dateRangesOverlap(input.startDate, input.endDate, absence.startDate, absence.endDate),
-			);
-			if (overlap && overlap.status !== "rejected") {
-				return {
-					success: false as const,
-					error: getAbsenceOverlapConflictMessage(overlap.status),
-				};
+			for (const absence of existingAbsences) {
+				if (
+					!dateRangesOverlap(
+						normalizedInput.startDate,
+						normalizedInput.endDate,
+						absence.startDate,
+						absence.endDate,
+					)
+				) {
+					continue;
+				}
+
+				const overlapMessage = getBlockingOverlapMessage({
+					newCategoryType: category.type,
+					newStartPeriod: normalizedInput.startPeriod,
+					newEndPeriod: normalizedInput.endPeriod,
+					existingStartPeriod: absence.startPeriod,
+					existingEndPeriod: absence.endPeriod,
+					existingStatus: absence.status,
+					existingCountsAgainstVacation: absence.category.countsAgainstVacation,
+				});
+
+				if (overlapMessage) {
+					return { success: false as const, error: overlapMessage };
+				}
 			}
 
+			const vacationOverrideSummary =
+				category.type === "sick" &&
+				normalizedInput.startPeriod === "full_day" &&
+				normalizedInput.endPeriod === "full_day"
+					? await adjustVacationAbsencesForSickness({
+							tx,
+							organizationId: actor.organizationId,
+							employeeId: target.id,
+							sickStartDate: normalizedInput.startDate,
+							sickEndDate: normalizedInput.endDate,
+							updatedBy: actor.userId,
+						})
+					: { updatedAbsenceIds: [], createdAbsenceIds: [], deletedAbsenceIds: [] };
+
+			const entryDuration = toAbsenceEntryDurationFields(normalizedInput);
 			const [absence] = await tx
 				.insert(absenceEntry)
 				.values({
 					employeeId: target.id,
 					organizationId: actor.organizationId,
-					categoryId: input.categoryId,
-					startDate: input.startDate,
-					startPeriod: input.startPeriod,
-					endDate: input.endDate,
-					endPeriod: input.endPeriod,
-					notes: input.notes,
+					categoryId: normalizedInput.categoryId,
+					startDate: entryDuration.startDate,
+					startPeriod: entryDuration.startPeriod,
+					endDate: entryDuration.endDate,
+					endPeriod: entryDuration.endPeriod,
+					notes: normalizedInput.notes,
+					sickDetail: input.sickDetail ?? null,
 					status: "approved",
 					approvedBy: actor.id,
 					approvedAt: currentTimestamp(),
@@ -202,11 +301,14 @@ export async function recordAbsenceForEmployee(
 			const canonicalValues = buildCanonicalAbsenceRecordValues({
 				organizationId: actor.organizationId,
 				employeeId: target.id,
-				categoryId: input.categoryId,
-				startDate: input.startDate,
-				startPeriod: input.startPeriod,
-				endDate: input.endDate,
-				endPeriod: input.endPeriod,
+				categoryId: normalizedInput.categoryId,
+				startDate: normalizedInput.startDate,
+				startPeriod: normalizedInput.startPeriod,
+				endDate: normalizedInput.endDate,
+				endPeriod: normalizedInput.endPeriod,
+				durationKind: input.durationKind,
+				startTime: normalizedInput.startTime,
+				endTime: normalizedInput.endTime,
 				countsAgainstVacation: category.countsAgainstVacation,
 				createdBy: actor.userId,
 			});
@@ -226,7 +328,7 @@ export async function recordAbsenceForEmployee(
 				.set({ canonicalRecordId: canonicalRecord.id })
 				.where(and(eq(absenceEntry.id, absence.id), eq(absenceEntry.organizationId, actor.organizationId)));
 
-			return { success: true as const, absenceId: absence.id };
+			return { success: true as const, absenceId: absence.id, vacationOverrideSummary };
 		});
 
 		if (!transactionResult.success) {
@@ -244,12 +346,30 @@ export async function recordAbsenceForEmployee(
 			),
 		);
 
+		for (const absenceId of transactionResult.vacationOverrideSummary.updatedAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "update" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.createdAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "create" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.deletedAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "delete" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
 		void notifyEmployeeOfManagerRecordedAbsence({
 			absenceId: transactionResult.absenceId,
 			actor,
 			target,
 			categoryName: category.name,
-			input,
+			input: { ...input, ...normalizedInput, durationKind: input.durationKind },
 		});
 
 		return { success: true, data: { absenceId: transactionResult.absenceId } };
@@ -299,9 +419,13 @@ async function resolveActor(): Promise<ServerActionResult<ManagerAbsenceActor>> 
 
 async function selectVisibleEmployees(
 	baseConditions: NonNullable<Parameters<typeof and>[number]>[],
-	limit: number,
-	offset: number,
-	managerId?: string,
+	options: {
+		managerId?: string;
+		sort?: Extract<ManagerAbsenceSortKey, "employee" | "team">;
+		direction?: ManagerAbsenceSortDirection;
+		limit?: number;
+		offset?: number;
+	} = {},
 ): Promise<ListedEmployee[]> {
 	const selectedFields = {
 		id: employee.id,
@@ -313,6 +437,8 @@ async function selectVisibleEmployees(
 		isActive: employee.isActive,
 		userName: user.name,
 		userEmail: user.email,
+		userImage: user.image,
+		teamId: employee.teamId,
 		teamName: team.name,
 	};
 
@@ -320,22 +446,112 @@ async function selectVisibleEmployees(
 		.select(selectedFields)
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
-		.leftJoin(team, eq(employee.teamId, team.id));
+		.leftJoin(team, and(eq(employee.teamId, team.id), eq(team.organizationId, employee.organizationId)));
 
-	if (managerId) {
-		return await query
+	const orderBy = buildNonMetricEmployeeOrderBy(options.sort ?? "employee", options.direction ?? "asc");
+
+	if (options.managerId) {
+		const managerQuery = query
 			.innerJoin(employeeManagers, eq(employeeManagers.employeeId, employee.id))
-			.where(and(...baseConditions, eq(employeeManagers.managerId, managerId)))
-			.orderBy(asc(user.name), asc(employee.employeeNumber))
-			.limit(limit)
-			.offset(offset);
+			.where(and(...baseConditions, eq(employeeManagers.managerId, options.managerId)))
+			.orderBy(...orderBy);
+
+		if (options.limit !== undefined && options.offset !== undefined) {
+			return await managerQuery.limit(options.limit).offset(options.offset);
+		}
+
+		return await managerQuery;
 	}
 
-	return await query
-		.where(and(...baseConditions))
-		.orderBy(asc(user.name), asc(employee.employeeNumber))
-		.limit(limit)
-		.offset(offset);
+	const organizationQuery = query.where(and(...baseConditions)).orderBy(...orderBy);
+	if (options.limit !== undefined && options.offset !== undefined) {
+		return await organizationQuery.limit(options.limit).offset(options.offset);
+	}
+
+	return await organizationQuery;
+}
+
+async function selectMetricSortedRows(params: {
+	baseConditions: NonNullable<Parameters<typeof and>[number]>[];
+	managerId?: string;
+	year: number;
+	organizationId: string;
+	sort: ManagerAbsenceSortKey;
+	direction: ManagerAbsenceSortDirection;
+	offset: number;
+	pageSize: number;
+}): Promise<ManagerAbsenceEmployeeRow[]> {
+	const allRows = await selectVisibleEmployees(params.baseConditions, {
+		managerId: params.managerId,
+	});
+	const allRowsWithMetrics = await addMetricsToRows(allRows, params.year, params.organizationId);
+	const sortedRows = sortManagerAbsenceRows(allRowsWithMetrics, params.sort, params.direction);
+
+	return sortedRows.slice(params.offset, params.offset + params.pageSize);
+}
+
+async function selectNonMetricSortedRows(params: {
+	baseConditions: NonNullable<Parameters<typeof and>[number]>[];
+	managerId?: string;
+	year: number;
+	organizationId: string;
+	sort: Extract<ManagerAbsenceSortKey, "employee" | "team">;
+	direction: ManagerAbsenceSortDirection;
+	offset: number;
+	pageSize: number;
+}): Promise<ManagerAbsenceEmployeeRow[]> {
+	const pageRows = await selectVisibleEmployees(params.baseConditions, {
+		managerId: params.managerId,
+		sort: params.sort,
+		direction: params.direction,
+		limit: params.pageSize,
+		offset: params.offset,
+	});
+
+	return await addMetricsToRows(pageRows, params.year, params.organizationId);
+}
+
+function buildNonMetricEmployeeOrderBy(
+	sort: Extract<ManagerAbsenceSortKey, "employee" | "team">,
+	direction: ManagerAbsenceSortDirection,
+) {
+	if (sort === "team") {
+		const teamSortValue = sql<string>`coalesce(${team.name}, ${employee.position}, '')`;
+
+		return [direction === "desc" ? desc(teamSortValue) : asc(teamSortValue), asc(user.name)];
+	}
+
+	return [direction === "desc" ? desc(user.name) : asc(user.name), asc(employee.employeeNumber)];
+}
+
+async function selectVisibleTeams(actor: ManagerAbsenceActor): Promise<ManagerAbsenceTeamOption[]> {
+	const selectedFields = {
+		id: team.id,
+		name: team.name,
+	};
+
+	if (actor.role === "manager") {
+		return await db
+			.selectDistinct(selectedFields)
+			.from(team)
+			.innerJoin(employee, eq(employee.teamId, team.id))
+			.innerJoin(employeeManagers, eq(employeeManagers.employeeId, employee.id))
+			.where(
+				and(
+					eq(team.organizationId, actor.organizationId),
+					eq(employee.organizationId, actor.organizationId),
+					eq(employee.isActive, true),
+					eq(employeeManagers.managerId, actor.id),
+				),
+			)
+			.orderBy(asc(team.name));
+	}
+
+	return await db
+		.select(selectedFields)
+		.from(team)
+		.where(eq(team.organizationId, actor.organizationId))
+		.orderBy(asc(team.name));
 }
 
 async function addMetricsToRows(
@@ -348,6 +564,8 @@ async function addMetricsToRows(
 	}
 
 	const employeeIds = rows.map((row) => row.id);
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
 	const [allowance, employeeAllowances, absences] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
@@ -367,6 +585,8 @@ async function addMetricsToRows(
 			where: and(
 				eq(absenceEntry.organizationId, organizationId),
 				inArray(absenceEntry.employeeId, employeeIds),
+				lte(absenceEntry.startDate, yearEnd),
+				gte(absenceEntry.endDate, yearStart),
 			),
 			with: { category: true },
 		}),
@@ -402,13 +622,58 @@ async function addMetricsToRows(
 			userId: row.userId,
 			name: row.userName,
 			email: row.userEmail,
+			image: row.userImage,
 			employeeNumber: row.employeeNumber,
 			position: row.position,
 			role: row.role,
 			teamName: row.teamName,
 			...metrics,
+			absences: buildManagerAbsenceRowAbsences(absencesByEmployeeId.get(row.id) ?? [], year),
 		};
 	});
+}
+
+function sortManagerAbsenceRows(
+	rows: ManagerAbsenceEmployeeRow[],
+	sort: ManagerAbsenceSortKey,
+	direction: ManagerAbsenceSortDirection,
+): ManagerAbsenceEmployeeRow[] {
+	return [...rows].sort((a, b) => compareManagerAbsenceRows(a, b, sort, direction));
+}
+
+function compareManagerAbsenceRows(
+	a: ManagerAbsenceEmployeeRow,
+	b: ManagerAbsenceEmployeeRow,
+	sort: ManagerAbsenceSortKey,
+	direction: ManagerAbsenceSortDirection,
+): number {
+	const multiplier = direction === "desc" ? -1 : 1;
+	const compared = compareManagerAbsenceRowValues(a, b, sort) * multiplier;
+
+	if (compared !== 0) {
+		return compared;
+	}
+
+	return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+}
+
+function compareManagerAbsenceRowValues(
+	a: ManagerAbsenceEmployeeRow,
+	b: ManagerAbsenceEmployeeRow,
+	sort: ManagerAbsenceSortKey,
+): number {
+	if (sort === "employee") {
+		return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+	}
+
+	if (sort === "team") {
+		const teamA = a.teamName ?? a.position ?? "";
+		const teamB = b.teamName ?? b.position ?? "";
+
+		return teamA.localeCompare(teamB, undefined, { sensitivity: "base" });
+	}
+
+	return a[sort] - b[sort];
 }
 
 async function resolveAccessibleTarget(

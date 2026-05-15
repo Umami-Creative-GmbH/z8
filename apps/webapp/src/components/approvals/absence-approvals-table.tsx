@@ -17,6 +17,7 @@ import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/dat
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import { getSickDetailLabel } from "@/lib/absences/sick-details";
 import { queryKeys } from "@/lib/query";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
@@ -166,6 +167,7 @@ export function AbsenceApprovalsTable() {
 							seed={row.original.requester.user.id}
 							name={row.original.requester.user.name}
 							size="sm"
+							clockStatus="unknown"
 						/>
 						<div>
 							<div className="font-medium">{row.original.requester.user.name}</div>
@@ -189,11 +191,18 @@ export function AbsenceApprovalsTable() {
 				accessorKey: "type",
 				header: t("approvals:approvals.type", "Type"),
 				cell: ({ row }) => (
-					<CategoryBadge
-						name={row.original.absence.category.name}
-						type={row.original.absence.category.type}
-						color={row.original.absence.category.color}
-					/>
+					<div className="flex flex-col items-start gap-1">
+						<CategoryBadge
+							name={row.original.absence.category.name}
+							type={row.original.absence.category.type}
+							color={row.original.absence.category.color}
+						/>
+						{row.original.absence.category.type === "sick" && row.original.absence.sickDetail && (
+							<span className="text-muted-foreground text-xs">
+								{getSickDetailLabel(row.original.absence.sickDetail)}
+							</span>
+						)}
+					</div>
 				),
 			},
 			{
