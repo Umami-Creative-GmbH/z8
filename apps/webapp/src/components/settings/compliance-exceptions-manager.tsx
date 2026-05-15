@@ -19,11 +19,11 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatDistance } from "@/lib/datetime/format";
 import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
 import { queryKeys } from "@/lib/query";
-import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
@@ -298,18 +298,15 @@ interface ExceptionCardProps {
 function ExceptionCard({ exception, onApprove, onReject, isApproving }: ExceptionCardProps) {
 	const { t } = useTranslate();
 	const employeeName = formatExceptionEmployeeName(exception.employee);
-	const initials = employeeName
-		.split(" ")
-		.map((n) => n[0])
-		.join("")
-		.toUpperCase()
-		.slice(0, 2);
 
 	return (
 		<div className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50">
-			<Avatar className="h-10 w-10">
-				<AvatarFallback>{initials}</AvatarFallback>
-			</Avatar>
+			<UserAvatar
+				seed={exception.employee.userId}
+				name={employeeName}
+				size="md"
+				showClockStatus={false}
+			/>
 
 			<div className="flex-1 space-y-1">
 				<div className="flex items-center gap-2">
