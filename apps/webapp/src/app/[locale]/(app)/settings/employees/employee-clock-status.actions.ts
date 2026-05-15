@@ -4,6 +4,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { employee, workPeriod } from "@/db/schema";
+import { DatabaseError, type AnyAppError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import {
@@ -17,8 +18,27 @@ function normalizeEmployeeIds(employeeIds: string[]) {
 	return [...new Set(employeeIds.map((id) => id.trim()).filter(Boolean))].sort();
 }
 
-function resolveQueryEffect<T>(value: Effect.Effect<T, unknown> | Promise<T> | T) {
-	return Effect.isEffect(value) ? value : Effect.promise(() => Promise.resolve(value));
+function resolveQueryEffect<T>(
+	operation: string,
+	value: Effect.Effect<T, AnyAppError, unknown> | Promise<T> | T,
+): Effect.Effect<T, AnyAppError, unknown> {
+	if (Effect.isEffect(value)) {
+		return value as Effect.Effect<T, AnyAppError, unknown>;
+	}
+
+	if (value instanceof Promise) {
+		return Effect.tryPromise({
+			try: () => value,
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to load employee clock statuses",
+					operation,
+					cause: error,
+				}),
+		});
+	}
+
+	return Effect.succeed(value);
 }
 
 export async function getEmployeeClockStatuses(
@@ -36,6 +56,7 @@ export async function getEmployeeClockStatuses(
 		);
 		const organizationEmployeeRows = yield* _(
 			resolveQueryEffect(
+				"getEmployeeClockStatuses:organizationEmployees",
 				actor.dbService.query("getEmployeeClockStatuses:organizationEmployees", async () => {
 					return await actor.dbService.db
 						.select({ id: employee.id })
@@ -68,6 +89,7 @@ export async function getEmployeeClockStatuses(
 
 		const activeRows = yield* _(
 			resolveQueryEffect(
+				"getEmployeeClockStatuses:activeWorkPeriods",
 				actor.dbService.query("getEmployeeClockStatuses:activeWorkPeriods", async () => {
 					return await actor.dbService.db
 						.select({ employeeId: workPeriod.employeeId })
