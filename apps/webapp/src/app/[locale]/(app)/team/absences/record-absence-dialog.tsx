@@ -3,20 +3,20 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -32,7 +32,12 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import type { DayPeriod } from "@/lib/absences/types";
+import {
+	normalizeAbsenceDurationInput,
+	type AbsenceDurationInput,
+	validateAbsenceDurationInput,
+} from "@/lib/absences/duration";
+import type { AbsenceDurationKind, DayPeriod } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { recordAbsenceForEmployee } from "./actions";
 
@@ -58,15 +63,21 @@ type RecordAbsenceFormValues = {
 	startPeriod: DayPeriod;
 	endDate: string;
 	endPeriod: DayPeriod;
+	durationKind: AbsenceDurationKind;
+	startTime: string;
+	endTime: string;
 	notes: string;
 };
 
 const defaultValues: RecordAbsenceFormValues = {
 	categoryId: "",
 	startDate: "",
-	startPeriod: "am",
+	startPeriod: "full_day",
 	endDate: "",
-	endPeriod: "pm",
+	endPeriod: "full_day",
+	durationKind: "full_day",
+	startTime: "",
+	endTime: "",
 	notes: "",
 };
 
@@ -74,29 +85,8 @@ function requiredMessage(label: string) {
 	return `${label} is required`;
 }
 
-export function validateRecordAbsenceFormDateRange(
-	input: Pick<RecordAbsenceFormValues, "startDate" | "startPeriod" | "endDate" | "endPeriod">,
-): string | null {
-	if (!input.startDate || !input.endDate) {
-		return null;
-	}
-
-	const start = DateTime.fromISO(input.startDate);
-	const end = DateTime.fromISO(input.endDate);
-
-	if (!start.isValid || !end.isValid) {
-		return "Invalid date format";
-	}
-
-	if (start > end) {
-		return "Start date must be before end date";
-	}
-
-	if (input.startDate === input.endDate && input.startPeriod === "pm" && input.endPeriod === "am") {
-		return "Cannot end in the morning if starting in the afternoon on the same day";
-	}
-
-	return null;
+export function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string | null {
+	return validateAbsenceDurationInput(input);
 }
 
 export function RecordAbsenceDialog({
@@ -111,10 +101,15 @@ export function RecordAbsenceDialog({
 	const title = employee
 		? `Record absence for ${employee.name}`
 		: t("team.absences.recordDialog.title", "Record absence");
+	const durationOptions: Array<{ value: AbsenceDurationKind; label: string }> = [
+		{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
+		{ value: "partial_day", label: t("absences.form.duration.partialDay", "Partial day") },
+	];
 
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			const normalized = normalizeAbsenceDurationInput(value);
 			const rangeError = validateRecordAbsenceFormDateRange(value);
 			if (rangeError) {
 				setDateRangeError(rangeError);
@@ -136,12 +131,15 @@ export function RecordAbsenceDialog({
 
 			const result = await recordAbsenceForEmployee({
 				employeeId: employee.id,
-				categoryId: value.categoryId,
-				startDate: value.startDate,
-				startPeriod: value.startPeriod,
-				endDate: value.endDate,
-				endPeriod: value.endPeriod,
-				notes: value.notes.trim() || undefined,
+				categoryId: normalized.categoryId,
+				startDate: normalized.startDate,
+				startPeriod: normalized.startPeriod,
+				endDate: normalized.endDate,
+				endPeriod: normalized.endPeriod,
+				durationKind: normalized.durationKind,
+				startTime: normalized.startTime,
+				endTime: normalized.endTime,
+				notes: normalized.notes?.trim() || undefined,
 			});
 
 			if (result.success) {
@@ -168,98 +166,231 @@ export function RecordAbsenceDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>
-						{t(
-							"team.absences.recordDialog.description",
-							"Record an approved absence directly for the selected employee.",
-						)}
-					</DialogDescription>
-				</DialogHeader>
-
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent>
 				<form
-					className="grid gap-5"
+					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field
-						name="categoryId"
-						validators={{
-							onChange: ({ value }) =>
-								value
-									? undefined
-									: requiredMessage(t("team.absences.recordDialog.category", "Category")),
-						}}
-					>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)} required>
-									{t("team.absences.recordDialog.category", "Category")}
-								</TFormLabel>
-								<Select
-									name="categoryId"
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value)}
-									disabled={categories.length === 0}
-								>
-									<TFormControl hasError={fieldHasError(field)}>
-										<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-											<SelectValue
-												placeholder={t(
-													"team.absences.recordDialog.categoryPlaceholder",
-													"Select an absence category…",
-												)}
-											/>
-										</SelectTrigger>
-									</TFormControl>
-									<SelectContent>
-										{categories.length === 0 ? (
-											<SelectItem value="__no-categories" disabled>
-												{t("team.absences.recordDialog.noCategories", "No categories available")}
-											</SelectItem>
-										) : (
-											categories.map((category) => (
-												<SelectItem key={category.id} value={category.id}>
-													{category.name}
+					<ActionPanelHeader>
+						<ActionPanelTitle>{title}</ActionPanelTitle>
+						<ActionPanelDescription>
+							{t(
+								"team.absences.recordDialog.description",
+								"Record an approved absence directly for the selected employee.",
+							)}
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+
+					<ActionPanelBody className="space-y-5">
+						<form.Field
+							name="categoryId"
+							validators={{
+								onChange: ({ value }) =>
+									value
+										? undefined
+										: requiredMessage(t("team.absences.recordDialog.category", "Category")),
+							}}
+						>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)} required>
+										{t("team.absences.recordDialog.category", "Category")}
+									</TFormLabel>
+									<Select
+										name="categoryId"
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value)}
+										disabled={categories.length === 0}
+									>
+										<TFormControl hasError={fieldHasError(field)}>
+											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+												<SelectValue
+													placeholder={t(
+														"team.absences.recordDialog.categoryPlaceholder",
+														"Select an absence category…",
+													)}
+												/>
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{categories.length === 0 ? (
+												<SelectItem value="__no-categories" disabled>
+													{t("team.absences.recordDialog.noCategories", "No categories available")}
 												</SelectItem>
-											))
-										)}
-									</SelectContent>
-								</Select>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
+											) : (
+												categories.map((category) => (
+													<SelectItem key={category.id} value={category.id}>
+														{category.name}
+													</SelectItem>
+												))
+											)}
+										</SelectContent>
+									</Select>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
 
-					<div className="grid gap-4 sm:grid-cols-2">
-						<form.Field
-							name="startDate"
-							validators={{
-								onChange: ({ value }) =>
-									value
-										? undefined
-										: requiredMessage(t("team.absences.recordDialog.startDate", "Start date")),
-							}}
-						>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<form.Field
+								name="startDate"
+								validators={{
+									onChange: ({ value }) =>
+										value
+											? undefined
+											: requiredMessage(t("team.absences.recordDialog.startDate", "Start date")),
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)} required>
+											{t("team.absences.recordDialog.startDate", "Start date")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<DatePicker
+												name="startDate"
+												value={field.state.value}
+												onChange={(value) => field.handleChange(value)}
+												onBlur={field.handleBlur}
+												placeholder={t(
+													"team.absences.recordDialog.pickStartDate",
+													"Pick start date…",
+												)}
+												required
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							<form.Field name="endDate">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("team.absences.recordDialog.endDate", "End date")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<DatePicker
+												name="endDate"
+												value={field.state.value}
+												onChange={(value) => field.handleChange(value)}
+												onBlur={field.handleBlur}
+												placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date…")}
+											/>
+										</TFormControl>
+										<p className="text-muted-foreground text-xs">
+											{t(
+												"team.absences.recordDialog.endDateHelper",
+												"Leave empty for a same-day absence.",
+											)}
+										</p>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+						</div>
+
+						<form.Field name="durationKind">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("team.absences.recordDialog.startDate", "Start date")}
+									<TFormLabel>{t("absences.form.duration", "Absence duration")}</TFormLabel>
+									<Select
+										name="durationKind"
+										value={field.state.value}
+										onValueChange={(value) => field.handleChange(value as AbsenceDurationKind)}
+									>
+										<TFormControl>
+											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+												<SelectValue />
+											</SelectTrigger>
+										</TFormControl>
+										<SelectContent>
+											{durationOptions.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
+
+						<form.Subscribe selector={(state) => state.values.durationKind}>
+							{(durationKind) =>
+								durationKind === "partial_day" ? (
+									<div className="grid gap-4 sm:grid-cols-2">
+										<form.Field name="startTime">
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={fieldHasError(field)} required>
+														{t("absences.form.startTime", "Start time")}
+													</TFormLabel>
+													<TFormControl hasError={fieldHasError(field)}>
+														<Input
+															name="startTime"
+															type="time"
+															value={field.state.value}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+															required
+														/>
+													</TFormControl>
+													<TFormMessage field={field} />
+												</TFormItem>
+											)}
+										</form.Field>
+
+										<form.Field name="endTime">
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={fieldHasError(field)} required>
+														{t("absences.form.endTime", "End time")}
+													</TFormLabel>
+													<TFormControl hasError={fieldHasError(field)}>
+														<Input
+															name="endTime"
+															type="time"
+															value={field.state.value}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+															required
+														/>
+													</TFormControl>
+													<TFormMessage field={field} />
+												</TFormItem>
+											)}
+										</form.Field>
+									</div>
+								) : null
+							}
+						</form.Subscribe>
+
+						<form.Field name="notes">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("team.absences.recordDialog.notes", "Notes")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<DatePicker
-											name="startDate"
+										<Textarea
+											name="notes"
+											autoComplete="off"
 											value={field.state.value}
-											onChange={(value) => field.handleChange(value)}
+											onChange={(event) => field.handleChange(event.target.value)}
 											onBlur={field.handleBlur}
-											placeholder={t("team.absences.recordDialog.pickStartDate", "Pick start date…")}
-											required
+											placeholder={t(
+												"team.absences.recordDialog.notesPlaceholder",
+												"Add internal context for this record…",
+											)}
+											rows={3}
 										/>
 									</TFormControl>
 									<TFormMessage field={field} />
@@ -267,133 +398,21 @@ export function RecordAbsenceDialog({
 							)}
 						</form.Field>
 
-						<form.Field name="startPeriod">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("team.absences.recordDialog.startPeriod", "Start period")}
-									</TFormLabel>
-									<Select
-										name="startPeriod"
-										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value as DayPeriod)}
-									>
-										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue />
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											<SelectItem value="am">
-												{t("team.absences.recordDialog.morning", "Morning")}
-											</SelectItem>
-											<SelectItem value="pm">
-												{t("team.absences.recordDialog.afternoon", "Afternoon")}
-											</SelectItem>
-										</SelectContent>
-									</Select>
-								</TFormItem>
-							)}
-						</form.Field>
-					</div>
+						{dateRangeError ? (
+							<p
+								role="alert"
+								aria-live="polite"
+								className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
+							>
+								{dateRangeError}
+							</p>
+						) : null}
+					</ActionPanelBody>
 
-					<div className="grid gap-4 sm:grid-cols-2">
-						<form.Field
-							name="endDate"
-							validators={{
-								onChange: ({ value }) =>
-									value
-										? undefined
-										: requiredMessage(t("team.absences.recordDialog.endDate", "End date")),
-							}}
-						>
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("team.absences.recordDialog.endDate", "End date")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<DatePicker
-											name="endDate"
-											value={field.state.value}
-											onChange={(value) => field.handleChange(value)}
-											onBlur={field.handleBlur}
-											placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date…")}
-											required
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
-
-						<form.Field name="endPeriod">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("team.absences.recordDialog.endPeriod", "End period")}
-									</TFormLabel>
-									<Select
-										name="endPeriod"
-										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value as DayPeriod)}
-									>
-										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue />
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											<SelectItem value="am">
-												{t("team.absences.recordDialog.morning", "Morning")}
-											</SelectItem>
-											<SelectItem value="pm">
-												{t("team.absences.recordDialog.afternoon", "Afternoon")}
-											</SelectItem>
-										</SelectContent>
-									</Select>
-								</TFormItem>
-							)}
-						</form.Field>
-					</div>
-
-					<form.Field name="notes">
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("team.absences.recordDialog.notes", "Notes")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Textarea
-										name="notes"
-										autoComplete="off"
-										value={field.state.value}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
-											"team.absences.recordDialog.notesPlaceholder",
-											"Add internal context for this record…",
-										)}
-										rows={3}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					{dateRangeError ? (
-						<p role="alert" aria-live="polite" className="text-destructive text-sm">
-							{dateRangeError}
-						</p>
-					) : null}
-
-					<DialogFooter>
-						<DialogClose asChild>
-							<Button type="button" variant="outline">
-								{t("common.cancel", "Cancel")}
-							</Button>
-						</DialogClose>
+					<ActionPanelFooter>
+						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+							{t("common.cancel", "Cancel")}
+						</Button>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
 								<Button type="submit" disabled={isSubmitting || !employee}>
@@ -408,9 +427,9 @@ export function RecordAbsenceDialog({
 								</Button>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

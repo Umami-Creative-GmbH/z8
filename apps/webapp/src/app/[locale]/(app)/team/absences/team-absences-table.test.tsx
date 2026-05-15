@@ -54,7 +54,9 @@ describe("TeamAbsencesTable", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
-		expect(routerPush).toHaveBeenCalledWith("/team/absences?search=Ada&page=1&pageSize=10&year=2026");
+		expect(routerPush).toHaveBeenCalledWith(
+			"/team/absences?search=Ada&page=1&pageSize=10&year=2026",
+		);
 	});
 
 	it("renders an empty state when no employees match", () => {
@@ -120,9 +122,7 @@ describe("TeamAbsencesTable", () => {
 
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
 		expect(screen.getByText("24")).toBeTruthy();
-		expect(screen.getByRole("columnheader", { name: "Pending" }).className).not.toContain(
-			"hidden",
-		);
+		expect(screen.getByRole("columnheader", { name: "Pending" }).className).not.toContain("hidden");
 		expect(screen.getByRole("columnheader", { name: "Sick" }).className).not.toContain("hidden");
 		const recordButton = screen.getByRole("button", {
 			name: "Record absence for Ada Lovelace",
@@ -130,7 +130,8 @@ describe("TeamAbsencesTable", () => {
 		expect(recordButton.closest("div.rounded-lg")?.className).not.toContain("overflow-hidden");
 
 		fireEvent.click(recordButton);
-		expect(screen.getByText("Record absence for Ada Lovelace")).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Record absence for Ada Lovelace" })).toBeTruthy();
+		expect(document.querySelector('[data-slot="action-panel-content"]')).toBeTruthy();
 	});
 
 	it("disables pagination controls at boundaries and routes to the next page", () => {
@@ -173,27 +174,69 @@ describe("TeamAbsencesTable", () => {
 
 		fireEvent.click(nextButton);
 
-		expect(routerPush).toHaveBeenCalledWith("/team/absences?search=old&page=2&pageSize=10&year=2026");
+		expect(routerPush).toHaveBeenCalledWith(
+			"/team/absences?search=old&page=2&pageSize=10&year=2026",
+		);
 	});
 });
 
 describe("validateRecordAbsenceFormDateRange", () => {
-	it("rejects reversed dates and same-day afternoon-to-morning ranges", () => {
+	it("accepts full-day absences without an explicit end date", () => {
 		expect(
 			validateRecordAbsenceFormDateRange({
+				categoryId: "category-sick",
+				startDate: "2026-05-12",
+				startPeriod: "full_day",
+				endDate: "",
+				endPeriod: "full_day",
+				durationKind: "full_day",
+				startTime: "",
+				endTime: "",
+			}),
+		).toBeNull();
+	});
+
+	it("rejects same-day partial-day times when the end time is before the start time", () => {
+		expect(
+			validateRecordAbsenceFormDateRange({
+				categoryId: "category-sick",
+				startDate: "2026-05-12",
+				startPeriod: "full_day",
+				endDate: "2026-05-12",
+				endPeriod: "full_day",
+				durationKind: "partial_day",
+				startTime: "13:00",
+				endTime: "09:00",
+			}),
+		).toBe(
+			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		);
+	});
+
+	it("rejects reversed dates and same-day legacy afternoon-to-morning ranges", () => {
+		expect(
+			validateRecordAbsenceFormDateRange({
+				categoryId: "category-sick",
 				startDate: "2026-05-13",
 				startPeriod: "am",
 				endDate: "2026-05-12",
 				endPeriod: "pm",
+				durationKind: undefined,
+				startTime: "",
+				endTime: "",
 			}),
 		).toBe("Start date must be before end date");
 
 		expect(
 			validateRecordAbsenceFormDateRange({
+				categoryId: "category-sick",
 				startDate: "2026-05-12",
 				startPeriod: "pm",
 				endDate: "2026-05-12",
 				endPeriod: "am",
+				durationKind: undefined,
+				startTime: "",
+				endTime: "",
 			}),
 		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
 	});
