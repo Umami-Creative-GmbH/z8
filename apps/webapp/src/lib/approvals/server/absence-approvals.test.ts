@@ -202,10 +202,20 @@ describe("formatAbsenceDateForEmail", () => {
 describe("absence requester decision notifications", () => {
 	it("applies sick vacation overrides when approving a full-day sick absence", async () => {
 		vi.resetModules();
+		const syncCanonicalAbsenceApprovalState = vi.fn().mockResolvedValue(undefined);
+		const syncCanonicalAbsenceApprovalStateInTransaction = vi.fn().mockResolvedValue(undefined);
 		const adjustVacationAbsencesForSickness = vi.fn().mockResolvedValue({
 			updatedAbsenceIds: ["vacation-updated"],
 			createdAbsenceIds: ["vacation-created"],
 			deletedAbsenceIds: ["vacation-deleted"],
+		});
+		vi.doMock("@/app/[locale]/(app)/absences/actions.canonical", async (importOriginal) => {
+			const actual = await importOriginal<typeof import("@/app/[locale]/(app)/absences/actions.canonical")>();
+			return {
+				...actual,
+				syncCanonicalAbsenceApprovalState,
+				syncCanonicalAbsenceApprovalStateInTransaction,
+			};
 		});
 		vi.doMock("@/lib/absences/sick-vacation-override", async (importOriginal) => {
 			const actual = await importOriginal<typeof import("@/lib/absences/sick-vacation-override")>();
@@ -228,6 +238,11 @@ describe("absence requester decision notifications", () => {
 					) => Effect.Effect<unknown, unknown, unknown>,
 				) => Effect.gen(function* (_) {
 					const result = yield* _(updateEntity(dbService, entityId, currentEmployee));
+					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
+						absenceId: "absence-1",
+						employeeId: "emp-requester",
+						action: "create",
+					});
 					expect(addCalendarSyncJob).not.toHaveBeenCalledWith({
 						absenceId: "vacation-updated",
 						employeeId: "emp-requester",
@@ -268,6 +283,18 @@ describe("absence requester decision notifications", () => {
 			sickEndDate: "2026-05-12",
 			updatedBy: "user-manager",
 		});
+		expect(syncCanonicalAbsenceApprovalState).not.toHaveBeenCalled();
+		expect(syncCanonicalAbsenceApprovalStateInTransaction).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			canonicalRecordId: null,
+			approvalState: "approved",
+			updatedBy: "user-manager",
+		});
+		expect(addCalendarSyncJob).toHaveBeenCalledWith({
+			absenceId: "absence-1",
+			employeeId: "emp-requester",
+			action: "create",
+		});
 		expect(addCalendarSyncJob).toHaveBeenCalledWith({
 			absenceId: "vacation-updated",
 			employeeId: "emp-requester",
@@ -283,6 +310,7 @@ describe("absence requester decision notifications", () => {
 			employeeId: "emp-requester",
 			action: "delete",
 		});
+		vi.doUnmock("@/app/[locale]/(app)/absences/actions.canonical");
 		vi.doUnmock("@/lib/absences/sick-vacation-override");
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});

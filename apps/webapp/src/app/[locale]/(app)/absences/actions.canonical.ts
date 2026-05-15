@@ -208,11 +208,23 @@ export async function syncCanonicalAbsenceApprovalState(input: {
 	approvalState: "approved" | "rejected";
 	updatedBy: string;
 }): Promise<void> {
+	await syncCanonicalAbsenceApprovalStateInTransaction(db, input);
+}
+
+export async function syncCanonicalAbsenceApprovalStateInTransaction(
+	tx: CanonicalAbsenceTransaction,
+	input: {
+		organizationId: string;
+		canonicalRecordId: string | null;
+		approvalState: "approved" | "rejected";
+		updatedBy: string;
+	},
+): Promise<void> {
 	if (!input.canonicalRecordId) {
 		return;
 	}
 
-	await db
+	await tx
 		.update(timeRecord)
 		.set({
 			approvalState: input.approvalState,
