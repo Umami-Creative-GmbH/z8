@@ -48,4 +48,26 @@ describe("splitVacationAroundSickRange", () => {
 			}),
 		).toEqual([]);
 	});
+
+	it("preserves vacation when sickness starts after vacation ends", () => {
+		expect(
+			splitVacationAroundSickRange({
+				vacationStartDate: "2026-05-18",
+				vacationEndDate: "2026-05-22",
+				sickStartDate: "2026-05-25",
+				sickEndDate: "2026-05-26",
+			}),
+		).toEqual([{ startDate: "2026-05-18", endDate: "2026-05-22" }]);
+	});
+
+	it("preserves vacation when sickness ends before vacation starts", () => {
+		expect(
+			splitVacationAroundSickRange({
+				vacationStartDate: "2026-05-18",
+				vacationEndDate: "2026-05-22",
+				sickStartDate: "2026-05-14",
+				sickEndDate: "2026-05-15",
+			}),
+		).toEqual([{ startDate: "2026-05-18", endDate: "2026-05-22" }]);
+	});
 });

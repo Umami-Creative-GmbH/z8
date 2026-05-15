@@ -12,6 +12,15 @@ export function splitVacationAroundSickRange(input: {
 	sickStartDate: string;
 	sickEndDate: string;
 }): VacationSegment[] {
+	if (
+		input.sickEndDate < input.vacationStartDate ||
+		input.sickStartDate > input.vacationEndDate
+	) {
+		return [
+			{ startDate: input.vacationStartDate, endDate: input.vacationEndDate },
+		];
+	}
+
 	const segments: VacationSegment[] = [];
 
 	if (input.vacationStartDate < input.sickStartDate) {
