@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useLocale, useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -72,7 +72,8 @@ export function AbsenceCategoriesTable({
 	canManageCategories,
 }: AbsenceCategoriesTableProps) {
 	const { t } = useTranslate();
-	const locale = useLocale();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [categoryToDelete, setCategoryToDelete] = useState<AbsenceCategoryForSettings | null>(null);
