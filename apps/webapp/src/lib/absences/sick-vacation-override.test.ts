@@ -332,6 +332,10 @@ describe("adjustVacationAbsencesForSickness", () => {
 			expect.arrayContaining([
 				expect.objectContaining({ table: timeRecord }),
 				expect.objectContaining({
+					table: timeRecord,
+					values: expect.objectContaining({ approvalState: "approved" }),
+				}),
+				expect.objectContaining({
 					table: timeRecordAbsence,
 					values: expect.objectContaining({ recordId: "canonical-new" }),
 				}),

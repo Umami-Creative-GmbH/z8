@@ -97,6 +97,7 @@ async function createCanonicalAbsenceInTransaction(
 		endPeriod: DayPeriod;
 		countsAgainstVacation: boolean;
 		requiresApproval: boolean;
+		approvalState?: "pending" | "approved";
 		createdBy: string;
 	},
 ): Promise<string> {
@@ -110,7 +111,7 @@ async function createCanonicalAbsenceInTransaction(
 			startAt,
 			endAt,
 			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
-			approvalState: input.requiresApproval ? "pending" : "approved",
+			approvalState: input.approvalState ?? (input.requiresApproval ? "pending" : "approved"),
 			origin: "manual",
 			createdBy: input.createdBy,
 			updatedBy: input.createdBy,
@@ -281,6 +282,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 				endPeriod: "full_day",
 				countsAgainstVacation: vacation.category.countsAgainstVacation,
 				requiresApproval: vacation.category.requiresApproval,
+				approvalState: vacation.status,
 				createdBy: input.updatedBy,
 			});
 			const [created] = await input.tx
