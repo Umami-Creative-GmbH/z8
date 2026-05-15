@@ -22,6 +22,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { getSickDetailLabel } from "@/lib/absences/sick-details";
 import { useRouter } from "@/navigation";
 import type {
 	ManagerAbsenceEmployeeRow,
@@ -220,6 +221,20 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 												<div className="min-w-0">
 													<p className="truncate font-medium">{employee.name}</p>
 													<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
+												{employee.absences?.length ? (
+													<div className="mt-2 flex flex-col gap-1">
+														{employee.absences.map((absence) => (
+															<div key={absence.id} className="flex flex-col text-sm">
+																<span>{absence.category.name}</span>
+																{absence.category.type === "sick" && absence.sickDetail && (
+																	<span className="text-muted-foreground text-xs">
+																		{getSickDetailLabel(absence.sickDetail)}
+																	</span>
+																)}
+															</div>
+														))}
+													</div>
+												) : null}
 												</div>
 											</div>
 										</TableCell>

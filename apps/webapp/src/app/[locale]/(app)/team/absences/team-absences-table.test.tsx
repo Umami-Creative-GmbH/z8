@@ -2,7 +2,11 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { validateRecordAbsenceFormDateRange } from "./record-absence-dialog";
+import {
+	buildRecordAbsenceForEmployeeInput,
+	getDefaultRecordAbsenceFormValues,
+	validateRecordAbsenceFormDateRange,
+} from "./record-absence-dialog";
 import { TeamAbsencesTable } from "./team-absences-table";
 
 const routerPush = vi.fn();
@@ -168,6 +172,53 @@ describe("TeamAbsencesTable", () => {
 		fireEvent.click(recordButton);
 		expect(screen.getByRole("heading", { name: "Record absence for Ada Lovelace" })).toBeTruthy();
 		expect(document.querySelector('[data-slot="action-panel-content"]')).toBeTruthy();
+	});
+
+	it("shows sick detail labels for sick absences in employee rows", () => {
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+							absences: [
+								{
+									id: "absence-1",
+									category: { name: "Sick Leave", type: "sick", color: null },
+									sickDetail: "child_sick",
+								},
+							],
+						},
+					],
+					teams: [{ id: "team-ops", name: "Operations" }],
+					total: 1,
+					page: 1,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search=""
+			/>,
+		);
+
+		expect(screen.getByText("Child sick")).toBeTruthy();
 	});
 
 	it("disables pagination controls at boundaries and routes to the next page", () => {
@@ -431,5 +482,40 @@ describe("validateRecordAbsenceFormDateRange", () => {
 				endTime: "",
 			}),
 		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+	});
+});
+
+describe("buildRecordAbsenceForEmployeeInput", () => {
+	it("submits manager absence defaults as full-day ranges", () => {
+		expect(
+			buildRecordAbsenceForEmployeeInput("employee-1", {
+				...getDefaultRecordAbsenceFormValues(),
+				categoryId: "category-sick",
+				startDate: "2026-05-18",
+				endDate: "2026-05-18",
+				sickDetail: "with_certificate",
+			}),
+		).toMatchObject({
+			startPeriod: "full_day",
+			endPeriod: "full_day",
+			sickDetail: "with_certificate",
+		});
+	});
+
+	it("includes sick detail for manager-recorded sick absences", () => {
+		expect(
+			buildRecordAbsenceForEmployeeInput("employee-1", {
+				categoryId: "category-sick",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-18",
+				endPeriod: "full_day",
+				notes: "",
+				sickDetail: "with_certificate",
+			}),
+		).toMatchObject({
+			employeeId: "employee-1",
+			sickDetail: "with_certificate",
+		});
 	});
 });

@@ -1,5 +1,6 @@
 // Legacy half-day compatibility period for absence forms and stored requests.
 export type DayPeriod = "full_day" | "am" | "pm";
+export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
 
 export type AbsenceDurationKind = "full_day" | "partial_day";
 
@@ -23,6 +24,7 @@ export interface AbsenceRequest {
 	startTime?: string;
 	endTime?: string;
 	notes?: string;
+	sickDetail?: SickDetail;
 }
 
 export interface EmployeeAllowanceUpdate {
@@ -43,6 +45,7 @@ export interface AbsenceWithCategory {
 	endPeriod: DayPeriod;
 	status: "pending" | "approved" | "rejected";
 	notes: string | null;
+	sickDetail: SickDetail | null;
 	category: {
 		id: string;
 		name: string;

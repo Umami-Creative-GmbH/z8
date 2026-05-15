@@ -10,6 +10,7 @@ export function mapAbsenceWithCategory(absence: AbsenceWithCategory): AbsenceWit
 		endPeriod: absence.endPeriod,
 		status: absence.status,
 		notes: absence.notes,
+		sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
 		category: {
 			id: absence.category.id,
 			name: absence.category.name,

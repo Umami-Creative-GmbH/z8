@@ -4,18 +4,17 @@ import {
 	canUseManagerAbsencePage,
 } from "./manager-absence-permissions";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
-import {
-	getManagerAbsenceEmployees,
-	recordAbsenceForEmployee,
-} from "./actions";
+import { getManagerAbsenceEmployees, recordAbsenceForEmployee } from "./actions";
 import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
 	clampManagerAbsencePage,
+	buildManagerAbsenceRowAbsences,
 	getAbsenceOverlapConflictMessage,
 	isManagerAbsenceMetricSort,
 	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
+	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
@@ -28,6 +27,92 @@ describe("manager absence server action contracts", () => {
 });
 
 describe("manager absence server action helpers", () => {
+	it("builds visible year-overlapping absence row payloads with sick detail", () => {
+		const rows = buildManagerAbsenceRowAbsences([
+			{
+				id: "absence-sick",
+				employeeId: "employee-1",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-18",
+				endPeriod: "full_day",
+				status: "approved",
+				notes: null,
+				sickDetail: "child_sick",
+				approvedBy: "manager-1",
+				approvedAt: new Date("2026-05-18T00:00:00.000Z"),
+				rejectionReason: null,
+				createdAt: new Date("2026-05-01T00:00:00.000Z"),
+				category: {
+					id: "category-sick",
+					name: "Sick Leave",
+					type: "sick",
+					color: "#f97316",
+					countsAgainstVacation: false,
+				},
+			},
+			{
+				id: "absence-old",
+				employeeId: "employee-1",
+				startDate: "2025-05-18",
+				startPeriod: "full_day",
+				endDate: "2025-05-18",
+				endPeriod: "full_day",
+				status: "approved",
+				notes: null,
+				sickDetail: "with_certificate",
+				approvedBy: "manager-1",
+				approvedAt: new Date("2025-05-18T00:00:00.000Z"),
+				rejectionReason: null,
+				createdAt: new Date("2025-05-01T00:00:00.000Z"),
+				category: {
+					id: "category-sick",
+					name: "Old Sick Leave",
+					type: "sick",
+					color: null,
+					countsAgainstVacation: false,
+				},
+			},
+		], 2026);
+
+		expect(rows).toEqual([
+			{
+				id: "absence-sick",
+				category: { name: "Sick Leave", type: "sick", color: "#f97316" },
+				sickDetail: "child_sick",
+			},
+		]);
+	});
+
+	it("redacts stale sick detail from non-sick absence row payloads", () => {
+		const rows = buildManagerAbsenceRowAbsences([
+			{
+				id: "absence-vacation",
+				employeeId: "employee-1",
+				startDate: "2026-06-01",
+				startPeriod: "full_day",
+				endDate: "2026-06-01",
+				endPeriod: "full_day",
+				status: "approved",
+				notes: null,
+				sickDetail: "with_certificate",
+				approvedBy: "manager-1",
+				approvedAt: new Date("2026-06-01T00:00:00.000Z"),
+				rejectionReason: null,
+				createdAt: new Date("2026-05-01T00:00:00.000Z"),
+				category: {
+					id: "category-vacation",
+					name: "Vacation",
+					type: "vacation",
+					color: null,
+					countsAgainstVacation: true,
+				},
+			},
+		], 2026);
+
+		expect(rows[0]?.sickDetail).toBeNull();
+	});
+
 	it("normalizes list params to safe server-backed pagination defaults", () => {
 		expect(
 			normalizeManagerAbsenceListParams({
@@ -245,6 +330,20 @@ describe("manager absence server action helpers", () => {
 		expect(isManagerAbsenceMetricSort("sickDays")).toBe(true);
 		expect(isManagerAbsenceMetricSort("employee")).toBe(false);
 		expect(isManagerAbsenceMetricSort("team")).toBe(false);
+	});
+});
+
+describe("manager sick absence detail validation", () => {
+	it("requires sick detail for manager-recorded sick absence", () => {
+		expect(validateManagerAbsenceSickDetail({ categoryType: "sick", sickDetail: undefined })).toBe(
+			"Sick detail is required for sick absences",
+		);
+	});
+
+	it("rejects sick detail for manager-recorded vacation", () => {
+		expect(
+			validateManagerAbsenceSickDetail({ categoryType: "vacation", sickDetail: "with_certificate" }),
+		).toBe("Sick detail can only be used for sick absences");
 	});
 });
 

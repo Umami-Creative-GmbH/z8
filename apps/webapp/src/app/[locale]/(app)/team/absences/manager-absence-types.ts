@@ -1,4 +1,4 @@
-import type { AbsenceDurationKind, DayPeriod } from "@/lib/absences/types";
+import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
@@ -32,6 +32,16 @@ export interface ManagerAbsenceEmployeeTarget {
 	isActive: boolean;
 }
 
+export interface ManagerAbsenceRowAbsence {
+	id: string;
+	category: {
+		name: string;
+		type: string;
+		color: string | null;
+	};
+	sickDetail: SickDetail | null;
+}
+
 export interface ManagerAbsenceEmployeeRow {
 	id: string;
 	userId: string;
@@ -47,6 +57,7 @@ export interface ManagerAbsenceEmployeeRow {
 	pendingVacationDays: number;
 	remainingVacationDays: number;
 	sickDays: number;
+	absences?: ManagerAbsenceRowAbsence[];
 }
 
 export interface ManagerAbsenceListParams {
@@ -83,4 +94,5 @@ export interface RecordAbsenceForEmployeeInput {
 	startTime?: string;
 	endTime?: string;
 	notes?: string;
+	sickDetail?: SickDetail;
 }

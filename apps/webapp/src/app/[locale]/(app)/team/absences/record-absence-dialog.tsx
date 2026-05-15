@@ -37,9 +37,11 @@ import {
 	type AbsenceDurationInput,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
-import type { AbsenceDurationKind, DayPeriod } from "@/lib/absences/types";
+import { sickDetailOptions } from "@/lib/absences/sick-details";
+import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { recordAbsenceForEmployee } from "./actions";
+import type { RecordAbsenceForEmployeeInput } from "./manager-absence-types";
 
 type AbsenceCategoryOption = {
 	id: string;
@@ -67,6 +69,7 @@ type RecordAbsenceFormValues = {
 	startTime: string;
 	endTime: string;
 	notes: string;
+	sickDetail: SickDetail | "";
 };
 
 const defaultValues: RecordAbsenceFormValues = {
@@ -79,6 +82,7 @@ const defaultValues: RecordAbsenceFormValues = {
 	startTime: "",
 	endTime: "",
 	notes: "",
+	sickDetail: "",
 };
 
 function requiredMessage(label: string) {
@@ -87,6 +91,31 @@ function requiredMessage(label: string) {
 
 export function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string | null {
 	return validateAbsenceDurationInput(input);
+}
+
+export function getDefaultRecordAbsenceFormValues(): RecordAbsenceFormValues {
+	return { ...defaultValues };
+}
+
+export function buildRecordAbsenceForEmployeeInput(
+	employeeId: string,
+	value: RecordAbsenceFormValues,
+): RecordAbsenceForEmployeeInput {
+	const normalized = normalizeAbsenceDurationInput(value);
+
+	return {
+		employeeId,
+		categoryId: normalized.categoryId,
+		startDate: normalized.startDate,
+		startPeriod: normalized.startPeriod,
+		endDate: normalized.endDate,
+		endPeriod: normalized.endPeriod,
+		durationKind: normalized.durationKind,
+		startTime: normalized.startTime,
+		endTime: normalized.endTime,
+		notes: normalized.notes?.trim() || undefined,
+		sickDetail: value.sickDetail || undefined,
+	};
 }
 
 export function RecordAbsenceDialog({
@@ -109,7 +138,6 @@ export function RecordAbsenceDialog({
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
-			const normalized = normalizeAbsenceDurationInput(value);
 			const rangeError = validateRecordAbsenceFormDateRange(value);
 			if (rangeError) {
 				setDateRangeError(rangeError);
@@ -129,18 +157,9 @@ export function RecordAbsenceDialog({
 				return;
 			}
 
-			const result = await recordAbsenceForEmployee({
-				employeeId: employee.id,
-				categoryId: normalized.categoryId,
-				startDate: normalized.startDate,
-				startPeriod: normalized.startPeriod,
-				endDate: normalized.endDate,
-				endPeriod: normalized.endPeriod,
-				durationKind: normalized.durationKind,
-				startTime: normalized.startTime,
-				endTime: normalized.endTime,
-				notes: normalized.notes?.trim() || undefined,
-			});
+			const result = await recordAbsenceForEmployee(
+				buildRecordAbsenceForEmployeeInput(employee.id, value),
+			);
 
 			if (result.success) {
 				toast.success(t("team.absences.recordDialog.success", "Absence recorded"));
@@ -204,7 +223,13 @@ export function RecordAbsenceDialog({
 									<Select
 										name="categoryId"
 										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value)}
+										onValueChange={(value) => {
+											field.handleChange(value);
+											const nextCategory = categories.find((category) => category.id === value);
+											if (nextCategory?.type !== "sick") {
+												form.setFieldValue("sickDetail", "");
+											}
+										}}
 										disabled={categories.length === 0}
 									>
 										<TFormControl hasError={fieldHasError(field)}>
@@ -235,6 +260,59 @@ export function RecordAbsenceDialog({
 								</TFormItem>
 							)}
 						</form.Field>
+
+						<form.Subscribe selector={(state) => state.values.categoryId}>
+							{(categoryId) => {
+								const selectedCategory = categories.find((category) => category.id === categoryId);
+								if (selectedCategory?.type !== "sick") return null;
+
+								return (
+									<form.Field
+										name="sickDetail"
+										validators={{
+											onChange: ({ value }) =>
+												value
+													? undefined
+													: requiredMessage(
+															t("team.absences.recordDialog.sickDetail", "Sick detail"),
+														),
+										}}
+									>
+										{(field) => (
+											<TFormItem>
+												<TFormLabel hasError={fieldHasError(field)} required>
+													{t("team.absences.recordDialog.sickDetail", "Sick detail")}
+												</TFormLabel>
+												<Select
+													name="sickDetail"
+													value={field.state.value}
+													onValueChange={(value) => field.handleChange(value as SickDetail)}
+												>
+													<TFormControl hasError={fieldHasError(field)}>
+														<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+															<SelectValue
+																placeholder={t(
+																	"team.absences.recordDialog.sickDetailPlaceholder",
+																	"Select sick detail…",
+																)}
+															/>
+														</SelectTrigger>
+													</TFormControl>
+													<SelectContent>
+														{sickDetailOptions.map((option) => (
+															<SelectItem key={option.value} value={option.value}>
+																{option.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<TFormMessage field={field} />
+											</TFormItem>
+										)}
+									</form.Field>
+								);
+							}}
+						</form.Subscribe>
 
 						<div className="grid gap-4 sm:grid-cols-2">
 							<form.Field

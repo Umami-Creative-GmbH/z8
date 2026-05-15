@@ -235,8 +235,9 @@ function executeApprovalWithCurrentEmployee<T>(
 			chainResult.kind === "chain_completed" ||
 			chainResult.kind === "chain_rejected";
 
+		let domainResult: T | undefined;
 		if (updateEntity && shouldRunDomainSideEffect) {
-			yield* _(updateEntity(dbService, entityId, currentEmployee));
+			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee));
 		}
 
 		yield* _(
@@ -262,6 +263,8 @@ function executeApprovalWithCurrentEmployee<T>(
 			},
 			`Successfully ${action === "approve" ? "approved" : "rejected"} ${entityType}`,
 		);
+
+		return domainResult;
 	});
 }
 
@@ -307,6 +310,7 @@ export function processApprovalWithCurrentEmployee<T>(
 		return yield* _(
 			Effect.tryPromise({
 				try: async () => {
+					let result: T | undefined;
 					await dbService.db.transaction(async (tx) => {
 						const transactionalDbService: ApprovalDbService = {
 							db: tx,
@@ -328,7 +332,7 @@ export function processApprovalWithCurrentEmployee<T>(
 								options,
 							).pipe(
 								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
-							) as Effect.Effect<void, AnyAppError, never>,
+							) as Effect.Effect<T | undefined, AnyAppError, never>,
 						);
 
 						if (Exit.isFailure(exit)) {
@@ -336,7 +340,10 @@ export function processApprovalWithCurrentEmployee<T>(
 							const defects = [...Cause.defects(exit.cause)];
 							throw failure ?? defects[0] ?? new Error("An error has occurred");
 						}
+
+						result = exit.value;
 					});
+					return result;
 				},
 				catch: (error) => error as AnyAppError,
 			}),
@@ -361,7 +368,7 @@ export async function processApproval<T>(
 		options?: ApprovalActionOptions,
 	) => Effect.Effect<unknown, AnyAppError, unknown>,
 	options?: ApprovalActionOptions,
-): Promise<ServerActionResult<void>> {
+): Promise<ServerActionResult<T | undefined>> {
 	const tracer = trace.getTracer("approvals");
 
 	const effect = tracer.startActiveSpan(
@@ -390,7 +397,7 @@ export async function processApproval<T>(
 				span.setAttribute("user.id", session.user.id);
 				span.setAttribute("approver.id", currentEmployee.id);
 
-				yield* _(
+				const result = yield* _(
 					processApprovalWithCurrentEmployee(
 						dbService,
 						currentEmployee,
@@ -405,6 +412,7 @@ export async function processApproval<T>(
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
+				return result;
 			}).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* (_) {
@@ -425,5 +433,5 @@ export async function processApproval<T>(
 		},
 	);
 
-	return runServerActionSafe(effect as Effect.Effect<void, AnyAppError, never>);
+	return runServerActionSafe(effect as Effect.Effect<T | undefined, AnyAppError, never>);
 }

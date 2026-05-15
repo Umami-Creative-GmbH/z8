@@ -38,6 +38,86 @@ describe("buildPendingApprovalResult", () => {
 		});
 	});
 
+	it("includes sick detail in absence approval payloads", () => {
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: "approval-1",
+					entityId: "absence-1",
+					entityType: "absence_entry",
+					status: "pending",
+					createdAt: new Date("2026-05-01T00:00:00.000Z"),
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map([
+				[
+					"absence-1",
+					{
+						id: "absence-1",
+						startDate: "2026-05-18",
+						startPeriod: "full_day",
+						endDate: "2026-05-18",
+						endPeriod: "full_day",
+						notes: null,
+						sickDetail: "child_sick",
+						category: { name: "Sick Leave", type: "sick", color: null },
+					},
+				],
+			]),
+			periodsById: new Map(),
+		});
+
+		expect(result.absenceApprovals[0]?.absence.sickDetail).toBe("child_sick");
+	});
+
+	it("redacts stale sick detail from non-sick absence approval payloads", () => {
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: "approval-1",
+					entityId: "absence-1",
+					entityType: "absence_entry",
+					status: "pending",
+					createdAt: new Date("2026-05-01T00:00:00.000Z"),
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map([
+				[
+					"absence-1",
+					{
+						id: "absence-1",
+						startDate: "2026-06-01",
+						startPeriod: "full_day",
+						endDate: "2026-06-01",
+						endPeriod: "full_day",
+						notes: null,
+						sickDetail: "with_certificate",
+						category: { name: "Vacation", type: "vacation", color: null },
+					},
+				],
+			]),
+			periodsById: new Map(),
+		});
+
+		expect(result.absenceApprovals[0]?.absence.sickDetail).toBeNull();
+	});
+
 	it("supports travel expense claims in the richer bulk decision contract", () => {
 		const approvalType: ApprovalType = "travel_expense_claim";
 		const decisionActions: ApprovalDecisionAction[] = ["approve", "reject"];

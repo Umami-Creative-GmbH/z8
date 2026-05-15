@@ -394,7 +394,7 @@ function handleRejectedTimeCorrection(
 export async function approveTimeCorrectionEffect(
 	workPeriodId: string,
 ): Promise<ServerActionResult<void>> {
-	return processApproval(
+	const result = await processApproval(
 		"time_entry",
 		workPeriodId,
 		"approve",
@@ -403,13 +403,16 @@ export async function approveTimeCorrectionEffect(
 		undefined,
 		{ transactional: true },
 	);
+
+	if (!result) return { success: true, data: undefined };
+	return result.success ? { success: true, data: undefined } : result;
 }
 
 export async function rejectTimeCorrectionEffect(
 	workPeriodId: string,
 	reason: string,
 ): Promise<ServerActionResult<void>> {
-	return processApproval(
+	const result = await processApproval(
 		"time_entry",
 		workPeriodId,
 		"reject",
@@ -419,4 +422,7 @@ export async function rejectTimeCorrectionEffect(
 		undefined,
 		{ transactional: true },
 	);
+
+	if (!result) return { success: true, data: undefined };
+	return result.success ? { success: true, data: undefined } : result;
 }

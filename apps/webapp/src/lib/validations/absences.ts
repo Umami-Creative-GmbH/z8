@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const sickDetailSchema = z.enum(["child_sick", "with_certificate", "without_certificate", "other"]);
+
 /**
  * Schema for vacation balance information
  */
@@ -21,6 +23,7 @@ export const absenceRequestSchema = z.object({
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
 	notes: z.string().optional(),
+	sickDetail: sickDetailSchema.optional(),
 });
 
 /**
@@ -57,6 +60,7 @@ export const absenceWithCategorySchema = z.object({
 	endDate: z.coerce.date(),
 	status: z.enum(["pending", "approved", "rejected"]),
 	notes: z.string().nullable(),
+	sickDetail: sickDetailSchema.nullable(),
 	category: absenceCategorySchema,
 	approvedBy: z.string().uuid().nullable(),
 	approvedAt: z.coerce.date().nullable(),

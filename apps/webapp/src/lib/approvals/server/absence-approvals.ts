@@ -1,9 +1,12 @@
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { syncCanonicalAbsenceApprovalState } from "@/app/[locale]/(app)/absences/actions.canonical";
+import { syncCanonicalAbsenceApprovalStateInTransaction } from "@/app/[locale]/(app)/absences/actions.canonical";
+import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { absenceEntry, approvalRequest, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
+import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
+import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
@@ -27,7 +30,9 @@ interface AbsenceRecord {
 	organizationId: string;
 	canonicalRecordId: string | null;
 	startDate: string;
+	startPeriod: "full_day" | "am" | "pm";
 	endDate: string;
+	endPeriod: "full_day" | "am" | "pm";
 	status: string;
 	rejectionReason: string | null;
 	category: {
@@ -44,6 +49,53 @@ interface AbsenceRecord {
 			image: string | null;
 		};
 	};
+}
+
+type ApprovedAbsenceResult = {
+	absence: AbsenceRecord;
+	vacationOverrideSummary: VacationOverrideSummary;
+};
+
+const emptyVacationOverrideSummary = (): VacationOverrideSummary => ({
+	updatedAbsenceIds: [],
+	createdAbsenceIds: [],
+	deletedAbsenceIds: [],
+});
+
+async function applySickVacationOverrideOnApproval(
+	dbService: ApprovalDbService,
+	absence: AbsenceRecord,
+	currentEmployee: CurrentApprover,
+): Promise<VacationOverrideSummary> {
+	if (
+		absence.category.type !== "sick" ||
+		absence.startPeriod !== "full_day" ||
+		absence.endPeriod !== "full_day"
+	) {
+		return emptyVacationOverrideSummary();
+	}
+
+	return await adjustVacationAbsencesForSickness({
+		tx: dbService.db,
+		organizationId: absence.organizationId,
+		employeeId: absence.employeeId,
+		sickStartDate: absence.startDate,
+		sickEndDate: absence.endDate,
+		updatedBy: currentEmployee.user.id,
+	});
+}
+
+function queueApprovedAbsenceCalendarSync(result: ApprovedAbsenceResult) {
+	void addCalendarSyncJob({
+		absenceId: result.absence.id,
+		employeeId: result.absence.employeeId,
+		action: "create",
+	});
+
+	enqueueVacationOverrideCalendarSyncJobs({
+		employeeId: result.absence.employeeId,
+		summary: result.vacationOverrideSummary,
+	});
 }
 
 function ensureAbsenceRecord(
@@ -173,6 +225,12 @@ export function approveAbsenceWithCurrentApproverEffect(
 		handleApprovedAbsence,
 		undefined,
 		{ ...options, transactional: true },
+	).pipe(
+		Effect.tap((result) =>
+			result
+				? Effect.sync(() => queueApprovedAbsenceCalendarSync(result))
+				: Effect.void,
+		),
 	);
 }
 
@@ -235,11 +293,6 @@ function notifyApprovedAbsence(
 		approverName: currentEmployee.user.name,
 	});
 
-	void addCalendarSyncJob({
-		absenceId: entityId,
-		employeeId: absence.employeeId,
-		action: "create",
-	});
 }
 
 function notifyRejectedAbsence(
@@ -269,9 +322,12 @@ function handleApprovedAbsence(
 	return Effect.gen(function* (_) {
 		const emailService = yield* _(EmailService);
 		const absence = yield* _(updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"));
+		const vacationOverrideSummary = yield* _(
+			Effect.promise(() => applySickVacationOverrideOnApproval(dbService, absence, currentEmployee)),
+		);
 		yield* _(
 			Effect.promise(() =>
-				syncCanonicalAbsenceApprovalState({
+				syncCanonicalAbsenceApprovalStateInTransaction(dbService.db, {
 					organizationId: absence.organizationId,
 					canonicalRecordId: absence.canonicalRecordId,
 					approvalState: "approved",
@@ -297,7 +353,7 @@ function handleApprovedAbsence(
 		);
 
 		notifyApprovedAbsence(absence, entityId, currentEmployee);
-		return absence;
+		return { absence, vacationOverrideSummary };
 	});
 }
 
@@ -314,7 +370,7 @@ function handleRejectedAbsence(
 		);
 		yield* _(
 			Effect.promise(() =>
-				syncCanonicalAbsenceApprovalState({
+				syncCanonicalAbsenceApprovalStateInTransaction(dbService.db, {
 					organizationId: absence.organizationId,
 					canonicalRecordId: absence.canonicalRecordId,
 					approvalState: "rejected",
@@ -352,7 +408,7 @@ function handleRejectedAbsence(
 }
 
 export async function approveAbsenceEffect(absenceId: string): Promise<ServerActionResult<void>> {
-	return processApproval(
+	const result = await processApproval(
 		"absence_entry",
 		absenceId,
 		"approve",
@@ -361,13 +417,18 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 		undefined,
 		{ transactional: true },
 	);
+	if (!result) return { success: true, data: undefined };
+	if (result.success && result.data) {
+		queueApprovedAbsenceCalendarSync(result.data);
+	}
+	return result.success ? { success: true, data: undefined } : result;
 }
 
 export async function rejectAbsenceEffect(
 	absenceId: string,
 	reason: string,
 ): Promise<ServerActionResult<void>> {
-	return processApproval(
+	const result = await processApproval(
 		"absence_entry",
 		absenceId,
 		"reject",
@@ -377,4 +438,7 @@ export async function rejectAbsenceEffect(
 		undefined,
 		{ transactional: true },
 	);
+
+	if (!result) return { success: true, data: undefined };
+	return result.success ? { success: true, data: undefined } : result;
 }

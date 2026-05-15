@@ -136,6 +136,7 @@ async function handleCreate(
 			endPeriod: absence.absence.endPeriod,
 			status: absence.absence.status as "pending" | "approved" | "rejected",
 			notes: absence.absence.notes,
+			sickDetail: absence.absence.sickDetail,
 			category: {
 				id: absence.category.id,
 				name: absence.category.name,

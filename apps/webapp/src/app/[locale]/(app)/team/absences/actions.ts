@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -23,6 +23,10 @@ import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
 } from "@/lib/absences/duration";
+import {
+	adjustVacationAbsencesForSickness,
+	getBlockingOverlapMessage,
+} from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -32,11 +36,12 @@ import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
 	clampManagerAbsencePage,
-	getAbsenceOverlapConflictMessage,
 	isManagerAbsenceMetricSort,
+	buildManagerAbsenceRowAbsences,
 	managerAbsenceAdvisoryLockKey,
 	type ManagerAbsenceListInput,
 	normalizeManagerAbsenceListParams,
+	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
@@ -211,41 +216,68 @@ export async function recordAbsenceForEmployee(
 			return { success: false, error: "Invalid absence category", code: "NotFoundError" };
 		}
 
+		const sickDetailError = validateManagerAbsenceSickDetail({
+			categoryType: category.type,
+			sickDetail: input.sickDetail,
+		});
+		if (sickDetailError) {
+			return { success: false, error: sickDetailError, code: "ValidationError" };
+		}
+
 		const transactionResult = await db.transaction(async (tx) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
 			);
 
-			const existingAbsences = await tx
-				.select({
-					id: absenceEntry.id,
-					status: absenceEntry.status,
-					startDate: absenceEntry.startDate,
-					endDate: absenceEntry.endDate,
-				})
-				.from(absenceEntry)
-				.where(
-					and(
-						eq(absenceEntry.employeeId, target.id),
-						eq(absenceEntry.organizationId, actor.organizationId),
-						or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
-					),
-				);
-
-			const overlap = existingAbsences.find((absence) =>
-				dateRangesOverlap(
-					normalizedInput.startDate,
-					normalizedInput.endDate,
-					absence.startDate,
-					absence.endDate,
+			const existingAbsences = await tx.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.employeeId, target.id),
+					eq(absenceEntry.organizationId, actor.organizationId),
+					or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
 				),
-			);
-			if (overlap && overlap.status !== "rejected") {
-				return {
-					success: false as const,
-					error: getAbsenceOverlapConflictMessage(overlap.status),
-				};
+				with: { category: true },
+			});
+
+			for (const absence of existingAbsences) {
+				if (
+					!dateRangesOverlap(
+						normalizedInput.startDate,
+						normalizedInput.endDate,
+						absence.startDate,
+						absence.endDate,
+					)
+				) {
+					continue;
+				}
+
+				const overlapMessage = getBlockingOverlapMessage({
+					newCategoryType: category.type,
+					newStartPeriod: normalizedInput.startPeriod,
+					newEndPeriod: normalizedInput.endPeriod,
+					existingStartPeriod: absence.startPeriod,
+					existingEndPeriod: absence.endPeriod,
+					existingStatus: absence.status,
+					existingCountsAgainstVacation: absence.category.countsAgainstVacation,
+				});
+
+				if (overlapMessage) {
+					return { success: false as const, error: overlapMessage };
+				}
 			}
+
+			const vacationOverrideSummary =
+				category.type === "sick" &&
+				normalizedInput.startPeriod === "full_day" &&
+				normalizedInput.endPeriod === "full_day"
+					? await adjustVacationAbsencesForSickness({
+							tx,
+							organizationId: actor.organizationId,
+							employeeId: target.id,
+							sickStartDate: normalizedInput.startDate,
+							sickEndDate: normalizedInput.endDate,
+							updatedBy: actor.userId,
+						})
+					: { updatedAbsenceIds: [], createdAbsenceIds: [], deletedAbsenceIds: [] };
 
 			const entryDuration = toAbsenceEntryDurationFields(normalizedInput);
 			const [absence] = await tx
@@ -259,6 +291,7 @@ export async function recordAbsenceForEmployee(
 					endDate: entryDuration.endDate,
 					endPeriod: entryDuration.endPeriod,
 					notes: normalizedInput.notes,
+					sickDetail: input.sickDetail ?? null,
 					status: "approved",
 					approvedBy: actor.id,
 					approvedAt: currentTimestamp(),
@@ -295,7 +328,7 @@ export async function recordAbsenceForEmployee(
 				.set({ canonicalRecordId: canonicalRecord.id })
 				.where(and(eq(absenceEntry.id, absence.id), eq(absenceEntry.organizationId, actor.organizationId)));
 
-			return { success: true as const, absenceId: absence.id };
+			return { success: true as const, absenceId: absence.id, vacationOverrideSummary };
 		});
 
 		if (!transactionResult.success) {
@@ -312,6 +345,24 @@ export async function recordAbsenceForEmployee(
 				"Failed to queue calendar sync",
 			),
 		);
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.updatedAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "update" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.createdAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "create" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
+
+		for (const absenceId of transactionResult.vacationOverrideSummary.deletedAbsenceIds) {
+			void addCalendarSyncJob({ absenceId, employeeId: target.id, action: "delete" }).catch((error) =>
+				logger.error({ error, absenceId }, "Failed to queue calendar sync for adjusted vacation"),
+			);
+		}
 
 		void notifyEmployeeOfManagerRecordedAbsence({
 			absenceId: transactionResult.absenceId,
@@ -513,6 +564,8 @@ async function addMetricsToRows(
 	}
 
 	const employeeIds = rows.map((row) => row.id);
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
 	const [allowance, employeeAllowances, absences] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
@@ -532,6 +585,8 @@ async function addMetricsToRows(
 			where: and(
 				eq(absenceEntry.organizationId, organizationId),
 				inArray(absenceEntry.employeeId, employeeIds),
+				lte(absenceEntry.startDate, yearEnd),
+				gte(absenceEntry.endDate, yearStart),
 			),
 			with: { category: true },
 		}),
@@ -573,6 +628,7 @@ async function addMetricsToRows(
 			role: row.role,
 			teamName: row.teamName,
 			...metrics,
+			absences: buildManagerAbsenceRowAbsences(absencesByEmployeeId.get(row.id) ?? [], year),
 		};
 	});
 }

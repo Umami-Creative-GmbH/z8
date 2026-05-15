@@ -148,6 +148,13 @@
       "when": 1778836149680,
       "tag": "0020_drop_organization_fiscal_year",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778827536858,
+      "tag": "0021_sick_detail",
+      "breakpoints": true
     }
   ]
 }

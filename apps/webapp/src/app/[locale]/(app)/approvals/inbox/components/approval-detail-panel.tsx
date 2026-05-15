@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
+import { getSickDetailLabel } from "@/lib/absences/sick-details";
+import type { SickDetail } from "@/lib/absences/types";
 import type { ApprovalType, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import { format, formatRelative } from "@/lib/datetime/luxon-utils";
 import { useEmployeeClockStatuses } from "@/lib/query";
@@ -53,6 +55,18 @@ interface TravelExpenseDetailEntity {
 
 function toDate(value: Date | string): Date {
 	return value instanceof Date ? value : new Date(value);
+}
+
+function getAbsenceSickDetail(entity: unknown): SickDetail | null {
+	if (typeof entity !== "object" || entity === null) return null;
+	if (!("category" in entity) || !("sickDetail" in entity)) return null;
+
+	const category = entity.category;
+	if (typeof category !== "object" || category === null || !("type" in category)) return null;
+	if (category.type !== "sick") return null;
+
+	const sickDetail = entity.sickDetail;
+	return typeof sickDetail === "string" ? (sickDetail as SickDetail) : null;
 }
 
 export function normalizeTravelExpenseDetailEntity(entity: TravelExpenseDetailEntity) {
@@ -141,6 +155,8 @@ export function ApprovalDetailPanel({
 		approval.approvalType === "travel_expense_claim" && detail?.entity
 			? normalizeTravelExpenseDetailEntity(detail.entity as TravelExpenseDetailEntity)
 			: null;
+	const sickDetail =
+		approval.approvalType === "absence_entry" ? getAbsenceSickDetail(detail?.entity) : null;
 
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
@@ -202,6 +218,16 @@ export function ApprovalDetailPanel({
 									>
 										{approval.display.badge.label}
 									</Badge>
+								</div>
+							)}
+							{sickDetail && (
+								<div className="flex justify-between gap-4">
+									<span className="text-sm text-muted-foreground">
+										{t("approvals:approvals.sickDetail", "Sick detail")}
+									</span>
+									<span className="text-right text-sm font-medium">
+										{getSickDetailLabel(sickDetail)}
+									</span>
 								</div>
 							)}
 							{travelExpenseDetail ? (

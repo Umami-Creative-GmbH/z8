@@ -10,6 +10,10 @@ import type { AbsenceDurationKind } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 type DayPeriod = "full_day" | "am" | "pm";
+type CanonicalAbsenceTransaction = Pick<
+	Parameters<Parameters<typeof db.transaction>[0]>[0],
+	"update"
+>;
 
 export function mapAbsenceRangeToCanonicalTimestamps(input: {
 	startDate: string;
@@ -49,6 +53,47 @@ export function mapAbsenceRangeToCanonicalTimestamps(input: {
 	};
 }
 
+export function buildCanonicalAbsenceRecordValues(input: {
+	organizationId: string;
+	employeeId: string;
+	absenceCategoryId: string;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+	countsAgainstVacation: boolean;
+	requiresApproval: boolean;
+	createdBy: string;
+	durationKind?: AbsenceDurationKind;
+	startTime?: string;
+	endTime?: string;
+}) {
+	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
+
+	return {
+		timeRecord: {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			recordKind: "absence" as const,
+			startAt,
+			endAt,
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			approvalState: input.requiresApproval ? ("pending" as const) : ("approved" as const),
+			origin: "manual" as const,
+			createdBy: input.createdBy,
+			updatedBy: input.createdBy,
+		},
+		timeRecordAbsence: {
+			organizationId: input.organizationId,
+			recordKind: "absence" as const,
+			absenceCategoryId: input.absenceCategoryId,
+			startPeriod: input.startPeriod,
+			endPeriod: input.endPeriod,
+			countsAgainstVacation: input.countsAgainstVacation,
+		},
+	};
+}
+
 export const canonicalAbsenceRecordClient = {
 	create: async (input: {
 		organizationId: string;
@@ -65,50 +110,92 @@ export const canonicalAbsenceRecordClient = {
 		requiresApproval: boolean;
 		createdBy: string;
 	}) => {
-		const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps({
-			startDate: input.startDate,
-			startPeriod: input.startPeriod,
-			endDate: input.endDate,
-			endPeriod: input.endPeriod,
-			durationKind: input.durationKind,
-			startTime: input.startTime,
-			endTime: input.endTime,
-		});
+		const values = buildCanonicalAbsenceRecordValues(input);
 
 		return db.transaction(async (tx) => {
 			const [record] = await tx
 				.insert(timeRecord)
-				.values({
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					recordKind: "absence",
-					startAt,
-					endAt,
-					durationMinutes: Math.max(
-						0,
-						Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
-					),
-					approvalState: input.requiresApproval ? "pending" : "approved",
-					origin: "manual",
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-				})
+				.values(values.timeRecord)
 				.returning({ id: timeRecord.id });
 
 			await tx.insert(timeRecordAbsence).values({
 				recordId: record.id,
-				organizationId: input.organizationId,
-				recordKind: "absence",
-				absenceCategoryId: input.absenceCategoryId,
-				startPeriod: input.startPeriod,
-				endPeriod: input.endPeriod,
-				countsAgainstVacation: input.countsAgainstVacation,
+				...values.timeRecordAbsence,
 			});
 
 			return record;
 		});
 	},
 };
+
+export async function updateCanonicalAbsenceRangeInTransaction(
+	tx: CanonicalAbsenceTransaction,
+	input: {
+		organizationId: string;
+		canonicalRecordId: string | null;
+		startDate: string;
+		startPeriod: DayPeriod;
+		endDate: string;
+		endPeriod: DayPeriod;
+		updatedBy: string;
+	},
+): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	const canonicalRecordId = input.canonicalRecordId;
+	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
+
+	await tx
+		.update(timeRecord)
+		.set({
+			startAt,
+			endAt,
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			updatedAt: currentTimestamp(),
+			updatedBy: input.updatedBy,
+		})
+		.where(
+			and(
+				eq(timeRecord.id, canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+			),
+		);
+
+	await tx
+		.update(timeRecordAbsence)
+		.set({
+			startPeriod: input.startPeriod,
+			endPeriod: input.endPeriod,
+		})
+		.where(
+			and(
+				eq(timeRecordAbsence.recordId, canonicalRecordId),
+				eq(timeRecordAbsence.organizationId, input.organizationId),
+				eq(timeRecordAbsence.recordKind, "absence"),
+			),
+		);
+}
+
+export async function updateCanonicalAbsenceRange(input: {
+	organizationId: string;
+	canonicalRecordId: string | null;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+	updatedBy: string;
+}): Promise<void> {
+	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	await db.transaction(async (tx) => {
+		await updateCanonicalAbsenceRangeInTransaction(tx, input);
+	});
+}
 
 export async function syncAbsenceRequestToCanonicalRecord(input: {
 	organizationId: string;
@@ -150,11 +237,23 @@ export async function syncCanonicalAbsenceApprovalState(input: {
 	approvalState: "approved" | "rejected";
 	updatedBy: string;
 }): Promise<void> {
+	await syncCanonicalAbsenceApprovalStateInTransaction(db, input);
+}
+
+export async function syncCanonicalAbsenceApprovalStateInTransaction(
+	tx: CanonicalAbsenceTransaction,
+	input: {
+		organizationId: string;
+		canonicalRecordId: string | null;
+		approvalState: "approved" | "rejected";
+		updatedBy: string;
+	},
+): Promise<void> {
 	if (!input.canonicalRecordId) {
 		return;
 	}
 
-	await db
+	await tx
 		.update(timeRecord)
 		.set({
 			approvalState: input.approvalState,

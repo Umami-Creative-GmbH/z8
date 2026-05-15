@@ -133,6 +133,12 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
 
 // Day period for half-day absences
 export const dayPeriodEnum = pgEnum("day_period", ["full_day", "am", "pm"]);
+export const sickDetailEnum = pgEnum("sick_detail", [
+	"child_sick",
+	"with_certificate",
+	"without_certificate",
+	"other",
+]);
 
 // Notification enums
 export const notificationTypeEnum = pgEnum("notification_type", [
