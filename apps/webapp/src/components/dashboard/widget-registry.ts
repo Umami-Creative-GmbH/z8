@@ -172,7 +172,7 @@ export function normalizeWidgetLayout(layout: DashboardWidgetOrder): Required<Da
 	return {
 		order: normalizeWidgetOrder(layout.order),
 		hidden: normalizeHiddenWidgets(layout.hidden),
-		version: layout.version,
+		version: 1,
 	};
 }
 

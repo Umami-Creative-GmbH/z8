@@ -35,6 +35,10 @@ describe("dashboard widget registry", () => {
 		});
 	});
 
+	it("normalizes layout version to the current version", () => {
+		expect(normalizeWidgetLayout({ order: ["quick-stats"], version: 999 }).version).toBe(1);
+	});
+
 	it("removes unknown and duplicate hidden widget ids", () => {
 		expect(
 			normalizeWidgetLayout({
