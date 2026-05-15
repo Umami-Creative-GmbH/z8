@@ -167,9 +167,10 @@ export function normalizeHiddenWidgets(hiddenWidgets: string[] = []): WidgetId[]
  */
 export function normalizeWidgetLayout(
 	layout: DashboardWidgetOrder | null | undefined,
-): Required<DashboardWidgetOrder> & {
+): Omit<Required<DashboardWidgetOrder>, "hidden" | "order" | "version"> & {
 	order: WidgetId[];
 	hidden: WidgetId[];
+	version: 1;
 } {
 	if (!layout) {
 		return {

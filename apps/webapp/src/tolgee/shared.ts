@@ -230,7 +230,7 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
  */
 export async function loadNamespaces(
 	locale: string,
-	namespaces: Namespace[],
+	namespaces: readonly Namespace[],
 ): Promise<TolgeeStaticData> {
 	const lang = ALL_LANGUAGES.includes(locale) ? locale : DEFAULT_LANGUAGE;
 

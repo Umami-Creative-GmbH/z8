@@ -25,7 +25,7 @@ vi.mock("@/app/[locale]/(app)/settings/vacation/actions", () => ({
 }));
 
 vi.mock("@tolgee/react", () => ({
-	useLocale: () => "de",
+	useTolgee: () => ({ getLanguage: () => "de" }),
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
