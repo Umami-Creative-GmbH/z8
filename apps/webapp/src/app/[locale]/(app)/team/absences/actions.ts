@@ -132,7 +132,16 @@ export async function recordAbsenceForEmployee(
 
 		const actor = actorResult.data;
 		const normalizedInput = normalizeAbsenceDurationInput(input);
-		const dateError = validateRecordAbsenceDateRange(input);
+		const dateError = validateRecordAbsenceDateRange({
+			categoryId: normalizedInput.categoryId,
+			startDate: normalizedInput.startDate,
+			startPeriod: normalizedInput.startPeriod,
+			endDate: normalizedInput.endDate,
+			endPeriod: normalizedInput.endPeriod,
+			durationKind: input.durationKind,
+			startTime: normalizedInput.startTime,
+			endTime: normalizedInput.endTime,
+		});
 		if (dateError) {
 			return { success: false, error: dateError, code: "ValidationError" };
 		}

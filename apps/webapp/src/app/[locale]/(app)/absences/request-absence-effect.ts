@@ -509,7 +509,7 @@ function requestAbsenceWithResolverEffect(
 					"Processing absence request",
 				);
 
-				yield* _(validateRequestDates(data));
+				yield* _(validateRequestDates(normalizedData));
 				yield* _(checkForOverlappingAbsences(dbService, currentEmployee.id, normalizedData));
 
 				const category = yield* _(
