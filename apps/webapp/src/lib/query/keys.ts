@@ -94,6 +94,17 @@ export const queryKeys = {
 			["employees", "detail", employeeId, "employment-history"] as const,
 	},
 
+	// Employee clock statuses
+	employeeClockStatuses: {
+		all: ["employee-clock-statuses"] as const,
+		list: (orgId: string, employeeIds: string[]) =>
+			[
+				"employee-clock-statuses",
+				orgId,
+				[...new Set(employeeIds.map((id) => id.trim()).filter(Boolean))].sort(),
+			] as const,
+	},
+
 	// Employee Select (for unified employee selection component)
 	employeeSelect: {
 		all: ["employee-select"] as const,
