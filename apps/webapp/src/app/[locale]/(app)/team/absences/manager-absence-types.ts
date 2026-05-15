@@ -16,6 +16,16 @@ export interface ManagerAbsenceEmployeeTarget {
 	isActive: boolean;
 }
 
+export interface ManagerAbsenceRowAbsence {
+	id: string;
+	category: {
+		name: string;
+		type: string;
+		color: string | null;
+	};
+	sickDetail: SickDetail | null;
+}
+
 export interface ManagerAbsenceEmployeeRow {
 	id: string;
 	userId: string;
@@ -30,6 +40,7 @@ export interface ManagerAbsenceEmployeeRow {
 	pendingVacationDays: number;
 	remainingVacationDays: number;
 	sickDays: number;
+	absences?: ManagerAbsenceRowAbsence[];
 }
 
 export interface ManagerAbsenceListParams {

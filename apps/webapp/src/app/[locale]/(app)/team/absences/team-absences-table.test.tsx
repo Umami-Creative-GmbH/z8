@@ -137,6 +137,48 @@ describe("TeamAbsencesTable", () => {
 		expect(screen.getByText("Record absence for Ada Lovelace")).toBeTruthy();
 	});
 
+	it("shows sick detail labels for sick absences in employee rows", () => {
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+							absences: [
+								{
+									id: "absence-1",
+									category: { name: "Sick Leave", type: "sick", color: null },
+									sickDetail: "child_sick",
+								},
+							],
+						},
+					],
+					total: 1,
+					page: 1,
+					pageSize: 10,
+					year: 2026,
+					pageCount: 1,
+				}}
+				categories={[]}
+				search=""
+			/>,
+		);
+
+		expect(screen.getByText("Child sick")).toBeTruthy();
+	});
+
 	it("disables pagination controls at boundaries and routes to the next page", () => {
 		render(
 			<TeamAbsencesTable
