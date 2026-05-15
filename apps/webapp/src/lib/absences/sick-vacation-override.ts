@@ -168,6 +168,8 @@ export function getBlockingOverlapMessage(input: {
 	newCategoryType: string;
 	newStartPeriod: DayPeriod;
 	newEndPeriod: DayPeriod;
+	existingStartPeriod: DayPeriod;
+	existingEndPeriod: DayPeriod;
 	existingStatus: AbsenceStatus;
 	existingCountsAgainstVacation: boolean;
 }): string | null {
@@ -175,6 +177,8 @@ export function getBlockingOverlapMessage(input: {
 		input.newCategoryType === "sick" &&
 		input.newStartPeriod === "full_day" &&
 		input.newEndPeriod === "full_day" &&
+		input.existingStartPeriod === "full_day" &&
+		input.existingEndPeriod === "full_day" &&
 		input.existingCountsAgainstVacation;
 
 	if (isEligibleSickVacationOverride) return null;
@@ -209,6 +213,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 
 	for (const vacation of overlappingVacations) {
 		if (!vacation.category.countsAgainstVacation) continue;
+		if (vacation.startPeriod !== "full_day" || vacation.endPeriod !== "full_day") continue;
 		if (!dateRangesOverlap(input.sickStartDate, input.sickEndDate, vacation.startDate, vacation.endDate)) {
 			continue;
 		}

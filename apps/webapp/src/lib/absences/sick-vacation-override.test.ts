@@ -13,7 +13,9 @@ function createFakeTx(input: {
 		organizationId: string;
 		categoryId: string;
 		startDate: string;
+		startPeriod: "full_day" | "am" | "pm";
 		endDate: string;
+		endPeriod: "full_day" | "am" | "pm";
 		status: "pending" | "approved";
 		notes: string | null;
 		approvedBy: string | null;
@@ -86,7 +88,9 @@ function vacation(overrides: Partial<Parameters<typeof createFakeTx>[0]["absence
 		organizationId: "org-1",
 		categoryId: "category-1",
 		startDate: "2026-05-18",
+		startPeriod: "full_day" as const,
 		endDate: "2026-05-22",
+		endPeriod: "full_day" as const,
 		status: "approved" as const,
 		notes: "planned vacation",
 		approvedBy: "manager-1",
@@ -179,10 +183,26 @@ describe("getBlockingOverlapMessage", () => {
 				newCategoryType: "sick",
 				newStartPeriod: "full_day",
 				newEndPeriod: "full_day",
+				existingStartPeriod: "full_day",
+				existingEndPeriod: "full_day",
 				existingStatus: "approved",
 				existingCountsAgainstVacation: true,
 			}),
 		).toBeNull();
+	});
+
+	it("blocks full-day sick overlap with half-day vacation", () => {
+		expect(
+			getBlockingOverlapMessage({
+				newCategoryType: "sick",
+				newStartPeriod: "full_day",
+				newEndPeriod: "full_day",
+				existingStartPeriod: "am",
+				existingEndPeriod: "am",
+				existingStatus: "approved",
+				existingCountsAgainstVacation: true,
+			}),
+		).toBe("Absence request overlaps with an existing approved absence");
 	});
 
 	it("blocks half-day sick overlap with vacation", () => {
@@ -191,6 +211,8 @@ describe("getBlockingOverlapMessage", () => {
 				newCategoryType: "sick",
 				newStartPeriod: "am",
 				newEndPeriod: "am",
+				existingStartPeriod: "full_day",
+				existingEndPeriod: "full_day",
 				existingStatus: "approved",
 				existingCountsAgainstVacation: true,
 			}),
@@ -203,6 +225,8 @@ describe("getBlockingOverlapMessage", () => {
 				newCategoryType: "sick",
 				newStartPeriod: "full_day",
 				newEndPeriod: "full_day",
+				existingStartPeriod: "full_day",
+				existingEndPeriod: "full_day",
 				existingStatus: "pending",
 				existingCountsAgainstVacation: false,
 			}),
@@ -246,6 +270,30 @@ describe("adjustVacationAbsencesForSickness", () => {
 				}),
 			]),
 		);
+	});
+
+	it("does not adjust half-day vacation overlaps", async () => {
+		const { tx, calls } = createFakeTx({
+			absences: [vacation({ startPeriod: "am", endPeriod: "am" })],
+		});
+
+		const summary = await adjustVacationAbsencesForSickness({
+			tx,
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			sickStartDate: "2026-05-18",
+			sickEndDate: "2026-05-19",
+			updatedBy: "user-1",
+		});
+
+		expect(summary).toEqual({
+			updatedAbsenceIds: [],
+			createdAbsenceIds: [],
+			deletedAbsenceIds: [],
+		});
+		expect(calls.updates).toEqual([]);
+		expect(calls.inserts).toEqual([]);
+		expect(calls.deletes).toEqual([]);
 	});
 
 	it("deletes fully covered vacation approval, absence, and then linked canonical record", async () => {

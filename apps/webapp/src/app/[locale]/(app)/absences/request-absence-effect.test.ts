@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { validateAbsenceSickDetail } from "./request-absence-effect";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	createSickDetailValidationError,
+	enqueueVacationOverrideCalendarSyncJobs,
+	validateAbsenceSickDetail,
+} from "./request-absence-effect";
+
+const addCalendarSyncJobMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -8,6 +14,14 @@ vi.mock("@/lib/auth", () => ({
 		},
 	},
 }));
+
+vi.mock("@/lib/queue", () => ({
+	addCalendarSyncJob: addCalendarSyncJobMock,
+}));
+
+beforeEach(() => {
+	addCalendarSyncJobMock.mockClear();
+});
 
 describe("validateAbsenceSickDetail", () => {
 	it("requires sick detail for sick requests", () => {
@@ -26,5 +40,44 @@ describe("validateAbsenceSickDetail", () => {
 		expect(
 			validateAbsenceSickDetail({ categoryType: "sick", sickDetail: "without_certificate" }),
 		).toBeNull();
+	});
+});
+
+describe("createSickDetailValidationError", () => {
+	it("does not expose the submitted sick detail as the validation value", () => {
+		const error = createSickDetailValidationError("Sick detail can only be used for sick absences");
+
+		expect(error.field).toBe("sickDetail");
+		expect(error.value).toBe("[redacted]");
+	});
+});
+
+describe("enqueueVacationOverrideCalendarSyncJobs", () => {
+	it("queues calendar sync for updated, created, and deleted vacation overrides", () => {
+		enqueueVacationOverrideCalendarSyncJobs({
+			employeeId: "employee-1",
+			summary: {
+				updatedAbsenceIds: ["updated-1"],
+				createdAbsenceIds: ["created-1"],
+				deletedAbsenceIds: ["deleted-1"],
+			},
+		});
+
+		expect(addCalendarSyncJobMock).toHaveBeenCalledTimes(3);
+		expect(addCalendarSyncJobMock).toHaveBeenNthCalledWith(1, {
+			absenceId: "updated-1",
+			employeeId: "employee-1",
+			action: "update",
+		});
+		expect(addCalendarSyncJobMock).toHaveBeenNthCalledWith(2, {
+			absenceId: "created-1",
+			employeeId: "employee-1",
+			action: "create",
+		});
+		expect(addCalendarSyncJobMock).toHaveBeenNthCalledWith(3, {
+			absenceId: "deleted-1",
+			employeeId: "employee-1",
+			action: "delete",
+		});
 	});
 });

@@ -15,6 +15,7 @@ import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/abse
 import {
 	adjustVacationAbsencesForSickness,
 	getBlockingOverlapMessage,
+	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
 import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
 import type { AbsenceRequest } from "@/lib/absences/types";
@@ -62,6 +63,31 @@ export function validateAbsenceSickDetail(input: {
 	sickDetail?: AbsenceRequest["sickDetail"] | null;
 }): string | null {
 	return validateSickDetailForCategory(input);
+}
+
+export function createSickDetailValidationError(message: string): ValidationError {
+	return new ValidationError({
+		message,
+		field: "sickDetail",
+		value: "[redacted]",
+	});
+}
+
+export function enqueueVacationOverrideCalendarSyncJobs(input: {
+	employeeId: string;
+	summary: VacationOverrideSummary;
+}) {
+	for (const absenceId of input.summary.updatedAbsenceIds) {
+		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "update" });
+	}
+
+	for (const absenceId of input.summary.createdAbsenceIds) {
+		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "create" });
+	}
+
+	for (const absenceId of input.summary.deletedAbsenceIds) {
+		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "delete" });
+	}
 }
 
 function validateRequestDates(data: AbsenceRequest) {
@@ -117,6 +143,8 @@ function checkForOverlappingAbsences(
 				newCategoryType: category.type,
 				newStartPeriod: data.startPeriod,
 				newEndPeriod: data.endPeriod,
+				existingStartPeriod: existing.startPeriod,
+				existingEndPeriod: existing.endPeriod,
 				existingStatus: existing.status,
 				existingCountsAgainstVacation: existing.category.countsAgainstVacation,
 			});
@@ -213,12 +241,18 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 
 	return dbService.query("createRequestedAbsenceRecords", async () => {
 		return await dbService.db.transaction(async (tx) => {
+			let vacationOverrideSummary: VacationOverrideSummary = {
+				updatedAbsenceIds: [],
+				createdAbsenceIds: [],
+				deletedAbsenceIds: [],
+			};
+
 			if (
 				category.type === "sick" &&
 				data.startPeriod === "full_day" &&
 				data.endPeriod === "full_day"
 			) {
-				await adjustVacationAbsencesForSickness({
+				vacationOverrideSummary = await adjustVacationAbsencesForSickness({
 					tx,
 					organizationId: currentEmployee.organizationId,
 					employeeId: currentEmployee.id,
@@ -277,7 +311,7 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 					),
 				);
 
-			return { ...newAbsence, canonicalRecordId: canonicalRecord.id };
+			return { ...newAbsence, canonicalRecordId: canonicalRecord.id, vacationOverrideSummary };
 		});
 	});
 }
@@ -534,13 +568,7 @@ function requestAbsenceWithResolverEffect(
 				});
 				if (sickDetailError) {
 					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: sickDetailError,
-								field: "sickDetail",
-								value: data.sickDetail,
-							}),
-						),
+						Effect.fail(createSickDetailValidationError(sickDetailError)),
 					);
 				}
 
@@ -581,6 +609,10 @@ function requestAbsenceWithResolverEffect(
 				span.setAttribute("absence.id", newAbsence.id);
 				span.setAttribute("absence.status", newAbsence.status);
 				const canonicalRecordId = newAbsence.canonicalRecordId;
+				enqueueVacationOverrideCalendarSyncJobs({
+					employeeId: currentEmployee.id,
+					summary: newAbsence.vacationOverrideSummary,
+				});
 
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 
