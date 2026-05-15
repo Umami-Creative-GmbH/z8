@@ -136,7 +136,15 @@ export function calculateAbsenceDurationDays(
 	const normalized = normalizeAbsenceDurationInput(input);
 
 	if (normalized.durationKind === "partial_day" && hasExplicitPartialTimes(normalized)) {
-		return 0.5;
+		return calculateBusinessDaysWithHalfDays(
+			normalized.startDate,
+			"am",
+			normalized.startDate,
+			"am",
+			holidays,
+		) > 0
+			? 0.5
+			: 0;
 	}
 
 	if (normalized.durationKind === "partial_day") {

@@ -70,6 +70,38 @@ describe("buildAbsencePlanPreview", () => {
 		expect(preview.balance?.remainingAfterRequest).toBe(9.5);
 	});
 
+	it("does not reduce balance for explicit partial-day time requests on holidays", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			request: {
+				categoryId: "cat-vacation",
+				startDate: "2026-05-15",
+				startPeriod: "am",
+				endDate: "2026-05-15",
+				endPeriod: "am",
+				durationKind: "partial_day",
+				startTime: "09:00",
+				endTime: "13:00",
+			},
+			vacationBalance: {
+				...baseInput.vacationBalance!,
+				remainingDays: 10,
+			},
+			holidays: [
+				{
+					id: "holiday-1",
+					name: "Liberation Day",
+					startDate: new Date("2026-05-15T00:00:00.000Z"),
+					endDate: new Date("2026-05-15T00:00:00.000Z"),
+					categoryId: "public",
+				},
+			],
+		});
+
+		expect(preview.requestedDays).toBe(0);
+		expect(preview.balance?.remainingAfterRequest).toBe(10);
+	});
+
 	it("does not reduce balance for non-vacation categories", () => {
 		const preview = buildAbsencePlanPreview({
 			...baseInput,

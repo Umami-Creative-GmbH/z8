@@ -38,6 +38,44 @@ describe("absence duration helpers", () => {
 		expect(calculateAbsenceDurationDays(normalized)).toBe(0.5);
 	});
 
+	it("excludes explicit partial-day absences on holidays", () => {
+		const normalized = normalizeAbsenceDurationInput({
+			categoryId: "category-1",
+			startDate: "2026-05-15",
+			endDate: "2026-05-15",
+			durationKind: "partial_day",
+			startTime: "09:00",
+			endTime: "13:00",
+			notes: "",
+		});
+
+		expect(
+			calculateAbsenceDurationDays(normalized, [
+				{
+					id: "holiday-1",
+					name: "Liberation Day",
+					startDate: new Date("2026-05-15T00:00:00.000Z"),
+					endDate: new Date("2026-05-15T23:59:59.999Z"),
+					categoryId: "public",
+				},
+			]),
+		).toBe(0);
+	});
+
+	it("excludes explicit partial-day absences on weekends", () => {
+		const normalized = normalizeAbsenceDurationInput({
+			categoryId: "category-1",
+			startDate: "2026-05-16",
+			endDate: "2026-05-16",
+			durationKind: "partial_day",
+			startTime: "09:00",
+			endTime: "13:00",
+			notes: "",
+		});
+
+		expect(calculateAbsenceDurationDays(normalized)).toBe(0);
+	});
+
 	it("maps same-day partial-day times to UTC canonical timestamps", () => {
 		const mapped = mapAbsenceDurationToCanonicalTimestamps(
 			normalizeAbsenceDurationInput({
