@@ -72,7 +72,7 @@ export function buildManagerAbsenceRowAbsences(
 				type: absence.category.type,
 				color: absence.category.color,
 			},
-			sickDetail: absence.sickDetail,
+			sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
 		}));
 }
 

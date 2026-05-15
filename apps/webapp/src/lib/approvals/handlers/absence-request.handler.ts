@@ -79,6 +79,13 @@ interface AbsenceWithRelations {
 	};
 }
 
+export function redactNonSickAbsenceSickDetail<T extends AbsenceWithRelations>(absence: T): T {
+	return {
+		...absence,
+		sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
+	};
+}
+
 /**
  * Absence Request Approval Handler
  */
@@ -110,7 +117,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 
 					const map = new Map<string, AbsenceWithRelations>();
 					for (const absence of absences) {
-						map.set(absence.id, absence as AbsenceWithRelations);
+						map.set(absence.id, redactNonSickAbsenceSickDetail(absence as AbsenceWithRelations));
 					}
 					return map;
 				}),
@@ -300,7 +307,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> = 
 					sla: buildSLAInfo(slaDeadline),
 					display: AbsenceRequestHandler.getDisplayMetadata(absence),
 				},
-				entity: absence,
+				entity: redactNonSickAbsenceSickDetail(absence),
 				timeline,
 			} as ApprovalDetail<AbsenceWithRelations>;
 		}),

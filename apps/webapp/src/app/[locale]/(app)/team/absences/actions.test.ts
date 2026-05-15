@@ -83,6 +83,35 @@ describe("manager absence server action helpers", () => {
 		]);
 	});
 
+	it("redacts stale sick detail from non-sick absence row payloads", () => {
+		const rows = buildManagerAbsenceRowAbsences([
+			{
+				id: "absence-vacation",
+				employeeId: "employee-1",
+				startDate: "2026-06-01",
+				startPeriod: "full_day",
+				endDate: "2026-06-01",
+				endPeriod: "full_day",
+				status: "approved",
+				notes: null,
+				sickDetail: "with_certificate",
+				approvedBy: "manager-1",
+				approvedAt: new Date("2026-06-01T00:00:00.000Z"),
+				rejectionReason: null,
+				createdAt: new Date("2026-05-01T00:00:00.000Z"),
+				category: {
+					id: "category-vacation",
+					name: "Vacation",
+					type: "vacation",
+					color: null,
+					countsAgainstVacation: true,
+				},
+			},
+		], 2026);
+
+		expect(rows[0]?.sickDetail).toBeNull();
+	});
+
 	it("normalizes list params to safe server-backed pagination defaults", () => {
 		expect(
 			normalizeManagerAbsenceListParams({

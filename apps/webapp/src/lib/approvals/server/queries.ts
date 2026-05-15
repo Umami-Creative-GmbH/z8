@@ -96,7 +96,7 @@ export function buildPendingApprovalResult({
 					endDate: absence.endDate,
 					endPeriod: absence.endPeriod,
 					notes: absence.notes,
-					sickDetail: absence.sickDetail,
+					sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
 					category: {
 						name: absence.category.name,
 						type: absence.category.type,
