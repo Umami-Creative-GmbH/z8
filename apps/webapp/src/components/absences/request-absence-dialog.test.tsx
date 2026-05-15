@@ -293,6 +293,15 @@ describe("RequestAbsenceDialog", () => {
 		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "13:00" } });
 		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "09:00" } });
 
+		const validationError = screen.getByRole("alert");
+		expect(validationError.getAttribute("aria-live")).toBe("polite");
+		expect(validationError.textContent).toContain(
+			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		);
+		expect(screen.getByRole("button", { name: "Submit Request" }).hasAttribute("disabled")).toBe(
+			true,
+		);
+
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());

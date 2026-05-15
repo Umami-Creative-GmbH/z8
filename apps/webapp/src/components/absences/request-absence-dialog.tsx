@@ -414,6 +414,24 @@ export function RequestAbsenceDialog({
 							}
 						</form.Subscribe>
 
+						<form.Subscribe selector={(state) => state.values}>
+							{(values) => {
+								const validationError = validateAbsenceDurationInput(values);
+
+								if (!validationError) return null;
+
+								return (
+									<p
+										aria-live="polite"
+										className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
+										role="alert"
+									>
+										{validationError}
+									</p>
+								);
+							}}
+						</form.Subscribe>
+
 						{/* Business Days Calculation */}
 						<form.Subscribe selector={(state) => state.values}>
 							{(values) => {
