@@ -70,6 +70,7 @@ export function useWidgetOrder() {
 
 	// Mutation for saving widget layout
 	const { mutate: saveLayout, isPending: isSaving } = useMutation({
+		scope: { id: "dashboard-layout" },
 		mutationFn: async (layout: WidgetLayout) => {
 			const result = await updateWidgetOrder(layout);
 			if (!result.success) {
