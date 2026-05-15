@@ -12,6 +12,9 @@ const { createMock, destroyMock, instances } = vi.hoisted(() => ({
 			clock?: {
 				type?: "12h" | "24h";
 			};
+			ui?: {
+				appendModalSelector?: string;
+			};
 			callbacks?: {
 				onConfirm?: (data: {
 					hour?: string | null;
@@ -161,5 +164,15 @@ describe("TimeInput", () => {
 		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "08:15" } });
 
 		expect(handleChange).not.toHaveBeenCalled();
+	});
+
+	it("appends the picker modal inside the component subtree", () => {
+		render(<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />);
+
+		const input = screen.getByLabelText("Start time");
+		const modalRootSelector = instances[0]?.options.ui?.appendModalSelector;
+
+		expect(modalRootSelector).toMatch(/^#time-input-/);
+		expect(document.querySelector(modalRootSelector ?? "")?.contains(input)).toBe(true);
 	});
 });
