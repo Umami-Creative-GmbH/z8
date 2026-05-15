@@ -44,6 +44,7 @@ import {
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
 
@@ -222,9 +223,13 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 			};
 
 			if (
-				category.type === "sick" &&
-				data.startPeriod === "full_day" &&
-				data.endPeriod === "full_day"
+				shouldApplySickVacationOverrideImmediately({
+					categoryType: category.type,
+					startPeriod: data.startPeriod,
+					endPeriod: data.endPeriod,
+					requiresApproval: category.requiresApproval,
+					hasManagerApprovalWorkflow: Boolean(currentEmployee.managerId),
+				})
 			) {
 				vacationOverrideSummary = await adjustVacationAbsencesForSickness({
 					tx,

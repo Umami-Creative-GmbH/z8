@@ -221,10 +221,6 @@ export function getBlockingOverlapMessage(input: {
 		input.existingEndPeriod === "full_day" &&
 		input.existingCountsAgainstVacation;
 
-	if (isEligibleSickVacationOverride && input.incomingRequiresApproval && input.hasManagerApprovalWorkflow) {
-		return "Sick absence requires approval before it can override vacation";
-	}
-
 	if (isEligibleSickVacationOverride) return null;
 
 	return input.existingStatus === "pending"

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
 
@@ -79,5 +80,31 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 			employeeId: "employee-1",
 			action: "delete",
 		});
+	});
+});
+
+describe("shouldApplySickVacationOverrideImmediately", () => {
+	it("defers approval-required employee sick overrides until approval", () => {
+		expect(
+			shouldApplySickVacationOverrideImmediately({
+				categoryType: "sick",
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+				requiresApproval: true,
+				hasManagerApprovalWorkflow: true,
+			}),
+		).toBe(false);
+	});
+
+	it("applies auto-approved sick overrides immediately", () => {
+		expect(
+			shouldApplySickVacationOverrideImmediately({
+				categoryType: "sick",
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+				requiresApproval: false,
+				hasManagerApprovalWorkflow: false,
+			}),
+		).toBe(true);
 	});
 });

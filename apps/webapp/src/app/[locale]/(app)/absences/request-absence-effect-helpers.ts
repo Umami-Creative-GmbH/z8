@@ -1,6 +1,6 @@
 import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
-import type { AbsenceRequest } from "@/lib/absences/types";
+import type { AbsenceRequest, DayPeriod } from "@/lib/absences/types";
 import { ValidationError } from "@/lib/effect/errors";
 import { addCalendarSyncJob } from "@/lib/queue";
 
@@ -17,6 +17,21 @@ export function createSickDetailValidationError(message: string): ValidationErro
 		field: "sickDetail",
 		value: "[redacted]",
 	});
+}
+
+export function shouldApplySickVacationOverrideImmediately(input: {
+	categoryType: string;
+	startPeriod: DayPeriod;
+	endPeriod: DayPeriod;
+	requiresApproval: boolean;
+	hasManagerApprovalWorkflow: boolean;
+}): boolean {
+	return (
+		input.categoryType === "sick" &&
+		input.startPeriod === "full_day" &&
+		input.endPeriod === "full_day" &&
+		!(input.requiresApproval && input.hasManagerApprovalWorkflow)
+	);
 }
 
 export function enqueueVacationOverrideCalendarSyncJobs(input: {

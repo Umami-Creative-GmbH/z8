@@ -191,7 +191,7 @@ describe("getBlockingOverlapMessage", () => {
 		).toBeNull();
 	});
 
-	it("blocks pending-approval sick overlap with vacation before approval", () => {
+	it("allows pending-approval sick overlap with vacation so it can be deferred until approval", () => {
 		expect(
 			getBlockingOverlapMessage({
 				newCategoryType: "sick",
@@ -204,7 +204,7 @@ describe("getBlockingOverlapMessage", () => {
 				incomingRequiresApproval: true,
 				hasManagerApprovalWorkflow: true,
 			}),
-		).toBe("Sick absence requires approval before it can override vacation");
+		).toBeNull();
 	});
 
 	it("allows auto-approved sick overlap with vacation", () => {

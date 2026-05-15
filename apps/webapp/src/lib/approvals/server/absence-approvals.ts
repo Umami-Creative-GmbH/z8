@@ -4,6 +4,8 @@ import { DateTime } from "luxon";
 import { syncCanonicalAbsenceApprovalState } from "@/app/[locale]/(app)/absences/actions.canonical";
 import { absenceEntry, approvalRequest, holiday } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
+import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
+import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
@@ -27,7 +29,9 @@ interface AbsenceRecord {
 	organizationId: string;
 	canonicalRecordId: string | null;
 	startDate: string;
+	startPeriod: "full_day" | "am" | "pm";
 	endDate: string;
+	endPeriod: "full_day" | "am" | "pm";
 	status: string;
 	rejectionReason: string | null;
 	category: {
@@ -44,6 +48,34 @@ interface AbsenceRecord {
 			image: string | null;
 		};
 	};
+}
+
+async function applySickVacationOverrideOnApproval(
+	dbService: ApprovalDbService,
+	absence: AbsenceRecord,
+	currentEmployee: CurrentApprover,
+) {
+	if (
+		absence.category.type !== "sick" ||
+		absence.startPeriod !== "full_day" ||
+		absence.endPeriod !== "full_day"
+	) {
+		return;
+	}
+
+	const summary = await adjustVacationAbsencesForSickness({
+		tx: dbService.db,
+		organizationId: absence.organizationId,
+		employeeId: absence.employeeId,
+		sickStartDate: absence.startDate,
+		sickEndDate: absence.endDate,
+		updatedBy: currentEmployee.user.id,
+	});
+
+	enqueueVacationOverrideCalendarSyncJobs({
+		employeeId: absence.employeeId,
+		summary,
+	});
 }
 
 function ensureAbsenceRecord(
@@ -269,6 +301,7 @@ function handleApprovedAbsence(
 	return Effect.gen(function* (_) {
 		const emailService = yield* _(EmailService);
 		const absence = yield* _(updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"));
+		yield* _(Effect.promise(() => applySickVacationOverrideOnApproval(dbService, absence, currentEmployee)));
 		yield* _(
 			Effect.promise(() =>
 				syncCanonicalAbsenceApprovalState({
