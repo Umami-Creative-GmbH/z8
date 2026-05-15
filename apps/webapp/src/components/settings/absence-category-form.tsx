@@ -33,12 +33,15 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 
 export interface AbsenceCategoryForSettings {
 	id: string;
 	type: AbsenceCategoryType;
 	name: string;
 	description: string | null;
+	nameTranslations: Record<string, string> | null;
+	descriptionTranslations: Record<string, string> | null;
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
@@ -58,6 +61,8 @@ export type AbsenceCategoryFormValues = {
 	name: string;
 	type: AbsenceCategoryType;
 	description: string;
+	nameTranslations: Record<string, string>;
+	descriptionTranslations: Record<string, string>;
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
@@ -71,6 +76,8 @@ export const defaultAbsenceCategoryFormValues: AbsenceCategoryFormValues = {
 	name: "",
 	type: "custom",
 	description: "",
+	nameTranslations: {},
+	descriptionTranslations: {},
 	requiresWorkTime: false,
 	requiresApproval: true,
 	countsAgainstVacation: false,
@@ -78,28 +85,54 @@ export const defaultAbsenceCategoryFormValues: AbsenceCategoryFormValues = {
 	isActive: true,
 };
 
-const absenceCategoryTypeOptions: Array<{ value: AbsenceCategoryType; label: string }> = [
-	{ value: "custom", label: "Custom" },
-	{ value: "vacation", label: "Vacation" },
-	{ value: "sick", label: "Sick Leave" },
-	{ value: "home_office", label: "Home Office" },
-	{ value: "personal", label: "Personal" },
-	{ value: "unpaid", label: "Unpaid" },
-	{ value: "parental", label: "Parental Leave" },
-	{ value: "bereavement", label: "Bereavement" },
+const absenceCategoryTypeOptions: Array<{
+	value: AbsenceCategoryType;
+	labelKey: string;
+	fallback: string;
+}> = [
+	{ value: "custom", labelKey: "settings.absenceCategories.form.typeCustom", fallback: "Custom" },
+	{ value: "vacation", labelKey: "settings.absenceCategories.form.typeVacation", fallback: "Vacation" },
+	{ value: "sick", labelKey: "settings.absenceCategories.form.typeSick", fallback: "Sick Leave" },
+	{
+		value: "home_office",
+		labelKey: "settings.absenceCategories.form.typeHomeOffice",
+		fallback: "Home Office",
+	},
+	{ value: "personal", labelKey: "settings.absenceCategories.form.typePersonal", fallback: "Personal" },
+	{ value: "unpaid", labelKey: "settings.absenceCategories.form.typeUnpaid", fallback: "Unpaid" },
+	{ value: "parental", labelKey: "settings.absenceCategories.form.typeParental", fallback: "Parental Leave" },
+	{
+		value: "bereavement",
+		labelKey: "settings.absenceCategories.form.typeBereavement",
+		fallback: "Bereavement",
+	},
 ];
+
+function normalizeTranslationMap(value: Record<string, string>) {
+	const entries = Object.entries(value)
+		.map(([locale, translation]) => [locale.trim(), translation.trim()] as const)
+		.filter(([locale, translation]) => locale && translation);
+
+	return Object.fromEntries(entries);
+}
 
 export function getAbsenceCategoryFormValues(
 	existingCategory?: AbsenceCategoryForSettings,
 ): AbsenceCategoryFormValues {
 	if (!existingCategory) {
-		return { ...defaultAbsenceCategoryFormValues };
+		return {
+			...defaultAbsenceCategoryFormValues,
+			nameTranslations: {},
+			descriptionTranslations: {},
+		};
 	}
 
 	return {
 		name: existingCategory.name,
 		type: existingCategory.type,
 		description: existingCategory.description ?? "",
+		nameTranslations: { ...(existingCategory.nameTranslations ?? {}) },
+		descriptionTranslations: { ...(existingCategory.descriptionTranslations ?? {}) },
 		requiresWorkTime: existingCategory.requiresWorkTime,
 		requiresApproval: existingCategory.requiresApproval,
 		countsAgainstVacation: existingCategory.countsAgainstVacation,
@@ -113,6 +146,8 @@ export function buildAbsenceCategoryPayload(value: AbsenceCategoryFormValues) {
 		name: value.name.trim(),
 		type: value.type,
 		description: value.description.trim(),
+		nameTranslations: normalizeTranslationMap(value.nameTranslations),
+		descriptionTranslations: normalizeTranslationMap(value.descriptionTranslations),
 		requiresWorkTime: value.requiresWorkTime,
 		requiresApproval: value.requiresApproval,
 		countsAgainstVacation: value.countsAgainstVacation,
@@ -144,6 +179,8 @@ export function AbsenceCategoryForm({
 	const categoryType = existingCategory?.type;
 	const categoryName = existingCategory?.name;
 	const categoryDescription = existingCategory?.description;
+	const categoryNameTranslations = existingCategory?.nameTranslations;
+	const categoryDescriptionTranslations = existingCategory?.descriptionTranslations;
 	const categoryRequiresWorkTime = existingCategory?.requiresWorkTime;
 	const categoryRequiresApproval = existingCategory?.requiresApproval;
 	const categoryCountsAgainstVacation = existingCategory?.countsAgainstVacation;
@@ -196,6 +233,8 @@ export function AbsenceCategoryForm({
 							name: categoryName ?? "",
 							type: categoryType ?? "custom",
 							description: categoryDescription ?? "",
+							nameTranslations: { ...(categoryNameTranslations ?? {}) },
+							descriptionTranslations: { ...(categoryDescriptionTranslations ?? {}) },
 							requiresWorkTime: categoryRequiresWorkTime ?? false,
 							requiresApproval: categoryRequiresApproval ?? true,
 							countsAgainstVacation: categoryCountsAgainstVacation ?? false,
@@ -211,6 +250,8 @@ export function AbsenceCategoryForm({
 		categoryType,
 		categoryName,
 		categoryDescription,
+		categoryNameTranslations,
+		categoryDescriptionTranslations,
 		categoryRequiresWorkTime,
 		categoryRequiresApproval,
 		categoryCountsAgainstVacation,
@@ -252,18 +293,20 @@ export function AbsenceCategoryForm({
 								onChange: z
 									.string()
 									.trim()
-									.min(1, "Category name is required")
-									.max(100, "Use 100 characters or fewer"),
+									.min(1, t("settings.absenceCategories.form.nameRequired", "Category name is required"))
+									.max(100, t("settings.absenceCategories.form.nameMaxLength", "Use 100 characters or fewer")),
 								onSubmit: z
 									.string()
 									.trim()
-									.min(1, "Category name is required")
-									.max(100, "Use 100 characters or fewer"),
+									.min(1, t("settings.absenceCategories.form.nameRequired", "Category name is required"))
+									.max(100, t("settings.absenceCategories.form.nameMaxLength", "Use 100 characters or fewer")),
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="absenceCategoryName">Name</Label>
+									<Label htmlFor="absenceCategoryName">
+										{t("settings.absenceCategories.form.name", "Name")}
+									</Label>
 									<Input
 										id="absenceCategoryName"
 										name="name"
@@ -271,10 +314,13 @@ export function AbsenceCategoryForm({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder="e.g., Training Day…"
+										placeholder={t("settings.absenceCategories.form.namePlaceholder", "e.g., Training Day…")}
 									/>
 									<p className="text-sm text-muted-foreground">
-										Use a clear label employees and approvers will recognize.
+										{t(
+											"settings.absenceCategories.form.nameHelp",
+											"Use a clear label employees and approvers will recognize.",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive" role="alert" aria-live="polite">
@@ -289,24 +335,34 @@ export function AbsenceCategoryForm({
 							<form.Field name="type">
 								{(field) => (
 									<div className="space-y-2">
-										<Label htmlFor="absenceCategoryType">Type</Label>
+										<Label htmlFor="absenceCategoryType">
+											{t("settings.absenceCategories.form.type", "Type")}
+										</Label>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as AbsenceCategoryType)}
 										>
 											<SelectTrigger id="absenceCategoryType" className="w-full">
-												<SelectValue placeholder="Select category type" />
+												<SelectValue
+													placeholder={t(
+														"settings.absenceCategories.form.typePlaceholder",
+														"Select category type",
+													)}
+												/>
 											</SelectTrigger>
 											<SelectContent>
 												{absenceCategoryTypeOptions.map((option) => (
 													<SelectItem key={option.value} value={option.value}>
-														{option.label}
+														{t(option.labelKey, option.fallback)}
 													</SelectItem>
 												))}
 											</SelectContent>
 										</Select>
 										<p className="text-sm text-muted-foreground">
-											Groups reports and downstream absence workflows.
+											{t(
+												"settings.absenceCategories.form.typeHelp",
+												"Groups reports and downstream absence workflows.",
+											)}
 										</p>
 									</div>
 								)}
@@ -315,7 +371,9 @@ export function AbsenceCategoryForm({
 							<form.Field name="color">
 								{(field) => (
 									<div className="space-y-2">
-										<Label htmlFor="absenceCategoryColor">Color</Label>
+										<Label htmlFor="absenceCategoryColor">
+											{t("settings.absenceCategories.form.color", "Color")}
+										</Label>
 										<Input
 											id="absenceCategoryColor"
 											name="color"
@@ -326,7 +384,9 @@ export function AbsenceCategoryForm({
 											onBlur={field.handleBlur}
 											className="h-10 w-full p-1 md:w-24"
 										/>
-										<p className="text-sm text-muted-foreground">Calendar marker</p>
+										<p className="text-sm text-muted-foreground">
+											{t("settings.absenceCategories.form.colorHelp", "Calendar marker")}
+										</p>
 									</div>
 								)}
 							</form.Field>
@@ -335,7 +395,9 @@ export function AbsenceCategoryForm({
 						<form.Field name="description">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="absenceCategoryDescription">Description</Label>
+									<Label htmlFor="absenceCategoryDescription">
+										{t("settings.absenceCategories.form.description", "Description")}
+									</Label>
 									<Textarea
 										id="absenceCategoryDescription"
 										name="description"
@@ -343,14 +405,93 @@ export function AbsenceCategoryForm({
 										value={field.state.value}
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
-										placeholder="e.g., Use for approved training or certification days…"
+										placeholder={t(
+											"settings.absenceCategories.form.descriptionPlaceholder",
+											"e.g., Use for approved training or certification days…",
+										)}
 									/>
 									<p className="text-sm text-muted-foreground">
-										Optional guidance shown to admins and reviewers.
+										{t(
+											"settings.absenceCategories.form.descriptionHelp",
+											"Optional guidance shown to admins and reviewers.",
+										)}
 									</p>
 								</div>
 							)}
 						</form.Field>
+
+						<section className="space-y-3">
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium">
+									{t("settings.absenceCategories.form.translations", "Translations")}
+								</h3>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"settings.absenceCategories.form.translationsHelp",
+										"Optional localized labels for employees using another app language.",
+									)}
+								</p>
+							</div>
+							<div className="space-y-4">
+								{ALL_LANGUAGES.map((locale) => {
+									const localeLabel = locale.toUpperCase();
+
+									return (
+										<div key={locale} className="grid gap-3 md:grid-cols-2">
+											<form.Field name={`nameTranslations.${locale}`}>
+												{(field) => (
+													<div className="space-y-2">
+														<Label htmlFor={`absenceCategoryNameTranslation-${locale}`}>
+															{t(
+																"settings.absenceCategories.form.nameTranslation",
+																"{locale} name",
+																{ locale: localeLabel },
+															)}
+														</Label>
+														<Input
+															id={`absenceCategoryNameTranslation-${locale}`}
+															autoComplete="off"
+															value={field.state.value ?? ""}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+															placeholder={t(
+																"settings.absenceCategories.form.nameTranslationPlaceholder",
+																"Localized name",
+															)}
+														/>
+													</div>
+												)}
+											</form.Field>
+
+											<form.Field name={`descriptionTranslations.${locale}`}>
+												{(field) => (
+													<div className="space-y-2">
+														<Label htmlFor={`absenceCategoryDescriptionTranslation-${locale}`}>
+															{t(
+																"settings.absenceCategories.form.descriptionTranslation",
+																"{locale} description",
+																{ locale: localeLabel },
+															)}
+														</Label>
+														<Input
+															id={`absenceCategoryDescriptionTranslation-${locale}`}
+															autoComplete="off"
+															value={field.state.value ?? ""}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+															placeholder={t(
+																"settings.absenceCategories.form.descriptionTranslationPlaceholder",
+																"Localized description",
+															)}
+														/>
+													</div>
+												)}
+											</form.Field>
+										</div>
+									);
+								})}
+							</div>
+						</section>
 
 						<div className="space-y-3">
 							<form.Field name="requiresApproval">
@@ -363,10 +504,13 @@ export function AbsenceCategoryForm({
 										/>
 										<div className="space-y-1 leading-none">
 											<Label htmlFor="absenceCategoryRequiresApproval" className="cursor-pointer">
-												Requires Approval
+												{t("settings.absenceCategories.form.requiresApproval", "Requires Approval")}
 											</Label>
 											<p className="text-sm text-muted-foreground">
-												Managers must approve requests before they become active.
+												{t(
+													"settings.absenceCategories.form.requiresApprovalHelp",
+													"Managers must approve requests before they become active.",
+												)}
 											</p>
 										</div>
 									</div>
@@ -386,10 +530,16 @@ export function AbsenceCategoryForm({
 												htmlFor="absenceCategoryCountsAgainstVacation"
 												className="cursor-pointer"
 											>
-												Counts Against Vacation Balance
+												{t(
+													"settings.absenceCategories.form.countsAgainstVacation",
+													"Counts Against Vacation Balance",
+												)}
 											</Label>
 											<p className="text-sm text-muted-foreground">
-												Deduct approved days from the employee vacation allowance.
+												{t(
+													"settings.absenceCategories.form.countsAgainstVacationHelp",
+													"Deduct approved days from the employee vacation allowance.",
+												)}
 											</p>
 										</div>
 									</div>
@@ -406,10 +556,13 @@ export function AbsenceCategoryForm({
 										/>
 										<div className="space-y-1 leading-none">
 											<Label htmlFor="absenceCategoryRequiresWorkTime" className="cursor-pointer">
-												Requires Work Time
+												{t("settings.absenceCategories.form.requiresWorkTime", "Requires Work Time")}
 											</Label>
 											<p className="text-sm text-muted-foreground">
-												Employees must record work time for this absence category.
+												{t(
+													"settings.absenceCategories.form.requiresWorkTimeHelp",
+													"Employees must record work time for this absence category.",
+												)}
 											</p>
 										</div>
 									</div>
@@ -422,10 +575,13 @@ export function AbsenceCategoryForm({
 								<div className="flex items-center justify-between gap-4 rounded-lg border p-4">
 									<div className="space-y-1">
 										<Label htmlFor="absenceCategoryIsActive" className="text-base">
-											Active
+											{t("settings.absenceCategories.form.active", "Active")}
 										</Label>
 										<p className="text-sm text-muted-foreground">
-											Active categories are available for new absence requests.
+											{t(
+												"settings.absenceCategories.form.activeHelp",
+												"Active categories are available for new absence requests.",
+											)}
 										</p>
 									</div>
 									<Switch

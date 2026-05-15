@@ -53,6 +53,8 @@ describe("absence category form helpers", () => {
 			name: "",
 			type: "custom",
 			description: "",
+			nameTranslations: {},
+			descriptionTranslations: {},
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
@@ -67,6 +69,8 @@ describe("absence category form helpers", () => {
 			type: "sick",
 			name: "Sick leave",
 			description: null,
+			nameTranslations: null,
+			descriptionTranslations: null,
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
@@ -78,6 +82,8 @@ describe("absence category form helpers", () => {
 			name: "Sick leave",
 			type: "sick",
 			description: "",
+			nameTranslations: {},
+			descriptionTranslations: {},
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
@@ -98,11 +104,28 @@ describe("absence category form helpers", () => {
 			name: "Training",
 			type: "custom",
 			description: "Planned training time",
+			nameTranslations: {},
+			descriptionTranslations: {},
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
 			color: "#3b82f6",
 			isActive: false,
+		});
+	});
+
+	it("normalizes custom translation maps in the payload", () => {
+		expect(
+			buildAbsenceCategoryPayload({
+				...defaultAbsenceCategoryFormValues,
+				name: "Training",
+				description: "Training day",
+				nameTranslations: { de: " Schulung ", fr: "" },
+				descriptionTranslations: { de: " Weiterbildung ", fr: "   " },
+			}),
+		).toMatchObject({
+			nameTranslations: { de: "Schulung" },
+			descriptionTranslations: { de: "Weiterbildung" },
 		});
 	});
 
@@ -112,6 +135,8 @@ describe("absence category form helpers", () => {
 			type: "sick",
 			name: "Sick leave",
 			description: "Medical absence",
+			nameTranslations: { de: "Krankheit" },
+			descriptionTranslations: { de: "Medizinische Abwesenheit" },
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
@@ -123,6 +148,8 @@ describe("absence category form helpers", () => {
 			type: "parental",
 			name: "Parental leave",
 			description: "Family leave",
+			nameTranslations: { de: "Elternzeit" },
+			descriptionTranslations: { de: "Familienzeit" },
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,

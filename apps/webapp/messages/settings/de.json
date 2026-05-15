@@ -173,7 +173,78 @@
       "deleteDescription": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Kategorien, die von bestehenden Abwesenheiten verwendet werden, können nicht gelöscht werden und sollten stattdessen deaktiviert werden.",
       "deleteFailed": "Kategorie konnte nicht gelöscht werden",
       "deleteTitle": "Abwesenheitskategorie löschen",
+      "defaults": {
+        "bereavement": {
+          "description": "Sonderurlaub im Trauerfall",
+          "name": "Trauerfall"
+        },
+        "home_office": {
+          "description": "Tag mit Arbeit im Homeoffice",
+          "name": "Homeoffice"
+        },
+        "parental": {
+          "description": "Abwesenheit wegen Elternzeit",
+          "name": "Elternzeit"
+        },
+        "personal": {
+          "description": "Persönliche Auszeit",
+          "name": "Persönlicher Tag"
+        },
+        "sick": {
+          "description": "Krankheitstag",
+          "name": "Krankheitsurlaub"
+        },
+        "unpaid": {
+          "description": "Unbezahlte Abwesenheit",
+          "name": "Unbezahlter Urlaub"
+        },
+        "vacation": {
+          "description": "Bezahlte Auszeit",
+          "name": "Urlaub"
+        }
+      },
       "editCategory": "\"{name}\" bearbeiten",
+      "form": {
+        "active": "Aktiv",
+        "activeHelp": "Aktive Kategorien sind für neue Abwesenheitsanträge verfügbar.",
+        "color": "Farbe",
+        "colorHelp": "Kalendermarkierung",
+        "countsAgainstVacation": "Auf Urlaubssaldo anrechnen",
+        "countsAgainstVacationHelp": "Genehmigte Tage vom Urlaubsanspruch des Mitarbeiters abziehen.",
+        "description": "Beschreibung",
+        "descriptionHelp": "Optionale Hinweise für Administratoren und Prüfer.",
+        "descriptionPlaceholder": "z. B. Für genehmigte Schulungs- oder Zertifizierungstage verwenden…",
+        "descriptionTranslation": "{locale}-Beschreibung",
+        "descriptionTranslationPlaceholder": "Lokalisierte Beschreibung",
+        "name": "Name",
+        "nameHelp": "Verwenden Sie eine klare Bezeichnung, die Mitarbeiter und Genehmiger erkennen.",
+        "nameMaxLength": "Verwenden Sie höchstens 100 Zeichen",
+        "namePlaceholder": "z. B. Schulungstag…",
+        "nameRequired": "Kategoriename ist erforderlich",
+        "nameTranslation": "{locale}-Name",
+        "nameTranslationPlaceholder": "Lokalisierter Name",
+        "requiresApproval": "Genehmigung erforderlich",
+        "requiresApprovalHelp": "Manager müssen Anträge genehmigen, bevor sie aktiv werden.",
+        "requiresWorkTime": "Arbeitszeit erforderlich",
+        "requiresWorkTimeHelp": "Mitarbeiter müssen für diese Abwesenheitskategorie Arbeitszeit erfassen.",
+        "translatedDescription": "{locale}-Beschreibung",
+        "translatedDescriptionPlaceholder": "Lokalisierte Beschreibung",
+        "translatedName": "{locale}-Name",
+        "translatedNamePlaceholder": "Lokalisierter Name",
+        "translations": "Übersetzungen",
+        "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeiter, die eine andere App-Sprache verwenden.",
+        "type": "Typ",
+        "typeBereavement": "Trauerfall",
+        "typeCustom": "Benutzerdefiniert",
+        "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheitsworkflows.",
+        "typeHomeOffice": "Homeoffice",
+        "typeParental": "Elternzeit",
+        "typePersonal": "Persönlich",
+        "typePlaceholder": "Kategorietyp auswählen",
+        "typeSick": "Krankheitsurlaub",
+        "typeUnpaid": "Unbezahlt",
+        "typeVacation": "Urlaub"
+      },
       "header": {
         "approval": "Genehmigung",
         "name": "Name",

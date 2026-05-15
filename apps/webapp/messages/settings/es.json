@@ -173,7 +173,78 @@
       "deleteDescription": "¿Está seguro de que desea eliminar \"{name}\"? Las categorías utilizadas por ausencias existentes no pueden eliminarse y deben desactivarse en su lugar.",
       "deleteFailed": "No se pudo eliminar la categoría",
       "deleteTitle": "Eliminar categoría de ausencia",
+      "defaults": {
+        "bereavement": {
+          "description": "Permiso por duelo",
+          "name": "Duelo"
+        },
+        "home_office": {
+          "description": "Día de trabajo remoto",
+          "name": "Trabajo desde casa"
+        },
+        "parental": {
+          "description": "Ausencia por permiso parental",
+          "name": "Permiso parental"
+        },
+        "personal": {
+          "description": "Tiempo libre personal",
+          "name": "Día personal"
+        },
+        "sick": {
+          "description": "Día por enfermedad",
+          "name": "Baja por enfermedad"
+        },
+        "unpaid": {
+          "description": "Ausencia no remunerada",
+          "name": "Permiso no remunerado"
+        },
+        "vacation": {
+          "description": "Tiempo libre pagado",
+          "name": "Vacaciones"
+        }
+      },
       "editCategory": "Editar \"{name}\"",
+      "form": {
+        "active": "Activo",
+        "activeHelp": "Las categorías activas están disponibles para nuevas solicitudes de ausencia.",
+        "color": "Color",
+        "colorHelp": "Marcador de calendario",
+        "countsAgainstVacation": "Cuenta contra el saldo de vacaciones",
+        "countsAgainstVacationHelp": "Deducir los días aprobados del derecho de vacaciones del empleado.",
+        "description": "Descripción",
+        "descriptionHelp": "Orientación opcional mostrada a administradores y revisores.",
+        "descriptionPlaceholder": "p. ej., Usar para días de formación o certificación aprobados…",
+        "descriptionTranslation": "Descripción en {locale}",
+        "descriptionTranslationPlaceholder": "Descripción localizada",
+        "name": "Nombre",
+        "nameHelp": "Use una etiqueta clara que empleados y aprobadores reconozcan.",
+        "nameMaxLength": "Use 100 caracteres o menos",
+        "namePlaceholder": "p. ej., Día de formación…",
+        "nameRequired": "El nombre de la categoría es obligatorio",
+        "nameTranslation": "Nombre en {locale}",
+        "nameTranslationPlaceholder": "Nombre localizado",
+        "requiresApproval": "Requiere aprobación",
+        "requiresApprovalHelp": "Los gerentes deben aprobar las solicitudes antes de que estén activas.",
+        "requiresWorkTime": "Requiere tiempo de trabajo",
+        "requiresWorkTimeHelp": "Los empleados deben registrar tiempo de trabajo para esta categoría de ausencia.",
+        "translatedDescription": "Descripción en {locale}",
+        "translatedDescriptionPlaceholder": "Descripción localizada",
+        "translatedName": "Nombre en {locale}",
+        "translatedNamePlaceholder": "Nombre localizado",
+        "translations": "Traducciones",
+        "translationsHelp": "Etiquetas localizadas opcionales para empleados que usan otro idioma de la aplicación.",
+        "type": "Tipo",
+        "typeBereavement": "Duelo",
+        "typeCustom": "Personalizado",
+        "typeHelp": "Agrupa informes y flujos de ausencia posteriores.",
+        "typeHomeOffice": "Trabajo desde casa",
+        "typeParental": "Permiso parental",
+        "typePersonal": "Personal",
+        "typePlaceholder": "Seleccionar tipo de categoría",
+        "typeSick": "Baja por enfermedad",
+        "typeUnpaid": "No remunerado",
+        "typeVacation": "Vacaciones"
+      },
       "header": {
         "approval": "Aprobación",
         "name": "Nombre",

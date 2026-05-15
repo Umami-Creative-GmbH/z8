@@ -155,6 +155,13 @@
       "when": 1778827536858,
       "tag": "0021_sick_detail",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1778836149681,
+      "tag": "0022_absence_category_translations",
+      "breakpoints": true
     }
   ]
 }

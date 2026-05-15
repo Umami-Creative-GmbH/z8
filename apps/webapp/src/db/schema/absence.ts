@@ -3,6 +3,7 @@ import {
 	date,
 	foreignKey,
 	index,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -10,6 +11,8 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+
+export type LocaleTranslationMap = Record<string, string>;
 
 // Import auth tables for FK references
 import { organization } from "../auth-schema";
@@ -32,6 +35,8 @@ export const absenceCategory = pgTable(
 		type: absenceTypeEnum("type").notNull(),
 		name: text("name").notNull(),
 		description: text("description"),
+		nameTranslations: jsonb("name_translations").$type<LocaleTranslationMap | null>(),
+		descriptionTranslations: jsonb("description_translations").$type<LocaleTranslationMap | null>(),
 		requiresWorkTime: boolean("requires_work_time").default(false).notNull(), // Does work need to be logged on this day?
 		requiresApproval: boolean("requires_approval").default(true).notNull(),
 		countsAgainstVacation: boolean("counts_against_vacation").default(true).notNull(), // Determines if absence deducts from vacation balance

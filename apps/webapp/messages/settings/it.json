@@ -173,7 +173,78 @@
       "deleteDescription": "Sei sicuro di voler eliminare \"{name}\"? Le categorie utilizzate da assenze esistenti non possono essere eliminate e dovrebbero essere invece disattivate.",
       "deleteFailed": "Impossibile eliminare la categoria",
       "deleteTitle": "Elimina categoria di assenza",
+      "defaults": {
+        "bereavement": {
+          "description": "Congedo per lutto",
+          "name": "Lutto"
+        },
+        "home_office": {
+          "description": "Giornata di lavoro da remoto",
+          "name": "Lavoro da casa"
+        },
+        "parental": {
+          "description": "Assenza per congedo parentale",
+          "name": "Congedo parentale"
+        },
+        "personal": {
+          "description": "Permesso personale",
+          "name": "Giorno personale"
+        },
+        "sick": {
+          "description": "Giorno di malattia",
+          "name": "Congedo per malattia"
+        },
+        "unpaid": {
+          "description": "Assenza non retribuita",
+          "name": "Congedo non retribuito"
+        },
+        "vacation": {
+          "description": "Permesso retribuito",
+          "name": "Ferie"
+        }
+      },
       "editCategory": "Modifica \"{name}\"",
+      "form": {
+        "active": "Attivo",
+        "activeHelp": "Le categorie attive sono disponibili per nuove richieste di assenza.",
+        "color": "Colore",
+        "colorHelp": "Indicatore calendario",
+        "countsAgainstVacation": "Conteggia nel saldo ferie",
+        "countsAgainstVacationHelp": "Deduce i giorni approvati dal monte ferie del dipendente.",
+        "description": "Descrizione",
+        "descriptionHelp": "Indicazioni facoltative mostrate ad amministratori e revisori.",
+        "descriptionPlaceholder": "es. Usa per giornate di formazione o certificazione approvate…",
+        "descriptionTranslation": "Descrizione {locale}",
+        "descriptionTranslationPlaceholder": "Descrizione localizzata",
+        "name": "Nome",
+        "nameHelp": "Usa un'etichetta chiara che dipendenti e approvatori riconoscano.",
+        "nameMaxLength": "Usa 100 caratteri o meno",
+        "namePlaceholder": "es. Giorno di formazione…",
+        "nameRequired": "Il nome della categoria è obbligatorio",
+        "nameTranslation": "Nome {locale}",
+        "nameTranslationPlaceholder": "Nome localizzato",
+        "requiresApproval": "Richiede approvazione",
+        "requiresApprovalHelp": "I manager devono approvare le richieste prima che diventino attive.",
+        "requiresWorkTime": "Richiede tempo di lavoro",
+        "requiresWorkTimeHelp": "I dipendenti devono registrare il tempo di lavoro per questa categoria di assenza.",
+        "translatedDescription": "Descrizione {locale}",
+        "translatedDescriptionPlaceholder": "Descrizione localizzata",
+        "translatedName": "Nome {locale}",
+        "translatedNamePlaceholder": "Nome localizzato",
+        "translations": "Traduzioni",
+        "translationsHelp": "Etichette localizzate facoltative per i dipendenti che usano un'altra lingua dell'app.",
+        "type": "Tipo",
+        "typeBereavement": "Lutto",
+        "typeCustom": "Personalizzato",
+        "typeHelp": "Raggruppa report e flussi di assenza successivi.",
+        "typeHomeOffice": "Lavoro da casa",
+        "typeParental": "Congedo parentale",
+        "typePersonal": "Personale",
+        "typePlaceholder": "Seleziona tipo di categoria",
+        "typeSick": "Congedo per malattia",
+        "typeUnpaid": "Non retribuito",
+        "typeVacation": "Ferie"
+      },
       "header": {
         "approval": "Approvazione",
         "name": "Nome",
