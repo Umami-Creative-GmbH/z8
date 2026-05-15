@@ -43,6 +43,7 @@ export async function getEmployeeClockStatuses(
 						.where(
 							and(
 								eq(employee.organizationId, actor.organizationId),
+								eq(employee.isActive, true),
 								inArray(employee.id, normalizedEmployeeIds),
 							),
 						);
