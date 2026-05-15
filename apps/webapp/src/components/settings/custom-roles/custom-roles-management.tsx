@@ -9,6 +9,7 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteCustomRole, listCustomRoles } from "@/app/[locale]/(app)/settings/roles/actions";
@@ -44,16 +45,16 @@ import {
 import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
 import { RoleEditor } from "./role-editor";
 
-const TIER_LABELS: Record<string, string> = {
-	admin: "Admin",
-	manager: "Manager",
-	employee: "Employee",
-};
-
 const TIER_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
 	admin: "default",
 	manager: "secondary",
 	employee: "outline",
+};
+
+const TIER_LABEL_FALLBACKS: Record<string, string> = {
+	admin: "Admin",
+	manager: "Manager",
+	employee: "Employee",
 };
 
 interface CustomRolesManagementProps {
@@ -61,6 +62,7 @@ interface CustomRolesManagementProps {
 }
 
 export function CustomRolesManagement({ organizationId }: CustomRolesManagementProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [editingRole, setEditingRole] = useState<CustomRoleWithPermissions | null>(null);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -86,7 +88,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			if (!result.success) throw new Error(result.error);
 		},
 		onSuccess: () => {
-			toast.success("Role deleted");
+			toast.success(t("settings.roles.toast.deleted", "Role deleted"));
 			queryClient.invalidateQueries({ queryKey: ["custom-roles"] });
 			setDeleteTarget(null);
 		},
@@ -105,20 +107,24 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex items-center justify-between">
 				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">Custom Roles</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.roles.title", "Custom Roles")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						Create custom permission roles that can be assigned to employees. Custom roles add
-						permissions on top of the base tier.
+						{t(
+							"settings.roles.introduction",
+							"Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
+						)}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">Refresh</span>
+						<span className="sr-only">{t("common:actions.refresh", "Refresh")}</span>
 					</Button>
 					<Button onClick={() => setIsCreateOpen(true)}>
 						<IconPlus className="mr-2 h-4 w-4" />
-						Create Role
+						{t("settings.roles.actions.create", "Create Role")}
 					</Button>
 				</div>
 			</div>
@@ -133,11 +139,15 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
 						<IconShieldCog className="h-12 w-12 text-muted-foreground" />
-						<h3 className="mt-4 text-lg font-medium">No custom roles yet</h3>
-						<p className="mt-2 text-sm text-muted-foreground">Create one to get started.</p>
+						<h3 className="mt-4 text-lg font-medium">
+							{t("settings.roles.empty.title", "No custom roles yet")}
+						</h3>
+						<p className="mt-2 text-sm text-muted-foreground">
+							{t("settings.roles.empty.description", "Create one to get started.")}
+						</p>
 						<Button onClick={() => setIsCreateOpen(true)} className="mt-4">
 							<IconPlus className="mr-2 h-4 w-4" />
-							Create Role
+							{t("settings.roles.actions.create", "Create Role")}
 						</Button>
 					</CardContent>
 				</Card>
@@ -147,11 +157,13 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Name</TableHead>
-									<TableHead>Base Tier</TableHead>
-									<TableHead>Permissions</TableHead>
-									<TableHead>Assigned</TableHead>
-									<TableHead className="w-[100px]">Actions</TableHead>
+									<TableHead>{t("settings.roles.table.name", "Name")}</TableHead>
+									<TableHead>{t("settings.roles.table.baseTier", "Base Tier")}</TableHead>
+									<TableHead>{t("settings.roles.table.permissions", "Permissions")}</TableHead>
+									<TableHead>{t("settings.roles.table.assigned", "Assigned")}</TableHead>
+									<TableHead className="w-[100px]">
+										{t("settings.roles.table.actions", "Actions")}
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -173,25 +185,40 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 										</TableCell>
 										<TableCell>
 											<Badge variant={TIER_VARIANTS[role.baseTier]}>
-												{TIER_LABELS[role.baseTier]}
+												{t(
+													`settings.roles.baseTiers.${role.baseTier}`,
+													TIER_LABEL_FALLBACKS[role.baseTier] ?? role.baseTier,
+												)}
 											</Badge>
 										</TableCell>
 										<TableCell>
 											<Badge variant="outline">
-												{role.permissions.length} permission
-												{role.permissions.length !== 1 ? "s" : ""}
+												{role.permissions.length === 1
+													? t("settings.roles.table.permissionCount.one", "{count} permission", {
+															count: role.permissions.length,
+														})
+													: t("settings.roles.table.permissionCount.other", "{count} permissions", {
+															count: role.permissions.length,
+														})}
 											</Badge>
 										</TableCell>
 										<TableCell>
-											{role.assignedCount} employee
-											{role.assignedCount !== 1 ? "s" : ""}
+											{role.assignedCount === 1
+												? t("settings.roles.table.assignedCount.one", "{count} employee", {
+														count: role.assignedCount,
+													})
+												: t("settings.roles.table.assignedCount.other", "{count} employees", {
+														count: role.assignedCount,
+													})}
 										</TableCell>
 										<TableCell>
 											<div className="flex gap-1">
 												<Button
 													variant="ghost"
 													size="icon"
-													aria-label={`Edit ${role.name}`}
+													aria-label={t("settings.roles.actions.editNamed", "Edit {name}", {
+														name: role.name,
+													})}
 													onClick={() => setEditingRole(role)}
 												>
 													<IconEdit className="h-4 w-4" />
@@ -199,7 +226,9 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 												<Button
 													variant="ghost"
 													size="icon"
-													aria-label={`Delete ${role.name}`}
+													aria-label={t("settings.roles.actions.deleteNamed", "Delete {name}", {
+														name: role.name,
+													})}
 													onClick={() => setDeleteTarget(role)}
 												>
 													<IconTrash className="h-4 w-4" />
@@ -218,9 +247,14 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			<ActionPanel open={isCreateOpen} onOpenChange={setIsCreateOpen}>
 				<ActionPanelContent size="wide">
 					<ActionPanelHeader>
-						<ActionPanelTitle>Create Custom Role</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.roles.createPanel.title", "Create Custom Role")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Define a new role with specific permissions for your organization.
+							{t(
+								"settings.roles.createPanel.description",
+								"Define a new role with specific permissions for your organization.",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody>
@@ -233,9 +267,14 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			<ActionPanel open={!!editingRole} onOpenChange={(open) => !open && setEditingRole(null)}>
 				<ActionPanelContent size="wide">
 					<ActionPanelHeader>
-						<ActionPanelTitle>Edit Custom Role</ActionPanelTitle>
+						<ActionPanelTitle>
+							{t("settings.roles.editPanel.title", "Edit Custom Role")}
+						</ActionPanelTitle>
 						<ActionPanelDescription>
-							Update the role details and permissions.
+							{t(
+								"settings.roles.editPanel.description",
+								"Update the role details and permissions.",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody>
@@ -254,20 +293,38 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			<AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Role</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("settings.roles.deleteDialog.title", "Delete Role")}
+						</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete &quot;{deleteTarget?.name}&quot;?
+							{t(
+								"settings.roles.deleteDialog.confirm",
+								'Are you sure you want to delete "{name}"?',
+								{
+									name: deleteTarget?.name ?? "",
+								},
+							)}
 							{deleteTarget && deleteTarget.assignedCount > 0 && (
 								<span className="block mt-1 text-destructive">
-									This role is currently assigned to {deleteTarget.assignedCount} employee
-									{deleteTarget.assignedCount !== 1 ? "s" : ""}. They will lose the permissions
-									granted by this role.
+									{deleteTarget.assignedCount === 1
+										? t(
+												"settings.roles.deleteDialog.assignedWarning.one",
+												"This role is currently assigned to {count} employee. They will lose the permissions granted by this role.",
+												{ count: deleteTarget.assignedCount },
+											)
+										: t(
+												"settings.roles.deleteDialog.assignedWarning.other",
+												"This role is currently assigned to {count} employees. They will lose the permissions granted by this role.",
+												{ count: deleteTarget.assignedCount },
+											)}
 								</span>
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setDeleteTarget(null)}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel onClick={() => setDeleteTarget(null)}>
+							{t("common:actions.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<AlertDialogAction asChild>
 							<Button
 								variant="destructive"
@@ -278,7 +335,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 								disabled={deleteMutation.isPending}
 							>
 								{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
-								Delete
+								{t("common:actions.delete", "Delete")}
 							</Button>
 						</AlertDialogAction>
 					</AlertDialogFooter>

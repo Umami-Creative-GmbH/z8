@@ -173,36 +173,6 @@
       "deleteDescription": "¿Está seguro de que desea eliminar \"{name}\"? Las categorías utilizadas por ausencias existentes no pueden eliminarse y deben desactivarse en su lugar.",
       "deleteFailed": "No se pudo eliminar la categoría",
       "deleteTitle": "Eliminar categoría de ausencia",
-      "defaults": {
-        "bereavement": {
-          "description": "Permiso por duelo",
-          "name": "Duelo"
-        },
-        "home_office": {
-          "description": "Día de trabajo remoto",
-          "name": "Trabajo desde casa"
-        },
-        "parental": {
-          "description": "Ausencia por permiso parental",
-          "name": "Permiso parental"
-        },
-        "personal": {
-          "description": "Tiempo libre personal",
-          "name": "Día personal"
-        },
-        "sick": {
-          "description": "Día por enfermedad",
-          "name": "Baja por enfermedad"
-        },
-        "unpaid": {
-          "description": "Ausencia no remunerada",
-          "name": "Permiso no remunerado"
-        },
-        "vacation": {
-          "description": "Tiempo libre pagado",
-          "name": "Vacaciones"
-        }
-      },
       "editCategory": "Editar \"{name}\"",
       "form": {
         "active": "Activo",
@@ -210,40 +180,28 @@
         "color": "Color",
         "colorHelp": "Marcador de calendario",
         "countsAgainstVacation": "Cuenta contra el saldo de vacaciones",
-        "countsAgainstVacationHelp": "Deducir los días aprobados del derecho de vacaciones del empleado.",
+        "countsAgainstVacationHelp": "Deducir los días aprobados de la asignación de vacaciones del empleado.",
         "description": "Descripción",
-        "descriptionHelp": "Orientación opcional mostrada a administradores y revisores.",
-        "descriptionPlaceholder": "p. ej., Usar para días de formación o certificación aprobados…",
+        "descriptionHelp": "Guía opcional que se muestra a los administradores y revisores.",
+        "descriptionPlaceholder": "p. ej., usar para días de formación o certificación aprobados…",
         "descriptionTranslation": "Descripción en {locale}",
         "descriptionTranslationPlaceholder": "Descripción localizada",
         "name": "Nombre",
-        "nameHelp": "Use una etiqueta clara que empleados y aprobadores reconozcan.",
+        "nameHelp": "Use una etiqueta clara que los empleados y aprobadores reconozcan.",
         "nameMaxLength": "Use 100 caracteres o menos",
         "namePlaceholder": "p. ej., Día de formación…",
         "nameRequired": "El nombre de la categoría es obligatorio",
         "nameTranslation": "Nombre en {locale}",
         "nameTranslationPlaceholder": "Nombre localizado",
         "requiresApproval": "Requiere aprobación",
-        "requiresApprovalHelp": "Los gerentes deben aprobar las solicitudes antes de que estén activas.",
+        "requiresApprovalHelp": "Los gerentes deben aprobar las solicitudes antes de que se activen.",
         "requiresWorkTime": "Requiere tiempo de trabajo",
-        "requiresWorkTimeHelp": "Los empleados deben registrar tiempo de trabajo para esta categoría de ausencia.",
-        "translatedDescription": "Descripción en {locale}",
-        "translatedDescriptionPlaceholder": "Descripción localizada",
-        "translatedName": "Nombre en {locale}",
-        "translatedNamePlaceholder": "Nombre localizado",
+        "requiresWorkTimeHelp": "Los empleados deben registrar el tiempo de trabajo para esta categoría de ausencia.",
         "translations": "Traducciones",
-        "translationsHelp": "Etiquetas localizadas opcionales para empleados que usan otro idioma de la aplicación.",
+        "translationsHelp": "Etiquetas localizadas opcionales para empleados que utilizan otro idioma en la aplicación.",
         "type": "Tipo",
-        "typeBereavement": "Duelo",
-        "typeCustom": "Personalizado",
-        "typeHelp": "Agrupa informes y flujos de ausencia posteriores.",
-        "typeHomeOffice": "Trabajo desde casa",
-        "typeParental": "Permiso parental",
-        "typePersonal": "Personal",
-        "typePlaceholder": "Seleccionar tipo de categoría",
-        "typeSick": "Baja por enfermedad",
-        "typeUnpaid": "No remunerado",
-        "typeVacation": "Vacaciones"
+        "typeHelp": "Agrupa informes y flujos de trabajo de ausencia posteriores.",
+        "typePlaceholder": "Seleccionar tipo de categoría"
       },
       "header": {
         "approval": "Aprobación",
@@ -2651,6 +2609,96 @@
       "updated": "Proyecto actualizado",
       "updateFailed": "Error al actualizar el proyecto"
     },
+    "roles": {
+      "actions": {
+        "assign": "Asignar rol",
+        "create": "Crear rol",
+        "deleteNamed": "Eliminar {name}",
+        "editNamed": "Editar {name}",
+        "removeNamed": "Quitar {name}",
+        "saveChanges": "Guardar cambios"
+      },
+      "assignPanel": {
+        "description": "Seleccione un rol para asignar a este empleado.",
+        "empty": "No hay roles disponibles para asignar. Todos los roles ya están asignados o no se ha creado ninguno.",
+        "permissionCount": "{count} permisos",
+        "title": "Asignar rol personalizado"
+      },
+      "baseTiers": {
+        "admin": "Administrador",
+        "employee": "Empleado",
+        "manager": "Gerente"
+      },
+      "createPanel": {
+        "description": "Defina un nuevo rol con permisos específicos para su organización.",
+        "title": "Crear rol personalizado"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Este rol está asignado actualmente a {count} empleado. Perderá los permisos otorgados por este rol.",
+          "other": "Este rol está asignado actualmente a {count} empleados. Perderán los permisos otorgados por este rol."
+        },
+        "confirm": "¿Está seguro de que desea eliminar \"{name}\"?",
+        "title": "Eliminar rol"
+      },
+      "editor": {
+        "baseTier": "Nivel base",
+        "color": "Color",
+        "description": "Descripción",
+        "descriptionPlaceholder": "Para qué sirve este rol...",
+        "errors": {
+          "createFailed": "Error al crear el rol",
+          "nameRequired": "El nombre del rol es obligatorio",
+          "permissionsFailed": "Error al guardar los permisos del rol",
+          "updateFailed": "Error al actualizar el rol"
+        },
+        "inherited": "Heredado",
+        "name": "Nombre",
+        "namePlaceholder": "p. ej. Jefe de equipo, Responsable de RR. HH…",
+        "permissions": "Permisos",
+        "permissionsHelp": "Selecciona permisos adicionales para este rol. Los permisos heredados del nivel base aparecen bloqueados.",
+        "selectColor": "Seleccionar color {color}"
+      },
+      "editPanel": {
+        "description": "Actualice los detalles y permisos del rol.",
+        "title": "Editar rol personalizado"
+      },
+      "employeeCard": {
+        "description": "Roles de permiso adicionales asignados a este empleado",
+        "empty": "No hay roles personalizados asignados.",
+        "permissionCount": {
+          "one": "({count} perm)",
+          "other": "({count} perms)"
+        }
+      },
+      "empty": {
+        "description": "Crea uno para empezar.",
+        "title": "Aún no hay roles personalizados"
+      },
+      "introduction": "Crea roles de permiso personalizados que se puedan asignar a los empleados. Los roles personalizados añaden permisos al nivel base.",
+      "table": {
+        "actions": "Acciones",
+        "assigned": "Asignado",
+        "assignedCount": {
+          "one": "{count} empleado",
+          "other": "{count} empleados"
+        },
+        "baseTier": "Nivel base",
+        "name": "Nombre",
+        "permissionCount": {
+          "one": "{count} permiso",
+          "other": "{count} permisos"
+        },
+        "permissions": "Permisos"
+      },
+      "toast": {
+        "assigned": "Rol asignado",
+        "created": "Rol creado",
+        "deleted": "Rol eliminado",
+        "removed": "Rol retirado",
+        "updated": "Rol actualizado"
+      }
+    },
     "scheduledExports": {
       "actions": {
         "delete": "Eliminar",
@@ -4128,14 +4176,12 @@
       },
       "feature": "gestionar ausencias del equipo",
       "recordDialog": {
-        "afternoon": "Tarde",
         "category": "Categoría",
         "categoryPlaceholder": "Seleccionar una categoría de ausencia…",
         "description": "Registrar una ausencia aprobada directamente para el empleado seleccionado.",
         "endDate": "Fecha de fin",
-        "endPeriod": "Periodo de fin",
+        "endDateHelper": "Dejar vacío para una ausencia en el mismo día.",
         "failure": "Error al registrar la ausencia",
-        "morning": "Mañana",
         "noCategories": "No hay categorías disponibles",
         "noEmployee": "Seleccione un empleado antes de registrar una ausencia",
         "notes": "Notas",
@@ -4143,8 +4189,9 @@
         "pickEndDate": "Elegir fecha de fin…",
         "pickStartDate": "Elegir fecha de inicio…",
         "recording": "Registrando…",
+        "sickDetail": "Detalle de enfermedad",
+        "sickDetailPlaceholder": "Seleccionar detalle de enfermedad…",
         "startDate": "Fecha de inicio",
-        "startPeriod": "Periodo de inicio",
         "submit": "Registrar ausencia",
         "success": "Ausencia registrada",
         "title": "Registrar ausencia"

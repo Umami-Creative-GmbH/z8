@@ -362,16 +362,16 @@ export function RecordAbsenceDialog({
 												placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date…")}
 											/>
 										</TFormControl>
-										<p className="text-muted-foreground text-xs">
-											{t(
-												"team.absences.recordDialog.endDateHelper",
-												"Leave empty for a same-day absence.",
-											)}
-										</p>
 										<TFormMessage field={field} />
 									</TFormItem>
 								)}
 							</form.Field>
+							<p className="-mt-2 text-muted-foreground text-xs sm:col-start-2">
+								{t(
+									"team.absences.recordDialog.endDateHelper",
+									"Leave empty for a same-day absence.",
+								)}
+							</p>
 						</div>
 
 						<form.Field name="durationKind">

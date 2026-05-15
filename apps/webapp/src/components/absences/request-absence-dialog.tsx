@@ -384,18 +384,18 @@ export function RequestAbsenceDialog({
 														onBlur={field.handleBlur}
 													/>
 												</TFormControl>
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"absences.form.endDateHelper",
-														"Leave empty for a same-day absence.",
-													)}
-												</p>
 												<TFormMessage field={field} />
 											</TFormItem>
 										)}
 									</form.Field>
 								)}
 							</form.Subscribe>
+							<p className="-mt-2 text-xs text-muted-foreground sm:col-start-2">
+								{t(
+									"absences.form.endDateHelper",
+									"Leave empty for a same-day absence.",
+								)}
+							</p>
 						</div>
 
 						<form.Field name="durationKind">

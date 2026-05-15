@@ -5,6 +5,11 @@
     "signOut": "Abmelden",
     "title": "Zugriff eingeschränkt"
   },
+  "actions": {
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "refresh": "Aktualisieren"
+  },
   "colors": {
     "blue": "Blau",
     "green": "Grün",

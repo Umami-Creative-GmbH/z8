@@ -173,77 +173,35 @@
       "deleteDescription": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Kategorien, die von bestehenden Abwesenheiten verwendet werden, können nicht gelöscht werden und sollten stattdessen deaktiviert werden.",
       "deleteFailed": "Kategorie konnte nicht gelöscht werden",
       "deleteTitle": "Abwesenheitskategorie löschen",
-      "defaults": {
-        "bereavement": {
-          "description": "Sonderurlaub im Trauerfall",
-          "name": "Trauerfall"
-        },
-        "home_office": {
-          "description": "Tag mit Arbeit im Homeoffice",
-          "name": "Homeoffice"
-        },
-        "parental": {
-          "description": "Abwesenheit wegen Elternzeit",
-          "name": "Elternzeit"
-        },
-        "personal": {
-          "description": "Persönliche Auszeit",
-          "name": "Persönlicher Tag"
-        },
-        "sick": {
-          "description": "Krankheitstag",
-          "name": "Krankheitsurlaub"
-        },
-        "unpaid": {
-          "description": "Unbezahlte Abwesenheit",
-          "name": "Unbezahlter Urlaub"
-        },
-        "vacation": {
-          "description": "Bezahlte Auszeit",
-          "name": "Urlaub"
-        }
-      },
       "editCategory": "\"{name}\" bearbeiten",
       "form": {
         "active": "Aktiv",
-        "activeHelp": "Aktive Kategorien sind für neue Abwesenheitsanträge verfügbar.",
+        "activeHelp": "Aktive Kategorien stehen für neue Abwesenheitsanträge zur Verfügung.",
         "color": "Farbe",
         "colorHelp": "Kalendermarkierung",
-        "countsAgainstVacation": "Auf Urlaubssaldo anrechnen",
+        "countsAgainstVacation": "Wird auf den Urlaubsanspruch angerechnet",
         "countsAgainstVacationHelp": "Genehmigte Tage vom Urlaubsanspruch des Mitarbeiters abziehen.",
         "description": "Beschreibung",
-        "descriptionHelp": "Optionale Hinweise für Administratoren und Prüfer.",
-        "descriptionPlaceholder": "z. B. Für genehmigte Schulungs- oder Zertifizierungstage verwenden…",
-        "descriptionTranslation": "{locale}-Beschreibung",
+        "descriptionHelp": "Optionale Anleitung für Administratoren und Prüfer.",
+        "descriptionPlaceholder": "z. B. Verwendung für genehmigte Schulungs- oder Zertifizierungstage…",
+        "descriptionTranslation": "{locale} Beschreibung",
         "descriptionTranslationPlaceholder": "Lokalisierte Beschreibung",
         "name": "Name",
-        "nameHelp": "Verwenden Sie eine klare Bezeichnung, die Mitarbeiter und Genehmiger erkennen.",
-        "nameMaxLength": "Verwenden Sie höchstens 100 Zeichen",
+        "nameHelp": "Verwenden Sie eine klare Bezeichnung, die Mitarbeiter und Genehmiger wiedererkennen.",
+        "nameMaxLength": "Maximal 100 Zeichen verwenden",
         "namePlaceholder": "z. B. Schulungstag…",
         "nameRequired": "Kategoriename ist erforderlich",
-        "nameTranslation": "{locale}-Name",
+        "nameTranslation": "{locale} Name",
         "nameTranslationPlaceholder": "Lokalisierter Name",
-        "requiresApproval": "Genehmigung erforderlich",
-        "requiresApprovalHelp": "Manager müssen Anträge genehmigen, bevor sie aktiv werden.",
-        "requiresWorkTime": "Arbeitszeit erforderlich",
+        "requiresApproval": "Erfordert Genehmigung",
+        "requiresApprovalHelp": "Manager müssen Anfragen genehmigen, bevor sie aktiv werden.",
+        "requiresWorkTime": "Erfordert Arbeitszeit",
         "requiresWorkTimeHelp": "Mitarbeiter müssen für diese Abwesenheitskategorie Arbeitszeit erfassen.",
-        "translatedDescription": "{locale}-Beschreibung",
-        "translatedDescriptionPlaceholder": "Lokalisierte Beschreibung",
-        "translatedName": "{locale}-Name",
-        "translatedNamePlaceholder": "Lokalisierter Name",
         "translations": "Übersetzungen",
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeiter, die eine andere App-Sprache verwenden.",
         "type": "Typ",
-        "typeBereavement": "Trauerfall",
-        "typeCustom": "Benutzerdefiniert",
-        "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheitsworkflows.",
-        "typeHomeOffice": "Homeoffice",
-        "typeParental": "Elternzeit",
-        "typePersonal": "Persönlich",
-        "typePlaceholder": "Kategorietyp auswählen",
-        "typeSick": "Krankheitsurlaub",
-        "typeUnpaid": "Unbezahlt",
-        "typeVacation": "Urlaub"
+        "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
+        "typePlaceholder": "Kategorietyp auswählen"
       },
       "header": {
         "approval": "Genehmigung",
@@ -2651,6 +2609,96 @@
       "updated": "Projekt aktualisiert",
       "updateFailed": "Aktualisieren des Projekts fehlgeschlagen"
     },
+    "roles": {
+      "actions": {
+        "assign": "Rolle zuweisen",
+        "create": "Rolle erstellen",
+        "deleteNamed": "{name} löschen",
+        "editNamed": "{name} bearbeiten",
+        "removeNamed": "{name} entfernen",
+        "saveChanges": "Änderungen speichern"
+      },
+      "assignPanel": {
+        "description": "Wählen Sie eine Rolle aus, die diesem Mitarbeiter zugewiesen werden soll.",
+        "empty": "Keine verfügbaren Rollen zur Zuweisung. Alle Rollen sind bereits zugewiesen oder es wurden noch keine erstellt.",
+        "permissionCount": "{count} Berechtigungen",
+        "title": "Benutzerdefinierte Rolle zuweisen"
+      },
+      "baseTiers": {
+        "admin": "Administrator",
+        "employee": "Mitarbeiter",
+        "manager": "Manager"
+      },
+      "createPanel": {
+        "description": "Definieren Sie eine neue Rolle mit spezifischen Berechtigungen für Ihr Unternehmen.",
+        "title": "Benutzerdefinierte Rolle erstellen"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Diese Rolle ist derzeit {count} Mitarbeiter zugewiesen. Er wird die durch diese Rolle gewährten Berechtigungen verlieren.",
+          "other": "Diese Rolle ist derzeit {count} Mitarbeitern zugewiesen. Sie werden die durch diese Rolle gewährten Berechtigungen verlieren."
+        },
+        "confirm": "Sind Sie sicher, dass Sie „{name}“ löschen möchten?",
+        "title": "Rolle löschen"
+      },
+      "editor": {
+        "baseTier": "Basisebene",
+        "color": "Farbe",
+        "description": "Beschreibung",
+        "descriptionPlaceholder": "Wofür diese Rolle gedacht ist…",
+        "errors": {
+          "createFailed": "Erstellung der Rolle fehlgeschlagen",
+          "nameRequired": "Rollenname ist erforderlich",
+          "permissionsFailed": "Speichern der Rollenberechtigungen fehlgeschlagen",
+          "updateFailed": "Aktualisierung der Rolle fehlgeschlagen"
+        },
+        "inherited": "Geerbt",
+        "name": "Name",
+        "namePlaceholder": "z. B. Teamleiter, HR-Manager...",
+        "permissions": "Berechtigungen",
+        "permissionsHelp": "Wählen Sie zusätzliche Berechtigungen für diese Rolle aus. Berechtigungen, die von der Basisebene geerbt wurden, werden als gesperrt angezeigt.",
+        "selectColor": "Farbe {color} auswählen"
+      },
+      "editPanel": {
+        "description": "Aktualisieren Sie die Rollendetails und Berechtigungen.",
+        "title": "Benutzerdefinierte Rolle bearbeiten"
+      },
+      "employeeCard": {
+        "description": "Zusätzliche Berechtigungsrollen, die diesem Mitarbeiter zugewiesen sind",
+        "empty": "Keine benutzerdefinierten Rollen zugewiesen.",
+        "permissionCount": {
+          "one": "({count} Berecht.)",
+          "other": "({count} Berecht.)"
+        }
+      },
+      "empty": {
+        "description": "Erstellen Sie eine, um zu beginnen.",
+        "title": "Noch keine benutzerdefinierten Rollen"
+      },
+      "introduction": "Erstellen Sie benutzerdefinierte Berechtigungsrollen, die Mitarbeitern zugewiesen werden können. Benutzerdefinierte Rollen fügen Berechtigungen zur Basisebene hinzu.",
+      "table": {
+        "actions": "Aktionen",
+        "assigned": "Zugewiesen",
+        "assignedCount": {
+          "one": "{count} Mitarbeiter",
+          "other": "{count} Mitarbeiter"
+        },
+        "baseTier": "Basisebene",
+        "name": "Name",
+        "permissionCount": {
+          "one": "{count} Berechtigung",
+          "other": "{count} Berechtigungen"
+        },
+        "permissions": "Berechtigungen"
+      },
+      "toast": {
+        "assigned": "Rolle zugewiesen",
+        "created": "Rolle erstellt",
+        "deleted": "Rolle gelöscht",
+        "removed": "Rolle entfernt",
+        "updated": "Rolle aktualisiert"
+      }
+    },
     "scheduledExports": {
       "actions": {
         "delete": "Löschen",
@@ -4128,14 +4176,12 @@
       },
       "feature": "Team-Abwesenheiten verwalten",
       "recordDialog": {
-        "afternoon": "Nachmittag",
         "category": "Kategorie",
         "categoryPlaceholder": "Abwesenheitskategorie auswählen…",
         "description": "Erfassen Sie eine genehmigte Abwesenheit direkt für den ausgewählten Mitarbeiter.",
         "endDate": "Enddatum",
-        "endPeriod": "Endzeitraum",
+        "endDateHelper": "Für eine Abwesenheit am selben Tag leer lassen.",
         "failure": "Abwesenheit konnte nicht erfasst werden",
-        "morning": "Vormittag",
         "noCategories": "Keine Kategorien verfügbar",
         "noEmployee": "Wählen Sie einen Mitarbeiter aus, bevor Sie eine Abwesenheit erfassen",
         "notes": "Notizen",
@@ -4143,8 +4189,9 @@
         "pickEndDate": "Enddatum wählen…",
         "pickStartDate": "Startdatum wählen…",
         "recording": "Wird erfasst…",
+        "sickDetail": "Krankheitsdetails",
+        "sickDetailPlaceholder": "Krankheitsdetails auswählen…",
         "startDate": "Startdatum",
-        "startPeriod": "Startzeitraum",
         "submit": "Abwesenheit erfassen",
         "success": "Abwesenheit erfasst",
         "title": "Abwesenheit erfassen"

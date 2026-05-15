@@ -13,6 +13,13 @@
       "today": "Aujourd'hui !",
       "tomorrow": "Demain"
     },
+    "customize": {
+      "empty-description": "Utilisez l'icône de personnalisation du tableau de bord pour réactiver des widgets individuels, ou réinitialisez la mise en page pour afficher à nouveau tous les widgets.",
+      "empty-title": "Tous les widgets du tableau de bord sont masqués",
+      "reset": "Réinitialiser la mise en page",
+      "title": "Widgets du tableau de bord",
+      "trigger": "Personnaliser le tableau de bord"
+    },
     "hydration": {
       "description": "Suivez votre consommation d'eau quotidienne",
       "error": "Échec du chargement des statistiques d'hydratation",

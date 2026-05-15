@@ -5,6 +5,11 @@
     "signOut": "Cerrar sesión",
     "title": "Acceso restringido"
   },
+  "actions": {
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "refresh": "Actualizar"
+  },
   "colors": {
     "blue": "Azul",
     "green": "Verde",

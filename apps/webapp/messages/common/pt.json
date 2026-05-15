@@ -5,6 +5,11 @@
     "signOut": "Sair",
     "title": "Acesso restrito"
   },
+  "actions": {
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "refresh": "Atualizar"
+  },
   "colors": {
     "blue": "Azul",
     "green": "Verde",

@@ -42,24 +42,25 @@
       "businessDays": "Arbeitstage:",
       "daysRemaining": "Verbleibende Tage:",
       "description": "Reichen Sie einen Antrag auf Freistellung ein. Ihr Manager wird zur Genehmigung benachrichtigt.",
+      "duration": "Abwesenheitsdauer",
+      "duration.fullDay": "Ganztägig",
+      "duration.partialDay": "Teiltägig",
       "endDate": "Enddatum *",
-      "endPeriod": "Ende des Zeitraums",
+      "endDateHelper": "Für eine eintägige Abwesenheit leer lassen.",
+      "endTime": "Endzeit",
       "errors": {
         "fillRequiredFields": "Bitte füllen Sie alle Pflichtfelder aus",
         "insufficientBalance": "Unzureichender Urlaubssaldo",
         "insufficientBalanceForRequest": "Unzureichender Urlaubssaldo für diesen Antrag",
-        "invalidSameDayPeriod": "Kann nicht morgens enden, wenn am selben Tag nachmittags begonnen wird"
+        "invalidSelection": "Bitte überprüfen Sie Ihre Auswahl und versuchen Sie es erneut"
       },
       "notesOptional": "Notizen (Optional)",
       "notesPlaceholder": "Zusätzliche Informationen hinzufügen...",
-      "period": {
-        "afternoonOnly": "Nur Nachmittag",
-        "fullDay": "Ganzer Tag",
-        "morningOnly": "Nur Vormittag"
-      },
       "selectAbsenceType": "Abwesenheitstyp auswählen",
+      "sickDetail": "Krankheitsdetails *",
+      "sickDetailPlaceholder": "Krankheitsdetails auswählen",
       "startDate": "Startdatum *",
-      "startPeriod": "Start des Zeitraums",
+      "startTime": "Startzeit",
       "submitRequest": "Antrag einreichen",
       "title": "Abwesenheit beantragen"
     },

@@ -5,6 +5,11 @@
     "signOut": "Sign Out",
     "title": "Access Restricted"
   },
+  "actions": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "refresh": "Refresh"
+  },
   "colors": {
     "blue": "Blue",
     "green": "Green",

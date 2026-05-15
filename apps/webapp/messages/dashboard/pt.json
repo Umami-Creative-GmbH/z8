@@ -13,6 +13,13 @@
       "today": "Hoje!",
       "tomorrow": "Amanhã"
     },
+    "customize": {
+      "empty-description": "Use o ícone de personalização do painel para reativar widgets individuais ou redefina o layout para exibir todos os widgets novamente.",
+      "empty-title": "Todos os widgets do painel estão ocultos",
+      "reset": "Redefinir layout",
+      "title": "Widgets do painel",
+      "trigger": "Personalizar painel"
+    },
     "hydration": {
       "description": "Acompanhe a sua ingestão diária de água",
       "error": "Falha ao carregar estatísticas de hidratação",
