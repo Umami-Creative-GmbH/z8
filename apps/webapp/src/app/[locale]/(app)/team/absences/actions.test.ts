@@ -504,6 +504,50 @@ describe("manager absence metrics", () => {
 		});
 	});
 
+	it("calculates legacy-compatible explicit overnight partial-day metrics as a half day", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [
+				{
+					id: "vacation-overnight-partial",
+					employeeId: "employee-1",
+					startDate: "2026-05-15",
+					startPeriod: "am",
+					endDate: "2026-05-15",
+					endPeriod: "am",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toEqual({
+			vacationAllowance: 30,
+			usedVacationDays: 0.5,
+			pendingVacationDays: 0,
+			remainingVacationDays: 29.5,
+			sickDays: 0,
+		});
+	});
+
 	it("returns zero vacation metrics without an allowance while retaining sick metrics", () => {
 		const metrics = calculateManagerAbsenceMetrics({
 			year: 2026,

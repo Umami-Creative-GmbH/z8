@@ -19,7 +19,10 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
-import { normalizeAbsenceDurationInput } from "@/lib/absences/duration";
+import {
+	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
+} from "@/lib/absences/duration";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -198,16 +201,17 @@ export async function recordAbsenceForEmployee(
 				};
 			}
 
+			const entryDuration = toAbsenceEntryDurationFields(normalizedInput);
 			const [absence] = await tx
 				.insert(absenceEntry)
 				.values({
 					employeeId: target.id,
 					organizationId: actor.organizationId,
 					categoryId: normalizedInput.categoryId,
-					startDate: normalizedInput.startDate,
-					startPeriod: normalizedInput.startPeriod,
-					endDate: normalizedInput.endDate,
-					endPeriod: normalizedInput.endPeriod,
+					startDate: entryDuration.startDate,
+					startPeriod: entryDuration.startPeriod,
+					endDate: entryDuration.endDate,
+					endPeriod: entryDuration.endPeriod,
 					notes: normalizedInput.notes,
 					status: "approved",
 					approvedBy: actor.id,

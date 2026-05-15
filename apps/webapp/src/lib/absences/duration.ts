@@ -29,6 +29,11 @@ export interface NormalizedAbsenceDurationInput {
 	notes?: string;
 }
 
+export type AbsenceEntryDurationFields = Pick<
+	NormalizedAbsenceDurationInput,
+	"startDate" | "startPeriod" | "endDate" | "endPeriod"
+>;
+
 export function normalizeAbsenceDurationInput(
 	input: AbsenceDurationInput,
 ): NormalizedAbsenceDurationInput {
@@ -115,6 +120,10 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 		return "Enter times in HH:mm format.";
 	}
 
+	if (hasExplicitPartialTimes(normalized) && end.diff(start, "days").days > 1) {
+		return "Partial-day absences can only be same-day or overnight.";
+	}
+
 	const startAt = DateTime.fromISO(`${normalized.startDate}T${normalized.startTime}`, { zone: "utc" });
 	const endAt = DateTime.fromISO(`${normalized.endDate}T${normalized.endTime}`, { zone: "utc" });
 
@@ -164,6 +173,26 @@ export function calculateAbsenceDurationDays(
 		"full_day",
 		holidays,
 	);
+}
+
+export function toAbsenceEntryDurationFields(
+	normalizedInput: NormalizedAbsenceDurationInput,
+): AbsenceEntryDurationFields {
+	if (normalizedInput.durationKind === "partial_day" && hasExplicitPartialTimes(normalizedInput)) {
+		return {
+			startDate: normalizedInput.startDate,
+			startPeriod: "am",
+			endDate: normalizedInput.startDate,
+			endPeriod: "am",
+		};
+	}
+
+	return {
+		startDate: normalizedInput.startDate,
+		startPeriod: normalizedInput.startPeriod,
+		endDate: normalizedInput.endDate,
+		endPeriod: normalizedInput.endPeriod,
+	};
 }
 
 export function mapAbsenceDurationToCanonicalTimestamps(input: AbsenceDurationInput): {

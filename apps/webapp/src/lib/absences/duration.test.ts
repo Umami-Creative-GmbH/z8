@@ -3,6 +3,7 @@ import {
 	calculateAbsenceDurationDays,
 	mapAbsenceDurationToCanonicalTimestamps,
 	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
 	validateAbsenceDurationInput,
 } from "./duration";
 
@@ -93,21 +94,40 @@ describe("absence duration helpers", () => {
 		expect(mapped.endAt.toISOString()).toBe("2026-05-15T13:00:00.000Z");
 	});
 
-	it("maps overnight partial-day times across dates", () => {
-		const mapped = mapAbsenceDurationToCanonicalTimestamps(
-			normalizeAbsenceDurationInput({
-				categoryId: "category-1",
-				startDate: "2026-05-15",
-				endDate: "2026-05-16",
-				durationKind: "partial_day",
-				startTime: "22:00",
-				endTime: "02:00",
-				notes: "Night shift",
-			}),
-		);
+	it("maps overnight partial-day times across dates while preserving half-day entry fields", () => {
+		const normalized = normalizeAbsenceDurationInput({
+			categoryId: "category-1",
+			startDate: "2026-05-15",
+			endDate: "2026-05-16",
+			durationKind: "partial_day",
+			startTime: "22:00",
+			endTime: "02:00",
+			notes: "Night shift",
+		});
+		const mapped = mapAbsenceDurationToCanonicalTimestamps(normalized);
 
 		expect(mapped.startAt.toISOString()).toBe("2026-05-15T22:00:00.000Z");
 		expect(mapped.endAt.toISOString()).toBe("2026-05-16T02:00:00.000Z");
+		expect(toAbsenceEntryDurationFields(normalized)).toEqual({
+			startDate: "2026-05-15",
+			startPeriod: "am",
+			endDate: "2026-05-15",
+			endPeriod: "am",
+		});
+	});
+
+	it("rejects explicit partial-day ranges longer than overnight", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-17",
+				durationKind: "partial_day",
+				startTime: "22:00",
+				endTime: "02:00",
+				notes: "Too long",
+			}),
+		).toBe("Partial-day absences can only be same-day or overnight.");
 	});
 
 	it("rejects same-day partial-day end times before the start time", () => {

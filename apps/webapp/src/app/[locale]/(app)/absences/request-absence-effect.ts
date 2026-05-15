@@ -7,7 +7,9 @@ import { DateTime } from "luxon";
 import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
 import {
+	type NormalizedAbsenceDurationInput,
 	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
 import type { AbsenceRequest } from "@/lib/absences/types";
@@ -171,19 +173,20 @@ function getRequestingEmployee(
 function insertAbsenceEntry(
 	dbService: typeof DatabaseService.Service,
 	currentEmployee: RequestAbsenceEmployeeContext,
-	data: AbsenceRequest,
+	data: NormalizedAbsenceDurationInput,
 ) {
 	return dbService.query("insertAbsenceEntry", async () => {
+		const entryDuration = toAbsenceEntryDurationFields(data);
 		const [newAbsence] = await dbService.db
 			.insert(absenceEntry)
 			.values({
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 				categoryId: data.categoryId,
-				startDate: data.startDate,
-				startPeriod: data.startPeriod,
-				endDate: data.endDate,
-				endPeriod: data.endPeriod,
+				startDate: entryDuration.startDate,
+				startPeriod: entryDuration.startPeriod,
+				endDate: entryDuration.endDate,
+				endPeriod: entryDuration.endPeriod,
 				notes: data.notes,
 				status: "pending",
 			})
