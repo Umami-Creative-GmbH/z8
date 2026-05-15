@@ -6,6 +6,12 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
+import {
+	type NormalizedAbsenceDurationInput,
+	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
+	validateAbsenceDurationInput,
+} from "@/lib/absences/duration";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
@@ -47,22 +53,14 @@ type EmployeeWithUserContact = {
 };
 
 function validateRequestDates(data: AbsenceRequest) {
-	if (data.startDate > data.endDate) {
-		return Effect.fail(
-			new ValidationError({
-				message: "Start date must be before end date",
-				field: "startDate",
-				value: data.startDate,
-			}),
-		);
-	}
+	const validationError = validateAbsenceDurationInput(data);
 
-	if (data.startDate === data.endDate && data.startPeriod === "pm" && data.endPeriod === "am") {
+	if (validationError) {
 		return Effect.fail(
 			new ValidationError({
-				message: "Cannot end in the morning if starting in the afternoon on the same day",
-				field: "endPeriod",
-				value: data.endPeriod,
+				message: validationError,
+				field: "duration",
+				value: data.durationKind ?? "full_day",
 			}),
 		);
 	}
@@ -175,19 +173,20 @@ function getRequestingEmployee(
 function insertAbsenceEntry(
 	dbService: typeof DatabaseService.Service,
 	currentEmployee: RequestAbsenceEmployeeContext,
-	data: AbsenceRequest,
+	data: NormalizedAbsenceDurationInput,
 ) {
 	return dbService.query("insertAbsenceEntry", async () => {
+		const entryDuration = toAbsenceEntryDurationFields(data);
 		const [newAbsence] = await dbService.db
 			.insert(absenceEntry)
 			.values({
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 				categoryId: data.categoryId,
-				startDate: data.startDate,
-				startPeriod: data.startPeriod,
-				endDate: data.endDate,
-				endPeriod: data.endPeriod,
+				startDate: entryDuration.startDate,
+				startPeriod: entryDuration.startPeriod,
+				endDate: entryDuration.endDate,
+				endPeriod: entryDuration.endPeriod,
 				notes: data.notes,
 				status: "pending",
 			})
@@ -217,6 +216,9 @@ function createCanonicalAbsenceRecord(params: {
 			startPeriod: data.startPeriod,
 			endDate: data.endDate,
 			endPeriod: data.endPeriod,
+			durationKind: data.durationKind,
+			startTime: data.startTime,
+			endTime: data.endTime,
 			countsAgainstVacation,
 			requiresApproval,
 			createdBy,
@@ -466,17 +468,28 @@ function requestAbsenceWithResolverEffect(
 		any
 	>,
 ): Promise<ServerActionResult<{ absenceId: string }>> {
+	const normalizedData = normalizeAbsenceDurationInput(data);
+	const canonicalData: AbsenceRequest = data.durationKind
+		? normalizedData
+		: {
+				categoryId: normalizedData.categoryId,
+				startDate: normalizedData.startDate,
+				startPeriod: normalizedData.startPeriod,
+				endDate: normalizedData.endDate,
+				endPeriod: normalizedData.endPeriod,
+				notes: normalizedData.notes,
+			};
 	const tracer = trace.getTracer("absences");
 
 	const effect = tracer.startActiveSpan(
 		"requestAbsence",
 		{
 			attributes: {
-				"absence.start_date": data.startDate,
-				"absence.end_date": data.endDate,
-				"absence.start_period": data.startPeriod,
-				"absence.end_period": data.endPeriod,
-				"absence.category_id": data.categoryId,
+				"absence.start_date": normalizedData.startDate,
+				"absence.end_date": normalizedData.endDate,
+				"absence.start_period": normalizedData.startPeriod,
+				"absence.end_period": normalizedData.endPeriod,
+				"absence.category_id": normalizedData.categoryId,
 			},
 		},
 		(span) => {
@@ -499,28 +512,28 @@ function requestAbsenceWithResolverEffect(
 					"Processing absence request",
 				);
 
-				yield* _(validateRequestDates(data));
-				yield* _(checkForOverlappingAbsences(dbService, currentEmployee.id, data));
+				yield* _(validateRequestDates(canonicalData));
+				yield* _(checkForOverlappingAbsences(dbService, currentEmployee.id, normalizedData));
 
 				const category = yield* _(
-					getAbsenceCategory(dbService, data.categoryId, currentEmployee.organizationId),
+					getAbsenceCategory(dbService, normalizedData.categoryId, currentEmployee.organizationId),
 				);
 
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);
 
 				const businessDays = calculateBusinessDaysWithHalfDays(
-					data.startDate,
-					data.startPeriod,
-					data.endDate,
-					data.endPeriod,
+					normalizedData.startDate,
+					normalizedData.startPeriod,
+					normalizedData.endDate,
+					normalizedData.endPeriod,
 					[],
 				);
 				span.setAttribute("absence.business_days", businessDays);
 
 				logger.info(
 					{
-						categoryId: data.categoryId,
+						categoryId: normalizedData.categoryId,
 						categoryName: category.name,
 						businessDays,
 						requiresApproval: category.requiresApproval,
@@ -528,7 +541,7 @@ function requestAbsenceWithResolverEffect(
 					"Absence request validated",
 				);
 
-				const newAbsence = yield* _(insertAbsenceEntry(dbService, currentEmployee, data));
+				const newAbsence = yield* _(insertAbsenceEntry(dbService, currentEmployee, normalizedData));
 
 				span.setAttribute("absence.id", newAbsence.id);
 				span.setAttribute("absence.status", newAbsence.status);
@@ -537,7 +550,7 @@ function requestAbsenceWithResolverEffect(
 					createCanonicalAbsenceRecord({
 						currentEmployee,
 						absenceId: newAbsence.id,
-						data,
+						data: canonicalData,
 						countsAgainstVacation: category.countsAgainstVacation,
 						requiresApproval: category.requiresApproval,
 						createdBy: userId,
@@ -555,7 +568,7 @@ function requestAbsenceWithResolverEffect(
 							dbService,
 							currentEmployee,
 							newAbsence.id,
-							data.categoryId,
+							normalizedData.categoryId,
 							managerId,
 						),
 					);
@@ -572,7 +585,7 @@ function requestAbsenceWithResolverEffect(
 							organizationId: currentEmployee.organizationId,
 							manager,
 							employeeRecord,
-							data,
+							data: normalizedData,
 							categoryName: category.name,
 							businessDays,
 						}),
@@ -590,8 +603,8 @@ function requestAbsenceWithResolverEffect(
 						employeeName: employeeRecord.user.name,
 						organizationId: employeeRecord.organizationId,
 						categoryName: category.name,
-						startDate: data.startDate,
-						endDate: data.endDate,
+						startDate: normalizedData.startDate,
+						endDate: normalizedData.endDate,
 					});
 
 					void onAbsenceRequestPendingApproval({
@@ -600,8 +613,8 @@ function requestAbsenceWithResolverEffect(
 						employeeName: employeeRecord.user.name,
 						organizationId: employeeRecord.organizationId,
 						categoryName: category.name,
-						startDate: data.startDate,
-						endDate: data.endDate,
+						startDate: normalizedData.startDate,
+						endDate: normalizedData.endDate,
 						managerUserId: manager.userId,
 						managerName: manager.user.name,
 					});

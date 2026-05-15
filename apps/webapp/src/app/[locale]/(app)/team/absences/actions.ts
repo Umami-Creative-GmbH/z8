@@ -19,6 +19,10 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
+import {
+	normalizeAbsenceDurationInput,
+	toAbsenceEntryDurationFields,
+} from "@/lib/absences/duration";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -176,7 +180,17 @@ export async function recordAbsenceForEmployee(
 		if (!actorResult.success) return actorResult;
 
 		const actor = actorResult.data;
-		const dateError = validateRecordAbsenceDateRange(input);
+		const normalizedInput = normalizeAbsenceDurationInput(input);
+		const dateError = validateRecordAbsenceDateRange({
+			categoryId: normalizedInput.categoryId,
+			startDate: normalizedInput.startDate,
+			startPeriod: normalizedInput.startPeriod,
+			endDate: normalizedInput.endDate,
+			endPeriod: normalizedInput.endPeriod,
+			durationKind: input.durationKind,
+			startTime: normalizedInput.startTime,
+			endTime: normalizedInput.endTime,
+		});
 		if (dateError) {
 			return { success: false, error: dateError, code: "ValidationError" };
 		}
@@ -187,7 +201,7 @@ export async function recordAbsenceForEmployee(
 		const target = targetResult.data;
 		const category = await db.query.absenceCategory.findFirst({
 			where: and(
-				eq(absenceCategory.id, input.categoryId),
+				eq(absenceCategory.id, normalizedInput.categoryId),
 				eq(absenceCategory.organizationId, actor.organizationId),
 				eq(absenceCategory.isActive, true),
 			),
@@ -219,7 +233,12 @@ export async function recordAbsenceForEmployee(
 				);
 
 			const overlap = existingAbsences.find((absence) =>
-				dateRangesOverlap(input.startDate, input.endDate, absence.startDate, absence.endDate),
+				dateRangesOverlap(
+					normalizedInput.startDate,
+					normalizedInput.endDate,
+					absence.startDate,
+					absence.endDate,
+				),
 			);
 			if (overlap && overlap.status !== "rejected") {
 				return {
@@ -228,17 +247,18 @@ export async function recordAbsenceForEmployee(
 				};
 			}
 
+			const entryDuration = toAbsenceEntryDurationFields(normalizedInput);
 			const [absence] = await tx
 				.insert(absenceEntry)
 				.values({
 					employeeId: target.id,
 					organizationId: actor.organizationId,
-					categoryId: input.categoryId,
-					startDate: input.startDate,
-					startPeriod: input.startPeriod,
-					endDate: input.endDate,
-					endPeriod: input.endPeriod,
-					notes: input.notes,
+					categoryId: normalizedInput.categoryId,
+					startDate: entryDuration.startDate,
+					startPeriod: entryDuration.startPeriod,
+					endDate: entryDuration.endDate,
+					endPeriod: entryDuration.endPeriod,
+					notes: normalizedInput.notes,
 					status: "approved",
 					approvedBy: actor.id,
 					approvedAt: currentTimestamp(),
@@ -248,11 +268,14 @@ export async function recordAbsenceForEmployee(
 			const canonicalValues = buildCanonicalAbsenceRecordValues({
 				organizationId: actor.organizationId,
 				employeeId: target.id,
-				categoryId: input.categoryId,
-				startDate: input.startDate,
-				startPeriod: input.startPeriod,
-				endDate: input.endDate,
-				endPeriod: input.endPeriod,
+				categoryId: normalizedInput.categoryId,
+				startDate: normalizedInput.startDate,
+				startPeriod: normalizedInput.startPeriod,
+				endDate: normalizedInput.endDate,
+				endPeriod: normalizedInput.endPeriod,
+				durationKind: input.durationKind,
+				startTime: normalizedInput.startTime,
+				endTime: normalizedInput.endTime,
 				countsAgainstVacation: category.countsAgainstVacation,
 				createdBy: actor.userId,
 			});
@@ -295,7 +318,7 @@ export async function recordAbsenceForEmployee(
 			actor,
 			target,
 			categoryName: category.name,
-			input,
+			input: { ...input, ...normalizedInput, durationKind: input.durationKind },
 		});
 
 		return { success: true, data: { absenceId: transactionResult.absenceId } };

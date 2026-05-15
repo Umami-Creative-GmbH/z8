@@ -73,7 +73,7 @@ describe("manager absence server action helpers", () => {
 		});
 	});
 
-	it("validates record absence date ranges", () => {
+	it("validates record absence duration ranges", () => {
 		expect(
 			validateRecordAbsenceDateRange({
 				startDate: "2026-04-10",
@@ -86,20 +86,56 @@ describe("manager absence server action helpers", () => {
 		expect(
 			validateRecordAbsenceDateRange({
 				startDate: "2026-04-10",
-				startPeriod: "pm",
-				endDate: "2026-04-10",
-				endPeriod: "am",
+				startPeriod: "full_day",
+				endDate: "",
+				endPeriod: "full_day",
+				durationKind: "full_day",
 			}),
-		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
+		).toBeNull();
 
 		expect(
 			validateRecordAbsenceDateRange({
 				startDate: "2026-04-10",
 				startPeriod: "am",
 				endDate: "2026-04-10",
+				endPeriod: "am",
+				durationKind: "partial_day",
+				startTime: "13:00",
+				endTime: "09:00",
+			}),
+		).toBe(
+			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		);
+	});
+
+	it("keeps legacy period-only partial-day ranges valid without explicit times", () => {
+		expect(
+			validateRecordAbsenceDateRange({
+				categoryId: "category-1",
+				startDate: "2026-04-10",
+				startPeriod: "pm",
+				endDate: "2026-04-10",
 				endPeriod: "pm",
+				durationKind: undefined,
+				startTime: "",
+				endTime: "",
 			}),
 		).toBeNull();
+	});
+
+	it("rejects same-day legacy pm to am manager ranges", () => {
+		expect(
+			validateRecordAbsenceDateRange({
+				categoryId: "category-1",
+				startDate: "2026-04-10",
+				startPeriod: "pm",
+				endDate: "2026-04-10",
+				endPeriod: "am",
+				durationKind: undefined,
+				startTime: "",
+				endTime: "",
+			}),
+		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
 	});
 
 	it("builds approved canonical absence record values", () => {
@@ -132,6 +168,31 @@ describe("manager absence server action helpers", () => {
 			startPeriod: "pm",
 			endPeriod: "pm",
 			countsAgainstVacation: true,
+		});
+	});
+
+	it("builds approved canonical absence record values for explicit overnight partial-day times", () => {
+		const values = buildCanonicalAbsenceRecordValues({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			categoryId: "category-1",
+			startDate: "2026-05-15",
+			startPeriod: "am",
+			endDate: "2026-05-16",
+			endPeriod: "am",
+			durationKind: "partial_day",
+			startTime: "22:00",
+			endTime: "02:00",
+			countsAgainstVacation: true,
+			createdBy: "user-1",
+		});
+
+		expect(values.timeRecord.startAt.toISOString()).toBe("2026-05-15T22:00:00.000Z");
+		expect(values.timeRecord.endAt.toISOString()).toBe("2026-05-16T02:00:00.000Z");
+		expect(values.timeRecord.durationMinutes).toBe(240);
+		expect(values.timeRecordAbsence).toMatchObject({
+			startPeriod: "am",
+			endPeriod: "am",
 		});
 	});
 
@@ -509,6 +570,50 @@ describe("manager absence metrics", () => {
 			pendingVacationDays: 0,
 			remainingVacationDays: 30,
 			sickDays: 0.5,
+		});
+	});
+
+	it("calculates legacy-compatible explicit overnight partial-day metrics as a half day", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [
+				{
+					id: "vacation-overnight-partial",
+					employeeId: "employee-1",
+					startDate: "2026-05-15",
+					startPeriod: "am",
+					endDate: "2026-05-15",
+					endPeriod: "am",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toEqual({
+			vacationAllowance: 30,
+			usedVacationDays: 0.5,
+			pendingVacationDays: 0,
+			remainingVacationDays: 29.5,
+			sickDays: 0,
 		});
 	});
 

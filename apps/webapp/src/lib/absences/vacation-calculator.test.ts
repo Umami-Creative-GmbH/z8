@@ -135,4 +135,27 @@ describe("calculateVacationBalance calendar year ranges", () => {
 		expect(previousCalendarYear.usedDays).toBe(2);
 		expect(nextCalendarYear.usedDays).toBe(2);
 	});
+
+	it("counts legacy-compatible explicit overnight partial-day entries as a half day", () => {
+		const overnightPartial = vacationAbsence("overnight-partial", "2026-05-15");
+		overnightPartial.startPeriod = "am";
+		overnightPartial.endPeriod = "am";
+
+		const balance = calculateVacationBalance({
+			organizationAllowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [overnightPartial],
+			currentDate: new Date("2026-05-01T00:00:00.000Z"),
+			year: 2026,
+			fiscalYearStartMonth: 1,
+		});
+
+		expect(balance.usedDays).toBe(0.5);
+		expect(balance.remainingDays).toBe(29.5);
+	});
 });
