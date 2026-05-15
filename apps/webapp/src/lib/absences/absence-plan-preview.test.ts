@@ -43,6 +43,33 @@ describe("buildAbsencePlanPreview", () => {
 		expect(preview.reasons).toContain("Request follows the normal approval path.");
 	});
 
+	it("counts explicit partial-day time requests as half a vacation day", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			request: {
+				categoryId: "cat-vacation",
+				startDate: "2026-05-15",
+				startPeriod: "am",
+				endDate: "2026-05-15",
+				endPeriod: "am",
+				durationKind: "partial_day",
+				startTime: "09:00",
+				endTime: "13:00",
+			},
+			category: {
+				...baseInput.category,
+				countsAgainstVacation: true,
+			},
+			vacationBalance: {
+				...baseInput.vacationBalance!,
+				remainingDays: 10,
+			},
+		});
+
+		expect(preview.requestedDays).toBe(0.5);
+		expect(preview.balance?.remainingAfterRequest).toBe(9.5);
+	});
+
 	it("does not reduce balance for non-vacation categories", () => {
 		const preview = buildAbsencePlanPreview({
 			...baseInput,

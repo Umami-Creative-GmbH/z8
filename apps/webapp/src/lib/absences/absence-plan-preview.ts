@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { dateRangesOverlap, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
-import { calculateBusinessDaysWithHalfDays } from "./date-utils";
+import { calculateAbsenceDurationDays, normalizeAbsenceDurationInput } from "./duration";
 import type { AbsenceRequest, Holiday, VacationBalance } from "./types";
 
 export type ApprovalSignal = "likely" | "needs_review" | "risky";
@@ -81,19 +81,13 @@ export interface AbsencePlanPreview {
 }
 
 export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): AbsencePlanPreview {
-	const holidays = findHolidaysInRequestRange(input.request, input.holidays);
-	const calculationHolidays = holidays.map((holiday) => ({
+	const normalizedRequest = normalizeAbsenceDurationInput(input.request);
+	const holidays = findHolidaysInRequestRange(normalizedRequest, input.holidays).map((holiday) => ({
 		...holiday,
 		endDate: fromJSDate(holiday.endDate, "utc").endOf("day").toJSDate(),
 	}));
-	const requestedDays = calculateBusinessDaysWithHalfDays(
-		input.request.startDate,
-		input.request.startPeriod,
-		input.request.endDate,
-		input.request.endPeriod,
-		calculationHolidays,
-	);
-	const overlaps = findAbsenceOverlaps(input.request, input.existingAbsences);
+	const requestedDays = calculateAbsenceDurationDays(normalizedRequest, holidays);
+	const overlaps = findAbsenceOverlaps(normalizedRequest, input.existingAbsences);
 	const warnings: string[] = [];
 	const reasons: string[] = [];
 	let hasRisk = false;
@@ -240,7 +234,10 @@ function determineApprovalSignal({
 	return "likely";
 }
 
-function findHolidaysInRequestRange(request: AbsenceRequest, holidays: Holiday[]): Holiday[] {
+function findHolidaysInRequestRange(
+	request: Pick<AbsenceRequest, "startDate" | "endDate">,
+	holidays: Holiday[],
+): Holiday[] {
 	const requestStart = DateTime.fromISO(request.startDate, { zone: "utc" });
 	const requestEnd = DateTime.fromISO(request.endDate, { zone: "utc" }).endOf("day");
 
@@ -252,7 +249,7 @@ function findHolidaysInRequestRange(request: AbsenceRequest, holidays: Holiday[]
 }
 
 function findAbsenceOverlaps(
-	request: AbsenceRequest,
+	request: Pick<AbsenceRequest, "startDate" | "endDate">,
 	existingAbsences: ExistingAbsenceInput[],
 ): ExistingAbsenceInput[] {
 	const requestStart = DateTime.fromISO(request.startDate, { zone: "utc" });
