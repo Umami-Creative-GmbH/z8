@@ -2,6 +2,11 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { timeRecord, timeRecordAbsence } from "@/db/schema";
+import {
+	mapAbsenceDurationToCanonicalTimestamps,
+	normalizeAbsenceDurationInput,
+} from "@/lib/absences/duration";
+import type { AbsenceDurationKind } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 type DayPeriod = "full_day" | "am" | "pm";
@@ -11,7 +16,19 @@ export function mapAbsenceRangeToCanonicalTimestamps(input: {
 	endDate: string;
 	startPeriod: DayPeriod;
 	endPeriod: DayPeriod;
+	durationKind?: AbsenceDurationKind;
+	startTime?: string;
+	endTime?: string;
 }): { startAt: Date; endAt: Date } {
+	if (input.durationKind) {
+		const normalized = normalizeAbsenceDurationInput(input);
+
+		return mapAbsenceDurationToCanonicalTimestamps({
+			...normalized,
+			categoryId: normalized.categoryId || "canonical-absence",
+		});
+	}
+
 	const startOfStartDate = DateTime.fromISO(input.startDate, {
 		zone: "utc",
 	}).startOf("day");
@@ -41,6 +58,9 @@ export const canonicalAbsenceRecordClient = {
 		startPeriod: DayPeriod;
 		endDate: string;
 		endPeriod: DayPeriod;
+		durationKind?: AbsenceDurationKind;
+		startTime?: string;
+		endTime?: string;
 		countsAgainstVacation: boolean;
 		requiresApproval: boolean;
 		createdBy: string;
@@ -50,6 +70,9 @@ export const canonicalAbsenceRecordClient = {
 			startPeriod: input.startPeriod,
 			endDate: input.endDate,
 			endPeriod: input.endPeriod,
+			durationKind: input.durationKind,
+			startTime: input.startTime,
+			endTime: input.endTime,
 		});
 
 		return db.transaction(async (tx) => {
@@ -95,6 +118,9 @@ export async function syncAbsenceRequestToCanonicalRecord(input: {
 	startPeriod: DayPeriod;
 	endDate: string;
 	endPeriod: DayPeriod;
+	durationKind?: AbsenceDurationKind;
+	startTime?: string;
+	endTime?: string;
 	countsAgainstVacation: boolean;
 	requiresApproval: boolean;
 	createdBy: string;
@@ -107,6 +133,9 @@ export async function syncAbsenceRequestToCanonicalRecord(input: {
 		startPeriod: input.startPeriod,
 		endDate: input.endDate,
 		endPeriod: input.endPeriod,
+		durationKind: input.durationKind,
+		startTime: input.startTime,
+		endTime: input.endTime,
 		countsAgainstVacation: input.countsAgainstVacation,
 		requiresApproval: input.requiresApproval,
 		createdBy: input.createdBy,

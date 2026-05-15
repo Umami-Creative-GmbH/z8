@@ -1,4 +1,8 @@
 import { DateTime } from "luxon";
+import {
+	normalizeAbsenceDurationInput,
+	validateAbsenceDurationInput,
+} from "@/lib/absences/duration";
 import type { DayPeriod } from "@/lib/absences/types";
 import { mapAbsenceRangeToCanonicalTimestamps } from "../../absences/actions.canonical";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
@@ -13,6 +17,9 @@ type ApprovedCanonicalAbsenceInput = {
 	startPeriod: DayPeriod;
 	endDate: string;
 	endPeriod: DayPeriod;
+	durationKind?: "full_day" | "partial_day";
+	startTime?: string;
+	endTime?: string;
 	countsAgainstVacation: boolean;
 	createdBy: string;
 };
@@ -36,27 +43,19 @@ export function normalizeManagerAbsenceListParams(
 }
 
 export function validateRecordAbsenceDateRange(input: {
+	categoryId?: string;
 	startDate: string;
 	startPeriod: DayPeriod;
 	endDate: string;
 	endPeriod: DayPeriod;
+	durationKind?: "full_day" | "partial_day";
+	startTime?: string;
+	endTime?: string;
 }): string | null {
-	const start = DateTime.fromISO(input.startDate);
-	const end = DateTime.fromISO(input.endDate);
-
-	if (!start.isValid || !end.isValid) {
-		return "Invalid date format";
-	}
-
-	if (start > end) {
-		return "Start date must be before end date";
-	}
-
-	if (input.startDate === input.endDate && input.startPeriod === "pm" && input.endPeriod === "am") {
-		return "Cannot end in the morning if starting in the afternoon on the same day";
-	}
-
-	return null;
+	return validateAbsenceDurationInput({
+		...input,
+		categoryId: input.categoryId ?? "manager-absence-category",
+	});
 }
 
 export function managerAbsenceAdvisoryLockKey(employeeId: string): string {
@@ -70,11 +69,15 @@ export function getAbsenceOverlapConflictMessage(status: "pending" | "approved")
 }
 
 export function buildCanonicalAbsenceRecordValues(input: ApprovedCanonicalAbsenceInput) {
+	const normalizedInput = normalizeAbsenceDurationInput(input);
 	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps({
-		startDate: input.startDate,
-		startPeriod: input.startPeriod,
-		endDate: input.endDate,
-		endPeriod: input.endPeriod,
+		startDate: normalizedInput.startDate,
+		startPeriod: normalizedInput.startPeriod,
+		endDate: normalizedInput.endDate,
+		endPeriod: normalizedInput.endPeriod,
+		durationKind: input.durationKind,
+		startTime: normalizedInput.startTime,
+		endTime: normalizedInput.endTime,
 	});
 
 	return {
@@ -94,8 +97,8 @@ export function buildCanonicalAbsenceRecordValues(input: ApprovedCanonicalAbsenc
 			organizationId: input.organizationId,
 			recordKind: "absence" as const,
 			absenceCategoryId: input.categoryId,
-			startPeriod: input.startPeriod,
-			endPeriod: input.endPeriod,
+			startPeriod: normalizedInput.startPeriod,
+			endPeriod: normalizedInput.endPeriod,
 			countsAgainstVacation: input.countsAgainstVacation,
 		},
 	};
