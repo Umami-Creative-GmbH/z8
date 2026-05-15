@@ -99,4 +99,55 @@ describe("absence duration helpers", () => {
 			}),
 		).toBe("Enter a start time and end time for a partial-day absence.");
 	});
+
+	it("validates legacy half-day periods without explicit times", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-15",
+				startPeriod: "pm",
+				endPeriod: "pm",
+				notes: "",
+			}),
+		).toBeNull();
+	});
+
+	it("maps legacy pm periods without explicit times to noon through end of day", () => {
+		const mapped = mapAbsenceDurationToCanonicalTimestamps({
+			categoryId: "category-1",
+			startDate: "2026-05-15",
+			endDate: "2026-05-15",
+			startPeriod: "pm",
+			endPeriod: "pm",
+			notes: "",
+		});
+
+		expect(mapped.startAt.toISOString()).toBe("2026-05-15T12:00:00.000Z");
+		expect(mapped.endAt.toISOString()).toBe("2026-05-15T23:59:59.999Z");
+	});
+
+	it("rejects full ISO timestamp start dates", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15T09:00:00.000Z",
+				endDate: "2026-05-15",
+				durationKind: "full_day",
+				notes: "",
+			}),
+		).toBe("Invalid date format");
+	});
+
+	it("rejects full ISO timestamp end dates", () => {
+		expect(
+			validateAbsenceDurationInput({
+				categoryId: "category-1",
+				startDate: "2026-05-15",
+				endDate: "2026-05-15T13:00:00.000Z",
+				durationKind: "full_day",
+				notes: "",
+			}),
+		).toBe("Invalid date format");
+	});
 });
