@@ -18,6 +18,20 @@ type WidgetLayout = {
 	version: 1;
 };
 
+type WidgetOrderSettings = {
+	dashboardWidgetOrder?: Parameters<typeof normalizeWidgetLayout>[0];
+};
+
+function areWidgetLayoutsEqual(left: WidgetLayout, right: WidgetLayout) {
+	return (
+		left.version === right.version &&
+		left.order.length === right.order.length &&
+		left.hidden.length === right.hidden.length &&
+		left.order.every((widgetId, index) => widgetId === right.order[index]) &&
+		left.hidden.every((widgetId, index) => widgetId === right.hidden[index])
+	);
+}
+
 /**
  * Hook for managing dashboard widget order with persistence.
  * Provides optimistic updates and automatic save on reorder.
@@ -38,6 +52,22 @@ export function useWidgetOrder() {
 		staleTime: 1000 * 60 * 5, // 5 minutes
 	});
 
+	const layout = useMemo<WidgetLayout>(() => {
+		return normalizeWidgetLayout(settings?.dashboardWidgetOrder ?? null);
+	}, [settings?.dashboardWidgetOrder]);
+
+	const getLatestLayout = useCallback(() => {
+		const cachedSettings = queryClient.getQueryData<WidgetOrderSettings>(
+			queryKeys.dashboard.widgetOrder(),
+		);
+
+		if (!cachedSettings) {
+			return layout;
+		}
+
+		return normalizeWidgetLayout(cachedSettings.dashboardWidgetOrder ?? null);
+	}, [layout, queryClient]);
+
 	// Mutation for saving widget layout
 	const { mutate: saveLayout, isPending: isSaving } = useMutation({
 		mutationFn: async (layout: WidgetLayout) => {
@@ -52,18 +82,29 @@ export function useWidgetOrder() {
 			await queryClient.cancelQueries({ queryKey: queryKeys.dashboard.widgetOrder() });
 
 			// Snapshot the previous value
-			const previousSettings = queryClient.getQueryData(queryKeys.dashboard.widgetOrder());
+			const previousSettings = queryClient.getQueryData<WidgetOrderSettings>(
+				queryKeys.dashboard.widgetOrder(),
+			);
 
 			// Optimistically update the cache
 			queryClient.setQueryData(queryKeys.dashboard.widgetOrder(), {
 				dashboardWidgetOrder: newLayout,
 			});
 
-			return { previousSettings };
+			return { previousSettings, newLayout };
 		},
 		onError: (_error, _newLayout, context) => {
-			// Rollback on error
-			if (context?.previousSettings) {
+			const currentSettings = queryClient.getQueryData<WidgetOrderSettings>(
+				queryKeys.dashboard.widgetOrder(),
+			);
+			const currentLayout = currentSettings?.dashboardWidgetOrder;
+
+			if (
+				context &&
+				(currentLayout === context.newLayout ||
+					(currentLayout &&
+						areWidgetLayoutsEqual(normalizeWidgetLayout(currentLayout), context.newLayout)))
+			) {
 				queryClient.setQueryData(queryKeys.dashboard.widgetOrder(), context.previousSettings);
 			}
 			toast.error("Failed to save dashboard layout", {
@@ -77,10 +118,6 @@ export function useWidgetOrder() {
 		// Only refetch on error (handled in onError with rollback)
 	});
 
-	const layout = useMemo<WidgetLayout>(() => {
-		return normalizeWidgetLayout(settings?.dashboardWidgetOrder ?? null);
-	}, [settings?.dashboardWidgetOrder]);
-
 	const hiddenSet = useMemo(() => new Set(layout.hidden), [layout.hidden]);
 
 	const visibleWidgetOrder = useMemo<WidgetId[]>(() => {
@@ -90,31 +127,34 @@ export function useWidgetOrder() {
 	// Handler for when widgets are reordered
 	const onReorder = useCallback(
 		(newVisibleOrder: WidgetId[]) => {
+			const latestLayout = getLatestLayout();
+
 			saveLayout({
-				order: mergeVisibleWidgetOrder(layout.order, newVisibleOrder, layout.hidden),
-				hidden: layout.hidden,
+				order: mergeVisibleWidgetOrder(latestLayout.order, newVisibleOrder, latestLayout.hidden),
+				hidden: latestLayout.hidden,
 				version: 1,
 			});
 		},
-		[layout.hidden, layout.order, saveLayout],
+		[getLatestLayout, saveLayout],
 	);
 
 	const onVisibilityChange = useCallback(
 		(widgetId: WidgetId, visible: boolean) => {
+			const latestLayout = getLatestLayout();
 			const nextHidden = visible
-				? layout.hidden.filter((hiddenWidgetId) => hiddenWidgetId !== widgetId)
-				: [...layout.hidden, widgetId].filter(
+				? latestLayout.hidden.filter((hiddenWidgetId) => hiddenWidgetId !== widgetId)
+				: [...latestLayout.hidden, widgetId].filter(
 						(hiddenWidgetId, index, hiddenWidgets) =>
 							hiddenWidgets.indexOf(hiddenWidgetId) === index,
 					);
 
 			saveLayout({
-				order: layout.order,
+				order: latestLayout.order,
 				hidden: nextHidden,
 				version: 1,
 			});
 		},
-		[layout.hidden, layout.order, saveLayout],
+		[getLatestLayout, saveLayout],
 	);
 
 	// Reset to default order
