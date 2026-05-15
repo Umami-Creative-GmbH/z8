@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useEffect, useState } from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
 import { DashboardCustomizeMenu } from "@/components/dashboard/dashboard-customize-menu";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
@@ -17,7 +18,10 @@ import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
 import { VacationBalanceWidget } from "@/components/dashboard/vacation-balance-widget";
 import { WhosOutTodayWidget } from "@/components/dashboard/whos-out-today-widget";
 import type { WidgetId } from "@/components/dashboard/widget-registry";
-import { WidgetVisibilityProvider } from "@/components/dashboard/widget-visibility-context";
+import {
+	useVisibleWidgets,
+	WidgetVisibilityProvider,
+} from "@/components/dashboard/widget-visibility-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -89,6 +93,65 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	);
 }
 
+function DashboardWidgetLayout({
+	visibleWidgetOrder,
+	hiddenWidgets,
+	onReorder,
+	onVisibilityChange,
+	resetOrder,
+}: {
+	visibleWidgetOrder: WidgetId[];
+	hiddenWidgets: WidgetId[];
+	onReorder: (newOrder: WidgetId[]) => void;
+	onVisibilityChange: (widgetId: WidgetId, visible: boolean) => void;
+	resetOrder: () => void;
+}) {
+	const renderedWidgets = useVisibleWidgets();
+	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(false);
+	const visibleWidgetKey = visibleWidgetOrder.join("|");
+	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
+	const shouldShowEmptyState =
+		!hasConfiguredWidgets || (hasCheckedRenderedWidgets && renderedWidgets.length === 0);
+
+	useEffect(() => {
+		if (!visibleWidgetKey) {
+			setHasCheckedRenderedWidgets(true);
+			return;
+		}
+
+		setHasCheckedRenderedWidgets(false);
+		const frame = requestAnimationFrame(() => {
+			setHasCheckedRenderedWidgets(true);
+		});
+
+		return () => {
+			cancelAnimationFrame(frame);
+		};
+	}, [visibleWidgetKey]);
+
+	return (
+		<>
+			<div className="mb-3 flex justify-end px-4 lg:px-6">
+				<DashboardCustomizeMenu
+					hiddenWidgets={hiddenWidgets}
+					onReset={resetOrder}
+					onVisibilityChange={onVisibilityChange}
+				/>
+			</div>
+			{hasConfiguredWidgets ? (
+				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
+					{visibleWidgetOrder.map((widgetId) => {
+						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
+						if (!WidgetComponent) return null;
+						return <WidgetComponent key={widgetId} />;
+					})}
+				</SortableWidgetGrid>
+			) : null}
+			{shouldShowEmptyState ? <HiddenWidgetsEmptyState onReset={resetOrder} /> : null}
+		</>
+	);
+}
+
 export function SectionCards() {
 	const {
 		visibleWidgetOrder,
@@ -105,24 +168,13 @@ export function SectionCards() {
 
 	return (
 		<WidgetVisibilityProvider>
-			<div className="mb-3 flex justify-end px-4 lg:px-6">
-				<DashboardCustomizeMenu
-					hiddenWidgets={hiddenWidgets}
-					onReset={resetOrder}
-					onVisibilityChange={onVisibilityChange}
-				/>
-			</div>
-			{visibleWidgetOrder.length === 0 ? (
-				<HiddenWidgetsEmptyState onReset={resetOrder} />
-			) : (
-				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
-					{visibleWidgetOrder.map((widgetId) => {
-						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
-						if (!WidgetComponent) return null;
-						return <WidgetComponent key={widgetId} />;
-					})}
-				</SortableWidgetGrid>
-			)}
+			<DashboardWidgetLayout
+				hiddenWidgets={hiddenWidgets}
+				onReorder={onReorder}
+				onVisibilityChange={onVisibilityChange}
+				resetOrder={resetOrder}
+				visibleWidgetOrder={visibleWidgetOrder}
+			/>
 		</WidgetVisibilityProvider>
 	);
 }
