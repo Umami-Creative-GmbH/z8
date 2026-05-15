@@ -124,6 +124,7 @@ export async function getEnhancedVacationBalance(input: {
 		endPeriod: e.endPeriod,
 		status: e.status as "approved" | "pending" | "rejected",
 		notes: null,
+		sickDetail: null,
 		category: {
 			id: "vacation",
 			name: "Vacation",

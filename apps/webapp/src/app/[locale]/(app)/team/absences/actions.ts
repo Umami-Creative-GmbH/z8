@@ -19,7 +19,6 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
-import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
 import {
 	adjustVacationAbsencesForSickness,
 	getBlockingOverlapMessage,
@@ -31,8 +30,10 @@ import { createLogger } from "@/lib/logger";
 import { addCalendarSyncJob } from "@/lib/queue";
 import {
 	buildCanonicalAbsenceRecordValues,
+	buildManagerAbsenceRowAbsences,
 	managerAbsenceAdvisoryLockKey,
 	normalizeManagerAbsenceListParams,
+	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
@@ -42,39 +43,11 @@ import type {
 	ManagerAbsenceEmployeeRow,
 	ManagerAbsenceListParams,
 	ManagerAbsenceListResult,
-	ManagerAbsenceRowAbsence,
 	RecordAbsenceForEmployeeInput,
 } from "./manager-absence-types";
 
 const logger = createLogger("ManagerAbsenceActions");
 const ACCESS_ERROR = "Employee not found or not accessible";
-
-export function validateManagerAbsenceSickDetail(input: {
-	categoryType: string;
-	sickDetail?: RecordAbsenceForEmployeeInput["sickDetail"] | null;
-}): string | null {
-	return validateSickDetailForCategory(input);
-}
-
-export function buildManagerAbsenceRowAbsences(
-	absences: AbsenceWithCategory[],
-	year: number,
-): ManagerAbsenceRowAbsence[] {
-	const yearStart = `${year}-01-01`;
-	const yearEnd = `${year}-12-31`;
-
-	return absences
-		.filter((absence) => dateRangesOverlap(yearStart, yearEnd, absence.startDate, absence.endDate))
-		.map((absence) => ({
-			id: absence.id,
-			category: {
-				name: absence.category.name,
-				type: absence.category.type,
-				color: absence.category.color,
-			},
-			sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
-		}));
-}
 
 type ActorEmployee = typeof employee.$inferSelect & {
 	user: { name: string; email: string };

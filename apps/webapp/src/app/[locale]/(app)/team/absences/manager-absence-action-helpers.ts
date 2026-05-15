@@ -1,7 +1,13 @@
 import { DateTime } from "luxon";
-import type { DayPeriod } from "@/lib/absences/types";
+import { dateRangesOverlap } from "@/lib/absences/date-utils";
+import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
+import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { mapAbsenceRangeToCanonicalTimestamps } from "../../absences/actions.canonical";
-import type { ManagerAbsenceListParams } from "./manager-absence-types";
+import type {
+	ManagerAbsenceListParams,
+	ManagerAbsenceRowAbsence,
+	RecordAbsenceForEmployeeInput,
+} from "./manager-absence-types";
 
 const PAGE_SIZES = [10, 25, 50] as const;
 
@@ -67,6 +73,33 @@ export function getAbsenceOverlapConflictMessage(status: "pending" | "approved")
 	return status === "pending"
 		? "Absence request overlaps with an existing pending request"
 		: "Absence request overlaps with an existing approved absence";
+}
+
+export function validateManagerAbsenceSickDetail(input: {
+	categoryType: string;
+	sickDetail?: RecordAbsenceForEmployeeInput["sickDetail"] | null;
+}): string | null {
+	return validateSickDetailForCategory(input);
+}
+
+export function buildManagerAbsenceRowAbsences(
+	absences: AbsenceWithCategory[],
+	year: number,
+): ManagerAbsenceRowAbsence[] {
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
+
+	return absences
+		.filter((absence) => dateRangesOverlap(yearStart, yearEnd, absence.startDate, absence.endDate))
+		.map((absence) => ({
+			id: absence.id,
+			category: {
+				name: absence.category.name,
+				type: absence.category.type,
+				color: absence.category.color,
+			},
+			sickDetail: absence.category.type === "sick" ? absence.sickDetail : null,
+		}));
 }
 
 export function buildCanonicalAbsenceRecordValues(input: ApprovedCanonicalAbsenceInput) {

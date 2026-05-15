@@ -250,6 +250,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 	});
 
 	for (const vacation of overlappingVacations) {
+		if (vacation.status !== "pending" && vacation.status !== "approved") continue;
 		if (!vacation.category.countsAgainstVacation) continue;
 		if (vacation.startPeriod !== "full_day" || vacation.endPeriod !== "full_day") continue;
 		if (!dateRangesOverlap(input.sickStartDate, input.sickEndDate, vacation.startDate, vacation.endDate)) {

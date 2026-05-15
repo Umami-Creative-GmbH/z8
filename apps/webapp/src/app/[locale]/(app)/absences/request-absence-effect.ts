@@ -17,7 +17,6 @@ import {
 	getBlockingOverlapMessage,
 	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
-import { validateSickDetailForCategory } from "@/lib/absences/sick-details";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
@@ -42,6 +41,11 @@ import {
 	buildCanonicalAbsenceRecordValues,
 	syncCanonicalAbsenceApprovalState,
 } from "./actions.canonical";
+import {
+	createSickDetailValidationError,
+	enqueueVacationOverrideCalendarSyncJobs,
+	validateAbsenceSickDetail,
+} from "./request-absence-effect-helpers";
 
 const logger = createLogger("AbsenceActionsEffect");
 
@@ -57,38 +61,6 @@ type EmployeeWithUserContact = {
 	userId: string;
 	organizationId: string;
 };
-
-export function validateAbsenceSickDetail(input: {
-	categoryType: string;
-	sickDetail?: AbsenceRequest["sickDetail"] | null;
-}): string | null {
-	return validateSickDetailForCategory(input);
-}
-
-export function createSickDetailValidationError(message: string): ValidationError {
-	return new ValidationError({
-		message,
-		field: "sickDetail",
-		value: "[redacted]",
-	});
-}
-
-export function enqueueVacationOverrideCalendarSyncJobs(input: {
-	employeeId: string;
-	summary: VacationOverrideSummary;
-}) {
-	for (const absenceId of input.summary.updatedAbsenceIds) {
-		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "update" });
-	}
-
-	for (const absenceId of input.summary.createdAbsenceIds) {
-		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "create" });
-	}
-
-	for (const absenceId of input.summary.deletedAbsenceIds) {
-		void addCalendarSyncJob({ absenceId, employeeId: input.employeeId, action: "delete" });
-	}
-}
 
 function validateRequestDates(data: AbsenceRequest) {
 	if (data.startDate > data.endDate) {

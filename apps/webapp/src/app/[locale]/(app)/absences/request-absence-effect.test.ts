@@ -3,7 +3,7 @@ import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
 	validateAbsenceSickDetail,
-} from "./request-absence-effect";
+} from "./request-absence-effect-helpers";
 
 const addCalendarSyncJobMock = vi.hoisted(() => vi.fn());
 
