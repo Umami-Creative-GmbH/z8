@@ -119,6 +119,8 @@ function checkForOverlappingAbsences(
 				existingEndPeriod: existing.endPeriod,
 				existingStatus: existing.status,
 				existingCountsAgainstVacation: existing.category.countsAgainstVacation,
+				incomingRequiresApproval: category.requiresApproval,
+				hasManagerApprovalWorkflow: Boolean(currentEmployee.managerId),
 			});
 
 			if (message) {

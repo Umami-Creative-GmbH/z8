@@ -210,6 +210,8 @@ export function getBlockingOverlapMessage(input: {
 	existingEndPeriod: DayPeriod;
 	existingStatus: AbsenceStatus;
 	existingCountsAgainstVacation: boolean;
+	incomingRequiresApproval?: boolean;
+	hasManagerApprovalWorkflow?: boolean;
 }): string | null {
 	const isEligibleSickVacationOverride =
 		input.newCategoryType === "sick" &&
@@ -218,6 +220,10 @@ export function getBlockingOverlapMessage(input: {
 		input.existingStartPeriod === "full_day" &&
 		input.existingEndPeriod === "full_day" &&
 		input.existingCountsAgainstVacation;
+
+	if (isEligibleSickVacationOverride && input.incomingRequiresApproval && input.hasManagerApprovalWorkflow) {
+		return "Sick absence requires approval before it can override vacation";
+	}
 
 	if (isEligibleSickVacationOverride) return null;
 
@@ -265,13 +271,23 @@ export async function adjustVacationAbsencesForSickness(input: {
 		});
 
 		if (segments.length === 0) {
-			await input.tx.delete(approvalRequest).where(
-				and(
-					eq(approvalRequest.entityType, "absence_entry"),
-					eq(approvalRequest.entityId, vacation.id),
-					eq(approvalRequest.organizationId, input.organizationId),
-				),
-			);
+			if (vacation.status === "pending") {
+				await input.tx
+					.update(approvalRequest)
+					.set({
+						status: "rejected",
+						approvedAt: currentTimestamp(),
+						rejectionReason: "Overridden by sick absence",
+					})
+					.where(
+						and(
+							eq(approvalRequest.entityType, "absence_entry"),
+							eq(approvalRequest.entityId, vacation.id),
+							eq(approvalRequest.organizationId, input.organizationId),
+							eq(approvalRequest.status, "pending"),
+						),
+					);
+			}
 			await input.tx
 				.update(absenceEntry)
 				.set({

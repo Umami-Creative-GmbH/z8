@@ -191,6 +191,38 @@ describe("getBlockingOverlapMessage", () => {
 		).toBeNull();
 	});
 
+	it("blocks pending-approval sick overlap with vacation before approval", () => {
+		expect(
+			getBlockingOverlapMessage({
+				newCategoryType: "sick",
+				newStartPeriod: "full_day",
+				newEndPeriod: "full_day",
+				existingStartPeriod: "full_day",
+				existingEndPeriod: "full_day",
+				existingStatus: "approved",
+				existingCountsAgainstVacation: true,
+				incomingRequiresApproval: true,
+				hasManagerApprovalWorkflow: true,
+			}),
+		).toBe("Sick absence requires approval before it can override vacation");
+	});
+
+	it("allows auto-approved sick overlap with vacation", () => {
+		expect(
+			getBlockingOverlapMessage({
+				newCategoryType: "sick",
+				newStartPeriod: "full_day",
+				newEndPeriod: "full_day",
+				existingStartPeriod: "full_day",
+				existingEndPeriod: "full_day",
+				existingStatus: "approved",
+				existingCountsAgainstVacation: true,
+				incomingRequiresApproval: false,
+				hasManagerApprovalWorkflow: false,
+			}),
+		).toBeNull();
+	});
+
 	it("blocks full-day sick overlap with half-day vacation", () => {
 		expect(
 			getBlockingOverlapMessage({
@@ -296,8 +328,10 @@ describe("adjustVacationAbsencesForSickness", () => {
 		expect(calls.deletes).toEqual([]);
 	});
 
-	it("rejects fully covered vacation without removing the row needed for calendar deletion", async () => {
-		const { tx, calls } = createFakeTx({ absences: [vacation()] });
+	it("rejects fully covered pending vacation and preserves rejected approval history", async () => {
+		const { tx, calls } = createFakeTx({
+			absences: [vacation({ status: "pending", approvedBy: null, approvedAt: null })],
+		});
 
 		const summary = await adjustVacationAbsencesForSickness({
 			tx,
@@ -309,9 +343,17 @@ describe("adjustVacationAbsencesForSickness", () => {
 		});
 
 		expect(summary.deletedAbsenceIds).toEqual(["vacation-1"]);
-		expect(calls.deletes.map((call) => call.table)).toEqual([approvalRequest]);
+		expect(calls.deletes).toEqual([]);
 		expect(calls.updates).toEqual(
 			expect.arrayContaining([
+				expect.objectContaining({
+					table: approvalRequest,
+					set: expect.objectContaining({
+						status: "rejected",
+						rejectionReason: "Overridden by sick absence",
+						approvedAt: expect.any(Date),
+					}),
+				}),
 				expect.objectContaining({
 					table: absenceEntry,
 					set: expect.objectContaining({
