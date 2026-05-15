@@ -12,27 +12,44 @@ vi.mock("@/lib/avatar", () => ({
 
 vi.mock("@/components/ui/avatar", () => ({
 	Avatar: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
-		<span {...props}>{children}</span>
+		<span data-slot="avatar" {...props}>
+			{children}
+		</span>
 	),
 	AvatarFallback: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
-		<span {...props}>{children}</span>
+		<span data-slot="avatar-fallback" {...props}>
+			{children}
+		</span>
 	),
-	AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
+	AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+		<img data-slot="avatar-image" {...props} />
+	),
 }));
 
 describe("UserAvatar", () => {
 	it("renders a green status badge for clocked-in users", () => {
 		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-in" />);
 
-		const badge = screen.getByLabelText("Clocked in");
+		const badge = screen.getByRole("img", { name: "Clocked in" });
 		expect(badge.className).toContain("bg-emerald-500");
 	});
 
 	it("renders a red status badge for clocked-out users", () => {
 		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-out" />);
 
-		const badge = screen.getByLabelText("Clocked out");
+		const badge = screen.getByRole("img", { name: "Clocked out" });
 		expect(badge.className).toContain("bg-red-500");
+	});
+
+	it("renders the status badge outside the clipped avatar root", () => {
+		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-in" />);
+
+		const avatar = document.querySelector('[data-slot="avatar"]');
+		const badge = screen.getByRole("img", { name: "Clocked in" });
+
+		expect(avatar).not.toBeNull();
+		expect(avatar?.contains(badge)).toBe(false);
+		expect(avatar?.parentElement?.contains(badge)).toBe(true);
 	});
 
 	it("does not render a status badge when status is unknown or omitted", () => {
@@ -40,13 +57,13 @@ describe("UserAvatar", () => {
 			<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="unknown" />,
 		);
 
-		expect(screen.queryByLabelText("Clocked in")).toBeNull();
-		expect(screen.queryByLabelText("Clocked out")).toBeNull();
+		expect(screen.queryByRole("img", { name: "Clocked in" })).toBeNull();
+		expect(screen.queryByRole("img", { name: "Clocked out" })).toBeNull();
 
 		rerender(<UserAvatar seed="user-1" name="Ada Lovelace" />);
 
-		expect(screen.queryByLabelText("Clocked in")).toBeNull();
-		expect(screen.queryByLabelText("Clocked out")).toBeNull();
+		expect(screen.queryByRole("img", { name: "Clocked in" })).toBeNull();
+		expect(screen.queryByRole("img", { name: "Clocked out" })).toBeNull();
 	});
 
 	it("keeps using uploaded images before generated fallbacks", () => {

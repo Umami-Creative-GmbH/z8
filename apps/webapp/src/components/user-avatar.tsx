@@ -96,25 +96,28 @@ export function UserAvatar({
 	const primarySrc = image || dicebearAvatar;
 
 	return (
-		<Avatar
-			className={cn(sizeClass, shapeClass, bordered && "border-2 border-background", className)}
-		>
-			<AvatarImage
-				src={primarySrc}
-				alt={alt}
-				onLoad={() => setIsLoading(false)}
-				onError={() => setIsLoading(false)}
-			/>
-			<AvatarFallback className={cn(shapeClass, "bg-muted")}>
-				{isLoading ? (
-					<IconLoader2 className={cn(spinnerClass, "animate-spin text-muted-foreground")} />
-				) : (
-					initials
-				)}
-			</AvatarFallback>
+		<span className="relative inline-flex shrink-0">
+			<Avatar
+				className={cn(sizeClass, shapeClass, bordered && "border-2 border-background", className)}
+			>
+				<AvatarImage
+					src={primarySrc}
+					alt={alt}
+					onLoad={() => setIsLoading(false)}
+					onError={() => setIsLoading(false)}
+				/>
+				<AvatarFallback className={cn(shapeClass, "bg-muted")}>
+					{isLoading ? (
+						<IconLoader2 className={cn(spinnerClass, "animate-spin text-muted-foreground")} />
+					) : (
+						initials
+					)}
+				</AvatarFallback>
+			</Avatar>
 			{clockStatusBadge ? (
 				<span
 					aria-label={clockStatusBadge.label}
+					role="img"
 					className={cn(
 						"absolute right-0 bottom-0 rounded-full border-2 border-background",
 						badgeClass,
@@ -122,6 +125,6 @@ export function UserAvatar({
 					)}
 				/>
 			) : null}
-		</Avatar>
+		</span>
 	);
 }
