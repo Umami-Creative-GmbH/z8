@@ -1,16 +1,15 @@
 Deutsch | [English](README.en.md)
 
-# Z8 - Workforce Management für auditfähige Betriebsabläufe
+# Z8 - Workforce Management für moderne Zeiterfassung und Betriebsabläufe
 
 Z8 ist eine Workforce-Management-Plattform für Organisationen, die zuverlässige Zeiterfassung, prüfungssichere Unterlagen und klare operative Kontrolle im Rahmen des deutschen Arbeitsrechts und der GoBD-Compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*) benötigen.
 
 Über Web, Mobile und Desktop hinweg gibt Z8 Teams ein verlässliches operatives System für Zeiterfassung, Abwesenheiten, Reisekosten und das tägliche Workforce Management.
 
-## Hinweis Zum Entwicklungsstand
-
-Z8 befindet sich weiterhin in aktiver Entwicklung. Die Plattform wird bereits von mehreren Unternehmen unterschiedlicher Größe genutzt, aber einzelne Teile des Produkts können sich während der weiteren Reifung noch verändern.
-
-Nicht alle Exportoptionen wurden bereits in jeder denkbaren Konstellation getestet. Wenn du auf einen Bug, einen Sonderfall beim Export oder anderes unerwartetes Verhalten stößt, erstelle bitte ein GitHub-Issue.
+> [!IMPORTANT]
+> **Hinweis Zum Entwicklungsstand**  
+> Z8 befindet sich weiterhin in aktiver Entwicklung. Die Plattform wird bereits von mehreren Unternehmen unterschiedlicher Größe genutzt, aber einzelne Teile des Produkts können sich während der weiteren Reifung noch verändern.
+> Nicht alle Exportoptionen wurden bereits in jeder denkbaren Konstellation getestet. Wenn du auf einen Bug, einen Sonderfall beim Export oder anderes unerwartetes Verhalten stößt, erstelle bitte ein GitHub-Issue.
 
 ---
 
