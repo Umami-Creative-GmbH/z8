@@ -12,6 +12,18 @@ vi.mock("./actions", () => ({
 	refreshPlatformDiagnosticsAction: refreshPlatformDiagnosticsActionMock,
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, defaultValue?: string, params?: Record<string, string>) => {
+			let value = defaultValue ?? _key;
+			for (const [param, replacement] of Object.entries(params ?? {})) {
+				value = value.replace(`{${param}}`, replacement);
+			}
+			return value;
+		},
+	}),
+}));
+
 vi.mock("@/components/ui/badge", () => ({
 	Badge: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement>) => <span {...props}>{children}</span>,
 }));

@@ -17,20 +17,13 @@ const CRON_SECRET = env.CRON_SECRET;
 /**
  * Verify the request is from a valid cron source or an authenticated admin
  */
-async function verifyAccess(request: NextRequest): Promise<boolean> {
+async function verifyAccess(): Promise<boolean> {
 	const headersList = await headers();
 
 	// Check for Bearer token
 	if (CRON_SECRET) {
 		const authHeader = headersList.get("authorization");
 		if (authHeader === `Bearer ${CRON_SECRET}`) {
-			return true;
-		}
-
-		// Check for cron secret in query params
-		const { searchParams } = new URL(request.url);
-		const secret = searchParams.get("secret");
-		if (secret === CRON_SECRET) {
 			return true;
 		}
 	}
@@ -55,7 +48,7 @@ export async function GET(
 ) {
 	await connection();
 
-	const isAuthorized = await verifyAccess(request);
+	const isAuthorized = await verifyAccess();
 	if (!isAuthorized) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}

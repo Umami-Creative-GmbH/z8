@@ -62,4 +62,36 @@ describe("platform admin layout", () => {
 			'<IconActivityHeartbeat className="size-5" aria-hidden="true" />',
 		);
 	});
+
+	it("renders platform admin nav and exit actions as icon-only accessible links", () => {
+		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+
+		expect(source).toContain("<PlatformAdminHeaderActions");
+		expect(source).toContain("<LanguageSwitcher variant=\"compact\" />");
+		expect(source).toContain('exitLabel={t("admin:admin.layout.exitAdmin", "Exit Admin")}');
+		expect(source).not.toContain('<span className="hidden sm:inline">');
+	});
+
+	it("uses tooltips and active styles for platform admin header actions", () => {
+		const source = stripComments(
+			readFileSync(join(PLATFORM_ADMIN_ROOT, "../platform-admin-header-actions.tsx"), "utf8"),
+		);
+
+		expect(source).toContain('"use client"');
+		expect(source).toContain("usePathname");
+		expect(source).toContain("TooltipContent");
+		expect(source).toContain("TooltipTrigger asChild");
+		expect(source).toContain("aria-label={item.label}");
+		expect(source).toContain("aria-label={exitLabel}");
+		expect(source).toContain('item.href === "/platform-admin"');
+		expect(source).toContain("pathname === item.href || pathname.startsWith(`${item.href}/`)");
+		expect(source).toContain("bg-accent text-accent-foreground");
+	});
+
+	it("keeps the language switcher close to the exit admin action", () => {
+		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+
+		expect(source).toContain('className="flex items-center gap-2"');
+		expect(source).toContain('<LanguageSwitcher variant="compact" />');
+	});
 });

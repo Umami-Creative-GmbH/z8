@@ -96,7 +96,7 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 
 	try {
 		// Generate presigned URL
-		const downloadUrl = await regeneratePresignedUrl(exportRecord.id);
+		const downloadUrl = await regeneratePresignedUrl(exportRecord.id, exportRecord.organizationId);
 
 		// Format categories for display
 		const categoryNames = exportRecord.categories.map(

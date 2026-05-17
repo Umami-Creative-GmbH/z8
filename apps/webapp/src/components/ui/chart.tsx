@@ -8,6 +8,22 @@ import { cn } from "@/lib/utils";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
+const SAFE_CSS_IDENTIFIER_REPLACEMENT = "-";
+const SAFE_CSS_IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function toSafeCssIdentifier(value: string, fallbackSuffix: number): string {
+	if (SAFE_CSS_IDENTIFIER_PATTERN.test(value)) {
+		return value;
+	}
+
+	const sanitized = value
+		.trim()
+		.replace(/[^a-zA-Z0-9_-]/g, SAFE_CSS_IDENTIFIER_REPLACEMENT)
+		.replace(/-+/g, SAFE_CSS_IDENTIFIER_REPLACEMENT)
+		.replace(/^-+|-+$/g, "");
+
+	return `${sanitized || "item"}-${fallbackSuffix}`;
+}
 
 export type ChartConfig = {
 	[k in string]: {
@@ -81,9 +97,9 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 						([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
-	.map(([key, itemConfig]) => {
+	.map(([key, itemConfig], index) => {
 		const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-		return color ? `  --color-${key}: ${color};` : null;
+		return color ? `  --color-${toSafeCssIdentifier(key, index)}: ${color};` : null;
 	})
 	.join("\n")}
 }

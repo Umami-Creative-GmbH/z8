@@ -5,6 +5,17 @@ import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { PlatformAnalyticsData } from "@/lib/platform-analytics/types";
 
+const tMock = vi.fn((_key: string, fallback: string, params?: Record<string, string>) =>
+	Object.entries(params ?? {}).reduce(
+		(message, [key, value]) => message.replace(`{${key}}`, value),
+		fallback,
+	),
+);
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: tMock }),
+}));
+
 vi.mock("next/dynamic", () => ({
 	default: () =>
 		function DynamicChartMock({ children }: { children?: React.ReactNode }) {
@@ -21,12 +32,31 @@ vi.mock("@/components/ui/chart", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
-import { PlatformAnalyticsCharts, PlatformAnalyticsPreviewCharts } from "./platform-analytics-charts";
+import {
+	PlatformAnalyticsCharts,
+	PlatformAnalyticsPreviewCharts,
+} from "./platform-analytics-charts";
 
 describe("PlatformAnalyticsCharts", () => {
+	it("loads visible labels through Tolgee translations", () => {
+		render(<PlatformAnalyticsCharts data={createAnalyticsData({ series: [] })} />);
+
+		expect(tMock).toHaveBeenCalledWith(
+			"admin:admin.analytics.kpis.activeUsers.title",
+			"Active users",
+		);
+		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.charts.growth.title", "Growth");
+		expect(tMock).toHaveBeenCalledWith(
+			"admin:admin.analytics.emptyState.noData",
+			"No data for this range",
+		);
+	});
+
 	it("renders KPI cards and chart sections from platform analytics data", () => {
 		render(<PlatformAnalyticsCharts data={createAnalyticsData()} />);
 
@@ -49,13 +79,10 @@ describe("PlatformAnalyticsCharts", () => {
 		expect(screen.getByRole("heading", { name: "Engagement" })).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "Operations" })).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "Commercial" })).toBeTruthy();
-		expect(screen.getByText("Growth summary: 42 signups and 11 organizations."))
-			.toBeTruthy();
-		expect(screen.getByText("Engagement summary: 128 active users and 918 sessions."))
-			.toBeTruthy();
+		expect(screen.getByText("Growth summary: 42 signups and 11 organizations.")).toBeTruthy();
+		expect(screen.getByText("Engagement summary: 128 active users and 918 sessions.")).toBeTruthy();
 		expect(screen.getByText("Operations summary: 1,204 time records.")).toBeTruthy();
-		expect(screen.getByText("Commercial summary: 76 seats and €304 estimated MRR."))
-			.toBeTruthy();
+		expect(screen.getByText("Commercial summary: 76 seats and €304 estimated MRR.")).toBeTruthy();
 	});
 
 	it("hides commercial KPI cards and chart when billing is disabled", () => {
@@ -100,7 +127,9 @@ describe("PlatformAnalyticsPreviewCharts", () => {
 	});
 });
 
-function createAnalyticsData(overrides: Partial<PlatformAnalyticsData> = {}): PlatformAnalyticsData {
+function createAnalyticsData(
+	overrides: Partial<PlatformAnalyticsData> = {},
+): PlatformAnalyticsData {
 	const series = [
 		{
 			bucketKey: "2026-05-01",

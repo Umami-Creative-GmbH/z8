@@ -1,10 +1,14 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { S3Store } from "@tus/s3-store";
 import { Server } from "@tus/server";
 import { headers } from "next/headers";
 import { NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { S3_BUCKET, S3_REGION } from "@/lib/storage/s3-client";
+import { createOwnedTusFileKey, isTusFileKeyOwnedByUser } from "@/lib/upload/tus-ownership";
 import { env } from "@/env";
+
+const tusUploadOwnerContext = new AsyncLocalStorage<string>();
 
 /**
  * S3 store for TUS resumable uploads
@@ -28,8 +32,19 @@ const tusServer = new Server({
 	path: "/api/tus",
 	datastore: store,
 	respectForwardedHeaders: true,
-	namingFunction: () => `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+	namingFunction: () => createOwnedTusFileKey(tusUploadOwnerContext.getStore() ?? "anonymous"),
 });
+
+function getTusFileKeyFromRequest(request: Request): string | null {
+	const { pathname } = new URL(request.url);
+	const prefix = "/api/tus/";
+
+	if (!pathname.startsWith(prefix)) {
+		return null;
+	}
+
+	return decodeURIComponent(pathname.slice(prefix.length));
+}
 
 // Wrapper to add authentication before handling TUS requests
 async function withAuth(request: Request): Promise<Response> {
@@ -41,8 +56,13 @@ async function withAuth(request: Request): Promise<Response> {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
+	const existingFileKey = getTusFileKeyFromRequest(request);
+	if (existingFileKey && !isTusFileKeyOwnedByUser(existingFileKey, session.user.id)) {
+		return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+	}
+
 	// Use handleWeb for proper Request/Response handling (TUS server v2+)
-	return tusServer.handleWeb(request);
+	return tusUploadOwnerContext.run(session.user.id, () => tusServer.handleWeb(request));
 }
 
 export async function GET(request: Request) {

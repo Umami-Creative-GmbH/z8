@@ -1,19 +1,10 @@
-import {
-	IconActivityHeartbeat,
-	IconBuilding,
-	IconChartBar,
-	IconChartLine,
-	IconCreditCard,
-	IconLogout,
-	IconServer,
-	IconSettings,
-	IconShield,
-	IconUsers,
-} from "@tabler/icons-react";
+import { IconShield } from "@tabler/icons-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
+import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { auth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
@@ -34,49 +25,51 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	const t = await getTranslate();
 	const billingEnabled = process.env.BILLING_ENABLED === "true";
 
-	const navItems = [
+	const billingNavItems: PlatformAdminNavItem[] = billingEnabled
+		? [
+				{
+					href: "/platform-admin/billing",
+					icon: "billing",
+					label: t("admin:admin.layout.nav.billing", "Billing"),
+				},
+			]
+		: [];
+
+	const navItems: PlatformAdminNavItem[] = [
 		{
 			href: "/platform-admin",
-			icon: IconChartBar,
+			icon: "overview",
 			label: t("admin:admin.layout.nav.overview", "Overview"),
 		},
 		{
 			href: "/platform-admin/analytics",
-			icon: IconChartLine,
+			icon: "analytics",
 			label: t("admin:admin.layout.nav.analytics", "Analytics"),
 		},
 		{
 			href: "/platform-admin/users",
-			icon: IconUsers,
+			icon: "users",
 			label: t("admin:admin.layout.nav.users", "Users"),
 		},
 		{
 			href: "/platform-admin/organizations",
-			icon: IconBuilding,
+			icon: "organizations",
 			label: t("admin:admin.layout.nav.organizations", "Organizations"),
 		},
-		...(billingEnabled
-			? [
-					{
-						href: "/platform-admin/billing",
-						icon: IconCreditCard,
-						label: t("admin:admin.layout.nav.billing", "Billing"),
-					},
-				]
-			: []),
+		...billingNavItems,
 		{
 			href: "/platform-admin/settings",
-			icon: IconSettings,
+			icon: "settings",
 			label: t("admin:admin.layout.nav.settings", "Settings"),
 		},
 		{
 			href: "/platform-admin/worker-queue",
-			icon: IconServer,
+			icon: "workerQueue",
 			label: t("admin:admin.layout.nav.workerQueue", "Worker Queue"),
 		},
 		{
 			href: "/platform-admin/diagnostics",
-			icon: IconActivityHeartbeat,
+			icon: "diagnostics",
 			label: t("admin:admin.layout.nav.diagnostics", "Deployment Diagnostics"),
 		},
 	];
@@ -109,26 +102,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 						{/* Divider */}
 						<div className="hidden h-6 w-px bg-border/60 md:block" />
 
-						{/* Navigation */}
-						<nav className="hidden items-center gap-1 md:flex">
-							{navItems.map((item) => (
-								<Link
-									key={item.href}
-									href={item.href}
-									className={cn(
-										"flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-										"text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-									)}
-								>
-									<item.icon className="size-4" aria-hidden="true" />
-									{item.label}
-								</Link>
-							))}
-						</nav>
+						<PlatformAdminHeaderActions
+							navItems={navItems}
+							exitLabel={t("admin:admin.layout.exitAdmin", "Exit Admin")}
+							showExit={false}
+						/>
 					</div>
 
 					{/* Right: User + Exit */}
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-2">
 						<div className="hidden items-center gap-3 sm:flex">
 							<div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
 								{session.user.name?.charAt(0).toUpperCase() ||
@@ -142,15 +124,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
 						<div className="hidden h-6 w-px bg-border/60 sm:block" />
 
-						<Link
-							href="/"
-							className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-						>
-							<IconLogout className="size-4" aria-hidden="true" />
-							<span className="hidden sm:inline">
-								{t("admin:admin.layout.exitAdmin", "Exit Admin")}
-							</span>
-						</Link>
+						<LanguageSwitcher variant="compact" />
+
+						<PlatformAdminHeaderActions
+							navItems={[]}
+							exitLabel={t("admin:admin.layout.exitAdmin", "Exit Admin")}
+						/>
 					</div>
 				</div>
 			</header>

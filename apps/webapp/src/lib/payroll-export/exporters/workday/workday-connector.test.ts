@@ -1,10 +1,23 @@
 import { DateTime } from "luxon";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AbsenceData, WorkPeriodData } from "../../types";
 import { WorkdayConnector } from "./workday-connector";
 import { DEFAULT_WORKDAY_CONFIG } from "./types";
 
+vi.mock("node:dns", () => ({
+	promises: {
+		lookup: vi.fn(async () => ({ address: "203.0.113.10", family: 4 })),
+	},
+}));
+
+const { promises: dns } = await import("node:dns");
+const mockLookup = vi.mocked(dns.lookup);
+
 describe("WorkdayConnector", () => {
+	beforeEach(() => {
+		mockLookup.mockResolvedValue({ address: "203.0.113.10", family: 4 });
+	});
+
 	it("validates required config fields and ranges", async () => {
 		const connector = new WorkdayConnector();
 
@@ -40,6 +53,22 @@ describe("WorkdayConnector", () => {
 		).resolves.toEqual({
 			valid: false,
 			errors: ["instanceUrl must use HTTPS", "instanceUrl cannot target private or internal addresses"],
+		});
+	});
+
+	it("rejects Workday instance URLs that resolve to private addresses", async () => {
+		mockLookup.mockResolvedValue({ address: "10.0.0.5", family: 4 });
+		const connector = new WorkdayConnector();
+
+		await expect(
+			connector.validateConfig({
+				...DEFAULT_WORKDAY_CONFIG,
+				instanceUrl: "https://workday.attacker.example",
+				tenantId: "acme",
+			}),
+		).resolves.toEqual({
+			valid: false,
+			errors: ["instanceUrl resolves to a private IP address"],
 		});
 	});
 

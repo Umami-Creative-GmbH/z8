@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,17 +21,46 @@ const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart),
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 
-const chartConfig = {
-	signups: { label: "Signups", color: "hsl(var(--chart-1))" },
-	organizations: { label: "Organizations", color: "hsl(var(--chart-2))" },
-	activeUsers: { label: "Active users", color: "hsl(var(--chart-1))" },
-	sessions: { label: "Sessions", color: "hsl(var(--chart-2))" },
-	timeRecords: { label: "Time records", color: "hsl(var(--chart-1))" },
-	seats: { label: "Licensed seats", color: "hsl(var(--chart-1))" },
-	mrr: { label: "Estimated MRR", color: "hsl(var(--chart-2))" },
-} satisfies ChartConfig;
+const metricConfig = {
+	signups: {
+		labelKey: "admin:admin.analytics.metrics.signups",
+		fallback: "Signups",
+		color: "hsl(var(--chart-1))",
+	},
+	organizations: {
+		labelKey: "admin:admin.analytics.metrics.organizations",
+		fallback: "Organizations",
+		color: "hsl(var(--chart-2))",
+	},
+	activeUsers: {
+		labelKey: "admin:admin.analytics.metrics.activeUsers",
+		fallback: "Active users",
+		color: "hsl(var(--chart-1))",
+	},
+	sessions: {
+		labelKey: "admin:admin.analytics.metrics.sessions",
+		fallback: "Sessions",
+		color: "hsl(var(--chart-2))",
+	},
+	timeRecords: {
+		labelKey: "admin:admin.analytics.metrics.timeRecords",
+		fallback: "Time records",
+		color: "hsl(var(--chart-1))",
+	},
+	seats: {
+		labelKey: "admin:admin.analytics.metrics.seats",
+		fallback: "Licensed seats",
+		color: "hsl(var(--chart-1))",
+	},
+	mrr: {
+		labelKey: "admin:admin.analytics.metrics.mrr",
+		fallback: "Estimated MRR",
+		color: "hsl(var(--chart-2))",
+	},
+};
 
-type MetricKey = keyof typeof chartConfig;
+type MetricKey = keyof typeof metricConfig;
+type Translate = ReturnType<typeof useTranslate>["t"];
 
 type KpiCard = {
 	title: string;
@@ -47,22 +77,30 @@ type AnalyticsChart = {
 };
 
 export function PlatformAnalyticsCharts({ data }: { data: PlatformAnalyticsData }) {
-	const kpis = getKpiCards(data);
-	const charts = getChartCards(data);
+	const { t } = useTranslate();
+	const chartConfig = getChartConfig(t);
+	const kpis = getKpiCards(data, t);
+	const charts = getChartCards(data, t);
 
 	return (
 		<div className="space-y-4">
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{kpis.map((kpi) => (
-					<KpiCard key={kpi.title} kpi={kpi} />
+					<KpiCard key={kpi.title} kpi={kpi} t={t} />
 				))}
 			</div>
 
-			{data.billingEnabled && data.kpis.estimatedBilling ? <EstimatedBillingNotice /> : null}
+			{data.billingEnabled && data.kpis.estimatedBilling ? <EstimatedBillingNotice t={t} /> : null}
 
 			<div className="grid gap-4 xl:grid-cols-2">
 				{charts.map((chart) => (
-					<AnalyticsChartCard key={chart.title} chart={chart} series={data.series} />
+					<AnalyticsChartCard
+						key={chart.title}
+						chart={chart}
+						chartConfig={chartConfig}
+						series={data.series}
+						t={t}
+					/>
 				))}
 			</div>
 		</div>
@@ -70,34 +108,50 @@ export function PlatformAnalyticsCharts({ data }: { data: PlatformAnalyticsData 
 }
 
 export function PlatformAnalyticsPreviewCharts({ data }: { data: PlatformAnalyticsData }) {
-	const charts = getChartCards(data).slice(0, 2);
+	const { t } = useTranslate();
+	const chartConfig = getChartConfig(t);
+	const charts = getChartCards(data, t).slice(0, 2);
 
 	return (
 		<Card>
 			<CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<div className="space-y-1.5">
 					<CardTitle>
-						<h2 className="text-base">Analytics trends</h2>
+						<h2 className="text-base">
+							{t("admin:admin.analytics.preview.title", "Analytics trends")}
+						</h2>
 					</CardTitle>
-					<CardDescription>Platform growth and engagement across the selected range.</CardDescription>
+					<CardDescription>
+						{t(
+							"admin:admin.analytics.preview.description",
+							"Platform growth and engagement across the selected range.",
+						)}
+					</CardDescription>
 				</div>
 				<Link
 					href="/platform-admin/analytics"
 					className="rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 				>
-					View full analytics
+					{t("admin:admin.analytics.preview.viewFull", "View full analytics")}
 				</Link>
 			</CardHeader>
 			<CardContent className="grid gap-4 lg:grid-cols-2">
 				{charts.map((chart) => (
-					<AnalyticsChartCard key={chart.title} chart={chart} series={data.series} compact />
+					<AnalyticsChartCard
+						key={chart.title}
+						chart={chart}
+						chartConfig={chartConfig}
+						series={data.series}
+						t={t}
+						compact
+					/>
 				))}
 			</CardContent>
 		</Card>
 	);
 }
 
-function KpiCard({ kpi }: { kpi: KpiCard }) {
+function KpiCard({ kpi, t }: { kpi: KpiCard; t: Translate }) {
 	return (
 		<Card className="gap-3">
 			<CardHeader className="pb-0">
@@ -105,7 +159,7 @@ function KpiCard({ kpi }: { kpi: KpiCard }) {
 			</CardHeader>
 			<CardContent className="space-y-1">
 				<div className="text-2xl font-semibold tabular-nums tracking-tight">
-					{formatValue(kpi.value, kpi.kind)}
+					{formatValue(kpi.value, kpi.kind, t)}
 				</div>
 				<p className="text-xs text-muted-foreground">{kpi.description}</p>
 			</CardContent>
@@ -115,11 +169,15 @@ function KpiCard({ kpi }: { kpi: KpiCard }) {
 
 function AnalyticsChartCard({
 	chart,
+	chartConfig,
 	series,
+	t,
 	compact = false,
 }: {
 	chart: AnalyticsChart;
+	chartConfig: ChartConfig;
 	series: PlatformAnalyticsPoint[];
+	t: Translate;
 	compact?: boolean;
 }) {
 	return (
@@ -146,7 +204,7 @@ function AnalyticsChartCard({
 				</ul>
 				{series.length === 0 ? (
 					<div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed bg-muted/20 text-sm text-muted-foreground">
-						No data for this range
+						{t("admin:admin.analytics.emptyState.noData", "No data for this range")}
 					</div>
 				) : (
 					<ChartContainer
@@ -176,51 +234,76 @@ function AnalyticsChartCard({
 	);
 }
 
-function EstimatedBillingNotice() {
+function EstimatedBillingNotice({ t }: { t: Translate }) {
 	return (
 		<Card className="border-amber-500/30 bg-amber-500/5 py-4">
 			<CardContent>
 				<p className="text-sm text-muted-foreground">
-					Historical seats and MRR are estimated. Exact reconstruction requires future snapshots or
-					a billing ledger.
+					{t(
+						"admin:admin.analytics.billing.estimatedNotice",
+						"Historical seats and MRR are estimated. Exact reconstruction requires future snapshots or a billing ledger.",
+					)}
 				</p>
 			</CardContent>
 		</Card>
 	);
 }
 
-function getKpiCards(data: PlatformAnalyticsData): KpiCard[] {
+function getKpiCards(data: PlatformAnalyticsData, t: Translate): KpiCard[] {
 	const kpis: KpiCard[] = [
 		{
-			title: "Active users",
+			title: t("admin:admin.analytics.kpis.activeUsers.title", "Active users"),
 			value: data.kpis.activeUsers,
-			description: "Users active in the selected range",
+			description: t(
+				"admin:admin.analytics.kpis.activeUsers.description",
+				"Users active in the selected range",
+			),
 		},
-		{ title: "Signups", value: data.kpis.signups, description: "New platform accounts" },
 		{
-			title: "Organizations",
+			title: t("admin:admin.analytics.kpis.signups.title", "Signups"),
+			value: data.kpis.signups,
+			description: t("admin:admin.analytics.kpis.signups.description", "New platform accounts"),
+		},
+		{
+			title: t("admin:admin.analytics.kpis.organizations.title", "Organizations"),
 			value: data.kpis.organizations,
-			description: "Active workspaces on the platform",
+			description: t(
+				"admin:admin.analytics.kpis.organizations.description",
+				"Active workspaces on the platform",
+			),
 		},
-		{ title: "Sessions", value: data.kpis.sessions, description: "Authenticated sessions" },
 		{
-			title: "Time records",
+			title: t("admin:admin.analytics.kpis.sessions.title", "Sessions"),
+			value: data.kpis.sessions,
+			description: t("admin:admin.analytics.kpis.sessions.description", "Authenticated sessions"),
+		},
+		{
+			title: t("admin:admin.analytics.kpis.timeRecords.title", "Time records"),
 			value: data.kpis.timeRecords,
-			description: "Submitted operational records",
+			description: t(
+				"admin:admin.analytics.kpis.timeRecords.description",
+				"Submitted operational records",
+			),
 		},
 	];
 
 	if (data.billingEnabled) {
 		kpis.push(
 			{
-				title: "Licensed seats",
+				title: t("admin:admin.analytics.kpis.seats.title", "Licensed seats"),
 				value: data.kpis.seats,
-				description: "Current paid or trial seats",
+				description: t(
+					"admin:admin.analytics.kpis.seats.description",
+					"Current paid or trial seats",
+				),
 			},
 			{
-				title: "Estimated MRR",
+				title: t("admin:admin.analytics.kpis.mrr.title", "Estimated MRR"),
 				value: data.kpis.mrr,
-				description: "Monthly recurring revenue estimate",
+				description: t(
+					"admin:admin.analytics.kpis.mrr.description",
+					"Monthly recurring revenue estimate",
+				),
 				kind: "currency",
 			},
 		);
@@ -229,50 +312,91 @@ function getKpiCards(data: PlatformAnalyticsData): KpiCard[] {
 	return kpis;
 }
 
-function getChartCards(data: PlatformAnalyticsData): AnalyticsChart[] {
+function getChartCards(data: PlatformAnalyticsData, t: Translate): AnalyticsChart[] {
 	const charts: AnalyticsChart[] = [
 		{
-			title: "Growth",
-			description: "New users and organizations entering the platform.",
+			title: t("admin:admin.analytics.charts.growth.title", "Growth"),
+			description: t(
+				"admin:admin.analytics.charts.growth.description",
+				"New users and organizations entering the platform.",
+			),
 			metrics: ["signups", "organizations"],
-			summary: `Growth summary: ${formatValue(data.kpis.signups)} signups and ${formatValue(
-				data.kpis.organizations,
-			)} organizations.`,
+			summary: t(
+				"admin:admin.analytics.charts.growth.summary",
+				"Growth summary: {signups} signups and {organizations} organizations.",
+				{
+					signups: formatValue(data.kpis.signups, undefined, t),
+					organizations: formatValue(data.kpis.organizations, undefined, t),
+				},
+			),
 		},
 		{
-			title: "Engagement",
-			description: "Platform usage through active users and sessions.",
+			title: t("admin:admin.analytics.charts.engagement.title", "Engagement"),
+			description: t(
+				"admin:admin.analytics.charts.engagement.description",
+				"Platform usage through active users and sessions.",
+			),
 			metrics: ["activeUsers", "sessions"],
-			summary: `Engagement summary: ${formatValue(
-				data.kpis.activeUsers,
-			)} active users and ${formatValue(data.kpis.sessions)} sessions.`,
+			summary: t(
+				"admin:admin.analytics.charts.engagement.summary",
+				"Engagement summary: {activeUsers} active users and {sessions} sessions.",
+				{
+					activeUsers: formatValue(data.kpis.activeUsers, undefined, t),
+					sessions: formatValue(data.kpis.sessions, undefined, t),
+				},
+			),
 		},
 		{
-			title: "Operations",
-			description: "Time tracking volume generated by tenant activity.",
+			title: t("admin:admin.analytics.charts.operations.title", "Operations"),
+			description: t(
+				"admin:admin.analytics.charts.operations.description",
+				"Time tracking volume generated by tenant activity.",
+			),
 			metrics: ["timeRecords"],
-			summary: `Operations summary: ${formatValue(data.kpis.timeRecords)} time records.`,
+			summary: t(
+				"admin:admin.analytics.charts.operations.summary",
+				"Operations summary: {timeRecords} time records.",
+				{
+					timeRecords: formatValue(data.kpis.timeRecords, undefined, t),
+				},
+			),
 		},
 	];
 
 	if (data.billingEnabled) {
 		charts.push({
-			title: "Commercial",
-			description: "Seat and recurring revenue signals for billing health.",
+			title: t("admin:admin.analytics.charts.commercial.title", "Commercial"),
+			description: t(
+				"admin:admin.analytics.charts.commercial.description",
+				"Seat and recurring revenue signals for billing health.",
+			),
 			metrics: ["seats", "mrr"],
-			summary: `Commercial summary: ${formatValue(data.kpis.seats)} seats and ${formatValue(
-				data.kpis.mrr,
-				"currency",
-			)} estimated MRR.`,
+			summary: t(
+				"admin:admin.analytics.charts.commercial.summary",
+				"Commercial summary: {seats} seats and {mrr} estimated MRR.",
+				{
+					seats: formatValue(data.kpis.seats, undefined, t),
+					mrr: formatValue(data.kpis.mrr, "currency", t),
+				},
+			),
 		});
 	}
 
 	return charts;
 }
 
-function formatValue(value: number | null, kind?: "currency") {
+function getChartConfig(t: Translate): ChartConfig {
+	return Object.fromEntries(
+		Object.entries(metricConfig).map(([key, config]) => [
+			key,
+			{ label: t(config.labelKey, config.fallback), color: config.color },
+		]),
+	) as ChartConfig;
+}
+
+function formatValue(value: number | null, kind: "currency" | undefined, t: Translate) {
 	if (value === null) {
-		return "Not available";
+		return t("admin:admin.analytics.values.notAvailable", "Not available");
 	}
 
 	if (kind === "currency") {

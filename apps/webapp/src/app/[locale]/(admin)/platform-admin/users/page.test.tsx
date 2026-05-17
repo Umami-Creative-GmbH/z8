@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { pushMock, useQueryMock, invalidateQueriesMock } = vi.hoisted(() => ({
@@ -125,11 +125,14 @@ vi.mock("@/components/ui/textarea", () => ({
 	Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...props} />,
 }));
 
+import { listUsersAction } from "./actions";
 import UsersPage from "./page";
 
 describe("Platform admin users page", () => {
 	beforeEach(() => {
+		vi.useRealTimers();
 		vi.clearAllMocks();
+		window.history.replaceState(null, "", "/platform-admin/users");
 		useQueryMock.mockReturnValue({
 			data: {
 				data: [
@@ -144,6 +147,15 @@ describe("Platform admin users page", () => {
 						banExpires: null,
 						createdAt: new Date("2026-05-01T08:00:00Z"),
 						image: "https://example.com/avatar.png",
+						organizations: [
+							{
+								id: "org-acme",
+								name: "Acme Corp",
+								slug: "acme-corp",
+								role: "owner",
+								status: "approved",
+							},
+						],
 					},
 				],
 				total: 1,
@@ -163,5 +175,59 @@ describe("Platform admin users page", () => {
 		expect(screen.getByText("ada@example.com")).toBeTruthy();
 		expect(screen.queryByText("Ada Lovelace")).toBeNull();
 		expect(screen.queryByAltText("Ada Lovelace")).toBeNull();
+	});
+
+	it("shows organization memberships and roles for each user", () => {
+		render(<UsersPage />);
+
+		expect(screen.getByText("Organizations")).toBeTruthy();
+		expect(screen.getByText("Acme Corp")).toBeTruthy();
+		expect(screen.getByText("owner")).toBeTruthy();
+	});
+
+	it("passes organization filters through the query key and query function", async () => {
+		window.history.replaceState(
+			null,
+			"",
+			"/platform-admin/users?search=ada&status=active&organizationId=org-acme",
+		);
+		vi.mocked(listUsersAction).mockResolvedValue({
+			success: true,
+			data: {
+				data: [],
+				total: 0,
+				page: 1,
+				pageSize: 20,
+				totalPages: 0,
+			},
+		});
+
+		render(<UsersPage />);
+
+		const queryConfig = useQueryMock.mock.calls.at(-1)?.[0];
+		expect(queryConfig.queryKey).toEqual(["admin-users", "ada", "active", "org-acme", 1]);
+
+		await queryConfig.queryFn();
+
+		expect(listUsersAction).toHaveBeenCalledWith(
+			{ search: "ada", status: "active", organizationId: "org-acme" },
+			1,
+			20,
+		);
+	});
+
+	it("preserves organizationId when updating search filters", () => {
+		vi.useFakeTimers();
+		window.history.replaceState(null, "", "/platform-admin/users?organizationId=org-acme");
+
+		render(<UsersPage />);
+		fireEvent.change(screen.getByLabelText("Search users by email"), {
+			target: { value: "ada" },
+		});
+		act(() => {
+			vi.advanceTimersByTime(300);
+		});
+
+		expect(pushMock).toHaveBeenCalledWith("/platform-admin/users?search=ada&organizationId=org-acme");
 	});
 });

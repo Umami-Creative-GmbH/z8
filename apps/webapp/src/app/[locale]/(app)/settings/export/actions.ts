@@ -208,7 +208,7 @@ export async function regenerateDownloadUrlAction(
 		}
 
 		// Step 3: Regenerate URL
-		const url = yield* _(Effect.promise(() => regeneratePresignedUrl(exportId)));
+		const url = yield* _(Effect.promise(() => regeneratePresignedUrl(exportId, organizationId)));
 
 		return url;
 	});

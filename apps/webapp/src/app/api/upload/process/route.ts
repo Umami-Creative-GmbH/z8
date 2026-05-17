@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPublicUrl, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
+import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -63,9 +64,8 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Sanitize tusFileKey to prevent path traversal
-		const safeTusFileKey = tusFileKey.replace(/\.\./g, "").replace(/[\/\\]/g, "");
-		if (!safeTusFileKey || safeTusFileKey !== tusFileKey) {
+		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, session.user.id);
+		if (!safeTusFileKey) {
 			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
 		}
 

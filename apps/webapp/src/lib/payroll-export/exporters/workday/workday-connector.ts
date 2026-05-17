@@ -6,7 +6,7 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../../types";
-import { isPrivateIP } from "@/lib/webhooks/url-validation";
+import { isPrivateIP, resolveAndValidateUrl } from "@/lib/webhooks/url-validation";
 import { WorkdayApiClient } from "./api-client";
 import {
 	DEFAULT_WORKDAY_CONFIG,
@@ -22,7 +22,7 @@ const WORKDAY_VAULT_KEY_CLIENT_ID = "payroll/workday/client_id";
 const WORKDAY_VAULT_KEY_CLIENT_SECRET = "payroll/workday/client_secret";
 const WORKDAY_VAULT_KEY_SCOPE = "payroll/workday/scope";
 
-function validateInstanceUrl(instanceUrl: string): string[] {
+async function validateInstanceUrl(instanceUrl: string): Promise<string[]> {
 	const errors: string[] = [];
 
 	try {
@@ -31,8 +31,21 @@ function validateInstanceUrl(instanceUrl: string): string[] {
 			errors.push("instanceUrl must use HTTPS");
 		}
 
-		if (isPrivateIP(parsed.hostname)) {
+		const targetsPrivateHost = isPrivateIP(parsed.hostname);
+		if (targetsPrivateHost) {
 			errors.push("instanceUrl cannot target private or internal addresses");
+		}
+
+		if (parsed.protocol === "https:" && !targetsPrivateHost) {
+			const resolved = await resolveAndValidateUrl(instanceUrl);
+			if (!resolved.valid) {
+				errors.push(
+					(resolved.reason ?? "Failed to validate Workday URL").replace(
+						/Webhook URL|webhook URL/g,
+						"instanceUrl",
+					),
+				);
+			}
 		}
 	} catch {
 		errors.push("instanceUrl must be a valid URL");
@@ -83,7 +96,7 @@ export class WorkdayConnector implements IPayrollExporter {
 		valid: boolean;
 		errors?: string[];
 	}> {
-		const { errors } = this.parseConfig(config);
+		const { errors } = await this.parseConfig(config);
 
 		return {
 			valid: errors.length === 0,
@@ -98,7 +111,7 @@ export class WorkdayConnector implements IPayrollExporter {
 		success: boolean;
 		error?: string;
 	}> {
-		const { config: workdayConfig, errors } = this.parseConfig(config);
+		const { config: workdayConfig, errors } = await this.parseConfig(config);
 		if (errors.length > 0 || !workdayConfig) {
 			return {
 				success: false,
@@ -141,7 +154,7 @@ export class WorkdayConnector implements IPayrollExporter {
 			throw new Error(connectionResult.error ?? "Workday connection test failed");
 		}
 
-		const { config: workdayConfig, errors: configErrors } = this.parseConfig(config);
+		const { config: workdayConfig, errors: configErrors } = await this.parseConfig(config);
 		if (configErrors.length > 0 || !workdayConfig) {
 			throw new Error(configErrors.join(", ") || "Invalid Workday configuration");
 		}
@@ -284,10 +297,10 @@ export class WorkdayConnector implements IPayrollExporter {
 		};
 	}
 
-	private parseConfig(rawConfig: Record<string, unknown>): {
+	private async parseConfig(rawConfig: Record<string, unknown>): Promise<{
 		config?: WorkdayConfig;
 		errors: string[];
-	} {
+	}> {
 		const config = { ...DEFAULT_WORKDAY_CONFIG };
 		const errors: string[] = [];
 
@@ -299,7 +312,7 @@ export class WorkdayConnector implements IPayrollExporter {
 		} else if (!instanceUrl.trim()) {
 			errors.push("instanceUrl is required");
 		} else {
-			errors.push(...validateInstanceUrl(instanceUrl));
+			errors.push(...(await validateInstanceUrl(instanceUrl)));
 			config.instanceUrl = instanceUrl;
 		}
 

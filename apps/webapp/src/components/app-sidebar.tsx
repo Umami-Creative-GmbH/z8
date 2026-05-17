@@ -13,6 +13,7 @@ import {
 	IconMessageCircle,
 	IconReceipt,
 	IconReport,
+	IconServerCog,
 	IconSettings,
 	IconShieldCheck,
 	IconUsers,
@@ -38,6 +39,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	shiftsEnabled?: boolean;
 	showComplianceNav?: boolean;
+	showPlatformAdminNav?: boolean;
 	settingsAccessTier?: SettingsAccessTier;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
@@ -55,6 +57,7 @@ export function AppSidebar({
 	employeeRole = null,
 	shiftsEnabled = false,
 	showComplianceNav = false,
+	showPlatformAdminNav = false,
 	settingsAccessTier = "member",
 	billingEnabled = false,
 	featureFlags,
@@ -169,6 +172,15 @@ export function AppSidebar({
 			url: "https://feedback.z8-time.app/",
 			icon: IconMessageCircle,
 		},
+		...(showPlatformAdminNav
+			? [
+					{
+						title: t("nav.platform-admin", "Platform Admin"),
+						url: "/platform-admin",
+						icon: IconServerCog,
+					},
+				]
+			: []),
 	];
 
 	return (

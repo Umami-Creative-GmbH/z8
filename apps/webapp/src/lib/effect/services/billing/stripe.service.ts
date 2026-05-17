@@ -78,6 +78,7 @@ export const StripeServiceLive = Layer.effect(
 
 		const stripe = config.enabled && config.secretKey
 			? new Stripe(config.secretKey, {
+					apiVersion: "2026-04-22.dahlia",
 					typescript: true,
 				})
 			: null;
@@ -140,6 +141,7 @@ export const StripeServiceLive = Layer.effect(
 						return await stripe.checkout.sessions.create({
 							customer: params.customerId,
 							mode: "subscription",
+							metadata: { organizationId: params.organizationId },
 							line_items: [
 								{
 									price: params.priceId,
