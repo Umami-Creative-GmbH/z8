@@ -2,8 +2,8 @@ import { Context, Effect, Layer } from "effect";
 import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user, session, organization, member } from "@/db/auth-schema";
-import { employee, platformAdminAuditLog, organizationSuspension } from "@/db/schema";
+import { user, session, organization } from "@/db/auth-schema";
+import { platformAdminAuditLog, organizationSuspension } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
 	AuthorizationError,
@@ -521,13 +521,13 @@ export const PlatformAdminServiceLive = Layer.effect(
 								createdAt: organization.createdAt,
 								deletedAt: organization.deletedAt,
 								employeeCount: sql<number>`(
-									SELECT COUNT(*) FROM ${employee}
-									WHERE ${employee.organizationId} = ${organization.id}
-									AND ${employee.isActive} = true
+									SELECT COUNT(*) FROM "employee"
+									WHERE "employee"."organization_id" = "organization"."id"
+									AND "employee"."is_active" = true
 								)`.as("employee_count"),
 								memberCount: sql<number>`(
-									SELECT COUNT(*) FROM ${member}
-									WHERE ${member.organizationId} = ${organization.id}
+									SELECT COUNT(*) FROM "member"
+									WHERE "member"."organization_id" = "organization"."id"
 								)`.as("member_count"),
 							})
 							.from(organization)

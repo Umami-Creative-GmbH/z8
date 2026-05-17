@@ -48,6 +48,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PlatformOrganization } from "@/lib/effect/services/platform-admin.service";
 import { useRouter } from "@/navigation";
 import {
@@ -117,6 +118,18 @@ export default function OrganizationsPage() {
 	const organizations = data?.data ?? [];
 	const loadErrorMessage = error instanceof Error ? error.message : null;
 	const total = data?.total ?? 0;
+	const suspendOrganizationLabel = t(
+		"admin:admin.organizations.actions.suspend",
+		"Suspend organization",
+	);
+	const reactivateOrganizationLabel = t(
+		"admin:admin.organizations.actions.reactivate",
+		"Reactivate organization",
+	);
+	const deleteOrganizationLabel = t(
+		"admin:admin.organizations.actions.delete",
+		"Delete organization",
+	);
 
 	// Debounced search with immediate status change
 	const handleFilterChange = useCallback(
@@ -306,7 +319,10 @@ export default function OrganizationsPage() {
 						</div>
 					) : isError ? (
 						<div className="flex items-start gap-3 p-6 text-sm">
-							<IconAlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
+							<IconAlertTriangle
+								className="mt-0.5 size-5 shrink-0 text-destructive"
+								aria-hidden="true"
+							/>
 							<div className="space-y-1">
 								<p className="font-medium">
 									{t(
@@ -415,43 +431,48 @@ export default function OrganizationsPage() {
 													{!org.deletedAt && (
 														<>
 															{org.isSuspended ? (
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	onClick={() => handleUnsuspend(org)}
-																	disabled={isPending}
-																	aria-label={t(
-																		"admin:admin.organizations.toasts.unsuspended",
-																		'Organization "{name}" has been unsuspended',
-																		{ name: org.name },
-																	)}
-																>
-																	<IconPlayerPlay className="size-4" aria-hidden="true" />
-																</Button>
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<Button
+																			variant="ghost"
+																			size="sm"
+																			onClick={() => handleUnsuspend(org)}
+																			disabled={isPending}
+																			aria-label={reactivateOrganizationLabel}
+																		>
+																			<IconPlayerPlay className="size-4" aria-hidden="true" />
+																		</Button>
+																	</TooltipTrigger>
+																	<TooltipContent>{reactivateOrganizationLabel}</TooltipContent>
+																</Tooltip>
 															) : (
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	onClick={() => setSuspendDialogOrg(org)}
-																	aria-label={t(
-																		"admin:admin.organizations.suspendDialog.title",
-																		"Suspend Organization",
-																	)}
-																>
-																	<IconPlayerPause className="size-4" aria-hidden="true" />
-																</Button>
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<Button
+																			variant="ghost"
+																			size="sm"
+																			onClick={() => setSuspendDialogOrg(org)}
+																			aria-label={suspendOrganizationLabel}
+																		>
+																			<IconPlayerPause className="size-4" aria-hidden="true" />
+																		</Button>
+																	</TooltipTrigger>
+																	<TooltipContent>{suspendOrganizationLabel}</TooltipContent>
+																</Tooltip>
 															)}
-															<Button
-																variant="ghost"
-																size="sm"
-																onClick={() => setDeleteDialogOrg(org)}
-																aria-label={t(
-																	"admin:admin.organizations.deleteDialog.title",
-																	"Delete Organization",
-																)}
-															>
-																<IconTrash className="size-4" aria-hidden="true" />
-															</Button>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		onClick={() => setDeleteDialogOrg(org)}
+																		aria-label={deleteOrganizationLabel}
+																	>
+																		<IconTrash className="size-4" aria-hidden="true" />
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>{deleteOrganizationLabel}</TooltipContent>
+															</Tooltip>
 														</>
 													)}
 												</div>

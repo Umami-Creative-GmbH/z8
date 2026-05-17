@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { selectMock, executeMock } = vi.hoisted(() => ({
+const { groupByArgs, selectMock, executeMock } = vi.hoisted(() => ({
+	groupByArgs: [] as unknown[],
 	selectMock: vi.fn(),
 	executeMock: vi.fn(),
 }));
@@ -18,7 +19,11 @@ function queueSelectResult(rows: unknown[]) {
 	selectMock.mockReturnValueOnce({
 		from: () => ({
 			where: () => ({
-				groupBy: () => Promise.resolve(rows),
+				groupBy: (...args: unknown[]) => {
+					groupByArgs.push(...args);
+
+					return Promise.resolve(rows);
+				},
 			}),
 		}),
 	});
@@ -38,6 +43,7 @@ describe("getPlatformAnalyticsData", () => {
 		vi.setSystemTime(new Date("2026-05-10T12:00:00.000Z"));
 		selectMock.mockReset();
 		executeMock.mockReset();
+		groupByArgs.length = 0;
 	});
 
 	afterEach(() => {
@@ -150,6 +156,22 @@ describe("getPlatformAnalyticsData", () => {
 
 		expect(generatedSql).toContain("- '1 millisecond'::interval");
 		expect(generatedSql).toContain("AT TIME ZONE 'UTC'");
+	});
+
+	it("groups aggregate queries by the selected bucket expression ordinal", async () => {
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueCurrentTotal([{ value: 0 }]);
+
+		await getPlatformAnalyticsData({ range: "30d", bucket: "week" }, false, {
+			includeTimeRecords: false,
+		});
+
+		const generatedSql = groupByArgs.map((arg) => collectStrings(arg, new WeakSet()).join(" "));
+
+		expect(generatedSql).toEqual(["1", "1", "1", "1"]);
 	});
 });
 

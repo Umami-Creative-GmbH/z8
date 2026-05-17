@@ -94,7 +94,7 @@ function getActiveUsersByBucket(params: ParsedPlatformAnalyticsParams) {
 		.select({ bucket, value: countDistinct(session.userId) })
 		.from(session)
 		.where(and(gte(session.createdAt, toDate(params.startIso)), lt(session.createdAt, toDate(params.endIso))))
-		.groupBy(bucket);
+		.groupBy(sql`1`);
 }
 
 function getCountByBucket(column: AnyPgColumn, params: ParsedPlatformAnalyticsParams) {
@@ -104,7 +104,7 @@ function getCountByBucket(column: AnyPgColumn, params: ParsedPlatformAnalyticsPa
 		.select({ bucket, value: count() })
 		.from(column.table)
 		.where(and(gte(column, toDate(params.startIso)), lt(column, toDate(params.endIso))))
-		.groupBy(bucket);
+		.groupBy(sql`1`);
 }
 
 async function getCurrentOrganizations() {

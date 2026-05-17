@@ -10,8 +10,8 @@ Add these to your environment (via Phase CLI for production):
 # Enable billing (set to "true" to activate)
 BILLING_ENABLED=true
 
-# Stripe API Keys (from Stripe Dashboard > Developers > API keys)
-STRIPE_SECRET_KEY=sk_live_...        # Use sk_test_... for development
+# Stripe API key (prefer a restricted API key from Stripe Dashboard > Developers > API keys)
+STRIPE_SECRET_KEY=rk_live_...        # Use rk_test_... for development; avoid sk_ keys unless a RAK cannot cover the required permissions
 STRIPE_WEBHOOK_SECRET=whsec_...      # From webhook endpoint configuration
 
 # Price IDs (from Stripe Dashboard > Products)
@@ -46,8 +46,12 @@ STRIPE_PRICE_YEARLY_ID=price_...     # Yearly per-seat price
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
    - `customer.subscription.trial_will_end`
+   - `customer.subscription.paused`
+   - `customer.subscription.resumed`
    - `invoice.payment_succeeded`
    - `invoice.payment_failed`
+   - `invoice.finalized`
+   - `payment_intent.payment_failed`
 4. Copy the **Signing secret** (`whsec_...`) to `STRIPE_WEBHOOK_SECRET`
 
 ### 3. Configure Customer Portal

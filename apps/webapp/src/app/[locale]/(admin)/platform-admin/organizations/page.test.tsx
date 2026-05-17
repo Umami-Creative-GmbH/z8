@@ -45,8 +45,12 @@ vi.mock("./actions", () => ({
 vi.mock("@/components/ui/alert-dialog", () => ({
 	AlertDialog: ({ children, open }: { children: React.ReactNode; open?: boolean }) =>
 		open ? <div>{children}</div> : null,
-	AlertDialogAction: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
-	AlertDialogCancel: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+	AlertDialogAction: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
+	AlertDialogCancel: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
 	AlertDialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	AlertDialogDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	AlertDialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -70,7 +74,9 @@ vi.mock("@/components/ui/card", () => ({
 }));
 
 vi.mock("@/components/ui/checkbox", () => ({
-	Checkbox: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input type="checkbox" {...props} />,
+	Checkbox: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+		<input type="checkbox" {...props} />
+	),
 }));
 
 vi.mock("@/components/ui/input", () => ({
@@ -87,7 +93,9 @@ vi.mock("@/components/ui/select", () => ({
 	Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	SelectTrigger: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+	SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+		<button type="button">{children}</button>
+	),
 	SelectValue: ({ placeholder }: { placeholder?: string }) => <span>{placeholder}</span>,
 }));
 
@@ -108,6 +116,12 @@ vi.mock("@/components/ui/table", () => ({
 
 vi.mock("@/components/ui/textarea", () => ({
 	Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...props} />,
+}));
+
+vi.mock("@/components/ui/tooltip", () => ({
+	Tooltip: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	TooltipContent: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+	TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 import OrganizationsPage from "./page";
@@ -136,5 +150,51 @@ describe("Platform admin organizations page", () => {
 		expect(screen.getByText("Unable to load organizations")).toBeTruthy();
 		expect(screen.getByText("Failed to list organizations")).toBeTruthy();
 		expect(screen.queryByText("No organizations found")).toBeNull();
+	});
+
+	it("shows descriptive tooltips for organization action buttons", () => {
+		useQueryMock.mockReturnValue({
+			data: {
+				data: [
+					{
+						id: "org-active",
+						name: "Active Org",
+						slug: "active-org",
+						logo: null,
+						createdAt: new Date("2026-01-01T00:00:00.000Z"),
+						employeeCount: 3,
+						memberCount: 4,
+						isSuspended: false,
+						suspendedReason: null,
+						deletedAt: null,
+					},
+					{
+						id: "org-suspended",
+						name: "Suspended Org",
+						slug: "suspended-org",
+						logo: null,
+						createdAt: new Date("2026-01-02T00:00:00.000Z"),
+						employeeCount: 1,
+						memberCount: 2,
+						isSuspended: true,
+						suspendedReason: "Billing issue",
+						deletedAt: null,
+					},
+				],
+				total: 2,
+				page: 1,
+				pageSize: 20,
+				totalPages: 1,
+			},
+			isError: false,
+			isLoading: false,
+			error: null,
+		});
+
+		render(<OrganizationsPage />);
+
+		expect(screen.getByText("Suspend organization")).toBeTruthy();
+		expect(screen.getByText("Reactivate organization")).toBeTruthy();
+		expect(screen.getAllByText("Delete organization")).toHaveLength(2);
 	});
 });

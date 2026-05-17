@@ -199,6 +199,30 @@ export const SubscriptionServiceLive = Layer.succeed(
 		create: (params) =>
 			Effect.tryPromise({
 				try: async () => {
+					const existing = await db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, params.organizationId),
+					});
+
+					if (existing) {
+						await db
+							.update(subscription)
+							.set({
+								stripeCustomerId: params.stripeCustomerId,
+								stripeSubscriptionId: params.stripeSubscriptionId,
+								stripePriceId: params.stripePriceId,
+								status: params.status,
+								billingInterval: params.billingInterval,
+								trialStart: params.trialEnd ? new Date() : null,
+								trialEnd: params.trialEnd,
+								currentPeriodStart: params.currentPeriodStart,
+								currentPeriodEnd: params.currentPeriodEnd,
+								currentSeats: params.seats,
+								updatedAt: new Date(),
+							})
+							.where(eq(subscription.organizationId, params.organizationId));
+						return;
+					}
+
 					await db.insert(subscription).values({
 						organizationId: params.organizationId,
 						stripeCustomerId: params.stripeCustomerId,
