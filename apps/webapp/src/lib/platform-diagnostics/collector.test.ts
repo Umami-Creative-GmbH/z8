@@ -20,6 +20,7 @@ function buildDeps(overrides: Partial<Parameters<typeof collectPlatformDiagnosti
 			STRIPE_PRICE_YEARLY_ID: "price_yearly_123",
 		},
 		getDeploymentId: async () => "deployment-123",
+		getBuildHash: () => overrides.env?.NEXT_PUBLIC_BUILD_HASH ?? "build-123",
 		getCookieConsentConfigured: async () => true,
 		checkDatabase: async () => true,
 		checkQueue: async () => true,
@@ -92,6 +93,25 @@ describe("collectPlatformDiagnostics", () => {
 		);
 		expect(snapshot.recommendedActions).toContain(
 			"Configure missing Stripe variables before enabling billing workflows.",
+		);
+	});
+
+	it("uses the injected build hash when the diagnostics env object does not include it", async () => {
+		const snapshot = await collectPlatformDiagnostics(
+			buildDeps({
+				env: {
+					BILLING_ENABLED: "false",
+					NODE_ENV: "production",
+					NEXT_RUNTIME: "nodejs",
+				},
+				getBuildHash: () => "injected-build-hash",
+			}),
+		);
+
+		expect(snapshot.configuration).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Build hash", status: "healthy", value: "injected-build-hash" }),
+			]),
 		);
 	});
 
@@ -171,5 +191,12 @@ describe("collectPlatformDiagnostics", () => {
 
 		expect(source).toContain("cookie_consent_script");
 		expect(source).not.toContain("getCookieConsentScript");
+	});
+
+	it("creates the deployment ID through the telemetry helper in default dependencies", () => {
+		const source = readFileSync(fileURLToPath(new URL("./collector.ts", import.meta.url)), "utf8");
+
+		expect(source).toContain("getOrCreateDeploymentId");
+		expect(source).not.toContain('where(eq(systemConfig.key, "deployment_id"))');
 	});
 });
