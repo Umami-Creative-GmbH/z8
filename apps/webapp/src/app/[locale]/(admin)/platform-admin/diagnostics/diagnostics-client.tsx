@@ -1,6 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,13 +10,6 @@ import type { DiagnosticsItem, DiagnosticsStatus, PlatformDiagnosticsSnapshot } 
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { refreshPlatformDiagnosticsAction } from "./actions";
-
-const statusLabels: Record<DiagnosticsStatus, string> = {
-	healthy: "Healthy",
-	warning: "Warning",
-	error: "Error",
-	disabled: "Disabled",
-};
 
 const statusStyles: Record<DiagnosticsStatus, string> = {
 	healthy: "border-emerald-500/40 text-emerald-700 dark:text-emerald-400",
@@ -36,22 +30,22 @@ function StatusIcon({ status }: { status: DiagnosticsStatus }) {
 	return <IconAlertTriangle className="size-3" aria-hidden="true" />;
 }
 
-function StatusBadge({ status, showLabel = true }: { status: DiagnosticsStatus; showLabel?: boolean }) {
+function StatusBadge({ status, label, showLabel = true }: { status: DiagnosticsStatus; label: string; showLabel?: boolean }) {
 	return (
 		<Badge variant="outline" className={cn("capitalize", statusStyles[status])}>
 			<StatusIcon status={status} />
-			{showLabel ? statusLabels[status] : <span className="sr-only">{statusLabels[status]}</span>}
+			{showLabel ? label : <span className="sr-only">{label}</span>}
 		</Badge>
 	);
 }
 
-function DiagnosticsItemRow({ item }: { item: DiagnosticsItem }) {
+function DiagnosticsItemRow({ item, statusLabel }: { item: DiagnosticsItem; statusLabel: string }) {
 	return (
 		<div className="flex flex-col gap-3 border-b py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
 			<div className="min-w-0 space-y-1">
 				<div className="flex flex-wrap items-center gap-2">
 					<h3 className="text-sm font-medium">{item.title}</h3>
-					<StatusBadge status={item.status} showLabel={false} />
+					<StatusBadge status={item.status} label={statusLabel} showLabel={false} />
 				</div>
 				{item.description ? <p className="break-words text-sm text-muted-foreground">{item.description}</p> : null}
 				{item.actionHref && item.actionLabel ? (
@@ -65,7 +59,17 @@ function DiagnosticsItemRow({ item }: { item: DiagnosticsItem }) {
 	);
 }
 
-function DiagnosticsSection({ title, description, items }: { title: string; description: string; items: DiagnosticsItem[] }) {
+function DiagnosticsSection({
+	title,
+	description,
+	items,
+	statusLabels,
+}: {
+	title: string;
+	description: string;
+	items: DiagnosticsItem[];
+	statusLabels: Record<DiagnosticsStatus, string>;
+}) {
 	return (
 		<Card>
 			<CardHeader>
@@ -74,7 +78,7 @@ function DiagnosticsSection({ title, description, items }: { title: string; desc
 			</CardHeader>
 			<CardContent>
 				{items.map((item) => (
-					<DiagnosticsItemRow key={item.title} item={item} />
+					<DiagnosticsItemRow key={item.title} item={item} statusLabel={statusLabels[item.status]} />
 				))}
 			</CardContent>
 		</Card>
@@ -82,9 +86,16 @@ function DiagnosticsSection({ title, description, items }: { title: string; desc
 }
 
 export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: PlatformDiagnosticsSnapshot }) {
+	const { t } = useTranslate();
 	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, startTransition] = useTransition();
+	const statusLabels: Record<DiagnosticsStatus, string> = {
+		healthy: t("admin:admin.diagnostics.status.healthy", "Healthy"),
+		warning: t("admin:admin.diagnostics.status.warning", "Warning"),
+		error: t("admin:admin.diagnostics.status.error", "Error"),
+		disabled: t("admin:admin.diagnostics.status.disabled", "Disabled"),
+	};
 
 	function refreshDiagnostics() {
 		setError(null);
@@ -106,23 +117,35 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 				<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 					<div className="space-y-2">
 						<div className="flex flex-wrap items-center gap-3">
-							<CardTitle>Deployment Diagnostics</CardTitle>
-							<StatusBadge status={snapshot.overallStatus} />
+							<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
+							<StatusBadge status={snapshot.overallStatus} label={statusLabels[snapshot.overallStatus]} />
 						</div>
 						<CardDescription>
-							Safe platform configuration and app-level service health. Last refreshed {snapshot.fetchedAt}.
+							{t(
+								"admin:admin.diagnostics.clientDescription",
+								"Safe platform configuration and app-level service health. Last refreshed {date}.",
+								{ date: snapshot.fetchedAt },
+							)}
 						</CardDescription>
 						<p className="sr-only" role="status" aria-live="polite">
-							Diagnostics status {statusLabels[snapshot.overallStatus]}. Last refreshed {snapshot.fetchedAt}.
+							{t(
+								"admin:admin.diagnostics.statusAnnouncement",
+								"Diagnostics status {status}. Last refreshed {date}.",
+								{ status: statusLabels[snapshot.overallStatus], date: snapshot.fetchedAt },
+							)}
 						</p>
 					</div>
-					<Button onClick={refreshDiagnostics} disabled={isPending} aria-label="Refresh diagnostics">
+					<Button
+						onClick={refreshDiagnostics}
+						disabled={isPending}
+						aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
+					>
 						{isPending ? (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : (
 							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 						)}
-						Refresh diagnostics
+						{t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
 					</Button>
 				</CardHeader>
 				{error ? (
@@ -140,22 +163,37 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 
 			<div className="grid gap-6 xl:grid-cols-2">
 				<DiagnosticsSection
-					title="Platform Configuration"
-					description="Safe deployment configuration states. Secret values are never shown."
+					title={t("admin:admin.diagnostics.sections.configuration.title", "Platform Configuration")}
+					description={t(
+						"admin:admin.diagnostics.sections.configuration.description",
+						"Safe deployment configuration states. Secret values are never shown.",
+					)}
 					items={snapshot.configuration}
+					statusLabels={statusLabels}
 				/>
 				<DiagnosticsSection
-					title="Service Health"
-					description="App-only checks for infrastructure dependencies used by the webapp."
+					title={t("admin:admin.diagnostics.sections.health.title", "Service Health")}
+					description={t(
+						"admin:admin.diagnostics.sections.health.description",
+						"App-only checks for infrastructure dependencies used by the webapp.",
+					)}
 					items={snapshot.health}
+					statusLabels={statusLabels}
 				/>
 			</div>
 
 			{snapshot.recommendedActions.length > 0 ? (
 				<Card className="border-amber-500/30 bg-amber-500/5">
 					<CardHeader>
-						<CardTitle>Recommended Actions</CardTitle>
-						<CardDescription>Resolve these items to return diagnostics to a healthy state.</CardDescription>
+						<CardTitle>
+							{t("admin:admin.diagnostics.recommendedActions.title", "Recommended Actions")}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"admin:admin.diagnostics.recommendedActions.description",
+								"Resolve these items to return diagnostics to a healthy state.",
+							)}
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<ul className="space-y-2 text-sm">

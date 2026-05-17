@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2, IconScript, IconShield } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getCookieConsentScriptAction, setCookieConsentScriptAction } from "./actions";
 
 export default function PlatformSettingsPage() {
+	const { t } = useTranslate();
 	const [script, setScript] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
@@ -36,15 +38,20 @@ export default function PlatformSettingsPage() {
 		const result = await setCookieConsentScriptAction(script).catch(() => null);
 
 		if (!result) {
-			toast.error("Failed to save");
+			toast.error(t("admin:admin.settings.toasts.saveFailed", "Failed to save"));
 			setIsLoading(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success("Cookie consent script saved successfully");
+			toast.success(
+				t(
+					"admin:admin.settings.toasts.cookieConsentSaved",
+					"Cookie consent script saved successfully",
+				),
+			);
 		} else {
-			toast.error(result.error ?? "Failed to save");
+			toast.error(result.error ?? t("admin:admin.settings.toasts.saveFailed", "Failed to save"));
 		}
 
 		setIsLoading(false);
@@ -54,9 +61,14 @@ export default function PlatformSettingsPage() {
 		<div className="space-y-10">
 			{/* Page Header */}
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold tracking-tight">Platform Settings</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("admin:admin.settings.title", "Platform Settings")}
+				</h1>
 				<p className="text-muted-foreground">
-					Global platform configuration for all organizations
+					{t(
+						"admin:admin.settings.description",
+						"Global platform configuration for all organizations",
+					)}
 				</p>
 			</div>
 
@@ -70,9 +82,14 @@ export default function PlatformSettingsPage() {
 								<IconScript className="size-5 text-muted-foreground" aria-hidden="true" />
 							</div>
 							<div>
-								<CardTitle>Cookie Consent Script</CardTitle>
+								<CardTitle>
+									{t("admin:admin.settings.cookieConsent.title", "Cookie Consent Script")}
+								</CardTitle>
 								<CardDescription>
-									Injected on authentication pages for GDPR compliance
+									{t(
+										"admin:admin.settings.cookieConsent.description",
+										"Injected on authentication pages for GDPR compliance",
+									)}
 								</CardDescription>
 							</div>
 						</div>
@@ -82,24 +99,35 @@ export default function PlatformSettingsPage() {
 							<Skeleton className="h-48 w-full rounded-lg" />
 						) : (
 							<div className="space-y-3">
-								<Label htmlFor="cookie-script">Script Content</Label>
+								<Label htmlFor="cookie-script">
+									{t("admin:admin.settings.cookieConsent.scriptContent", "Script Content")}
+								</Label>
 								<Textarea
 									id="cookie-script"
+									name="cookie-consent-script"
+									autoComplete="off"
 									value={script}
 									onChange={(e) => setScript(e.target.value)}
 									rows={10}
 									className="font-mono text-sm"
-									placeholder={`<!-- Example: CookieBot -->
+									placeholder={t(
+										"admin:admin.settings.cookieConsent.scriptPlaceholder",
+										`<!-- Example: CookieBot -->
 <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="YOUR-ID" type="text/javascript" async></script>
 
 <!-- Or custom script -->
 <script>
   // Your cookie consent logic here
-</script>`}
+</script>`,
+									)}
 								/>
 								<p className="text-xs text-muted-foreground">
-									Leave empty to disable. Loaded with{" "}
-									<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">afterInteractive</code> strategy.
+									{t(
+										"admin:admin.settings.cookieConsent.helperPrefix",
+										"Leave empty to disable. Loaded with",
+									)}{" "}
+									<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs" translate="no">afterInteractive</code>{" "}
+									{t("admin:admin.settings.cookieConsent.helperSuffix", "strategy.")}
 								</p>
 							</div>
 						)}
@@ -107,7 +135,7 @@ export default function PlatformSettingsPage() {
 					<CardFooter className="border-t bg-muted/30 px-6 py-4">
 						<Button onClick={handleSave} disabled={isLoading || isFetching}>
 							{isLoading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
-							Save Changes
+							{t("admin:admin.settings.actions.saveChanges", "Save Changes")}
 						</Button>
 					</CardFooter>
 				</Card>
@@ -120,9 +148,14 @@ export default function PlatformSettingsPage() {
 								<IconShield className="size-5 text-muted-foreground" aria-hidden="true" />
 							</div>
 							<div>
-								<CardTitle>Cloudflare Turnstile</CardTitle>
+								<CardTitle>
+									{t("admin:admin.settings.turnstile.title", "Cloudflare Turnstile")}
+								</CardTitle>
 								<CardDescription>
-									Bot protection for authentication forms
+									{t(
+										"admin:admin.settings.turnstile.description",
+										"Bot protection for authentication forms",
+									)}
 								</CardDescription>
 							</div>
 						</div>
@@ -131,16 +164,23 @@ export default function PlatformSettingsPage() {
 						<div className="space-y-4">
 							<div className="space-y-2">
 								<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
-									<span className="text-sm font-medium">Site Key</span>
-									<code className="text-xs text-muted-foreground">TURNSTILE_SITE_KEY</code>
+									<span className="text-sm font-medium">
+										{t("admin:admin.settings.turnstile.siteKey", "Site Key")}
+									</span>
+									<code className="text-xs text-muted-foreground" translate="no">TURNSTILE_SITE_KEY</code>
 								</div>
 								<div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
-									<span className="text-sm font-medium">Secret Key</span>
-									<code className="text-xs text-muted-foreground">TURNSTILE_SECRET_KEY</code>
+									<span className="text-sm font-medium">
+										{t("admin:admin.settings.turnstile.secretKey", "Secret Key")}
+									</span>
+									<code className="text-xs text-muted-foreground" translate="no">TURNSTILE_SECRET_KEY</code>
 								</div>
 							</div>
 							<p className="text-sm text-muted-foreground">
-								Configured via environment variables at deployment. Enterprise orgs can override in Domain Settings.
+								{t(
+									"admin:admin.settings.turnstile.deploymentNote",
+									"Configured via environment variables at deployment. Enterprise orgs can override in Domain Settings.",
+								)}
 							</p>
 						</div>
 					</CardContent>

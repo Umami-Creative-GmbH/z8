@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
 import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { auth } from "@/lib/auth";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -109,7 +110,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 					</div>
 
 					{/* Right: User + Exit */}
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-2">
 						<div className="hidden items-center gap-3 sm:flex">
 							<div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
 								{session.user.name?.charAt(0).toUpperCase() ||
@@ -122,6 +123,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 						</div>
 
 						<div className="hidden h-6 w-px bg-border/60 sm:block" />
+
+						<LanguageSwitcher variant="compact" />
 
 						<PlatformAdminHeaderActions
 							navItems={[]}

@@ -31,6 +31,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			employeeRole={authContext?.employee?.role ?? null}
 			shiftsEnabled={currentOrganization?.shiftsEnabled ?? false}
 			showComplianceNav={settingsAccessTier === "orgAdmin"}
+			showPlatformAdminNav={authContext?.user.role === "admin"}
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={process.env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}

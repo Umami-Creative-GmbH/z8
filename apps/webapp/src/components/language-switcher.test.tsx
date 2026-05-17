@@ -39,7 +39,11 @@ vi.mock("@/components/ui/select", () => ({
 	),
 	SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	SelectTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	SelectTrigger: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+		<div data-testid="language-trigger" className={className}>
+			{children}
+		</div>
+	),
 	SelectValue: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -59,5 +63,14 @@ describe("LanguageSwitcher", () => {
 		await waitFor(() =>
 			expect(replace).toHaveBeenCalledWith("/settings/profile", { locale: "de" }),
 		);
+	});
+
+	it("renders a compact admin header variant", () => {
+		render(<LanguageSwitcher variant="compact" />);
+		const trigger = screen.getByTestId("language-trigger");
+
+		expect(trigger.className).toContain("w-[88px]");
+		expect(trigger.textContent).not.toContain("English");
+		expect(screen.getByText("EN").className).toContain("text-foreground");
 	});
 });

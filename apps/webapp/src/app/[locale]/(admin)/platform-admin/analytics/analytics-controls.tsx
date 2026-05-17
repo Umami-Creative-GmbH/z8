@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import {
 	Select,
@@ -37,6 +38,7 @@ export function PlatformAnalyticsControls({
 	range: PlatformAnalyticsRange;
 	bucket: PlatformAnalyticsBucket;
 }) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const bucketOptions = getPlatformAnalyticsBucketOptions(range);
@@ -64,16 +66,19 @@ export function PlatformAnalyticsControls({
 		<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 			<div className="grid gap-1.5">
 				<label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					Range
+					{t("admin:admin.analytics.controls.range.label", "Range")}
 				</label>
 				<Select value={range} onValueChange={handleRangeChange}>
-					<SelectTrigger className="w-full sm:w-[180px]" aria-label="Analytics range">
+					<SelectTrigger
+						className="w-full sm:w-[180px]"
+						aria-label={t("admin:admin.analytics.controls.range.ariaLabel", "Analytics range")}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						{RANGE_OPTIONS.map((option) => (
 							<SelectItem key={option} value={option}>
-								{RANGE_LABELS[option]}
+								{t(`admin:admin.analytics.controls.range.${option}`, RANGE_LABELS[option])}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -82,16 +87,19 @@ export function PlatformAnalyticsControls({
 
 			<div className="grid gap-1.5">
 				<label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					Bucket
+					{t("admin:admin.analytics.controls.bucket.label", "Bucket")}
 				</label>
 				<Select value={bucket} onValueChange={handleBucketChange}>
-					<SelectTrigger className="w-full sm:w-[160px]" aria-label="Analytics bucket">
+					<SelectTrigger
+						className="w-full sm:w-[160px]"
+						aria-label={t("admin:admin.analytics.controls.bucket.ariaLabel", "Analytics bucket")}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						{bucketOptions.map((option) => (
 							<SelectItem key={option} value={option}>
-								{BUCKET_LABELS[option]}
+								{t(`admin:admin.analytics.controls.bucket.${option}`, BUCKET_LABELS[option])}
 							</SelectItem>
 						))}
 					</SelectContent>

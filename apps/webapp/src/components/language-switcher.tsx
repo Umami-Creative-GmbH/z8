@@ -11,22 +11,28 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
+import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "@/navigation";
 import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
-export function LanguageSwitcher() {
+type LanguageSwitcherProps = {
+	variant?: "default" | "compact";
+};
+
+export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const router = useRouter();
+	const { replace } = useRouter();
 	const pathname = usePathname();
 	const [isPending, startTransition] = useTransition();
+	const isCompact = variant === "compact";
 
 	const handleLanguageChange = (newLocale: string) => {
 		startTransition(async () => {
 			await setLanguage(newLocale);
 			await persistLocaleToDb(newLocale).catch(() => {});
-			router.replace(pathname, { locale: newLocale });
+			replace(pathname, { locale: newLocale });
 		});
 	};
 
@@ -35,11 +41,22 @@ export function LanguageSwitcher() {
 
 	return (
 		<Select value={locale} onValueChange={handleLanguageChange} disabled={isPending}>
-			<SelectTrigger className="w-[160px] bg-background">
+			<SelectTrigger
+				aria-label={t("common.select-language", "Select language")}
+				className={cn("bg-background", isCompact ? "w-[88px]" : "w-[160px]")}
+			>
 				<SelectValue placeholder={t("common.select-language", "Select language")}>
 					<span className="flex items-center gap-2">
-						{CurrentFlag && <CurrentFlag className="h-4 w-auto" title={currentConfig.name} />}
-						{currentConfig?.name ?? locale}
+						{CurrentFlag && (
+							<CurrentFlag className="h-4 w-auto" title={isCompact ? undefined : currentConfig.name} />
+						)}
+						{isCompact ? (
+							<span className="font-medium text-foreground text-xs tracking-wide">
+								{locale.toUpperCase()}
+							</span>
+						) : (
+							(currentConfig?.name ?? locale)
+						)}
 					</span>
 				</SelectValue>
 			</SelectTrigger>

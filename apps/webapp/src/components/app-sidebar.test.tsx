@@ -1,6 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { IconBeach, IconHelp, IconMessageCircle, IconShieldCheck } from "@tabler/icons-react";
+import {
+	IconBeach,
+	IconHelp,
+	IconMessageCircle,
+	IconServerCog,
+	IconShieldCheck,
+} from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -216,6 +222,43 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
+	it("hides platform admin navigation by default", () => {
+		render(<AppSidebar />);
+
+		expect(screen.queryByRole("link", { name: "Platform Admin" })).toBeNull();
+		expect(navSecondarySpy).toHaveBeenLastCalledWith(
+			expect.not.arrayContaining([
+				expect.objectContaining({
+					title: "Platform Admin",
+					url: "/platform-admin",
+				}),
+			]),
+		);
+	});
+
+	it("renders platform admin navigation below feedback when enabled", () => {
+		render(<AppSidebar showPlatformAdminNav />);
+
+		expect(screen.getByRole("link", { name: "Platform Admin" }).getAttribute("href")).toBe(
+			"/platform-admin",
+		);
+
+		const secondaryItems = navSecondarySpy.mock.lastCall?.[0] ?? [];
+		expect(secondaryItems).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Platform Admin",
+					url: "/platform-admin",
+					icon: IconServerCog,
+				}),
+			]),
+		);
+		expect(secondaryItems.map((item) => item.title).slice(-2)).toEqual([
+			"Feedback",
+			"Platform Admin",
+		]);
+	});
+
 	it("renders the compliance entry in secondary nav only when enabled", () => {
 		const { rerender } = render(<AppSidebar showComplianceNav />);
 
@@ -249,6 +292,9 @@ describe("app sidebar compliance navigation", () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
 		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: true }]);
 		getAuthContextMock.mockResolvedValue({
+			user: {
+				role: "user",
+			},
 			employee: {
 				organizationId: "org_1",
 				role: "admin",
@@ -277,6 +323,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: true,
+				showPlatformAdminNav: false,
 				employeeRole: "admin",
 				shiftsEnabled: true,
 				settingsAccessTier: "orgAdmin",
@@ -298,6 +345,7 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				showComplianceNav: false,
+				showPlatformAdminNav: false,
 				settingsAccessTier: "member",
 				billingEnabled: false,
 				featureFlags: {
@@ -306,6 +354,47 @@ describe("app sidebar compliance navigation", () => {
 					surchargesEnabled: false,
 					demoDataEnabled: true,
 				},
+			}),
+		);
+	});
+
+	it("passes platform admin navigation from the authenticated platform role", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: false }]);
+		getAuthContextMock.mockResolvedValue({
+			user: {
+				role: "admin",
+			},
+			employee: {
+				organizationId: "org_1",
+				role: "employee",
+			},
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+		}));
+
+		vi.doMock("./app-sidebar", () => ({
+			AppSidebar: (props: Record<string, unknown>) => {
+				appSidebarSpy(props);
+				return <div data-testid="server-sidebar-proxy" />;
+			},
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(screen.getByTestId("server-sidebar-proxy")).toBeTruthy();
+		expect(appSidebarSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				showPlatformAdminNav: true,
+				employeeRole: "employee",
+				settingsAccessTier: "member",
 			}),
 		);
 	});

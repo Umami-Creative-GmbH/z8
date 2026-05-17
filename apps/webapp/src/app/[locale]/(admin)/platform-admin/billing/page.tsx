@@ -26,6 +26,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { getTranslate } from "@/tolgee/server";
 
 export default async function AdminBillingPage() {
 	await connection();
@@ -35,20 +36,27 @@ export default async function AdminBillingPage() {
 		redirect("/platform-admin");
 	}
 
+	const t = await getTranslate();
+
 	return (
 		<div className="space-y-10">
 			{/* Page Header */}
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold tracking-tight">Billing Dashboard</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("admin:admin.billing.title", "Billing Dashboard")}
+				</h1>
 				<p className="text-muted-foreground">
-					Monitor subscriptions, revenue, and payment status
+					{t(
+						"admin:admin.billing.description",
+						"Monitor subscriptions, revenue, and payment status",
+					)}
 				</p>
 			</div>
 
 			{/* Stats */}
 			<section className="space-y-4">
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-					Revenue Metrics
+					{t("admin:admin.billing.sections.revenueMetrics", "Revenue Metrics")}
 				</h2>
 				<Suspense fallback={<BillingStatsLoading />}>
 					<BillingStats />
@@ -58,7 +66,7 @@ export default async function AdminBillingPage() {
 			{/* Subscriptions Table */}
 			<section className="space-y-4">
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-					Recent Subscriptions
+					{t("admin:admin.billing.sections.recentSubscriptions", "Recent Subscriptions")}
 				</h2>
 				<Suspense fallback={<SubscriptionsTableLoading />}>
 					<SubscriptionsTable />
@@ -117,6 +125,7 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 
 async function BillingStats() {
 	await connection();
+	const t = await getTranslate();
 
 	// Get all subscriptions
 	const allSubscriptions = await db
@@ -148,9 +157,6 @@ async function BillingStats() {
 	const pastDueCount = allSubscriptions.filter((s) => s.status === "past_due").length;
 
 	// Trial conversion rate (trials that converted to active)
-	const now = DateTime.now();
-	const thirtyDaysAgo = now.minus({ days: 30 });
-
 	// Count subscriptions that were trialing and are now active
 	const activeCount = allSubscriptions.filter((s) => s.status === "active").length;
 	const totalTrialsAndActive = trialingCount + activeCount;
@@ -161,41 +167,51 @@ async function BillingStats() {
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 			<StatCard
-				title="MRR"
+				title={t("admin:admin.billing.metrics.mrr", "MRR")}
 				value={`€${mrr.toLocaleString()}`}
-				description="Monthly recurring revenue"
+				description={t(
+					"admin:admin.billing.metrics.mrrDescription",
+					"Monthly recurring revenue",
+				)}
 				icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
 				variant="success"
 			/>
 			<StatCard
-				title="Licensed Seats"
+				title={t("admin:admin.billing.metrics.licensedSeats", "Licensed Seats")}
 				value={totalSeats}
-				description="Across all subscriptions"
+				description={t(
+					"admin:admin.billing.metrics.licensedSeatsDescription",
+					"Across all subscriptions",
+				)}
 				icon={<IconUsers className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
-				title="Active Subscriptions"
+				title={t("admin:admin.billing.metrics.activeSubscriptions", "Active Subscriptions")}
 				value={activeSubscriptions.length}
-				description={`${trialingCount} trialing, ${activeCount} paid`}
+				description={t(
+					"admin:admin.billing.metrics.activeSubscriptionsDescription",
+					"{trialingCount} trialing, {activeCount} paid",
+					{ trialingCount, activeCount },
+				)}
 				icon={<IconBuilding className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
-				title="Past Due"
+				title={t("admin:admin.billing.metrics.pastDue", "Past Due")}
 				value={pastDueCount}
-				description="Payment issues"
+				description={t("admin:admin.billing.metrics.pastDueDescription", "Payment issues")}
 				icon={<IconAlertTriangle className="size-5" aria-hidden="true" />}
 				variant={pastDueCount > 0 ? "warning" : "default"}
 			/>
 			<StatCard
-				title="Conversion Rate"
+				title={t("admin:admin.billing.metrics.conversionRate", "Conversion Rate")}
 				value={`${conversionRate}%`}
-				description="Trials to paid"
+				description={t("admin:admin.billing.metrics.conversionRateDescription", "Trials to paid")}
 				icon={<IconTrendingUp className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
-				title="Trialing"
+				title={t("admin:admin.billing.metrics.trialing", "Trialing")}
 				value={trialingCount}
-				description="In trial period"
+				description={t("admin:admin.billing.metrics.trialingDescription", "In trial period")}
 				icon={<IconClock className="size-5" aria-hidden="true" />}
 			/>
 		</div>
@@ -223,6 +239,7 @@ function BillingStatsLoading() {
 
 async function SubscriptionsTable() {
 	await connection();
+	const t = await getTranslate();
 
 	// Fetch subscriptions and organizations in parallel (async-parallel)
 	// Note: We fetch all orgs since we don't know IDs upfront, but this is
@@ -255,15 +272,40 @@ async function SubscriptionsTable() {
 	const getStatusBadge = (status: string) => {
 		switch (status) {
 			case "trialing":
-				return <Badge variant="default">Trial</Badge>;
+				return (
+					<Badge variant="default">{t("admin:admin.billing.status.trialing", "Trial")}</Badge>
+				);
 			case "active":
-				return <Badge variant="default" className="bg-green-600">Active</Badge>;
+				return (
+					<Badge variant="default" className="bg-green-600">
+						{t("admin:admin.billing.status.active", "Active")}
+					</Badge>
+				);
 			case "past_due":
-				return <Badge variant="destructive">Past Due</Badge>;
+				return (
+					<Badge variant="destructive">
+						{t("admin:admin.billing.status.pastDue", "Past Due")}
+					</Badge>
+				);
 			case "canceled":
-				return <Badge variant="secondary">Canceled</Badge>;
+				return (
+					<Badge variant="secondary">
+						{t("admin:admin.billing.status.canceled", "Canceled")}
+					</Badge>
+				);
 			default:
 				return <Badge variant="outline">{status}</Badge>;
+		}
+	};
+
+	const formatBillingInterval = (interval: string | null) => {
+		switch (interval) {
+			case "month":
+				return t("admin:admin.billing.intervals.month", "Monthly");
+			case "year":
+				return t("admin:admin.billing.intervals.year", "Yearly");
+			default:
+				return "—";
 		}
 	};
 
@@ -278,19 +320,21 @@ async function SubscriptionsTable() {
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Organization</TableHead>
-							<TableHead>Status</TableHead>
-							<TableHead className="text-right">Seats</TableHead>
-							<TableHead>Billing</TableHead>
-							<TableHead>Period End</TableHead>
-							<TableHead>Created</TableHead>
+							<TableHead>{t("admin:admin.billing.table.organization", "Organization")}</TableHead>
+							<TableHead>{t("admin:admin.billing.table.status", "Status")}</TableHead>
+							<TableHead className="text-right">
+								{t("admin:admin.billing.table.seats", "Seats")}
+							</TableHead>
+							<TableHead>{t("admin:admin.billing.table.billing", "Billing")}</TableHead>
+							<TableHead>{t("admin:admin.billing.table.periodEnd", "Period End")}</TableHead>
+							<TableHead>{t("admin:admin.billing.table.created", "Created")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{subscriptions.length === 0 ? (
 							<TableRow>
 								<TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-									No subscriptions yet
+									{t("admin:admin.billing.table.noSubscriptions", "No subscriptions yet")}
 								</TableCell>
 							</TableRow>
 						) : (
@@ -301,7 +345,7 @@ async function SubscriptionsTable() {
 									</TableCell>
 									<TableCell>{getStatusBadge(sub.status)}</TableCell>
 									<TableCell className="text-right tabular-nums">{sub.currentSeats}</TableCell>
-									<TableCell className="capitalize">{sub.billingInterval || "—"}</TableCell>
+									<TableCell>{formatBillingInterval(sub.billingInterval)}</TableCell>
 									<TableCell>
 										{sub.status === "trialing"
 											? formatDate(sub.trialEnd)

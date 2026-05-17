@@ -67,6 +67,7 @@ describe("platform admin layout", () => {
 		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
 
 		expect(source).toContain("<PlatformAdminHeaderActions");
+		expect(source).toContain("<LanguageSwitcher variant=\"compact\" />");
 		expect(source).toContain('exitLabel={t("admin:admin.layout.exitAdmin", "Exit Admin")}');
 		expect(source).not.toContain('<span className="hidden sm:inline">');
 	});
@@ -85,5 +86,12 @@ describe("platform admin layout", () => {
 		expect(source).toContain('item.href === "/platform-admin"');
 		expect(source).toContain("pathname === item.href || pathname.startsWith(`${item.href}/`)");
 		expect(source).toContain("bg-accent text-accent-foreground");
+	});
+
+	it("keeps the language switcher close to the exit admin action", () => {
+		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+
+		expect(source).toContain('className="flex items-center gap-2"');
+		expect(source).toContain('<LanguageSwitcher variant="compact" />');
 	});
 });
