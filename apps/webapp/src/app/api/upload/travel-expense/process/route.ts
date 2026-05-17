@@ -7,6 +7,7 @@ import { travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { isAllowedTravelExpenseMime } from "@/lib/travel-expenses/attachment-validation";
+import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -14,10 +15,6 @@ interface ProcessTravelExpenseUploadRequest {
 	tusFileKey: string;
 	claimId: string;
 	fileName?: string;
-}
-
-function isValidTusFileKey(key: string): boolean {
-	return !key.includes("..") && !key.includes("/") && !key.includes("\\") && key.length > 0;
 }
 
 function sanitizeFileName(fileName: string): string {
@@ -51,7 +48,8 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Missing tusFileKey or claimId" }, { status: 400 });
 		}
 
-		if (!isValidTusFileKey(tusFileKey)) {
+		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, authContext.user.id);
+		if (!safeTusFileKey) {
 			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
 		}
 
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
 		const getResponse = await s3Client.send(
 			new GetObjectCommand({
 				Bucket: S3_BUCKET,
-				Key: tusFileKey,
+				Key: safeTusFileKey,
 			}),
 		);
 
@@ -108,7 +106,7 @@ export async function POST(request: NextRequest) {
 				ContentType: detectedType.mime,
 				Metadata: {
 					"uploaded-by": authContext.employee.id,
-					"original-key": tusFileKey,
+					"original-key": safeTusFileKey,
 					"upload-timestamp": new Date().toISOString(),
 				},
 			}),
@@ -142,7 +140,7 @@ export async function POST(request: NextRequest) {
 		await s3Client.send(
 			new DeleteObjectCommand({
 				Bucket: S3_BUCKET,
-				Key: tusFileKey,
+				Key: safeTusFileKey,
 			}),
 		);
 

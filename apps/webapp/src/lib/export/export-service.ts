@@ -187,10 +187,17 @@ export async function getPendingExports(): Promise<ExportRecord[]> {
 /**
  * Generate a new presigned URL for an existing export
  */
-export async function regeneratePresignedUrl(exportId: string): Promise<string> {
+export async function regeneratePresignedUrl(
+	exportId: string,
+	organizationId: string,
+): Promise<string> {
 	const exportRecord = await getExportById(exportId);
 	if (!exportRecord) {
 		throw new Error(`Export not found: ${exportId}`);
+	}
+
+	if (exportRecord.organizationId !== organizationId) {
+		throw new Error("Export does not belong to this organization");
 	}
 
 	if (exportRecord.status !== "completed") {

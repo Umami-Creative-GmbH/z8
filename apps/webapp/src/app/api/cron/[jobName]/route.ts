@@ -6,7 +6,7 @@
  * - POST: Enqueue a manual trigger with custom parameters
  *
  * Query parameters:
- * - secret: CRON_SECRET for authentication (alternative to Bearer token)
+ * - Authorization: Bearer CRON_SECRET for authentication
  * - waitForResult: If "true", waits for job completion before responding
  *
  * All jobs are enqueued to BullMQ and processed by the worker.
@@ -27,7 +27,7 @@ const CRON_SECRET = env.CRON_SECRET;
 /**
  * Verify the request is from a valid cron source
  */
-async function verifyCronAuth(request: NextRequest): Promise<boolean> {
+async function verifyCronAuth(): Promise<boolean> {
 	// Fail closed if CRON_SECRET is not configured
 	if (!CRON_SECRET) {
 		return false;
@@ -38,14 +38,6 @@ async function verifyCronAuth(request: NextRequest): Promise<boolean> {
 	const authHeader = headersList.get("authorization");
 
 	if (authHeader === `Bearer ${CRON_SECRET}`) {
-		return true;
-	}
-
-	// Check for cron secret in query params (for external schedulers)
-	const { searchParams } = new URL(request.url);
-	const secret = searchParams.get("secret");
-
-	if (secret === CRON_SECRET) {
 		return true;
 	}
 
@@ -75,7 +67,7 @@ export async function GET(
 ) {
 	await connection();
 
-	const isAuthorized = await verifyCronAuth(request);
+	const isAuthorized = await verifyCronAuth();
 	if (!isAuthorized) {
 		logger.warn("Unauthorized cron request");
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -189,7 +181,7 @@ export async function POST(
 ) {
 	await connection();
 
-	const isAuthorized = await verifyCronAuth(request);
+	const isAuthorized = await verifyCronAuth();
 	if (!isAuthorized) {
 		logger.warn("Unauthorized cron request");
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -217,7 +209,7 @@ export async function POST(
 		};
 
 		logger.info(
-			{ jobName: typedJobName, manualParams, triggeredBy },
+			{ jobName: typedJobName, manualParamKeys: Object.keys(manualParams ?? {}), triggeredBy },
 			"Enqueueing manual cron job via API",
 		);
 

@@ -7,6 +7,10 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 import { superJsonResponse } from "@/lib/superjson";
 
+function canViewOrganizationWideCalendar(role: string | null): boolean {
+	return role === "admin" || role === "manager";
+}
+
 /**
  * Fetch events for a single month
  * Uses Promise.all for parallel fetching to eliminate waterfalls
@@ -57,6 +61,14 @@ export async function GET(request: NextRequest) {
 		}
 
 		const organizationId = orgContext.organizationId;
+		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
+		const scopedEmployeeId = canViewOrganizationWideCalendar(orgContext.role)
+			? employeeId
+			: orgContext.employeeId ?? undefined;
+
+		if (showsEmployeeScopedEvents && !scopedEmployeeId) {
+			return NextResponse.json({ error: "Forbidden: Employee profile required" }, { status: 403 });
+		}
 
 		if (year === null) {
 			return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
@@ -77,7 +89,7 @@ export async function GET(request: NextRequest) {
 					organizationId,
 					monthIndex,
 					yearNum,
-					employeeId,
+					scopedEmployeeId,
 					showHolidays,
 					showAbsences,
 					showTimeEntries,
@@ -93,7 +105,7 @@ export async function GET(request: NextRequest) {
 				organizationId,
 				parseInt(month!, 10),
 				yearNum,
-				employeeId,
+				scopedEmployeeId,
 				showHolidays,
 				showAbsences,
 				showTimeEntries,
