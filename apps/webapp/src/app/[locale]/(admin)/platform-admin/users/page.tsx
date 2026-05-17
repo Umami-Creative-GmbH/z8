@@ -63,11 +63,12 @@ const LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "l
 const SESSION_LOADING_KEYS = ["session-loading-1", "session-loading-2", "session-loading-3"];
 type UserStatusFilter = "all" | "active" | "banned";
 
-function getInitialFilters(): { search: string; status: UserStatusFilter } {
+function getInitialFilters(): { search: string; status: UserStatusFilter; organizationId: string } {
 	if (typeof window === "undefined") {
 		return {
 			search: "",
 			status: "all" as const,
+			organizationId: "",
 		};
 	}
 
@@ -79,6 +80,7 @@ function getInitialFilters(): { search: string; status: UserStatusFilter } {
 	return {
 		search: params.get("search") ?? "",
 		status,
+		organizationId: params.get("organizationId") ?? "",
 	};
 }
 
@@ -95,6 +97,7 @@ export default function UsersPage() {
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState(initialFilters.search);
 	const [status, setStatus] = useState<UserStatusFilter>(initialFilters.status);
+	const [organizationId] = useState(initialFilters.organizationId);
 	const [isPending, startTransition] = useTransition();
 	const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -107,9 +110,13 @@ export default function UsersPage() {
 	const [sessionsLoading, setSessionsLoading] = useState(false);
 
 	const { data, isLoading } = useQuery({
-		queryKey: ["admin-users", search, status, page],
+		queryKey: ["admin-users", search, status, organizationId, page],
 		queryFn: async () => {
-			const result = await listUsersAction({ search, status }, page, PAGE_SIZE);
+			const result = await listUsersAction(
+				{ search, status, organizationId: organizationId || undefined },
+				page,
+				PAGE_SIZE,
+			);
 			if (!result.success) {
 				throw new Error(result.error);
 			}
@@ -138,6 +145,7 @@ export default function UsersPage() {
 				const params = new URLSearchParams();
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
+				if (organizationId) params.set("organizationId", organizationId);
 				router.push(`/platform-admin/users?${params.toString()}`);
 				return;
 			}
@@ -148,10 +156,11 @@ export default function UsersPage() {
 				const params = new URLSearchParams();
 				if (newSearch) params.set("search", newSearch);
 				if (newStatus !== "all") params.set("status", newStatus);
+				if (organizationId) params.set("organizationId", organizationId);
 				router.push(`/platform-admin/users?${params.toString()}`);
 			}, 300);
 		},
-		[router, status],
+		[organizationId, router, status],
 	);
 
 	// Cleanup timeout on unmount
@@ -311,6 +320,9 @@ export default function UsersPage() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>{t("admin:admin.users.table.user", "User")}</TableHead>
+									<TableHead>
+										{t("admin:admin.users.table.organizations", "Organizations")}
+									</TableHead>
 									<TableHead>{t("admin:admin.users.table.role", "Role")}</TableHead>
 									<TableHead>{t("common.status", "Status")}</TableHead>
 									<TableHead>{t("admin:admin.users.table.created", "Created")}</TableHead>
@@ -320,7 +332,7 @@ export default function UsersPage() {
 							<TableBody>
 								{users.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={5} className="text-center text-muted-foreground">
+										<TableCell colSpan={6} className="text-center text-muted-foreground">
 											{t("admin:admin.users.table.noUsersFound", "No users found")}
 										</TableCell>
 									</TableRow>
@@ -337,6 +349,23 @@ export default function UsersPage() {
 														<div className="text-sm text-muted-foreground">{user.email}</div>
 													</div>
 												</div>
+											</TableCell>
+											<TableCell>
+												{user.organizations.length > 0 ? (
+													<div className="flex flex-wrap gap-1.5">
+														{user.organizations.map((org) => (
+															<Badge key={org.id} variant="outline" className="gap-1 font-normal">
+																<span>{org.name}</span>
+																<span className="text-muted-foreground">·</span>
+																<span className="text-muted-foreground">{org.role}</span>
+															</Badge>
+														))}
+													</div>
+												) : (
+													<span className="text-sm text-muted-foreground">
+														{t("admin:admin.users.table.noOrganizations", "No organizations")}
+													</span>
+												)}
 											</TableCell>
 											<TableCell>
 												{user.role === "admin" ? (

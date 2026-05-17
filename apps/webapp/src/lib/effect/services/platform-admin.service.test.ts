@@ -40,6 +40,30 @@ describe("PlatformAdminService listUsers privacy guardrails", () => {
 		expect(listUsersSource).toContain("ilike(user.email");
 		expect(listUsersSource).not.toContain("ilike(user.name");
 	});
+
+	it("selects organization memberships without selecting organization private fields", () => {
+		const listUsersSource = getListUsersSource();
+
+		expect(listUsersSource).toContain("member.userId");
+		expect(listUsersSource).toContain("member.organizationId");
+		expect(listUsersSource).toContain("role: member.role");
+		expect(listUsersSource).toContain("status: member.status");
+		expect(listUsersSource).toContain("name: organization.name");
+		expect(listUsersSource).toContain("slug: organization.slug");
+		expect(listUsersSource).not.toContain("logo: organization.logo");
+	});
+
+	it("supports filtering users by organization membership", () => {
+		const listUsersSource = getListUsersSource();
+
+		expect(listUsersSource).toContain("organizationId");
+		expect(listUsersSource).toContain("EXISTS");
+		expect(listUsersSource).toContain('"member"."user_id" = ${user.id}');
+		expect(listUsersSource).toContain(
+			'"member"."organization_id" = ${organizationId}',
+		);
+		expect(listUsersSource).not.toContain("inArray(user.id");
+	});
 });
 
 describe("PlatformAdminService listOrganizations query guardrails", () => {

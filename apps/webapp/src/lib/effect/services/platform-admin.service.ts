@@ -2,7 +2,7 @@ import { Context, Effect, Layer } from "effect";
 import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user, session, organization } from "@/db/auth-schema";
+import { user, session, organization, member } from "@/db/auth-schema";
 import { platformAdminAuditLog, organizationSuspension } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
@@ -13,6 +13,14 @@ import {
 } from "../errors";
 
 // Types
+export interface PlatformUserOrganization {
+	id: string;
+	name: string;
+	slug: string;
+	role: string;
+	status: string | null;
+}
+
 export interface PlatformUser {
 	id: string;
 	email: string;
@@ -22,11 +30,13 @@ export interface PlatformUser {
 	banReason: string | null;
 	banExpires: Date | null;
 	createdAt: Date;
+	organizations: PlatformUserOrganization[];
 }
 
 export interface PlatformUserFilters {
 	search?: string;
 	status?: "all" | "active" | "banned";
+	organizationId?: string;
 }
 
 export interface PlatformOrganization {
@@ -207,7 +217,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 			listUsers: (filters, pagination) =>
 				Effect.tryPromise({
 					try: async () => {
-						const { search, status } = filters;
+						const { search, status, organizationId } = filters;
 						const { page, pageSize } = pagination;
 						const offset = (page - 1) * pageSize;
 
@@ -224,6 +234,15 @@ export const PlatformAdminServiceLive = Layer.effect(
 							);
 						} else if (status === "banned") {
 							conditions.push(eq(user.banned, true));
+						}
+
+						if (organizationId) {
+							conditions.push(sql`EXISTS (
+								SELECT 1
+								FROM "member"
+								WHERE "member"."user_id" = ${user.id}
+								AND "member"."organization_id" = ${organizationId}
+							)`);
 						}
 
 						const whereClause =
@@ -253,8 +272,56 @@ export const PlatformAdminServiceLive = Layer.effect(
 							.limit(pageSize)
 							.offset(offset);
 
+						const userIds = users.map((platformUser) => platformUser.id);
+						const memberships =
+							userIds.length > 0
+								? await db
+										.select({
+											userId: member.userId,
+											id: organization.id,
+											name: organization.name,
+											slug: organization.slug,
+											role: member.role,
+											status: member.status,
+										})
+										.from(member)
+										.innerJoin(organization, eq(member.organizationId, organization.id))
+										.where(
+											organizationId
+												? and(
+														inArray(member.userId, userIds),
+														eq(member.organizationId, organizationId),
+													)
+												: inArray(member.userId, userIds),
+										)
+								: [];
+
+						const membershipsByUserId = new Map<
+							string,
+							PlatformUserOrganization[]
+						>();
+
+						for (const membership of memberships) {
+							const userMemberships = membershipsByUserId.get(membership.userId) ?? [];
+							userMemberships.push({
+								id: membership.id,
+								name: membership.name,
+								slug: membership.slug,
+								role: membership.role,
+								status: membership.status,
+							});
+							membershipsByUserId.set(membership.userId, userMemberships);
+						}
+
+						const usersWithOrganizations: PlatformUser[] = users.map(
+							(platformUser) => ({
+								...platformUser,
+								organizations: membershipsByUserId.get(platformUser.id) ?? [],
+							}),
+						);
+
 						return {
-							data: users,
+							data: usersWithOrganizations,
 							total,
 							page,
 							pageSize,
