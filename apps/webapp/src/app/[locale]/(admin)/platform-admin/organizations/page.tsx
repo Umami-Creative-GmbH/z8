@@ -50,7 +50,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PlatformOrganization } from "@/lib/effect/services/platform-admin.service";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import {
 	deleteOrganizationAction,
 	listOrganizationsAction,
@@ -360,125 +360,141 @@ export default function OrganizationsPage() {
 										</TableCell>
 									</TableRow>
 								) : (
-									organizations.map((org) => (
-										<TableRow key={org.id}>
-											<TableCell>
-												<div className="flex items-center gap-3">
-													<div className="size-8 rounded bg-muted flex items-center justify-center">
-														{org.logo ? (
-															<img
-																src={org.logo}
-																alt={org.name}
-																width={32}
-																height={32}
-																className="size-8 rounded"
-															/>
-														) : (
-															<IconBuilding className="size-4" aria-hidden="true" />
-														)}
-													</div>
-													<div>
-														<div className="font-medium">{org.name}</div>
-														<div className="text-sm text-muted-foreground">{org.slug}</div>
-													</div>
-												</div>
-											</TableCell>
-											<TableCell>
-												<div className="flex items-center gap-1">
-													<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />
-													{org.employeeCount}
-												</div>
-											</TableCell>
-											<TableCell>{org.memberCount}</TableCell>
-											<TableCell>
-												{org.deletedAt ? (
-													<div>
-														<Badge variant="destructive">
-															<IconTrash className="size-3 mr-1" aria-hidden="true" />
-															{t("admin:admin.organizations.badges.deleted", "Deleted")}
-														</Badge>
-														<div className="text-xs text-muted-foreground mt-1">
-															{DateTime.fromJSDate(org.deletedAt).toRelative()}
+									organizations.map((org) => {
+										const usersHref = `/platform-admin/users?organizationId=${encodeURIComponent(org.id)}`;
+
+										return (
+											<TableRow key={org.id}>
+												<TableCell>
+													<div className="flex items-center gap-3">
+														<div className="size-8 rounded bg-muted flex items-center justify-center">
+															{org.logo ? (
+																<img
+																	src={org.logo}
+																	alt={org.name}
+																	width={32}
+																	height={32}
+																	className="size-8 rounded"
+																/>
+															) : (
+																<IconBuilding className="size-4" aria-hidden="true" />
+															)}
+														</div>
+														<div>
+															<Link href={usersHref} className="font-medium hover:underline">
+																{org.name}
+															</Link>
+															<div className="text-sm text-muted-foreground">{org.slug}</div>
 														</div>
 													</div>
-												) : org.isSuspended ? (
-													<div>
-														<Badge variant="outline" className="border-yellow-500 text-yellow-700">
-															<IconAlertTriangle className="size-3 mr-1" aria-hidden="true" />
-															{t("admin:admin.organizations.badges.suspended", "Suspended")}
-														</Badge>
-														{org.suspendedReason && (
-															<div
-																className="text-xs text-muted-foreground mt-1 max-w-32 truncate"
-																title={org.suspendedReason}
-															>
-																{org.suspendedReason}
+												</TableCell>
+												<TableCell>
+													<div className="flex items-center gap-1">
+														<IconUsers
+															className="size-4 text-muted-foreground"
+															aria-hidden="true"
+														/>
+														{org.employeeCount}
+													</div>
+												</TableCell>
+												<TableCell>
+													<Link href={usersHref} className="hover:underline">
+														{org.memberCount}
+													</Link>
+												</TableCell>
+												<TableCell>
+													{org.deletedAt ? (
+														<div>
+															<Badge variant="destructive">
+																<IconTrash className="size-3 mr-1" aria-hidden="true" />
+																{t("admin:admin.organizations.badges.deleted", "Deleted")}
+															</Badge>
+															<div className="text-xs text-muted-foreground mt-1">
+																{DateTime.fromJSDate(org.deletedAt).toRelative()}
 															</div>
+														</div>
+													) : org.isSuspended ? (
+														<div>
+															<Badge
+																variant="outline"
+																className="border-yellow-500 text-yellow-700"
+															>
+																<IconAlertTriangle className="size-3 mr-1" aria-hidden="true" />
+																{t("admin:admin.organizations.badges.suspended", "Suspended")}
+															</Badge>
+															{org.suspendedReason && (
+																<div
+																	className="text-xs text-muted-foreground mt-1 max-w-32 truncate"
+																	title={org.suspendedReason}
+																>
+																	{org.suspendedReason}
+																</div>
+															)}
+														</div>
+													) : (
+														<Badge variant="outline" className="border-green-500 text-green-700">
+															<IconCheck className="size-3 mr-1" aria-hidden="true" />
+															{t("common.active", "Active")}
+														</Badge>
+													)}
+												</TableCell>
+												<TableCell>
+													{DateTime.fromJSDate(org.createdAt).toLocaleString(DateTime.DATE_MED)}
+												</TableCell>
+												<TableCell className="text-right">
+													<div className="flex justify-end gap-2">
+														{!org.deletedAt && (
+															<>
+																{org.isSuspended ? (
+																	<Tooltip>
+																		<TooltipTrigger asChild>
+																			<Button
+																				variant="ghost"
+																				size="sm"
+																				onClick={() => handleUnsuspend(org)}
+																				disabled={isPending}
+																				aria-label={reactivateOrganizationLabel}
+																			>
+																				<IconPlayerPlay className="size-4" aria-hidden="true" />
+																			</Button>
+																		</TooltipTrigger>
+																		<TooltipContent>{reactivateOrganizationLabel}</TooltipContent>
+																	</Tooltip>
+																) : (
+																	<Tooltip>
+																		<TooltipTrigger asChild>
+																			<Button
+																				variant="ghost"
+																				size="sm"
+																				onClick={() => setSuspendDialogOrg(org)}
+																				aria-label={suspendOrganizationLabel}
+																			>
+																				<IconPlayerPause className="size-4" aria-hidden="true" />
+																			</Button>
+																		</TooltipTrigger>
+																		<TooltipContent>{suspendOrganizationLabel}</TooltipContent>
+																	</Tooltip>
+																)}
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<Button
+																			variant="ghost"
+																			size="sm"
+																			onClick={() => setDeleteDialogOrg(org)}
+																			aria-label={deleteOrganizationLabel}
+																		>
+																			<IconTrash className="size-4" aria-hidden="true" />
+																		</Button>
+																	</TooltipTrigger>
+																	<TooltipContent>{deleteOrganizationLabel}</TooltipContent>
+																</Tooltip>
+															</>
 														)}
 													</div>
-												) : (
-													<Badge variant="outline" className="border-green-500 text-green-700">
-														<IconCheck className="size-3 mr-1" aria-hidden="true" />
-														{t("common.active", "Active")}
-													</Badge>
-												)}
-											</TableCell>
-											<TableCell>
-												{DateTime.fromJSDate(org.createdAt).toLocaleString(DateTime.DATE_MED)}
-											</TableCell>
-											<TableCell className="text-right">
-												<div className="flex justify-end gap-2">
-													{!org.deletedAt && (
-														<>
-															{org.isSuspended ? (
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<Button
-																			variant="ghost"
-																			size="sm"
-																			onClick={() => handleUnsuspend(org)}
-																			disabled={isPending}
-																			aria-label={reactivateOrganizationLabel}
-																		>
-																			<IconPlayerPlay className="size-4" aria-hidden="true" />
-																		</Button>
-																	</TooltipTrigger>
-																	<TooltipContent>{reactivateOrganizationLabel}</TooltipContent>
-																</Tooltip>
-															) : (
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<Button
-																			variant="ghost"
-																			size="sm"
-																			onClick={() => setSuspendDialogOrg(org)}
-																			aria-label={suspendOrganizationLabel}
-																		>
-																			<IconPlayerPause className="size-4" aria-hidden="true" />
-																		</Button>
-																	</TooltipTrigger>
-																	<TooltipContent>{suspendOrganizationLabel}</TooltipContent>
-																</Tooltip>
-															)}
-															<Tooltip>
-																<TooltipTrigger asChild>
-																	<Button
-																		variant="ghost"
-																		size="sm"
-																		onClick={() => setDeleteDialogOrg(org)}
-																		aria-label={deleteOrganizationLabel}
-																	>
-																		<IconTrash className="size-4" aria-hidden="true" />
-																	</Button>
-																</TooltipTrigger>
-																<TooltipContent>{deleteOrganizationLabel}</TooltipContent>
-															</Tooltip>
-														</>
-													)}
-												</div>
-											</TableCell>
-										</TableRow>
-									))
+												</TableCell>
+											</TableRow>
+										);
+									})
 								)}
 							</TableBody>
 						</Table>

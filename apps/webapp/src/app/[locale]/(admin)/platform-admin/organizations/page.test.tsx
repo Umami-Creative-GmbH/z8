@@ -30,6 +30,15 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
+	Link: ({
+		children,
+		href,
+		...props
+	}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
 	useRouter: () => ({
 		push: pushMock,
 	}),
@@ -196,5 +205,42 @@ describe("Platform admin organizations page", () => {
 		expect(screen.getByText("Suspend organization")).toBeTruthy();
 		expect(screen.getByText("Reactivate organization")).toBeTruthy();
 		expect(screen.getAllByText("Delete organization")).toHaveLength(2);
+	});
+
+	it("links organization names and member counts to filtered users", () => {
+		useQueryMock.mockReturnValue({
+			data: {
+				data: [
+					{
+						id: "org-active",
+						name: "Active Org",
+						slug: "active-org",
+						logo: null,
+						createdAt: new Date("2026-01-01T00:00:00.000Z"),
+						employeeCount: 3,
+						memberCount: 4,
+						isSuspended: false,
+						suspendedReason: null,
+						deletedAt: null,
+					},
+				],
+				total: 1,
+				page: 1,
+				pageSize: 20,
+				totalPages: 1,
+			},
+			isError: false,
+			isLoading: false,
+			error: null,
+		});
+
+		render(<OrganizationsPage />);
+
+		expect(screen.getByRole("link", { name: "Active Org" }).getAttribute("href")).toBe(
+			"/platform-admin/users?organizationId=org-active",
+		);
+		expect(screen.getByRole("link", { name: "4" }).getAttribute("href")).toBe(
+			"/platform-admin/users?organizationId=org-active",
+		);
 	});
 });
