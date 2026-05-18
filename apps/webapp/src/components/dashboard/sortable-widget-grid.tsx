@@ -13,7 +13,8 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
-import { Children, cloneElement, isValidElement, type ReactNode, useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
+import { DashboardWidgetDraggableProvider } from "./dashboard-widget";
 import type { WidgetId } from "./widget-registry";
 import { useVisibleWidgets } from "./widget-visibility-context";
 
@@ -24,16 +25,6 @@ interface SortableWidgetGridProps {
 	onReorder: (newOrder: WidgetId[]) => void;
 	/** Children (widget components that wrap themselves in DashboardWidget) */
 	children: ReactNode;
-}
-
-function renderMasonryChildren(children: ReactNode) {
-	return Children.map(children, (child) => {
-		if (!isValidElement<{ draggable?: boolean }>(child)) {
-			return child;
-		}
-
-		return cloneElement(child, { draggable: false });
-	});
 }
 
 /**
@@ -106,7 +97,7 @@ export function SortableWidgetGrid({ widgetOrder, onReorder, children }: Sortabl
 		>
 			<SortableContext items={sortableItems} strategy={rectSortingStrategy}>
 				<div className="columns-1 @xl/main:columns-2 @5xl/main:columns-3 gap-4 px-4 lg:px-6">
-					{renderMasonryChildren(children)}
+					<DashboardWidgetDraggableProvider value={false}>{children}</DashboardWidgetDraggableProvider>
 				</div>
 			</SortableContext>
 			<DragOverlay dropAnimation={null}>

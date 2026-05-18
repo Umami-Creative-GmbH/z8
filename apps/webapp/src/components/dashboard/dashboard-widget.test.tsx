@@ -2,7 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DashboardWidget } from "./dashboard-widget";
+import { DashboardWidget, DashboardWidgetDraggableProvider } from "./dashboard-widget";
 
 vi.mock("./widget-visibility-context", () => ({
 	useRegisterVisibleWidget: vi.fn(),
@@ -49,5 +49,17 @@ describe("DashboardWidget", () => {
 		);
 
 		expect(screen.queryByRole("button", { name: "Drag to reorder widget" })).toBeNull();
+	});
+
+	it("uses an explicit draggable prop over the surrounding draggable default", () => {
+		render(
+			<DashboardWidgetDraggableProvider value={false}>
+				<DashboardWidget draggable id="quick-stats">
+					<div>Time tracking content</div>
+				</DashboardWidget>
+			</DashboardWidgetDraggableProvider>,
+		);
+
+		expect(screen.getByRole("button", { name: "Drag to reorder widget" })).not.toBeNull();
 	});
 });

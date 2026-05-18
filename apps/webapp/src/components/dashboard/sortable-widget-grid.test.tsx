@@ -51,6 +51,10 @@ vi.mock("./widget-visibility-context", () => ({
 	useVisibleWidgets: () => ["quick-stats", "presence-status"],
 }));
 
+function ProductionLikeWidget() {
+	return <DashboardWidget id="quick-stats">Time tracking</DashboardWidget>;
+}
+
 describe("SortableWidgetGrid", () => {
 	it("renders widgets in a responsive masonry column container", () => {
 		render(
@@ -69,11 +73,10 @@ describe("SortableWidgetGrid", () => {
 		expect(container?.className).not.toContain("grid-cols");
 	});
 
-	it("does not expose drag handles in masonry mode", () => {
+	it("does not expose nested dashboard widget drag handles in masonry mode", () => {
 		render(
-			<SortableWidgetGrid onReorder={vi.fn()} widgetOrder={["quick-stats", "presence-status"]}>
-				<DashboardWidget id="quick-stats">Time tracking</DashboardWidget>
-				<DashboardWidget id="presence-status">Presence status</DashboardWidget>
+			<SortableWidgetGrid onReorder={vi.fn()} widgetOrder={["quick-stats"]}>
+				<ProductionLikeWidget />
 			</SortableWidgetGrid>,
 		);
 
