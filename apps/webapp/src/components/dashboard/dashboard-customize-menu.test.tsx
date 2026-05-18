@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DashboardCustomizeMenu } from "./dashboard-customize-menu";
 import { DEFAULT_WIDGET_ORDER, type WidgetId } from "./widget-registry";
@@ -131,5 +132,44 @@ describe("DashboardCustomizeMenu", () => {
 			"manager-today",
 			"pending-approvals",
 		]);
+	});
+
+	it("keeps the menu open for repeated reorder moves", () => {
+		function ControlledMenu() {
+			const [order, setOrder] = useState(visibleWidgetOrder);
+
+			return (
+				<DashboardCustomizeMenu
+					hiddenWidgets={[]}
+					onReorder={setOrder}
+					onReset={vi.fn()}
+					onVisibilityChange={vi.fn()}
+					visibleWidgetOrder={order}
+				/>
+			);
+		}
+
+		render(<ControlledMenu />);
+
+		openMenu();
+		fireEvent.click(
+			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("button", {
+				name: "Move Vacation Balance up",
+			}),
+		);
+		fireEvent.click(
+			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("button", {
+				name: "Move Vacation Balance up",
+			}),
+		);
+
+		expect(screen.getByRole("menuitem", { name: "Reset layout" })).toBeTruthy();
+		expect(
+			(
+				within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("button", {
+					name: "Move Vacation Balance up",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
 	});
 });

@@ -137,8 +137,10 @@ function DashboardWidgetLayout({
 			<div className="mb-3 flex justify-end px-4 lg:px-6">
 				<DashboardCustomizeMenu
 					hiddenWidgets={hiddenWidgets}
+					onReorder={onReorder}
 					onReset={resetOrder}
 					onVisibilityChange={onVisibilityChange}
+					visibleWidgetOrder={visibleWidgetOrder}
 				/>
 			</div>
 			{hasConfiguredWidgets ? (
