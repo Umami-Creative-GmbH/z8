@@ -36,7 +36,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
-import type { ManagedEmployee } from "./actions";
+import type { ManagedEmployee } from "./team-members-data";
 
 type ManagedEmployeeWithPresence = ManagedEmployee & {
 	clockStatus?: EmployeeClockStatus;
