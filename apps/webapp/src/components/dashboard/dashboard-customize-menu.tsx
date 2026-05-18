@@ -58,7 +58,7 @@ export function DashboardCustomizeMenu({
 					aria-label={t("dashboard.customize.trigger", "Customize dashboard")}
 					className="size-9"
 					size="icon"
-					variant="outline"
+					variant="ghost"
 				>
 					<IconAdjustmentsHorizontal className="size-4" aria-hidden="true" />
 				</Button>
