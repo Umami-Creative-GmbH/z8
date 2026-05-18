@@ -8,9 +8,9 @@ import {
 	IconLoader2,
 	IconMapPin,
 	IconDots,
-	Palette,
+	IconPalette,
 	IconPencil,
-	Plus,
+	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useState } from "react";
@@ -332,7 +332,7 @@ export function ShiftTemplateManagement({
 						</CardDescription>
 					</div>
 					<Button onClick={handleCreate} size="sm">
-						<Plus className="mr-2 size-4" />
+						<IconPlus className="mr-2 size-4" />
 						{t("settings.shiftTemplates.add", "Add Template")}
 					</Button>
 				</CardHeader>
@@ -354,7 +354,7 @@ export function ShiftTemplateManagement({
 								)}
 							</p>
 							<Button onClick={handleCreate} className="mt-4" variant="outline">
-								<Plus className="mr-2 size-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.shiftTemplates.createFirst", "Create your first template")}
 							</Button>
 						</div>
@@ -666,7 +666,7 @@ function ShiftTemplateDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label className="flex items-center gap-2">
-										<Palette className="size-4" aria-hidden="true" />
+										<IconPalette className="size-4" aria-hidden="true" />
 										{t("settings.shiftTemplates.form.color", "Color")}
 									</Label>
 									<div
