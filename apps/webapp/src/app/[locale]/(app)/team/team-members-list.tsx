@@ -1,7 +1,10 @@
 "use client";
 
 import {
+	IconArrowDown,
 	IconArrowRight,
+	IconArrowsSort,
+	IconArrowUp,
 	IconLayoutGrid,
 	IconLayoutList,
 	IconSearch,
@@ -33,10 +36,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
-import type { ManagedEmployee } from "./actions";
+import type { ManagedEmployee } from "./team-members-data";
 
 type ManagedEmployeeWithPresence = ManagedEmployee & {
 	clockStatus?: EmployeeClockStatus;
@@ -46,11 +49,69 @@ interface TeamMembersListProps {
 	employees: ManagedEmployee[];
 }
 
+function formatSignedBalance(balanceMinutes: number) {
+	if (balanceMinutes === 0) return "0h";
+	const sign = balanceMinutes > 0 ? "+" : "-";
+	const absoluteMinutes = Math.abs(balanceMinutes);
+	const hours = Math.floor(absoluteMinutes / 60);
+	const minutes = absoluteMinutes % 60;
+	return minutes === 0 ? `${sign}${hours}h` : `${sign}${hours}h ${minutes}m`;
+}
+
+function getBalanceVariant(balanceMinutes: number | null | undefined) {
+	if (balanceMinutes == null || balanceMinutes === 0) return "outline" as const;
+	return balanceMinutes > 0 ? ("default" as const) : ("secondary" as const);
+}
+
+function TimeBalanceBadge({
+	employee,
+	noBalanceLabel,
+	yearBalanceLabel,
+}: {
+	employee: ManagedEmployee;
+	noBalanceLabel: string;
+	yearBalanceLabel: string;
+}) {
+	const balance = employee.timeBalance;
+	const label = balance ? formatSignedBalance(balance.balanceMinutes) : noBalanceLabel;
+	const accessibleLabel = `${yearBalanceLabel}: ${label}`;
+	if (!balance) {
+		return (
+			<Badge variant="outline" aria-label={accessibleLabel} title={accessibleLabel}>
+				{noBalanceLabel}
+			</Badge>
+		);
+	}
+	return (
+		<Badge
+			variant={getBalanceVariant(balance.balanceMinutes)}
+			className="text-xs font-normal"
+			aria-label={accessibleLabel}
+			title={accessibleLabel}
+		>
+			{label}
+		</Badge>
+	);
+}
+
+function YouBadge({ show, label }: { show: boolean; label: string }) {
+	if (!show) return null;
+	return (
+		<Badge variant="outline" className="text-xs font-normal">
+			{label}
+		</Badge>
+	);
+}
+
 export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const { t } = useTranslate();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 	const [sorting, setSorting] = useState<SortingState>([]);
+	const youLabel = t("team.member.you", "You");
+	const noBalanceLabel = t("team.balance.noBalance", "No balance");
+	const yearBalanceLabel = t("team.table.timeBalance", "Year balance");
+	const primaryManagerLabel = t("team.primaryManager", "You are the primary manager");
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
 		{ polling: true },
@@ -74,11 +135,18 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		);
 	});
 
+	function getSortLabel(sorted: false | "asc" | "desc") {
+		if (sorted === "asc") return t("team.table.sort.ascending", "ascending");
+		if (sorted === "desc") return t("team.table.sort.descending", "descending");
+		return null;
+	}
+
 	// Table columns
 	const columns: ColumnDef<ManagedEmployeeWithPresence>[] = [
 		{
 			accessorKey: "user.name",
 			header: t("team.table.employee", "Employee"),
+			enableSorting: false,
 			cell: ({ row }) => (
 				<Link
 					href={`/settings/employees/${row.original.id}`}
@@ -94,7 +162,10 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 					<div>
 						<div className="flex items-center gap-1.5 font-medium">
 							{row.original.user.name}
-							{row.original.isPrimaryManager && <IconUserCheck className="size-4 text-primary" />}
+							{row.original.isPrimaryManager && (
+								<IconUserCheck className="size-4 text-primary" title={primaryManagerLabel} />
+							)}
+							<YouBadge show={row.original.isCurrentUser} label={youLabel} />
 						</div>
 						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
 					</div>
@@ -104,17 +175,61 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		{
 			accessorKey: "position",
 			header: t("team.table.position", "Position"),
+			enableSorting: false,
 			cell: ({ row }) => row.original.position || "—",
 		},
 		{
 			accessorKey: "team.name",
 			header: t("team.table.team", "Team"),
+			enableSorting: false,
 			cell: ({ row }) =>
 				row.original.team ? <Badge variant="secondary">{row.original.team.name}</Badge> : "—",
 		},
 		{
+			id: "timeBalance",
+			header: ({ column }) => {
+				const sorted = column.getIsSorted();
+				const directionLabel = getSortLabel(sorted);
+				const SortIcon =
+					sorted === "asc" ? IconArrowUp : sorted === "desc" ? IconArrowDown : IconArrowsSort;
+				return (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="-ml-2 h-8 gap-1 px-2 font-medium hover:bg-transparent"
+						onClick={column.getToggleSortingHandler()}
+						aria-label={
+							directionLabel
+								? t(
+										"team.table.sortByTimeBalanceWithDirection",
+										"Sort by Year balance ({direction})",
+										{
+											direction: directionLabel,
+										},
+									)
+								: t("team.table.sortByTimeBalance", "Sort by Year balance")
+						}
+					>
+						<span>{yearBalanceLabel}</span>
+						<SortIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+					</Button>
+				);
+			},
+			accessorFn: (row) => row.timeBalance?.balanceMinutes ?? 0,
+			sortDescFirst: false,
+			cell: ({ row }) => (
+				<TimeBalanceBadge
+					employee={row.original}
+					noBalanceLabel={noBalanceLabel}
+					yearBalanceLabel={yearBalanceLabel}
+				/>
+			),
+		},
+		{
 			accessorKey: "role",
 			header: t("team.table.role", "Role"),
+			enableSorting: false,
 			cell: ({ row }) => (
 				<Badge
 					variant={
@@ -132,6 +247,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		{
 			accessorKey: "isActive",
 			header: t("team.table.status", "Status"),
+			enableSorting: false,
 			cell: ({ row }) => (
 				<Badge variant={row.original.isActive ? "default" : "secondary"}>
 					{row.original.isActive
@@ -193,6 +309,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 							"team.search.placeholder",
 							"Search by name, email, position, or team...",
 						)}
+						aria-label={t("team.search.ariaLabel", "Search team members")}
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="pl-10"
@@ -235,9 +352,10 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 													{emp.isPrimaryManager && (
 														<IconUserCheck
 															className="size-3.5 shrink-0 text-primary"
-															title={t("team.primaryManager", "You are the primary manager")}
+															title={primaryManagerLabel}
 														/>
 													)}
+													<YouBadge show={emp.isCurrentUser} label={youLabel} />
 												</div>
 												<p className="truncate text-xs text-muted-foreground">{emp.user.email}</p>
 												{emp.position && (
@@ -252,6 +370,11 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 														{emp.team.name}
 													</Badge>
 												)}
+												<TimeBalanceBadge
+													employee={emp}
+													noBalanceLabel={noBalanceLabel}
+													yearBalanceLabel={yearBalanceLabel}
+												/>
 												{!emp.isActive && (
 													<Badge variant="outline" className="text-xs font-normal">
 														{t("team.status.inactive", "Inactive")}
@@ -275,13 +398,24 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 					</div>
 				) : (
 					<div className="space-y-4">
-						<div className="rounded-md border">
-							<Table>
+						<div className="overflow-x-auto rounded-md border">
+							<Table className="min-w-[760px]">
 								<TableHeader>
 									{table.getHeaderGroups().map((headerGroup) => (
 										<TableRow key={headerGroup.id}>
 											{headerGroup.headers.map((header) => (
-												<TableHead key={header.id}>
+												<TableHead
+													key={header.id}
+													aria-sort={
+														header.column.getCanSort()
+															? header.column.getIsSorted() === "asc"
+																? "ascending"
+																: header.column.getIsSorted() === "desc"
+																	? "descending"
+																	: "none"
+															: undefined
+													}
+												>
 													{header.isPlaceholder
 														? null
 														: flexRender(header.column.columnDef.header, header.getContext())}
