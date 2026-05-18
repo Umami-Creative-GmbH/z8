@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconGripVertical } from "@tabler/icons-react";
-import type { CSSProperties, ReactNode } from "react";
+import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { WidgetId } from "./widget-registry";
@@ -14,7 +14,13 @@ interface DashboardWidgetProps {
 	id: WidgetId;
 	/** Widget content - if null/undefined, widget won't render */
 	children: ReactNode;
+	/** Whether this widget can be reordered with drag-and-drop */
+	draggable?: boolean;
 }
+
+const DashboardWidgetDraggableContext = createContext(true);
+
+export const DashboardWidgetDraggableProvider = DashboardWidgetDraggableContext.Provider;
 
 /**
  * Dashboard widget wrapper that handles:
@@ -36,9 +42,11 @@ interface DashboardWidgetProps {
  * }
  * ```
  */
-export function DashboardWidget({ id, children }: DashboardWidgetProps) {
+export function DashboardWidget({ id, children, draggable }: DashboardWidgetProps) {
 	// Register as visible when mounted
 	useRegisterVisibleWidget(id);
+	const contextDraggable = useContext(DashboardWidgetDraggableContext);
+	const effectiveDraggable = draggable ?? contextDraggable;
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id,
@@ -54,27 +62,29 @@ export function DashboardWidget({ id, children }: DashboardWidgetProps) {
 		<div
 			ref={setNodeRef}
 			style={style}
-			className={cn("relative group", isDragging && "z-50")}
+			className={cn("relative group mb-4 break-inside-avoid", isDragging && "z-50")}
 			data-widget-id={id}
 			data-dragging={isDragging}
 		>
-			<Button
-				variant="ghost"
-				size="icon"
-				className={cn(
-					"absolute -top-2 -right-2 z-10 size-7",
-					"opacity-0 group-hover:opacity-100 transition-opacity",
-					"bg-background border shadow-sm",
-					"cursor-grab active:cursor-grabbing",
-					"hover:bg-muted",
-					isDragging && "opacity-100 cursor-grabbing",
-				)}
-				{...attributes}
-				{...listeners}
-				aria-label="Drag to reorder widget"
-			>
-				<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
-			</Button>
+			{effectiveDraggable ? (
+				<Button
+					variant="ghost"
+					size="icon"
+					className={cn(
+						"absolute -top-2 -right-2 z-10 size-7",
+						"opacity-0 group-hover:opacity-100 transition-opacity",
+						"bg-background border shadow-sm",
+						"cursor-grab active:cursor-grabbing",
+						"hover:bg-muted",
+						isDragging && "opacity-100 cursor-grabbing",
+					)}
+					{...attributes}
+					{...listeners}
+					aria-label="Drag to reorder widget"
+				>
+					<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
+				</Button>
+			) : null}
 			{children}
 		</div>
 	);
