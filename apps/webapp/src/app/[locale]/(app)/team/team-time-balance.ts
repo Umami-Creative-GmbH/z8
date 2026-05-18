@@ -10,17 +10,11 @@ import {
 } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
+import type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
+
+export type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
 
 type DayPeriod = typeof absenceEntry.$inferSelect.startPeriod;
-
-export type EmployeeTimeBalancePayload = {
-	year: number;
-	actualMinutes: number;
-	expectedMinutes: number;
-	absenceAdjustedMinutes: number;
-	balanceMinutes: number;
-	calculatedAt: Date;
-};
 
 export function getCurrentYearRange(now: DateTime = DateTime.utc()) {
 	const current = now.toUTC();

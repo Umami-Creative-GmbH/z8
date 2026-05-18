@@ -1,4 +1,4 @@
-import type { EmployeeTimeBalancePayload } from "./team-time-balance";
+import type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
 
 type TeamMemberUser = {
 	id: string;
