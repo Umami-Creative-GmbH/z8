@@ -1,4 +1,14 @@
-import { boolean, foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	foreignKey,
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 // Import auth tables for FK references
@@ -155,6 +165,42 @@ export const workPeriod = pgTable(
 			table.employeeId,
 			table.organizationId,
 			table.startTime,
+		),
+	],
+);
+
+export const employeeTimeBalance = pgTable(
+	"employee_time_balance",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		year: integer("year").notNull(),
+		actualMinutes: integer("actual_minutes").notNull(),
+		expectedMinutes: integer("expected_minutes").notNull(),
+		absenceAdjustedMinutes: integer("absence_adjusted_minutes").notNull(),
+		balanceMinutes: integer("balance_minutes").notNull(),
+		calculatedAt: timestamp("calculated_at").defaultNow().notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("employeeTimeBalance_org_employee_year_idx").on(
+			table.organizationId,
+			table.employeeId,
+			table.year,
+		),
+		index("employeeTimeBalance_org_year_idx").on(table.organizationId, table.year),
+		index("employeeTimeBalance_employee_org_year_idx").on(
+			table.employeeId,
+			table.organizationId,
+			table.year,
 		),
 	],
 );
