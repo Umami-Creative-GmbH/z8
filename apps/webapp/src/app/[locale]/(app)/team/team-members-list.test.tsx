@@ -1,10 +1,10 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { TeamMembersList } from "./team-members-list";
 import type { ManagedEmployee } from "./team-members-data";
+import { TeamMembersList } from "./team-members-list";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -110,5 +110,13 @@ describe("TeamMembersList", () => {
 		expect(screen.getByText("+2h")).toBeTruthy();
 		expect(screen.getByText("-3h")).toBeTruthy();
 		expect(screen.getByText("0h")).toBeTruthy();
+	});
+
+	it("renders a sortable yearly balance table header", () => {
+		render(<TeamMembersList employees={[employee({})]} />);
+
+		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
+
+		expect(screen.getByRole("button", { name: "Sort by Year balance" })).toBeTruthy();
 	});
 });

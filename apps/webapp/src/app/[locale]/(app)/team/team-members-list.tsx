@@ -33,7 +33,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
 import type { ManagedEmployee } from "./actions";
@@ -57,7 +57,7 @@ function formatSignedBalance(balanceMinutes: number) {
 
 function getBalanceVariant(balanceMinutes: number | null | undefined) {
 	if (balanceMinutes == null || balanceMinutes === 0) return "outline" as const;
-	return balanceMinutes > 0 ? "default" as const : "secondary" as const;
+	return balanceMinutes > 0 ? ("default" as const) : ("secondary" as const);
 }
 
 function TimeBalanceBadge({ employee }: { employee: ManagedEmployee }) {
@@ -148,7 +148,17 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		},
 		{
 			id: "timeBalance",
-			header: t("team.table.timeBalance", "Year balance"),
+			header: ({ column }) => (
+				<Button
+					variant="ghost"
+					size="sm"
+					className="-ml-3 h-8 px-2"
+					onClick={column.getToggleSortingHandler()}
+					aria-label={t("team.table.sortByTimeBalance", "Sort by Year balance")}
+				>
+					{t("team.table.timeBalance", "Year balance")}
+				</Button>
+			),
 			accessorFn: (row) => row.timeBalance?.balanceMinutes ?? 0,
 			cell: ({ row }) => <TimeBalanceBadge employee={row.original} />,
 		},
