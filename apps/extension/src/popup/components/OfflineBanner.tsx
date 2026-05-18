@@ -1,4 +1,4 @@
-import { WifiOff, CloudOff } from "@tabler/icons-react";
+import { IconWifiOff, IconCloudOff } from "@tabler/icons-react";
 
 interface OfflineBannerProps {
   queueLength: number;
@@ -11,7 +11,7 @@ export function OfflineBanner({ queueLength }: OfflineBannerProps) {
       role="status"
       aria-live="polite"
     >
-      <WifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" aria-hidden="true" />
+      <IconWifiOff className="w-4 h-4 text-amber-600 flex-shrink-0" aria-hidden="true" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-amber-800">You're offline</p>
         {queueLength > 0 && (
@@ -20,7 +20,7 @@ export function OfflineBanner({ queueLength }: OfflineBannerProps) {
           </p>
         )}
       </div>
-      <CloudOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" aria-hidden="true" />
+      <IconCloudOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" aria-hidden="true" />
     </div>
   );
 }

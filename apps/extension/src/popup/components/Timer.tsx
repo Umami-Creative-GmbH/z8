@@ -1,4 +1,4 @@
-import { Clock } from "@tabler/icons-react";
+import { IconClock } from "@tabler/icons-react";
 import { useTimer, formatTime } from "../hooks/useTimer";
 
 interface TimerProps {
@@ -14,7 +14,7 @@ export function Timer({ startTime }: TimerProps) {
       className="mb-3 flex items-center justify-center gap-2 rounded-2xl bg-slate-950 p-4 font-mono text-3xl font-semibold tracking-tight text-slate-50 shadow-sm"
       role="timer"
     >
-      <Clock className="size-5 text-blue-300" aria-hidden="true" />
+      <IconClock className="size-5 text-blue-300" aria-hidden="true" />
       <span>{formatted}</span>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Loader2 } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 
 export function Loading() {
   return (
@@ -7,7 +7,7 @@ export function Loading() {
       role="status"
       aria-live="polite"
     >
-      <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" aria-hidden="true" />
+      <IconLoader2 className="w-8 h-8 text-emerald-500 animate-spin" aria-hidden="true" />
       <p className="text-xs text-gray-500 mt-2">Loading…</p>
     </div>
   );
