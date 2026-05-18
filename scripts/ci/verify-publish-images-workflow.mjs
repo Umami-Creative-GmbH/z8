@@ -133,7 +133,6 @@ const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
 
 expect(publishTargetsJob, "Missing publish-targets job");
 expect(publishManifestsJob, "Missing publish-manifests job");
-expect(cleanupPackageVersionsJob, "Missing cleanup-package-versions job");
 
 expectPushPathFilters([
 	"apps/webapp/**",
@@ -276,27 +275,14 @@ if (publishManifestsJob) {
 	}
 }
 
-if (cleanupPackageVersionsJob) {
-	includesAll(
-		cleanupPackageVersionsJob,
-		[
-			"name: Cleanup Package Versions (${{ matrix.repository }})",
-			"needs: publish-manifests",
-			"if: ${{ github.event_name != 'pull_request' }}",
-			"repository:",
-			"- z8-webapp",
-			"- z8-worker",
-			"- z8-migration",
-			"uses: actions/delete-package-versions@v5",
-			"owner: ${{ env.IMAGE_NAMESPACE }}",
-			"package-name: ${{ matrix.repository }}",
-			"package-type: container",
-			"min-versions-to-keep: 10",
-			"ignore-versions: '^(latest|v.*)$'",
-		],
-		"cleanup-package-versions",
-	);
-}
+expect(
+	!cleanupPackageVersionsJob,
+	"cleanup-package-versions must not be present; deleting GHCR package versions can remove child manifests still referenced by multi-arch tags",
+);
+expect(
+	!workflow.includes("actions/delete-package-versions"),
+	"workflow must not use actions/delete-package-versions for multi-arch GHCR images",
+);
 
 expect(
 	!workflow.includes("name: Build Native (${{ matrix.repository }} ${{ matrix.arch }})"),
