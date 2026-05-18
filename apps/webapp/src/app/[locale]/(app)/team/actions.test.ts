@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildVisibleManagedEmployees } from "./team-members-data";
+import { buildVisibleManagedEmployees, canUseTeamPage } from "./team-members-data";
 
 const user = {
 	id: "user-1",
@@ -11,6 +11,12 @@ const user = {
 };
 
 describe("team action helpers", () => {
+	it("allows only managers and admins to use team actions", () => {
+		expect(canUseTeamPage("employee")).toBe(false);
+		expect(canUseTeamPage("manager")).toBe(true);
+		expect(canUseTeamPage("admin")).toBe(true);
+	});
+
 	it("includes the current employee and marks them as current user", () => {
 		const employees = buildVisibleManagedEmployees({
 			currentEmployee: {

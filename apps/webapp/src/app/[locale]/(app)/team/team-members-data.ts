@@ -29,12 +29,18 @@ type TeamMemberEmployee = {
 	team: TeamMemberTeam;
 };
 
+type TeamMemberRole = TeamMemberEmployee["role"];
+
 export type CurrentTeamEmployee = TeamMemberEmployee;
 
 export type ManagedEmployeeRecord = {
 	isPrimary: boolean;
 	employee: TeamMemberEmployee;
 };
+
+export function canUseTeamPage(role: TeamMemberRole): boolean {
+	return role === "manager" || role === "admin";
+}
 
 export interface ManagedEmployee {
 	id: string;

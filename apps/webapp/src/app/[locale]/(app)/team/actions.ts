@@ -6,13 +6,14 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { NotFoundError } from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	buildVisibleManagedEmployees,
 	type CurrentTeamEmployee,
+	canUseTeamPage,
 	type ManagedEmployee,
 	type ManagedEmployeeRecord,
 } from "./team-members-data";
@@ -101,6 +102,17 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 						),
 			),
 		);
+		if (!canUseTeamPage(currentEmp.role)) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Not authorized",
+						resource: "team",
+						action: "read",
+					}),
+				),
+			);
+		}
 
 		// Get all employees where current user is their manager
 		const managedEmployeeRecords = yield* _(
