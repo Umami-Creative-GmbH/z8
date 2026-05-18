@@ -59,7 +59,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 			{/* Error Alert */}
 			{error && (
 				<Alert variant="destructive">
-					<IconAlertCircle className="h-4 w-4" />
+					<IconAlertCircle className="size-4" />
 					<AlertTitle>Error</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
@@ -96,7 +96,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4">
-							<IconChartBar className="h-12 w-12 animate-pulse text-muted-foreground" />
+							<IconChartBar className="size-12 animate-pulse text-muted-foreground" />
 							<div className="text-center">
 								<p className="font-semibold">Generating Report...</p>
 								<p className="text-sm text-muted-foreground">
@@ -113,7 +113,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4 text-center">
-							<IconChartBar className="h-12 w-12 text-muted-foreground" />
+							<IconChartBar className="size-12 text-muted-foreground" />
 							<div>
 								<p className="font-semibold">No report generated yet</p>
 								<p className="text-sm text-muted-foreground">

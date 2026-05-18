@@ -165,7 +165,7 @@ export function useNotificationStreamContext(): NotificationStreamState {
 export function NotificationBadgeSkeleton() {
 	return (
 		<div className="relative inline-flex">
-			<div className="h-6 w-6 animate-pulse rounded-full bg-muted" />
+			<div className="size-6 animate-pulse rounded-full bg-muted" />
 		</div>
 	);
 }

@@ -170,25 +170,25 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="ghost" size="icon">
-									<IconDots className="h-4 w-4" aria-hidden="true" />
+									<IconDots className="size-4" aria-hidden="true" />
 									<span className="sr-only">{t("common.actions", "Actions")}</span>
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem onClick={handleTest}>
-									<IconPlayerPlay className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconPlayerPlay className="mr-2 size-4" aria-hidden="true" />
 									{t("settings:webhooks.test", "Send Test")}
 								</DropdownMenuItem>
 								<DropdownMenuItem onClick={() => setIsLogsDialogOpen(true)}>
-									<IconHistory className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconHistory className="mr-2 size-4" aria-hidden="true" />
 									{t("settings:webhooks.view-logs", "View Logs")}
 								</DropdownMenuItem>
 								<DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
-									<IconEdit className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconEdit className="mr-2 size-4" aria-hidden="true" />
 									{t("common.edit", "Edit")}
 								</DropdownMenuItem>
 								<DropdownMenuItem onClick={handleRegenerateSecret}>
-									<IconRefresh className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 									{t("settings:webhooks.regenerate-secret", "Regenerate Secret")}
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
@@ -196,7 +196,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 									className="text-destructive"
 									onClick={() => setIsDeleteDialogOpen(true)}
 								>
-									<IconTrash className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconTrash className="mr-2 size-4" aria-hidden="true" />
 									{t("common.delete", "Delete")}
 								</DropdownMenuItem>
 							</DropdownMenuContent>

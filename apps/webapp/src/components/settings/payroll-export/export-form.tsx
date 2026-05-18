@@ -571,12 +571,12 @@ export function ExportForm({
 				<Button onClick={handleExport} disabled={isPending || !isSelectedFormatConfigured}>
 					{isPending ? (
 						<>
-							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							<IconLoader2 className="mr-2 size-4 animate-spin" />
 							{t("settings.payrollExport.export.exporting", "Exporting…")}
 						</>
 					) : (
 						<>
-							<IconDownload className="mr-2 h-4 w-4" />
+							<IconDownload className="mr-2 size-4" />
 							{exportButtonLabel}
 						</>
 					)}

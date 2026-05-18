@@ -85,7 +85,7 @@ export function ReportFilters({
 							size="lg"
 							className="w-full sm:w-auto"
 						>
-							<IconChartBar className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconChartBar className="mr-2 size-4" aria-hidden="true" />
 							{isGenerating ? "Generating Report…" : "Generate Report"}
 						</Button>
 					</div>

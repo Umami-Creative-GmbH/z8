@@ -177,7 +177,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 						<div className="flex items-center gap-2 mt-0.5">
 							{metadata.projectColor && (
 								<div
-									className="w-3 h-3 rounded-full"
+									className="size-3 rounded-full"
 									style={{ backgroundColor: metadata.projectColor }}
 								/>
 							)}
@@ -331,7 +331,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 			<SheetContent>
 				<SheetHeader>
 					<div className="flex items-center gap-2">
-						<div className="w-3 h-3 rounded-full" style={{ backgroundColor: event.color }} />
+						<div className="size-3 rounded-full" style={{ backgroundColor: event.color }} />
 						<SheetTitle>{event.title}</SheetTitle>
 					</div>
 					<SheetDescription className="flex items-center gap-2">

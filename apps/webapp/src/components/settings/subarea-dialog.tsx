@@ -184,7 +184,7 @@ export function SubareaDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing
 								? t("settings.locations.subareaDialog.save", "Save Changes")
 								: t("settings.locations.subareaDialog.create", "Add Subarea")}

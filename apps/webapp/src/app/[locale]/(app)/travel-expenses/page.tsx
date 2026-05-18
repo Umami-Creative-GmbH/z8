@@ -25,14 +25,14 @@ export default async function TravelExpensesPage() {
 			{(authContext.employee.role === "manager" || authContext.employee.role === "admin") && (
 				<div className="px-4 lg:px-6">
 					<Alert>
-						<IconInbox aria-hidden="true" className="h-4 w-4" />
+						<IconInbox aria-hidden="true" className="size-4" />
 						<AlertTitle>Review Pending Travel Expense Approvals</AlertTitle>
 						<AlertDescription className="flex items-center justify-between gap-4">
 							<span>Open the unified approvals inbox filtered to travel expenses.</span>
 							<Button asChild size="sm" variant="outline">
 								<Link href="/approvals/inbox?types=travel_expense_claim">
 									Open Inbox
-									<IconArrowRight aria-hidden="true" className="ml-2 h-4 w-4" />
+									<IconArrowRight aria-hidden="true" className="ml-2 size-4" />
 								</Link>
 							</Button>
 						</AlertDescription>

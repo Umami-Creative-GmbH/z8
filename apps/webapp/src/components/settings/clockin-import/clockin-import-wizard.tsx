@@ -191,7 +191,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconKey className="h-5 w-5" />
+							<IconKey className="size-5" />
 							{t("settings.clockinImport.credentials.title", "Clockin API Token")}
 						</CardTitle>
 						<CardDescription>
@@ -218,9 +218,9 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<div className="flex justify-end">
 							<Button onClick={handleConnect} disabled={!token.trim() || busyAction === "connect"}>
 								{busyAction === "connect" ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 								) : (
-									<IconArrowRight className="mr-2 h-4 w-4" />
+									<IconArrowRight className="mr-2 size-4" />
 								)}
 								{t("settings.clockinImport.credentials.connect", "Connect & Preview")}
 							</Button>
@@ -248,14 +248,14 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						</div>
 						<div className="flex justify-between">
 							<Button variant="outline" onClick={() => setStep("connect")}>
-								<IconArrowLeft className="mr-2 h-4 w-4" />
+								<IconArrowLeft className="mr-2 size-4" />
 								{t("common.back", "Back")}
 							</Button>
 							<Button onClick={handleLoadMappings} disabled={busyAction === "mapping"}>
 								{busyAction === "mapping" ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 								) : (
-									<IconUsers className="mr-2 h-4 w-4" />
+									<IconUsers className="mr-2 size-4" />
 								)}
 								{t("settings.clockinImport.preview.next", "Map Employees")}
 							</Button>
@@ -310,11 +310,11 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						</div>
 						<div className="flex justify-between">
 							<Button variant="outline" onClick={() => setStep("preview")}>
-								<IconArrowLeft className="mr-2 h-4 w-4" />
+								<IconArrowLeft className="mr-2 size-4" />
 								{t("common.back", "Back")}
 							</Button>
 							<Button onClick={() => setStep("selection")}>
-								<IconArrowRight className="mr-2 h-4 w-4" />
+								<IconArrowRight className="mr-2 size-4" />
 								{t("common.continue", "Continue")}
 							</Button>
 						</div>
@@ -384,7 +384,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						</div>
 						<div className="flex justify-between">
 							<Button variant="outline" onClick={() => setStep("mapping")}>
-								<IconArrowLeft className="mr-2 h-4 w-4" />
+								<IconArrowLeft className="mr-2 size-4" />
 								{t("common.back", "Back")}
 							</Button>
 							<Button
@@ -396,7 +396,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									!selections.dateRange.endDate
 								}
 							>
-								<IconArrowRight className="mr-2 h-4 w-4" />
+								<IconArrowRight className="mr-2 size-4" />
 								Start Review Scan
 							</Button>
 						</div>
@@ -407,7 +407,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 			{step === "importing" && (
 				<Card>
 					<CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
-						<IconLoader2 className="h-4 w-4 animate-spin" />
+						<IconLoader2 className="size-4 animate-spin" />
 						Starting Clockin import review scan…
 					</CardContent>
 				</Card>
@@ -417,7 +417,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconCheck className="h-5 w-5 text-green-600" aria-hidden="true" />
+							<IconCheck className="size-5 text-green-600" aria-hidden="true" />
 							Import review scan started
 						</CardTitle>
 						<CardDescription>

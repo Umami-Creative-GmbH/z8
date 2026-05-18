@@ -24,7 +24,7 @@ export function InfoHeader({
 		<div className="sticky top-0 z-30 flex shrink-0 items-center gap-4 pb-6">
 			<Button asChild size="icon" variant="ghost">
 				<Link href={backHref} locale={locale}>
-					<IconArrowLeft className="h-4 w-4" />
+					<IconArrowLeft className="size-4" />
 					<span className="sr-only">{t("info.back-to-login", "Back to login")}</span>
 				</Link>
 			</Button>

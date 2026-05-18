@@ -121,7 +121,7 @@ export function TravelExpensePolicyManagement({ organizationId }: TravelExpenseP
 
 			<div className="flex justify-end">
 				<Button onClick={handleCreate}>
-					<IconPlus className="mr-2 h-4 w-4" />
+					<IconPlus className="mr-2 size-4" />
 					{t("settings.travelExpenses.addPolicy", "Add Policy")}
 				</Button>
 			</div>
@@ -183,7 +183,7 @@ export function TravelExpensePolicyManagement({ organizationId }: TravelExpenseP
 												onClick={() => handleEdit(policy)}
 												aria-label={t("common.edit", "Edit")}
 											>
-												<IconPencil className="h-4 w-4" />
+												<IconPencil className="size-4" />
 											</Button>
 										</TableCell>
 									</TableRow>

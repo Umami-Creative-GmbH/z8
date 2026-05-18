@@ -208,7 +208,7 @@ export function SocialOAuthDialog({
 														return (
 															<SelectItem key={provider} value={provider}>
 																<div className="flex items-center gap-2">
-																	<info.icon className="h-4 w-4" />
+																	<info.icon className="size-4" />
 																	{info.name}
 																</div>
 															</SelectItem>

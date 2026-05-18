@@ -123,7 +123,7 @@ export function SurchargeRuleEditor({ ruleIndex, form, onRemove }: SurchargeRule
 						onClick={onRemove}
 						className="text-destructive hover:text-destructive"
 					>
-						<IconTrash className="h-4 w-4" />
+						<IconTrash className="size-4" />
 					</Button>
 				</div>
 			</CardHeader>

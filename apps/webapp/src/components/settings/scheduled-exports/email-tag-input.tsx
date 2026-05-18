@@ -91,7 +91,7 @@ export function EmailTagInput({
 							className="ml-1 rounded-full hover:bg-muted p-0.5"
 							aria-label={t("settings.scheduledExports.emailInput.remove", "Remove {email}", { email })}
 						>
-							<IconX className="h-3 w-3" aria-hidden="true" />
+							<IconX className="size-3" aria-hidden="true" />
 						</button>
 					</Badge>
 				))}

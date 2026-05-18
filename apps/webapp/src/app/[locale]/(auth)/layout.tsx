@@ -103,7 +103,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 				<aside className="fixed top-0 right-0 hidden h-svh w-1/2 overflow-hidden bg-muted lg:block">
 					<Image
 						alt=""
-						className="absolute inset-0 h-full w-full object-cover"
+						className="absolute inset-0 size-full object-cover"
 						fill
 						priority
 						sizes="50vw"

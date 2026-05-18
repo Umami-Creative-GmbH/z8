@@ -78,7 +78,7 @@ export function OrganizationTimezoneCard({
 						<Label htmlFor="timezone-picker">
 							{t("organization.timezone.default", "Default Timezone")}
 						</Label>
-						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 					</div>
 					<TimezonePicker
 						value={timezone}

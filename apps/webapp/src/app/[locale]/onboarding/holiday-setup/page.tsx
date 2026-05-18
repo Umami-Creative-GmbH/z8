@@ -187,7 +187,7 @@ export default function HolidaySetupPage() {
 								>
 													{selectedCountryName ||
 														t("onboarding.holidaySetup.selectCountry", "Select a country")}
-													<IconSelector className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+													<IconSelector className="ml-2 size-4 shrink-0 opacity-50" />
 												</Button>
 											</PopoverTrigger>
 											<PopoverContent
@@ -216,7 +216,7 @@ export default function HolidaySetupPage() {
 												>
 																	<IconCheck
 																		className={cn(
-																			"mr-2 h-4 w-4",
+																			"mr-2 size-4",
 																			field.state.value === country.code
 																				? "opacity-100"
 																				: "opacity-0",

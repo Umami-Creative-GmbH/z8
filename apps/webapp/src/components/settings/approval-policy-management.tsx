@@ -110,7 +110,7 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 							</CardDescription>
 						</div>
 						<Button onClick={() => setDialogOpen(true)}>
-							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.approvalPolicies.addPolicy", "Add Policy")}
 						</Button>
 					</div>
@@ -174,7 +174,7 @@ export function ApprovalPolicyManagement({ organizationId }: ApprovalPolicyManag
 												disabled
 												aria-label={t("settings.approvalPolicies.editPolicy", "Edit policy")}
 											>
-												<IconPencil className="h-4 w-4" aria-hidden="true" />
+												<IconPencil className="size-4" aria-hidden="true" />
 											</Button>
 										</TableCell>
 									</TableRow>

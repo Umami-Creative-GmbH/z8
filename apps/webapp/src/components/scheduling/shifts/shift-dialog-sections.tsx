@@ -114,7 +114,7 @@ export function ShiftDialogSections({
 									) : (
 										<span>Pick a date</span>
 									)}
-									<IconCalendar className="ml-auto h-4 w-4 opacity-50" />
+									<IconCalendar className="ml-auto size-4 opacity-50" />
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="w-auto p-0" align="start">
@@ -210,7 +210,7 @@ export function ShiftDialogSections({
 						<div className="space-y-2">
 							<Label>
 								<span className="flex items-center gap-2">
-									<IconMapPin className="h-4 w-4" aria-hidden="true" />
+									<IconMapPin className="size-4" aria-hidden="true" />
 									Subarea
 									<span className="text-destructive">*</span>
 								</span>
@@ -243,7 +243,7 @@ export function ShiftDialogSections({
 						<div className="space-y-2">
 							<Label>
 								<span className="flex items-center gap-2">
-									<IconUsers className="h-4 w-4" aria-hidden="true" />
+									<IconUsers className="size-4" aria-hidden="true" />
 									Assign To
 								</span>
 							</Label>
@@ -344,10 +344,10 @@ export function ShiftDialogFooterActions({
 					disabled={isPending}
 				>
 					{isDeleting ? (
-						<IconLoader2 className="h-4 w-4 animate-spin" />
+						<IconLoader2 className="size-4 animate-spin" />
 					) : (
 						<>
-							<IconTrash className="h-4 w-4 mr-2" />
+							<IconTrash className="size-4 mr-2" />
 							{showDeleteConfirm ? "Confirm Delete" : "Delete"}
 						</>
 					)}
@@ -368,7 +368,7 @@ export function ShiftDialogFooterActions({
 				<Button type="submit" disabled={isPending}>
 					{isSaving ? (
 						<>
-							<IconLoader2 className="h-4 w-4 mr-2 animate-spin" />
+							<IconLoader2 className="size-4 mr-2 animate-spin" />
 							Saving...
 						</>
 					) : isEditing ? (

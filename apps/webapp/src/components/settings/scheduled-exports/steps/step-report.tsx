@@ -117,7 +117,7 @@ function PayrollReportConfig({
 	if (!hasConfigs) {
 		return (
 			<Alert role="alert">
-				<IconAlertCircle className="h-4 w-4" aria-hidden="true" />
+				<IconAlertCircle className="size-4" aria-hidden="true" />
 				<AlertTitle>{t("settings.scheduledExports.report.noPayrollConfig", "No Payroll Configuration")}</AlertTitle>
 				<AlertDescription>
 					{t("settings.scheduledExports.report.noPayrollConfigDesc", "You need to configure at least one payroll export format (DATEV, Sage, etc.) before creating a scheduled payroll export. Go to Settings → Payroll Export to set up your configuration.")}
@@ -231,7 +231,7 @@ function AuditReportConfig({
 	return (
 		<div className="space-y-4">
 			<Alert>
-				<IconAlertCircle className="h-4 w-4" aria-hidden="true" />
+				<IconAlertCircle className="size-4" aria-hidden="true" />
 				<AlertTitle>{t("settings.scheduledExports.report.auditReport", "Audit Report")}</AlertTitle>
 				<AlertDescription>
 					{t("settings.scheduledExports.report.auditReportDesc", "Audit reports include all time tracking data with cryptographic signatures and timestamps for GoBD compliance. The export will be stored with WORM (Write Once Read Many) protection.")}

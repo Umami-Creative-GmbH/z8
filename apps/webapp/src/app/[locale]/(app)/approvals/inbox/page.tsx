@@ -255,9 +255,9 @@ export default function ApprovalInboxPage() {
 					</div>
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						{isFetching ? (
-							<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 						) : (
-							<IconRefresh className="h-4 w-4" aria-hidden="true" />
+							<IconRefresh className="size-4" aria-hidden="true" />
 						)}
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
@@ -266,7 +266,7 @@ export default function ApprovalInboxPage() {
 				<Card>
 					<CardContent className="py-12">
 						<div className="flex flex-col items-center justify-center text-center">
-							<IconInbox className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
+							<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
 							<h2 className="mt-4 text-lg font-medium">
 								{t("approvals:approvals.inboxErrorTitle", "Unable to load approval inbox")}
 							</h2>
@@ -306,14 +306,14 @@ export default function ApprovalInboxPage() {
 								onClick={() => setBulkRejectOpen(true)}
 								disabled={isBulkActionPending}
 							>
-								<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconX className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.rejectSelected", "Reject Selected")} ({selectedIds.size})
 							</Button>
 							<Button onClick={handleBulkApprove} disabled={isBulkActionPending}>
 								{bulkApproveMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : (
-									<IconCheck className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconCheck className="mr-2 size-4" aria-hidden="true" />
 								)}
 								{t("approvals:approvals.approveSelected", "Approve Selected")} ({selectedIds.size})
 							</Button>
@@ -321,9 +321,9 @@ export default function ApprovalInboxPage() {
 					)}
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						{isFetching ? (
-							<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 						) : (
-							<IconRefresh className="h-4 w-4" aria-hidden="true" />
+							<IconRefresh className="size-4" aria-hidden="true" />
 						)}
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
@@ -334,7 +334,7 @@ export default function ApprovalInboxPage() {
 			<Card>
 				<CardHeader className="pb-0">
 					<CardTitle className="flex items-center gap-2">
-						<IconInbox className="h-5 w-5" aria-hidden="true" />
+						<IconInbox className="size-5" aria-hidden="true" />
 						{t("approvals:approvals.pendingRequests", "Pending Requests")}
 						{totalCount > 0 && (
 							<span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
@@ -378,7 +378,7 @@ export default function ApprovalInboxPage() {
 								disabled={isFetchingNextPage}
 							>
 								{isFetchingNextPage ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : null}
 								{t("common.loadMore", "Load More")}
 							</Button>
@@ -388,7 +388,7 @@ export default function ApprovalInboxPage() {
 					{/* Empty state */}
 					{items.length === 0 && !isFetching && (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
-							<IconInbox className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
+							<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
 							<h3 className="mt-4 text-lg font-medium">
 								{t("approvals:approvals.noRequests", "No pending requests")}
 							</h3>
@@ -464,9 +464,9 @@ export default function ApprovalInboxPage() {
 							disabled={!bulkRejectReason.trim() || bulkRejectMutation.isPending}
 						>
 							{bulkRejectMutation.isPending && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
-							<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconX className="mr-2 size-4" aria-hidden="true" />
 							{t("approvals:approvals.confirmReject", "Confirm Rejection")}
 						</Button>
 					</ActionPanelFooter>

@@ -294,14 +294,14 @@ export function PresetDialog({
 							{/* Location Info (read-only) */}
 							{formatLocation() && (
 								<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-									<IconMapPin className="h-4 w-4" />
+									<IconMapPin className="size-4" />
 									<span>{formatLocation()}</span>
 								</div>
 							)}
 
 							{data?.preset?.year && (
 								<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-									<IconCalendar className="h-4 w-4" />
+									<IconCalendar className="size-4" />
 									<span>
 										{t("settings.holidays.presets.year", "Year")}: {data.preset.year}
 									</span>
@@ -330,7 +330,7 @@ export function PresetDialog({
 						<div className="border-t pt-4">
 							<div className="flex items-center justify-between mb-3">
 								<h4 className="text-sm font-medium flex items-center gap-2">
-									<IconCalendar className="h-4 w-4" />
+									<IconCalendar className="size-4" />
 									{t("settings.holidays.presets.holidaysList", "Holidays")}
 									<Badge variant="secondary">{data?.holidays?.length || 0}</Badge>
 								</h4>
@@ -380,7 +380,7 @@ export function PresetDialog({
 														<Button
 															variant="ghost"
 															size="icon"
-															className="h-8 w-8 text-muted-foreground hover:text-destructive"
+															className="size-8 text-muted-foreground hover:text-destructive"
 															onClick={() => deleteHolidayMutation.mutate(holiday.id)}
 															disabled={deleteHolidayMutation.isPending}
 															aria-label={t(
@@ -389,7 +389,7 @@ export function PresetDialog({
 																{ holiday: holiday.name },
 															)}
 														>
-															<IconTrash className="h-4 w-4" />
+															<IconTrash className="size-4" />
 														</Button>
 													</TableCell>
 												</TableRow>
@@ -419,7 +419,7 @@ export function PresetDialog({
 								onClick={() => form.handleSubmit()}
 								disabled={updateMutation.isPending}
 							>
-								{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{updateMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common.save", "Save")}
 							</Button>
 						</ActionPanelFooter>

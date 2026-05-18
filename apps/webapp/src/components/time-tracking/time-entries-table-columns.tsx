@@ -51,7 +51,7 @@ function DurationCell({ row, t }: { row: WorkPeriodData; t: TFnType }) {
 					<TooltipTrigger asChild>
 						<span className="inline-flex cursor-help">
 							<IconInfoCircle
-								className="h-4 w-4 text-amber-500"
+								className="size-4 text-amber-500"
 								aria-label={t(
 									"timeTracking.autoAdjusted.indicator",
 									"Auto-adjusted for compliance",

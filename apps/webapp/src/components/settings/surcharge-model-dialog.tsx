@@ -265,7 +265,7 @@ export function SurchargeModelDialog({
 											field.pushValue({ ...defaultRule, priority: field.state.value.length });
 										}}
 									>
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.surcharges.addRule", "Add Rule")}
 									</Button>
 								)}
@@ -333,7 +333,7 @@ export function SurchargeModelDialog({
 							{([isSubmitting, canSubmit]) => (
 								<Button type="submit" disabled={isPending || isSubmitting || !canSubmit}>
 									{(isPending || isSubmitting) && (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
 									)}
 									{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 								</Button>

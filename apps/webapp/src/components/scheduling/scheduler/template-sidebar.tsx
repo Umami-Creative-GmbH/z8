@@ -66,11 +66,11 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 			}}
 		>
 			<div className="flex items-start gap-2">
-				<IconGripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
+				<IconGripVertical className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
 				<div className="flex-1 min-w-0">
 					<h4 className="font-medium text-sm truncate">{template.name}</h4>
 					<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-						<IconClock className="h-3 w-3" />
+						<IconClock className="size-3" />
 						<span>
 							{formatTime(template.startTime)} - {formatTime(template.endTime)}
 						</span>

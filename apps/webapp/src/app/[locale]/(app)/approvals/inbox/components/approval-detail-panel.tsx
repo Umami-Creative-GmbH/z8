@@ -163,7 +163,7 @@ export function ApprovalDetailPanel({
 			<SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto overscroll-behavior-contain">
 				<SheetHeader>
 					<div className="flex items-center gap-2">
-						<TypeIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+						<TypeIcon className="size-5 text-muted-foreground" aria-hidden="true" />
 						<SheetTitle>{approval.typeName}</SheetTitle>
 					</div>
 					<SheetDescription>{approval.display.summary}</SheetDescription>
@@ -396,9 +396,9 @@ export function ApprovalDetailPanel({
 									disabled={!rejectionReason.trim() || isPending}
 								>
 									{rejectMutation.isPending && (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									)}
-									<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconX className="mr-2 size-4" aria-hidden="true" />
 									{t("approvals:approvals.confirmReject", "Confirm Rejection")}
 								</Button>
 							</div>
@@ -411,14 +411,14 @@ export function ApprovalDetailPanel({
 								onClick={() => setIsRejecting(true)}
 								disabled={isPending}
 							>
-								<IconX className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconX className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.reject", "Reject")}
 							</Button>
 							<Button className="flex-1" onClick={handleApprove} disabled={isPending}>
 								{approveMutation.isPending && (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								)}
-								<IconCheck className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconCheck className="mr-2 size-4" aria-hidden="true" />
 								{t("approvals:approvals.approve", "Approve")}
 							</Button>
 						</div>

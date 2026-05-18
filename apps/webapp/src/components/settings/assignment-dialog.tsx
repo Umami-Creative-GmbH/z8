@@ -287,7 +287,7 @@ export function AssignmentDialog({
 														<div className="flex items-center gap-2">
 															{preset.color && (
 																<div
-																	className="w-3 h-3 rounded-full"
+																	className="size-3 rounded-full"
 																	style={{ backgroundColor: preset.color }}
 																/>
 															)}
@@ -445,7 +445,7 @@ export function AssignmentDialog({
 								{t("common.cancel", "Cancel")}
 							</Button>
 							<Button type="submit" disabled={createMutation.isPending}>
-								{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common.assign", "Assign")}
 							</Button>
 						</ActionPanelFooter>

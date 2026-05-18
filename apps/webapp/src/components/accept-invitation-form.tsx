@@ -189,7 +189,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 		return (
 			<AuthFormWrapper title={t("auth.accept-invitation", "Accept invitation")}>
 				<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-					<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden="true" />
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 					<p aria-live="polite" className="text-muted-foreground text-sm">
 						{t("auth.loading-invitation", "Checking your invitation details...")}
 					</p>
@@ -203,9 +203,9 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 			<AuthFormWrapper title={t("auth.accept-invitation", "Accept invitation")}>
 				<Card className="border-none shadow-none">
 					<CardHeader className="px-0 text-center">
-						<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+						<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
 							<IconCheck
-								className="h-8 w-8 text-green-600 dark:text-green-400"
+								className="size-8 text-green-600 dark:text-green-400"
 								aria-hidden="true"
 							/>
 						</div>
@@ -225,11 +225,11 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 				<CardHeader className="px-0">
 					<div className="rounded-2xl border border-border/80 bg-muted/20 p-4 sm:p-5">
 						<div className="flex items-start gap-4">
-							<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+							<div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
 								{displayedError ? (
-									<IconX className="h-8 w-8" aria-hidden="true" />
+									<IconX className="size-8" aria-hidden="true" />
 								) : (
-									<IconUserPlus className="h-8 w-8" aria-hidden="true" />
+									<IconUserPlus className="size-8" aria-hidden="true" />
 								)}
 							</div>
 							<div className="space-y-2">
@@ -297,7 +297,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 										{t("auth.invited-email", "Invited email")}
 									</dt>
 									<dd className="mt-1 flex items-center gap-2 font-medium text-sm">
-										<IconMail className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+										<IconMail className="size-4 text-muted-foreground" aria-hidden="true" />
 										<span>{invitation.email}</span>
 									</dd>
 								</div>
@@ -389,7 +389,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 						>
 							{state === "accepting" ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("auth.accepting-invitation", "Accepting invitation…")}
 								</>
 							) : session ? (

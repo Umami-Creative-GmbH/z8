@@ -147,7 +147,7 @@ const MiniMonth = memo(function MiniMonth({
 							{workStatus !== "none" && (
 								<div
 									className={cn(
-										"absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full",
+										"absolute bottom-0.5 left-1/2 -translate-x-1/2 size-1 rounded-full",
 										workStatus === "met" && "bg-green-500",
 										workStatus === "overtime" && "bg-purple-500",
 										workStatus === "undertime" && "bg-orange-500",
@@ -200,10 +200,10 @@ export function YearCalendarView({
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="icon" onClick={() => onYearChange(year - 1)}>
-						<IconChevronLeft className="h-4 w-4" />
+						<IconChevronLeft className="size-4" />
 					</Button>
 					<Button variant="outline" size="icon" onClick={() => onYearChange(year + 1)}>
-						<IconChevronRight className="h-4 w-4" />
+						<IconChevronRight className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
@@ -227,23 +227,23 @@ export function YearCalendarView({
 			{/* Legend */}
 			<div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
 				<div className="flex items-center gap-1">
-					<div className="w-2 h-2 rounded-full bg-green-500" />
+					<div className="size-2 rounded-full bg-green-500" />
 					<span>{t("calendar.legend.hoursMet", "Hours Met")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-2 h-2 rounded-full bg-purple-500" />
+					<div className="size-2 rounded-full bg-purple-500" />
 					<span>{t("calendar.legend.overtime", "Overtime")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-2 h-2 rounded-full bg-orange-500" />
+					<div className="size-2 rounded-full bg-orange-500" />
 					<span>{t("calendar.legend.undertime", "Undertime")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/30 border" />
+					<div className="size-3 rounded bg-amber-100 dark:bg-amber-900/30 border" />
 					<span>{t("calendar.legend.holiday", "Holiday")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-3 h-3 rounded bg-blue-100 dark:bg-blue-900/30 border" />
+					<div className="size-3 rounded bg-blue-100 dark:bg-blue-900/30 border" />
 					<span>{t("calendar.legend.absence", "Absence")}</span>
 				</div>
 			</div>

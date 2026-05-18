@@ -207,17 +207,17 @@ async function StatisticsContent() {
 					<StatCard
 						title={t("settings.statistics.cards.pendingAbsences", "Pending Absences")}
 						value={stats.pendingAbsences}
-						icon={<div className="h-3 w-3 rounded-full bg-yellow-500" />}
+						icon={<div className="size-3 rounded-full bg-yellow-500" />}
 					/>
 					<StatCard
 						title={t("settings.statistics.cards.approvedAbsences", "Approved Absences")}
 						value={stats.approvedAbsences}
-						icon={<div className="h-3 w-3 rounded-full bg-green-500" />}
+						icon={<div className="size-3 rounded-full bg-green-500" />}
 					/>
 					<StatCard
 						title={t("settings.statistics.cards.rejectedAbsences", "Rejected Absences")}
 						value={stats.rejectedAbsences}
-						icon={<div className="h-3 w-3 rounded-full bg-red-500" />}
+						icon={<div className="size-3 rounded-full bg-red-500" />}
 					/>
 				</div>
 			</section>

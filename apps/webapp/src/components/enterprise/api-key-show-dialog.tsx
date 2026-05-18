@@ -55,7 +55,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 			<ActionPanelContent onPointerDownOutside={(e) => e.preventDefault()}>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconKey className="h-5 w-5 text-green-600" />
+						<IconKey className="size-5 text-green-600" />
 						{t("settings.apiKeys.showTitle", "API Key Created")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -70,7 +70,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 				<ActionPanelBody className="space-y-4">
 					{/* Warning Banner */}
 					<div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
-						<IconAlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+						<IconAlertTriangle className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
 						<div className="text-sm text-amber-800 dark:text-amber-200">
 							<strong>{t("settings.apiKeys.showWarningTitle", "Important:")}</strong>{" "}
 							{t(
@@ -100,9 +100,9 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 								aria-label={t("settings.apiKeys.copyKey", "Copy API key")}
 							>
 								{copied ? (
-									<IconCheck className="h-4 w-4 text-green-600" />
+									<IconCheck className="size-4 text-green-600" />
 								) : (
-									<IconCopy className="h-4 w-4" />
+									<IconCopy className="size-4" />
 								)}
 							</Button>
 						</div>
@@ -131,7 +131,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 					{/* Copy Status */}
 					{copied && (
 						<div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-							<IconCheck className="h-4 w-4" />
+							<IconCheck className="size-4" />
 							{t("settings.apiKeys.showCopied", "Key copied to clipboard")}
 						</div>
 					)}

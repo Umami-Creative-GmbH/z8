@@ -158,12 +158,12 @@ function TimeEntryAdminMenu({
 					className="size-8 text-muted-foreground hover:text-foreground"
 					aria-label={t("timeTracking.table.rowActions", "Time entry actions")}
 				>
-					<IconDotsVertical className="h-4 w-4" aria-hidden="true" />
+					<IconDotsVertical className="size-4" aria-hidden="true" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-44">
 				<DropdownMenuItem disabled={isApproving} onClick={onApprove}>
-					<IconCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+					<IconCheck className="size-4 text-emerald-600" aria-hidden="true" />
 					{isApproving
 						? t("timeTracking.table.approving", "Approving...")
 						: t("timeTracking.table.approveEntry", "Approve entry")}

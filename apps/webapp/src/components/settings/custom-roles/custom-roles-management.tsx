@@ -119,11 +119,11 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common:actions.refresh", "Refresh")}</span>
 					</Button>
 					<Button onClick={() => setIsCreateOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 size-4" />
 						{t("settings.roles.actions.create", "Create Role")}
 					</Button>
 				</div>
@@ -132,13 +132,13 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 			{isLoading ? (
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</CardContent>
 				</Card>
 			) : !roles?.length ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconShieldCog className="h-12 w-12 text-muted-foreground" />
+						<IconShieldCog className="size-12 text-muted-foreground" />
 						<h3 className="mt-4 text-lg font-medium">
 							{t("settings.roles.empty.title", "No custom roles yet")}
 						</h3>
@@ -146,7 +146,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 							{t("settings.roles.empty.description", "Create one to get started.")}
 						</p>
 						<Button onClick={() => setIsCreateOpen(true)} className="mt-4">
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.roles.actions.create", "Create Role")}
 						</Button>
 					</CardContent>
@@ -172,7 +172,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 										<TableCell>
 											<div className="flex items-center gap-2">
 												<div
-													className="h-3 w-3 rounded-full"
+													className="size-3 rounded-full"
 													style={{ backgroundColor: role.color }}
 												/>
 												<div>
@@ -221,7 +221,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 													})}
 													onClick={() => setEditingRole(role)}
 												>
-													<IconEdit className="h-4 w-4" />
+													<IconEdit className="size-4" />
 												</Button>
 												<Button
 													variant="ghost"
@@ -231,7 +231,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 													})}
 													onClick={() => setDeleteTarget(role)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 												</Button>
 											</div>
 										</TableCell>
@@ -334,7 +334,7 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 								}}
 								disabled={deleteMutation.isPending}
 							>
-								{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+								{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								{t("common:actions.delete", "Delete")}
 							</Button>
 						</AlertDialogAction>

@@ -199,7 +199,7 @@ export default function ProfilePage() {
 														onClick={() => field.handleChange(option.value)}
 														disabled={loading}
 													>
-														<Icon className="h-6 w-6" />
+														<Icon className="size-6" />
 														<span className="text-sm">{option.label}</span>
 													</Button>
 												);
@@ -235,7 +235,7 @@ export default function ProfilePage() {
 													) : (
 														<span>{t("onboarding.profile.pickDate", "Pick a date")}</span>
 													)}
-													<IconCalendar className="ml-auto h-4 w-4 opacity-50" />
+													<IconCalendar className="ml-auto size-4 opacity-50" />
 												</Button>
 											</PopoverTrigger>
 											<PopoverContent className="w-auto p-0" align="start">

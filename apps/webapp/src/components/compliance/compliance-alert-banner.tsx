@@ -85,7 +85,7 @@ export function ComplianceAlertBanner({
 					className,
 				)}
 			>
-				<Icon className={cn("h-4 w-4 shrink-0", config.iconClassName)} aria-hidden="true" />
+				<Icon className={cn("size-4 shrink-0", config.iconClassName)} aria-hidden="true" />
 				<span className="flex-1 truncate">{alert.message}</span>
 				{sortedAlerts.length > 1 && (
 					<span className="shrink-0 text-xs opacity-70">
@@ -104,7 +104,7 @@ export function ComplianceAlertBanner({
 
 				return (
 					<Alert key={`${alert.alertType}-${index}`} className={cn("py-3", config.className)}>
-						<Icon className={cn("h-4 w-4", config.iconClassName)} aria-hidden="true" />
+						<Icon className={cn("size-4", config.iconClassName)} aria-hidden="true" />
 						<AlertTitle className="flex items-center gap-2">
 							{alertTypeLabels[alert.alertType] || alert.alertType}
 							{alert.currentMinutes !== undefined && alert.thresholdMinutes !== undefined && (
@@ -123,7 +123,7 @@ export function ComplianceAlertBanner({
 									className="shrink-0"
 									onClick={() => onRequestException(alert.alertType)}
 								>
-									<IconShield className="mr-1.5 h-3 w-3" aria-hidden="true" />
+									<IconShield className="mr-1.5 size-3" aria-hidden="true" />
 									{t("compliance:compliance.requestException", "Request Exception")}
 								</Button>
 							)}
@@ -163,7 +163,7 @@ export function RestPeriodBlocker({
 
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
-			<IconClock className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
+			<IconClock className="size-4 text-red-600 dark:text-red-400" aria-hidden="true" />
 			<AlertTitle>
 				{t("compliance:compliance.restPeriodRequired", "Rest Period Required")}
 			</AlertTitle>
@@ -177,7 +177,7 @@ export function RestPeriodBlocker({
 				</p>
 				{hasApprovedExceptions ? (
 					<p className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
-						<IconShield className="h-4 w-4" aria-hidden="true" />
+						<IconShield className="size-4" aria-hidden="true" />
 						{t(
 							"compliance:compliance.hasApprovedException",
 							"You have an approved exception. You may proceed.",
@@ -190,7 +190,7 @@ export function RestPeriodBlocker({
 						className="border-red-300 hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900"
 						onClick={onRequestException}
 					>
-						<IconShield className="mr-1.5 h-3 w-3" aria-hidden="true" />
+						<IconShield className="mr-1.5 size-3" aria-hidden="true" />
 						{t("compliance:compliance.requestException", "Request Exception")}
 					</Button>
 				) : null}

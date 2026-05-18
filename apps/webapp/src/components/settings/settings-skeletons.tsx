@@ -292,8 +292,8 @@ export function HolidaysSkeleton() {
 											<Skeleton className="h-4 w-32" />
 										</div>
 										<div className="flex gap-2">
-											<Skeleton className="h-8 w-8" />
-											<Skeleton className="h-8 w-8" />
+											<Skeleton className="size-8" />
+											<Skeleton className="size-8" />
 										</div>
 									</div>
 								))}

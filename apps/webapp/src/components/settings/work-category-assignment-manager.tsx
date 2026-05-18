@@ -172,7 +172,7 @@ export function WorkCategoryAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconBuilding className="h-5 w-5 text-muted-foreground" />
+							<IconBuilding className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.workCategories.orgLevel", "Organization Default")}
@@ -193,7 +193,7 @@ export function WorkCategoryAssignmentManager({
 							</h4>
 							{canManage && !orgAssignment && (
 								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.workCategories.setDefault", "Set Default")}
 								</Button>
 							)}
@@ -201,7 +201,7 @@ export function WorkCategoryAssignmentManager({
 						{orgAssignment ? (
 							<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
 								<div className="flex items-center gap-3">
-									<IconTag className="h-4 w-4 text-muted-foreground" />
+									<IconTag className="size-4 text-muted-foreground" />
 									<div>
 										<span className="font-medium">{orgAssignment.set.name}</span>
 										{orgAssignment.set.description && (
@@ -215,11 +215,11 @@ export function WorkCategoryAssignmentManager({
 									<Button
 										variant="ghost"
 										size="icon"
-										className="h-8 w-8 text-muted-foreground hover:text-destructive"
+										className="size-8 text-muted-foreground hover:text-destructive"
 										onClick={() => handleDeleteClick(orgAssignment)}
 										aria-label={t("common.remove", "Remove")}
 									>
-										<IconTrash className="h-4 w-4" />
+										<IconTrash className="size-4" />
 									</Button>
 								) : null}
 							</div>
@@ -238,7 +238,7 @@ export function WorkCategoryAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUsers className="h-5 w-5 text-muted-foreground" />
+							<IconUsers className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.workCategories.teamLevel", "Team Level")}
@@ -260,7 +260,7 @@ export function WorkCategoryAssignmentManager({
 					<CardContent>
 						{canManage ? <div className="flex justify-end mb-2">
 							<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.workCategories.assignTeam", "Assign to Team")}
 							</Button>
 						</div> : null}
@@ -272,7 +272,7 @@ export function WorkCategoryAssignmentManager({
 										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 									>
 										<div className="flex items-center gap-3">
-											<IconUsers className="h-4 w-4 text-muted-foreground" />
+											<IconUsers className="size-4 text-muted-foreground" />
 											<div>
 												<span className="font-medium">{assignment.team?.name}</span>
 												<span className="text-muted-foreground mx-2">→</span>
@@ -283,11 +283,11 @@ export function WorkCategoryAssignmentManager({
 										<Button
 											variant="ghost"
 											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											className="size-8 text-muted-foreground hover:text-destructive"
 											onClick={() => handleDeleteClick(assignment)}
 											aria-label={t("common.remove", "Remove")}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 										</Button>
 									) : null}
 								</div>
@@ -305,7 +305,7 @@ export function WorkCategoryAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUser className="h-5 w-5 text-muted-foreground" />
+							<IconUser className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.workCategories.employeeLevel", "Employee Overrides")}
@@ -327,7 +327,7 @@ export function WorkCategoryAssignmentManager({
 					<CardContent>
 						{canManage ? <div className="flex justify-end mb-2">
 							<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.workCategories.assignEmployee", "Assign to Employee")}
 							</Button>
 						</div> : null}
@@ -339,7 +339,7 @@ export function WorkCategoryAssignmentManager({
 										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 									>
 										<div className="flex items-center gap-3">
-											<IconUser className="h-4 w-4 text-muted-foreground" />
+											<IconUser className="size-4 text-muted-foreground" />
 											<div>
 												<span className="font-medium">
 													{assignment.employee?.firstName} {assignment.employee?.lastName}
@@ -352,11 +352,11 @@ export function WorkCategoryAssignmentManager({
 										<Button
 											variant="ghost"
 											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											className="size-8 text-muted-foreground hover:text-destructive"
 											onClick={() => handleDeleteClick(assignment)}
 											aria-label={t("common.remove", "Remove")}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 										</Button>
 									) : null}
 								</div>
@@ -411,7 +411,7 @@ export function WorkCategoryAssignmentManager({
 						>
 							{deleteMutation.isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.removing", "Removing...")}
 								</>
 							) : (

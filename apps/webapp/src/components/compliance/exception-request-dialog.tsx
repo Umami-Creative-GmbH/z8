@@ -150,7 +150,7 @@ export function ExceptionRequestDialog({
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelHeader>
 						<ActionPanelTitle className="flex items-center gap-2">
-							<IconShield className="h-5 w-5" aria-hidden="true" />
+							<IconShield className="size-5" aria-hidden="true" />
 							{t("compliance:compliance.exception.requestTitle", "Request Compliance Exception")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
@@ -180,7 +180,7 @@ export function ExceptionRequestDialog({
 											<RadioGroupItem value={type.value} className="mt-0.5" />
 											<div className="flex-1 space-y-0.5">
 												<div className="flex items-center gap-1.5 font-medium">
-													<Icon className="h-4 w-4" aria-hidden="true" />
+													<Icon className="size-4" aria-hidden="true" />
 													{type.label}
 												</div>
 												<p className="text-xs text-muted-foreground">{type.description}</p>

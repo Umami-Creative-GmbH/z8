@@ -348,7 +348,7 @@ export function CustomerDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing
 								? t("settings.customers.dialog.save", "Save Changes")
 								: t("settings.customers.dialog.create", "Add Customer")}

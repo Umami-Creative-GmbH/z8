@@ -57,7 +57,7 @@ export function AvvDownloadButton({ organizationName }: AvvDownloadButtonProps) 
 
 	return (
 		<Button onClick={handleDownload} disabled={loading} size="lg">
-			<IconFileText className="mr-2 h-4 w-4" aria-hidden="true" />
+			<IconFileText className="mr-2 size-4" aria-hidden="true" />
 			{loading ? "Generiere PDF\u2026" : "AVV als PDF herunterladen"}
 		</Button>
 	);

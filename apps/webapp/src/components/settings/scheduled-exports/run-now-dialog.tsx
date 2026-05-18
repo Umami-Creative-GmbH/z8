@@ -161,7 +161,7 @@ export function RunNowDialog({
 
 					{hasExecutionInProgress && (
 						<Alert variant="destructive" role="alert">
-							<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
+							<IconAlertTriangle className="size-4" aria-hidden="true" />
 							<AlertDescription>
 								{t(
 									"settings.scheduledExports.runNow.inProgressWarning",
@@ -185,12 +185,12 @@ export function RunNowDialog({
 					>
 						{isPending ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								{t("settings.scheduledExports.runNow.starting", "Starting...")}
 							</>
 						) : (
 							<>
-								<IconPlayerPlay className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconPlayerPlay className="mr-2 size-4" aria-hidden="true" />
 								{t("settings.scheduledExports.runNow.runNow", "Run Now")}
 							</>
 						)}

@@ -19,7 +19,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 	if (isLoading) {
 		return (
 			<Alert>
-				<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+				<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 				<AlertTitle>
 					{t("scheduling:scheduling.skills.validating", "Validating Skills…")}
 				</AlertTitle>
@@ -56,7 +56,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 
 	return (
 		<Alert variant={requiredMissing.length > 0 || hasExpired ? "destructive" : "default"}>
-			<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
+			<IconAlertTriangle className="size-4" aria-hidden="true" />
 			<AlertTitle>
 				{requiredMissing.length > 0 || hasExpired
 					? t("scheduling:scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
@@ -68,13 +68,13 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					{requiredMissing.length > 0 && (
 						<div>
 							<p className="font-medium text-sm mb-1.5 flex items-center gap-1.5">
-								<IconCertificate className="h-4 w-4" aria-hidden="true" />
+								<IconCertificate className="size-4" aria-hidden="true" />
 								{t("scheduling:scheduling.skills.missingRequired", "Missing Required Skills:")}
 							</p>
 							<ul className="space-y-1 pl-5">
 								{requiredMissing.map((skill) => (
 									<li key={skill.id} className="text-sm flex items-center gap-2">
-										<span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+										<span className="size-1.5 rounded-full bg-destructive" />
 										{skill.name}
 										<Badge variant="outline" className="text-xs">
 											{skill.category}
@@ -94,7 +94,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 							<ul className="space-y-1 pl-5">
 								{preferredMissing.map((skill) => (
 									<li key={skill.id} className="text-sm flex items-center gap-2">
-										<span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+										<span className="size-1.5 rounded-full bg-muted-foreground" />
 										{skill.name}
 										<Badge variant="secondary" className="text-xs">
 											{t("scheduling:scheduling.skills.preferred", "Preferred")}
@@ -114,7 +114,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 							<ul className="space-y-1 pl-5">
 								{validation.expiredSkills.map((skill) => (
 									<li key={skill.id} className="text-sm flex items-center gap-2">
-										<span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+										<span className="size-1.5 rounded-full bg-destructive" />
 										{skill.name}
 										<span className="text-xs text-muted-foreground">
 											{t("scheduling:scheduling.skills.expiredOn", "(Expired {{date}})", {
@@ -165,7 +165,7 @@ export function SkillWarningBadge({
 	if (hasMissingRequired || hasExpired) {
 		return (
 			<Badge variant="destructive" className="text-xs">
-				<IconAlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+				<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
 				{t("scheduling:scheduling.skills.unqualified", "Unqualified")}
 			</Badge>
 		);

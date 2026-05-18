@@ -42,7 +42,7 @@ async function ApprovalsContent() {
 
 			{/* Unified Inbox Banner */}
 			<Alert>
-				<IconInbox className="h-4 w-4" />
+				<IconInbox className="size-4" />
 				<AlertTitle>Try the new Unified Inbox</AlertTitle>
 				<AlertDescription className="flex items-center justify-between">
 					<span>
@@ -51,7 +51,7 @@ async function ApprovalsContent() {
 					<Button asChild size="sm" variant="outline" className="ml-4">
 						<Link href="/approvals/inbox">
 							Open Inbox
-							<IconArrowRight className="ml-2 h-4 w-4" />
+							<IconArrowRight className="ml-2 size-4" />
 						</Link>
 					</Button>
 				</AlertDescription>

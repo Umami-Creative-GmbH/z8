@@ -170,13 +170,13 @@ export function LocationDetail({
 	if (!location) {
 		return (
 			<div className="flex flex-1 flex-col items-center justify-center gap-4 p-4">
-				<IconMapPin className="h-12 w-12 text-muted-foreground/50" />
+				<IconMapPin className="size-12 text-muted-foreground/50" />
 				<p className="text-muted-foreground">
 					{t("settings.locations.notFound", "Location not found")}
 				</p>
 				<Button asChild variant="outline">
 					<Link href="/settings/locations">
-						<IconArrowLeft className="mr-2 h-4 w-4" />
+						<IconArrowLeft className="mr-2 size-4" />
 						{t("settings.locations.backToList", "Back to Locations")}
 					</Link>
 				</Button>
@@ -198,7 +198,7 @@ export function LocationDetail({
 				<div className="flex items-center gap-4">
 					<Button asChild variant="ghost" size="icon">
 						<Link href="/settings/locations">
-							<IconArrowLeft className="h-4 w-4" />
+							<IconArrowLeft className="size-4" />
 						</Link>
 					</Button>
 					<div>
@@ -215,16 +215,16 @@ export function LocationDetail({
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 					</Button>
 					{canManageLocations && (
 						<>
 							<Button variant="outline" onClick={() => setEditLocationOpen(true)}>
-								<IconEdit className="mr-2 h-4 w-4" />
+								<IconEdit className="mr-2 size-4" />
 								{t("common.edit", "Edit")}
 							</Button>
 							<Button variant="destructive" onClick={() => setDeleteLocationOpen(true)}>
-								<IconTrash className="mr-2 h-4 w-4" />
+								<IconTrash className="mr-2 size-4" />
 								{t("common.delete", "Delete")}
 							</Button>
 						</>
@@ -238,7 +238,7 @@ export function LocationDetail({
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconMapPin className="h-5 w-5" />
+							<IconMapPin className="size-5" />
 							{t("settings.locations.details", "Location Details")}
 						</CardTitle>
 					</CardHeader>
@@ -281,12 +281,12 @@ export function LocationDetail({
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<CardTitle className="flex items-center gap-2">
-								<IconUsers className="h-5 w-5" />
+								<IconUsers className="size-5" />
 								{t("settings.locations.supervisors", "Supervisors")}
 							</CardTitle>
 							{canManageLocations && (
 								<Button size="sm" variant="outline" onClick={() => setAddEmployeeOpen(true)}>
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("common.add", "Add")}
 								</Button>
 							)}
@@ -311,8 +311,8 @@ export function LocationDetail({
 										className="flex items-center justify-between rounded-lg border p-3"
 									>
 										<div className="flex items-center gap-3">
-											<div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-												<IconUser className="h-4 w-4" />
+											<div className="flex size-8 items-center justify-center rounded-full bg-muted">
+												<IconUser className="size-4" />
 											</div>
 											<div>
 												<div className="flex items-center gap-2">
@@ -321,7 +321,7 @@ export function LocationDetail({
 													</p>
 													{assignment.isPrimary && (
 														<Badge variant="outline" className="text-xs">
-															<IconStar className="mr-1 h-3 w-3" />
+															<IconStar className="mr-1 size-3" />
 															{t("settings.locations.primary", "Primary")}
 														</Badge>
 													)}
@@ -337,7 +337,7 @@ export function LocationDetail({
 											size="icon"
 											onClick={() => handleRemoveEmployee(assignment.id)}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 										</Button>
 									)}
 									</div>
@@ -354,7 +354,7 @@ export function LocationDetail({
 							<CardTitle>{t("settings.locations.subareas", "Subareas")}</CardTitle>
 							{canManageLocations && (
 								<Button size="sm" variant="outline" onClick={() => setAddSubareaOpen(true)}>
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("common.add", "Add")}
 								</Button>
 							)}
@@ -395,17 +395,17 @@ export function LocationDetail({
 														})
 													}
 												>
-													<IconPlus className="h-4 w-4" />
+													<IconPlus className="size-4" />
 												</Button>
 												<Button variant="ghost" size="icon" onClick={() => setEditSubarea(subarea)}>
-													<IconEdit className="h-4 w-4" />
+													<IconEdit className="size-4" />
 												</Button>
 												<Button
 													variant="ghost"
 													size="icon"
 													onClick={() => setDeleteSubareaId(subarea.id)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 												</Button>
 											</>
 										)}
@@ -417,16 +417,16 @@ export function LocationDetail({
 													<div key={emp.id} className="flex items-center justify-between text-sm">
 														<div className="flex items-center gap-2">
 															<span>{getEmployeeName(emp.employee)}</span>
-															{emp.isPrimary && <IconStar className="h-3 w-3 text-yellow-500" />}
+															{emp.isPrimary && <IconStar className="size-3 text-yellow-500" />}
 														</div>
 											{canManageLocations && (
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-6 w-6"
+													className="size-6"
 													onClick={() => handleRemoveSubareaEmployee(emp.id)}
 												>
-													<IconTrash className="h-3 w-3" />
+													<IconTrash className="size-3" />
 												</Button>
 											)}
 													</div>

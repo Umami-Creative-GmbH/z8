@@ -39,7 +39,7 @@ export function CalendarLegend() {
 				{legendItems.map((item) => (
 					<div key={item.label} className="flex items-center gap-2">
 						<div
-							className={`h-3 w-3 rounded-full ${item.isPending ? "opacity-60 border border-dashed" : ""}`}
+							className={`size-3 rounded-full ${item.isPending ? "opacity-60 border border-dashed" : ""}`}
 							style={{
 								backgroundColor: item.color,
 								borderColor: item.isPending ? item.color : undefined,

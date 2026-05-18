@@ -64,7 +64,7 @@ export function DataTableSkeleton({
 						<TableRow>
 							{showSelection && (
 								<TableHead className="w-12">
-									<Skeleton className="h-4 w-4" />
+									<Skeleton className="size-4" />
 								</TableHead>
 							)}
 							{Array.from({ length: columnCount }).map((_, i) => (
@@ -79,7 +79,7 @@ export function DataTableSkeleton({
 							<TableRow key={rowIndex}>
 								{showSelection && (
 									<TableCell>
-										<Skeleton className="h-4 w-4" />
+										<Skeleton className="size-4" />
 									</TableCell>
 								)}
 								{Array.from({ length: columnCount }).map((_, colIndex) => (
@@ -103,10 +103,10 @@ export function DataTableSkeleton({
 						</div>
 						<Skeleton className="h-5 w-[100px]" />
 						<div className="flex items-center gap-2">
-							<Skeleton className="h-8 w-8" />
-							<Skeleton className="h-8 w-8" />
-							<Skeleton className="h-8 w-8" />
-							<Skeleton className="h-8 w-8" />
+							<Skeleton className="size-8" />
+							<Skeleton className="size-8" />
+							<Skeleton className="size-8" />
+							<Skeleton className="size-8" />
 						</div>
 					</div>
 				</div>

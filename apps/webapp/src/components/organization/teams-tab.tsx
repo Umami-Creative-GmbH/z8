@@ -246,12 +246,12 @@ export function TeamsTab({
 								disabled={isRefreshing}
 								className="w-full sm:w-auto"
 							>
-								<IconRefresh className="mr-2 h-4 w-4" />
+								<IconRefresh className="mr-2 size-4" />
 								{isRefreshing ? "Refreshing..." : "Refresh"}
 							</Button>
 							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									Create Team
 								</Button>
 							)}
@@ -262,14 +262,14 @@ export function TeamsTab({
 					{teams.length === 0 ? (
 						// Empty state
 						<div className="text-center py-12 text-muted-foreground">
-							<IconUsers className="h-16 w-16 mx-auto mb-4 opacity-50" />
+							<IconUsers className="size-16 mx-auto mb-4 opacity-50" />
 							<h3 className="text-lg font-medium mb-2">No teams yet</h3>
 							<p className="text-sm mb-4">
 								Create your first team to start organizing your employees
 							</p>
 							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									Create Your First Team
 								</Button>
 							)}

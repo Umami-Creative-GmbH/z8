@@ -309,7 +309,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 			<Button className="w-full" disabled={isLoading} type="submit">
 				{isLoading ? (
 					<>
-						<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+						<IconLoader2 className="mr-2 size-4 animate-spin" />
 						{t("common.loading", "Loading...")}
 					</>
 				) : (

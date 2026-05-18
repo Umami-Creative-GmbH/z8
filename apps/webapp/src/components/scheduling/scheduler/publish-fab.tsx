@@ -43,15 +43,15 @@ export function PublishFab({
 				>
 					{isPublishing ? (
 						<>
-							<IconLoader2 className="h-5 w-5 mr-2 animate-spin" />
+							<IconLoader2 className="size-5 mr-2 animate-spin" />
 							Publishing…
 						</>
 					) : (
 						<>
 							{hasWarnings ? (
-								<IconAlertTriangle className="h-5 w-5 mr-2" aria-hidden="true" />
+								<IconAlertTriangle className="size-5 mr-2" aria-hidden="true" />
 							) : (
-								<IconSend className="h-5 w-5 mr-2" aria-hidden="true" />
+								<IconSend className="size-5 mr-2" aria-hidden="true" />
 							)}
 							Publish ({draftCount})
 						</>

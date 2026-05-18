@@ -75,12 +75,12 @@ export function LocationManagement({ organizationId, canManageLocations }: Locat
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
 					{canManageLocations && (
 						<Button onClick={handleCreate}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.locations.create", "Create Location")}
 						</Button>
 					)}
@@ -100,7 +100,7 @@ export function LocationManagement({ organizationId, canManageLocations }: Locat
 			) : locations.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconMapPin className="h-12 w-12 text-muted-foreground/50 mb-4" />
+						<IconMapPin className="size-12 text-muted-foreground/50 mb-4" />
 						<CardTitle className="mb-2">
 							{t("settings.locations.noLocations", "No locations yet")}
 						</CardTitle>
@@ -112,7 +112,7 @@ export function LocationManagement({ organizationId, canManageLocations }: Locat
 						</CardDescription>
 						{canManageLocations && (
 							<Button onClick={handleCreate}>
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.locations.create", "Create Location")}
 							</Button>
 						)}
@@ -143,7 +143,7 @@ export function LocationManagement({ organizationId, canManageLocations }: Locat
 												href={`/settings/locations/${location.id}`}
 												className="flex items-center gap-2 font-medium hover:underline"
 											>
-												<IconMapPin className="h-4 w-4 text-muted-foreground" />
+												<IconMapPin className="size-4 text-muted-foreground" />
 												{location.name}
 											</Link>
 										</TableCell>
@@ -157,7 +157,7 @@ export function LocationManagement({ organizationId, canManageLocations }: Locat
 										</TableCell>
 										<TableCell className="text-center">
 											<div className="flex items-center justify-center gap-1">
-												<IconUsers className="h-4 w-4 text-muted-foreground" />
+												<IconUsers className="size-4 text-muted-foreground" />
 												<span>{location.employeeCount}</span>
 											</div>
 										</TableCell>

@@ -161,7 +161,7 @@ export function ComplianceExceptionsManager({
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex flex-col gap-2">
 				<h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-					<IconShield className="h-6 w-6" aria-hidden="true" />
+					<IconShield className="size-6" aria-hidden="true" />
 					{t("settings.compliance.title", "ArbZG Compliance")}
 				</h1>
 				<p className="text-sm text-muted-foreground">
@@ -176,7 +176,7 @@ export function ComplianceExceptionsManager({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2 text-lg">
-						<IconClock className="h-5 w-5" aria-hidden="true" />
+						<IconClock className="size-5" aria-hidden="true" />
 						{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}
 					</CardTitle>
 					<CardDescription>
@@ -191,7 +191,7 @@ export function ComplianceExceptionsManager({
 						<div className="space-y-3">
 							{[1, 2, 3].map((i) => (
 								<div key={i} className="flex items-center gap-4 rounded-lg border p-4">
-									<Skeleton className="h-10 w-10 rounded-full" />
+									<Skeleton className="size-10 rounded-full" />
 									<div className="flex-1 space-y-2">
 										<Skeleton className="h-4 w-1/3" />
 										<Skeleton className="h-3 w-2/3" />
@@ -202,7 +202,7 @@ export function ComplianceExceptionsManager({
 						</div>
 					) : exceptions.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<IconCheck className="mb-3 h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
+							<IconCheck className="mb-3 size-12 text-muted-foreground/50" aria-hidden="true" />
 							<p className="text-sm text-muted-foreground">
 								{t("compliance:compliance.noExceptions", "No pending exception requests")}
 							</p>
@@ -313,7 +313,7 @@ function ExceptionCard({ exception, onApprove, onReject, isApproving }: Exceptio
 					<span className="font-medium">{employeeName}</span>
 					<Badge variant="outline" className="text-xs">
 						<span
-							className={`mr-1.5 inline-block h-2 w-2 rounded-full ${exceptionTypeColors[exception.exceptionType] || "bg-gray-500"}`}
+							className={`mr-1.5 inline-block size-2 rounded-full ${exceptionTypeColors[exception.exceptionType] || "bg-gray-500"}`}
 						/>
 						{exceptionTypeLabels[exception.exceptionType] || exception.exceptionType}
 					</Badge>
@@ -338,11 +338,11 @@ function ExceptionCard({ exception, onApprove, onReject, isApproving }: Exceptio
 
 			<div className="flex gap-2">
 				<Button size="sm" variant="outline" onClick={onReject} disabled={isApproving}>
-					<IconX className="mr-1 h-4 w-4" aria-hidden="true" />
+					<IconX className="mr-1 size-4" aria-hidden="true" />
 					{t("common.reject", "Reject")}
 				</Button>
 				<Button size="sm" onClick={onApprove} disabled={isApproving}>
-					<IconCheck className="mr-1 h-4 w-4" aria-hidden="true" />
+					<IconCheck className="mr-1 size-4" aria-hidden="true" />
 					{t("common.approve", "Approve")}
 				</Button>
 			</div>

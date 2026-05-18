@@ -146,7 +146,7 @@ export function PasskeyManagement() {
 										onClick={() => confirmDelete(passkey.id)}
 										disabled={isPending}
 									>
-										<IconTrash className="h-4 w-4 text-destructive" />
+										<IconTrash className="size-4 text-destructive" />
 									</Button>
 								</div>
 							</CardHeader>

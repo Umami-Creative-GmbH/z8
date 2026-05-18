@@ -404,7 +404,7 @@ export function WorkCategorySetDialog({
 																type="button"
 																variant="ghost"
 																size="icon"
-																className="h-4 w-4 p-0"
+																className="size-4 p-0"
 																onClick={() => moveUp(index)}
 																disabled={index === 0}
 																aria-label={t("common.moveUp", "Move up")}
@@ -417,7 +417,7 @@ export function WorkCategorySetDialog({
 																type="button"
 																variant="ghost"
 																size="icon"
-																className="h-4 w-4 p-0"
+																className="size-4 p-0"
 																onClick={() => moveDown(index)}
 																disabled={index === selectedCategories.length - 1}
 																aria-label={t("common.moveDown", "Move down")}
@@ -429,7 +429,7 @@ export function WorkCategorySetDialog({
 														</div>
 														{category.color && (
 															<div
-																className="h-4 w-4 rounded-full flex-shrink-0"
+																className="size-4 rounded-full flex-shrink-0"
 																style={{ backgroundColor: category.color }}
 																aria-hidden="true"
 															/>
@@ -442,11 +442,11 @@ export function WorkCategorySetDialog({
 															type="button"
 															variant="ghost"
 															size="icon"
-															className="h-6 w-6"
+															className="size-6"
 															onClick={() => removeCategory(category.id)}
 															aria-label={t("common.remove", "Remove")}
 														>
-															<IconX className="h-3 w-3" aria-hidden="true" />
+															<IconX className="size-3" aria-hidden="true" />
 														</Button>
 													</div>
 												))}
@@ -483,7 +483,7 @@ export function WorkCategorySetDialog({
 															/>
 															{category.color && (
 																<div
-																	className="h-4 w-4 rounded-full flex-shrink-0"
+																	className="size-4 rounded-full flex-shrink-0"
 																	style={{ backgroundColor: category.color }}
 																	aria-hidden="true"
 																/>
@@ -510,7 +510,7 @@ export function WorkCategorySetDialog({
 						<Button type="submit" disabled={isMutating || isLoading}>
 							{isMutating ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : isEditing ? (

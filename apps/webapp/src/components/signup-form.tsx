@@ -183,7 +183,7 @@ const SignupSocialAuth = memo(function SignupSocialAuth({
 										onClick={() => onSocialSignup(provider.id)}
 										disabled={isLoading}
 									>
-										<provider.icon aria-hidden="true" className="h-4 w-4" />
+										<provider.icon aria-hidden="true" className="size-4" />
 										<span className="sr-only">
 											{t(`auth.sign-up-with.${provider.id}`, `Sign up with ${provider.name}`)}
 										</span>
@@ -576,7 +576,7 @@ export function SignupForm({
 			{/* Show organization info when signing up via invite */}
 			{organizationName && (isInvitationSignup || (inviteCode && inviteCodeValid)) && (
 				<Alert className="border-primary/20 bg-primary/5">
-					<IconBuilding className="h-4 w-4" />
+					<IconBuilding className="size-4" />
 					<AlertDescription>
 						{t("auth.signing-up-to-join", "You're signing up to join {organization}", {
 							organization: organizationName,
@@ -842,7 +842,7 @@ export function SignupForm({
 					<Button className="w-full" disabled={isLoading} type="submit">
 						{isLoading ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("common.loading", "Loading…")}
 							</>
 						) : (

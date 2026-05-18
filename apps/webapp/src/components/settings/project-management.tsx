@@ -127,11 +127,11 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
 					<Button onClick={handleCreate}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 size-4" />
 						{t("settings.projects.create", "Create Project")}
 					</Button>
 				</div>
@@ -150,7 +150,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 			) : projects.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconBriefcase className="h-12 w-12 text-muted-foreground" />
+						<IconBriefcase className="size-12 text-muted-foreground" />
 						<h3 className="mt-4 text-lg font-medium">
 							{t("settings.projects.empty.title", "No projects yet")}
 						</h3>
@@ -161,7 +161,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 							)}
 						</p>
 						<Button onClick={handleCreate} className="mt-4">
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.projects.create", "Create Project")}
 						</Button>
 					</CardContent>
@@ -200,7 +200,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 												<div className="flex items-center gap-2">
 													{project.color && (
 														<div
-															className="h-4 w-4 rounded-full"
+															className="size-4 rounded-full"
 															style={{ backgroundColor: project.color }}
 														/>
 													)}
@@ -256,7 +256,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 													<div
 														className={`flex items-center gap-1 text-sm ${deadline.isOverdue ? "text-red-600" : ""}`}
 													>
-														<IconCalendar className="h-4 w-4" />
+														<IconCalendar className="size-4" />
 														{deadline.text}
 													</div>
 												) : (
@@ -265,7 +265,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 											</TableCell>
 											<TableCell>
 												<div className="flex items-center gap-1 text-sm text-muted-foreground">
-													<IconUsers className="h-4 w-4" />
+													<IconUsers className="size-4" />
 													<span>
 														{project.assignments.length}{" "}
 														{project.assignments.length === 1 ? "member" : "members"}
@@ -274,7 +274,7 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 											</TableCell>
 											<TableCell>
 												<Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
-													<IconEdit className="h-4 w-4" />
+													<IconEdit className="size-4" />
 												</Button>
 											</TableCell>
 										</TableRow>

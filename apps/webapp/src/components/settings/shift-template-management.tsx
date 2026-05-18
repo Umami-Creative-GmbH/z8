@@ -332,18 +332,18 @@ export function ShiftTemplateManagement({
 						</CardDescription>
 					</div>
 					<Button onClick={handleCreate} size="sm">
-						<Plus className="mr-2 h-4 w-4" />
+						<Plus className="mr-2 size-4" />
 						{t("settings.shiftTemplates.add", "Add Template")}
 					</Button>
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+							<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
 						</div>
 					) : templates.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<IconClock className="h-12 w-12 text-muted-foreground/50 mb-4" aria-hidden="true" />
+							<IconClock className="size-12 text-muted-foreground/50 mb-4" aria-hidden="true" />
 							<h3 className="font-medium">
 								{t("settings.shiftTemplates.empty.title", "No templates yet")}
 							</h3>
@@ -354,7 +354,7 @@ export function ShiftTemplateManagement({
 								)}
 							</p>
 							<Button onClick={handleCreate} className="mt-4" variant="outline">
-								<Plus className="mr-2 h-4 w-4" />
+								<Plus className="mr-2 size-4" />
 								{t("settings.shiftTemplates.createFirst", "Create your first template")}
 							</Button>
 						</div>
@@ -375,7 +375,7 @@ export function ShiftTemplateManagement({
 										<TableCell>
 											<div className="flex items-center gap-3">
 												<div
-													className="h-4 w-4 rounded-full shrink-0"
+													className="size-4 rounded-full shrink-0"
 													style={{ backgroundColor: template.color || "#3b82f6" }}
 													aria-hidden="true"
 												/>
@@ -402,14 +402,14 @@ export function ShiftTemplateManagement({
 										<TableCell>
 											<DropdownMenu>
 												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" size="icon" className="h-8 w-8">
-														<IconDots className="h-4 w-4" />
+													<Button variant="ghost" size="icon" className="size-8">
+														<IconDots className="size-4" />
 														<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
 													<DropdownMenuItem onClick={() => handleEdit(template)}>
-														<IconPencil className="mr-2 h-4 w-4" aria-hidden="true" />
+														<IconPencil className="mr-2 size-4" aria-hidden="true" />
 														{t("common.edit", "Edit")}
 													</DropdownMenuItem>
 													<DropdownMenuItem onClick={() => handleToggleActive(template)}>
@@ -421,7 +421,7 @@ export function ShiftTemplateManagement({
 														onClick={() => handleDelete(template)}
 														className="text-destructive focus:text-destructive"
 													>
-														<IconTrash className="mr-2 h-4 w-4" aria-hidden="true" />
+														<IconTrash className="mr-2 size-4" aria-hidden="true" />
 														{t("common.delete", "Delete")}
 													</DropdownMenuItem>
 												</DropdownMenuContent>
@@ -479,7 +479,7 @@ export function ShiftTemplateManagement({
 							>
 								{deleteMutation.isPending ? (
 									<>
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 										{t("common.deleting", "Deleting…")}
 									</>
 								) : (
@@ -666,7 +666,7 @@ function ShiftTemplateDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label className="flex items-center gap-2">
-										<Palette className="h-4 w-4" aria-hidden="true" />
+										<Palette className="size-4" aria-hidden="true" />
 										{t("settings.shiftTemplates.form.color", "Color")}
 									</Label>
 									<div
@@ -683,7 +683,7 @@ function ShiftTemplateDialog({
 												aria-label={getColorName(color.key)}
 												onClick={() => field.handleChange(color.value)}
 												className={cn(
-													"h-8 w-8 rounded-full transition-transform hover:scale-110",
+													"size-8 rounded-full transition-transform hover:scale-110",
 													field.state.value === color.value && "ring-2 ring-offset-2 ring-primary",
 												)}
 												style={{ backgroundColor: color.value }}
@@ -699,7 +699,7 @@ function ShiftTemplateDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label className="flex items-center gap-2">
-										<IconMapPin className="h-4 w-4" aria-hidden="true" />
+										<IconMapPin className="size-4" aria-hidden="true" />
 										{t("settings.shiftTemplates.form.defaultSubarea", "Default Subarea")}
 										<span className="text-xs text-muted-foreground">
 											({t("common.optional", "Optional")})
@@ -764,7 +764,7 @@ function ShiftTemplateDialog({
 									</p>
 									<div className="flex items-center gap-3">
 										<div
-											className="h-4 w-4 rounded-full shrink-0"
+											className="size-4 rounded-full shrink-0"
 											style={{ backgroundColor: values.color || "#3b82f6" }}
 											aria-hidden="true"
 										/>
@@ -778,7 +778,7 @@ function ShiftTemplateDialog({
 											</p>
 											{values.subareaId && (
 												<p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-													<IconMapPin className="h-3 w-3" aria-hidden="true" />
+													<IconMapPin className="size-3" aria-hidden="true" />
 													{getSubareaDisplay(values.subareaId)}
 												</p>
 											)}
@@ -801,7 +801,7 @@ function ShiftTemplateDialog({
 						>
 							{isSubmitting ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving…")}
 								</>
 							) : template ? (

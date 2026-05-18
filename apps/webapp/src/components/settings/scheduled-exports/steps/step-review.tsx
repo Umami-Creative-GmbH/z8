@@ -86,7 +86,7 @@ export function StepReview({ form, filterOptions, payrollConfigs }: StepReviewPr
 				return (
 					<div className="space-y-4" role="region" aria-label={t("settings.scheduledExports.review.region", "Configuration summary")}>
 						<div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-							<IconCheck className="h-4 w-4 text-green-500" aria-hidden="true" />
+							<IconCheck className="size-4 text-green-500" aria-hidden="true" />
 							<span>{t("settings.scheduledExports.review.instructions", "Review your schedule configuration before creating")}</span>
 						</div>
 

@@ -209,7 +209,7 @@ export function CoverageRulesManagement({
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
-							<IconShieldCheck className="h-5 w-5" />
+							<IconShieldCheck className="size-5" />
 							{t("settings.coverageRules.publishSettings", "Publishing Settings")}
 						</CardTitle>
 						<CardDescription>
@@ -250,7 +250,7 @@ export function CoverageRulesManagement({
 
 			<div className="flex justify-end">
 				<Button onClick={handleCreateRule}>
-					<IconPlus className="mr-2 h-4 w-4" />
+					<IconPlus className="mr-2 size-4" />
 					{t("settings.coverageRules.addRule", "Add Rule")}
 				</Button>
 			</div>
@@ -258,7 +258,7 @@ export function CoverageRulesManagement({
 			{visibleRules.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconTarget className="text-muted-foreground mb-4 h-12 w-12" />
+						<IconTarget className="text-muted-foreground mb-4 size-12" />
 						<h3 className="mb-2 text-lg font-semibold">
 							{t("settings.coverageRules.noRules", "No coverage rules")}
 						</h3>
@@ -269,7 +269,7 @@ export function CoverageRulesManagement({
 							)}
 						</p>
 						<Button onClick={handleCreateRule}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.coverageRules.createFirstRule", "Create First Rule")}
 						</Button>
 					</CardContent>
@@ -313,20 +313,20 @@ export function CoverageRulesManagement({
 														<Button
 															variant="ghost"
 															size="icon"
-															className="h-8 w-8"
+															className="size-8"
 															onClick={() => handleEditRule(rule)}
 															aria-label={t("settings.coverageRules.editRule", "Edit Coverage Rule")}
 														>
-															<IconPencil className="h-4 w-4" />
+															<IconPencil className="size-4" />
 														</Button>
 														<Button
 															variant="ghost"
 															size="icon"
-															className="h-8 w-8 text-destructive hover:text-destructive"
+															className="size-8 text-destructive hover:text-destructive"
 															onClick={() => setDeleteRuleId(rule.id)}
 															aria-label={t("settings.coverageRules.deleteRule", "Delete Coverage Rule")}
 														>
-															<IconTrash className="h-4 w-4" />
+															<IconTrash className="size-4" />
 														</Button>
 													</div>
 												</TableCell>

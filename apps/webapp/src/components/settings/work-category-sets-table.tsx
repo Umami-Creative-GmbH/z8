@@ -191,7 +191,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 				{canManage ? (
 					<div className="flex justify-end">
 						<Button onClick={() => setCreateDialogOpen(true)}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.workCategories.createSet", "Create Set")}
 						</Button>
 					</div>
@@ -199,7 +199,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 
 				{sets.length === 0 ? (
 					<div className="py-12 text-center">
-						<IconTag className="mx-auto h-12 w-12 text-muted-foreground/50" />
+						<IconTag className="mx-auto size-12 text-muted-foreground/50" />
 						<h3 className="mt-4 text-lg font-medium">
 							{t("settings.workCategories.noSets", "No category sets")}
 						</h3>
@@ -211,7 +211,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 						</p>
 							{canManage ? (
 								<Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.workCategories.createFirstSet", "Create First Set")}
 								</Button>
 							) : null}
@@ -245,20 +245,20 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-8 w-8"
+													className="size-8"
 													onClick={() => handleEditClick(set)}
 													aria-label={t("common.edit", "Edit")}
 												>
-													<IconEdit className="h-4 w-4" />
+													<IconEdit className="size-4" />
 												</Button>
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													className="size-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeleteClick(set)}
 													aria-label={t("common.delete", "Delete")}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 												</Button>
 											</div>
 										</TableCell>
@@ -321,7 +321,7 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 						>
 							{deleteMutation.isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.deleting", "Deleting...")}
 								</>
 							) : (

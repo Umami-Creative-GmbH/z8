@@ -282,7 +282,7 @@ export function EmployeeSelectModal({
 								onClick={handleCancel}
 								className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
 							>
-								<IconX className="h-4 w-4" />
+								<IconX className="size-4" />
 							</button>
 						</div>
 
@@ -361,7 +361,7 @@ export function EmployeeSelectModal({
 														onClick={() => handleDeselect(id)}
 														className="hover:bg-muted rounded-full p-0.5"
 													>
-														<IconX className="h-3 w-3" />
+														<IconX className="size-3" />
 													</button>
 												</Badge>
 											);

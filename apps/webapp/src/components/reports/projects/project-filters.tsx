@@ -117,7 +117,7 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 							size="lg"
 							className="w-full sm:w-auto"
 						>
-							<IconChartBar className="mr-2 h-4 w-4" />
+							<IconChartBar className="mr-2 size-4" />
 							{isGenerating
 								? t("reports.projects.generating", "Generating Report...")
 								: t("reports.projects.generate", "Generate Report")}

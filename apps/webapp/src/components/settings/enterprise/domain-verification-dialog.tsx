@@ -97,9 +97,9 @@ export function DomainVerificationDialog({
 											onClick={() => copyToClipboard(txtRecordName, "name")}
 										>
 											{copiedField === "name" ? (
-												<IconCheck className="h-4 w-4" />
+												<IconCheck className="size-4" />
 											) : (
-												<IconCopy className="h-4 w-4" />
+												<IconCopy className="size-4" />
 											)}
 										</Button>
 									</div>
@@ -115,9 +115,9 @@ export function DomainVerificationDialog({
 											onClick={() => copyToClipboard(txtRecordValue, "value")}
 										>
 											{copiedField === "value" ? (
-												<IconCheck className="h-4 w-4" />
+												<IconCheck className="size-4" />
 											) : (
-												<IconCopy className="h-4 w-4" />
+												<IconCopy className="size-4" />
 											)}
 										</Button>
 									</div>
@@ -145,7 +145,7 @@ export function DomainVerificationDialog({
 
 				<ActionPanelFooter className="flex-col sm:flex-row gap-2">
 					<Button variant="outline" onClick={handleRegenerateToken} disabled={isRegenerating}>
-						<IconRefresh className="mr-2 h-4 w-4" />
+						<IconRefresh className="mr-2 size-4" />
 						{isRegenerating ? "Regenerating..." : "Regenerate Token"}
 					</Button>
 					<Button onClick={() => onVerify(domain.id)} disabled={isVerifying || !!isExpired}>

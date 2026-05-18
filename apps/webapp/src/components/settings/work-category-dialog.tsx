@@ -276,7 +276,7 @@ export function WorkCategoryDialog({
 						<Button type="submit" disabled={isMutating}>
 							{isMutating ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : isEditing ? (
@@ -333,17 +333,17 @@ function ColorPicker({
 					type="button"
 					variant="outline"
 					size="icon"
-					className="mt-8 h-9 w-9 flex-shrink-0"
+					className="mt-8 size-9 flex-shrink-0"
 					aria-label={label}
 				>
 					{value ? (
 						<div
-							className="h-5 w-5 rounded-full"
+							className="size-5 rounded-full"
 							style={{ backgroundColor: value }}
 							aria-hidden="true"
 						/>
 					) : (
-						<IconPalette className="h-4 w-4" aria-hidden="true" />
+						<IconPalette className="size-4" aria-hidden="true" />
 					)}
 				</Button>
 			</PopoverTrigger>
@@ -356,7 +356,7 @@ function ColorPicker({
 							role="option"
 							aria-selected={value === color}
 							aria-label={COLOR_NAMES[color] || color}
-							className="h-6 w-6 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+							className="size-6 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
 							style={{ backgroundColor: color }}
 							onClick={() => onChange(color)}
 						/>
@@ -366,7 +366,7 @@ function ColorPicker({
 						role="option"
 						aria-selected={value === null}
 						aria-label={noColorLabel}
-						className="h-6 w-6 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground transition-colors flex items-center justify-center"
+						className="size-6 rounded-full border-2 border-dashed border-muted-foreground/50 hover:border-muted-foreground transition-colors flex items-center justify-center"
 						onClick={() => onChange(null)}
 					>
 						<span className="text-xs text-muted-foreground" aria-hidden="true">

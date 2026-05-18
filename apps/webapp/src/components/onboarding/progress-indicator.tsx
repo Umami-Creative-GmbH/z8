@@ -76,7 +76,7 @@ export function ProgressIndicator({
 									{/* Step Circle */}
 									<div
 										className={cn(
-											"flex h-10 w-10 items-center justify-center rounded-full border-2 bg-background transition-[border-color,background-color,color] duration-300",
+											"flex size-10 items-center justify-center rounded-full border-2 bg-background transition-[border-color,background-color,color] duration-300",
 											{
 												"border-primary bg-primary text-primary-foreground": isCompleted,
 												"border-primary bg-background text-primary": isCurrent,
@@ -86,7 +86,7 @@ export function ProgressIndicator({
 										)}
 									>
 										{isCompleted ? (
-											<IconCheck className="h-5 w-5" />
+											<IconCheck className="size-5" />
 										) : (
 											<span className="text-sm font-medium">{step.displayOrder}</span>
 										)}

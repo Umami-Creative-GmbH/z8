@@ -51,7 +51,7 @@ function WidgetSkeleton() {
 		<div className="mb-4 break-inside-avoid rounded-xl border bg-card p-6">
 			<div className="flex items-center justify-between mb-4">
 				<Skeleton className="h-5 w-32" />
-				<Skeleton className="h-4 w-4 rounded-full" />
+				<Skeleton className="size-4 rounded-full" />
 			</div>
 			<div className="space-y-3">
 				<Skeleton className="h-4 w-full" />

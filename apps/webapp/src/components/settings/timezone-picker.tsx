@@ -255,10 +255,10 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 					disabled={disabled}
 				>
 					<div className="flex items-center gap-2 truncate">
-						<IconWorld className="h-4 w-4 shrink-0 opacity-50" />
+						<IconWorld className="size-4 shrink-0 opacity-50" />
 						<span className="truncate">{selectedLabel}</span>
 					</div>
-					<IconChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					<IconChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[400px] p-0" align="start">
@@ -279,7 +279,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 									>
 										<IconCheck
 											className={cn(
-												"mr-2 h-4 w-4",
+												"mr-2 size-4",
 												value === timezone ? "opacity-100" : "opacity-0",
 											)}
 										/>

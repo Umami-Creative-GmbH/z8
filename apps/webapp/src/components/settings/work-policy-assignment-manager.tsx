@@ -168,7 +168,7 @@ export function WorkPolicyAssignmentManager({
 					<Card>
 						<CardHeader>
 							<div className="flex items-center gap-2">
-								<IconBuilding className="h-5 w-5 text-muted-foreground" />
+								<IconBuilding className="size-5 text-muted-foreground" />
 								<div>
 									<CardTitle className="text-base">
 										{t("settings.workPolicies.orgLevel", "Organization Default")}
@@ -186,7 +186,7 @@ export function WorkPolicyAssignmentManager({
 							{orgAssignment ? (
 								<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
 									<div className="flex items-center gap-3">
-										<IconFileText className="h-5 w-5 text-muted-foreground" />
+										<IconFileText className="size-5 text-muted-foreground" />
 										<div>
 											<p className="font-medium">
 												{orgAssignment.policy?.name || t("common.unknown", "Unknown")}
@@ -200,7 +200,7 @@ export function WorkPolicyAssignmentManager({
 											className="text-destructive hover:text-destructive"
 											onClick={() => handleDeleteClick(orgAssignment)}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 										</Button>
 									) : null}
 								</div>
@@ -215,7 +215,7 @@ export function WorkPolicyAssignmentManager({
 											size="sm"
 											variant="outline"
 										>
-											<IconPlus className="mr-2 h-4 w-4" />
+											<IconPlus className="mr-2 size-4" />
 											{t("settings.workPolicies.assignPolicy", "Assign Policy")}
 										</Button>
 									) : null}
@@ -231,7 +231,7 @@ export function WorkPolicyAssignmentManager({
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">
-									<IconUsers className="h-5 w-5 text-muted-foreground" />
+									<IconUsers className="size-5 text-muted-foreground" />
 									<div>
 										<CardTitle className="text-base">
 											{t("settings.workPolicies.teamLevel", "Team Overrides")}
@@ -251,7 +251,7 @@ export function WorkPolicyAssignmentManager({
 								</div>
 								{canManageTeamAssignments ? (
 									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.workPolicies.addTeam", "Add Team")}
 									</Button>
 								) : null}
@@ -270,7 +270,7 @@ export function WorkPolicyAssignmentManager({
 											className="flex items-center justify-between p-3 rounded-lg border"
 										>
 											<div className="flex items-center gap-3">
-												<IconUsers className="h-4 w-4 text-muted-foreground" />
+												<IconUsers className="size-4 text-muted-foreground" />
 												<div>
 													<p className="font-medium">
 														{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}
@@ -287,7 +287,7 @@ export function WorkPolicyAssignmentManager({
 													className="text-destructive hover:text-destructive"
 													onClick={() => handleDeleteClick(assignment)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 												</Button>
 											) : null}
 										</div>
@@ -304,7 +304,7 @@ export function WorkPolicyAssignmentManager({
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">
-									<IconUser className="h-5 w-5 text-muted-foreground" />
+									<IconUser className="size-5 text-muted-foreground" />
 									<div>
 										<CardTitle className="text-base">
 											{t("settings.workPolicies.employeeLevel", "Employee Overrides")}
@@ -324,7 +324,7 @@ export function WorkPolicyAssignmentManager({
 								</div>
 								{canManageEmployeeAssignments ? (
 									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.workPolicies.addEmployee", "Add Employee")}
 									</Button>
 								) : null}
@@ -346,7 +346,7 @@ export function WorkPolicyAssignmentManager({
 											className="flex items-center justify-between p-3 rounded-lg border"
 										>
 											<div className="flex items-center gap-3">
-												<IconUser className="h-4 w-4 text-muted-foreground" />
+												<IconUser className="size-4 text-muted-foreground" />
 												<div>
 													<p className="font-medium">
 														{formatAssignmentEmployeeName(
@@ -366,7 +366,7 @@ export function WorkPolicyAssignmentManager({
 													className="text-destructive hover:text-destructive"
 													onClick={() => handleDeleteClick(assignment)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 												</Button>
 											) : null}
 										</div>
@@ -400,7 +400,7 @@ export function WorkPolicyAssignmentManager({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.remove", "Remove")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

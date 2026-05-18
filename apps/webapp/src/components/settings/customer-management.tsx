@@ -142,11 +142,11 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
 					<Button onClick={handleCreate} disabled={!canCreateCustomer}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 size-4" />
 						{t("settings.customers.create", "Add Customer")}
 					</Button>
 				</div>
@@ -173,7 +173,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 			) : customers.length === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconAddressBook className="h-12 w-12 text-muted-foreground" />
+						<IconAddressBook className="size-12 text-muted-foreground" />
 						<h3 className="mt-4 text-lg font-medium">
 							{t("settings.customers.empty.title", "No customers yet")}
 						</h3>
@@ -184,7 +184,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 							)}
 						</p>
 						<Button onClick={handleCreate} className="mt-4" disabled={!canCreateCustomer}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.customers.create", "Add Customer")}
 						</Button>
 						{!canCreateCustomer ? (
@@ -258,14 +258,14 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 													size="sm"
 													onClick={() => handleEdit(cust)}
 												>
-													<IconEdit className="h-4 w-4" />
+													<IconEdit className="size-4" />
 												</Button>
 												<Button
 													variant="ghost"
 													size="sm"
 													onClick={() => setDeletingCustomer(cust)}
 												>
-													<IconTrash className="h-4 w-4 text-destructive" />
+													<IconTrash className="size-4 text-destructive" />
 												</Button>
 											</div>
 										</TableCell>

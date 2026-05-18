@@ -159,7 +159,7 @@ export function CreateTeamDialog({
 							Cancel
 						</Button>
 						<Button type="submit" disabled={createMutation.isPending}>
-							{createMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{createMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							Create Team
 						</Button>
 					</ActionPanelFooter>

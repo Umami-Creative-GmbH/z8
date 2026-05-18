@@ -314,7 +314,7 @@ export function ScheduledExportDialog({
 						disabled={currentStep === 0 || isPending}
 						aria-label={t("settings.scheduledExports.dialog.backStep", "Go to previous step")}
 					>
-						<IconArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("settings.scheduledExports.dialog.back", "Back")}
 					</Button>
 
@@ -336,7 +336,7 @@ export function ScheduledExportDialog({
 								aria-label={t("settings.scheduledExports.dialog.nextStep", "Go to next step")}
 							>
 								{t("settings.scheduledExports.dialog.next", "Next")}
-								<IconArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+								<IconArrowRight className="ml-2 size-4" aria-hidden="true" />
 							</Button>
 						) : (
 							<Button
@@ -346,7 +346,7 @@ export function ScheduledExportDialog({
 							>
 								{isPending ? (
 									<>
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 										{isEditing
 											? t("settings.scheduledExports.dialog.updating", "Updating...")
 											: t("settings.scheduledExports.dialog.creating", "Creating...")}

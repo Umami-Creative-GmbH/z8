@@ -89,7 +89,7 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 			<Card className="border-2 border-amber-500">
 				<CardHeader className="bg-amber-50">
 					<CardTitle className="flex items-center gap-2 text-amber-900">
-						<IconHome className="h-5 w-5" />
+						<IconHome className="size-5" />
 						IconHome Office Summary (Tax Relevant)
 					</CardTitle>
 					<p className="text-sm text-amber-700">

@@ -164,7 +164,7 @@ export function TwoFactorVerificationForm() {
 				<Button onClick={handleVerify} disabled={isLoading} className="w-full">
 					{isLoading ? (
 						<>
-							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							<IconLoader2 className="mr-2 size-4 animate-spin" />
 							{t("auth.2fa.verifying", "Verifying...")}
 						</>
 					) : (

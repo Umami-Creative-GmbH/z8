@@ -53,12 +53,12 @@ function DayButtonWithEvents({
 		.slice(0, 3);
 
 	return (
-		<div className="relative w-full h-full">
+		<div className="relative size-full">
 			<CalendarDayButton day={day} {...props} />
 			{eventColors.length > 0 && (
 				<div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
 					{eventColors.map((color, index) => (
-						<div key={index} className="h-1 w-1 rounded-full" style={{ backgroundColor: color }} />
+						<div key={index} className="size-1 rounded-full" style={{ backgroundColor: color }} />
 					))}
 				</div>
 			)}

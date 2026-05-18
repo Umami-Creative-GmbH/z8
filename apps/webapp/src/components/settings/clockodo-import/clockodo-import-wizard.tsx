@@ -443,7 +443,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconKey className="h-5 w-5" aria-hidden="true" />
+							<IconKey className="size-5" aria-hidden="true" />
 							{t("settings.clockodoImport.credentials.title", "Clockodo Credentials")}
 						</CardTitle>
 						<CardDescription>
@@ -484,7 +484,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 									className="text-primary underline underline-offset-2 hover:text-primary/80"
 								>
 									my.clockodo.com
-									<IconExternalLink className="ml-0.5 inline h-3 w-3" aria-hidden="true" />
+									<IconExternalLink className="ml-0.5 inline size-3" aria-hidden="true" />
 								</a>
 							</p>
 							<Input
@@ -504,9 +504,9 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 								disabled={!email.trim() || !apiKey.trim() || validateMutation.isPending}
 							>
 								{validateMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : (
-									<IconArrowRight className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconArrowRight className="mr-2 size-4" aria-hidden="true" />
 								)}
 								{t("settings.clockodoImport.credentials.connect", "Connect & Preview")}
 							</Button>
@@ -600,7 +600,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 						</div>
 						<div className="mt-4 flex justify-between">
 							<Button variant="outline" onClick={() => setStep("credentials")}>
-								<IconArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 								{t("common.back", "Back")}
 							</Button>
 							<Button
@@ -608,9 +608,9 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 								disabled={fetchUsersMutation.isPending}
 							>
 								{fetchUsersMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : (
-									<IconArrowRight className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconArrowRight className="mr-2 size-4" aria-hidden="true" />
 								)}
 								{t("settings.clockodoImport.preview.next", "Map Users")}
 							</Button>
@@ -624,7 +624,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconUsers className="h-5 w-5" aria-hidden="true" />
+							<IconUsers className="size-5" aria-hidden="true" />
 							{t("settings.clockodoImport.userMapping.title", "Map Users")}
 						</CardTitle>
 						<CardDescription>
@@ -690,19 +690,19 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 
 						<div className="flex items-center gap-4 text-xs text-muted-foreground">
 							<span className="flex items-center gap-1">
-								<IconLink className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />
+								<IconLink className="size-3.5 text-emerald-500" aria-hidden="true" />
 								{t("settings.clockodoImport.userMapping.autoMatched", "{count} auto-matched", {
 									count: userMappings.filter((m) => m.mappingType === "auto_email").length,
 								})}
 							</span>
 							<span className="flex items-center gap-1">
-								<IconUserPlus className="h-3.5 w-3.5 text-blue-500" aria-hidden="true" />
+								<IconUserPlus className="size-3.5 text-blue-500" aria-hidden="true" />
 								{t("settings.clockodoImport.userMapping.newEmployees", "{count} new", {
 									count: userMappings.filter((m) => m.mappingType === "new_employee").length,
 								})}
 							</span>
 							<span className="flex items-center gap-1">
-								<IconUserX className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+								<IconUserX className="size-3.5 text-muted-foreground" aria-hidden="true" />
 								{t("settings.clockodoImport.userMapping.skippedCount", "{count} skipped", {
 									count: userMappings.filter((m) => m.mappingType === "skipped").length,
 								})}
@@ -711,7 +711,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 
 						<div className="flex justify-between pt-2">
 							<Button variant="outline" onClick={() => setStep("preview")}>
-								<IconArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 								{t("common.back", "Back")}
 							</Button>
 							<Button
@@ -719,9 +719,9 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 								disabled={saveMappingsMutation.isPending}
 							>
 								{saveMappingsMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : (
-									<IconArrowRight className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconArrowRight className="mr-2 size-4" aria-hidden="true" />
 								)}
 								{t("settings.clockodoImport.userMapping.continue", "Continue")}
 							</Button>
@@ -749,7 +749,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 						<Card className="border-dashed">
 							<CardHeader className="pb-3">
 								<CardTitle className="flex items-center gap-2 text-sm">
-									<IconCalendar className="h-4 w-4" aria-hidden="true" />
+									<IconCalendar className="size-4" aria-hidden="true" />
 									{t(
 										"settings.clockodoImport.selection.dateRange",
 										"Date range for time entries & absences",
@@ -786,7 +786,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 												variant="outline"
 												className="w-full justify-start text-left font-normal"
 											>
-												<IconCalendar className="mr-2 h-4 w-4" aria-hidden="true" />
+												<IconCalendar className="mr-2 size-4" aria-hidden="true" />
 												{selections.dateRange.startDate && selections.dateRange.endDate
 													? `${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(selections.dateRange.startDate))} \u2013 ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(selections.dateRange.endDate))}`
 													: t(
@@ -858,7 +858,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 
 						<div className="flex justify-between pt-4">
 							<Button variant="outline" onClick={() => setStep("user-mapping")}>
-								<IconArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 								{t("common.back", "Back")}
 							</Button>
 							<Button
@@ -871,7 +871,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 									!hasSelectedEntities || isCustomDateRangeIncomplete || isUserScopedSelectionEmpty
 								}
 							>
-								<IconDatabaseImport className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconDatabaseImport className="mr-2 size-4" aria-hidden="true" />
 								{t("settings.clockodoImport.selection.startImport", "Start Review Scan")}
 							</Button>
 						</div>
@@ -900,7 +900,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconLoader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+							<IconLoader2 className="size-5 animate-spin" aria-hidden="true" />
 							{t("settings.clockodoImport.importing.title", "Starting Review Scan…")}
 						</CardTitle>
 						<CardDescription>
@@ -929,7 +929,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<IconCircleCheck className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+							<IconCircleCheck className="size-5 text-emerald-500" aria-hidden="true" />
 							{t("settings.clockodoImport.complete.successTitle", "Import review scan started")}
 						</CardTitle>
 						<CardDescription>
@@ -948,7 +948,7 @@ export function ClockodoImportWizard({ organizationId }: ClockodoImportWizardPro
 
 						<div className="mt-6 flex justify-end">
 							<Button onClick={() => router.push(`/settings/import/${reviewBatchId}`)}>
-								<IconExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
 								{t("settings.clockodoImport.complete.openReview", "Open review")}
 							</Button>
 						</div>
@@ -982,7 +982,7 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
 				<div key={s.key} className="flex items-center">
 					<div className="flex items-center gap-2">
 						<div
-							className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+							className={`flex size-8 items-center justify-center rounded-full text-xs font-medium ${
 								i < currentIndex
 									? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
 									: i === currentIndex
@@ -990,7 +990,7 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
 										: "bg-muted text-muted-foreground"
 							}`}
 						>
-							{i < currentIndex ? <IconCheck className="h-4 w-4" /> : i + 1}
+							{i < currentIndex ? <IconCheck className="size-4" /> : i + 1}
 						</div>
 						<span
 							className={`hidden text-sm sm:inline ${
@@ -1092,7 +1092,7 @@ function MappingStatusBadge({ type }: { type: UserMappingType }) {
 					variant="outline"
 					className="border-emerald-200 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400"
 				>
-					<IconLink className="mr-1 h-3 w-3" aria-hidden="true" />
+					<IconLink className="mr-1 size-3" aria-hidden="true" />
 					{t("settings.clockodoImport.mappingStatus.auto", "Auto")}
 				</Badge>
 			);
@@ -1102,7 +1102,7 @@ function MappingStatusBadge({ type }: { type: UserMappingType }) {
 					variant="outline"
 					className="border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400"
 				>
-					<IconLink className="mr-1 h-3 w-3" aria-hidden="true" />
+					<IconLink className="mr-1 size-3" aria-hidden="true" />
 					{t("settings.clockodoImport.mappingStatus.manual", "Manual")}
 				</Badge>
 			);
@@ -1112,14 +1112,14 @@ function MappingStatusBadge({ type }: { type: UserMappingType }) {
 					variant="outline"
 					className="border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400"
 				>
-					<IconUserPlus className="mr-1 h-3 w-3" aria-hidden="true" />
+					<IconUserPlus className="mr-1 size-3" aria-hidden="true" />
 					{t("settings.clockodoImport.mappingStatus.new", "New")}
 				</Badge>
 			);
 		case "skipped":
 			return (
 				<Badge variant="outline" className="text-muted-foreground">
-					<IconUserX className="mr-1 h-3 w-3" aria-hidden="true" />
+					<IconUserX className="mr-1 size-3" aria-hidden="true" />
 					{t("settings.clockodoImport.mappingStatus.skip", "Skip")}
 				</Badge>
 			);

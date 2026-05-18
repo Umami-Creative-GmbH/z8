@@ -108,7 +108,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 								!value && "text-muted-foreground",
 							)}
 						>
-							<IconCalendar className="mr-2 h-4 w-4" />
+							<IconCalendar className="mr-2 size-4" />
 							{value?.start ? (
 								value.end ? (
 									<>
@@ -141,7 +141,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{/* Display current range for non-custom presets */}
 			{preset !== "custom" && (
 				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
-					<IconCalendar className="mr-2 h-4 w-4" />
+					<IconCalendar className="mr-2 size-4" />
 					{formatDateRangeLabel(value.start, value.end, timezone)}
 				</div>
 			)}

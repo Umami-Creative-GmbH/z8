@@ -141,7 +141,7 @@ export function EmployeeSkillsCard({
 					</div>
 					{canManageSkills && (
 						<Button size="sm" onClick={() => setDialogOpen(true)}>
-							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.skills.assignSkill", "Assign Skill")}
 						</Button>
 					)}
@@ -151,13 +151,13 @@ export function EmployeeSkillsCard({
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<IconLoader2
-							className="h-6 w-6 animate-spin text-muted-foreground"
+							className="size-6 animate-spin text-muted-foreground"
 							aria-hidden="true"
 						/>
 					</div>
 				) : skills.length === 0 ? (
 					<div className="py-8 text-center text-muted-foreground">
-						<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" aria-hidden="true" />
+						<IconAward className="mx-auto size-12 mb-4 opacity-50" aria-hidden="true" />
 						<p>{t("settings.skills.noSkillsAssigned", "No skills assigned")}</p>
 						{canManageSkills && (
 							<p className="text-sm mt-1">
@@ -183,20 +183,20 @@ export function EmployeeSkillsCard({
 										<div
 											className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}
 										>
-											<CategoryIcon className="h-5 w-5" aria-hidden="true" />
+											<CategoryIcon className="size-5" aria-hidden="true" />
 										</div>
 										<div className="space-y-1">
 											<div className="flex items-center gap-2">
 												<span className="font-medium">{employeeSkill.skill.name}</span>
 												{expired && (
 													<Badge variant="destructive">
-														<IconAlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+														<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
 														{t("settings.skills.expired", "Expired")}
 													</Badge>
 												)}
 												{expiringSoon && !expired && (
 													<Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
-														<IconCalendarDue className="mr-1 h-3 w-3" aria-hidden="true" />
+														<IconCalendarDue className="mr-1 size-3" aria-hidden="true" />
 														{t("settings.skills.expiringSoon", "Expiring Soon")}
 													</Badge>
 												)}
@@ -230,14 +230,14 @@ export function EmployeeSkillsCard({
 													<Button
 														variant="ghost"
 														size="icon"
-														className="h-8 w-8"
+														className="size-8"
 														onClick={() =>
 															handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
 														}
 														disabled={removeMutation.isPending}
 														aria-label={t("common.remove", "Remove")}
 													>
-														<IconTrash className="h-4 w-4" aria-hidden="true" />
+														<IconTrash className="size-4" aria-hidden="true" />
 													</Button>
 												</TooltipTrigger>
 												<TooltipContent>{t("common.remove", "Remove")}</TooltipContent>
@@ -378,7 +378,7 @@ function AssignSkillDialog({
 									<Label htmlFor="assign-skill">{t("settings.skills.skill", "Skill")} *</Label>
 									{isLoadingSkills ? (
 										<div className="flex items-center gap-2 text-muted-foreground">
-											<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+											<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 											{t("common.loading", "Loading…")}
 										</div>
 									) : availableSkills.length === 0 ? (
@@ -401,7 +401,7 @@ function AssignSkillDialog({
 													return (
 														<SelectItem key={skill.id} value={skill.id}>
 															<span className="flex items-center gap-2">
-																<CategoryIcon className="h-4 w-4" aria-hidden="true" />
+																<CategoryIcon className="size-4" aria-hidden="true" />
 																{skill.name}
 																{skill.requiresExpiry && (
 																	<Badge variant="outline" className="ml-2 text-xs">
@@ -483,7 +483,7 @@ function AssignSkillDialog({
 							}
 						>
 							{assignMutation.isPending && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
 							{t("settings.skills.assign", "Assign")}
 						</Button>

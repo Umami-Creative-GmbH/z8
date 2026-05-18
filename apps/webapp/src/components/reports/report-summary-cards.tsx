@@ -24,7 +24,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Total Work Hours</CardTitle>
-					<IconClock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					<IconClock className="size-4 text-muted-foreground" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.workHours.totalHours}h</div>
@@ -39,7 +39,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card className="border-amber-500">
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">IconHome Office Days</CardTitle>
-					<IconHome className="h-4 w-4 text-amber-500" aria-hidden="true" />
+					<IconHome className="size-4 text-amber-500" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.absences.homeOffice.days}</div>
@@ -54,7 +54,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Vacation Days</CardTitle>
-					<IconUmbrella className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					<IconUmbrella className="size-4 text-muted-foreground" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.absences.vacation.approved}</div>
@@ -68,7 +68,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 					<CardTitle className="text-sm font-medium">Total Absences</CardTitle>
-					<IconCalendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					<IconCalendar className="size-4 text-muted-foreground" aria-hidden="true" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{reportData.absences.totalDays}</div>
@@ -86,7 +86,7 @@ export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {
 				<Card className="border-green-500">
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-						<IconWallet className="h-4 w-4 text-green-500" aria-hidden="true" />
+						<IconWallet className="size-4 text-green-500" aria-hidden="true" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">

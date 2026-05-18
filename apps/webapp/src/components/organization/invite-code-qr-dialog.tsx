@@ -147,7 +147,7 @@ export function InviteCodeQRDialog({
 						<TabsContent value="png" className="mt-4">
 							<div className="flex min-h-[220px] items-center justify-center rounded-lg bg-white p-4">
 								{generateMutation.isPending && format === "png" ? (
-									<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+									<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 								) : qrData.png ? (
 									<img
 										src={`data:image/png;base64,${qrData.png}`}
@@ -169,7 +169,7 @@ export function InviteCodeQRDialog({
 						<TabsContent value="svg" className="mt-4">
 							<div className="flex min-h-[220px] items-center justify-center rounded-lg bg-white p-4">
 								{generateMutation.isPending && format === "svg" ? (
-									<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+									<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 								) : qrData.svg ? (
 									<img
 										src={`data:image/svg+xml;base64,${btoa(qrData.svg)}`}
@@ -193,7 +193,7 @@ export function InviteCodeQRDialog({
 						{t("common.close", "Close")}
 					</Button>
 					<Button onClick={handleDownload} disabled={!qrData[format] || generateMutation.isPending}>
-						<IconDownload className="mr-2 h-4 w-4" />
+						<IconDownload className="mr-2 size-4" />
 						{t("settings.inviteCodes.downloadFormat", "Download {format}", {
 							format: format.toUpperCase(),
 						})}

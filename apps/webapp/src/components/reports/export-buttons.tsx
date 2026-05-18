@@ -85,7 +85,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				variant="default"
 				size="lg"
 			>
-				<IconFileText className="mr-2 h-4 w-4" />
+				<IconFileText className="mr-2 size-4" />
 				{loading === "pdf" ? "Generating..." : "Export PDF"}
 			</Button>
 
@@ -95,7 +95,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				variant="outline"
 				size="lg"
 			>
-				<IconFileSpreadsheet className="mr-2 h-4 w-4" />
+				<IconFileSpreadsheet className="mr-2 size-4" />
 				{loading === "excel" ? "Generating..." : "Export Excel"}
 			</Button>
 
@@ -105,7 +105,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				variant="outline"
 				size="lg"
 			>
-				<IconDownload className="mr-2 h-4 w-4" />
+				<IconDownload className="mr-2 size-4" />
 				{loading === "csv" ? "Generating..." : "Export CSV"}
 			</Button>
 		</div>

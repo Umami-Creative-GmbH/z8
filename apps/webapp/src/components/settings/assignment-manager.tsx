@@ -312,7 +312,7 @@ export function AssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconBuilding className="h-5 w-5 text-muted-foreground" />
+							<IconBuilding className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.holidays.assignments.orgLevel", "Organization Level")}
@@ -335,7 +335,7 @@ export function AssignmentManager({
 								</h4>
 								{canManage && (
 									<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.holidays.assignments.setDefault", "Set Default")}
 									</Button>
 								)}
@@ -350,7 +350,7 @@ export function AssignmentManager({
 											<div className="flex items-center gap-3">
 												{assignment.preset.color && (
 													<div
-														className="w-3 h-3 rounded-full flex-shrink-0"
+														className="size-3 rounded-full flex-shrink-0"
 														style={{ backgroundColor: assignment.preset.color }}
 													/>
 												)}
@@ -376,7 +376,7 @@ export function AssignmentManager({
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													className="size-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeletePresetClick(assignment)}
 													aria-label={t(
 														"settings.holidays.assignments.removePresetAssignment",
@@ -384,7 +384,7 @@ export function AssignmentManager({
 														{ preset: assignment.preset.name },
 													)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 												</Button>
 											) : null}
 										</div>
@@ -416,7 +416,7 @@ export function AssignmentManager({
 									size="sm"
 									variant="outline"
 								>
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.holidays.assignments.addHoliday", "Add Holiday")}
 									</Button>
 								) : null}
@@ -429,7 +429,7 @@ export function AssignmentManager({
 											className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 										>
 											<div className="flex items-center gap-3">
-												<IconCalendarEvent className="h-4 w-4 text-muted-foreground" />
+												<IconCalendarEvent className="size-4 text-muted-foreground" />
 												<div>
 													<span className="font-medium">{assignment.holiday.name}</span>
 													<span className="text-sm text-muted-foreground ml-2">
@@ -446,7 +446,7 @@ export function AssignmentManager({
 										<Button
 											variant="ghost"
 												size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											className="size-8 text-muted-foreground hover:text-destructive"
 											onClick={() => handleDeleteHolidayClick(assignment)}
 											aria-label={t(
 												"settings.holidays.assignments.removeHolidayAssignment",
@@ -454,7 +454,7 @@ export function AssignmentManager({
 												{ holiday: assignment.holiday.name },
 											)}
 										>
-												<IconTrash className="h-4 w-4" />
+												<IconTrash className="size-4" />
 										</Button>
 									) : null}
 									</div>
@@ -476,7 +476,7 @@ export function AssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUsers className="h-5 w-5 text-muted-foreground" />
+							<IconUsers className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.holidays.assignments.teamLevel", "Team Level")}
@@ -518,7 +518,7 @@ export function AssignmentManager({
 							<TabsContent value="presets" className="mt-4">
 								{canManage ? <div className="flex justify-end mb-2">
 									<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.holidays.assignments.assignTeam", "Assign Preset")}
 									</Button>
 								</div> : null}
@@ -530,7 +530,7 @@ export function AssignmentManager({
 												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 											>
 												<div className="flex items-center gap-3">
-													<IconUsers className="h-4 w-4 text-muted-foreground" />
+													<IconUsers className="size-4 text-muted-foreground" />
 													<div>
 														<span className="font-medium">{assignment.team?.name}</span>
 														<span className="text-muted-foreground mx-2">→</span>
@@ -543,7 +543,7 @@ export function AssignmentManager({
 															)}
 															{assignment.preset.color && (
 																<span
-																	className="inline-block w-2 h-2 rounded-full ml-2"
+																	className="inline-block size-2 rounded-full ml-2"
 																	style={{ backgroundColor: assignment.preset.color }}
 																/>
 															)}
@@ -557,7 +557,7 @@ export function AssignmentManager({
 											<Button
 												variant="ghost"
 													size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												className="size-8 text-muted-foreground hover:text-destructive"
 												onClick={() => handleDeletePresetClick(assignment)}
 												aria-label={t(
 													"settings.holidays.assignments.removeTeamPresetAssignment",
@@ -565,7 +565,7 @@ export function AssignmentManager({
 													{ team: assignment.team?.name ?? "" },
 												)}
 											>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 											</Button>
 										) : null}
 									</div>
@@ -580,7 +580,7 @@ export function AssignmentManager({
 							<TabsContent value="holidays" className="mt-4">
 								{canManage ? <div className="flex justify-end mb-2">
 									<Button onClick={() => onHolidayAssignClick("team")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
 									</Button>
 								</div> : null}
@@ -592,7 +592,7 @@ export function AssignmentManager({
 												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 											>
 												<div className="flex items-center gap-3">
-													<IconUsers className="h-4 w-4 text-muted-foreground" />
+													<IconUsers className="size-4 text-muted-foreground" />
 													<div>
 														<span className="font-medium">{assignment.team?.name}</span>
 														<span className="text-muted-foreground mx-2">→</span>
@@ -613,7 +613,7 @@ export function AssignmentManager({
 											<Button
 												variant="ghost"
 													size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												className="size-8 text-muted-foreground hover:text-destructive"
 												onClick={() => handleDeleteHolidayClick(assignment)}
 												aria-label={t(
 													"settings.holidays.assignments.removeTeamHolidayAssignment",
@@ -621,7 +621,7 @@ export function AssignmentManager({
 													{ team: assignment.team?.name ?? "" },
 												)}
 											>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 											</Button>
 										) : null}
 									</div>
@@ -644,7 +644,7 @@ export function AssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUser className="h-5 w-5 text-muted-foreground" />
+							<IconUser className="size-5 text-muted-foreground" />
 							<div>
 								<CardTitle className="text-base">
 									{t("settings.holidays.assignments.employeeLevel", "Employee Overrides")}
@@ -687,7 +687,7 @@ export function AssignmentManager({
 							<TabsContent value="presets" className="mt-4">
 								{canManage ? <div className="flex justify-end mb-2">
 									<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.holidays.assignments.assignEmployee", "Assign Preset")}
 									</Button>
 								</div> : null}
@@ -699,7 +699,7 @@ export function AssignmentManager({
 												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 											>
 												<div className="flex items-center gap-3">
-													<IconUser className="h-4 w-4 text-muted-foreground" />
+													<IconUser className="size-4 text-muted-foreground" />
 													<div>
 														<span className="font-medium">
 															{assignment.employee?.firstName} {assignment.employee?.lastName}
@@ -714,7 +714,7 @@ export function AssignmentManager({
 															)}
 															{assignment.preset.color && (
 																<span
-																	className="inline-block w-2 h-2 rounded-full ml-2"
+																	className="inline-block size-2 rounded-full ml-2"
 																	style={{ backgroundColor: assignment.preset.color }}
 																/>
 															)}
@@ -728,7 +728,7 @@ export function AssignmentManager({
 											<Button
 												variant="ghost"
 													size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												className="size-8 text-muted-foreground hover:text-destructive"
 												onClick={() => handleDeletePresetClick(assignment)}
 												aria-label={t(
 													"settings.holidays.assignments.removeEmployeePresetAssignment",
@@ -738,7 +738,7 @@ export function AssignmentManager({
 													},
 												)}
 											>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 											</Button>
 										) : null}
 									</div>
@@ -760,7 +760,7 @@ export function AssignmentManager({
 										size="sm"
 										variant="outline"
 									>
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.holidays.assignments.assignHoliday", "Assign Holiday")}
 									</Button>
 								</div> : null}
@@ -772,7 +772,7 @@ export function AssignmentManager({
 												className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
 											>
 												<div className="flex items-center gap-3">
-													<IconUser className="h-4 w-4 text-muted-foreground" />
+													<IconUser className="size-4 text-muted-foreground" />
 													<div>
 														<span className="font-medium">
 															{assignment.employee?.firstName} {assignment.employee?.lastName}
@@ -795,7 +795,7 @@ export function AssignmentManager({
 											<Button
 												variant="ghost"
 													size="icon"
-												className="h-8 w-8 text-muted-foreground hover:text-destructive"
+												className="size-8 text-muted-foreground hover:text-destructive"
 												onClick={() => handleDeleteHolidayClick(assignment)}
 												aria-label={t(
 													"settings.holidays.assignments.removeEmployeeHolidayAssignment",
@@ -805,7 +805,7 @@ export function AssignmentManager({
 													},
 												)}
 											>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 											</Button>
 										) : null}
 									</div>
@@ -875,7 +875,7 @@ export function AssignmentManager({
 						>
 							{isDeleting ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.removing", "Removing...")}
 								</>
 							) : (

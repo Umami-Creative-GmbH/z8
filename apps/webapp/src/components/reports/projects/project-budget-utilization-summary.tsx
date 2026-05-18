@@ -72,7 +72,7 @@ export function ProjectBudgetUtilizationSummary({
 					<Card key={card.key}>
 						<CardHeader className="flex flex-row items-center justify-between gap-0 pb-2">
 							<CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-							<Icon className={cn("h-4 w-4", card.iconClassName)} aria-hidden="true" />
+							<Icon className={cn("size-4", card.iconClassName)} aria-hidden="true" />
 						</CardHeader>
 						<CardContent>
 							<div className={cn("font-bold text-2xl tabular-nums", card.valueClassName)}>
