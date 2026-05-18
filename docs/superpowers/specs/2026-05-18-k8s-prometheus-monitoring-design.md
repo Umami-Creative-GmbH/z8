@@ -31,6 +31,7 @@ The repo should store a small monitoring configuration area instead of committin
 
 - `infra/hetzner-k8s/monitoring/values.yaml` for kube-prometheus-stack values.
 - A deployment command or script using `helm upgrade --install` for repeatable installs and upgrades.
+- `infra/hetzner-k8s/monitoring/grafana-allowlist-middleware.yaml.tpl` as a committed Traefik middleware template with no concrete IP addresses.
 - Optional separate manifests only when Helm chart values are not sufficient for Z8-specific resources.
 
 The main app Kustomize file at `infra/hetzner-k8s/k8s/kustomization.yaml` should not absorb the generated operator stack. Keeping Helm-managed monitoring separate avoids large generated YAML diffs and makes chart upgrades practical.
@@ -61,7 +62,7 @@ Phase should provide the Grafana admin credential and the Grafana ingress allowl
 
 The Helm values should reference `grafana-admin` as Grafana's existing admin secret rather than embedding credentials in `values.yaml`. If Alertmanager notification receivers are configured later, their webhook URLs, API keys, SMTP passwords, or similar credentials must also be stored through Phase-managed Kubernetes secrets.
 
-Phase should also provide `ALLOWED_GRAFANA_IPS`, a comma-separated list of IPv4 addresses allowed to access `dash.z8-time.app`. Traefik `Middleware` resources cannot read environment variables directly, so the deployment flow should render the Grafana IP allowlist middleware from this Phase-provided value before applying it. Each IPv4 address should be converted to a `/32` CIDR entry in the middleware `sourceRange`.
+Phase should also provide `ALLOWED_GRAFANA_IPS`, a comma-separated list of IPv4 addresses allowed to access `dash.z8-time.app`. Traefik `Middleware` resources cannot read environment variables directly, so the deployment flow should render `grafana-allowlist-middleware.yaml.tpl` from this Phase-provided value into a temporary manifest before applying it. Each IPv4 address should be validated and converted to a `/32` CIDR entry in the middleware `sourceRange`. The rendered middleware with concrete IPs should not be committed.
 
 ## Storage And Capacity
 
@@ -87,6 +88,8 @@ The Grafana ingress should use:
 - TLS secret dedicated to `dash.z8-time.app`.
 
 DNS for `dash.z8-time.app` must point at the cluster ingress endpoint before certificate issuance can complete.
+
+The allowlist implementation should use a committed template plus render/apply script instead of hardcoding IPs in git or adding a dynamic authorization service. This keeps Phase as the source of truth, avoids exposing office or home IP addresses in the repository, and avoids the operational complexity of a custom `forwardAuth` service for a simple IP allowlist.
 
 ## Failure Handling
 
