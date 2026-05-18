@@ -40,6 +40,23 @@ export function calculateDayAbsenceAdjustmentMinutes(
 	return expectedDayMinutes;
 }
 
+export function getAbsenceDayFraction(input: {
+	date: string;
+	startDate: string;
+	startPeriod: DayPeriod;
+	endDate: string;
+	endPeriod: DayPeriod;
+}) {
+	if (input.startDate === input.endDate) {
+		if (input.startPeriod === "full_day" || input.endPeriod === "full_day") return 1;
+		return input.startPeriod === input.endPeriod ? 0.5 : 1;
+	}
+
+	if (input.date === input.startDate) return input.startPeriod === "pm" ? 0.5 : 1;
+	if (input.date === input.endDate) return input.endPeriod === "am" ? 0.5 : 1;
+	return 1;
+}
+
 export function formatSignedBalance(balanceMinutes: number) {
 	if (balanceMinutes === 0) return "0h";
 	const sign = balanceMinutes > 0 ? "+" : "-";
@@ -187,6 +204,7 @@ async function calculateAbsenceAdjustedMinutes(input: {
 		const last = DateTime.fromISO(absence.endDate).startOf("day");
 		while (current <= last) {
 			if (current >= input.rangeStart.startOf("day") && current <= input.rangeEnd.startOf("day")) {
+				const currentISODate = current.toISODate()!;
 				const currentDate = current.toJSDate();
 				const expected = await calculateExpectedWorkHoursForEmployee(
 					input.employeeId,
@@ -194,10 +212,14 @@ async function calculateAbsenceAdjustedMinutes(input: {
 					currentDate,
 					currentDate,
 				);
-				let period: DayPeriod = "full_day";
-				if (current.toISODate() === absence.startDate) period = absence.startPeriod;
-				if (current.toISODate() === absence.endDate) period = absence.endPeriod;
-				total += calculateDayAbsenceAdjustmentMinutes(expected.totalMinutes, period);
+				const fraction = getAbsenceDayFraction({
+					date: currentISODate,
+					startDate: absence.startDate,
+					startPeriod: absence.startPeriod,
+					endDate: absence.endDate,
+					endPeriod: absence.endPeriod,
+				});
+				total += Math.round(expected.totalMinutes * fraction);
 			}
 			current = current.plus({ days: 1 });
 		}

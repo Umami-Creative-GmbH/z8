@@ -11,6 +11,7 @@ import {
 	calculateBalanceMinutes,
 	calculateDayAbsenceAdjustmentMinutes,
 	formatSignedBalance,
+	getAbsenceDayFraction,
 	getCurrentYearRange,
 } from "./team-time-balance";
 
@@ -60,6 +61,66 @@ describe("team time balance helpers", () => {
 		expect(calculateDayAbsenceAdjustmentMinutes(480, "full_day")).toBe(480);
 		expect(calculateDayAbsenceAdjustmentMinutes(480, "am")).toBe(240);
 		expect(calculateDayAbsenceAdjustmentMinutes(480, "pm")).toBe(240);
+	});
+
+	it("uses full day for same-day absences from am to pm", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-18",
+				startDate: "2026-05-18",
+				startPeriod: "am",
+				endDate: "2026-05-18",
+				endPeriod: "pm",
+			}),
+		).toBe(1);
+	});
+
+	it("uses half day for same-day absences from am to am", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-18",
+				startDate: "2026-05-18",
+				startPeriod: "am",
+				endDate: "2026-05-18",
+				endPeriod: "am",
+			}),
+		).toBe(0.5);
+	});
+
+	it("uses half day for a multi-day absence starting in pm", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-18",
+				startDate: "2026-05-18",
+				startPeriod: "pm",
+				endDate: "2026-05-20",
+				endPeriod: "full_day",
+			}),
+		).toBe(0.5);
+	});
+
+	it("uses half day for a multi-day absence ending in am", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-20",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-20",
+				endPeriod: "am",
+			}),
+		).toBe(0.5);
+	});
+
+	it("uses full day for a multi-day absence middle day", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-19",
+				startDate: "2026-05-18",
+				startPeriod: "pm",
+				endDate: "2026-05-20",
+				endPeriod: "am",
+			}),
+		).toBe(1);
 	});
 
 	it("formats signed balances for display", () => {
