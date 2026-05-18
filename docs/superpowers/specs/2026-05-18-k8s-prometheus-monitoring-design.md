@@ -46,7 +46,7 @@ Create a dedicated `monitoring` namespace for the stack. Install `kube-prometheu
 - node-exporter.
 - kube-state-metrics.
 
-Grafana is exposed through Traefik at `dash.z8-time.app` with TLS issued by the existing `letsencrypt-prod` ClusterIssuer. Prometheus and Alertmanager remain cluster-internal services.
+Grafana is exposed through Traefik at `dash.z8-time.app` with TLS issued by the existing `letsencrypt-prod` ClusterIssuer and a Traefik IP allowlist middleware. Prometheus and Alertmanager remain cluster-internal services.
 
 Prometheus discovers Kubernetes and node targets through the operator stack. Future Z8 app metrics can be added by exposing metrics endpoints in the relevant workloads and adding `ServiceMonitor` resources scoped to the correct namespace and labels.
 
@@ -54,12 +54,14 @@ Prometheus discovers Kubernetes and node targets through the operator stack. Fut
 
 No secret values are committed.
 
-Phase should provide the Grafana admin credential to Kubernetes before or during deployment. The required Kubernetes secret is `grafana-admin` in the `monitoring` namespace with these keys:
+Phase should provide the Grafana admin credential and the Grafana ingress allowlist before deployment. The required Kubernetes secret is `grafana-admin` in the `monitoring` namespace with these keys:
 
 - `admin-user`, set to the chosen Grafana admin username.
 - `admin-password`, set to the Grafana admin password.
 
 The Helm values should reference `grafana-admin` as Grafana's existing admin secret rather than embedding credentials in `values.yaml`. If Alertmanager notification receivers are configured later, their webhook URLs, API keys, SMTP passwords, or similar credentials must also be stored through Phase-managed Kubernetes secrets.
+
+Phase should also provide `ALLOWED_GRAFANA_IPS`, a comma-separated list of IPv4 addresses allowed to access `dash.z8-time.app`. Traefik `Middleware` resources cannot read environment variables directly, so the deployment flow should render the Grafana IP allowlist middleware from this Phase-provided value before applying it. Each IPv4 address should be converted to a `/32` CIDR entry in the middleware `sourceRange`.
 
 ## Storage And Capacity
 
@@ -75,12 +77,13 @@ These values are intentionally conservative. If monitoring data volume grows or 
 
 ## Access And Security
 
-Grafana is public at `https://dash.z8-time.app` but requires Grafana authentication. The initial design does not add an IP allowlist, OAuth, or SSO gate. Prometheus and Alertmanager are not publicly routed.
+Grafana is reachable at `https://dash.z8-time.app`, requires Grafana authentication, and is additionally restricted by a Traefik `ipAllowList` middleware. The allowlist source is the Phase-provided `ALLOWED_GRAFANA_IPS` comma list. The initial design does not add OAuth or SSO. Prometheus and Alertmanager are not publicly routed.
 
 The Grafana ingress should use:
 
 - `ingressClassName: traefik`.
 - `cert-manager.io/cluster-issuer: letsencrypt-prod`.
+- `traefik.ingress.kubernetes.io/router.middlewares` pointing to the generated Grafana allowlist middleware.
 - TLS secret dedicated to `dash.z8-time.app`.
 
 DNS for `dash.z8-time.app` must point at the cluster ingress endpoint before certificate issuance can complete.
@@ -90,6 +93,7 @@ DNS for `dash.z8-time.app` must point at the cluster ingress endpoint before cer
 Expected operational failure modes and handling:
 
 - If the `monitoring/grafana-admin` secret is missing, Grafana should fail clearly instead of falling back to a committed or default password.
+- If `ALLOWED_GRAFANA_IPS` is missing, empty, or contains invalid IPv4 addresses, the deployment should stop before applying the Grafana ingress or middleware.
 - If DNS for `dash.z8-time.app` is missing or wrong, Traefik may route internally but cert-manager HTTP-01 validation will not complete.
 - If PVC provisioning fails, inspect the cluster storage class and Hetzner-backed volume capacity before resizing or adding workers.
 - If Prometheus targets are down, inspect the generated ServiceMonitors, RBAC, target discovery, and affected pods before changing scrape configuration.
@@ -104,6 +108,8 @@ Static and deployment verification should include:
 - Verify pods in `monitoring` become ready.
 - Verify Prometheus has Kubernetes, node, and kube-state-metrics targets up.
 - Verify the Grafana ingress host is `dash.z8-time.app`.
+- Verify the Grafana ingress references the generated Traefik allowlist middleware.
+- Verify the middleware source ranges match `ALLOWED_GRAFANA_IPS` as `/32` CIDRs.
 - Verify the TLS certificate for `dash.z8-time.app` reaches Ready.
 - Verify Grafana login works with the Phase-provided admin password.
 
@@ -112,5 +118,6 @@ Static and deployment verification should include:
 Before live deployment, the operator must ensure:
 
 - Phase contains the Grafana admin username/password and syncs them to `monitoring/grafana-admin` keys `admin-user` and `admin-password`.
+- Phase contains `ALLOWED_GRAFANA_IPS` as a comma-separated IPv4 list for the Grafana Traefik allowlist.
 - DNS for `dash.z8-time.app` points to the cluster ingress.
 - `helm` and `kubectl` are available with access to the production cluster.
