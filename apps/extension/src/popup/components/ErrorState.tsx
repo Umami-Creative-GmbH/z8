@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCw, Settings } from "@tabler/icons-react";
+import { IconAlertCircle, IconRefresh, IconSettings } from "@tabler/icons-react";
 
 interface ErrorStateProps {
   error: Error | null;
@@ -13,7 +13,7 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-6 text-center">
       <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
-        <AlertCircle className="w-6 h-6 text-red-500" aria-hidden="true" />
+        <IconAlertCircle className="w-6 h-6 text-red-500" aria-hidden="true" />
       </div>
       <h3 className="text-sm font-semibold text-slate-950 mb-1">
         Connection Error
@@ -26,14 +26,14 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
           onClick={onRetry}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
-          <RefreshCw className="w-4 h-4" aria-hidden="true" />
+          <IconRefresh className="w-4 h-4" aria-hidden="true" />
           <span>Retry</span>
         </button>
         <button
           onClick={handleOpenOptions}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
-          <Settings className="w-4 h-4" aria-hidden="true" />
+          <IconSettings className="w-4 h-4" aria-hidden="true" />
           <span>Settings</span>
         </button>
       </div>

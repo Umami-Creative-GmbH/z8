@@ -74,9 +74,12 @@ import {
 	calculatePresenceStatusCounts,
 	type PresenceDayOfWeek,
 } from "./actions/presence-status";
+import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
 import type { WorkPeriodWithEntries } from "./types";
 
-export { addBreakToActiveSession } from "./actions/clocking";
+export async function addBreakToActiveSession(breakMinutes: number) {
+	return addBreakToActiveSessionAction(breakMinutes);
+}
 
 const logger = createLogger("TimeTrackingActionsEffect");
 

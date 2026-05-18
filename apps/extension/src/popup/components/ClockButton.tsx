@@ -1,4 +1,4 @@
-import { LogIn, LogOut, Loader2 } from "@tabler/icons-react";
+import { IconLogin2, IconLogout2, IconLoader2 } from "@tabler/icons-react";
 import { cn } from "@/lib/cn";
 
 interface ClockButtonProps {
@@ -41,15 +41,15 @@ export function ClockButton({
     >
       {isLoading ? (
         <>
-          <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+          <IconLoader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
           <span>{isClockedIn ? "Clocking Out…" : "Clocking In…"}</span>
         </>
       ) : (
         <>
           {isClockedIn ? (
-            <LogOut className="w-5 h-5" aria-hidden="true" />
+            <IconLogout2 className="w-5 h-5" aria-hidden="true" />
           ) : (
-            <LogIn className="w-5 h-5" aria-hidden="true" />
+            <IconLogin2 className="w-5 h-5" aria-hidden="true" />
           )}
           <span>{isClockedIn ? "Clock Out" : "Clock In"}</span>
         </>

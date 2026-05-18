@@ -1,4 +1,4 @@
-import { Settings } from "@tabler/icons-react";
+import { IconSettings } from "@tabler/icons-react";
 
 export function Header() {
   const handleOpenOptions = () => {
@@ -19,7 +19,7 @@ export function Header() {
         title="Settings"
         aria-label="Settings"
       >
-        <Settings className="w-4 h-4" aria-hidden="true" />
+        <IconSettings className="w-4 h-4" aria-hidden="true" />
       </button>
     </div>
   );

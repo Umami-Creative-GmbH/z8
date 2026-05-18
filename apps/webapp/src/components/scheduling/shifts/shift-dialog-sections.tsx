@@ -9,7 +9,7 @@ import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/sk
 import { ActionPanelFooter } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconCalendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -118,7 +118,7 @@ export function ShiftDialogSections({
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="w-auto p-0" align="start">
-								<IconCalendar
+								<Calendar
 									mode="single"
 									selected={field.state.value}
 									onSelect={(date) => date && field.handleChange(date)}

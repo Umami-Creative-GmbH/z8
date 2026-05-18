@@ -6,9 +6,9 @@ import {
 	IconAlertTriangle,
 	IconCircleCheck,
 	IconLoader2,
-	Mail,
+	IconMail,
 	IconSend,
-	Server,
+	IconServer,
 	IconShield,
 	IconTrash,
 	IconCircleX,
@@ -201,7 +201,7 @@ export function EmailConfigForm({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<Mail className="size-5" />
+						<IconMail className="size-5" />
 						{t("settings.enterprise.email.title", "Email Configuration")}
 					</CardTitle>
 					<CardDescription>
@@ -238,7 +238,7 @@ export function EmailConfigForm({
 									<div className="flex items-center space-x-2">
 										<RadioGroupItem value="smtp" id="smtp" />
 										<Label htmlFor="smtp" className="flex items-center gap-2 cursor-pointer">
-											<Server className="size-4" />
+											<IconServer className="size-4" />
 											{t("settings.enterprise.email.smtpServer", "SMTP Server")}
 										</Label>
 									</div>
@@ -337,7 +337,7 @@ export function EmailConfigForm({
 							transportType === "smtp" && (
 								<div className="space-y-4 rounded-lg border p-4">
 									<h4 className="font-medium flex items-center gap-2">
-										<Server className="size-4" />
+										<IconServer className="size-4" />
 										{t("settings.enterprise.email.smtpConfig", "SMTP Configuration")}
 									</h4>
 

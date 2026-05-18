@@ -1,4 +1,4 @@
-import { Cloud, CloudOff } from "@tabler/icons-react";
+import { IconCloud, IconCloudOff } from "@tabler/icons-react";
 import { formatActionTime, formatClockTime } from "@/lib/time";
 import type { LastAction } from "@/types";
 
@@ -64,9 +64,9 @@ export function StatusCard({
       <div className="mt-3 flex items-center justify-between gap-3 text-xs font-medium text-slate-500">
         <div className="flex items-center gap-1.5">
           {isOffline ? (
-            <CloudOff className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            <IconCloudOff className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
           ) : (
-            <Cloud className="h-3.5 w-3.5 text-blue-500" aria-hidden="true" />
+            <IconCloud className="h-3.5 w-3.5 text-blue-500" aria-hidden="true" />
           )}
           <span>{connectivityLabel}</span>
         </div>

@@ -1,4 +1,4 @@
-import { Folder } from "@tabler/icons-react";
+import { IconFolder } from "@tabler/icons-react";
 import type { Project } from "@/types";
 
 interface ProjectSelectorProps {
@@ -22,7 +22,7 @@ export function ProjectSelector({
         htmlFor="project-select"
         className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-1.5"
       >
-        <Folder className="w-3.5 h-3.5" aria-hidden="true" />
+        <IconFolder className="w-3.5 h-3.5" aria-hidden="true" />
         <span>Project (optional)</span>
       </label>
       <select

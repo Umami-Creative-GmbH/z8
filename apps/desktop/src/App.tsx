@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Settings as SettingsIcon, WifiOff, Clock, Sun, Moon, Monitor } from "@tabler/icons-react";
+import {
+  IconSettings,
+  IconWifiOff,
+  IconClock,
+  IconSun,
+  IconMoon,
+  IconDeviceDesktop,
+} from "@tabler/icons-react";
 import { Toaster, toast } from "sonner";
 
 import { ClockButton } from "./components/ClockButton";
@@ -64,7 +71,7 @@ function AppContent() {
     else setTheme("system");
   };
 
-  const ThemeIcon = theme === "system" ? Monitor : resolvedTheme === "dark" ? Moon : Sun;
+  const ThemeIcon = theme === "system" ? IconDeviceDesktop : resolvedTheme === "dark" ? IconMoon : IconSun;
 
   const handleClockIn = async () => {
     try {
@@ -140,7 +147,7 @@ function AppContent() {
         <div className="app-header-left">
           <div className="app-header-brand">
             <div className="app-logo">
-              <Clock size={18} color="white" aria-hidden="true" />
+              <IconClock size={18} color="white" aria-hidden="true" />
             </div>
             <div>
               <div className="app-title">z8 Timer</div>
@@ -159,7 +166,7 @@ function AppContent() {
         <div className="app-header-actions">
           {isError && (
             <div className="offline-badge">
-              <WifiOff size={14} aria-hidden="true" />
+              <IconWifiOff size={14} aria-hidden="true" />
               <span>Offline</span>
             </div>
           )}
@@ -177,7 +184,7 @@ function AppContent() {
             title="Settings"
             aria-label="Open Settings"
           >
-            <SettingsIcon size={18} />
+            <IconSettings size={18} />
           </button>
         </div>
       </header>

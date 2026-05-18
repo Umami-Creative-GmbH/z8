@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { IconCheck, IconChevronsUpDown, IconWorld } from "@tabler/icons-react";
+import { IconCheck, IconSelector, IconWorld } from "@tabler/icons-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -258,7 +258,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 						<IconWorld className="size-4 shrink-0 opacity-50" />
 						<span className="truncate">{selectedLabel}</span>
 					</div>
-					<IconChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+					<IconSelector className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[400px] p-0" align="start">
