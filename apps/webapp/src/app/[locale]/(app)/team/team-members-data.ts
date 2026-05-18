@@ -18,6 +18,7 @@ type TeamMemberEmployee = {
 	id: string;
 	userId: string;
 	organizationId: string;
+	teamId: string | null;
 	firstName: string | null;
 	lastName: string | null;
 	pronouns: string | null;
