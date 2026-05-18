@@ -232,7 +232,7 @@ export function PersonioConfigForm({
 								alt="Personio Logo"
 								width={48}
 								height={48}
-								className="h-12 w-12"
+								className="size-12"
 							/>
 							<div>
 								<CardTitle className="flex items-center gap-2">
@@ -242,7 +242,7 @@ export function PersonioConfigForm({
 									)}
 									{initialConfig?.hasCredentials && (
 										<Badge variant="secondary" className="gap-1">
-											<IconCheck className="h-3 w-3" aria-hidden="true" />
+											<IconCheck className="size-3" aria-hidden="true" />
 											{t(
 												"settings.payrollExport.personio.connected",
 												"Connected",
@@ -276,7 +276,7 @@ export function PersonioConfigForm({
 													className="inline-flex cursor-help"
 													aria-label={t("settings.payrollExport.personio.clientIdHelp", "Client ID help")}
 												>
-													<IconInfoCircle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+													<IconInfoCircle className="size-4 text-muted-foreground" aria-hidden="true" />
 												</button>
 											</TooltipTrigger>
 											<TooltipContent className="max-w-xs">
@@ -316,7 +316,7 @@ export function PersonioConfigForm({
 													className="inline-flex cursor-help"
 													aria-label={t("settings.payrollExport.personio.clientSecretHelp", "API Secret help")}
 												>
-													<IconInfoCircle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+													<IconInfoCircle className="size-4 text-muted-foreground" aria-hidden="true" />
 												</button>
 											</TooltipTrigger>
 											<TooltipContent className="max-w-xs">
@@ -343,7 +343,7 @@ export function PersonioConfigForm({
 					) : (
 						<div className="flex items-center justify-between rounded-lg border p-4">
 							<div className="flex items-center gap-3">
-								<IconPlugConnected className="h-5 w-5 text-green-600" />
+								<IconPlugConnected className="size-5 text-green-600" />
 								<div>
 									<p className="font-medium">
 										{t(
@@ -376,7 +376,7 @@ export function PersonioConfigForm({
 											size="sm"
 											aria-label={t("settings.payrollExport.personio.deleteCredentials", "Delete credentials")}
 										>
-											<IconTrash className="h-4 w-4 text-destructive" aria-hidden="true" />
+											<IconTrash className="size-4 text-destructive" aria-hidden="true" />
 										</Button>
 									</AlertDialogTrigger>
 									<AlertDialogContent>
@@ -420,7 +420,7 @@ export function PersonioConfigForm({
 						>
 							{isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : (
@@ -483,7 +483,7 @@ export function PersonioConfigForm({
 														className="inline-flex cursor-help"
 														aria-label={t("settings.payrollExport.personio.employeeMatchStrategyHelp", "Employee matching help")}
 													>
-														<IconInfoCircle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+														<IconInfoCircle className="size-4 text-muted-foreground" aria-hidden="true" />
 													</button>
 												</TooltipTrigger>
 												<TooltipContent className="max-w-xs">
@@ -555,7 +555,7 @@ export function PersonioConfigForm({
 						<Button type="submit" disabled={isPending}>
 							{isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : (
@@ -571,12 +571,12 @@ export function PersonioConfigForm({
 							>
 								{isTesting ? (
 									<>
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
 										{t("settings.payrollExport.personio.testing", "Testing...")}
 									</>
 								) : (
 									<>
-										<IconPlugConnected className="mr-2 h-4 w-4" />
+										<IconPlugConnected className="mr-2 size-4" />
 										{t(
 											"settings.payrollExport.personio.testConnection",
 											"Test Connection",

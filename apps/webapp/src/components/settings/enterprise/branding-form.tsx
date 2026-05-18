@@ -107,7 +107,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				</CardHeader>
 				<CardContent>
 					<div className="flex items-center gap-6">
-						<div className="relative h-20 w-20 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
+						<div className="relative size-20 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
 							{logoUpload.previewUrl || branding.logoUrl ? (
 								<Image
 									src={logoUpload.previewUrl || branding.logoUrl || ""}
@@ -116,7 +116,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 									className="object-contain"
 								/>
 							) : (
-								<IconUpload className="h-8 w-8 text-muted-foreground" />
+								<IconUpload className="size-8 text-muted-foreground" />
 							)}
 						</div>
 						<div className="flex-1">
@@ -147,7 +147,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								onClick={() => setBranding((prev) => ({ ...prev, logoUrl: null }))}
 								aria-label={t("settings.branding.logo.remove", "Remove logo")}
 							>
-								<IconX className="h-4 w-4" />
+								<IconX className="size-4" />
 							</Button>
 						)}
 					</div>
@@ -176,7 +176,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 									className="object-cover"
 								/>
 							) : (
-								<IconUpload className="h-8 w-8 text-muted-foreground" />
+								<IconUpload className="size-8 text-muted-foreground" />
 							)}
 						</div>
 						<div className="flex-1">
@@ -207,7 +207,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 								onClick={() => setBranding((prev) => ({ ...prev, backgroundImageUrl: null }))}
 								aria-label={t("settings.branding.background.remove", "Remove background")}
 							>
-								<IconX className="h-4 w-4" />
+								<IconX className="size-4" />
 							</Button>
 						)}
 					</div>
@@ -355,7 +355,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 				<Button onClick={handleSave} disabled={isSaving} size="lg">
 					{isSaving ? (
 						<>
-							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							<IconLoader2 className="mr-2 size-4 animate-spin" />
 							{t("common.saving", "Saving...")}
 						</>
 					) : (

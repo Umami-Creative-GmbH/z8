@@ -1,11 +1,11 @@
 "use client";
 
-import { CalendarIcon } from "lucide-react";
+import { IconCalendar } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import { useId, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { IconCalendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
@@ -97,7 +97,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 				</p>
 			)}
 
-			{/* Calendar Picker for Custom Range */}
+			{/* IconCalendar Picker for Custom Range */}
 			{preset === "custom" && (
 				<Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
 					<PopoverTrigger asChild>
@@ -108,7 +108,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 								!value && "text-muted-foreground",
 							)}
 						>
-							<CalendarIcon className="mr-2 h-4 w-4" />
+							<IconCalendar className="mr-2 size-4" />
 							{value?.start ? (
 								value.end ? (
 									<>
@@ -123,7 +123,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 						</Button>
 					</PopoverTrigger>
 					<PopoverContent className="w-auto p-0" align="start">
-						<Calendar
+						<IconCalendar
 							autoFocus
 							mode="range"
 							defaultMonth={value?.start}
@@ -141,7 +141,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			{/* Display current range for non-custom presets */}
 			{preset !== "custom" && (
 				<div className="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground">
-					<CalendarIcon className="mr-2 h-4 w-4" />
+					<IconCalendar className="mr-2 size-4" />
 					{formatDateRangeLabel(value.start, value.end, timezone)}
 				</div>
 			)}

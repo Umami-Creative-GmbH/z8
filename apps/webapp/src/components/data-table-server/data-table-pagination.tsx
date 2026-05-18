@@ -95,39 +95,39 @@ export function DataTablePagination<TData>({
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
-						className="hidden h-8 w-8 p-0 lg:flex"
+						className="hidden size-8 p-0 lg:flex"
 						onClick={() => table.setPageIndex(0)}
 						disabled={!table.getCanPreviousPage()}
 					>
 						<span className="sr-only">{t("table.goToFirstPage", "Go to first page")}</span>
-						<IconChevronsLeft className="h-4 w-4" />
+						<IconChevronsLeft className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
-						className="h-8 w-8 p-0"
+						className="size-8 p-0"
 						onClick={() => table.previousPage()}
 						disabled={!table.getCanPreviousPage()}
 					>
 						<span className="sr-only">{t("table.goToPreviousPage", "Go to previous page")}</span>
-						<IconChevronLeft className="h-4 w-4" />
+						<IconChevronLeft className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
-						className="h-8 w-8 p-0"
+						className="size-8 p-0"
 						onClick={() => table.nextPage()}
 						disabled={!table.getCanNextPage()}
 					>
 						<span className="sr-only">{t("table.goToNextPage", "Go to next page")}</span>
-						<IconChevronRight className="h-4 w-4" />
+						<IconChevronRight className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
-						className="hidden h-8 w-8 p-0 lg:flex"
+						className="hidden size-8 p-0 lg:flex"
 						onClick={() => table.setPageIndex(pageCount - 1)}
 						disabled={!table.getCanNextPage()}
 					>
 						<span className="sr-only">{t("table.goToLastPage", "Go to last page")}</span>
-						<IconChevronsRight className="h-4 w-4" />
+						<IconChevronsRight className="size-4" />
 					</Button>
 				</div>
 			</div>

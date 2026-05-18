@@ -250,7 +250,7 @@ export function VacationPoliciesTable({
 					if (row.original.isCompanyDefault) {
 						return (
 							<Badge className="bg-primary">
-								<IconStar className="mr-1 h-3 w-3" />
+								<IconStar className="mr-1 size-3" />
 								{t("vacation.policies.company-default", "Company Default")}
 							</Badge>
 						);
@@ -272,14 +272,14 @@ export function VacationPoliciesTable({
 						cell: ({ row }: { row: { original: VacationPolicy } }) => (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<IconDots className="h-4 w-4" />
+							<Button variant="ghost" size="icon" className="size-8">
+								<IconDots className="size-4" />
 								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem onClick={() => handleEditClick(row.original)}>
-								<IconPencil className="mr-2 h-4 w-4" />
+								<IconPencil className="mr-2 size-4" />
 								{t("common.edit", "Edit")}
 							</DropdownMenuItem>
 							<DropdownMenuSeparator />
@@ -287,7 +287,7 @@ export function VacationPoliciesTable({
 								className="text-destructive"
 								onClick={() => handleDeleteClick(row.original)}
 							>
-								<IconTrash className="mr-2 h-4 w-4" />
+								<IconTrash className="mr-2 size-4" />
 								{t("common.delete", "Delete")}
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -306,7 +306,7 @@ export function VacationPoliciesTable({
 				{canManagePolicies ? (
 					<div className="flex justify-end">
 						<Button onClick={handleCreateClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("vacation.policies.add-policy", "Add Policy")}
 						</Button>
 					</div>
@@ -323,7 +323,7 @@ export function VacationPoliciesTable({
 					{t("vacation.policies.loadError", "Failed to load policies")}
 				</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-					<IconRefresh className="mr-2 h-4 w-4" />
+					<IconRefresh className="mr-2 size-4" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -341,15 +341,15 @@ export function VacationPoliciesTable({
 						<div className="flex items-center gap-2">
 							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 								{isFetching ? (
-									<IconLoader2 className="h-4 w-4 animate-spin" />
+									<IconLoader2 className="size-4 animate-spin" />
 								) : (
-									<IconRefresh className="h-4 w-4" />
+									<IconRefresh className="size-4" />
 								)}
 								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 							</Button>
 							{canManagePolicies ? (
 								<Button onClick={handleCreateClick}>
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("vacation.policies.add-policy", "Add Policy")}
 								</Button>
 							) : null}
@@ -401,7 +401,7 @@ export function VacationPoliciesTable({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

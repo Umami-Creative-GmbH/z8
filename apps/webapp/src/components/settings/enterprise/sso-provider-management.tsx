@@ -173,7 +173,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 						</CardDescription>
 					</div>
 					<Button onClick={() => setIsAddDialogOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 size-4" />
 						Add Provider
 					</Button>
 				</CardHeader>
@@ -208,12 +208,12 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 											<TableCell>
 												{provider.domainVerified ? (
 													<Badge variant="default" className="bg-green-600">
-														<IconCheck className="mr-1 h-3 w-3" />
+														<IconCheck className="mr-1 size-3" />
 														Verified
 													</Badge>
 												) : (
 													<Badge variant="secondary">
-														<IconX className="mr-1 h-3 w-3" />
+														<IconX className="mr-1 size-3" />
 														Pending
 													</Badge>
 												)}
@@ -231,7 +231,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 													className="flex items-center text-sm text-muted-foreground hover:text-foreground"
 												>
 													<span className="max-w-[200px] truncate">{provider.issuer}</span>
-													<IconExternalLink className="ml-1 h-3 w-3" />
+													<IconExternalLink className="ml-1 size-3" />
 												</a>
 											</TableCell>
 											<TableCell className="text-right">
@@ -244,7 +244,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 																disabled={busyProviderId === provider.id}
 																onClick={() => handleRequestVerificationToken(provider)}
 															>
-																<IconKey className="mr-1 h-4 w-4" />
+																<IconKey className="mr-1 size-4" />
 																Token
 															</Button>
 															<Button
@@ -253,7 +253,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 																disabled={busyProviderId === provider.id}
 																onClick={() => handleVerifyDomain(provider)}
 															>
-																<IconRefresh className="mr-1 h-4 w-4" />
+																<IconRefresh className="mr-1 size-4" />
 																Verify
 															</Button>
 														</>
@@ -263,7 +263,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 														size="sm"
 														onClick={() => setDeleteDialog({ isOpen: true, provider })}
 													>
-														<IconTrash className="h-4 w-4 text-destructive" />
+														<IconTrash className="size-4 text-destructive" />
 													</Button>
 												</div>
 											</TableCell>

@@ -3,16 +3,16 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import {
-	AlertTriangle,
-	CheckCircle2,
-	Loader2,
+	IconAlertTriangle,
+	IconCircleCheck,
+	IconLoader2,
 	Mail,
-	Send,
+	IconSend,
 	Server,
-	Shield,
-	Trash2,
-	XCircle,
-} from "lucide-react";
+	IconShield,
+	IconTrash,
+	IconCircleX,
+} from "@tabler/icons-react";
 import { useState, useTransition } from "react";
 import type {
 	EmailConfigInput,
@@ -60,7 +60,7 @@ function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
 	if (!vaultStatus.available) {
 		return (
 			<Alert variant="destructive" className="mb-4">
-				<AlertTriangle className="h-4 w-4" />
+				<IconAlertTriangle className="size-4" />
 				<AlertTitle>{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -75,7 +75,7 @@ function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
 	if (vaultStatus.sealed) {
 		return (
 			<Alert variant="destructive" className="mb-4">
-				<AlertTriangle className="h-4 w-4" />
+				<IconAlertTriangle className="size-4" />
 				<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -89,7 +89,7 @@ function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
 
 	return (
 		<Alert className="mb-4">
-			<Shield className="h-4 w-4" />
+			<IconShield className="size-4" />
 			<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
 			<AlertDescription>
 				{t(
@@ -201,7 +201,7 @@ export function EmailConfigForm({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<Mail className="h-5 w-5" />
+						<Mail className="size-5" />
 						{t("settings.enterprise.email.title", "Email Configuration")}
 					</CardTitle>
 					<CardDescription>
@@ -228,7 +228,7 @@ export function EmailConfigForm({
 									<div className="flex items-center space-x-2">
 										<RadioGroupItem value="resend" id="resend" />
 										<Label htmlFor="resend" className="flex items-center gap-2 cursor-pointer">
-											<Send className="h-4 w-4" />
+											<IconSend className="size-4" />
 											Resend
 											<Badge variant="secondary" className="text-xs">
 												{t("settings.enterprise.email.recommended", "Recommended")}
@@ -238,7 +238,7 @@ export function EmailConfigForm({
 									<div className="flex items-center space-x-2">
 										<RadioGroupItem value="smtp" id="smtp" />
 										<Label htmlFor="smtp" className="flex items-center gap-2 cursor-pointer">
-											<Server className="h-4 w-4" />
+											<Server className="size-4" />
 											{t("settings.enterprise.email.smtpServer", "SMTP Server")}
 										</Label>
 									</div>
@@ -294,7 +294,7 @@ export function EmailConfigForm({
 							transportType === "resend" && (
 								<div className="space-y-4 rounded-lg border p-4">
 									<h4 className="font-medium flex items-center gap-2">
-										<Send className="h-4 w-4" />
+										<IconSend className="size-4" />
 										{t("settings.enterprise.email.resendConfig", "Resend Configuration")}
 									</h4>
 									<form.Field name="resendApiKey">
@@ -304,7 +304,7 @@ export function EmailConfigForm({
 													{t("settings.enterprise.email.apiKey", "API Key")}
 													{initialConfig?.hasResendApiKey && (
 														<Badge variant="outline" className="ml-2 text-xs">
-															<CheckCircle2 className="h-3 w-3 mr-1" />
+															<IconCircleCheck className="size-3 mr-1" />
 															{t("settings.enterprise.email.secretSet", "Set")}
 														</Badge>
 													)}
@@ -337,7 +337,7 @@ export function EmailConfigForm({
 							transportType === "smtp" && (
 								<div className="space-y-4 rounded-lg border p-4">
 									<h4 className="font-medium flex items-center gap-2">
-										<Server className="h-4 w-4" />
+										<Server className="size-4" />
 										{t("settings.enterprise.email.smtpConfig", "SMTP Configuration")}
 									</h4>
 
@@ -403,7 +403,7 @@ export function EmailConfigForm({
 														{t("settings.enterprise.email.smtpPassword", "Password")}
 														{initialConfig?.hasSmtpPassword && (
 															<Badge variant="outline" className="ml-2 text-xs">
-																<CheckCircle2 className="h-3 w-3 mr-1" />
+																<IconCircleCheck className="size-3 mr-1" />
 																{t("settings.enterprise.email.secretSet", "Set")}
 															</Badge>
 														)}
@@ -491,14 +491,14 @@ export function EmailConfigForm({
 							<div className="flex items-center gap-2 text-sm">
 								{initialConfig.lastTestSuccess ? (
 									<>
-										<CheckCircle2 className="h-4 w-4 text-green-500" />
+										<IconCircleCheck className="size-4 text-green-500" />
 										<span className="text-green-600">
 											{t("settings.enterprise.email.testSuccess", "Success")}
 										</span>
 									</>
 								) : (
 									<>
-										<XCircle className="h-4 w-4 text-red-500" />
+										<IconCircleX className="size-4 text-red-500" />
 										<span className="text-red-600">
 											{t("settings.enterprise.email.testFailure", "Failed")}
 										</span>
@@ -519,7 +519,7 @@ export function EmailConfigForm({
 						<>
 							<Separator />
 							<div className="space-y-3">
-								<Label>{t("settings.enterprise.email.testSection", "Send Test Email")}</Label>
+								<Label>{t("settings.enterprise.email.testSection", "IconSend Test Email")}</Label>
 								<div className="flex gap-2">
 									<Input
 										type="email"
@@ -535,11 +535,11 @@ export function EmailConfigForm({
 										disabled={isTesting || !testEmail}
 									>
 										{isTesting ? (
-											<Loader2 className="h-4 w-4 animate-spin" />
+											<IconLoader2 className="size-4 animate-spin" />
 										) : (
-											<Send className="h-4 w-4 mr-2" />
+											<IconSend className="size-4 mr-2" />
 										)}
-										{t("settings.enterprise.email.sendTest", "Send Test")}
+										{t("settings.enterprise.email.sendTest", "IconSend Test")}
 									</Button>
 								</div>
 							</div>
@@ -550,7 +550,7 @@ export function EmailConfigForm({
 				<CardFooter className="flex justify-between">
 					{initialConfig && (
 						<Button type="button" variant="destructive" onClick={handleDelete} disabled={isPending}>
-							<Trash2 className="h-4 w-4 mr-2" />
+							<IconTrash className="size-4 mr-2" />
 							{t("settings.enterprise.email.delete", "Delete Configuration")}
 						</Button>
 					)}
@@ -561,7 +561,7 @@ export function EmailConfigForm({
 								type="submit"
 								disabled={isPending || isSubmitting || (!isDirty && !!initialConfig)}
 							>
-								{(isPending || isSubmitting) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+								{(isPending || isSubmitting) && <IconLoader2 className="size-4 mr-2 animate-spin" />}
 								{initialConfig
 									? t("settings.enterprise.email.save", "Save Changes")
 									: t("settings.enterprise.email.create", "Create Configuration")}

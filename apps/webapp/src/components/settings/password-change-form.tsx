@@ -191,7 +191,7 @@ export function PasswordChangeForm() {
 					<Button type="submit" disabled={isPasswordLoading}>
 						{isPasswordLoading ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("common.saving", "Saving...")}
 							</>
 						) : (

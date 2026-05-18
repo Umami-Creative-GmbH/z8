@@ -4,7 +4,7 @@ import { IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { Command as CommandPrimitive } from "cmdk";
-import { SearchIcon } from "lucide-react";
+import { IconSearch } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import {
@@ -259,13 +259,13 @@ export function EmployeeSelectModal({
 							"border-0",
 						)}
 					>
-						{/* Search input */}
+						{/* IconSearch input */}
 						<div className="flex items-center gap-2 border-b border-border/50 px-4">
-							<SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+							<IconSearch className="size-4 shrink-0 text-muted-foreground" />
 							<CommandPrimitive.Input
 								placeholder={t(
 									"common:employeeSelect.searchPlaceholder",
-									"Search by name, email, or position...",
+									"IconSearch by name, email, or position...",
 								)}
 								value={search}
 								onValueChange={setSearch}
@@ -282,7 +282,7 @@ export function EmployeeSelectModal({
 								onClick={handleCancel}
 								className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
 							>
-								<IconX className="h-4 w-4" />
+								<IconX className="size-4" />
 							</button>
 						</div>
 
@@ -361,7 +361,7 @@ export function EmployeeSelectModal({
 														onClick={() => handleDeselect(id)}
 														className="hover:bg-muted rounded-full p-0.5"
 													>
-														<IconX className="h-3 w-3" />
+														<IconX className="size-3" />
 													</button>
 												</Badge>
 											);

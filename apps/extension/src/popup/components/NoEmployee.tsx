@@ -1,4 +1,4 @@
-import { UserX, ExternalLink } from "lucide-react";
+import { UserX, ExternalLink } from "@tabler/icons-react";
 import { useSettings } from "../hooks/useSettings";
 
 export function NoEmployee() {

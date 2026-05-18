@@ -170,7 +170,7 @@ function BotConnectionCard({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconBrandTelegram className="h-5 w-5" aria-hidden="true" />
+					<IconBrandTelegram className="size-5" aria-hidden="true" />
 					{t("settings.telegram.bot.title", "Telegram Bot")}
 				</CardTitle>
 				<CardDescription>
@@ -184,8 +184,8 @@ function BotConnectionCard({
 				{isConnected && config ? (
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex min-w-0 items-center gap-3">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-								<IconBrandTelegram className="h-5 w-5 text-blue-500" aria-hidden="true" />
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+								<IconBrandTelegram className="size-5 text-blue-500" aria-hidden="true" />
 							</div>
 							<div className="min-w-0">
 								<div className="flex items-center gap-2">
@@ -207,9 +207,9 @@ function BotConnectionCard({
 							<AlertDialogTrigger asChild>
 								<Button variant="destructive" size="sm" disabled={disconnectMutation.isPending}>
 									{disconnectMutation.isPending ? (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									) : (
-										<IconPlugConnectedX className="mr-2 h-4 w-4" aria-hidden="true" />
+										<IconPlugConnectedX className="mr-2 size-4" aria-hidden="true" />
 									)}
 									{t("settings.telegram.disconnect", "Disconnect")}
 								</Button>
@@ -264,9 +264,9 @@ function BotConnectionCard({
 							disabled={!botToken.trim() || setupMutation.isPending}
 						>
 							{setupMutation.isPending ? (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							) : (
-								<IconPlugConnected className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconPlugConnected className="mr-2 size-4" aria-hidden="true" />
 							)}
 							{t("settings.telegram.connect", "Connect Bot")}
 						</Button>
@@ -527,7 +527,7 @@ function FeatureSettingsCard({
 					{/* Save Button */}
 					<div className="flex justify-end pt-2">
 						<Button type="submit" disabled={loading || !isDirty}>
-							{loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
 							{t("common.saveChanges", "Save Changes")}
 						</Button>
 					</div>
@@ -600,7 +600,7 @@ function AccountLinkingCard({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconBrandTelegram className="h-5 w-5" aria-hidden="true" />
+					<IconBrandTelegram className="size-5" aria-hidden="true" />
 					{t("settings.telegram.linking.title", "Telegram Account")}
 				</CardTitle>
 				<CardDescription>
@@ -614,8 +614,8 @@ function AccountLinkingCard({
 				{userLink ? (
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex min-w-0 items-center gap-3">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-								<IconBrandTelegram className="h-5 w-5 text-blue-500" aria-hidden="true" />
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+								<IconBrandTelegram className="size-5 text-blue-500" aria-hidden="true" />
 							</div>
 							<div className="min-w-0">
 								<span className="block truncate font-medium">
@@ -632,9 +632,9 @@ function AccountLinkingCard({
 							<AlertDialogTrigger asChild>
 								<Button variant="outline" size="sm" disabled={unlinkMutation.isPending}>
 									{unlinkMutation.isPending ? (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									) : (
-										<IconUnlink className="mr-2 h-4 w-4" aria-hidden="true" />
+										<IconUnlink className="mr-2 size-4" aria-hidden="true" />
 									)}
 									{t("settings.telegram.unlink", "Unlink")}
 								</Button>
@@ -675,9 +675,9 @@ function AccountLinkingCard({
 										aria-label={t("common.copy", "Copy")}
 									>
 										{copied ? (
-											<IconCheck className="h-4 w-4 text-emerald-500" />
+											<IconCheck className="size-4 text-emerald-500" />
 										) : (
-											<IconCopy className="h-4 w-4" />
+											<IconCopy className="size-4" />
 										)}
 									</Button>
 								</div>
@@ -707,9 +707,9 @@ function AccountLinkingCard({
 								variant="outline"
 							>
 								{generateCodeMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								) : (
-									<IconBrandTelegram className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconBrandTelegram className="mr-2 size-4" aria-hidden="true" />
 								)}
 								{t("settings.telegram.linking.generateCode", "Generate Link Code")}
 							</Button>

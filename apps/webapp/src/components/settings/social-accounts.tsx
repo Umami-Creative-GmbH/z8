@@ -164,8 +164,8 @@ export function SocialAccounts() {
 							<CardHeader className="pb-3">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
-										<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-											<Icon className="h-5 w-5" />
+										<div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+											<Icon className="size-5" />
 										</div>
 										<div>
 											<CardTitle className="text-base">{provider.name}</CardTitle>

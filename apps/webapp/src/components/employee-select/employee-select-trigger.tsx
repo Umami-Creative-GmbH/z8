@@ -73,7 +73,7 @@ export function EmployeeSelectTrigger({
 				) : (
 					<span>{displayPlaceholder}</span>
 				)}
-				<IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+				<IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
 			</Button>
 		);
 	}
@@ -98,10 +98,10 @@ export function EmployeeSelectTrigger({
 				)}
 			>
 				<div className="flex items-center gap-2">
-					<IconUsers className="h-4 w-4" />
+					<IconUsers className="size-4" />
 					<span>{displayPlaceholder}</span>
 				</div>
-				<IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+				<IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
 			</Button>
 		);
 	}
@@ -153,7 +153,7 @@ export function EmployeeSelectTrigger({
 							: t("common:employeeSelect.countSelected", "{count} employees selected", { count })}
 				</span>
 			</div>
-			<IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+			<IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
 		</Button>
 	);
 }
@@ -207,7 +207,7 @@ export function EmployeeChips({
 							className="ml-1 rounded-full p-0.5 hover:bg-muted transition-colors"
 							aria-label={t("common.remove", "Remove")}
 						>
-							<IconX className="h-3 w-3" />
+							<IconX className="size-3" />
 						</button>
 					)}
 				</div>

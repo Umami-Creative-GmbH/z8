@@ -135,14 +135,14 @@ export function SuccessFactorsConfigForm({
 							alt="SAP SuccessFactors Logo"
 							width={48}
 							height={48}
-							className="h-12 w-12"
+							className="size-12"
 						/>
 						<div>
 							<CardTitle className="flex items-center gap-2">
 								{t("settings.payrollExport.successfactors.title", "SAP SuccessFactors")}
 								{initialConfig && (
 									<Badge variant="secondary" className="gap-1">
-										<IconCheck className="h-3 w-3" aria-hidden="true" />
+										<IconCheck className="size-3" aria-hidden="true" />
 										{t("settings.payrollExport.successfactors.configured", "Configured")}
 									</Badge>
 								)}
@@ -187,7 +187,7 @@ export function SuccessFactorsConfigForm({
 													)}
 												>
 													<IconInfoCircle
-														className="h-4 w-4 text-muted-foreground"
+														className="size-4 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</button>
@@ -237,7 +237,7 @@ export function SuccessFactorsConfigForm({
 													)}
 												>
 													<IconInfoCircle
-														className="h-4 w-4 text-muted-foreground"
+														className="size-4 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</button>
@@ -287,7 +287,7 @@ export function SuccessFactorsConfigForm({
 													)}
 												>
 													<IconInfoCircle
-														className="h-4 w-4 text-muted-foreground"
+														className="size-4 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</button>
@@ -359,7 +359,7 @@ export function SuccessFactorsConfigForm({
 													)}
 												>
 													<IconInfoCircle
-														className="h-4 w-4 text-muted-foreground"
+														className="size-4 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</button>
@@ -423,12 +423,12 @@ export function SuccessFactorsConfigForm({
 						>
 							{isTestingConnection ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("settings.payrollExport.successfactors.testingConnection", "Testing...")}
 								</>
 							) : (
 								<>
-									<IconPlugConnected className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconPlugConnected className="mr-2 size-4" aria-hidden="true" />
 									{t("settings.payrollExport.successfactors.testConnection", "Test Connection")}
 								</>
 							)}
@@ -439,7 +439,7 @@ export function SuccessFactorsConfigForm({
 					<Button type="submit" disabled={isPending}>
 						{isPending ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								{t("common.saving", "Saving...")}
 							</>
 						) : (

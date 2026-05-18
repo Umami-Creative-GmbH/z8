@@ -170,12 +170,12 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 				<CardContent>
 					{!domain ? (
 						<div className="text-center py-8">
-							<div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-								<IconWorld className="h-6 w-6 text-muted-foreground" />
+							<div className="mx-auto size-12 rounded-full bg-muted flex items-center justify-center mb-4">
+								<IconWorld className="size-6 text-muted-foreground" />
 							</div>
 							<p className="text-muted-foreground mb-4">No custom domain configured yet.</p>
 							<Button onClick={() => setIsAddDialogOpen(true)}>
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								Add Custom Domain
 							</Button>
 						</div>
@@ -184,20 +184,20 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 							{/* Domain Info */}
 							<div className="flex items-center justify-between p-4 border rounded-lg">
 								<div className="flex items-center gap-4">
-									<div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-										<IconWorld className="h-5 w-5 text-primary" />
+									<div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+										<IconWorld className="size-5 text-primary" />
 									</div>
 									<div>
 										<p className="font-medium">{domain.domain}</p>
 										<div className="flex items-center gap-2 mt-1">
 											{domain.domainVerified ? (
 												<Badge variant="default" className="bg-green-600">
-													<IconCheck className="mr-1 h-3 w-3" />
+													<IconCheck className="mr-1 size-3" />
 													Verified
 												</Badge>
 											) : (
 												<Badge variant="destructive">
-													<IconX className="mr-1 h-3 w-3" />
+													<IconX className="mr-1 size-3" />
 													Pending Verification
 												</Badge>
 											)}
@@ -211,7 +211,7 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 											size="sm"
 											onClick={() => setVerificationDialog({ isOpen: true, domain })}
 										>
-											<IconRefresh className="mr-1 h-4 w-4" />
+											<IconRefresh className="mr-1 size-4" />
 											Verify
 										</Button>
 									)}
@@ -221,7 +221,7 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 										size="sm"
 										onClick={() => setAuthConfigDialog({ isOpen: true, domain })}
 									>
-										<IconSettings className="h-4 w-4" aria-hidden="true" />
+										<IconSettings className="size-4" aria-hidden="true" />
 									</Button>
 									<Button
 										aria-label={`Delete custom domain ${domain.domain}`}
@@ -229,7 +229,7 @@ export function DomainManagement({ initialDomains, organizationId }: DomainManag
 										size="sm"
 										onClick={() => setDeleteDialog({ isOpen: true, domain })}
 									>
-										<IconTrash className="h-4 w-4 text-destructive" aria-hidden="true" />
+										<IconTrash className="size-4 text-destructive" aria-hidden="true" />
 									</Button>
 								</div>
 							</div>

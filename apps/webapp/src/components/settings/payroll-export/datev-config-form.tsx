@@ -110,14 +110,14 @@ export function DatevConfigForm({
 							alt="DATEV Logo"
 							width={48}
 							height={48}
-							className="h-12 w-12 dark:invert"
+							className="size-12 dark:invert"
 						/>
 						<div>
 							<CardTitle className="flex items-center gap-2">
 								{t("settings.payrollExport.datev.title", "DATEV Master Data")}
 								{initialConfig && (
 									<Badge variant="secondary" className="gap-1">
-										<IconCheck className="h-3 w-3" aria-hidden="true" />
+										<IconCheck className="size-3" aria-hidden="true" />
 										{t("settings.payrollExport.datev.configured", "Configured")}
 									</Badge>
 								)}
@@ -156,7 +156,7 @@ export function DatevConfigForm({
 										<TooltipProvider>
 											<Tooltip>
 												<TooltipTrigger asChild>
-													<IconInfoCircle className="h-4 w-4 text-muted-foreground" />
+													<IconInfoCircle className="size-4 text-muted-foreground" />
 												</TooltipTrigger>
 												<TooltipContent>
 													<p>
@@ -203,7 +203,7 @@ export function DatevConfigForm({
 										<TooltipProvider>
 											<Tooltip>
 												<TooltipTrigger asChild>
-													<IconInfoCircle className="h-4 w-4 text-muted-foreground" />
+													<IconInfoCircle className="size-4 text-muted-foreground" />
 												</TooltipTrigger>
 												<TooltipContent>
 													<p>
@@ -249,7 +249,7 @@ export function DatevConfigForm({
 									<TooltipProvider>
 										<Tooltip>
 											<TooltipTrigger asChild>
-												<IconInfoCircle className="h-4 w-4 text-muted-foreground" />
+												<IconInfoCircle className="size-4 text-muted-foreground" />
 											</TooltipTrigger>
 											<TooltipContent className="max-w-xs">
 												<p>
@@ -320,7 +320,7 @@ export function DatevConfigForm({
 					<Button type="submit" disabled={isPending || !isValid}>
 						{isPending ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("common.saving", "Saving…")}
 							</>
 						) : (

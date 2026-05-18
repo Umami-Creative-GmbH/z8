@@ -2,7 +2,7 @@
 
 import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { Key } from "lucide-react";
+import { IconKey } from '@tabler/icons-react';
 import { useSearchParams } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
@@ -224,7 +224,7 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button type="button" variant="outline" onClick={onPasskeyLogin} disabled={isLoading}>
-								<Key className="h-4 w-4" />
+								<IconKey className="size-4" />
 								<span className="sr-only">
 									{t("auth.login-with.passkey", "Login with Passkey")}
 								</span>
@@ -249,7 +249,7 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 										onClick={() => onSocialLogin(provider.id)}
 										disabled={isLoading}
 									>
-										<provider.icon className="h-4 w-4" />
+										<provider.icon className="size-4" />
 										<span className="sr-only">
 											{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
 										</span>
@@ -743,7 +743,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			{/* SSO Button - show prominently when SSO is the primary method */}
 			{showSSO && !requires2FA && (
 				<Button type="button" className="w-full" onClick={handleSSOLogin} disabled={isLoading}>
-					<IconFingerprint className="mr-2 h-4 w-4" />
+					<IconFingerprint className="mr-2 size-4" />
 					{t("auth.login-with-sso", "Sign in with SSO")}
 				</Button>
 			)}
@@ -835,7 +835,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							onError={handleTurnstileError}
 							onExpire={handleTurnstileExpire}
 							onTimeout={handleTurnstileTimeout}
-							className="!absolute !overflow-hidden !h-0 !w-0"
+							className="!absolute !overflow-hidden !size-0"
 						/>
 					)}
 

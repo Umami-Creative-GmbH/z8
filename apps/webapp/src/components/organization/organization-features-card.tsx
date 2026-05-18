@@ -171,7 +171,7 @@ export function OrganizationFeaturesCard({
 				<div className="flex items-center justify-between">
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconCalendarTime className="h-5 w-5 text-primary" />
+							<IconCalendarTime className="size-5 text-primary" />
 						</div>
 						<div className="space-y-1">
 							<Label
@@ -189,7 +189,7 @@ export function OrganizationFeaturesCard({
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="shifts-toggle"
 							checked={isShiftsEnabled}
@@ -204,7 +204,7 @@ export function OrganizationFeaturesCard({
 				<div className="flex items-center justify-between">
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconBriefcase className="h-5 w-5 text-primary" />
+							<IconBriefcase className="size-5 text-primary" />
 						</div>
 						<div className="space-y-1">
 							<Label
@@ -222,7 +222,7 @@ export function OrganizationFeaturesCard({
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="projects-toggle"
 							checked={isProjectsEnabled}
@@ -237,7 +237,7 @@ export function OrganizationFeaturesCard({
 				<div className="flex items-center justify-between">
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconPercentage className="h-5 w-5 text-primary" />
+							<IconPercentage className="size-5 text-primary" />
 						</div>
 						<div className="space-y-1">
 							<Label
@@ -255,7 +255,7 @@ export function OrganizationFeaturesCard({
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="surcharges-toggle"
 							checked={isSurchargesEnabled}
@@ -270,7 +270,7 @@ export function OrganizationFeaturesCard({
 				<div className="flex items-center justify-between">
 					<div className="flex items-start gap-3">
 						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-							<IconDatabase className="h-5 w-5 text-primary" />
+							<IconDatabase className="size-5 text-primary" />
 						</div>
 						<div className="space-y-1">
 							<Label
@@ -288,7 +288,7 @@ export function OrganizationFeaturesCard({
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						{isPending && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						<Switch
 							id="demo-data-toggle"
 							checked={isDemoDataEnabled}

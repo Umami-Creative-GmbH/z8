@@ -46,7 +46,7 @@ export function ApprovalPolicyPreview() {
 							</div>
 							{index < previewStages.length - 1 ? (
 								<IconArrowRight
-									className="hidden h-4 w-4 text-muted-foreground sm:block"
+									className="hidden size-4 text-muted-foreground sm:block"
 									aria-hidden="true"
 								/>
 							) : null}

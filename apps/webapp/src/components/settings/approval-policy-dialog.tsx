@@ -358,7 +358,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 												])
 											}
 										>
-											<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+											<IconPlus className="mr-2 size-4" aria-hidden="true" />
 											{t("settings.approvalPolicies.addStage", "Add stage")}
 										</Button>
 									</div>
@@ -395,7 +395,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 																"Remove stage",
 															)}
 														>
-															<IconTrash className="h-4 w-4" aria-hidden="true" />
+															<IconTrash className="size-4" aria-hidden="true" />
 														</Button>
 													</div>
 													<div className="grid gap-3 sm:grid-cols-2">
@@ -500,7 +500,7 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 						</Button>
 						<Button type="submit" disabled={form.state.isSubmitting}>
 							{form.state.isSubmitting && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
 							{t("common.create", "Create")}
 						</Button>

@@ -71,7 +71,7 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 
 				{hasChanged && (
 					<Button onClick={handleSave} disabled={isLoading} className="w-full">
-						{isLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+						{isLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 						{t("settings.timezone.save", "Save Timezone")}
 					</Button>
 				)}

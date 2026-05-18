@@ -51,7 +51,7 @@ export function TravelExpenseManagement({
 					</p>
 				</div>
 				<Button onClick={() => setIsDialogOpen(true)}>
-					<IconPlus className="mr-2 h-4 w-4" />
+					<IconPlus className="mr-2 size-4" />
 					New Claim
 				</Button>
 			</div>

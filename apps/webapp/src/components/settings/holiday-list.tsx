@@ -216,7 +216,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 					<div className="flex items-center gap-2">
 						{row.original.category.color && (
 							<div
-								className="h-3 w-3 rounded-full border"
+								className="size-3 rounded-full border"
 								style={{ backgroundColor: row.original.category.color }}
 							/>
 						)}
@@ -258,7 +258,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 									onClick={() => onEditClick(row.original)}
 									disabled={deleteMutation.isPending}
 								>
-									<IconPencil className="h-4 w-4" />
+									<IconPencil className="size-4" />
 								</Button>
 								<Button
 									variant="ghost"
@@ -267,9 +267,9 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 									disabled={deleteMutation.isPending}
 								>
 									{deleteMutation.isPending && holidayToDelete?.id === row.original.id ? (
-										<IconLoader2 className="h-4 w-4 animate-spin" />
+										<IconLoader2 className="size-4 animate-spin" />
 									) : (
-										<IconTrash className="h-4 w-4" />
+										<IconTrash className="size-4" />
 									)}
 								</Button>
 							</div>
@@ -291,7 +291,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
 					{canManage ? (
 						<Button size="sm" onClick={onAddClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.holidays.add", "Add Holiday")}
 						</Button>
 					) : null}
@@ -309,7 +309,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 					<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
 					{canManage ? (
 						<Button size="sm" onClick={onAddClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.holidays.add", "Add Holiday")}
 						</Button>
 					) : null}
@@ -351,9 +351,9 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 								disabled={bulkDeleteMutation.isPending}
 							>
 								{bulkDeleteMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 								) : (
-									<IconTrash className="mr-2 h-4 w-4" />
+									<IconTrash className="mr-2 size-4" />
 								)}
 								{t("settings.holidays.deleteSelected", "Delete ({count})", {
 									count: selectedCount,
@@ -364,7 +364,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 					actions={
 						canManage ? (
 							<Button size="sm" onClick={onAddClick}>
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.holidays.add", "Add Holiday")}
 							</Button>
 						) : null
@@ -437,7 +437,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 							disabled={deleteMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -468,7 +468,7 @@ export function HolidayList({ organizationId, canManage, onAddClick, onEditClick
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{bulkDeleteMutation.isPending && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 							)}
 							{t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", {
 								count: selectedCount,

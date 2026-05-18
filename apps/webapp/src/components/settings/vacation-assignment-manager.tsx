@@ -239,12 +239,12 @@ export function VacationAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconBuilding className="h-5 w-5 text-muted-foreground" />
+							<IconBuilding className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base flex items-center gap-2">
 									{t("settings.vacation.assignments.companyDefault", "Company Default")}
 									<Badge variant="default" className="bg-primary">
-										<IconStar className="mr-1 h-3 w-3" />
+										<IconStar className="mr-1 size-3" />
 										{t("settings.vacation.required", "Required")}
 									</Badge>
 								</CardTitle>
@@ -260,7 +260,7 @@ export function VacationAssignmentManager({
 					<CardContent className="space-y-4">
 						{!companyDefaults?.current ? (
 							<div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/50 bg-destructive/10">
-								<IconAlertTriangle className="h-5 w-5 text-destructive" />
+								<IconAlertTriangle className="size-5 text-destructive" />
 								<div>
 									<p className="font-medium text-destructive">
 										{t("settings.vacation.noDefaultPolicy", "No Company Default Policy")}
@@ -287,7 +287,7 @@ export function VacationAssignmentManager({
 										</span>
 									</div>
 									<div className="flex items-center gap-3">
-										<IconCalendarDollar className="h-4 w-4 text-primary" />
+										<IconCalendarDollar className="size-4 text-primary" />
 										<div>
 											<span className="font-medium">{companyDefaults.current.name}</span>
 											<span className="text-sm text-muted-foreground ml-2">
@@ -304,14 +304,14 @@ export function VacationAssignmentManager({
 											<Badge variant="secondary" className="text-xs">
 												{t("settings.vacation.next", "Next")}
 											</Badge>
-											<IconChevronRight className="h-3 w-3" />
+											<IconChevronRight className="size-3" />
 											<span>
 												{t("settings.vacation.startingOn", "starting on")}{" "}
 												{formatDate(companyDefaults.next.startDate)}
 											</span>
 										</div>
 										<div className="flex items-center gap-3">
-											<IconCalendarDollar className="h-4 w-4 text-muted-foreground" />
+											<IconCalendarDollar className="size-4 text-muted-foreground" />
 											<div>
 												<span className="font-medium">{companyDefaults.next.name}</span>
 												<span className="text-sm text-muted-foreground ml-2">
@@ -331,7 +331,7 @@ export function VacationAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUsers className="h-5 w-5 text-muted-foreground" />
+							<IconUsers className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base">
 									{t("settings.vacation.assignments.teamLevel", "Team Overrides")}
@@ -354,7 +354,7 @@ export function VacationAssignmentManager({
 						{canManageTeamAssignments ? (
 							<div className="flex justify-end mb-4">
 								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.vacation.assignments.assignTeam", "Assign to Team")}
 								</Button>
 							</div>
@@ -368,17 +368,17 @@ export function VacationAssignmentManager({
 									>
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-3">
-												<IconUsers className="h-4 w-4 text-muted-foreground" />
+												<IconUsers className="size-4 text-muted-foreground" />
 												<span className="font-medium">{assignment.team?.name}</span>
 											</div>
 									{canManageTeamAssignments ? (
 										<Button
 											variant="ghost"
 											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											className="size-8 text-muted-foreground hover:text-destructive"
 											onClick={() => handleDeleteClick(assignment)}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 										</Button>
 									) : null}
 								</div>
@@ -431,7 +431,7 @@ export function VacationAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUser className="h-5 w-5 text-muted-foreground" />
+							<IconUser className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base">
 									{t("settings.vacation.assignments.employeeLevel", "Employee Overrides")}
@@ -454,7 +454,7 @@ export function VacationAssignmentManager({
 						{canManageEmployeeAssignments ? (
 							<div className="flex justify-end mb-4">
 								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.vacation.assignments.assignEmployee", "Assign to Employee")}
 								</Button>
 							</div>
@@ -468,7 +468,7 @@ export function VacationAssignmentManager({
 									>
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-3">
-												<IconUser className="h-4 w-4 text-muted-foreground" />
+												<IconUser className="size-4 text-muted-foreground" />
 												<span className="font-medium">
 													{assignment.employee?.firstName} {assignment.employee?.lastName}
 												</span>
@@ -477,10 +477,10 @@ export function VacationAssignmentManager({
 										<Button
 											variant="ghost"
 											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											className="size-8 text-muted-foreground hover:text-destructive"
 											onClick={() => handleDeleteClick(assignment)}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 										</Button>
 									) : null}
 								</div>
@@ -564,7 +564,7 @@ export function VacationAssignmentManager({
 						>
 							{deleteMutation.isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.removing", "Removing...")}
 								</>
 							) : (

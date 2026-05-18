@@ -93,7 +93,7 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 		return (
 			<div className="space-y-6">
 				<Alert>
-					<IconLock className="h-4 w-4" aria-hidden="true" />
+					<IconLock className="size-4" aria-hidden="true" />
 					<AlertDescription>
 						{t(
 							"settings.calendar.readOnlyManagerNotice",
@@ -121,7 +121,7 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<IconCalendarShare className="h-5 w-5" aria-hidden="true" />
+						<IconCalendarShare className="size-5" aria-hidden="true" />
 						{t("settings.calendar.providers.title", "Calendar Providers")}
 					</CardTitle>
 					<CardDescription>
@@ -135,8 +135,8 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 					{/* Google Calendar */}
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-								<IconBrandGoogle className="h-5 w-5 text-red-500" aria-hidden="true" />
+							<div className="flex size-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+								<IconBrandGoogle className="size-5 text-red-500" aria-hidden="true" />
 							</div>
 							<div>
 								<div className="flex items-center gap-2">
@@ -173,8 +173,8 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 					{/* Microsoft 365 */}
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-								<IconBrandWindows className="h-5 w-5 text-blue-500" aria-hidden="true" />
+							<div className="flex size-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+								<IconBrandWindows className="size-5 text-blue-500" aria-hidden="true" />
 							</div>
 							<div>
 								<div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 
 					{!manageableSettings.googleAvailable && !manageableSettings.microsoft365Available && (
 						<Alert>
-							<IconInfoCircle className="h-4 w-4" aria-hidden="true" />
+							<IconInfoCircle className="size-4" aria-hidden="true" />
 							<AlertDescription>
 								{t(
 									"settings.calendar.noProvidersConfigured",
@@ -226,7 +226,7 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<IconCalendarShare className="h-5 w-5" aria-hidden="true" />
+						<IconCalendarShare className="size-5" aria-hidden="true" />
 						{t("settings.calendar.icsFeeds.title", "ICS Feeds")}
 					</CardTitle>
 					<CardDescription>
@@ -240,8 +240,8 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 					{/* User ICS Feeds */}
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-								<IconCalendarShare className="h-5 w-5 text-purple-500" aria-hidden="true" />
+							<div className="flex size-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+								<IconCalendarShare className="size-5 text-purple-500" aria-hidden="true" />
 							</div>
 							<div>
 								<span id="personal-ics-label" className="font-medium">
@@ -271,8 +271,8 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 					{/* Team ICS Feeds */}
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-								<IconUsers className="h-5 w-5 text-green-500" aria-hidden="true" />
+							<div className="flex size-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+								<IconUsers className="size-5 text-green-500" aria-hidden="true" />
 							</div>
 							<div>
 								<span id="team-ics-label" className="font-medium">
@@ -437,7 +437,7 @@ export function CalendarSettingsForm({ initialSettings, canManage }: CalendarSet
 			{/* Save Button */}
 			<div className="flex justify-end">
 				<Button type="submit" disabled={controlsDisabled || !isDirty}>
-					{loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+					{loading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
 					{t("common.saveChanges", "Save Changes")}
 				</Button>
 			</div>

@@ -1,4 +1,4 @@
-import { LogIn, ExternalLink } from "lucide-react";
+import { LogIn, ExternalLink } from "@tabler/icons-react";
 import { useSettings } from "../hooks/useSettings";
 
 export function LoginRequired() {

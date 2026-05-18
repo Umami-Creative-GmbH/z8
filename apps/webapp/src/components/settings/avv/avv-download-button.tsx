@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { IconFileText } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { exportAvvToPDF, generateAvvFilename } from "@/lib/avv/avv-pdf-generator";
@@ -28,7 +28,7 @@ export function AvvDownloadButton({ organizationName }: AvvDownloadButtonProps) 
 
 		if (!downloadResult.ok) {
 			console.error("AVV download failed:", downloadResult.error);
-			toast.error("Download fehlgeschlagen", {
+			toast.error("IconDownload fehlgeschlagen", {
 				description:
 					downloadResult.error instanceof Error
 						? downloadResult.error.message
@@ -57,7 +57,7 @@ export function AvvDownloadButton({ organizationName }: AvvDownloadButtonProps) 
 
 	return (
 		<Button onClick={handleDownload} disabled={loading} size="lg">
-			<FileText className="mr-2 h-4 w-4" aria-hidden="true" />
+			<IconFileText className="mr-2 size-4" aria-hidden="true" />
 			{loading ? "Generiere PDF\u2026" : "AVV als PDF herunterladen"}
 		</Button>
 	);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { AlertTriangle, Clock, Info, Shield, XCircle } from "lucide-react";
+import { IconAlertTriangle, IconClock, IconInfoCircle, IconShield, IconCircleX } from "@tabler/icons-react";
 import type { ComplianceAlert } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
@@ -16,25 +16,25 @@ interface ComplianceAlertBannerProps {
 
 const severityConfig = {
 	info: {
-		icon: Info,
+		icon: IconInfoCircle,
 		className:
 			"border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100",
 		iconClassName: "text-blue-600 dark:text-blue-400",
 	},
 	warning: {
-		icon: AlertTriangle,
+		icon: IconAlertTriangle,
 		className:
 			"border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100",
 		iconClassName: "text-amber-600 dark:text-amber-400",
 	},
 	critical: {
-		icon: AlertTriangle,
+		icon: IconAlertTriangle,
 		className:
 			"border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-100",
 		iconClassName: "text-orange-600 dark:text-orange-400",
 	},
 	violation: {
-		icon: XCircle,
+		icon: IconCircleX,
 		className:
 			"border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100",
 		iconClassName: "text-red-600 dark:text-red-400",
@@ -85,7 +85,7 @@ export function ComplianceAlertBanner({
 					className,
 				)}
 			>
-				<Icon className={cn("h-4 w-4 shrink-0", config.iconClassName)} aria-hidden="true" />
+				<Icon className={cn("size-4 shrink-0", config.iconClassName)} aria-hidden="true" />
 				<span className="flex-1 truncate">{alert.message}</span>
 				{sortedAlerts.length > 1 && (
 					<span className="shrink-0 text-xs opacity-70">
@@ -104,7 +104,7 @@ export function ComplianceAlertBanner({
 
 				return (
 					<Alert key={`${alert.alertType}-${index}`} className={cn("py-3", config.className)}>
-						<Icon className={cn("h-4 w-4", config.iconClassName)} aria-hidden="true" />
+						<Icon className={cn("size-4", config.iconClassName)} aria-hidden="true" />
 						<AlertTitle className="flex items-center gap-2">
 							{alertTypeLabels[alert.alertType] || alert.alertType}
 							{alert.currentMinutes !== undefined && alert.thresholdMinutes !== undefined && (
@@ -123,7 +123,7 @@ export function ComplianceAlertBanner({
 									className="shrink-0"
 									onClick={() => onRequestException(alert.alertType)}
 								>
-									<Shield className="mr-1.5 h-3 w-3" aria-hidden="true" />
+									<IconShield className="mr-1.5 size-3" aria-hidden="true" />
 									{t("compliance:compliance.requestException", "Request Exception")}
 								</Button>
 							)}
@@ -163,7 +163,7 @@ export function RestPeriodBlocker({
 
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
-			<Clock className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
+			<IconClock className="size-4 text-red-600 dark:text-red-400" aria-hidden="true" />
 			<AlertTitle>
 				{t("compliance:compliance.restPeriodRequired", "Rest Period Required")}
 			</AlertTitle>
@@ -177,7 +177,7 @@ export function RestPeriodBlocker({
 				</p>
 				{hasApprovedExceptions ? (
 					<p className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
-						<Shield className="h-4 w-4" aria-hidden="true" />
+						<IconShield className="size-4" aria-hidden="true" />
 						{t(
 							"compliance:compliance.hasApprovedException",
 							"You have an approved exception. You may proceed.",
@@ -190,7 +190,7 @@ export function RestPeriodBlocker({
 						className="border-red-300 hover:bg-red-100 dark:border-red-700 dark:hover:bg-red-900"
 						onClick={onRequestException}
 					>
-						<Shield className="mr-1.5 h-3 w-3" aria-hidden="true" />
+						<IconShield className="mr-1.5 size-3" aria-hidden="true" />
 						{t("compliance:compliance.requestException", "Request Exception")}
 					</Button>
 				) : null}

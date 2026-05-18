@@ -33,7 +33,7 @@ export function ApprovalStatusBanner({
 	if (status === "pending") {
 		return (
 			<Alert className="border-amber-500/50 bg-amber-500/10">
-				<IconClock className="h-4 w-4 text-amber-500" />
+				<IconClock className="size-4 text-amber-500" />
 				<AlertTitle className="text-amber-600 dark:text-amber-400">
 					{t("calendar.details.pendingApproval", "Pending Approval")}
 				</AlertTitle>
@@ -50,7 +50,7 @@ export function ApprovalStatusBanner({
 	if (status === "rejected") {
 		return (
 			<Alert variant="destructive">
-				<IconXboxX className="h-4 w-4" />
+				<IconXboxX className="size-4" />
 				<AlertTitle>{t("calendar.details.rejected", "Rejected")}</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -78,7 +78,7 @@ export function WorkPeriodHeader({
 		<>
 			<div className="flex items-center gap-2">
 				<div
-					className={`h-3 w-3 rounded-full ${status === "pending" ? "opacity-60" : ""}`}
+					className={`size-3 rounded-full ${status === "pending" ? "opacity-60" : ""}`}
 					style={{ backgroundColor: event.color }}
 				/>
 				<span className="font-semibold">{t("calendar.edit.title", "Work Period")}</span>

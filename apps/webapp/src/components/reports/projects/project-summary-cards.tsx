@@ -42,7 +42,7 @@ export function ProjectSummaryCards({
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.totalHours", "Total Hours")}
 						</CardTitle>
-						<IconClock className="h-4 w-4 text-muted-foreground" />
+						<IconClock className="size-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{summary.totalHours.toFixed(1)}h</div>
@@ -60,7 +60,7 @@ export function ProjectSummaryCards({
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.teamMembers", "Team Members")}
 						</CardTitle>
-						<IconUsers className="h-4 w-4 text-muted-foreground" />
+						<IconUsers className="size-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{summary.uniqueEmployees}</div>
@@ -76,7 +76,7 @@ export function ProjectSummaryCards({
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.budgetUsed", "Budget Used")}
 						</CardTitle>
-						<IconBriefcase className="h-4 w-4 text-muted-foreground" />
+						<IconBriefcase className="size-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
@@ -101,7 +101,7 @@ export function ProjectSummaryCards({
 						<CardTitle className="text-sm font-medium">
 							{t("reports.projects.cards.dailyAverage", "Daily Average")}
 						</CardTitle>
-						<IconClock className="h-4 w-4 text-muted-foreground" />
+						<IconClock className="size-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{summary.averageHoursPerDay.toFixed(1)}h</div>
@@ -122,7 +122,7 @@ export function ProjectSummaryCards({
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.totalProjects", "Total Projects")}
 					</CardTitle>
-					<IconBriefcase className="h-4 w-4 text-muted-foreground" />
+					<IconBriefcase className="size-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{data.totalProjects}</div>
@@ -140,7 +140,7 @@ export function ProjectSummaryCards({
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.totalHours", "Total Hours")}
 					</CardTitle>
-					<IconClock className="h-4 w-4 text-muted-foreground" />
+					<IconClock className="size-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{data.totalHours.toFixed(1)}h</div>
@@ -156,7 +156,7 @@ export function ProjectSummaryCards({
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.activeProjects", "Active Projects")}
 					</CardTitle>
-					<IconBriefcase className="h-4 w-4 text-muted-foreground" />
+					<IconBriefcase className="size-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold">{data.activeProjects}</div>
@@ -172,7 +172,7 @@ export function ProjectSummaryCards({
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.overBudget", "Over Budget")}
 					</CardTitle>
-					<IconAlertTriangle className="h-4 w-4 text-muted-foreground" />
+					<IconAlertTriangle className="size-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold text-amber-600">{data.projectsOverBudget}</div>
@@ -188,7 +188,7 @@ export function ProjectSummaryCards({
 					<CardTitle className="text-sm font-medium">
 						{t("reports.projects.cards.overdue", "Overdue")}
 					</CardTitle>
-					<IconAlertTriangle className="h-4 w-4 text-muted-foreground" />
+					<IconAlertTriangle className="size-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
 					<div className="text-2xl font-bold text-red-600">{data.projectsOverdue}</div>

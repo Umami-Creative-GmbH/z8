@@ -490,7 +490,7 @@ export function HolidayImportDialog({
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconDownload className="h-5 w-5" />
+						<IconDownload className="size-5" />
 						{t("settings.holidays.import.title", "Import Holiday Preset")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -506,7 +506,7 @@ export function HolidayImportDialog({
 				<div className="flex items-center justify-center gap-2">
 					<div
 						className={cn(
-							"flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+							"flex size-8 items-center justify-center rounded-full text-sm font-medium",
 							step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
 						)}
 					>
@@ -515,7 +515,7 @@ export function HolidayImportDialog({
 					<div className={cn("h-0.5 w-12", step >= 2 ? "bg-primary" : "bg-muted")} />
 					<div
 						className={cn(
-							"flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+							"flex size-8 items-center justify-center rounded-full text-sm font-medium",
 							step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
 						)}
 					>
@@ -524,7 +524,7 @@ export function HolidayImportDialog({
 					<div className={cn("h-0.5 w-12", step >= 3 ? "bg-primary" : "bg-muted")} />
 					<div
 						className={cn(
-							"flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
+							"flex size-8 items-center justify-center rounded-full text-sm font-medium",
 							step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
 						)}
 					>
@@ -726,12 +726,12 @@ export function HolidayImportDialog({
 												<TableCell>
 													{holiday.isDuplicate ? (
 														<span className="flex items-center gap-1 text-amber-600">
-															<IconAlertTriangle className="h-4 w-4" />
+															<IconAlertTriangle className="size-4" />
 															{t("settings.holidays.import.duplicate", "Exists")}
 														</span>
 													) : (
 														<span className="flex items-center gap-1 text-green-600">
-															<IconCheck className="h-4 w-4" />
+															<IconCheck className="size-4" />
 															{t("settings.holidays.import.new", "New")}
 														</span>
 													)}
@@ -834,7 +834,7 @@ export function HolidayImportDialog({
 							onClick={() => setStep((prev) => prev - 1)}
 							disabled={previewLoading || importLoading}
 						>
-							<IconChevronLeft className="mr-1 h-4 w-4" />
+							<IconChevronLeft className="mr-1 size-4" />
 							{t("common.back", "Back")}
 						</Button>
 					)}
@@ -858,22 +858,22 @@ export function HolidayImportDialog({
 								regionsLoading
 							}
 						>
-							{previewLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{previewLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.next", "Next")}
-							<IconChevronRight className="ml-1 h-4 w-4" />
+							<IconChevronRight className="ml-1 size-4" />
 						</Button>
 					)}
 
 					{step === 2 && (
 						<Button onClick={() => setStep(3)} disabled={selectedHolidays.size === 0}>
 							{t("common.next", "Next")}
-							<IconChevronRight className="ml-1 h-4 w-4" />
+							<IconChevronRight className="ml-1 size-4" />
 						</Button>
 					)}
 
 					{step === 3 && (
 						<Button onClick={handleImport} disabled={importLoading || !presetName.trim()}>
-							{importLoading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{importLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("settings.holidays.import.createPresetButton", "Create Preset")}
 						</Button>
 					)}

@@ -234,7 +234,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 								onClick={() => setBulkRejectDialogOpen(true)}
 								disabled={bulkRejectMutation.isPending}
 							>
-								<IconUserX className="mr-2 h-4 w-4" />
+								<IconUserX className="mr-2 size-4" />
 								{t("settings.pendingMembers.rejectSelected", "Reject Selected")} (
 								{selectedMembers.size})
 							</Button>
@@ -244,9 +244,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 								disabled={bulkApproveMutation.isPending}
 							>
 								{bulkApproveMutation.isPending ? (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 								) : (
-									<IconUserCheck className="mr-2 h-4 w-4" />
+									<IconUserCheck className="mr-2 size-4" />
 								)}
 								{t("settings.pendingMembers.approveSelected", "Approve Selected")} (
 								{selectedMembers.size})
@@ -258,7 +258,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 			<CardContent>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</div>
 				) : (
 					<Table>
@@ -357,9 +357,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 														)}
 													>
 														{approveMutation.isPending ? (
-															<IconLoader2 className="h-4 w-4 animate-spin" />
+															<IconLoader2 className="size-4 animate-spin" />
 														) : (
-															<IconCheck className="h-4 w-4" />
+															<IconCheck className="size-4" />
 														)}
 													</Button>
 												</TooltipTrigger>
@@ -378,7 +378,7 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 															name: member.user?.name || "member",
 														})}
 													>
-														<IconX className="h-4 w-4" />
+														<IconX className="size-4" />
 													</Button>
 												</TooltipTrigger>
 												<TooltipContent>
@@ -424,9 +424,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{rejectMutation.isPending ? (
-								<IconLoader2 className="h-4 w-4 animate-spin mr-2" />
+								<IconLoader2 className="size-4 animate-spin mr-2" />
 							) : (
-								<IconUserX className="h-4 w-4 mr-2" />
+								<IconUserX className="size-4 mr-2" />
 							)}
 							{t("settings.pendingMembers.reject", "Reject")}
 						</AlertDialogAction>
@@ -456,9 +456,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{bulkRejectMutation.isPending ? (
-								<IconLoader2 className="h-4 w-4 animate-spin mr-2" />
+								<IconLoader2 className="size-4 animate-spin mr-2" />
 							) : (
-								<IconUserX className="h-4 w-4 mr-2" />
+								<IconUserX className="size-4 mr-2" />
 							)}
 							{t("settings.pendingMembers.rejectSelected", "Reject Selected")}
 						</AlertDialogAction>

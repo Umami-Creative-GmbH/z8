@@ -173,7 +173,7 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 						</div>
 						{canManage ? (
 							<Button onClick={handleCreateClick}>
-								<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconPlus className="mr-2 size-4" aria-hidden="true" />
 								{t("settings.workCategories.addCategory", "Add Category")}
 							</Button>
 						) : null}
@@ -213,13 +213,13 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 										<TableCell>
 											{category.color ? (
 												<div
-													className="h-6 w-6 rounded-full border"
+													className="size-6 rounded-full border"
 													style={{ backgroundColor: category.color }}
 													aria-hidden="true"
 												/>
 											) : (
 												<div
-													className="h-6 w-6 rounded-full border border-dashed bg-muted"
+													className="size-6 rounded-full border border-dashed bg-muted"
 													aria-hidden="true"
 												/>
 											)}
@@ -256,11 +256,11 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 															<Button
 																variant="ghost"
 																size="icon"
-																className="h-8 w-8"
+																className="size-8"
 																onClick={() => handleEditClick(category)}
 																aria-label={t("common.edit", "Edit")}
 															>
-																<IconEdit className="h-4 w-4" aria-hidden="true" />
+																<IconEdit className="size-4" aria-hidden="true" />
 															</Button>
 														</TooltipTrigger>
 														<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
@@ -272,7 +272,7 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 															<Button
 																variant="ghost"
 																size="icon"
-																className="h-8 w-8 text-muted-foreground hover:text-destructive"
+																className="size-8 text-muted-foreground hover:text-destructive"
 																onClick={() => handleDeleteClick(category)}
 																disabled={deleteMutation.isPending || category.usedInSetsCount > 0}
 																aria-label={
@@ -284,7 +284,7 @@ export function WorkCategoryTable({ organizationId, canManage }: WorkCategoryTab
 																		: t("common.delete", "Delete")
 																}
 															>
-																<IconTrash className="h-4 w-4" aria-hidden="true" />
+																<IconTrash className="size-4" aria-hidden="true" />
 															</Button>
 														</TooltipTrigger>
 														<TooltipContent>

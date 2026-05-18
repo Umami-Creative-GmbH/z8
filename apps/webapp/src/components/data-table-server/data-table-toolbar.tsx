@@ -91,7 +91,7 @@ export function DataTableToolbar({
 			<div className="flex flex-1 items-center gap-2">
 				{onSearchChange && (
 					<div className="relative w-full max-w-sm">
-						<IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<IconSearch className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
 						<Input
 							placeholder={searchPlaceholder ?? t("table.searchPlaceholder", "Search...")}
 							value={currentSearch}
@@ -102,12 +102,12 @@ export function DataTableToolbar({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
+								className="absolute right-0 top-0 size-9 hover:bg-transparent"
 								onClick={() => {
 									onSearchChange("");
 								}}
 							>
-								<IconX className="h-4 w-4" />
+								<IconX className="size-4" />
 								<span className="sr-only">{t("common.clearSearch", "Clear search")}</span>
 							</Button>
 						)}
@@ -127,7 +127,7 @@ export function DataTableToolbar({
 							{filter.options.map((option) => (
 								<SelectItem key={option.value} value={option.value}>
 									<div className="flex items-center gap-2">
-										{option.icon && <option.icon className="h-4 w-4 text-muted-foreground" />}
+										{option.icon && <option.icon className="size-4 text-muted-foreground" />}
 										{option.label}
 									</div>
 								</SelectItem>
@@ -139,7 +139,7 @@ export function DataTableToolbar({
 				{(hasActiveFilters || currentSearch) && (
 					<Button variant="ghost" onClick={clearAllFilters} className="h-9 px-2 lg:px-3">
 						{t("table.clearFilters", "Clear filters")}
-						<IconX className="ml-2 h-4 w-4" />
+						<IconX className="ml-2 size-4" />
 					</Button>
 				)}
 			</div>

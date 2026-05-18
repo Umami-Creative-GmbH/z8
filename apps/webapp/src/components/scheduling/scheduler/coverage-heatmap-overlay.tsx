@@ -38,11 +38,11 @@ function getStatusColor(status: "under" | "met" | "over"): string {
 function getStatusIcon(status: "under" | "met" | "over") {
 	switch (status) {
 		case "under":
-			return <IconAlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+			return <IconAlertTriangle className="size-4 text-red-600 dark:text-red-400" />;
 		case "met":
-			return <IconCheck className="h-4 w-4 text-green-600 dark:text-green-400" />;
+			return <IconCheck className="size-4 text-green-600 dark:text-green-400" />;
 		case "over":
-			return <IconTrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+			return <IconTrendingUp className="size-4 text-blue-600 dark:text-blue-400" />;
 	}
 }
 
@@ -77,12 +77,12 @@ export function CoverageToggleButton({
 						onClick={onToggle}
 						className={cn("relative", hasGaps && !visible && "ring-2 ring-red-500 ring-offset-2")}
 					>
-						<IconTarget className="mr-2 h-4 w-4" />
+						<IconTarget className="mr-2 size-4" />
 						{t("scheduling:scheduling.coverage.toggleLabel", "Coverage")}
 						{hasGaps && (
-							<span className="absolute -right-1 -top-1 flex h-3 w-3">
-								<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-								<span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+							<span className="absolute -right-1 -top-1 flex size-3">
+								<span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75" />
+								<span className="relative inline-flex size-3 rounded-full bg-red-500" />
 							</span>
 						)}
 					</Button>
@@ -261,7 +261,7 @@ export function CoverageSummaryBar({
 
 			{underCount > 0 && (
 				<div className="flex items-center gap-1 text-red-600 dark:text-red-400">
-					<IconAlertTriangle className="h-4 w-4" />
+					<IconAlertTriangle className="size-4" />
 					<span>
 						{t("scheduling:scheduling.coverage.underSlots", "{{count}} understaffed", {
 							count: underCount,
@@ -273,7 +273,7 @@ export function CoverageSummaryBar({
 
 			{metCount > 0 && (
 				<div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-					<IconCheck className="h-4 w-4" />
+					<IconCheck className="size-4" />
 					<span>
 						{t("scheduling:scheduling.coverage.metSlots", "{{count}} adequate", {
 							count: metCount,
@@ -284,7 +284,7 @@ export function CoverageSummaryBar({
 
 			{overCount > 0 && (
 				<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-					<IconTrendingUp className="h-4 w-4" />
+					<IconTrendingUp className="size-4" />
 					<span>
 						{t("scheduling:scheduling.coverage.overSlots", "{{count}} overstaffed", {
 							count: overCount,

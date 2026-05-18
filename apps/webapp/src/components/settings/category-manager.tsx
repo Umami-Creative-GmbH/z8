@@ -155,7 +155,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 					row.original.color ? (
 						<div className="flex items-center gap-2">
 							<div
-								className="h-4 w-4 rounded-full border"
+								className="size-4 rounded-full border"
 								style={{ backgroundColor: row.original.color }}
 							/>
 							<span className="text-sm text-muted-foreground">{row.original.color}</span>
@@ -194,7 +194,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 							onClick={() => onEditClick(row.original)}
 							disabled={deleteMutation.isPending}
 						>
-							<IconPencil className="h-4 w-4" />
+							<IconPencil className="size-4" />
 						</Button>
 						<Button
 							variant="ghost"
@@ -203,9 +203,9 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 							disabled={deleteMutation.isPending}
 						>
 							{deleteMutation.isPending && categoryToDelete?.id === row.original.id ? (
-								<IconLoader2 className="h-4 w-4 animate-spin" />
+								<IconLoader2 className="size-4 animate-spin" />
 							) : (
-								<IconTrash className="h-4 w-4" />
+								<IconTrash className="size-4" />
 							)}
 						</Button>
 					</div>
@@ -220,7 +220,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 			<div className="space-y-4">
 				<div className="flex justify-end">
 					<Button onClick={onAddClick}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 size-4" />
 						{t("settings.holidays.categories.add", "Add Category")}
 					</Button>
 				</div>
@@ -236,7 +236,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 					{t("settings.holidays.categories.loadError", "Failed to load categories")}
 				</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-					<IconRefresh className="mr-2 h-4 w-4" />
+					<IconRefresh className="mr-2 size-4" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -257,14 +257,14 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 						<div className="flex items-center gap-2">
 							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 								{isFetching ? (
-									<IconLoader2 className="h-4 w-4 animate-spin" />
+									<IconLoader2 className="size-4 animate-spin" />
 								) : (
-									<IconRefresh className="h-4 w-4" />
+									<IconRefresh className="size-4" />
 								)}
 								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 							</Button>
 							<Button onClick={onAddClick}>
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.holidays.categories.add", "Add Category")}
 							</Button>
 						</div>
@@ -312,7 +312,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 							disabled={deleteMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

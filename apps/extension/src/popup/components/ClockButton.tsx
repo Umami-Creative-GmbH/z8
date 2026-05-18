@@ -1,4 +1,4 @@
-import { LogIn, LogOut, Loader2 } from "lucide-react";
+import { LogIn, LogOut, Loader2 } from "@tabler/icons-react";
 import { cn } from "@/lib/cn";
 
 interface ClockButtonProps {

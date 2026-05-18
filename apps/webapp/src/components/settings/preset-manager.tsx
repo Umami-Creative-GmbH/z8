@@ -171,7 +171,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 							</CardDescription>
 						</div>
 						<Button onClick={onImportClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.holidays.presets.import", "Import Holidays")}
 						</Button>
 					</div>
@@ -179,7 +179,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 				<CardContent>
 					{presets.length === 0 ? (
 						<div className="text-center py-12 text-muted-foreground">
-							<IconCalendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
+							<IconCalendar className="size-16 mx-auto mb-4 opacity-50" />
 							<h3 className="text-lg font-medium mb-2">
 								{t("settings.holidays.presets.empty", "No presets yet")}
 							</h3>
@@ -190,7 +190,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 								)}
 							</p>
 							<Button onClick={onImportClick} variant="outline">
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.holidays.presets.importFirst", "Import Your First Preset")}
 							</Button>
 						</div>
@@ -206,7 +206,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 											<div className="flex items-center gap-2">
 												{preset.color && (
 													<div
-														className="w-3 h-3 rounded-full flex-shrink-0"
+														className="size-3 rounded-full flex-shrink-0"
 														style={{ backgroundColor: preset.color }}
 													/>
 												)}
@@ -219,7 +219,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 											)}
 											{formatLocation(preset) && (
 												<div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-													<IconMapPin className="h-3 w-3" />
+													<IconMapPin className="size-3" />
 													<span>{formatLocation(preset)}</span>
 												</div>
 											)}
@@ -229,15 +229,15 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-8 w-8"
+													className="size-8"
 													aria-label={t("settings.holidays.presets.actions", "Preset actions")}
 												>
-													<IconDotsVertical className="h-4 w-4" />
+													<IconDotsVertical className="size-4" />
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem onClick={() => onEditClick(preset)}>
-													<IconEdit className="mr-2 h-4 w-4" />
+													<IconEdit className="mr-2 size-4" />
 													{t("common.edit", "Edit")}
 												</DropdownMenuItem>
 												<DropdownMenuSeparator />
@@ -246,7 +246,7 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 													className="text-destructive focus:text-destructive"
 													disabled={preset.assignmentCount > 0}
 												>
-													<IconTrash className="mr-2 h-4 w-4" />
+													<IconTrash className="mr-2 size-4" />
 													{t("common.delete", "Delete")}
 												</DropdownMenuItem>
 											</DropdownMenuContent>
@@ -254,14 +254,14 @@ export function PresetManager({ organizationId, onImportClick, onEditClick }: Pr
 									</div>
 									<div className="flex items-center gap-3 mt-3 text-sm text-muted-foreground">
 										<div className="flex items-center gap-1">
-											<IconCalendar className="h-4 w-4" />
+											<IconCalendar className="size-4" />
 											<span>
 												{preset.holidayCount} {t("settings.holidays.presets.holidays", "holidays")}
 											</span>
 										</div>
 										{preset.assignmentCount > 0 && (
 											<Badge variant="secondary" className="gap-1">
-												<IconUsers className="h-3 w-3" />
+												<IconUsers className="size-3" />
 												{preset.assignmentCount}
 											</Badge>
 										)}

@@ -96,14 +96,14 @@ function InviteCodeMobileCard({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-8 w-8 shrink-0 p-0"
+							className="size-8 shrink-0 p-0"
 							onClick={() => onCopyCode(code.code)}
 							aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
 						>
 							{copiedCode === code.code ? (
-								<IconCheck className="h-4 w-4 text-green-600" aria-hidden="true" />
+								<IconCheck className="size-4 text-green-600" aria-hidden="true" />
 							) : (
-								<IconCopy className="h-4 w-4" aria-hidden="true" />
+								<IconCopy className="size-4" aria-hidden="true" />
 							)}
 						</Button>
 					</div>
@@ -159,7 +159,7 @@ function InviteCodeMobileCard({
 					className="min-w-0 whitespace-normal text-center"
 					onClick={() => onCopyUrl(code.code)}
 				>
-					<IconCopy className="mr-2 h-4 w-4" aria-hidden="true" />
+					<IconCopy className="mr-2 size-4" aria-hidden="true" />
 					{t("settings.inviteCodes.copyUrl", "Copy invite URL")}
 				</Button>
 				<Button
@@ -167,7 +167,7 @@ function InviteCodeMobileCard({
 					className="min-w-0 whitespace-normal text-center"
 					onClick={() => onOpenQr(code)}
 				>
-					<IconQrcode className="mr-2 h-4 w-4" aria-hidden="true" />
+					<IconQrcode className="mr-2 size-4" aria-hidden="true" />
 					{t("settings.inviteCodes.qrCode", "QR Code")}
 				</Button>
 			</div>
@@ -271,7 +271,7 @@ export function InviteCodeManagement({
 						</CardDescription>
 					</div>
 					<Button onClick={() => setCreateDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
-						<IconPlus className="h-4 w-4 sm:mr-2" />
+						<IconPlus className="size-4 sm:mr-2" />
 						<span className="sr-only sm:not-sr-only">
 							{t("settings.inviteCodes.createCode", "Create Code")}
 						</span>
@@ -281,7 +281,7 @@ export function InviteCodeManagement({
 			<CardContent>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</div>
 				) : inviteCodes.length === 0 ? (
 					<div className="text-center py-8 text-muted-foreground">
@@ -315,14 +315,14 @@ export function InviteCodeManagement({
 															<Button
 																variant="ghost"
 																size="sm"
-																className="h-6 w-6 p-0"
+																className="size-6 p-0"
 																onClick={() => handleCopyCodeOnly(code.code)}
 																aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
 															>
 																{copiedCode === code.code ? (
-																	<IconCheck className="h-4 w-4 text-green-600" />
+																	<IconCheck className="size-4 text-green-600" />
 																) : (
-																	<IconCopy className="h-4 w-4" />
+																	<IconCopy className="size-4" />
 																)}
 															</Button>
 														</TooltipTrigger>
@@ -366,7 +366,7 @@ export function InviteCodeManagement({
 																onClick={() => handleCopyCode(code.code)}
 																aria-label={t("settings.inviteCodes.copyUrl", "Copy invite URL")}
 															>
-																<IconCopy className="h-4 w-4" />
+																<IconCopy className="size-4" />
 															</Button>
 														</TooltipTrigger>
 														<TooltipContent>
@@ -381,7 +381,7 @@ export function InviteCodeManagement({
 																onClick={() => setQrDialogCode(code)}
 																aria-label={t("settings.inviteCodes.qrCode", "QR Code")}
 															>
-																<IconQrcode className="h-4 w-4" />
+																<IconQrcode className="size-4" />
 															</Button>
 														</TooltipTrigger>
 														<TooltipContent>
@@ -487,9 +487,9 @@ export function InviteCodeManagement({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{deleteMutation.isPending ? (
-								<IconLoader2 className="h-4 w-4 animate-spin mr-2" />
+								<IconLoader2 className="size-4 animate-spin mr-2" />
 							) : (
-								<IconTrash className="h-4 w-4 mr-2" />
+								<IconTrash className="size-4 mr-2" />
 							)}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>

@@ -387,7 +387,7 @@ export function ChangePolicyDialog({
 						<form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting]}>
 							{([isDirty, _isSubmitting]) => (
 								<Button type="submit" disabled={(!isDirty && isEditing) || isPending}>
-									{isPending && <IconLoader2 className="h-4 w-4 mr-2 animate-spin" />}
+									{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}
 									{isEditing
 										? t("common.saveChanges", "Save Changes")
 										: t("common.create", "Create")}

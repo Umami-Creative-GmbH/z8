@@ -216,7 +216,7 @@ export function ApiKeyEditDialog({
 						onClick={() => updateMutation.mutate()}
 						disabled={!isValid || updateMutation.isPending}
 					>
-						{updateMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+						{updateMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 						{t("common.save", "Save")}
 					</Button>
 				</ActionPanelFooter>

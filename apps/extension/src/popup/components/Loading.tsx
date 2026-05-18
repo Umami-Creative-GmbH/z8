@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@tabler/icons-react";
 
 export function Loading() {
   return (

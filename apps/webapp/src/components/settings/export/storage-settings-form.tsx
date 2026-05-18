@@ -233,7 +233,7 @@ export function StorageSettingsForm({
 							{t("settings.dataExport.storage.title", "S3 Storage Configuration")}
 							{config?.isVerified && (
 								<Badge variant="secondary" className="gap-1">
-									<IconCheck className="h-3 w-3" />
+									<IconCheck className="size-3" />
 									{t("settings.dataExport.storage.verified", "Verified")}
 								</Badge>
 							)}
@@ -249,7 +249,7 @@ export function StorageSettingsForm({
 						<AlertDialog>
 							<AlertDialogTrigger asChild>
 								<Button variant="ghost" size="icon" className="text-destructive">
-									<IconTrash className="h-4 w-4" />
+									<IconTrash className="size-4" />
 								</Button>
 							</AlertDialogTrigger>
 							<AlertDialogContent>
@@ -288,9 +288,9 @@ export function StorageSettingsForm({
 					{testResult && (
 						<Alert variant={testResult.success ? "default" : "destructive"}>
 							{testResult.success ? (
-								<IconCheck className="h-4 w-4" />
+								<IconCheck className="size-4" />
 							) : (
-								<IconX className="h-4 w-4" />
+								<IconX className="size-4" />
 							)}
 							<AlertTitle>
 								{testResult.success
@@ -500,12 +500,12 @@ export function StorageSettingsForm({
 					>
 						{isTesting ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("settings.dataExport.storage.testing", "Testing...")}
 							</>
 						) : (
 							<>
-								<IconPlugConnected className="mr-2 h-4 w-4" />
+								<IconPlugConnected className="mr-2 size-4" />
 								{t("settings.dataExport.storage.testConnection", "Test Connection")}
 							</>
 						)}
@@ -513,7 +513,7 @@ export function StorageSettingsForm({
 					<Button type="submit" disabled={isPending || !isFormValid}>
 						{isPending ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("settings.dataExport.storage.saving", "Saving...")}
 							</>
 						) : (

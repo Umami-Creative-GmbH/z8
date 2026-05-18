@@ -189,7 +189,7 @@ export function ChangePolicyAssignmentDialog({
 
 				{isLoading ? (
 					<ActionPanelBody className="flex items-center justify-center">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</ActionPanelBody>
 				) : policies?.length === 0 ? (
 					<ActionPanelBody className="text-center text-muted-foreground">
@@ -336,7 +336,7 @@ export function ChangePolicyAssignmentDialog({
 							>
 								{(isValid) => (
 									<Button type="submit" disabled={!isValid || isPending}>
-										{isPending && <IconLoader2 className="h-4 w-4 mr-2 animate-spin" />}
+										{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}
 										{t("settings.changePolicies.assign", "Assign Policy")}
 									</Button>
 								)}

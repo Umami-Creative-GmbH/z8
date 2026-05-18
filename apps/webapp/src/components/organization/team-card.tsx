@@ -55,13 +55,13 @@ export function TeamCard({
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost" size="sm">
-								<IconDots className="h-4 w-4" />
+								<IconDots className="size-4" />
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							{canManageMembers && (
 								<DropdownMenuItem onClick={onManageMembers}>
-									<IconUsers className="mr-2 h-4 w-4" />
+									<IconUsers className="mr-2 size-4" />
 									Manage Members
 								</DropdownMenuItem>
 							)}
@@ -69,12 +69,12 @@ export function TeamCard({
 								<>
 									{canManageMembers && <DropdownMenuSeparator />}
 									<DropdownMenuItem onClick={onEdit}>
-										<IconEdit className="mr-2 h-4 w-4" />
+										<IconEdit className="mr-2 size-4" />
 										Edit Team
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem className="text-destructive" onClick={onDelete}>
-										<IconTrash className="mr-2 h-4 w-4" />
+										<IconTrash className="mr-2 size-4" />
 										Delete Team
 									</DropdownMenuItem>
 								</>
@@ -86,7 +86,7 @@ export function TeamCard({
 			<CardContent>
 				<div className="space-y-4">
 					<div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm">
-						<IconShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+						<IconShieldCheck className="mt-0.5 size-4 text-muted-foreground" />
 						<div className="min-w-0">
 							<div className="font-medium">Fallback manager</div>
 							<div className="truncate text-muted-foreground">
@@ -99,7 +99,7 @@ export function TeamCard({
 
 					{/* Member Count */}
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<IconUsers className="h-4 w-4" />
+						<IconUsers className="size-4" />
 						<span>
 							{memberCount} {memberCount === 1 ? "member" : "members"}
 						</span>
@@ -121,7 +121,7 @@ export function TeamCard({
 									/>
 								))}
 								{remainingCount > 0 && (
-									<div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium">
+									<div className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium">
 										+{remainingCount}
 									</div>
 								)}

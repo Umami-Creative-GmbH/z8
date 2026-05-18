@@ -311,7 +311,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						{t("settings.workPolicies.violationsLoadError", "Failed to load violations")}
 					</p>
 					<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-						<IconRefresh className="mr-2 h-4 w-4" />
+						<IconRefresh className="mr-2 size-4" />
 						{t("common.retry", "Retry")}
 					</Button>
 				</CardContent>
@@ -347,11 +347,11 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						onClick={handleExportCSV}
 						disabled={!violations || violations.length === 0}
 					>
-						<IconDownload className="mr-2 h-4 w-4" />
+						<IconDownload className="mr-2 size-4" />
 						{t("settings.workPolicies.exportCsv", "Export CSV")}
 					</Button>
 					<Button variant="ghost" size="icon" onClick={() => refetch()}>
-						<IconRefresh className="h-4 w-4" />
+						<IconRefresh className="size-4" />
 						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
 				</div>
@@ -405,7 +405,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 			{!violations || violations.length === 0 ? (
 				<Card>
 					<CardContent className="py-12 text-center">
-						<IconCheck className="mx-auto h-12 w-12 text-green-500 mb-4" />
+						<IconCheck className="mx-auto size-12 text-green-500 mb-4" />
 						<p className="text-lg font-medium">
 							{t("settings.workPolicies.noViolations", "No violations found")}
 						</p>
@@ -450,12 +450,12 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 									<TableCell>
 										{violation.acknowledgedAt ? (
 											<Badge variant="secondary">
-												<IconCheck className="mr-1 h-3 w-3" />
+												<IconCheck className="mr-1 size-3" />
 												{t("settings.workPolicies.acknowledged", "Acknowledged")}
 											</Badge>
 										) : (
 											<Badge variant="outline">
-												<IconAlertTriangle className="mr-1 h-3 w-3" />
+												<IconAlertTriangle className="mr-1 size-3" />
 												{t("settings.workPolicies.pending", "Pending")}
 											</Badge>
 										)}
@@ -553,7 +553,7 @@ export function WorkPolicyComplianceView({ organizationId }: WorkPolicyComplianc
 						</Button>
 						<Button onClick={handleAcknowledgeConfirm} disabled={acknowledgeMutation.isPending}>
 							{acknowledgeMutation.isPending && (
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 							)}
 							{t("settings.workPolicies.acknowledge", "Acknowledge")}
 						</Button>

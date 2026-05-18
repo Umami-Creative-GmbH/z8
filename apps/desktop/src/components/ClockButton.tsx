@@ -1,4 +1,4 @@
-import { Play, Square, Loader2 } from "lucide-react";
+import { IconPlayerPlay, IconSquare, IconLoader2 } from "@tabler/icons-react";
 import { useElapsedTimer } from "../hooks/useElapsedTimer";
 import { formatDuration } from "../lib/utils";
 
@@ -54,11 +54,11 @@ export function ClockButton({
       >
         <div className="clock-button-inner">
           {isLoading ? (
-            <Loader2 size={48} color="white" className="clock-spinner" />
+            <IconLoader2 size={48} color="white" className="clock-spinner" />
           ) : isClockedIn ? (
-            <Square size={48} color="white" fill="white" />
+            <IconSquare size={48} color="white" fill="white" />
           ) : (
-            <Play size={48} color="white" fill="white" style={{ marginLeft: "6px" }} />
+            <IconPlayerPlay size={48} color="white" fill="white" style={{ marginLeft: "6px" }} />
           )}
         </div>
       </button>
@@ -68,8 +68,8 @@ export function ClockButton({
         {isLoading
           ? "Processing..."
           : isClockedIn
-          ? "Tap to Clock Out"
-          : "Tap to Clock In"}
+          ? "Tap to IconClock Out"
+          : "Tap to IconClock In"}
       </div>
     </div>
   );

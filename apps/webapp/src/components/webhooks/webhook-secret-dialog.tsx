@@ -45,7 +45,7 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconKey className="h-5 w-5" aria-hidden="true" />
+						<IconKey className="size-5" aria-hidden="true" />
 						{t("settings:webhooks.secret-dialog.title", "Webhook Secret")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -91,9 +91,9 @@ export function WebhookSecretDialog({ secret, open, onOpenChange }: WebhookSecre
 								)}
 							>
 								{copied ? (
-									<IconCheck className="h-4 w-4 text-green-600" aria-hidden="true" />
+									<IconCheck className="size-4 text-green-600" aria-hidden="true" />
 								) : (
-									<IconCopy className="h-4 w-4" aria-hidden="true" />
+									<IconCopy className="size-4" aria-hidden="true" />
 								)}
 							</Button>
 						</div>

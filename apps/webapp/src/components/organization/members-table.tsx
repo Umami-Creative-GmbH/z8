@@ -298,7 +298,7 @@ export function MembersTable({
 				header: t("organization.members.email", "Email"),
 				cell: ({ row }) => (
 					<div className="flex items-center gap-2">
-						<IconMail className="h-4 w-4 text-muted-foreground" />
+						<IconMail className="size-4 text-muted-foreground" />
 						{row.original.email}
 					</div>
 				),
@@ -351,16 +351,16 @@ export function MembersTable({
 								<DropdownMenuTrigger asChild>
 									<Button variant="ghost" size="sm" disabled={isActioning(row.original.id)}>
 										{isActioning(row.original.id) ? (
-											<IconLoader2 className="h-4 w-4 animate-spin" />
+											<IconLoader2 className="size-4 animate-spin" />
 										) : (
-											<IconDots className="h-4 w-4" />
+											<IconDots className="size-4" />
 										)}
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
 									<DropdownMenuLabel>{t("common.actions", "Actions")}</DropdownMenuLabel>
 									<DropdownMenuItem onClick={() => handleResendInvitation(row.original)}>
-										<IconMail className="mr-2 h-4 w-4" />
+										<IconMail className="mr-2 size-4" />
 										{t("organization.members.resend", "Resend")}
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
@@ -368,7 +368,7 @@ export function MembersTable({
 										className="text-destructive"
 										onClick={() => handleCancelInvitation(row.original.id)}
 									>
-										<IconX className="mr-2 h-4 w-4" />
+										<IconX className="mr-2 size-4" />
 										{t("organization.members.cancel", "Cancel")}
 									</DropdownMenuItem>
 								</DropdownMenuContent>
@@ -456,12 +456,12 @@ export function MembersTable({
 				cell: ({ row }) =>
 					row.original.user.emailVerified ? (
 						<div className="flex items-center gap-1 text-green-600">
-							<IconCheck className="h-4 w-4" />
+							<IconCheck className="size-4" />
 							<span className="text-sm">{t("organization.members.verified", "Verified")}</span>
 						</div>
 					) : (
 						<div className="flex items-center gap-1 text-amber-600">
-							<IconClock className="h-4 w-4" />
+							<IconClock className="size-4" />
 							<span className="text-sm">{t("organization.members.pending", "Pending")}</span>
 						</div>
 					),
@@ -472,12 +472,12 @@ export function MembersTable({
 				cell: ({ row }) =>
 					row.original.employee?.isActive ? (
 						<div className="flex items-center gap-2">
-							<div className="h-2 w-2 rounded-full bg-green-500" />
+							<div className="size-2 rounded-full bg-green-500" />
 							<span className="text-sm">{t("organization.members.active", "Active")}</span>
 						</div>
 					) : (
 						<div className="flex items-center gap-2">
-							<div className="h-2 w-2 rounded-full bg-gray-400" />
+							<div className="size-2 rounded-full bg-gray-400" />
 							<span className="text-sm text-muted-foreground">
 								{t("organization.members.inactive", "Inactive")}
 							</span>
@@ -503,9 +503,9 @@ export function MembersTable({
 											}
 										>
 											{isActioning(row.original.user.id) || isActioning(employee?.id || "") ? (
-												<IconLoader2 className="h-4 w-4 animate-spin" />
+												<IconLoader2 className="size-4 animate-spin" />
 											) : (
-												<IconDots className="h-4 w-4" />
+												<IconDots className="size-4" />
 											)}
 										</Button>
 									</DropdownMenuTrigger>
@@ -517,12 +517,12 @@ export function MembersTable({
 											>
 												{employee.isActive ? (
 													<>
-														<IconPlayerPause className="mr-2 h-4 w-4" />
+														<IconPlayerPause className="mr-2 size-4" />
 														{t("organization.members.deactivate", "Deactivate")}
 													</>
 												) : (
 													<>
-														<IconPlayerPlay className="mr-2 h-4 w-4" />
+														<IconPlayerPlay className="mr-2 size-4" />
 														{t("organization.members.activate", "Activate")}
 													</>
 												)}
@@ -538,7 +538,7 @@ export function MembersTable({
 														setRemoveDialogOpen(true);
 													}}
 												>
-													<IconTrash className="mr-2 h-4 w-4" />
+													<IconTrash className="mr-2 size-4" />
 													{t("organization.members.remove", "Remove from Organization")}
 												</DropdownMenuItem>
 											</>
@@ -599,9 +599,9 @@ export function MembersTable({
 							onRefresh && (
 								<Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
 									{isRefreshing ? (
-										<IconLoader2 className="h-4 w-4 animate-spin" />
+										<IconLoader2 className="size-4 animate-spin" />
 									) : (
-										<IconRefresh className="h-4 w-4" />
+										<IconRefresh className="size-4" />
 									)}
 									<span className="ml-2">{t("common.refresh", "Refresh")}</span>
 								</Button>

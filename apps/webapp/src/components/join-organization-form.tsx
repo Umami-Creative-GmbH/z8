@@ -160,7 +160,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		return (
 			<AuthFormWrapper title={t("settings.inviteCodes.joinOrganization", "Join Organization")}>
 				<div className="flex items-center justify-center py-8">
-					<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 				</div>
 			</AuthFormWrapper>
 		);
@@ -171,8 +171,8 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		return (
 			<Card className="mx-auto w-full max-w-md">
 				<CardHeader className="text-center">
-					<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-						<IconCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+						<IconCheck className="size-8 text-green-600 dark:text-green-400" />
 					</div>
 					<CardTitle>
 						{joinStatus === "pending"
@@ -196,7 +196,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				<CardContent>
 					{joinStatus === "pending" && (
 						<Alert>
-							<IconClock className="h-4 w-4" />
+							<IconClock className="size-4" />
 							<AlertTitle>
 								{t("settings.inviteCodes.pendingApproval", "Pending Approval")}
 							</AlertTitle>
@@ -223,8 +223,8 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		return (
 			<Card className="mx-auto w-full max-w-md">
 				<CardHeader className="text-center">
-					<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
-						<IconBuilding className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
+						<IconBuilding className="size-8 text-yellow-600 dark:text-yellow-400" />
 					</div>
 					<CardTitle>{t("settings.inviteCodes.alreadyMember", "Already a Member")}</CardTitle>
 					<CardDescription>
@@ -281,7 +281,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 								disabled={!code.trim() || state === "loading" || state === "joining"}
 							>
 								{state === "loading" ? (
-									<IconLoader2 className="h-4 w-4 animate-spin" />
+									<IconLoader2 className="size-4 animate-spin" />
 								) : (
 									t("common.validate", "Validate")
 								)}
@@ -293,7 +293,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				{/* Error message */}
 				{(state === "invalid" || state === "error") && error && (
 					<Alert variant="destructive">
-						<IconX className="h-4 w-4" />
+						<IconX className="size-4" />
 						<AlertTitle>{t("common.error", "Error")}</AlertTitle>
 						<AlertDescription>{error}</AlertDescription>
 					</Alert>
@@ -302,7 +302,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				{/* Organization info */}
 				{organizationName && state === "valid" && (
 					<Alert>
-						<IconBuilding className="h-4 w-4" />
+						<IconBuilding className="size-4" />
 						<AlertTitle>{organizationName}</AlertTitle>
 						<AlertDescription>
 							{t(
@@ -316,7 +316,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				{/* Loading state */}
 				{state === "loading" && (
 					<div className="flex items-center justify-center py-4">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 						<span className="ml-2 text-muted-foreground">
 							{t("settings.inviteCodes.validatingCode", "Validating code...")}
 						</span>
@@ -338,17 +338,17 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 				>
 					{state === "joining" ? (
 						<>
-							<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+							<IconLoader2 className="mr-2 size-4 animate-spin" />
 							{t("settings.inviteCodes.joining", "Joining...")}
 						</>
 					) : !session ? (
 						<>
-							<IconUserPlus className="mr-2 h-4 w-4" />
+							<IconUserPlus className="mr-2 size-4" />
 							{t("settings.inviteCodes.signInToJoin", "Sign in to Join")}
 						</>
 					) : (
 						<>
-							<IconUserPlus className="mr-2 h-4 w-4" />
+							<IconUserPlus className="mr-2 size-4" />
 							{t("settings.inviteCodes.joinOrganization", "Join Organization")}
 						</>
 					)}

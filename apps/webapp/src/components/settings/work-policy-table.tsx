@@ -184,7 +184,7 @@ export function WorkPolicyTable({
 								<TooltipProvider>
 									<Tooltip>
 										<TooltipTrigger>
-											<IconStar className="h-4 w-4 text-yellow-500 fill-yellow-500 shrink-0" />
+											<IconStar className="size-4 text-yellow-500 fill-yellow-500 shrink-0" />
 										</TooltipTrigger>
 										<TooltipContent>
 											{t("settings.workPolicies.defaultPolicy", "Default policy")}
@@ -222,7 +222,7 @@ export function WorkPolicyTable({
 								<Tooltip>
 									<TooltipTrigger>
 										<Badge variant="outline" className="gap-1">
-											<IconCalendar className="h-3 w-3" />
+											<IconCalendar className="size-3" />
 											{t("settings.workPolicies.schedule", "Schedule")}
 										</Badge>
 									</TooltipTrigger>
@@ -237,7 +237,7 @@ export function WorkPolicyTable({
 								<Tooltip>
 									<TooltipTrigger>
 										<Badge variant="outline" className="gap-1">
-											<IconGavel className="h-3 w-3" />
+											<IconGavel className="size-3" />
 											{t("settings.workPolicies.regulation", "Regulation")}
 										</Badge>
 									</TooltipTrigger>
@@ -252,7 +252,7 @@ export function WorkPolicyTable({
 								<Tooltip>
 									<TooltipTrigger>
 										<Badge variant="outline" className="gap-1">
-											<IconMapPin className="h-3 w-3" />
+											<IconMapPin className="size-3" />
 											{t("settings.workPolicies.presenceEnabled", "Presence")}
 										</Badge>
 									</TooltipTrigger>
@@ -320,21 +320,21 @@ export function WorkPolicyTable({
 						cell: ({ row }: { row: { original: WorkPolicyWithDetails } }) => (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<IconDots className="h-4 w-4" />
+							<Button variant="ghost" size="icon" className="size-8">
+								<IconDots className="size-4" />
 								<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
-								<IconPencil className="mr-2 h-4 w-4" />
+								<IconPencil className="mr-2 size-4" />
 								{t("common.edit", "Edit")}
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => duplicateMutation.mutate(row.original.id)}
 								disabled={duplicateMutation.isPending}
 							>
-								<IconCopy className="mr-2 h-4 w-4" />
+								<IconCopy className="mr-2 size-4" />
 								{t("common.duplicate", "Duplicate")}
 							</DropdownMenuItem>
 							{!row.original.isDefault && (
@@ -342,7 +342,7 @@ export function WorkPolicyTable({
 									onClick={() => setDefaultMutation.mutate(row.original.id)}
 									disabled={setDefaultMutation.isPending}
 								>
-									<IconStar className="mr-2 h-4 w-4" />
+									<IconStar className="mr-2 size-4" />
 									{t("settings.workPolicies.setAsDefault", "Set as Default")}
 								</DropdownMenuItem>
 							)}
@@ -352,7 +352,7 @@ export function WorkPolicyTable({
 								onClick={() => handleDeleteClick(row.original)}
 								disabled={row.original.isDefault}
 							>
-								<IconTrash className="mr-2 h-4 w-4" />
+								<IconTrash className="mr-2 size-4" />
 								{t("common.delete", "Delete")}
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -371,7 +371,7 @@ export function WorkPolicyTable({
 				{canManagePolicies ? (
 					<div className="flex justify-end">
 						<Button onClick={onCreateClick}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.workPolicies.create", "Create Policy")}
 						</Button>
 					</div>
@@ -388,7 +388,7 @@ export function WorkPolicyTable({
 					{t("settings.workPolicies.loadError", "Failed to load policies")}
 				</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-					<IconRefresh className="mr-2 h-4 w-4" />
+					<IconRefresh className="mr-2 size-4" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -405,15 +405,15 @@ export function WorkPolicyTable({
 					<div className="flex items-center gap-2">
 						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
-								<IconLoader2 className="h-4 w-4 animate-spin" />
+								<IconLoader2 className="size-4 animate-spin" />
 							) : (
-								<IconRefresh className="h-4 w-4" />
+								<IconRefresh className="size-4" />
 							)}
 							<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 						</Button>
 						{canManagePolicies ? (
 							<Button onClick={onCreateClick}>
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.workPolicies.create", "Create Policy")}
 							</Button>
 						) : null}
@@ -458,7 +458,7 @@ export function WorkPolicyTable({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							disabled={deleteMutation.isPending}
 						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>

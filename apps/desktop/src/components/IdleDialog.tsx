@@ -1,4 +1,4 @@
-import { Coffee, Briefcase } from "lucide-react";
+import { IconCoffee, IconBriefcase } from "@tabler/icons-react";
 import { formatIdleDuration, cn } from "../lib/utils";
 import type { IdleEvent } from "../types";
 
@@ -48,7 +48,7 @@ export function IdleDialog({
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              <Coffee className="w-5 h-5" />
+              <IconCoffee className="w-5 h-5" />
               I was on break
             </button>
 
@@ -63,7 +63,7 @@ export function IdleDialog({
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              <Briefcase className="w-5 h-5" />
+              <IconBriefcase className="w-5 h-5" />
               I was still working
             </button>
           </div>

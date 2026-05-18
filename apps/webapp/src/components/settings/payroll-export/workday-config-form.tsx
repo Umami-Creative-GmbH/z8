@@ -216,7 +216,7 @@ export function WorkdayConfigForm({
 						)}
 						{initialConfig?.hasCredentials && !showCredentialsForm && (
 							<Badge variant="secondary" className="gap-1">
-								<IconCheck className="h-3 w-3" aria-hidden="true" />
+								<IconCheck className="size-3" aria-hidden="true" />
 								{t("settings.payrollExport.workday.connected", "Connected")}
 							</Badge>
 						)}
@@ -261,7 +261,7 @@ export function WorkdayConfigForm({
 					) : (
 						<div className="flex items-center justify-between rounded-lg border p-4">
 							<div className="flex items-center gap-3">
-								<IconPlugConnected className="h-5 w-5 text-green-600" aria-hidden="true" />
+								<IconPlugConnected className="size-5 text-green-600" aria-hidden="true" />
 								<div>
 									<p className="font-medium">
 										{t(
@@ -297,7 +297,7 @@ export function WorkdayConfigForm({
 												"Delete credentials",
 											)}
 										>
-											<IconTrash className="h-4 w-4 text-destructive" aria-hidden="true" />
+											<IconTrash className="size-4 text-destructive" aria-hidden="true" />
 										</Button>
 									</AlertDialogTrigger>
 									<AlertDialogContent>
@@ -339,7 +339,7 @@ export function WorkdayConfigForm({
 						>
 							{isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : (
@@ -524,7 +524,7 @@ export function WorkdayConfigForm({
 						<Button type="submit" disabled={isPending}>
 							{isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving...")}
 								</>
 							) : (
@@ -544,12 +544,12 @@ export function WorkdayConfigForm({
 						>
 							{isTesting ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									{t("settings.payrollExport.workday.testing", "Testing...")}
 								</>
 							) : (
 								<>
-									<IconPlugConnected className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconPlugConnected className="mr-2 size-4" aria-hidden="true" />
 									{t(
 										"settings.payrollExport.workday.testConnection",
 										"Test Connection",

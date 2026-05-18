@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertTriangle } from "@tabler/icons-react";
-import { Loader2 } from "lucide-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -39,7 +39,7 @@ export function PublishComplianceDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconAlertTriangle className="h-5 w-5 text-amber-600" aria-hidden="true" />
+						<IconAlertTriangle className="size-5 text-amber-600" aria-hidden="true" />
 						Compliance Acknowledgment Required
 					</ActionPanelTitle>
 					<ActionPanelDescription>
@@ -73,7 +73,7 @@ export function PublishComplianceDialog({
 					<Button type="button" onClick={onConfirm} disabled={isConfirming}>
 						{isConfirming ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								Publishing…
 							</>
 						) : (

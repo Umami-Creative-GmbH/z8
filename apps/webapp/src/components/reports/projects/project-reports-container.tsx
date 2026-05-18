@@ -2,7 +2,7 @@
 
 import { IconBriefcase } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { AlertCircle, FileBarChart } from "lucide-react";
+import { IconAlertCircle, IconChartBar } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -125,7 +125,7 @@ export function ProjectReportsContainer() {
 			{/* Error Alert */}
 			{error && (
 				<Alert variant="destructive">
-					<AlertCircle className="h-4 w-4" />
+					<IconAlertCircle className="size-4" />
 					<AlertTitle>{t("reports.projects.container.error", "Error")}</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
@@ -136,7 +136,7 @@ export function ProjectReportsContainer() {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4">
-							<IconBriefcase className="h-12 w-12 animate-pulse text-muted-foreground" />
+							<IconBriefcase className="size-12 animate-pulse text-muted-foreground" />
 							<div className="text-center">
 								<p className="font-semibold">
 									{t("reports.projects.container.generating", "Generating Report...")}
@@ -233,7 +233,7 @@ export function ProjectReportsContainer() {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4 text-center">
-							<FileBarChart className="h-12 w-12 text-muted-foreground" />
+							<IconChartBar className="size-12 text-muted-foreground" />
 							<div>
 								<p className="font-semibold">
 									{t("reports.projects.container.noReportYet", "No report generated yet")}

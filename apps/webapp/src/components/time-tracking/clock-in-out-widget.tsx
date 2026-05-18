@@ -12,6 +12,7 @@ import {
 	RestPeriodWarnBanner,
 	WorkLocationSelector,
 } from "@/components/time-tracking/clock-in-out-widget-parts";
+import { QuickBreakPopover } from "@/components/time-tracking/quick-break-popover";
 import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
 import { useClockInOutWidget } from "@/components/time-tracking/use-clock-in-out-widget";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,13 +97,24 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 				) : null}
 
 				{!widget.uiState.showNotesInput ? (
-					<ClockActionButton
-						isClockedIn={widget.isClockedIn}
-						isMutating={widget.isMutating}
-						isClockingOut={widget.isClockingOut}
-						onClick={widget.isClockedIn ? widget.handleClockOut : widget.handleClockIn}
-						t={widget.t}
-					/>
+					<div className="flex gap-2">
+						<ClockActionButton
+							isClockedIn={widget.isClockedIn}
+							isMutating={widget.isMutating}
+							isClockingOut={widget.isClockingOut}
+							onClick={widget.isClockedIn ? widget.handleClockOut : widget.handleClockIn}
+							t={widget.t}
+						/>
+						{widget.isClockedIn ? (
+							<QuickBreakPopover
+								onAddBreak={widget.handleAddBreak}
+								isAddingBreak={widget.isAddingBreak}
+								isDisabled={widget.isMutating}
+								t={widget.t}
+								buttonClassName="shrink-0 px-4"
+							/>
+						) : null}
+					</div>
 				) : (
 					<PostClockOutNotesForm
 						notes={widget.uiState.notesText}

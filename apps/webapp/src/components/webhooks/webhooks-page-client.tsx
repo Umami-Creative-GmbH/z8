@@ -50,7 +50,7 @@ export function WebhooksPageClient({
 						</p>
 					</div>
 					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+						<IconPlus className="mr-2 size-4" aria-hidden="true" />
 						{t("settings:webhooks.create", "Add Webhook")}
 					</Button>
 				</div>
@@ -58,7 +58,7 @@ export function WebhooksPageClient({
 					<CardContent className="pt-6">
 						{webhooks.length === 0 ? (
 							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<IconWebhook className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
+								<IconWebhook className="size-12 text-muted-foreground/50" aria-hidden="true" />
 								<h3 className="mt-4 text-lg font-semibold">
 									{t("settings:webhooks.empty.title", "No webhooks configured")}
 								</h3>
@@ -69,7 +69,7 @@ export function WebhooksPageClient({
 									)}
 								</p>
 								<Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
-									<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+									<IconPlus className="mr-2 size-4" aria-hidden="true" />
 									{t("settings:webhooks.create", "Add Webhook")}
 								</Button>
 							</div>

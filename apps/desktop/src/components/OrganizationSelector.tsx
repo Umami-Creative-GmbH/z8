@@ -1,4 +1,4 @@
-import { Building2, Check, ChevronDown, Loader2 } from "lucide-react";
+import { IconBuilding, IconCheck, IconChevronDown, IconLoader2 } from "@tabler/icons-react";
 import { useState } from "react";
 import type { Organization } from "../hooks/useOrganizations";
 
@@ -31,7 +31,7 @@ export function OrganizationSelector({
           {activeOrg.logo ? (
             <img src={activeOrg.logo} alt={activeOrg.name} />
           ) : (
-            <Building2 size={14} />
+            <IconBuilding size={14} />
           )}
         </div>
         <span className="org-name">{activeOrg.name}</span>
@@ -59,14 +59,14 @@ export function OrganizationSelector({
           {activeOrg?.logo ? (
             <img src={activeOrg.logo} alt={activeOrg.name} />
           ) : (
-            <Building2 size={14} />
+            <IconBuilding size={14} />
           )}
         </div>
         <span className="org-name">{activeOrg?.name ?? "Select org"}</span>
         {isSwitching ? (
-          <Loader2 size={14} className="clock-spinner" />
+          <IconLoader2 size={14} className="clock-spinner" />
         ) : (
-          <ChevronDown size={14} className={`org-chevron ${isOpen ? "org-chevron-open" : ""}`} />
+          <IconChevronDown size={14} className={`org-chevron ${isOpen ? "org-chevron-open" : ""}`} />
         )}
       </button>
 
@@ -86,14 +86,14 @@ export function OrganizationSelector({
                   {org.logo ? (
                     <img src={org.logo} alt={org.name} />
                   ) : (
-                    <Building2 size={14} />
+                    <IconBuilding size={14} />
                   )}
                 </div>
                 <div className="org-dropdown-item-content">
                   <span className="org-name">{org.name}</span>
                   <span className="org-role">{org.memberRole}</span>
                 </div>
-                {org.id === activeOrganizationId && <Check size={14} />}
+                {org.id === activeOrganizationId && <IconCheck size={14} />}
               </button>
             ))}
           </div>

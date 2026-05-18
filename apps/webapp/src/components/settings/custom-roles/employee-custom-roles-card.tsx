@@ -104,7 +104,7 @@ export function EmployeeCustomRolesCard({
 					</div>
 					{isAdmin && (
 						<Button variant="outline" size="sm" onClick={() => setIsAssignOpen(true)}>
-							<IconPlus className="mr-1 h-4 w-4" />
+							<IconPlus className="mr-1 size-4" />
 							{t("settings.roles.actions.assign", "Assign Role")}
 						</Button>
 					)}
@@ -113,7 +113,7 @@ export function EmployeeCustomRolesCard({
 			<CardContent>
 				{isLoadingAssigned ? (
 					<div className="flex items-center justify-center py-4">
-						<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-5 animate-spin text-muted-foreground" />
 					</div>
 				) : !assignedRoles?.length ? (
 					<p className="text-sm text-muted-foreground">
@@ -132,7 +132,7 @@ export function EmployeeCustomRolesCard({
 								}}
 							>
 								<span
-									className="mr-1 inline-block h-2 w-2 rounded-full"
+									className="mr-1 inline-block size-2 rounded-full"
 									style={{ backgroundColor: role.color }}
 								/>
 								{role.name}
@@ -155,7 +155,7 @@ export function EmployeeCustomRolesCard({
 										onClick={() => unassignMutation.mutate(role.id)}
 										disabled={unassignMutation.isPending}
 									>
-										<IconX className="h-3 w-3" />
+										<IconX className="size-3" />
 									</button>
 								)}
 							</Badge>
@@ -196,7 +196,7 @@ export function EmployeeCustomRolesCard({
 									disabled={assignMutation.isPending}
 								>
 									<div
-										className="h-3 w-3 rounded-full shrink-0"
+										className="size-3 rounded-full shrink-0"
 										style={{ backgroundColor: role.color }}
 									/>
 									<div className="flex-1">

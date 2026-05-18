@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCw, Settings } from "lucide-react";
+import { AlertCircle, RefreshCw, Settings } from "@tabler/icons-react";
 
 interface ErrorStateProps {
   error: Error | null;

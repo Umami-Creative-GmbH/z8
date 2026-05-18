@@ -1,4 +1,4 @@
-import { Cloud, CloudOff } from "lucide-react";
+import { Cloud, CloudOff } from "@tabler/icons-react";
 import { formatActionTime, formatClockTime } from "@/lib/time";
 import type { LastAction } from "@/types";
 

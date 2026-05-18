@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
@@ -155,30 +155,50 @@ export async function clockOut(
 	}
 
 	try {
-		const entry = await createTimeEntry({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			type: "clock_out",
-			timestamp: now,
-			createdBy: session.user.id,
+		const { entry, durationMinutes } = await db.transaction(async (tx) => {
+			const clockOutEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					type: "clock_out",
+					timestamp: now,
+					createdBy: session.user.id,
+				},
+				tx,
+			);
+
+			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+
+			const [closedWorkPeriod] = await tx
+				.update(workPeriod)
+				.set({
+					clockOutId: clockOutEntry.id,
+					endTime: now,
+					durationMinutes: sessionDurationMinutes,
+					projectId: projectId || null,
+					workCategoryId: workCategoryId || null,
+					isActive: false,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(workPeriod.id, activeWorkPeriod.id),
+						eq(workPeriod.employeeId, currentEmployee.id),
+						eq(workPeriod.organizationId, currentEmployee.organizationId),
+						eq(workPeriod.isActive, true),
+						isNull(workPeriod.endTime),
+					),
+				)
+				.returning({ id: workPeriod.id });
+
+			if (!closedWorkPeriod) {
+				throw new Error("Active work period was not updated");
+			}
+
+			return { entry: clockOutEntry, durationMinutes: sessionDurationMinutes };
 		});
-
-		const durationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
-
-		await db
-			.update(workPeriod)
-			.set({
-				clockOutId: entry.id,
-				endTime: now,
-				durationMinutes,
-				projectId: projectId || null,
-				workCategoryId: workCategoryId || null,
-				isActive: false,
-				approvalStatus: "approved",
-				pendingChanges: null,
-				updatedAt: new Date(),
-			})
-			.where(eq(workPeriod.id, activeWorkPeriod.id));
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
 
@@ -220,6 +240,114 @@ export async function clockOut(
 	} catch (error) {
 		logger.error({ error }, "Clock out error");
 		return { success: false, error: "Failed to clock out. Please try again." };
+	}
+}
+
+export async function addBreakToActiveSession(
+	breakMinutes: number,
+): Promise<ServerActionResult<{ id: string; startTime: Date }>> {
+	const session = await getCurrentSession();
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const currentEmployee = await getCurrentEmployee();
+	if (!currentEmployee) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	if (!Number.isInteger(breakMinutes) || breakMinutes < 1) {
+		return { success: false, error: "Enter a break duration of at least 1 minute." };
+	}
+
+	const activeWorkPeriod = await getActiveWorkPeriod(currentEmployee.id);
+	if (!activeWorkPeriod) {
+		return { success: false, error: "You are not currently clocked in." };
+	}
+
+	if (activeWorkPeriod.organizationId !== currentEmployee.organizationId) {
+		return { success: false, error: "You are not allowed to edit this time entry" };
+	}
+
+	const now = new Date();
+	const breakStart = new Date(now.getTime() - breakMinutes * ONE_MINUTE_MS);
+	if (breakStart <= activeWorkPeriod.startTime) {
+		return { success: false, error: "Break duration must be shorter than your current session." };
+	}
+
+	try {
+		const newWorkPeriod = await db.transaction(async (tx) => {
+			const clockOutEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					type: "clock_out",
+					timestamp: breakStart,
+					createdBy: session.user.id,
+				},
+				tx,
+			);
+
+			const durationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, breakStart);
+
+			const [closedWorkPeriod] = await tx
+				.update(workPeriod)
+				.set({
+					clockOutId: clockOutEntry.id,
+					endTime: breakStart,
+					durationMinutes,
+					isActive: false,
+					approvalStatus: "approved",
+					pendingChanges: null,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(workPeriod.id, activeWorkPeriod.id),
+						eq(workPeriod.employeeId, currentEmployee.id),
+						eq(workPeriod.organizationId, currentEmployee.organizationId),
+						eq(workPeriod.isActive, true),
+					),
+				)
+				.returning({ id: workPeriod.id });
+
+			if (!closedWorkPeriod) {
+				throw new Error("Active work period was not updated");
+			}
+
+			const clockInEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					type: "clock_in",
+					timestamp: now,
+					createdBy: session.user.id,
+				},
+				tx,
+			);
+
+			const [insertedWorkPeriod] = await tx
+				.insert(workPeriod)
+				.values({
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					clockInId: clockInEntry.id,
+					startTime: now,
+					workLocationType: activeWorkPeriod.workLocationType ?? "office",
+				})
+				.returning({ id: workPeriod.id, startTime: workPeriod.startTime });
+
+			if (!insertedWorkPeriod) {
+				throw new Error("New work period was not inserted");
+			}
+
+			return insertedWorkPeriod;
+		});
+
+		return { success: true, data: newWorkPeriod };
+	} catch (error) {
+		logger.error({ error }, "Add break to active session error");
+		return { success: false, error: "Failed to add break. Please try again." };
 	}
 }
 

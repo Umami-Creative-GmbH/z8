@@ -55,7 +55,7 @@ export function OrganizationTab({
 			{canCreateOrganizations && (
 				<div className="flex justify-end">
 					<Button onClick={() => setCreateOrgDialogOpen(true)} variant="outline">
-						<IconBuilding className="mr-2 h-4 w-4" />
+						<IconBuilding className="mr-2 size-4" />
 						Create New Organization
 					</Button>
 				</div>
@@ -104,7 +104,7 @@ export function OrganizationTab({
 						</div>
 						{canInvite && (
 							<Button onClick={() => setInviteDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
-								<IconUserPlus className="h-4 w-4 sm:mr-2" />
+								<IconUserPlus className="size-4 sm:mr-2" />
 								<span className="sr-only sm:not-sr-only">Invite Member</span>
 							</Button>
 						)}

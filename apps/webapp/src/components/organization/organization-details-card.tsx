@@ -82,17 +82,17 @@ export function OrganizationDetailsCard({
 								aria-label="Upload organization logo"
 								onChange={handleFileInputChange}
 							/>
-							<div className="relative h-16 w-16 shrink-0">
-								<Avatar className="h-16 w-16">
+							<div className="relative size-16 shrink-0">
+								<Avatar className="size-16">
 									<AvatarImage src={previewUrl || logoUrl || undefined} alt={organization.name} />
 									<AvatarFallback className="bg-primary/10">
-										<IconBuilding className="h-8 w-8 text-primary" />
+										<IconBuilding className="size-8 text-primary" />
 									</AvatarFallback>
 								</Avatar>
 								{/* Upload progress overlay */}
 								{isUploading && (
 									<div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-full bg-black/70">
-										<IconLoader2 className="h-5 w-5 animate-spin text-white" />
+										<IconLoader2 className="size-5 animate-spin text-white" />
 										<span className="mt-0.5 text-[10px] font-medium text-white">
 											{uploadProgress}%
 										</span>
@@ -104,7 +104,7 @@ export function OrganizationDetailsCard({
 										onClick={() => inputRef.current?.click()}
 										className="absolute bottom-0 right-0 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg transition-transform hover:scale-110"
 									>
-										<IconCamera className="h-3 w-3" />
+										<IconCamera className="size-3" />
 									</button>
 								)}
 							</div>
@@ -126,7 +126,7 @@ export function OrganizationDetailsCard({
 								className="shrink-0 px-2 sm:px-3"
 								onClick={() => setEditDialogOpen(true)}
 							>
-								<IconEdit className="h-4 w-4 sm:mr-2" />
+								<IconEdit className="size-4 sm:mr-2" />
 								<span className="sr-only sm:not-sr-only">Edit</span>
 							</Button>
 						)}
@@ -134,7 +134,7 @@ export function OrganizationDetailsCard({
 				</CardHeader>
 				<CardContent>
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<IconUsers className="h-4 w-4" />
+						<IconUsers className="size-4" />
 						<span>
 							{memberCount} {memberCount === 1 ? "member" : "members"}
 						</span>

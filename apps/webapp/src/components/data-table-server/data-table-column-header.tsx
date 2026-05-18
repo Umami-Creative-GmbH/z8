@@ -37,21 +37,21 @@ export function DataTableColumnHeader<TData, TValue>({
 					<Button variant="ghost" size="sm" className="-ml-3 h-8 data-[state=open]:bg-accent">
 						<span>{title}</span>
 						{column.getIsSorted() === "desc" ? (
-							<IconArrowDown className="ml-2 h-4 w-4" />
+							<IconArrowDown className="ml-2 size-4" />
 						) : column.getIsSorted() === "asc" ? (
-							<IconArrowUp className="ml-2 h-4 w-4" />
+							<IconArrowUp className="ml-2 size-4" />
 						) : (
-							<IconSelector className="ml-2 h-4 w-4" />
+							<IconSelector className="ml-2 size-4" />
 						)}
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start">
 					<DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-						<IconArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+						<IconArrowUp className="mr-2 size-3.5 text-muted-foreground/70" />
 						{t("table.sortAscending", "Ascending")}
 					</DropdownMenuItem>
 					<DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-						<IconArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+						<IconArrowDown className="mr-2 size-3.5 text-muted-foreground/70" />
 						{t("table.sortDescending", "Descending")}
 					</DropdownMenuItem>
 					{column.getIsSorted() && (

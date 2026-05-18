@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	clockIn: vi.fn(),
 	clockOut: vi.fn(),
+	addBreakToActiveSession: vi.fn(),
 	getTimeClockStatus: vi.fn(),
 	updateTimeEntryNotes: vi.fn(),
 	useOfflineClock: vi.fn(),
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	clockIn: mocks.clockIn,
 	clockOut: mocks.clockOut,
+	addBreakToActiveSession: mocks.addBreakToActiveSession,
 	getTimeClockStatus: mocks.getTimeClockStatus,
 	updateTimeEntryNotes: mocks.updateTimeEntryNotes,
 }));
@@ -74,6 +76,21 @@ describe("useTimeClock presence invalidation", () => {
 
 		await waitFor(() => {
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
+		});
+	});
+
+	it("invalidates time clock status, employee clock statuses, and break status after adding a break", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const invalidateSpy = vi.spyOn(client, "invalidateQueries");
+		mocks.addBreakToActiveSession.mockResolvedValue({ success: true });
+
+		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await result.current.addBreak({ breakMinutes: 30 });
+
+		await waitFor(() => {
+			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.timeClock.status() });
+			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
+			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.timeClock.breakStatus() });
 		});
 	});
 });

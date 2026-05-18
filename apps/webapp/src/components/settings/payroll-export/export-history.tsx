@@ -57,28 +57,28 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 			case "completed":
 				return (
 					<Badge variant="secondary" className="gap-1 bg-green-100 text-green-700">
-						<IconCheck className="h-3 w-3" aria-hidden="true" />
+						<IconCheck className="size-3" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.completed", "Completed")}
 					</Badge>
 				);
 			case "processing":
 				return (
 					<Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-700">
-						<IconLoader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+						<IconLoader2 className="size-3 animate-spin" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.processing", "Processing")}
 					</Badge>
 				);
 			case "pending":
 				return (
 					<Badge variant="secondary" className="gap-1">
-						<IconClock className="h-3 w-3" aria-hidden="true" />
+						<IconClock className="size-3" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.pending", "Pending")}
 					</Badge>
 				);
 			case "failed":
 				return (
 					<Badge variant="destructive" className="gap-1">
-						<IconX className="h-3 w-3" aria-hidden="true" />
+						<IconX className="size-3" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.failed", "Failed")}
 					</Badge>
 				);
@@ -185,9 +185,9 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 												aria-label={t("settings.payrollExport.history.download", "Download export")}
 											>
 												{isPending ? (
-													<IconLoader2 className="h-4 w-4 animate-spin" />
+													<IconLoader2 className="size-4 animate-spin" />
 												) : (
-													<IconDownload className="h-4 w-4" />
+													<IconDownload className="size-4" />
 												)}
 											</Button>
 										)}

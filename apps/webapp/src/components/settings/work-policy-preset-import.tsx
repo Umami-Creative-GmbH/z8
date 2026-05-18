@@ -139,7 +139,7 @@ export function WorkPolicyPresetImport({
 				<CardContent className="py-12 text-center">
 					<div className="flex flex-col items-center gap-4">
 						<div className="rounded-full bg-muted p-4">
-							<IconDownload className="h-8 w-8 text-muted-foreground" />
+							<IconDownload className="size-8 text-muted-foreground" />
 						</div>
 						<div>
 							<h3 className="text-lg font-medium">
@@ -222,12 +222,12 @@ export function WorkPolicyPresetImport({
 							>
 								{importingPresetId === preset.id ? (
 									<>
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
 										{t("settings.workPolicies.importing", "Importing...")}
 									</>
 								) : (
 									<>
-										<IconDownload className="mr-2 h-4 w-4" />
+										<IconDownload className="mr-2 size-4" />
 										{t("settings.workPolicies.import", "Import")}
 									</>
 								)}

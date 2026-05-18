@@ -177,11 +177,11 @@ export function SkillCatalogManagement({
 				</div>
 				<div className="flex items-center gap-2">
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 					</Button>
 					{canManageCatalog ? (
 						<Button onClick={handleCreate}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							{t("settings.skills.addSkill", "Add Skill")}
 						</Button>
 					) : null}
@@ -202,11 +202,11 @@ export function SkillCatalogManagement({
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+							<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 						</div>
 					) : skills.length === 0 ? (
 						<div className="py-8 text-center text-muted-foreground">
-							<IconAward className="mx-auto h-12 w-12 mb-4 opacity-50" />
+							<IconAward className="mx-auto size-12 mb-4 opacity-50" />
 							<p>{t("settings.skills.noSkills", "No skills defined yet")}</p>
 							<p className="text-sm mt-1">
 								{t("settings.skills.noSkillsHint", "Create your first skill to get started")}
@@ -236,7 +236,7 @@ export function SkillCatalogManagement({
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<div className="flex items-center justify-center">
-																<CategoryIcon className="h-5 w-5 text-muted-foreground" />
+																<CategoryIcon className="size-5 text-muted-foreground" />
 															</div>
 														</TooltipTrigger>
 														<TooltipContent>
@@ -278,10 +278,10 @@ export function SkillCatalogManagement({
 																		<Button
 																			variant="ghost"
 																			size="icon"
-																			className="h-8 w-8"
+																			className="size-8"
 																			onClick={() => handleEdit(skill)}
 																		>
-																			<IconEdit className="h-4 w-4" />
+																			<IconEdit className="size-4" />
 																		</Button>
 																	</TooltipTrigger>
 																	<TooltipContent>{t("common.edit", "Edit")}</TooltipContent>
@@ -293,11 +293,11 @@ export function SkillCatalogManagement({
 																		<Button
 																			variant="ghost"
 																			size="icon"
-																			className="h-8 w-8"
+																			className="size-8"
 																			onClick={() => handleDelete(skill)}
 																			disabled={deleteMutation.isPending}
 																		>
-																			<IconTrash className="h-4 w-4" />
+																			<IconTrash className="size-4" />
 																		</Button>
 																	</TooltipTrigger>
 																	<TooltipContent>{t("common.delete", "Delete")}</TooltipContent>
@@ -499,7 +499,7 @@ function SkillDialog({
 											{SKILL_CATEGORIES.map((cat) => (
 												<SelectItem key={cat.value} value={cat.value}>
 													<span className="flex items-center gap-2">
-														<cat.icon className="h-4 w-4" />
+														<cat.icon className="size-4" />
 														{cat.label}
 													</span>
 												</SelectItem>
@@ -594,7 +594,7 @@ function SkillDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isMutating}>
-							{isMutating && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isMutating && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

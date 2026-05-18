@@ -40,7 +40,7 @@ export function EmployeeSelectList({
 	if (isLoading && employees.length === 0) {
 		return (
 			<div className="flex items-center justify-center h-48">
-				<IconLoader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+				<IconLoader2 className="size-5 animate-spin text-muted-foreground" />
 			</div>
 		);
 	}
@@ -49,7 +49,7 @@ export function EmployeeSelectList({
 	if (!isLoading && employees.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-				<IconUsers className="h-10 w-10 mb-2 opacity-40" />
+				<IconUsers className="size-10 mb-2 opacity-40" />
 				<p className="text-sm">
 					{t("common:employeeSelect.noEmployeesFound", "No employees found")}
 				</p>
@@ -92,7 +92,7 @@ export function EmployeeSelectList({
 						onClick={onLoadMore}
 						disabled={isLoading}
 					>
-						{isLoading ? <IconLoader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+						{isLoading ? <IconLoader2 className="size-4 animate-spin mr-2" /> : null}
 						{t("common.loadMore", "Load more")}
 					</Button>
 				</div>
@@ -101,7 +101,7 @@ export function EmployeeSelectList({
 			{/* Loading indicator for pagination */}
 			{isLoading && employees.length > 0 && (
 				<div className="flex items-center justify-center py-2">
-					<IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+					<IconLoader2 className="size-4 animate-spin text-muted-foreground" />
 				</div>
 			)}
 		</div>

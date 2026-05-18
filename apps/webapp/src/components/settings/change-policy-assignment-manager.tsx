@@ -201,7 +201,7 @@ export function ChangePolicyAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconBuilding className="h-5 w-5 text-muted-foreground" />
+							<IconBuilding className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base">
 									{t("settings.changePolicies.organizationDefault", "Organization Default")}
@@ -220,7 +220,7 @@ export function ChangePolicyAssignmentManager({
 							<div className="rounded-lg border p-4 bg-accent/30">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
-										<IconShieldCheck className="h-4 w-4 text-primary" />
+										<IconShieldCheck className="size-4 text-primary" />
 										<div>
 											<span className="font-medium">{orgAssignment.policy?.name}</span>
 											{orgAssignment.policy?.noApprovalRequired && (
@@ -237,10 +237,10 @@ export function ChangePolicyAssignmentManager({
 										<Button
 											variant="ghost"
 											size="icon"
-											className="h-8 w-8 text-muted-foreground hover:text-destructive"
+											className="size-8 text-muted-foreground hover:text-destructive"
 											onClick={() => handleDeleteClick(orgAssignment)}
 										>
-											<IconTrash className="h-4 w-4" />
+											<IconTrash className="size-4" />
 											<span className="sr-only">{t("common.remove", "Remove")}</span>
 										</Button>
 									) : null}
@@ -249,7 +249,7 @@ export function ChangePolicyAssignmentManager({
 						) : (
 							<div className="space-y-4">
 								<div className="flex items-center gap-3 p-4 rounded-lg border border-dashed">
-									<IconLock className="h-5 w-5 text-muted-foreground" />
+									<IconLock className="size-5 text-muted-foreground" />
 									<div>
 										<p className="font-medium text-muted-foreground">
 											{t("settings.changePolicies.noOrgDefault", "No Organization Default")}
@@ -269,7 +269,7 @@ export function ChangePolicyAssignmentManager({
 											size="sm"
 											variant="outline"
 										>
-											<IconPlus className="mr-2 h-4 w-4" />
+											<IconPlus className="mr-2 size-4" />
 											{t("settings.changePolicies.setOrgDefault", "Set Organization Default")}
 										</Button>
 									</div>
@@ -283,7 +283,7 @@ export function ChangePolicyAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUsers className="h-5 w-5 text-muted-foreground" />
+							<IconUsers className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base">
 									{t("settings.changePolicies.teamOverrides", "Team Overrides")}
@@ -306,7 +306,7 @@ export function ChangePolicyAssignmentManager({
 						{canManage ? (
 							<div className="flex justify-end mb-4">
 								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.changePolicies.assignToTeam", "Assign to Team")}
 								</Button>
 							</div>
@@ -320,17 +320,17 @@ export function ChangePolicyAssignmentManager({
 									>
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-3">
-												<IconUsers className="h-4 w-4 text-muted-foreground" />
+												<IconUsers className="size-4 text-muted-foreground" />
 												<span className="font-medium">{assignment.team?.name}</span>
 											</div>
 											{canManage ? (
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													className="size-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeleteClick(assignment)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 													<span className="sr-only">{t("common.remove", "Remove")}</span>
 												</Button>
 											) : null}
@@ -368,7 +368,7 @@ export function ChangePolicyAssignmentManager({
 				<Card>
 					<CardHeader>
 						<div className="flex items-center gap-2">
-							<IconUser className="h-5 w-5 text-muted-foreground" />
+							<IconUser className="size-5 text-muted-foreground" />
 							<div className="flex-1">
 								<CardTitle className="text-base">
 									{t("settings.changePolicies.employeeOverrides", "Employee Overrides")}
@@ -391,7 +391,7 @@ export function ChangePolicyAssignmentManager({
 						{canManage ? (
 							<div className="flex justify-end mb-4">
 								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.changePolicies.assignToEmployee", "Assign to Employee")}
 								</Button>
 							</div>
@@ -405,17 +405,17 @@ export function ChangePolicyAssignmentManager({
 									>
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-3">
-												<IconUser className="h-4 w-4 text-muted-foreground" />
+												<IconUser className="size-4 text-muted-foreground" />
 												<span className="font-medium">{getEmployeeName(assignment.employee)}</span>
 											</div>
 											{canManage ? (
 												<Button
 													variant="ghost"
 													size="icon"
-													className="h-8 w-8 text-muted-foreground hover:text-destructive"
+													className="size-8 text-muted-foreground hover:text-destructive"
 													onClick={() => handleDeleteClick(assignment)}
 												>
-													<IconTrash className="h-4 w-4" />
+													<IconTrash className="size-4" />
 													<span className="sr-only">{t("common.remove", "Remove")}</span>
 												</Button>
 											) : null}
@@ -488,7 +488,7 @@ export function ChangePolicyAssignmentManager({
 						>
 							{deleteMutation.isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("common.removing", "Removing…")}
 								</>
 							) : (

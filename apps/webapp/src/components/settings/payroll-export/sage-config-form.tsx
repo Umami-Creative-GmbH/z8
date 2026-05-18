@@ -97,14 +97,14 @@ export function SageConfigForm({
 							alt="Sage Logo"
 							width={48}
 							height={48}
-							className="h-12 w-12"
+							className="size-12"
 						/>
 						<div>
 							<CardTitle className="flex items-center gap-2">
 								{t("settings.payrollExport.sage.title", "Sage Lohn")}
 								{initialConfig && (
 									<Badge variant="secondary" className="gap-1">
-										<IconCheck className="h-3 w-3" aria-hidden="true" />
+										<IconCheck className="size-3" aria-hidden="true" />
 										{t("settings.payrollExport.sage.configured", "Configured")}
 									</Badge>
 								)}
@@ -149,7 +149,7 @@ export function SageConfigForm({
 													)}
 												>
 													<IconInfoCircle
-														className="h-4 w-4 text-muted-foreground"
+														className="size-4 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</button>
@@ -215,7 +215,7 @@ export function SageConfigForm({
 													)}
 												>
 													<IconInfoCircle
-														className="h-4 w-4 text-muted-foreground"
+														className="size-4 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</button>
@@ -289,7 +289,7 @@ export function SageConfigForm({
 					<Button type="submit" disabled={isPending}>
 						{isPending ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("common.saving", "Saving…")}
 							</>
 						) : (

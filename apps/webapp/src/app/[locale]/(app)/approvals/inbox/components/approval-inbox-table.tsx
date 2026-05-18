@@ -133,7 +133,7 @@ export function ApprovalInboxTable({
 					const TypeIcon = TYPE_ICONS[row.original.approvalType] || IconClockEdit;
 					return (
 						<div className="flex items-center gap-2">
-							<TypeIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+							<TypeIcon className="size-4 text-muted-foreground" aria-hidden="true" />
 							<span className="text-sm">{row.original.typeName}</span>
 						</div>
 					);
@@ -200,9 +200,9 @@ export function ApprovalInboxTable({
 					return (
 						<div className={cn("flex items-center gap-1", getSLAStatusColor(sla.status))}>
 							{sla.status === "overdue" && (
-								<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
+								<IconAlertTriangle className="size-4" aria-hidden="true" />
 							)}
-							{sla.status === "approaching" && <IconClock className="h-4 w-4" aria-hidden="true" />}
+							{sla.status === "approaching" && <IconClock className="size-4" aria-hidden="true" />}
 							<span className="text-sm">
 								{sla.hoursRemaining !== null
 									? sla.hoursRemaining < 0

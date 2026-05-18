@@ -257,7 +257,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 							aria-label={t("settings.roles.editor.selectColor", "Select color {color}", {
 								color: c,
 							})}
-							className="h-7 w-7 rounded-full border-2 transition-[border-color,box-shadow]"
+							className="size-7 rounded-full border-2 transition-[border-color,box-shadow]"
 							style={{
 								backgroundColor: c,
 								borderColor: color === c ? "white" : "transparent",
@@ -347,7 +347,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 					{t("common:actions.cancel", "Cancel")}
 				</Button>
 				<Button onClick={handleSave} disabled={isSaving}>
-					{isSaving && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+					{isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 					{isEditing
 						? t("settings.roles.actions.saveChanges", "Save Changes")
 						: t("settings.roles.actions.create", "Create Role")}

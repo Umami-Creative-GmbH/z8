@@ -1,7 +1,8 @@
 import { DateTime } from "luxon";
 import type { NotificationWithMeta } from "./types";
 
-type Translate = (key: string, defaultValue: string, params?: Record<string, unknown>) => string;
+type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
+type Translate = (key: string, defaultValue: string, params?: Record<string, TranslationParam>) => string;
 
 type NotificationMetadata = {
 	managerRecorded?: boolean;

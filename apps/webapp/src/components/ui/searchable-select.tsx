@@ -60,7 +60,7 @@ export function SearchableSelect({
 					disabled={disabled}
 				>
 					{selectedOption ? selectedOption.name : placeholder}
-					<IconSelector className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					<IconSelector className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
@@ -78,7 +78,7 @@ export function SearchableSelect({
 									}}
 								>
 									<IconCheck
-										className={cn("mr-2 h-4 w-4", value === "" ? "opacity-100" : "opacity-0")}
+										className={cn("mr-2 size-4", value === "" ? "opacity-100" : "opacity-0")}
 									/>
 									{emptyLabel}
 								</CommandItem>
@@ -94,7 +94,7 @@ export function SearchableSelect({
 								>
 									<IconCheck
 										className={cn(
-											"mr-2 h-4 w-4",
+											"mr-2 size-4",
 											value === option.code ? "opacity-100" : "opacity-0",
 										)}
 									/>

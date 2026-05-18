@@ -56,10 +56,10 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 						type="button"
 						variant="ghost"
 						size="icon"
-						className="h-8 w-8 text-destructive hover:text-destructive"
+						className="size-8 text-destructive hover:text-destructive"
 						onClick={onRemove}
 					>
-						<IconTrash className="h-4 w-4" />
+						<IconTrash className="size-4" />
 					</Button>
 				</div>
 			</CardHeader>
@@ -153,7 +153,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 										field.pushValue({ ...defaultBreakOption });
 									}}
 								>
-									<IconPlus className="mr-1 h-3 w-3" />
+									<IconPlus className="mr-1 size-3" />
 									{t("settings.timeRegulations.addOption", "Add Option")}
 								</Button>
 							)}
@@ -271,11 +271,11 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 												type="button"
 												variant="ghost"
 												size="icon"
-												className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+												className="size-8 text-destructive hover:text-destructive shrink-0"
 												onClick={() => optionsField.removeValue(optionIndex)}
 												disabled={optionsField.state.value.length <= 1}
 											>
-												<IconTrash className="h-4 w-4" />
+												<IconTrash className="size-4" />
 											</Button>
 										</div>
 									))

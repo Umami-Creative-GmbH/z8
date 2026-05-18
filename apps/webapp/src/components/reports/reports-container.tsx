@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, FileBarChart } from "lucide-react";
+import { IconAlertCircle, IconChartBar } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { generateReport } from "@/app/[locale]/(app)/reports/actions";
@@ -59,7 +59,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 			{/* Error Alert */}
 			{error && (
 				<Alert variant="destructive">
-					<AlertCircle className="h-4 w-4" />
+					<IconAlertCircle className="size-4" />
 					<AlertTitle>Error</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
@@ -78,7 +78,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 								<div>
 									<h3 className="text-lg font-semibold">Export Report</h3>
 									<p className="text-sm text-muted-foreground">
-										Download this report in your preferred format
+										IconDownload this report in your preferred format
 									</p>
 								</div>
 								<ExportButtons reportData={reportData} />
@@ -96,7 +96,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4">
-							<FileBarChart className="h-12 w-12 animate-pulse text-muted-foreground" />
+							<IconChartBar className="size-12 animate-pulse text-muted-foreground" />
 							<div className="text-center">
 								<p className="font-semibold">Generating Report...</p>
 								<p className="text-sm text-muted-foreground">
@@ -113,7 +113,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4 text-center">
-							<FileBarChart className="h-12 w-12 text-muted-foreground" />
+							<IconChartBar className="size-12 text-muted-foreground" />
 							<div>
 								<p className="font-semibold">No report generated yet</p>
 								<p className="text-sm text-muted-foreground">

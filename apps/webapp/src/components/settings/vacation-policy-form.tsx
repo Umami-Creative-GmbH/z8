@@ -253,7 +253,7 @@ export function VacationPolicyForm({
 														!field.state.value && "text-muted-foreground",
 													)}
 												>
-													<IconCalendar className="mr-2 h-4 w-4" />
+													<IconCalendar className="mr-2 size-4" />
 													{field.state.value ? (
 														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 													) : (
@@ -300,7 +300,7 @@ export function VacationPolicyForm({
 														!field.state.value && "text-muted-foreground",
 													)}
 												>
-													<IconCalendar className="mr-2 h-4 w-4" />
+													<IconCalendar className="mr-2 size-4" />
 													{field.state.value ? (
 														DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 													) : (

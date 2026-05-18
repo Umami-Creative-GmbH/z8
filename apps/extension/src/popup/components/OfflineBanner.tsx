@@ -1,4 +1,4 @@
-import { WifiOff, CloudOff } from "lucide-react";
+import { WifiOff, CloudOff } from "@tabler/icons-react";
 
 interface OfflineBannerProps {
   queueLength: number;

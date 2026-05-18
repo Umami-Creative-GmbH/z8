@@ -177,7 +177,7 @@ export function AbsenceCategoriesTable({
 						<div className="flex items-center gap-2">
 							{row.original.color ? (
 								<span
-									className="h-3 w-3 shrink-0 rounded-full border"
+									className="size-3 shrink-0 rounded-full border"
 									style={{ backgroundColor: row.original.color }}
 									title={t("settings.absenceCategories.colorIndicator", "Category color")}
 								/>
@@ -254,15 +254,15 @@ export function AbsenceCategoriesTable({
 											<Button
 												variant="ghost"
 												size="icon"
-												className="h-8 w-8"
+												className="size-8"
 												aria-label={`${t("common.openMenu", "Open menu")} ${displayName}`}
 											>
-												<IconDots aria-hidden="true" className="h-4 w-4" />
+												<IconDots aria-hidden="true" className="size-4" />
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align="end">
 											<DropdownMenuItem onClick={() => setEditingCategory(row.original)}>
-												<IconPencil aria-hidden="true" className="mr-2 h-4 w-4" />
+												<IconPencil aria-hidden="true" className="mr-2 size-4" />
 												{t("common.edit", "Edit")}
 											</DropdownMenuItem>
 											<DropdownMenuItem
@@ -270,9 +270,9 @@ export function AbsenceCategoriesTable({
 												disabled={toggleActivePending}
 											>
 												{row.original.isActive ? (
-													<IconX aria-hidden="true" className="mr-2 h-4 w-4" />
+													<IconX aria-hidden="true" className="mr-2 size-4" />
 												) : (
-													<IconCheck aria-hidden="true" className="mr-2 h-4 w-4" />
+													<IconCheck aria-hidden="true" className="mr-2 size-4" />
 												)}
 												{row.original.isActive
 													? t("settings.absenceCategories.deactivate", "Deactivate")
@@ -283,7 +283,7 @@ export function AbsenceCategoriesTable({
 												className="text-destructive"
 												onClick={() => setCategoryToDelete(row.original)}
 											>
-												<IconTrash aria-hidden="true" className="mr-2 h-4 w-4" />
+												<IconTrash aria-hidden="true" className="mr-2 size-4" />
 												{t("common.delete", "Delete")}
 											</DropdownMenuItem>
 										</DropdownMenuContent>
@@ -311,7 +311,7 @@ export function AbsenceCategoriesTable({
 				{canManageCategories ? (
 					<div className="flex justify-end">
 						<Button onClick={() => setCreateFormOpen(true)}>
-							<IconPlus aria-hidden="true" className="mr-2 h-4 w-4" />
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
 							{t("settings.absenceCategories.addCategory", "Add category")}
 						</Button>
 					</div>
@@ -328,7 +328,7 @@ export function AbsenceCategoriesTable({
 					{t("settings.absenceCategories.loadError", "Failed to load absence categories")}
 				</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-					<IconRefresh aria-hidden="true" className="mr-2 h-4 w-4" />
+					<IconRefresh aria-hidden="true" className="mr-2 size-4" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -349,15 +349,15 @@ export function AbsenceCategoriesTable({
 						<div className="flex items-center gap-2">
 							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 								{isFetching ? (
-									<IconLoader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+									<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 								) : (
-									<IconRefresh aria-hidden="true" className="h-4 w-4" />
+									<IconRefresh aria-hidden="true" className="size-4" />
 								)}
 								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 							</Button>
 							{canManageCategories ? (
 								<Button onClick={() => setCreateFormOpen(true)}>
-									<IconPlus aria-hidden="true" className="mr-2 h-4 w-4" />
+									<IconPlus aria-hidden="true" className="mr-2 size-4" />
 									{t("settings.absenceCategories.addCategory", "Add category")}
 								</Button>
 							) : null}
@@ -411,7 +411,7 @@ export function AbsenceCategoriesTable({
 							disabled={deleteMutation.isPending}
 						>
 							{deleteMutation.isPending ? (
-								<IconLoader2 aria-hidden="true" className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
 							) : null}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>

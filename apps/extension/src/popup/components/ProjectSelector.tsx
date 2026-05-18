@@ -1,4 +1,4 @@
-import { Folder } from "lucide-react";
+import { Folder } from "@tabler/icons-react";
 import type { Project } from "@/types";
 
 interface ProjectSelectorProps {

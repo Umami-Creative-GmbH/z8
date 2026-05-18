@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -146,7 +146,7 @@ export function PasskeyManagement() {
 										onClick={() => confirmDelete(passkey.id)}
 										disabled={isPending}
 									>
-										<Trash2 className="h-4 w-4 text-destructive" />
+										<IconTrash className="size-4 text-destructive" />
 									</Button>
 								</div>
 							</CardHeader>

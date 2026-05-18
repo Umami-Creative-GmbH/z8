@@ -259,7 +259,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			>
 				{isLoading ? (
 					<>
-						<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+						<IconLoader2 className="mr-2 size-4 animate-spin" />
 						{t("common.loading", "Loading...")}
 					</>
 				) : (

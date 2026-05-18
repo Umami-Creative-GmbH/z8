@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { IconArrowLeft, IconArrowRight, IconLoader2 } from "@tabler/icons-react";
 import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -314,7 +314,7 @@ export function ScheduledExportDialog({
 						disabled={currentStep === 0 || isPending}
 						aria-label={t("settings.scheduledExports.dialog.backStep", "Go to previous step")}
 					>
-						<ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("settings.scheduledExports.dialog.back", "Back")}
 					</Button>
 
@@ -336,7 +336,7 @@ export function ScheduledExportDialog({
 								aria-label={t("settings.scheduledExports.dialog.nextStep", "Go to next step")}
 							>
 								{t("settings.scheduledExports.dialog.next", "Next")}
-								<ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+								<IconArrowRight className="ml-2 size-4" aria-hidden="true" />
 							</Button>
 						) : (
 							<Button
@@ -346,7 +346,7 @@ export function ScheduledExportDialog({
 							>
 								{isPending ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 										{isEditing
 											? t("settings.scheduledExports.dialog.updating", "Updating...")
 											: t("settings.scheduledExports.dialog.creating", "Creating...")}

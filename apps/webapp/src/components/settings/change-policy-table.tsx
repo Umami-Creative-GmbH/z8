@@ -218,14 +218,14 @@ export function ChangePolicyTable({
 					canManage ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<IconDots className="h-4 w-4" />
+							<Button variant="ghost" size="icon" className="size-8">
+								<IconDots className="size-4" />
 								<span className="sr-only">{t("common.actions", "Actions")}</span>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem onClick={() => onEditClick(row.original)}>
-								<IconPencil className="h-4 w-4 mr-2" />
+								<IconPencil className="size-4 mr-2" />
 								{t("common.edit", "Edit")}
 							</DropdownMenuItem>
 							<DropdownMenuSeparator />
@@ -233,7 +233,7 @@ export function ChangePolicyTable({
 								onClick={() => handleDeleteClick(row.original)}
 								className="text-destructive focus:text-destructive"
 							>
-								<IconTrash className="h-4 w-4 mr-2" />
+								<IconTrash className="size-4 mr-2" />
 								{t("common.delete", "Delete")}
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -255,7 +255,7 @@ export function ChangePolicyTable({
 					{t("settings.changePolicies.loadError", "Failed to load change policies")}
 				</p>
 				<Button variant="outline" onClick={() => refetch()}>
-					<IconRefresh className="h-4 w-4 mr-2" />
+					<IconRefresh className="size-4 mr-2" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -270,10 +270,10 @@ export function ChangePolicyTable({
 				searchPlaceholder={t("settings.changePolicies.searchPlaceholder", "Search policies...")}
 				actions={
 					<div className="flex items-center gap-2">
-						{isFetching && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+						{isFetching && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
 						{canManage ? (
 							<Button onClick={onCreateClick}>
-								<IconPlus className="h-4 w-4 mr-2" />
+								<IconPlus className="size-4 mr-2" />
 								{t("settings.changePolicies.create", "Create Policy")}
 							</Button>
 						) : null}
@@ -297,7 +297,7 @@ export function ChangePolicyTable({
 								)}
 							</p>
 							<Button onClick={onCreateClick}>
-								<IconPlus className="h-4 w-4 mr-2" />
+								<IconPlus className="size-4 mr-2" />
 								{t("settings.changePolicies.createFirst", "Create Your First Policy")}
 							</Button>
 						</>
@@ -330,9 +330,9 @@ export function ChangePolicyTable({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{deleteMutation.isPending ? (
-								<IconLoader2 className="h-4 w-4 mr-2 animate-spin" />
+								<IconLoader2 className="size-4 mr-2 animate-spin" />
 							) : (
-								<IconTrash className="h-4 w-4 mr-2" />
+								<IconTrash className="size-4 mr-2" />
 							)}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>

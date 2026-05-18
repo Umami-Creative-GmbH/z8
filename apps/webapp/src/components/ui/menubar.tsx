@@ -1,7 +1,7 @@
 "use client";
 
 import * as MenubarPrimitive from "@radix-ui/react-menubar";
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+import { IconCheck, IconChevronRight, IconCircleFilled } from "@tabler/icons-react";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -116,7 +116,7 @@ function MenubarCheckboxItem({
 		>
 			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
 				<MenubarPrimitive.ItemIndicator>
-					<CheckIcon className="size-4" />
+					<IconCheck className="size-4" />
 				</MenubarPrimitive.ItemIndicator>
 			</span>
 			{children}
@@ -140,7 +140,7 @@ function MenubarRadioItem({
 		>
 			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
 				<MenubarPrimitive.ItemIndicator>
-					<CircleIcon className="size-2 fill-current" />
+					<IconCircleFilled className="size-2 fill-current" />
 				</MenubarPrimitive.ItemIndicator>
 			</span>
 			{children}
@@ -211,7 +211,7 @@ function MenubarSubTrigger({
 			{...props}
 		>
 			{children}
-			<ChevronRightIcon className="ml-auto h-4 w-4" />
+			<IconChevronRight className="ml-auto size-4" />
 		</MenubarPrimitive.SubTrigger>
 	);
 }

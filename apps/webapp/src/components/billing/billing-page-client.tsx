@@ -160,7 +160,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 			{/* Success/Cancel Alerts */}
 			{success && (
 				<Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-					<IconCheck className="h-4 w-4 text-green-600" />
+					<IconCheck className="size-4 text-green-600" />
 					<AlertTitle>Success!</AlertTitle>
 					<AlertDescription>
 						Your subscription has been activated. Thank you for subscribing!
@@ -179,7 +179,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 			{/* Warning Alert for access issues */}
 			{!accessResult.canAccess && (
 				<Alert variant="destructive">
-					<IconAlertTriangle className="h-4 w-4" />
+					<IconAlertTriangle className="size-4" />
 					<AlertTitle>Subscription Required</AlertTitle>
 					<AlertDescription>
 						{accessResult.reason === "trial_expired"
@@ -221,7 +221,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 							{/* Seats */}
 							<div className="flex items-start gap-3">
 								<div className="p-2 bg-primary/10 rounded-lg">
-									<IconUsers className="h-5 w-5 text-primary" />
+									<IconUsers className="size-5 text-primary" />
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">Active Seats</p>
@@ -237,7 +237,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 							{/* Trial Info or Next Billing */}
 							<div className="flex items-start gap-3">
 								<div className="p-2 bg-primary/10 rounded-lg">
-									<IconCalendar className="h-5 w-5 text-primary" />
+									<IconCalendar className="size-5 text-primary" />
 								</div>
 								<div>
 									{subscription.isTrialing ? (
@@ -267,7 +267,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 							{/* Monthly Cost */}
 							<div className="flex items-start gap-3">
 								<div className="p-2 bg-primary/10 rounded-lg">
-									<IconCreditCard className="h-5 w-5 text-primary" />
+									<IconCreditCard className="size-5 text-primary" />
 								</div>
 								<div>
 									<p className="text-sm text-muted-foreground">Monthly Cost</p>
@@ -312,15 +312,15 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 										</div>
 										<ul className="space-y-2 text-sm">
 											<li className="flex items-center gap-2">
-												<IconCheck className="h-4 w-4 text-green-600" />
+												<IconCheck className="size-4 text-green-600" />
 												14-day free trial
 											</li>
 											<li className="flex items-center gap-2">
-												<IconCheck className="h-4 w-4 text-green-600" />
+												<IconCheck className="size-4 text-green-600" />
 												Cancel anytime
 											</li>
 											<li className="flex items-center gap-2">
-												<IconCheck className="h-4 w-4 text-green-600" />
+												<IconCheck className="size-4 text-green-600" />
 												All features included
 											</li>
 										</ul>
@@ -356,15 +356,15 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 										</div>
 										<ul className="space-y-2 text-sm">
 											<li className="flex items-center gap-2">
-												<IconCheck className="h-4 w-4 text-green-600" />
+												<IconCheck className="size-4 text-green-600" />
 												14-day free trial
 											</li>
 											<li className="flex items-center gap-2">
-												<IconCheck className="h-4 w-4 text-green-600" />
+												<IconCheck className="size-4 text-green-600" />
 												25% discount vs monthly
 											</li>
 											<li className="flex items-center gap-2">
-												<IconCheck className="h-4 w-4 text-green-600" />
+												<IconCheck className="size-4 text-green-600" />
 												All features included
 											</li>
 										</ul>

@@ -134,7 +134,7 @@ export default function WelcomePage() {
 				{/* Organization Info - show if user already joined via invite code */}
 				{hasOrganization && organizationName && (
 					<Alert className="mb-6 mx-auto max-w-md border-primary/20 bg-primary/5">
-						<IconBuilding className="h-4 w-4" />
+						<IconBuilding className="size-4" />
 						<AlertDescription>
 							{t(
 								"onboarding.welcome.joinedOrganization",

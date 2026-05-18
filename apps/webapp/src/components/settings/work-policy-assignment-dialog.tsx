@@ -309,7 +309,7 @@ export function WorkPolicyAssignmentDialog({
 									disabled={isPending || isSubmitting || isLoading || !canSubmit}
 								>
 									{(isPending || isSubmitting) && (
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
 									)}
 									{t("settings.workPolicies.assign", "Assign")}
 								</Button>

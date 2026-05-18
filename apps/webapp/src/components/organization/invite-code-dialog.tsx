@@ -234,7 +234,7 @@ export function InviteCodeDialog({
 										className="w-full sm:w-auto"
 										aria-label={t("settings.inviteCodes.generateCode", "Generate new code")}
 									>
-										<IconRefresh className="h-4 w-4" />
+										<IconRefresh className="size-4" />
 									</Button>
 								)}
 							</div>
@@ -392,7 +392,7 @@ export function InviteCodeDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting || !values.label.trim()}>
-							{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("settings.inviteCodes.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

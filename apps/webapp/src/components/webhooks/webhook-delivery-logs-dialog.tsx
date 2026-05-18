@@ -84,28 +84,28 @@ export function WebhookDeliveryLogsDialog({
 			case "success":
 				return (
 					<Badge variant="default" className="bg-green-600">
-						<IconCheck className="mr-1 h-3 w-3" aria-hidden="true" />
+						<IconCheck className="mr-1 size-3" aria-hidden="true" />
 						{t("settings:webhooks.logs.success", "Success")}
 					</Badge>
 				);
 			case "failed":
 				return (
 					<Badge variant="destructive">
-						<IconX className="mr-1 h-3 w-3" aria-hidden="true" />
+						<IconX className="mr-1 size-3" aria-hidden="true" />
 						{t("settings:webhooks.logs.failed", "Failed")}
 					</Badge>
 				);
 			case "retrying":
 				return (
 					<Badge variant="outline" className="border-yellow-500 text-yellow-600">
-						<IconRefresh className="mr-1 h-3 w-3" aria-hidden="true" />
+						<IconRefresh className="mr-1 size-3" aria-hidden="true" />
 						{t("settings:webhooks.logs.retrying", "Retrying")}
 					</Badge>
 				);
 			default:
 				return (
 					<Badge variant="secondary">
-						<IconLoader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden="true" />
+						<IconLoader2 className="mr-1 size-3 animate-spin" aria-hidden="true" />
 						{t("settings:webhooks.logs.pending", "Pending")}
 					</Badge>
 				);
@@ -131,7 +131,7 @@ export function WebhookDeliveryLogsDialog({
 					{isLoading && deliveries.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<IconLoader2
-								className="h-8 w-8 animate-spin text-muted-foreground"
+								className="size-8 animate-spin text-muted-foreground"
 								aria-hidden="true"
 							/>
 							<span className="sr-only">{t("common.loading", "Loading...")}</span>

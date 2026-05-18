@@ -96,7 +96,7 @@ export function ProjectTeamBreakdown({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<IconUsers className="h-5 w-5" />
+						<IconUsers className="size-5" />
 						{t("reports.projects.team.title", "Team Breakdown")}
 					</CardTitle>
 					<CardDescription>
@@ -114,7 +114,7 @@ export function ProjectTeamBreakdown({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconUsers className="h-5 w-5" />
+					<IconUsers className="size-5" />
 					{t("reports.projects.team.title", "Team Breakdown")}
 				</CardTitle>
 				<CardDescription>

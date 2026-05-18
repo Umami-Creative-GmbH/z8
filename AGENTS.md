@@ -39,6 +39,7 @@ Agents must validate their work against these skills before completing tasks:
 - **Dates**: Use Luxon (`DateTime`), not native `Date`.
 - **Auth schema**: Never edit `src/db/auth-schema.ts` directly - it's auto-generated.
 - **RBAC**: Uses [CASL](https://casl.js.org/) for role-based access control.
+- **Icons**: Use `@tabler/icons-react` exclusively. All icon components are prefixed with `Icon` (e.g. `IconCheck`, `IconLoader2`). Do **not** use `lucide-react`.
 
 ## Detailed Documentation
 

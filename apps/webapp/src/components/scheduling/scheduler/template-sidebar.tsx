@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, GripVertical } from "lucide-react";
+import { IconClock, IconGripVertical } from "@tabler/icons-react";
 import { useMemo } from "react";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,11 +66,11 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 			}}
 		>
 			<div className="flex items-start gap-2">
-				<GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
+				<IconGripVertical className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
 				<div className="flex-1 min-w-0">
 					<h4 className="font-medium text-sm truncate">{template.name}</h4>
 					<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-						<Clock className="h-3 w-3" />
+						<IconClock className="size-3" />
 						<span>
 							{formatTime(template.startTime)} - {formatTime(template.endTime)}
 						</span>
@@ -93,7 +93,7 @@ export function TemplateSidebar({
 		e.dataTransfer.effectAllowed = "copy";
 	};
 
-	// Handle drop on calendar - this needs to be coordinated with Schedule-X
+	// Handle drop on calendar - this needs to be coordinated with Schedule-IconX
 	// For now, we'll use a simpler approach where clicking a template opens the dialog
 
 	if (activeTemplates.length === 0) {

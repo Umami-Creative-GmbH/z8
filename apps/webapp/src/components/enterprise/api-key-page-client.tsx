@@ -174,7 +174,7 @@ export function ApiKeyPageClient({
 						</p>
 					</div>
 					<Button onClick={() => setCreateDialogOpen(true)} disabled={!canCreateMore}>
-						<IconPlus className="mr-2 h-4 w-4" />
+						<IconPlus className="mr-2 size-4" />
 						{t("settings.apiKeys.create", "Create Key")}
 					</Button>
 				</div>
@@ -183,11 +183,11 @@ export function ApiKeyPageClient({
 						<CardContent className="pt-6">
 						{isLoading ? (
 							<div className="flex items-center justify-center py-8">
-								<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+								<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 							</div>
 						) : apiKeys.length === 0 ? (
 							<div className="text-center py-12">
-								<IconKey className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+								<IconKey className="size-12 mx-auto text-muted-foreground mb-4" />
 								<h3 className="text-lg font-medium mb-2">
 									{t("settings.apiKeys.empty.title", "No API Keys")}
 								</h3>
@@ -198,7 +198,7 @@ export function ApiKeyPageClient({
 									)}
 								</p>
 								<Button onClick={() => setCreateDialogOpen(true)}>
-									<IconPlus className="mr-2 h-4 w-4" />
+									<IconPlus className="mr-2 size-4" />
 									{t("settings.apiKeys.create", "Create Key")}
 								</Button>
 							</div>
@@ -238,13 +238,13 @@ export function ApiKeyPageClient({
 																<Button
 																	variant="ghost"
 																	size="sm"
-																	className="h-6 w-6 p-0"
+																	className="size-6 p-0"
 																	onClick={() => handleCopyPrefix(apiKey.prefix || "", apiKey.id)}
 																>
 																	{copiedKeyId === apiKey.id ? (
-																		<IconCheck className="h-4 w-4 text-green-600" />
+																		<IconCheck className="size-4 text-green-600" />
 																	) : (
-																		<IconCopy className="h-4 w-4" />
+																		<IconCopy className="size-4" />
 																	)}
 																</Button>
 															</TooltipTrigger>
@@ -328,7 +328,7 @@ export function ApiKeyPageClient({
 				<Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
 					<CardContent>
 						<div className="flex gap-3">
-							<IconKey className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+							<IconKey className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
 							<div>
 								<h4 className="font-medium text-amber-800 dark:text-amber-200">
 									{t("settings.apiKeys.security.title", "Security Notice")}
@@ -394,9 +394,9 @@ export function ApiKeyPageClient({
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{deleteMutation.isPending ? (
-								<IconLoader2 className="h-4 w-4 animate-spin mr-2" />
+								<IconLoader2 className="size-4 animate-spin mr-2" />
 							) : (
-								<IconTrash className="h-4 w-4 mr-2" />
+								<IconTrash className="size-4 mr-2" />
 							)}
 							{t("common.delete", "Delete")}
 						</AlertDialogAction>

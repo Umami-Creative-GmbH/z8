@@ -1,30 +1,39 @@
 /* @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
 
+const toastMocks = vi.hoisted(() => ({
+	success: vi.fn(),
+	info: vi.fn(),
+	error: vi.fn(),
+}));
+
 const clockInMock = vi.fn();
 const clockOutMock = vi.fn();
+const addBreakMock = vi.fn();
 const updateNotesMock = vi.fn();
 const useElapsedTimerMock = vi.fn();
 
 let localStorageData: Record<string, string> = {};
+let isClockedInMock = false;
+let activeWorkPeriodMock: { startTime: string } | null = null;
 
 vi.mock("@/lib/query", () => ({
 	useElapsedTimer: () => useElapsedTimerMock(),
 	useTimeClock: () => ({
 		hasEmployee: true,
 		employeeId: "employee-1",
-		isClockedIn: false,
-		activeWorkPeriod: null,
+		isClockedIn: isClockedInMock,
+		activeWorkPeriod: activeWorkPeriodMock,
 		isLoading: false,
 		clockIn: clockInMock,
 		clockOut: clockOutMock,
+		addBreak: addBreakMock,
 		updateNotes: updateNotesMock,
 		isClockingOut: false,
+		isAddingBreak: false,
 		isUpdatingNotes: false,
 		isMutating: false,
 	}),
@@ -44,9 +53,9 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("sonner", () => ({
 	toast: {
-		success: vi.fn(),
-		info: vi.fn(),
-		error: vi.fn(),
+		success: toastMocks.success,
+		info: toastMocks.info,
+		error: toastMocks.error,
 	},
 }));
 
@@ -69,7 +78,10 @@ describe("TimeClockPopover", () => {
 			}),
 		});
 		useElapsedTimerMock.mockReturnValue(0);
+		isClockedInMock = false;
+		activeWorkPeriodMock = null;
 		clockInMock.mockResolvedValue({ success: true });
+		addBreakMock.mockResolvedValue({ success: true });
 	});
 
 	it("submits office as the default quick clock-in work location", async () => {
@@ -91,19 +103,22 @@ describe("TimeClockPopover", () => {
 		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
 	});
 
-	it("memoizes time formatter creation in timer-driven render paths", () => {
-		const popoverSource = readFileSync(
-			join(process.cwd(), "src/components/time-tracking/time-clock-popover.tsx"),
-			"utf8",
-		);
-		const partsSource = readFileSync(
-			join(process.cwd(), "src/components/time-tracking/clock-in-out-widget-parts.tsx"),
-			"utf8",
-		);
+	it("adds a break from the header clock popover while clocked in", async () => {
+		isClockedInMock = true;
+		activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
 
-		expect(popoverSource).toContain("useMemo");
-		expect(partsSource).toContain("useMemo");
-		expect(popoverSource).toContain("[timeFormat]");
-		expect(partsSource).toContain("[timeFormat]");
+		render(<TimeClockPopover />);
+
+		fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
+		fireEvent.change(screen.getByLabelText("Break duration in minutes"), {
+			target: { value: "30" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+		await waitFor(() => expect(addBreakMock).toHaveBeenCalledWith({ breakMinutes: 30 }));
+		expect(toastMocks.success).toHaveBeenCalledWith("Break added", {
+			description: "You are still clocked in.",
+		});
 	});
 });

@@ -380,7 +380,7 @@ export function WebhookFormDialog({
 								</div>
 
 								<p className="text-xs text-muted-foreground flex items-center gap-1">
-									<IconInfoCircle className="h-3 w-3" aria-hidden="true" />
+									<IconInfoCircle className="size-3" aria-hidden="true" />
 									{t("settings:webhooks.form.events-hint", "Selected events: {{count}}", {
 										count: selectedEvents.size,
 									})}
@@ -394,7 +394,7 @@ export function WebhookFormDialog({
 							</Button>
 							<Button type="submit" disabled={isPending}>
 								{isPending && (
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								)}
 								{isEditing
 									? t("common.save", "Save")

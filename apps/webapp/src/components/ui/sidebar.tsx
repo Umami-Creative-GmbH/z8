@@ -2,7 +2,7 @@
 
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { PanelLeftIcon } from "lucide-react";
+import { IconLayoutSidebarLeft } from "@tabler/icons-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -204,7 +204,7 @@ function Sidebar({
 						<SheetTitle>Sidebar</SheetTitle>
 						<SheetDescription>Displays the mobile sidebar.</SheetDescription>
 					</SheetHeader>
-					<div className="flex h-full w-full flex-col">{children}</div>
+					<div className="flex size-full flex-col">{children}</div>
 				</SheetContent>
 			</Sheet>
 		);
@@ -247,7 +247,7 @@ function Sidebar({
 				{...props}
 			>
 				<div
-					className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
+					className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
 					data-sidebar="sidebar"
 					data-slot="sidebar-inner"
 				>
@@ -274,7 +274,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
 			variant="ghost"
 			{...props}
 		>
-			<PanelLeftIcon />
+			<IconLayoutSidebarLeft />
 			<span className="sr-only">Toggle Sidebar</span>
 		</Button>
 	);

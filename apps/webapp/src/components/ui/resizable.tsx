@@ -1,6 +1,6 @@
 "use client";
 
-import { GripVerticalIcon } from "lucide-react";
+import { IconGripVertical } from "@tabler/icons-react";
 import type * as React from "react";
 import { Panel, Group as ResizableGroup, Separator } from "react-resizable-panels";
 
@@ -10,7 +10,7 @@ function ResizablePanelGroup({ className, ...props }: React.ComponentProps<typeo
 	return (
 		<ResizableGroup
 			data-slot="resizable-panel-group"
-			className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col", className)}
+			className={cn("flex size-full data-[panel-group-direction=vertical]:flex-col", className)}
 			{...props}
 		/>
 	);
@@ -38,7 +38,7 @@ function ResizableHandle({
 		>
 			{withHandle && (
 				<div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
-					<GripVerticalIcon className="size-2.5" />
+					<IconGripVertical className="size-2.5" />
 				</div>
 			)}
 		</Separator>

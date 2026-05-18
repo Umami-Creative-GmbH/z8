@@ -176,7 +176,7 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 					{canManage ? (
 						<div className="flex justify-end">
 							<Button onClick={handleCreateModel}>
-								<IconPlus className="mr-2 h-4 w-4" />
+								<IconPlus className="mr-2 size-4" />
 								{t("settings.surcharges.createModel", "Create Model")}
 							</Button>
 						</div>
@@ -185,7 +185,7 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 					{models.length === 0 ? (
 						<Card>
 							<CardContent className="flex flex-col items-center justify-center py-12">
-								<IconPercentage className="text-muted-foreground mb-4 h-12 w-12" />
+								<IconPercentage className="text-muted-foreground mb-4 size-12" />
 								<h3 className="mb-2 text-lg font-semibold">
 									{t("settings.surcharges.noModels", "No surcharge models")}
 								</h3>
@@ -197,7 +197,7 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 								</p>
 								{canManage ? (
 									<Button onClick={handleCreateModel}>
-										<IconPlus className="mr-2 h-4 w-4" />
+										<IconPlus className="mr-2 size-4" />
 										{t("settings.surcharges.createFirstModel", "Create First Model")}
 									</Button>
 								) : null}
@@ -222,18 +222,18 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 													<Button
 														variant="ghost"
 														size="icon"
-														className="h-8 w-8"
+														className="size-8"
 														onClick={() => handleEditModel(model)}
 													>
-														<IconPencil className="h-4 w-4" />
+														<IconPencil className="size-4" />
 													</Button>
 													<Button
 														variant="ghost"
 														size="icon"
-														className="h-8 w-8 text-destructive hover:text-destructive"
+														className="size-8 text-destructive hover:text-destructive"
 														onClick={() => setDeleteModelId(model.id)}
 													>
-														<IconTrash className="h-4 w-4" />
+														<IconTrash className="size-4" />
 													</Button>
 												</div>
 											) : null}

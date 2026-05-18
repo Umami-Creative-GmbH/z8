@@ -266,7 +266,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 							onClick={resetForm}
 							aria-label={t("settings.payrollExport.mappings.addMapping", "Add Mapping")}
 						>
-							<IconPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.payrollExport.mappings.addMapping", "Add Mapping")}
 						</Button>
 					</ActionPanelTrigger>
@@ -512,7 +512,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 							>
 								{isPending ? (
 									<>
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
 										{t("common.saving", "Saving…")}
 									</>
 								) : (
@@ -526,7 +526,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 			<CardContent>
 				{isPending && mappings.length === 0 ? (
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</div>
 				) : mappings.length === 0 ? (
 					<div className="py-8 text-center text-muted-foreground">
@@ -616,7 +616,7 @@ export function WageTypeMappings({ organizationId, config }: WageTypeMappingsPro
 															"Delete mapping",
 														)}
 													>
-														<IconTrash className="h-4 w-4" />
+														<IconTrash className="size-4" />
 													</Button>
 												</AlertDialogTrigger>
 												<AlertDialogContent>

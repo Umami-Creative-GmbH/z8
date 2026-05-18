@@ -165,7 +165,7 @@ export function SessionManagement() {
 				</CardHeader>
 				<CardContent>
 					<div className="flex items-center justify-center py-8">
-						<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
 					</div>
 				</CardContent>
 			</Card>
@@ -194,7 +194,7 @@ export function SessionManagement() {
 						>
 							{revokeOtherSessionsMutation.isPending ? (
 								<>
-									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
 									{t("settings.sessions.revoking", "Revoking…")}
 								</>
 							) : (
@@ -234,7 +234,7 @@ export function SessionManagement() {
 									<div className="flex items-start justify-between gap-4">
 										<div className="flex min-w-0 flex-1 items-start gap-3">
 											<div className="rounded-full bg-muted p-2">
-												<DeviceIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+												<DeviceIcon className="size-5 text-muted-foreground" aria-hidden="true" />
 											</div>
 											<div className="min-w-0 flex-1 space-y-1">
 												<div className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export function SessionManagement() {
 													</p>
 													{isCurrentSession && (
 														<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-															<IconCheck className="h-3 w-3" aria-hidden="true" />
+															<IconCheck className="size-3" aria-hidden="true" />
 															{t("settings.sessions.current", "Current Session")}
 														</span>
 													)}
@@ -258,7 +258,7 @@ export function SessionManagement() {
 															className="flex min-w-0 max-w-full items-center gap-1"
 															title={session.ipAddress}
 														>
-															<IconMapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+															<IconMapPin className="size-3 shrink-0" aria-hidden="true" />
 															<span className="block min-w-0 truncate">{session.ipAddress}</span>
 														</span>
 													)}
@@ -282,10 +282,10 @@ export function SessionManagement() {
 												disabled={revokingSessionId === session.id}
 											>
 												{revokingSessionId === session.id ? (
-													<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+													<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 												) : (
 													<>
-														<IconTrash className="h-4 w-4" aria-hidden="true" />
+														<IconTrash className="size-4" aria-hidden="true" />
 														<span className="sr-only">
 															{t("settings.sessions.revoke", "Revoke")}
 														</span>

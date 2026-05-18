@@ -122,7 +122,7 @@ export function ApprovalInboxToolbar({
 
 				<div className="relative w-64">
 					<IconSearch
-						className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+						className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
 						aria-hidden="true"
 					/>
 					<Input
@@ -227,7 +227,7 @@ export function ApprovalInboxToolbar({
 				{/* Clear filters */}
 				{activeFilterCount > 0 && (
 					<Button variant="ghost" size="sm" onClick={clearFilters}>
-						<IconX className="mr-1 h-4 w-4" aria-hidden="true" />
+						<IconX className="mr-1 size-4" aria-hidden="true" />
 						{t("common.clear", "Clear")}
 					</Button>
 				)}

@@ -21,12 +21,12 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 
 	const getStatusIcon = () => {
 		if (isOverBudget) {
-			return <IconAlertTriangle className="h-5 w-5 text-red-500" />;
+			return <IconAlertTriangle className="size-5 text-red-500" />;
 		}
 		if (isNearBudget) {
-			return <IconTrendingDown className="h-5 w-5 text-amber-500" />;
+			return <IconTrendingDown className="size-5 text-amber-500" />;
 		}
-		return <IconCheck className="h-5 w-5 text-green-500" />;
+		return <IconCheck className="size-5 text-green-500" />;
 	};
 
 	const getStatusText = () => {

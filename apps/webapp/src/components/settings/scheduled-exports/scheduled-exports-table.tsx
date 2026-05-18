@@ -24,7 +24,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Calendar, Clock, AlertCircle, CheckCircle2, Loader2, Play, History, Pencil, Trash2 } from "lucide-react";
+import { IconPlus, IconDots, IconCalendar, IconClock, IconAlertCircle, IconCircleCheck, IconLoader2, IconPlayerPlay, IconHistory, IconPencil, IconTrash } from "@tabler/icons-react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -260,7 +260,7 @@ export function ScheduledExportsTable({
 	if (loading && !schedules) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
-				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} />
+				<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} />
 			</div>
 		);
 	}
@@ -276,7 +276,7 @@ export function ScheduledExportsTable({
 					</p>
 				</div>
 				<Button onClick={handleOpenCreate}>
-					<Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+					<IconPlus className="size-4 mr-2" aria-hidden="true" />
 					{t("settings.scheduledExports.newSchedule", "New Schedule")}
 				</Button>
 			</div>
@@ -286,7 +286,7 @@ export function ScheduledExportsTable({
 				<Card className="border-destructive">
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-2 text-destructive" role="alert">
-							<AlertCircle className="h-5 w-5" aria-hidden="true" />
+							<IconAlertCircle className="size-5" aria-hidden="true" />
 							<p>{error instanceof Error ? error.message : t("settings.scheduledExports.error.loadFailed", "Failed to load scheduled exports")}</p>
 						</div>
 					</CardContent>
@@ -298,13 +298,13 @@ export function ScheduledExportsTable({
 				<Card>
 					<CardContent className="py-12">
 						<div className="text-center">
-							<Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" aria-hidden="true" />
+							<IconCalendar className="size-12 mx-auto text-muted-foreground mb-4" aria-hidden="true" />
 							<h3 className="text-lg font-medium mb-2">{t("settings.scheduledExports.empty.title", "No scheduled exports")}</h3>
 							<p className="text-muted-foreground mb-6">
 								{t("settings.scheduledExports.empty.description", "Create your first scheduled export to automate recurring reports.")}
 							</p>
 							<Button onClick={handleOpenCreate}>
-								<Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+								<IconPlus className="size-4 mr-2" aria-hidden="true" />
 								{t("settings.scheduledExports.empty.createButton", "Create Schedule")}
 							</Button>
 						</div>
@@ -354,7 +354,7 @@ export function ScheduledExportsTable({
 										</TableCell>
 										<TableCell>
 											<div className="flex items-center gap-2">
-												<Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+												<IconClock className="size-4 text-muted-foreground" aria-hidden="true" />
 												{getScheduleLabel(schedule)}
 											</div>
 											<div className="text-xs text-muted-foreground">
@@ -383,9 +383,9 @@ export function ScheduledExportsTable({
 														: t("settings.scheduledExports.table.activate", "Activate schedule")}
 												/>
 												{schedule.isActive ? (
-													<CheckCircle2 className="h-4 w-4 text-green-500" aria-label={t("settings.scheduledExports.table.active", "Active")} />
+													<IconCircleCheck className="size-4 text-green-500" aria-label={t("settings.scheduledExports.table.active", "Active")} />
 												) : (
-													<AlertCircle className="h-4 w-4 text-muted-foreground" aria-label={t("settings.scheduledExports.table.inactive", "Inactive")} />
+													<IconAlertCircle className="size-4 text-muted-foreground" aria-label={t("settings.scheduledExports.table.inactive", "Inactive")} />
 												)}
 											</div>
 										</TableCell>
@@ -397,20 +397,20 @@ export function ScheduledExportsTable({
 														size="sm"
 														aria-label={t("settings.scheduledExports.table.openMenu", "Open actions menu")}
 													>
-														<MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+														<IconDots className="size-4" aria-hidden="true" />
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
 													<DropdownMenuItem onClick={() => handleOpenEdit(schedule.id)}>
-														<Pencil className="h-4 w-4 mr-2" aria-hidden="true" />
+														<IconPencil className="size-4 mr-2" aria-hidden="true" />
 														{t("settings.scheduledExports.actions.edit", "Edit")}
 													</DropdownMenuItem>
 													<DropdownMenuItem onClick={() => setHistorySchedule(schedule)}>
-														<History className="h-4 w-4 mr-2" aria-hidden="true" />
-														{t("settings.scheduledExports.actions.viewHistory", "View History")}
+														<IconHistory className="size-4 mr-2" aria-hidden="true" />
+														{t("settings.scheduledExports.actions.viewHistory", "View IconHistory")}
 													</DropdownMenuItem>
 													<DropdownMenuItem onClick={() => setRunNowSchedule(schedule)}>
-														<Play className="h-4 w-4 mr-2" aria-hidden="true" />
+														<IconPlayerPlay className="size-4 mr-2" aria-hidden="true" />
 														{t("settings.scheduledExports.actions.runNow", "Run Now")}
 													</DropdownMenuItem>
 													<DropdownMenuSeparator />
@@ -418,7 +418,7 @@ export function ScheduledExportsTable({
 														className="text-destructive"
 														onClick={() => setDeleteSchedule(schedule)}
 													>
-														<Trash2 className="h-4 w-4 mr-2" aria-hidden="true" />
+														<IconTrash className="size-4 mr-2" aria-hidden="true" />
 														{t("settings.scheduledExports.actions.delete", "Delete")}
 													</DropdownMenuItem>
 												</DropdownMenuContent>
@@ -470,7 +470,7 @@ export function ScheduledExportsTable({
 				onSuccess={() => mutate()}
 			/>
 
-			{/* Execution History Dialog */}
+			{/* Execution IconHistory Dialog */}
 			{historySchedule && (
 				<ExecutionHistoryDialog
 					open={Boolean(historySchedule)}

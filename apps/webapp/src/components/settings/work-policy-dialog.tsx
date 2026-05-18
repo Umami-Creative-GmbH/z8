@@ -783,7 +783,7 @@ export function WorkPolicyDialog({
 														field.pushValue({ ...defaultBreakRule });
 													}}
 												>
-													<IconPlus className="mr-2 h-4 w-4" />
+													<IconPlus className="mr-2 size-4" />
 													{t("settings.timeRegulations.addBreakRule", "Add Break Rule")}
 												</Button>
 											)}
@@ -1173,7 +1173,7 @@ export function WorkPolicyDialog({
 								isPending || (!scheduleEnabled && !regulationEnabled && !presenceEnabled)
 							}
 						>
-							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

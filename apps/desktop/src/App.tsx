@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Settings as SettingsIcon, WifiOff, Clock, Sun, Moon, Monitor } from "lucide-react";
+import { Settings as SettingsIcon, WifiOff, Clock, Sun, Moon, Monitor } from "@tabler/icons-react";
 import { Toaster, toast } from "sonner";
 
 import { ClockButton } from "./components/ClockButton";

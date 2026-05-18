@@ -340,7 +340,7 @@ export function TravelExpensePolicyDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isPending}>
-							{isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing ? t("common.saveChanges", "Save Changes") : t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

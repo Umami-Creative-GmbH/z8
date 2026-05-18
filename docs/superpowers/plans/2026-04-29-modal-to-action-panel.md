@@ -199,7 +199,6 @@ Create `apps/webapp/src/components/ui/action-panel.tsx`:
 ```tsx
 "use client";
 
-import { XIcon } from "lucide-react";
 import type * as React from "react";
 
 import {

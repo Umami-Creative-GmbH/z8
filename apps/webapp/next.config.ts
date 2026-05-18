@@ -49,9 +49,7 @@ const nextConfig: NextConfig = {
 	experimental: {
 		optimizePackageImports: [
 			"@tabler/icons-react",
-			"lucide-react",
 			"recharts",
-			"date-fns",
 			"@radix-ui/react-icons",
 		],
 	},

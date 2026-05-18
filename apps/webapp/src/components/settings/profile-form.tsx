@@ -295,7 +295,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							<div className="space-y-4">
 								<Skeleton className="h-4 w-24" />
 								<div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-									<Skeleton className="h-24 w-24 rounded-full" />
+									<Skeleton className="size-24 rounded-full" />
 									<div className="flex-1 space-y-2">
 										<div className="flex items-center gap-2">
 											<Skeleton className="h-9 w-32" />
@@ -390,7 +390,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										{isUploadingAvatar && (
 											<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
 												<IconLoader2
-													className="h-8 w-8 animate-spin text-white"
+													className="size-8 animate-spin text-white"
 													aria-hidden="true"
 												/>
 											</div>
@@ -402,7 +402,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											aria-label={t("settings.profile.changePicture", "Change Picture")}
 											className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-transform hover:scale-110 focus-visible:scale-110 disabled:opacity-50"
 										>
-											<IconCamera className="h-4 w-4" aria-hidden="true" />
+											<IconCamera className="size-4" aria-hidden="true" />
 										</button>
 									</div>
 									<div className="w-full flex-1 space-y-2 sm:w-auto">
@@ -417,7 +417,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													isUploadingAvatar || isSubmitting || removeAvatarMutation.isPending
 												}
 											>
-												<IconUpload className="mr-2 h-4 w-4" aria-hidden="true" />
+												<IconUpload className="mr-2 size-4" aria-hidden="true" />
 												{t("settings.profile.changePicture", "Change Picture")}
 											</Button>
 											{avatarImage && (
@@ -432,9 +432,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													}
 												>
 													{removeAvatarMutation.isPending ? (
-														<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+														<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 													) : (
-														<IconTrash className="mr-2 h-4 w-4" aria-hidden="true" />
+														<IconTrash className="mr-2 size-4" aria-hidden="true" />
 													)}
 													{t("settings.profile.removePicture", "Remove Picture")}
 												</Button>
@@ -570,7 +570,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													: "border-border bg-background",
 											)}
 										>
-											<IconGenderMale className="h-6 w-6" aria-hidden="true" />
+											<IconGenderMale className="size-6" aria-hidden="true" />
 											<span className="text-sm font-medium">
 												{t("settings.profile.gender.male", "Male")}
 											</span>
@@ -587,7 +587,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													: "border-border bg-background",
 											)}
 										>
-											<IconGenderFemale className="h-6 w-6" aria-hidden="true" />
+											<IconGenderFemale className="size-6" aria-hidden="true" />
 											<span className="text-sm font-medium">
 												{t("settings.profile.gender.female", "Female")}
 											</span>
@@ -604,7 +604,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													: "border-border bg-background",
 											)}
 										>
-											<IconGenderBigender className="h-6 w-6" aria-hidden="true" />
+											<IconGenderBigender className="size-6" aria-hidden="true" />
 											<span className="text-sm font-medium">
 												{t("settings.profile.gender.other", "Other")}
 											</span>
@@ -707,7 +707,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 													!selectedBirthday && "text-muted-foreground",
 												)}
 											>
-												<IconCalendar className="mr-2 h-4 w-4" aria-hidden="true" />
+												<IconCalendar className="mr-2 size-4" aria-hidden="true" />
 												{selectedBirthday ? (
 													format(selectedBirthday, "PPP")
 												) : (
@@ -744,7 +744,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							<Button type="submit" disabled={isSubmitting}>
 								{isSubmitting ? (
 									<>
-										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
 										{t("settings.profile.saving", "Saving…")}
 									</>
 								) : (

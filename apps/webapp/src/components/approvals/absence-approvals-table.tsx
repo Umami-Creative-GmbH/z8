@@ -268,7 +268,7 @@ export function AbsenceApprovalsTable() {
 					{t("approvals:approvals.loadError", "Failed to load approvals")}
 				</p>
 				<Button className="mt-4" variant="outline" onClick={() => refetch()}>
-					<IconRefresh className="mr-2 h-4 w-4" />
+					<IconRefresh className="mr-2 size-4" />
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -288,9 +288,9 @@ export function AbsenceApprovalsTable() {
 					actions={
 						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 							{isFetching ? (
-								<IconLoader2 className="h-4 w-4 animate-spin" />
+								<IconLoader2 className="size-4 animate-spin" />
 							) : (
-								<IconRefresh className="h-4 w-4" />
+								<IconRefresh className="size-4" />
 							)}
 							<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 						</Button>

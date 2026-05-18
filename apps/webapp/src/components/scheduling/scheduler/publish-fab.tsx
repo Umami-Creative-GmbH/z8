@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertTriangle } from "@tabler/icons-react";
-import { Loader2, Send } from "lucide-react";
+import { IconLoader2, IconSend } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -43,15 +43,15 @@ export function PublishFab({
 				>
 					{isPublishing ? (
 						<>
-							<Loader2 className="h-5 w-5 mr-2 animate-spin" />
+							<IconLoader2 className="size-5 mr-2 animate-spin" />
 							Publishing…
 						</>
 					) : (
 						<>
 							{hasWarnings ? (
-								<IconAlertTriangle className="h-5 w-5 mr-2" aria-hidden="true" />
+								<IconAlertTriangle className="size-5 mr-2" aria-hidden="true" />
 							) : (
-								<Send className="h-5 w-5 mr-2" aria-hidden="true" />
+								<IconSend className="size-5 mr-2" aria-hidden="true" />
 							)}
 							Publish ({draftCount})
 						</>

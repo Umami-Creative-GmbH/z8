@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogIn, Settings as SettingsIcon, Loader2, Clock, Sun, Moon, Monitor } from "lucide-react";
+import { IconLogin2, IconSettings as SettingsIcon, IconLoader2, IconClock, IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react";
 import { useTheme } from "../hooks/useTheme";
 
 interface LoginScreenProps {
@@ -38,7 +38,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
     else setTheme("system");
   };
 
-  const ThemeIcon = theme === "system" ? Monitor : resolvedTheme === "dark" ? Moon : Sun;
+  const ThemeIcon = theme === "system" ? IconDeviceDesktop : resolvedTheme === "dark" ? IconMoon : IconSun;
 
   return (
     <div className="login-screen">
@@ -55,7 +55,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
           <button
             onClick={onOpenSettings}
             className="settings-button"
-            title="Settings"
+            title="IconSettings"
           >
             <SettingsIcon size={18} />
           </button>
@@ -65,7 +65,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
       {/* Logo/Title */}
       <div className="login-brand">
         <div className="login-logo">
-          <Clock size={36} color="white" />
+          <IconClock size={36} color="white" />
         </div>
         <h1 className="login-title">z8 Timer</h1>
         <p className="login-subtitle">Your time tracking companion</p>
@@ -80,7 +80,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
             </p>
             <button onClick={onOpenSettings} className="login-button">
               <SettingsIcon size={20} />
-              Open Settings
+              Open IconSettings
             </button>
           </div>
         ) : (
@@ -91,9 +91,9 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
               className={`login-button ${isLoading ? "login-button-loading" : ""}`}
             >
               {isLoading ? (
-                <Loader2 size={20} className="clock-spinner" />
+                <IconLoader2 size={20} className="clock-spinner" />
               ) : (
-                <LogIn size={20} />
+                <IconLogin2 size={20} />
               )}
               {isLoading ? "Opening browser..." : "Sign in with Z8"}
             </button>

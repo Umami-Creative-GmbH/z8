@@ -53,7 +53,7 @@ export function DayDetails({ selectedDate, events }: DayDetailsProps) {
 						{dayEvents.map((event) => (
 							<div key={event.id} className="space-y-1">
 								<div className="flex items-center gap-2">
-									<div className="h-2 w-2 rounded-full" style={{ backgroundColor: event.color }} />
+									<div className="size-2 rounded-full" style={{ backgroundColor: event.color }} />
 									<span className="text-sm font-medium">{event.title}</span>
 									<Badge variant="secondary" className="text-xs">
 										{event.type}

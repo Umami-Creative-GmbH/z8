@@ -107,7 +107,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					<div className="flex items-center gap-2">
 						{row.original.color && (
 							<div
-								className="h-3 w-3 rounded-full flex-shrink-0"
+								className="size-3 rounded-full flex-shrink-0"
 								style={{ backgroundColor: row.original.color }}
 							/>
 						)}
@@ -202,7 +202,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 						className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
 						aria-label={t("reports.projects.table.viewProject", "View project details")}
 					>
-						<IconChevronRight className="h-4 w-4" />
+						<IconChevronRight className="size-4" />
 					</Button>
 				),
 			},

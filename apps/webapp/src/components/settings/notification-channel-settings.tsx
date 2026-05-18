@@ -341,7 +341,7 @@ export function NotificationChannelSettings({
 							<Button type="submit" disabled={disableForm || !isDirty}>
 								{isSubmitting && (
 									<IconLoader2
-										className="mr-2 h-4 w-4 motion-safe:animate-spin"
+										className="mr-2 size-4 motion-safe:animate-spin"
 										aria-hidden="true"
 									/>
 								)}

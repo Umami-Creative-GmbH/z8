@@ -314,7 +314,7 @@ export function ProjectDialog({
 												key={color}
 												type="button"
 												onClick={() => field.handleChange(color)}
-												className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 ${
+												className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
 													field.state.value === color
 														? "border-foreground ring-2 ring-foreground ring-offset-2"
 														: "border-transparent"
@@ -325,7 +325,7 @@ export function ProjectDialog({
 										<button
 											type="button"
 											onClick={() => field.handleChange("")}
-											className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs ${
+											className={`flex size-8 items-center justify-center rounded-full border-2 text-xs ${
 												!field.state.value
 													? "border-foreground ring-2 ring-foreground ring-offset-2"
 													: "border-muted"
@@ -390,7 +390,7 @@ export function ProjectDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{isEditing
 								? t("settings.projects.dialog.save", "Save Changes")
 								: t("settings.projects.dialog.create", "Create Project")}

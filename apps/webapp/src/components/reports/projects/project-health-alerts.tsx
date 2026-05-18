@@ -23,7 +23,7 @@ export function ProjectHealthAlerts({ projects, onProjectSelect }: ProjectHealth
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconAlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+					<IconAlertTriangle className="size-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
 					{t("reports.projects.healthAlerts.title", "Project Health Alerts")}
 				</CardTitle>
 				<CardDescription>
@@ -54,7 +54,7 @@ export function ProjectHealthAlerts({ projects, onProjectSelect }: ProjectHealth
 										<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm">
 											{project.percentBudgetUsed !== null ? (
 												<span className="inline-flex items-center gap-1 tabular-nums">
-													<IconGauge className="h-4 w-4" aria-hidden="true" />
+													<IconGauge className="size-4" aria-hidden="true" />
 													{t("reports.projects.healthAlerts.budgetUsed", "{percent}% budget used", {
 														percent: Math.round(project.percentBudgetUsed),
 													})}
@@ -62,7 +62,7 @@ export function ProjectHealthAlerts({ projects, onProjectSelect }: ProjectHealth
 											) : null}
 											{project.daysUntilDeadline !== null ? (
 												<span className="inline-flex items-center gap-1 tabular-nums">
-													<IconCalendarDue className="h-4 w-4" aria-hidden="true" />
+													<IconCalendarDue className="size-4" aria-hidden="true" />
 													{formatDeadlineContext(project.daysUntilDeadline, t)}
 												</span>
 											) : null}

@@ -67,8 +67,8 @@ export function EmployeeSelectItem({
 					aria-hidden="true"
 				/>
 			) : (
-				<div className="w-4 h-4 flex items-center justify-center shrink-0">
-					{isSelected && <IconCheck className="h-4 w-4 text-primary" />}
+				<div className="size-4 flex items-center justify-center shrink-0">
+					{isSelected && <IconCheck className="size-4 text-primary" />}
 				</div>
 			)}
 

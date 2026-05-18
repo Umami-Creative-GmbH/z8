@@ -113,7 +113,7 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 					</div>
 					{availableProviders.length > 0 && (
 						<Button onClick={() => setIsAddDialogOpen(true)}>
-							<IconPlus className="mr-2 h-4 w-4" />
+							<IconPlus className="mr-2 size-4" />
 							Add Provider
 						</Button>
 					)}
@@ -145,7 +145,7 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 										<TableRow key={config.id}>
 											<TableCell className="font-medium">
 												<div className="flex items-center gap-2">
-													<provider.icon className="h-5 w-5" />
+													<provider.icon className="size-5" />
 													{provider.name}
 												</div>
 											</TableCell>
@@ -159,12 +159,12 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 													<Badge variant="secondary">Not Tested</Badge>
 												) : config.lastTestSuccess ? (
 													<Badge variant="default" className="bg-green-600">
-														<IconCheck className="mr-1 h-3 w-3" />
+														<IconCheck className="mr-1 size-3" />
 														Working
 													</Badge>
 												) : (
 													<Badge variant="destructive">
-														<IconX className="mr-1 h-3 w-3" />
+														<IconX className="mr-1 size-3" />
 														Error
 													</Badge>
 												)}
@@ -182,14 +182,14 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 											<TableCell className="text-right">
 												<div className="flex justify-end gap-2">
 													<Button variant="outline" size="sm" onClick={() => setEditConfig(config)}>
-														<IconPencil className="h-4 w-4" />
+														<IconPencil className="size-4" />
 													</Button>
 													<Button
 														variant="outline"
 														size="sm"
 														onClick={() => setDeleteDialog({ isOpen: true, config })}
 													>
-														<IconTrash className="h-4 w-4 text-destructive" />
+														<IconTrash className="size-4 text-destructive" />
 													</Button>
 												</div>
 											</TableCell>

@@ -325,7 +325,7 @@ export function WorkCategoryAssignmentDialog({
 					<Button onClick={handleSubmit} disabled={!isValid || createMutation.isPending}>
 						{createMutation.isPending ? (
 							<>
-								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
 								{t("common.saving", "Saving...")}
 							</>
 						) : (

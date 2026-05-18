@@ -104,7 +104,7 @@ export function InviteMemberDialog({
 						<div className="space-y-2">
 							<Label htmlFor="email">Email Address</Label>
 							<div className="relative">
-								<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
 								<Input
 									id="email"
 									type="email"
@@ -189,7 +189,7 @@ export function InviteMemberDialog({
 							Cancel
 						</Button>
 						<Button type="submit" disabled={inviteMutation.isPending}>
-							{inviteMutation.isPending && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{inviteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							Send Invitation
 						</Button>
 					</ActionPanelFooter>
