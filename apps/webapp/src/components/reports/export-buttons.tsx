@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { IconDownload, IconFileSpreadsheet, IconFileText } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				variant="default"
 				size="lg"
 			>
-				<FileText className="mr-2 h-4 w-4" />
+				<IconFileText className="mr-2 h-4 w-4" />
 				{loading === "pdf" ? "Generating..." : "Export PDF"}
 			</Button>
 
@@ -95,7 +95,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				variant="outline"
 				size="lg"
 			>
-				<FileSpreadsheet className="mr-2 h-4 w-4" />
+				<IconFileSpreadsheet className="mr-2 h-4 w-4" />
 				{loading === "excel" ? "Generating..." : "Export Excel"}
 			</Button>
 
@@ -105,7 +105,7 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				variant="outline"
 				size="lg"
 			>
-				<Download className="mr-2 h-4 w-4" />
+				<IconDownload className="mr-2 h-4 w-4" />
 				{loading === "csv" ? "Generating..." : "Export CSV"}
 			</Button>
 		</div>

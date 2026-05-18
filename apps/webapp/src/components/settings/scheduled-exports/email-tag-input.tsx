@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { IconX } from "@tabler/icons-react";
 import { useState, useCallback } from "react";
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
@@ -91,7 +91,7 @@ export function EmailTagInput({
 							className="ml-1 rounded-full hover:bg-muted p-0.5"
 							aria-label={t("settings.scheduledExports.emailInput.remove", "Remove {email}", { email })}
 						>
-							<X className="h-3 w-3" aria-hidden="true" />
+							<IconX className="h-3 w-3" aria-hidden="true" />
 						</button>
 					</Badge>
 				))}

@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Settings } from "@tabler/icons-react";
 
 export function Header() {
   const handleOpenOptions = () => {

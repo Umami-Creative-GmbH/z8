@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { IconMapPin } from "@tabler/icons-react";
 import { WORK_LOCATION_OPTIONS, type WorkLocationType } from "../types";
 
 interface WorkLocationSelectorProps {
@@ -11,7 +11,7 @@ export function WorkLocationSelector({ value, onChange, disabled }: WorkLocation
   return (
     <div className="work-location-selector" aria-label="Work location">
       <div className="work-location-label">
-        <MapPin size={14} aria-hidden="true" />
+        <IconMapPin size={14} aria-hidden="true" />
         <span>Work location</span>
       </div>
       <div className="work-location-options" role="radiogroup" aria-label="Work location">

@@ -1,7 +1,7 @@
 "use client";
 
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
-import { SearchIcon } from "lucide-react";
+import { IconSearch } from '@tabler/icons-react';
 import { useEffect, useState } from "react";
 import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
 import {
@@ -146,7 +146,7 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 					<SidebarMenu>
 						<SidebarMenuItem>
 							<SidebarMenuButton onClick={() => setOpen(true)} tooltip="Search" type="button">
-								<SearchIcon />
+								<IconSearch />
 								<span>Search</span>
 								<Kbd className="ml-auto hidden bg-sidebar-accent text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden sm:inline-flex">
 									{searchShortcutLabel}

@@ -17,7 +17,7 @@ import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { IconChevronLeft, IconChevronRight, IconReload } from '@tabler/icons-react';
 import { DateTime } from "luxon";
 import { useTheme } from "next-themes";
 
@@ -298,17 +298,17 @@ export function ScheduleXCalendarWrapper({
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="icon" onClick={navigatePrevious}>
-						<ChevronLeft className="h-4 w-4" />
+						<IconChevronLeft className="size-4" />
 					</Button>
 					<Button variant="outline" size="icon" onClick={navigateNext}>
-						<ChevronRight className="h-4 w-4" />
+						<IconChevronRight className="size-4" />
 					</Button>
 					<Button variant="outline" size="sm" onClick={navigateToday}>
 						Today
 					</Button>
 					{onRefresh && (
 						<Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
-							<RefreshCw className="h-4 w-4" />
+							<IconReload className="size-4" />
 						</Button>
 					)}
 				</div>

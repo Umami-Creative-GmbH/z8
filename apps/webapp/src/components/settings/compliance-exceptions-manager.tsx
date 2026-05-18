@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { Check, Clock, Shield, X } from "lucide-react";
+import { IconCheck, IconClock, IconShield, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -161,7 +161,7 @@ export function ComplianceExceptionsManager({
 		<div className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex flex-col gap-2">
 				<h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-					<Shield className="h-6 w-6" aria-hidden="true" />
+					<IconShield className="h-6 w-6" aria-hidden="true" />
 					{t("settings.compliance.title", "ArbZG Compliance")}
 				</h1>
 				<p className="text-sm text-muted-foreground">
@@ -176,7 +176,7 @@ export function ComplianceExceptionsManager({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2 text-lg">
-						<Clock className="h-5 w-5" aria-hidden="true" />
+						<IconClock className="h-5 w-5" aria-hidden="true" />
 						{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}
 					</CardTitle>
 					<CardDescription>
@@ -202,7 +202,7 @@ export function ComplianceExceptionsManager({
 						</div>
 					) : exceptions.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<Check className="mb-3 h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
+							<IconCheck className="mb-3 h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
 							<p className="text-sm text-muted-foreground">
 								{t("compliance:compliance.noExceptions", "No pending exception requests")}
 							</p>
@@ -338,11 +338,11 @@ function ExceptionCard({ exception, onApprove, onReject, isApproving }: Exceptio
 
 			<div className="flex gap-2">
 				<Button size="sm" variant="outline" onClick={onReject} disabled={isApproving}>
-					<X className="mr-1 h-4 w-4" aria-hidden="true" />
+					<IconX className="mr-1 h-4 w-4" aria-hidden="true" />
 					{t("common.reject", "Reject")}
 				</Button>
 				<Button size="sm" onClick={onApprove} disabled={isApproving}>
-					<Check className="mr-1 h-4 w-4" aria-hidden="true" />
+					<IconCheck className="mr-1 h-4 w-4" aria-hidden="true" />
 					{t("common.approve", "Approve")}
 				</Button>
 			</div>

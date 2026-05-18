@@ -309,7 +309,6 @@ git commit -m "feat: surface extension last action context"
 Create `apps/extension/src/popup/components/StatusCard.tsx`:
 
 ```tsx
-import { CheckCircle2, Clock3, Cloud, CloudOff } from "lucide-react";
 import { formatActionTime, formatClockTime } from "@/lib/time";
 import type { LastAction } from "@/types";
 

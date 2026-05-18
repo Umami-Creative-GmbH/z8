@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { memo, useMemo, useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -237,7 +237,7 @@ export function AbsenceYearCalendar({
 						onClick={() => handleYearChange(year - 1)}
 						aria-label={t("absences.calendar.previousYear", "Previous year")}
 					>
-						<ChevronLeft className="h-4 w-4" />
+						<IconChevronLeft className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
@@ -245,7 +245,7 @@ export function AbsenceYearCalendar({
 						onClick={() => handleYearChange(year + 1)}
 						aria-label={t("absences.calendar.nextYear", "Next year")}
 					>
-						<ChevronRight className="h-4 w-4" />
+						<IconChevronRight className="size-4" />
 					</Button>
 					<Button
 						variant="outline"
@@ -262,19 +262,19 @@ export function AbsenceYearCalendar({
 			{/* Absences-specific legend */}
 			<div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
 				<div className="flex items-center gap-1">
-					<div className="w-3 h-3 rounded bg-blue-100 dark:bg-blue-900/30 border border-blue-500" />
+					<div className="size-3 rounded bg-blue-100 dark:bg-blue-900/30 border border-blue-500" />
 					<span>{t("absences.calendar.legend.approved", "Approved")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-500" />
+					<div className="size-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-500" />
 					<span>{t("absences.calendar.legend.pending", "Pending")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-500" />
+					<div className="size-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-500" />
 					<span>{t("absences.calendar.legend.rejected", "Rejected")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/30 border border-amber-500" />
+					<div className="size-3 rounded bg-amber-100 dark:bg-amber-900/30 border border-amber-500" />
 					<span>{t("absences.calendar.legend.holiday", "Holiday")}</span>
 				</div>
 			</div>

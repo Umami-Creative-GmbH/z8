@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTolgee, useTranslate } from "@tolgee/react";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { memo, useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -22,22 +22,20 @@ interface YearCalendarViewProps {
 	workHoursData?: Map<string, { expected: number; actual: number }>;
 }
 
-const MONTHS = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-];
+const MONTH_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
-const SUNDAY_FIRST_WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+function getMonthNames(locale: string): string[] {
+	return MONTH_INDICES.map((month) =>
+		new Intl.DateTimeFormat(locale, { month: "long" }).format(new Date(2000, month, 1)),
+	);
+}
+
+function getWeekdayNames(locale: string): string[] {
+	// Sunday=0 based reference week: Jan 2–8 2000 (Sun–Sat)
+	return Array.from({ length: 7 }, (_, i) =>
+		new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2000, 0, 2 + i)),
+	);
+}
 
 function getDaysInMonth(year: number, month: number): Date[] {
 	const days: Date[] = [];
@@ -57,6 +55,7 @@ function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStart
 interface MiniMonthProps {
 	year: number;
 	month: number;
+	monthName: string;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	weekdays: string[];
 	weekStartDay: WeekStartDay;
@@ -67,6 +66,7 @@ interface MiniMonthProps {
 const MiniMonth = memo(function MiniMonth({
 	year,
 	month,
+	monthName,
 	eventsByDate,
 	weekdays,
 	weekStartDay,
@@ -85,7 +85,7 @@ const MiniMonth = memo(function MiniMonth({
 
 	return (
 		<div className="p-2 border rounded-lg bg-card">
-			<h3 className="text-sm font-medium text-center mb-2">{MONTHS[month]}</h3>
+			<h3 className="text-sm font-medium text-center mb-2">{monthName}</h3>
 
 			{/* Weekday headers */}
 			<div className="grid grid-cols-7 gap-0.5 text-center mb-1">
@@ -172,14 +172,14 @@ export function YearCalendarView({
 	workHoursData,
 }: YearCalendarViewProps) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
-	const weekdays = useMemo(
-		() =>
-			weekStartDay === "monday"
-				? [...SUNDAY_FIRST_WEEKDAYS.slice(1), SUNDAY_FIRST_WEEKDAYS[0]]
-				: SUNDAY_FIRST_WEEKDAYS,
-		[weekStartDay],
-	);
+	const monthNames = useMemo(() => getMonthNames(locale), [locale]);
+	const weekdays = useMemo(() => {
+		const names = getWeekdayNames(locale);
+		return weekStartDay === "monday" ? [...names.slice(1), names[0]] : names;
+	}, [locale, weekStartDay]);
 
 	// Group events by date
 	const eventsByDate = useMemo(() => {
@@ -200,10 +200,10 @@ export function YearCalendarView({
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="icon" onClick={() => onYearChange(year - 1)}>
-						<ChevronLeft className="h-4 w-4" />
+						<IconChevronLeft className="h-4 w-4" />
 					</Button>
 					<Button variant="outline" size="icon" onClick={() => onYearChange(year + 1)}>
-						<ChevronRight className="h-4 w-4" />
+						<IconChevronRight className="h-4 w-4" />
 					</Button>
 					<Button
 						variant="outline"
@@ -250,11 +250,12 @@ export function YearCalendarView({
 
 			{/* 12 month grid */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
-				{MONTHS.map((monthName, month) => (
+				{MONTH_INDICES.map((month) => (
 					<MiniMonth
-						key={monthName}
+						key={month}
 						year={year}
 						month={month}
+						monthName={monthNames[month]}
 						eventsByDate={eventsByDate}
 						weekdays={weekdays}
 						weekStartDay={weekStartDay}

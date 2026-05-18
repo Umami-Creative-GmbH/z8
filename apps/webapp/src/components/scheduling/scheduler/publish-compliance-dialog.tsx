@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertTriangle } from "@tabler/icons-react";
-import { Loader2 } from "lucide-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -73,7 +73,7 @@ export function PublishComplianceDialog({
 					<Button type="button" onClick={onConfirm} disabled={isConfirming}>
 						{isConfirming ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
 								Publishing…
 							</>
 						) : (

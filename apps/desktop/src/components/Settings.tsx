@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, LogOut, Settings as SettingsIcon } from "lucide-react";
-import type { Settings as SettingsType } from "../types";
+import { IconX, IconLogout2, IconSettings as SettingsIcon } from "@tabler/icons-react";
+import type { IconSettings as SettingsType } from "../types";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface SettingsProps {
   isAuthenticated: boolean;
 }
 
-export function Settings({
+export function IconSettings({
   isOpen,
   onClose,
   settings,
@@ -107,7 +107,7 @@ export function Settings({
             >
               <SettingsIcon size={20} color="var(--color-muted-foreground)" />
             </div>
-            <h2 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>Settings</h2>
+            <h2 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>IconSettings</h2>
           </div>
           <button
             onClick={onClose}
@@ -122,7 +122,7 @@ export function Settings({
               justifyContent: "center",
             }}
           >
-            <X size={18} color="var(--color-muted-foreground)" />
+            <IconX size={18} color="var(--color-muted-foreground)" />
           </button>
         </div>
 
@@ -296,7 +296,7 @@ export function Settings({
                 transition: "background 0.15s ease",
               }}
             >
-              <LogOut size={16} />
+              <IconLogout2 size={16} />
               Sign out
             </button>
           )}

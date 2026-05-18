@@ -65,7 +65,7 @@ function PopupContent() {
       <>
         <OfflineBanner queueLength={queueLength} />
         <ErrorState
-          error={new Error("Unable to connect. Check your internet connection.")}
+          error={new Error("Unable to connect. IconCheck your internet connection.")}
           onRetry={() => refetch()}
         />
       </>
@@ -80,7 +80,7 @@ function PopupContent() {
     try {
       await clockIn();
     } catch (err) {
-      console.error("Clock in failed:", err);
+      console.error("IconClock in failed:", err);
     }
   };
 
@@ -89,7 +89,7 @@ function PopupContent() {
       await clockOut(selectedProjectId);
       setSelectedProjectId(undefined);
     } catch (err) {
-      console.error("Clock out failed:", err);
+      console.error("IconClock out failed:", err);
     }
   };
 

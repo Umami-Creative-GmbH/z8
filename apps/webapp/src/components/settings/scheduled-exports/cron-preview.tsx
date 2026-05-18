@@ -3,7 +3,7 @@
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { useTranslate } from "@tolgee/react";
-import { AlertCircle, Calendar, Loader2 } from "lucide-react";
+import { IconAlertCircle, IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { previewNextExecutionsAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import type { ScheduleType } from "@/lib/scheduled-exports/domain/types";
 
@@ -70,7 +70,7 @@ export function CronPreview({
 	if (isLoading) {
 		return (
 			<div className="flex items-center gap-2 text-sm text-muted-foreground py-2" role="status" aria-live="polite">
-				<Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+				<IconLoader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
 				<span>{t("settings.scheduledExports.cronPreview.loading", "Calculating next runs...")}</span>
 			</div>
 		);
@@ -79,7 +79,7 @@ export function CronPreview({
 	if (displayError) {
 		return (
 			<div className="flex items-center gap-2 text-sm text-destructive py-2" role="alert">
-				<AlertCircle className="h-4 w-4" aria-hidden="true" />
+				<IconAlertCircle className="h-4 w-4" aria-hidden="true" />
 				<span>{displayError}</span>
 			</div>
 		);
@@ -92,7 +92,7 @@ export function CronPreview({
 	return (
 		<div className="rounded-md border bg-muted/50 p-3 space-y-2" role="region" aria-label={t("settings.scheduledExports.cronPreview.region", "Scheduled runs preview")}>
 			<div className="flex items-center gap-2 text-sm font-medium">
-				<Calendar className="h-4 w-4" aria-hidden="true" />
+				<IconCalendar className="h-4 w-4" aria-hidden="true" />
 				<span>{t("settings.scheduledExports.cronPreview.title", "Next 5 scheduled runs")}</span>
 			</div>
 			<ul className="space-y-1 text-sm text-muted-foreground" aria-label={t("settings.scheduledExports.cronPreview.listLabel", "List of next scheduled runs")}>

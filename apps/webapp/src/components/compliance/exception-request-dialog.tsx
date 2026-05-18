@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { AlertTriangle, Clock, Shield } from "lucide-react";
+import { IconAlertTriangle, IconClock, IconShield } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { requestComplianceException } from "@/app/[locale]/(app)/settings/compliance/actions";
@@ -36,25 +36,25 @@ const exceptionTypes = [
 		value: "rest_period",
 		label: "Rest Period Exception",
 		description: "Request to clock in before completing the 11-hour rest period",
-		icon: Clock,
+		icon: IconClock,
 	},
 	{
 		value: "overtime_daily",
 		label: "Daily Overtime",
 		description: "Request to work beyond the daily overtime threshold",
-		icon: AlertTriangle,
+		icon: IconAlertTriangle,
 	},
 	{
 		value: "overtime_weekly",
 		label: "Weekly Overtime",
 		description: "Request to work beyond the weekly overtime threshold",
-		icon: AlertTriangle,
+		icon: IconAlertTriangle,
 	},
 	{
 		value: "overtime_monthly",
 		label: "Monthly Overtime",
 		description: "Request to work beyond the monthly overtime threshold",
-		icon: AlertTriangle,
+		icon: IconAlertTriangle,
 	},
 ] as const;
 
@@ -150,7 +150,7 @@ export function ExceptionRequestDialog({
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelHeader>
 						<ActionPanelTitle className="flex items-center gap-2">
-							<Shield className="h-5 w-5" aria-hidden="true" />
+							<IconShield className="h-5 w-5" aria-hidden="true" />
 							{t("compliance:compliance.exception.requestTitle", "Request Compliance Exception")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>

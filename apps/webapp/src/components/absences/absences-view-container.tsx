@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Calendar, Plus, Table as TableIcon } from "lucide-react";
+import { IconCalendar, IconPlus, IconTable } from '@tabler/icons-react';
 import { useCallback, useRef, useState } from "react";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
@@ -87,16 +87,16 @@ export function AbsencesViewContainer({
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<TabsList>
 						<TabsTrigger value="calendar" className="gap-2">
-							<Calendar className="h-4 w-4" />
+							<IconCalendar className="size-4" />
 							{t("absences.view.calendar", "Calendar")}
 						</TabsTrigger>
 						<TabsTrigger value="table" className="gap-2">
-							<TableIcon className="h-4 w-4" />
+							<IconTable className="size-4" />
 							{t("absences.view.table", "Table")}
 						</TabsTrigger>
 					</TabsList>
 					<Button className="w-full gap-2 sm:w-auto" onClick={handleAddAbsence}>
-						<Plus className="h-4 w-4" />
+						<IconPlus className="size-4" />
 						{t("absences.addAbsence", "Add absence")}
 					</Button>
 				</div>

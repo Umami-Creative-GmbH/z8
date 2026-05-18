@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, ExternalLink, Loader2, Bell, BellOff } from "lucide-react";
+import { IconCheck, IconExternalLink, IconLoader2, IconBell, IconBellOff } from "@tabler/icons-react";
 import { storage } from "@/lib/storage";
 
 export function Options() {
@@ -82,7 +82,7 @@ export function Options() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-950" role="status">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" aria-hidden="true" />
+        <IconLoader2 className="w-8 h-8 text-blue-600 animate-spin" aria-hidden="true" />
         <span className="sr-only">Loading…</span>
       </div>
     );
@@ -100,7 +100,7 @@ export function Options() {
               <h1 className="text-lg font-semibold text-slate-950">
                 Z8 Time Tracker
               </h1>
-              <p className="text-sm text-slate-500">Extension Settings</p>
+              <p className="text-sm text-slate-500">Extension IconSettings</p>
             </div>
           </div>
 
@@ -141,9 +141,9 @@ export function Options() {
             <div className="border-t border-slate-100 pt-6">
               <div className="flex items-center gap-2 mb-4">
                 {notificationsEnabled ? (
-                  <Bell className="w-4 h-4 text-blue-600" aria-hidden="true" />
+                  <IconBell className="w-4 h-4 text-blue-600" aria-hidden="true" />
                 ) : (
-                  <BellOff className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                  <IconBellOff className="w-4 h-4 text-slate-400" aria-hidden="true" />
                 )}
                 <h2 className="text-sm font-medium text-slate-950">Notifications</h2>
               </div>
@@ -207,22 +207,22 @@ export function Options() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <IconLoader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                 ) : saved ? (
-                  <Check className="w-4 h-4" aria-hidden="true" />
+                  <IconCheck className="w-4 h-4" aria-hidden="true" />
                 ) : null}
-                <span>{saved ? "Saved!" : "Save Settings"}</span>
+                <span>{saved ? "Saved!" : "Save IconSettings"}</span>
               </button>
               <button
                 onClick={handleTest}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 <span>Test</span>
-                <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                <IconExternalLink className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
             <p className="sr-only" aria-live="polite">
-              {saved ? "Settings saved." : ""}
+              {saved ? "IconSettings saved." : ""}
             </p>
           </div>
 

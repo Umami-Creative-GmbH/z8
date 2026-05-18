@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { Check, ChevronsUpDown, Globe } from "lucide-react";
+import { IconCheck, IconChevronsUpDown, IconWorld } from "@tabler/icons-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -255,15 +255,15 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 					disabled={disabled}
 				>
 					<div className="flex items-center gap-2 truncate">
-						<Globe className="h-4 w-4 shrink-0 opacity-50" />
+						<IconWorld className="h-4 w-4 shrink-0 opacity-50" />
 						<span className="truncate">{selectedLabel}</span>
 					</div>
-					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					<IconChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[400px] p-0" align="start">
 				<Command>
-					<CommandInput placeholder={t("settings.timezone.picker.search", "Search timezone…")} />
+					<CommandInput placeholder={t("settings.timezone.picker.search", "IconSearch timezone…")} />
 					<CommandEmpty>{t("settings.timezone.picker.empty", "No timezone found.")}</CommandEmpty>
 					<CommandList id={listboxId}>
 						{TIMEZONE_GROUPS.map((group) => (
@@ -277,7 +277,7 @@ export function TimezonePicker({ value = "UTC", onChange, disabled }: TimezonePi
 											setOpen(false);
 										}}
 									>
-										<Check
+										<IconCheck
 											className={cn(
 												"mr-2 h-4 w-4",
 												value === timezone ? "opacity-100" : "opacity-0",

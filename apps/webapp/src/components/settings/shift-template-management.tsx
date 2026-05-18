@@ -4,15 +4,15 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import {
-	Clock,
-	Loader2,
-	MapPin,
-	MoreHorizontal,
+	IconClock,
+	IconLoader2,
+	IconMapPin,
+	IconDots,
 	Palette,
-	Pencil,
+	IconPencil,
 	Plus,
-	Trash2,
-} from "lucide-react";
+	IconTrash,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -339,11 +339,11 @@ export function ShiftTemplateManagement({
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
+							<IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
 						</div>
 					) : templates.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<Clock className="h-12 w-12 text-muted-foreground/50 mb-4" aria-hidden="true" />
+							<IconClock className="h-12 w-12 text-muted-foreground/50 mb-4" aria-hidden="true" />
 							<h3 className="font-medium">
 								{t("settings.shiftTemplates.empty.title", "No templates yet")}
 							</h3>
@@ -403,13 +403,13 @@ export function ShiftTemplateManagement({
 											<DropdownMenu>
 												<DropdownMenuTrigger asChild>
 													<Button variant="ghost" size="icon" className="h-8 w-8">
-														<MoreHorizontal className="h-4 w-4" />
+														<IconDots className="h-4 w-4" />
 														<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
 													<DropdownMenuItem onClick={() => handleEdit(template)}>
-														<Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+														<IconPencil className="mr-2 h-4 w-4" aria-hidden="true" />
 														{t("common.edit", "Edit")}
 													</DropdownMenuItem>
 													<DropdownMenuItem onClick={() => handleToggleActive(template)}>
@@ -421,7 +421,7 @@ export function ShiftTemplateManagement({
 														onClick={() => handleDelete(template)}
 														className="text-destructive focus:text-destructive"
 													>
-														<Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+														<IconTrash className="mr-2 h-4 w-4" aria-hidden="true" />
 														{t("common.delete", "Delete")}
 													</DropdownMenuItem>
 												</DropdownMenuContent>
@@ -479,7 +479,7 @@ export function ShiftTemplateManagement({
 							>
 								{deleteMutation.isPending ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+										<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 										{t("common.deleting", "Deleting…")}
 									</>
 								) : (
@@ -699,7 +699,7 @@ function ShiftTemplateDialog({
 							{(field) => (
 								<div className="space-y-2">
 									<Label className="flex items-center gap-2">
-										<MapPin className="h-4 w-4" aria-hidden="true" />
+										<IconMapPin className="h-4 w-4" aria-hidden="true" />
 										{t("settings.shiftTemplates.form.defaultSubarea", "Default Subarea")}
 										<span className="text-xs text-muted-foreground">
 											({t("common.optional", "Optional")})
@@ -778,7 +778,7 @@ function ShiftTemplateDialog({
 											</p>
 											{values.subareaId && (
 												<p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-													<MapPin className="h-3 w-3" aria-hidden="true" />
+													<IconMapPin className="h-3 w-3" aria-hidden="true" />
 													{getSubareaDisplay(values.subareaId)}
 												</p>
 											)}
@@ -801,7 +801,7 @@ function ShiftTemplateDialog({
 						>
 							{isSubmitting ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+									<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 									{t("common.saving", "Saving…")}
 								</>
 							) : template ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileBarChart } from "lucide-react";
+import { IconChartBar } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function ReportFilters({
 							size="lg"
 							className="w-full sm:w-auto"
 						>
-							<FileBarChart className="mr-2 h-4 w-4" aria-hidden="true" />
+							<IconChartBar className="mr-2 h-4 w-4" aria-hidden="true" />
 							{isGenerating ? "Generating Report…" : "Generate Report"}
 						</Button>
 					</div>

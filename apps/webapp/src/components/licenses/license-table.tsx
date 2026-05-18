@@ -10,7 +10,7 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ExternalLink, Search } from "lucide-react";
+import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ const columns: ColumnDef<LicenseInfo>[] = [
 				variant="ghost"
 			>
 				Package
-				<ArrowUpDown className="ml-2 h-4 w-4" />
+				<IconArrowsUpDown className="ml-2 h-4 w-4" />
 			</Button>
 		),
 		cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
@@ -74,7 +74,7 @@ const columns: ColumnDef<LicenseInfo>[] = [
 				variant="ghost"
 			>
 				License
-				<ArrowUpDown className="ml-2 h-4 w-4" />
+				<IconArrowsUpDown className="ml-2 h-4 w-4" />
 			</Button>
 		),
 		cell: ({ row }) => {
@@ -98,7 +98,7 @@ const columns: ColumnDef<LicenseInfo>[] = [
 							rel="noopener noreferrer"
 							target="_blank"
 						>
-							<ExternalLink className="h-4 w-4" />
+							<IconExternalLink className="h-4 w-4" />
 							<span className="sr-only">Repository</span>
 						</a>
 					)}
@@ -109,7 +109,7 @@ const columns: ColumnDef<LicenseInfo>[] = [
 							rel="noopener noreferrer"
 							target="_blank"
 						>
-							<ExternalLink className="h-4 w-4" />
+							<IconExternalLink className="h-4 w-4" />
 							<span className="sr-only">Homepage</span>
 						</a>
 					)}
@@ -158,11 +158,11 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 			<div className="shrink-0">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="relative max-w-sm flex-1">
-						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+						<IconSearch className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 						<Input
 							className="pl-9"
 							onChange={(e) => setGlobalFilter(e.target.value)}
-							placeholder="Search packages or licenses..."
+							placeholder="IconSearch packages or licenses..."
 							value={globalFilter}
 						/>
 					</div>

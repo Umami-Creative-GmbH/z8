@@ -2,7 +2,7 @@
 
 import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { Key } from "lucide-react";
+import { IconKey } from '@tabler/icons-react';
 import { useSearchParams } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
@@ -224,7 +224,7 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button type="button" variant="outline" onClick={onPasskeyLogin} disabled={isLoading}>
-								<Key className="h-4 w-4" />
+								<IconKey className="size-4" />
 								<span className="sr-only">
 									{t("auth.login-with.passkey", "Login with Passkey")}
 								</span>

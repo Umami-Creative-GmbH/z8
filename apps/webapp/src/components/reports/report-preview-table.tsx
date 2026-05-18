@@ -1,6 +1,6 @@
 "use client";
 
-import { Home } from "lucide-react";
+import { IconHome } from "@tabler/icons-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
@@ -89,8 +89,8 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 			<Card className="border-2 border-amber-500">
 				<CardHeader className="bg-amber-50">
 					<CardTitle className="flex items-center gap-2 text-amber-900">
-						<Home className="h-5 w-5" />
-						Home Office Summary (Tax Relevant)
+						<IconHome className="h-5 w-5" />
+						IconHome Office Summary (Tax Relevant)
 					</CardTitle>
 					<p className="text-sm text-amber-700">
 						Important for German tax purposes - shows home office days and hours worked
@@ -99,11 +99,11 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 				<CardContent className="pt-6">
 					<div className="mb-6 grid gap-4 md:grid-cols-2">
 						<div className="space-y-1">
-							<p className="text-sm text-muted-foreground">Total Home Office Days</p>
+							<p className="text-sm text-muted-foreground">Total IconHome Office Days</p>
 							<p className="text-2xl font-bold">{reportData.absences.homeOffice.days}</p>
 						</div>
 						<div className="space-y-1">
-							<p className="text-sm text-muted-foreground">Total Hours Worked from Home</p>
+							<p className="text-sm text-muted-foreground">Total Hours Worked from IconHome</p>
 							<p className="text-2xl font-bold">{reportData.absences.homeOffice.hoursWorked}h</p>
 						</div>
 					</div>

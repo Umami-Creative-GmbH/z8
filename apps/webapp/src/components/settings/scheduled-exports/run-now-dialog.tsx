@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { AlertTriangle, Loader2, Play } from "lucide-react";
+import { IconAlertTriangle, IconLoader2, IconPlayerPlay } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -106,7 +106,7 @@ export function RunNowDialog({
 				toast.success(t("settings.scheduledExports.runNow.success", "Export started"), {
 					description: t(
 						"settings.scheduledExports.runNow.successDesc",
-						"The export has been queued and will run shortly. Check the execution history for progress.",
+						"The export has been queued and will run shortly. IconCheck the execution history for progress.",
 					),
 				});
 				onOpenChange(false);
@@ -161,7 +161,7 @@ export function RunNowDialog({
 
 					{hasExecutionInProgress && (
 						<Alert variant="destructive" role="alert">
-							<AlertTriangle className="h-4 w-4" aria-hidden="true" />
+							<IconAlertTriangle className="h-4 w-4" aria-hidden="true" />
 							<AlertDescription>
 								{t(
 									"settings.scheduledExports.runNow.inProgressWarning",
@@ -185,12 +185,12 @@ export function RunNowDialog({
 					>
 						{isPending ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+								<IconLoader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
 								{t("settings.scheduledExports.runNow.starting", "Starting...")}
 							</>
 						) : (
 							<>
-								<Play className="mr-2 h-4 w-4" aria-hidden="true" />
+								<IconPlayerPlay className="mr-2 h-4 w-4" aria-hidden="true" />
 								{t("settings.scheduledExports.runNow.runNow", "Run Now")}
 							</>
 						)}

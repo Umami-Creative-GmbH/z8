@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, Loader2, MapPin, Trash2, Users } from "lucide-react";
+import { IconCalendar, IconLoader2, IconMapPin, IconTrash, IconUsers } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import { type ComponentProps, useState } from "react";
 import { z } from "zod";
@@ -9,7 +9,7 @@ import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/sk
 import { ActionPanelFooter } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { IconCalendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -114,11 +114,11 @@ export function ShiftDialogSections({
 									) : (
 										<span>Pick a date</span>
 									)}
-									<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+									<IconCalendar className="ml-auto h-4 w-4 opacity-50" />
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="w-auto p-0" align="start">
-								<Calendar
+								<IconCalendar
 									mode="single"
 									selected={field.state.value}
 									onSelect={(date) => date && field.handleChange(date)}
@@ -210,7 +210,7 @@ export function ShiftDialogSections({
 						<div className="space-y-2">
 							<Label>
 								<span className="flex items-center gap-2">
-									<MapPin className="h-4 w-4" aria-hidden="true" />
+									<IconMapPin className="h-4 w-4" aria-hidden="true" />
 									Subarea
 									<span className="text-destructive">*</span>
 								</span>
@@ -243,7 +243,7 @@ export function ShiftDialogSections({
 						<div className="space-y-2">
 							<Label>
 								<span className="flex items-center gap-2">
-									<Users className="h-4 w-4" aria-hidden="true" />
+									<IconUsers className="h-4 w-4" aria-hidden="true" />
 									Assign To
 								</span>
 							</Label>
@@ -344,10 +344,10 @@ export function ShiftDialogFooterActions({
 					disabled={isPending}
 				>
 					{isDeleting ? (
-						<Loader2 className="h-4 w-4 animate-spin" />
+						<IconLoader2 className="h-4 w-4 animate-spin" />
 					) : (
 						<>
-							<Trash2 className="h-4 w-4 mr-2" />
+							<IconTrash className="h-4 w-4 mr-2" />
 							{showDeleteConfirm ? "Confirm Delete" : "Delete"}
 						</>
 					)}
@@ -368,7 +368,7 @@ export function ShiftDialogFooterActions({
 				<Button type="submit" disabled={isPending}>
 					{isSaving ? (
 						<>
-							<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+							<IconLoader2 className="h-4 w-4 mr-2 animate-spin" />
 							Saving...
 						</>
 					) : isEditing ? (

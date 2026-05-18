@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { Clock } from "@tabler/icons-react";
 import { useTimer, formatTime } from "../hooks/useTimer";
 
 interface TimerProps {

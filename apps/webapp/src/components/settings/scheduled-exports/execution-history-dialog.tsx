@@ -4,12 +4,12 @@ import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { useTranslate } from "@tolgee/react";
 import {
-	AlertCircle,
-	CheckCircle2,
-	Clock,
-	Loader2,
-	XCircle,
-} from "lucide-react";
+	IconAlertCircle,
+	IconCircleCheck,
+	IconClock,
+	IconLoader2,
+	IconCircleX,
+} from "@tabler/icons-react";
 import {
 	getExecutionHistoryAction,
 	type ExecutionHistoryItem,
@@ -95,28 +95,28 @@ export function ExecutionHistoryDialog({
 			case "completed":
 				return (
 					<Badge variant="secondary" className="bg-green-100 text-green-700">
-						<CheckCircle2 className="mr-1 h-3 w-3" aria-hidden="true" />
+						<IconCircleCheck className="mr-1 h-3 w-3" aria-hidden="true" />
 						{t("settings.scheduledExports.history.statusCompleted", "Completed")}
 					</Badge>
 				);
 			case "processing":
 				return (
 					<Badge variant="secondary" className="bg-blue-100 text-blue-700">
-						<Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden="true" />
+						<IconLoader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden="true" />
 						{t("settings.scheduledExports.history.statusProcessing", "Processing")}
 					</Badge>
 				);
 			case "pending":
 				return (
 					<Badge variant="secondary">
-						<Clock className="mr-1 h-3 w-3" aria-hidden="true" />
+						<IconClock className="mr-1 h-3 w-3" aria-hidden="true" />
 						{t("settings.scheduledExports.history.statusPending", "Pending")}
 					</Badge>
 				);
 			case "failed":
 				return (
 					<Badge variant="destructive">
-						<XCircle className="mr-1 h-3 w-3" aria-hidden="true" />
+						<IconCircleX className="mr-1 h-3 w-3" aria-hidden="true" />
 						{t("settings.scheduledExports.history.statusFailed", "Failed")}
 					</Badge>
 				);
@@ -140,7 +140,7 @@ export function ExecutionHistoryDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
-					<ActionPanelTitle>{t("settings.scheduledExports.history.title", "Execution History")}</ActionPanelTitle>
+					<ActionPanelTitle>{t("settings.scheduledExports.history.title", "Execution IconHistory")}</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t("settings.scheduledExports.history.description", "Past runs for \"{scheduleName}\"", { scheduleName })}
 					</ActionPanelDescription>
@@ -149,20 +149,20 @@ export function ExecutionHistoryDialog({
 				<ActionPanelBody role="region" aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}>
 					{isLoading && (
 						<div className="flex items-center justify-center py-12">
-							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} />
+							<IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label={t("common.loading", "Loading")} />
 						</div>
 					)}
 
 					{error && (
 						<div className="flex items-center gap-2 text-destructive py-4" role="alert">
-							<AlertCircle className="h-5 w-5" aria-hidden="true" />
+							<IconAlertCircle className="h-5 w-5" aria-hidden="true" />
 							<span>{error}</span>
 						</div>
 					)}
 
 					{!isLoading && !error && executions.length === 0 && (
 						<div className="text-center py-12 text-muted-foreground">
-							<Clock className="h-12 w-12 mx-auto mb-4 opacity-50" aria-hidden="true" />
+							<IconClock className="h-12 w-12 mx-auto mb-4 opacity-50" aria-hidden="true" />
 							<p>{t("settings.scheduledExports.history.noExecutions", "No executions yet")}</p>
 							<p className="text-sm">
 								{t("settings.scheduledExports.history.noExecutionsDesc", "This schedule hasn't run yet. Executions will appear here once the schedule triggers.")}
@@ -238,7 +238,7 @@ export function ExecutionHistoryDialog({
 																size="sm"
 																aria-label={t("settings.scheduledExports.history.viewError", "View error details")}
 															>
-																<AlertCircle className="h-4 w-4 text-destructive" aria-hidden="true" />
+																<IconAlertCircle className="h-4 w-4 text-destructive" aria-hidden="true" />
 															</Button>
 														</TooltipTrigger>
 														<TooltipContent className="max-w-xs">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Command as CommandPrimitive } from "cmdk";
-import { SearchIcon } from "lucide-react";
+import { IconSearch } from "@tabler/icons-react";
 import type * as React from "react";
 import {
 	Dialog,
@@ -27,7 +27,7 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 
 function CommandDialog({
 	title = "Command Palette",
-	description = "Search for a command to run...",
+	description = "IconSearch for a command to run...",
 	children,
 	className,
 	showCloseButton = true,
@@ -62,7 +62,7 @@ function CommandInput({
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
 	return (
 		<div data-slot="command-input-wrapper" className="flex h-9 items-center gap-2 border-b px-3">
-			<SearchIcon className="size-4 shrink-0 opacity-50" />
+			<IconSearch className="size-4 shrink-0 opacity-50" />
 			<CommandPrimitive.Input
 				data-slot="command-input"
 				className={cn(

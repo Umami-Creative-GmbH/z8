@@ -191,7 +191,6 @@ Expected: commit succeeds. If commits are not approved, leave changes uncommitte
 Create `apps/desktop/src/components/WorkLocationSelector.tsx` with this content:
 
 ```tsx
-import { MapPin } from "lucide-react";
 import { WORK_LOCATION_OPTIONS, type WorkLocationType } from "../types";
 
 interface WorkLocationSelectorProps {
