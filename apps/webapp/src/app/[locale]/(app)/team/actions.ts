@@ -48,15 +48,7 @@ export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> 
 		if (emp) return emp as CurrentTeamEmployee;
 	}
 
-	const emp = await db.query.employee.findFirst({
-		where: (e, { and, eq }) => and(eq(e.userId, session.user.id), eq(e.isActive, true)),
-		with: {
-			user: true,
-			team: true,
-		},
-	});
-
-	return emp as CurrentTeamEmployee | null;
+	return null;
 }
 
 /**
@@ -86,10 +78,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 					});
 				}
 
-				return await db.query.employee.findFirst({
-					where: (e, { and, eq }) => and(eq(e.userId, session.user.id), eq(e.isActive, true)),
-					with: { user: true, team: true },
-				});
+				return null;
 			}),
 			Effect.flatMap((emp) =>
 				emp
