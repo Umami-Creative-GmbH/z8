@@ -70,9 +70,19 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
-		fireEvent.click(within(row).getByRole("button", { name: "Move Presence Status up" }));
+		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Presence Status up" }));
 
 		expect(onReorder).toHaveBeenCalledWith(["presence-status", "quick-stats", "vacation-balance"]);
+	});
+
+	it("exposes move controls as dropdown menu items", () => {
+		renderMenu();
+
+		openMenu();
+		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
+
+		expect(within(row).getByRole("menuitem", { name: "Move Presence Status up" })).toBeTruthy();
+		expect(within(row).getByRole("menuitem", { name: "Move Presence Status down" })).toBeTruthy();
 	});
 
 	it("moves a visible widget down", () => {
@@ -82,7 +92,7 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
-		fireEvent.click(within(row).getByRole("button", { name: "Move Presence Status down" }));
+		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Presence Status down" }));
 
 		expect(onReorder).toHaveBeenCalledWith(["quick-stats", "vacation-balance", "presence-status"]);
 	});
@@ -95,12 +105,12 @@ describe("DashboardCustomizeMenu", () => {
 		const lastRow = screen.getByTestId("dashboard-widget-menu-row-vacation-balance");
 
 		expect(
-			(within(firstRow).getByRole("button", { name: "Move Time Tracking up" }) as HTMLButtonElement)
+			(within(firstRow).getByRole("menuitem", { name: "Move Time Tracking up" }) as HTMLButtonElement)
 				.disabled,
 		).toBe(true);
 		expect(
 			(
-				within(lastRow).getByRole("button", {
+				within(lastRow).getByRole("menuitem", {
 					name: "Move Vacation Balance down",
 				}) as HTMLButtonElement
 			).disabled,
@@ -125,7 +135,7 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-managed-employees");
-		fireEvent.click(within(row).getByRole("button", { name: "Move Managed Employees up" }));
+		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Managed Employees up" }));
 
 		expect(onReorder).toHaveBeenCalledWith([
 			"managed-employees",
@@ -153,12 +163,12 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		fireEvent.click(
-			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("button", {
+			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
 				name: "Move Vacation Balance up",
 			}),
 		);
 		fireEvent.click(
-			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("button", {
+			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
 				name: "Move Vacation Balance up",
 			}),
 		);
@@ -166,7 +176,7 @@ describe("DashboardCustomizeMenu", () => {
 		expect(screen.getByRole("menuitem", { name: "Reset layout" })).toBeTruthy();
 		expect(
 			(
-				within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("button", {
+				within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
 					name: "Move Vacation Balance up",
 				}) as HTMLButtonElement
 			).disabled,
