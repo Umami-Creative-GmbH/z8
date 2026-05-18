@@ -1,6 +1,7 @@
 "use client";
 
 import { IconBellOff } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import {
 	Empty,
 	EmptyDescription,
@@ -41,6 +42,8 @@ export function NotificationList({
 	onDelete,
 	onClose,
 }: NotificationListProps) {
+	const { t } = useTranslate();
+
 	if (isLoading) {
 		return (
 			<div className="divide-y">
@@ -58,9 +61,14 @@ export function NotificationList({
 					<EmptyMedia variant="icon">
 						<IconBellOff className="size-5" />
 					</EmptyMedia>
-					<EmptyTitle className="text-base">No notifications</EmptyTitle>
+					<EmptyTitle className="text-base">
+						{t("common:notifications.empty.title", "No notifications")}
+					</EmptyTitle>
 					<EmptyDescription>
-						You&apos;re all caught up! New notifications will appear here.
+						{t(
+							"common:notifications.empty.description",
+							"You're all caught up! New notifications will appear here.",
+						)}
 					</EmptyDescription>
 				</EmptyHeader>
 			</Empty>

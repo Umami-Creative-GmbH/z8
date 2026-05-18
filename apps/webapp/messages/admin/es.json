@@ -1,13 +1,155 @@
 {
   "admin": {
     "analytics": {
+      "billing": {
+        "estimatedNotice": "Los asientos históricos y el MRR son estimados. La reconstrucción exacta requiere instantáneas futuras o un libro mayor de facturación."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Señales de asientos e ingresos recurrentes para la salud de la facturación.",
+          "summary": "Resumen comercial: {seats} asientos y {mrr} de MRR estimado.",
+          "title": "Comercial"
+        },
+        "engagement": {
+          "description": "Uso de la plataforma a través de usuarios activos y sesiones.",
+          "summary": "Resumen de participación: {activeUsers} usuarios activos y {sessions} sesiones.",
+          "title": "Participación"
+        },
+        "growth": {
+          "description": "Nuevos usuarios y organizaciones que ingresan a la plataforma.",
+          "summary": "Resumen de crecimiento: {signups} registros y {organizations} organizaciones.",
+          "title": "Crecimiento"
+        },
+        "operations": {
+          "description": "Volumen de seguimiento de tiempo generado por la actividad del inquilino.",
+          "summary": "Resumen de operaciones: {timeRecords} registros de tiempo.",
+          "title": "Operaciones"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Depósito de análisis",
+          "label": "Depósito"
+        },
+        "range": {
+          "ariaLabel": "Rango de análisis",
+          "label": "Rango"
+        }
+      },
       "description": "Supervise el crecimiento de la plataforma, la participación, la actividad operativa y las tendencias de facturación.",
+      "emptyState": {
+        "noData": "No hay datos para este rango"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Usuarios activos en el rango seleccionado",
+          "title": "Usuarios activos"
+        },
+        "mrr": {
+          "description": "Estimación de ingresos recurrentes mensuales",
+          "title": "MRR estimado"
+        },
+        "organizations": {
+          "description": "Espacios de trabajo activos en la plataforma",
+          "title": "Organizaciones"
+        },
+        "seats": {
+          "description": "Asientos actuales de pago o de prueba",
+          "title": "Licencias asignadas"
+        },
+        "sessions": {
+          "description": "Sesiones autenticadas",
+          "title": "Sesiones"
+        },
+        "signups": {
+          "description": "Nuevas cuentas de plataforma",
+          "title": "Registros"
+        },
+        "timeRecords": {
+          "description": "Registros operativos enviados",
+          "title": "Registros de tiempo"
+        }
+      },
+      "preview": {
+        "description": "Crecimiento y participación en la plataforma durante el rango seleccionado.",
+        "title": "Tendencias analíticas",
+        "viewFull": "Ver analíticas completas"
+      },
       "sectionDescription": "Actualizado a partir de los datos actuales de la plataforma para el rango y el segmento seleccionados.",
       "sectionTitle": "Tendencias de análisis",
-      "title": "Análisis de la plataforma"
+      "title": "Análisis de la plataforma",
+      "values": {
+        "notAvailable": "No disponible"
+      }
+    },
+    "billing": {
+      "description": "Monitorear suscripciones, ingresos y estado de pago",
+      "intervals": {
+        "month": "Mensual",
+        "year": "Anual"
+      },
+      "metrics": {
+        "activeSubscriptions": "Suscripciones activas",
+        "activeSubscriptionsDescription": "{trialingCount} en prueba, {activeCount} de pago",
+        "conversionRate": "Tasa de conversión",
+        "conversionRateDescription": "De prueba a pago",
+        "licensedSeats": "Licencias asignadas",
+        "licensedSeatsDescription": "En todas las suscripciones",
+        "mrr": "MRR",
+        "mrrDescription": "Ingresos recurrentes mensuales",
+        "pastDue": "Vencido",
+        "pastDueDescription": "Problemas de pago",
+        "trialing": "En prueba",
+        "trialingDescription": "En periodo de prueba"
+      },
+      "sections": {
+        "recentSubscriptions": "Suscripciones recientes",
+        "revenueMetrics": "Métricas de ingresos"
+      },
+      "status": {
+        "active": "Activo",
+        "canceled": "Cancelado",
+        "pastDue": "Vencido",
+        "trialing": "Prueba"
+      },
+      "table": {
+        "billing": "Facturación",
+        "created": "Creado",
+        "noSubscriptions": "Aún no hay suscripciones",
+        "organization": "Organización",
+        "periodEnd": "Fin del periodo",
+        "seats": "Asientos",
+        "status": "Estado"
+      },
+      "title": "Panel de facturación"
     },
     "diagnostics": {
+      "actions": {
+        "refresh": "Actualizar diagnósticos"
+      },
+      "clientDescription": "Configuración segura de la plataforma y estado del servicio a nivel de aplicación. Última actualización: {date}.",
       "description": "Configuración segura de la plataforma y comprobaciones de estado de implementación solo para aplicaciones.",
+      "recommendedActions": {
+        "description": "Resuelva estos elementos para que los diagnósticos vuelvan a un estado saludable.",
+        "title": "Acciones recomendadas"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Estados de configuración de despliegue seguro. Los valores secretos nunca se muestran.",
+          "title": "Configuración de la plataforma"
+        },
+        "health": {
+          "description": "Comprobaciones exclusivas de la aplicación para las dependencias de infraestructura utilizadas por la aplicación web.",
+          "title": "Estado del servicio"
+        }
+      },
+      "statusAnnouncement": "Estado de diagnóstico {status}. Última actualización {date}.",
+      "status": {
+        "disabled": "Desactivado",
+        "error": "Error",
+        "healthy": "Saludable",
+        "warning": "Advertencia"
+      },
       "title": "Diagnóstico de implementación"
     },
     "layout": {
@@ -26,6 +168,11 @@
       "title": "Consola de administración"
     },
     "organizations": {
+      "actions": {
+        "delete": "Eliminar organización",
+        "reactivate": "Reactivar organización",
+        "suspend": "Suspender organización"
+      },
       "badges": {
         "deleted": "Eliminado",
         "suspended": "Suspendido"
@@ -113,6 +260,32 @@
       },
       "title": "Resumen"
     },
+    "settings": {
+      "actions": {
+        "saveChanges": "Guardar cambios"
+      },
+      "cookieConsent": {
+        "description": "Insertado en las páginas de autenticación para el cumplimiento del RGPD",
+        "helperPrefix": "Dejar vacío para desactivar. Cargado con",
+        "helperSuffix": "estrategia.",
+        "scriptContent": "Contenido del script",
+        "scriptPlaceholder": "<!-- Ejemplo: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- O script personalizado -->\n<script>\n  // Tu lógica de consentimiento de cookies aquí\n</script>",
+        "title": "Script de consentimiento de cookies"
+      },
+      "description": "Configuración global de la plataforma para todas las organizaciones",
+      "title": "Configuración de la plataforma",
+      "toasts": {
+        "cookieConsentSaved": "Script de consentimiento de cookies guardado correctamente",
+        "saveFailed": "Error al guardar"
+      },
+      "turnstile": {
+        "deploymentNote": "Configurado mediante variables de entorno en el despliegue. Las organizaciones Enterprise pueden sobrescribirlo en la Configuración de dominio.",
+        "description": "Protección contra bots para formularios de autenticación",
+        "secretKey": "Clave secreta",
+        "siteKey": "Clave del sitio",
+        "title": "Cloudflare Turnstile"
+      }
+    },
     "users": {
       "badges": {
         "admin": "Administrador",
@@ -149,7 +322,9 @@
       },
       "table": {
         "created": "Creado",
+        "noOrganizations": "No hay organizaciones",
         "noUsersFound": "No se encontraron usuarios",
+        "organizations": "Organizaciones",
         "role": "Rol",
         "user": "Usuario"
       },

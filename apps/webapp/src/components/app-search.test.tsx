@@ -16,6 +16,7 @@ const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock } = vi.hoisted
 }));
 
 vi.mock("@tanstack/react-hotkeys", () => ({
+	formatForDisplay: vi.fn(() => "⌘ K"),
 	useHotkey: (keys: string, callback: () => void, options?: { preventDefault?: boolean }) => {
 		hotkeyRegistrations.push({ keys, callback, options });
 	},
@@ -130,6 +131,15 @@ describe("AppSearch", () => {
 		);
 	});
 
+	it("shows the OS-aware search shortcut in the main menu", async () => {
+		const { formatForDisplay } = await import("@tanstack/react-hotkeys");
+
+		renderAppSearch();
+
+		expect(formatForDisplay).toHaveBeenCalledWith("Mod+K");
+		expect(screen.getByText("⌘ K")).not.toBeNull();
+	});
+
 	it("opens when the registered hotkey fires", () => {
 		renderAppSearch();
 
@@ -236,9 +246,9 @@ describe("AppSearch", () => {
 			await vi.advanceTimersByTimeAsync(250);
 		});
 
-		const groupHeadings = screen.getAllByText(/^(People|Teams|Pages|Settings)$/).map((heading) =>
-			heading.textContent,
-		);
+		const groupHeadings = screen
+			.getAllByText(/^(People|Teams|Pages|Settings)$/)
+			.map((heading) => heading.textContent);
 
 		expect(groupHeadings).toEqual(["People", "Teams", "Pages", "Settings"]);
 	});

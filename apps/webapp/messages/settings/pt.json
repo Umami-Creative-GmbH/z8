@@ -1139,7 +1139,7 @@
           "thisYear": "Este ano"
         },
         "employees": {
-          "all": "Todos os funcionários (${employees.length})",
+          "all": "Todos os funcionários ({count})",
           "label": "Funcionários",
           "selectSpecific": "Selecionar funcionários específicos"
         }
@@ -1150,19 +1150,19 @@
         "title": "Gerar Dados de Demonstração"
       },
       "generateEmployees": {
-        "button": "Gerar ${employeeCount} Funcionários",
+        "button": "Gerar {count} Funcionários",
         "countHint": "Máximo de 50 funcionários por vez",
         "countLabel": "Número de Funcionários",
         "description": "Criar contas de funcionários de demonstração para testes",
-        "employeesCreated": "${employeeResult.employeesCreated} funcionários criados",
+        "employeesCreated": "{count} funcionários criados",
         "generating": "Gerando...",
         "includeManagers": "Incluir Atribuições de Gestores",
-        "managersCreated": "${employeeResult.managersCreated} atribuições de gestores",
+        "managersCreated": "{count} atribuições de gestores",
         "managersHint": "Atribuir gestores aleatoriamente aos novos funcionários",
         "options": "Opções",
         "successTitle": "Funcionários gerados com sucesso!",
         "title": "Gerar Funcionários",
-        "usersCreated": "${employeeResult.usersCreated} usuários criados"
+        "usersCreated": "{count} usuários criados"
       },
       "results": {
         "success": "Dados de demonstração gerados com sucesso!"

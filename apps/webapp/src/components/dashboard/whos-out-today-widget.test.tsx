@@ -9,6 +9,7 @@ const { useWidgetDataMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "de" }),
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
@@ -63,7 +64,7 @@ describe("WhosOutTodayWidget", () => {
 						categoryColor: null,
 						endsToday: true,
 						returnsTomorrow: false,
-						returnDate: "May 18",
+						returnDate: "2026-05-18",
 					},
 				],
 				returningTomorrow: [],
@@ -78,6 +79,35 @@ describe("WhosOutTodayWidget", () => {
 
 		expect(screen.queryByText("Returns tomorrow")).toBeNull();
 		expect(screen.queryByText("Returning Tomorrow")).toBeNull();
-		expect(screen.getByText("Until May 18")).toBeTruthy();
+		expect(screen.getByText("Until 18. Mai")).toBeTruthy();
+	});
+
+	it("formats return dates with the active UI locale", () => {
+		useWidgetDataMock.mockReturnValue({
+			data: {
+				outToday: [
+					{
+						id: "employee-1",
+						userId: "user-1",
+						name: "Ada Lovelace",
+						image: null,
+						category: "Vacation",
+						categoryColor: null,
+						endsToday: true,
+						returnsTomorrow: false,
+						returnDate: "2026-05-18",
+					},
+				],
+				returningTomorrow: [],
+				totalOut: 1,
+			},
+			loading: false,
+			refreshing: false,
+			refetch: vi.fn(),
+		});
+
+		render(<WhosOutTodayWidget />);
+
+		expect(screen.getByText("Until 18. Mai")).toBeTruthy();
 	});
 });

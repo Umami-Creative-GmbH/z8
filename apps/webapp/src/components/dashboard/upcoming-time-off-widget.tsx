@@ -1,16 +1,17 @@
 "use client";
 
 import { IconCalendar, IconCalendarEvent, IconClock } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
-import { differenceInDays, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
+import { differenceInDays, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
 import { useEmployeeClockStatuses } from "@/lib/query";
-import { cn, pluralize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getUpcomingAbsences } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
+import { formatDashboardDate } from "./format-dashboard-date";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
 
@@ -83,9 +84,15 @@ function getCalendarDaysUntil(date: Date): number {
 
 function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee();
+	const locale = tolgee.getLanguage() || "en";
 	const daysUntil = getCalendarDaysUntil(new Date(absence.startDate));
 	const duration = differenceInDays(new Date(absence.endDate), new Date(absence.startDate)) + 1;
 	const name = absence.employee.user.name || t("common.unknown", "Unknown");
+	const durationLabel =
+		duration === 1
+			? t("dashboard.upcoming-time-off.day", "day")
+			: t("dashboard.upcoming-time-off.days", "days");
 
 	return (
 		<div className="flex items-start gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20">
@@ -110,14 +117,14 @@ function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 					<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 						<IconCalendarEvent className="size-3" />
 						<span>
-							{format(new Date(absence.startDate), "MMM d")} -{" "}
-							{format(new Date(absence.endDate), "MMM d")}
+							{formatDashboardDate(new Date(absence.startDate), locale)} -{" "}
+							{formatDashboardDate(new Date(absence.endDate), locale)}
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
 						<IconClock className="size-3" />
 						<span>
-							{duration} {pluralize(duration, "day")}
+							{duration} {durationLabel}
 						</span>
 					</div>
 				</div>
@@ -168,7 +175,13 @@ export function UpcomingTimeOffWidget() {
 						? t(
 								"dashboard.upcoming-time-off.description-count",
 								"Next {count} scheduled {absence}",
-								{ count: absences.length, absence: pluralize(absences.length, "absence") },
+								{
+									count: absences.length,
+									absence:
+										absences.length === 1
+											? t("dashboard.upcoming-time-off.absence", "absence")
+											: t("dashboard.upcoming-time-off.absences", "absences"),
+								},
 							)
 						: t("dashboard.upcoming-time-off.description", "Scheduled team absences")
 				}

@@ -12,7 +12,7 @@ import { useTranslate } from "@tolgee/react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
 import { getManagedEmployees } from "./actions";
@@ -113,7 +113,10 @@ export function ManagedEmployeesWidget() {
 
 			const result = await getManagedEmployees(current.id);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to load managed employees");
+				throw new Error(
+					result.error ||
+						t("dashboard.managed-employees.error", "Failed to load managed employees"),
+				);
 			}
 
 			return {

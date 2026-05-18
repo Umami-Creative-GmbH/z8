@@ -1139,7 +1139,7 @@
           "thisYear": "This year"
         },
         "employees": {
-          "all": "All employees (${employees.length})",
+          "all": "All employees ({count})",
           "label": "Employees",
           "selectSpecific": "Select specific employees"
         }
@@ -1150,19 +1150,19 @@
         "title": "Generate Demo Data"
       },
       "generateEmployees": {
-        "button": "Generate ${employeeCount} Employees",
+        "button": "Generate {count} Employees",
         "countHint": "Maximum 50 employees at a time",
         "countLabel": "Number of Employees",
         "description": "Create demo employee accounts for testing",
-        "employeesCreated": "${employeeResult.employeesCreated} employees created",
+        "employeesCreated": "{count} employees created",
         "generating": "Generating...",
         "includeManagers": "Include Manager Assignments",
-        "managersCreated": "${employeeResult.managersCreated} manager assignments",
+        "managersCreated": "{count} manager assignments",
         "managersHint": "Randomly assign managers to new employees",
         "options": "Options",
         "successTitle": "Employees generated successfully!",
         "title": "Generate Employees",
-        "usersCreated": "${employeeResult.usersCreated} users created"
+        "usersCreated": "{count} users created"
       },
       "results": {
         "success": "Demo data generated successfully!"

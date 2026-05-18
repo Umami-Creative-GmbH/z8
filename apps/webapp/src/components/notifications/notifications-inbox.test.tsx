@@ -15,6 +15,17 @@ vi.mock("@/hooks/use-organization", () => ({
 	useOrganization: vi.fn(),
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en" }),
+	useTranslate: () => ({
+		t: (_key: string, defaultValue: string, params?: Record<string, unknown>) =>
+			Object.entries(params ?? {}).reduce(
+				(message, [name, value]) => message.replace(`{${name}}`, String(value)),
+				defaultValue,
+			),
+	}),
+}));
+
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: ComponentProps<"a">) => (
 		<a href={String(href)} {...props}>

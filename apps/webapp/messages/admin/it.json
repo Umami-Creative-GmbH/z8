@@ -1,13 +1,155 @@
 {
   "admin": {
     "analytics": {
+      "billing": {
+        "estimatedNotice": "I posti storici e l'MRR sono stimati. La ricostruzione esatta richiede snapshot futuri o un registro di fatturazione."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Segnali di posti e ricavi ricorrenti per lo stato della fatturazione.",
+          "summary": "Riepilogo commerciale: {seats} posti e {mrr} MRR stimato.",
+          "title": "Commerciale"
+        },
+        "engagement": {
+          "description": "Utilizzo della piattaforma tramite utenti attivi e sessioni.",
+          "summary": "Riepilogo coinvolgimento: {activeUsers} utenti attivi e {sessions} sessioni.",
+          "title": "Coinvolgimento"
+        },
+        "growth": {
+          "description": "Nuovi utenti e organizzazioni che accedono alla piattaforma.",
+          "summary": "Riepilogo crescita: {signups} iscrizioni e {organizations} organizzazioni.",
+          "title": "Crescita"
+        },
+        "operations": {
+          "description": "Volume di monitoraggio del tempo generato dall'attività del tenant.",
+          "summary": "Riepilogo operazioni: {timeRecords} record temporali.",
+          "title": "Operazioni"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Bucket di analisi",
+          "label": "Bucket"
+        },
+        "range": {
+          "ariaLabel": "Intervallo di analisi",
+          "label": "Intervallo"
+        }
+      },
       "description": "Monitora la crescita della piattaforma, il coinvolgimento, l'attività operativa e i trend di fatturazione.",
+      "emptyState": {
+        "noData": "Nessun dato per questo intervallo"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Utenti attivi nell'intervallo selezionato",
+          "title": "Utenti attivi"
+        },
+        "mrr": {
+          "description": "Stima dei ricavi ricorrenti mensili",
+          "title": "MRR stimato"
+        },
+        "organizations": {
+          "description": "Spazi di lavoro attivi sulla piattaforma",
+          "title": "Organizzazioni"
+        },
+        "seats": {
+          "description": "Posti correnti a pagamento o di prova",
+          "title": "Posti con licenza"
+        },
+        "sessions": {
+          "description": "Sessioni autenticate",
+          "title": "Sessioni"
+        },
+        "signups": {
+          "description": "Nuovi account piattaforma",
+          "title": "Iscrizioni"
+        },
+        "timeRecords": {
+          "description": "Record operativi inviati",
+          "title": "Record temporali"
+        }
+      },
+      "preview": {
+        "description": "Crescita e coinvolgimento della piattaforma nell'intervallo selezionato.",
+        "title": "Tendenze analitiche",
+        "viewFull": "Visualizza analisi completa"
+      },
       "sectionDescription": "Aggiornato dai dati correnti della piattaforma per l'intervallo e il bucket selezionati.",
       "sectionTitle": "Trend analitici",
-      "title": "Analisi piattaforma"
+      "title": "Analisi piattaforma",
+      "values": {
+        "notAvailable": "Non disponibile"
+      }
+    },
+    "billing": {
+      "description": "Monitora abbonamenti, entrate e stato dei pagamenti",
+      "intervals": {
+        "month": "Mensile",
+        "year": "Annuale"
+      },
+      "metrics": {
+        "activeSubscriptions": "Abbonamenti attivi",
+        "activeSubscriptionsDescription": "{trialingCount} in prova, {activeCount} a pagamento",
+        "conversionRate": "Tasso di conversione",
+        "conversionRateDescription": "Da prova a pagamento",
+        "licensedSeats": "Posti con licenza",
+        "licensedSeatsDescription": "In tutti gli abbonamenti",
+        "mrr": "MRR",
+        "mrrDescription": "Entrate ricorrenti mensili",
+        "pastDue": "Scaduto",
+        "pastDueDescription": "Problemi di pagamento",
+        "trialing": "In prova",
+        "trialingDescription": "In periodo di prova"
+      },
+      "sections": {
+        "recentSubscriptions": "Abbonamenti recenti",
+        "revenueMetrics": "Metriche dei ricavi"
+      },
+      "status": {
+        "active": "Attivo",
+        "canceled": "Annullato",
+        "pastDue": "Scaduto",
+        "trialing": "Prova"
+      },
+      "table": {
+        "billing": "Fatturazione",
+        "created": "Creato",
+        "noSubscriptions": "Nessun abbonamento ancora",
+        "organization": "Organizzazione",
+        "periodEnd": "Fine periodo",
+        "seats": "Posti",
+        "status": "Stato"
+      },
+      "title": "Dashboard di fatturazione"
     },
     "diagnostics": {
+      "actions": {
+        "refresh": "Aggiorna diagnostica"
+      },
+      "clientDescription": "Configurazione sicura della piattaforma e stato del servizio a livello di app. Ultimo aggiornamento {date}.",
       "description": "Configurazione sicura della piattaforma e controlli di integrità del deployment solo app.",
+      "recommendedActions": {
+        "description": "Risolvi questi elementi per riportare la diagnostica a uno stato integro.",
+        "title": "Azioni consigliate"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Stati di configurazione del deployment sicuri. I valori segreti non vengono mai mostrati.",
+          "title": "Configurazione piattaforma"
+        },
+        "health": {
+          "description": "Controlli solo app per le dipendenze dell'infrastruttura utilizzate dalla webapp.",
+          "title": "Stato del servizio"
+        }
+      },
+      "statusAnnouncement": "Stato diagnostica {status}. Ultimo aggiornamento {date}.",
+      "status": {
+        "disabled": "Disabilitato",
+        "error": "Errore",
+        "healthy": "Sano",
+        "warning": "Avviso"
+      },
       "title": "Diagnostica di deployment"
     },
     "layout": {
@@ -26,6 +168,11 @@
       "title": "Console di amministrazione"
     },
     "organizations": {
+      "actions": {
+        "delete": "Elimina organizzazione",
+        "reactivate": "Riattiva organizzazione",
+        "suspend": "Sospendi organizzazione"
+      },
       "badges": {
         "deleted": "Eliminato",
         "suspended": "Sospeso"
@@ -113,6 +260,32 @@
       },
       "title": "Panoramica"
     },
+    "settings": {
+      "actions": {
+        "saveChanges": "Salva modifiche"
+      },
+      "cookieConsent": {
+        "description": "Iniettato nelle pagine di autenticazione per la conformità al GDPR",
+        "helperPrefix": "Lascia vuoto per disabilitare. Caricato con",
+        "helperSuffix": "strategia.",
+        "scriptContent": "Contenuto script",
+        "scriptPlaceholder": "<!-- Esempio: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- O script personalizzato -->\n<script>\n  // La tua logica di consenso ai cookie qui\n</script>",
+        "title": "Script di consenso ai cookie"
+      },
+      "description": "Configurazione globale della piattaforma per tutte le organizzazioni",
+      "title": "Impostazioni piattaforma",
+      "toasts": {
+        "cookieConsentSaved": "Script di consenso ai cookie salvato correttamente",
+        "saveFailed": "Salvataggio non riuscito"
+      },
+      "turnstile": {
+        "deploymentNote": "Configurato tramite variabili d'ambiente al momento del deployment. Le organizzazioni Enterprise possono sovrascriverlo nelle Impostazioni dominio.",
+        "description": "Protezione bot per i moduli di autenticazione",
+        "secretKey": "Chiave segreta",
+        "siteKey": "Chiave del sito",
+        "title": "Cloudflare Turnstile"
+      }
+    },
     "users": {
       "badges": {
         "admin": "Amministratore",
@@ -149,7 +322,9 @@
       },
       "table": {
         "created": "Creato",
+        "noOrganizations": "Nessuna organizzazione",
         "noUsersFound": "Nessun utente trovato",
+        "organizations": "Organizzazioni",
         "role": "Ruolo",
         "user": "Utente"
       },

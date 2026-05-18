@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconSettings, IconTrash } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +16,7 @@ interface NotificationPopoverProps {
 }
 
 export function NotificationPopover({ children }: NotificationPopoverProps) {
+	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
 	const { organizationId } = useOrganization();
 	const hasOrganization = Boolean(organizationId);
@@ -74,7 +76,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 				{/* Header */}
 				<div className="flex items-center justify-between px-4 py-3">
 					<div className="flex items-center gap-2">
-						<h3 className="font-semibold">Notifications</h3>
+						<h3 className="font-semibold">{t("common:notifications.title", "Notifications")}</h3>
 						{unreadCount > 0 && (
 							<span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
 								{unreadCount > 99 ? "99+" : unreadCount}
@@ -91,7 +93,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 								disabled={isMarkingAllRead}
 							>
 								<IconCheck className="mr-1 size-3.5" />
-								Mark all read
+								{t("common:notifications.actions.markAllRead", "Mark all read")}
 							</Button>
 						)}
 						{notifications.length > 0 && (
@@ -103,13 +105,15 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 								disabled={isDeletingAll}
 							>
 								<IconTrash className="mr-1 size-3.5" />
-								Delete all
+								{t("common:notifications.actions.deleteAll", "Delete all")}
 							</Button>
 						)}
 						<Button size="icon" variant="ghost" className="size-8" asChild onClick={handleClose}>
 							<Link href="/settings/notifications">
 								<IconSettings className="size-4" />
-								<span className="sr-only">Notification settings</span>
+								<span className="sr-only">
+									{t("common:notifications.actions.settings", "Notification settings")}
+								</span>
 							</Link>
 						</Button>
 					</div>
@@ -132,7 +136,9 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						<Separator />
 						<div className="p-2">
 							<Button variant="ghost" className="w-full text-sm" asChild onClick={handleClose}>
-								<Link href="/notifications">View all notifications</Link>
+								<Link href="/notifications">
+									{t("common:notifications.actions.viewAll", "View all notifications")}
+								</Link>
 							</Button>
 						</div>
 					</>

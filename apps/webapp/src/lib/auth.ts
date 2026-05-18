@@ -385,7 +385,6 @@ export const auth = betterAuth({
 		schema,
 	}),
 	plugins: [
-		nextCookies(),
 		bearer(), // Enable Bearer token auth for desktop app
 		admin({
 			defaultRole: "user",
@@ -699,5 +698,6 @@ export const auth = betterAuth({
 				}
 			},
 		}),
+		nextCookies(),
 	],
 });

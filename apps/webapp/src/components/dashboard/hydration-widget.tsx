@@ -112,10 +112,12 @@ function AddButton({
 	count,
 	onClick,
 	disabled,
+	label,
 }: {
 	count: 1 | 2;
 	onClick: () => void;
 	disabled: boolean;
+	label: string;
 }) {
 	return (
 		<Button
@@ -124,7 +126,7 @@ function AddButton({
 			className="size-9 relative"
 			onClick={onClick}
 			disabled={disabled}
-			aria-label={`Add ${count} glass${count > 1 ? "es" : ""}`}
+			aria-label={label}
 		>
 			<IconPlus className="size-3 text-muted-foreground absolute top-1 left-1" />
 			<IconDropletFilled className="size-4 text-blue-500" />
@@ -199,6 +201,10 @@ export function HydrationWidget() {
 	const progressPercentage = stats?.goalProgress ?? 0;
 	const isGoalMet = progressPercentage >= 100;
 	const glassesArray = Array.from({ length: stats?.dailyGoal ?? 8 }, (_, i) => i);
+	const addOneGlassLabel = t("dashboard.hydration.add-glass", "Add {count} glass", { count: 1 });
+	const addTwoGlassesLabel = t("dashboard.hydration.add-glasses", "Add {count} glasses", {
+		count: 2,
+	});
 
 	return (
 		<DashboardWidget id="hydration">
@@ -242,8 +248,18 @@ export function HydrationWidget() {
 
 							{/* Add Buttons */}
 							<div className="flex gap-2">
-								<AddButton count={1} onClick={() => handleLogWater(1)} disabled={isLogging} />
-								<AddButton count={2} onClick={() => handleLogWater(2)} disabled={isLogging} />
+								<AddButton
+									count={1}
+									onClick={() => handleLogWater(1)}
+									disabled={isLogging}
+									label={addOneGlassLabel}
+								/>
+								<AddButton
+									count={2}
+									onClick={() => handleLogWater(2)}
+									disabled={isLogging}
+									label={addTwoGlassesLabel}
+								/>
 							</div>
 						</div>
 					</div>

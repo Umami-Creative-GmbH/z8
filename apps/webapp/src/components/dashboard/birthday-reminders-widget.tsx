@@ -1,14 +1,14 @@
 "use client";
 
 import { IconCake, IconConfetti, IconGift, IconSparkles } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
-import { format } from "@/lib/datetime/luxon-utils";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
-import { cn, pluralize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getUpcomingBirthdays } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
+import { formatDashboardDate } from "./format-dashboard-date";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
 
@@ -36,6 +36,8 @@ function useDaysLabel() {
 
 function BirthdayCard({ birthday, isToday }: { birthday: UpcomingBirthday; isToday: boolean }) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee();
+	const locale = tolgee.getLanguage() || "en";
 	const getDaysLabel = useDaysLabel();
 	const name = birthday.user.name || t("common.unknown", "Unknown");
 
@@ -87,7 +89,7 @@ function BirthdayCard({ birthday, isToday }: { birthday: UpcomingBirthday; isTod
 					{name}
 				</div>
 				<div className="text-xs text-muted-foreground">
-					{format(new Date(birthday.nextBirthday), "MMMM d")}
+					{formatDashboardDate(new Date(birthday.nextBirthday), locale)}
 				</div>
 			</div>
 
@@ -146,6 +148,11 @@ export function BirthdayRemindersWidget() {
 	const todayBirthdays = birthdaysWithPresence?.filter((b) => b.daysUntil === 0) ?? [];
 	const upcomingBirthdays = birthdaysWithPresence?.filter((b) => b.daysUntil > 0).slice(0, 5) ?? [];
 	const displayBirthdays = [...todayBirthdays, ...upcomingBirthdays];
+	const celebrationLabel = birthdays
+		? birthdays.length === 1
+			? t("dashboard.birthday.celebration", "celebration")
+			: t("dashboard.birthday.celebrations", "celebrations")
+		: t("dashboard.birthday.celebrations", "celebrations");
 
 	return (
 		<DashboardWidget id="birthday-reminders">
@@ -158,7 +165,7 @@ export function BirthdayRemindersWidget() {
 								"{count} {celebration} in the next 30 days",
 								{
 									count: birthdays.length,
-									celebration: pluralize(birthdays.length, "celebration"),
+									celebration: celebrationLabel,
 								},
 							)
 						: t("dashboard.birthday.description", "Celebrations in the next 30 days")

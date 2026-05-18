@@ -202,6 +202,7 @@
     "get-help": "Obtenir de l'aide",
     "my-requests": "Mes demandes",
     "org-explorer": "Explorateur d'organisation",
+    "platform-admin": "Administrateur de la plateforme",
     "reports": "Rapports",
     "scheduling": "Planification",
     "settings": "Paramètres",
@@ -210,6 +211,58 @@
     "team-label": "Équipe",
     "time-tracking": "Suivi du temps",
     "travel-expenses": "Frais de déplacement"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Tout supprimer",
+      "markAllRead": "Tout marquer comme lu",
+      "markAsRead": "Marquer comme lu",
+      "markRead": "Marquer comme lu",
+      "settings": "Paramètres de notification",
+      "viewAll": "Voir toutes les notifications"
+    },
+    "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",
+    "empty": {
+      "description": "Vous êtes à jour ! Les nouvelles notifications apparaîtront ici.",
+      "inboxDescription": "Vous êtes à jour. Les nouvelles mises à jour apparaîtront ici.",
+      "noMatchesDescription": "Ajustez la recherche ou le filtre de lecture pour élargir cette vue de la boîte de réception.",
+      "noMatchesTitle": "Aucune notification correspondante",
+      "title": "Aucune notification",
+      "unreadDescription": "Vous êtes à jour. Les nouvelles mises à jour non lues apparaîtront ici.",
+      "unreadTitle": "Aucune notification non lue"
+    },
+    "error": {
+      "title": "Impossible de charger les notifications"
+    },
+    "filters": {
+      "all": "Tout",
+      "ariaLabel": "Filtrer les notifications par état de lecture",
+      "read": "Lu",
+      "unread": "Non lu"
+    },
+    "search": {
+      "ariaLabel": "Rechercher des notifications",
+      "placeholder": "Rechercher des notifications..."
+    },
+    "selection": {
+      "selectAll": "Tout sélectionner",
+      "selectAllAria": "Sélectionner toutes les notifications visibles",
+      "selectNamedAria": "Sélectionner {title}",
+      "visibleSelected": "{count} éléments visibles sélectionnés"
+    },
+    "timeline": {
+      "earlier": "Plus tôt",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier"
+    },
+    "title": "Notifications",
+    "toasts": {
+      "deleted": "{count} notifications supprimées",
+      "deleteFailed": "Échec de la suppression des notifications",
+      "markedRead": "{count} notifications marquées comme lues",
+      "markReadFailed": "Échec du marquage des notifications comme lues"
+    },
+    "unreadBadge": "{count} non lu"
   },
   "offline": {
     "banner": {

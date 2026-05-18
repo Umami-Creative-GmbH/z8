@@ -1139,7 +1139,7 @@
           "thisYear": "Quest'anno"
         },
         "employees": {
-          "all": "Tutti i dipendenti (${employees.length})",
+          "all": "Tutti i dipendenti ({count})",
           "label": "Dipendenti",
           "selectSpecific": "Seleziona dipendenti specifici"
         }
@@ -1150,19 +1150,19 @@
         "title": "Genera dati demo"
       },
       "generateEmployees": {
-        "button": "Genera ${employeeCount} dipendenti",
+        "button": "Genera {count} dipendenti",
         "countHint": "Massimo 50 dipendenti alla volta",
         "countLabel": "Numero di dipendenti",
         "description": "Crea account dipendente demo per i test",
-        "employeesCreated": "${employeeResult.employeesCreated} dipendenti creati",
+        "employeesCreated": "{count} dipendenti creati",
         "generating": "Generazione in corso...",
         "includeManagers": "Includi assegnazioni responsabili",
-        "managersCreated": "${employeeResult.managersCreated} assegnazioni responsabili",
+        "managersCreated": "{count} assegnazioni responsabili",
         "managersHint": "Assegna casualmente i responsabili ai nuovi dipendenti",
         "options": "Opzioni",
         "successTitle": "Dipendenti generati con successo!",
         "title": "Genera dipendenti",
-        "usersCreated": "${employeeResult.usersCreated} utenti creati"
+        "usersCreated": "{count} utenti creati"
       },
       "results": {
         "success": "Dati demo generati con successo!"

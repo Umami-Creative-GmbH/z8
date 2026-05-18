@@ -202,6 +202,7 @@
     "get-help": "Get Help",
     "my-requests": "My Requests",
     "org-explorer": "Org Explorer",
+    "platform-admin": "Platform Admin",
     "reports": "Reports",
     "scheduling": "Scheduling",
     "settings": "Settings",
@@ -210,6 +211,58 @@
     "team-label": "Team",
     "time-tracking": "Time Tracking",
     "travel-expenses": "Travel Expenses"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Delete all",
+      "markAllRead": "Mark all read",
+      "markAsRead": "Mark as read",
+      "markRead": "Mark read",
+      "settings": "Notification settings",
+      "viewAll": "View all notifications"
+    },
+    "description": "Review updates, approvals, and system alerts in one timeline.",
+    "empty": {
+      "description": "You're all caught up! New notifications will appear here.",
+      "inboxDescription": "You are all caught up. New updates will appear here.",
+      "noMatchesDescription": "Adjust the search or read filter to widen this inbox view.",
+      "noMatchesTitle": "No matching notifications",
+      "title": "No notifications",
+      "unreadDescription": "You are all caught up. New unread updates will appear here.",
+      "unreadTitle": "No unread notifications"
+    },
+    "error": {
+      "title": "Could not load notifications"
+    },
+    "filters": {
+      "all": "All",
+      "ariaLabel": "Filter notifications by read status",
+      "read": "Read",
+      "unread": "Unread"
+    },
+    "search": {
+      "ariaLabel": "Search notifications",
+      "placeholder": "Search notifications..."
+    },
+    "selection": {
+      "selectAll": "Select all visible",
+      "selectAllAria": "Select all visible notifications",
+      "selectNamedAria": "Select {title}",
+      "visibleSelected": "{count} visible selected"
+    },
+    "timeline": {
+      "earlier": "Earlier",
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "title": "Notifications",
+    "toasts": {
+      "deleted": "Deleted {count} notifications",
+      "deleteFailed": "Failed to delete notifications",
+      "markedRead": "Marked {count} notifications as read",
+      "markReadFailed": "Failed to mark notifications as read"
+    },
+    "unreadBadge": "{count} unread"
   },
   "offline": {
     "banner": {
