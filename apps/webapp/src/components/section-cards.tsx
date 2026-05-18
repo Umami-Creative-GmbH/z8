@@ -4,7 +4,6 @@ import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
-import { DashboardCustomizeMenu } from "@/components/dashboard/dashboard-customize-menu";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
@@ -96,15 +95,11 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 
 function DashboardWidgetLayout({
 	visibleWidgetOrder,
-	hiddenWidgets,
 	onReorder,
-	onVisibilityChange,
 	resetOrder,
 }: {
 	visibleWidgetOrder: WidgetId[];
-	hiddenWidgets: WidgetId[];
 	onReorder: (newOrder: WidgetId[]) => void;
-	onVisibilityChange: (widgetId: WidgetId, visible: boolean) => void;
 	resetOrder: () => void;
 }) {
 	const renderedWidgets = useVisibleWidgets();
@@ -134,15 +129,6 @@ function DashboardWidgetLayout({
 
 	return (
 		<>
-			<div className="mb-3 flex justify-end px-4 lg:px-6">
-				<DashboardCustomizeMenu
-					hiddenWidgets={hiddenWidgets}
-					onReorder={onReorder}
-					onReset={resetOrder}
-					onVisibilityChange={onVisibilityChange}
-					visibleWidgetOrder={visibleWidgetOrder}
-				/>
-			</div>
 			{hasConfiguredWidgets ? (
 				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
 					{visibleWidgetOrder.map((widgetId) => {
@@ -158,14 +144,7 @@ function DashboardWidgetLayout({
 }
 
 export function SectionCards() {
-	const {
-		visibleWidgetOrder,
-		hiddenWidgets,
-		onReorder,
-		onVisibilityChange,
-		resetOrder,
-		isLoading,
-	} = useWidgetOrder();
+	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder();
 
 	if (isLoading) {
 		return <SectionCardsSkeleton />;
@@ -174,9 +153,7 @@ export function SectionCards() {
 	return (
 		<WidgetVisibilityProvider>
 			<DashboardWidgetLayout
-				hiddenWidgets={hiddenWidgets}
 				onReorder={onReorder}
-				onVisibilityChange={onVisibilityChange}
 				resetOrder={resetOrder}
 				visibleWidgetOrder={visibleWidgetOrder}
 			/>
