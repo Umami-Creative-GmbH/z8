@@ -4,138 +4,25 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { type employee, employeeManagers, type team } from "@/db/schema";
+import { employee, employeeManagers } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { refreshEmployeeTimeBalances, type EmployeeTimeBalancePayload } from "./team-time-balance";
+import {
+	buildVisibleManagedEmployees,
+	type CurrentTeamEmployee,
+	type ManagedEmployee,
+	type ManagedEmployeeRecord,
+} from "./team-members-data";
+import { refreshEmployeeTimeBalances } from "./team-time-balance";
 
-// =============================================================================
-// Types
-// =============================================================================
-
-export interface ManagedEmployee {
-	id: string;
-	userId: string;
-	firstName: string | null;
-	lastName: string | null;
-	pronouns: string | null;
-	position: string | null;
-	role: "admin" | "manager" | "employee";
-	isActive: boolean;
-	isPrimaryManager: boolean;
-	isCurrentUser: boolean;
-	timeBalance: EmployeeTimeBalancePayload | null;
-	user: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-		name: string;
-		email: string;
-		image: string | null;
-	};
-	team: {
-		id: string;
-		name: string;
-	} | null;
-}
-
-export type CurrentTeamEmployee = Pick<
-	typeof employee.$inferSelect,
-	| "id"
-	| "userId"
-	| "organizationId"
-	| "firstName"
-	| "lastName"
-	| "pronouns"
-	| "position"
-	| "role"
-	| "isActive"
-> & {
-	user: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-		name: string;
-		email: string;
-		image: string | null;
-	};
-	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
-};
-
-type ManagedEmployeeRecord = Pick<typeof employeeManagers.$inferSelect, "isPrimary"> & {
-	employee: Pick<
-		typeof employee.$inferSelect,
-		| "id"
-		| "userId"
-		| "organizationId"
-		| "firstName"
-		| "lastName"
-		| "pronouns"
-		| "position"
-		| "role"
-		| "isActive"
-	> & {
-		user: {
-			id: string;
-			firstName: string | null;
-			lastName: string | null;
-			name: string;
-			email: string;
-			image: string | null;
-		};
-		team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
-	};
-};
+export type { CurrentTeamEmployee, ManagedEmployee } from "./team-members-data";
 
 // =============================================================================
 // Server Actions
 // =============================================================================
-
-export function buildVisibleManagedEmployees(input: {
-	currentEmployee: CurrentTeamEmployee;
-	managedRecords: ManagedEmployeeRecord[];
-	balances: Map<string, EmployeeTimeBalancePayload>;
-}): ManagedEmployee[] {
-	const byId = new Map<string, ManagedEmployee>();
-	const toManagedEmployee = (
-		emp: ManagedEmployeeRecord["employee"] | CurrentTeamEmployee,
-		isPrimaryManager: boolean,
-		isCurrentUser: boolean,
-	): ManagedEmployee => ({
-		id: emp.id,
-		userId: emp.userId,
-		firstName: emp.user.firstName,
-		lastName: emp.user.lastName,
-		pronouns: emp.pronouns,
-		position: emp.position,
-		role: emp.role,
-		isActive: emp.isActive,
-		isPrimaryManager,
-		isCurrentUser,
-		timeBalance: input.balances.get(emp.id) ?? null,
-		user: {
-			id: emp.user.id,
-			firstName: emp.user.firstName,
-			lastName: emp.user.lastName,
-			name: emp.user.name,
-			email: emp.user.email,
-			image: emp.user.image,
-		},
-		team: emp.team ? { id: emp.team.id, name: emp.team.name } : null,
-	});
-
-	byId.set(input.currentEmployee.id, toManagedEmployee(input.currentEmployee, false, true));
-	for (const record of input.managedRecords) {
-		if (record.employee.organizationId !== input.currentEmployee.organizationId) continue;
-		if (record.employee.id === input.currentEmployee.id) continue;
-		byId.set(record.employee.id, toManagedEmployee(record.employee, record.isPrimary, false));
-	}
-
-	return [...byId.values()];
-}
 
 /**
  * Get current employee from session (reuse pattern from absences)

@@ -1,9 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { buildVisibleManagedEmployees } from "./actions";
-
-vi.mock("@/lib/auth", () => ({
-	auth: { api: { getSession: vi.fn() } },
-}));
+import { describe, expect, it } from "vitest";
+import { buildVisibleManagedEmployees } from "./team-members-data";
 
 const user = {
 	id: "user-1",
