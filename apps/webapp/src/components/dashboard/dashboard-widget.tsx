@@ -14,6 +14,8 @@ interface DashboardWidgetProps {
 	id: WidgetId;
 	/** Widget content - if null/undefined, widget won't render */
 	children: ReactNode;
+	/** Whether this widget can be reordered with drag-and-drop */
+	draggable?: boolean;
 }
 
 /**
@@ -36,7 +38,7 @@ interface DashboardWidgetProps {
  * }
  * ```
  */
-export function DashboardWidget({ id, children }: DashboardWidgetProps) {
+export function DashboardWidget({ id, children, draggable = true }: DashboardWidgetProps) {
 	// Register as visible when mounted
 	useRegisterVisibleWidget(id);
 
@@ -54,27 +56,29 @@ export function DashboardWidget({ id, children }: DashboardWidgetProps) {
 		<div
 			ref={setNodeRef}
 			style={style}
-			className={cn("relative group", isDragging && "z-50")}
+			className={cn("relative group mb-4 break-inside-avoid", isDragging && "z-50")}
 			data-widget-id={id}
 			data-dragging={isDragging}
 		>
-			<Button
-				variant="ghost"
-				size="icon"
-				className={cn(
-					"absolute -top-2 -right-2 z-10 size-7",
-					"opacity-0 group-hover:opacity-100 transition-opacity",
-					"bg-background border shadow-sm",
-					"cursor-grab active:cursor-grabbing",
-					"hover:bg-muted",
-					isDragging && "opacity-100 cursor-grabbing",
-				)}
-				{...attributes}
-				{...listeners}
-				aria-label="Drag to reorder widget"
-			>
-				<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
-			</Button>
+			{draggable ? (
+				<Button
+					variant="ghost"
+					size="icon"
+					className={cn(
+						"absolute -top-2 -right-2 z-10 size-7",
+						"opacity-0 group-hover:opacity-100 transition-opacity",
+						"bg-background border shadow-sm",
+						"cursor-grab active:cursor-grabbing",
+						"hover:bg-muted",
+						isDragging && "opacity-100 cursor-grabbing",
+					)}
+					{...attributes}
+					{...listeners}
+					aria-label="Drag to reorder widget"
+				>
+					<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
+				</Button>
+			) : null}
 			{children}
 		</div>
 	);
