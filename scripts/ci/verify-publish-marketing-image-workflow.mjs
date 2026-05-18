@@ -136,7 +136,6 @@ const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
 
 expect(buildNativeJob, "Missing build-native job");
 expect(publishManifestJob, "Missing publish-manifest job");
-expect(cleanupPackageVersionsJob, "Missing cleanup-package-versions job");
 
 expectPushPathFilters([
 	"apps/marketing/**",
@@ -214,23 +213,14 @@ if (publishManifestJob) {
 	expect(publishStep, "Missing multi-arch manifest publish step");
 }
 
-if (cleanupPackageVersionsJob) {
-	includesAll(
-		cleanupPackageVersionsJob,
-		[
-			"name: Cleanup Package Versions",
-			"needs: publish-manifest",
-			"if: ${{ github.event_name != 'pull_request' }}",
-			"uses: actions/delete-package-versions@v5",
-			"owner: umami-creative-gmbh",
-			"package-name: z8-marketing",
-			"package-type: container",
-			"min-versions-to-keep: 10",
-			"ignore-versions: '^(latest|v.*)$'",
-		],
-		"cleanup-package-versions",
-	);
-}
+expect(
+	!cleanupPackageVersionsJob,
+	"cleanup-package-versions must not be present; deleting GHCR package versions can remove child manifests still referenced by multi-arch tags",
+);
+expect(
+	!workflow.includes("actions/delete-package-versions"),
+	"workflow must not use actions/delete-package-versions for multi-arch GHCR images",
+);
 
 if (errors.length > 0) {
 	console.error("Publish marketing image workflow contract failed:");
