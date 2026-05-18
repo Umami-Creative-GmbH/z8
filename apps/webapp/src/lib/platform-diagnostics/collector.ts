@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { systemConfig } from "@/db/schema";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
+import { getOrCreateDeploymentId } from "@/lib/telemetry";
 
 import type { DiagnosticsItem, PlatformDiagnosticsSnapshot, QueueSummary } from "./types";
 
@@ -13,6 +14,7 @@ export interface PlatformDiagnosticsDependencies {
 	now: () => string;
 	env: DiagnosticsEnv;
 	getDeploymentId: () => Promise<string | null>;
+	getBuildHash: () => string | undefined;
 	getCookieConsentConfigured: () => Promise<boolean>;
 	checkDatabase: () => Promise<boolean>;
 	checkQueue: () => Promise<boolean>;
@@ -127,15 +129,8 @@ function getRecommendedActions(items: DiagnosticsItem[]): string[] {
 export const defaultPlatformDiagnosticsDependencies: PlatformDiagnosticsDependencies = {
 	now: () => DateTime.utc().toISO() ?? DateTime.utc().toString(),
 	env: process.env,
-	getDeploymentId: async () => {
-		const [row] = await db
-			.select({ value: systemConfig.value })
-			.from(systemConfig)
-			.where(eq(systemConfig.key, "deployment_id"))
-			.limit(1);
-
-		return row?.value ?? null;
-	},
+	getDeploymentId: async () => getOrCreateDeploymentId(),
+	getBuildHash: () => process.env.NEXT_PUBLIC_BUILD_HASH,
 	getCookieConsentConfigured: async () => {
 		const [row] = await db
 			.select({ value: systemConfig.value })
@@ -182,6 +177,7 @@ export async function collectPlatformDiagnostics(
 
 	const billingEnabled = deps.env.BILLING_ENABLED === "true";
 	const runtimeParts = [deps.env.NODE_ENV ?? "unknown", deps.env.NEXT_RUNTIME ?? "nodejs"].filter(Boolean);
+	const buildHash = deps.env.NEXT_PUBLIC_BUILD_HASH ?? deps.getBuildHash();
 
 	const configuration: DiagnosticsItem[] = [
 		{
@@ -238,8 +234,8 @@ export async function collectPlatformDiagnostics(
 		},
 		{
 			title: "Build hash",
-			status: isConfigured(deps.env.NEXT_PUBLIC_BUILD_HASH) ? "healthy" : "warning",
-			value: deps.env.NEXT_PUBLIC_BUILD_HASH ?? "Missing",
+			status: isConfigured(buildHash) ? "healthy" : "warning",
+			value: buildHash ?? "Missing",
 			description: "Public build identifier when provided by deployment.",
 		},
 	];

@@ -88,4 +88,3 @@ Für tiefergehende Informationen zu einzelnen Bereichen der Plattform siehe:
 ---
 
 *Mit Präzision für die moderne Arbeitswelt entwickelt.*
-
