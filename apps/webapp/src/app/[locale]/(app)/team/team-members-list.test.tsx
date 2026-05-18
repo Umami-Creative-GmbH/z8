@@ -115,6 +115,17 @@ describe("TeamMembersList", () => {
 							calculatedAt: new Date("2026-05-18T00:00:00.000Z"),
 						},
 					}),
+					employee({
+						id: "employee-4",
+						user: {
+							id: "user-4",
+							firstName: "Dorothy",
+							lastName: "Vaughan",
+							name: "Dorothy Vaughan",
+							email: "dorothy@example.com",
+							image: null,
+						},
+					}),
 				]}
 			/>,
 		);
@@ -122,6 +133,10 @@ describe("TeamMembersList", () => {
 		expect(screen.getByText("+2h")).toBeTruthy();
 		expect(screen.getByText("-3h")).toBeTruthy();
 		expect(screen.getByText("0h")).toBeTruthy();
+		expect(screen.getByLabelText("Year balance: +2h")).toBeTruthy();
+		expect(screen.getByLabelText("Year balance: -3h")).toBeTruthy();
+		expect(screen.getByLabelText("Year balance: 0h")).toBeTruthy();
+		expect(screen.getByLabelText("Year balance: No balance")).toBeTruthy();
 	});
 
 	it("renders You and balance badges in table mode", () => {
@@ -130,6 +145,7 @@ describe("TeamMembersList", () => {
 				employees={[
 					employee({
 						isCurrentUser: true,
+						isPrimaryManager: true,
 						timeBalance: {
 							year: 2026,
 							actualMinutes: 600,
@@ -147,6 +163,7 @@ describe("TeamMembersList", () => {
 
 		expect(screen.getByText("You")).toBeTruthy();
 		expect(screen.getByText("+2h")).toBeTruthy();
+		expect(screen.getByTitle("You are the primary manager")).toBeTruthy();
 	});
 
 	it("renders and toggles an accessible sortable yearly balance table header", () => {

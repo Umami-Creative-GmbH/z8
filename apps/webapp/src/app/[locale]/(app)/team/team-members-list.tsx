@@ -66,15 +66,30 @@ function getBalanceVariant(balanceMinutes: number | null | undefined) {
 function TimeBalanceBadge({
 	employee,
 	noBalanceLabel,
+	yearBalanceLabel,
 }: {
 	employee: ManagedEmployee;
 	noBalanceLabel: string;
+	yearBalanceLabel: string;
 }) {
 	const balance = employee.timeBalance;
-	if (!balance) return <Badge variant="outline">{noBalanceLabel}</Badge>;
+	const label = balance ? formatSignedBalance(balance.balanceMinutes) : noBalanceLabel;
+	const accessibleLabel = `${yearBalanceLabel}: ${label}`;
+	if (!balance) {
+		return (
+			<Badge variant="outline" aria-label={accessibleLabel} title={accessibleLabel}>
+				{noBalanceLabel}
+			</Badge>
+		);
+	}
 	return (
-		<Badge variant={getBalanceVariant(balance.balanceMinutes)} className="text-xs font-normal">
-			{formatSignedBalance(balance.balanceMinutes)}
+		<Badge
+			variant={getBalanceVariant(balance.balanceMinutes)}
+			className="text-xs font-normal"
+			aria-label={accessibleLabel}
+			title={accessibleLabel}
+		>
+			{label}
 		</Badge>
 	);
 }
@@ -96,6 +111,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const youLabel = t("team.member.you", "You");
 	const noBalanceLabel = t("team.balance.noBalance", "No balance");
 	const yearBalanceLabel = t("team.table.timeBalance", "Year balance");
+	const primaryManagerLabel = t("team.primaryManager", "You are the primary manager");
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
 		{ polling: true },
@@ -146,7 +162,9 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 					<div>
 						<div className="flex items-center gap-1.5 font-medium">
 							{row.original.user.name}
-							{row.original.isPrimaryManager && <IconUserCheck className="size-4 text-primary" />}
+							{row.original.isPrimaryManager && (
+								<IconUserCheck className="size-4 text-primary" title={primaryManagerLabel} />
+							)}
 							<YouBadge show={row.original.isCurrentUser} label={youLabel} />
 						</div>
 						<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
@@ -201,7 +219,11 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 			accessorFn: (row) => row.timeBalance?.balanceMinutes ?? 0,
 			sortDescFirst: false,
 			cell: ({ row }) => (
-				<TimeBalanceBadge employee={row.original} noBalanceLabel={noBalanceLabel} />
+				<TimeBalanceBadge
+					employee={row.original}
+					noBalanceLabel={noBalanceLabel}
+					yearBalanceLabel={yearBalanceLabel}
+				/>
 			),
 		},
 		{
@@ -330,7 +352,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 													{emp.isPrimaryManager && (
 														<IconUserCheck
 															className="size-3.5 shrink-0 text-primary"
-															title={t("team.primaryManager", "You are the primary manager")}
+															title={primaryManagerLabel}
 														/>
 													)}
 													<YouBadge show={emp.isCurrentUser} label={youLabel} />
@@ -348,7 +370,11 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 														{emp.team.name}
 													</Badge>
 												)}
-												<TimeBalanceBadge employee={emp} noBalanceLabel={noBalanceLabel} />
+												<TimeBalanceBadge
+													employee={emp}
+													noBalanceLabel={noBalanceLabel}
+													yearBalanceLabel={yearBalanceLabel}
+												/>
 												{!emp.isActive && (
 													<Badge variant="outline" className="text-xs font-normal">
 														{t("team.status.inactive", "Inactive")}
