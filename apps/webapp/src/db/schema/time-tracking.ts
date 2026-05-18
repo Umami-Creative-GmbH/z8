@@ -202,5 +202,9 @@ export const employeeTimeBalance = pgTable(
 			table.organizationId,
 			table.year,
 		),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
 	],
 );
