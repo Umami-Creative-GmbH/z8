@@ -29,7 +29,7 @@ export function calculateBalanceMinutes(input: {
 }
 
 export function calculateDayAbsenceAdjustmentMinutes(expectedDayMinutes: number, period: DayPeriod) {
-	if (period === "morning" || period === "afternoon") return Math.round(expectedDayMinutes / 2);
+	if (period === "am" || period === "pm") return Math.round(expectedDayMinutes / 2);
 	return expectedDayMinutes;
 }
 

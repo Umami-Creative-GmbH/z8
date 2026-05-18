@@ -27,8 +27,8 @@ describe("team time balance helpers", () => {
 
 	it("adjusts full and half-day absences by expected day minutes", () => {
 		expect(calculateDayAbsenceAdjustmentMinutes(480, "full_day")).toBe(480);
-		expect(calculateDayAbsenceAdjustmentMinutes(480, "morning")).toBe(240);
-		expect(calculateDayAbsenceAdjustmentMinutes(480, "afternoon")).toBe(240);
+		expect(calculateDayAbsenceAdjustmentMinutes(480, "am")).toBe(240);
+		expect(calculateDayAbsenceAdjustmentMinutes(480, "pm")).toBe(240);
 	});
 
 	it("formats signed balances for display", () => {
