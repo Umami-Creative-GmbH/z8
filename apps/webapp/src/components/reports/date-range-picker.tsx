@@ -5,7 +5,7 @@ import { DateTime } from "luxon";
 import { useId, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
-import { IconCalendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
 	Select,
@@ -97,7 +97,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 				</p>
 			)}
 
-			{/* IconCalendar Picker for Custom Range */}
+			{/* Calendar picker for custom range */}
 			{preset === "custom" && (
 				<Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
 					<PopoverTrigger asChild>
@@ -123,7 +123,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 						</Button>
 					</PopoverTrigger>
 					<PopoverContent className="w-auto p-0" align="start">
-						<IconCalendar
+						<Calendar
 							autoFocus
 							mode="range"
 							defaultMonth={value?.start}
