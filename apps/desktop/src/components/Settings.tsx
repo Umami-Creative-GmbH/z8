@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { IconX, IconLogout2, IconSettings as SettingsIcon } from "@tabler/icons-react";
-import type { IconSettings as SettingsType } from "../types";
+import type { Settings as SettingsType } from "../types";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface SettingsProps {
   isAuthenticated: boolean;
 }
 
-export function IconSettings({
+export function Settings({
   isOpen,
   onClose,
   settings,
@@ -107,7 +107,7 @@ export function IconSettings({
             >
               <SettingsIcon size={20} color="var(--color-muted-foreground)" />
             </div>
-            <h2 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>IconSettings</h2>
+            <h2 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>Settings</h2>
           </div>
           <button
             onClick={onClose}
