@@ -118,7 +118,7 @@ export function TeamOverviewWidget() {
 
 			const result = await getTeamOverviewStats();
 			if (!result.success || !result.data) {
-				throw new Error("Failed to load team statistics");
+				throw new Error(t("dashboard.team-overview.error", "Failed to load team statistics"));
 			}
 
 			return { role: current.role, stats: result.data };

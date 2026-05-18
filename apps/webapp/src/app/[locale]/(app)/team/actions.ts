@@ -1,68 +1,25 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { type employee, employeeManagers, type team } from "@/db/schema";
+import { employee, employeeManagers } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { NotFoundError } from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	buildVisibleManagedEmployees,
+	type CurrentTeamEmployee,
+	canUseTeamPage,
+	type ManagedEmployee,
+	type ManagedEmployeeRecord,
+} from "./team-members-data";
+import { refreshEmployeeTimeBalances } from "./team-time-balance";
 
-// =============================================================================
-// Types
-// =============================================================================
-
-export interface ManagedEmployee {
-	id: string;
-	userId: string;
-	firstName: string | null;
-	lastName: string | null;
-	pronouns: string | null;
-	position: string | null;
-	role: "admin" | "manager" | "employee";
-	isActive: boolean;
-	isPrimaryManager: boolean;
-	user: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-		name: string;
-		email: string;
-		image: string | null;
-	};
-	team: {
-		id: string;
-		name: string;
-	} | null;
-}
-
-export type CurrentTeamEmployee = typeof employee.$inferSelect & {
-	user: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-		name: string;
-		email: string;
-		image: string | null;
-	};
-};
-
-type ManagedEmployeeRecord = typeof employeeManagers.$inferSelect & {
-	employee: typeof employee.$inferSelect & {
-		user: {
-			id: string;
-			firstName: string | null;
-			lastName: string | null;
-			name: string;
-			email: string;
-			image: string | null;
-		};
-		team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
-	};
-};
+export type { CurrentTeamEmployee, ManagedEmployee } from "./team-members-data";
 
 // =============================================================================
 // Server Actions
@@ -85,19 +42,13 @@ export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> 
 				and(eq(e.userId, session.user.id), eq(e.organizationId, activeOrgId), eq(e.isActive, true)),
 			with: {
 				user: true,
+				team: true,
 			},
 		});
 		if (emp) return emp as CurrentTeamEmployee;
 	}
 
-	const emp = await db.query.employee.findFirst({
-		where: (e, { and, eq }) => and(eq(e.userId, session.user.id), eq(e.isActive, true)),
-		with: {
-			user: true,
-		},
-	});
-
-	return emp as CurrentTeamEmployee | null;
+	return null;
 }
 
 /**
@@ -123,12 +74,11 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 								eq(e.organizationId, activeOrgId),
 								eq(e.isActive, true),
 							),
+						with: { user: true, team: true },
 					});
 				}
 
-				return await db.query.employee.findFirst({
-					where: (e, { and, eq }) => and(eq(e.userId, session.user.id), eq(e.isActive, true)),
-				});
+				return null;
 			}),
 			Effect.flatMap((emp) =>
 				emp
@@ -141,12 +91,32 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 						),
 			),
 		);
+		if (!canUseTeamPage(currentEmp.role)) {
+			return yield* _(
+				Effect.fail(
+					new AuthorizationError({
+						message: "Not authorized",
+						resource: "team",
+						action: "read",
+					}),
+				),
+			);
+		}
 
 		// Get all employees where current user is their manager
 		const managedEmployeeRecords = yield* _(
 			dbService.query("getManagedEmployees", async () => {
 				return await dbService.db.query.employeeManagers.findMany({
-					where: eq(employeeManagers.managerId, currentEmp.id),
+					where: and(
+						eq(employeeManagers.managerId, currentEmp.id),
+						inArray(
+							employeeManagers.employeeId,
+							dbService.db
+								.select({ id: employee.id })
+								.from(employee)
+								.where(eq(employee.organizationId, currentEmp.organizationId)),
+						),
+					),
 					with: {
 						employee: {
 							with: {
@@ -159,36 +129,30 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 			}),
 		);
 
-		// Transform to ManagedEmployee type
 		const typedManagedEmployeeRecords =
 			managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
-		const managedEmployees: ManagedEmployee[] = typedManagedEmployeeRecords.map((record) => ({
-			id: record.employee.id,
-			userId: record.employee.userId,
-			firstName: record.employee.user.firstName,
-			lastName: record.employee.user.lastName,
-			pronouns: record.employee.pronouns,
-			position: record.employee.position,
-			role: record.employee.role,
-			isActive: record.employee.isActive,
-			isPrimaryManager: record.isPrimary,
-			user: {
-				id: record.employee.user.id,
-				firstName: record.employee.user.firstName,
-				lastName: record.employee.user.lastName,
-				name: record.employee.user.name,
-				email: record.employee.user.email,
-				image: record.employee.user.image,
-			},
-			team: record.employee.team
-				? {
-						id: record.employee.team.id,
-						name: record.employee.team.name,
-					}
-				: null,
-		}));
+		const visibleEmployeeIds = [
+			...new Set([
+				currentEmp.id,
+				...typedManagedEmployeeRecords
+					.filter((record) => record.employee.organizationId === currentEmp.organizationId)
+					.map((record) => record.employee.id),
+			]),
+		];
+		const balances = yield* _(
+			Effect.promise(() =>
+				refreshEmployeeTimeBalances({
+					employeeIds: visibleEmployeeIds,
+					organizationId: currentEmp.organizationId,
+				}),
+			),
+		);
 
-		return managedEmployees;
+		return buildVisibleManagedEmployees({
+			currentEmployee: currentEmp as CurrentTeamEmployee,
+			managedRecords: typedManagedEmployeeRecords,
+			balances,
+		});
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

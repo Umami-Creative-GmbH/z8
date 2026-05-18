@@ -101,7 +101,7 @@ import {
 	timeRecordBreak,
 	timeRecordWork,
 } from "./time-record";
-import { timeEntry, workPeriod } from "./time-tracking";
+import { employeeTimeBalance, timeEntry, workPeriod } from "./time-tracking";
 import {
 	travelExpenseAttachment,
 	travelExpenseClaim,
@@ -198,6 +198,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Time tracking
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
+	timeBalances: many(employeeTimeBalance),
 	timeRecords: many(timeRecord),
 	timeRecordWorks: many(timeRecordWork),
 	timeRecordAbsences: many(timeRecordAbsence),
@@ -444,6 +445,7 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	// Time tracking
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
+	timeBalances: many(employeeTimeBalance),
 	timeRecords: many(timeRecord),
 	timeRecordApprovalDecisionsAsActor: many(timeRecordApprovalDecision),
 	absenceEntries: many(absenceEntry),
@@ -618,6 +620,17 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 	workCategory: one(workCategory, {
 		fields: [workPeriod.workCategoryId],
 		references: [workCategory.id],
+	}),
+}));
+
+export const employeeTimeBalanceRelations = relations(employeeTimeBalance, ({ one }) => ({
+	employee: one(employee, {
+		fields: [employeeTimeBalance.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [employeeTimeBalance.organizationId],
+		references: [organization.id],
 	}),
 }));
 

@@ -8,29 +8,25 @@ import {
 	IconClockEdit,
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { getPendingApprovals } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, pluralize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/validations/approvals";
 import { Link } from "@/navigation";
 import { DashboardWidget } from "./dashboard-widget";
+import { formatDashboardDate, formatDashboardDateWithYear } from "./format-dashboard-date";
 import { WidgetCard } from "./widget-card";
-
-const formatDateStr = (dateStr: string): string => {
-	return DateTime.fromISO(dateStr).toFormat("MMM d");
-};
-
-const formatDateStrFull = (dateStr: string): string => {
-	return DateTime.fromISO(dateStr).toFormat("MMM d, yyyy");
-};
 
 function UrgencyIndicator({ count }: { count: number }) {
 	const { t } = useTranslate();
 	const isUrgent = count >= 5;
 	const isWarning = count >= 3;
+	const requestLabel =
+		count === 1
+			? t("dashboard.pending-approvals.request", "request")
+			: t("dashboard.pending-approvals.requests", "requests");
 
 	return (
 		<div
@@ -50,7 +46,7 @@ function UrgencyIndicator({ count }: { count: number }) {
 				<p className="font-semibold">
 					{t("dashboard.pending-approvals.pending-requests", "{count} pending {request}", {
 						count,
-						request: pluralize(count, "request"),
+						request: requestLabel,
 					})}
 				</p>
 				<p className="text-xs opacity-90">
@@ -118,6 +114,8 @@ function ApprovalItem({
 
 export function PendingApprovalsWidget() {
 	const { t } = useTranslate();
+	const tolgee = useTolgee();
+	const locale = tolgee.getLanguage() || "en";
 	const pendingApprovalsQuery = useQuery({
 		queryKey: ["dashboard", "pending-approvals"],
 		queryFn: async () => {
@@ -130,7 +128,8 @@ export function PendingApprovalsWidget() {
 		},
 	});
 
-	const absenceApprovals: ApprovalWithAbsence[] = pendingApprovalsQuery.data?.absenceApprovals ?? [];
+	const absenceApprovals: ApprovalWithAbsence[] =
+		pendingApprovalsQuery.data?.absenceApprovals ?? [];
 	const timeCorrectionApprovals: ApprovalWithTimeCorrection[] =
 		pendingApprovalsQuery.data?.timeCorrectionApprovals ?? [];
 	const loading = pendingApprovalsQuery.isLoading;
@@ -173,7 +172,7 @@ export function PendingApprovalsWidget() {
 								<ApprovalItem
 									key={approval.id}
 									name={approval.requester.user.name || t("common.unknown", "Unknown")}
-									subtitle={`${formatDateStr(approval.absence.startDate)} - ${formatDateStrFull(approval.absence.endDate)}`}
+									subtitle={`${formatDashboardDate(approval.absence.startDate, locale)} - ${formatDashboardDateWithYear(approval.absence.endDate, locale)}`}
 									badge={approval.absence.category.name}
 								/>
 							))}
@@ -199,9 +198,7 @@ export function PendingApprovalsWidget() {
 								<ApprovalItem
 									key={approval.id}
 									name={approval.requester.user.name || t("common.unknown", "Unknown")}
-									subtitle={DateTime.fromJSDate(approval.workPeriod.startTime).toFormat(
-										"MMM d, yyyy",
-									)}
+									subtitle={formatDashboardDateWithYear(approval.workPeriod.startTime, locale)}
 									badge={t("dashboard.pending-approvals.correction", "Correction")}
 								/>
 							))}

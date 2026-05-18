@@ -202,6 +202,7 @@
     "get-help": "Ottieni Aiuto",
     "my-requests": "Le mie richieste",
     "org-explorer": "Esplora organizzazione",
+    "platform-admin": "Amministratore piattaforma",
     "reports": "Rapporti",
     "scheduling": "Pianificazione",
     "settings": "Impostazioni",
@@ -210,6 +211,58 @@
     "team-label": "Team",
     "time-tracking": "Rilevazione Tempo",
     "travel-expenses": "Spese di viaggio"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Elimina tutto",
+      "markAllRead": "Segna tutto come letto",
+      "markAsRead": "Segna come letto",
+      "markRead": "Segna come letto",
+      "settings": "Impostazioni notifiche",
+      "viewAll": "Visualizza tutte le notifiche"
+    },
+    "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",
+    "empty": {
+      "description": "Sei in pari! Le nuove notifiche appariranno qui.",
+      "inboxDescription": "Sei in pari. I nuovi aggiornamenti appariranno qui.",
+      "noMatchesDescription": "Modifica la ricerca o il filtro di lettura per ampliare questa vista della posta in arrivo.",
+      "noMatchesTitle": "Nessuna notifica corrispondente",
+      "title": "Nessuna notifica",
+      "unreadDescription": "Sei in pari. I nuovi aggiornamenti non letti appariranno qui.",
+      "unreadTitle": "Nessuna notifica non letta"
+    },
+    "error": {
+      "title": "Impossibile caricare le notifiche"
+    },
+    "filters": {
+      "all": "Tutto",
+      "ariaLabel": "Filtra le notifiche per stato di lettura",
+      "read": "Letto",
+      "unread": "Non letto"
+    },
+    "search": {
+      "ariaLabel": "Cerca notifiche",
+      "placeholder": "Cerca notifiche..."
+    },
+    "selection": {
+      "selectAll": "Seleziona tutto il visibile",
+      "selectAllAria": "Seleziona tutte le notifiche visibili",
+      "selectNamedAria": "Seleziona {title}",
+      "visibleSelected": "{count} elementi visibili selezionati"
+    },
+    "timeline": {
+      "earlier": "Più recente",
+      "today": "Oggi",
+      "yesterday": "Ieri"
+    },
+    "title": "Notifiche",
+    "toasts": {
+      "deleted": "{count} notifiche eliminate",
+      "deleteFailed": "Impossibile eliminare le notifiche",
+      "markedRead": "{count} notifiche contrassegnate come lette",
+      "markReadFailed": "Impossibile contrassegnare le notifiche come lette"
+    },
+    "unreadBadge": "{count} non lette"
   },
   "offline": {
     "banner": {

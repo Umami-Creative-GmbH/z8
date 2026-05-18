@@ -1,13 +1,155 @@
 {
   "admin": {
     "analytics": {
+      "billing": {
+        "estimatedNotice": "Historische Plätze und MRR sind geschätzt. Eine exakte Rekonstruktion erfordert zukünftige Snapshots oder ein Abrechnungsjournal."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Signale für Plätze und wiederkehrende Umsätze zur Abrechnungsprüfung.",
+          "summary": "Kommerzielle Zusammenfassung: {seats} Plätze und {mrr} geschätzter MRR.",
+          "title": "Kommerziell"
+        },
+        "engagement": {
+          "description": "Plattformnutzung durch aktive Benutzer und Sitzungen.",
+          "summary": "Engagement-Zusammenfassung: {activeUsers} aktive Benutzer und {sessions} Sitzungen.",
+          "title": "Engagement"
+        },
+        "growth": {
+          "description": "Neue Benutzer und Organisationen, die der Plattform beitreten.",
+          "summary": "Wachstumszusammenfassung: {signups} Anmeldungen und {organizations} Organisationen.",
+          "title": "Wachstum"
+        },
+        "operations": {
+          "description": "Durch Mandantenaktivität generiertes Zeiterfassungsvolumen.",
+          "summary": "Betriebszusammenfassung: {timeRecords} Zeiteinträge.",
+          "title": "Betrieb"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Analyse-Bucket",
+          "label": "Bucket"
+        },
+        "range": {
+          "ariaLabel": "Analysebereich",
+          "label": "Bereich"
+        }
+      },
       "description": "Überwachen Sie Plattformwachstum, Engagement, operative Aktivitäten und Abrechnungstrends.",
+      "emptyState": {
+        "noData": "Keine Daten für diesen Bereich"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Aktive Benutzer im ausgewählten Bereich",
+          "title": "Aktive Benutzer"
+        },
+        "mrr": {
+          "description": "Schätzung des monatlich wiederkehrenden Umsatzes",
+          "title": "Geschätzter MRR"
+        },
+        "organizations": {
+          "description": "Aktive Arbeitsbereiche auf der Plattform",
+          "title": "Organisationen"
+        },
+        "seats": {
+          "description": "Aktuelle bezahlte oder Test-Plätze",
+          "title": "Lizensierte Plätze"
+        },
+        "sessions": {
+          "description": "Authentifizierte Sitzungen",
+          "title": "Sitzungen"
+        },
+        "signups": {
+          "description": "Neue Plattform-Konten",
+          "title": "Registrierungen"
+        },
+        "timeRecords": {
+          "description": "Übermittelte Betriebsdatensätze",
+          "title": "Zeitdatensätze"
+        }
+      },
+      "preview": {
+        "description": "Plattformwachstum und Engagement im ausgewählten Zeitraum.",
+        "title": "Analysetrends",
+        "viewFull": "Vollständige Analysen anzeigen"
+      },
       "sectionDescription": "Aktualisiert anhand aktueller Plattformdaten für den ausgewählten Bereich und Zeitraum.",
       "sectionTitle": "Analysetrends",
-      "title": "Plattform-Analysen"
+      "title": "Plattform-Analysen",
+      "values": {
+        "notAvailable": "Nicht verfügbar"
+      }
+    },
+    "billing": {
+      "description": "Abonnements, Umsatz und Zahlungsstatus überwachen",
+      "intervals": {
+        "month": "Monatlich",
+        "year": "Jährlich"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktive Abonnements",
+        "activeSubscriptionsDescription": "{trialingCount} in Testphase, {activeCount} bezahlt",
+        "conversionRate": "Konversionsrate",
+        "conversionRateDescription": "Testphase zu bezahlt",
+        "licensedSeats": "Lizensierte Plätze",
+        "licensedSeatsDescription": "Über alle Abonnements hinweg",
+        "mrr": "MRR",
+        "mrrDescription": "Monatlich wiederkehrender Umsatz",
+        "pastDue": "Überfällig",
+        "pastDueDescription": "Zahlungsprobleme",
+        "trialing": "In Testphase",
+        "trialingDescription": "In der Testphase"
+      },
+      "sections": {
+        "recentSubscriptions": "Kürzliche Abonnements",
+        "revenueMetrics": "Umsatzkennzahlen"
+      },
+      "status": {
+        "active": "Aktiv",
+        "canceled": "Gekündigt",
+        "pastDue": "Überfällig",
+        "trialing": "Testphase"
+      },
+      "table": {
+        "billing": "Abrechnung",
+        "created": "Erstellt",
+        "noSubscriptions": "Noch keine Abonnements vorhanden",
+        "organization": "Organisation",
+        "periodEnd": "Abrechnungsende",
+        "seats": "Plätze",
+        "status": "Status"
+      },
+      "title": "Abrechnungs-Dashboard"
     },
     "diagnostics": {
+      "actions": {
+        "refresh": "Diagnose aktualisieren"
+      },
+      "clientDescription": "Sichere Plattformkonfiguration und Dienststatus auf App-Ebene. Zuletzt aktualisiert am {date}.",
       "description": "Sichere Plattformkonfiguration und Integritätsprüfungen für App-only-Bereitstellungen.",
+      "recommendedActions": {
+        "description": "Beheben Sie diese Punkte, um den Diagnose-Status wieder auf „fehlerfrei“ zu setzen.",
+        "title": "Empfohlene Aktionen"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Sichere Bereitstellungskonfigurationszustände. Geheimwerte werden niemals angezeigt.",
+          "title": "Plattformkonfiguration"
+        },
+        "health": {
+          "description": "App-spezifische Prüfungen für Infrastrukturabhängigkeiten, die von der Web-App verwendet werden.",
+          "title": "Dienststatus"
+        }
+      },
+      "statusAnnouncement": "Diagnosestatus {status}. Zuletzt aktualisiert am {date}.",
+      "status": {
+        "disabled": "Deaktiviert",
+        "error": "Fehler",
+        "healthy": "Gesund",
+        "warning": "Warnung"
+      },
       "title": "Bereitstellungsdiagnose"
     },
     "layout": {
@@ -26,6 +168,11 @@
       "title": "Admin-Konsole"
     },
     "organizations": {
+      "actions": {
+        "delete": "Organisation löschen",
+        "reactivate": "Organisation reaktivieren",
+        "suspend": "Organisation suspendieren"
+      },
       "badges": {
         "deleted": "Gelöscht",
         "suspended": "Suspendiert"
@@ -113,6 +260,32 @@
       },
       "title": "Übersicht"
     },
+    "settings": {
+      "actions": {
+        "saveChanges": "Änderungen speichern"
+      },
+      "cookieConsent": {
+        "description": "Zur DSGVO-Konformität auf Authentifizierungsseiten eingefügt",
+        "helperPrefix": "Leer lassen zum Deaktivieren. Geladen mit",
+        "helperSuffix": "Strategie.",
+        "scriptContent": "Skriptinhalt",
+        "scriptPlaceholder": "<!-- Beispiel: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Oder benutzerdefiniertes Skript -->\n<script>\n  // Ihre Cookie-Zustimmungslogik hier\n</script>",
+        "title": "Cookie-Zustimmungsskript"
+      },
+      "description": "Globale Plattformkonfiguration für alle Organisationen",
+      "title": "Plattformeinstellungen",
+      "toasts": {
+        "cookieConsentSaved": "Cookie-Zustimmungsskript erfolgreich gespeichert",
+        "saveFailed": "Speichern fehlgeschlagen"
+      },
+      "turnstile": {
+        "deploymentNote": "Konfiguriert über Umgebungsvariablen bei der Bereitstellung. Enterprise-Organisationen können dies in den Domäneneinstellungen überschreiben.",
+        "description": "Bot-Schutz für Authentifizierungsformulare",
+        "secretKey": "Geheimer Schlüssel",
+        "siteKey": "Seitenschlüssel",
+        "title": "Cloudflare Turnstile"
+      }
+    },
     "users": {
       "badges": {
         "admin": "Admin",
@@ -149,7 +322,9 @@
       },
       "table": {
         "created": "Erstellt",
+        "noOrganizations": "Keine Organisationen",
         "noUsersFound": "Keine Benutzer gefunden",
+        "organizations": "Organisationen",
         "role": "Rolle",
         "user": "Benutzer"
       },

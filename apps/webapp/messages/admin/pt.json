@@ -1,13 +1,155 @@
 {
   "admin": {
     "analytics": {
+      "billing": {
+        "estimatedNotice": "Os assentos históricos e a MRR são estimados. A reconstrução exata requer snapshots futuros ou um registro de faturamento."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Sinais de assentos e receita recorrente para a saúde do faturamento.",
+          "summary": "Resumo comercial: {seats} assentos e {mrr} de MRR estimado.",
+          "title": "Comercial"
+        },
+        "engagement": {
+          "description": "Uso da plataforma por meio de usuários ativos e sessões.",
+          "summary": "Resumo de engajamento: {activeUsers} usuários ativos e {sessions} sessões.",
+          "title": "Engajamento"
+        },
+        "growth": {
+          "description": "Novos usuários e organizações entrando na plataforma.",
+          "summary": "Resumo de crescimento: {signups} cadastros e {organizations} organizações.",
+          "title": "Crescimento"
+        },
+        "operations": {
+          "description": "Volume de registro de tempo gerado pela atividade do locatário.",
+          "summary": "Resumo de operações: {timeRecords} registros de tempo.",
+          "title": "Operações"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Bucket de análise",
+          "label": "Bucket"
+        },
+        "range": {
+          "ariaLabel": "Intervalo de análise",
+          "label": "Intervalo"
+        }
+      },
       "description": "Monitore o crescimento da plataforma, engajamento, atividade operacional e tendências de faturamento.",
+      "emptyState": {
+        "noData": "Sem dados para este intervalo"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Usuários ativos no intervalo selecionado",
+          "title": "Usuários ativos"
+        },
+        "mrr": {
+          "description": "Estimativa de receita recorrente mensal",
+          "title": "MRR estimado"
+        },
+        "organizations": {
+          "description": "Workspaces ativos na plataforma",
+          "title": "Organizações"
+        },
+        "seats": {
+          "description": "Assentos atuais pagos ou em teste",
+          "title": "Assentos licenciados"
+        },
+        "sessions": {
+          "description": "Sessões autenticadas",
+          "title": "Sessões"
+        },
+        "signups": {
+          "description": "Novas contas na plataforma",
+          "title": "Cadastros"
+        },
+        "timeRecords": {
+          "description": "Registros operacionais enviados",
+          "title": "Registros de tempo"
+        }
+      },
+      "preview": {
+        "description": "Crescimento e engajamento da plataforma no período selecionado.",
+        "title": "Tendências analíticas",
+        "viewFull": "Ver análise completa"
+      },
       "sectionDescription": "Atualizado a partir dos dados atuais da plataforma para o intervalo e grupo selecionados.",
       "sectionTitle": "Tendências de análise",
-      "title": "Análise da plataforma"
+      "title": "Análise da plataforma",
+      "values": {
+        "notAvailable": "Não disponível"
+      }
+    },
+    "billing": {
+      "description": "Monitore assinaturas, receita e status de pagamento",
+      "intervals": {
+        "month": "Mensal",
+        "year": "Anual"
+      },
+      "metrics": {
+        "activeSubscriptions": "Assinaturas ativas",
+        "activeSubscriptionsDescription": "{trialingCount} em teste, {activeCount} pagas",
+        "conversionRate": "Taxa de conversão",
+        "conversionRateDescription": "De teste para pago",
+        "licensedSeats": "Assentos licenciados",
+        "licensedSeatsDescription": "Em todas as assinaturas",
+        "mrr": "MRR",
+        "mrrDescription": "Receita recorrente mensal",
+        "pastDue": "Vencido",
+        "pastDueDescription": "Problemas de pagamento",
+        "trialing": "Em teste",
+        "trialingDescription": "Em período de teste"
+      },
+      "sections": {
+        "recentSubscriptions": "Assinaturas recentes",
+        "revenueMetrics": "Métricas de receita"
+      },
+      "status": {
+        "active": "Ativo",
+        "canceled": "Cancelado",
+        "pastDue": "Vencido",
+        "trialing": "Teste"
+      },
+      "table": {
+        "billing": "Faturamento",
+        "created": "Criado",
+        "noSubscriptions": "Nenhuma assinatura ainda",
+        "organization": "Organização",
+        "periodEnd": "Fim do período",
+        "seats": "Assentos",
+        "status": "Status"
+      },
+      "title": "Painel de faturamento"
     },
     "diagnostics": {
+      "actions": {
+        "refresh": "Atualizar diagnósticos"
+      },
+      "clientDescription": "Configuração segura da plataforma e integridade do serviço em nível de aplicativo. Última atualização em {date}.",
       "description": "Configuração segura da plataforma e verificações de integridade de implantação apenas de aplicativos.",
+      "recommendedActions": {
+        "description": "Resolva estes itens para retornar os diagnósticos a um estado saudável.",
+        "title": "Ações recomendadas"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Estados de configuração de implantação segura. Valores secretos nunca são exibidos.",
+          "title": "Configuração da plataforma"
+        },
+        "health": {
+          "description": "Verificações apenas de aplicativo para dependências de infraestrutura usadas pelo aplicativo web.",
+          "title": "Integridade do serviço"
+        }
+      },
+      "statusAnnouncement": "Status de diagnóstico {status}. Última atualização {date}.",
+      "status": {
+        "disabled": "Desativado",
+        "error": "Erro",
+        "healthy": "Saudável",
+        "warning": "Aviso"
+      },
       "title": "Diagnóstico de implantação"
     },
     "layout": {
@@ -26,6 +168,11 @@
       "title": "Console de administração"
     },
     "organizations": {
+      "actions": {
+        "delete": "Excluir organização",
+        "reactivate": "Reativar organização",
+        "suspend": "Suspender organização"
+      },
       "badges": {
         "deleted": "Excluído",
         "suspended": "Suspenso"
@@ -113,6 +260,32 @@
       },
       "title": "Visão Geral"
     },
+    "settings": {
+      "actions": {
+        "saveChanges": "Salvar alterações"
+      },
+      "cookieConsent": {
+        "description": "Injetado em páginas de autenticação para conformidade com o RGPD",
+        "helperPrefix": "Deixe vazio para desativar. Carregado com",
+        "helperSuffix": "estratégia.",
+        "scriptContent": "Conteúdo do script",
+        "scriptPlaceholder": "<!-- Exemplo: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Ou script personalizado -->\n<script>\n  // Sua lógica de consentimento de cookies aqui\n</script>",
+        "title": "Script de consentimento de cookies"
+      },
+      "description": "Configuração global da plataforma para todas as organizações",
+      "title": "Configurações da plataforma",
+      "toasts": {
+        "cookieConsentSaved": "Script de consentimento de cookies salvo com sucesso",
+        "saveFailed": "Falha ao salvar"
+      },
+      "turnstile": {
+        "deploymentNote": "Configurado via variáveis de ambiente na implantação. Organizações Enterprise podem substituir nas Configurações de Domínio.",
+        "description": "Proteção contra bots para formulários de autenticação",
+        "secretKey": "Chave secreta",
+        "siteKey": "Chave do site",
+        "title": "Cloudflare Turnstile"
+      }
+    },
     "users": {
       "badges": {
         "admin": "Administrador",
@@ -149,7 +322,9 @@
       },
       "table": {
         "created": "Criado",
+        "noOrganizations": "Nenhuma organização",
         "noUsersFound": "Nenhum usuário encontrado",
+        "organizations": "Organizações",
         "role": "Função",
         "user": "Usuário"
       },

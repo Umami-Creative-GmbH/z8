@@ -202,6 +202,7 @@
     "get-help": "Obter Ajuda",
     "my-requests": "Minhas Solicitações",
     "org-explorer": "Explorador da Organização",
+    "platform-admin": "Administrador da plataforma",
     "reports": "Relatórios",
     "scheduling": "Agendamento",
     "settings": "Definições",
@@ -210,6 +211,58 @@
     "team-label": "Equipa",
     "time-tracking": "Rastreio de Tempo",
     "travel-expenses": "Despesas de Viagem"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Excluir tudo",
+      "markAllRead": "Marcar tudo como lido",
+      "markAsRead": "Marcar como lido",
+      "markRead": "Marcar como lido",
+      "settings": "Configurações de notificação",
+      "viewAll": "Ver todas as notificações"
+    },
+    "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
+    "empty": {
+      "description": "Você está em dia! Novas notificações aparecerão aqui.",
+      "inboxDescription": "Você está em dia. Novas atualizações aparecerão aqui.",
+      "noMatchesDescription": "Ajuste o filtro de pesquisa ou de leitura para ampliar esta visualização da caixa de entrada.",
+      "noMatchesTitle": "Nenhuma notificação correspondente",
+      "title": "Nenhuma notificação",
+      "unreadDescription": "Você está em dia. Novas atualizações não lidas aparecerão aqui.",
+      "unreadTitle": "Nenhuma notificação não lida"
+    },
+    "error": {
+      "title": "Não foi possível carregar as notificações"
+    },
+    "filters": {
+      "all": "Tudo",
+      "ariaLabel": "Filtrar notificações por status de leitura",
+      "read": "Lido",
+      "unread": "Não lido"
+    },
+    "search": {
+      "ariaLabel": "Pesquisar notificações",
+      "placeholder": "Pesquisar notificações..."
+    },
+    "selection": {
+      "selectAll": "Selecionar tudo visível",
+      "selectAllAria": "Selecionar todas as notificações visíveis",
+      "selectNamedAria": "Selecionar {title}",
+      "visibleSelected": "{count} visíveis selecionados"
+    },
+    "timeline": {
+      "earlier": "Anterior",
+      "today": "Hoje",
+      "yesterday": "Ontem"
+    },
+    "title": "Notificações",
+    "toasts": {
+      "deleted": "{count} notificações excluídas",
+      "deleteFailed": "Falha ao excluir notificações",
+      "markedRead": "{count} notificações marcadas como lidas",
+      "markReadFailed": "Falha ao marcar notificações como lidas"
+    },
+    "unreadBadge": "{count} não lidas"
   },
   "offline": {
     "banner": {

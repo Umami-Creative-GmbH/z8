@@ -1,6 +1,6 @@
 "use client";
 
-import { useHotkey } from "@tanstack/react-hotkeys";
+import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
@@ -12,6 +12,7 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
+import { Kbd } from "@/components/ui/kbd";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -26,6 +27,8 @@ const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
 	employees: [],
 	teams: [],
 };
+
+const SEARCH_HOTKEY = "Mod+K";
 
 function getGroupLabel(type: AppSearchResult["type"]) {
 	switch (type) {
@@ -90,7 +93,11 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 	const [liveResults, setLiveResults] = useState<LiveAppSearchResults>(EMPTY_LIVE_RESULTS);
 	const [liveError, setLiveError] = useState<string | null>(null);
 
-	useHotkey("Mod+K", () => setOpen((currentOpen) => !currentOpen), { preventDefault: true });
+	const searchShortcutLabel = formatForDisplay(SEARCH_HOTKEY);
+
+	useHotkey(SEARCH_HOTKEY, () => setOpen((currentOpen) => !currentOpen), {
+		preventDefault: true,
+	});
 
 	useEffect(() => {
 		if (!(open && query.trim().length >= 2)) {
@@ -141,6 +148,9 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 							<SidebarMenuButton onClick={() => setOpen(true)} tooltip="Search" type="button">
 								<SearchIcon />
 								<span>Search</span>
+								<Kbd className="ml-auto hidden bg-sidebar-accent text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden sm:inline-flex">
+									{searchShortcutLabel}
+								</Kbd>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					</SidebarMenu>

@@ -32,6 +32,7 @@ import {
 } from "@/lib/calendar/schedule-x-adapter";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
+import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -64,6 +65,7 @@ export function ScheduleXCalendarWrapper({
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
 	const weekStartDay = useWeekStartDay();
+	const timeZone = useOrganizationTimezone();
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display
@@ -77,16 +79,19 @@ export function ScheduleXCalendarWrapper({
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
 	// Convert events to Schedule-X format
-	const baseScheduleXEvents = useMemo(() => calendarEventsToScheduleX(events), [events]);
+	const baseScheduleXEvents = useMemo(
+		() => calendarEventsToScheduleX(events, timeZone),
+		[events, timeZone],
+	);
 
 	// Generate break events only for day/week view
 	const scheduleXEvents = useMemo(() => {
 		if (viewMode === "day" || viewMode === "week") {
-			const breakEvents = generateBreakEvents(baseScheduleXEvents);
+			const breakEvents = generateBreakEvents(baseScheduleXEvents, timeZone);
 			return [...baseScheduleXEvents, ...breakEvents];
 		}
 		return baseScheduleXEvents;
-	}, [baseScheduleXEvents, viewMode]);
+	}, [baseScheduleXEvents, viewMode, timeZone]);
 
 	// Helper to convert Luxon DateTime to Temporal.PlainDate
 	const luxonToPlainDate = useCallback((dt: DateTime): Temporal.PlainDate => {

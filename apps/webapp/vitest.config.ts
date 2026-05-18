@@ -6,6 +6,7 @@ export default defineConfig({
 		globals: true,
 		environment: "node",
 		env: {
+			BETTER_AUTH_SECRET: "test-secret-value-with-at-least-32-characters",
 			SKIP_ENV_VALIDATION: "true",
 		},
 		include: ["src/**/*.test.{ts,tsx}"],

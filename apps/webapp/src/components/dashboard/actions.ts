@@ -36,10 +36,7 @@ import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
-import {
-	type AbsenceRange,
-	getNextAvailableReturnDate,
-} from "./return-date-calculations";
+import { type AbsenceRange, getNextAvailableReturnDate } from "./return-date-calculations";
 
 export type ManagerTodaySummaryResult = {
 	role: "admin" | "manager" | "employee" | null;
@@ -1149,7 +1146,9 @@ export async function getWhosOutToday(): Promise<
 		const schedulesByEmployee = new Map<string, EffectiveWorkPolicy | null>();
 		for (const employeeId of new Set(typedTodayAbsences.map((absence) => absence.employee.id))) {
 			const policy = yield* _(
-				workPolicyService.getEffectivePolicy(employeeId).pipe(Effect.catchAll(() => Effect.succeed(null))),
+				workPolicyService
+					.getEffectivePolicy(employeeId)
+					.pipe(Effect.catchAll(() => Effect.succeed(null))),
 			);
 			schedulesByEmployee.set(employeeId, policy);
 		}
@@ -1165,7 +1164,7 @@ export async function getWhosOutToday(): Promise<
 				absenceRanges: absenceRangesByEmployee.get(employeeId) ?? [],
 			});
 			const returnsTomorrow = returnInfo.returnsTomorrow;
-			const returnDate = DateTime.fromISO(returnInfo.returnDate).toFormat("MMM d");
+			const returnDate = returnInfo.returnDate;
 
 			const employeeData = {
 				id: employeeId,

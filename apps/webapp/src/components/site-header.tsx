@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { DashboardHeaderCustomize } from "@/components/dashboard/dashboard-header-customize";
 import { NotificationBell } from "@/components/notifications";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { TimeClockPopover } from "@/components/time-tracking/time-clock-popover";
@@ -12,39 +13,36 @@ export function SiteHeader() {
 	const { t } = useTranslate();
 	const timeFormat = useTimeFormat();
 	const pathname = usePathname();
+	const normalizedPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
+	const isDashboardRoute = normalizedPath === "/" || normalizedPath === "";
 
 	// Map routes to title translation keys
 	const getTitleKey = () => {
-		// Remove locale prefix (e.g., "/en/calendar" -> "/calendar")
-		const path = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
-
-		if (path === "/" || path === "") return "dashboard.title";
-		if (path.startsWith("/notifications")) return "notifications.title";
-		if (path.startsWith("/calendar")) return "calendar.title";
-		if (path.startsWith("/time-tracking")) return "timeTracking.title";
-		if (path.startsWith("/absences")) return "absences.title";
-		if (path.startsWith("/travel-expenses")) return "settings.travelExpenses.title";
-		if (path.startsWith("/reports")) return "reports.title";
-		if (path.startsWith("/settings/holidays")) return "settings.holidays.title";
-		if (path.startsWith("/settings")) return "settings.title";
-		if (path.startsWith("/team")) return "team.title";
+		if (normalizedPath === "/" || normalizedPath === "") return "dashboard.title";
+		if (normalizedPath.startsWith("/notifications")) return "notifications.title";
+		if (normalizedPath.startsWith("/calendar")) return "calendar.title";
+		if (normalizedPath.startsWith("/time-tracking")) return "timeTracking.title";
+		if (normalizedPath.startsWith("/absences")) return "absences.title";
+		if (normalizedPath.startsWith("/travel-expenses")) return "settings.travelExpenses.title";
+		if (normalizedPath.startsWith("/reports")) return "reports.title";
+		if (normalizedPath.startsWith("/settings/holidays")) return "settings.holidays.title";
+		if (normalizedPath.startsWith("/settings")) return "settings.title";
+		if (normalizedPath.startsWith("/team")) return "team.title";
 
 		return "dashboard.title"; // Default fallback
 	};
 
 	const getDefaultTitle = () => {
-		const path = pathname.replace(/^\/[a-z]{2}(\/|$)/, "/");
-
-		if (path === "/" || path === "") return "Dashboard";
-		if (path.startsWith("/notifications")) return "Notifications";
-		if (path.startsWith("/calendar")) return "Calendar";
-		if (path.startsWith("/time-tracking")) return "Time Tracking";
-		if (path.startsWith("/absences")) return "Absences";
-		if (path.startsWith("/travel-expenses")) return "Travel Expenses";
-		if (path.startsWith("/reports")) return "Reports";
-		if (path.startsWith("/settings/holidays")) return "Holiday Management";
-		if (path.startsWith("/settings")) return "Settings";
-		if (path.startsWith("/team")) return "Team";
+		if (normalizedPath === "/" || normalizedPath === "") return "Dashboard";
+		if (normalizedPath.startsWith("/notifications")) return "Notifications";
+		if (normalizedPath.startsWith("/calendar")) return "Calendar";
+		if (normalizedPath.startsWith("/time-tracking")) return "Time Tracking";
+		if (normalizedPath.startsWith("/absences")) return "Absences";
+		if (normalizedPath.startsWith("/travel-expenses")) return "Travel Expenses";
+		if (normalizedPath.startsWith("/reports")) return "Reports";
+		if (normalizedPath.startsWith("/settings/holidays")) return "Holiday Management";
+		if (normalizedPath.startsWith("/settings")) return "Settings";
+		if (normalizedPath.startsWith("/team")) return "Team";
 
 		return "Dashboard"; // Default fallback
 	};
@@ -59,6 +57,7 @@ export function SiteHeader() {
 				<Separator className="mx-2 data-[orientation=vertical]:h-4" orientation="vertical" />
 				<h1 className="font-medium text-base">{t(titleKey, defaultTitle)}</h1>
 				<div className="ml-auto flex items-center gap-2">
+					{isDashboardRoute ? <DashboardHeaderCustomize /> : null}
 					<NotificationBell />
 					<TimeClockPopover timeFormat={timeFormat} />
 				</div>

@@ -11,7 +11,9 @@ import {
 	IconUsers,
 	IconX,
 } from "@tabler/icons-react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
+import { getLocalizedNotificationContent } from "@/lib/notifications/localized-notification";
 import type { NotificationType, NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
@@ -140,8 +142,12 @@ export function NotificationItem({
 	onDelete,
 	onClose,
 }: NotificationItemProps) {
+	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
 	const router = useRouter();
 	const { icon, bgColor, iconColor } = getNotificationStyle(notification.type);
+	const localized = getLocalizedNotificationContent(notification, t, locale);
 
 	const handleClick = () => {
 		// Mark as read if not already
@@ -192,7 +198,7 @@ export function NotificationItem({
 			<div className="min-w-0 flex-1">
 				<div className="flex items-start justify-between gap-2">
 					<p className={cn("text-sm line-clamp-1", !notification.isRead && "font-medium")}>
-						{notification.title}
+						{localized.title}
 					</p>
 					{!notification.isRead && (
 						<span className="shrink-0 mt-1.5">
@@ -200,8 +206,8 @@ export function NotificationItem({
 						</span>
 					)}
 				</div>
-				<p className="text-muted-foreground text-xs line-clamp-2 mt-0.5">{notification.message}</p>
-				<p className="text-muted-foreground text-xs mt-1">{notification.timeAgo}</p>
+				<p className="text-muted-foreground text-xs line-clamp-2 mt-0.5">{localized.message}</p>
+				<p className="text-muted-foreground text-xs mt-1">{localized.timeAgo}</p>
 			</div>
 
 			{/* Actions (visible on hover) */}
@@ -212,7 +218,7 @@ export function NotificationItem({
 						variant="ghost"
 						className="size-7"
 						onClick={handleMarkAsRead}
-						title="Mark as read"
+						title={t("common:notifications.actions.markAsRead", "Mark as read")}
 					>
 						<IconCheck className="size-3.5" />
 					</Button>
@@ -222,7 +228,7 @@ export function NotificationItem({
 					variant="ghost"
 					className="size-7 text-muted-foreground hover:text-destructive"
 					onClick={handleDelete}
-					title="Delete"
+					title={t("common:actions.delete", "Delete")}
 				>
 					<IconX className="size-3.5" />
 				</Button>

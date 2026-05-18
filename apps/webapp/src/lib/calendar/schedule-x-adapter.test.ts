@@ -6,6 +6,30 @@ import { calendarEventToScheduleX, generateBreakEvents } from "./schedule-x-adap
 import type { HolidayEvent, WorkPeriodEvent } from "./types";
 
 describe("calendarEventToScheduleX", () => {
+	it("renders timed work periods in the configured timezone instead of the runtime timezone", () => {
+		const workPeriod: WorkPeriodEvent = {
+			id: "work-berlin",
+			type: "work_period",
+			date: new Date("2026-05-18T07:40:00.000Z"),
+			endDate: new Date("2026-05-18T15:40:00.000Z"),
+			title: "Work period",
+			color: "#10b981",
+			metadata: {
+				durationMinutes: 480,
+				employeeName: "Kai Hentschel",
+			},
+		};
+
+		const scheduleXEvent = calendarEventToScheduleX(workPeriod, "America/New_York");
+
+		expect(scheduleXEvent?.start.toString()).toBe(
+			"2026-05-18T03:40:00-04:00[America/New_York]",
+		);
+		expect(scheduleXEvent?.end.toString()).toBe(
+			"2026-05-18T11:40:00-04:00[America/New_York]",
+		);
+	});
+
 	it("keeps holidays on a single day when the stored end date is next-day midnight", () => {
 		const holiday: HolidayEvent = {
 			id: "holiday-1",
@@ -57,7 +81,7 @@ describe("generateBreakEvents", () => {
 		};
 
 		const scheduleXEvents = [firstPeriod, secondPeriod]
-			.map(calendarEventToScheduleX)
+			.map((event) => calendarEventToScheduleX(event))
 			.filter((event) => event !== null);
 
 		const [breakEvent] = generateBreakEvents(scheduleXEvents);

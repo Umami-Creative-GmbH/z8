@@ -1139,7 +1139,7 @@
           "thisYear": "Dieses Jahr"
         },
         "employees": {
-          "all": "Alle Mitarbeiter (${employees.length})",
+          "all": "Alle Mitarbeiter ({count})",
           "label": "Mitarbeiter",
           "selectSpecific": "Bestimmte Mitarbeiter auswählen"
         }
@@ -1150,19 +1150,19 @@
         "title": "Demodaten generieren"
       },
       "generateEmployees": {
-        "button": "${employeeCount} Mitarbeiter generieren",
+        "button": "{count} Mitarbeiter generieren",
         "countHint": "Maximal 50 Mitarbeiter gleichzeitig",
         "countLabel": "Anzahl der Mitarbeiter",
         "description": "Demo-Mitarbeiterkonten für Testzwecke erstellen",
-        "employeesCreated": "${employeeResult.employeesCreated} Mitarbeiter erstellt",
+        "employeesCreated": "{count} Mitarbeiter erstellt",
         "generating": "Wird generiert...",
         "includeManagers": "Manager-Zuweisungen einschließen",
-        "managersCreated": "${employeeResult.managersCreated} Manager-Zuweisungen",
+        "managersCreated": "{count} Manager-Zuweisungen",
         "managersHint": "Zufällige Zuweisung von Managern zu neuen Mitarbeitern",
         "options": "Optionen",
         "successTitle": "Mitarbeiter erfolgreich generiert!",
         "title": "Mitarbeiter generieren",
-        "usersCreated": "${employeeResult.usersCreated} Benutzer erstellt"
+        "usersCreated": "{count} Benutzer erstellt"
       },
       "results": {
         "success": "Demodaten erfolgreich generiert!"

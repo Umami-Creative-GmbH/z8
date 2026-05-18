@@ -1139,7 +1139,7 @@
           "thisYear": "Este año"
         },
         "employees": {
-          "all": "Todos los empleados (${employees.length})",
+          "all": "Todos los empleados ({count})",
           "label": "Empleados",
           "selectSpecific": "Seleccionar empleados específicos"
         }
@@ -1150,19 +1150,19 @@
         "title": "Generar datos de demostración"
       },
       "generateEmployees": {
-        "button": "Generar ${employeeCount} empleados",
+        "button": "Generar {count} empleados",
         "countHint": "Máximo 50 empleados a la vez",
         "countLabel": "Número de empleados",
         "description": "Crear cuentas de empleados de demostración para pruebas",
-        "employeesCreated": "${employeeResult.employeesCreated} empleados creados",
+        "employeesCreated": "{count} empleados creados",
         "generating": "Generando...",
         "includeManagers": "Incluir asignaciones de gerentes",
-        "managersCreated": "${employeeResult.managersCreated} asignaciones de gerentes",
+        "managersCreated": "{count} asignaciones de gerentes",
         "managersHint": "Asignar gerentes aleatoriamente a los nuevos empleados",
         "options": "Opciones",
         "successTitle": "¡Empleados generados con éxito!",
         "title": "Generar empleados",
-        "usersCreated": "${employeeResult.usersCreated} usuarios creados"
+        "usersCreated": "{count} usuarios creados"
       },
       "results": {
         "success": "¡Datos de demostración generados con éxito!"

@@ -9,6 +9,7 @@ import {
 	IconSettings,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOrganization } from "@/hooks/use-organization";
+import { getLocalizedNotificationContent } from "@/lib/notifications/localized-notification";
 import type { NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -44,11 +46,6 @@ import { NotificationItem } from "./notification-item";
 type ReadFilter = "all" | "unread" | "read";
 type TimelineGroup = "Today" | "Yesterday" | "Earlier";
 
-const readFilters: { label: string; value: ReadFilter }[] = [
-	{ label: "All", value: "all" },
-	{ label: "Unread", value: "unread" },
-	{ label: "Read", value: "read" },
-];
 const timelineGroups: TimelineGroup[] = ["Today", "Yesterday", "Earlier"];
 
 function getGroupLabel(notification: NotificationWithMeta): TimelineGroup {
@@ -86,6 +83,9 @@ function NotificationsInboxSkeleton() {
 }
 
 export function NotificationsInbox() {
+	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
 	const { organizationId } = useOrganization();
 	const hasOrganization = Boolean(organizationId);
 	const [search, setSearch] = useState("");
@@ -105,6 +105,21 @@ export function NotificationsInbox() {
 		isDeleting,
 		refresh,
 	} = useNotifications({ enabled: hasOrganization, limit: 100, organizationId });
+	const readFilters: { label: string; value: ReadFilter }[] = [
+		{ label: t("common:notifications.filters.all", "All"), value: "all" },
+		{ label: t("common:notifications.filters.unread", "Unread"), value: "unread" },
+		{ label: t("common:notifications.filters.read", "Read"), value: "read" },
+	];
+	const getTimelineGroupLabel = (group: TimelineGroup) => {
+		switch (group) {
+			case "Today":
+				return t("common:notifications.timeline.today", "Today");
+			case "Yesterday":
+				return t("common:notifications.timeline.yesterday", "Yesterday");
+			case "Earlier":
+				return t("common:notifications.timeline.earlier", "Earlier");
+		}
+	};
 
 	const filteredNotifications = useMemo(() => {
 		const normalizedSearch = deferredSearch.trim().toLowerCase();
@@ -122,11 +137,11 @@ export function NotificationsInbox() {
 				return true;
 			}
 
-			return `${notification.title} ${notification.message}`
-				.toLowerCase()
-				.includes(normalizedSearch);
+			const localized = getLocalizedNotificationContent(notification, t, locale);
+
+			return `${localized.title} ${localized.message}`.toLowerCase().includes(normalizedSearch);
 		});
-	}, [deferredSearch, notifications, readFilter]);
+	}, [deferredSearch, notifications, readFilter, t, locale]);
 
 	const groupedNotifications = useMemo(() => {
 		const groups: Record<TimelineGroup, NotificationWithMeta[]> = {
@@ -190,36 +205,51 @@ export function NotificationsInbox() {
 		try {
 			await Promise.all(selectedUnreadVisibleIds.map((id) => markAsRead(id)));
 			toast.success(
-				`Marked ${selectedUnreadVisibleCount} notification${selectedUnreadVisibleCount === 1 ? "" : "s"} as read`,
+				t("common:notifications.toasts.markedRead", "Marked {count} notifications as read", {
+					count: selectedUnreadVisibleCount,
+				}),
 			);
 			clearSelection();
 		} catch {
-			toast.error("Failed to mark notifications as read");
+			toast.error(
+				t("common:notifications.toasts.markReadFailed", "Failed to mark notifications as read"),
+			);
 		}
 	};
 
 	const emptyTitle =
 		readFilter === "unread" && !hasSearch
-			? "No unread notifications"
+			? t("common:notifications.empty.unreadTitle", "No unread notifications")
 			: notifications.length === 0
-				? "No notifications"
-				: "No matching notifications";
+				? t("common:notifications.empty.title", "No notifications")
+				: t("common:notifications.empty.noMatchesTitle", "No matching notifications");
 	const emptyDescription =
 		readFilter === "unread" && !hasSearch
-			? "You are all caught up. New unread updates will appear here."
+			? t(
+					"common:notifications.empty.unreadDescription",
+					"You are all caught up. New unread updates will appear here.",
+				)
 			: notifications.length === 0
-				? "You are all caught up. New updates will appear here."
-				: "Adjust the search or read filter to widen this inbox view.";
+				? t(
+						"common:notifications.empty.inboxDescription",
+						"You are all caught up. New updates will appear here.",
+					)
+				: t(
+						"common:notifications.empty.noMatchesDescription",
+						"Adjust the search or read filter to widen this inbox view.",
+					);
 
 	const handleBulkDelete = async () => {
 		try {
 			await Promise.all(selectedVisibleIds.map((id) => deleteNotification(id)));
 			toast.success(
-				`Deleted ${selectedVisibleCount} notification${selectedVisibleCount === 1 ? "" : "s"}`,
+				t("common:notifications.toasts.deleted", "Deleted {count} notifications", {
+					count: selectedVisibleCount,
+				}),
 			);
 			clearSelection();
 		} catch {
-			toast.error("Failed to delete notifications");
+			toast.error(t("common:notifications.toasts.deleteFailed", "Failed to delete notifications"));
 		}
 	};
 
@@ -228,22 +258,31 @@ export function NotificationsInbox() {
 			<CardHeader className="border-b">
 				<div className="space-y-1.5">
 					<div className="flex flex-wrap items-center gap-2">
-						<CardTitle className="text-2xl">Notifications</CardTitle>
-						{unreadCount > 0 && <Badge variant="secondary">{unreadCount} unread</Badge>}
+						<CardTitle className="text-2xl">
+							{t("common:notifications.title", "Notifications")}
+						</CardTitle>
+						{unreadCount > 0 && (
+							<Badge variant="secondary">
+								{t("common:notifications.unreadBadge", "{count} unread", { count: unreadCount })}
+							</Badge>
+						)}
 					</div>
 					<CardDescription>
-						Review updates, approvals, and system alerts in one timeline.
+						{t(
+							"common:notifications.description",
+							"Review updates, approvals, and system alerts in one timeline.",
+						)}
 					</CardDescription>
 				</div>
 				<CardAction className="flex items-center gap-2">
 					<Button disabled={isFetching} onClick={refresh} size="sm" type="button" variant="outline">
 						<IconRefresh className={cn("size-4", isFetching && "animate-spin")} />
-						Refresh
+						{t("common:actions.refresh", "Refresh")}
 					</Button>
 					<Button asChild size="sm" variant="outline">
 						<Link href="/settings/notifications">
 							<IconSettings className="size-4" />
-							Settings
+							{t("common:nav.settings", "Settings")}
 						</Link>
 					</Button>
 				</CardAction>
@@ -254,16 +293,19 @@ export function NotificationsInbox() {
 					<div className="relative md:w-80">
 						<IconSearch className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
 						<Input
-							aria-label="Search notifications"
+							aria-label={t("common:notifications.search.ariaLabel", "Search notifications")}
 							className="pl-9"
 							onChange={(event) => setSearch(event.target.value)}
-							placeholder="Search notifications..."
+							placeholder={t("common:notifications.search.placeholder", "Search notifications...")}
 							value={search}
 						/>
 					</div>
 
 					<div
-						aria-label="Filter notifications by read status"
+						aria-label={t(
+							"common:notifications.filters.ariaLabel",
+							"Filter notifications by read status",
+						)}
 						className="inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground"
 						role="group"
 					>
@@ -290,10 +332,12 @@ export function NotificationsInbox() {
 				{isError && (
 					<Alert variant="destructive">
 						<IconBellOff className="size-4" />
-						<AlertTitle>Could not load notifications</AlertTitle>
+						<AlertTitle>
+							{t("common:notifications.error.title", "Could not load notifications")}
+						</AlertTitle>
 						<AlertDescription>
 							<Button onClick={refresh} size="sm" type="button" variant="outline">
-								Try again
+								{t("common:common.retry", "Retry")}
 							</Button>
 						</AlertDescription>
 					</Alert>
@@ -302,8 +346,9 @@ export function NotificationsInbox() {
 				{hasSelection && (
 					<div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 md:flex-row md:items-center md:justify-between">
 						<p className="text-sm text-muted-foreground">
-							<span className="font-medium text-foreground">{selectedVisibleCount}</span> visible
-							selected
+							{t("common:notifications.selection.visibleSelected", "{count} visible selected", {
+								count: selectedVisibleCount,
+							})}
 						</p>
 						<div className="flex flex-wrap gap-2">
 							<Button
@@ -313,7 +358,7 @@ export function NotificationsInbox() {
 								type="button"
 								variant="ghost"
 							>
-								Clear
+								{t("common:common.clear", "Clear")}
 							</Button>
 							<Button
 								disabled={isMutating || selectedUnreadVisibleCount === 0}
@@ -323,7 +368,7 @@ export function NotificationsInbox() {
 								variant="outline"
 							>
 								<IconCheck className="size-4" />
-								Mark read
+								{t("common:notifications.actions.markRead", "Mark read")}
 							</Button>
 							<Button
 								disabled={isMutating}
@@ -333,7 +378,7 @@ export function NotificationsInbox() {
 								variant="destructive"
 							>
 								<IconTrash className="size-4" />
-								Delete
+								{t("common:actions.delete", "Delete")}
 							</Button>
 						</div>
 					</div>
@@ -353,7 +398,7 @@ export function NotificationsInbox() {
 						<EmptyContent>
 							<Button onClick={refresh} type="button" variant="outline">
 								<IconRefresh className="size-4" />
-								Refresh
+								{t("common:actions.refresh", "Refresh")}
 							</Button>
 						</EmptyContent>
 					</Empty>
@@ -361,11 +406,16 @@ export function NotificationsInbox() {
 					<div className="space-y-6">
 						<div className="flex items-center gap-2 rounded-lg border px-3 py-2">
 							<Checkbox
-								aria-label="Select all visible notifications"
+								aria-label={t(
+									"common:notifications.selection.selectAllAria",
+									"Select all visible notifications",
+								)}
 								checked={someVisibleSelected ? "indeterminate" : allVisibleSelected}
 								onCheckedChange={(checked) => toggleSelectAllVisible(checked === true)}
 							/>
-							<span className="text-sm text-muted-foreground">Select all visible</span>
+							<span className="text-sm text-muted-foreground">
+								{t("common:notifications.selection.selectAll", "Select all visible")}
+							</span>
 						</div>
 
 						{timelineGroups.map((group) => {
@@ -376,13 +426,22 @@ export function NotificationsInbox() {
 
 							return (
 								<section className="space-y-2" key={group}>
-									<h2 className="font-medium text-muted-foreground text-sm">{group}</h2>
+									<h2 className="font-medium text-muted-foreground text-sm">
+										{getTimelineGroupLabel(group)}
+									</h2>
 									<div className="divide-y rounded-lg border">
 										{groupNotifications.map((notification) => (
 											<div className="flex items-start gap-2" key={notification.id}>
 												<div className="flex pt-6 pl-3">
 													<Checkbox
-														aria-label={`Select ${notification.title}`}
+														aria-label={t(
+															"common:notifications.selection.selectNamedAria",
+															"Select {title}",
+															{
+																title: getLocalizedNotificationContent(notification, t, locale)
+																	.title,
+															},
+														)}
 														checked={selectedIds.has(notification.id)}
 														onCheckedChange={(checked) =>
 															setSelected(notification.id, checked === true)

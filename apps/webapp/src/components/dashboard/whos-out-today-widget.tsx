@@ -1,15 +1,15 @@
 "use client";
 
 import { IconBeach, IconCalendar, IconCheck, IconSunHigh, IconUsers } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
-import { cn, pluralize } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getWhosOutToday } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
+import { formatDashboardDate } from "./format-dashboard-date";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
 
@@ -34,6 +34,9 @@ type WhosOutData = {
 
 function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee();
+	const locale = tolgee.getLanguage() || "en";
+	const returnDate = formatDashboardDate(employee.returnDate, locale);
 	return (
 		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20">
 			<UserAvatar
@@ -52,9 +55,7 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 							{t("dashboard.whos-out.returns-tomorrow", "Returns tomorrow")}
 						</span>
 					) : (
-						<span>
-							{t("dashboard.whos-out.until-date", "Until {date}", { date: employee.returnDate })}
-						</span>
+						<span>{t("dashboard.whos-out.until-date", "Until {date}", { date: returnDate })}</span>
 					)}
 				</div>
 			</div>
@@ -151,7 +152,10 @@ export function WhosOutTodayWidget() {
 							? t("dashboard.whos-out.everyones-in", "Everyone's in!")
 							: t("dashboard.whos-out.members-out", "{count} team {member} out", {
 									count: dataWithPresence.totalOut,
-									member: pluralize(dataWithPresence.totalOut, "member"),
+									member:
+										dataWithPresence.totalOut === 1
+											? t("dashboard.whos-out.member", "member")
+											: t("dashboard.whos-out.members", "members"),
 								})
 						: t("dashboard.whos-out.team-availability", "Team availability")
 				}
@@ -218,7 +222,9 @@ export function WhosOutTodayWidget() {
 											))}
 											{dataWithPresence.returningTomorrow.length > 4 && (
 												<div className="flex items-center rounded-lg bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
-													+{dataWithPresence.returningTomorrow.length - 4}
+													{t("dashboard.whos-out.more-returning", "+{count} more", {
+														count: dataWithPresence.returningTomorrow.length - 4,
+													})}
 												</div>
 											)}
 										</div>

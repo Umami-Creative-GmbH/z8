@@ -1,5 +1,7 @@
 "use server";
 
+import { DateTime } from "luxon";
+import { db } from "@/db";
 import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employee";
 import {
 	cancelAbsenceRequest as cancelAbsenceRequestAction,
@@ -54,6 +56,36 @@ export async function getHolidays(employeeId: string, startDate: Date, endDate: 
 	}
 
 	return getHolidaysAction(employeeId, startDate, endDate);
+}
+
+export async function getAbsenceCalendarYearData(year: number) {
+	if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+		return { absences: [], holidays: [] };
+	}
+
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee) {
+		return { absences: [], holidays: [] };
+	}
+
+	const org = await db.query.organization.findFirst({
+		where: (organization, { eq }) => eq(organization.id, currentEmployee.organizationId),
+		columns: { timezone: true },
+	});
+	const timezone = org?.timezone || "UTC";
+	const calendarStart = DateTime.fromObject({ year, month: 1, day: 1 }, { zone: timezone }).startOf(
+		"day",
+	);
+	const calendarEnd = calendarStart.endOf("year");
+	const calendarStartDate = calendarStart.toISODate() ?? `${year}-01-01`;
+	const calendarEndDate = calendarEnd.toISODate() ?? `${year}-12-31`;
+
+	const [absences, holidays] = await Promise.all([
+		getAbsenceEntriesAction(currentEmployee.id, calendarStartDate, calendarEndDate),
+		getHolidaysAction(currentEmployee.id, calendarStart.toJSDate(), calendarEnd.toJSDate()),
+	]);
+
+	return { absences, holidays };
 }
 
 export async function getVacationBalance(employeeId: string, year: number, timezone?: string) {

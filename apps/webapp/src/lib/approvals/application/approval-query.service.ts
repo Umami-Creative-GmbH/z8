@@ -154,8 +154,8 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					for (const handler of activeHandlers) {
 						const items = yield* _(
 							handler.getApprovals(params).pipe(
-								Effect.catchAll((error) =>
-									shouldRequireEveryHandler ? Effect.fail(error) : Effect.succeed([]),
+								Effect.catchAllCause((cause) =>
+									shouldRequireEveryHandler ? Effect.failCause(cause) : Effect.succeed([]),
 								),
 							),
 						);

@@ -14,6 +14,12 @@ interface UseWidgetDataOptions {
 	errorMessage?: string;
 }
 
+function isAbortError(error: unknown) {
+	return (
+		typeof error === "object" && error !== null && "name" in error && error.name === "AbortError"
+	);
+}
+
 export function useWidgetData<T>(
 	fetcher: () => Promise<ActionResult<T>>,
 	options?: UseWidgetDataOptions,
@@ -38,17 +44,19 @@ export function useWidgetData<T>(
 				if (result.success && result.data) {
 					setData(result.data);
 				}
-			} catch {
+			} catch (error) {
 				if (!mountedRef.current) {
+					return;
+				}
+				if (isAbortError(error)) {
 					return;
 				}
 				toast.error(options?.errorMessage ?? "Failed to load data");
 			} finally {
-				if (!mountedRef.current) {
-					return;
+				if (mountedRef.current) {
+					setLoading(false);
+					setRefreshing(false);
 				}
-				setLoading(false);
-				setRefreshing(false);
 			}
 		},
 		[fetcher, options?.errorMessage],

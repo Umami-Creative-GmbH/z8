@@ -1,14 +1,14 @@
 "use client";
 
 import { IconBeach, IconCheck, IconCircleCheck, IconClockEdit } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format } from "@/lib/datetime/luxon-utils";
-import { cn, pluralize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { getRecentlyApprovedRequests } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
+import { formatDashboardDate } from "./format-dashboard-date";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
 
@@ -30,6 +30,8 @@ type RecentlyApproved = {
 
 function ApprovedCard({ request }: { request: RecentlyApproved }) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee();
+	const locale = tolgee.getLanguage() || "en";
 	const isAbsence = request.type === "absence";
 
 	return (
@@ -61,7 +63,7 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 						})}
 					</span>
 					<span className="text-muted-foreground/50">•</span>
-					<span>{format(new Date(request.updatedAt), "MMM d")}</span>
+					<span>{formatDashboardDate(new Date(request.updatedAt), locale)}</span>
 				</div>
 			</div>
 
@@ -99,6 +101,12 @@ export function RecentlyApprovedWidget() {
 
 	if (!loading && (!requests || requests.length === 0)) return null;
 
+	const requestLabel = requests
+		? requests.length === 1
+			? t("dashboard.recently-approved.request", "request")
+			: t("dashboard.recently-approved.requests", "requests")
+		: t("dashboard.recently-approved.requests", "requests");
+
 	return (
 		<DashboardWidget id="recently-approved">
 			<WidgetCard
@@ -108,7 +116,7 @@ export function RecentlyApprovedWidget() {
 						? t(
 								"dashboard.recently-approved.description-count",
 								"Last {count} approved {request}",
-								{ count: requests.length, request: pluralize(requests.length, "request") },
+								{ count: requests.length, request: requestLabel },
 							)
 						: t("dashboard.recently-approved.description", "Latest approved requests")
 				}
@@ -142,7 +150,7 @@ export function RecentlyApprovedWidget() {
 									{t(
 										"dashboard.recently-approved.approved-recently",
 										"{count} {request} approved recently",
-										{ count: requests.length, request: pluralize(requests.length, "request") },
+										{ count: requests.length, request: requestLabel },
 									)}
 								</p>
 							</div>

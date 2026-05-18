@@ -741,7 +741,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<SelectItem value="all">
 												{t(
 													"settings.demo.form.employees.all",
-													`All employees (${employees.length})`,
+													"All employees ({count})",
 													{ count: employees.length },
 												)}
 											</SelectItem>
@@ -1235,21 +1235,21 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 									<li>
 										{t(
 											"settings.demo.generateEmployees.usersCreated",
-											`${employeeResult.usersCreated} users created`,
+											"{count} users created",
 											{ count: employeeResult.usersCreated },
 										)}
 									</li>
 									<li>
 										{t(
 											"settings.demo.generateEmployees.employeesCreated",
-											`${employeeResult.employeesCreated} employees created`,
+											"{count} employees created",
 											{ count: employeeResult.employeesCreated },
 										)}
 									</li>
 									<li>
 										{t(
 											"settings.demo.generateEmployees.managersCreated",
-											`${employeeResult.managersCreated} manager assignments`,
+											"{count} manager assignments",
 											{ count: employeeResult.managersCreated },
 										)}
 									</li>
@@ -1332,7 +1332,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										<IconUsers className="size-4" />
 										{t(
 											"settings.demo.generateEmployees.button",
-											`Generate ${employeeCount} Employees`,
+											"Generate {count} Employees",
 											{ count: employeeCount },
 										)}
 									</>
@@ -1405,49 +1405,49 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.timeEntriesDeleted",
-												`${clearResult.timeEntriesDeleted} time entries deleted`,
+												"{count} time entries deleted",
 												{ count: clearResult.timeEntriesDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.workPeriodsDeleted",
-												`${clearResult.workPeriodsDeleted} work periods deleted`,
+												"{count} work periods deleted",
 												{ count: clearResult.workPeriodsDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.absencesDeleted",
-												`${clearResult.absencesDeleted} absences deleted`,
+												"{count} absences deleted",
 												{ count: clearResult.absencesDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.vacationAllowancesReset",
-												`${clearResult.vacationAllowancesReset} vacation allowances reset`,
+												"{count} vacation allowances reset",
 												{ count: clearResult.vacationAllowancesReset },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.teamsDeleted",
-												`${clearResult.teamsDeleted} teams deleted`,
+												"{count} teams deleted",
 												{ count: clearResult.teamsDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.projectsDeleted",
-												`${clearResult.projectsDeleted} projects deleted`,
+												"{count} projects deleted",
 												{ count: clearResult.projectsDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.clearData.managerAssignmentsDeleted",
-												`${clearResult.managerAssignmentsDeleted} manager assignments deleted`,
+												"{count} manager assignments deleted",
 												{ count: clearResult.managerAssignmentsDeleted },
 											)}
 										</li>
@@ -1456,7 +1456,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.locationsDeleted",
-													`${clearResult.locationsDeleted} locations deleted`,
+													"{count} locations deleted",
 													{ count: clearResult.locationsDeleted },
 												)}
 											</li>
@@ -1465,7 +1465,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.subareasDeleted",
-													`${clearResult.subareasDeleted} subareas deleted`,
+													"{count} subareas deleted",
 													{ count: clearResult.subareasDeleted },
 												)}
 											</li>
@@ -1474,7 +1474,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.workCategorySetsDeleted",
-													`${clearResult.workCategorySetsDeleted} work category sets deleted`,
+													"{count} work category sets deleted",
 													{ count: clearResult.workCategorySetsDeleted },
 												)}
 											</li>
@@ -1483,7 +1483,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.workCategoriesDeleted",
-													`${clearResult.workCategoriesDeleted} work categories deleted`,
+													"{count} work categories deleted",
 													{ count: clearResult.workCategoriesDeleted },
 												)}
 											</li>
@@ -1492,7 +1492,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.changePoliciesDeleted",
-													`${clearResult.changePoliciesDeleted} change policies deleted`,
+													"{count} change policies deleted",
 													{ count: clearResult.changePoliciesDeleted },
 												)}
 											</li>
@@ -1501,7 +1501,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.shiftTemplatesDeleted",
-													`${clearResult.shiftTemplatesDeleted} shift templates deleted`,
+													"{count} shift templates deleted",
 													{ count: clearResult.shiftTemplatesDeleted },
 												)}
 											</li>
@@ -1510,7 +1510,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.shiftsDeleted",
-													`${clearResult.shiftsDeleted} shifts deleted`,
+													"{count} shifts deleted",
 													{ count: clearResult.shiftsDeleted },
 												)}
 											</li>
@@ -1519,7 +1519,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 											<li>
 												{t(
 													"settings.demo.dangerZone.clearData.shiftRequestsDeleted",
-													`${clearResult.shiftRequestsDeleted} shift requests deleted`,
+													"{count} shift requests deleted",
 													{ count: clearResult.shiftRequestsDeleted },
 												)}
 											</li>
@@ -1656,35 +1656,35 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										<li>
 											{t(
 												"settings.demo.dangerZone.deleteNonAdmin.employeesDeleted",
-												`${deleteNonAdminResult.employeesDeleted} employees deleted`,
+												"{count} employees deleted",
 												{ count: deleteNonAdminResult.employeesDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.deleteNonAdmin.usersDeleted",
-												`${deleteNonAdminResult.usersDeleted} users deleted`,
+												"{count} users deleted",
 												{ count: deleteNonAdminResult.usersDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.deleteNonAdmin.membersDeleted",
-												`${deleteNonAdminResult.membersDeleted} members deleted`,
+												"{count} members deleted",
 												{ count: deleteNonAdminResult.membersDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.deleteNonAdmin.timeEntriesDeleted",
-												`${deleteNonAdminResult.timeEntriesDeleted} time entries deleted`,
+												"{count} time entries deleted",
 												{ count: deleteNonAdminResult.timeEntriesDeleted },
 											)}
 										</li>
 										<li>
 											{t(
 												"settings.demo.dangerZone.deleteNonAdmin.absencesDeleted",
-												`${deleteNonAdminResult.absencesDeleted} absences deleted`,
+												"{count} absences deleted",
 												{ count: deleteNonAdminResult.absencesDeleted },
 											)}
 										</li>

@@ -12,7 +12,7 @@ import { useTranslate } from "@tolgee/react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { UserAvatar, type EmployeeClockStatus } from "@/components/user-avatar";
+import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
 import { getManagedEmployees } from "./actions";
@@ -38,7 +38,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 	return (
 		<Link
 			href={`/settings/employees/${employee.id}`}
-			className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20"
+			className="group/employee flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20"
 		>
 			{/* Avatar */}
 			<UserAvatar
@@ -51,7 +51,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 
 			{/* Info */}
 			<div className="flex-1 min-w-0">
-				<div className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+				<div className="font-medium text-sm truncate group-hover/employee:text-primary transition-colors">
 					{employee.user.name}
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -74,7 +74,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 			)}
 
 			{/* Arrow */}
-			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-all group-hover/employee:opacity-100 group-hover/employee:translate-x-1" />
 		</Link>
 	);
 }
@@ -113,7 +113,10 @@ export function ManagedEmployeesWidget() {
 
 			const result = await getManagedEmployees(current.id);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to load managed employees");
+				throw new Error(
+					result.error ||
+						t("dashboard.managed-employees.error", "Failed to load managed employees"),
+				);
 			}
 
 			return {

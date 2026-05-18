@@ -4,7 +4,6 @@ import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
-import { DashboardCustomizeMenu } from "@/components/dashboard/dashboard-customize-menu";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
@@ -49,7 +48,7 @@ const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-ske
 
 function WidgetSkeleton() {
 	return (
-		<div className="rounded-xl border bg-card p-6">
+		<div className="mb-4 break-inside-avoid rounded-xl border bg-card p-6">
 			<div className="flex items-center justify-between mb-4">
 				<Skeleton className="h-5 w-32" />
 				<Skeleton className="h-4 w-4 rounded-full" />
@@ -65,7 +64,7 @@ function WidgetSkeleton() {
 
 export function SectionCardsSkeleton() {
 	return (
-		<div className="grid @5xl/main:grid-cols-3 @xl/main:grid-cols-2 grid-cols-1 gap-4 px-4 lg:px-6 items-start">
+		<div className="columns-1 @xl/main:columns-2 @5xl/main:columns-3 gap-4 px-4 lg:px-6">
 			{WIDGET_SKELETON_KEYS.map((key) => (
 				<WidgetSkeleton key={key} />
 			))}
@@ -96,15 +95,11 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 
 function DashboardWidgetLayout({
 	visibleWidgetOrder,
-	hiddenWidgets,
 	onReorder,
-	onVisibilityChange,
 	resetOrder,
 }: {
 	visibleWidgetOrder: WidgetId[];
-	hiddenWidgets: WidgetId[];
 	onReorder: (newOrder: WidgetId[]) => void;
-	onVisibilityChange: (widgetId: WidgetId, visible: boolean) => void;
 	resetOrder: () => void;
 }) {
 	const renderedWidgets = useVisibleWidgets();
@@ -134,13 +129,6 @@ function DashboardWidgetLayout({
 
 	return (
 		<>
-			<div className="mb-3 flex justify-end px-4 lg:px-6">
-				<DashboardCustomizeMenu
-					hiddenWidgets={hiddenWidgets}
-					onReset={resetOrder}
-					onVisibilityChange={onVisibilityChange}
-				/>
-			</div>
 			{hasConfiguredWidgets ? (
 				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
 					{visibleWidgetOrder.map((widgetId) => {
@@ -156,14 +144,7 @@ function DashboardWidgetLayout({
 }
 
 export function SectionCards() {
-	const {
-		visibleWidgetOrder,
-		hiddenWidgets,
-		onReorder,
-		onVisibilityChange,
-		resetOrder,
-		isLoading,
-	} = useWidgetOrder();
+	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder();
 
 	if (isLoading) {
 		return <SectionCardsSkeleton />;
@@ -172,9 +153,7 @@ export function SectionCards() {
 	return (
 		<WidgetVisibilityProvider>
 			<DashboardWidgetLayout
-				hiddenWidgets={hiddenWidgets}
 				onReorder={onReorder}
-				onVisibilityChange={onVisibilityChange}
 				resetOrder={resetOrder}
 				visibleWidgetOrder={visibleWidgetOrder}
 			/>

@@ -1,13 +1,155 @@
 {
   "admin": {
     "analytics": {
+      "billing": {
+        "estimatedNotice": "Les sièges historiques et le MRR sont estimés. Une reconstruction exacte nécessite des instantanés futurs ou un registre de facturation."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Signaux de sièges et de revenus récurrents pour la santé de la facturation.",
+          "summary": "Résumé commercial : {seats} sièges et {mrr} de MRR estimé.",
+          "title": "Commercial"
+        },
+        "engagement": {
+          "description": "Utilisation de la plateforme via les utilisateurs actifs et les sessions.",
+          "summary": "Résumé de l'engagement : {activeUsers} utilisateurs actifs et {sessions} sessions.",
+          "title": "Engagement"
+        },
+        "growth": {
+          "description": "Nouveaux utilisateurs et organisations rejoignant la plateforme.",
+          "summary": "Résumé de la croissance : {signups} inscriptions et {organizations} organisations.",
+          "title": "Croissance"
+        },
+        "operations": {
+          "description": "Volume de suivi du temps généré par l'activité du locataire.",
+          "summary": "Résumé des opérations : {timeRecords} enregistrements de temps.",
+          "title": "Opérations"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Compartiment analytique",
+          "label": "Compartiment"
+        },
+        "range": {
+          "ariaLabel": "Plage analytique",
+          "label": "Plage"
+        }
+      },
       "description": "Surveillez la croissance de la plateforme, l'engagement, l'activité opérationnelle et les tendances de facturation.",
+      "emptyState": {
+        "noData": "Aucune donnée pour cette plage"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Utilisateurs actifs dans la plage sélectionnée",
+          "title": "Utilisateurs actifs"
+        },
+        "mrr": {
+          "description": "Estimation du revenu récurrent mensuel",
+          "title": "MRR estimé"
+        },
+        "organizations": {
+          "description": "Espaces de travail actifs sur la plateforme",
+          "title": "Organisations"
+        },
+        "seats": {
+          "description": "Sièges payants ou d'essai actuels",
+          "title": "Sièges sous licence"
+        },
+        "sessions": {
+          "description": "Sessions authentifiées",
+          "title": "Sessions"
+        },
+        "signups": {
+          "description": "Nouveaux comptes sur la plateforme",
+          "title": "Inscriptions"
+        },
+        "timeRecords": {
+          "description": "Registres opérationnels soumis",
+          "title": "Registres de temps"
+        }
+      },
+      "preview": {
+        "description": "Croissance et engagement de la plateforme sur la période sélectionnée.",
+        "title": "Tendances analytiques",
+        "viewFull": "Voir l'analyse complète"
+      },
       "sectionDescription": "Mis à jour à partir des données actuelles de la plateforme pour la plage et le compartiment sélectionnés.",
       "sectionTitle": "Tendances analytiques",
-      "title": "Analytique de la plateforme"
+      "title": "Analytique de la plateforme",
+      "values": {
+        "notAvailable": "Non disponible"
+      }
+    },
+    "billing": {
+      "description": "Surveiller les abonnements, les revenus et le statut des paiements",
+      "intervals": {
+        "month": "Mensuel",
+        "year": "Annuel"
+      },
+      "metrics": {
+        "activeSubscriptions": "Abonnements actifs",
+        "activeSubscriptionsDescription": "{trialingCount} en essai, {activeCount} payants",
+        "conversionRate": "Taux de conversion",
+        "conversionRateDescription": "Essais vers payants",
+        "licensedSeats": "Sièges sous licence",
+        "licensedSeatsDescription": "Sur tous les abonnements",
+        "mrr": "MRR",
+        "mrrDescription": "Revenu récurrent mensuel",
+        "pastDue": "En retard",
+        "pastDueDescription": "Problèmes de paiement",
+        "trialing": "En essai",
+        "trialingDescription": "En période d'essai"
+      },
+      "sections": {
+        "recentSubscriptions": "Abonnements récents",
+        "revenueMetrics": "Indicateurs de revenus"
+      },
+      "status": {
+        "active": "Actif",
+        "canceled": "Annulé",
+        "pastDue": "En retard de paiement",
+        "trialing": "Essai"
+      },
+      "table": {
+        "billing": "Facturation",
+        "created": "Créé",
+        "noSubscriptions": "Aucun abonnement pour le moment",
+        "organization": "Organisation",
+        "periodEnd": "Fin de période",
+        "seats": "Sièges",
+        "status": "Statut"
+      },
+      "title": "Tableau de bord de facturation"
     },
     "diagnostics": {
+      "actions": {
+        "refresh": "Actualiser les diagnostics"
+      },
+      "clientDescription": "Configuration sécurisée de la plateforme et état des services au niveau de l'application. Dernière actualisation le {date}.",
       "description": "Configuration sécurisée de la plateforme et vérifications de l'état du déploiement des applications uniquement.",
+      "recommendedActions": {
+        "description": "Résolvez ces éléments pour rétablir un état de diagnostic sain.",
+        "title": "Actions recommandées"
+      },
+      "sections": {
+        "configuration": {
+          "description": "États de configuration de déploiement sécurisés. Les valeurs secrètes ne sont jamais affichées.",
+          "title": "Configuration de la plateforme"
+        },
+        "health": {
+          "description": "Vérifications spécifiques à l'application pour les dépendances d'infrastructure utilisées par l'application web.",
+          "title": "État des services"
+        }
+      },
+      "statusAnnouncement": "État des diagnostics {status}. Dernière actualisation le {date}.",
+      "status": {
+        "disabled": "Désactivé",
+        "error": "Erreur",
+        "healthy": "Sain",
+        "warning": "Avertissement"
+      },
       "title": "Diagnostics de déploiement"
     },
     "layout": {
@@ -26,6 +168,11 @@
       "title": "Console d'administration"
     },
     "organizations": {
+      "actions": {
+        "delete": "Supprimer l'organisation",
+        "reactivate": "Réactiver l'organisation",
+        "suspend": "Suspendre l'organisation"
+      },
       "badges": {
         "deleted": "Supprimé",
         "suspended": "Suspendu"
@@ -113,6 +260,32 @@
       },
       "title": "Vue d'ensemble"
     },
+    "settings": {
+      "actions": {
+        "saveChanges": "Enregistrer les modifications"
+      },
+      "cookieConsent": {
+        "description": "Injecté sur les pages d'authentification pour la conformité au RGPD",
+        "helperPrefix": "Laisser vide pour désactiver. Chargé avec",
+        "helperSuffix": "stratégie.",
+        "scriptContent": "Contenu du script",
+        "scriptPlaceholder": "<!-- Exemple : CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"VOTRE-ID\" type=\"text/javascript\" async></script>\n\n<!-- Ou script personnalisé -->\n<script>\n  // Votre logique de consentement aux cookies ici\n</script>",
+        "title": "Script de consentement aux cookies"
+      },
+      "description": "Configuration globale de la plateforme pour toutes les organisations",
+      "title": "Paramètres de la plateforme",
+      "toasts": {
+        "cookieConsentSaved": "Script de consentement aux cookies enregistré avec succès",
+        "saveFailed": "Échec de l'enregistrement"
+      },
+      "turnstile": {
+        "deploymentNote": "Configuré via des variables d'environnement lors du déploiement. Les organisations Entreprise peuvent remplacer cela dans les paramètres de domaine.",
+        "description": "Protection contre les bots pour les formulaires d'authentification",
+        "secretKey": "Clé secrète",
+        "siteKey": "Clé du site",
+        "title": "Cloudflare Turnstile"
+      }
+    },
     "users": {
       "badges": {
         "admin": "Administration",
@@ -149,7 +322,9 @@
       },
       "table": {
         "created": "Créé le",
+        "noOrganizations": "Aucune organisation",
         "noUsersFound": "Aucun utilisateur trouvé",
+        "organizations": "Organisations",
         "role": "Rôle",
         "user": "Utilisateur"
       },

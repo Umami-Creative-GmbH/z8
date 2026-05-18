@@ -165,25 +165,12 @@ function toSafeDate(value: Date | string | number | unknown): Date {
  * Uses the global Temporal API (required by Schedule-X)
  * Format: Temporal.ZonedDateTime.from('2025-01-01T12:00:00+01:00[Europe/Berlin]')
  */
-export function toTemporalZonedDateTime(date: Date | string | unknown): Temporal.ZonedDateTime {
+export function toTemporalZonedDateTime(
+	date: Date | string | unknown,
+	timeZone: string = Temporal.Now.timeZoneId(),
+): Temporal.ZonedDateTime {
 	const safeDate = toSafeDate(date);
-
-	// Get the user's timezone from the global Temporal
-	const timeZone = Temporal.Now.timeZoneId();
-
-	// Format the date as ISO string with timezone offset
-	const year = safeDate.getFullYear();
-	const month = String(safeDate.getMonth() + 1).padStart(2, "0");
-	const day = String(safeDate.getDate()).padStart(2, "0");
-	const hours = String(safeDate.getHours()).padStart(2, "0");
-	const minutes = String(safeDate.getMinutes()).padStart(2, "0");
-	const seconds = String(safeDate.getSeconds()).padStart(2, "0");
-
-	// Create ZonedDateTime using the from() method with timezone annotation
-	// This is the format Schedule-X expects
-	const isoString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}[${timeZone}]`;
-
-	return Temporal.ZonedDateTime.from(isoString);
+	return Temporal.Instant.from(safeDate.toISOString()).toZonedDateTimeISO(timeZone);
 }
 
 /**
@@ -208,7 +195,10 @@ export function toTemporalPlainDate(date: Date | string | unknown): Temporal.Pla
  * Uses Temporal API types as required by Schedule-X v3
  * Returns null if the event cannot be transformed (invalid dates)
  */
-export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent | null {
+export function calendarEventToScheduleX(
+	event: CalendarEvent,
+	timeZone?: string,
+): ScheduleXEvent | null {
 	try {
 		// Debug: Log raw date values to identify parsing issues
 		if (process.env.NODE_ENV === "development") {
@@ -264,8 +254,8 @@ export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent |
 			// Work periods span from clock-in to clock-out
 			// Display as a timed block showing work time
 			// Breaks appear as gaps between these blocks
-			const start = toTemporalZonedDateTime(startDate);
-			const end = toTemporalZonedDateTime(endDate);
+			const start = toTemporalZonedDateTime(startDate, timeZone);
+			const end = toTemporalZonedDateTime(endDate, timeZone);
 
 			// Determine calendar ID based on approval status
 			// Pending/rejected work periods get different styling
@@ -294,7 +284,7 @@ export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent |
 		if (event.type === "time_entry") {
 			// Time entries are point-in-time, show as 30-minute block
 			// Use Temporal.ZonedDateTime for timed events
-			const start = toTemporalZonedDateTime(startDate);
+			const start = toTemporalZonedDateTime(startDate, timeZone);
 			const end = start.add({ minutes: 30 });
 
 			return {
@@ -332,12 +322,15 @@ export function calendarEventToScheduleX(event: CalendarEvent): ScheduleXEvent |
  * Transform multiple CalendarEvents to Schedule-X events
  * Filters out any events with invalid dates
  */
-export function calendarEventsToScheduleX(events: CalendarEvent[]): ScheduleXEvent[] {
+export function calendarEventsToScheduleX(
+	events: CalendarEvent[],
+	timeZone?: string,
+): ScheduleXEvent[] {
 	const validEvents: ScheduleXEvent[] = [];
 	let invalidCount = 0;
 
 	for (const event of events) {
-		const scheduleXEvent = calendarEventToScheduleX(event);
+		const scheduleXEvent = calendarEventToScheduleX(event, timeZone);
 		if (scheduleXEvent) {
 			validEvents.push(scheduleXEvent);
 		} else {
@@ -398,7 +391,10 @@ function toScheduleXSafeIdPart(value: string): string {
  * Breaks are the gaps between consecutive work periods on the same day
  * Returns Schedule-X formatted events for display in day/week view
  */
-export function generateBreakEvents(workPeriodEvents: ScheduleXEvent[]): ScheduleXEvent[] {
+export function generateBreakEvents(
+	workPeriodEvents: ScheduleXEvent[],
+	timeZone?: string,
+): ScheduleXEvent[] {
 	const breakEvents: ScheduleXEvent[] = [];
 
 	// Group work periods by date and employee
@@ -464,8 +460,8 @@ export function generateBreakEvents(workPeriodEvents: ScheduleXEvent[]): Schedul
 				const breakEvent: ScheduleXEvent = {
 					id: breakEventId,
 					title: `Break - ${formatBreakDuration(gapMinutes)}`,
-					start: toTemporalZonedDateTime(breakStart),
-					end: toTemporalZonedDateTime(breakEnd),
+					start: toTemporalZonedDateTime(breakStart, timeZone),
+					end: toTemporalZonedDateTime(breakEnd, timeZone),
 					calendarId: "break",
 					_eventData: {
 						id: breakEventId,
