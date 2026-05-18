@@ -76,6 +76,8 @@ import {
 } from "./actions/presence-status";
 import type { WorkPeriodWithEntries } from "./types";
 
+export { addBreakToActiveSession } from "./actions/clocking";
+
 const logger = createLogger("TimeTrackingActionsEffect");
 
 const approvalDbService = {

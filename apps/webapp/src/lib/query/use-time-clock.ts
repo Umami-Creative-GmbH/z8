@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import {
+	addBreakToActiveSession,
 	clockIn,
 	clockOut,
 	getTimeClockStatus,
@@ -211,6 +212,27 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			updateTimeEntryNotes(entryId, notes),
 	});
 
+	// Add break mutation (online only - break changes must be confirmed immediately)
+	const addBreakMutation = useMutation({
+		mutationFn: async ({ breakMinutes }: { breakMinutes: number }) => {
+			if (isOffline) {
+				return {
+					success: false as const,
+					error: "Adding a break requires an internet connection.",
+				};
+			}
+
+			return addBreakToActiveSession(breakMinutes);
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.breakStatus() });
+				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+			}
+		},
+	});
+
 	// Refetch status manually
 	const refetchStatus = useCallback(() => {
 		return queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
@@ -239,12 +261,17 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		clockIn: (params?: { workLocationType?: WorkLocationType }) =>
 			clockInMutation.mutateAsync(params ?? {}),
 		clockOut: clockOutMutation.mutateAsync,
+		addBreak: addBreakMutation.mutateAsync,
 		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,
 		isClockingOut: clockOutMutation.isPending,
+		isAddingBreak: addBreakMutation.isPending,
 		isUpdatingNotes: updateNotesMutation.isPending,
 		isMutating:
-			clockInMutation.isPending || clockOutMutation.isPending || updateNotesMutation.isPending,
+			clockInMutation.isPending ||
+			clockOutMutation.isPending ||
+			addBreakMutation.isPending ||
+			updateNotesMutation.isPending,
 
 		// Utilities
 		refetchStatus,

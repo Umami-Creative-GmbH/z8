@@ -10,6 +10,7 @@ import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
+import { useQuickBreakHandler } from "./use-quick-break-handler";
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -106,6 +107,7 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 
 	const timeClock = useTimeClock({ initialData });
 	const elapsedSeconds = useElapsedTimer(timeClock.activeWorkPeriod?.startTime ?? null);
+	const handleAddBreak = useQuickBreakHandler(timeClock.addBreak, t);
 
 	useEffect(() => {
 		localStorage.setItem("z8-work-location-type", uiState.workLocationType);
@@ -257,6 +259,7 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		...compliance,
 		handleClockIn,
 		handleClockOut,
+		handleAddBreak,
 		handleSaveNotes,
 		handleDismissNotes: () => dispatch({ type: "closeNotesInput" }),
 		handleRequestException,

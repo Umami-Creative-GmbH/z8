@@ -11,6 +11,8 @@ import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { getRequestMetadata } from "./auth";
 import { BOOKABLE_PROJECT_STATUSES } from "./shared";
 
+type TimeEntryDbClient = Pick<typeof db, "insert" | "select">;
+
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
@@ -26,10 +28,10 @@ export async function createTimeEntry(params: {
 	createdBy: string;
 	replacesEntryId?: string;
 	notes?: string;
-}): Promise<typeof timeEntry.$inferSelect> {
+}, client: TimeEntryDbClient = db): Promise<typeof timeEntry.$inferSelect> {
 	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
 
-	const [previousEntry] = await db
+	const [previousEntry] = await client
 		.select()
 		.from(timeEntry)
 		.where(and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)))
@@ -45,7 +47,7 @@ export async function createTimeEntry(params: {
 		previousHash,
 	});
 
-	const [entry] = await db
+	const [entry] = await client
 		.insert(timeEntry)
 		.values({
 			employeeId,
