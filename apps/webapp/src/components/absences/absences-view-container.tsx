@@ -2,7 +2,8 @@
 
 import { useTranslate } from "@tolgee/react";
 import { Calendar, Plus, Table as TableIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toLocalDateString } from "@/lib/absences/date-utils";
@@ -41,6 +42,9 @@ export function AbsencesViewContainer({
 	const [activeView, setActiveView] = useState<ViewType>("calendar");
 	const [requestDialogOpen, setRequestDialogOpen] = useState(false);
 	const [prefilledDate, setPrefilledDate] = useState<string | undefined>(undefined);
+	const [calendarAbsences, setCalendarAbsences] = useState(absences);
+	const [calendarHolidays, setCalendarHolidays] = useState(holidays);
+	const latestRequestedYearRef = useRef(currentYear);
 
 	// Handle day click in year calendar - open request dialog with date prefilled
 	const handleDayClick = useCallback((date: Date) => {
@@ -61,6 +65,20 @@ export function AbsencesViewContainer({
 	const handleAddAbsence = useCallback(() => {
 		setPrefilledDate(undefined);
 		setRequestDialogOpen(true);
+	}, []);
+
+	const handleYearChange = useCallback(async (year: number) => {
+		latestRequestedYearRef.current = year;
+		try {
+			const data = await getAbsenceCalendarYearData(year);
+			if (latestRequestedYearRef.current !== year) {
+				return;
+			}
+			setCalendarAbsences(data.absences);
+			setCalendarHolidays(data.holidays);
+		} catch (error) {
+			console.error("Failed to load absence calendar year data", error);
+		}
 	}, []);
 
 	return (
@@ -85,10 +103,11 @@ export function AbsencesViewContainer({
 
 				<TabsContent value="calendar" className="mt-4">
 					<AbsenceYearCalendar
-						absences={absences}
-						holidays={holidays}
+						absences={calendarAbsences}
+						holidays={calendarHolidays}
 						initialYear={currentYear}
 						onDayClick={handleDayClick}
+						onYearChange={handleYearChange}
 					/>
 				</TabsContent>
 
@@ -101,7 +120,7 @@ export function AbsencesViewContainer({
 							{t("absences.table.subtitle", "Recent and upcoming absence requests")}
 						</p>
 					</div>
-					<AbsenceEntriesTable absences={absences} />
+					<AbsenceEntriesTable absences={calendarAbsences} />
 				</TabsContent>
 			</Tabs>
 
@@ -112,7 +131,7 @@ export function AbsencesViewContainer({
 				categories={categories}
 				organizationId={organizationId}
 				remainingDays={remainingDays}
-				holidays={holidays}
+				holidays={calendarHolidays}
 				initialDate={prefilledDate}
 			/>
 		</div>

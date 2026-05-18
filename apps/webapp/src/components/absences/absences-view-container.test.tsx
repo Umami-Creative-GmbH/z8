@@ -1,10 +1,16 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AbsenceYearCalendar } from "./absence-year-calendar";
 import { AbsencesViewContainer } from "./absences-view-container";
+
+const mockGetAbsenceCalendarYearData = vi.hoisted(() => vi.fn());
+
+vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
+	getAbsenceCalendarYearData: mockGetAbsenceCalendarYearData,
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -38,6 +44,10 @@ const categories: ComponentProps<typeof AbsencesViewContainer>["categories"] = [
 ];
 
 describe("AbsencesViewContainer", () => {
+	beforeEach(() => {
+		mockGetAbsenceCalendarYearData.mockReset();
+	});
+
 	it("shows a primary add absence action in the view header", () => {
 		render(
 			<AbsencesViewContainer
@@ -58,6 +68,41 @@ describe("AbsencesViewContainer", () => {
 		fireEvent.click(button);
 
 		expect(screen.getByTestId("request-absence-dialog").getAttribute("data-open")).toBe("true");
+	});
+
+	it("loads holidays for the selected calendar year", async () => {
+		mockGetAbsenceCalendarYearData.mockResolvedValue({
+			absences: [],
+			holidays: [
+				{
+					id: "holiday-2027",
+					name: "New 2027 Holiday",
+					startDate: new Date(2027, 0, 6),
+					endDate: new Date(2027, 0, 6),
+					categoryId: "public",
+				},
+			],
+		});
+
+		render(
+			<AbsencesViewContainer
+				absences={[]}
+				categories={categories}
+				currentYear={2026}
+				holidays={[]}
+				organizationId="org-1"
+				remainingDays={10}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
+
+		await waitFor(() => {
+			expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2027);
+		});
+		await waitFor(() => {
+			expect(screen.getAllByRole("button", { name: "6" })[0].className).toContain("bg-amber-100");
+		});
 	});
 });
 
