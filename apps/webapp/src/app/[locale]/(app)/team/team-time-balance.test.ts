@@ -1,9 +1,17 @@
 import { DateTime } from "luxon";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/db", () => ({ db: {} }));
-vi.mock("@/lib/time-tracking/calculations", () => ({
+const mocks = vi.hoisted(() => ({
 	calculateExpectedWorkHoursForEmployee: vi.fn(),
+	db: {
+		insert: vi.fn(),
+		select: vi.fn(),
+	},
+}));
+
+vi.mock("@/db", () => ({ db: mocks.db }));
+vi.mock("@/lib/time-tracking/calculations", () => ({
+	calculateExpectedWorkHoursForEmployee: mocks.calculateExpectedWorkHoursForEmployee,
 }));
 
 import {
@@ -13,7 +21,20 @@ import {
 	formatSignedBalance,
 	getAbsenceDayFraction,
 	getCurrentYearRange,
+	refreshEmployeeTimeBalances,
 } from "./team-time-balance";
+
+function createEmptySelectChain() {
+	const chain = {
+		from: vi.fn(() => chain),
+		where: vi.fn(async () => []),
+	};
+	return chain;
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 describe("team time balance helpers", () => {
 	it("returns the current calendar year range", () => {
@@ -123,6 +144,18 @@ describe("team time balance helpers", () => {
 		).toBe(1);
 	});
 
+	it("uses UTC-derived date-only values for canonical day fractions", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: DateTime.fromISO("2026-03-29", { zone: "utc" }).toISODate()!,
+				startDate: "2026-03-28",
+				startPeriod: "pm",
+				endDate: "2026-03-30",
+				endPeriod: "am",
+			}),
+		).toBe(1);
+	});
+
 	it("formats signed balances for display", () => {
 		expect(formatSignedBalance(750)).toBe("+12h 30m");
 		expect(formatSignedBalance(-255)).toBe("-4h 15m");
@@ -153,5 +186,25 @@ describe("employee time balance persistence values", () => {
 			balanceMinutes: 420,
 			calculatedAt,
 		});
+	});
+
+	it("does not calculate balances when supplied employees do not belong to the organization", async () => {
+		mocks.db.select.mockImplementation(() => createEmptySelectChain());
+		mocks.db.insert.mockReturnValue({
+			values: vi.fn(() => ({
+				onConflictDoUpdate: vi.fn(async () => undefined),
+			})),
+		});
+		mocks.calculateExpectedWorkHoursForEmployee.mockResolvedValue({ totalMinutes: 0 });
+
+		const result = await refreshEmployeeTimeBalances({
+			employeeIds: ["employee-from-another-org"],
+			organizationId: "org-1",
+			now: DateTime.fromISO("2026-05-18T12:00:00", { zone: "utc" }),
+		});
+
+		expect(result.size).toBe(0);
+		expect(mocks.calculateExpectedWorkHoursForEmployee).not.toHaveBeenCalled();
+		expect(mocks.db.insert).not.toHaveBeenCalled();
 	});
 });

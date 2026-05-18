@@ -1,7 +1,13 @@
 import { and, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { absenceCategory, absenceEntry, employeeTimeBalance, workPeriod } from "@/db/schema";
+import {
+	absenceCategory,
+	absenceEntry,
+	employee,
+	employeeTimeBalance,
+	workPeriod,
+} from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 
@@ -92,8 +98,20 @@ export async function refreshEmployeeTimeBalances(input: {
 	organizationId: string;
 	now?: DateTime;
 }): Promise<Map<string, EmployeeTimeBalancePayload>> {
-	const employeeIds = [...new Set(input.employeeIds)];
+	const requestedEmployeeIds = [...new Set(input.employeeIds)];
 	const balances = new Map<string, EmployeeTimeBalancePayload>();
+	if (requestedEmployeeIds.length === 0) return balances;
+
+	const employeeRows = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(employee.id, requestedEmployeeIds),
+			),
+		);
+	const employeeIds = employeeRows.map((row) => row.id);
 	if (employeeIds.length === 0) return balances;
 
 	const range = getCurrentYearRange(input.now);
@@ -200,8 +218,8 @@ async function calculateAbsenceAdjustedMinutes(input: {
 
 	let total = 0;
 	for (const absence of absenceRows) {
-		let current = DateTime.fromISO(absence.startDate).startOf("day");
-		const last = DateTime.fromISO(absence.endDate).startOf("day");
+		let current = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
+		const last = DateTime.fromISO(absence.endDate, { zone: "utc" }).startOf("day");
 		while (current <= last) {
 			if (current >= input.rangeStart.startOf("day") && current <= input.rangeEnd.startOf("day")) {
 				const currentISODate = current.toISODate()!;
