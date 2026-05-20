@@ -1,4 +1,10 @@
 {
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "O Stripe Checkout coleta os dados de pagamento agora. Sua assinatura paga começa somente depois que o teste expirar.",
+			"trialContinuesTitle": "Seu teste continua após o upgrade"
+		}
+	},
 	"organization": {
 		"create": "Criar organização",
 		"createNew": "Criar nova organização",

@@ -1,4 +1,10 @@
 {
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "Stripe Checkout collecte vos informations de paiement maintenant. Votre abonnement payant commencera seulement après la fin de l’essai.",
+			"trialContinuesTitle": "Votre essai continue après la mise à niveau"
+		}
+	},
 	"organization": {
 		"create": "Créer une organisation",
 		"createNew": "Créer une nouvelle organisation",

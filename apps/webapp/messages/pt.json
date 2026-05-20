@@ -10,7 +10,6 @@
     }
   },
   "billing": {
-    "checkout": { "trialContinuesDescription": "O Stripe Checkout coleta os dados de pagamento agora. Sua assinatura paga começa somente depois que o teste expirar.", "trialContinuesTitle": "Seu teste continua após o upgrade" },
     "trialBanner": { "description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.", "title": "Teste de 14 dias ativo", "upgrade": "Fazer upgrade" }
   },
   "team": {

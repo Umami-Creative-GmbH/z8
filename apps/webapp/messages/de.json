@@ -10,7 +10,6 @@
     }
   },
   "billing": {
-    "checkout": { "trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdetails. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testphase.", "trialContinuesTitle": "Ihre Testphase läuft nach dem Upgrade weiter" },
     "trialBanner": { "description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.", "title": "14-tägige Testphase aktiv", "upgrade": "Upgrade" }
   },
   "team": {

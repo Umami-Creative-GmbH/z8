@@ -1,4 +1,10 @@
 {
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Su suscripción de pago empieza solo cuando finaliza la prueba.",
+			"trialContinuesTitle": "Su prueba continúa después de mejorar el plan"
+		}
+	},
 	"organization": {
 		"create": "Crear organización",
 		"createNew": "Crear nueva organización",

@@ -1,4 +1,10 @@
 {
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
+			"trialContinuesTitle": "Your trial continues after upgrade"
+		}
+	},
 	"organization": {
 		"create": "Create Organization",
 		"createNew": "Create New Organization",

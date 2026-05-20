@@ -10,7 +10,6 @@
     }
   },
   "billing": {
-    "checkout": { "trialContinuesDescription": "Stripe Checkout collecte vos informations de paiement maintenant. Votre abonnement payant commencera seulement après la fin de l’essai.", "trialContinuesTitle": "Votre essai continue après la mise à niveau" },
     "trialBanner": { "description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.", "title": "Essai de 14 jours actif", "upgrade": "Mettre à niveau" }
   },
   "team": {

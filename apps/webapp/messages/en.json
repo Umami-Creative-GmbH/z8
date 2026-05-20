@@ -21,7 +21,6 @@
     "bestValue": "Best Value",
     "billedMonthly": "billed monthly",
     "cancelsOn": "Cancels on {date}",
-    "checkout": { "trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.", "trialContinuesTitle": "Your trial continues after upgrade" },
     "checkoutCreateFailed": "Failed to create checkout session",
     "checkoutStartFailed": "Failed to start checkout",
     "choosePlan": "Choose Your Plan",
