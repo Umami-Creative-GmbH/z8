@@ -14,6 +14,8 @@ const mockState = vi.hoisted(() => ({
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
+	isBillingMutationAllowed: vi.fn(),
+	requireBillingForMutation: vi.fn(),
 	insertValues: vi.fn(),
 	insertReturning: vi.fn(),
 	transaction: vi.fn(),
@@ -52,6 +54,11 @@ vi.mock("@/db/schema", () => ({
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntry: mockState.validateTimeEntry,
 	validateTimeEntryRange: vi.fn(),
+}));
+
+vi.mock("@/lib/billing/guard", () => ({
+	isBillingMutationAllowed: mockState.isBillingMutationAllowed,
+	requireBillingForMutation: mockState.requireBillingForMutation,
 }));
 
 vi.mock("./approvals", () => ({
@@ -124,7 +131,24 @@ describe("clockIn", () => {
 			type: "clock_in",
 			timestamp: new Date("2026-05-04T09:00:00.000Z"),
 		});
+		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
+		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.insertValues.mockResolvedValue(undefined);
+	});
+
+	it("rejects suspended organizations before creating a clock-in entry", async () => {
+		mockState.requireBillingForMutation.mockResolvedValue({
+			canAccess: false,
+			reason: "trial_expired",
+		});
+		mockState.isBillingMutationAllowed.mockReturnValue(false);
+
+		const result = await clockIn("remote");
+
+		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
+		expect(result).toEqual({ success: false, error: "billing_required", code: "trial_expired" });
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("persists remote work location when clocking in", async () => {
@@ -197,6 +221,23 @@ describe("clockOut", () => {
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
+		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
+		mockState.isBillingMutationAllowed.mockReturnValue(true);
+	});
+
+	it("rejects suspended organizations before creating a clock-out entry", async () => {
+		mockState.requireBillingForMutation.mockResolvedValue({
+			canAccess: false,
+			reason: "payment_failed",
+		});
+		mockState.isBillingMutationAllowed.mockReturnValue(false);
+
+		const result = await clockOut();
+
+		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
+		expect(result).toEqual({ success: false, error: "billing_required", code: "payment_failed" });
+		expect(mockState.transaction).not.toHaveBeenCalled();
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
 	it("approves live clock-out instead of creating a pending approval", async () => {
