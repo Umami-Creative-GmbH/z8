@@ -143,7 +143,7 @@ describe("absence mutations", () => {
 		expect(mockState.dbDelete).not.toHaveBeenCalled();
 	});
 
-	it("notifies assigned managers after approved self-cancellation succeeds", async () => {
+	it("notifies only same-organization assigned managers after approved self-cancellation succeeds", async () => {
 		mockState.findAbsence.mockResolvedValue({
 			id: "absence-1",
 			employeeId: "emp-1",
@@ -156,8 +156,8 @@ describe("absence mutations", () => {
 			category: { name: "Vacation" },
 		});
 		mockState.findManagerLinks.mockResolvedValue([
-			{ manager: { userId: "manager-user-1" } },
-			{ manager: { userId: "manager-user-2" } },
+			{ manager: { userId: "manager-user-1", organizationId: "org-1" } },
+			{ manager: { userId: "manager-user-2", organizationId: "org-2" } },
 		]);
 
 		const result = await mutations.cancelAbsenceRequestForEmployee("absence-1", {
@@ -166,19 +166,10 @@ describe("absence mutations", () => {
 		});
 
 		expect(result).toEqual({ success: true });
-		expect(mockState.onApprovedAbsenceCancelledByEmployee).toHaveBeenCalledTimes(2);
+		expect(mockState.onApprovedAbsenceCancelledByEmployee).toHaveBeenCalledTimes(1);
 		expect(mockState.onApprovedAbsenceCancelledByEmployee).toHaveBeenCalledWith({
 			absenceId: "absence-1",
 			managerUserId: "manager-user-1",
-			employeeName: "Avery Employee",
-			organizationId: "org-1",
-			categoryName: "Vacation",
-			startDate: "2026-05-22",
-			endDate: "2026-05-23",
-		});
-		expect(mockState.onApprovedAbsenceCancelledByEmployee).toHaveBeenCalledWith({
-			absenceId: "absence-1",
-			managerUserId: "manager-user-2",
 			employeeName: "Avery Employee",
 			organizationId: "org-1",
 			categoryName: "Vacation",

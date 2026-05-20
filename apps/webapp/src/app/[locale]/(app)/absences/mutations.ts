@@ -20,6 +20,10 @@ type AbsenceForCancellation = typeof absenceEntry.$inferSelect & {
 	employee?: { user?: { name?: string | null } | null } | null;
 };
 
+type ManagerLinkForNotification = {
+	manager?: { userId?: string | null; organizationId?: string | null } | null;
+};
+
 async function notifyManagersOfApprovedSelfCancellation(absence: AbsenceForCancellation): Promise<void> {
 	try {
 		const managerLinks = await db.query.employeeManagers.findMany({
@@ -27,9 +31,9 @@ async function notifyManagersOfApprovedSelfCancellation(absence: AbsenceForCance
 			with: { manager: true },
 		});
 
-		for (const link of managerLinks) {
+		for (const link of managerLinks as ManagerLinkForNotification[]) {
 			const managerUserId = link.manager?.userId;
-			if (!managerUserId) {
+			if (!managerUserId || link.manager?.organizationId !== absence.organizationId) {
 				continue;
 			}
 
