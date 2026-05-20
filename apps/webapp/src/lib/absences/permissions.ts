@@ -111,31 +111,52 @@ export async function canEditOrgSettings(employeeId: string): Promise<boolean> {
  * Check if an employee can cancel an absence request
  *
  * Rules:
- * - Can cancel own pending requests
- * - Cannot cancel approved/rejected requests
- * - Admins can cancel any pending request
+ * - Owners can cancel pending requests
+ * - Owners can cancel approved requests before the start date
+ * - Rejected requests cannot be cancelled
+ * - Admins can cancel other employees' pending requests
  *
  * @param employeeId - ID of the employee trying to cancel
  * @param absenceOwnerId - ID of the employee who owns the absence
  * @param absenceStatus - Current status of the absence
  * @returns True if can cancel
  */
+type AbsenceApprovalStatus = "pending" | "approved" | "rejected";
+
+export function canSelfCancelAbsenceStatus(input: {
+	status: AbsenceApprovalStatus;
+	startDate: string;
+	today: string;
+}): boolean {
+	if (input.status === "pending") {
+		return true;
+	}
+
+	if (input.status === "approved") {
+		return input.startDate > input.today;
+	}
+
+	return false;
+}
+
 export async function canCancelAbsence(
 	employeeId: string,
 	absenceOwnerId: string,
-	absenceStatus: "pending" | "approved" | "rejected",
+	absenceStatus: AbsenceApprovalStatus,
+	context?: { startDate?: string; today?: string },
 ): Promise<boolean> {
-	// Cannot cancel approved or rejected requests
+	if (employeeId === absenceOwnerId) {
+		return canSelfCancelAbsenceStatus({
+			status: absenceStatus,
+			startDate: context?.startDate ?? "",
+			today: context?.today ?? "9999-12-31",
+		});
+	}
+
 	if (absenceStatus !== "pending") {
 		return false;
 	}
 
-	// Can cancel own pending requests
-	if (employeeId === absenceOwnerId) {
-		return true;
-	}
-
-	// Admins can cancel any pending request
 	const emp = await db.query.employee.findFirst({
 		where: eq(employee.id, employeeId),
 	});
