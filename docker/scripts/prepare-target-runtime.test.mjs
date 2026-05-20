@@ -28,6 +28,32 @@ test("pnpm settings live in workspace config", async () => {
 	assert.match(workspaceConfig, /^allowBuilds:/m);
 });
 
+test("Dockerfiles with global pnpm installs put pnpm global bin on PATH", async () => {
+	const dockerfiles = [
+		"Dockerfile.db-seed",
+		"Dockerfile.deploy-webhook",
+		"Dockerfile.docs",
+		"Dockerfile.marketing",
+		"Dockerfile.migration",
+		"Dockerfile.webapp",
+		"Dockerfile.worker",
+	];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+
+		if (!contents.includes("pnpm add -g")) {
+			continue;
+		}
+
+		assert.match(
+			contents,
+			/ENV PATH=\$\{PNPM_HOME\}\/bin:\$\{PNPM_HOME\}:\$\{PATH\}/,
+			`${dockerfile} must put pnpm global bin on PATH before pnpm add -g`,
+		);
+	}
+});
+
 test("collectTarget lists traced worker runtime files and packages", async () => {
 	const result = await collectTarget("worker");
 
