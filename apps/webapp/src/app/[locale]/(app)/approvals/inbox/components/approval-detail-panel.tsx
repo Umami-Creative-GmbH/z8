@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
-import { getSickDetailLabel } from "@/lib/absences/sick-details";
+import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
 import type { SickDetail } from "@/lib/absences/types";
 import type { ApprovalType, UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import { format, formatRelative } from "@/lib/datetime/luxon-utils";
@@ -226,7 +226,7 @@ export function ApprovalDetailPanel({
 										{t("approvals:approvals.sickDetail", "Sick detail")}
 									</span>
 									<span className="text-right text-sm font-medium">
-										{getSickDetailLabel(sickDetail)}
+										{t(getSickDetailLabelKey(sickDetail), getSickDetailLabel(sickDetail))}
 									</span>
 								</div>
 							)}

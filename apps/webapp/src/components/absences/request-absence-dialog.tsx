@@ -335,7 +335,7 @@ export function RequestAbsenceDialog({
 											<SelectContent>
 												{sickDetailOptions.map((option) => (
 													<SelectItem key={option.value} value={option.value}>
-														{t(`absences.sickDetail.${option.value}`, option.label)}
+												{t(option.labelKey, option.label)}
 													</SelectItem>
 												))}
 											</SelectContent>

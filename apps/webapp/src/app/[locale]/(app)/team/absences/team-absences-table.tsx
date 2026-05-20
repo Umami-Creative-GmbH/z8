@@ -1,10 +1,16 @@
 "use client";
 
-import { IconArrowDown, IconArrowUp, IconArrowsSort, IconCalendarPlus, IconSearch } from "@tabler/icons-react";
+import {
+	IconArrowDown,
+	IconArrowsSort,
+	IconArrowUp,
+	IconCalendarPlus,
+	IconSearch,
+} from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
-import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +28,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { UserAvatar } from "@/components/user-avatar";
 import { useRouter } from "@/navigation";
 import type {
 	ManagerAbsenceEmployeeRow,
@@ -46,6 +53,7 @@ type TeamAbsencesTableProps = {
 };
 
 export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTableProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [selectedEmployee, setSelectedEmployee] = useState<ManagerAbsenceEmployeeRow | null>(null);
@@ -61,7 +69,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 
 	function pushParams(updates: Record<string, string | number | null>) {
 		const params = new URLSearchParams(searchParams.toString());
-		const updatesTeamId = Object.prototype.hasOwnProperty.call(updates, "teamId");
+		const updatesTeamId = Object.hasOwn(updates, "teamId");
 
 		if (data.teamId === null && !updatesTeamId) {
 			params.delete("teamId");
@@ -96,23 +104,33 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 		pushParams({ sort, direction: nextDirection, page: 1 });
 	}
 
-	function renderSortableHeader(
-		label: string,
-		sort: ManagerAbsenceSortKey,
-		className?: string,
-	) {
+	function renderSortableHeader(label: string, sort: ManagerAbsenceSortKey, className?: string) {
 		const isActive = data.sort === sort;
-		const directionLabel = data.direction === "asc" ? "ascending" : "descending";
-		const SortIcon = !isActive ? IconArrowsSort : data.direction === "asc" ? IconArrowUp : IconArrowDown;
+		const ariaSort = data.direction === "asc" ? "ascending" : "descending";
+		const directionLabel =
+			data.direction === "asc"
+				? t("team.absences.sort.ascending", "ascending")
+				: t("team.absences.sort.descending", "descending");
+		const sortLabel = isActive
+			? t("team.absences.sort.byWithDirection", "Sort by {label} ({direction})", {
+					label,
+					direction: directionLabel,
+				})
+			: t("team.absences.sort.by", "Sort by {label}", { label });
+		const SortIcon = !isActive
+			? IconArrowsSort
+			: data.direction === "asc"
+				? IconArrowUp
+				: IconArrowDown;
 
 		return (
-			<TableHead className={className} aria-sort={isActive ? directionLabel : undefined}>
+			<TableHead className={className} aria-sort={isActive ? ariaSort : undefined}>
 				<Button
 					type="button"
 					variant="ghost"
 					size="sm"
 					className="h-auto gap-1 px-0 font-medium hover:bg-transparent"
-					aria-label={isActive ? `Sort by ${label} (${directionLabel})` : `Sort by ${label}`}
+					aria-label={sortLabel}
 					onClick={() => handleSort(sort)}
 					disabled={isPending}
 				>
@@ -136,15 +154,15 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 							type="search"
 							name="search"
 							defaultValue={search}
-							placeholder="Search employees…"
-							aria-label="Search employees"
+							placeholder={t("team.absences.filters.searchPlaceholder", "Search employees…")}
+							aria-label={t("team.absences.filters.searchLabel", "Search employees")}
 							autoComplete="off"
 							className="pl-9"
 							disabled={isPending}
 						/>
 					</div>
 					<Button type="submit" variant="outline" disabled={isPending}>
-						Search
+						{t("team.absences.filters.searchSubmit", "Search")}
 					</Button>
 				</form>
 
@@ -156,11 +174,16 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 						}
 						disabled={isPending}
 					>
-						<SelectTrigger className="w-full sm:w-44" aria-label="Filter by team">
-							<SelectValue placeholder="Team" />
+						<SelectTrigger
+							className="w-full sm:w-44"
+							aria-label={t("team.absences.filters.teamLabel", "Filter by team")}
+						>
+							<SelectValue placeholder={t("team.absences.filters.teamPlaceholder", "Team")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All teams</SelectItem>
+							<SelectItem value="all">
+								{t("team.absences.filters.allTeams", "All teams")}
+							</SelectItem>
 							{data.teams.map((team) => (
 								<SelectItem key={team.id} value={team.id}>
 									{team.name}
@@ -174,8 +197,11 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 						onValueChange={(year) => pushParams({ year, page: 1 })}
 						disabled={isPending}
 					>
-						<SelectTrigger className="w-full sm:w-36" aria-label="Filter by year">
-							<SelectValue placeholder="Year" />
+						<SelectTrigger
+							className="w-full sm:w-36"
+							aria-label={t("team.absences.filters.yearLabel", "Filter by year")}
+						>
+							<SelectValue placeholder={t("team.absences.filters.yearPlaceholder", "Year")} />
 						</SelectTrigger>
 						<SelectContent>
 							{years.map((year) => (
@@ -194,14 +220,39 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 						<Table className="min-w-[760px]">
 							<TableHeader>
 								<TableRow>
-									{renderSortableHeader("Employee", "employee")}
-									{renderSortableHeader("Team or Position", "team")}
-									{renderSortableHeader("Allowance", "vacationAllowance", "text-right")}
-									{renderSortableHeader("Used", "usedVacationDays", "text-right")}
-									{renderSortableHeader("Pending", "pendingVacationDays", "text-right")}
-									{renderSortableHeader("Left", "remainingVacationDays", "text-right")}
-									{renderSortableHeader("Sick", "sickDays", "text-right")}
-									<TableHead className="text-right">Actions</TableHead>
+									{renderSortableHeader(t("team.absences.table.employee", "Employee"), "employee")}
+									{renderSortableHeader(
+										t("team.absences.table.teamOrPosition", "Team or Position"),
+										"team",
+									)}
+									{renderSortableHeader(
+										t("team.absences.table.allowance", "Allowance"),
+										"vacationAllowance",
+										"text-right",
+									)}
+									{renderSortableHeader(
+										t("team.absences.table.used", "Used"),
+										"usedVacationDays",
+										"text-right",
+									)}
+									{renderSortableHeader(
+										t("team.absences.table.pending", "Pending"),
+										"pendingVacationDays",
+										"text-right",
+									)}
+									{renderSortableHeader(
+										t("team.absences.table.left", "Left"),
+										"remainingVacationDays",
+										"text-right",
+									)}
+									{renderSortableHeader(
+										t("team.absences.table.sick", "Sick"),
+										"sickDays",
+										"text-right",
+									)}
+									<TableHead className="text-right">
+										{t("team.absences.table.actions", "Actions")}
+									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -215,10 +266,10 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 													name={employee.name}
 													size="sm"
 												/>
-								<div className="min-w-0">
-									<p className="truncate font-medium">{employee.name}</p>
-									<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
-								</div>
+												<div className="min-w-0">
+													<p className="truncate font-medium">{employee.name}</p>
+													<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
+												</div>
 											</div>
 										</TableCell>
 										<TableCell className="text-muted-foreground text-sm">
@@ -236,15 +287,17 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 										<TableCell className="text-right font-medium tabular-nums">
 											{employee.remainingVacationDays}
 										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{employee.sickDays}
-										</TableCell>
+										<TableCell className="text-right tabular-nums">{employee.sickDays}</TableCell>
 										<TableCell className="text-right">
 											<Button
 												type="button"
 												variant="outline"
 												size="icon"
-												aria-label={`Record absence for ${employee.name}`}
+												aria-label={t(
+													"team.absences.actions.recordForEmployee",
+													"Record absence for {name}",
+													{ name: employee.name },
+												)}
 												onClick={() => setSelectedEmployee(employee)}
 											>
 												<IconCalendarPlus className="size-4" aria-hidden="true" />
@@ -259,19 +312,26 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 			) : (
 				<div
 					role="status"
-					aria-label="No employees found"
+					aria-label={t("team.absences.empty.label", "No employees found")}
 					className="rounded-lg border bg-card p-6 text-center"
 				>
-					<p className="font-medium">No employees found</p>
+					<p className="font-medium">{t("team.absences.empty.title", "No employees found")}</p>
 					<p className="mt-1 text-muted-foreground text-sm">
-						Try adjusting filters or search to find team members.
+						{t(
+							"team.absences.empty.description",
+							"Try adjusting filters or search to find team members.",
+						)}
 					</p>
 				</div>
 			)}
 
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<p className="text-muted-foreground text-sm">
-					Showing {firstItem} to {lastItem} of {data.total}
+					{t("team.absences.pagination.showing", "Showing {firstItem} to {lastItem} of {total}", {
+						firstItem,
+						lastItem,
+						total: data.total,
+					})}
 				</p>
 				<div className="flex items-center gap-2">
 					<Button
@@ -280,12 +340,15 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 						size="sm"
 						onClick={() => pushParams({ page: data.page - 1 })}
 						disabled={!canGoPrevious || isPending}
-						aria-label="Previous page"
+						aria-label={t("team.absences.pagination.previousLabel", "Previous page")}
 					>
-						Previous
+						{t("team.absences.pagination.previous", "Previous")}
 					</Button>
 					<span className="text-muted-foreground text-sm tabular-nums">
-						Page {visiblePage} of {visiblePageCount}
+						{t("team.absences.pagination.page", "Page {page} of {pageCount}", {
+							page: visiblePage,
+							pageCount: visiblePageCount,
+						})}
 					</span>
 					<Button
 						type="button"
@@ -293,9 +356,9 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 						size="sm"
 						onClick={() => pushParams({ page: data.page + 1 })}
 						disabled={!canGoNext || isPending}
-						aria-label="Next page"
+						aria-label={t("team.absences.pagination.nextLabel", "Next page")}
 					>
-						Next
+						{t("team.absences.pagination.next", "Next")}
 					</Button>
 				</div>
 			</div>

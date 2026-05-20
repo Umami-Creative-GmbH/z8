@@ -66,7 +66,10 @@ describe("deriveAccessControlsSection", () => {
 		});
 
 		expect(result.card.status).toBe("critical");
-		expect(result.card.facts).toContain("Latest sensitive action: manager.assigned");
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.access.latestSensitiveAction",
+			params: { action: "manager.assigned" },
+		});
 		expect(result.recentCriticalEvents.map((event) => event.id)).toContain("evt-critical-1");
 	});
 
@@ -74,8 +77,8 @@ describe("deriveAccessControlsSection", () => {
 		const result = deriveAccessControlsSection({ recentSensitiveEvents: [] });
 
 		expect(result.card.status).toBe("healthy");
-		expect(result.card.facts).toContain(
-			"No sensitive control changes were logged in the last 24 hours.",
-		);
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.access.noSensitiveEvents",
+		});
 	});
 });

@@ -402,15 +402,34 @@ function extractKeyMappingObjects(code) {
 	// Match objects that are likely i18n key maps
 	// Look for: variable assignment followed by object with string values
 	const objectPattern =
-		/(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\{([\s\S]*?)\};/g;
+		/(?:export\s+)?(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\{/g;
 
 	for (let match = objectPattern.exec(code); match !== null; match = objectPattern.exec(code)) {
-		const objectContent = match[2];
+		const objectStart = objectPattern.lastIndex - 1;
+		let pos = objectStart + 1;
+		let braceCount = 1;
+
+		while (pos < code.length && braceCount > 0) {
+			if (code[pos] === "{") braceCount++;
+			else if (code[pos] === "}") braceCount--;
+			else if (code[pos] === '"' || code[pos] === "'" || code[pos] === "`") {
+				const strResult = extractString(code, pos);
+				if (strResult) {
+					pos = strResult.endIndex;
+				}
+			}
+			pos++;
+		}
+
+		if (braceCount !== 0) continue;
+
+		const objectContent = code.slice(objectStart + 1, pos - 1);
 		const lineNumber = getLineNumber(code, match.index);
+		objectPattern.lastIndex = pos;
 
 		// Pattern 1: Nested objects with { key: "...", default: "..." }
 		const nestedPattern =
-			/(\w+)\s*:\s*\{\s*key\s*:\s*["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']\s*,\s*(?:default|fallback)\s*:\s*["']([^"']+)["']\s*\}/g;
+			/(\w+)\s*:\s*\{\s*key\s*:\s*["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']\s*,\s*(?:default|fallback)\s*:\s*["']([^"']+)["']\s*,?\s*\}/g;
 
 		for (
 			let nestedMatch = nestedPattern.exec(objectContent);
@@ -469,7 +488,7 @@ function extractKeyMappingObjects(code) {
 	// Also look for arrays of translation keys
 	// Pattern: const KEYS = ["some.key", "another.key"]
 	const arrayPattern =
-		/(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/g;
+		/(?:export\s+)?(?:const|let|var)\s+(\w*(?:I18N|KEY|TRANSLATION|i18n|key|translation|Keys|KEYS)\w*)\s*(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\]/g;
 
 	for (let match = arrayPattern.exec(code); match !== null; match = arrayPattern.exec(code)) {
 		const arrayContent = match[2];

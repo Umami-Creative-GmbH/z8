@@ -1,6 +1,7 @@
 "use client";
 
 import { IconChartBar } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export function ReportFilters({
 	onGenerate,
 	isGenerating = false,
 }: ReportFiltersProps) {
+	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -66,12 +68,17 @@ export function ReportFilters({
 
 						{/* Date Range Picker */}
 						<div className="space-y-2">
-							<label className="text-sm font-medium leading-none">Period</label>
+							<label className="text-sm font-medium leading-none">
+								{t("reports.filter.period", "Period")}
+							</label>
 							{dateRange ? (
 								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 							) : (
 								<p className="text-sm text-muted-foreground">
-									Loading organization settings before enabling presets.
+									{t(
+										"reports.filter.loadingSettings",
+										"Loading organization settings before enabling presets.",
+									)}
 								</p>
 							)}
 						</div>
@@ -86,7 +93,9 @@ export function ReportFilters({
 							className="w-full sm:w-auto"
 						>
 							<IconChartBar className="mr-2 size-4" aria-hidden="true" />
-							{isGenerating ? "Generating Report…" : "Generate Report"}
+							{isGenerating
+								? t("reports.generating", "Generating Report…")
+								: t("reports.generate", "Generate Report")}
 						</Button>
 					</div>
 				</div>

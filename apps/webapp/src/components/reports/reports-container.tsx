@@ -1,6 +1,7 @@
 "use client";
 
 import { IconAlertCircle, IconChartBar } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { generateReport } from "@/app/[locale]/(app)/reports/actions";
@@ -17,6 +18,7 @@ interface ReportsContainerProps {
 }
 
 export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
+	const { t } = useTranslate();
 	const [reportData, setReportData] = useState<ReportData | null>(null);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -25,24 +27,31 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 		setIsGenerating(true);
 		setError(null);
 
-		const result = await generateReport(employeeId, dateRange.start, dateRange.end).catch((error) => ({
-			success: false,
-			error: error instanceof Error ? error.message : "An unexpected error occurred",
-			data: null,
-		}));
+		const result = await generateReport(employeeId, dateRange.start, dateRange.end).catch(
+			(error) => ({
+				success: false,
+				error:
+					error instanceof Error
+						? error.message
+						: t("reports.toast.unexpectedError", "An unexpected error occurred"),
+				data: null,
+			}),
+		);
 
 		if (result.success && result.data) {
 			setReportData(result.data);
-			toast.success("Report generated successfully", {
-				description: `Generated report for ${result.data.employee.name}`,
+			toast.success(t("reports.toast.reportGenerated", "Report generated successfully"), {
+				description: t("reports.toast.generatedFor", "Generated report for {name}", {
+					name: result.data.employee.name,
+				}),
 			});
 			setIsGenerating(false);
 			return;
 		}
 
-		setError(result.error || "Failed to generate report");
-		toast.error("Failed to generate report", {
-			description: result.error || "An unknown error occurred",
+		setError(result.error || t("reports.toast.failedGenerate", "Failed to generate report"));
+		toast.error(t("reports.toast.failedGenerate", "Failed to generate report"), {
+			description: result.error || t("reports.toast.unknownError", "An unknown error occurred"),
 		});
 		setIsGenerating(false);
 	};
@@ -60,7 +69,7 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 			{error && (
 				<Alert variant="destructive">
 					<IconAlertCircle className="size-4" />
-					<AlertTitle>Error</AlertTitle>
+					<AlertTitle>{t("reports.container.error", "Error")}</AlertTitle>
 					<AlertDescription>{error}</AlertDescription>
 				</Alert>
 			)}
@@ -76,9 +85,14 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 						<CardContent className="pt-6">
 							<div className="flex flex-col gap-4">
 								<div>
-									<h3 className="text-lg font-semibold">Export Report</h3>
+									<h3 className="text-lg font-semibold">
+										{t("reports.export.title", "Export Report")}
+									</h3>
 									<p className="text-sm text-muted-foreground">
-										IconDownload this report in your preferred format
+										{t(
+											"reports.export.description",
+											"Download this report in your preferred format",
+										)}
 									</p>
 								</div>
 								<ExportButtons reportData={reportData} />
@@ -98,9 +112,11 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 						<div className="flex flex-col items-center gap-4">
 							<IconChartBar className="size-12 animate-pulse text-muted-foreground" />
 							<div className="text-center">
-								<p className="font-semibold">Generating Report...</p>
+								<p className="font-semibold">
+									{t("reports.container.generating", "Generating Report...")}
+								</p>
 								<p className="text-sm text-muted-foreground">
-									Please wait while we compile your data
+									{t("reports.container.pleaseWait", "Please wait while we compile your data")}
 								</p>
 							</div>
 						</div>
@@ -115,9 +131,14 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 						<div className="flex flex-col items-center gap-4 text-center">
 							<IconChartBar className="size-12 text-muted-foreground" />
 							<div>
-								<p className="font-semibold">No report generated yet</p>
+								<p className="font-semibold">
+									{t("reports.container.noReportYet", "No report generated yet")}
+								</p>
 								<p className="text-sm text-muted-foreground">
-									Select a period and click "Generate Report" to get started
+									{t(
+										"reports.container.selectPeriod",
+										'Select a period and click "Generate Report" to get started',
+									)}
 								</p>
 							</div>
 						</div>

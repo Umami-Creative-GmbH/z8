@@ -110,7 +110,7 @@ describe("TimeClockPopover", () => {
 		render(<TimeClockPopover />);
 
 		fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
-		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
+		fireEvent.click(screen.getAllByRole("button", { name: "Add break" }).at(-1)!);
 		fireEvent.change(screen.getByLabelText("Break duration in minutes"), {
 			target: { value: "30" },
 		});
@@ -120,5 +120,23 @@ describe("TimeClockPopover", () => {
 		expect(toastMocks.success).toHaveBeenCalledWith("Break added", {
 			description: "You are still clocked in.",
 		});
+	});
+
+	it("shows an icon-only quick break trigger next to the header clock-out button while clocked in", () => {
+		isClockedInMock = true;
+		activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
+
+		render(<TimeClockPopover />);
+
+		expect(screen.getByRole("button", { name: /Clock Out/ })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Add break" })).toBeTruthy();
+	});
+
+	it("does not show the header quick break trigger while clocked out", () => {
+		isClockedInMock = false;
+
+		render(<TimeClockPopover />);
+
+		expect(screen.queryByRole("button", { name: "Add break" })).toBeNull();
 	});
 });

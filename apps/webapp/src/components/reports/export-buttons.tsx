@@ -1,6 +1,7 @@
 "use client";
 
 import { IconDownload, IconFileSpreadsheet, IconFileText } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface ExportButtonsProps {
 type ExportFormat = "pdf" | "excel" | "csv";
 
 export function ExportButtons({ reportData }: ExportButtonsProps) {
+	const { t } = useTranslate();
 	const [loading, setLoading] = useState<ExportFormat | null>(null);
 
 	const handleExport = async (format: ExportFormat) => {
@@ -50,11 +52,11 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 
 		if (!exportResult.ok) {
 			console.error("Export failed:", exportResult.error);
-			toast.error("Export failed", {
+			toast.error(t("reports.export.failed", "Export failed"), {
 				description:
 					exportResult.error instanceof Error
 						? exportResult.error.message
-						: "An error occurred while exporting the report",
+						: t("reports.export.errorDescription", "An error occurred while exporting the report"),
 			});
 			setLoading(null);
 			return;
@@ -71,8 +73,8 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
 
-		toast.success("Export successful", {
-			description: `Downloaded ${filename}`,
+		toast.success(t("reports.export.success", "Export successful"), {
+			description: t("reports.export.downloaded", "Downloaded {filename}", { filename }),
 		});
 		setLoading(null);
 	};
@@ -86,7 +88,9 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				size="lg"
 			>
 				<IconFileText className="mr-2 size-4" />
-				{loading === "pdf" ? "Generating..." : "Export PDF"}
+				{loading === "pdf"
+					? t("reports.export.generating", "Generating...")
+					: t("reports.export.pdf", "Export PDF")}
 			</Button>
 
 			<Button
@@ -96,7 +100,9 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				size="lg"
 			>
 				<IconFileSpreadsheet className="mr-2 size-4" />
-				{loading === "excel" ? "Generating..." : "Export Excel"}
+				{loading === "excel"
+					? t("reports.export.generating", "Generating...")
+					: t("reports.export.excel", "Export Excel")}
 			</Button>
 
 			<Button
@@ -106,7 +112,9 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				size="lg"
 			>
 				<IconDownload className="mr-2 size-4" />
-				{loading === "csv" ? "Generating..." : "Export CSV"}
+				{loading === "csv"
+					? t("reports.export.generating", "Generating...")
+					: t("reports.export.csv", "Export CSV")}
 			</Button>
 		</div>
 	);

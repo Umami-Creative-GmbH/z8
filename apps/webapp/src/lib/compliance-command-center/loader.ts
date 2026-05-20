@@ -2,19 +2,23 @@ import { DateTime } from "luxon";
 import { getAccessControlsSection } from "./sections/access-controls";
 import { getAuditEvidenceSection } from "./sections/audit-evidence";
 import { getWorkforceComplianceSection } from "./sections/workforce-compliance";
-import type { ComplianceCommandCenterData, ComplianceSectionResult } from "./types";
+import type { ComplianceCommandCenterData, ComplianceSectionResult, ComplianceText } from "./types";
 import { buildComplianceCommandCenterData } from "./view-model";
+
+function text(key: string, params?: Record<string, string | number>): ComplianceText {
+	return params ? { key, params } : { key };
+}
 
 function unavailableSection(
 	key: ComplianceSectionResult["card"]["key"],
 	primaryLink: ComplianceSectionResult["card"]["primaryLink"],
-	errorMessage: string,
+	errorMessage: ComplianceText,
 ): ComplianceSectionResult {
 	return {
 		card: {
 			key,
 			status: "unavailable",
-			headline: "Signal temporarily unavailable",
+			headline: text("compliance.commandCenter.sections.unavailable.headline"),
 			facts: [errorMessage],
 			updatedAt: DateTime.utc().toISO(),
 			primaryLink,
@@ -30,22 +34,31 @@ export async function getComplianceCommandCenterData(
 		getAuditEvidenceSection(organizationId).catch(() =>
 			unavailableSection(
 				"auditEvidence",
-				{ label: "Open Audit Export", href: "/settings/audit-export" },
-				"Audit evidence data could not be loaded.",
+				{
+					label: text("compliance.commandCenter.links.openAuditExport"),
+					href: "/settings/audit-export",
+				},
+				text("compliance.commandCenter.facts.unavailable.auditEvidence"),
 			),
 		),
 		getWorkforceComplianceSection(organizationId).catch(() =>
 			unavailableSection(
 				"workforceCompliance",
-				{ label: "Open Compliance Settings", href: "/settings/compliance" },
-				"Workforce compliance data could not be loaded.",
+				{
+					label: text("compliance.commandCenter.links.openComplianceSettings"),
+					href: "/settings/compliance",
+				},
+				text("compliance.commandCenter.facts.unavailable.workforceCompliance"),
 			),
 		),
 		getAccessControlsSection(organizationId).catch(() =>
 			unavailableSection(
 				"accessControls",
-				{ label: "Open Audit Log", href: "/settings/enterprise/audit-log" },
-				"Access-control events could not be loaded.",
+				{
+					label: text("compliance.commandCenter.links.openAuditLog"),
+					href: "/settings/enterprise/audit-log",
+				},
+				text("compliance.commandCenter.facts.unavailable.accessControls"),
 			),
 		),
 	]);
@@ -58,9 +71,9 @@ export async function getComplianceCommandCenterData(
 			...accessControls.recentCriticalEvents,
 		],
 		coverageNotes: [
-			"Audit evidence uses live audit-export configuration, audit-pack requests, and recent verification results.",
-			"Workforce compliance uses the last 7 days of work-policy violations and pending exception requests.",
-			"Access controls only summarize sensitive audit-log events that are already captured today.",
+			text("compliance.commandCenter.coverage.auditEvidence"),
+			text("compliance.commandCenter.coverage.workforceCompliance"),
+			text("compliance.commandCenter.coverage.accessControls"),
 		],
 		refreshedAt: DateTime.utc().toISO()!,
 	});

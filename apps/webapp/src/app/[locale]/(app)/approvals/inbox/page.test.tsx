@@ -148,6 +148,15 @@ describe("ApprovalInboxPage", () => {
 		expect(screen.queryByText("No pending requests")).toBeNull();
 	});
 
+	it("uses the shared app page spacing shell", () => {
+		const { container } = render(<ApprovalInboxPage />);
+
+		expect(container.firstElementChild?.className).toContain(
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		);
+		expect(container.querySelectorAll(":scope > div > .px-4.lg\\:px-6")).toHaveLength(2);
+	});
+
 	it("shows a toast when bulk approve throws instead of leaving an uncaught rejection", async () => {
 		bulkApproveMutateAsyncMock.mockRejectedValue(new Error("Bulk approve failed"));
 

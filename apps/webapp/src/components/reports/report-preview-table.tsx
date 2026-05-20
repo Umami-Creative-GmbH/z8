@@ -1,6 +1,7 @@
 "use client";
 
 import { IconHome } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
@@ -18,21 +19,24 @@ interface ReportPreviewTableProps {
 }
 
 export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
+	const { t } = useTranslate();
 	return (
 		<div className="space-y-6">
 			{/* Work Hours by Month */}
 			{reportData.workHours.byMonth.size > 0 && (
 				<Card>
 					<CardHeader>
-						<CardTitle>Work Hours by Month</CardTitle>
+						<CardTitle>{t("reports.preview.workHoursByMonth", "Work Hours by Month")}</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Month</TableHead>
-									<TableHead className="text-right">Hours</TableHead>
-									<TableHead className="text-right">Days</TableHead>
+									<TableHead>{t("reports.preview.month", "Month")}</TableHead>
+									<TableHead className="text-right">
+										{t("reports.preview.hours", "Hours")}
+									</TableHead>
+									<TableHead className="text-right">{t("reports.preview.days", "Days")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -44,7 +48,7 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 									</TableRow>
 								))}
 								<TableRow className="bg-muted/50 font-bold">
-									<TableCell>Total</TableCell>
+									<TableCell>{t("reports.preview.total", "Total")}</TableCell>
 									<TableCell className="text-right">{reportData.workHours.totalHours}h</TableCell>
 									<TableCell className="text-right">{reportData.workHours.workDays}</TableCell>
 								</TableRow>
@@ -58,14 +62,14 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 			{reportData.absences.byCategory.size > 0 && (
 				<Card>
 					<CardHeader>
-						<CardTitle>Absences by Category</CardTitle>
+						<CardTitle>{t("reports.preview.absencesByCategory", "Absences by Category")}</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Category</TableHead>
-									<TableHead className="text-right">Days</TableHead>
+									<TableHead>{t("reports.preview.category", "Category")}</TableHead>
+									<TableHead className="text-right">{t("reports.preview.days", "Days")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -76,7 +80,7 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 									</TableRow>
 								))}
 								<TableRow className="bg-muted/50 font-bold">
-									<TableCell>Total</TableCell>
+									<TableCell>{t("reports.preview.total", "Total")}</TableCell>
 									<TableCell className="text-right">{reportData.absences.totalDays}</TableCell>
 								</TableRow>
 							</TableBody>
@@ -90,32 +94,43 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 				<CardHeader className="bg-amber-50">
 					<CardTitle className="flex items-center gap-2 text-amber-900">
 						<IconHome className="size-5" />
-						IconHome Office Summary (Tax Relevant)
+						{t("reports.preview.homeOfficeSummary", "Home Office Summary (Tax Relevant)")}
 					</CardTitle>
 					<p className="text-sm text-amber-700">
-						Important for German tax purposes - shows home office days and hours worked
+						{t(
+							"reports.preview.homeOfficeDescription",
+							"Important for German tax purposes - shows home office days and hours worked",
+						)}
 					</p>
 				</CardHeader>
 				<CardContent className="pt-6">
 					<div className="mb-6 grid gap-4 md:grid-cols-2">
 						<div className="space-y-1">
-							<p className="text-sm text-muted-foreground">Total IconHome Office Days</p>
+							<p className="text-sm text-muted-foreground">
+								{t("reports.preview.totalHomeOfficeDays", "Total Home Office Days")}
+							</p>
 							<p className="text-2xl font-bold">{reportData.absences.homeOffice.days}</p>
 						</div>
 						<div className="space-y-1">
-							<p className="text-sm text-muted-foreground">Total Hours Worked from IconHome</p>
+							<p className="text-sm text-muted-foreground">
+								{t("reports.preview.totalHomeOfficeHours", "Total Hours Worked from Home")}
+							</p>
 							<p className="text-2xl font-bold">{reportData.absences.homeOffice.hoursWorked}h</p>
 						</div>
 					</div>
 
 					{reportData.absences.homeOffice.dateDetails.length > 0 && (
 						<div>
-							<h4 className="mb-3 font-semibold">Date-by-Date Breakdown</h4>
+							<h4 className="mb-3 font-semibold">
+								{t("reports.preview.dateBreakdown", "Date-by-Date Breakdown")}
+							</h4>
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>Date</TableHead>
-										<TableHead className="text-right">Hours Worked</TableHead>
+										<TableHead>{t("reports.preview.date", "Date")}</TableHead>
+										<TableHead className="text-right">
+											{t("reports.preview.hoursWorked", "Hours Worked")}
+										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -128,7 +143,7 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 										</TableRow>
 									))}
 									<TableRow className="bg-amber-50 font-bold">
-										<TableCell>Total</TableCell>
+										<TableCell>{t("reports.preview.total", "Total")}</TableCell>
 										<TableCell className="text-right">
 											{reportData.absences.homeOffice.hoursWorked}h
 										</TableCell>
@@ -140,7 +155,10 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 
 					{reportData.absences.homeOffice.dateDetails.length === 0 && (
 						<p className="text-sm text-muted-foreground">
-							No home office days recorded in this period.
+							{t(
+								"reports.preview.noHomeOfficeDays",
+								"No home office days recorded in this period.",
+							)}
 						</p>
 					)}
 				</CardContent>
@@ -149,24 +167,30 @@ export function ReportPreviewTable({ reportData }: ReportPreviewTableProps) {
 			{/* Compliance Metrics */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Compliance Metrics</CardTitle>
+					<CardTitle>{t("reports.preview.complianceMetrics", "Compliance Metrics")}</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
-							<span className="text-sm font-medium">Attendance Percentage</span>
+							<span className="text-sm font-medium">
+								{t("reports.preview.attendancePercentage", "Attendance Percentage")}
+							</span>
 							<span className="text-lg font-bold">
 								{reportData.complianceMetrics.attendancePercentage}%
 							</span>
 						</div>
 						<div className="flex items-center justify-between">
-							<span className="text-sm font-medium">Overtime</span>
+							<span className="text-sm font-medium">
+								{t("reports.preview.overtime", "Overtime")}
+							</span>
 							<span className="text-lg font-bold">
 								{Math.round((reportData.complianceMetrics.overtimeMinutes / 60) * 100) / 100}h
 							</span>
 						</div>
 						<div className="flex items-center justify-between">
-							<span className="text-sm font-medium">Undertime</span>
+							<span className="text-sm font-medium">
+								{t("reports.preview.undertime", "Undertime")}
+							</span>
 							<span className="text-lg font-bold">
 								{Math.round((reportData.complianceMetrics.underTimeMinutes / 60) * 100) / 100}h
 							</span>

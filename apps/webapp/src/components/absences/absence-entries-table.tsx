@@ -20,12 +20,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
 	calculateBusinessDaysWithHalfDays,
 	formatDateRange,
 	formatDays,
 } from "@/lib/absences/date-utils";
-import { getSickDetailLabel } from "@/lib/absences/sick-details";
+import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
@@ -153,7 +154,10 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 						/>
 						{row.original.category.type === "sick" && row.original.sickDetail && (
 							<span className="text-muted-foreground text-xs">
-								{getSickDetailLabel(row.original.sickDetail)}
+								{t(
+									getSickDetailLabelKey(row.original.sickDetail),
+									getSickDetailLabel(row.original.sickDetail),
+								)}
 							</span>
 						)}
 					</div>
@@ -207,20 +211,26 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 				cell: ({ row }) => {
 					const absence = row.original;
 					if (!canShowCancelAction(absence, currentDate)) return null;
+					const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
+					const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
 
 					return (
 						<div className="flex justify-end">
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										disabled={cancelingId === absence.id}
-										aria-label={t("absences.table.cancelRequest", "Cancel absence")}
-									>
-										<IconX className="size-4" />
-									</Button>
-								</AlertDialogTrigger>
+							<Tooltip>
+								<AlertDialog>
+									<TooltipTrigger asChild>
+										<AlertDialogTrigger asChild>
+											<Button
+												variant="ghost"
+												size="sm"
+												disabled={cancelingId === absence.id}
+												aria-label={cancelLabel}
+											>
+												<IconX className="size-4" />
+											</Button>
+										</AlertDialogTrigger>
+									</TooltipTrigger>
+									<TooltipContent>{cancelTooltip}</TooltipContent>
 								<AlertDialogContent>
 									<AlertDialogHeader>
 										<AlertDialogTitle>
@@ -243,7 +253,8 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
-							</AlertDialog>
+								</AlertDialog>
+							</Tooltip>
 						</div>
 					);
 				},

@@ -82,17 +82,52 @@ describe("tolgee extractor", () => {
 			"data.ts",
 		);
 
-		expect(result.keys).toEqual(expect.arrayContaining([
-			expect.objectContaining({
-				defaultValue: "Pending",
-				keyName: "myRequests.status.pending",
-				namespace: "myRequests",
-			}),
-			expect.objectContaining({
-				defaultValue: "Select Organization",
-				keyName: "init.selectOrganization",
-				namespace: "setup",
-			}),
-		]));
+		expect(result.keys).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					defaultValue: "Pending",
+					keyName: "myRequests.status.pending",
+					namespace: "myRequests",
+				}),
+				expect.objectContaining({
+					defaultValue: "Select Organization",
+					keyName: "init.selectOrganization",
+					namespace: "setup",
+				}),
+			]),
+		);
+	});
+
+	it("extracts compliance command-center descriptor maps used by dynamic renderers", () => {
+		const result = extractor(
+			`
+			export const COMPLIANCE_COMMAND_CENTER_I18N = {
+				summaryHealthy: {
+					key: "compliance.commandCenter.summary.healthy",
+					default: "No active issues detected in monitored signals",
+				},
+				statusHealthy: {
+					key: "compliance.commandCenter.status.healthy",
+					default: "healthy",
+				},
+			};
+		`,
+			"localized-text.ts",
+		);
+
+		expect(result.keys).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					defaultValue: "No active issues detected in monitored signals",
+					keyName: "compliance.commandCenter.summary.healthy",
+					namespace: "compliance",
+				}),
+				expect.objectContaining({
+					defaultValue: "healthy",
+					keyName: "compliance.commandCenter.status.healthy",
+					namespace: "compliance",
+				}),
+			]),
+		);
 	});
 });

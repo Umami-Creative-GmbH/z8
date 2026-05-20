@@ -6,18 +6,17 @@ import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "./date-range-picker";
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 describe("DateRangePicker", () => {
 	beforeEach(() => {
 		useOrganizationSettings.getState().reset();
 	});
 
 	it("disables and explains preset selection until organization settings are hydrated", () => {
-		render(
-			<DateRangePicker
-				value={getDateRangeForPreset("current_year")}
-				onChange={vi.fn()}
-			/>,
-		);
+		render(<DateRangePicker value={getDateRangeForPreset("current_year")} onChange={vi.fn()} />);
 
 		expect((screen.getByRole("combobox", { name: "Period" }) as HTMLButtonElement).disabled).toBe(
 			true,

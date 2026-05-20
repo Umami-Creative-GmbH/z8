@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +30,8 @@ interface TravelExpenseListProps {
 }
 
 function formatDateRange(start: string | Date, end: string | Date, locale: string): string {
-	const startDateTime = typeof start === "string" ? DateTime.fromISO(start) : DateTime.fromJSDate(start);
+	const startDateTime =
+		typeof start === "string" ? DateTime.fromISO(start) : DateTime.fromJSDate(start);
 	const endDateTime = typeof end === "string" ? DateTime.fromISO(end) : DateTime.fromJSDate(end);
 
 	if (!startDateTime.isValid || !endDateTime.isValid) {
@@ -46,6 +48,7 @@ function prettify(value: string): string {
 
 export function TravelExpenseList({ claims, isLoading = false }: TravelExpenseListProps) {
 	const locale = useLocale();
+	const { t } = useTranslate();
 
 	if (isLoading) {
 		return (
@@ -63,9 +66,14 @@ export function TravelExpenseList({ claims, isLoading = false }: TravelExpenseLi
 		return (
 			<Card>
 				<CardContent className="py-12 text-center">
-					<p className="text-lg font-medium">No travel expense claims yet</p>
+					<p className="text-lg font-medium">
+						{t("travelExpenses.list.emptyTitle", "No travel expense claims yet")}
+					</p>
 					<p className="mt-2 text-sm text-muted-foreground">
-						Create your first claim to start the approval process.
+						{t(
+							"travelExpenses.list.emptyDescription",
+							"Create your first claim to start the approval process.",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -78,17 +86,21 @@ export function TravelExpenseList({ claims, isLoading = false }: TravelExpenseLi
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Type</TableHead>
-							<TableHead>Status</TableHead>
-							<TableHead>Amount</TableHead>
-							<TableHead>Date Range</TableHead>
+							<TableHead>{t("travelExpenses.list.type", "Type")}</TableHead>
+							<TableHead>{t("travelExpenses.list.status", "Status")}</TableHead>
+							<TableHead>{t("travelExpenses.list.amount", "Amount")}</TableHead>
+							<TableHead>{t("travelExpenses.list.dateRange", "Date Range")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{claims.map((claim) => (
 							<TableRow key={claim.id}>
-								<TableCell>{prettify(claim.type)}</TableCell>
-								<TableCell>{prettify(claim.status)}</TableCell>
+								<TableCell>
+									{t(`travelExpenses.claimTypes.${claim.type}`, prettify(claim.type))}
+								</TableCell>
+								<TableCell>
+									{t(`travelExpenses.status.${claim.status}`, prettify(claim.status))}
+								</TableCell>
 								<TableCell>
 									{claim.calculatedAmount} {claim.calculatedCurrency}
 								</TableCell>

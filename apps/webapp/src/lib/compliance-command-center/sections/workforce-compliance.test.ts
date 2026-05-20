@@ -62,7 +62,10 @@ describe("deriveWorkforceComplianceSection", () => {
 		});
 
 		expect(result.card.status).toBe("critical");
-		expect(result.card.facts).toContain("Rest-period violations: 1");
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.restPeriodViolations",
+			params: { count: 1 },
+		});
 	});
 
 	it("falls back to warning for overtime-only drift", () => {
@@ -102,7 +105,10 @@ describe("getWorkforceComplianceSection", () => {
 		const result = await getWorkforceComplianceSection("org-1");
 
 		expect(result.card.status).toBe("critical");
-		expect(result.card.facts).toContain("Other policy violations: 3");
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.generalPolicyViolations",
+			params: { count: 3 },
+		});
 	});
 
 	it("limits pending exception requests to the same seven-day lookback", async () => {

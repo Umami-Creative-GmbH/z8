@@ -96,7 +96,7 @@ export function DataTableToolbar({
 							placeholder={searchPlaceholder ?? t("table.searchPlaceholder", "Search...")}
 							value={currentSearch}
 							onChange={(e) => onSearchChange(e.target.value)}
-							className="h-9 w-full pl-8 pr-8"
+							className="h-9 w-full bg-background pl-8 pr-8"
 						/>
 						{currentSearch && (
 							<Button

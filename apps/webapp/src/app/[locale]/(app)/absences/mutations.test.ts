@@ -200,4 +200,33 @@ describe("absence mutations", () => {
 		expect(result).toEqual({ success: true });
 		expect(mockState.onApprovedAbsenceCancelledByEmployee).not.toHaveBeenCalled();
 	});
+
+	it("deletes the absence entry before deleting the canonical time record", async () => {
+		mockState.findAbsence.mockResolvedValue({
+			id: "absence-1",
+			employeeId: "emp-1",
+			organizationId: "org-1",
+			status: "pending",
+			startDate: "2026-05-22",
+			endDate: "2026-05-23",
+			canonicalRecordId: "record-1",
+			employee: { user: { name: "Avery Employee" } },
+			category: { name: "Vacation" },
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee("absence-1", {
+			id: "emp-1",
+			organizationId: "org-1",
+		});
+
+		expect(result).toEqual({ success: true });
+		expect(mockState.dbDelete).toHaveBeenCalled();
+		expect(mockState.removeCanonicalAbsenceRecord).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			canonicalRecordId: "record-1",
+		});
+		expect(mockState.dbDelete.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.removeCanonicalAbsenceRecord.mock.invocationCallOrder[0],
+		);
+	});
 });
