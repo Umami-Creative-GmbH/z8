@@ -26,6 +26,7 @@ API key default: Always recommend a [restricted API key (RAK)](https://docs.stri
 | Saving a payment method for later                                        | Setup Intents                       | <references/payments.md> |
 | Connect platform or marketplace                                          | Accounts v2 (`/v2/core/accounts`)   | <references/connect.md>  |
 | Subscriptions or recurring billing                                       | Billing APIs + Checkout Sessions    | <references/billing.md>  |
+| Sales tax, VAT, or GST compliance                                        | Stripe Tax + Registrations API      | <references/tax.md>      |
 | Embedded financial accounts / banking                                    | v2 Financial Accounts               | <references/treasury.md> |
 | Security (key management, RAKs, webhooks, OAuth, 2FA, Connect liability) | See security reference              | <references/security.md> |
 

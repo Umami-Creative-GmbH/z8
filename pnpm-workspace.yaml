@@ -2,5 +2,14 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+  msgpackr-extract: true
+  msw: true
+  protobufjs: true
+  sharp: true
+
 onlyBuiltDependencies:
   - msw

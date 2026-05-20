@@ -1,11 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "hetzner-infra": {
-      "source": "nmime/infra-skills",
-      "sourceType": "github",
-      "computedHash": "b63fcd4b09f7f630722b2b88f5dc7413e52dc732ca1a68f6fd34d4eead2deb7f"
-    },
     "hetzner-server": {
       "source": "connorads/dotfiles",
       "sourceType": "github",
@@ -40,7 +35,7 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "4cedb294535650bd178718515c248d837325c4093d09b722bd748fc61834af69"
+      "computedHash": "80fcae69ba979d1b5061e53231a6a106486aa7b384766c791a443a758dc2d32b"
     },
     "stripe-projects": {
       "source": "stripe/ai",

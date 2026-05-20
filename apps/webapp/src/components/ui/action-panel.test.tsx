@@ -104,6 +104,22 @@ describe("ActionPanel", () => {
 		expect(screen.getByText("Footer actions").className).toContain("sm:*:w-auto");
 	});
 
+	it("gives nested form controls an opaque sheet surface", () => {
+		render(
+			<ActionPanel open>
+				<ActionPanelContent>
+					<ActionPanelTitle>Form panel</ActionPanelTitle>
+					<ActionPanelDescription>Form panel description</ActionPanelDescription>
+				</ActionPanelContent>
+			</ActionPanel>,
+		);
+
+		const dialogClassName = screen.getByRole("dialog", { name: "Form panel" }).className;
+		expect(dialogClassName).toContain("[&_input]:bg-background");
+		expect(dialogClassName).toContain("[&_textarea]:bg-background");
+		expect(dialogClassName).toContain("[&_[data-slot=select-trigger]]:bg-background");
+	});
+
 	it("uses animated sheet transitions", () => {
 		render(
 			<ActionPanel open>
