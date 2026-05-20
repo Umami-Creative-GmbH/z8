@@ -246,19 +246,20 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 	);
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 [&_input]:bg-background">
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}
 				searchPlaceholder={t(
 					"absences.table.searchPlaceholder",
-					"Search by type, status, or notes...",
+					"Search by type, status, or notes…",
 				)}
 			/>
 
 			<DataTable
 				columns={columns}
 				data={filteredAbsences}
+				className="bg-card"
 				emptyMessage={
 					search
 						? t("absences.table.noSearchResults", "No absences match your search.")
