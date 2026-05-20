@@ -4,9 +4,9 @@ export type WeekStartDay = "sunday" | "monday";
 
 export const DEFAULT_WEEK_START_DAY: WeekStartDay = "sunday";
 
-export const WEEK_START_OPTIONS: Array<{ value: WeekStartDay; label: string }> = [
-	{ value: "sunday", label: "Sunday" },
-	{ value: "monday", label: "Monday" },
+export const WEEK_START_OPTIONS: Array<{ value: WeekStartDay; label: string; labelKey: string }> = [
+	{ value: "sunday", label: "Sunday", labelKey: "settings.weekStart.options.sunday" },
+	{ value: "monday", label: "Monday", labelKey: "settings.weekStart.options.monday" },
 ];
 
 export function normalizeWeekStartDay(value: unknown): WeekStartDay {

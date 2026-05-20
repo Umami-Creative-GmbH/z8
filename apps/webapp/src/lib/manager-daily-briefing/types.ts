@@ -13,7 +13,11 @@ export interface BriefingActionItem {
 	category: BriefingActionCategory;
 	severity: BriefingActionSeverity;
 	title: string;
+	titleKey?: string;
+	titleParams?: Record<string, string | number>;
 	description: string;
+	descriptionKey?: string;
+	descriptionParams?: Record<string, string | number>;
 	href: string;
 }
 
@@ -49,10 +53,13 @@ export interface BriefingSections {
 export interface BriefingSection<TItem extends BriefingActionItem = BriefingActionItem> {
 	id: string;
 	title: string;
+	titleKey?: string;
 	description: string;
+	descriptionKey?: string;
 	items: TItem[];
 	error?: string;
 	emptyState?: string;
+	emptyStateKey?: string;
 }
 
 export interface ManagerDailyBriefing {

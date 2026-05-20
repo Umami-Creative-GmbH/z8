@@ -5,6 +5,7 @@ import type {
 	ComplianceRiskSummary,
 	ComplianceSectionCard,
 	ComplianceSectionStatus,
+	ComplianceText,
 } from "./types";
 
 const STATUS_PRIORITY: Record<ComplianceSectionStatus, number> = {
@@ -14,42 +15,38 @@ const STATUS_PRIORITY: Record<ComplianceSectionStatus, number> = {
 	healthy: 0,
 };
 
+function text(key: string, params?: Record<string, string | number>): ComplianceText {
+	return params ? { key, params } : { key };
+}
+
 function buildRiskSummary(
 	sections: ComplianceSectionCard[],
 	refreshedAt: string,
 ): ComplianceRiskSummary {
-	const highestPriority = Math.max(
-		...sections.map((section) => STATUS_PRIORITY[section.status]),
-	);
+	const highestPriority = Math.max(...sections.map((section) => STATUS_PRIORITY[section.status]));
 	const status = (Object.entries(STATUS_PRIORITY).find(
 		([, value]) => value === highestPriority,
 	)?.[0] ?? "healthy") as ComplianceSectionStatus;
 	const topRiskKeys = sections
-		.filter(
-			(section) =>
-				STATUS_PRIORITY[section.status] === highestPriority &&
-				highestPriority > 0,
-		)
+		.filter((section) => STATUS_PRIORITY[section.status] === highestPriority && highestPriority > 0)
 		.map((section) => section.key);
 
 	return {
 		status,
 		headline:
 			status === "critical"
-				? "Critical compliance risks need attention"
+				? text("compliance.commandCenter.summary.critical")
 				: status === "warning"
-					? "Compliance signals need review"
+					? text("compliance.commandCenter.summary.warning")
 					: status === "unavailable"
-						? "Some compliance signals are unavailable"
-						: "No active issues detected in monitored signals",
+						? text("compliance.commandCenter.summary.unavailable")
+						: text("compliance.commandCenter.summary.healthy"),
 		topRiskKeys,
 		refreshedAt,
 	};
 }
 
-function sortRecentCriticalEvents(
-	events: ComplianceCriticalEvent[],
-): ComplianceCriticalEvent[] {
+function sortRecentCriticalEvents(events: ComplianceCriticalEvent[]): ComplianceCriticalEvent[] {
 	return [...events]
 		.filter((event) => event.severity === "critical")
 		.sort(
@@ -63,7 +60,7 @@ function sortRecentCriticalEvents(
 export function buildComplianceCommandCenterData(input: {
 	sections: ComplianceSectionCard[];
 	recentCriticalEvents: ComplianceCriticalEvent[];
-	coverageNotes: string[];
+	coverageNotes: ComplianceText[];
 	refreshedAt: string;
 }): ComplianceCommandCenterData {
 	return {

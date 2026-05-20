@@ -110,9 +110,9 @@ function ChecklistCard({ t, check }: { t: TranslateFn; check: PayrollReadinessCh
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="space-y-1">
 						<CardTitle>
-							<h2 className="text-base font-semibold">{check.title}</h2>
+							<h2 className="text-base font-semibold">{t(check.titleKey, check.title)}</h2>
 						</CardTitle>
-						<CardDescription>{check.description}</CardDescription>
+						<CardDescription>{t(check.descriptionKey, check.description)}</CardDescription>
 					</div>
 					<Badge variant={check.status === "fail" ? "destructive" : "secondary"}>
 						{getCheckStatusLabel(check.status, t)}

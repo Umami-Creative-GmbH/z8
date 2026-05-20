@@ -7,6 +7,7 @@ import { member, organization } from "@/db/auth-schema";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
+import { getDaysRemaining } from "@/lib/effect/services/billing/billing-access";
 import {
 	StripeService,
 	StripeServiceLive,
@@ -115,7 +116,12 @@ export async function POST(request: NextRequest) {
 			return yield* Effect.fail(new Error("Price not configured"));
 		}
 
-		// Create checkout session with 14-day trial
+		const trialPeriodDays =
+			existing?.status === "trialing" && existing.trialEnd
+				? getDaysRemaining(existing.trialEnd)
+				: 0;
+
+		// Create checkout session, preserving only remaining local trial time.
 		const checkoutSession = yield* stripeService.createCheckoutSession({
 			customerId,
 			priceId,
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
 			quantity: seatCount,
 			successUrl: `${appUrl}/settings/billing?success=true`,
 			cancelUrl: `${appUrl}/settings/billing?canceled=true`,
-			trialPeriodDays: 14,
+			trialPeriodDays,
 		});
 
 		logger.info({ organizationId, customerId, interval, seatCount }, "Checkout session created");

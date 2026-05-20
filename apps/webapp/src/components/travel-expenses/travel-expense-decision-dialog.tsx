@@ -2,6 +2,7 @@
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
@@ -48,16 +49,21 @@ export function TravelExpenseDecisionDialog({
 	claimId,
 	onActioned,
 }: TravelExpenseDecisionDialogProps) {
+	const { t } = useTranslate();
 	const form = useForm({
 		defaultValues: getDefaultValues(),
 		onSubmit: async ({ value }) => {
 			if (!claimId) {
-				toast.error("Travel expense claim is missing");
+				toast.error(
+					t("travelExpenses.decision.errors.missingClaim", "Travel expense claim is missing"),
+				);
 				return;
 			}
 
 			if (action === "reject" && !value.reason.trim()) {
-				toast.error("Please provide a rejection reason");
+				toast.error(
+					t("travelExpenses.decision.errors.rejectionReason", "Please provide a rejection reason"),
+				);
 				return;
 			}
 
@@ -73,11 +79,20 @@ export function TravelExpenseDecisionDialog({
 						});
 
 			if (!result.success) {
-				toast.error(result.error || `Failed to ${action} claim`);
+				toast.error(
+					result.error ||
+						(action === "approve"
+							? t("travelExpenses.decision.errors.approve", "Failed to approve claim")
+							: t("travelExpenses.decision.errors.reject", "Failed to reject claim")),
+				);
 				return;
 			}
 
-			toast.success(`Claim ${action}d successfully`);
+			toast.success(
+				action === "approve"
+					? t("travelExpenses.decision.approved", "Claim approved successfully")
+					: t("travelExpenses.decision.rejected", "Claim rejected successfully"),
+			);
 			await onActioned?.(claimId);
 			onOpenChange(false);
 			form.reset();
@@ -102,12 +117,20 @@ export function TravelExpenseDecisionDialog({
 				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
-							{action === "approve" ? "Approve Claim" : "Reject Claim"}
+							{action === "approve"
+								? t("travelExpenses.decision.approveTitle", "Approve Claim")
+								: t("travelExpenses.decision.rejectTitle", "Reject Claim")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{action === "approve"
-								? "Add an optional note for the claimant before approving."
-								: "Provide a clear reason to help the claimant update and resubmit."}
+								? t(
+										"travelExpenses.decision.approveDescription",
+										"Add an optional note for the claimant before approving.",
+									)
+								: t(
+										"travelExpenses.decision.rejectDescription",
+										"Provide a clear reason to help the claimant update and resubmit.",
+									)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 
@@ -116,10 +139,15 @@ export function TravelExpenseDecisionDialog({
 							<form.Field name="note">
 								{(field) => (
 									<>
-										<Label htmlFor="decision-note">Note (optional)</Label>
+										<Label htmlFor="decision-note">
+											{t("travelExpenses.decision.noteOptional", "Note (optional)")}
+										</Label>
 										<Textarea
 											id="decision-note"
-											placeholder="Looks good. Thanks for the details."
+											placeholder={t(
+												"travelExpenses.decision.notePlaceholder",
+												"Looks good. Thanks for the details.",
+											)}
 											rows={4}
 											value={field.state.value}
 											onChange={(event) => field.handleChange(event.target.value)}
@@ -132,10 +160,15 @@ export function TravelExpenseDecisionDialog({
 							<form.Field name="reason">
 								{(field) => (
 									<>
-										<Label htmlFor="decision-reason">Reason (required)</Label>
+										<Label htmlFor="decision-reason">
+											{t("travelExpenses.decision.reasonRequired", "Reason (required)")}
+										</Label>
 										<Textarea
 											id="decision-reason"
-											placeholder="Missing receipt details for the submitted amount"
+											placeholder={t(
+												"travelExpenses.decision.reasonPlaceholder",
+												"Missing receipt details for the submitted amount",
+											)}
 											rows={4}
 											required
 											value={field.state.value}
@@ -157,23 +190,25 @@ export function TravelExpenseDecisionDialog({
 									onClick={() => onOpenChange(false)}
 									disabled={isSubmitting}
 								>
-									Cancel
+									{t("common.cancel", "Cancel")}
 								</Button>
 								<Button
 									type="submit"
 									variant={action === "approve" ? "default" : "destructive"}
 									disabled={isSubmitting}
 								>
-									{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{isSubmitting && (
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+									)}
 									{action === "approve" ? (
 										<>
-											<IconCheck className="mr-2 size-4" />
-											Approve
+											<IconCheck className="mr-2 size-4" aria-hidden="true" />
+											{t("travelExpenses.decision.approve", "Approve")}
 										</>
 									) : (
 										<>
-											<IconX className="mr-2 size-4" />
-											Reject
+											<IconX className="mr-2 size-4" aria-hidden="true" />
+											{t("travelExpenses.decision.reject", "Reject")}
 										</>
 									)}
 								</Button>

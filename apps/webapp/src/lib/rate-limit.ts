@@ -166,6 +166,48 @@ type RatelimitRedis = {
 	set: (key: string, value: string, opts?: { ex?: number }) => Promise<string | null>;
 };
 
+export const RATE_LIMIT_RESPONSE_COPY = {
+	title: { key: "common:rateLimit.title", fallback: "Too Many Requests" },
+	message: {
+		key: "common:rateLimit.message",
+		fallback: "You've made too many requests. Please wait before trying again.",
+	},
+	jsonMessage: {
+		key: "common:rateLimit.jsonMessage",
+		fallback: "Rate limit exceeded. Please try again later.",
+	},
+	countdownLabel: {
+		key: "common:rateLimit.countdownLabel",
+		fallback: "seconds until you can retry",
+	},
+	waitingButton: { key: "common:rateLimit.waitingButton", fallback: "Please wait..." },
+	retryButton: { key: "common:rateLimit.retryButton", fallback: "Try Again" },
+	retryingButton: { key: "common:rateLimit.retryingButton", fallback: "Retrying..." },
+} as const;
+
+type RateLimitResponseMessages = {
+	title?: string;
+	message?: string;
+	jsonMessage?: string;
+	countdownLabel?: string;
+	waitingButton?: string;
+	retryButton?: string;
+	retryingButton?: string;
+};
+
+function escapeHtml(value: string): string {
+	return value
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#39;");
+}
+
+function escapeJsString(value: string): string {
+	return JSON.stringify(value).slice(1, -1);
+}
+
 /**
  * Custom error class that properly stringifies for NOSCRIPT detection
  * @upstash/ratelimit checks `${error}`.includes("NOSCRIPT")
@@ -397,13 +439,29 @@ export function getClientIp(request: Request): string {
 /**
  * Generate HTML for rate limit error page
  */
-function generateRateLimitHtml(retryAfter: number): string {
+function generateRateLimitHtml(
+	retryAfter: number,
+	messages: RateLimitResponseMessages = {},
+): string {
+	const title = escapeHtml(messages.title ?? RATE_LIMIT_RESPONSE_COPY.title.fallback);
+	const message = escapeHtml(messages.message ?? RATE_LIMIT_RESPONSE_COPY.message.fallback);
+	const countdownLabel = escapeHtml(
+		messages.countdownLabel ?? RATE_LIMIT_RESPONSE_COPY.countdownLabel.fallback,
+	);
+	const waitingButton = escapeHtml(
+		messages.waitingButton ?? RATE_LIMIT_RESPONSE_COPY.waitingButton.fallback,
+	);
+	const retryButton = escapeJsString(messages.retryButton ?? RATE_LIMIT_RESPONSE_COPY.retryButton.fallback);
+	const retryingButton = escapeJsString(
+		messages.retryingButton ?? RATE_LIMIT_RESPONSE_COPY.retryingButton.fallback,
+	);
+
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Too Many Requests</title>
+	<title>${title}</title>
 	<style>
 		* { box-sizing: border-box; margin: 0; padding: 0; }
 		body {
@@ -529,17 +587,17 @@ function generateRateLimitHtml(retryAfter: number): string {
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 			</svg>
 		</div>
-		<h1>Too Many Requests</h1>
-		<p class="message">You've made too many requests. Please wait before trying again.</p>
+		<h1>${title}</h1>
+		<p class="message">${message}</p>
 		<div class="countdown-box">
 			<div class="countdown" id="countdown">${retryAfter}</div>
-			<div class="countdown-label">seconds until you can retry</div>
+			<div class="countdown-label">${countdownLabel}</div>
 		</div>
 		<button class="btn" id="retryBtn" disabled>
 			<svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
 			</svg>
-			<span id="btnText">Please wait...</span>
+			<span id="btnText">${waitingButton}</span>
 		</button>
 	</div>
 	<script>
@@ -554,7 +612,7 @@ function generateRateLimitHtml(retryAfter: number): string {
 				if (remaining <= 0) {
 					countdown.textContent = '0';
 					btn.disabled = false;
-					btnText.textContent = 'Try Again';
+					btnText.textContent = '${retryButton}';
 					return;
 				}
 				countdown.textContent = remaining;
@@ -563,7 +621,7 @@ function generateRateLimitHtml(retryAfter: number): string {
 			}
 
 			btn.addEventListener('click', function() {
-				btnText.textContent = 'Retrying...';
+				btnText.textContent = '${retryingButton}';
 				btnIcon.classList.add('spinner');
 				btn.disabled = true;
 				window.location.reload();
@@ -580,7 +638,11 @@ function generateRateLimitHtml(retryAfter: number): string {
  * Create a rate limit response with proper headers
  * Returns HTML for browser requests, JSON for API requests
  */
-export function createRateLimitResponse(result: RateLimitResult, request?: Request): Response {
+export function createRateLimitResponse(
+	result: RateLimitResult,
+	request?: Request,
+	messages: RateLimitResponseMessages = {},
+): Response {
 	const headers: Record<string, string> = {
 		"Retry-After": result.retryAfter.toString(),
 		"X-RateLimit-Remaining": result.remaining.toString(),
@@ -592,7 +654,7 @@ export function createRateLimitResponse(result: RateLimitResult, request?: Reque
 	const wantsHtml = acceptHeader.includes("text/html");
 
 	if (wantsHtml) {
-		return new Response(generateRateLimitHtml(result.retryAfter), {
+		return new Response(generateRateLimitHtml(result.retryAfter, messages), {
 			status: 429,
 			headers: {
 				...headers,
@@ -604,8 +666,8 @@ export function createRateLimitResponse(result: RateLimitResult, request?: Reque
 	// Return JSON for API requests
 	return new Response(
 		JSON.stringify({
-			error: "Too Many Requests",
-			message: "Rate limit exceeded. Please try again later.",
+			error: messages.title ?? RATE_LIMIT_RESPONSE_COPY.title.fallback,
+			message: messages.jsonMessage ?? RATE_LIMIT_RESPONSE_COPY.jsonMessage.fallback,
 			retryAfter: result.retryAfter,
 		}),
 		{

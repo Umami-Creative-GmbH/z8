@@ -2,7 +2,11 @@ import { DateTime } from "luxon";
 import type { NotificationWithMeta } from "./types";
 
 type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
-type Translate = (key: string, defaultValue: string, params?: Record<string, TranslationParam>) => string;
+type Translate = (
+	key: string,
+	defaultValue: string,
+	params?: Record<string, TranslationParam>,
+) => string;
 
 type NotificationMetadata = {
 	managerRecorded?: boolean;
@@ -11,6 +15,13 @@ type NotificationMetadata = {
 	endDate?: string;
 	absenceType?: string;
 	categoryName?: string;
+	i18n?: {
+		titleKey?: string;
+		titleDefault?: string;
+		messageKey?: string;
+		messageDefault?: string;
+		params?: Record<string, TranslationParam>;
+	};
 };
 
 const titleKeys: Record<string, { key: string; defaultValue: string }> = {
@@ -78,8 +89,18 @@ export function getLocalizedNotificationContent(
 ): { title: string; message: string; timeAgo: string } {
 	const metadata = parseMetadata(notification.metadata);
 	const titleKey = titleKeys[notification.title];
-	const title = titleKey ? t(titleKey.key, titleKey.defaultValue) : notification.title;
-	let message = notification.message;
+	const title = metadata.i18n?.titleKey
+		? t(metadata.i18n.titleKey, metadata.i18n.titleDefault ?? notification.title)
+		: titleKey
+			? t(titleKey.key, titleKey.defaultValue)
+			: notification.title;
+	let message = metadata.i18n?.messageKey
+		? t(
+				metadata.i18n.messageKey,
+				metadata.i18n.messageDefault ?? notification.message,
+				metadata.i18n.params,
+			)
+		: notification.message;
 
 	if (metadata.managerRecorded) {
 		message = t(

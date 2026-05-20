@@ -74,6 +74,25 @@ Use these paths as your first stop:
 
 Classify every request before acting.
 
+If the user invokes this skill but gives no actionable next step, use the `question` tool before running commands or editing files. Offer concrete next-step choices such as:
+- refresh `web`, `worker`, `docs`, and `drizzle-migrate` to newer GHCR images
+- check rollout status and current image digests
+- rerun `drizzle-migrate`
+- scale a workload
+- inspect ingress, middleware, certificates, or RustFS routes
+
+Do not infer a production operation from vague prompts like "deployment", "k8s", or "z8-k8s-deployment".
+
+### Quick reference
+
+| User intent | First action |
+| --- | --- |
+| No actionable next step | Use `question` with concrete deployment options |
+| Refresh newer GHCR images | Operate: restart deployments, recreate migration job, verify digests |
+| Check live status | Inspect: gather deployments, pods, rollouts, and image IDs |
+| Change manifests | Edit repo manifests, apply, then verify live resources |
+| Change Hetzner/OpenTofu infra | Confirm `HCLOUD_TOKEN`, plan first, then verify resources |
+
 ### 1. Inspect
 
 Use for read-only tasks.
@@ -206,6 +225,14 @@ Examples of evidence to collect:
 - Hetzner resource lists or `tofu plan` output
 
 Do not guess. Identify the failing layer first: image pull, rollout, service routing, TLS issuance, or infra provisioning.
+
+## Common mistakes
+
+- Guessing the operation from vague prompts instead of using `question`.
+- Restarting pods before inspecting current state.
+- Treating `:latest` as refreshed without recreating pods and checking image digests.
+- Rerunning `drizzle-migrate` without deleting and recreating the job from the manifest.
+- Printing kubeconfig, tokens, private keys, or secret values while debugging.
 
 ## Verification checklist
 

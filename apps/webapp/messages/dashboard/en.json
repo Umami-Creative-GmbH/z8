@@ -33,6 +33,11 @@
       "of-goal": "of {goal}",
       "title": "Hydration"
     },
+    "layout": {
+      "saved": "Dashboard layout saved",
+      "saveFailed": "Failed to save dashboard layout",
+      "saveFailedDescription": "Your changes could not be saved. Please try again."
+    },
     "managed-employees": {
       "direct-reports": "{count} direct reports",
       "error": "Failed to load managed employees",
@@ -161,6 +166,11 @@
       "title": "Who's Out Today",
       "until-date": "Until {date}",
       "view-calendar": "View Full Calendar"
+    },
+    "widgets": {
+      "dragToReorder": "Drag to reorder widget",
+      "moving": "Moving widget…",
+      "refresh": "Refresh"
     }
   }
 }

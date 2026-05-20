@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Area,
@@ -42,6 +43,7 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 }
 
 export default function WorkHoursPage() {
+	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -105,7 +107,7 @@ export default function WorkHoursPage() {
 				}
 
 				console.error("Failed to load work hours analytics data:", error);
-				toast.error("Failed to load work hours analytics data");
+				toast.error(t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"));
 			} finally {
 				if (isCurrent) {
 					setLoading(false);
@@ -138,18 +140,21 @@ export default function WorkHoursPage() {
 					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 				) : (
 					<p className="text-sm text-muted-foreground">
-						Loading organization settings before enabling presets.
+						{t(
+							"analytics.common.loadingOrganizationSettings",
+							"Loading organization settings before enabling presets.",
+						)}
 					</p>
 				)}
 				<ExportButton
 					data={{
 						data: employees,
 						headers: [
-							{ key: "employeeName", label: "Employee" },
-							{ key: "totalHours", label: "Total Hours" },
-							{ key: "overtimeHours", label: "Overtime Hours" },
-							{ key: "undertimeHours", label: "Undertime Hours" },
-							{ key: "avgHoursPerWeek", label: "Avg Hours/Week" },
+							{ key: "employeeName", label: t("analytics.common.employee", "Employee") },
+							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
+							{ key: "overtimeHours", label: t("analytics.common.overtimeHours", "Overtime Hours") },
+							{ key: "undertimeHours", label: t("analytics.common.undertimeHours", "Undertime Hours") },
+							{ key: "avgHoursPerWeek", label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week") },
 						],
 						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
@@ -168,19 +173,19 @@ export default function WorkHoursPage() {
 					{/* Overtime/Undertime Trend */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Overtime & Undertime Trend</CardTitle>
-							<CardDescription>Hours variance from expected work hours over time</CardDescription>
+							<CardTitle>{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}</CardTitle>
+							<CardDescription>{t("analytics.workHours.varianceTrend.description", "Hours variance from expected work hours over time")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{trendData.length > 0 ? (
 								<ChartContainer
 									config={{
 										overtime: {
-											label: "Overtime",
+										label: t("analytics.common.overtime", "Overtime"),
 											color: "hsl(var(--chart-1))",
 										},
 										undertime: {
-											label: "Undertime",
+										label: t("analytics.common.undertime", "Undertime"),
 											color: "hsl(var(--chart-2))",
 										},
 									}}
@@ -211,7 +216,7 @@ export default function WorkHoursPage() {
 								</ChartContainer>
 							) : (
 								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									No trend data available
+									{t("analytics.workHours.varianceTrend.empty", "No trend data available")}
 								</div>
 							)}
 						</CardContent>
@@ -220,19 +225,19 @@ export default function WorkHoursPage() {
 					{/* Daily Work Hours */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Daily Work Hours</CardTitle>
-							<CardDescription>Actual vs expected work hours per day</CardDescription>
+							<CardTitle>{t("analytics.workHours.daily.title", "Daily Work Hours")}</CardTitle>
+							<CardDescription>{t("analytics.workHours.daily.description", "Actual vs expected work hours per day")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{dailyHoursData.length > 0 ? (
 								<ChartContainer
 									config={{
 										actual: {
-											label: "Actual Hours",
+										label: t("analytics.workHours.actualHours", "Actual Hours"),
 											color: "hsl(var(--primary))",
 										},
 										expected: {
-											label: "Expected Hours",
+										label: t("analytics.workHours.expectedHours", "Expected Hours"),
 											color: "hsl(var(--muted-foreground))",
 										},
 									}}
@@ -262,7 +267,7 @@ export default function WorkHoursPage() {
 								</ChartContainer>
 							) : (
 								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									No daily hours data available
+									{t("analytics.workHours.daily.empty", "No daily hours data available")}
 								</div>
 							)}
 						</CardContent>
@@ -271,23 +276,23 @@ export default function WorkHoursPage() {
 					{/* Employee Work Hours Comparison */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Employee Work Hours</CardTitle>
-							<CardDescription>Total hours and variance from expected by employee</CardDescription>
+							<CardTitle>{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}</CardTitle>
+							<CardDescription>{t("analytics.workHours.employeeComparison.description", "Total hours and variance from expected by employee")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{employees.length === 0 ? (
 								<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-									No data available for the selected period
+									{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
 								</div>
 							) : (
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>Employee</TableHead>
-											<TableHead className="text-right">Total Hours</TableHead>
-											<TableHead className="text-right">Expected Hours</TableHead>
-											<TableHead className="text-right">Variance</TableHead>
-											<TableHead>Status</TableHead>
+										<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
+										<TableHead className="text-right">{t("analytics.common.totalHours", "Total Hours")}</TableHead>
+										<TableHead className="text-right">{t("analytics.workHours.expectedHours", "Expected Hours")}</TableHead>
+										<TableHead className="text-right">{t("analytics.workHours.variance", "Variance")}</TableHead>
+										<TableHead>{t("common.status", "Status")}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -332,15 +337,15 @@ export default function WorkHoursPage() {
 					{/* Work Hours Distribution */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Work Hours Distribution</CardTitle>
-							<CardDescription>Employee work hours comparison (horizontal bar)</CardDescription>
+							<CardTitle>{t("analytics.workHours.distribution.title", "Work Hours Distribution")}</CardTitle>
+							<CardDescription>{t("analytics.workHours.distribution.description", "Employee work hours comparison (horizontal bar)")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{distributionData.length > 0 ? (
 								<ChartContainer
 									config={{
 										hours: {
-											label: "Hours",
+										label: t("analytics.common.hours", "Hours"),
 											color: "hsl(var(--chart-4))",
 										},
 									}}
@@ -363,7 +368,7 @@ export default function WorkHoursPage() {
 								</ChartContainer>
 							) : (
 								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									No distribution data available
+									{t("analytics.workHours.distribution.empty", "No distribution data available")}
 								</div>
 							)}
 						</CardContent>

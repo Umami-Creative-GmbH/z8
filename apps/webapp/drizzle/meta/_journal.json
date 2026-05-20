@@ -162,6 +162,13 @@
       "when": 1778836149681,
       "tag": "0022_absence_category_translations",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1779299200000,
+      "tag": "0023_billing_local_trials",
+      "breakpoints": true
     }
   ]
 }

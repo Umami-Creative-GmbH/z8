@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IconTrash } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -27,6 +28,7 @@ interface Passkey {
 }
 
 export function PasskeyManagement() {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [passkeyToDelete, setPasskeyToDelete] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function PasskeyManagement() {
 		queryFn: async () => {
 			const result = await authClient.passkey.listUserPasskeys();
 			if (result.error) {
-				throw new Error(getAuthErrorMessage(result.error, "Failed to load passkeys"));
+				throw new Error(getAuthErrorMessage(result.error, t("settings.passkeys.loadError", "Failed to load passkeys")));
 			}
 			return (result.data || []) as Passkey[];
 		},
@@ -48,20 +50,20 @@ export function PasskeyManagement() {
 	const addPasskeyMutation = useMutation({
 		mutationFn: async () => {
 			const result = await authClient.passkey.addPasskey({
-				name: `Passkey ${new Date().toLocaleDateString()}`,
+				name: t("settings.passkeys.defaultName", "Passkey {date}", { date: new Date().toLocaleDateString() }),
 			});
 			if (result.error) {
-				throw new Error(getAuthErrorMessage(result.error, "Failed to add passkey"));
+				throw new Error(getAuthErrorMessage(result.error, t("settings.passkeys.addError", "Failed to add passkey")));
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Passkey added successfully");
+			toast.success(t("settings.passkeys.addSuccess", "Passkey added successfully"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.passkeys() });
 		},
 		onError: (error) => {
-			toast.error("Failed to add passkey", {
-				description: error instanceof Error ? error.message : "An unexpected error occurred",
+			toast.error(t("settings.passkeys.addError", "Failed to add passkey"), {
+				description: error instanceof Error ? error.message : t("common.unexpectedError", "An unexpected error occurred"),
 			});
 		},
 	});
@@ -71,19 +73,19 @@ export function PasskeyManagement() {
 		mutationFn: async (id: string) => {
 			const result = await authClient.passkey.deletePasskey({ id });
 			if (result.error) {
-				throw new Error(getAuthErrorMessage(result.error, "Failed to delete passkey"));
+				throw new Error(getAuthErrorMessage(result.error, t("settings.passkeys.deleteError", "Failed to delete passkey")));
 			}
 			return result;
 		},
 		onSuccess: () => {
-			toast.success("Passkey deleted successfully");
+			toast.success(t("settings.passkeys.deleteSuccess", "Passkey deleted successfully"));
 			setDeleteDialogOpen(false);
 			setPasskeyToDelete(null);
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.passkeys() });
 		},
 		onError: (error) => {
-			toast.error("Failed to delete passkey", {
-				description: error instanceof Error ? error.message : "An unexpected error occurred",
+			toast.error(t("settings.passkeys.deleteError", "Failed to delete passkey"), {
+				description: error instanceof Error ? error.message : t("common.unexpectedError", "An unexpected error occurred"),
 			});
 		},
 	});
@@ -105,16 +107,16 @@ export function PasskeyManagement() {
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<div>
-					<h3 className="text-lg font-medium">Passkeys</h3>
+					<h3 className="text-lg font-medium">{t("settings.passkeys.title", "Passkeys")}</h3>
 					<p className="text-sm text-muted-foreground">
-						Manage passkeys for passwordless authentication
+						{t("settings.passkeys.description", "Manage passkeys for passwordless authentication")}
 					</p>
 				</div>
 				<Button
 					onClick={() => addPasskeyMutation.mutate()}
 					disabled={addPasskeyMutation.isPending || isPending}
 				>
-					{addPasskeyMutation.isPending ? "Adding..." : "Add Passkey"}
+					{addPasskeyMutation.isPending ? t("common.adding", "Adding...") : t("settings.passkeys.add", "Add Passkey")}
 				</Button>
 			</div>
 
@@ -122,9 +124,9 @@ export function PasskeyManagement() {
 				<Card>
 					<CardContent className="flex flex-col items-center justify-center py-12">
 						<p className="text-sm text-muted-foreground text-center">
-							No passkeys configured
+							{t("settings.passkeys.empty", "No passkeys configured")}
 							<br />
-							Add a passkey to enable passwordless authentication
+							{t("settings.passkeys.emptyDescription", "Add a passkey to enable passwordless authentication")}
 						</p>
 					</CardContent>
 				</Card>
@@ -135,9 +137,9 @@ export function PasskeyManagement() {
 							<CardHeader className="pb-3">
 								<div className="flex items-center justify-between">
 									<div>
-										<CardTitle className="text-base">{passkey.name || "Unnamed Passkey"}</CardTitle>
-										<CardDescription>
-											Added on {new Date(passkey.createdAt).toLocaleDateString()}
+							<CardTitle className="text-base">{passkey.name || t("settings.passkeys.unnamed", "Unnamed Passkey")}</CardTitle>
+							<CardDescription>
+								{t("settings.passkeys.addedOn", "Added on {date}", { date: new Date(passkey.createdAt).toLocaleDateString() })}
 										</CardDescription>
 									</div>
 									<Button
@@ -159,20 +161,19 @@ export function PasskeyManagement() {
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Passkey?</AlertDialogTitle>
+						<AlertDialogTitle>{t("settings.passkeys.deleteDialogTitle", "Delete Passkey?")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							This passkey will no longer be able to access your account. This action cannot be
-							undone.
+							{t("settings.passkeys.deleteDialogDescription", "This passkey will no longer be able to access your account. This action cannot be undone.")}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deletePasskeyMutation.isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={deletePasskeyMutation.isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeletePasskey}
 							disabled={deletePasskeyMutation.isPending}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							Delete
+							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

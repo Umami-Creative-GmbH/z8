@@ -33,6 +33,11 @@
       "of-goal": "sur {goal}",
       "title": "Hydratation"
     },
+    "layout": {
+      "saved": "Disposition du tableau de bord enregistrée",
+      "saveFailed": "Échec de l'enregistrement de la disposition du tableau de bord",
+      "saveFailedDescription": "Vos modifications n'ont pas pu être enregistrées. Veuillez réessayer."
+    },
     "managed-employees": {
       "direct-reports": "{count} subordonnés directs",
       "error": "Échec du chargement des employés gérés",
@@ -161,6 +166,11 @@
       "title": "Qui est absent aujourd'hui",
       "until-date": "Jusqu'au {date}",
       "view-calendar": "Voir le calendrier complet"
+    },
+    "widgets": {
+      "dragToReorder": "Faites glisser pour réorganiser le widget",
+      "moving": "Déplacement du widget…",
+      "refresh": "Actualiser"
     }
   }
 }

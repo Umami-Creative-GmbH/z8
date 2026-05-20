@@ -1,20 +1,29 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import type { ViewMode } from "./schedule-x-calendar";
+
+function CalendarLoading() {
+	const { t } = useTranslate();
+
+	return (
+		<div className="flex items-center justify-center h-full min-h-[400px]">
+			<div className="animate-pulse text-muted-foreground">
+				{t("calendar.view.loading", "Loading calendar…")}
+			</div>
+		</div>
+	);
+}
 
 // Dynamically import Schedule-X calendar with no SSR
 const ScheduleXCalendarWrapper = dynamic(
 	() => import("./schedule-x-calendar").then((mod) => mod.ScheduleXCalendarWrapper),
 	{
 		ssr: false,
-		loading: () => (
-			<div className="flex items-center justify-center h-full min-h-[400px]">
-				<div className="animate-pulse text-muted-foreground">Loading calendar...</div>
-			</div>
-		),
+		loading: () => <CalendarLoading />,
 	},
 );
 
@@ -48,11 +57,7 @@ export function ScheduleXWrapper(props: ScheduleXWrapperProps) {
 	}, []);
 
 	if (!isPolyfillReady) {
-		return (
-			<div className="flex items-center justify-center h-full min-h-[400px]">
-				<div className="animate-pulse text-muted-foreground">Loading calendar...</div>
-			</div>
-		);
+		return <CalendarLoading />;
 	}
 
 	return <ScheduleXCalendarWrapper {...props} />;

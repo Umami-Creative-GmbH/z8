@@ -1,5 +1,107 @@
 {
   "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "I controlli di accesso riassumono solo gli eventi sensibili del registro di controllo già acquisiti oggi.",
+        "auditEvidence": "L'evidenza di controllo utilizza la configurazione di esportazione del controllo in tempo reale, le richieste di pacchetti di controllo e i risultati di verifica recenti.",
+        "workforceCompliance": "La conformità della forza lavoro utilizza gli ultimi 7 giorni di violazioni delle politiche di lavoro e le richieste di eccezione in sospeso."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Lavori falliti recenti: {failedRequests}; verifiche non valide recenti: {invalidVerifications}",
+          "title": "Rilevati errori nell'evidenza di controllo"
+        },
+        "auditPackFailure": {
+          "description": "Lavori falliti recenti: {failedRequests}",
+          "title": "Generazione del pacchetto di controllo non riuscita"
+        },
+        "auditVerificationFailure": {
+          "description": "Verifiche non valide recenti: {invalidVerifications}",
+          "title": "Verifica di controllo non riuscita"
+        },
+        "sensitiveAction": {
+          "description": "{action} su {entityType}",
+          "title": "Azione sensibile: {action}"
+        },
+        "workforceFindings": {
+          "description": "Riposo: {restPeriodViolations}, Altra policy: {generalPolicyViolations}, Straordinari: {overtimeViolations}",
+          "title": "Risultati recenti sulla policy della forza lavoro"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Ultima azione sensibile: {action}",
+          "latestSensitiveActionNone": "Ultima azione sensibile: nessuna",
+          "noSensitiveEvents": "Nessuna modifica ai controlli sensibili è stata registrata nelle ultime 24 ore.",
+          "recentSensitiveEvents": "Eventi sensibili recenti: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Chiave di firma attiva: {fingerprint}",
+          "lastSuccessfulAuditPack": "Ultimo pacchetto di audit riuscito: {timestamp}",
+          "missingSigningKey": "Le chiavi di firma non sono ancora configurate.",
+          "noSuccessfulAuditPack": "Non è stato ancora registrato alcun pacchetto di audit riuscito.",
+          "recentFailedJobs": "Lavori di pacchetto di audit falliti di recente: {count}",
+          "recentInvalidVerifications": "Tentativi di verifica non validi recenti: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Impossibile caricare gli eventi di controllo dell'accesso.",
+          "auditEvidence": "Impossibile caricare i dati delle prove di audit.",
+          "workforceCompliance": "Impossibile caricare i dati di conformità della forza lavoro."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Altre violazioni della policy: {count}",
+          "overtimeViolations": "Violazioni degli straordinari: {count}",
+          "pendingExceptions": "Eccezioni in sospeso: {count}",
+          "restPeriodViolations": "Violazioni del periodo di riposo: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Ispeziona conformità",
+        "inspectInAuditLog": "Ispeziona nel Log di Audit",
+        "openAuditExport": "Apri Esportazione Audit",
+        "openAuditLog": "Apri Log di Audit",
+        "openComplianceSettings": "Apri impostazioni di conformità",
+        "reviewAuditExport": "Revisiona esportazione audit"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Le modifiche ai controlli sensibili richiedono una revisione",
+            "healthy": "Nessuna modifica ai controlli sensibili è stata registrata di recente",
+            "warning": "Sono state rilevate recenti modifiche ai controlli"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Le prove di audit richiedono attenzione",
+            "healthy": "I segnali delle prove di audit sembrano corretti",
+            "warning": "Le prove di audit sono solo parzialmente pronte"
+          }
+        },
+        "unavailable": {
+          "headline": "Segnale temporaneamente non disponibile"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Le violazioni della policy del personale richiedono una revisione",
+            "healthy": "Nessun problema recente relativo alla policy del personale è stato rilevato",
+            "warning": "La conformità del personale sta peggiorando"
+          }
+        }
+      },
+      "status": {
+        "critical": "critico",
+        "healthy": "corretto",
+        "unavailable": "non disponibile",
+        "warning": "avviso"
+      },
+      "summary": {
+        "critical": "I rischi di conformità critici richiedono attenzione",
+        "healthy": "Nessun problema attivo rilevato nei segnali monitorati",
+        "unavailable": "Alcuni segnali di conformità non sono disponibili",
+        "warning": "I segnali di conformità richiedono una revisione"
+      }
+    },
     "exception": {
       "approved": "Eccezione approvata",
       "approvedDescription": "L'eccezione di conformità è stata approvata.",

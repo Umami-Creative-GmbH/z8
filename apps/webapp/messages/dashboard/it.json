@@ -33,6 +33,11 @@
       "of-goal": "di {goal}",
       "title": "Idratazione"
     },
+    "layout": {
+      "saved": "Layout della dashboard salvato",
+      "saveFailed": "Salvataggio del layout della dashboard non riuscito",
+      "saveFailedDescription": "Le modifiche non sono state salvate. Riprova."
+    },
     "managed-employees": {
       "direct-reports": "{count} subordinati diretti",
       "error": "Impossibile caricare i dipendenti gestiti",
@@ -161,6 +166,11 @@
       "title": "Chi è assente oggi",
       "until-date": "Fino al {date}",
       "view-calendar": "Vedi calendario completo"
+    },
+    "widgets": {
+      "dragToReorder": "Trascina per riordinare il widget",
+      "moving": "Spostamento widget...",
+      "refresh": "Aggiorna"
     }
   }
 }

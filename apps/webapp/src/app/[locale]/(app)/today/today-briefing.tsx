@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	IconAlertTriangle,
 	IconArrowRight,
@@ -8,6 +10,7 @@ import {
 	IconShieldCheck,
 	IconUsersGroup,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import type { ComponentType, SVGProps } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +38,8 @@ type SummaryCardProps = {
 	tone?: "default" | "critical" | "warning";
 };
 
+type TFunction = ReturnType<typeof useTranslate>["t"];
+
 type SectionCardProps = {
 	section: BriefingSection;
 	icon: IconComponent;
@@ -44,47 +49,65 @@ type EmptyStateProps = {
 	message: string;
 };
 
-const summaryCards: Array<
-	Omit<SummaryCardProps, "value"> & { key: keyof ManagerDailyBriefing["summary"] }
-> = [
+const summaryCards: Array<{
+	key: keyof ManagerDailyBriefing["summary"];
+	titleKey: string;
+	fallbackTitle: string;
+	descriptionKey: string;
+	fallbackDescription: string;
+	icon: IconComponent;
+	tone?: SummaryCardProps["tone"];
+}> = [
 	{
 		key: "criticalIssues",
-		title: "Critical issues",
-		description: "Highest-priority items across today.",
+		titleKey: "today.briefing.summary.criticalIssues.title",
+		fallbackTitle: "Critical issues",
+		descriptionKey: "today.briefing.summary.criticalIssues.description",
+		fallbackDescription: "Highest-priority items across today.",
 		icon: IconAlertTriangle,
 		tone: "critical",
 	},
 	{
 		key: "openApprovals",
-		title: "Open approvals",
-		description: "Requests waiting for a decision.",
+		titleKey: "today.briefing.summary.openApprovals.title",
+		fallbackTitle: "Open approvals",
+		descriptionKey: "today.briefing.summary.openApprovals.description",
+		fallbackDescription: "Requests waiting for a decision.",
 		icon: IconClipboardCheck,
 	},
 	{
 		key: "attendanceExceptions",
-		title: "Clock-in exceptions",
-		description: "Published shifts needing attention.",
+		titleKey: "today.briefing.summary.attendanceExceptions.title",
+		fallbackTitle: "Clock-in exceptions",
+		descriptionKey: "today.briefing.summary.attendanceExceptions.description",
+		fallbackDescription: "Published shifts needing attention.",
 		icon: IconClockExclamation,
 		tone: "warning",
 	},
 	{
 		key: "payrollIssues",
-		title: "Payroll issues",
-		description: "Setup gaps before export readiness.",
+		titleKey: "today.briefing.summary.payrollIssues.title",
+		fallbackTitle: "Payroll issues",
+		descriptionKey: "today.briefing.summary.payrollIssues.description",
+		fallbackDescription: "Setup gaps before export readiness.",
 		icon: IconCurrencyEuro,
 		tone: "warning",
 	},
 	{
 		key: "coverageRisks",
-		title: "Coverage risks",
-		description: "Minimum staffing risks for today.",
+		titleKey: "today.briefing.summary.coverageRisks.title",
+		fallbackTitle: "Coverage risks",
+		descriptionKey: "today.briefing.summary.coverageRisks.description",
+		fallbackDescription: "Minimum staffing risks for today.",
 		icon: IconShieldCheck,
 		tone: "warning",
 	},
 	{
 		key: "overtimeWarnings",
-		title: "Overtime warnings",
-		description: "Employees nearing overtime thresholds.",
+		titleKey: "today.briefing.summary.overtimeWarnings.title",
+		fallbackTitle: "Overtime warnings",
+		descriptionKey: "today.briefing.summary.overtimeWarnings.description",
+		fallbackDescription: "Employees nearing overtime thresholds.",
 		icon: IconUsersGroup,
 	},
 ];
@@ -101,6 +124,7 @@ const supportingSections: Array<{
 ];
 
 export function TodayBriefing({ briefing }: TodayBriefingProps) {
+	const { t } = useTranslate();
 	const briefingDate = DateTime.fromISO(briefing.date).toLocaleString(
 		DateTime.DATE_MED_WITH_WEEKDAY,
 	);
@@ -111,30 +135,47 @@ export function TodayBriefing({ briefing }: TodayBriefingProps) {
 			<header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
 				<div className="space-y-2">
 					<Badge variant="secondary" className="w-fit">
-						Today
+						{t("today.briefing.badge", "Today")}
 					</Badge>
 					<div className="space-y-1">
 						<h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-							Manager Daily Briefing
+							{t("today.briefing.title", "Manager Daily Briefing")}
 						</h1>
 						<p className="max-w-2xl text-muted-foreground text-sm">
-							Review the items that need action today, then move directly into the right workflow.
+							{t(
+								"today.briefing.description",
+								"Review the items that need action today, then move directly into the right workflow.",
+							)}
 						</p>
 					</div>
 				</div>
 				<p className="text-muted-foreground text-xs md:text-right">
-					{briefingDate} - Updated {generatedAt}
+					{t("today.briefing.updatedAt", "{date} - Updated {time}", {
+						date: briefingDate,
+						time: generatedAt,
+					})}
 				</p>
 			</header>
 
-			<section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6" aria-label="Today summary">
-				{summaryCards.map(({ key, ...card }) => (
-					<SummaryCard key={key} {...card} value={briefing.summary[key]} />
-				))}
+			<section
+				className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
+				aria-label={t("today.briefing.summaryAriaLabel", "Today summary")}
+			>
+				{summaryCards.map(
+					({ key, titleKey, fallbackTitle, descriptionKey, fallbackDescription, ...card }) => (
+						<SummaryCard
+							key={key}
+							{...card}
+							title={t(titleKey, fallbackTitle)}
+							description={t(descriptionKey, fallbackDescription)}
+							value={briefing.summary[key]}
+						/>
+					),
+				)}
 			</section>
 
 			<section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-				<NeedsActionCard items={briefing.needsAction} />
+				<NeedsActionCard items={briefing.needsAction} t={t} />
 				<TodayApprovalsPanel
 					items={briefing.sections.approvals.items}
 					error={briefing.sections.approvals.error}
@@ -143,7 +184,7 @@ export function TodayBriefing({ briefing }: TodayBriefingProps) {
 
 			<section
 				className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-				aria-label="Supporting sections"
+				aria-label={t("today.briefing.supportingSectionsAriaLabel", "Supporting sections")}
 			>
 				{supportingSections.map(({ key, icon }) => (
 					<SectionCard key={key} section={briefing.sections[key]} icon={icon} />
@@ -183,14 +224,21 @@ function SummaryCard({
 	);
 }
 
-function NeedsActionCard({ items }: { items: BriefingActionItem[] }) {
+function NeedsActionCard({ items, t }: { items: BriefingActionItem[]; t: TFunction }) {
 	return (
 		<Card className="gap-4">
 			<CardHeader className="gap-2">
 				<div className="flex items-start justify-between gap-3">
 					<div className="space-y-1">
-						<h2 className="font-semibold text-base leading-none">Needs Action</h2>
-						<CardDescription>Start here for the most urgent operational follow-up.</CardDescription>
+						<h2 className="font-semibold text-base leading-none">
+							{t("today.briefing.needsAction.title", "Needs Action")}
+						</h2>
+						<CardDescription>
+							{t(
+								"today.briefing.needsAction.description",
+								"Start here for the most urgent operational follow-up.",
+							)}
+						</CardDescription>
 					</div>
 					<Badge variant={items.length > 0 ? "default" : "secondary"}>{items.length}</Badge>
 				</div>
@@ -203,7 +251,12 @@ function NeedsActionCard({ items }: { items: BriefingActionItem[] }) {
 						))}
 					</div>
 				) : (
-					<EmptyState message="All clear. No manager action is needed right now." />
+					<EmptyState
+						message={t(
+							"today.briefing.needsAction.empty",
+							"All clear. No manager action is needed right now.",
+						)}
+					/>
 				)}
 			</CardContent>
 		</Card>
@@ -211,6 +264,8 @@ function NeedsActionCard({ items }: { items: BriefingActionItem[] }) {
 }
 
 function SectionCard({ section, icon: Icon }: SectionCardProps) {
+	const { t } = useTranslate();
+
 	return (
 		<Card className="gap-4">
 			<CardHeader className="gap-2">
@@ -218,9 +273,13 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 					<div className="space-y-1">
 						<h3 className="flex items-center gap-2 font-semibold text-base leading-none">
 							<Icon className="size-4 text-primary" aria-hidden="true" />
-							{section.title}
+							{section.titleKey ? t(section.titleKey, section.title) : section.title}
 						</h3>
-						<CardDescription>{section.description}</CardDescription>
+						<CardDescription>
+							{section.descriptionKey
+								? t(section.descriptionKey, section.description)
+								: section.description}
+						</CardDescription>
 					</div>
 					<Badge variant={section.items.length > 0 ? "outline" : "secondary"}>
 						{section.items.length}
@@ -236,7 +295,13 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 						))}
 					</div>
 				) : (
-					<EmptyState message={section.emptyState ?? "No issues detected."} />
+					<EmptyState
+						message={
+							section.emptyStateKey
+								? t(section.emptyStateKey, section.emptyState ?? "No issues detected.")
+								: (section.emptyState ?? t("today.briefing.sections.empty", "No issues detected."))
+						}
+					/>
 				)}
 			</CardContent>
 		</Card>
@@ -244,6 +309,12 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 }
 
 function ActionRow({ item, compact = false }: { item: BriefingActionItem; compact?: boolean }) {
+	const { t } = useTranslate();
+	const title = item.titleKey ? t(item.titleKey, item.title, item.titleParams) : item.title;
+	const description = item.descriptionKey
+		? t(item.descriptionKey, item.description, item.descriptionParams)
+		: item.description;
+
 	return (
 		<Link
 			href={item.href}
@@ -252,12 +323,12 @@ function ActionRow({ item, compact = false }: { item: BriefingActionItem; compac
 			<div className="min-w-0 space-y-1 break-words">
 				<div className="flex flex-wrap items-center gap-2">
 					<SeverityBadge severity={item.severity} />
-					<span className="min-w-0 break-words font-medium text-sm leading-snug">{item.title}</span>
+					<span className="min-w-0 break-words font-medium text-sm leading-snug">{title}</span>
 				</div>
 				<p
 					className={`break-words text-muted-foreground text-sm leading-relaxed ${compact ? "line-clamp-2" : ""}`}
 				>
-					{item.description}
+					{description}
 				</p>
 			</div>
 			<IconArrowRight
@@ -269,11 +340,12 @@ function ActionRow({ item, compact = false }: { item: BriefingActionItem; compac
 }
 
 function SeverityBadge({ severity }: { severity: BriefingActionSeverity }) {
+	const { t } = useTranslate();
 	const label = {
-		critical: "Critical",
-		high: "High",
-		warning: "Warning",
-		info: "Info",
+		critical: t("today.briefing.severity.critical", "Critical"),
+		high: t("today.briefing.severity.high", "High"),
+		warning: t("today.briefing.severity.warning", "Warning"),
+		info: t("today.briefing.severity.info", "Info"),
 	}[severity];
 	const variant =
 		severity === "critical" ? "destructive" : severity === "info" ? "secondary" : "outline";

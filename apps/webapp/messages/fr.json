@@ -1,8 +1,314 @@
 {
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "voir les analyses",
+      "restrictedDescription": "Les analyses ne sont accessibles qu'aux administrateurs et aux gestionnaires.",
+      "restrictedTitle": "Accès restreint"
+    },
+    "common": {
+      "days": "Jours",
+      "employee": "Employé",
+      "employees": "Employés",
+      "hours": "Heures",
+      "loadingOrganizationSettings": "Chargement des paramètres de l'organisation avant d'activer les préréglages.",
+      "noDataAvailable": "Aucune donnée disponible",
+      "noDataForPeriod": "Aucune donnée disponible pour la période sélectionnée",
+      "overtime": "Heures supplémentaires",
+      "overtimeHours": "Heures supplémentaires",
+      "team": "Équipe",
+      "totalHours": "Heures totales",
+      "unavailable": "Indisponible",
+      "undertime": "Heures manquantes",
+      "undertimeHours": "Heures manquantes"
+    },
+    "layout": {
+      "description": "Aperçu complet des performances de l'équipe, des heures de travail et des modèles d'absence",
+      "tabs": {
+        "overtimeBurnDown": "Réduction des heures supplémentaires",
+        "overview": "Vue d'ensemble",
+        "teamPerformance": "Performance de l'équipe",
+        "vacationTrends": "Tendances des congés",
+        "workHours": "Heures de travail"
+      },
+      "title": "Analyses"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Répartition",
+      "breakdownDescription": "Détails de la réduction des heures supplémentaires au niveau {label}",
+      "breakdownEmpty": "Aucune donnée de répartition disponible pour le moment",
+      "byCostCenter": "Par centre de coûts",
+      "byManager": "Par responsable",
+      "byTeam": "Par équipe",
+      "costCenter": "Centre de coûts",
+      "currentOvertime": "Heures supplémentaires actuelles",
+      "description": "Suivez la réduction hebdomadaire des heures supplémentaires par équipe.",
+      "errors": {
+        "loadData": "Échec du chargement des données de réduction des heures supplémentaires"
+      },
+      "filters": {
+        "allCostCenters": "Tous les centres de coûts",
+        "allManagers": "Tous les responsables",
+        "allTeams": "Toutes les équipes",
+        "breakdownLabel": "Dimension de répartition",
+        "costCenterLabel": "Filtre par centre de coûts",
+        "managerLabel": "Filtre par responsable",
+        "teamLabel": "Filtre par équipe"
+      },
+      "improvingGroups": "Groupes en amélioration",
+      "improvingGroupsDescription": "Groupes avec une diminution des heures supplémentaires",
+      "manager": "Responsable",
+      "previousOvertime": "Heures supplémentaires précédentes",
+      "previousPeriodDescription": "Comparé à la période précédente",
+      "selectedRangeDescription": "Pour la plage de dates et les filtres sélectionnés",
+      "title": "Réduction des heures supplémentaires",
+      "trendDirection": "Direction de la tendance",
+      "trendDirectionDescription": "Trajectoire globale des heures supplémentaires",
+      "trend": {
+        "down": "En baisse",
+        "flat": "Stable",
+        "up": "Hausse"
+      },
+      "weeklyTrend": {
+        "description": "Tendance de réduction des heures supplémentaires hebdomadaires",
+        "empty": "Aucune donnée de tendance disponible pour le moment",
+        "title": "Tendance de réduction hebdomadaire"
+      },
+      "weekOverWeek": "Semaine sur semaine"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Répartition des absences par catégorie",
+        "title": "Modèles d'absence"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% approuvé",
+        "avgDecision": "{hours}h de décision en moyenne",
+        "byManager": "Par manager",
+        "byTeam": "Par équipe",
+        "byType": "Par type",
+        "description": "Équipes et types de demandes avec travail en attente ou avertissements SLA",
+        "empty": "Aucun goulot d'étranglement d'approbation trouvé",
+        "pendingSummary": "{pendingCount} en attente - {slaWarnings} avertissements SLA",
+        "title": "Goulots d'étranglement d'approbation",
+        "unavailable": "Les goulots d'étranglement d'approbation n'ont pas pu être chargés"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Des demandes traitées approuvées",
+          "title": "Taux d'approbation",
+          "unavailableDescription": "Les analyses d'approbation n'ont pas pu être chargées"
+        },
+        "avgWorkHours": {
+          "description": "Par employé sur la période sélectionnée",
+          "title": "Heures de travail moyennes"
+        },
+        "totalAbsenceDays": {
+          "description": "Nombre total de jours sur la période sélectionnée",
+          "title": "Nombre total de jours d'absence"
+        },
+        "totalEmployees": {
+          "description": "Employés actifs dans l'organisation",
+          "title": "Nombre total d'employés"
+        }
+      },
+      "loadingLabel": "Chargement des données analytiques",
+      "workHoursByTeam": {
+        "description": "Total des heures de travail enregistrées par équipe",
+        "title": "Heures de travail par équipe"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Moyenne par employé",
+      "comparison": {
+        "description": "Total des heures de travail par équipe pour la période sélectionnée",
+        "title": "Comparaison des équipes"
+      },
+      "details": {
+        "description": "Répartition des heures de travail par équipe et par employé",
+        "title": "Détails de la performance de l'équipe"
+      },
+      "employeeCount": "Nombre d'employés",
+      "errors": {
+        "loadData": "Échec du chargement des données de performance de l'équipe"
+      },
+      "onTrack": "En bonne voie",
+      "variance": {
+        "description": "Écart d'heures par rapport aux heures de travail prévues",
+        "empty": "Aucune donnée d'écart disponible",
+        "title": "Heures supplémentaires et heures manquantes"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Alloué",
+      "balance": {
+        "description": "Jours alloués, pris et restants par employé",
+        "title": "Solde de congés"
+      },
+      "daysRemaining": "{count} jours restants",
+      "daysTaken": "{count} jours pris",
+      "errors": {
+        "loadData": "Échec du chargement des données sur les tendances des congés"
+      },
+      "monthlyUsage": {
+        "description": "Jours de congés pris par mois",
+        "empty": "Aucune donnée d'utilisation mensuelle disponible",
+        "title": "Utilisation mensuelle des congés"
+      },
+      "peakMonths": {
+        "description": "Mois avec la plus forte activité de congés",
+        "empty": "Aucune donnée de mois de pointe disponible",
+        "title": "Mois de pointe des congés"
+      },
+      "remaining": "Restants",
+      "taken": "Pris",
+      "utilization": {
+        "description": "Utilisation globale des jours de congés dans l'organisation",
+        "overall": "Utilisation globale",
+        "title": "Utilisation des congés"
+      },
+      "utilizationLabel": "Utilisation",
+      "utilizationPercent": "% d'utilisation",
+      "vacationDays": "Jours de congés"
+    },
+    "workHours": {
+      "actualHours": "Heures réelles",
+      "avgHoursPerWeek": "Moyenne d'heures/semaine",
+      "daily": {
+        "description": "Heures de travail réelles par rapport aux heures prévues par jour",
+        "empty": "Aucune donnée d'heures quotidiennes disponible",
+        "title": "Heures de travail quotidiennes"
+      },
+      "distribution": {
+        "description": "Comparaison des heures de travail des employés (barre horizontale)",
+        "empty": "Aucune donnée de répartition disponible",
+        "title": "Répartition des heures de travail"
+      },
+      "employeeComparison": {
+        "description": "Total des heures et écart par rapport aux prévisions par employé",
+        "title": "Heures de travail des employés"
+      },
+      "errors": {
+        "loadData": "Échec du chargement des données analytiques des heures de travail"
+      },
+      "expectedHours": "Heures prévues",
+      "variance": "Écart",
+      "varianceTrend": {
+        "description": "Écart d'heures par rapport aux heures de travail prévues au fil du temps",
+        "empty": "Aucune donnée de tendance disponible",
+        "title": "Tendance des heures supplémentaires et des heures non effectuées"
+      }
+    }
+  },
   "appSearch": {
+    "description": "Rechercher des pages, des paramètres, des personnes et des équipes",
+    "empty": "Aucun résultat trouvé.",
+    "groups": {
+      "pages": "Pages",
+      "people": "Personnes",
+      "settings": "Paramètres",
+      "teams": "Équipes"
+    },
+    "placeholder": "Rechercher des pages, des paramètres, des personnes et des équipes…",
+    "search": "Rechercher",
     "teamAbsences": {
       "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
     }
+  },
+  "billing": {
+    "access": {
+      "canceled": "Votre abonnement a été annulé. Réabonnez-vous pour retrouver l'accès.",
+      "paymentFailed": "Votre dernier paiement a échoué. Veuillez mettre à jour votre méthode de paiement.",
+      "required": "Un abonnement est requis pour utiliser cette application.",
+      "trialExpired": "Votre essai a expiré. Abonnez-vous pour continuer à utiliser l'application."
+    },
+    "activeSeats": "Sièges actifs",
+    "alerts": {
+      "canceledDescription": "Le paiement a été annulé. Vous pouvez réessayer quand vous serez prêt.",
+      "subscriptionRequired": "Abonnement requis",
+      "successDescription": "Votre abonnement a été activé. Merci de votre abonnement !",
+      "successTitle": "Succès !"
+    },
+    "bestValue": "Meilleur rapport qualité-prix",
+    "billedMonthly": "facturé mensuellement",
+    "cancelsOn": "Annulation le {date}",
+    "checkoutCreateFailed": "Échec de la création de la session de paiement",
+    "checkoutStartFailed": "Échec du démarrage du paiement",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout collecte vos informations de paiement maintenant. Votre abonnement payé commence seulement après l'expiration de l'essai.",
+      "trialContinuesTitle": "Votre essai se poursuit après la mise à niveau"
+    },
+    "choosePlan": "Choisissez votre forfait",
+    "choosePlanDescription": "Commencez avec un essai gratuit de 14 jours. Aucune carte de crédit requise pour commencer.",
+    "currentPlan": "Forfait actuel",
+    "days": "{count} jours",
+    "description": "Gérez votre abonnement et vos informations de facturation",
+    "faq": {
+      "afterTrial": {
+        "answer": "Une fois votre essai de 14 jours terminé, vous serez facturé pour le forfait que vous avez sélectionné. Vous pouvez annuler à tout moment avant la fin de l'essai pour éviter tout frais.",
+        "question": "Que se passe-t-il après l'essai ?"
+      },
+      "perSeat": {
+        "answer": "Vous êtes facturé en fonction du nombre de membres actifs dans votre organisation. Lorsque vous ajoutez ou supprimez des membres, votre abonnement est automatiquement ajusté.",
+        "question": "Comment fonctionne la facturation par siège ?"
+      },
+      "switch": {
+        "answer": "Oui ! Vous pouvez changer de forfait à tout moment via le portail de facturation. Les changements prennent effet lors de votre prochain cycle de facturation.",
+        "question": "Puis-je passer de la facturation mensuelle à annuelle ?"
+      },
+      "title": "Questions fréquentes"
+    },
+    "features": {
+      "allFeatures": "Toutes les fonctionnalités incluses",
+      "cancelAnytime": "Annulez à tout moment",
+      "trial": "Essai gratuit de 14 jours",
+      "yearlyDiscount": "25 % de réduction par rapport au tarif mensuel"
+    },
+    "interval": {
+      "monthlyBilling": "Facturation mensuelle",
+      "yearlyBilling": "Facturation annuelle"
+    },
+    "manageBilling": "Gérer la facturation",
+    "monthlyCost": "Coût mensuel",
+    "nextBilling": "Prochaine facturation",
+    "opening": "Ouverture...",
+    "perSeatMonth": "/siège/mois",
+    "plans": {
+      "monthly": {
+        "description": "Facturation mensuelle flexible",
+        "title": "Mensuel"
+      },
+      "yearly": {
+        "description": "Économisez 25 % avec une facturation annuelle",
+        "title": "Annuel"
+      }
+    },
+    "portalOpenFailed": "Échec de l'ouverture du portail de facturation",
+    "priceSeatMonth": "{price} €/siège/mois",
+    "priceSeatMonthYearly": "{price} €/siège/mois (facturé annuellement)",
+    "seatBilledAnnually": "{price} €/siège facturé annuellement",
+    "starting": "Démarrage...",
+    "startTrial": "Démarrer l'essai gratuit",
+    "status": {
+      "canceled": "Annulé",
+      "noSubscription": "Aucun abonnement",
+      "pastDue": "En retard",
+      "trial": "Essai"
+    },
+    "suspended": {
+      "adminDescription": "Votre essai a expiré ou l'abonnement n'est plus valide. Mettez à jour la facturation pour continuer à utiliser Z8.",
+      "goToBilling": "Accéder à la facturation",
+      "memberDescription": "Cette organisation est suspendue. Contactez un administrateur d'organisation pour mettre à jour la facturation.",
+      "title": "Organisation suspendue"
+    },
+    "title": "Facturation et abonnement",
+    "trialBanner": {
+      "description": "{days} jours restants. Ajoutez vos informations de paiement maintenant ; votre abonnement payé commence après l'essai.",
+      "title": "Essai de 14 jours actif",
+      "upgrade": "Mettre à niveau"
+    },
+    "trialEnds": "Fin de l'essai",
+    "vatNotice": "Les prix indiqués sont des prix nets hors TVA. La TVA sera ajoutée le cas échéant.",
+    "yearTotal": "{amount} €/an au total"
   },
   "surcharges": {
     "reports": {
@@ -53,5 +359,124 @@
       },
       "title": "Rapports de surcharge"
     }
+  },
+  "today": {
+    "approvals": {
+      "approve": "Approuver",
+      "approveLabel": "Approuver {title}",
+      "description": "Demandes en attente d'une décision du responsable.",
+      "empty": "Aucune approbation en attente.",
+      "openInbox": "Ouvrir la boîte de réception",
+      "pendingAriaLabel": "Approbations en attente",
+      "reject": "Rejeter",
+      "rejectLabel": "Rejeter {title}",
+      "title": "Approbations",
+      "toast": {
+        "approved": "Demande approuvée",
+        "approveError": "Impossible d'approuver la demande",
+        "rejected": "Demande rejetée",
+        "rejectError": "Impossible de rejeter la demande"
+      }
+    },
+    "briefing": {
+      "badge": "Aujourd'hui",
+      "description": "Passez en revue les éléments nécessitant une action aujourd'hui, puis accédez directement au flux de travail approprié.",
+      "needsAction": {
+        "description": "Commencez ici pour le suivi opérationnel le plus urgent.",
+        "empty": "Tout est en ordre. Aucune action de la part du responsable n'est requise pour le moment.",
+        "title": "Action requise"
+      },
+      "sections": {
+        "empty": "Aucun problème détecté."
+      },
+      "severity": {
+        "critical": "Critique",
+        "high": "Élevé",
+        "info": "Info",
+        "warning": "Avertissement"
+      },
+      "summaryAriaLabel": "Résumé du jour",
+      "supportingSectionsAriaLabel": "Sections de support",
+      "title": "Briefing quotidien du responsable",
+      "updatedAt": "{date} - Mis à jour à {time}"
+    }
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nouvelle réclamation"
+    },
+    "approvals": {
+      "description": "Ouvrir la boîte de réception unifiée des approbations filtrée sur les frais de déplacement.",
+      "openInbox": "Ouvrir la boîte de réception",
+      "title": "Examiner les approbations de frais de déplacement en attente"
+    },
+    "claimTypes": {
+      "mileage": "Kilométrage",
+      "per_diem": "Indemnité journalière",
+      "receipt": "Reçu"
+    },
+    "decision": {
+      "approve": "Approuver",
+      "approved": "Demande approuvée avec succès",
+      "approveDescription": "Ajoutez une note facultative pour le demandeur avant d'approuver.",
+      "approveTitle": "Approuver la demande",
+      "errors": {
+        "approve": "Échec de l'approbation de la demande",
+        "missingClaim": "La demande de frais de déplacement est manquante",
+        "reject": "Échec du rejet de la demande",
+        "rejectionReason": "Veuillez fournir un motif de rejet"
+      },
+      "noteOptional": "Note (facultatif)",
+      "notePlaceholder": "Cela semble correct. Merci pour les détails.",
+      "reasonPlaceholder": "Détails du reçu manquants pour le montant soumis",
+      "reasonRequired": "Motif (requis)",
+      "reject": "Rejeter",
+      "rejectDescription": "Fournissez un motif clair pour aider le demandeur à mettre à jour et à soumettre à nouveau.",
+      "rejected": "Demande rejetée avec succès",
+      "rejectTitle": "Rejeter la demande"
+    },
+    "description": "Créez et suivez vos demandes de frais de déplacement",
+    "errors": {
+      "loadClaims": "Échec du chargement des demandes de frais de déplacement"
+    },
+    "feature": "gérer les frais de déplacement",
+    "form": {
+      "amount": "Montant",
+      "claimType": "Type de demande",
+      "created": "Brouillon de frais de déplacement créé",
+      "createDraft": "Créer un brouillon",
+      "currency": "Devise",
+      "currencyDescription": "Code ISO 4217, par ex. EUR ou USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Créez un nouveau brouillon de note de frais pour vos récents déplacements.",
+      "destinationCity": "Ville de destination",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Pays de destination",
+      "destinationCountryPlaceholder": "Allemagne",
+      "errors": {
+        "createDraft": "Échec de la création du brouillon de note de frais",
+        "positiveAmount": "Le montant doit être un nombre positif",
+        "tripEndBeforeStart": "La date de fin du voyage ne peut pas être antérieure à la date de début",
+        "validTripDates": "Veuillez fournir une date de début et de fin de voyage valide",
+        "validTripEnd": "Veuillez fournir une date de fin de voyage valide",
+        "validTripStart": "Veuillez fournir une date de début de voyage valide"
+      },
+      "notes": "Notes",
+      "notesPlaceholder": "Ajoutez un contexte optionnel pour votre approbateur",
+      "receiptAttachmentHint": "Les notes de frais avec justificatifs nécessitent au moins une pièce jointe. Le téléchargement de pièces jointes sera disponible après la création du brouillon.",
+      "selectClaimType": "Sélectionner le type de note de frais",
+      "title": "Créer une note de frais de déplacement",
+      "tripEnd": "Fin du voyage",
+      "tripStart": "Début du voyage"
+    },
+    "list": {
+      "amount": "Montant",
+      "dateRange": "Plage de dates",
+      "emptyDescription": "Créez votre première note de frais pour lancer le processus d'approbation.",
+      "emptyTitle": "Aucune note de frais de déplacement pour le moment",
+      "status": "Statut",
+      "type": "Type"
+    },
+    "title": "Notes de frais"
   }
 }

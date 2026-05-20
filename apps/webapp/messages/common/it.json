@@ -10,6 +10,16 @@
     "delete": "Elimina",
     "refresh": "Aggiorna"
   },
+  "analytics": {
+    "export": {
+      "export": "Esporta",
+      "exportAsCsv": "Esporta come CSV",
+      "exportAsExcel": "Esporta come Excel",
+      "exportedAsFormat": "Esportato come {format}",
+      "exportingFormat": "Esportazione in {format} in corso…",
+      "failedAsFormat": "Esportazione come {format} non riuscita"
+    }
+  },
   "colors": {
     "blue": "Blu",
     "green": "Verde",
@@ -24,6 +34,7 @@
     "actions": "Azioni",
     "active": "Attivo",
     "add": "Aggiungi",
+    "adding": "Aggiunta in corso...",
     "all": "Tutti",
     "approve": "Approva",
     "assign": "Assegna",
@@ -37,6 +48,7 @@
     "continue": "Continua",
     "copy": "Copia",
     "create": "Crea",
+    "current": "Attuale",
     "days": {
       "friday": "Venerdì",
       "label": "giorni",
@@ -87,6 +99,7 @@
     "moveDown": "Sposta giù",
     "moveUp": "Sposta su",
     "name": "Nome",
+    "never": "Mai",
     "new": "Nuovo",
     "next": "Avanti",
     "notApplicable": "N/D",
@@ -95,9 +108,12 @@
     "openMenu": "Apri menu",
     "optional": "opzionale",
     "or": "O",
+    "pending": "In sospeso",
+    "present": "Presente",
     "previous": "Precedente",
     "recovering": "Ripristino in corso...",
     "refresh": "Aggiorna",
+    "refreshing": "Aggiornamento in corso...",
     "reject": "Rifiuta",
     "rejecting": "Rifiuto in corso…",
     "remove": "Rimuovi",
@@ -123,6 +139,8 @@
     "unknownEmployee": "Dipendente sconosciuto",
     "unknownTeam": "Team sconosciuto",
     "unnamed": "Senza nome",
+    "update": "Aggiorna",
+    "updating": "Aggiornamento in corso...",
     "uploading": "Caricamento...",
     "validate": "Convalida",
     "validationError": "Errore di convalida",
@@ -221,6 +239,12 @@
       "settings": "Impostazioni notifiche",
       "viewAll": "Visualizza tutte le notifiche"
     },
+    "content": {
+      "teamMemberAdded": {
+        "message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
+        "title": "Aggiunto al team"
+      }
+    },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",
     "empty": {
       "description": "Sei in pari! Le nuove notifiche appariranno qui.",
@@ -239,6 +263,36 @@
       "ariaLabel": "Filtra le notifiche per stato di lettura",
       "read": "Letto",
       "unread": "Non letto"
+    },
+    "preferences": {
+      "disabled": "Notifica disabilitata",
+      "enabled": "Notifica abilitata",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Ricevi avvisi per le richieste di approvazione in sospeso",
+          "requestUpdates": "Ricevi una notifica quando le tue richieste vengono approvate o rifiutate",
+          "teamSecurity": "Rimani informato sugli aggiornamenti del team e sulla sicurezza"
+        },
+        "description": "Abilita le notifiche push per ricevere aggiornamenti istantanei su approvazioni, correzioni di orario e importanti cambiamenti del team, anche quando non stai utilizzando l'app.",
+        "enable": "Abilita notifiche",
+        "notNow": "Non ora",
+        "title": "Rimani aggiornato"
+      },
+      "push": {
+        "blockedDescription": "Le notifiche push sono bloccate dal tuo browser. Per abilitarle, devi aggiornare le impostazioni del browser.",
+        "blockedHelp": "Fai clic sull'icona del lucchetto nella barra degli indirizzi del browser e consenti le notifiche per questo sito, quindi aggiorna la pagina.",
+        "blockedTitle": "Notifiche push bloccate",
+        "enableButton": "Abilita notifiche push",
+        "enableDescription": "Ricevi notifiche istantanee anche quando non stai utilizzando l'app",
+        "enabledIndicator": "Le notifiche push sono abilitate",
+        "enabledToast": "Notifiche push abilitate",
+        "enabledToastDescription": "Ora riceverai le notifiche push del browser",
+        "enableFailedToast": "Impossibile abilitare le notifiche push",
+        "enableTitle": "Abilita notifiche push",
+        "errorToast": "Errore notifica push"
+      },
+      "toggleAria": "Notifiche {channel} per {type}",
+      "updateFailed": "Aggiornamento preferenza non riuscito"
     },
     "search": {
       "ariaLabel": "Cerca notifiche",
@@ -272,6 +326,10 @@
       "retry": "Riprova",
       "syncing": "Sincronizzazione di {count} evento/i in corso..."
     }
+  },
+  "presence": {
+    "clockedIn": "Entrata effettuata",
+    "clockedOut": "Uscita effettuata"
   },
   "roles": {
     "admin": "Amministratore",
@@ -331,6 +389,9 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
+  "userAvatar": {
+    "alt": "Avatar utente"
+  },
   "user": {
     "language": "Lingua",
     "logging-out": "Disconnessione...",
@@ -340,6 +401,7 @@
     "theme-dark": "Scuro",
     "theme-light": "Chiaro",
     "theme-system": "Sistema",
+    "theme-toggle": "Cambia tema",
     "time-settings": "Impostazioni orario"
   },
   "validation": {

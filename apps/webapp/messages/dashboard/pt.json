@@ -33,6 +33,11 @@
       "of-goal": "de {goal}",
       "title": "Hidratação"
     },
+    "layout": {
+      "saved": "Layout do painel salvo",
+      "saveFailed": "Falha ao salvar o layout do painel",
+      "saveFailedDescription": "Suas alterações não puderam ser salvas. Por favor, tente novamente."
+    },
     "managed-employees": {
       "direct-reports": "{count} subordinados diretos",
       "error": "Falha ao carregar funcionários gerenciados",
@@ -161,6 +166,11 @@
       "title": "Quem está ausente hoje",
       "until-date": "Até {date}",
       "view-calendar": "Ver calendário completo"
+    },
+    "widgets": {
+      "dragToReorder": "Arraste para reordenar o widget",
+      "moving": "Movendo widget…",
+      "refresh": "Atualizar"
     }
   }
 }

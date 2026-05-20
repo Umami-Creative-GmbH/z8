@@ -33,8 +33,8 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	normalizeAbsenceDurationInput,
 	type AbsenceDurationInput,
+	normalizeAbsenceDurationInput,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
@@ -85,10 +85,6 @@ const defaultValues: RecordAbsenceFormValues = {
 	sickDetail: "",
 };
 
-function requiredMessage(label: string) {
-	return `${label} is required`;
-}
-
 export function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string | null {
 	return validateAbsenceDurationInput(input);
 }
@@ -127,8 +123,14 @@ export function RecordAbsenceDialog({
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
+	function requiredMessage(label: string) {
+		return t("team.absences.recordDialog.required", "{label} is required", { label });
+	}
+
 	const title = employee
-		? `Record absence for ${employee.name}`
+		? t("team.absences.recordDialog.titleForEmployee", "Record absence for {name}", {
+				name: employee.name,
+			})
 		: t("team.absences.recordDialog.title", "Record absence");
 	const durationOptions: Array<{ value: AbsenceDurationKind; label: string }> = [
 		{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
@@ -299,11 +301,11 @@ export function RecordAbsenceDialog({
 														</SelectTrigger>
 													</TFormControl>
 													<SelectContent>
-														{sickDetailOptions.map((option) => (
-															<SelectItem key={option.value} value={option.value}>
-																{option.label}
-															</SelectItem>
-														))}
+											{sickDetailOptions.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{t(option.labelKey, option.label)}
+												</SelectItem>
+											))}
 													</SelectContent>
 												</Select>
 												<TFormMessage field={field} />

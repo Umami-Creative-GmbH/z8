@@ -199,13 +199,13 @@ export function WorkPolicyPresetImport({
 							<div className="space-y-2">
 								<div className="grid grid-cols-2 gap-2 text-sm">
 									<div>
-										<span className="text-muted-foreground">Max Daily:</span>
+									<span className="text-muted-foreground">{t("settings.workPolicies.maxDailyLabel", "Max Daily:")}</span>
 										<span className="ml-1 font-medium">
 											{formatMinutesToHours(preset.maxDailyMinutes)}
 										</span>
 									</div>
 									<div>
-										<span className="text-muted-foreground">Max Weekly:</span>
+									<span className="text-muted-foreground">{t("settings.workPolicies.maxWeeklyLabel", "Max Weekly:")}</span>
 										<span className="ml-1 font-medium">
 											{formatMinutesToHours(preset.maxWeeklyMinutes)}
 										</span>

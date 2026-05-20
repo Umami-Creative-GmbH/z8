@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, employeeManagers } from "@/db/schema";
 import { canCancelAbsence } from "@/lib/absences/permissions";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { onApprovedAbsenceCancelledByEmployee } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { removeCanonicalAbsenceRecord } from "./actions.canonical";
@@ -111,6 +112,11 @@ export async function cancelAbsenceRequestForEmployee(
 		};
 	}
 
+	const billingAccess = await requireBillingForMutation(organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return { success: false, error: "billing_required" };
+	}
+
 	const shouldNotifyManagers = absence.status === "approved" && absence.employeeId === currentEmployee.id;
 
 	void addCalendarSyncJob({
@@ -123,11 +129,6 @@ export async function cancelAbsenceRequestForEmployee(
 		return { success: false, error: "Absence organization not found" };
 	}
 
-	await removeCanonicalAbsenceRecord({
-		organizationId,
-		canonicalRecordId: absence.canonicalRecordId,
-	});
-
 	await db.delete(absenceEntry).where(eq(absenceEntry.id, absenceId));
 
 	await db
@@ -135,6 +136,11 @@ export async function cancelAbsenceRequestForEmployee(
 		.where(
 			and(eq(approvalRequest.entityType, "absence_entry"), eq(approvalRequest.entityId, absenceId)),
 		);
+
+	await removeCanonicalAbsenceRecord({
+		organizationId,
+		canonicalRecordId: absence.canonicalRecordId,
+	});
 
 	if (shouldNotifyManagers) {
 		void notifyManagersOfApprovedSelfCancellation(absence, organizationId);

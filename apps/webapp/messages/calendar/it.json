@@ -97,7 +97,8 @@
     },
     "subtitle": "Gestisci il tuo tempo libero e i giorni di ferie",
     "table": {
-      "cancelRequest": "Annulla richiesta",
+      "cancelAbsence": "Annulla assenza",
+      "cancelAbsenceTooltip": "Annulla assenza",
       "end": "Fine",
       "headers": {
         "actions": "Azioni",
@@ -228,6 +229,17 @@
       "approved": "Approvato",
       "pending": "In attesa",
       "rejected": "Rifiutato"
+    },
+    "view": {
+      "day": "Giorno",
+      "loading": "Caricamento calendario...",
+      "month": "Mese",
+      "next": "Successivo",
+      "previous": "Precedente",
+      "refresh": "Aggiorna",
+      "today": "Oggi",
+      "week": "Settimana",
+      "year": "Anno"
     }
   }
 }

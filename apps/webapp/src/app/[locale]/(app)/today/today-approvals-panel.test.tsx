@@ -18,6 +18,16 @@ vi.mock("@/navigation", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: toastSuccessMock, error: toastErrorMock } }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+				fallback,
+			),
+	}),
+}));
+
 describe("TodayApprovalsPanel", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();

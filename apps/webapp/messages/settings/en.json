@@ -6,6 +6,7 @@
       "title": "Create Organization"
     },
     "createError": "Failed to create organization",
+    "createNew": "Create New Organization",
     "createSuccess": "Organization created successfully!",
     "delete": {
       "bannerDescription": "{count, plural, one {This organization will be permanently deleted in # day. Contact your administrator if you believe this is a mistake.} other {This organization will be permanently deleted in # days. Contact your administrator if you believe this is a mistake.}}",
@@ -37,6 +38,16 @@
       "warning": "This will schedule the organization for deletion. You will have 5 days to recover it before all data is permanently deleted."
     },
     "description": "Explore direct managers, teams, and reporting relationships in your organization.",
+    "edit": {
+      "description": "Update your organization details. Changes will be visible to all members.",
+      "descriptionPlaceholder": "A brief description of your organization",
+      "nameLabel": "Organization Name",
+      "slugHelp": "Only lowercase letters, numbers, and hyphens",
+      "slugLabel": "Organization Slug",
+      "title": "Edit Organization",
+      "updateError": "Failed to update organization",
+      "updateSuccess": "Organization updated successfully"
+    },
     "error": {
       "description": "The organization chart could not be loaded. Please try again.",
       "title": "Unable to load organization"
@@ -68,20 +79,46 @@
       "work-shifts": "Work Shifts",
       "work-shifts-description": "Enable work shifts with drag-and-drop planning, open shifts, and swap requests."
     },
+    "invite": {
+      "allowCreateOrganizations": "Allow this user to create organizations",
+      "description": "Send an invitation to join {organizationName}",
+      "emailLabel": "Email Address",
+      "error": "Failed to send invitation",
+      "member": "Invite Member",
+      "roleDescriptions": {
+        "admin": "Can invite members and manage settings",
+        "member": "Basic access to organization",
+        "owner": "Full control of organization"
+      },
+      "submit": "Send Invitation",
+      "success": "Invitation sent successfully",
+      "title": "Invite Member"
+    },
     "joinOrCreate": "Join or create one",
     "logo-uploaded": "Logo uploaded successfully",
     "logo-upload-failed": "Failed to upload logo",
+    "logo": {
+      "uploadLabel": "Upload organization logo"
+    },
     "members": {
       "activate": "Activate",
       "active": "Active",
       "activeMembers": "Active Members",
       "cancel": "Cancel",
+      "count": "{count, plural, one {# member} other {# members}}",
       "deactivate": "Deactivate",
       "email": "Email",
       "emailVerified": "Email Verified",
+      "employeeActivateSuccess": "Employee activated successfully",
+      "employeeDeactivateSuccess": "Employee deactivated successfully",
+      "employeeStatusError": "Failed to update employee status",
       "expired": "Expired",
       "expires": "Expires",
       "inactive": "Inactive",
+      "invitationCancelError": "Failed to cancel invitation",
+      "invitationCancelSuccess": "Invitation cancelled",
+      "invitationResendError": "Failed to resend invitation",
+      "invitationResendSuccess": "Invitation resent successfully",
       "invitationsWaiting": "{count} invitation(s) waiting to be accepted",
       "invitedBy": "Invited By",
       "member": "Member",
@@ -93,6 +130,12 @@
       "pending": "Pending",
       "pendingInvitations": "Pending Invitations",
       "remove": "Remove from Organization",
+      "removeDialogAction": "Remove Member",
+      "removeDialogDescriptionPrefix": "Are you sure you want to remove",
+      "removeDialogDescriptionSuffix": "from this organization? This action cannot be undone.",
+      "removeDialogTitle": "Remove Member",
+      "removeError": "Failed to remove member",
+      "removeSuccess": "Member removed successfully",
       "resend": "Resend",
       "role": "Role",
       "roles": {
@@ -100,12 +143,18 @@
         "member": "Member",
         "owner": "Owner"
       },
+      "roleUpdateError": "Failed to update member role",
+      "roleUpdateSuccess": "Member role updated successfully",
       "searchInvitations": "Search invitations...",
       "searchMembers": "Search members...",
       "sent": "Sent",
       "status": "Status",
       "verified": "Verified",
       "you": "You"
+    },
+    "membersInvitations": {
+      "description": "Manage organization members and send invitations",
+      "title": "Members & Invitations"
     },
     "nameLabel": "Organization Name",
     "namePlaceholder": "Acme Inc.",
@@ -114,15 +163,23 @@
     "orgChart": {
       "employeeCount": "{count} active employees",
       "empty": "No active employees found",
+      "expand": "Expand",
       "expandEmployeeFailed": "Could not expand employee.",
+      "expandEmployeeLabel": "Expand {name} neighborhood",
       "expanding": "Loading more organization data",
+      "expandTeam": "Expand team",
       "expandTeamFailed": "Could not expand team.",
+      "expandTeamLabel": "Expand {name} team",
       "explorer": "Org Chart Explorer",
       "focusFailed": "Could not load employee details.",
+      "memberCount": "{count} members",
       "noSearchResults": "No employees found",
+      "partialGraph": "Showing part of a large organization. Expand nodes or search to continue.",
       "searchFailed": "Could not search employees.",
       "searching": "Searching…",
-      "searchPlaceholder": "Search employees…"
+      "searchLabel": "Search employees",
+      "searchPlaceholder": "Search employees…",
+      "teamBadge": "Team"
     },
     "recover": {
       "button": "Recover Organization",
@@ -138,12 +195,65 @@
       "owner": "Owner"
     },
     "slugDescription": "Used in URLs. Auto-generated from name.",
+    "slugErrors": {
+      "format": "Slug must contain only lowercase letters, numbers, and hyphens",
+      "hyphen": "Slug cannot start or end with a hyphen",
+      "max": "Slug must be less than 50 characters",
+      "min": "Slug must be at least 2 characters"
+    },
     "slugLabel": "Organization Slug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "This slug is already taken. Please choose a different one.",
     "switchFailed": "Failed to switch organization",
     "switching": "Switching organization...",
     "switchTo": "Switch Organization",
+    "teams": {
+      "card": {
+        "deleteTeam": "Delete Team",
+        "editTeam": "Edit Team",
+        "fallbackManager": "Fallback manager",
+        "manageMembers": "Manage Members",
+        "notAssigned": "Not assigned"
+      },
+      "create": "Create Team",
+      "createFirst": "Create Your First Team",
+      "delete": "Delete Team",
+      "deleteDialogDescription": "This will permanently delete the team \"{teamName}\".",
+      "deleteDialogMembersWarning": "Warning: This team has {count} member(s). They will be removed from the team.",
+      "deleteDialogTitle": "Are you sure?",
+      "deleteError": "Failed to delete team",
+      "deleteSuccess": "Team deleted successfully",
+      "description": "Organize your employees into teams for better collaboration",
+      "edit": {
+        "description": "Update team name and description",
+        "descriptionLabel": "Description (Optional)",
+        "descriptionPlaceholder": "A brief description of this team",
+        "fallbackManagerHelp": "Used for approvals when a team member has no direct manager.",
+        "fallbackManagerLabel": "Fallback Manager",
+        "fallbackManagerPlaceholder": "Select a fallback manager",
+        "nameLabel": "Team Name",
+        "namePlaceholder": "Engineering, Sales, Marketing...",
+        "noFallbackManager": "No fallback manager",
+        "title": "Edit Team",
+        "updateError": "Failed to update team",
+        "updateSuccess": "Team updated successfully"
+      },
+      "empty": "No teams yet",
+      "emptyDescription": "Create your first team to start organizing your employees",
+      "members": {
+        "addError": "Failed to add member",
+        "addSuccess": "Member added to team",
+        "currentMembers": "Current Members ({count})",
+        "description": "Manage who belongs to this team",
+        "empty": "No members in this team yet",
+        "emptyHelp": "Add members using the dropdown above",
+        "removeError": "Failed to remove member",
+        "removeSuccess": "Member removed from team",
+        "selectEmployee": "Select an employee to add",
+        "title": "{teamName} - Team Members"
+      },
+      "title": "Teams"
+    },
     "timezone": {
       "default": "Default Timezone",
       "description": "Set the default timezone for your organization. This is used for absence tracking, reports, and other date-based features. Individual users can override this in their profile settings.",
@@ -506,8 +616,37 @@
       }
     },
     "auditLog": {
+      "action": "Action",
+      "actionCategoryPlaceholder": "Action Category",
+      "changes": "Changes",
       "description": "View and search all actions performed in your organization",
-      "title": "Audit Log"
+      "details": "Details",
+      "detailsDescription": "Full details of this audit log entry",
+      "detailsTitle": "Audit Log Details",
+      "entity": "Entity",
+      "entityTypePlaceholder": "Entity Type",
+      "entriesFound": "{count} entries found",
+      "entriesTitle": "Audit Log Entries",
+      "export": "Export",
+      "exportFailed": "Failed to export audit logs",
+      "exportSuccess": "Exported {count} audit log entries",
+      "fetchFailed": "Failed to fetch audit logs",
+      "filters": "Filters",
+      "filtersDescription": "Search and filter audit log entries",
+      "from": "From",
+      "ipAddress": "IP Address",
+      "metadata": "Metadata",
+      "noEntries": "No entries found",
+      "noEntriesForFilters": "No audit log entries found for the selected filters.",
+      "pageOf": "Page {page} of {totalPages}",
+      "search": "Search",
+      "searchPlaceholder": "Search actions, users, or metadata…",
+      "timestamp": "Timestamp",
+      "title": "Audit Log",
+      "to": "To",
+      "unknown": "Unknown",
+      "user": "User",
+      "userAgent": "User Agent"
     },
     "avv": {
       "contractDetails": {
@@ -715,17 +854,36 @@
       },
       "mapping": {
         "description": "Match Clockin employees to existing Z8 employees. Automatic email matches are preselected.",
+        "mapEmployee": "Map",
+        "noEmail": "No email in Clockin",
+        "skipEmployee": "Skip this employee",
         "summary": "Mapped employees",
         "title": "Map Employees"
       },
       "preview": {
+        "absences": "Absences",
         "description": "Review what Clockin data is available before mapping employees and scanning records.",
+        "employees": "Employees",
         "next": "Map Employees",
-        "title": "Clockin Preview"
+        "title": "Clockin Preview",
+        "workdays": "Workdays"
+      },
+      "review": {
+        "noProductionRecords": "No production records have been imported yet.",
+        "openReview": "Open review",
+        "scanningDescription": "Review batch {reviewBatchId} is scanning. Review and approve records before commit.",
+        "startedTitle": "Import review scan started",
+        "starting": "Starting Clockin import review scan…",
+        "startSuccess": "Import review scan started. Review is required before records are committed."
       },
       "selection": {
+        "absences": "Absences",
         "description": "Choose which Clockin records to scan for review. Records must be reviewed before commit.",
-        "title": "Import Scope"
+        "endDate": "End date",
+        "startDate": "Start date",
+        "startReviewScan": "Start Review Scan",
+        "title": "Import Scope",
+        "workdays": "Workdays / Work periods"
       }
     },
     "clockodoImport": {
@@ -1139,7 +1297,7 @@
           "thisYear": "This year"
         },
         "employees": {
-          "all": "All employees ({count})",
+          "all": "All employees (${employees.length})",
           "label": "Employees",
           "selectSpecific": "Select specific employees"
         }
@@ -1150,19 +1308,19 @@
         "title": "Generate Demo Data"
       },
       "generateEmployees": {
-        "button": "Generate {count} Employees",
+        "button": "Generate ${employeeCount} Employees",
         "countHint": "Maximum 50 employees at a time",
         "countLabel": "Number of Employees",
         "description": "Create demo employee accounts for testing",
-        "employeesCreated": "{count} employees created",
+        "employeesCreated": "${employeeResult.employeesCreated} employees created",
         "generating": "Generating...",
         "includeManagers": "Include Manager Assignments",
-        "managersCreated": "{count} manager assignments",
+        "managersCreated": "${employeeResult.managersCreated} manager assignments",
         "managersHint": "Randomly assign managers to new employees",
         "options": "Options",
         "successTitle": "Employees generated successfully!",
         "title": "Generate Employees",
-        "usersCreated": "{count} users created"
+        "usersCreated": "${employeeResult.usersCreated} users created"
       },
       "results": {
         "success": "Demo data generated successfully!"
@@ -1322,15 +1480,152 @@
       },
       "title": "Employees"
     },
+    "employmentHistory": {
+      "addChange": "Add Change",
+      "addError": "Failed to add employment history change",
+      "addSuccess": "Employment history change added",
+      "cancelConfirm": "Cancel this employment change? This removes the scheduled or draft employment change.",
+      "cancelError": "Failed to cancel employment history change",
+      "cancelSuccess": "Employment history change canceled",
+      "confirmError": "Failed to confirm employment history change",
+      "confirmSuccess": "Employment history change confirmed",
+      "contractType": "Contract Type",
+      "contractTypes": {
+        "fixed": "fixed",
+        "hourly": "hourly"
+      },
+      "currentConfirmed": "Current confirmed",
+      "description": "Confirmed context and scheduled employment changes",
+      "effectiveDate": "Effective Date",
+      "effectiveDateHelp": "When this contract context takes effect",
+      "effectiveDateRequired": "Effective Date is required",
+      "effectiveDateValue": "Effective {date}",
+      "emptyTimeline": "No contract or work-model history yet.",
+      "hourlyRate": "Hourly Rate",
+      "hourlyRateValue": "{rate} / hour",
+      "nextScheduledConfirmed": "Next scheduled confirmed",
+      "noCurrentContext": "No confirmed contract context",
+      "noScheduledChange": "No confirmed change scheduled",
+      "probationEnd": "Probation End",
+      "probationRange": "Probation {startDate} - {endDate}",
+      "probationStart": "Probation Start",
+      "reasonNote": "Reason / Note",
+      "reasonPlaceholder": "Annual review, role change, or work-model update…",
+      "reviewState": "Review State",
+      "saveChange": "Save Change",
+      "selectContractType": "Select contract type",
+      "selectReviewState": "Select review state",
+      "selectWorkModel": "Select work model",
+      "states": {
+        "confirmed": "confirmed",
+        "draft": "draft",
+        "pending": "pending"
+      },
+      "timeline": "Timeline",
+      "title": "Contract & Work Model",
+      "weeklyHours": "Weekly Hours",
+      "weeklyHoursValue": "{hours} / week",
+      "workModel": "Work Model",
+      "workModels": {
+        "flexible": "flexible",
+        "hybrid": "hybrid",
+        "onsite": "onsite",
+        "remote": "remote"
+      }
+    },
     "enterprise": {
+      "addProvider": "Add Provider",
+      "clientId": "Client ID",
+      "clientIdRequired": "Client ID is required",
+      "clientSecret": "Client Secret",
+      "clientSecretRequired": "Client Secret is required",
+      "configureCallbackUrl": "Configure the callback URL:",
+      "domain": "Domain",
       "domains": {
+        "add": "Add Custom Domain",
+        "addDescription": "Add a custom domain to enable organization-specific login pages. You will need to verify ownership via DNS records.",
+        "addDomain": "Add Domain",
+        "added": "Domain added successfully",
+        "addFailed": "Failed to add domain",
+        "adding": "Adding…",
+        "authConfigDescription": "Configure which authentication methods are available for users signing in via {domain}",
+        "authConfigTitle": "Auth Configuration",
+        "authConfigUpdated": "Auth configuration updated",
+        "authConfigUpdateFailed": "Failed to update auth configuration",
+        "authMethod": {
+          "emailPassword": "Email/Password",
+          "passkey": "Passkey",
+          "social": "Social ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "configured",
+        "cookieConsentScript": "Cookie Consent Script",
+        "cookieConsentScriptHelp": "Injected on authentication pages for this custom domain only. Leave empty to disable.",
+        "cookieConsentStatus": "Cookie consent {status}",
+        "copiedToClipboard": "Copied to clipboard",
+        "customDomain": "Custom Domain",
+        "customDomainDescription": "Configure a custom domain to enable an organization-specific login page with your branding.",
+        "deleteAria": "Delete custom domain {domain}",
+        "deleted": "Domain deleted",
+        "deleteDescription": "Are you sure you want to delete \"{domain}\"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.",
+        "deleteFailed": "Failed to delete domain",
+        "deleteTitle": "Delete Domain",
         "description": "Configure your organization's custom login domain, branding, and SSO providers.",
+        "dnsPropagation": "DNS Propagation",
+        "dnsPropagationDescription": "DNS changes can take up to 48 hours to propagate, though they often complete within a few minutes. You can click \"Verify\" once you have added the TXT record.",
+        "domain": "Domain",
+        "domainHelp": "Enter the domain where users will access the login page.",
+        "domainInvalid": "Please enter a valid domain (e.g., login.example.com)",
+        "domainPageSettings": "Domain Page Settings",
+        "domainRequired": "Domain is required",
+        "editAuthSettingsAria": "Edit authentication settings for {domain}",
+        "emailPassword": "Email & Password",
+        "emailPasswordHelp": "Allow users to sign in with email and password",
+        "empty": "No custom domain configured yet.",
+        "enabledAuthMethods": "Enabled Auth Methods",
         "guidedSetup": {
           "action": "Guided setup",
           "description": "Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
           "title": "Guided setup"
         },
-        "title": "Custom Domain & Branding"
+        "keepExistingSecretKey": "Leave empty to keep existing secret key",
+        "nameHost": "Name / Host",
+        "notConfigured": "not configured",
+        "passkey": "Passkey",
+        "passkeyHelp": "Allow passwordless sign-in with passkeys",
+        "regenerateToken": "Regenerate Token",
+        "regenerateTokenFailed": "Failed to regenerate token",
+        "regenerateTokenSuccess": "New verification token generated",
+        "regenerating": "Regenerating…",
+        "saveConfiguration": "Save Configuration",
+        "secretKey": "Secret Key",
+        "secretKeyPlaceholder": "Enter secret key",
+        "secretKeyRequired": "Required when setting a site key",
+        "siteKey": "Site Key",
+        "socialProviders": "Social Providers",
+        "socialProvidersHelp": "Enable social login options for this domain",
+        "sso": "Single Sign-On (SSO)",
+        "ssoHelp": "Allow OIDC-based enterprise sign-in",
+        "status": {
+          "pending": "Pending Verification",
+          "verified": "Verified"
+        },
+        "title": "Custom Domain & Branding",
+        "tokenExpired": "Token Expired",
+        "tokenExpiredDescription": "The verification token has expired. Please regenerate a new token.",
+        "tokenExpires": "Token expires: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Bot protection for auth forms. Required for enterprise domains.",
+        "turnstileSiteKeyStatus": "Turnstile site key {status}",
+        "txtRecordInstruction": "Add the following TXT record to your DNS:",
+        "value": "Value",
+        "verifiedSuccess": "Domain verified successfully",
+        "verify": "Verify",
+        "verifyDomain": "Verify Domain",
+        "verifyFailed": "Failed to verify domain",
+        "verifying": "Verifying…",
+        "verifyOwnership": "Verify Domain Ownership",
+        "verifyOwnershipDescription": "Add a DNS TXT record to verify ownership of {domain}"
       },
       "email": {
         "apiKey": "API Key",
@@ -1376,6 +1671,7 @@
         "vaultUnavailable": "Vault Unavailable",
         "vaultUnavailableDesc": "Vault is not available. Secrets cannot be stored securely."
       },
+      "enableProviderHelp": "Enable or disable this provider",
       "identity": {
         "accessPolicy": {
           "action": {
@@ -1581,6 +1877,90 @@
           "ssoTestPassed": "SSO test marked passed",
           "ssoTestRecordFailed": "Failed to record SSO test"
         }
+      },
+      "keepExistingSecretHelp": "Leave blank to keep the existing secret",
+      "leaveBlankKeepExisting": "Leave blank to keep existing",
+      "provider": "Provider",
+      "socialOAuth": {
+        "addDescription": "Configure your own OAuth app for social login.",
+        "addProviderError": "Failed to add provider",
+        "addTitle": "Add Social OAuth Provider",
+        "appleKeyIdHelp": "The Key ID associated with your private key",
+        "appleKeyIdRequired": "Key ID is required for Apple",
+        "appleTeamIdHelp": "Found in your Apple Developer account",
+        "appleTeamIdRequired": "Team ID is required for Apple",
+        "clientIdPlaceholder": "Your OAuth client ID",
+        "clientSecretPlaceholder": "Your OAuth client secret",
+        "configured": "{provider} OAuth configured successfully",
+        "createAppAt": "Create an OAuth app at",
+        "deleteError": "Failed to delete OAuth config",
+        "description": "Configure your own OAuth credentials for social login. This allows your users to sign in using your organization's OAuth apps instead of shared credentials.",
+        "developerConsole": "{provider} Developer Console",
+        "editDescription": "Update your OAuth credentials.",
+        "editTitle": "Edit {provider} OAuth",
+        "empty": "No custom social OAuth providers configured.",
+        "emptyDescription": "Add your own OAuth credentials to replace the shared credentials.",
+        "howItWorks": "How it Works",
+        "instructions": {
+          "addProvider": "Add the provider here with your credentials",
+          "copyCredentials": "Copy the Client ID and Client Secret",
+          "createApp": "Create an OAuth app in the provider's developer console",
+          "customDomain": "Users signing in via your custom domain will use your OAuth app"
+        },
+        "keyId": "Key ID",
+        "lastTested": "Last Tested",
+        "notTested": "Not Tested",
+        "privateKey": "Private Key (.p8)",
+        "removed": "{provider} OAuth removed",
+        "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
+        "removeDialogTitle": "Remove Social OAuth Provider",
+        "teamId": "Team ID",
+        "title": "Social Login Providers",
+        "updateConfigError": "Failed to update config",
+        "updated": "{provider} OAuth updated successfully",
+        "working": "Working"
+      },
+      "sso": {
+        "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",
+        "addError": "Failed to add SSO provider",
+        "addSuccess": "SSO provider added successfully",
+        "addTitle": "Add SSO Provider",
+        "clientIdPlaceholder": "Your OIDC client ID",
+        "clientSecretPlaceholder": "Your OIDC client secret",
+        "deleteDialogDescription": "Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
+        "deleteDialogTitle": "Delete SSO Provider",
+        "deleteError": "Failed to delete SSO provider",
+        "deleteSuccess": "SSO provider deleted",
+        "description": "Add OIDC identity providers to enable SSO for your organization.",
+        "domainInvalid": "Please enter a valid domain (e.g., example.com)",
+        "domainRequired": "Domain is required",
+        "domainVerified": "Domain verified",
+        "emailDomain": "Email Domain",
+        "emailDomainHelp": "Users with this email domain will be able to use SSO",
+        "empty": "No SSO providers configured yet.",
+        "emptyDescription": "Add an OIDC provider to enable enterprise single sign-on.",
+        "instructions": {
+          "copyCredentials": "Copy the Issuer URL, Client ID, and Client Secret from your IdP",
+          "createApp": "Create an OIDC application in your identity provider (Okta, Azure AD, etc.)",
+          "verifyDomain": "Add the provider here and verify the email domain via DNS TXT record"
+        },
+        "issuerUrl": "Issuer URL",
+        "issuerUrlHelp": "The OIDC issuer URL from your identity provider",
+        "issuerUrlRequired": "Issuer URL is required",
+        "providerId": "Provider ID",
+        "providerIdHelp": "A unique identifier for this provider (lowercase, no spaces)",
+        "providerIdInvalid": "Provider ID must contain only lowercase letters, numbers, and hyphens",
+        "providerIdRequired": "Provider ID is required",
+        "setupInstructions": "Setup Instructions",
+        "title": "Identity Providers",
+        "token": "Token",
+        "tokenError": "Failed to generate domain verification token",
+        "tokenGenerated": "Verification token generated",
+        "txtToken": "TXT token:",
+        "validUrlRequired": "Please enter a valid URL",
+        "verified": "Verified",
+        "verify": "Verify",
+        "verifyError": "Domain verification failed. Check your DNS TXT record and retry."
       },
       "tab": {
         "branding": "Branding",
@@ -1938,6 +2318,27 @@
     },
     "import": {
       "description": "Import data from supported providers like Clockodo and Clockin.",
+      "review": {
+        "commitAccepted": "Commit accepted rows",
+        "commitFailed": "Failed to start import commit",
+        "commitQueued": "Queued {count} accepted rows for commit",
+        "committing": "Committing...",
+        "description": "Review staged import rows, resolve blocking issues, and commit accepted records when the batch is ready.",
+        "issueGroups": {
+          "currentMarkers": "Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
+          "description": "Grouped review areas help keep quality checks visible before accepted rows are committed.",
+          "title": "Issue groups"
+        },
+        "rows": {
+          "empty": "No staged rows are available for this import batch.",
+          "entity": "Entity",
+          "rowId": "Row ID",
+          "sourceId": "Source ID",
+          "status": "Status",
+          "title": "Rows"
+        },
+        "title": "Import Review"
+      },
       "title": "Import Data"
     },
     "inviteCodes": {
@@ -2010,6 +2411,19 @@
       "usage": "Usage",
       "validatingCode": "Validating code...",
       "validCodeDescription": "This invite code is valid. Click the button below to join."
+    },
+    "licenses": {
+      "footer": "This application uses open source software. Thank you to all the maintainers and contributors of these packages.",
+      "homepage": "Homepage",
+      "license": "License",
+      "licenseTypesCount": "{count} license types",
+      "links": "Links",
+      "noPackages": "No packages found.",
+      "package": "Package",
+      "packagesCount": "{count} packages",
+      "repository": "Repository",
+      "searchPlaceholder": "Search packages or licenses...",
+      "unknown": "Unknown"
     },
     "locations": {
       "address": "Address",
@@ -2163,6 +2577,41 @@
         "title": "Organization Not Found"
       },
       "title": "Organizations & Teams"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Team created successfully",
+          "description": "Create a new team to organize your employees",
+          "descriptionLabel": "Description (Optional)",
+          "descriptionPlaceholder": "A brief description of this team",
+          "fallbackManagerHelp": "Used for approvals when a team member has no direct manager.",
+          "fallbackManagerLabel": "Fallback Manager",
+          "fallbackManagerPlaceholder": "Select a fallback manager",
+          "nameLabel": "Team Name",
+          "namePlaceholder": "Engineering, Sales, Marketing...",
+          "noFallbackManager": "No fallback manager",
+          "submit": "Create Team",
+          "title": "Create Team"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Add Passkey",
+      "addedOn": "Added on {date}",
+      "addError": "Failed to add passkey",
+      "addSuccess": "Passkey added successfully",
+      "defaultName": "Passkey {date}",
+      "deleteDialogDescription": "This passkey will no longer be able to access your account. This action cannot be undone.",
+      "deleteDialogTitle": "Delete Passkey?",
+      "deleteError": "Failed to delete passkey",
+      "deleteSuccess": "Passkey deleted successfully",
+      "description": "Manage passkeys for passwordless authentication",
+      "empty": "No passkeys configured",
+      "emptyDescription": "Add a passkey to enable passwordless authentication",
+      "loadError": "Failed to load passkeys",
+      "title": "Passkeys",
+      "unnamed": "Unnamed Passkey"
     },
     "payrollExport": {
       "datev": {
@@ -2488,6 +2937,8 @@
         "edit": "Edit"
       },
       "adminRequired": "Admin access required",
+      "allTeams": "All Teams (Organization-wide)",
+      "allTeamsHelp": "Permissions apply to all teams in the organization",
       "badge": {
         "allPermissions": "All Permissions",
         "permissionCount": "{count} permission(s)"
@@ -2503,9 +2954,16 @@
       "emptyState": "No employees found",
       "noEmployeeFeature": "manage permissions",
       "noPermissions": "No permissions",
+      "permissions": "Permissions",
       "refresh": "Refresh",
+      "revokeAll": "Revoke All",
+      "revokeError": "Failed to revoke permissions",
+      "revokeSuccess": "Permissions revoked successfully",
+      "save": "Save Permissions",
+      "scope": "Permission Scope",
       "searchLabel": "Search employees",
       "searchPlaceholder": "Search by name, email, or position...",
+      "selectedTeamHelp": "Permissions apply only to the selected team",
       "table": {
         "actions": "Actions",
         "employee": "Employee",
@@ -2515,8 +2973,11 @@
       },
       "title": "Permissions",
       "toast": {
-        "adminRequired": "You must be an admin to manage permissions"
-      }
+        "adminRequired": "You must be an admin to manage permissions",
+        "loadEmployeesFailed": "Failed to load employees"
+      },
+      "updateError": "Failed to update permissions",
+      "updateSuccess": "Permissions updated successfully"
     },
     "profile": {
       "avatarRemoved": "Avatar removed successfully",
@@ -2608,6 +3069,23 @@
       "title": "Projects",
       "updated": "Project updated",
       "updateFailed": "Failed to update project"
+    },
+    "rateHistory": {
+      "changeRate": "Change Rate",
+      "currentRate": "Current rate: {rate}",
+      "description": "Hourly rate changes over time",
+      "effectiveFrom": "Effective From",
+      "effectiveFromHelp": "When the new rate takes effect",
+      "empty": "No rate history available",
+      "newHourlyRate": "New Hourly Rate",
+      "reasonOptional": "Reason (Optional)",
+      "reasonPlaceholder": "e.g., Annual review, Promotion, etc.",
+      "title": "Rate History",
+      "updateDescription": "Create a new rate entry. The current rate will be closed automatically.",
+      "updateError": "Failed to update rate",
+      "updateRate": "Update Rate",
+      "updateSuccess": "Rate updated successfully",
+      "updateTitle": "Update Hourly Rate"
     },
     "roles": {
       "actions": {
@@ -4037,6 +4515,8 @@
       "last7Days": "Last 7 days",
       "last90Days": "Last 90 days",
       "loadError": "Failed to load policies",
+      "maxDailyLabel": "Max Daily:",
+      "maxWeeklyLabel": "Max Weekly:",
       "name": "Name",
       "namePlaceholder": "e.g., Full-Time Germany",
       "noDataToExport": "No data to export",
@@ -4169,12 +4649,38 @@
   },
   "team": {
     "absences": {
+      "actions": {
+        "recordForEmployee": "Record absence for {name}"
+      },
       "description": "Review allowances and record approved absences for your team.",
+      "empty": {
+        "description": "Try adjusting filters or search to find team members.",
+        "label": "No employees found",
+        "title": "No employees found"
+      },
       "error": {
         "description": "Please try again in a moment.",
         "title": "Unable to load absences"
       },
       "feature": "manage team absences",
+      "filters": {
+        "allTeams": "All teams",
+        "searchLabel": "Search employees",
+        "searchPlaceholder": "Search employees…",
+        "searchSubmit": "Search",
+        "teamLabel": "Filter by team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filter by year",
+        "yearPlaceholder": "Year"
+      },
+      "pagination": {
+        "next": "Next",
+        "nextLabel": "Next page",
+        "page": "Page {page} of {pageCount}",
+        "previous": "Previous",
+        "previousLabel": "Previous page",
+        "showing": "Showing {firstItem} to {lastItem} of {total}"
+      },
       "recordDialog": {
         "category": "Category",
         "categoryPlaceholder": "Select an absence category…",
@@ -4189,14 +4695,35 @@
         "pickEndDate": "Pick end date…",
         "pickStartDate": "Pick start date…",
         "recording": "Recording…",
+        "required": "{label} is required",
         "sickDetail": "Sick detail",
         "sickDetailPlaceholder": "Select sick detail…",
         "startDate": "Start date",
         "submit": "Record absence",
         "success": "Absence recorded",
-        "title": "Record absence"
+        "title": "Record absence",
+        "titleForEmployee": "Record absence for {name}"
+      },
+      "sort": {
+        "ascending": "ascending",
+        "by": "Sort by {label}",
+        "byWithDirection": "Sort by {label} ({direction})",
+        "descending": "descending"
+      },
+      "table": {
+        "actions": "Actions",
+        "allowance": "Allowance",
+        "employee": "Employee",
+        "left": "Left",
+        "pending": "Pending",
+        "sick": "Sick",
+        "teamOrPosition": "Team or Position",
+        "used": "Used"
       },
       "title": "Team absences"
+    },
+    "balance": {
+      "noBalance": "No balance"
     },
     "description": "View and manage employees you directly supervise",
     "empty": {
@@ -4211,6 +4738,7 @@
     "feature": "view your team",
     "member": "member",
     "members": "members",
+    "member.you": "You",
     "noResults": {
       "action": "Clear search",
       "description": "No team members match \"{query}\"",
@@ -4223,6 +4751,7 @@
     },
     "primaryManager": "You are the primary manager",
     "search": {
+      "ariaLabel": "Search team members",
       "placeholder": "Search by name, email, position, or team..."
     },
     "status": {
@@ -4233,8 +4762,15 @@
       "employee": "Employee",
       "position": "Position",
       "role": "Role",
+      "sort": {
+        "ascending": "ascending",
+        "descending": "descending"
+      },
+      "sortByTimeBalance": "Sort by Year balance",
+      "sortByTimeBalanceWithDirection": "Sort by Year balance ({direction})",
       "status": "Status",
-      "team": "Team"
+      "team": "Team",
+      "timeBalance": "Year balance"
     },
     "title": "Your Team",
     "view": {

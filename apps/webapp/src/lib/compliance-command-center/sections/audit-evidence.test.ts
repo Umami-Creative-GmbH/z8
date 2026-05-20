@@ -14,9 +14,9 @@ describe("deriveAuditEvidenceSection", () => {
 		});
 
 		expect(result.card.status).toBe("critical");
-		expect(result.recentCriticalEvents[0]?.title).toContain(
-			"Audit pack generation failed",
-		);
+		expect(result.recentCriticalEvents[0]?.title).toMatchObject({
+			key: "compliance.commandCenter.events.auditPackFailure.title",
+		});
 		expect(result.recentCriticalEvents[0]?.occurredAt).toBe("2026-04-11T09:00:00.000Z");
 	});
 
@@ -31,10 +31,13 @@ describe("deriveAuditEvidenceSection", () => {
 		});
 
 		expect(result.card.status).toBe("critical");
-		expect(result.card.facts).toContain("Recent invalid verification attempts: 1");
-		expect(result.recentCriticalEvents[0]?.title).toContain(
-			"Audit verification failed",
-		);
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.audit.recentInvalidVerifications",
+			params: { count: 1 },
+		});
+		expect(result.recentCriticalEvents[0]?.title).toMatchObject({
+			key: "compliance.commandCenter.events.auditVerificationFailure.title",
+		});
 	});
 
 	it("marks the section warning when signing is not configured", () => {
@@ -48,7 +51,9 @@ describe("deriveAuditEvidenceSection", () => {
 		});
 
 		expect(result.card.status).toBe("warning");
-		expect(result.card.facts).toContain("Signing keys are not configured yet.");
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.audit.missingSigningKey",
+		});
 	});
 
 	it("marks the section healthy when signing is configured and recent signals are clean", () => {

@@ -8,6 +8,10 @@ vi.mock("./widget-visibility-context", () => ({
 	useRegisterVisibleWidget: vi.fn(),
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 vi.mock("@dnd-kit/sortable", () => ({
 	useSortable: () => ({
 		attributes: { role: "button" },

@@ -74,7 +74,7 @@ export default function ProfilePage() {
 			router.push(result.data.nextStep);
 		} else {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip profile setup");
+			toast.error(result.error || t("onboarding.profile.skipError", "Failed to skip profile setup"));
 		}
 	}
 
@@ -186,7 +186,7 @@ export default function ProfilePage() {
 							<form.Field name="gender">
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("onboarding.profile.gender", "Gender")} (Optional)</Label>
+										<Label>{t("onboarding.profile.genderOptional", "Gender (Optional)")}</Label>
 										<div className="grid grid-cols-3 gap-3">
 											{genderOptions.map((option) => {
 												const Icon = option.icon;
@@ -219,7 +219,7 @@ export default function ProfilePage() {
 							<form.Field name="birthday">
 								{(field) => (
 									<div className="flex flex-col space-y-2">
-										<Label>{t("onboarding.profile.birthday", "Birthday")} (Optional)</Label>
+										<Label>{t("onboarding.profile.birthdayOptional", "Birthday (Optional)")}</Label>
 										<Popover>
 											<PopoverTrigger asChild>
 												<Button

@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconGripVertical } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ interface SortableWidgetProps {
  * Registers itself as visible for the sortable context.
  */
 export function SortableWidget({ id, children }: SortableWidgetProps) {
+	const { t } = useTranslate();
 	// Register this widget as visible
 	useRegisterVisibleWidget(id);
 
@@ -57,7 +59,7 @@ export function SortableWidget({ id, children }: SortableWidgetProps) {
 				)}
 				{...attributes}
 				{...listeners}
-				aria-label="Drag to reorder widget"
+				aria-label={t("dashboard.widgets.dragToReorder", "Drag to reorder widget")}
 			>
 				<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
 			</Button>

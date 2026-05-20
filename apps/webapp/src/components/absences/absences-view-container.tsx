@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { IconCalendar, IconPlus, IconTable } from '@tabler/icons-react';
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +48,11 @@ export function AbsencesViewContainer({
 	const [calendarHolidays, setCalendarHolidays] = useState(holidays);
 	const latestRequestedYearRef = useRef(currentYear);
 
+	useEffect(() => {
+		setCalendarAbsences(absences);
+		setCalendarHolidays(holidays);
+	}, [absences, holidays]);
+
 	// Handle day click in year calendar - open request dialog with date prefilled
 	const handleDayClick = useCallback((date: Date) => {
 		// Use local date string to avoid timezone issues with toISOString()
@@ -69,7 +74,7 @@ export function AbsencesViewContainer({
 		setRequestDialogOpen(true);
 	}, []);
 
-	const handleYearChange = useCallback(async (year: number) => {
+	const reloadYearData = useCallback(async (year: number) => {
 		latestRequestedYearRef.current = year;
 		try {
 			const data = await getAbsenceCalendarYearData(year);
@@ -82,6 +87,14 @@ export function AbsencesViewContainer({
 			console.error("Failed to load absence calendar year data", error);
 		}
 	}, []);
+
+	const handleYearChange = useCallback((year: number) => {
+		void reloadYearData(year);
+	}, [reloadYearData]);
+
+	const handleAbsencesUpdated = useCallback(() => {
+		void reloadYearData(latestRequestedYearRef.current);
+	}, [reloadYearData]);
 
 	return (
 		<div className="space-y-4">
@@ -122,7 +135,11 @@ export function AbsencesViewContainer({
 							{t("absences.table.subtitle", "Recent and upcoming absence requests")}
 						</p>
 					</div>
-					<AbsenceEntriesTable absences={calendarAbsences} currentDate={currentDate} />
+					<AbsenceEntriesTable
+						absences={calendarAbsences}
+						currentDate={currentDate}
+						onUpdate={handleAbsencesUpdated}
+					/>
 				</TabsContent>
 			</Tabs>
 
@@ -135,6 +152,7 @@ export function AbsencesViewContainer({
 				remainingDays={remainingDays}
 				holidays={calendarHolidays}
 				initialDate={prefilledDate}
+				onSuccess={handleAbsencesUpdated}
 			/>
 		</div>
 	);

@@ -4,6 +4,7 @@
       "alreadyProcessed": "Cette approbation a déjà été traitée."
     },
     "cmd": {
+      "billingRequired": "La facturation est requise pour continuer à utiliser le suivi du temps. Demandez à un administrateur d'organisation de mettre à jour la facturation.",
       "clockedin": {
         "header": "{active} sur {total} membres de l'équipe sont actuellement pointés :",
         "noneActive": "Aucun de vos {total} membres d'équipe n'est actuellement pointé.",

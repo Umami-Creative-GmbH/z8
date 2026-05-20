@@ -627,7 +627,7 @@ export function WorkPolicyDialog({
 																	form.setFieldValue("days", newDays);
 																}}
 															/>
-															<span className="w-24 font-medium">{day.label}</span>
+								<span className="w-24 font-medium">{t(`common.days.${day.value}`, day.label)}</span>
 															<div className="flex-1">
 																<Input
 																	type="number"
@@ -647,7 +647,7 @@ export function WorkPolicyDialog({
 																	}}
 																/>
 															</div>
-															<span className="text-sm text-muted-foreground w-12">hours</span>
+								<span className="text-sm text-muted-foreground w-12">{t("settings.workSchedules.hoursUnit", "hours")}</span>
 														</div>
 													))}
 												</div>
@@ -708,7 +708,7 @@ export function WorkPolicyDialog({
 															placeholder="—"
 															className="w-20"
 														/>
-														<span className="text-sm text-muted-foreground">hours</span>
+								<span className="text-sm text-muted-foreground">{t("settings.workSchedules.hoursUnit", "hours")}</span>
 													</div>
 												</div>
 											)}
@@ -732,7 +732,7 @@ export function WorkPolicyDialog({
 															placeholder="—"
 															className="w-20"
 														/>
-														<span className="text-sm text-muted-foreground">hours</span>
+								<span className="text-sm text-muted-foreground">{t("settings.workSchedules.hoursUnit", "hours")}</span>
 													</div>
 												</div>
 											)}
@@ -759,7 +759,7 @@ export function WorkPolicyDialog({
 															placeholder="—"
 															className="w-20"
 														/>
-														<span className="text-sm text-muted-foreground">hours</span>
+								<span className="text-sm text-muted-foreground">{t("settings.workSchedules.hoursUnit", "hours")}</span>
 													</div>
 												</div>
 											)}
@@ -991,7 +991,7 @@ export function WorkPolicyDialog({
 																		}
 																	}}
 																/>
-																<span className="text-sm">{day.label}</span>
+									<span className="text-sm">{t(`common.days.${day.value}`, day.label)}</span>
 															</label>
 														);
 													})}

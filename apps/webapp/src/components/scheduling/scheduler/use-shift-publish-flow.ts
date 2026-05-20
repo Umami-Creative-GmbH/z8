@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { publishShifts } from "@/app/[locale]/(app)/scheduling/actions";
@@ -17,6 +18,7 @@ interface UseShiftPublishFlowOptions {
 }
 
 export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPublishFlowOptions) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [pendingAcknowledgment, setPendingAcknowledgment] =
 		useState<PendingPublishAcknowledgment | null>(null);
@@ -39,14 +41,20 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 
 			setPendingAcknowledgment(null);
 			setIsComplianceDialogOpen(false);
-			toast.success(`Published ${result.count} shift(s)`);
+			toast.success(
+				t("scheduling.scheduler.publish.published", "Published {count} shift(s)", {
+					count: result.count,
+				}),
+			);
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
 			});
 		},
 		onError: (error) => {
-			toast.error("Failed to publish shifts", { description: error.message });
+			toast.error(t("scheduling.scheduler.publish.failed", "Failed to publish shifts"), {
+				description: error.message,
+			});
 		},
 	});
 

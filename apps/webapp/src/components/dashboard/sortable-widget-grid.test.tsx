@@ -8,8 +8,12 @@ import { SortableWidgetGrid } from "./sortable-widget-grid";
 
 vi.mock("@dnd-kit/core", () => ({
 	closestCenter: vi.fn(),
-	DndContext: ({ children }: { children: ReactNode }) => <div data-testid="dnd-context">{children}</div>,
-	DragOverlay: ({ children }: { children: ReactNode }) => <div data-testid="drag-overlay">{children}</div>,
+	DndContext: ({ children }: { children: ReactNode }) => (
+		<div data-testid="dnd-context">{children}</div>
+	),
+	DragOverlay: ({ children }: { children: ReactNode }) => (
+		<div data-testid="drag-overlay">{children}</div>
+	),
 	KeyboardSensor: vi.fn(),
 	MouseSensor: vi.fn(),
 	TouchSensor: vi.fn(),
@@ -44,6 +48,12 @@ vi.mock("@dnd-kit/utilities", () => ({
 			toString: () => undefined,
 		},
 	},
+}));
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string) => fallback,
+	}),
 }));
 
 vi.mock("./widget-visibility-context", () => ({

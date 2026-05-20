@@ -97,7 +97,8 @@
     },
     "subtitle": "Gestione su tiempo libre y días de vacaciones",
     "table": {
-      "cancelRequest": "Cancelar solicitud",
+      "cancelAbsence": "Cancelar ausencia",
+      "cancelAbsenceTooltip": "Cancelar ausencia",
       "end": "Fin",
       "headers": {
         "actions": "Acciones",
@@ -228,6 +229,17 @@
       "approved": "Aprobado",
       "pending": "Pendiente",
       "rejected": "Rechazado"
+    },
+    "view": {
+      "day": "Día",
+      "loading": "Cargando calendario…",
+      "month": "Mes",
+      "next": "Siguiente",
+      "previous": "Anterior",
+      "refresh": "Actualizar",
+      "today": "Hoy",
+      "week": "Semana",
+      "year": "Año"
     }
   }
 }

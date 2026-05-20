@@ -1,8 +1,314 @@
 {
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "Analysen anzeigen",
+      "restrictedDescription": "Analysen stehen nur Administratoren und Managern zur Verfügung.",
+      "restrictedTitle": "Zugriff eingeschränkt"
+    },
+    "common": {
+      "days": "Tage",
+      "employee": "Mitarbeiter",
+      "employees": "Mitarbeiter",
+      "hours": "Stunden",
+      "loadingOrganizationSettings": "Organisationseinstellungen werden geladen, bevor Voreinstellungen aktiviert werden.",
+      "noDataAvailable": "Keine Daten verfügbar",
+      "noDataForPeriod": "Keine Daten für den ausgewählten Zeitraum verfügbar",
+      "overtime": "Überstunden",
+      "overtimeHours": "Überstunden",
+      "team": "Team",
+      "totalHours": "Gesamtstunden",
+      "unavailable": "Nicht verfügbar",
+      "undertime": "Unterstunden",
+      "undertimeHours": "Unterstunden"
+    },
+    "layout": {
+      "description": "Umfassende Einblicke in Teamleistung, Arbeitsstunden und Abwesenheitsmuster",
+      "tabs": {
+        "overtimeBurnDown": "Überstundenabbau",
+        "overview": "Übersicht",
+        "teamPerformance": "Teamleistung",
+        "vacationTrends": "Urlaubstrends",
+        "workHours": "Arbeitsstunden"
+      },
+      "title": "Analysen"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Aufschlüsselung",
+      "breakdownDescription": "{label} Details zum Überstundenabbau",
+      "breakdownEmpty": "Noch keine Aufschlüsselungsdaten verfügbar",
+      "byCostCenter": "Nach Kostenstelle",
+      "byManager": "Nach Manager",
+      "byTeam": "Nach Team",
+      "costCenter": "Kostenstelle",
+      "currentOvertime": "Aktuelle Überstunden",
+      "description": "Verfolgen Sie den wöchentlichen Überstundenabbau in den Teams.",
+      "errors": {
+        "loadData": "Daten zum Überstundenabbau konnten nicht geladen werden"
+      },
+      "filters": {
+        "allCostCenters": "Alle Kostenstellen",
+        "allManagers": "Alle Manager",
+        "allTeams": "Alle Teams",
+        "breakdownLabel": "Aufschlüsselungsdimension",
+        "costCenterLabel": "Kostenstellenfilter",
+        "managerLabel": "Managerfilter",
+        "teamLabel": "Teamfilter"
+      },
+      "improvingGroups": "Sich verbessernde Gruppen",
+      "improvingGroupsDescription": "Gruppen mit sinkenden Überstunden",
+      "manager": "Manager",
+      "previousOvertime": "Vorherige Überstunden",
+      "previousPeriodDescription": "Im Vergleich zum vorherigen Zeitraum",
+      "selectedRangeDescription": "Für den ausgewählten Datumsbereich und die Filter",
+      "title": "Überstundenabbau",
+      "trendDirection": "Trendrichtung",
+      "trendDirectionDescription": "Gesamter Überstundenverlauf",
+      "trend": {
+        "down": "Rückgang",
+        "flat": "Gleichbleibend",
+        "up": "Aufwärts"
+      },
+      "weeklyTrend": {
+        "description": "Trend beim wöchentlichen Überstundenabbau",
+        "empty": "Noch keine Trenddaten verfügbar",
+        "title": "Wöchentlicher Burn-Down-Trend"
+      },
+      "weekOverWeek": "Woche-zu-Woche"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Abwesenheitsverteilung nach Kategorie",
+        "title": "Abwesenheitsmuster"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% genehmigt",
+        "avgDecision": "{hours}h durchschnittliche Entscheidungszeit",
+        "byManager": "Nach Manager",
+        "byTeam": "Nach Team",
+        "byType": "Nach Typ",
+        "description": "Teams und Anfragetypen mit ausstehender Bearbeitung oder SLA-Warnungen",
+        "empty": "Keine Genehmigungsengpässe gefunden",
+        "pendingSummary": "{pendingCount} ausstehend - {slaWarnings} SLA-Warnungen",
+        "title": "Genehmigungsengpässe",
+        "unavailable": "Genehmigungsengpässe konnten nicht geladen werden"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Von entschiedenen Anfragen genehmigt",
+          "title": "Genehmigungsrate",
+          "unavailableDescription": "Genehmigungsanalysen konnten nicht geladen werden"
+        },
+        "avgWorkHours": {
+          "description": "Pro Mitarbeiter im ausgewählten Zeitraum",
+          "title": "Durchschnittliche Arbeitsstunden"
+        },
+        "totalAbsenceDays": {
+          "description": "Gesamttage im ausgewählten Zeitraum",
+          "title": "Gesamte Abwesenheitstage"
+        },
+        "totalEmployees": {
+          "description": "Aktive Mitarbeiter in der Organisation",
+          "title": "Gesamtzahl der Mitarbeiter"
+        }
+      },
+      "loadingLabel": "Analysedaten werden geladen",
+      "workHoursByTeam": {
+        "description": "Gesamte protokollierte Arbeitsstunden pro Team",
+        "title": "Arbeitsstunden nach Team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Durchschnitt pro Mitarbeiter",
+      "comparison": {
+        "description": "Gesamte Arbeitsstunden pro Team für den ausgewählten Zeitraum",
+        "title": "Teamvergleich"
+      },
+      "details": {
+        "description": "Aufschlüsselung der Arbeitsstunden nach Team und Mitarbeiter",
+        "title": "Details zur Teamleistung"
+      },
+      "employeeCount": "Mitarbeiteranzahl",
+      "errors": {
+        "loadData": "Laden der Teamleistungsdaten fehlgeschlagen"
+      },
+      "onTrack": "Im Plan",
+      "variance": {
+        "description": "Abweichung der Stunden von den erwarteten Arbeitsstunden",
+        "empty": "Keine Abweichungsdaten verfügbar",
+        "title": "Überstunden & Unterstunden"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Zugewiesen",
+      "balance": {
+        "description": "Zugewiesene, genommene und verbleibende Tage pro Mitarbeiter",
+        "title": "Urlaubssaldo"
+      },
+      "daysRemaining": "{count} Tage verbleibend",
+      "daysTaken": "{count} Tage genommen",
+      "errors": {
+        "loadData": "Laden der Urlaubstrenddaten fehlgeschlagen"
+      },
+      "monthlyUsage": {
+        "description": "Genommene Urlaubstage pro Monat",
+        "empty": "Keine monatlichen Nutzungsdaten verfügbar",
+        "title": "Monatliche Urlaubsnutzung"
+      },
+      "peakMonths": {
+        "description": "Monate mit der höchsten Urlaubsaktivität",
+        "empty": "Keine Daten zu Spitzenmonaten verfügbar",
+        "title": "Urlaubsspitzenmonate"
+      },
+      "remaining": "Verbleibend",
+      "taken": "Genommen",
+      "utilization": {
+        "description": "Gesamte Urlaubsnutzung im Unternehmen",
+        "overall": "Gesamtauslastung",
+        "title": "Urlaubsauslastung"
+      },
+      "utilizationLabel": "Auslastung",
+      "utilizationPercent": "Auslastung in %",
+      "vacationDays": "Urlaubstage"
+    },
+    "workHours": {
+      "actualHours": "Tatsächliche Stunden",
+      "avgHoursPerWeek": "Durchschn. Stunden/Woche",
+      "daily": {
+        "description": "Tatsächliche vs. erwartete Arbeitsstunden pro Tag",
+        "empty": "Keine Daten zu täglichen Stunden verfügbar",
+        "title": "Tägliche Arbeitsstunden"
+      },
+      "distribution": {
+        "description": "Vergleich der Mitarbeiterarbeitsstunden (horizontaler Balken)",
+        "empty": "Keine Verteilungsdaten verfügbar",
+        "title": "Verteilung der Arbeitsstunden"
+      },
+      "employeeComparison": {
+        "description": "Gesamtstunden und Abweichung vom Soll pro Mitarbeiter",
+        "title": "Arbeitsstunden der Mitarbeiter"
+      },
+      "errors": {
+        "loadData": "Laden der Arbeitsstunden-Analysedaten fehlgeschlagen"
+      },
+      "expectedHours": "Erwartete Stunden",
+      "variance": "Abweichung",
+      "varianceTrend": {
+        "description": "Abweichung der Stunden von der erwarteten Arbeitszeit im Zeitverlauf",
+        "empty": "Keine Trenddaten verfügbar",
+        "title": "Trend bei Über- und Unterstunden"
+      }
+    }
+  },
   "appSearch": {
+    "description": "Seiten, Einstellungen, Personen und Teams durchsuchen",
+    "empty": "Keine Ergebnisse gefunden.",
+    "groups": {
+      "pages": "Seiten",
+      "people": "Personen",
+      "settings": "Einstellungen",
+      "teams": "Teams"
+    },
+    "placeholder": "Seiten, Einstellungen, Personen und Teams durchsuchen…",
+    "search": "Suche",
     "teamAbsences": {
       "description": "Mitarbeiterabwesenheitskennzahlen überprüfen und Abwesenheiten erfassen"
     }
+  },
+  "billing": {
+    "access": {
+      "canceled": "Ihr Abonnement wurde gekündigt. Abonnieren Sie erneut, um wieder Zugriff zu erhalten.",
+      "paymentFailed": "Ihre letzte Zahlung ist fehlgeschlagen. Bitte aktualisieren Sie Ihre Zahlungsmethode.",
+      "required": "Für die Nutzung dieser Anwendung ist ein Abonnement erforderlich.",
+      "trialExpired": "Ihr Testzeitraum ist abgelaufen. Abonnieren Sie, um die App weiterhin nutzen zu können."
+    },
+    "activeSeats": "Aktive Plätze",
+    "alerts": {
+      "canceledDescription": "Der Bezahlvorgang wurde abgebrochen. Sie können es jederzeit erneut versuchen.",
+      "subscriptionRequired": "Abonnement erforderlich",
+      "successDescription": "Ihr Abonnement wurde aktiviert. Vielen Dank für Ihr Abonnement!",
+      "successTitle": "Erfolgreich!"
+    },
+    "bestValue": "Bestes Preis-Leistungs-Verhältnis",
+    "billedMonthly": "monatliche Abrechnung",
+    "cancelsOn": "Wird am {date} gekündigt",
+    "checkoutCreateFailed": "Fehler beim Erstellen der Checkout-Sitzung",
+    "checkoutStartFailed": "Fehler beim Starten des Checkouts",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdaten. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testversion.",
+      "trialContinuesTitle": "Ihre Testversion läuft nach dem Upgrade weiter"
+    },
+    "choosePlan": "Wählen Sie Ihren Plan",
+    "choosePlanDescription": "Starten Sie mit einer 14-tägigen kostenlosen Testversion. Keine Kreditkarte erforderlich.",
+    "currentPlan": "Aktueller Plan",
+    "days": "{count} Tage",
+    "description": "Verwalten Sie Ihr Abonnement und Ihre Rechnungsdaten",
+    "faq": {
+      "afterTrial": {
+        "answer": "Nach Ablauf Ihrer 14-tägigen Testversion wird Ihnen der von Ihnen gewählte Abonnementplan in Rechnung gestellt. Sie können jederzeit vor Ablauf der Testphase kündigen, um Kosten zu vermeiden.",
+        "question": "Was passiert nach der Testphase?"
+      },
+      "perSeat": {
+        "answer": "Die Abrechnung erfolgt basierend auf der Anzahl der aktiven Mitglieder in Ihrer Organisation. Wenn Sie Mitglieder hinzufügen oder entfernen, wird Ihr Abonnement automatisch angepasst.",
+        "question": "Wie funktioniert die nutzerbasierte Abrechnung?"
+      },
+      "switch": {
+        "answer": "Ja! Sie können jederzeit über das Abrechnungsportal zwischen den Plänen wechseln. Änderungen werden mit dem nächsten Abrechnungszyklus wirksam.",
+        "question": "Kann ich zwischen monatlicher und jährlicher Abrechnung wechseln?"
+      },
+      "title": "Häufig gestellte Fragen"
+    },
+    "features": {
+      "allFeatures": "Alle Funktionen enthalten",
+      "cancelAnytime": "Jederzeit kündbar",
+      "trial": "14 Tage kostenlos testen",
+      "yearlyDiscount": "25% Rabatt gegenüber monatlicher Zahlung"
+    },
+    "interval": {
+      "monthlyBilling": "Monatliche Abrechnung",
+      "yearlyBilling": "Jährliche Abrechnung"
+    },
+    "manageBilling": "Abrechnung verwalten",
+    "monthlyCost": "Monatliche Kosten",
+    "nextBilling": "Nächste Abrechnung",
+    "opening": "Wird geöffnet...",
+    "perSeatMonth": "/Nutzer/Monat",
+    "plans": {
+      "monthly": {
+        "description": "Flexible monatliche Abrechnung",
+        "title": "Monatlich"
+      },
+      "yearly": {
+        "description": "25 % sparen bei jährlicher Abrechnung",
+        "title": "Jährlich"
+      }
+    },
+    "portalOpenFailed": "Fehler beim Öffnen des Abrechnungsportals",
+    "priceSeatMonth": "€{price}/Platz/Monat",
+    "priceSeatMonthYearly": "€{price}/Platz/Monat (jährliche Abrechnung)",
+    "seatBilledAnnually": "€{price}/Platz jährlich abgerechnet",
+    "starting": "Startet...",
+    "startTrial": "Kostenlose Testversion starten",
+    "status": {
+      "canceled": "Storniert",
+      "noSubscription": "Kein Abonnement",
+      "pastDue": "Überfällig",
+      "trial": "Testversion"
+    },
+    "suspended": {
+      "adminDescription": "Ihre Testversion ist abgelaufen oder das Abonnement ist nicht mehr gültig. Aktualisieren Sie die Zahlungsdaten, um Z8 weiterhin zu nutzen.",
+      "goToBilling": "Zu den Zahlungsdaten",
+      "memberDescription": "Diese Organisation wurde gesperrt. Kontaktieren Sie einen Organisationsadministrator, um die Zahlungsdaten zu aktualisieren.",
+      "title": "Organisation gesperrt"
+    },
+    "title": "Abrechnung & Abonnement",
+    "trialBanner": {
+      "description": "{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdaten hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
+      "title": "14-tägige Testversion aktiv",
+      "upgrade": "Upgrade"
+    },
+    "trialEnds": "Testversion endet",
+    "vatNotice": "Die angezeigten Preise sind Nettopreise exklusive MwSt. Die MwSt. wird gegebenenfalls hinzugerechnet.",
+    "yearTotal": "€{amount}/Jahr gesamt"
   },
   "surcharges": {
     "reports": {
@@ -53,5 +359,124 @@
       },
       "title": "Zuschlagsberichte"
     }
+  },
+  "today": {
+    "approvals": {
+      "approve": "Genehmigen",
+      "approveLabel": "{title} genehmigen",
+      "description": "Anfragen, die auf eine Entscheidung des Managers warten.",
+      "empty": "Es warten keine Genehmigungen.",
+      "openInbox": "Posteingang öffnen",
+      "pendingAriaLabel": "Ausstehende Genehmigungen",
+      "reject": "Ablehnen",
+      "rejectLabel": "{title} ablehnen",
+      "title": "Genehmigungen",
+      "toast": {
+        "approved": "Anfrage genehmigt",
+        "approveError": "Anfrage konnte nicht genehmigt werden",
+        "rejected": "Anfrage abgelehnt",
+        "rejectError": "Anfrage konnte nicht abgelehnt werden"
+      }
+    },
+    "briefing": {
+      "badge": "Heute",
+      "description": "Überprüfen Sie die Elemente, die heute Aufmerksamkeit erfordern, und wechseln Sie dann direkt in den entsprechenden Workflow.",
+      "needsAction": {
+        "description": "Beginnen Sie hier für die dringendsten operativen Nachverfolgungen.",
+        "empty": "Alles erledigt. Derzeit ist kein Handeln des Managers erforderlich.",
+        "title": "Erfordert Handeln"
+      },
+      "sections": {
+        "empty": "Keine Probleme erkannt."
+      },
+      "severity": {
+        "critical": "Kritisch",
+        "high": "Hoch",
+        "info": "Info",
+        "warning": "Warnung"
+      },
+      "summaryAriaLabel": "Zusammenfassung für heute",
+      "supportingSectionsAriaLabel": "Unterstützende Abschnitte",
+      "title": "Tägliches Manager-Briefing",
+      "updatedAt": "{date} - Aktualisiert um {time}"
+    }
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Neuer Anspruch"
+    },
+    "approvals": {
+      "description": "Öffnen Sie den einheitlichen Genehmigungsposteingang, gefiltert nach Reisekosten.",
+      "openInbox": "Posteingang öffnen",
+      "title": "Ausstehende Reisekostengenehmigungen prüfen"
+    },
+    "claimTypes": {
+      "mileage": "Kilometergeld",
+      "per_diem": "Tagegeld",
+      "receipt": "Beleg"
+    },
+    "decision": {
+      "approve": "Genehmigen",
+      "approved": "Antrag erfolgreich genehmigt",
+      "approveDescription": "Fügen Sie vor der Genehmigung eine optionale Notiz für den Antragsteller hinzu.",
+      "approveTitle": "Antrag genehmigen",
+      "errors": {
+        "approve": "Antrag konnte nicht genehmigt werden",
+        "missingClaim": "Reisekostenantrag fehlt",
+        "reject": "Antrag konnte nicht abgelehnt werden",
+        "rejectionReason": "Bitte geben Sie einen Ablehnungsgrund an"
+      },
+      "noteOptional": "Notiz (optional)",
+      "notePlaceholder": "Sieht gut aus. Danke für die Details.",
+      "reasonPlaceholder": "Belegdetails für den eingereichten Betrag fehlen",
+      "reasonRequired": "Grund (erforderlich)",
+      "reject": "Ablehnen",
+      "rejectDescription": "Geben Sie einen klaren Grund an, damit der Antragsteller den Antrag korrigieren und erneut einreichen kann.",
+      "rejected": "Antrag erfolgreich abgelehnt",
+      "rejectTitle": "Antrag ablehnen"
+    },
+    "description": "Erstellen und verfolgen Sie Ihre Reisekostenanträge",
+    "errors": {
+      "loadClaims": "Reisekostenanträge konnten nicht geladen werden"
+    },
+    "feature": "Reisekosten verwalten",
+    "form": {
+      "amount": "Betrag",
+      "claimType": "Antragstyp",
+      "created": "Reisekostenentwurf erstellt",
+      "createDraft": "Entwurf erstellen",
+      "currency": "Währung",
+      "currencyDescription": "ISO 4217-Code, z. B. EUR oder USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Erstellen Sie einen neuen Reisekostenentwurf für Ihre kürzlichen Reiseausgaben.",
+      "destinationCity": "Zielstadt",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Zielland",
+      "destinationCountryPlaceholder": "Deutschland",
+      "errors": {
+        "createDraft": "Erstellung des Reisekostenentwurfs fehlgeschlagen",
+        "positiveAmount": "Der Betrag muss eine positive Zahl sein",
+        "tripEndBeforeStart": "Das Reiseenddatum darf nicht vor dem Reisestartdatum liegen",
+        "validTripDates": "Bitte geben Sie ein gültiges Reisestart- und Enddatum an",
+        "validTripEnd": "Bitte geben Sie ein gültiges Reiseenddatum an",
+        "validTripStart": "Bitte geben Sie ein gültiges Reisestartdatum an"
+      },
+      "notes": "Notizen",
+      "notesPlaceholder": "Fügen Sie optionalen Kontext für Ihren Genehmiger hinzu",
+      "receiptAttachmentHint": "Belegansprüche erfordern mindestens einen Anhang. Der Upload von Anhängen ist nach der Erstellung des Entwurfs möglich.",
+      "selectClaimType": "Anspruchstyp auswählen",
+      "title": "Reisekostenabrechnung erstellen",
+      "tripEnd": "Reiseende",
+      "tripStart": "Reisestart"
+    },
+    "list": {
+      "amount": "Betrag",
+      "dateRange": "Zeitraum",
+      "emptyDescription": "Erstellen Sie Ihren ersten Anspruch, um den Genehmigungsprozess zu starten.",
+      "emptyTitle": "Noch keine Reisekostenabrechnungen vorhanden",
+      "status": "Status",
+      "type": "Typ"
+    },
+    "title": "Reisekosten"
   }
 }

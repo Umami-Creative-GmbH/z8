@@ -11,6 +11,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,76 +51,79 @@ function normalizeRepoUrl(
 	return url.replace(/^git\+/, "").replace(/\.git$/, "");
 }
 
-const columns: ColumnDef<LicenseInfo>[] = [
-	{
-		accessorKey: "name",
-		header: ({ column }) => (
-			<Button
-				className="-ml-3"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-				variant="ghost"
-			>
-				Package
-				<IconArrowsUpDown className="ml-2 size-4" />
-			</Button>
-		),
-		cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
-	},
-	{
-		accessorKey: "license",
-		header: ({ column }) => (
-			<Button
-				className="-ml-3"
-				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-				variant="ghost"
-			>
-				License
-				<IconArrowsUpDown className="ml-2 size-4" />
-			</Button>
-		),
-		cell: ({ row }) => {
-			const license = row.getValue("license") as string;
-			return <Badge variant={getLicenseBadgeVariant(license)}>{license || "Unknown"}</Badge>;
-		},
-	},
-	{
-		id: "links",
-		header: "Links",
-		cell: ({ row }) => {
-			const { repository, homepage } = row.original;
-			const repoUrl = normalizeRepoUrl(repository);
-
-			return (
-				<div className="flex gap-2">
-					{repoUrl && (
-						<a
-							className="text-muted-foreground hover:text-foreground"
-							href={repoUrl}
-							rel="noopener noreferrer"
-							target="_blank"
-						>
-							<IconExternalLink className="size-4" />
-							<span className="sr-only">Repository</span>
-						</a>
-					)}
-					{homepage && homepage !== repoUrl && (
-						<a
-							className="text-muted-foreground hover:text-foreground"
-							href={homepage}
-							rel="noopener noreferrer"
-							target="_blank"
-						>
-							<IconExternalLink className="size-4" />
-							<span className="sr-only">Homepage</span>
-						</a>
-					)}
-				</div>
-			);
-		},
-	},
-];
-
 export function LicenseTable({ licenses }: LicenseTableProps) {
+	const { t } = useTranslate();
+	const columns = useMemo<ColumnDef<LicenseInfo>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: ({ column }) => (
+					<Button
+						className="-ml-3"
+						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+						variant="ghost"
+					>
+						{t("settings.licenses.package", "Package")}
+						<IconArrowsUpDown className="ml-2 size-4" />
+					</Button>
+				),
+				cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+			},
+			{
+				accessorKey: "license",
+				header: ({ column }) => (
+					<Button
+						className="-ml-3"
+						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+						variant="ghost"
+					>
+						{t("settings.licenses.license", "License")}
+						<IconArrowsUpDown className="ml-2 size-4" />
+					</Button>
+				),
+				cell: ({ row }) => {
+					const license = row.getValue("license") as string;
+					return <Badge variant={getLicenseBadgeVariant(license)}>{license || t("settings.licenses.unknown", "Unknown")}</Badge>;
+				},
+			},
+			{
+				id: "links",
+				header: t("settings.licenses.links", "Links"),
+				cell: ({ row }) => {
+					const { repository, homepage } = row.original;
+					const repoUrl = normalizeRepoUrl(repository);
+
+					return (
+						<div className="flex gap-2">
+							{repoUrl && (
+								<a
+									className="text-muted-foreground hover:text-foreground"
+									href={repoUrl}
+									rel="noopener noreferrer"
+									target="_blank"
+								>
+									<IconExternalLink className="size-4" />
+									<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
+								</a>
+							)}
+							{homepage && homepage !== repoUrl && (
+								<a
+									className="text-muted-foreground hover:text-foreground"
+									href={homepage}
+									rel="noopener noreferrer"
+									target="_blank"
+								>
+									<IconExternalLink className="size-4" />
+									<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
+								</a>
+							)}
+						</div>
+					);
+				},
+			},
+		],
+		[t],
+	);
 	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
@@ -162,13 +166,13 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						<Input
 							className="pl-9"
 							onChange={(e) => setGlobalFilter(e.target.value)}
-							placeholder="IconSearch packages or licenses..."
+							placeholder={t("settings.licenses.searchPlaceholder", "Search packages or licenses...")}
 							value={globalFilter}
 						/>
 					</div>
 					<div className="flex gap-4 text-muted-foreground text-sm">
-						<span>{stats.total} packages</span>
-						<span>{stats.uniqueLicenses} license types</span>
+						<span>{t("settings.licenses.packagesCount", "{count} packages", { count: stats.total })}</span>
+						<span>{t("settings.licenses.licenseTypesCount", "{count} license types", { count: stats.uniqueLicenses })}</span>
 					</div>
 				</div>
 			</div>
@@ -203,7 +207,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						) : (
 							<TableRow>
 								<TableCell className="h-24 text-center" colSpan={columns.length}>
-									No packages found.
+									{t("settings.licenses.noPackages", "No packages found.")}
 								</TableCell>
 							</TableRow>
 						)}
@@ -213,8 +217,10 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 
 			{/* Fixed footer section */}
 			<p className="shrink-0 text-muted-foreground text-xs">
-				This application uses open source software. Thank you to all the maintainers and
-				contributors of these packages. ❤️
+				{t(
+					"settings.licenses.footer",
+					"This application uses open source software. Thank you to all the maintainers and contributors of these packages.",
+				)}
 			</p>
 		</div>
 	);

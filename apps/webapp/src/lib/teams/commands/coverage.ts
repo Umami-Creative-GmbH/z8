@@ -108,6 +108,7 @@ async function coverageHandler(
 			summary,
 			appUrl,
 			locale: ctx.locale,
+			t,
 		});
 
 		return {

@@ -1,0 +1,2 @@
+{"type":"server-started","port":55278,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:55278","screen_dir":"/home/kai/projects/z8/.superpowers/brainstorm/86073-1779283508/content","state_dir":"/home/kai/projects/z8/.superpowers/brainstorm/86073-1779283508/state"}
+{"type":"server-stopped","reason":"idle timeout"}

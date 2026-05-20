@@ -30,13 +30,13 @@ z8 offers two billing cycles with per-seat pricing:
 
 ## Free Trial
 
-New organizations receive a **14-day free trial**:
+New organizations receive a **14-day free trial** when billing is enabled:
 
 - Full access to all features during the trial
-- No credit card required to start
-- Trial countdown visible on the billing page
-- You'll receive a reminder before the trial ends
-- Subscribe at any time during or after the trial
+- No credit card is required to start the trial
+- A trial countdown appears in the app while the trial is active
+- Organization admins can add payment details during the trial with Stripe Checkout
+- If payment details are added during the trial, the paid subscription starts after the trial expires
 
 ## Managing Your Subscription
 
@@ -56,7 +56,8 @@ New organizations receive a **14-day free trial**:
 2. Select your preferred plan (Monthly or Yearly)
 3. Click **Subscribe**
 4. You'll be redirected to Stripe Checkout to enter payment details
-5. After successful payment, you'll be redirected back to z8
+5. After successful checkout, you'll be redirected back to z8
+6. During a trial, the paid subscription starts after the trial expires
 
 ### Changing Your Plan
 
@@ -86,11 +87,13 @@ To switch between Monthly and Yearly billing:
 1. Go to **Settings > Billing**
 2. Click **Manage Subscription**
 3. In the Stripe Customer Portal, click **Cancel Plan**
-4. Your subscription remains active until the end of the current billing period
+4. If cancellation is scheduled for the end of the billing period, access remains active while Stripe reports the subscription as active
 
 <Callout type="warn">
-After your subscription ends, your organization enters read-only mode. You can view existing data but cannot create new time entries, approvals, or other records until you resubscribe.
+After your trial expires or your subscription is no longer valid, your organization is suspended. Normal product pages and data-changing actions are blocked until an organization admin updates billing.
 </Callout>
+
+If a cancellation is scheduled for the end of the billing period, access remains active while Stripe reports the subscription as active. When Stripe reports the subscription as canceled, the organization is suspended immediately.
 
 ## Subscription States
 
@@ -98,9 +101,9 @@ After your subscription ends, your organization enters read-only mode. You can v
 |-------|-------------|-------------|
 | **Trialing** | Full access | Free trial period active |
 | **Active** | Full access | Subscription is current and paid |
-| **Past Due** | Full access (temporary) | Payment failed, retry in progress |
-| **Canceled** | Read-only | Subscription ended |
-| **Unpaid** | Read-only | Payment failed after all retries |
+| **Past Due** | Suspended | Payment failed; access is blocked until payment is resolved |
+| **Canceled** | Suspended | Subscription ended |
+| **Unpaid** | Suspended | Payment failed after all retries |
 
 ## Seat Synchronization
 
@@ -131,7 +134,7 @@ Platform administrators have access to a billing overview dashboard at **Admin >
 
 ### What happens if my payment fails?
 
-Stripe will automatically retry the payment over several days. During this time, your access remains unchanged. If all retries fail, your organization enters read-only mode until payment is resolved.
+Stripe may automatically retry the payment over several days. Your organization remains suspended until payment is resolved and Stripe reports a valid subscription state.
 
 ### Can I get a refund?
 

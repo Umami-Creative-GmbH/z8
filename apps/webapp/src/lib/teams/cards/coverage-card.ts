@@ -6,6 +6,7 @@
  */
 
 import { DateTime } from "luxon";
+import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
 import { fmtFullDate } from "@/lib/bot-platform/i18n";
 
@@ -17,6 +18,7 @@ export interface CoverageCardInput {
 	summary: CoverageSummary;
 	appUrl: string;
 	locale: string;
+	t?: BotTranslateFn;
 }
 
 // ============================================
@@ -58,6 +60,7 @@ function formatVariance(variance: number): string {
 
 export function buildCoverageCard(input: CoverageCardInput): Record<string, unknown> {
 	const { summary, appUrl, locale } = input;
+	const t = input.t ?? ((_key, defaultValue) => defaultValue);
 	const dateFormatted = fmtFullDate(
 		DateTime.fromJSDate(summary.date).setZone(summary.timezone),
 		locale,
@@ -80,7 +83,7 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 			items: [
 				{
 					type: "TextBlock",
-					text: "📊 Coverage Report",
+					text: t("teamsBot:commands.coverage.titleWithIcon", "📊 Coverage Report"),
 					weight: "bolder",
 					size: "large",
 				},
@@ -108,7 +111,7 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 							items: [
 								{
 									type: "TextBlock",
-									text: "Scheduled",
+									text: t("teamsBot:commands.coverage.scheduled", "Scheduled"),
 									weight: "bolder",
 									horizontalAlignment: "center",
 								},
@@ -127,7 +130,7 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 							items: [
 								{
 									type: "TextBlock",
-									text: "Clocked In",
+									text: t("teamsBot:commands.coverage.clockedIn", "Clocked In"),
 									weight: "bolder",
 									horizontalAlignment: "center",
 								},
@@ -146,7 +149,7 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 							items: [
 								{
 									type: "TextBlock",
-									text: "Variance",
+									text: t("teamsBot:commands.coverage.variance", "Variance"),
 									weight: "bolder",
 									horizontalAlignment: "center",
 								},
@@ -171,7 +174,7 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 		if (subareaCount >= 5) {
 			body.push({
 				type: "TextBlock",
-				text: `_+${bySubarea.size - 5} more locations..._`,
+				text: t("teamsBot:commands.coverage.moreLocationsMarkdown", "_+{count} more locations..._", { count: bySubarea.size - 5 }),
 				isSubtle: true,
 				spacing: "medium",
 			});
@@ -305,7 +308,7 @@ export function buildCoverageCard(input: CoverageCardInput): Record<string, unkn
 		actions: [
 			{
 				type: "Action.OpenUrl",
-				title: "View Full Schedule",
+				title: t("teamsBot:commands.coverage.viewFullSchedule", "View Full Schedule"),
 				url: `${appUrl}/scheduling`,
 			},
 		],

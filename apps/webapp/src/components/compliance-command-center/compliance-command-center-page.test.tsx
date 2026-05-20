@@ -1,21 +1,35 @@
 /* @vitest-environment jsdom */
 
-import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ComplianceCommandCenterPage } from "./compliance-command-center-page";
 
 const refresh = vi.fn();
+const tolgeeTranslations = vi.hoisted(() => new Map<string, string>());
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			Object.entries(params ?? {}).reduce(
+				(message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
+				tolgeeTranslations.get(_key) ?? fallback,
+			),
+	}),
+}));
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh }),
-	Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+	Link: ({ href, children }: { href: string; children: ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 describe("ComplianceCommandCenterPage", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		refresh.mockReset();
+		tolgeeTranslations.clear();
 	});
 
 	afterEach(() => {
@@ -77,6 +91,46 @@ describe("ComplianceCommandCenterPage", () => {
 		expect(screen.getByRole("heading", { name: "Recent Critical Events" })).toBeTruthy();
 		expect(screen.getByText("Admin role changed outside scheduled review")).toBeTruthy();
 		expect(screen.getByText("Access controls only summarize logged audit events.")).toBeTruthy();
+	});
+
+	it("renders translated command-center chrome and interpolated data", () => {
+		tolgeeTranslations.set("compliance.commandCenter.overview", "Compliance-Überblick");
+		tolgeeTranslations.set("compliance.commandCenter.status.healthy", "stabil");
+		tolgeeTranslations.set(
+			"compliance.commandCenter.recentEvents.title",
+			"Aktuelle kritische Ereignisse",
+		);
+		tolgeeTranslations.set(
+			"compliance.commandCenter.recentEvents.empty",
+			"Keine kritischen Ereignisse erkannt.",
+		);
+		tolgeeTranslations.set(
+			"compliance.commandCenter.footer.lastRefreshed",
+			"Zuletzt aktualisiert: {time}",
+		);
+
+		render(
+			<ComplianceCommandCenterPage
+				data={{
+					refreshedAt: "2026-04-11T10:00:00.000Z",
+					summary: {
+						status: "healthy",
+						headline: "No active issues detected in monitored signals",
+						topRiskKeys: [],
+						refreshedAt: "2026-04-11T10:00:00.000Z",
+					},
+					sections: [],
+					recentCriticalEvents: [],
+					coverageNotes: [],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Compliance-Überblick")).toBeTruthy();
+		expect(screen.getByText("stabil")).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Aktuelle kritische Ereignisse" })).toBeTruthy();
+		expect(screen.getByText("Keine kritischen Ereignisse erkannt.")).toBeTruthy();
+		expect(screen.getByText(/Zuletzt aktualisiert:/)).toBeTruthy();
 	});
 
 	it("refreshes the route every two minutes to keep critical signals fresher", () => {

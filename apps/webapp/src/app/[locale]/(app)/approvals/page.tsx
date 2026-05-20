@@ -10,10 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@/navigation";
+import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "./actions";
 
 async function ApprovalsContent() {
-	const currentEmployee = await getCurrentEmployee();
+	const [currentEmployee, t] = await Promise.all([getCurrentEmployee(), getTranslate()]);
 
 	// Show error if no employee profile found
 	if (!currentEmployee) {
@@ -33,9 +34,14 @@ async function ApprovalsContent() {
 		<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Approvals</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("approvals:approvals.title", "Approvals")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						Review and approve pending requests from your team
+						{t(
+							"approvals:approvals.inboxDescription",
+							"Review and approve pending requests from your team",
+						)}
 					</p>
 				</div>
 			</div>
@@ -43,14 +49,19 @@ async function ApprovalsContent() {
 			{/* Unified Inbox Banner */}
 			<Alert>
 				<IconInbox className="size-4" />
-				<AlertTitle>Try the new Unified Inbox</AlertTitle>
+				<AlertTitle>
+					{t("approvals:approvals.unifiedInboxBannerTitle", "Try the new Unified Inbox")}
+				</AlertTitle>
 				<AlertDescription className="flex items-center justify-between">
 					<span>
-						View all approval types in one place with filtering, bulk actions, and SLA tracking.
+						{t(
+							"approvals:approvals.unifiedInboxBannerDescription",
+							"View all approval types in one place with filtering, bulk actions, and SLA tracking.",
+						)}
 					</span>
 					<Button asChild size="sm" variant="outline" className="ml-4">
 						<Link href="/approvals/inbox">
-							Open Inbox
+							{t("approvals:approvals.openInbox", "Open Inbox")}
 							<IconArrowRight className="ml-2 size-4" />
 						</Link>
 					</Button>
@@ -60,19 +71,22 @@ async function ApprovalsContent() {
 			<Tabs defaultValue="absences" className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="absences" className="relative">
-						Absence Requests
+						{t("approvals:approvals.absenceRequests", "Absence Requests")}
 					</TabsTrigger>
 					<TabsTrigger value="corrections" className="relative">
-						Time Corrections
+						{t("approvals:approvals.timeCorrections", "Time Corrections")}
 					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="absences" className="space-y-4">
 					<Card>
 						<CardHeader>
-							<CardTitle>Absence Requests</CardTitle>
+							<CardTitle>{t("approvals:approvals.absenceRequests", "Absence Requests")}</CardTitle>
 							<CardDescription>
-								Review and approve time-off requests from your team members
+								{t(
+									"approvals:approvals.absenceRequestsDescription",
+									"Review and approve time-off requests from your team members",
+								)}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -84,9 +98,12 @@ async function ApprovalsContent() {
 				<TabsContent value="corrections" className="space-y-4">
 					<Card>
 						<CardHeader>
-							<CardTitle>Time Corrections</CardTitle>
+							<CardTitle>{t("approvals:approvals.timeCorrections", "Time Corrections")}</CardTitle>
 							<CardDescription>
-								Review and approve time entry correction requests from your team members
+								{t(
+									"approvals:approvals.timeCorrectionsDescription",
+									"Review and approve time entry correction requests from your team members",
+								)}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>

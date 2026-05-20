@@ -1,12 +1,68 @@
 {
   "reports": {
+    "container": {
+      "error": "Erreur",
+      "generating": "Génération du rapport...",
+      "noReportYet": "Aucun rapport généré pour le moment",
+      "pleaseWait": "Veuillez patienter pendant que nous compilons vos données",
+      "selectPeriod": "Sélectionnez une période et cliquez sur « Générer le rapport » pour commencer"
+    },
     "description": "Générez des rapports complets sur les heures de travail et les absences avec des données de télétravail pertinentes pour les impôts",
     "employeeSelector": {
       "error": "Impossible de charger les membres de l'équipe",
       "label": "Employé",
       "placeholder": "Sélectionner un employé..."
     },
+    "export": {
+      "csv": "Exporter en CSV",
+      "description": "Téléchargez ce rapport dans votre format préféré",
+      "downloaded": "{filename} téléchargé",
+      "errorDescription": "Une erreur est survenue lors de l'exportation du rapport",
+      "excel": "Exporter en Excel",
+      "failed": "Échec de l'exportation",
+      "generating": "Génération en cours...",
+      "pdf": "Exporter en PDF",
+      "success": "Exportation réussie",
+      "title": "Exporter le rapport"
+    },
     "feature": "générer des rapports",
+    "filter": {
+      "loadingSettings": "Chargement des paramètres de l'organisation avant d'activer les préréglages.",
+      "period": "Période",
+      "selectPeriod": "Sélectionner une période"
+    },
+    "generate": "Générer le rapport",
+    "generating": "Génération du rapport en cours…",
+    "period": {
+      "currentMonth": "Mois en cours",
+      "currentYear": "Année en cours",
+      "customRange": "Plage personnalisée",
+      "lastMonth": "Mois dernier",
+      "lastYear": "Année dernière",
+      "pickDateRange": "Choisir une plage de dates",
+      "yearToDate": "Depuis le début de l'année"
+    },
+    "preview": {
+      "absencesByCategory": "Absences par catégorie",
+      "attendancePercentage": "Pourcentage de présence",
+      "category": "Catégorie",
+      "complianceMetrics": "Indicateurs de conformité",
+      "date": "Date",
+      "dateBreakdown": "Répartition par date",
+      "days": "Jours",
+      "homeOfficeDescription": "Important pour la fiscalité allemande - indique les jours de télétravail et les heures travaillées",
+      "homeOfficeSummary": "Résumé du télétravail (pertinent pour la fiscalité)",
+      "hours": "Heures",
+      "hoursWorked": "Heures travaillées",
+      "month": "Mois",
+      "noHomeOfficeDays": "Aucun jour de télétravail enregistré sur cette période.",
+      "overtime": "Heures supplémentaires",
+      "total": "Total",
+      "totalHomeOfficeDays": "Total des jours de télétravail",
+      "totalHomeOfficeHours": "Total des heures travaillées à domicile",
+      "undertime": "Heures manquantes",
+      "workHoursByMonth": "Heures de travail par mois"
+    },
     "projects": {
       "budget": {
         "exceededBy": "Budget dépassé de {hours} heures",
@@ -161,6 +217,29 @@
         "unexpectedError": "Une erreur inattendue s'est produite"
       }
     },
-    "title": "Rapports des employés"
+    "summary": {
+      "averagePerDay": "Moyenne : {hours}h/jour",
+      "homeOfficeDays": "Jours de télétravail",
+      "hourlyAverage": "{hours}h à une moyenne de {rate}/h",
+      "otherDays": "Autre : {count} jours",
+      "pending": "{count} en attente",
+      "ratePeriods": "{count} périodes de taux",
+      "sickDays": "Maladie : {count} jours",
+      "taxRelevant": "Pertinent pour la fiscalité",
+      "totalAbsences": "Total des absences",
+      "totalEarnings": "Revenus totaux",
+      "totalWorkHours": "Heures de travail totales",
+      "vacationDays": "Jours de congé",
+      "workDays": "{count} jours travaillés",
+      "workedFromHome": "{hours}h travaillées depuis le domicile"
+    },
+    "title": "Rapports des employés",
+    "toast": {
+      "failedGenerate": "Échec de la génération du rapport",
+      "generatedFor": "Rapport généré pour {name}",
+      "reportGenerated": "Rapport généré avec succès",
+      "unexpectedError": "Une erreur inattendue est survenue",
+      "unknownError": "Une erreur inconnue est survenue"
+    }
   }
 }

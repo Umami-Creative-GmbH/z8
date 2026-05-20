@@ -213,35 +213,37 @@ export default function ApprovalInboxPage() {
 	// Loading state
 	if (isLoading) {
 		return (
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-				<div className="flex items-center justify-between">
+			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+				<div className="flex items-center justify-between px-4 lg:px-6">
 					<div className="space-y-2">
 						<Skeleton className="h-8 w-48" />
 						<Skeleton className="h-4 w-96" />
 					</div>
 				</div>
-				<Card>
-					<CardHeader>
-						<Skeleton className="h-6 w-32" />
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-3">
-							<Skeleton className="h-12 w-full" />
-							<Skeleton className="h-12 w-full" />
-							<Skeleton className="h-12 w-full" />
-							<Skeleton className="h-12 w-full" />
-							<Skeleton className="h-12 w-full" />
-						</div>
-					</CardContent>
-				</Card>
+				<div className="px-4 lg:px-6">
+					<Card>
+						<CardHeader>
+							<Skeleton className="h-6 w-32" />
+						</CardHeader>
+						<CardContent>
+							<div className="space-y-3">
+								<Skeleton className="h-12 w-full" />
+								<Skeleton className="h-12 w-full" />
+								<Skeleton className="h-12 w-full" />
+								<Skeleton className="h-12 w-full" />
+								<Skeleton className="h-12 w-full" />
+							</div>
+						</CardContent>
+					</Card>
+				</div>
 			</div>
 		);
 	}
 
 	if (isError) {
 		return (
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-				<div className="flex items-center justify-between">
+			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+				<div className="flex items-center justify-between px-4 lg:px-6">
 					<div>
 						<h1 className="text-2xl font-semibold tracking-tight">
 							{t("approvals:approvals.inbox", "Approval Inbox")}
@@ -263,30 +265,32 @@ export default function ApprovalInboxPage() {
 					</Button>
 				</div>
 
-				<Card>
-					<CardContent className="py-12">
-						<div className="flex flex-col items-center justify-center text-center">
-							<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
-							<h2 className="mt-4 text-lg font-medium">
-								{t("approvals:approvals.inboxErrorTitle", "Unable to load approval inbox")}
-							</h2>
-							<p className="mt-1 max-w-md text-sm text-muted-foreground">
-								{getErrorMessage(
-									error,
-									t("approvals:approvals.inboxErrorDescription", "Failed to fetch approvals"),
-								)}
-							</p>
-						</div>
-					</CardContent>
-				</Card>
+				<div className="px-4 lg:px-6">
+					<Card>
+						<CardContent className="py-12">
+							<div className="flex flex-col items-center justify-center text-center">
+								<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
+								<h2 className="mt-4 text-lg font-medium">
+									{t("approvals:approvals.inboxErrorTitle", "Unable to load approval inbox")}
+								</h2>
+								<p className="mt-1 max-w-md text-sm text-muted-foreground">
+									{getErrorMessage(
+										error,
+										t("approvals:approvals.inboxErrorDescription", "Failed to fetch approvals"),
+									)}
+								</p>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between px-4 lg:px-6">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
 						{t("approvals:approvals.inbox", "Approval Inbox")}
@@ -331,77 +335,79 @@ export default function ApprovalInboxPage() {
 			</div>
 
 			{/* Main content */}
-			<Card>
-				<CardHeader className="pb-0">
-					<CardTitle className="flex items-center gap-2">
-						<IconInbox className="size-5" aria-hidden="true" />
-						{t("approvals:approvals.pendingRequests", "Pending Requests")}
-						{totalCount > 0 && (
-							<span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
-						)}
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"approvals:approvals.pendingRequestsDescription",
-							"Select requests to approve in bulk, or click a row for details",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="pt-4">
-					{/* Toolbar with filters */}
-					<ApprovalInboxToolbar
-						filters={filters}
-						onFiltersChange={setFilters}
-						selectedCount={selectedIds.size}
-						totalCount={items.length}
-						allSelected={items.length > 0 && selectedIds.size === items.length}
-						onSelectAll={handleSelectAll}
-					/>
-
-					{/* Table */}
-					<div className="mt-4">
-						<ApprovalInboxTable
-							items={items}
-							selectedIds={selectedIds}
-							onSelectItem={handleSelectItem}
-							onRowClick={handleOpenDetail}
-							isFetching={isFetching}
+			<div className="px-4 lg:px-6">
+				<Card>
+					<CardHeader className="pb-0">
+						<CardTitle className="flex items-center gap-2">
+							<IconInbox className="size-5" aria-hidden="true" />
+							{t("approvals:approvals.pendingRequests", "Pending Requests")}
+							{totalCount > 0 && (
+								<span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
+							)}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"approvals:approvals.pendingRequestsDescription",
+								"Select requests to approve in bulk, or click a row for details",
+							)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="pt-4">
+						{/* Toolbar with filters */}
+						<ApprovalInboxToolbar
+							filters={filters}
+							onFiltersChange={setFilters}
+							selectedCount={selectedIds.size}
+							totalCount={items.length}
+							allSelected={items.length > 0 && selectedIds.size === items.length}
+							onSelectAll={handleSelectAll}
 						/>
-					</div>
 
-					{/* Load more */}
-					{hasNextPage && (
-						<div className="mt-4 flex justify-center">
-							<Button
-								variant="outline"
-								onClick={() => fetchNextPage()}
-								disabled={isFetchingNextPage}
-							>
-								{isFetchingNextPage ? (
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-								) : null}
-								{t("common.loadMore", "Load More")}
-							</Button>
+						{/* Table */}
+						<div className="mt-4">
+							<ApprovalInboxTable
+								items={items}
+								selectedIds={selectedIds}
+								onSelectItem={handleSelectItem}
+								onRowClick={handleOpenDetail}
+								isFetching={isFetching}
+							/>
 						</div>
-					)}
 
-					{/* Empty state */}
-					{items.length === 0 && !isFetching && (
-						<div className="flex flex-col items-center justify-center py-12 text-center">
-							<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
-							<h3 className="mt-4 text-lg font-medium">
-								{t("approvals:approvals.noRequests", "No pending requests")}
-							</h3>
-							<p className="mt-1 text-sm text-muted-foreground">
-								{t(
-									"approvals:approvals.noRequestsDescription",
-									"When team members submit requests, they will appear here",
-								)}
-							</p>
-						</div>
-					)}
-				</CardContent>
-			</Card>
+						{/* Load more */}
+						{hasNextPage && (
+							<div className="mt-4 flex justify-center">
+								<Button
+									variant="outline"
+									onClick={() => fetchNextPage()}
+									disabled={isFetchingNextPage}
+								>
+									{isFetchingNextPage ? (
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+									) : null}
+									{t("common.loadMore", "Load More")}
+								</Button>
+							</div>
+						)}
+
+						{/* Empty state */}
+						{items.length === 0 && !isFetching && (
+							<div className="flex flex-col items-center justify-center py-12 text-center">
+								<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
+								<h3 className="mt-4 text-lg font-medium">
+									{t("approvals:approvals.noRequests", "No pending requests")}
+								</h3>
+								<p className="mt-1 text-sm text-muted-foreground">
+									{t(
+										"approvals:approvals.noRequestsDescription",
+										"When team members submit requests, they will appear here",
+									)}
+								</p>
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			</div>
 
 			{/* Detail slide-over panel */}
 			<ApprovalDetailPanel

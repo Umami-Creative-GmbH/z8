@@ -80,42 +80,67 @@ type GetManagerDailyBriefingInput = {
 	now?: DateTime;
 };
 
+const SECTION_LOAD_ERROR = "Section could not be loaded.";
+
+const briefingSectionCopy = {
+	approvalsTitle: "Approvals",
+	approvalsDescription: "Pending requests waiting for a decision.",
+} as const;
+
 const SECTION_METADATA = {
 	approvals: {
 		id: "approvals",
-		title: "Approvals",
-		description: "Pending requests waiting for a decision.",
+		title: briefingSectionCopy.approvalsTitle,
+		titleKey: "today.briefing.sections.approvals.title",
+		description: briefingSectionCopy.approvalsDescription,
+		descriptionKey: "today.briefing.sections.approvals.description",
 		emptyState: "No approvals are waiting.",
+		emptyStateKey: "today.briefing.sections.approvals.empty",
 	},
 	attendance: {
 		id: "attendance",
 		title: "Attendance",
+		titleKey: "today.briefing.sections.attendance.title",
 		description: "Clock-in exceptions for today's published shifts.",
+		descriptionKey: "today.briefing.sections.attendance.description",
 		emptyState: "No attendance exceptions detected.",
+		emptyStateKey: "today.briefing.sections.attendance.empty",
 	},
 	absences: {
 		id: "absences",
 		title: "Absences",
+		titleKey: "today.briefing.sections.absences.title",
 		description: "Approved absences overlapping today.",
+		descriptionKey: "today.briefing.sections.absences.description",
 		emptyState: "No approved absences today.",
+		emptyStateKey: "today.briefing.sections.absences.empty",
 	},
 	coverage: {
 		id: "coverage",
 		title: "Coverage",
+		titleKey: "today.briefing.sections.coverage.title",
 		description: "Coverage risks for today's schedule.",
+		descriptionKey: "today.briefing.sections.coverage.description",
 		emptyState: "No coverage risks detected.",
+		emptyStateKey: "today.briefing.sections.coverage.empty",
 	},
 	overtime: {
 		id: "overtime",
 		title: "Overtime",
+		titleKey: "today.briefing.sections.overtime.title",
 		description: "Employees approaching overtime thresholds.",
+		descriptionKey: "today.briefing.sections.overtime.description",
 		emptyState: "No overtime warnings detected.",
+		emptyStateKey: "today.briefing.sections.overtime.empty",
 	},
 	payroll: {
 		id: "payroll",
 		title: "Payroll",
+		titleKey: "today.briefing.sections.payroll.title",
 		description: "Payroll readiness issues that may need setup.",
+		descriptionKey: "today.briefing.sections.payroll.description",
 		emptyState: "No payroll setup issues detected.",
+		emptyStateKey: "today.briefing.sections.payroll.empty",
 	},
 } as const;
 
@@ -562,8 +587,10 @@ const databaseSources: ManagerDailyBriefingSources = {
 				category: "payroll",
 				severity: "warning",
 				title: "Payroll wage mappings are missing",
+				titleKey: "today.briefing.items.payrollWageMappings.title",
 				description:
 					"No active wage type mappings are configured for the active payroll export setup.",
+				descriptionKey: "today.briefing.items.payrollWageMappings.description",
 				href: "/settings/payroll-readiness",
 			},
 		];
@@ -595,7 +622,7 @@ function firstRejected(
 }
 
 function errorMessage(_reason: unknown): string {
-	return "Section could not be loaded.";
+	return SECTION_LOAD_ERROR;
 }
 
 function employeeDisplayName(row: {

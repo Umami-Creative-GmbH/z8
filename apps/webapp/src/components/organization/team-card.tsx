@@ -1,6 +1,7 @@
 "use client";
 
 import { IconDots, IconEdit, IconShieldCheck, IconTrash, IconUsers } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,6 +37,7 @@ export function TeamCard({
 	onDelete,
 	onManageMembers,
 }: TeamCardProps) {
+	const { t } = useTranslate();
 	const memberCount = team._count?.employees || employees.length || 0;
 
 	// Show first 3 employees
@@ -62,7 +64,7 @@ export function TeamCard({
 							{canManageMembers && (
 								<DropdownMenuItem onClick={onManageMembers}>
 									<IconUsers className="mr-2 size-4" />
-									Manage Members
+									{t("organization.teams.card.manageMembers", "Manage Members")}
 								</DropdownMenuItem>
 							)}
 							{canManageSettings && (
@@ -70,12 +72,12 @@ export function TeamCard({
 									{canManageMembers && <DropdownMenuSeparator />}
 									<DropdownMenuItem onClick={onEdit}>
 										<IconEdit className="mr-2 size-4" />
-										Edit Team
+										{t("organization.teams.card.editTeam", "Edit Team")}
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem className="text-destructive" onClick={onDelete}>
 										<IconTrash className="mr-2 size-4" />
-										Delete Team
+										{t("organization.teams.card.deleteTeam", "Delete Team")}
 									</DropdownMenuItem>
 								</>
 							)}
@@ -88,11 +90,11 @@ export function TeamCard({
 					<div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 text-sm">
 						<IconShieldCheck className="mt-0.5 size-4 text-muted-foreground" />
 						<div className="min-w-0">
-							<div className="font-medium">Fallback manager</div>
+							<div className="font-medium">{t("organization.teams.card.fallbackManager", "Fallback manager")}</div>
 							<div className="truncate text-muted-foreground">
 								{primaryManager
 									? `${primaryManager.name}${primaryManager.position ? ` - ${primaryManager.position}` : ""}`
-									: "Not assigned"}
+									: t("organization.teams.card.notAssigned", "Not assigned")}
 							</div>
 						</div>
 					</div>
@@ -101,7 +103,9 @@ export function TeamCard({
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<IconUsers className="size-4" />
 						<span>
-							{memberCount} {memberCount === 1 ? "member" : "members"}
+							{t("organization.members.count", "{count, plural, one {# member} other {# members}}", {
+								count: memberCount,
+							})}
 						</span>
 					</div>
 

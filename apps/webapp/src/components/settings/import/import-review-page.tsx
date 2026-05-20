@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
@@ -25,17 +26,18 @@ interface ImportReviewPageProps {
 }
 
 const summaryItems = [
-	{ label: "Total", key: "totalRows" },
-	{ label: "Accepted", key: "acceptedRows" },
-	{ label: "Rejected", key: "rejectedRows" },
-	{ label: "Blocked", key: "blockedRows" },
-	{ label: "Committed", key: "committedRows" },
-	{ label: "Issues", key: "issueCount" },
+	{ labelKey: "settings.import.review.summary.total", fallback: "Total", key: "totalRows" },
+	{ labelKey: "settings.import.review.summary.accepted", fallback: "Accepted", key: "acceptedRows" },
+	{ labelKey: "settings.import.review.summary.rejected", fallback: "Rejected", key: "rejectedRows" },
+	{ labelKey: "settings.import.review.summary.blocked", fallback: "Blocked", key: "blockedRows" },
+	{ labelKey: "settings.import.review.summary.committed", fallback: "Committed", key: "committedRows" },
+	{ labelKey: "settings.import.review.summary.issues", fallback: "Issues", key: "issueCount" },
 ] as const;
 
 const numberFormatter = new Intl.NumberFormat();
 
 export function ImportReviewPage({ organizationId, batchId, summary, rows }: ImportReviewPageProps) {
+	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
 	const commitDisabled = isPending || summary.blockedRows > 0 || summary.acceptedRows === 0;
 
@@ -44,11 +46,18 @@ export function ImportReviewPage({ organizationId, batchId, summary, rows }: Imp
 			const result = await startImportCommitAction({ organizationId, batchId });
 
 			if (result.success) {
-				toast.success(`Queued ${result.data.queuedCount} accepted rows for commit`);
+				toast.success(
+					t("settings.import.review.commitQueued", "Queued {count} accepted rows for commit", {
+						count: result.data.queuedCount,
+					}),
+				);
 				return;
 			}
 
-			toast.error(result.error ?? "Failed to start import commit");
+			toast.error(
+				result.error ??
+					t("settings.import.review.commitFailed", "Failed to start import commit"),
+			);
 		});
 	}
 
@@ -56,14 +65,20 @@ export function ImportReviewPage({ organizationId, batchId, summary, rows }: Imp
 		<div className="space-y-6">
 			<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 				<div className="space-y-2">
-					<h1 className="text-balance font-semibold text-2xl tracking-tight">Import Review</h1>
+					<h1 className="text-balance font-semibold text-2xl tracking-tight">
+						{t("settings.import.review.title", "Import Review")}
+					</h1>
 					<p className="max-w-3xl text-muted-foreground text-sm">
-						Review staged import rows, resolve blocking issues, and commit accepted records when the
-						batch is ready.
+						{t(
+							"settings.import.review.description",
+							"Review staged import rows, resolve blocking issues, and commit accepted records when the batch is ready.",
+						)}
 					</p>
 				</div>
 				<Button disabled={commitDisabled} onClick={commitAcceptedRows} type="button">
-					{isPending ? "Committing…" : "Commit accepted rows"}
+					{isPending
+						? t("settings.import.review.committing", "Committing...")
+						: t("settings.import.review.commitAccepted", "Commit accepted rows")}
 				</Button>
 			</div>
 
@@ -72,7 +87,7 @@ export function ImportReviewPage({ organizationId, batchId, summary, rows }: Imp
 					<Card className="gap-2 py-4 shadow-none" key={item.key}>
 						<CardHeader className="px-4">
 							<CardTitle className="font-medium text-muted-foreground text-sm">
-								{item.label}
+								{t(item.labelKey, item.fallback)}
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="px-4 font-semibold text-2xl tabular-nums">

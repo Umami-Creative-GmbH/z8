@@ -1,11 +1,16 @@
 import { and, desc, eq, gte } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { AuditAction } from "@/lib/audit-logger";
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
-import type { ComplianceCriticalEvent, ComplianceSectionResult } from "../types";
+import { AuditAction } from "@/lib/audit-logger";
+import type { ComplianceCriticalEvent, ComplianceSectionResult, ComplianceText } from "../types";
 
 const ACCESS_CONTROL_LOOKBACK_HOURS = 24;
+
+function text(key: string, params?: Record<string, string | number>): ComplianceText {
+	return params ? { key, params } : { key };
+}
+
 const SENSITIVE_ACTIONS = new Set<string>([
 	AuditAction.PERMISSION_GRANTED,
 	AuditAction.PERMISSION_REVOKED,
@@ -22,31 +27,33 @@ export interface AccessControlEventSnapshot {
 	id: string;
 	action: string;
 	timestamp: string;
-	description: string;
+	description: ComplianceText;
 }
 
 export function deriveAccessControlsSection(input: {
 	recentSensitiveEvents: AccessControlEventSnapshot[];
 }): ComplianceSectionResult {
-	const recentCriticalEvents: ComplianceCriticalEvent[] = input.recentSensitiveEvents.map((event) => ({
-		id: event.id,
-		sectionKey: "accessControls" as const,
-		severity:
-			event.action === "permission.revoked" || event.action === "app_access.denied"
-				? "critical"
-				: "warning",
-		title: `Sensitive action: ${event.action}`,
-		description: event.description,
-		occurredAt: event.timestamp,
-		primaryLink: {
-			label: "Inspect in Audit Log",
-			href: "/settings/enterprise/audit-log",
-		},
-	}));
+	const recentCriticalEvents: ComplianceCriticalEvent[] = input.recentSensitiveEvents.map(
+		(event) => ({
+			id: event.id,
+			sectionKey: "accessControls" as const,
+			severity:
+				event.action === "permission.revoked" || event.action === "app_access.denied"
+					? "critical"
+					: "warning",
+			title: text("compliance.commandCenter.events.sensitiveAction.title", {
+				action: event.action,
+			}),
+			description: event.description,
+			occurredAt: event.timestamp,
+			primaryLink: {
+				label: text("compliance.commandCenter.links.inspectInAuditLog"),
+				href: "/settings/enterprise/audit-log",
+			},
+		}),
+	);
 	const hasCriticalSignals = input.recentSensitiveEvents.some(
-		(event) =>
-			event.action === "permission.revoked" ||
-			event.action === "app_access.denied",
+		(event) => event.action === "permission.revoked" || event.action === "app_access.denied",
 	);
 	const status = hasCriticalSignals
 		? "critical"
@@ -60,26 +67,33 @@ export function deriveAccessControlsSection(input: {
 			status,
 			headline:
 				status === "critical"
-					? "Sensitive control changes need review"
+					? text("compliance.commandCenter.sections.accessControls.headline.critical")
 					: status === "warning"
-						? "Recent control changes were detected"
-						: "No sensitive control changes were logged recently",
+						? text("compliance.commandCenter.sections.accessControls.headline.warning")
+						: text("compliance.commandCenter.sections.accessControls.headline.healthy"),
 			facts: [
 				input.recentSensitiveEvents.length > 0
-					? `Recent sensitive events: ${input.recentSensitiveEvents.length}`
-					: "No sensitive control changes were logged in the last 24 hours.",
+					? text("compliance.commandCenter.facts.access.recentSensitiveEvents", {
+							count: input.recentSensitiveEvents.length,
+						})
+					: text("compliance.commandCenter.facts.access.noSensitiveEvents"),
 				input.recentSensitiveEvents[0]
-					? `Latest sensitive action: ${input.recentSensitiveEvents[0].action}`
-					: "Latest sensitive action: none",
+					? text("compliance.commandCenter.facts.access.latestSensitiveAction", {
+							action: input.recentSensitiveEvents[0].action,
+						})
+					: text("compliance.commandCenter.facts.access.latestSensitiveActionNone"),
 			],
 			updatedAt: DateTime.utc().toISO(),
 			primaryLink: {
-				label: "Open Audit Log",
+				label: text("compliance.commandCenter.links.openAuditLog"),
 				href: "/settings/enterprise/audit-log",
 			},
 		},
 		recentCriticalEvents: recentCriticalEvents
-			.toSorted((left, right) => Number(right.severity === "critical") - Number(left.severity === "critical"))
+			.toSorted(
+				(left, right) =>
+					Number(right.severity === "critical") - Number(left.severity === "critical"),
+			)
 			.slice(0, 3),
 	};
 }
@@ -87,14 +101,9 @@ export function deriveAccessControlsSection(input: {
 export async function getAccessControlsSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const lookbackStart = DateTime.utc()
-		.minus({ hours: ACCESS_CONTROL_LOOKBACK_HOURS })
-		.toJSDate();
+	const lookbackStart = DateTime.utc().minus({ hours: ACCESS_CONTROL_LOOKBACK_HOURS }).toJSDate();
 	const logs = await db.query.auditLog.findMany({
-		where: and(
-			eq(auditLog.organizationId, organizationId),
-			gte(auditLog.timestamp, lookbackStart),
-		),
+		where: and(eq(auditLog.organizationId, organizationId), gte(auditLog.timestamp, lookbackStart)),
 		orderBy: [desc(auditLog.timestamp)],
 	});
 	const recentSensitiveEvents = logs
@@ -104,7 +113,10 @@ export async function getAccessControlsSection(
 			id: log.id,
 			action: log.action,
 			timestamp: log.timestamp.toISOString(),
-			description: `${log.action} on ${log.entityType}`,
+			description: text("compliance.commandCenter.events.sensitiveAction.description", {
+				action: log.action,
+				entityType: log.entityType,
+			}),
 		}));
 
 	return deriveAccessControlsSection({ recentSensitiveEvents });

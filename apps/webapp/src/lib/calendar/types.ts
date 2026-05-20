@@ -6,7 +6,9 @@ export interface CalendarEvent {
 	date: Date;
 	endDate?: Date; // For multi-day events (absences, holidays)
 	title: string;
+	titleKey?: string;
 	description?: string;
+	descriptionKey?: string;
 	color: string;
 	metadata: Record<string, any>;
 }

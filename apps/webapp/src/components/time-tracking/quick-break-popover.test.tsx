@@ -21,12 +21,7 @@ describe("QuickBreakPopover", () => {
 		const onAddBreak = vi.fn().mockResolvedValue({ success: true });
 
 		render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
@@ -38,16 +33,26 @@ describe("QuickBreakPopover", () => {
 		await waitFor(() => expect(onAddBreak).toHaveBeenCalledWith(30));
 	});
 
+	it("renders an icon-only trigger with an accessible label", () => {
+		render(
+			<QuickBreakPopover
+				onAddBreak={async () => ({ success: true })}
+				isAddingBreak={false}
+				isDisabled={false}
+				t={t}
+				iconOnly
+			/>,
+		);
+
+		const button = screen.getByRole("button", { name: "Add break" });
+		expect(button.textContent).toBe("");
+	});
+
 	it("shows a local error for break durations below one minute", async () => {
 		const onAddBreak = vi.fn().mockResolvedValue({ success: true });
 
 		render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
@@ -56,27 +61,20 @@ describe("QuickBreakPopover", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
 
-		expect(
-			await screen.findByText("Enter a break duration of at least 1 minute."),
-		).toBeTruthy();
+		expect(await screen.findByText("Enter a break duration of at least 1 minute.")).toBeTruthy();
 		expect(onAddBreak).not.toHaveBeenCalled();
 	});
 
-	it('disables the applying button while a break is being added', () => {
+	it("disables the applying button while a break is being added", () => {
 		const onAddBreak = vi.fn().mockResolvedValue({ success: true });
 
 		render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={true}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={true} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
 
-		expect(screen.getByRole<HTMLButtonElement>("button", { name: "Applying..." }).disabled).toBe(
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: "Applying…" }).disabled).toBe(
 			true,
 		);
 	});
@@ -86,47 +84,36 @@ describe("QuickBreakPopover", () => {
 		const onAddBreak = vi.fn().mockReturnValue(pending.promise);
 
 		render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
 		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
-		fireEvent.click(screen.getByRole("button", { name: "Applying..." }));
+		fireEvent.click(screen.getByRole("button", { name: "Applying…" }));
 
 		expect(onAddBreak).toHaveBeenCalledTimes(1);
 
 		pending.resolve({ success: true });
-		await waitFor(() => expect(screen.queryByText("Record a break ending now and stay clocked in.")).toBeNull());
+		await waitFor(() =>
+			expect(screen.queryByText("Record a break ending now and stay clocked in.")).toBeNull(),
+		);
 	});
 
 	it("disables controls and does not submit if disabled while open", () => {
 		const onAddBreak = vi.fn().mockResolvedValue({ success: true });
 		const { rerender } = render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
 
 		rerender(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={true}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={true} t={t} />,
 		);
 
-		expect(screen.getByLabelText<HTMLInputElement>("Break duration in minutes").disabled).toBe(true);
+		expect(screen.getByLabelText<HTMLInputElement>("Break duration in minutes").disabled).toBe(
+			true,
+		);
 		expect(screen.getByRole<HTMLButtonElement>("button", { name: "Apply" }).disabled).toBe(true);
 
 		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
@@ -138,12 +125,7 @@ describe("QuickBreakPopover", () => {
 		const onAddBreak = vi.fn().mockRejectedValue(new Error("Network failed"));
 
 		render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));
@@ -156,12 +138,7 @@ describe("QuickBreakPopover", () => {
 		const onAddBreak = vi.fn().mockResolvedValue({ success: false, error: "Break overlaps lunch" });
 
 		render(
-			<QuickBreakPopover
-				onAddBreak={onAddBreak}
-				isAddingBreak={false}
-				isDisabled={false}
-				t={t}
-			/>,
+			<QuickBreakPopover onAddBreak={onAddBreak} isAddingBreak={false} isDisabled={false} t={t} />,
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Add break" }));

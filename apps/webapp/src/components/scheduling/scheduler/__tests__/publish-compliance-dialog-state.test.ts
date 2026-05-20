@@ -22,6 +22,16 @@ vi.mock("sonner", () => ({
 	},
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			Object.entries(params ?? {}).reduce(
+				(message, [key, value]) => message.replace(`{${key}}`, String(value)),
+				fallback,
+			),
+	}),
+}));
+
 import { getPendingPublishAcknowledgment } from "@/components/scheduling/scheduler/shift-publish-flow-utils";
 import { useShiftPublishFlow } from "@/components/scheduling/scheduler/use-shift-publish-flow";
 

@@ -4,12 +4,19 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CoverageFooter } from "./coverage-footer";
 
+const t = (_key: string, fallback: string, params?: Record<string, string | number>) =>
+	Object.entries(params ?? {}).reduce(
+		(message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
+		fallback,
+	);
+
 describe("CoverageFooter", () => {
 	it("renders the refreshed timestamp in a deterministic UTC format", () => {
 		render(
 			<CoverageFooter
 				notes={["Access controls only summarize logged audit events."]}
 				refreshedAt="2026-04-11T10:00:00.000Z"
+				t={t}
 			/>,
 		);
 

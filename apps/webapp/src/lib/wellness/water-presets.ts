@@ -11,7 +11,9 @@ export interface WaterPresetConfig {
 	id: WaterReminderPreset;
 	intervalMinutes: number;
 	label: string;
+	labelKey: string;
 	description: string;
+	descriptionKey: string;
 	recommended?: boolean;
 }
 
@@ -30,26 +32,34 @@ export const WATER_PRESETS: Record<WaterReminderPreset, WaterPresetConfig> = {
 		id: "light",
 		intervalMinutes: 60,
 		label: "Light",
+		labelKey: "settings.wellness.presets.light.label",
 		description: "Every 60 minutes - for low activity",
+		descriptionKey: "settings.wellness.presets.light.description",
 	},
 	moderate: {
 		id: "moderate",
 		intervalMinutes: 45,
 		label: "Moderate",
+		labelKey: "settings.wellness.presets.moderate.label",
 		description: "Every 45 minutes - recommended for most people",
+		descriptionKey: "settings.wellness.presets.moderate.description",
 		recommended: true,
 	},
 	active: {
 		id: "active",
 		intervalMinutes: 30,
 		label: "Active",
+		labelKey: "settings.wellness.presets.active.label",
 		description: "Every 30 minutes - for high activity or hot environments",
+		descriptionKey: "settings.wellness.presets.active.description",
 	},
 	custom: {
 		id: "custom",
 		intervalMinutes: 45, // Default when switching to custom
 		label: "Custom",
+		labelKey: "settings.wellness.presets.custom.label",
 		description: "Set your own interval (15-120 minutes)",
+		descriptionKey: "settings.wellness.presets.custom.description",
 	},
 };
 

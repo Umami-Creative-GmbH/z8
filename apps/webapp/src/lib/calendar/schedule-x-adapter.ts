@@ -469,7 +469,9 @@ export function generateBreakEvents(
 						date: breakStart,
 						endDate: breakEnd,
 						title: `Break - ${formatBreakDuration(gapMinutes)}`,
+						titleKey: "calendar.calendar.break.titleWithDuration",
 						description: "Break between work periods",
+						descriptionKey: "calendar.calendar.break.description",
 						color: "#6b7280",
 						metadata: {
 							durationMinutes: gapMinutes,

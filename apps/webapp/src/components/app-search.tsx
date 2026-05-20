@@ -2,6 +2,7 @@
 
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { IconSearch } from '@tabler/icons-react';
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
 import {
@@ -30,16 +31,16 @@ const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
 
 const SEARCH_HOTKEY = "Mod+K";
 
-function getGroupLabel(type: AppSearchResult["type"]) {
+function getGroupLabel(type: AppSearchResult["type"], t: ReturnType<typeof useTranslate>["t"]) {
 	switch (type) {
 		case "page":
-			return "Pages";
+			return t("appSearch.groups.pages", "Pages");
 		case "setting":
-			return "Settings";
+			return t("appSearch.groups.settings", "Settings");
 		case "employee":
-			return "People";
+			return t("appSearch.groups.people", "People");
 		case "team":
-			return "Teams";
+			return t("appSearch.groups.teams", "Teams");
 	}
 }
 
@@ -87,6 +88,7 @@ function ResultGroup({
 }
 
 export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] }) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
@@ -145,9 +147,13 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 				<SidebarGroupContent>
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<SidebarMenuButton onClick={() => setOpen(true)} tooltip="Search" type="button">
+							<SidebarMenuButton
+								onClick={() => setOpen(true)}
+								tooltip={t("appSearch.search", "Search")}
+								type="button"
+							>
 								<IconSearch />
-								<span>Search</span>
+								<span>{t("appSearch.search", "Search")}</span>
 								<Kbd className="ml-auto hidden bg-sidebar-accent text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden sm:inline-flex">
 									{searchShortcutLabel}
 								</Kbd>
@@ -157,36 +163,45 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 				</SidebarGroupContent>
 			</SidebarGroup>
 			<CommandDialog
-				description="Search pages, settings, people, and teams"
+				description={t(
+					"appSearch.description",
+					"Search pages, settings, people, and teams",
+				)}
 				onOpenChange={setOpen}
 				open={open}
-				title="Search"
+				title={t("appSearch.search", "Search")}
 			>
 				<CommandInput
-					aria-label="Search pages, settings, people, and teams"
+					aria-label={t(
+						"appSearch.description",
+						"Search pages, settings, people, and teams",
+					)}
 					onValueChange={setQuery}
-					placeholder="Search pages, settings, people, and teams…"
+					placeholder={t(
+						"appSearch.placeholder",
+						"Search pages, settings, people, and teams…",
+					)}
 					value={query}
 				/>
 				<CommandList>
-					<CommandEmpty>No results found.</CommandEmpty>
+					<CommandEmpty>{t("appSearch.empty", "No results found.")}</CommandEmpty>
 					<ResultGroup
-						label={getGroupLabel("employee")}
+						label={getGroupLabel("employee", t)}
 						onSelect={handleSelect}
 						results={liveResults.employees}
 					/>
 					<ResultGroup
-						label={getGroupLabel("team")}
+						label={getGroupLabel("team", t)}
 						onSelect={handleSelect}
 						results={liveResults.teams}
 					/>
 					<ResultGroup
-						label={getGroupLabel("page")}
+						label={getGroupLabel("page", t)}
 						onSelect={handleSelect}
 						results={pageResults}
 					/>
 					<ResultGroup
-						label={getGroupLabel("setting")}
+						label={getGroupLabel("setting", t)}
 						onSelect={handleSelect}
 						results={settingResults}
 					/>

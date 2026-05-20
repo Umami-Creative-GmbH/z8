@@ -9,6 +9,7 @@ import {
 	IconSearch,
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -48,30 +49,66 @@ import {
 import type { AuditLogResult } from "@/lib/query/audit.queries";
 
 const ENTITY_TYPES = [
-	{ value: "all", label: "All Types" },
-	{ value: "employee", label: "Employee" },
-	{ value: "team", label: "Team" },
-	{ value: "organization", label: "Organization" },
-	{ value: "permission", label: "Permission" },
-	{ value: "schedule", label: "Schedule" },
-	{ value: "time_entry", label: "Time Entry" },
-	{ value: "absence", label: "Absence" },
-	{ value: "approval", label: "Approval" },
-	{ value: "vacation", label: "Vacation" },
+	{ value: "all", labelKey: "settings.auditLog.entityType.all", fallback: "All Types" },
+	{ value: "employee", labelKey: "settings.auditLog.entityType.employee", fallback: "Employee" },
+	{ value: "team", labelKey: "settings.auditLog.entityType.team", fallback: "Team" },
+	{
+		value: "organization",
+		labelKey: "settings.auditLog.entityType.organization",
+		fallback: "Organization",
+	},
+	{
+		value: "permission",
+		labelKey: "settings.auditLog.entityType.permission",
+		fallback: "Permission",
+	},
+	{ value: "schedule", labelKey: "settings.auditLog.entityType.schedule", fallback: "Schedule" },
+	{
+		value: "time_entry",
+		labelKey: "settings.auditLog.entityType.timeEntry",
+		fallback: "Time Entry",
+	},
+	{ value: "absence", labelKey: "settings.auditLog.entityType.absence", fallback: "Absence" },
+	{ value: "approval", labelKey: "settings.auditLog.entityType.approval", fallback: "Approval" },
+	{ value: "vacation", labelKey: "settings.auditLog.entityType.vacation", fallback: "Vacation" },
 ];
 
 const ACTION_CATEGORIES = [
-	{ value: "all", label: "All Actions" },
-	{ value: "manager", label: "Manager" },
-	{ value: "permission", label: "Permission" },
-	{ value: "schedule", label: "Schedule" },
-	{ value: "team", label: "Team" },
-	{ value: "employee", label: "Employee" },
-	{ value: "time_entry", label: "Time Entry" },
-	{ value: "absence", label: "Absence" },
-	{ value: "approval", label: "Approval" },
-	{ value: "vacation", label: "Vacation" },
-	{ value: "auth", label: "Authentication" },
+	{ value: "all", labelKey: "settings.auditLog.actionCategory.all", fallback: "All Actions" },
+	{ value: "manager", labelKey: "settings.auditLog.actionCategory.manager", fallback: "Manager" },
+	{
+		value: "permission",
+		labelKey: "settings.auditLog.actionCategory.permission",
+		fallback: "Permission",
+	},
+	{
+		value: "schedule",
+		labelKey: "settings.auditLog.actionCategory.schedule",
+		fallback: "Schedule",
+	},
+	{ value: "team", labelKey: "settings.auditLog.actionCategory.team", fallback: "Team" },
+	{
+		value: "employee",
+		labelKey: "settings.auditLog.actionCategory.employee",
+		fallback: "Employee",
+	},
+	{
+		value: "time_entry",
+		labelKey: "settings.auditLog.actionCategory.timeEntry",
+		fallback: "Time Entry",
+	},
+	{ value: "absence", labelKey: "settings.auditLog.actionCategory.absence", fallback: "Absence" },
+	{
+		value: "approval",
+		labelKey: "settings.auditLog.actionCategory.approval",
+		fallback: "Approval",
+	},
+	{
+		value: "vacation",
+		labelKey: "settings.auditLog.actionCategory.vacation",
+		fallback: "Vacation",
+	},
+	{ value: "auth", labelKey: "settings.auditLog.actionCategory.auth", fallback: "Authentication" },
 ];
 
 function getActionBadgeVariant(
@@ -104,6 +141,7 @@ function formatAction(action: string): string {
 }
 
 export function AuditLogViewer() {
+	const { t } = useTranslate();
 	const [exporting, setExporting] = useState(false);
 
 	// Filters
@@ -147,13 +185,15 @@ export function AuditLogViewer() {
 		logsResult?.success && logsResult.data ? (logsResult.data.logs as AuditLogResult[]) : [];
 	const total = logsResult?.success && logsResult.data ? logsResult.data.total : 0;
 	const loadError =
-		logsResult && !logsResult.success ? logsResult.error || "Failed to fetch audit logs" : null;
+		logsResult && !logsResult.success
+			? logsResult.error || t("settings.auditLog.fetchFailed", "Failed to fetch audit logs")
+			: null;
 
 	const handleExport = async () => {
 		setExporting(true);
 		const result = await exportAuditLogsAction(startDate, endDate).catch(() => null);
 		if (!result) {
-			toast.error("Failed to export audit logs");
+			toast.error(t("settings.auditLog.exportFailed", `Failed to export audit logs`));
 			setExporting(false);
 			return;
 		}
@@ -172,9 +212,15 @@ export function AuditLogViewer() {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 
-			toast.success(`Exported ${result.data.length} audit log entries`);
+			toast.success(
+				t("settings.auditLog.exportSuccess", "Exported {count} audit log entries", {
+					count: result.data.length,
+				}),
+			);
 		} else {
-			toast.error(result.error || "Failed to export audit logs");
+			toast.error(
+				result.error || t("settings.auditLog.exportFailed", `Failed to export audit logs`),
+			);
 		}
 
 		setExporting(false);
@@ -193,15 +239,20 @@ export function AuditLogViewer() {
 			{/* Filters */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Filters</CardTitle>
-					<CardDescription>Search and filter audit log entries</CardDescription>
+					<CardTitle>{t("settings.auditLog.filters", "Filters")}</CardTitle>
+					<CardDescription>
+						{t("settings.auditLog.filtersDescription", "Search and filter audit log entries")}
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<form onSubmit={handleSearch} className="space-y-4">
 						<div className="flex flex-wrap gap-4">
 							<div className="flex-1 min-w-[200px]">
 								<Input
-									placeholder="Search actions, users, or metadata..."
+									placeholder={t(
+										"settings.auditLog.searchPlaceholder",
+										"Search actions, users, or metadata…",
+									)}
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
 									className="w-full"
@@ -215,12 +266,14 @@ export function AuditLogViewer() {
 								}}
 							>
 								<SelectTrigger className="w-[180px]">
-									<SelectValue placeholder="Entity Type" />
+									<SelectValue
+										placeholder={t("settings.auditLog.entityTypePlaceholder", "Entity Type")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{ENTITY_TYPES.map((type) => (
 										<SelectItem key={type.value} value={type.value}>
-											{type.label}
+											{t(type.labelKey, type.fallback)}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -233,12 +286,17 @@ export function AuditLogViewer() {
 								}}
 							>
 								<SelectTrigger className="w-[180px]">
-									<SelectValue placeholder="Action Category" />
+									<SelectValue
+										placeholder={t(
+											"settings.auditLog.actionCategoryPlaceholder",
+											"Action Category",
+										)}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{ACTION_CATEGORIES.map((cat) => (
 										<SelectItem key={cat.value} value={cat.value}>
-											{cat.label}
+											{t(cat.labelKey, cat.fallback)}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -247,7 +305,7 @@ export function AuditLogViewer() {
 						<div className="flex flex-wrap gap-4 items-end">
 							<div>
 								<label htmlFor="audit-log-start-date" className="text-sm text-muted-foreground">
-									From
+									{t("settings.auditLog.from", "From")}
 								</label>
 								<DatePicker
 									id="audit-log-start-date"
@@ -261,7 +319,7 @@ export function AuditLogViewer() {
 							</div>
 							<div>
 								<label htmlFor="audit-log-end-date" className="text-sm text-muted-foreground">
-									To
+									{t("settings.auditLog.to", "To")}
 								</label>
 								<DatePicker
 									id="audit-log-end-date"
@@ -275,7 +333,7 @@ export function AuditLogViewer() {
 							</div>
 							<Button type="submit" variant="secondary">
 								<IconSearch className="size-4 mr-2" />
-								Search
+								{t("settings.auditLog.search", "Search")}
 							</Button>
 							<Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
 								{exporting ? (
@@ -283,7 +341,7 @@ export function AuditLogViewer() {
 								) : (
 									<IconDownload className="size-4 mr-2" />
 								)}
-								Export
+								{t("settings.auditLog.export", "Export")}
 							</Button>
 						</div>
 					</form>
@@ -295,9 +353,11 @@ export function AuditLogViewer() {
 				<CardHeader>
 					<div className="flex items-center justify-between">
 						<div>
-							<CardTitle>Audit Log Entries</CardTitle>
+							<CardTitle>{t("settings.auditLog.entriesTitle", "Audit Log Entries")}</CardTitle>
 							<CardDescription>
-								{total > 0 ? `${total} entries found` : "No entries found"}
+								{total > 0
+									? t("settings.auditLog.entriesFound", "{count} entries found", { count: total })
+									: t("settings.auditLog.noEntries", "No entries found")}
 							</CardDescription>
 						</div>
 					</div>
@@ -311,19 +371,24 @@ export function AuditLogViewer() {
 						<div className="text-center py-12 text-destructive">{loadError}</div>
 					) : logs.length === 0 ? (
 						<div className="text-center py-12 text-muted-foreground">
-							No audit log entries found for the selected filters.
+							{t(
+								"settings.auditLog.noEntriesForFilters",
+								"No audit log entries found for the selected filters.",
+							)}
 						</div>
 					) : (
 						<>
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>Timestamp</TableHead>
-										<TableHead>Action</TableHead>
-										<TableHead>User</TableHead>
-										<TableHead>Entity</TableHead>
-										<TableHead>IP Address</TableHead>
-										<TableHead className="w-[80px]">Details</TableHead>
+										<TableHead>{t("settings.auditLog.timestamp", "Timestamp")}</TableHead>
+										<TableHead>{t("settings.auditLog.action", "Action")}</TableHead>
+										<TableHead>{t("settings.auditLog.user", "User")}</TableHead>
+										<TableHead>{t("settings.auditLog.entity", "Entity")}</TableHead>
+										<TableHead>{t("settings.auditLog.ipAddress", "IP Address")}</TableHead>
+										<TableHead className="w-[80px]">
+											{t("settings.auditLog.details", "Details")}
+										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -343,7 +408,9 @@ export function AuditLogViewer() {
 												</Badge>
 											</TableCell>
 											<TableCell>
-												<div className="text-sm">{log.performedByName || "Unknown"}</div>
+												<div className="text-sm">
+													{log.performedByName || t("settings.auditLog.unknown", "Unknown")}
+												</div>
 												<div className="text-xs text-muted-foreground">{log.performedByEmail}</div>
 											</TableCell>
 											<TableCell>
@@ -364,20 +431,29 @@ export function AuditLogViewer() {
 													</ActionPanelTrigger>
 													<ActionPanelContent size="wide">
 														<ActionPanelHeader>
-															<ActionPanelTitle>Audit Log Details</ActionPanelTitle>
+															<ActionPanelTitle>
+																{t("settings.auditLog.detailsTitle", "Audit Log Details")}
+															</ActionPanelTitle>
 															<ActionPanelDescription>
-																Full details of this audit log entry
+																{t(
+																	"settings.auditLog.detailsDescription",
+																	"Full details of this audit log entry",
+																)}
 															</ActionPanelDescription>
 														</ActionPanelHeader>
 														<ActionPanelBody>
 															<div className="space-y-4">
 																<div className="grid grid-cols-2 gap-4">
 																	<div>
-																		<div className="text-sm font-medium">Action</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.action", "Action")}
+																		</div>
 																		<p className="text-sm">{formatAction(log.action)}</p>
 																	</div>
 																	<div>
-																		<div className="text-sm font-medium">Timestamp</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.timestamp", "Timestamp")}
+																		</div>
 																		<p className="text-sm">
 																			{DateTime.fromJSDate(log.timestamp).toLocaleString(
 																				DateTime.DATETIME_FULL,
@@ -385,23 +461,31 @@ export function AuditLogViewer() {
 																		</p>
 																	</div>
 																	<div>
-																		<div className="text-sm font-medium">User</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.user", "User")}
+																		</div>
 																		<p className="text-sm">
 																			{log.performedByName} ({log.performedByEmail})
 																		</p>
 																	</div>
 																	<div>
-																		<div className="text-sm font-medium">Entity</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.entity", "Entity")}
+																		</div>
 																		<p className="text-sm">
 																			{log.entityType}: {log.entityId}
 																		</p>
 																	</div>
 																	<div>
-																		<div className="text-sm font-medium">IP Address</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.ipAddress", "IP Address")}
+																		</div>
 																		<p className="text-sm font-mono">{log.ipAddress || "-"}</p>
 																	</div>
 																	<div>
-																		<div className="text-sm font-medium">User Agent</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.userAgent", "User Agent")}
+																		</div>
 																		<p
 																			className="text-sm truncate"
 																			title={log.userAgent || undefined}
@@ -412,7 +496,9 @@ export function AuditLogViewer() {
 																</div>
 																{log.changes && (
 																	<div>
-																		<div className="text-sm font-medium">Changes</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.changes", "Changes")}
+																		</div>
 																		<pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-[200px]">
 																			{JSON.stringify(log.changes, null, 2)}
 																		</pre>
@@ -420,7 +506,9 @@ export function AuditLogViewer() {
 																)}
 																{log.metadata && (
 																	<div>
-																		<div className="text-sm font-medium">Metadata</div>
+																		<div className="text-sm font-medium">
+																			{t("settings.auditLog.metadata", "Metadata")}
+																		</div>
 																		<pre className="mt-1 p-3 bg-muted rounded-md text-xs overflow-auto max-h-[200px]">
 																			{JSON.stringify(log.metadata, null, 2)}
 																		</pre>
@@ -440,7 +528,10 @@ export function AuditLogViewer() {
 							{totalPages > 1 && (
 								<div className="flex items-center justify-between mt-4">
 									<div className="text-sm text-muted-foreground">
-										Page {page + 1} of {totalPages}
+										{t("settings.auditLog.pageOf", "Page {page} of {totalPages}", {
+											page: page + 1,
+											totalPages,
+										})}
 									</div>
 									<div className="flex gap-2">
 										<Button
@@ -450,7 +541,7 @@ export function AuditLogViewer() {
 											disabled={page === 0}
 										>
 											<IconChevronLeft className="size-4 mr-1" />
-											Previous
+											{t("common.previous", "Previous")}
 										</Button>
 										<Button
 											variant="outline"
@@ -458,7 +549,7 @@ export function AuditLogViewer() {
 											onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
 											disabled={page >= totalPages - 1}
 										>
-											Next
+											{t("common.next", "Next")}
 											<IconChevronRight className="size-4 ml-1" />
 										</Button>
 									</div>

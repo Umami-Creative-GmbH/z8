@@ -98,20 +98,22 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 
 				{!widget.uiState.showNotesInput ? (
 					<div className="flex gap-2">
-						<ClockActionButton
-							isClockedIn={widget.isClockedIn}
-							isMutating={widget.isMutating}
-							isClockingOut={widget.isClockingOut}
-							onClick={widget.isClockedIn ? widget.handleClockOut : widget.handleClockIn}
-							t={widget.t}
-						/>
+						<div className={widget.isClockedIn ? "min-w-0 basis-2/3" : "w-full"}>
+							<ClockActionButton
+								isClockedIn={widget.isClockedIn}
+								isMutating={widget.isMutating}
+								isClockingOut={widget.isClockingOut}
+								onClick={widget.isClockedIn ? widget.handleClockOut : widget.handleClockIn}
+								t={widget.t}
+							/>
+						</div>
 						{widget.isClockedIn ? (
 							<QuickBreakPopover
 								onAddBreak={widget.handleAddBreak}
 								isAddingBreak={widget.isAddingBreak}
 								isDisabled={widget.isMutating}
 								t={widget.t}
-								buttonClassName="shrink-0 px-4"
+								buttonClassName="min-w-0 basis-1/3 px-3"
 							/>
 						) : null}
 					</div>

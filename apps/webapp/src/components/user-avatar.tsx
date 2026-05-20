@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateAvatarDataUri, getInitials, type UserAvatarGender } from "@/lib/avatar";
@@ -23,13 +24,16 @@ export type UserAvatarSize = keyof typeof sizeConfig;
 export type UserAvatarShape = keyof typeof shapeConfig;
 export type EmployeeClockStatus = "clocked-in" | "clocked-out" | "unknown";
 
-function getClockStatusBadge(clockStatus?: EmployeeClockStatus) {
+function getClockStatusBadge(
+	clockStatus: EmployeeClockStatus | undefined,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
 	if (clockStatus === "clocked-in") {
-		return { label: "Clocked in", className: "bg-emerald-500" };
+		return { label: t("common:presence.clockedIn", "Clocked in"), className: "bg-emerald-500" };
 	}
 
 	if (clockStatus === "clocked-out") {
-		return { label: "Clocked out", className: "bg-red-500" };
+		return { label: t("common:presence.clockedOut", "Clocked out"), className: "bg-red-500" };
 	}
 
 	return null;
@@ -77,10 +81,11 @@ export function UserAvatar({
 	clockStatus,
 	showClockStatus = true,
 }: UserAvatarProps) {
+	const { t } = useTranslate();
 	const [isLoading, setIsLoading] = useState(true);
 	const { class: sizeClass, pixels, spinner: spinnerClass, badge: badgeClass } = sizeConfig[size];
 	const shapeClass = shapeConfig[shape];
-	const clockStatusBadge = showClockStatus ? getClockStatusBadge(clockStatus) : null;
+	const clockStatusBadge = showClockStatus ? getClockStatusBadge(clockStatus, t) : null;
 
 	// Generate DiceBear fallback - memoized for performance
 	// Using 2x pixels for retina displays
@@ -90,7 +95,7 @@ export function UserAvatar({
 	);
 
 	const initials = useMemo(() => getInitials(name), [name]);
-	const alt = name || "User avatar";
+	const alt = name || t("common:userAvatar.alt", "User avatar");
 
 	// Use uploaded image if available, otherwise DiceBear
 	const primarySrc = image || dicebearAvatar;

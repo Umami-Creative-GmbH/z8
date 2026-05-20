@@ -2,12 +2,11 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createTravelExpenseDraft } from "@/app/[locale]/(app)/travel-expenses/actions";
-import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -17,6 +16,8 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -85,6 +86,7 @@ export function TravelExpenseClaimDialog({
 	onOpenChange,
 	onCreated,
 }: TravelExpenseClaimDialogProps) {
+	const { t } = useTranslate();
 	const [submitErrors, setSubmitErrors] = useState<{
 		tripStart?: string;
 		tripEnd?: string;
@@ -104,27 +106,51 @@ export function TravelExpenseClaimDialog({
 			const nextErrors: { tripStart?: string; tripEnd?: string; amount?: string } = {};
 
 			if (!tripStart.isValid || !tripEnd.isValid) {
-				nextErrors.tripStart = "Please provide a valid trip start date";
-				nextErrors.tripEnd = "Please provide a valid trip end date";
+				nextErrors.tripStart = t(
+					"travelExpenses.form.errors.validTripStart",
+					"Please provide a valid trip start date",
+				);
+				nextErrors.tripEnd = t(
+					"travelExpenses.form.errors.validTripEnd",
+					"Please provide a valid trip end date",
+				);
 				setSubmitErrors(nextErrors);
 				tripStartRef.current?.focus();
-				toast.error("Please provide a valid trip start and end date");
+				toast.error(
+					t(
+						"travelExpenses.form.errors.validTripDates",
+						"Please provide a valid trip start and end date",
+					),
+				);
 				return;
 			}
 
 			if (tripEnd < tripStart) {
-				nextErrors.tripEnd = "Trip end date cannot be before trip start date";
+				nextErrors.tripEnd = t(
+					"travelExpenses.form.errors.tripEndBeforeStart",
+					"Trip end date cannot be before trip start date",
+				);
 				setSubmitErrors(nextErrors);
 				tripEndRef.current?.focus();
-				toast.error("Trip end date cannot be before trip start date");
+				toast.error(
+					t(
+						"travelExpenses.form.errors.tripEndBeforeStart",
+						"Trip end date cannot be before trip start date",
+					),
+				);
 				return;
 			}
 
 			if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
-				nextErrors.amount = "Amount must be a positive number";
+				nextErrors.amount = t(
+					"travelExpenses.form.errors.positiveAmount",
+					"Amount must be a positive number",
+				);
 				setSubmitErrors(nextErrors);
 				amountRef.current?.focus();
-				toast.error("Amount must be a positive number");
+				toast.error(
+					t("travelExpenses.form.errors.positiveAmount", "Amount must be a positive number"),
+				);
 				return;
 			}
 
@@ -152,11 +178,14 @@ export function TravelExpenseClaimDialog({
 			});
 
 			if (!result.success) {
-				toast.error(result.error || "Failed to create travel expense draft");
+				toast.error(
+					result.error ||
+						t("travelExpenses.form.errors.createDraft", "Failed to create travel expense draft"),
+				);
 				return;
 			}
 
-			toast.success("Travel expense draft created");
+			toast.success(t("travelExpenses.form.created", "Travel expense draft created"));
 			form.reset();
 			await onCreated?.();
 		},
@@ -173,9 +202,14 @@ export function TravelExpenseClaimDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>Create Travel Expense Claim</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("travelExpenses.form.title", "Create Travel Expense Claim")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
-						Create a new draft claim for your recent travel expenses.
+						{t(
+							"travelExpenses.form.description",
+							"Create a new draft claim for your recent travel expenses.",
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 				<form
@@ -189,20 +223,33 @@ export function TravelExpenseClaimDialog({
 						<form.Field name="type">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel required>Claim Type</TFormLabel>
+									<TFormLabel required>
+										{t("travelExpenses.form.claimType", "Claim Type")}
+									</TFormLabel>
 									<Select
 										value={field.state.value}
 										onValueChange={(value) => field.handleChange(value as TravelExpenseClaimType)}
 									>
 										<TFormControl>
 											<SelectTrigger>
-												<SelectValue placeholder="Select claim type" />
+												<SelectValue
+													placeholder={t(
+														"travelExpenses.form.selectClaimType",
+														"Select claim type",
+													)}
+												/>
 											</SelectTrigger>
 										</TFormControl>
 										<SelectContent>
-											<SelectItem value="receipt">Receipt</SelectItem>
-											<SelectItem value="mileage">Mileage</SelectItem>
-											<SelectItem value="per_diem">Per Diem</SelectItem>
+											<SelectItem value="receipt">
+												{t("travelExpenses.claimTypes.receipt", "Receipt")}
+											</SelectItem>
+											<SelectItem value="mileage">
+												{t("travelExpenses.claimTypes.mileage", "Mileage")}
+											</SelectItem>
+											<SelectItem value="per_diem">
+												{t("travelExpenses.claimTypes.per_diem", "Per Diem")}
+											</SelectItem>
 										</SelectContent>
 									</Select>
 								</TFormItem>
@@ -213,8 +260,10 @@ export function TravelExpenseClaimDialog({
 							{(type) =>
 								type === "receipt" ? (
 									<p className="text-sm text-muted-foreground">
-										Receipt claims require at least one attachment. Attachment upload will be
-										available after draft creation.
+										{t(
+											"travelExpenses.form.receiptAttachmentHint",
+											"Receipt claims require at least one attachment. Attachment upload will be available after draft creation.",
+										)}
 									</p>
 								) : null
 							}
@@ -228,7 +277,7 @@ export function TravelExpenseClaimDialog({
 											required
 											hasError={fieldHasError(field) || !!submitErrors.tripStart}
 										>
-											Trip Start
+											{t("travelExpenses.form.tripStart", "Trip Start")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripStart}>
 											<DatePicker
@@ -252,7 +301,7 @@ export function TravelExpenseClaimDialog({
 								{(field) => (
 									<TFormItem>
 										<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
-											Trip End
+											{t("travelExpenses.form.tripEnd", "Trip End")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field) || !!submitErrors.tripEnd}>
 											<DatePicker
@@ -277,12 +326,14 @@ export function TravelExpenseClaimDialog({
 							<form.Field name="destinationCity">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel>Destination City</TFormLabel>
+										<TFormLabel>
+											{t("travelExpenses.form.destinationCity", "Destination City")}
+										</TFormLabel>
 										<TFormControl>
 											<Input
 												name="destinationCity"
 												autoComplete="address-level2"
-												placeholder="Berlin"
+												placeholder={t("travelExpenses.form.destinationCityPlaceholder", "Berlin")}
 												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
@@ -295,12 +346,17 @@ export function TravelExpenseClaimDialog({
 							<form.Field name="destinationCountry">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel>Destination Country</TFormLabel>
+										<TFormLabel>
+											{t("travelExpenses.form.destinationCountry", "Destination Country")}
+										</TFormLabel>
 										<TFormControl>
 											<Input
 												name="destinationCountry"
 												autoComplete="country-name"
-												placeholder="Germany"
+												placeholder={t(
+													"travelExpenses.form.destinationCountryPlaceholder",
+													"Germany",
+												)}
 												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
@@ -316,7 +372,7 @@ export function TravelExpenseClaimDialog({
 								{(field) => (
 									<TFormItem>
 										<TFormLabel required hasError={fieldHasError(field) || !!submitErrors.amount}>
-											Amount
+											{t("travelExpenses.form.amount", "Amount")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field) || !!submitErrors.amount}>
 											<Input
@@ -343,12 +399,14 @@ export function TravelExpenseClaimDialog({
 							<form.Field name="currency">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel required>Currency</TFormLabel>
+										<TFormLabel required>
+											{t("travelExpenses.form.currency", "Currency")}
+										</TFormLabel>
 										<TFormControl>
 											<Input
 												name="currency"
 												autoComplete="off"
-												placeholder="EUR"
+												placeholder={t("travelExpenses.form.currencyPlaceholder", "EUR")}
 												maxLength={3}
 												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
@@ -356,7 +414,12 @@ export function TravelExpenseClaimDialog({
 												required
 											/>
 										</TFormControl>
-										<TFormDescription>ISO 4217 code, e.g. EUR or USD</TFormDescription>
+										<TFormDescription>
+											{t(
+												"travelExpenses.form.currencyDescription",
+												"ISO 4217 code, e.g. EUR or USD",
+											)}
+										</TFormDescription>
 									</TFormItem>
 								)}
 							</form.Field>
@@ -365,12 +428,15 @@ export function TravelExpenseClaimDialog({
 						<form.Field name="notes">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel>Notes</TFormLabel>
+									<TFormLabel>{t("travelExpenses.form.notes", "Notes")}</TFormLabel>
 									<TFormControl>
 										<Textarea
 											name="notes"
 											autoComplete="off"
-											placeholder="Add optional context for your approver"
+											placeholder={t(
+												"travelExpenses.form.notesPlaceholder",
+												"Add optional context for your approver",
+											)}
 											rows={4}
 											value={field.state.value}
 											onChange={(event) => field.handleChange(event.target.value)}
@@ -391,11 +457,13 @@ export function TravelExpenseClaimDialog({
 									onClick={() => onOpenChange(false)}
 									disabled={isSubmitting}
 								>
-									Cancel
+									{t("common.cancel", "Cancel")}
 								</Button>
 								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-									Create Draft
+									{isSubmitting && (
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+									)}
+									{t("travelExpenses.form.createDraft", "Create Draft")}
 								</Button>
 							</ActionPanelFooter>
 						)}

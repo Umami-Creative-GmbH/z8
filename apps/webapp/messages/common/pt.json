@@ -10,6 +10,16 @@
     "delete": "Excluir",
     "refresh": "Atualizar"
   },
+  "analytics": {
+    "export": {
+      "export": "Exportar",
+      "exportAsCsv": "Exportar como CSV",
+      "exportAsExcel": "Exportar como Excel",
+      "exportedAsFormat": "Exportado como {format}",
+      "exportingFormat": "Exportando {format}…",
+      "failedAsFormat": "Falha ao exportar como {format}"
+    }
+  },
   "colors": {
     "blue": "Azul",
     "green": "Verde",
@@ -24,6 +34,7 @@
     "actions": "Ações",
     "active": "Ativo",
     "add": "Adicionar",
+    "adding": "Adicionando...",
     "all": "Tudo",
     "approve": "Aprovar",
     "assign": "Atribuir",
@@ -37,6 +48,7 @@
     "continue": "Continuar",
     "copy": "Copiar",
     "create": "Criar",
+    "current": "Atual",
     "days": {
       "friday": "Sexta-feira",
       "label": "dias",
@@ -87,6 +99,7 @@
     "moveDown": "Mover para baixo",
     "moveUp": "Mover para cima",
     "name": "Nome",
+    "never": "Nunca",
     "new": "Novo",
     "next": "Seguinte",
     "notApplicable": "N/D",
@@ -95,9 +108,12 @@
     "openMenu": "Abrir menu",
     "optional": "opcional",
     "or": "Ou",
+    "pending": "Pendente",
+    "present": "Presente",
     "previous": "Anterior",
     "recovering": "Recuperando...",
     "refresh": "Atualizar",
+    "refreshing": "Atualizando...",
     "reject": "Rejeitar",
     "rejecting": "Rejeitando…",
     "remove": "Remover",
@@ -123,6 +139,8 @@
     "unknownEmployee": "Funcionário desconhecido",
     "unknownTeam": "Equipa desconhecida",
     "unnamed": "Sem nome",
+    "update": "Atualizar",
+    "updating": "Atualizando...",
     "uploading": "A carregar...",
     "validate": "Validar",
     "validationError": "Erro de validação",
@@ -221,6 +239,12 @@
       "settings": "Configurações de notificação",
       "viewAll": "Ver todas as notificações"
     },
+    "content": {
+      "teamMemberAdded": {
+        "message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
+        "title": "Adicionado à equipe"
+      }
+    },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
     "empty": {
       "description": "Você está em dia! Novas notificações aparecerão aqui.",
@@ -239,6 +263,36 @@
       "ariaLabel": "Filtrar notificações por status de leitura",
       "read": "Lido",
       "unread": "Não lido"
+    },
+    "preferences": {
+      "disabled": "Notificação desativada",
+      "enabled": "Notificação ativada",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Receber alertas para solicitações de aprovação pendentes",
+          "requestUpdates": "Seja notificado quando suas solicitações forem aprovadas ou rejeitadas",
+          "teamSecurity": "Mantenha-se informado sobre atualizações da equipe e de segurança"
+        },
+        "description": "Ative as notificações push para receber atualizações instantâneas sobre aprovações, correções de tempo e mudanças importantes na equipe - mesmo quando você não estiver usando o aplicativo.",
+        "enable": "Ativar Notificações",
+        "notNow": "Agora não",
+        "title": "Mantenha-se Atualizado"
+      },
+      "push": {
+        "blockedDescription": "As notificações push estão bloqueadas pelo seu navegador. Para ativá-las, você precisa atualizar as configurações do seu navegador.",
+        "blockedHelp": "Clique no ícone de cadeado na barra de endereços do seu navegador e permita notificações para este site, em seguida, atualize a página.",
+        "blockedTitle": "Notificações push bloqueadas",
+        "enableButton": "Ativar notificações push",
+        "enableDescription": "Seja notificado instantaneamente mesmo quando não estiver usando o aplicativo",
+        "enabledIndicator": "As notificações push estão ativadas",
+        "enabledToast": "Notificações push ativadas",
+        "enabledToastDescription": "Você agora receberá notificações push do navegador",
+        "enableFailedToast": "Não foi possível ativar as notificações push",
+        "enableTitle": "Ativar notificações push",
+        "errorToast": "Erro de notificação push"
+      },
+      "toggleAria": "Notificações {channel} para {type}",
+      "updateFailed": "Falha ao atualizar preferência"
     },
     "search": {
       "ariaLabel": "Pesquisar notificações",
@@ -272,6 +326,10 @@
       "retry": "Tentar novamente",
       "syncing": "Sincronizando {count} evento(s)..."
     }
+  },
+  "presence": {
+    "clockedIn": "Registrou entrada",
+    "clockedOut": "Registrou saída"
   },
   "roles": {
     "admin": "Administrador",
@@ -331,6 +389,9 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
+  "userAvatar": {
+    "alt": "Avatar do usuário"
+  },
   "user": {
     "language": "Idioma",
     "logging-out": "Saindo...",
@@ -340,6 +401,7 @@
     "theme-dark": "Escuro",
     "theme-light": "Claro",
     "theme-system": "Sistema",
+    "theme-toggle": "Alternar tema",
     "time-settings": "Configurações de Tempo"
   },
   "validation": {

@@ -1,5 +1,107 @@
 {
   "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Zugriffskontrollen fassen nur sensible Audit-Log-Ereignisse zusammen, die bereits heute erfasst werden.",
+        "auditEvidence": "Audit-Nachweise nutzen die Live-Audit-Export-Konfiguration, Audit-Paket-Anfragen und aktuelle Verifizierungsergebnisse.",
+        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Kürzlich fehlgeschlagene Jobs: {failedRequests}; kürzlich ungültige Verifizierungen: {invalidVerifications}",
+          "title": "Fehler bei Audit-Nachweisen erkannt"
+        },
+        "auditPackFailure": {
+          "description": "Kürzlich fehlgeschlagene Jobs: {failedRequests}",
+          "title": "Erstellung des Audit-Pakets fehlgeschlagen"
+        },
+        "auditVerificationFailure": {
+          "description": "Kürzlich ungültige Verifizierungen: {invalidVerifications}",
+          "title": "Audit-Verifizierung fehlgeschlagen"
+        },
+        "sensitiveAction": {
+          "description": "{action} für {entityType}",
+          "title": "Sensible Aktion: {action}"
+        },
+        "workforceFindings": {
+          "description": "Ruhezeit: {restPeriodViolations}, Sonstige Richtlinien: {generalPolicyViolations}, Überstunden: {overtimeViolations}",
+          "title": "Aktuelle Ergebnisse zur Arbeitsplatzrichtlinie"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Letzte sensible Aktion: {action}",
+          "latestSensitiveActionNone": "Letzte sensible Aktion: keine",
+          "noSensitiveEvents": "In den letzten 24 Stunden wurden keine Änderungen an sensiblen Kontrollen protokolliert.",
+          "recentSensitiveEvents": "Aktuelle sensible Ereignisse: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Aktiver Signierschlüssel: {fingerprint}",
+          "lastSuccessfulAuditPack": "Letztes erfolgreiches Audit-Paket: {timestamp}",
+          "missingSigningKey": "Signierschlüssel sind noch nicht konfiguriert.",
+          "noSuccessfulAuditPack": "Es wurde noch kein erfolgreiches Audit-Paket aufgezeichnet.",
+          "recentFailedJobs": "Aktuelle fehlgeschlagene Audit-Paket-Jobs: {count}",
+          "recentInvalidVerifications": "Aktuelle ungültige Verifizierungsversuche: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Zugriffskontrollereignisse konnten nicht geladen werden.",
+          "auditEvidence": "Audit-Nachweisdaten konnten nicht geladen werden.",
+          "workforceCompliance": "Compliance-Daten der Belegschaft konnten nicht geladen werden."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Sonstige Richtlinienverstöße: {count}",
+          "overtimeViolations": "Überstundenverstöße: {count}",
+          "pendingExceptions": "Ausstehende Ausnahmen: {count}",
+          "restPeriodViolations": "Ruhezeitverstöße: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Compliance prüfen",
+        "inspectInAuditLog": "Im Audit-Protokoll prüfen",
+        "openAuditExport": "Audit-Export öffnen",
+        "openAuditLog": "Audit-Protokoll öffnen",
+        "openComplianceSettings": "Compliance-Einstellungen öffnen",
+        "reviewAuditExport": "Audit-Export überprüfen"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Änderungen an sensiblen Kontrollen erfordern eine Überprüfung",
+            "healthy": "Es wurden kürzlich keine Änderungen an sensiblen Kontrollen protokolliert",
+            "warning": "Es wurden kürzlich Änderungen an Kontrollen erkannt"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Audit-Nachweise erfordern Aufmerksamkeit",
+            "healthy": "Audit-Nachweissignale sehen gut aus",
+            "warning": "Audit-Nachweise sind nur teilweise bereit"
+          }
+        },
+        "unavailable": {
+          "headline": "Signal vorübergehend nicht verfügbar"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Verstöße gegen die Personalrichtlinien erfordern eine Überprüfung",
+            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien erkannt",
+            "warning": "Die Einhaltung der Personalrichtlinien weicht ab"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritisch",
+        "healthy": "gesund",
+        "unavailable": "nicht verfügbar",
+        "warning": "Warnung"
+      },
+      "summary": {
+        "critical": "Kritische Compliance-Risiken erfordern Aufmerksamkeit",
+        "healthy": "Keine aktiven Probleme in überwachten Signalen erkannt",
+        "unavailable": "Einige Compliance-Signale sind nicht verfügbar",
+        "warning": "Compliance-Signale erfordern eine Überprüfung"
+      }
+    },
     "exception": {
       "approved": "Ausnahme genehmigt",
       "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",

@@ -3,9 +3,13 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { auditExportPackage, auditPackRequest, auditVerificationLog } from "@/db/schema";
 import { configurationService } from "@/lib/audit-export";
-import type { ComplianceSectionResult } from "../types";
+import type { ComplianceSectionResult, ComplianceText } from "../types";
 
 const AUDIT_EVIDENCE_LOOKBACK_DAYS = 7;
+
+function text(key: string, params?: Record<string, string | number>): ComplianceText {
+	return params ? { key, params } : { key };
+}
 
 export interface AuditEvidenceSnapshot {
 	hasConfig: boolean;
@@ -22,22 +26,30 @@ export function deriveAuditEvidenceSection(
 	const criticalEvent =
 		snapshot.recentFailedRequests > 0 && snapshot.recentInvalidVerifications > 0
 			? {
-				id: "audit-evidence-failure",
-				title: "Audit evidence failures detected",
-				description: `Recent failed jobs: ${snapshot.recentFailedRequests}; recent invalid verifications: ${snapshot.recentInvalidVerifications}`,
-			}
+					id: "audit-evidence-failure",
+					title: text("compliance.commandCenter.events.auditEvidenceFailures.title"),
+					description: text("compliance.commandCenter.events.auditEvidenceFailures.description", {
+						failedRequests: snapshot.recentFailedRequests,
+						invalidVerifications: snapshot.recentInvalidVerifications,
+					}),
+				}
 			: snapshot.recentFailedRequests > 0
 				? {
-					id: "audit-pack-failure",
-					title: "Audit pack generation failed",
-					description: `Recent failed jobs: ${snapshot.recentFailedRequests}`,
-				}
+						id: "audit-pack-failure",
+						title: text("compliance.commandCenter.events.auditPackFailure.title"),
+						description: text("compliance.commandCenter.events.auditPackFailure.description", {
+							failedRequests: snapshot.recentFailedRequests,
+						}),
+					}
 				: snapshot.recentInvalidVerifications > 0
 					? {
-						id: "audit-verification-failure",
-						title: "Audit verification failed",
-						description: `Recent invalid verifications: ${snapshot.recentInvalidVerifications}`,
-					}
+							id: "audit-verification-failure",
+							title: text("compliance.commandCenter.events.auditVerificationFailure.title"),
+							description: text(
+								"compliance.commandCenter.events.auditVerificationFailure.description",
+								{ invalidVerifications: snapshot.recentInvalidVerifications },
+							),
+						}
 					: null;
 
 	const status =
@@ -49,13 +61,21 @@ export function deriveAuditEvidenceSection(
 
 	const facts = [
 		snapshot.activeKeyFingerprint
-			? `Active signing key: ${snapshot.activeKeyFingerprint}`
-			: "Signing keys are not configured yet.",
-		`Recent failed audit-pack jobs: ${snapshot.recentFailedRequests}`,
-		`Recent invalid verification attempts: ${snapshot.recentInvalidVerifications}`,
+			? text("compliance.commandCenter.facts.audit.activeSigningKey", {
+					fingerprint: snapshot.activeKeyFingerprint,
+				})
+			: text("compliance.commandCenter.facts.audit.missingSigningKey"),
+		text("compliance.commandCenter.facts.audit.recentFailedJobs", {
+			count: snapshot.recentFailedRequests,
+		}),
+		text("compliance.commandCenter.facts.audit.recentInvalidVerifications", {
+			count: snapshot.recentInvalidVerifications,
+		}),
 		snapshot.latestSuccessAt
-			? `Last successful audit pack: ${snapshot.latestSuccessAt}`
-			: "No successful audit pack has been recorded yet.",
+			? text("compliance.commandCenter.facts.audit.lastSuccessfulAuditPack", {
+					timestamp: snapshot.latestSuccessAt,
+				})
+			: text("compliance.commandCenter.facts.audit.noSuccessfulAuditPack"),
 	];
 
 	return {
@@ -64,17 +84,20 @@ export function deriveAuditEvidenceSection(
 			status,
 			headline:
 				status === "critical"
-					? "Audit evidence needs attention"
+					? text("compliance.commandCenter.sections.auditEvidence.headline.critical")
 					: status === "warning"
-						? "Audit evidence is only partially ready"
-						: "Audit evidence signals look healthy",
+						? text("compliance.commandCenter.sections.auditEvidence.headline.warning")
+						: text("compliance.commandCenter.sections.auditEvidence.headline.healthy"),
 			facts,
 			updatedAt: DateTime.utc().toISO(),
-			primaryLink: { label: "Open Audit Export", href: "/settings/audit-export" },
+			primaryLink: {
+				label: text("compliance.commandCenter.links.openAuditExport"),
+				href: "/settings/audit-export",
+			},
 		},
-			recentCriticalEvents:
-				status === "critical" && criticalEvent
-					? [
+		recentCriticalEvents:
+			status === "critical" && criticalEvent
+				? [
 						{
 							id: criticalEvent.id,
 							sectionKey: "auditEvidence",
@@ -83,7 +106,7 @@ export function deriveAuditEvidenceSection(
 							description: criticalEvent.description,
 							occurredAt: snapshot.latestIncidentAt ?? DateTime.utc().toISO()!,
 							primaryLink: {
-								label: "Review audit export",
+								label: text("compliance.commandCenter.links.reviewAuditExport"),
 								href: "/settings/audit-export",
 							},
 						},
@@ -95,9 +118,7 @@ export function deriveAuditEvidenceSection(
 export async function getAuditEvidenceSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const lookbackStart = DateTime.utc()
-		.minus({ days: AUDIT_EVIDENCE_LOOKBACK_DAYS })
-		.toJSDate();
+	const lookbackStart = DateTime.utc().minus({ days: AUDIT_EVIDENCE_LOOKBACK_DAYS }).toJSDate();
 	const [config, recentFailedRequests, latestSuccess, invalidVerifications] = await Promise.all([
 		configurationService.getConfig(organizationId),
 		db.query.auditPackRequest.findMany({
@@ -131,20 +152,17 @@ export async function getAuditEvidenceSection(
 			.limit(10),
 	]);
 
-	const latestFailedRequestAt = recentFailedRequests.reduce<Date | null>(
-		(latest, request) => {
-			if (!(request.completedAt instanceof Date)) {
-				return latest;
-			}
-
-			if (!latest || request.completedAt.getTime() > latest.getTime()) {
-				return request.completedAt;
-			}
-
+	const latestFailedRequestAt = recentFailedRequests.reduce<Date | null>((latest, request) => {
+		if (!(request.completedAt instanceof Date)) {
 			return latest;
-		},
-		null,
-	);
+		}
+
+		if (!latest || request.completedAt.getTime() > latest.getTime()) {
+			return request.completedAt;
+		}
+
+		return latest;
+	}, null);
 	const latestInvalidVerificationAt = invalidVerifications.reduce<Date | null>(
 		(latest, verification) => {
 			if (!(verification.verifiedAt instanceof Date)) {

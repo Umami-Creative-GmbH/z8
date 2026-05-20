@@ -118,15 +118,15 @@ export function MembersTable({
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Member role updated successfully");
+				toast.success(t("organization.members.roleUpdateSuccess", "Member role updated successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
 			} else {
-				toast.error(result.error || "Failed to update member role");
+				toast.error(result.error || t("organization.members.roleUpdateError", "Failed to update member role"));
 			}
 		},
 		onError: (_error, _vars, context) => {
 			if (context?.previousMembers) setMembers(context.previousMembers);
-			toast.error("Failed to update member role");
+			toast.error(t("organization.members.roleUpdateError", "Failed to update member role"));
 		},
 	});
 
@@ -142,15 +142,15 @@ export function MembersTable({
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Member removed successfully");
+				toast.success(t("organization.members.removeSuccess", "Member removed successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
 			} else {
-				toast.error(result.error || "Failed to remove member");
+				toast.error(result.error || t("organization.members.removeError", "Failed to remove member"));
 			}
 		},
 		onError: (_error, _userId, context) => {
 			if (context?.previousMembers) setMembers(context.previousMembers);
-			toast.error("Failed to remove member");
+			toast.error(t("organization.members.removeError", "Failed to remove member"));
 		},
 	});
 
@@ -164,15 +164,15 @@ export function MembersTable({
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Invitation cancelled");
+				toast.success(t("organization.members.invitationCancelSuccess", "Invitation cancelled"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 			} else {
-				toast.error(result.error || "Failed to cancel invitation");
+				toast.error(result.error || t("organization.members.invitationCancelError", "Failed to cancel invitation"));
 			}
 		},
 		onError: (_error, _invitationId, context) => {
 			if (context?.previousInvitations) setInvitations(context.previousInvitations);
-			toast.error("Failed to cancel invitation");
+			toast.error(t("organization.members.invitationCancelError", "Failed to cancel invitation"));
 		},
 	});
 
@@ -189,14 +189,14 @@ export function MembersTable({
 		},
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Invitation resent successfully");
+				toast.success(t("organization.members.invitationResendSuccess", "Invitation resent successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 			} else {
-				toast.error(result.error || "Failed to resend invitation");
+				toast.error(result.error || t("organization.members.invitationResendError", "Failed to resend invitation"));
 			}
 		},
 		onError: () => {
-			toast.error("Failed to resend invitation");
+			toast.error(t("organization.members.invitationResendError", "Failed to resend invitation"));
 		},
 	});
 
@@ -217,15 +217,19 @@ export function MembersTable({
 		},
 		onSuccess: (result, { isActive }) => {
 			if (result.success) {
-				toast.success(`Employee ${isActive ? "activated" : "deactivated"} successfully`);
+				toast.success(
+					isActive
+						? t("organization.members.employeeActivateSuccess", "Employee activated successfully")
+						: t("organization.members.employeeDeactivateSuccess", "Employee deactivated successfully"),
+				);
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
 			} else {
-				toast.error(result.error || "Failed to update employee status");
+				toast.error(result.error || t("organization.members.employeeStatusError", "Failed to update employee status"));
 			}
 		},
 		onError: (_error, _vars, context) => {
 			if (context?.previousMembers) setMembers(context.previousMembers);
-			toast.error("Failed to update employee status");
+			toast.error(t("organization.members.employeeStatusError", "Failed to update employee status"));
 		},
 	});
 
@@ -659,19 +663,18 @@ export function MembersTable({
 			<AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Remove Member</AlertDialogTitle>
-						<AlertDialogDescription>
-							Are you sure you want to remove <strong>{memberToRemove?.user.name}</strong> from this
-							organization? This action cannot be undone.
-						</AlertDialogDescription>
+					<AlertDialogTitle>{t("organization.members.removeDialogTitle", "Remove Member")}</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t("organization.members.removeDialogDescriptionPrefix", "Are you sure you want to remove")} <strong>{memberToRemove?.user.name}</strong> {t("organization.members.removeDialogDescriptionSuffix", "from this organization? This action cannot be undone.")}
+					</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleRemoveMember}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							Remove Member
+							{t("organization.members.removeDialogAction", "Remove Member")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

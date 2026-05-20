@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ interface DomainAddDialogProps {
 const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 
 export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAddDialogProps) {
+	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const form = useForm({
@@ -61,7 +63,7 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 				if (error instanceof Error) {
 					toast.error(error.message);
 				} else {
-					toast.error("Failed to add domain");
+					toast.error(t("settings.enterprise.domains.addFailed", "Failed to add domain"));
 				}
 				return null;
 			});
@@ -89,7 +91,7 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 				createdAt: now.toJSDate(),
 			});
 			form.reset();
-			toast.success("Domain added successfully");
+			toast.success(t("settings.enterprise.domains.added", "Domain added successfully"));
 			setIsSubmitting(false);
 		},
 	});
@@ -98,10 +100,14 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>Add Custom Domain</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.enterprise.domains.add", "Add Custom Domain")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
-						Add a custom domain to enable organization-specific login pages. You will need to verify
-						ownership via DNS records.
+						{t(
+							"settings.enterprise.domains.addDescription",
+							"Add a custom domain to enable organization-specific login pages. You will need to verify ownership via DNS records.",
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 				<form
@@ -116,9 +122,13 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 							name="domain"
 							validators={{
 								onChange: ({ value }) => {
-									if (!value) return "Domain is required";
+									if (!value)
+										return t("settings.enterprise.domains.domainRequired", "Domain is required");
 									if (!DOMAIN_REGEX.test(value)) {
-										return "Please enter a valid domain (e.g., login.example.com)";
+										return t(
+											"settings.enterprise.domains.domainInvalid",
+											"Please enter a valid domain (e.g., login.example.com)",
+										);
 									}
 									return undefined;
 								},
@@ -126,7 +136,9 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="domain">Domain</Label>
+									<Label htmlFor="domain">
+										{t("settings.enterprise.domains.domain", "Domain")}
+									</Label>
 									<Input
 										id="domain"
 										placeholder="login.example.com"
@@ -135,7 +147,10 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 										onBlur={field.handleBlur}
 									/>
 									<p className="text-sm text-muted-foreground">
-										Enter the domain where users will access the login page.
+										{t(
+											"settings.enterprise.domains.domainHelp",
+											"Enter the domain where users will access the login page.",
+										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
 										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -146,10 +161,12 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 					</ActionPanelBody>
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting ? "Adding..." : "Add Domain"}
+							{isSubmitting
+								? t("settings.enterprise.domains.adding", "Adding…")
+								: t("settings.enterprise.domains.addDomain", "Add Domain")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

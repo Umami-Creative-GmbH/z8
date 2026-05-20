@@ -89,4 +89,25 @@ describe("POST /api/mobile/absences/[absenceId]/cancel", () => {
 			error: "Absence not found in the active organization",
 		});
 	});
+
+	it("returns 402 when billing is required to cancel an absence", async () => {
+		mockState.cancelAbsenceRequestForEmployee.mockResolvedValue({
+			success: false,
+			error: "billing_required",
+			reason: "trial_expired",
+		});
+
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/absences/absence-3/cancel", {
+				method: "POST",
+			}),
+			{ params: Promise.resolve({ absenceId: "absence-3" }) },
+		);
+
+		expect(response.status).toBe(402);
+		expect(await response.json()).toEqual({
+			error: "billing_required",
+			reason: "trial_expired",
+		});
+	});
 });

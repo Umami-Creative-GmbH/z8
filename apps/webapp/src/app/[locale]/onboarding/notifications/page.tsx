@@ -80,7 +80,7 @@ export default function NotificationsPage() {
 			router.push("/onboarding/complete");
 		} else {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip notification setup");
+			toast.error(result.error || t("onboarding.notifications.skipError", "Failed to skip notification setup"));
 		}
 	}
 

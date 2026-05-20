@@ -16,6 +16,67 @@
       "understaffed": "Com falta de pessoal",
       "utilization": "{{percent}}% de utilização"
     },
+    "page": {
+      "employeeDescription": "Veja seus turnos e escolha turnos disponíveis",
+      "managerDescription": "Gerencie e planeje os turnos dos funcionários",
+      "title": "Escala de Turnos"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} ocorrência(s) detectada(s) antes da publicação.",
+        "maxHours": "Horas máximas: {count}",
+        "overtime": "Horas extras: {count}",
+        "restTime": "Tempo de descanso: {count}",
+        "title": "Avisos de Conformidade neste Intervalo de Datas"
+      },
+      "loading": "Carregando escala...",
+      "publish": {
+        "failed": "Falha ao publicar turnos",
+        "published": "Publicado {count} turno(s)"
+      },
+      "shiftUpdate": {
+        "failed": "Falha ao atualizar turno",
+        "overlapDescription": "Este turno se sobrepõe a {count} outro(s) turno(s)",
+        "overlapWarning": "Turno salvo com aviso de sobreposição",
+        "updated": "Turno atualizado"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Qualquer pessoa pode assumir",
+      "assignTo": "Atribuir a",
+      "confirmDelete": "Confirmar exclusão",
+      "created": "Turno criado",
+      "createDescription": "Preencha os detalhes do novo turno",
+      "createShift": "Criar turno",
+      "createTitle": "Criar turno",
+      "date": "Data",
+      "deleted": "Turno excluído",
+      "deleteFailed": "Falha ao excluir turno",
+      "draft": "Rascunho",
+      "editDescription": "Atualize os detalhes do turno abaixo",
+      "editTitle": "Editar turno",
+      "endTime": "Hora de término",
+      "noTemplate": "Sem modelo",
+      "notes": "Observações (Opcional)",
+      "notesPlaceholder": "Quaisquer instruções ou observações especiais...",
+      "openShift": "Turno aberto",
+      "openShiftHelp": "Deixe como \"Turno aberto\" para permitir que os funcionários o reivindiquem",
+      "pickDate": "Escolha uma data",
+      "published": "Publicado",
+      "savedWithWarnings": "Turno salvo com avisos",
+      "saveFailed": "Falha ao salvar turno",
+      "selectEmployee": "Selecione um funcionário",
+      "selectSubarea": "Selecione uma subárea…",
+      "selectTemplate": "Selecionar um modelo",
+      "startTime": "Hora de início",
+      "status": "Status:",
+      "subarea": "Subárea",
+      "subareaHelp": "Onde este turno ocorrerá",
+      "template": "Modelo (Opcional)",
+      "templateHelp": "Selecionar um modelo preencherá automaticamente os horários",
+      "updated": "Turno atualizado",
+      "updateShift": "Atualizar turno"
+    },
     "skills": {
       "expiredCertifications": "Certificações Expiradas:",
       "expiredOn": "(Expirou em {{date}})",
@@ -29,6 +90,11 @@
       "validating": "Validando habilidades…",
       "validatingDescription": "Verificando qualificações do funcionário",
       "warningMessage": "Você ainda pode atribuir este turno, mas ele será registrado como uma substituição."
+    },
+    "templates": {
+      "dragHint": "Arraste um modelo para o calendário para criar um turno",
+      "empty": "Nenhum modelo disponível. Crie modelos nas Configurações para adicionar turnos rapidamente.",
+      "title": "Modelos de turno"
     }
   }
 }

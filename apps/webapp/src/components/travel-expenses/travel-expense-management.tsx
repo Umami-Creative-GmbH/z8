@@ -2,6 +2,7 @@
 
 import { IconPlus } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { getMyTravelExpenseClaims } from "@/app/[locale]/(app)/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function TravelExpenseManagement({
 	organizationId,
 	employeeId,
 }: TravelExpenseManagementProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -28,7 +30,10 @@ export function TravelExpenseManagement({
 		queryFn: async () => {
 			const result = await getMyTravelExpenseClaims();
 			if (!result.success) {
-				throw new Error(result.error || "Failed to load travel expense claims");
+				throw new Error(
+					result.error ||
+						t("travelExpenses.errors.loadClaims", "Failed to load travel expense claims"),
+				);
 			}
 			return result.data;
 		},
@@ -45,14 +50,16 @@ export function TravelExpenseManagement({
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<div className="flex items-center justify-between px-4 lg:px-6">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Travel Expenses</h1>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("travelExpenses.title", "Travel Expenses")}
+					</h1>
 					<p className="text-sm text-muted-foreground">
-						Create and track your travel expense claims
+						{t("travelExpenses.description", "Create and track your travel expense claims")}
 					</p>
 				</div>
 				<Button onClick={() => setIsDialogOpen(true)}>
-					<IconPlus className="mr-2 size-4" />
-					New Claim
+					<IconPlus className="mr-2 size-4" aria-hidden="true" />
+					{t("travelExpenses.actions.newClaim", "New Claim")}
 				</Button>
 			</div>
 

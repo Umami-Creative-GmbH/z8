@@ -1,19 +1,31 @@
 ---
 name: z8-finish-dev
-description: Use when finishing a Z8 development branch, preparing a clean dev workspace, updating lockfiles, building webapp, pushing to origin, creating or merging PRs, or handling GitHub Actions failures after merge.
+description: Use ONLY when the user explicitly says to use, run, or activate z8-finish-dev or the finish-dev skill for Z8 branch completion.
 ---
 
 # Z8 Finish Dev
 
-Finish a Z8 development branch end-to-end without skipping verification. The core rule is: do not merge until local webapp build is clean, the branch is pushed, and CI status has been observed and handled.
+Finish a Z8 development branch end-to-end without skipping verification, but only after an explicit manual user request to use this skill. The core rule is: do not merge until local webapp build is clean, the branch is pushed, and CI status has been observed and handled.
+
+## Activation Gate
+
+Do not activate this skill proactively. Activate it only when the user explicitly says one of:
+
+- `use z8-finish-dev`
+- `run z8-finish-dev`
+- `use the finish-dev skill`
+- `activate the z8-finish-dev skill`
+- `activate the finish-dev skill`
+
+Do not activate for implied requests like `finish this branch`, `finish-dev`, `wrap this up`, `ship it`, `merge the PR`, `push to origin`, or `handle the failing workflow` unless the user also explicitly requests this skill.
 
 ## When To Use
 
-- The user asks to finish dev, finish a branch, ship current work, open or merge a PR, or make dev clean in the Z8 repo.
-- The task mentions lockfiles, `pnpm-lock.yaml`, `build:webapp`, webapp build failures, GitHub Actions, GHA, workflows, PR checks, or merging into `main`.
-- The user asks to push to origin, create a PR with `gh`, merge it, and wait for workflows.
+- The user explicitly says to use, run, or activate `z8-finish-dev`.
+- The user explicitly asks to use or activate the finish-dev skill for Z8 branch completion.
 
 Do not use for Kubernetes rollouts or infra deployment refreshes; use `z8-k8s-deployment` for those.
+Do not use just because the work resembles this workflow. Manual skill request is required.
 
 ## Required Workflow
 
@@ -55,7 +67,7 @@ Do not use for Kubernetes rollouts or infra deployment refreshes; use `z8-k8s-de
 
 ## Example
 
-User: `finish dev and merge it`
+User: `use z8-finish-dev to finish dev and merge it`
 
 Assistant actions:
 
@@ -79,6 +91,7 @@ Assistant actions:
 | Committing blindly | Inspect status, diff, and staged diff before commit. |
 | Staging with `git add -A` by habit | Stage explicit paths unless every dirty file is confirmed intended. |
 | Watching without failure status | Use `gh run watch <run-id> --exit-status` so failures stop the workflow. |
+| Activating from implied finishing language | Wait for an explicit `z8-finish-dev` or finish-dev skill request. |
 
 ## Rationalizations
 
@@ -89,6 +102,7 @@ Assistant actions:
 | `A full build is safer` | The user asked for webapp only; broaden only when a failing workflow demands it. |
 | `The lockfile is probably fine` | Package changes require an explicit lockfile check. |
 | `Merge now, fix later` | A failed post-merge workflow is still your task to diagnose and fix. |
+| `The user asked to wrap this up, so this skill applies` | Implied branch-finishing language is not enough; the user must explicitly request `z8-finish-dev` or the finish-dev skill. |
 
 ## Red Flags
 
@@ -100,5 +114,6 @@ Assistant actions:
 - You are about to open the browser with `gh pr view --web`.
 - You are about to use destructive git commands to clean the branch.
 - You are about to run `git add -A` with unrelated or unreviewed dirty files present.
+- You are about to activate this skill from an implied finishing request instead of an explicit manual skill request.
 
-If a red flag appears, stop and return to the required workflow.
+If the activation red flag appears, do not use this skill. For other red flags, stop and return to the required workflow.

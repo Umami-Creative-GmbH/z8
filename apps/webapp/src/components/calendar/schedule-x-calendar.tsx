@@ -17,7 +17,8 @@ import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
-import { IconChevronLeft, IconChevronRight, IconReload } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useTheme } from "next-themes";
 
@@ -64,6 +65,9 @@ export function ScheduleXCalendarWrapper({
 	onRefresh,
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
+	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
 	const timeZone = useOrganizationTimezone();
 	const isDark = resolvedTheme === "dark";
@@ -149,22 +153,27 @@ export function ScheduleXCalendarWrapper({
 
 	// Format the date range display based on view mode
 	const dateRangeDisplay = useMemo(() => {
+		const localizedCurrentDate = currentDate.setLocale(locale);
+
 		switch (viewMode) {
 			case "day":
-				return currentDate.toFormat("EEEE, MMMM d, yyyy");
+				return localizedCurrentDate.toFormat("EEEE, MMMM d, yyyy");
 			case "week": {
-				const { start: weekStart, end: weekEnd } = getWeekBounds(currentDate, weekStartDay);
+				const { start: weekStart, end: weekEnd } = getWeekBounds(
+					localizedCurrentDate,
+					weekStartDay,
+				);
 				if (weekStart.month === weekEnd.month) {
 					return `${weekStart.toFormat("MMMM d")} - ${weekEnd.toFormat("d, yyyy")}`;
 				}
 				return `${weekStart.toFormat("MMM d")} - ${weekEnd.toFormat("MMM d, yyyy")}`;
 			}
 			case "month":
-				return currentDate.toFormat("MMMM yyyy");
+				return localizedCurrentDate.toFormat("MMMM yyyy");
 			default:
-				return currentDate.toFormat("MMMM d, yyyy");
+				return localizedCurrentDate.toFormat("MMMM d, yyyy");
 		}
-	}, [viewMode, currentDate, weekStartDay]);
+	}, [viewMode, currentDate, weekStartDay, locale]);
 
 	// Handle event click - Schedule-X passes the event object
 	const handleEventClick = useCallback(
@@ -213,6 +222,7 @@ export function ScheduleXCalendarWrapper({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		events: scheduleXEvents as any,
 		isDark,
+		locale,
 		calendars: getScheduleXCalendars(),
 		plugins: [createEventModalPlugin(), calendarControls, currentTimePlugin],
 		callbacks: {
@@ -287,7 +297,9 @@ export function ScheduleXCalendarWrapper({
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center h-full min-h-[400px]">
-				<div className="animate-pulse text-muted-foreground">Loading calendar...</div>
+				<div className="animate-pulse text-muted-foreground">
+					{t("calendar.view.loading", "Loading calendar…")}
+				</div>
 			</div>
 		);
 	}
@@ -297,17 +309,33 @@ export function ScheduleXCalendarWrapper({
 			{/* Custom navigation header */}
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={navigatePrevious}>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={navigatePrevious}
+						aria-label={t("calendar.view.previous", "Previous")}
+					>
 						<IconChevronLeft className="size-4" />
 					</Button>
-					<Button variant="outline" size="icon" onClick={navigateNext}>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={navigateNext}
+						aria-label={t("calendar.view.next", "Next")}
+					>
 						<IconChevronRight className="size-4" />
 					</Button>
 					<Button variant="outline" size="sm" onClick={navigateToday}>
-						Today
+						{t("calendar.view.today", "Today")}
 					</Button>
 					{onRefresh && (
-						<Button variant="outline" size="icon" onClick={onRefresh} title="Refresh">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={onRefresh}
+							aria-label={t("calendar.view.refresh", "Refresh")}
+							title={t("calendar.view.refresh", "Refresh")}
+						>
 							<IconReload className="size-4" />
 						</Button>
 					)}
@@ -315,10 +343,10 @@ export function ScheduleXCalendarWrapper({
 				<h2 className="text-lg font-semibold">{dateRangeDisplay}</h2>
 				<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>
 					<TabsList>
-						<TabsTrigger value="day">Day</TabsTrigger>
-						<TabsTrigger value="week">Week</TabsTrigger>
-						<TabsTrigger value="month">Month</TabsTrigger>
-						<TabsTrigger value="year">Year</TabsTrigger>
+						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
+						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
+						<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
+						<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
 					</TabsList>
 				</Tabs>
 			</div>

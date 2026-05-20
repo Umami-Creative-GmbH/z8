@@ -10,10 +10,17 @@ import {
 import { TeamAbsencesTable } from "./team-absences-table";
 
 const routerPush = vi.fn();
+const tolgeeTranslations = vi.hoisted(() => new Map<string, string>());
 let mockedSearchParams = "search=old&page=2&pageSize=10&year=2026";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			Object.entries(params ?? {}).reduce(
+				(message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
+				tolgeeTranslations.get(_key) ?? fallback,
+			),
+	}),
 }));
 
 vi.mock("@/navigation", () => ({
@@ -26,7 +33,15 @@ vi.mock("@/navigation", () => ({
 }));
 
 vi.mock("@/components/user-avatar", () => ({
-	UserAvatar: ({ image, name, seed }: { image?: string | null; name?: string | null; seed: string }) => (
+	UserAvatar: ({
+		image,
+		name,
+		seed,
+	}: {
+		image?: string | null;
+		name?: string | null;
+		seed: string;
+	}) => (
 		<span
 			data-testid="user-avatar"
 			data-image={image ?? ""}
@@ -47,7 +62,79 @@ vi.mock("./actions", () => ({
 describe("TeamAbsencesTable", () => {
 	beforeEach(() => {
 		routerPush.mockClear();
+		tolgeeTranslations.clear();
 		mockedSearchParams = "search=old&page=2&pageSize=10&year=2026";
+	});
+
+	it("renders translated table controls and accessible labels", () => {
+		tolgeeTranslations.set("team.absences.filters.searchPlaceholder", "Mitarbeiter suchen…");
+		tolgeeTranslations.set("team.absences.filters.searchLabel", "Mitarbeiter suchen");
+		tolgeeTranslations.set("team.absences.filters.searchSubmit", "Suchen");
+		tolgeeTranslations.set("team.absences.filters.allTeams", "Alle Teams");
+		tolgeeTranslations.set("team.absences.table.employee", "Mitarbeiter");
+		tolgeeTranslations.set("team.absences.table.actions", "Aktionen");
+		tolgeeTranslations.set("team.absences.sort.ascending", "aufsteigend");
+		tolgeeTranslations.set(
+			"team.absences.sort.byWithDirection",
+			"Nach {label} sortieren ({direction})",
+		);
+		tolgeeTranslations.set(
+			"team.absences.actions.recordForEmployee",
+			"Abwesenheit für {name} erfassen",
+		);
+		tolgeeTranslations.set("team.absences.pagination.page", "Seite {page} von {pageCount}");
+
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 30,
+							usedVacationDays: 4,
+							pendingVacationDays: 2,
+							remainingVacationDays: 24,
+							sickDays: 1,
+						},
+					],
+					teams: [{ id: "team-ops", name: "Operations" }],
+					total: 1,
+					page: 1,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search=""
+			/>,
+		);
+
+		expect(screen.getByRole("searchbox", { name: "Mitarbeiter suchen" })).toHaveProperty(
+			"placeholder",
+			"Mitarbeiter suchen…",
+		);
+		expect(screen.getByRole("button", { name: "Suchen" })).toBeTruthy();
+		expect(screen.getByText("Alle Teams")).toBeTruthy();
+		expect(screen.getByRole("columnheader", { name: /mitarbeiter/i })).toBeTruthy();
+		expect(screen.getByRole("columnheader", { name: "Aktionen" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Nach Mitarbeiter sortieren (aufsteigend)" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Abwesenheit für Ada Lovelace erfassen" }),
+		).toBeTruthy();
+		expect(screen.getByText("Seite 1 von 1")).toBeTruthy();
 	});
 
 	it("submits search through URL params and resets to the first page", () => {

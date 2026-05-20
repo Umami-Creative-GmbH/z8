@@ -1,12 +1,68 @@
 {
   "reports": {
+    "container": {
+      "error": "Error",
+      "generating": "Generating Report...",
+      "noReportYet": "No report generated yet",
+      "pleaseWait": "Please wait while we compile your data",
+      "selectPeriod": "Select a period and click \"Generate Report\" to get started"
+    },
     "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
     "employeeSelector": {
       "error": "Unable to load team members",
       "label": "Employee",
       "placeholder": "Select employee..."
     },
+    "export": {
+      "csv": "Export CSV",
+      "description": "Download this report in your preferred format",
+      "downloaded": "Downloaded {filename}",
+      "errorDescription": "An error occurred while exporting the report",
+      "excel": "Export Excel",
+      "failed": "Export failed",
+      "generating": "Generating...",
+      "pdf": "Export PDF",
+      "success": "Export successful",
+      "title": "Export Report"
+    },
     "feature": "generate reports",
+    "filter": {
+      "loadingSettings": "Loading organization settings before enabling presets.",
+      "period": "Period",
+      "selectPeriod": "Select period"
+    },
+    "generate": "Generate Report",
+    "generating": "Generating Report…",
+    "period": {
+      "currentMonth": "Current Month",
+      "currentYear": "Current Year",
+      "customRange": "Custom Range",
+      "lastMonth": "Last Month",
+      "lastYear": "Last Year",
+      "pickDateRange": "Pick a date range",
+      "yearToDate": "Year to Date"
+    },
+    "preview": {
+      "absencesByCategory": "Absences by Category",
+      "attendancePercentage": "Attendance Percentage",
+      "category": "Category",
+      "complianceMetrics": "Compliance Metrics",
+      "date": "Date",
+      "dateBreakdown": "Date-by-Date Breakdown",
+      "days": "Days",
+      "homeOfficeDescription": "Important for German tax purposes - shows home office days and hours worked",
+      "homeOfficeSummary": "Home Office Summary (Tax Relevant)",
+      "hours": "Hours",
+      "hoursWorked": "Hours Worked",
+      "month": "Month",
+      "noHomeOfficeDays": "No home office days recorded in this period.",
+      "overtime": "Overtime",
+      "total": "Total",
+      "totalHomeOfficeDays": "Total Home Office Days",
+      "totalHomeOfficeHours": "Total Hours Worked from Home",
+      "undertime": "Undertime",
+      "workHoursByMonth": "Work Hours by Month"
+    },
     "projects": {
       "budget": {
         "exceededBy": "Exceeded budget by {hours} hours",
@@ -161,6 +217,29 @@
         "unexpectedError": "An unexpected error occurred"
       }
     },
-    "title": "Employee Reports"
+    "summary": {
+      "averagePerDay": "Avg: {hours}h/day",
+      "homeOfficeDays": "Home Office Days",
+      "hourlyAverage": "{hours}h @ avg {rate}/h",
+      "otherDays": "Other: {count} days",
+      "pending": "{count} pending",
+      "ratePeriods": "{count} rate periods",
+      "sickDays": "Sick: {count} days",
+      "taxRelevant": "Tax relevant",
+      "totalAbsences": "Total Absences",
+      "totalEarnings": "Total Earnings",
+      "totalWorkHours": "Total Work Hours",
+      "vacationDays": "Vacation Days",
+      "workDays": "{count} work days",
+      "workedFromHome": "{hours}h worked from home"
+    },
+    "title": "Employee Reports",
+    "toast": {
+      "failedGenerate": "Failed to generate report",
+      "generatedFor": "Generated report for {name}",
+      "reportGenerated": "Report generated successfully",
+      "unexpectedError": "An unexpected error occurred",
+      "unknownError": "An unknown error occurred"
+    }
   }
 }

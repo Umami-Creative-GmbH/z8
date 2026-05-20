@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -38,22 +39,30 @@ interface PermissionEditorProps {
 	onCancel?: () => void;
 }
 
-const PERMISSION_LABELS = {
+const PERMISSION_KEYS = {
 	canCreateTeams: {
-		label: "Create Teams",
-		description: "Allow creating new teams within the organization",
+		labelKey: "settings.permissions.createTeams",
+		descriptionKey: "settings.permissions.createTeamsDescription",
+		labelFallback: "Create Teams",
+		descriptionFallback: "Allow creating new teams within the organization",
 	},
 	canManageTeamMembers: {
-		label: "Manage Team Members",
-		description: "Allow adding and removing team members",
+		labelKey: "settings.permissions.manageTeamMembers",
+		descriptionKey: "settings.permissions.manageTeamMembersDescription",
+		labelFallback: "Manage Team Members",
+		descriptionFallback: "Allow adding and removing team members",
 	},
 	canManageTeamSettings: {
-		label: "Manage Team Settings",
-		description: "Allow editing team information and settings",
+		labelKey: "settings.permissions.manageTeamSettings",
+		descriptionKey: "settings.permissions.manageTeamSettingsDescription",
+		labelFallback: "Manage Team Settings",
+		descriptionFallback: "Allow editing team information and settings",
 	},
 	canApproveTeamRequests: {
-		label: "Approve Team Requests",
-		description: "Allow approving vacation and time-off requests",
+		labelKey: "settings.permissions.approveTeamRequests",
+		descriptionKey: "settings.permissions.approveTeamRequestsDescription",
+		labelFallback: "Approve Team Requests",
+		descriptionFallback: "Allow approving vacation and time-off requests",
 	},
 };
 
@@ -66,6 +75,7 @@ export function PermissionEditor({
 	onSuccess,
 	onCancel,
 }: PermissionEditorProps) {
+	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
 	const [teamScope, setTeamScope] = useState<string>(currentPermissions?.teamId || "all");
 	const [permissions, setPermissions] = useState({
@@ -95,16 +105,16 @@ export function PermissionEditor({
 		}).then((response) => response, () => null);
 
 		if (!result) {
-			toast.error("An unexpected error occurred");
+			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			setLoading(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success("Permissions updated successfully");
+			toast.success(t("settings.permissions.updateSuccess", "Permissions updated successfully"));
 			onSuccess?.();
 		} else {
-			toast.error(result.error || "Failed to update permissions");
+			toast.error(result.error || t("settings.permissions.updateError", "Failed to update permissions"));
 		}
 
 		setLoading(false);
@@ -120,16 +130,16 @@ export function PermissionEditor({
 		).then((response) => response, () => null);
 
 		if (!result) {
-			toast.error("An unexpected error occurred");
+			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			setLoading(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success("Permissions revoked successfully");
+			toast.success(t("settings.permissions.revokeSuccess", "Permissions revoked successfully"));
 			onSuccess?.();
 		} else {
-			toast.error(result.error || "Failed to revoke permissions");
+			toast.error(result.error || t("settings.permissions.revokeError", "Failed to revoke permissions"));
 		}
 
 		setLoading(false);
@@ -145,21 +155,21 @@ export function PermissionEditor({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Team Permissions</CardTitle>
+				<CardTitle>{t("settings.permissions.title", "Team Permissions")}</CardTitle>
 				<CardDescription>
-					Configure permissions for {employeeName}. Admins automatically have all permissions.
+					{t("settings.permissions.description", "Configure permissions for {employeeName}. Admins automatically have all permissions.", { employeeName })}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{/* Team Scope Selection */}
 				<div className="space-y-2">
-					<Label htmlFor="teamScope">Permission Scope</Label>
+					<Label htmlFor="teamScope">{t("settings.permissions.scope", "Permission Scope")}</Label>
 					<Select value={teamScope} onValueChange={setTeamScope}>
 						<SelectTrigger id="teamScope">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">All Teams (Organization-wide)</SelectItem>
+						<SelectItem value="all">{t("settings.permissions.allTeams", "All Teams (Organization-wide)")}</SelectItem>
 							{availableTeams.map((team) => (
 								<SelectItem key={team.id} value={team.id}>
 									{team.name}
@@ -169,16 +179,16 @@ export function PermissionEditor({
 					</Select>
 					<p className="text-sm text-muted-foreground">
 						{teamScope === "all"
-							? "Permissions apply to all teams in the organization"
-							: "Permissions apply only to the selected team"}
+						? t("settings.permissions.allTeamsHelp", "Permissions apply to all teams in the organization")
+						: t("settings.permissions.selectedTeamHelp", "Permissions apply only to the selected team")}
 					</p>
 				</div>
 
 				{/* Permission Checkboxes */}
 				<div className="space-y-4">
-					<Label className="text-base font-semibold">Permissions</Label>
+					<Label className="text-base font-semibold">{t("settings.permissions.permissions", "Permissions")}</Label>
 					<div className="space-y-4">
-						{Object.entries(PERMISSION_LABELS).map(([key, { label, description }]) => (
+						{Object.entries(PERMISSION_KEYS).map(([key, item]) => (
 							<div key={key} className="flex items-start space-x-3 rounded-lg border p-3">
 								<Checkbox
 									id={key}
@@ -193,9 +203,9 @@ export function PermissionEditor({
 										htmlFor={key}
 										className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 									>
-										{label}
-									</Label>
-									<p className="mt-1 text-sm text-muted-foreground">{description}</p>
+									{t(item.labelKey, item.labelFallback)}
+								</Label>
+								<p className="mt-1 text-sm text-muted-foreground">{t(item.descriptionKey, item.descriptionFallback)}</p>
 								</div>
 							</div>
 						))}
@@ -209,20 +219,20 @@ export function PermissionEditor({
 							<Button type="button" variant="destructive" onClick={handleRevoke} disabled={loading}>
 								{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								<IconX className="mr-2 size-4" />
-								Revoke All
+							{t("settings.permissions.revokeAll", "Revoke All")}
 							</Button>
 						)}
 					</div>
 					<div className="flex gap-2">
 						{onCancel && (
 							<Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-								Cancel
+							{t("common.cancel", "Cancel")}
 							</Button>
 						)}
 						<Button onClick={handleSave} disabled={loading || !isChanged || !hasAnyPermission}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							<IconCheck className="mr-2 size-4" />
-							Save Permissions
+						{t("settings.permissions.save", "Save Permissions")}
 						</Button>
 					</div>
 				</div>

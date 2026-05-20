@@ -1,6 +1,7 @@
 "use client";
 
 import { IconClock, IconGripVertical } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useMemo } from "react";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,7 @@ export function TemplateSidebar({
 	templates,
 	onTemplateDrop: _onTemplateDrop,
 }: TemplateSidebarProps) {
+	const { t } = useTranslate();
 	const activeTemplates = useMemo(() => templates.filter((t) => t.isActive), [templates]);
 
 	const handleDragStart = (e: React.DragEvent, template: ShiftTemplate) => {
@@ -100,11 +102,16 @@ export function TemplateSidebar({
 		return (
 			<Card className="w-64 shrink-0">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-medium">Shift Templates</CardTitle>
+					<CardTitle className="text-sm font-medium">
+						{t("scheduling:scheduling.templates.title", "Shift Templates")}
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<p className="text-sm text-muted-foreground">
-						No templates available. Create templates in Settings to quickly add shifts.
+						{t(
+							"scheduling:scheduling.templates.empty",
+							"No templates available. Create templates in Settings to quickly add shifts.",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -114,9 +121,14 @@ export function TemplateSidebar({
 	return (
 		<Card className="w-64 shrink-0">
 			<CardHeader className="pb-3">
-				<CardTitle className="text-sm font-medium">Shift Templates</CardTitle>
+				<CardTitle className="text-sm font-medium">
+					{t("scheduling:scheduling.templates.title", "Shift Templates")}
+				</CardTitle>
 				<p className="text-xs text-muted-foreground">
-					Drag a template onto the calendar to create a shift
+					{t(
+						"scheduling:scheduling.templates.dragHint",
+						"Drag a template onto the calendar to create a shift",
+					)}
 				</p>
 			</CardHeader>
 			<CardContent className="p-0">

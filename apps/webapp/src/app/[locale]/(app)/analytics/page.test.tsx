@@ -29,6 +29,10 @@ vi.mock("sonner", () => ({
 	},
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 vi.mock("@tabler/icons-react", () => ({
 	IconCalendarOff: () => <span aria-hidden="true" />,
 	IconCheck: () => <span aria-hidden="true" />,
@@ -76,8 +80,8 @@ vi.mock("./actions", () => ({
 	getTeamPerformanceData: getTeamPerformanceDataMock,
 }));
 
-import AnalyticsOverviewPage from "./page";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import AnalyticsOverviewPage from "./page";
 
 function hydrateOrganizationSettings(timezone = "UTC") {
 	act(() => {

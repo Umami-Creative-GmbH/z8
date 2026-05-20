@@ -6,6 +6,7 @@
       "title": "Crea organizzazione"
     },
     "createError": "Impossibile creare l'organizzazione",
+    "createNew": "Crea nuova organizzazione",
     "createSuccess": "Organizzazione creata con successo!",
     "delete": {
       "bannerDescription": "{count, plural, one {Questa organizzazione verrà eliminata definitivamente tra # giorno. Contatta il tuo amministratore se ritieni che si tratti di un errore.} other {Questa organizzazione verrà eliminata definitivamente tra # giorni. Contatta il tuo amministratore se ritieni che si tratti di un errore.}}",
@@ -37,6 +38,16 @@
       "warning": "Questo programmerà l'organizzazione per l'eliminazione. Avrai 5 giorni per recuperarla prima che tutti i dati vengano eliminati permanentemente."
     },
     "description": "Esplora i responsabili diretti, i team e le relazioni gerarchiche nella tua organizzazione.",
+    "edit": {
+      "description": "Aggiorna i dettagli della tua organizzazione. Le modifiche saranno visibili a tutti i membri.",
+      "descriptionPlaceholder": "Una breve descrizione della tua organizzazione",
+      "nameLabel": "Nome dell'organizzazione",
+      "slugHelp": "Solo lettere minuscole, numeri e trattini",
+      "slugLabel": "Slug dell'organizzazione",
+      "title": "Modifica organizzazione",
+      "updateError": "Impossibile aggiornare l'organizzazione",
+      "updateSuccess": "Organizzazione aggiornata correttamente"
+    },
     "error": {
       "description": "Non è stato possibile caricare l'organigramma. Riprova.",
       "title": "Impossibile caricare l'organizzazione"
@@ -68,20 +79,46 @@
       "work-shifts": "Turni di lavoro",
       "work-shifts-description": "Abilita i turni di lavoro con pianificazione drag-and-drop, turni aperti e richieste di scambio."
     },
+    "invite": {
+      "allowCreateOrganizations": "Consenti a questo utente di creare organizzazioni",
+      "description": "Invia un invito per unirti a {organizationName}",
+      "emailLabel": "Indirizzo email",
+      "error": "Impossibile inviare l'invito",
+      "member": "Invita membro",
+      "roleDescriptions": {
+        "admin": "Può invitare membri e gestire le impostazioni",
+        "member": "Accesso di base all'organizzazione",
+        "owner": "Controllo completo dell'organizzazione"
+      },
+      "submit": "Invia invito",
+      "success": "Invito inviato correttamente",
+      "title": "Invita membro"
+    },
     "joinOrCreate": "Unisciti o crea",
     "logo-uploaded": "Logo caricato con successo",
     "logo-upload-failed": "Caricamento del logo fallito",
+    "logo": {
+      "uploadLabel": "Carica il logo dell'organizzazione"
+    },
     "members": {
       "activate": "Attiva",
       "active": "Attivo",
       "activeMembers": "Membri Attivi",
       "cancel": "Annulla",
+      "count": "{count, plural, one {# membro} other {# membri}}",
       "deactivate": "Disattiva",
       "email": "Email",
       "emailVerified": "Email verificata",
+      "employeeActivateSuccess": "Dipendente attivato correttamente",
+      "employeeDeactivateSuccess": "Dipendente disattivato correttamente",
+      "employeeStatusError": "Impossibile aggiornare lo stato del dipendente",
       "expired": "Scaduto",
       "expires": "Scade",
       "inactive": "Inattivo",
+      "invitationCancelError": "Impossibile annullare l'invito",
+      "invitationCancelSuccess": "Invito annullato",
+      "invitationResendError": "Impossibile reinviare l'invito",
+      "invitationResendSuccess": "Invito reinviato correttamente",
       "invitationsWaiting": "{count} invito/i in attesa di essere accettato/i",
       "invitedBy": "Invitato da",
       "member": "Membro",
@@ -93,6 +130,12 @@
       "pending": "In sospeso",
       "pendingInvitations": "Inviti in sospeso",
       "remove": "Rimuovi dall'organizzazione",
+      "removeDialogAction": "Rimuovi membro",
+      "removeDialogDescriptionPrefix": "Sei sicuro di voler rimuovere",
+      "removeDialogDescriptionSuffix": "da questa organizzazione? Questa azione non può essere annullata.",
+      "removeDialogTitle": "Rimuovi membro",
+      "removeError": "Impossibile rimuovere il membro",
+      "removeSuccess": "Membro rimosso correttamente",
       "resend": "Reinvia",
       "role": "Ruolo",
       "roles": {
@@ -100,12 +143,18 @@
         "member": "Membro",
         "owner": "Proprietario"
       },
+      "roleUpdateError": "Impossibile aggiornare il ruolo del membro",
+      "roleUpdateSuccess": "Ruolo del membro aggiornato correttamente",
       "searchInvitations": "Cerca inviti...",
       "searchMembers": "Cerca membri...",
       "sent": "Inviato",
       "status": "Stato",
       "verified": "Verificato",
       "you": "Tu"
+    },
+    "membersInvitations": {
+      "description": "Gestisci i membri dell'organizzazione e invia inviti",
+      "title": "Membri e inviti"
     },
     "nameLabel": "Nome organizzazione",
     "namePlaceholder": "Acme S.p.A.",
@@ -114,15 +163,23 @@
     "orgChart": {
       "employeeCount": "{count} dipendenti attivi",
       "empty": "Nessun dipendente attivo trovato",
+      "expand": "Espandi",
       "expandEmployeeFailed": "Impossibile espandere il dipendente.",
+      "expandEmployeeLabel": "Espandi il quartiere {name}",
       "expanding": "Caricamento di ulteriori dati dell'organizzazione",
+      "expandTeam": "Espandi team",
       "expandTeamFailed": "Impossibile espandere il team.",
+      "expandTeamLabel": "Espandi il team {name}",
       "explorer": "Esplora organigramma",
       "focusFailed": "Impossibile caricare i dettagli del dipendente.",
+      "memberCount": "{count} membri",
       "noSearchResults": "Nessun dipendente trovato",
+      "partialGraph": "Visualizzazione parziale di una grande organizzazione. Espandi i nodi o cerca per continuare.",
       "searchFailed": "Impossibile cercare i dipendenti.",
       "searching": "Ricerca in corso…",
-      "searchPlaceholder": "Cerca dipendenti…"
+      "searchLabel": "Cerca dipendenti",
+      "searchPlaceholder": "Cerca dipendenti…",
+      "teamBadge": "Team"
     },
     "recover": {
       "button": "Ripristina organizzazione",
@@ -138,12 +195,65 @@
       "owner": "Proprietario"
     },
     "slugDescription": "Utilizzato negli URL. Generato automaticamente dal nome.",
+    "slugErrors": {
+      "format": "Lo slug può contenere solo lettere minuscole, numeri e trattini",
+      "hyphen": "Lo slug non può iniziare o terminare con un trattino",
+      "max": "Lo slug deve essere più corto di 50 caratteri",
+      "min": "Lo slug deve essere lungo almeno 2 caratteri"
+    },
     "slugLabel": "Slug dell'organizzazione",
     "slugPlaceholder": "acme-spa",
     "slugTaken": "Questo slug è già preso. Scegline un altro.",
     "switchFailed": "Impossibile cambiare organizzazione",
     "switching": "Cambio organizzazione in corso...",
     "switchTo": "Cambia organizzazione",
+    "teams": {
+      "card": {
+        "deleteTeam": "Elimina team",
+        "editTeam": "Modifica team",
+        "fallbackManager": "Manager di fallback",
+        "manageMembers": "Gestisci membri",
+        "notAssigned": "Non assegnato"
+      },
+      "create": "Crea team",
+      "createFirst": "Crea il tuo primo team",
+      "delete": "Elimina team",
+      "deleteDialogDescription": "Questo eliminerà definitivamente il team \"{teamName}\".",
+      "deleteDialogMembersWarning": "Attenzione: questo team ha {count} membro/i. Verranno rimossi dal team.",
+      "deleteDialogTitle": "Sei sicuro?",
+      "deleteError": "Impossibile eliminare il team",
+      "deleteSuccess": "Team eliminato correttamente",
+      "description": "Organizza i tuoi dipendenti in team per una migliore collaborazione",
+      "edit": {
+        "description": "Aggiorna nome e descrizione del team",
+        "descriptionLabel": "Descrizione (opzionale)",
+        "descriptionPlaceholder": "Una breve descrizione di questo team",
+        "fallbackManagerHelp": "Utilizzato per le approvazioni quando un membro del team non ha un manager diretto.",
+        "fallbackManagerLabel": "Manager di riserva",
+        "fallbackManagerPlaceholder": "Seleziona un manager di riserva",
+        "nameLabel": "Nome del team",
+        "namePlaceholder": "Ingegneria, Vendite, Marketing...",
+        "noFallbackManager": "Nessun manager di riserva",
+        "title": "Modifica team",
+        "updateError": "Aggiornamento del team non riuscito",
+        "updateSuccess": "Team aggiornato correttamente"
+      },
+      "empty": "Nessun team ancora presente",
+      "emptyDescription": "Crea il tuo primo team per iniziare a organizzare i tuoi dipendenti",
+      "members": {
+        "addError": "Aggiunta del membro non riuscita",
+        "addSuccess": "Membro aggiunto al team",
+        "currentMembers": "Membri attuali ({count})",
+        "description": "Gestisci chi appartiene a questo team",
+        "empty": "Nessun membro in questo team al momento",
+        "emptyHelp": "Aggiungi membri utilizzando il menu a tendina qui sopra",
+        "removeError": "Rimozione del membro non riuscita",
+        "removeSuccess": "Membro rimosso dal team",
+        "selectEmployee": "Seleziona un dipendente da aggiungere",
+        "title": "{teamName} - Membri del team"
+      },
+      "title": "Team"
+    },
     "timezone": {
       "default": "Fuso orario predefinito",
       "description": "Imposta il fuso orario predefinito per la tua organizzazione. Viene utilizzato per il monitoraggio delle assenze, i report e altre funzionalità basate sulla data. I singoli utenti possono sovrascriverlo nelle impostazioni del loro profilo.",
@@ -506,8 +616,37 @@
       }
     },
     "auditLog": {
+      "action": "Azione",
+      "actionCategoryPlaceholder": "Categoria di azione",
+      "changes": "Modifiche",
       "description": "Visualizza e cerca tutte le azioni eseguite nella tua organizzazione",
-      "title": "Registro di audit"
+      "details": "Dettagli",
+      "detailsDescription": "Dettagli completi di questa voce del registro di controllo",
+      "detailsTitle": "Dettagli registro di controllo",
+      "entity": "Entità",
+      "entityTypePlaceholder": "Tipo di entità",
+      "entriesFound": "{count} voci trovate",
+      "entriesTitle": "Voci del registro di controllo",
+      "export": "Esporta",
+      "exportFailed": "Impossibile esportare i registri di controllo",
+      "exportSuccess": "Esportate {count} voci del registro di controllo",
+      "fetchFailed": "Impossibile recuperare i registri di controllo",
+      "filters": "Filtri",
+      "filtersDescription": "Cerca e filtra le voci del registro di controllo",
+      "from": "Da",
+      "ipAddress": "Indirizzo IP",
+      "metadata": "Metadati",
+      "noEntries": "Nessuna voce trovata",
+      "noEntriesForFilters": "Nessuna voce del registro di controllo trovata per i filtri selezionati.",
+      "pageOf": "Pagina {page} di {totalPages}",
+      "search": "Cerca",
+      "searchPlaceholder": "Cerca azioni, utenti o metadati…",
+      "timestamp": "Timestamp",
+      "title": "Registro di audit",
+      "to": "A",
+      "unknown": "Sconosciuto",
+      "user": "Utente",
+      "userAgent": "User Agent"
     },
     "avv": {
       "contractDetails": {
@@ -715,17 +854,36 @@
       },
       "mapping": {
         "description": "Abbina i dipendenti Clockin ai dipendenti Z8 esistenti. Le corrispondenze email automatiche sono preselezionate.",
+        "mapEmployee": "Mappa",
+        "noEmail": "Nessuna email in Clockin",
+        "skipEmployee": "Ignora questo dipendente",
         "summary": "Dipendenti mappati",
         "title": "Mappa dipendenti"
       },
       "preview": {
+        "absences": "Assenze",
         "description": "Esamina quali dati Clockin sono disponibili prima di mappare i dipendenti e scansionare i record.",
+        "employees": "Dipendenti",
         "next": "Mappa dipendenti",
-        "title": "Anteprima Clockin"
+        "title": "Anteprima Clockin",
+        "workdays": "Giorni lavorativi"
+      },
+      "review": {
+        "noProductionRecords": "Non è ancora stato importato alcun record di produzione.",
+        "openReview": "Apri revisione",
+        "scanningDescription": "Il batch di revisione {reviewBatchId} è in fase di scansione. Esamina e approva i record prima del commit.",
+        "startedTitle": "Scansione di revisione importazione avviata",
+        "starting": "Avvio della scansione di revisione dell'importazione Clockin…",
+        "startSuccess": "Scansione di revisione importazione avviata. È richiesta una revisione prima che i record vengano confermati."
       },
       "selection": {
+        "absences": "Assenze",
         "description": "Scegli quali record Clockin scansionare per la revisione. I record devono essere revisionati prima del commit.",
-        "title": "Ambito di importazione"
+        "endDate": "Data di fine",
+        "startDate": "Data di inizio",
+        "startReviewScan": "Avvia scansione di revisione",
+        "title": "Ambito di importazione",
+        "workdays": "Giorni lavorativi / Periodi lavorativi"
       }
     },
     "clockodoImport": {
@@ -1139,7 +1297,7 @@
           "thisYear": "Quest'anno"
         },
         "employees": {
-          "all": "Tutti i dipendenti ({count})",
+          "all": "Tutti i dipendenti (${employees.length})",
           "label": "Dipendenti",
           "selectSpecific": "Seleziona dipendenti specifici"
         }
@@ -1150,19 +1308,19 @@
         "title": "Genera dati demo"
       },
       "generateEmployees": {
-        "button": "Genera {count} dipendenti",
+        "button": "Genera ${employeeCount} dipendenti",
         "countHint": "Massimo 50 dipendenti alla volta",
         "countLabel": "Numero di dipendenti",
         "description": "Crea account dipendente demo per i test",
-        "employeesCreated": "{count} dipendenti creati",
+        "employeesCreated": "${employeeResult.employeesCreated} dipendenti creati",
         "generating": "Generazione in corso...",
         "includeManagers": "Includi assegnazioni responsabili",
-        "managersCreated": "{count} assegnazioni responsabili",
+        "managersCreated": "${employeeResult.managersCreated} assegnazioni responsabili",
         "managersHint": "Assegna casualmente i responsabili ai nuovi dipendenti",
         "options": "Opzioni",
         "successTitle": "Dipendenti generati con successo!",
         "title": "Genera dipendenti",
-        "usersCreated": "{count} utenti creati"
+        "usersCreated": "${employeeResult.usersCreated} utenti creati"
       },
       "results": {
         "success": "Dati demo generati con successo!"
@@ -1322,15 +1480,152 @@
       },
       "title": "Dipendenti"
     },
+    "employmentHistory": {
+      "addChange": "Aggiungi modifica",
+      "addError": "Impossibile aggiungere la modifica alla cronologia lavorativa",
+      "addSuccess": "Modifica alla cronologia lavorativa aggiunta",
+      "cancelConfirm": "Annullare questa modifica lavorativa? Questa operazione rimuoverà la modifica lavorativa programmata o in bozza.",
+      "cancelError": "Impossibile annullare la modifica alla cronologia lavorativa",
+      "cancelSuccess": "Modifica alla cronologia lavorativa annullata",
+      "confirmError": "Impossibile confermare la modifica dello storico lavorativo",
+      "confirmSuccess": "Modifica dello storico lavorativo confermata",
+      "contractType": "Tipo di contratto",
+      "contractTypes": {
+        "fixed": "fisso",
+        "hourly": "orario"
+      },
+      "currentConfirmed": "Attuale confermato",
+      "description": "Contesto confermato e modifiche lavorative pianificate",
+      "effectiveDate": "Data di decorrenza",
+      "effectiveDateHelp": "Quando questo contesto contrattuale diventa effettivo",
+      "effectiveDateRequired": "La data di decorrenza è obbligatoria",
+      "effectiveDateValue": "Data di decorrenza {date}",
+      "emptyTimeline": "Nessuno storico contrattuale o del modello di lavoro disponibile.",
+      "hourlyRate": "Tariffa oraria",
+      "hourlyRateValue": "{rate} / ora",
+      "nextScheduledConfirmed": "Prossima pianificata confermata",
+      "noCurrentContext": "Nessun contesto contrattuale confermato",
+      "noScheduledChange": "Nessuna modifica confermata pianificata",
+      "probationEnd": "Fine periodo di prova",
+      "probationRange": "Periodo di prova {startDate} - {endDate}",
+      "probationStart": "Inizio periodo di prova",
+      "reasonNote": "Motivo / Nota",
+      "reasonPlaceholder": "Revisione annuale, cambio di ruolo o aggiornamento del modello di lavoro...",
+      "reviewState": "Stato revisione",
+      "saveChange": "Salva modifica",
+      "selectContractType": "Seleziona tipo di contratto",
+      "selectReviewState": "Seleziona stato revisione",
+      "selectWorkModel": "Seleziona modello di lavoro",
+      "states": {
+        "confirmed": "confermato",
+        "draft": "bozza",
+        "pending": "in attesa"
+      },
+      "timeline": "Cronologia",
+      "title": "Contratto e modello di lavoro",
+      "weeklyHours": "Ore settimanali",
+      "weeklyHoursValue": "{hours} / settimana",
+      "workModel": "Modello di lavoro",
+      "workModels": {
+        "flexible": "flessibile",
+        "hybrid": "ibrido",
+        "onsite": "in sede",
+        "remote": "da remoto"
+      }
+    },
     "enterprise": {
+      "addProvider": "Aggiungi provider",
+      "clientId": "ID cliente",
+      "clientIdRequired": "L'ID cliente è obbligatorio",
+      "clientSecret": "Segreto cliente",
+      "clientSecretRequired": "Il segreto cliente è obbligatorio",
+      "configureCallbackUrl": "Configura l'URL di callback:",
+      "domain": "Dominio",
       "domains": {
+        "add": "Aggiungi dominio personalizzato",
+        "addDescription": "Aggiungi un dominio personalizzato per abilitare pagine di accesso specifiche per l'organizzazione. Sarà necessario verificare la proprietà tramite record DNS.",
+        "addDomain": "Aggiungi dominio",
+        "added": "Dominio aggiunto correttamente",
+        "addFailed": "Impossibile aggiungere il dominio",
+        "adding": "Aggiunta in corso…",
+        "authConfigDescription": "Configura quali metodi di autenticazione sono disponibili per gli utenti che accedono tramite {domain}",
+        "authConfigTitle": "Configurazione autenticazione",
+        "authConfigUpdated": "Configurazione autenticazione aggiornata",
+        "authConfigUpdateFailed": "Impossibile aggiornare la configurazione dell'autenticazione",
+        "authMethod": {
+          "emailPassword": "Email/Password",
+          "passkey": "Passkey",
+          "social": "Social ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "configurato",
+        "cookieConsentScript": "Script di consenso cookie",
+        "cookieConsentScriptHelp": "Iniettato nelle pagine di autenticazione solo per questo dominio personalizzato. Lasciare vuoto per disabilitare.",
+        "cookieConsentStatus": "Consenso cookie {status}",
+        "copiedToClipboard": "Copiato negli appunti",
+        "customDomain": "Dominio personalizzato",
+        "customDomainDescription": "Configura un dominio personalizzato per abilitare una pagina di accesso specifica per l'organizzazione con il tuo branding.",
+        "deleteAria": "Elimina dominio personalizzato {domain}",
+        "deleted": "Dominio eliminato",
+        "deleteDescription": "Sei sicuro di voler eliminare \"{domain}\"? Questa azione non può essere annullata. Gli utenti non potranno più accedere tramite questo dominio personalizzato.",
+        "deleteFailed": "Impossibile eliminare il dominio",
+        "deleteTitle": "Elimina dominio",
         "description": "Configura il dominio di accesso personalizzato, il branding e i provider SSO della tua organizzazione.",
+        "dnsPropagation": "Propagazione DNS",
+        "dnsPropagationDescription": "Le modifiche DNS possono richiedere fino a 48 ore per propagarsi, sebbene spesso vengano completate in pochi minuti. Puoi fare clic su \"Verifica\" una volta aggiunto il record TXT.",
+        "domain": "Dominio",
+        "domainHelp": "Inserisci il dominio da cui gli utenti accederanno alla pagina di login.",
+        "domainInvalid": "Inserisci un dominio valido (es. login.example.com)",
+        "domainPageSettings": "Impostazioni pagina dominio",
+        "domainRequired": "Il dominio è obbligatorio",
+        "editAuthSettingsAria": "Modifica le impostazioni di autenticazione per {domain}",
+        "emailPassword": "Email e password",
+        "emailPasswordHelp": "Consenti agli utenti di accedere con email e password",
+        "empty": "Nessun dominio personalizzato configurato.",
+        "enabledAuthMethods": "Metodi di autenticazione abilitati",
         "guidedSetup": {
           "action": "Configurazione guidata",
           "description": "Configura SSO, SCIM, policy di accesso e controlli di attivazione in un unico flusso guidato.",
           "title": "Configurazione guidata"
         },
-        "title": "Dominio personalizzato e branding"
+        "keepExistingSecretKey": "Lascia vuoto per mantenere la chiave segreta esistente",
+        "nameHost": "Nome / Host",
+        "notConfigured": "non configurato",
+        "passkey": "Passkey",
+        "passkeyHelp": "Consenti l'accesso senza password tramite passkey",
+        "regenerateToken": "Rigenera token",
+        "regenerateTokenFailed": "Impossibile rigenerare il token",
+        "regenerateTokenSuccess": "Nuovo token di verifica generato",
+        "regenerating": "Rigenerazione in corso…",
+        "saveConfiguration": "Salva configurazione",
+        "secretKey": "Chiave segreta",
+        "secretKeyPlaceholder": "Inserisci la chiave segreta",
+        "secretKeyRequired": "Obbligatorio quando si imposta una chiave del sito",
+        "siteKey": "Chiave del sito",
+        "socialProviders": "Provider social",
+        "socialProvidersHelp": "Abilita le opzioni di accesso social per questo dominio",
+        "sso": "Single Sign-On (SSO)",
+        "ssoHelp": "Consenti l'accesso aziendale basato su OIDC",
+        "status": {
+          "pending": "Verifica in sospeso",
+          "verified": "Verificato"
+        },
+        "title": "Dominio personalizzato e branding",
+        "tokenExpired": "Token scaduto",
+        "tokenExpiredDescription": "Il token di verifica è scaduto. Generane uno nuovo.",
+        "tokenExpires": "Scadenza token: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Protezione dai bot per i moduli di autenticazione. Richiesta per i domini aziendali.",
+        "turnstileSiteKeyStatus": "Chiave del sito Turnstile {status}",
+        "txtRecordInstruction": "Aggiungi il seguente record TXT al tuo DNS:",
+        "value": "Valore",
+        "verifiedSuccess": "Dominio verificato correttamente",
+        "verify": "Verifica",
+        "verifyDomain": "Verifica dominio",
+        "verifyFailed": "Verifica del dominio non riuscita",
+        "verifying": "Verifica in corso…",
+        "verifyOwnership": "Verifica proprietà del dominio",
+        "verifyOwnershipDescription": "Aggiungi un record DNS TXT per verificare la proprietà di {domain}"
       },
       "email": {
         "apiKey": "Chiave API",
@@ -1376,6 +1671,7 @@
         "vaultUnavailable": "Vault non Disponibile",
         "vaultUnavailableDesc": "Il Vault non è disponibile. I segreti non possono essere archiviati in modo sicuro."
       },
+      "enableProviderHelp": "Abilita o disabilita questo provider",
       "identity": {
         "accessPolicy": {
           "action": {
@@ -1581,6 +1877,90 @@
           "ssoTestPassed": "Test SSO contrassegnato come superato",
           "ssoTestRecordFailed": "Registrazione test SSO non riuscita"
         }
+      },
+      "keepExistingSecretHelp": "Lascia vuoto per mantenere il segreto esistente",
+      "leaveBlankKeepExisting": "Lascia vuoto per mantenere quello esistente",
+      "provider": "Provider",
+      "socialOAuth": {
+        "addDescription": "Configura la tua app OAuth per l'accesso tramite social.",
+        "addProviderError": "Impossibile aggiungere il provider",
+        "addTitle": "Aggiungi provider OAuth social",
+        "appleKeyIdHelp": "L'ID chiave associato alla tua chiave privata",
+        "appleKeyIdRequired": "L'ID chiave è richiesto per Apple",
+        "appleTeamIdHelp": "Si trova nel tuo account Apple Developer",
+        "appleTeamIdRequired": "L'ID team è richiesto per Apple",
+        "clientIdPlaceholder": "Il tuo ID client OAuth",
+        "clientSecretPlaceholder": "Il tuo segreto client OAuth",
+        "configured": "OAuth di {provider} configurato correttamente",
+        "createAppAt": "Crea un'app OAuth su",
+        "deleteError": "Impossibile eliminare la configurazione OAuth",
+        "description": "Configura le tue credenziali OAuth per il social login. Ciò consente ai tuoi utenti di accedere utilizzando le app OAuth della tua organizzazione invece delle credenziali condivise.",
+        "developerConsole": "Console sviluppatore di {provider}",
+        "editDescription": "Aggiorna le tue credenziali OAuth.",
+        "editTitle": "Modifica OAuth di {provider}",
+        "empty": "Nessun provider OAuth social personalizzato configurato.",
+        "emptyDescription": "Aggiungi le tue credenziali OAuth per sostituire quelle condivise.",
+        "howItWorks": "Come funziona",
+        "instructions": {
+          "addProvider": "Aggiungi qui il provider con le tue credenziali",
+          "copyCredentials": "Copia l'ID client e il segreto client",
+          "createApp": "Crea un'app OAuth nella console sviluppatore del provider",
+          "customDomain": "Gli utenti che accedono tramite il tuo dominio personalizzato utilizzeranno la tua app OAuth"
+        },
+        "keyId": "ID chiave",
+        "lastTested": "Ultimo test",
+        "notTested": "Non testato",
+        "privateKey": "Chiave privata (.p8)",
+        "removed": "OAuth di {provider} rimosso",
+        "removeDialogDescription": "Sei sicuro di voler rimuovere questa configurazione OAuth? Gli utenti torneranno a utilizzare le credenziali OAuth condivise (se disponibili).",
+        "removeDialogTitle": "Rimuovi provider OAuth social",
+        "teamId": "ID team",
+        "title": "Provider di accesso social",
+        "updateConfigError": "Aggiornamento configurazione non riuscito",
+        "updated": "OAuth di {provider} aggiornato correttamente",
+        "working": "In corso"
+      },
+      "sso": {
+        "addDescription": "Configura un provider di identità OIDC per il single sign-on aziendale.",
+        "addError": "Aggiunta del provider SSO non riuscita",
+        "addSuccess": "Provider SSO aggiunto correttamente",
+        "addTitle": "Aggiungi provider SSO",
+        "clientIdPlaceholder": "Il tuo ID client OIDC",
+        "clientSecretPlaceholder": "Il tuo segreto client OIDC",
+        "deleteDialogDescription": "Sei sicuro di voler eliminare questo provider SSO? Gli utenti non potranno più accedere utilizzando questo provider di identità.",
+        "deleteDialogTitle": "Elimina provider SSO",
+        "deleteError": "Eliminazione del provider SSO non riuscita",
+        "deleteSuccess": "Provider SSO eliminato",
+        "description": "Aggiungi provider di identità OIDC per abilitare il SSO per la tua organizzazione.",
+        "domainInvalid": "Inserisci un dominio valido (es. example.com)",
+        "domainRequired": "Il dominio è obbligatorio",
+        "domainVerified": "Dominio verificato",
+        "emailDomain": "Dominio email",
+        "emailDomainHelp": "Gli utenti con questo dominio email potranno utilizzare il SSO",
+        "empty": "Nessun provider SSO configurato ancora.",
+        "emptyDescription": "Aggiungi un provider OIDC per abilitare il single sign-on aziendale.",
+        "instructions": {
+          "copyCredentials": "Copia l'URL dell'emittente, l'ID client e il segreto client dal tuo IdP",
+          "createApp": "Crea un'applicazione OIDC nel tuo identity provider (Okta, Azure AD, ecc.)",
+          "verifyDomain": "Aggiungi il provider qui e verifica il dominio email tramite record DNS TXT"
+        },
+        "issuerUrl": "URL dell'emittente",
+        "issuerUrlHelp": "L'URL dell'emittente OIDC dal tuo identity provider",
+        "issuerUrlRequired": "L'URL dell'emittente è obbligatorio",
+        "providerId": "ID provider",
+        "providerIdHelp": "Un identificatore univoco per questo provider (minuscolo, senza spazi)",
+        "providerIdInvalid": "L'ID provider deve contenere solo lettere minuscole, numeri e trattini",
+        "providerIdRequired": "L'ID provider è obbligatorio",
+        "setupInstructions": "Istruzioni di configurazione",
+        "title": "Identity Provider",
+        "token": "Token",
+        "tokenError": "Generazione del token di verifica del dominio non riuscita",
+        "tokenGenerated": "Token di verifica generato",
+        "txtToken": "Token TXT:",
+        "validUrlRequired": "Inserisci un URL valido",
+        "verified": "Verificato",
+        "verify": "Verifica",
+        "verifyError": "Verifica del dominio non riuscita. Controlla il tuo record DNS TXT e riprova."
       },
       "tab": {
         "branding": "Branding",
@@ -1938,6 +2318,27 @@
     },
     "import": {
       "description": "Importa dati da provider supportati come Clockodo e Clockin.",
+      "review": {
+        "commitAccepted": "Conferma righe accettate",
+        "commitFailed": "Impossibile avviare il commit dell'importazione",
+        "commitQueued": "{count} righe accettate in coda per il commit",
+        "committing": "Commit in corso...",
+        "description": "Rivedi le righe di importazione in staging, risolvi i problemi bloccanti e conferma i record accettati quando il batch è pronto.",
+        "issueGroups": {
+          "currentMarkers": "Le righe correnti includono {blockingRows} marcatori di problemi bloccanti e {warningRows} di avviso.",
+          "description": "Le aree di revisione raggruppate aiutano a mantenere visibili i controlli di qualità prima che le righe accettate vengano confermate.",
+          "title": "Gruppi di problemi"
+        },
+        "rows": {
+          "empty": "Nessuna riga in staging disponibile per questo batch di importazione.",
+          "entity": "Entità",
+          "rowId": "ID riga",
+          "sourceId": "ID sorgente",
+          "status": "Stato",
+          "title": "Righe"
+        },
+        "title": "Revisione importazione"
+      },
       "title": "Importa dati"
     },
     "inviteCodes": {
@@ -2010,6 +2411,19 @@
       "usage": "Utilizzo",
       "validatingCode": "Validazione codice in corso...",
       "validCodeDescription": "Questo codice di invito è valido. Clicca sul pulsante qui sotto per unirti."
+    },
+    "licenses": {
+      "footer": "Questa applicazione utilizza software open source. Grazie a tutti i manutentori e ai collaboratori di questi pacchetti.",
+      "homepage": "Pagina iniziale",
+      "license": "Licenza",
+      "licenseTypesCount": "{count} tipi di licenza",
+      "links": "Link",
+      "noPackages": "Nessun pacchetto trovato.",
+      "package": "Pacchetto",
+      "packagesCount": "{count} pacchetti",
+      "repository": "Repository",
+      "searchPlaceholder": "Cerca pacchetti o licenze...",
+      "unknown": "Sconosciuto"
     },
     "locations": {
       "address": "Indirizzo",
@@ -2163,6 +2577,41 @@
         "title": "Organizzazione non trovata"
       },
       "title": "Organizzazioni & Team"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Team creato correttamente",
+          "description": "Crea un nuovo team per organizzare i tuoi dipendenti",
+          "descriptionLabel": "Descrizione (opzionale)",
+          "descriptionPlaceholder": "Una breve descrizione di questo team",
+          "fallbackManagerHelp": "Utilizzato per le approvazioni quando un membro del team non ha un manager diretto.",
+          "fallbackManagerLabel": "Manager di fallback",
+          "fallbackManagerPlaceholder": "Seleziona un manager di fallback",
+          "nameLabel": "Nome del team",
+          "namePlaceholder": "Engineering, Sales, Marketing...",
+          "noFallbackManager": "Nessun manager di fallback",
+          "submit": "Crea team",
+          "title": "Crea team"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Aggiungi passkey",
+      "addedOn": "Aggiunta il {date}",
+      "addError": "Impossibile aggiungere la passkey",
+      "addSuccess": "Passkey aggiunta correttamente",
+      "defaultName": "Passkey {date}",
+      "deleteDialogDescription": "Questa passkey non sarà più in grado di accedere al tuo account. Questa azione non può essere annullata.",
+      "deleteDialogTitle": "Eliminare la passkey?",
+      "deleteError": "Impossibile eliminare la passkey",
+      "deleteSuccess": "Passkey eliminata correttamente",
+      "description": "Gestisci le passkey per l'autenticazione senza password",
+      "empty": "Nessuna passkey configurata",
+      "emptyDescription": "Aggiungi una passkey per abilitare l'autenticazione senza password",
+      "loadError": "Impossibile caricare le passkey",
+      "title": "Passkey",
+      "unnamed": "Passkey senza nome"
     },
     "payrollExport": {
       "datev": {
@@ -2488,6 +2937,8 @@
         "edit": "Modifica"
       },
       "adminRequired": "È richiesto l'accesso amministratore",
+      "allTeams": "Tutti i team (a livello di organizzazione)",
+      "allTeamsHelp": "Le autorizzazioni si applicano a tutti i team dell'organizzazione",
       "badge": {
         "allPermissions": "Tutte le autorizzazioni",
         "permissionCount": "{count} autorizzazione/i"
@@ -2503,9 +2954,16 @@
       "emptyState": "Nessun dipendente trovato",
       "noEmployeeFeature": "gestisci autorizzazioni",
       "noPermissions": "Nessuna autorizzazione",
+      "permissions": "Autorizzazioni",
       "refresh": "Aggiorna",
+      "revokeAll": "Revoca tutto",
+      "revokeError": "Impossibile revocare le autorizzazioni",
+      "revokeSuccess": "Autorizzazioni revocate correttamente",
+      "save": "Salva autorizzazioni",
+      "scope": "Ambito delle autorizzazioni",
       "searchLabel": "Cerca dipendenti",
       "searchPlaceholder": "Cerca per nome, email o posizione...",
+      "selectedTeamHelp": "Le autorizzazioni si applicano solo al team selezionato",
       "table": {
         "actions": "Azioni",
         "employee": "Dipendente",
@@ -2515,8 +2973,11 @@
       },
       "title": "Permessi",
       "toast": {
-        "adminRequired": "Devi essere un amministratore per gestire le autorizzazioni"
-      }
+        "adminRequired": "Devi essere un amministratore per gestire le autorizzazioni",
+        "loadEmployeesFailed": "Impossibile caricare i dipendenti"
+      },
+      "updateError": "Impossibile aggiornare le autorizzazioni",
+      "updateSuccess": "Autorizzazioni aggiornate correttamente"
     },
     "profile": {
       "avatarRemoved": "Avatar rimosso correttamente",
@@ -2608,6 +3069,23 @@
       "title": "Progetti",
       "updated": "Progetto aggiornato",
       "updateFailed": "Aggiornamento progetto fallito"
+    },
+    "rateHistory": {
+      "changeRate": "Modifica tariffa",
+      "currentRate": "Tariffa attuale: {rate}",
+      "description": "La tariffa oraria cambia nel tempo",
+      "effectiveFrom": "In vigore dal",
+      "effectiveFromHelp": "Quando la nuova tariffa diventa effettiva",
+      "empty": "Nessuna cronologia tariffe disponibile",
+      "newHourlyRate": "Nuova tariffa oraria",
+      "reasonOptional": "Motivazione (opzionale)",
+      "reasonPlaceholder": "es. Revisione annuale, promozione, ecc.",
+      "title": "Cronologia tariffe",
+      "updateDescription": "Crea una nuova voce di tariffa. La tariffa corrente verrà chiusa automaticamente.",
+      "updateError": "Impossibile aggiornare la tariffa",
+      "updateRate": "Aggiorna tariffa",
+      "updateSuccess": "Tariffa aggiornata correttamente",
+      "updateTitle": "Aggiorna tariffa oraria"
     },
     "roles": {
       "actions": {
@@ -4037,6 +4515,8 @@
       "last7Days": "Ultimi 7 giorni",
       "last90Days": "Ultimi 90 giorni",
       "loadError": "Impossibile caricare le policy",
+      "maxDailyLabel": "Massimo giornaliero:",
+      "maxWeeklyLabel": "Massimo settimanale:",
       "name": "Nome",
       "namePlaceholder": "ad es., Full-Time Germania",
       "noDataToExport": "Nessun dato da esportare",
@@ -4169,12 +4649,38 @@
   },
   "team": {
     "absences": {
+      "actions": {
+        "recordForEmployee": "Registra assenza per {name}"
+      },
       "description": "Esamina le indennità e registra le assenze approvate per il tuo team.",
+      "empty": {
+        "description": "Prova a modificare i filtri o la ricerca per trovare i membri del team.",
+        "label": "Nessun dipendente trovato",
+        "title": "Nessun dipendente trovato"
+      },
       "error": {
         "description": "Riprova tra un momento.",
         "title": "Impossibile caricare le assenze"
       },
       "feature": "gestisci le assenze del team",
+      "filters": {
+        "allTeams": "Tutti i team",
+        "searchLabel": "Cerca dipendenti",
+        "searchPlaceholder": "Cerca dipendenti…",
+        "searchSubmit": "Cerca",
+        "teamLabel": "Filtra per team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filtra per anno",
+        "yearPlaceholder": "Anno"
+      },
+      "pagination": {
+        "next": "Avanti",
+        "nextLabel": "Pagina successiva",
+        "page": "Pagina {page} di {pageCount}",
+        "previous": "Indietro",
+        "previousLabel": "Pagina precedente",
+        "showing": "Visualizzazione da {firstItem} a {lastItem} di {total}"
+      },
       "recordDialog": {
         "category": "Categoria",
         "categoryPlaceholder": "Seleziona una categoria di assenza…",
@@ -4189,14 +4695,35 @@
         "pickEndDate": "Seleziona data di fine…",
         "pickStartDate": "Seleziona data di inizio…",
         "recording": "Registrazione in corso…",
+        "required": "{label} è obbligatorio",
         "sickDetail": "Dettaglio malattia",
         "sickDetailPlaceholder": "Seleziona dettaglio malattia…",
         "startDate": "Data di inizio",
         "submit": "Registra assenza",
         "success": "Assenza registrata",
-        "title": "Registra assenza"
+        "title": "Registra assenza",
+        "titleForEmployee": "Registra assenza per {name}"
+      },
+      "sort": {
+        "ascending": "crescente",
+        "by": "Ordina per {label}",
+        "byWithDirection": "Ordina per {label} ({direction})",
+        "descending": "decrescente"
+      },
+      "table": {
+        "actions": "Azioni",
+        "allowance": "Indennità",
+        "employee": "Dipendente",
+        "left": "Rimanente",
+        "pending": "In attesa",
+        "sick": "Malattia",
+        "teamOrPosition": "Team o Posizione",
+        "used": "Utilizzato"
       },
       "title": "Assenze del team"
+    },
+    "balance": {
+      "noBalance": "Nessun saldo"
     },
     "description": "Visualizza e gestisci i dipendenti che supervisioni direttamente",
     "empty": {
@@ -4211,6 +4738,7 @@
     "feature": "vedi il tuo team",
     "member": "membro",
     "members": "membri",
+    "member.you": "Tu",
     "noResults": {
       "action": "Cancella ricerca",
       "description": "Nessun membro del team corrisponde a \"{query}\"",
@@ -4223,6 +4751,7 @@
     },
     "primaryManager": "Sei il manager principale",
     "search": {
+      "ariaLabel": "Cerca membri del team",
       "placeholder": "Cerca per nome, email, posizione o team..."
     },
     "status": {
@@ -4233,8 +4762,15 @@
       "employee": "Dipendente",
       "position": "Posizione",
       "role": "Ruolo",
+      "sort": {
+        "ascending": "crescente",
+        "descending": "decrescente"
+      },
+      "sortByTimeBalance": "Ordina per saldo annuale",
+      "sortByTimeBalanceWithDirection": "Ordina per saldo annuale ({direction})",
       "status": "Stato",
-      "team": "Team"
+      "team": "Team",
+      "timeBalance": "Saldo annuale"
     },
     "title": "Il tuo team",
     "view": {

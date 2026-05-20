@@ -33,6 +33,11 @@
       "of-goal": "de {goal}",
       "title": "Hidratación"
     },
+    "layout": {
+      "saved": "Diseño del tablero guardado",
+      "saveFailed": "No se pudo guardar el diseño del tablero",
+      "saveFailedDescription": "No se pudieron guardar los cambios. Por favor, inténtelo de nuevo."
+    },
     "managed-employees": {
       "direct-reports": "{count} informes directos",
       "error": "Error al cargar los empleados gestionados",
@@ -161,6 +166,11 @@
       "title": "Quién está fuera hoy",
       "until-date": "Hasta {date}",
       "view-calendar": "Ver calendario completo"
+    },
+    "widgets": {
+      "dragToReorder": "Arrastrar para reordenar el widget",
+      "moving": "Moviendo widget…",
+      "refresh": "Actualizar"
     }
   }
 }

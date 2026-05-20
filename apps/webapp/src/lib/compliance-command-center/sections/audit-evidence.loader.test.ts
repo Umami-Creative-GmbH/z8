@@ -38,7 +38,10 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	auditExportPackage: { id: "auditExportPackage.id", organizationId: "auditExportPackage.organizationId" },
+	auditExportPackage: {
+		id: "auditExportPackage.id",
+		organizationId: "auditExportPackage.organizationId",
+	},
 	auditPackRequest: {
 		id: "auditPackRequest.id",
 		organizationId: "auditPackRequest.organizationId",
@@ -100,8 +103,9 @@ describe("getAuditEvidenceSection", () => {
 		expect(successQuery.orderBy).toEqual([{ desc: "auditPackRequest.completedAt" }]);
 		expect(result.card.status).toBe("critical");
 		expect(result.recentCriticalEvents[0]?.occurredAt).toBe("2026-04-11T10:00:00.000Z");
-		expect(result.card.facts).toContain(
-			"Last successful audit pack: 2026-03-01T12:00:00.000Z",
-		);
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.audit.lastSuccessfulAuditPack",
+			params: { timestamp: "2026-03-01T12:00:00.000Z" },
+		});
 	});
 });

@@ -67,7 +67,9 @@ export default function WellnessPage() {
 			router.push("/onboarding/notifications");
 		} else {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip wellness setup");
+			toast.error(
+				result.error || t("onboarding.wellness.skipError", "Failed to skip wellness setup"),
+			);
 		}
 	}
 
@@ -179,7 +181,9 @@ export default function WellnessPage() {
 														<span className="flex items-center gap-2">
 															{preset.label}
 															{preset.recommended && (
-																<span className="text-xs text-primary">(Recommended)</span>
+														<span className="text-xs text-primary">
+															{t("onboarding.wellness.recommended", "(Recommended)")}
+														</span>
 															)}
 														</span>
 													</SelectItem>

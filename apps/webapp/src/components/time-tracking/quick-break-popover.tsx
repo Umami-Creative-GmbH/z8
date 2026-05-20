@@ -14,6 +14,7 @@ interface QuickBreakPopoverProps {
 	isDisabled: boolean;
 	t: TFnType;
 	buttonClassName?: string;
+	iconOnly?: boolean;
 }
 
 export function QuickBreakPopover({
@@ -22,6 +23,7 @@ export function QuickBreakPopover({
 	isDisabled,
 	t,
 	buttonClassName,
+	iconOnly = false,
 }: QuickBreakPopoverProps) {
 	const [open, setOpen] = useState(false);
 	const [minutes, setMinutes] = useState("30");
@@ -76,7 +78,9 @@ export function QuickBreakPopover({
 					t("timeTracking.quickBreak.errors.addFailed", "Failed to add break. Please try again."),
 			);
 		} catch {
-			setError(t("timeTracking.quickBreak.errors.addFailed", "Failed to add break. Please try again."));
+			setError(
+				t("timeTracking.quickBreak.errors.addFailed", "Failed to add break. Please try again."),
+			);
 		} finally {
 			submittingRef.current = false;
 			setLocalSubmitting(false);
@@ -94,8 +98,8 @@ export function QuickBreakPopover({
 					disabled={isDisabled}
 					aria-label={addBreakLabel}
 				>
-					<IconCoffee className="size-4" />
-					<span className="hidden sm:inline">{addBreakLabel}</span>
+					<IconCoffee className="size-4" aria-hidden="true" />
+					{iconOnly ? null : <span className="hidden sm:inline">{addBreakLabel}</span>}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-80" align="end">
@@ -112,13 +116,12 @@ export function QuickBreakPopover({
 
 					<div className="space-y-2">
 						<label className="font-medium text-sm" htmlFor={inputId}>
-							{t(
-								"timeTracking.quickBreak.durationLabel",
-								"Break duration in minutes",
-							)}
+							{t("timeTracking.quickBreak.durationLabel", "Break duration in minutes")}
 						</label>
 						<Input
 							id={inputId}
+							name="breakMinutes"
+							autoComplete="off"
 							type="number"
 							inputMode="numeric"
 							min={1}
@@ -145,9 +148,9 @@ export function QuickBreakPopover({
 						disabled={controlsDisabled}
 						className={cn("w-full", applying && "cursor-wait")}
 					>
-						{applying && <IconLoader2 className="size-4 animate-spin" />}
+						{applying && <IconLoader2 className="size-4 animate-spin" aria-hidden="true" />}
 						{applying
-							? t("timeTracking.quickBreak.applying", "Applying...")
+							? t("timeTracking.quickBreak.applying", "Applying…")
 							: t("timeTracking.quickBreak.apply", "Apply")}
 					</Button>
 				</div>

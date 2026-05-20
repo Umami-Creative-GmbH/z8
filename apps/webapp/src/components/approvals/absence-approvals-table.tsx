@@ -17,7 +17,7 @@ import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/dat
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
-import { getSickDetailLabel } from "@/lib/absences/sick-details";
+import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
 import { queryKeys } from "@/lib/query";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
@@ -199,7 +199,10 @@ export function AbsenceApprovalsTable() {
 						/>
 						{row.original.absence.category.type === "sick" && row.original.absence.sickDetail && (
 							<span className="text-muted-foreground text-xs">
-								{getSickDetailLabel(row.original.absence.sickDetail)}
+								{t(
+									getSickDetailLabelKey(row.original.absence.sickDetail),
+									getSickDetailLabel(row.original.absence.sickDetail),
+								)}
 							</span>
 						)}
 					</div>

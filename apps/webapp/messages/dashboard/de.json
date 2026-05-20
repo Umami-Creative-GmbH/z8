@@ -33,6 +33,11 @@
       "of-goal": "von {goal}",
       "title": "Hydratation"
     },
+    "layout": {
+      "saved": "Dashboard-Layout gespeichert",
+      "saveFailed": "Dashboard-Layout konnte nicht gespeichert werden",
+      "saveFailedDescription": "Ihre Änderungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    },
     "managed-employees": {
       "direct-reports": "{count} direkte Mitarbeiter",
       "error": "Laden der verwalteten Mitarbeiter fehlgeschlagen",
@@ -161,6 +166,11 @@
       "title": "Wer ist heute abwesend",
       "until-date": "Bis {date}",
       "view-calendar": "Vollständigen Kalender anzeigen"
+    },
+    "widgets": {
+      "dragToReorder": "Zum Neuanordnen des Widgets ziehen",
+      "moving": "Widget wird verschoben…",
+      "refresh": "Aktualisieren"
     }
   }
 }

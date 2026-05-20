@@ -1,5 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 import { eq } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { DatabaseError, NotFoundError } from "../../errors";
@@ -7,13 +8,14 @@ import { DatabaseError, NotFoundError } from "../../errors";
 export interface SubscriptionInfo {
 	id: string;
 	organizationId: string;
-	stripeCustomerId: string;
+	stripeCustomerId: string | null;
 	stripeSubscriptionId: string | null;
 	status: string;
 	isActive: boolean;
 	isTrialing: boolean;
 	isPastDue: boolean;
 	currentSeats: number;
+	trialStart: Date | null;
 	trialEnd: Date | null;
 	currentPeriodEnd: Date | null;
 	billingInterval: string | null;
@@ -67,6 +69,11 @@ export class SubscriptionService extends Context.Tag("SubscriptionService")<
 			organizationId: string,
 		) => Effect.Effect<SubscriptionInfo, NotFoundError | DatabaseError>;
 
+		readonly ensureLocalTrial: (params: {
+			organizationId: string;
+			now?: Date;
+		}) => Effect.Effect<SubscriptionInfo, DatabaseError>;
+
 		readonly create: (params: CreateSubscriptionParams) => Effect.Effect<void, DatabaseError>;
 
 		readonly updateFromStripe: (
@@ -99,6 +106,7 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 		isTrialing: sub.status === "trialing",
 		isPastDue: sub.status === "past_due",
 		currentSeats: sub.currentSeats,
+		trialStart: sub.trialStart,
 		trialEnd: sub.trialEnd,
 		currentPeriodEnd: sub.currentPeriodEnd,
 		billingInterval: sub.billingInterval,
@@ -194,6 +202,51 @@ export const SubscriptionServiceLive = Layer.succeed(
 				}
 
 				return mapToSubscriptionInfo(sub);
+			}),
+
+		ensureLocalTrial: ({ organizationId, now = new Date() }) =>
+			Effect.tryPromise({
+				try: async () => {
+					const existing = await db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, organizationId),
+					});
+
+					if (existing) return mapToSubscriptionInfo(existing);
+
+					const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
+					const inserted = await db
+						.insert(subscription)
+						.values({
+							organizationId,
+							stripeCustomerId: null,
+							status: "trialing",
+							trialStart: now,
+							trialEnd,
+							currentSeats: 0,
+						})
+						.onConflictDoNothing({ target: subscription.organizationId })
+						.returning();
+
+					const localTrial = inserted[0];
+					if (localTrial) return mapToSubscriptionInfo(localTrial);
+
+					const raced = await db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, organizationId),
+					});
+
+					if (!raced) {
+						throw new Error("Local trial insert returned no row");
+					}
+
+					return mapToSubscriptionInfo(raced);
+				},
+				catch: (error) =>
+					new DatabaseError({
+						message: "Failed to ensure local trial subscription",
+						operation: "ensureLocalTrial",
+						table: "subscription",
+						cause: error,
+					}),
 			}),
 
 		create: (params) =>
@@ -295,25 +348,21 @@ export const SubscriptionServiceLive = Layer.succeed(
 		setStripeCustomerId: (organizationId, stripeCustomerId) =>
 			Effect.tryPromise({
 				try: async () => {
-					// Check if subscription record exists
-					const existing = await db.query.subscription.findFirst({
-						where: eq(subscription.organizationId, organizationId),
-					});
-
-					if (existing) {
-						await db
-							.update(subscription)
-							.set({ stripeCustomerId })
-							.where(eq(subscription.organizationId, organizationId));
-					} else {
-						// Create a minimal subscription record with customer ID
-						await db.insert(subscription).values({
+					await db
+						.insert(subscription)
+						.values({
 							organizationId,
 							stripeCustomerId,
 							status: "incomplete",
 							currentSeats: 0,
+						})
+						.onConflictDoUpdate({
+							target: subscription.organizationId,
+							set: {
+								stripeCustomerId,
+								updatedAt: new Date(),
+							},
 						});
-					}
 				},
 				catch: (error) =>
 					new DatabaseError({
@@ -349,13 +398,11 @@ export const SubscriptionServiceLive = Layer.succeed(
 				// No subscription = cannot mutate (needs to subscribe)
 				if (!sub) return false;
 
-				// Check status
-				const blockedStatuses = ["canceled", "unpaid", "past_due"];
-				if (blockedStatuses.includes(sub.status)) {
-					return false;
+				if (sub.status === "trialing") {
+					return sub.trialEnd !== null && sub.trialEnd.getTime() > Date.now();
 				}
 
-				return true;
+				return sub.status === "active";
 			}),
 	}),
 );

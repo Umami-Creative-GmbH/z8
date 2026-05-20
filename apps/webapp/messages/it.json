@@ -1,8 +1,314 @@
 {
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "visualizza analisi",
+      "restrictedDescription": "L'analisi è disponibile solo per amministratori e manager.",
+      "restrictedTitle": "Accesso limitato"
+    },
+    "common": {
+      "days": "Giorni",
+      "employee": "Dipendente",
+      "employees": "Dipendenti",
+      "hours": "Ore",
+      "loadingOrganizationSettings": "Caricamento impostazioni organizzazione prima di abilitare i preset.",
+      "noDataAvailable": "Nessun dato disponibile",
+      "noDataForPeriod": "Nessun dato disponibile per il periodo selezionato",
+      "overtime": "Straordinari",
+      "overtimeHours": "Ore di straordinario",
+      "team": "Team",
+      "totalHours": "Ore totali",
+      "unavailable": "Non disponibile",
+      "undertime": "Ore mancanti",
+      "undertimeHours": "Ore mancanti"
+    },
+    "layout": {
+      "description": "Approfondimenti completi sulle prestazioni del team, sulle ore di lavoro e sui modelli di assenza",
+      "tabs": {
+        "overtimeBurnDown": "Riduzione straordinari",
+        "overview": "Panoramica",
+        "teamPerformance": "Prestazioni del team",
+        "vacationTrends": "Tendenze ferie",
+        "workHours": "Ore di lavoro"
+      },
+      "title": "Analisi"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Dettaglio",
+      "breakdownDescription": "Dettagli burn-down degli straordinari a livello di {label}",
+      "breakdownEmpty": "Nessun dato di ripartizione ancora disponibile",
+      "byCostCenter": "Per centro di costo",
+      "byManager": "Per manager",
+      "byTeam": "Per team",
+      "costCenter": "Centro di costo",
+      "currentOvertime": "Straordinari attuali",
+      "description": "Monitora la riduzione settimanale degli straordinari tra i team.",
+      "errors": {
+        "loadData": "Impossibile caricare i dati di burn-down degli straordinari"
+      },
+      "filters": {
+        "allCostCenters": "Tutti i centri di costo",
+        "allManagers": "Tutti i manager",
+        "allTeams": "Tutti i team",
+        "breakdownLabel": "Dimensione di ripartizione",
+        "costCenterLabel": "Filtro centro di costo",
+        "managerLabel": "Filtro manager",
+        "teamLabel": "Filtro team"
+      },
+      "improvingGroups": "Gruppi in miglioramento",
+      "improvingGroupsDescription": "Gruppi con straordinari in diminuzione",
+      "manager": "Manager",
+      "previousOvertime": "Straordinari precedenti",
+      "previousPeriodDescription": "Rispetto al periodo precedente",
+      "selectedRangeDescription": "Per l'intervallo di date e i filtri selezionati",
+      "title": "Burn-down degli straordinari",
+      "trendDirection": "Direzione del trend",
+      "trendDirectionDescription": "Traiettoria complessiva degli straordinari",
+      "trend": {
+        "down": "In calo",
+        "flat": "Stabile",
+        "up": "Su"
+      },
+      "weeklyTrend": {
+        "description": "Trend settimanale di riduzione degli straordinari",
+        "empty": "Nessun dato di trend disponibile al momento",
+        "title": "Trend settimanale di burn-down"
+      },
+      "weekOverWeek": "Settimana su settimana"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Distribuzione delle assenze per categoria",
+        "title": "Modelli di assenza"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% approvato",
+        "avgDecision": "{hours}h decisione media",
+        "byManager": "Per manager",
+        "byTeam": "Per team",
+        "byType": "Per tipo",
+        "description": "Team e tipi di richiesta con lavoro in sospeso o avvisi SLA",
+        "empty": "Nessun collo di bottiglia nelle approvazioni trovato",
+        "pendingSummary": "{pendingCount} in sospeso - {slaWarnings} avvisi SLA",
+        "title": "Colli di bottiglia nelle approvazioni",
+        "unavailable": "Impossibile caricare i colli di bottiglia nelle approvazioni"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Delle richieste decise approvate",
+          "title": "Tasso di approvazione",
+          "unavailableDescription": "Impossibile caricare le analisi delle approvazioni"
+        },
+        "avgWorkHours": {
+          "description": "Per dipendente nel periodo selezionato",
+          "title": "Ore lavorative medie"
+        },
+        "totalAbsenceDays": {
+          "description": "Giorni totali nel periodo selezionato",
+          "title": "Giorni di assenza totali"
+        },
+        "totalEmployees": {
+          "description": "Dipendenti attivi nell'organizzazione",
+          "title": "Dipendenti totali"
+        }
+      },
+      "loadingLabel": "Caricamento dati analitici",
+      "workHoursByTeam": {
+        "description": "Ore di lavoro totali registrate per team",
+        "title": "Ore di lavoro per team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Media per dipendente",
+      "comparison": {
+        "description": "Ore di lavoro totali per team nel periodo selezionato",
+        "title": "Confronto tra team"
+      },
+      "details": {
+        "description": "Ripartizione delle ore di lavoro per team e dipendente",
+        "title": "Dettagli sulle prestazioni del team"
+      },
+      "employeeCount": "Conteggio dipendenti",
+      "errors": {
+        "loadData": "Impossibile caricare i dati sulle prestazioni del team"
+      },
+      "onTrack": "In linea",
+      "variance": {
+        "description": "Variazione delle ore rispetto alle ore di lavoro previste",
+        "empty": "Nessun dato di variazione disponibile",
+        "title": "Straordinari e ore non lavorate"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Assegnati",
+      "balance": {
+        "description": "Giorni assegnati, fruiti e rimanenti per dipendente",
+        "title": "Saldo ferie"
+      },
+      "daysRemaining": "{count} giorni rimanenti",
+      "daysTaken": "{count} giorni fruiti",
+      "errors": {
+        "loadData": "Impossibile caricare i dati sulle tendenze delle ferie"
+      },
+      "monthlyUsage": {
+        "description": "Giorni di ferie fruiti al mese",
+        "empty": "Nessun dato di utilizzo mensile disponibile",
+        "title": "Utilizzo ferie mensile"
+      },
+      "peakMonths": {
+        "description": "Mesi con maggiore attività di ferie",
+        "empty": "Nessun dato sui mesi di picco disponibile",
+        "title": "Mesi di picco delle ferie"
+      },
+      "remaining": "Rimanenti",
+      "taken": "Usufruite",
+      "utilization": {
+        "description": "Utilizzo complessivo dei giorni di ferie nell'organizzazione",
+        "overall": "Utilizzo complessivo",
+        "title": "Utilizzo ferie"
+      },
+      "utilizationLabel": "Utilizzo",
+      "utilizationPercent": "% di utilizzo",
+      "vacationDays": "Giorni di ferie"
+    },
+    "workHours": {
+      "actualHours": "Ore effettive",
+      "avgHoursPerWeek": "Media ore/settimana",
+      "daily": {
+        "description": "Confronto tra ore di lavoro effettive e previste al giorno",
+        "empty": "Nessun dato sulle ore giornaliere disponibile",
+        "title": "Ore di lavoro giornaliere"
+      },
+      "distribution": {
+        "description": "Confronto ore di lavoro dei dipendenti (grafico a barre orizzontali)",
+        "empty": "Nessun dato di distribuzione disponibile",
+        "title": "Distribuzione ore di lavoro"
+      },
+      "employeeComparison": {
+        "description": "Totale ore e varianza rispetto al previsto per dipendente",
+        "title": "Ore di lavoro dei dipendenti"
+      },
+      "errors": {
+        "loadData": "Impossibile caricare i dati analitici sulle ore di lavoro"
+      },
+      "expectedHours": "Ore previste",
+      "variance": "Varianza",
+      "varianceTrend": {
+        "description": "Variazione delle ore rispetto all'orario di lavoro previsto nel tempo",
+        "empty": "Nessun dato di tendenza disponibile",
+        "title": "Tendenza straordinari e ore lavorate in meno"
+      }
+    }
+  },
   "appSearch": {
+    "description": "Cerca pagine, impostazioni, persone e team",
+    "empty": "Nessun risultato trovato.",
+    "groups": {
+      "pages": "Pagine",
+      "people": "Persone",
+      "settings": "Impostazioni",
+      "teams": "Team"
+    },
+    "placeholder": "Cerca pagine, impostazioni, persone e team…",
+    "search": "Cerca",
     "teamAbsences": {
       "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
     }
+  },
+  "billing": {
+    "access": {
+      "canceled": "Il tuo abbonamento è stato annullato. Riabbonati per riacquisire l'accesso.",
+      "paymentFailed": "L'ultimo pagamento non è andato a buon fine. Aggiorna il tuo metodo di pagamento.",
+      "required": "È necessario un abbonamento per utilizzare questa applicazione.",
+      "trialExpired": "La tua prova è scaduta. Abbonati per continuare a utilizzare l'app."
+    },
+    "activeSeats": "Posti attivi",
+    "alerts": {
+      "canceledDescription": "Il checkout è stato annullato. Puoi riprovare quando vuoi.",
+      "subscriptionRequired": "Abbonamento richiesto",
+      "successDescription": "Il tuo abbonamento è stato attivato. Grazie per esserti abbonato!",
+      "successTitle": "Operazione riuscita!"
+    },
+    "bestValue": "Miglior rapporto qualità-prezzo",
+    "billedMonthly": "fatturato mensilmente",
+    "cancelsOn": "Si annulla il {date}",
+    "checkoutCreateFailed": "Impossibile creare la sessione di checkout",
+    "checkoutStartFailed": "Impossibile avviare il checkout",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout raccoglie i dati di pagamento ora. Il tuo abbonamento a pagamento inizia solo dopo la scadenza del periodo di prova.",
+      "trialContinuesTitle": "La tua prova continua dopo l'aggiornamento"
+    },
+    "choosePlan": "Scegli il tuo piano",
+    "choosePlanDescription": "Inizia con una prova gratuita di 14 giorni. Non è richiesta alcuna carta di credito per iniziare.",
+    "currentPlan": "Piano attuale",
+    "days": "{count} giorni",
+    "description": "Gestisci il tuo abbonamento e i dettagli di fatturazione",
+    "faq": {
+      "afterTrial": {
+        "answer": "Al termine della prova di 14 giorni, ti verrà addebitato il costo del piano di abbonamento selezionato. Puoi annullare in qualsiasi momento prima della fine della prova per evitare addebiti.",
+        "question": "Cosa succede dopo la prova?"
+      },
+      "perSeat": {
+        "answer": "La fatturazione si basa sul numero di membri attivi nella tua organizzazione. Quando aggiungi o rimuovi membri, il tuo abbonamento viene adeguato automaticamente.",
+        "question": "Come funziona la fatturazione per utente?"
+      },
+      "switch": {
+        "answer": "Sì! Puoi cambiare piano in qualsiasi momento tramite il portale di fatturazione. Le modifiche avranno effetto al ciclo di fatturazione successivo.",
+        "question": "Posso passare dalla fatturazione mensile a quella annuale?"
+      },
+      "title": "Domande frequenti"
+    },
+    "features": {
+      "allFeatures": "Tutte le funzionalità incluse",
+      "cancelAnytime": "Annulla in qualsiasi momento",
+      "trial": "Prova gratuita di 14 giorni",
+      "yearlyDiscount": "25% di sconto rispetto al mensile"
+    },
+    "interval": {
+      "monthlyBilling": "Fatturazione mensile",
+      "yearlyBilling": "Fatturazione annuale"
+    },
+    "manageBilling": "Gestisci fatturazione",
+    "monthlyCost": "Costo mensile",
+    "nextBilling": "Prossima fatturazione",
+    "opening": "Apertura in corso...",
+    "perSeatMonth": "/utente/mese",
+    "plans": {
+      "monthly": {
+        "description": "Fatturazione mensile flessibile",
+        "title": "Mensile"
+      },
+      "yearly": {
+        "description": "Risparmia il 25% con la fatturazione annuale",
+        "title": "Annuale"
+      }
+    },
+    "portalOpenFailed": "Impossibile aprire il portale di fatturazione",
+    "priceSeatMonth": "€{price}/utente/mese",
+    "priceSeatMonthYearly": "€{price}/utente/mese (fatturato annualmente)",
+    "seatBilledAnnually": "€{price}/utente fatturato annualmente",
+    "starting": "Avvio in corso...",
+    "startTrial": "Inizia la prova gratuita",
+    "status": {
+      "canceled": "Annullato",
+      "noSubscription": "Nessun abbonamento",
+      "pastDue": "Scaduto",
+      "trial": "Prova"
+    },
+    "suspended": {
+      "adminDescription": "Il periodo di prova è terminato o l'abbonamento non è più valido. Aggiorna la fatturazione per continuare a usare Z8.",
+      "goToBilling": "Vai alla fatturazione",
+      "memberDescription": "Questa organizzazione è sospesa. Contatta un amministratore dell'organizzazione per aggiornare la fatturazione.",
+      "title": "Organizzazione sospesa"
+    },
+    "title": "Fatturazione e abbonamento",
+    "trialBanner": {
+      "description": "{days} giorni rimanenti. Aggiungi i dati di pagamento ora; il tuo abbonamento a pagamento inizia dopo il periodo di prova.",
+      "title": "Prova di 14 giorni attiva",
+      "upgrade": "Aggiorna"
+    },
+    "trialEnds": "La prova termina il",
+    "vatNotice": "I prezzi indicati sono prezzi netti IVA esclusa. L'IVA verrà aggiunta ove applicabile.",
+    "yearTotal": "€{amount}/anno totale"
   },
   "surcharges": {
     "reports": {
@@ -53,5 +359,124 @@
       },
       "title": "Report supplementi"
     }
+  },
+  "today": {
+    "approvals": {
+      "approve": "Approva",
+      "approveLabel": "Approva {title}",
+      "description": "Richieste in attesa di una decisione del manager.",
+      "empty": "Nessuna approvazione in attesa.",
+      "openInbox": "Apri posta in arrivo",
+      "pendingAriaLabel": "Approvazioni in sospeso",
+      "reject": "Rifiuta",
+      "rejectLabel": "Rifiuta {title}",
+      "title": "Approvazioni",
+      "toast": {
+        "approved": "Richiesta approvata",
+        "approveError": "Impossibile approvare la richiesta",
+        "rejected": "Richiesta rifiutata",
+        "rejectError": "Impossibile rifiutare la richiesta"
+      }
+    },
+    "briefing": {
+      "badge": "Oggi",
+      "description": "Esamina gli elementi che richiedono un'azione oggi, quindi passa direttamente al flusso di lavoro corretto.",
+      "needsAction": {
+        "description": "Inizia da qui per il follow-up operativo più urgente.",
+        "empty": "Tutto a posto. Al momento non è richiesta alcuna azione da parte del manager.",
+        "title": "Richiede azione"
+      },
+      "sections": {
+        "empty": "Nessun problema rilevato."
+      },
+      "severity": {
+        "critical": "Critico",
+        "high": "Alto",
+        "info": "Informazioni",
+        "warning": "Avviso"
+      },
+      "summaryAriaLabel": "Riepilogo di oggi",
+      "supportingSectionsAriaLabel": "Sezioni di supporto",
+      "title": "Briefing giornaliero del manager",
+      "updatedAt": "{date} - Aggiornato alle {time}"
+    }
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nuova richiesta di rimborso"
+    },
+    "approvals": {
+      "description": "Apri la posta in arrivo unificata delle approvazioni filtrata per le spese di viaggio.",
+      "openInbox": "Apri posta in arrivo",
+      "title": "Esamina le approvazioni delle spese di viaggio in sospeso"
+    },
+    "claimTypes": {
+      "mileage": "Chilometraggio",
+      "per_diem": "Indennità giornaliera",
+      "receipt": "Ricevuta"
+    },
+    "decision": {
+      "approve": "Approva",
+      "approved": "Richiesta approvata correttamente",
+      "approveDescription": "Aggiungi una nota facoltativa per il richiedente prima di approvare.",
+      "approveTitle": "Approva richiesta",
+      "errors": {
+        "approve": "Impossibile approvare la richiesta",
+        "missingClaim": "La richiesta di rimborso spese di viaggio è mancante",
+        "reject": "Impossibile rifiutare la richiesta",
+        "rejectionReason": "Si prega di fornire un motivo per il rifiuto"
+      },
+      "noteOptional": "Nota (facoltativa)",
+      "notePlaceholder": "Sembra tutto a posto. Grazie per i dettagli.",
+      "reasonPlaceholder": "Dettagli della ricevuta mancanti per l'importo inviato",
+      "reasonRequired": "Motivo (obbligatorio)",
+      "reject": "Rifiuta",
+      "rejectDescription": "Fornisci un motivo chiaro per aiutare il richiedente ad aggiornare e inviare nuovamente.",
+      "rejected": "Richiesta rifiutata correttamente",
+      "rejectTitle": "Rifiuta richiesta"
+    },
+    "description": "Crea e monitora le tue richieste di rimborso spese di viaggio",
+    "errors": {
+      "loadClaims": "Impossibile caricare le richieste di rimborso spese di viaggio"
+    },
+    "feature": "gestisci spese di viaggio",
+    "form": {
+      "amount": "Importo",
+      "claimType": "Tipo di richiesta",
+      "created": "Bozza di spesa di viaggio creata",
+      "createDraft": "Crea bozza",
+      "currency": "Valuta",
+      "currencyDescription": "Codice ISO 4217, ad es. EUR o USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Crea una nuova bozza di richiesta di rimborso per le tue recenti spese di viaggio.",
+      "destinationCity": "Città di destinazione",
+      "destinationCityPlaceholder": "Berlino",
+      "destinationCountry": "Paese di destinazione",
+      "destinationCountryPlaceholder": "Germania",
+      "errors": {
+        "createDraft": "Impossibile creare la bozza della spesa di viaggio",
+        "positiveAmount": "L'importo deve essere un numero positivo",
+        "tripEndBeforeStart": "La data di fine viaggio non può essere precedente alla data di inizio",
+        "validTripDates": "Si prega di fornire una data di inizio e di fine viaggio valida",
+        "validTripEnd": "Si prega di fornire una data di fine viaggio valida",
+        "validTripStart": "Si prega di fornire una data di inizio viaggio valida"
+      },
+      "notes": "Note",
+      "notesPlaceholder": "Aggiungi un contesto facoltativo per il tuo approvatore",
+      "receiptAttachmentHint": "Le richieste di rimborso con ricevuta richiedono almeno un allegato. Il caricamento degli allegati sarà disponibile dopo la creazione della bozza.",
+      "selectClaimType": "Seleziona il tipo di richiesta",
+      "title": "Crea richiesta di rimborso spese di viaggio",
+      "tripEnd": "Fine viaggio",
+      "tripStart": "Inizio viaggio"
+    },
+    "list": {
+      "amount": "Importo",
+      "dateRange": "Intervallo date",
+      "emptyDescription": "Crea la tua prima richiesta per avviare il processo di approvazione.",
+      "emptyTitle": "Nessuna richiesta di rimborso spese di viaggio ancora presente",
+      "status": "Stato",
+      "type": "Tipo"
+    },
+    "title": "Spese di viaggio"
   }
 }

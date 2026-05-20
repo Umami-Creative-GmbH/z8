@@ -10,6 +10,16 @@
     "delete": "Delete",
     "refresh": "Refresh"
   },
+  "analytics": {
+    "export": {
+      "export": "Export",
+      "exportAsCsv": "Export as CSV",
+      "exportAsExcel": "Export as Excel",
+      "exportedAsFormat": "Exported as {format}",
+      "exportingFormat": "Exporting {format}…",
+      "failedAsFormat": "Failed to export as {format}"
+    }
+  },
   "colors": {
     "blue": "Blue",
     "green": "Green",
@@ -24,6 +34,7 @@
     "actions": "Actions",
     "active": "Active",
     "add": "Add",
+    "adding": "Adding...",
     "all": "All",
     "approve": "Approve",
     "assign": "Assign",
@@ -37,6 +48,7 @@
     "continue": "Continue",
     "copy": "Copy",
     "create": "Create",
+    "current": "Current",
     "days": {
       "friday": "Friday",
       "label": "days",
@@ -87,6 +99,7 @@
     "moveDown": "Move down",
     "moveUp": "Move up",
     "name": "Name",
+    "never": "Never",
     "new": "New",
     "next": "Next",
     "notApplicable": "N/A",
@@ -95,9 +108,12 @@
     "openMenu": "Open menu",
     "optional": "optional",
     "or": "Or",
+    "pending": "Pending",
+    "present": "Present",
     "previous": "Previous",
     "recovering": "Recovering...",
     "refresh": "Refresh",
+    "refreshing": "Refreshing...",
     "reject": "Reject",
     "rejecting": "Rejecting…",
     "remove": "Remove",
@@ -123,6 +139,8 @@
     "unknownEmployee": "Unknown Employee",
     "unknownTeam": "Unknown Team",
     "unnamed": "Unnamed",
+    "update": "Update",
+    "updating": "Updating...",
     "uploading": "Uploading...",
     "validate": "Validate",
     "validationError": "Validation error",
@@ -221,6 +239,12 @@
       "settings": "Notification settings",
       "viewAll": "View all notifications"
     },
+    "content": {
+      "teamMemberAdded": {
+        "message": "You have been added to the {teamName} team by {performedByName}.",
+        "title": "Added to team"
+      }
+    },
     "description": "Review updates, approvals, and system alerts in one timeline.",
     "empty": {
       "description": "You're all caught up! New notifications will appear here.",
@@ -239,6 +263,36 @@
       "ariaLabel": "Filter notifications by read status",
       "read": "Read",
       "unread": "Unread"
+    },
+    "preferences": {
+      "disabled": "Notification disabled",
+      "enabled": "Notification enabled",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Receive alerts for pending approval requests",
+          "requestUpdates": "Get notified when your requests are approved or rejected",
+          "teamSecurity": "Stay informed about team and security updates"
+        },
+        "description": "Enable push notifications to receive instant updates about approvals, time corrections, and important team changes - even when you're not using the app.",
+        "enable": "Enable Notifications",
+        "notNow": "Not Now",
+        "title": "Stay Updated"
+      },
+      "push": {
+        "blockedDescription": "Push notifications are blocked by your browser. To enable them, you need to update your browser settings.",
+        "blockedHelp": "Click the lock icon in your browser's address bar and allow notifications for this site, then refresh the page.",
+        "blockedTitle": "Push Notifications Blocked",
+        "enableButton": "Enable Push Notifications",
+        "enableDescription": "Get notified instantly even when you're not using the app",
+        "enabledIndicator": "Push notifications are enabled",
+        "enabledToast": "Push notifications enabled",
+        "enabledToastDescription": "You will now receive browser push notifications",
+        "enableFailedToast": "Could not enable push notifications",
+        "enableTitle": "Enable Push Notifications",
+        "errorToast": "Push notification error"
+      },
+      "toggleAria": "{channel} notifications for {type}",
+      "updateFailed": "Failed to update preference"
     },
     "search": {
       "ariaLabel": "Search notifications",
@@ -272,6 +326,10 @@
       "retry": "Retry",
       "syncing": "Syncing {count} event(s)..."
     }
+  },
+  "presence": {
+    "clockedIn": "Clocked in",
+    "clockedOut": "Clocked out"
   },
   "roles": {
     "admin": "Admin",
@@ -331,6 +389,9 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
+  "userAvatar": {
+    "alt": "User avatar"
+  },
   "user": {
     "language": "Language",
     "logging-out": "Logging out...",
@@ -340,6 +401,7 @@
     "theme-dark": "Dark",
     "theme-light": "Light",
     "theme-system": "System",
+    "theme-toggle": "Toggle theme",
     "time-settings": "Time Settings"
   },
   "validation": {

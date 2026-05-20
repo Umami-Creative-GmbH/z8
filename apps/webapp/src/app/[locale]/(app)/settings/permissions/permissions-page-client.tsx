@@ -43,7 +43,10 @@ export function PermissionsPageClient(props: { organizationId: string; isOrgAdmi
 			]);
 
 			if (!employeesResult.success) {
-				toast.error(employeesResult.error || "Failed to load employees");
+				toast.error(
+					employeesResult.error ||
+						t("settings.permissions.toast.loadEmployeesFailed", "Failed to load employees"),
+				);
 			}
 
 			dispatch({

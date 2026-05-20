@@ -290,7 +290,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 					return (
 						<div key={cat.id} className="space-y-2">
 							<h4 className="text-sm font-semibold">
-								{t(`settings.roles.permissionCategories.${cat.id}`, cat.label)}
+								{t(cat.labelKey, cat.label)}
 							</h4>
 							<div className="grid gap-2">
 								{perms.map((perm) => {
@@ -314,10 +314,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 											<div className="flex-1 space-y-0.5">
 												<div className="flex items-center gap-2">
 													<span className="text-sm font-medium">
-														{t(
-															`settings.roles.permissions.${perm.action}.${perm.subject}.label`,
-															perm.label,
-														)}
+														{t(perm.labelKey, perm.label)}
 													</span>
 													{isInherited && (
 														<Badge variant="outline" className="text-xs">
@@ -326,10 +323,7 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 													)}
 												</div>
 												<p className="text-xs text-muted-foreground">
-													{t(
-														`settings.roles.permissions.${perm.action}.${perm.subject}.description`,
-														perm.description,
-													)}
+													{t(perm.descriptionKey, perm.description)}
 												</p>
 											</div>
 										</label>

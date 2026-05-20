@@ -7,6 +7,7 @@ import {
 	IconCreditCard,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -49,6 +50,7 @@ const YEARLY_PRICE_PER_MONTH = 3;
 const YEARLY_PRICE_TOTAL = 36;
 
 export function BillingPageClient({ subscription, accessResult, isOwner }: BillingPageClientProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [isLoading, setIsLoading] = useState(false);
@@ -67,20 +69,20 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 		}).catch(() => null);
 
 		if (!response) {
-			toast.error("Failed to start checkout");
+			toast.error(t("billing.checkoutStartFailed", "Failed to start checkout"));
 			setIsLoading(false);
 			return;
 		}
 
 		const data = await response.json().catch(() => null);
 		if (!response.ok) {
-			toast.error(data?.error || "Failed to create checkout session");
+			toast.error(data?.error || t("billing.checkoutCreateFailed", "Failed to create checkout session"));
 			setIsLoading(false);
 			return;
 		}
 
 		if (!data?.url) {
-			toast.error("Failed to start checkout");
+			toast.error(t("billing.checkoutStartFailed", "Failed to start checkout"));
 			setIsLoading(false);
 			return;
 		}
@@ -98,20 +100,20 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 		}).catch(() => null);
 
 		if (!response) {
-			toast.error("Failed to open billing portal");
+			toast.error(t("billing.portalOpenFailed", "Failed to open billing portal"));
 			setIsPortalLoading(false);
 			return;
 		}
 
 		const data = await response.json().catch(() => null);
 		if (!response.ok) {
-			toast.error(data?.error || "Failed to open billing portal");
+			toast.error(data?.error || t("billing.portalOpenFailed", "Failed to open billing portal"));
 			setIsPortalLoading(false);
 			return;
 		}
 
 		if (!data?.url) {
-			toast.error("Failed to open billing portal");
+			toast.error(t("billing.portalOpenFailed", "Failed to open billing portal"));
 			setIsPortalLoading(false);
 			return;
 		}
@@ -121,7 +123,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 	};
 
 	const formatDate = (dateStr: string | null) => {
-		if (!dateStr) return "N/A";
+		if (!dateStr) return t("common:common.notApplicable", "N/A");
 		return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_MED);
 	};
 
@@ -134,22 +136,22 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 
 	const getStatusBadge = () => {
 		if (!subscription) {
-			return <Badge variant="outline">No Subscription</Badge>;
+			return <Badge variant="outline">{t("billing.status.noSubscription", "No Subscription")}</Badge>;
 		}
 
-		switch (subscription.status) {
+			switch (subscription.status) {
 			case "trialing":
-				return <Badge variant="default">Trial</Badge>;
+				return <Badge variant="default">{t("billing.status.trial", "Trial")}</Badge>;
 			case "active":
 				return (
 					<Badge variant="default" className="bg-green-600">
-						Active
+						{t("common:common.active", "Active")}
 					</Badge>
 				);
 			case "past_due":
-				return <Badge variant="destructive">Past Due</Badge>;
+				return <Badge variant="destructive">{t("billing.status.pastDue", "Past Due")}</Badge>;
 			case "canceled":
-				return <Badge variant="secondary">Canceled</Badge>;
+				return <Badge variant="secondary">{t("billing.status.canceled", "Canceled")}</Badge>;
 			default:
 				return <Badge variant="outline">{subscription.status}</Badge>;
 		}
@@ -161,9 +163,12 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 			{success && (
 				<Alert className="border-green-500 bg-green-50 dark:bg-green-950">
 					<IconCheck className="size-4 text-green-600" />
-					<AlertTitle>Success!</AlertTitle>
+					<AlertTitle>{t("billing.alerts.successTitle", "Success!")}</AlertTitle>
 					<AlertDescription>
-						Your subscription has been activated. Thank you for subscribing!
+						{t(
+							"billing.alerts.successDescription",
+							"Your subscription has been activated. Thank you for subscribing!",
+						)}
 					</AlertDescription>
 				</Alert>
 			)}
@@ -171,7 +176,10 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 			{canceled && (
 				<Alert>
 					<AlertDescription>
-						Checkout was canceled. You can try again whenever you're ready.
+						{t(
+							"billing.alerts.canceledDescription",
+							"Checkout was canceled. You can try again whenever you're ready.",
+						)}
 					</AlertDescription>
 				</Alert>
 			)}
@@ -180,39 +188,58 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 			{!accessResult.canAccess && (
 				<Alert variant="destructive">
 					<IconAlertTriangle className="size-4" />
-					<AlertTitle>Subscription Required</AlertTitle>
+					<AlertTitle>{t("billing.alerts.subscriptionRequired", "Subscription Required")}</AlertTitle>
 					<AlertDescription>
 						{accessResult.reason === "trial_expired"
-							? "Your trial has expired. Subscribe to continue using the app."
+							? t(
+									"billing.access.trialExpired",
+									"Your trial has expired. Subscribe to continue using the app.",
+								)
 							: accessResult.reason === "payment_failed"
-								? "Your last payment failed. Please update your payment method."
+								? t(
+										"billing.access.paymentFailed",
+										"Your last payment failed. Please update your payment method.",
+									)
 								: accessResult.reason === "canceled"
-									? "Your subscription has been canceled. Resubscribe to regain access."
-									: "A subscription is required to use this application."}
+									? t(
+											"billing.access.canceled",
+											"Your subscription has been canceled. Resubscribe to regain access.",
+										)
+									: t(
+											"billing.access.required",
+											"A subscription is required to use this application.",
+										)}
 					</AlertDescription>
 				</Alert>
 			)}
 
 			<div>
-				<h1 className="text-3xl font-bold">Billing & Subscription</h1>
-				<p className="text-muted-foreground mt-1">Manage your subscription and billing details</p>
+				<h1 className="text-3xl font-bold">{t("billing.title", "Billing & Subscription")}</h1>
+				<p className="text-muted-foreground mt-1">
+					{t("billing.description", "Manage your subscription and billing details")}
+				</p>
 			</div>
 
 			{/* Current Subscription Card */}
 			{subscription ? (
+				<>
 				<Card>
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<div>
 								<CardTitle className="flex items-center gap-2">
-									Current Plan {getStatusBadge()}
+									{t("billing.currentPlan", "Current Plan")} {getStatusBadge()}
 								</CardTitle>
 								<CardDescription>
-									{subscription.billingInterval === "year" ? "Yearly" : "Monthly"} billing
+									{subscription.billingInterval === "year"
+										? t("billing.interval.yearlyBilling", "Yearly billing")
+										: t("billing.interval.monthlyBilling", "Monthly billing")}
 								</CardDescription>
 							</div>
 							<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
-								{isPortalLoading ? "Opening..." : "Manage Billing"}
+								{isPortalLoading
+									? t("billing.opening", "Opening...")
+									: t("billing.manageBilling", "Manage Billing")}
 							</Button>
 						</div>
 					</CardHeader>
@@ -224,12 +251,14 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 									<IconUsers className="size-5 text-primary" />
 								</div>
 								<div>
-									<p className="text-sm text-muted-foreground">Active Seats</p>
+									<p className="text-sm text-muted-foreground">{t("billing.activeSeats", "Active Seats")}</p>
 									<p className="text-2xl font-bold">{subscription.currentSeats}</p>
 									<p className="text-xs text-muted-foreground">
 										{subscription.billingInterval === "year"
-											? `€${YEARLY_PRICE_PER_MONTH}/seat/mo (billed yearly)`
-											: `€${MONTHLY_PRICE}/seat/mo`}
+										? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
+												price: YEARLY_PRICE_PER_MONTH,
+											})
+										: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
 									</p>
 								</div>
 							</div>
@@ -242,21 +271,25 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 								<div>
 									{subscription.isTrialing ? (
 										<>
-											<p className="text-sm text-muted-foreground">Trial Ends</p>
-											<p className="text-2xl font-bold">{getTrialDaysRemaining()} days</p>
+											<p className="text-sm text-muted-foreground">{t("billing.trialEnds", "Trial Ends")}</p>
+											<p className="text-2xl font-bold">
+												{t("billing.days", "{count} days", { count: getTrialDaysRemaining() })}
+											</p>
 											<p className="text-xs text-muted-foreground">
 												{formatDate(subscription.trialEnd)}
 											</p>
 										</>
 									) : (
 										<>
-											<p className="text-sm text-muted-foreground">Next Billing</p>
+											<p className="text-sm text-muted-foreground">{t("billing.nextBilling", "Next Billing")}</p>
 											<p className="text-2xl font-bold">
 												{formatDate(subscription.currentPeriodEnd)}
 											</p>
 											{subscription.cancelAt && (
 												<p className="text-xs text-destructive">
-													Cancels on {formatDate(subscription.cancelAt)}
+												{t("billing.cancelsOn", "Cancels on {date}", {
+													date: formatDate(subscription.cancelAt),
+												})}
 												</p>
 											)}
 										</>
@@ -270,7 +303,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 									<IconCreditCard className="size-5 text-primary" />
 								</div>
 								<div>
-									<p className="text-sm text-muted-foreground">Monthly Cost</p>
+									<p className="text-sm text-muted-foreground">{t("billing.monthlyCost", "Monthly Cost")}</p>
 									<p className="text-2xl font-bold">
 										€
 										{subscription.billingInterval === "year"
@@ -279,22 +312,40 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 									</p>
 									<p className="text-xs text-muted-foreground">
 										{subscription.billingInterval === "year"
-											? `€${(subscription.currentSeats * YEARLY_PRICE_TOTAL).toFixed(2)}/year total`
-											: "billed monthly"}
+										? t("billing.yearTotal", "€{amount}/year total", {
+												amount: (subscription.currentSeats * YEARLY_PRICE_TOTAL).toFixed(2),
+											})
+										: t("billing.billedMonthly", "billed monthly")}
 									</p>
 								</div>
 							</div>
 						</div>
 					</CardContent>
 				</Card>
+				{subscription.status === "trialing" && (
+					<Alert>
+						<IconCreditCard aria-hidden="true" className="size-4" />
+						<AlertTitle>{t("billing.checkout.trialContinuesTitle", "Your trial continues after upgrade")}</AlertTitle>
+						<AlertDescription>
+							{t(
+								"billing.checkout.trialContinuesDescription",
+								"Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
+							)}
+						</AlertDescription>
+					</Alert>
+				)}
+				</>
 			) : (
 				/* No Subscription - Show Pricing */
 				<div className="space-y-6">
 					<Card>
 						<CardHeader>
-							<CardTitle>Choose Your Plan</CardTitle>
+							<CardTitle>{t("billing.choosePlan", "Choose Your Plan")}</CardTitle>
 							<CardDescription>
-								Start with a 14-day free trial. No credit card required to start.
+								{t(
+									"billing.choosePlanDescription",
+									"Start with a 14-day free trial. No credit card required to start.",
+								)}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -302,26 +353,28 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 								{/* Monthly Plan */}
 								<Card className="border-2">
 									<CardHeader>
-										<CardTitle>Monthly</CardTitle>
-										<CardDescription>Flexible month-to-month billing</CardDescription>
+										<CardTitle>{t("billing.plans.monthly.title", "Monthly")}</CardTitle>
+										<CardDescription>
+											{t("billing.plans.monthly.description", "Flexible month-to-month billing")}
+										</CardDescription>
 									</CardHeader>
 									<CardContent className="space-y-4">
 										<div>
 											<span className="text-4xl font-bold">€{MONTHLY_PRICE}</span>
-											<span className="text-muted-foreground">/seat/month</span>
+											<span className="text-muted-foreground">{t("billing.perSeatMonth", "/seat/month")}</span>
 										</div>
 										<ul className="space-y-2 text-sm">
 											<li className="flex items-center gap-2">
 												<IconCheck className="size-4 text-green-600" />
-												14-day free trial
+												{t("billing.features.trial", "14-day free trial")}
 											</li>
 											<li className="flex items-center gap-2">
 												<IconCheck className="size-4 text-green-600" />
-												Cancel anytime
+												{t("billing.features.cancelAnytime", "Cancel anytime")}
 											</li>
 											<li className="flex items-center gap-2">
 												<IconCheck className="size-4 text-green-600" />
-												All features included
+												{t("billing.features.allFeatures", "All features included")}
 											</li>
 										</ul>
 										<Button
@@ -330,7 +383,9 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 											onClick={() => handleSubscribe("month")}
 											disabled={isLoading}
 										>
-											{isLoading ? "Starting..." : "Start Free Trial"}
+											{isLoading
+												? t("billing.starting", "Starting...")
+												: t("billing.startTrial", "Start Free Trial")}
 										</Button>
 									</CardContent>
 								</Card>
@@ -340,32 +395,36 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 									<CardHeader>
 										<div className="flex items-center justify-between">
 											<div>
-												<CardTitle>Yearly</CardTitle>
-												<CardDescription>Save 25% with annual billing</CardDescription>
+												<CardTitle>{t("billing.plans.yearly.title", "Yearly")}</CardTitle>
+												<CardDescription>
+													{t("billing.plans.yearly.description", "Save 25% with annual billing")}
+												</CardDescription>
 											</div>
-											<Badge>Best Value</Badge>
+											<Badge>{t("billing.bestValue", "Best Value")}</Badge>
 										</div>
 									</CardHeader>
 									<CardContent className="space-y-4">
 										<div>
 											<span className="text-4xl font-bold">€{YEARLY_PRICE_PER_MONTH}</span>
-											<span className="text-muted-foreground">/seat/month</span>
+											<span className="text-muted-foreground">{t("billing.perSeatMonth", "/seat/month")}</span>
 											<p className="text-sm text-muted-foreground">
-												€{YEARLY_PRICE_TOTAL}/seat billed annually
+												{t("billing.seatBilledAnnually", "€{price}/seat billed annually", {
+													price: YEARLY_PRICE_TOTAL,
+												})}
 											</p>
 										</div>
 										<ul className="space-y-2 text-sm">
 											<li className="flex items-center gap-2">
 												<IconCheck className="size-4 text-green-600" />
-												14-day free trial
+												{t("billing.features.trial", "14-day free trial")}
 											</li>
 											<li className="flex items-center gap-2">
 												<IconCheck className="size-4 text-green-600" />
-												25% discount vs monthly
+												{t("billing.features.yearlyDiscount", "25% discount vs monthly")}
 											</li>
 											<li className="flex items-center gap-2">
 												<IconCheck className="size-4 text-green-600" />
-												All features included
+												{t("billing.features.allFeatures", "All features included")}
 											</li>
 										</ul>
 										<Button
@@ -373,7 +432,9 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 											onClick={() => handleSubscribe("year")}
 											disabled={isLoading}
 										>
-											{isLoading ? "Starting..." : "Start Free Trial"}
+											{isLoading
+												? t("billing.starting", "Starting...")
+												: t("billing.startTrial", "Start Free Trial")}
 										</Button>
 									</CardContent>
 								</Card>
@@ -381,37 +442,46 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 						</CardContent>
 					</Card>
 
-					<p className="text-center text-sm text-muted-foreground">
-						Prices shown are net prices excluding VAT. VAT will be added where applicable.
-					</p>
+				<p className="text-center text-sm text-muted-foreground">
+					{t(
+						"billing.vatNotice",
+						"Prices shown are net prices excluding VAT. VAT will be added where applicable.",
+					)}
+				</p>
 				</div>
 			)}
 
 			{/* FAQ Section */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Frequently Asked Questions</CardTitle>
+					<CardTitle>{t("billing.faq.title", "Frequently Asked Questions")}</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div>
-						<h4 className="font-medium">How does per-seat billing work?</h4>
+						<h4 className="font-medium">{t("billing.faq.perSeat.question", "How does per-seat billing work?")}</h4>
 						<p className="text-sm text-muted-foreground">
-							You're billed based on the number of active members in your organization. When you add
-							or remove members, your subscription is automatically adjusted.
+							{t(
+								"billing.faq.perSeat.answer",
+								"You're billed based on the number of active members in your organization. When you add or remove members, your subscription is automatically adjusted.",
+							)}
 						</p>
 					</div>
 					<div>
-						<h4 className="font-medium">What happens after the trial?</h4>
+						<h4 className="font-medium">{t("billing.faq.afterTrial.question", "What happens after the trial?")}</h4>
 						<p className="text-sm text-muted-foreground">
-							After your 14-day trial ends, you'll be charged for the subscription plan you
-							selected. You can cancel anytime before the trial ends to avoid charges.
+							{t(
+								"billing.faq.afterTrial.answer",
+								"After your 14-day trial ends, you'll be charged for the subscription plan you selected. You can cancel anytime before the trial ends to avoid charges.",
+							)}
 						</p>
 					</div>
 					<div>
-						<h4 className="font-medium">Can I switch between monthly and yearly?</h4>
+						<h4 className="font-medium">{t("billing.faq.switch.question", "Can I switch between monthly and yearly?")}</h4>
 						<p className="text-sm text-muted-foreground">
-							Yes! You can switch plans at any time through the billing portal. Changes take effect
-							at your next billing cycle.
+							{t(
+								"billing.faq.switch.answer",
+								"Yes! You can switch plans at any time through the billing portal. Changes take effect at your next billing cycle.",
+							)}
 						</p>
 					</div>
 				</CardContent>

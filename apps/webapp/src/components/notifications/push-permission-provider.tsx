@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
@@ -36,7 +37,8 @@ interface PushPermissionProviderProps {
  * - Permission has not been asked yet (is "default")
  * - User has not dismissed the modal before
  */
-	export function PushPermissionProvider({ children }: PushPermissionProviderProps) {
+export function PushPermissionProvider({ children }: PushPermissionProviderProps) {
+	const { t } = useTranslate();
 	const [showModal, setShowModal] = useState(false);
 	const hasCheckedRef = useRef(false);
 
@@ -47,14 +49,20 @@ interface PushPermissionProviderProps {
 		subscribe,
 	} = usePushNotifications({
 		onSubscribe: () => {
-			toast.success("Push notifications enabled", {
-				description: "You will now receive browser push notifications",
+			toast.success(t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"), {
+				description: t(
+					"common:notifications.preferences.push.enabledToastDescription",
+					"You will now receive browser push notifications",
+				),
 			});
 		},
-		onError: (error) => {
-			toast.error("Could not enable push notifications", {
-				description: error.message,
-			});
+			onError: (error) => {
+			toast.error(
+				t("common:notifications.preferences.push.enableFailedToast", "Could not enable push notifications"),
+				{
+					description: error.message,
+				},
+			);
 		},
 	});
 

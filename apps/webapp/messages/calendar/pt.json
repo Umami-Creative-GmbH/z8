@@ -97,7 +97,8 @@
     },
     "subtitle": "Gerir os seus dias de folga e férias",
     "table": {
-      "cancelRequest": "Cancelar pedido",
+      "cancelAbsence": "Cancelar ausência",
+      "cancelAbsenceTooltip": "Cancelar ausência",
       "end": "Fim",
       "headers": {
         "actions": "Ações",
@@ -228,6 +229,17 @@
       "approved": "Aprovado",
       "pending": "Pendente",
       "rejected": "Rejeitado"
+    },
+    "view": {
+      "day": "Dia",
+      "loading": "Carregando calendário…",
+      "month": "Mês",
+      "next": "Próximo",
+      "previous": "Anterior",
+      "refresh": "Atualizar",
+      "today": "Hoje",
+      "week": "Semana",
+      "year": "Ano"
     }
   }
 }

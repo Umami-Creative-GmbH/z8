@@ -1,7 +1,7 @@
 "use client";
 
-import { useTolgee, useTranslate } from "@tolgee/react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { memo, useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -199,10 +199,20 @@ export function YearCalendarView({
 			{/* Year navigation header */}
 			<div className="flex items-center justify-between gap-4 pb-3 mb-3">
 				<div className="flex items-center gap-2">
-					<Button variant="outline" size="icon" onClick={() => onYearChange(year - 1)}>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => onYearChange(year - 1)}
+						aria-label={t("calendar.view.previous", "Previous")}
+					>
 						<IconChevronLeft className="size-4" />
 					</Button>
-					<Button variant="outline" size="icon" onClick={() => onYearChange(year + 1)}>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => onYearChange(year + 1)}
+						aria-label={t("calendar.view.next", "Next")}
+					>
 						<IconChevronRight className="size-4" />
 					</Button>
 					<Button
@@ -210,16 +220,16 @@ export function YearCalendarView({
 						size="sm"
 						onClick={() => onYearChange(new Date().getFullYear())}
 					>
-						Today
+						{t("calendar.view.today", "Today")}
 					</Button>
 				</div>
 				<h2 className="text-lg font-semibold">{year}</h2>
 				<Tabs value={viewMode} onValueChange={(v) => onViewModeChange(v as ViewMode)}>
 					<TabsList>
-						<TabsTrigger value="day">Day</TabsTrigger>
-						<TabsTrigger value="week">Week</TabsTrigger>
-						<TabsTrigger value="month">Month</TabsTrigger>
-						<TabsTrigger value="year">Year</TabsTrigger>
+						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
+						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
+						<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
+						<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
 					</TabsList>
 				</Tabs>
 			</div>

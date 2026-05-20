@@ -1,6 +1,7 @@
 "use client";
 
 import { IconMoon, IconSun } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function ThemeToggle() {
+	const { t } = useTranslate();
 	const { theme, setTheme } = useTheme();
 	const mounted = useSyncExternalStore(
 		() => () => {},
@@ -32,17 +34,17 @@ export function ThemeToggle() {
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="icon">
 					{theme === "dark" ? <IconMoon className="size-4" /> : <IconSun className="size-4" />}
-					<span className="sr-only">Toggle theme</span>
+					<span className="sr-only">{t("common:user.theme-toggle", "Toggle theme")}</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
 				<DropdownMenuItem onClick={() => setTheme("light")}>
 					<IconSun className="mr-2 size-4" />
-					Light
+					{t("common:user.theme-light", "Light")}
 				</DropdownMenuItem>
 				<DropdownMenuItem onClick={() => setTheme("dark")}>
 					<IconMoon className="mr-2 size-4" />
-					Dark
+					{t("common:user.theme-dark", "Dark")}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

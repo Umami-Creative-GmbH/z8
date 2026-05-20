@@ -7,6 +7,9 @@ const t = (key: string, defaultValue: string, params?: Record<string, unknown>) 
 		"common:notifications.content.absenceRecorded.title": "Abwesenheit erfasst",
 		"common:notifications.content.absenceRecorded.message":
 			"{managerName} hat {absenceType} für {dateRange} in Ihrem Namen erfasst.",
+		"common:notifications.content.teamMemberAdded.title": "Zum Team hinzugefügt",
+		"common:notifications.content.teamMemberAdded.message":
+			"Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
 		"common:notifications.time.justNow": "gerade eben",
 	};
 
@@ -64,5 +67,31 @@ describe("getLocalizedNotificationContent", () => {
 
 		expect(localized.title).toBe("Custom title");
 		expect(localized.message).toBe("Custom message");
+	});
+
+	it("localizes notification content from generic i18n metadata", () => {
+		const localized = getLocalizedNotificationContent(
+			buildNotification({
+				title: "Added to team",
+				message: "You have been added to the Operations team by Mina Manager.",
+				metadata: JSON.stringify({
+					i18n: {
+						titleKey: "common:notifications.content.teamMemberAdded.title",
+						titleDefault: "Added to team",
+						messageKey: "common:notifications.content.teamMemberAdded.message",
+						messageDefault: "You have been added to the {teamName} team by {performedByName}.",
+						params: {
+							teamName: "Operations",
+							performedByName: "Mina Manager",
+						},
+					},
+				}),
+			}),
+			t,
+			"de",
+		);
+
+		expect(localized.title).toBe("Zum Team hinzugefügt");
+		expect(localized.message).toBe("Sie wurden von Mina Manager zum Team Operations hinzugefügt.");
 	});
 });

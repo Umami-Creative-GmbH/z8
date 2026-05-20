@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query/keys";
@@ -37,6 +38,7 @@ function areWidgetLayoutsEqual(left: WidgetLayout, right: WidgetLayout) {
  * Provides optimistic updates and automatic save on reorder.
  */
 export function useWidgetOrder() {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	// Fetch user settings
@@ -108,12 +110,15 @@ export function useWidgetOrder() {
 			) {
 				queryClient.setQueryData(queryKeys.dashboard.widgetOrder(), context.previousSettings);
 			}
-			toast.error("Failed to save dashboard layout", {
-				description: "Your changes could not be saved. Please try again.",
+			toast.error(t("dashboard.layout.saveFailed", "Failed to save dashboard layout"), {
+				description: t(
+					"dashboard.layout.saveFailedDescription",
+					"Your changes could not be saved. Please try again.",
+				),
 			});
 		},
 		onSuccess: () => {
-			toast.success("Dashboard layout saved");
+			toast.success(t("dashboard.layout.saved", "Dashboard layout saved"));
 			// Don't invalidate on success - optimistic update is already correct
 		},
 		// Only refetch on error (handled in onError with rollback)

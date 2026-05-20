@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCalendar } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useId, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -26,6 +27,7 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
+	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -73,27 +75,34 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 			>
 				<SelectTrigger
 					aria-describedby={!isHydrated ? loadingDescriptionId : undefined}
-					aria-label="Period"
+					aria-label={t("reports.filter.period", "Period")}
 					className="w-full sm:w-[200px]"
 				>
-					<SelectValue placeholder="Select period" />
+					<SelectValue placeholder={t("reports.filter.selectPeriod", "Select period")} />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="last_month">Last Month</SelectItem>
-					<SelectItem value="current_month">Current Month</SelectItem>
-					<SelectItem value="last_year">Last Year</SelectItem>
-					<SelectItem value="current_year">Current Year</SelectItem>
-					<SelectItem value="ytd">Year to Date</SelectItem>
+					<SelectItem value="last_month">{t("reports.period.lastMonth", "Last Month")}</SelectItem>
+					<SelectItem value="current_month">
+						{t("reports.period.currentMonth", "Current Month")}
+					</SelectItem>
+					<SelectItem value="last_year">{t("reports.period.lastYear", "Last Year")}</SelectItem>
+					<SelectItem value="current_year">
+						{t("reports.period.currentYear", "Current Year")}
+					</SelectItem>
+					<SelectItem value="ytd">{t("reports.period.yearToDate", "Year to Date")}</SelectItem>
 					<SelectItem value="q1">Q1 {currentYear}</SelectItem>
 					<SelectItem value="q2">Q2 {currentYear}</SelectItem>
 					<SelectItem value="q3">Q3 {currentYear}</SelectItem>
 					<SelectItem value="q4">Q4 {currentYear}</SelectItem>
-					<SelectItem value="custom">Custom Range</SelectItem>
+					<SelectItem value="custom">{t("reports.period.customRange", "Custom Range")}</SelectItem>
 				</SelectContent>
 			</Select>
 			{!isHydrated && (
 				<p id={loadingDescriptionId} className="text-sm text-muted-foreground">
-					Loading organization settings before enabling presets.
+					{t(
+						"reports.filter.loadingSettings",
+						"Loading organization settings before enabling presets.",
+					)}
 				</p>
 			)}
 
@@ -118,7 +127,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 									format(value.start, "LLL dd, y")
 								)
 							) : (
-								<span>Pick a date range</span>
+								<span>{t("reports.period.pickDateRange", "Pick a date range")}</span>
 							)}
 						</Button>
 					</PopoverTrigger>

@@ -79,7 +79,7 @@ export function OrganizationDetailsCard({
 								type="file"
 								accept="image/*"
 								className="hidden"
-								aria-label="Upload organization logo"
+								aria-label={t("organization.logo.uploadLabel", "Upload organization logo")}
 								onChange={handleFileInputChange}
 							/>
 							<div className="relative size-16 shrink-0">
@@ -127,7 +127,7 @@ export function OrganizationDetailsCard({
 								onClick={() => setEditDialogOpen(true)}
 							>
 								<IconEdit className="size-4 sm:mr-2" />
-								<span className="sr-only sm:not-sr-only">Edit</span>
+								<span className="sr-only sm:not-sr-only">{t("common.edit", "Edit")}</span>
 							</Button>
 						)}
 					</div>
@@ -136,7 +136,9 @@ export function OrganizationDetailsCard({
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<IconUsers className="size-4" />
 						<span>
-							{memberCount} {memberCount === 1 ? "member" : "members"}
+							{t("organization.members.count", "{count, plural, one {# member} other {# members}}", {
+								count: memberCount,
+							})}
 						</span>
 					</div>
 					{metadataDescription && (

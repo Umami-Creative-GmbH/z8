@@ -8,6 +8,16 @@ import {
 	type EmployeeEmploymentHistoryCardProps,
 } from "./employee-employment-history-card";
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number | null>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value ?? "")),
+				fallback,
+			),
+	}),
+}));
+
 afterEach(() => {
 	Settings.defaultZone = "system";
 	Settings.defaultLocale = "en-US";

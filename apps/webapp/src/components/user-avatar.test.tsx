@@ -26,6 +26,10 @@ vi.mock("@/components/ui/avatar", () => ({
 	),
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 describe("UserAvatar", () => {
 	it("renders a green status badge for clocked-in users", () => {
 		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-in" />);

@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconMail } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
@@ -43,6 +44,7 @@ export function InviteMemberDialog({
 	open,
 	onOpenChange,
 }: InviteMemberDialogProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
@@ -61,7 +63,7 @@ export function InviteMemberDialog({
 		}) => sendInvitation(data),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Invitation sent successfully");
+				toast.success(t("organization.invite.success", "Invitation sent successfully"));
 				setFormData({
 					email: "",
 					role: "member",
@@ -71,11 +73,11 @@ export function InviteMemberDialog({
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
 				router.refresh();
 			} else {
-				toast.error(result.error || "Failed to send invitation");
+				toast.error(result.error || t("organization.invite.error", "Failed to send invitation"));
 			}
 		},
 		onError: () => {
-			toast.error("Failed to send invitation");
+			toast.error(t("organization.invite.error", "Failed to send invitation"));
 		},
 	});
 
@@ -93,16 +95,18 @@ export function InviteMemberDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>Invite Member</ActionPanelTitle>
+					<ActionPanelTitle>{t("organization.invite.title", "Invite Member")}</ActionPanelTitle>
 					<ActionPanelDescription>
-						Send an invitation to join {organizationName}
+						{t("organization.invite.description", "Send an invitation to join {organizationName}", {
+							organizationName,
+						})}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelBody className="space-y-5">
 						<div className="space-y-2">
-							<Label htmlFor="email">Email Address</Label>
+							<Label htmlFor="email">{t("organization.invite.emailLabel", "Email Address")}</Label>
 							<div className="relative">
 								<IconMail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
 								<Input
@@ -119,7 +123,7 @@ export function InviteMemberDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="role">Role</Label>
+							<Label htmlFor="role">{t("organization.members.role", "Role")}</Label>
 							<Select
 								value={formData.role}
 								onValueChange={(value: "owner" | "admin" | "member") =>
@@ -132,26 +136,26 @@ export function InviteMemberDialog({
 								<SelectContent>
 									<SelectItem value="member">
 										<div className="flex flex-col items-start">
-											<span className="font-medium">Member</span>
+											<span className="font-medium">{t("organization.members.roles.member", "Member")}</span>
 											<span className="text-xs text-muted-foreground">
-												Basic access to organization
+												{t("organization.invite.roleDescriptions.member", "Basic access to organization")}
 											</span>
 										</div>
 									</SelectItem>
 									<SelectItem value="admin">
 										<div className="flex flex-col items-start">
-											<span className="font-medium">Admin</span>
+											<span className="font-medium">{t("organization.members.roles.admin", "Admin")}</span>
 											<span className="text-xs text-muted-foreground">
-												Can invite members and manage settings
+												{t("organization.invite.roleDescriptions.admin", "Can invite members and manage settings")}
 											</span>
 										</div>
 									</SelectItem>
 									{currentMemberRole === "owner" && (
 										<SelectItem value="owner">
 											<div className="flex flex-col items-start">
-												<span className="font-medium">Owner</span>
+												<span className="font-medium">{t("organization.members.roles.owner", "Owner")}</span>
 												<span className="text-xs text-muted-foreground">
-													Full control of organization
+													{t("organization.invite.roleDescriptions.owner", "Full control of organization")}
 												</span>
 											</div>
 										</SelectItem>
@@ -173,7 +177,7 @@ export function InviteMemberDialog({
 									htmlFor="canCreateOrganizations"
 									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 								>
-									Allow this user to create organizations
+									{t("organization.invite.allowCreateOrganizations", "Allow this user to create organizations")}
 								</label>
 							</div>
 						)}
@@ -186,11 +190,11 @@ export function InviteMemberDialog({
 							onClick={() => onOpenChange(false)}
 							disabled={inviteMutation.isPending}
 						>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={inviteMutation.isPending}>
 							{inviteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							Send Invitation
+							{t("organization.invite.submit", "Send Invitation")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

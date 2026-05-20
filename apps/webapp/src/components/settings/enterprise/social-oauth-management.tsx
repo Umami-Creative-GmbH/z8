@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -48,6 +49,7 @@ const PROVIDER_INFO: Record<SocialOAuthProvider, { name: string; icon: typeof Go
 };
 
 export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementProps) {
+	const { t } = useTranslate();
 	const [configs, setConfigs] = useState<SocialOAuthConfigResponse[]>(initialConfigs);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editConfig, setEditConfig] = useState<SocialOAuthConfigResponse | null>(null);
@@ -65,13 +67,13 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 	const handleConfigAdded = (newConfig: SocialOAuthConfigResponse) => {
 		setConfigs((prev) => [...prev, newConfig]);
 		setIsAddDialogOpen(false);
-		toast.success(`${PROVIDER_INFO[newConfig.provider].name} OAuth configured successfully`);
+		toast.success(t("settings.enterprise.socialOAuth.configured", "{provider} OAuth configured successfully", { provider: PROVIDER_INFO[newConfig.provider].name }));
 	};
 
 	const handleConfigUpdated = (updatedConfig: SocialOAuthConfigResponse) => {
 		setConfigs((prev) => prev.map((c) => (c.id === updatedConfig.id ? updatedConfig : c)));
 		setEditConfig(null);
-		toast.success(`${PROVIDER_INFO[updatedConfig.provider].name} OAuth updated successfully`);
+		toast.success(t("settings.enterprise.socialOAuth.updated", "{provider} OAuth updated successfully", { provider: PROVIDER_INFO[updatedConfig.provider].name }));
 	};
 
 	const handleDelete = async () => {
@@ -81,17 +83,17 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 		await deleteSocialOAuthConfigAction(configToDelete.id)
 			.then(() => {
 				setConfigs((prev) => prev.filter((c) => c.id !== configToDelete.id));
-				toast.success(`${PROVIDER_INFO[configToDelete.provider].name} OAuth removed`);
+				toast.success(t("settings.enterprise.socialOAuth.removed", "{provider} OAuth removed", { provider: PROVIDER_INFO[configToDelete.provider].name }));
 			})
 			.catch(() => {
-				toast.error("Failed to delete OAuth config");
+				toast.error(t("settings.enterprise.socialOAuth.deleteError", "Failed to delete OAuth config"));
 			});
 
 		setDeleteDialog({ isOpen: false, config: null });
 	};
 
 	const formatDate = (date: Date | null) => {
-		if (!date) return "Never";
+		if (!date) return t("common.never", "Never");
 		return new Date(date).toLocaleDateString(undefined, {
 			month: "short",
 			day: "numeric",
@@ -105,37 +107,36 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between">
 					<div>
-						<CardTitle>Social Login Providers</CardTitle>
+						<CardTitle>{t("settings.enterprise.socialOAuth.title", "Social Login Providers")}</CardTitle>
 						<CardDescription>
-							Configure your own OAuth credentials for social login. This allows your users to sign
-							in using your organization's OAuth apps instead of shared credentials.
+							{t("settings.enterprise.socialOAuth.description", "Configure your own OAuth credentials for social login. This allows your users to sign in using your organization's OAuth apps instead of shared credentials.")}
 						</CardDescription>
 					</div>
 					{availableProviders.length > 0 && (
 						<Button onClick={() => setIsAddDialogOpen(true)}>
 							<IconPlus className="mr-2 size-4" />
-							Add Provider
+							{t("settings.enterprise.addProvider", "Add Provider")}
 						</Button>
 					)}
 				</CardHeader>
 				<CardContent>
 					{configs.length === 0 ? (
 						<div className="text-center py-8 text-muted-foreground">
-							<p>No custom social OAuth providers configured.</p>
-							<p className="text-sm">
-								Add your own OAuth credentials to replace the shared credentials.
+						<p>{t("settings.enterprise.socialOAuth.empty", "No custom social OAuth providers configured.")}</p>
+						<p className="text-sm">
+							{t("settings.enterprise.socialOAuth.emptyDescription", "Add your own OAuth credentials to replace the shared credentials.")}
 							</p>
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Provider</TableHead>
-									<TableHead>Client ID</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Last Tested</TableHead>
-									<TableHead>Active</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
+							<TableHead>{t("settings.enterprise.provider", "Provider")}</TableHead>
+							<TableHead>{t("settings.enterprise.clientId", "Client ID")}</TableHead>
+							<TableHead>{t("common.status", "Status")}</TableHead>
+							<TableHead>{t("settings.enterprise.socialOAuth.lastTested", "Last Tested")}</TableHead>
+							<TableHead>{t("common.active", "Active")}</TableHead>
+							<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -156,16 +157,16 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 											</TableCell>
 											<TableCell>
 												{config.lastTestSuccess === null ? (
-													<Badge variant="secondary">Not Tested</Badge>
+								<Badge variant="secondary">{t("settings.enterprise.socialOAuth.notTested", "Not Tested")}</Badge>
 												) : config.lastTestSuccess ? (
 													<Badge variant="default" className="bg-green-600">
 														<IconCheck className="mr-1 size-3" />
-														Working
+								{t("settings.enterprise.socialOAuth.working", "Working")}
 													</Badge>
 												) : (
 													<Badge variant="destructive">
 														<IconX className="mr-1 size-3" />
-														Error
+								{t("common.error", "Error")}
 													</Badge>
 												)}
 											</TableCell>
@@ -176,7 +177,7 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 												<Switch
 													checked={config.isActive}
 													disabled
-													aria-label={config.isActive ? "Active" : "Inactive"}
+								aria-label={config.isActive ? t("common.active", "Active") : t("common.inactive", "Inactive")}
 												/>
 											</TableCell>
 											<TableCell className="text-right">
@@ -203,20 +204,20 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 			</Card>
 
 			<div className="mt-6 p-4 bg-muted rounded-lg">
-				<h3 className="font-medium mb-2">How it Works</h3>
+			<h3 className="font-medium mb-2">{t("settings.enterprise.socialOAuth.howItWorks", "How it Works")}</h3>
 				<ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-					<li>Create an OAuth app in the provider's developer console</li>
-					<li>
-						Configure the callback URL:{" "}
+				<li>{t("settings.enterprise.socialOAuth.instructions.createApp", "Create an OAuth app in the provider's developer console")}</li>
+				<li>
+					{t("settings.enterprise.configureCallbackUrl", "Configure the callback URL:")}{" "}
 						<code className="bg-background px-1 rounded">
 							{typeof window !== "undefined"
 								? `${window.location.origin}/api/auth/callback/social-org/[provider]`
 								: "/api/auth/callback/social-org/[provider]"}
 						</code>
 					</li>
-					<li>Copy the Client ID and Client Secret</li>
-					<li>Add the provider here with your credentials</li>
-					<li>Users signing in via your custom domain will use your OAuth app</li>
+				<li>{t("settings.enterprise.socialOAuth.instructions.copyCredentials", "Copy the Client ID and Client Secret")}</li>
+				<li>{t("settings.enterprise.socialOAuth.instructions.addProvider", "Add the provider here with your credentials")}</li>
+				<li>{t("settings.enterprise.socialOAuth.instructions.customDomain", "Users signing in via your custom domain will use your OAuth app")}</li>
 				</ol>
 			</div>
 
@@ -242,19 +243,18 @@ export function SocialOAuthManagement({ initialConfigs }: SocialOAuthManagementP
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Remove Social OAuth Provider</AlertDialogTitle>
+						<AlertDialogTitle>{t("settings.enterprise.socialOAuth.removeDialogTitle", "Remove Social OAuth Provider")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to remove this OAuth configuration? Users will fall back to the
-							shared OAuth credentials (if available).
+							{t("settings.enterprise.socialOAuth.removeDialogDescription", "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).")}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDelete}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							Remove
+							{t("common.remove", "Remove")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

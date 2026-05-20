@@ -1,12 +1,68 @@
 {
   "reports": {
+    "container": {
+      "error": "Fehler",
+      "generating": "Bericht wird generiert...",
+      "noReportYet": "Noch kein Bericht generiert",
+      "pleaseWait": "Bitte warten Sie, während wir Ihre Daten zusammenstellen",
+      "selectPeriod": "Wählen Sie einen Zeitraum aus und klicken Sie auf „Bericht generieren“, um zu beginnen"
+    },
     "description": "Erstellen Sie umfassende Arbeitszeit- und Abwesenheitsberichte mit steuerrelevanten Homeoffice-Daten",
     "employeeSelector": {
       "error": "Teammitglieder konnten nicht geladen werden",
       "label": "Mitarbeiter",
       "placeholder": "Mitarbeiter auswählen..."
     },
+    "export": {
+      "csv": "CSV exportieren",
+      "description": "Diesen Bericht im bevorzugten Format herunterladen",
+      "downloaded": "{filename} heruntergeladen",
+      "errorDescription": "Beim Exportieren des Berichts ist ein Fehler aufgetreten",
+      "excel": "Excel exportieren",
+      "failed": "Export fehlgeschlagen",
+      "generating": "Wird generiert...",
+      "pdf": "PDF exportieren",
+      "success": "Export erfolgreich",
+      "title": "Bericht exportieren"
+    },
     "feature": "Berichte generieren",
+    "filter": {
+      "loadingSettings": "Unternehmenseinstellungen werden geladen, bevor Voreinstellungen aktiviert werden.",
+      "period": "Zeitraum",
+      "selectPeriod": "Zeitraum auswählen"
+    },
+    "generate": "Bericht generieren",
+    "generating": "Bericht wird generiert…",
+    "period": {
+      "currentMonth": "Aktueller Monat",
+      "currentYear": "Aktuelles Jahr",
+      "customRange": "Benutzerdefinierter Bereich",
+      "lastMonth": "Letzter Monat",
+      "lastYear": "Letztes Jahr",
+      "pickDateRange": "Datumsbereich auswählen",
+      "yearToDate": "Laufendes Jahr"
+    },
+    "preview": {
+      "absencesByCategory": "Abwesenheiten nach Kategorie",
+      "attendancePercentage": "Anwesenheitsprozentsatz",
+      "category": "Kategorie",
+      "complianceMetrics": "Compliance-Metriken",
+      "date": "Datum",
+      "dateBreakdown": "Aufschlüsselung nach Datum",
+      "days": "Tage",
+      "homeOfficeDescription": "Wichtig für steuerliche Zwecke in Deutschland – zeigt Home-Office-Tage und geleistete Arbeitsstunden",
+      "homeOfficeSummary": "Home-Office-Zusammenfassung (steuerrelevant)",
+      "hours": "Stunden",
+      "hoursWorked": "Geleistete Arbeitsstunden",
+      "month": "Monat",
+      "noHomeOfficeDays": "Keine Home-Office-Tage in diesem Zeitraum erfasst.",
+      "overtime": "Überstunden",
+      "total": "Gesamt",
+      "totalHomeOfficeDays": "Home-Office-Tage gesamt",
+      "totalHomeOfficeHours": "Gesamte Home-Office-Arbeitsstunden",
+      "undertime": "Minusstunden",
+      "workHoursByMonth": "Arbeitsstunden nach Monat"
+    },
     "projects": {
       "budget": {
         "exceededBy": "Budget um {hours} Stunden überschritten",
@@ -161,6 +217,29 @@
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
       }
     },
-    "title": "Mitarbeiterberichte"
+    "summary": {
+      "averagePerDay": "Durchschnitt: {hours}h/Tag",
+      "homeOfficeDays": "Home-Office-Tage",
+      "hourlyAverage": "{hours}h bei Ø {rate}/h",
+      "otherDays": "Sonstige: {count} Tage",
+      "pending": "{count} ausstehend",
+      "ratePeriods": "{count} Abrechnungszeiträume",
+      "sickDays": "Krank: {count} Tage",
+      "taxRelevant": "Steuerrelevant",
+      "totalAbsences": "Abwesenheiten gesamt",
+      "totalEarnings": "Gesamtverdienst",
+      "totalWorkHours": "Gesamte Arbeitsstunden",
+      "vacationDays": "Urlaubstage",
+      "workDays": "{count} Arbeitstage",
+      "workedFromHome": "{hours} Std. im Homeoffice gearbeitet"
+    },
+    "title": "Mitarbeiterberichte",
+    "toast": {
+      "failedGenerate": "Bericht konnte nicht erstellt werden",
+      "generatedFor": "Bericht für {name} erstellt",
+      "reportGenerated": "Bericht erfolgreich erstellt",
+      "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+      "unknownError": "Ein unbekannter Fehler ist aufgetreten"
+    }
   }
 }

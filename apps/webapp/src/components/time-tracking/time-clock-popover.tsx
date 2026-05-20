@@ -191,154 +191,166 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 	}
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button size="sm" variant={isClockedIn ? "destructive" : "default"}>
-					{isClockedIn ? <IconClockPause className="size-4" /> : <IconClock className="size-4" />}
-					<span className="hidden sm:inline">
-						{isClockedIn ? t("header.clock-out", "Clock Out") : t("header.clock-in", "Clock In")}
-					</span>
-					{isClockedIn && (
-						<span className="hidden md:inline text-xs tabular-nums opacity-80">
-							{formatDurationWithSeconds(elapsedSeconds)}
+		<div className="flex items-center gap-2">
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<Button size="sm" variant={isClockedIn ? "destructive" : "default"}>
+						{isClockedIn ? <IconClockPause className="size-4" /> : <IconClock className="size-4" />}
+						<span className="hidden sm:inline">
+							{isClockedIn ? t("header.clock-out", "Clock Out") : t("header.clock-in", "Clock In")}
 						</span>
-					)}
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent className="w-72" align="end">
-				<div className="flex flex-col gap-3">
-					{/* Notes input after clock-out */}
-					{showNotesInput ? (
-						<div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-							<div className="font-medium">
-								{t("timeTracking.clockedOutSuccess", "You've clocked out!")}
-							</div>
-							<div className="text-sm text-muted-foreground">
-								{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
-							</div>
-							<Textarea
-								name="notes"
-								autoComplete="off"
-								placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
-								value={notesText}
-								onChange={(e) => setNotesText(e.target.value)}
-								rows={3}
-								className="resize-none"
-								autoFocus
-							/>
-							<div className="flex gap-2">
-								<Button
-									size="sm"
-									onClick={handleSaveNotes}
-									disabled={isUpdatingNotes}
-									className="flex-1"
-								>
-									{isUpdatingNotes ? (
-										<IconLoader2 className="size-4 animate-spin" />
-									) : (
-										<IconCheck className="size-4" />
-									)}
-									{t("common.save", "Save")}
-								</Button>
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={handleDismissNotes}
-									disabled={isUpdatingNotes}
-								>
-									<IconX className="size-4" />
-									{t("common.skip", "Skip")}
-								</Button>
-							</div>
-						</div>
-					) : (
-						<>
-							<div className="font-medium">
-								{isClockedIn
-									? t("timeTracking.currentlyClockedIn", "You're currently clocked in")
-									: t("timeTracking.readyToClockIn", "Ready to start working?")}
-							</div>
-
-							{isClockedIn && activeWorkPeriod && (
-								<div className="flex flex-col gap-1">
-									<div className="font-bold text-2xl tabular-nums">
-										{formatDurationWithSeconds(elapsedSeconds)}
-									</div>
-									<div className="text-muted-foreground text-sm">
-										{t("timeTracking.startedAt", "Started at")}{" "}
-										{timeFormatter.format(new Date(activeWorkPeriod.startTime))}
-									</div>
+						{isClockedIn && (
+							<span className="hidden md:inline text-xs tabular-nums opacity-80">
+								{formatDurationWithSeconds(elapsedSeconds)}
+							</span>
+						)}
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent className="w-72" align="end">
+					<div className="flex flex-col gap-3">
+						{/* Notes input after clock-out */}
+						{showNotesInput ? (
+							<div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+								<div className="font-medium">
+									{t("timeTracking.clockedOutSuccess", "You've clocked out!")}
 								</div>
-							)}
-
-							{/* Project selector - only shown when clocked in */}
-							{isClockedIn && (
-								<ProjectSelector
-									value={selectedProjectId}
-									onValueChange={setSelectedProjectId}
-									disabled={isMutating}
+								<div className="text-sm text-muted-foreground">
+									{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
+								</div>
+								<Textarea
+									name="notes"
+									autoComplete="off"
+									placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
+									value={notesText}
+									onChange={(e) => setNotesText(e.target.value)}
+									rows={3}
+									className="resize-none"
+									autoFocus
 								/>
-							)}
-
-							{/* Work category selector - only shown when clocked in */}
-							{isClockedIn && employeeId && (
-								<WorkCategorySelector
-									employeeId={employeeId}
-									value={selectedWorkCategoryId}
-									onValueChange={setSelectedWorkCategoryId}
-									disabled={isMutating}
-								/>
-							)}
-
-							{!isClockedIn && (
-								<WorkLocationSelector
-									value={workLocationType}
-									onChange={setWorkLocationType}
-									t={t}
-								/>
-							)}
-
-							<div className="flex gap-2">
-								<Button
-									size="default"
-									variant={isClockedIn ? "destructive" : "default"}
-									onClick={isClockedIn ? handleClockOut : handleClockIn}
-									disabled={isMutating}
-									className="w-full"
-								>
-									{isMutating ? (
-										<>
+								<div className="flex gap-2">
+									<Button
+										size="sm"
+										onClick={handleSaveNotes}
+										disabled={isUpdatingNotes}
+										className="flex-1"
+									>
+										{isUpdatingNotes ? (
 											<IconLoader2 className="size-4 animate-spin" />
-											{isClockingOut
-												? t("timeTracking.clockingOut", "Clocking Out…")
-												: t("timeTracking.clockingIn", "Clocking In…")}
-										</>
-									) : isClockedIn ? (
-										<>
-											<IconClockPause className="size-4" />
-											{t("timeTracking.clockOut", "Clock Out")}
-										</>
-									) : (
-										<>
-											<IconClock className="size-4" />
-											{t("timeTracking.clockIn", "Clock In")}
-										</>
-									)}
-								</Button>
-								{isClockedIn ? (
-									<QuickBreakPopover
-										onAddBreak={handleAddBreak}
-										isAddingBreak={isAddingBreak}
-										isDisabled={isMutating}
-										t={t}
-										buttonClassName="h-10 shrink-0 px-3"
-									/>
-								) : null}
+										) : (
+											<IconCheck className="size-4" />
+										)}
+										{t("common.save", "Save")}
+									</Button>
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={handleDismissNotes}
+										disabled={isUpdatingNotes}
+									>
+										<IconX className="size-4" />
+										{t("common.skip", "Skip")}
+									</Button>
+								</div>
 							</div>
-						</>
-					)}
-				</div>
-			</PopoverContent>
-		</Popover>
+						) : (
+							<>
+								<div className="font-medium">
+									{isClockedIn
+										? t("timeTracking.currentlyClockedIn", "You're currently clocked in")
+										: t("timeTracking.readyToClockIn", "Ready to start working?")}
+								</div>
+
+								{isClockedIn && activeWorkPeriod && (
+									<div className="flex flex-col gap-1">
+										<div className="font-bold text-2xl tabular-nums">
+											{formatDurationWithSeconds(elapsedSeconds)}
+										</div>
+										<div className="text-muted-foreground text-sm">
+											{t("timeTracking.startedAt", "Started at")}{" "}
+											{timeFormatter.format(new Date(activeWorkPeriod.startTime))}
+										</div>
+									</div>
+								)}
+
+								{/* Project selector - only shown when clocked in */}
+								{isClockedIn && (
+									<ProjectSelector
+										value={selectedProjectId}
+										onValueChange={setSelectedProjectId}
+										disabled={isMutating}
+									/>
+								)}
+
+								{/* Work category selector - only shown when clocked in */}
+								{isClockedIn && employeeId && (
+									<WorkCategorySelector
+										employeeId={employeeId}
+										value={selectedWorkCategoryId}
+										onValueChange={setSelectedWorkCategoryId}
+										disabled={isMutating}
+									/>
+								)}
+
+								{!isClockedIn && (
+									<WorkLocationSelector
+										value={workLocationType}
+										onChange={setWorkLocationType}
+										t={t}
+									/>
+								)}
+
+								<div className="flex gap-2">
+									<Button
+										size="default"
+										variant={isClockedIn ? "destructive" : "default"}
+										onClick={isClockedIn ? handleClockOut : handleClockIn}
+										disabled={isMutating}
+										className="w-full"
+									>
+										{isMutating ? (
+											<>
+												<IconLoader2 className="size-4 animate-spin" />
+												{isClockingOut
+													? t("timeTracking.clockingOut", "Clocking Out…")
+													: t("timeTracking.clockingIn", "Clocking In…")}
+											</>
+										) : isClockedIn ? (
+											<>
+												<IconClockPause className="size-4" />
+												{t("timeTracking.clockOut", "Clock Out")}
+											</>
+										) : (
+											<>
+												<IconClock className="size-4" />
+												{t("timeTracking.clockIn", "Clock In")}
+											</>
+										)}
+									</Button>
+									{isClockedIn ? (
+										<QuickBreakPopover
+											onAddBreak={handleAddBreak}
+											isAddingBreak={isAddingBreak}
+											isDisabled={isMutating}
+											t={t}
+											buttonClassName="h-10 shrink-0 px-3"
+										/>
+									) : null}
+								</div>
+							</>
+						)}
+					</div>
+				</PopoverContent>
+			</Popover>
+			{isClockedIn ? (
+				<QuickBreakPopover
+					onAddBreak={handleAddBreak}
+					isAddingBreak={isAddingBreak}
+					isDisabled={isMutating}
+					t={t}
+					buttonClassName="h-8 w-8 p-0"
+					iconOnly
+				/>
+			) : null}
+		</div>
 	);
 }

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 
@@ -16,6 +17,16 @@ vi.mock("@/navigation", () => ({
 vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	cancelAbsenceRequest: vi.fn(),
 }));
+
+beforeAll(() => {
+	class ResizeObserverMock implements ResizeObserver {
+		disconnect() {}
+		observe() {}
+		unobserve() {}
+	}
+
+	globalThis.ResizeObserver = ResizeObserverMock;
+});
 
 function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCategory {
 	return {
@@ -139,5 +150,51 @@ describe("AbsenceEntriesTable", () => {
 		);
 
 		expect(screen.queryByLabelText("Cancel absence")).toBeNull();
+	});
+
+	it("refreshes absence data after successful cancellation", async () => {
+		const onUpdate = vi.fn();
+		vi.mocked(cancelAbsenceRequest).mockResolvedValueOnce({ success: true });
+
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ id: "absence-cancellable", status: "pending" })]}
+				onUpdate={onUpdate}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("Cancel absence"));
+		fireEvent.click(screen.getByRole("button", { name: "Yes, cancel absence" }));
+
+		await waitFor(() => {
+			expect(onUpdate).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	it("shows translated tooltip copy for the cancel button", async () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ id: "absence-cancellable", status: "pending" })]}
+			/>,
+		);
+
+		fireEvent.focus(screen.getByLabelText("Cancel absence"));
+
+		expect((await screen.findAllByText("Cancel absence")).length).toBeGreaterThan(0);
+	});
+
+	it("renders the search input with an explicit background", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ id: "absence-cancellable", status: "pending" })]}
+			/>,
+		);
+
+		expect(screen.getByPlaceholderText("Search by type, status, or notes…").className).toContain(
+			"bg-background",
+		);
 	});
 });

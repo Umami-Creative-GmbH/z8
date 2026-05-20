@@ -23,14 +23,26 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("./absence-entries-table", () => ({
-	AbsenceEntriesTable: ({ currentDate }: { currentDate: string }) => (
-		<div data-current-date={currentDate}>Absence entries</div>
+	AbsenceEntriesTable: ({
+		absences,
+		currentDate,
+	}: {
+		absences: Array<{ id: string }>;
+		currentDate: string;
+	}) => (
+		<div data-current-date={currentDate} data-absence-count={absences.length}>
+			Absence entries
+		</div>
 	),
 }));
 
 vi.mock("./request-absence-dialog", () => ({
-	RequestAbsenceDialog: ({ open }: { open?: boolean }) => (
-		<div data-testid="request-absence-dialog" data-open={open ? "true" : "false"} />
+	RequestAbsenceDialog: ({ open, onSuccess }: { open?: boolean; onSuccess?: () => void }) => (
+		<div data-testid="request-absence-dialog" data-open={open ? "true" : "false"}>
+			<button type="button" onClick={onSuccess}>
+				Simulate request success
+			</button>
+		</div>
 	),
 }));
 
@@ -106,6 +118,52 @@ describe("AbsencesViewContainer", () => {
 		});
 		await waitFor(() => {
 			expect(screen.getAllByRole("button", { name: "6" })[0].className).toContain("bg-amber-100");
+		});
+	});
+
+	it("reloads absence data after a request succeeds", async () => {
+		mockGetAbsenceCalendarYearData.mockResolvedValue({
+			absences: [
+				{
+					id: "absence-1",
+					category: { name: "Vacation", color: null, type: "vacation" },
+					status: "pending",
+					startDate: "2026-05-20",
+					endDate: "2026-05-20",
+				},
+			],
+			holidays: [],
+		});
+
+		render(
+			<AbsencesViewContainer
+				absences={[]}
+				categories={categories}
+				currentYear={2026}
+				holidays={[]}
+				organizationId="org-1"
+				remainingDays={10}
+				currentDate="2026-05-20"
+			/>,
+		);
+
+		expect(
+			screen
+				.getAllByRole("button", { name: "20" })
+				.some((button) => button.className.includes("bg-yellow-100")),
+		).toBe(false);
+
+		fireEvent.click(screen.getByRole("button", { name: "Simulate request success" }));
+
+		await waitFor(() => {
+			expect(mockGetAbsenceCalendarYearData).toHaveBeenCalledWith(2026);
+		});
+		await waitFor(() => {
+			expect(
+				screen
+					.getAllByRole("button", { name: "20" })
+					.some((button) => button.className.includes("bg-yellow-100")),
+			).toBe(true);
 		});
 	});
 });

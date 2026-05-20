@@ -2,6 +2,7 @@
 
 import { IconBuilding, IconUserPlus } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,7 @@ export function OrganizationTab({
 	currentUserId,
 	canCreateOrganizations,
 }: OrganizationTabProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 	const [createOrgDialogOpen, setCreateOrgDialogOpen] = useState(false);
@@ -56,7 +58,7 @@ export function OrganizationTab({
 				<div className="flex justify-end">
 					<Button onClick={() => setCreateOrgDialogOpen(true)} variant="outline">
 						<IconBuilding className="mr-2 size-4" />
-						Create New Organization
+						{t("organization.createNew", "Create New Organization")}
 					</Button>
 				</div>
 			)}
@@ -99,13 +101,20 @@ export function OrganizationTab({
 				<CardHeader>
 					<div className="flex items-start justify-between">
 						<div>
-							<CardTitle>Members & Invitations</CardTitle>
-							<CardDescription>Manage organization members and send invitations</CardDescription>
+							<CardTitle>{t("organization.membersInvitations.title", "Members & Invitations")}</CardTitle>
+							<CardDescription>
+								{t(
+									"organization.membersInvitations.description",
+									"Manage organization members and send invitations",
+								)}
+							</CardDescription>
 						</div>
 						{canInvite && (
 							<Button onClick={() => setInviteDialogOpen(true)} className="shrink-0 px-2 sm:px-4">
 								<IconUserPlus className="size-4 sm:mr-2" />
-								<span className="sr-only sm:not-sr-only">Invite Member</span>
+								<span className="sr-only sm:not-sr-only">
+									{t("organization.invite.member", "Invite Member")}
+								</span>
 							</Button>
 						)}
 					</div>

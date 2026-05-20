@@ -2,9 +2,13 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { complianceException, workPolicyViolation } from "@/db/schema";
-import type { ComplianceSectionResult } from "../types";
+import type { ComplianceSectionResult, ComplianceText } from "../types";
 
 const WORKFORCE_COMPLIANCE_LOOKBACK_DAYS = 7;
+
+function text(key: string, params?: Record<string, string | number>): ComplianceText {
+	return params ? { key, params } : { key };
+}
 
 export interface WorkforceComplianceSnapshot {
 	restPeriodViolations: number;
@@ -30,18 +34,29 @@ export function deriveWorkforceComplianceSection(
 			status,
 			headline:
 				status === "critical"
-					? "Workforce policy violations need review"
+					? text("compliance.commandCenter.sections.workforceCompliance.headline.critical")
 					: status === "warning"
-						? "Workforce compliance is drifting"
-						: "No recent workforce policy issues were detected",
+						? text("compliance.commandCenter.sections.workforceCompliance.headline.warning")
+						: text("compliance.commandCenter.sections.workforceCompliance.headline.healthy"),
 			facts: [
-				`Rest-period violations: ${snapshot.restPeriodViolations}`,
-				`Other policy violations: ${snapshot.generalPolicyViolations}`,
-				`Overtime violations: ${snapshot.overtimeViolations}`,
-				`Pending exceptions: ${snapshot.pendingExceptions}`,
+				text("compliance.commandCenter.facts.workforce.restPeriodViolations", {
+					count: snapshot.restPeriodViolations,
+				}),
+				text("compliance.commandCenter.facts.workforce.generalPolicyViolations", {
+					count: snapshot.generalPolicyViolations,
+				}),
+				text("compliance.commandCenter.facts.workforce.overtimeViolations", {
+					count: snapshot.overtimeViolations,
+				}),
+				text("compliance.commandCenter.facts.workforce.pendingExceptions", {
+					count: snapshot.pendingExceptions,
+				}),
 			],
 			updatedAt: snapshot.latestViolationAt ?? DateTime.utc().toISO(),
-			primaryLink: { label: "Open Compliance Settings", href: "/settings/compliance" },
+			primaryLink: {
+				label: text("compliance.commandCenter.links.openComplianceSettings"),
+				href: "/settings/compliance",
+			},
 		},
 		recentCriticalEvents:
 			status === "healthy"
@@ -51,11 +66,15 @@ export function deriveWorkforceComplianceSection(
 							id: "workforce-violations",
 							sectionKey: "workforceCompliance",
 							severity: status === "critical" ? "critical" : "warning",
-							title: "Recent workforce policy findings",
-							description: `Rest: ${snapshot.restPeriodViolations}, Other policy: ${snapshot.generalPolicyViolations}, Overtime: ${snapshot.overtimeViolations}`,
+							title: text("compliance.commandCenter.events.workforceFindings.title"),
+							description: text("compliance.commandCenter.events.workforceFindings.description", {
+								restPeriodViolations: snapshot.restPeriodViolations,
+								generalPolicyViolations: snapshot.generalPolicyViolations,
+								overtimeViolations: snapshot.overtimeViolations,
+							}),
 							occurredAt: snapshot.latestViolationAt ?? DateTime.utc().toISO()!,
 							primaryLink: {
-								label: "Inspect compliance",
+								label: text("compliance.commandCenter.links.inspectCompliance"),
 								href: "/settings/compliance",
 							},
 						},

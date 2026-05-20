@@ -1,6 +1,11 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { getWeekBounds, normalizeWeekStartDay, weekStartDayToDayPickerValue } from "./week-start";
+import {
+	getWeekBounds,
+	normalizeWeekStartDay,
+	WEEK_START_OPTIONS,
+	weekStartDayToDayPickerValue,
+} from "./week-start";
 
 describe("week start preferences", () => {
 	it("defaults unknown values to sunday", () => {
@@ -16,6 +21,13 @@ describe("week start preferences", () => {
 	it("converts to react-day-picker week start numbers", () => {
 		expect(weekStartDayToDayPickerValue("sunday")).toBe(0);
 		expect(weekStartDayToDayPickerValue("monday")).toBe(1);
+	});
+
+	it("exposes translation keys while preserving fallback labels", () => {
+		expect(WEEK_START_OPTIONS).toEqual([
+			{ value: "sunday", label: "Sunday", labelKey: "settings.weekStart.options.sunday" },
+			{ value: "monday", label: "Monday", labelKey: "settings.weekStart.options.monday" },
+		]);
 	});
 
 	it("computes sunday-based week bounds", () => {

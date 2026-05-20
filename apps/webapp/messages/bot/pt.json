@@ -4,6 +4,7 @@
       "alreadyProcessed": "Esta aprovação já foi processada."
     },
     "cmd": {
+      "billingRequired": "O faturamento é necessário para continuar usando o controle de tempo. Peça a um administrador da organização para atualizar o faturamento.",
       "clockedin": {
         "header": "{active} de {total} membros da equipe estão registrados no momento:",
         "noneActive": "Nenhum dos seus {total} membros da equipe está registrado no momento.",

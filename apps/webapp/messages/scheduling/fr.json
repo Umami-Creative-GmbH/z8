@@ -16,6 +16,67 @@
       "understaffed": "Sous-effectif",
       "utilization": "{{percent}}% d'utilisation"
     },
+    "page": {
+      "employeeDescription": "Consultez vos quarts de travail et récupérez les quarts disponibles",
+      "managerDescription": "Gérez et planifiez les quarts de travail des employés",
+      "title": "Planning des quarts"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} problème(s) détecté(s) avant la publication.",
+        "maxHours": "Heures max : {count}",
+        "overtime": "Heures supplémentaires : {count}",
+        "restTime": "Temps de repos : {count}",
+        "title": "Avertissements de conformité dans cette plage de dates"
+      },
+      "loading": "Chargement du planning...",
+      "publish": {
+        "failed": "Échec de la publication des quarts",
+        "published": "{count} quart(s) publié(s)"
+      },
+      "shiftUpdate": {
+        "failed": "Échec de la mise à jour du quart",
+        "overlapDescription": "Ce quart chevauche {count} autre(s) quart(s)",
+        "overlapWarning": "Quart enregistré avec avertissement de chevauchement",
+        "updated": "Quart mis à jour"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Tout le monde peut prendre le créneau",
+      "assignTo": "Assigner à",
+      "confirmDelete": "Confirmer la suppression",
+      "created": "Quart de travail créé",
+      "createDescription": "Remplissez les détails du nouveau quart de travail",
+      "createShift": "Créer un quart de travail",
+      "createTitle": "Créer un quart de travail",
+      "date": "Date",
+      "deleted": "Quart de travail supprimé",
+      "deleteFailed": "Échec de la suppression du quart de travail",
+      "draft": "Brouillon",
+      "editDescription": "Mettez à jour les détails du quart de travail ci-dessous",
+      "editTitle": "Modifier le quart de travail",
+      "endTime": "Heure de fin",
+      "noTemplate": "Aucun modèle",
+      "notes": "Notes (facultatif)",
+      "notesPlaceholder": "Instructions spéciales ou notes...",
+      "openShift": "Quart de travail ouvert",
+      "openShiftHelp": "Laisser en tant que « Quart de travail ouvert » pour permettre aux employés de le réclamer",
+      "pickDate": "Choisir une date",
+      "published": "Publié",
+      "savedWithWarnings": "Quart de travail enregistré avec des avertissements",
+      "saveFailed": "Échec de l'enregistrement du quart de travail",
+      "selectEmployee": "Sélectionner un employé",
+      "selectSubarea": "Sélectionner une sous-zone…",
+      "selectTemplate": "Sélectionner un modèle",
+      "startTime": "Heure de début",
+      "status": "Statut :",
+      "subarea": "Sous-zone",
+      "subareaHelp": "Lieu où ce quart de travail aura lieu",
+      "template": "Modèle (facultatif)",
+      "templateHelp": "La sélection d'un modèle remplira automatiquement les horaires",
+      "updated": "Quart de travail mis à jour",
+      "updateShift": "Mettre à jour le quart de travail"
+    },
     "skills": {
       "expiredCertifications": "Certifications expirées :",
       "expiredOn": "(Expiré le {{date}})",
@@ -29,6 +90,11 @@
       "validating": "Validation des compétences…",
       "validatingDescription": "Vérification des qualifications de l'employé",
       "warningMessage": "Vous pouvez toujours attribuer ce quart de travail, mais il sera enregistré comme une dérogation."
+    },
+    "templates": {
+      "dragHint": "Faites glisser un modèle sur le calendrier pour créer un quart de travail",
+      "empty": "Aucun modèle disponible. Créez des modèles dans les paramètres pour ajouter rapidement des quarts de travail.",
+      "title": "Modèles de quarts de travail"
     }
   }
 }

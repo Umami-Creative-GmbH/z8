@@ -97,7 +97,8 @@
     },
     "subtitle": "Manage your time off and vacation days",
     "table": {
-      "cancelRequest": "Cancel request",
+      "cancelAbsence": "Cancel absence",
+      "cancelAbsenceTooltip": "Cancel absence",
       "end": "End",
       "headers": {
         "actions": "Actions",
@@ -228,6 +229,17 @@
       "approved": "Approved",
       "pending": "Pending",
       "rejected": "Rejected"
+    },
+    "view": {
+      "day": "Day",
+      "loading": "Loading calendar…",
+      "month": "Month",
+      "next": "Next",
+      "previous": "Previous",
+      "refresh": "Refresh",
+      "today": "Today",
+      "week": "Week",
+      "year": "Year"
     }
   }
 }

@@ -7,6 +7,11 @@ import { employee, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import {
+	createBillingForbiddenResponse,
+	isBillingMutationAllowed,
+	requireBillingForMutation,
+} from "@/lib/billing/guard";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
@@ -172,6 +177,11 @@ export async function POST(request: NextRequest) {
 				{ error: "Employee record not found in this organization" },
 				{ status: 404 },
 			);
+		}
+
+		const billingAccess = await requireBillingForMutation(activeOrgId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return createBillingForbiddenResponse(billingAccess);
 		}
 
 		// Extract request metadata from already-resolved headers

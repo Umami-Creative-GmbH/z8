@@ -14,6 +14,10 @@ vi.mock("next/dynamic", () => ({
 	default: () => () => null,
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+}));
+
 vi.mock("@/components/analytics/export-button", () => ({
 	ExportButton: () => <button type="button">Export</button>,
 }));

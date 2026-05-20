@@ -2,6 +2,7 @@
 
 import { IconPlus, IconRefresh, IconUsers } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
@@ -56,6 +57,7 @@ export function TeamsTab({
 	canCreateTeams,
 	organizationId,
 }: TeamsTabProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const router = useRouter();
 	const [isRefreshing, startRefreshTransition] = useTransition();
@@ -143,7 +145,7 @@ export function TeamsTab({
 		},
 		onSuccess: (result, _teamId, context) => {
 			if (result.success) {
-				toast.success("Team deleted successfully");
+				toast.success(t("organization.teams.deleteSuccess", "Team deleted successfully"));
 				refreshTeams();
 				return;
 			}
@@ -151,13 +153,13 @@ export function TeamsTab({
 			if (context?.previousTeamPatches) {
 				setTeamPatches(context.previousTeamPatches);
 			}
-			toast.error(result.error || "Failed to delete team");
+			toast.error(result.error || t("organization.teams.deleteError", "Failed to delete team"));
 		},
 		onError: (_error, _teamId, context) => {
 			if (context?.previousTeamPatches) {
 				setTeamPatches(context.previousTeamPatches);
 			}
-			toast.error("Failed to delete team");
+			toast.error(t("organization.teams.deleteError", "Failed to delete team"));
 		},
 	});
 
@@ -233,9 +235,9 @@ export function TeamsTab({
 				<CardHeader>
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 						<div>
-							<CardTitle>Teams</CardTitle>
+							<CardTitle>{t("organization.teams.title", "Teams")}</CardTitle>
 							<CardDescription>
-								Organize your employees into teams for better collaboration
+								{t("organization.teams.description", "Organize your employees into teams for better collaboration")}
 							</CardDescription>
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
@@ -247,12 +249,12 @@ export function TeamsTab({
 								className="w-full sm:w-auto"
 							>
 								<IconRefresh className="mr-2 size-4" />
-								{isRefreshing ? "Refreshing..." : "Refresh"}
+								{isRefreshing ? t("common.refreshing", "Refreshing...") : t("common.refresh", "Refresh")}
 							</Button>
 							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
 									<IconPlus className="mr-2 size-4" />
-									Create Team
+									{t("organization.teams.create", "Create Team")}
 								</Button>
 							)}
 						</div>
@@ -263,14 +265,14 @@ export function TeamsTab({
 						// Empty state
 						<div className="text-center py-12 text-muted-foreground">
 							<IconUsers className="size-16 mx-auto mb-4 opacity-50" />
-							<h3 className="text-lg font-medium mb-2">No teams yet</h3>
+							<h3 className="text-lg font-medium mb-2">{t("organization.teams.empty", "No teams yet")}</h3>
 							<p className="text-sm mb-4">
-								Create your first team to start organizing your employees
+								{t("organization.teams.emptyDescription", "Create your first team to start organizing your employees")}
 							</p>
 							{canCreateTeams && (
 								<Button onClick={() => setCreateDialogOpen(true)} variant="outline">
 									<IconPlus className="mr-2 size-4" />
-									Create Your First Team
+									{t("organization.teams.createFirst", "Create Your First Team")}
 								</Button>
 							)}
 						</div>
@@ -326,25 +328,24 @@ export function TeamsTab({
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Are you sure?</AlertDialogTitle>
+						<AlertDialogTitle>{t("organization.teams.deleteDialogTitle", "Are you sure?")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							This will permanently delete the team "{selectedTeam?.name}".
+							{t("organization.teams.deleteDialogDescription", "This will permanently delete the team \"{teamName}\".", { teamName: selectedTeam?.name ?? "" })}
 							{selectedTeam && getTeamEmployees(selectedTeam.id).length > 0 && (
 								<span className="block mt-2 text-destructive font-medium">
-									Warning: This team has {getTeamEmployees(selectedTeam.id).length} member(s). They
-									will be removed from the team.
+									{t("organization.teams.deleteDialogMembersWarning", "Warning: This team has {count} member(s). They will be removed from the team.", { count: getTeamEmployees(selectedTeam.id).length })}
 								</span>
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
 							disabled={deleteMutation.isPending}
 							className="bg-destructive hover:bg-destructive/90"
 						>
-							{deleteMutation.isPending ? "Deleting..." : "Delete Team"}
+							{deleteMutation.isPending ? t("common.deleting", "Deleting...") : t("organization.teams.delete", "Delete Team")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

@@ -10,6 +10,16 @@
     "delete": "Löschen",
     "refresh": "Aktualisieren"
   },
+  "analytics": {
+    "export": {
+      "export": "Exportieren",
+      "exportAsCsv": "Als CSV exportieren",
+      "exportAsExcel": "Als Excel exportieren",
+      "exportedAsFormat": "Exportiert als {format}",
+      "exportingFormat": "Exportiere {format}…",
+      "failedAsFormat": "Export als {format} fehlgeschlagen"
+    }
+  },
   "colors": {
     "blue": "Blau",
     "green": "Grün",
@@ -24,6 +34,7 @@
     "actions": "Aktionen",
     "active": "Aktiv",
     "add": "Hinzufügen",
+    "adding": "Hinzufügen...",
     "all": "Alle",
     "approve": "Genehmigen",
     "assign": "Zuweisen",
@@ -37,6 +48,7 @@
     "continue": "Weiter",
     "copy": "Kopieren",
     "create": "Erstellen",
+    "current": "Aktuell",
     "days": {
       "friday": "Freitag",
       "label": "Tage",
@@ -87,6 +99,7 @@
     "moveDown": "Nach unten verschieben",
     "moveUp": "Nach oben verschieben",
     "name": "Name",
+    "never": "Nie",
     "new": "Neu",
     "next": "Weiter",
     "notApplicable": "n. v.",
@@ -95,9 +108,12 @@
     "openMenu": "Menü öffnen",
     "optional": "optional",
     "or": "Oder",
+    "pending": "Ausstehend",
+    "present": "Vorhanden",
     "previous": "Zurück",
     "recovering": "Wiederherstellung läuft...",
     "refresh": "Aktualisieren",
+    "refreshing": "Aktualisiere...",
     "reject": "Ablehnen",
     "rejecting": "Wird abgelehnt…",
     "remove": "Entfernen",
@@ -123,6 +139,8 @@
     "unknownEmployee": "Unbekannter Mitarbeiter",
     "unknownTeam": "Unbekanntes Team",
     "unnamed": "Unbenannt",
+    "update": "Aktualisieren",
+    "updating": "Aktualisiere...",
     "uploading": "Hochladen...",
     "validate": "Validieren",
     "validationError": "Validierungsfehler",
@@ -221,6 +239,12 @@
       "settings": "Benachrichtigungseinstellungen",
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
+    "content": {
+      "teamMemberAdded": {
+        "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
+        "title": "Zum Team hinzugefügt"
+      }
+    },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
     "empty": {
       "description": "Sie sind auf dem neuesten Stand! Neue Benachrichtigungen erscheinen hier.",
@@ -239,6 +263,36 @@
       "ariaLabel": "Benachrichtigungen nach Lesestatus filtern",
       "read": "Gelesen",
       "unread": "Ungelesen"
+    },
+    "preferences": {
+      "disabled": "Benachrichtigung deaktiviert",
+      "enabled": "Benachrichtigung aktiviert",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Benachrichtigungen für ausstehende Genehmigungsanfragen erhalten",
+          "requestUpdates": "Benachrichtigt werden, wenn deine Anfragen genehmigt oder abgelehnt wurden",
+          "teamSecurity": "Über Team- und Sicherheitsupdates informiert bleiben"
+        },
+        "description": "Aktiviere Push-Benachrichtigungen, um sofortige Updates zu Genehmigungen, Zeitkorrekturen und wichtigen Teamänderungen zu erhalten – auch wenn du die App gerade nicht nutzt.",
+        "enable": "Benachrichtigungen aktivieren",
+        "notNow": "Später",
+        "title": "Auf dem Laufenden bleiben"
+      },
+      "push": {
+        "blockedDescription": "Push-Benachrichtigungen werden von deinem Browser blockiert. Um sie zu aktivieren, musst du deine Browsereinstellungen aktualisieren.",
+        "blockedHelp": "Klicken Sie auf das Schloss-Symbol in der Adressleiste Ihres Browsers, erlauben Sie Benachrichtigungen für diese Seite und laden Sie die Seite anschließend neu.",
+        "blockedTitle": "Push-Benachrichtigungen blockiert",
+        "enableButton": "Push-Benachrichtigungen aktivieren",
+        "enableDescription": "Erhalten Sie sofort Benachrichtigungen, auch wenn Sie die App gerade nicht nutzen",
+        "enabledIndicator": "Push-Benachrichtigungen sind aktiviert",
+        "enabledToast": "Push-Benachrichtigungen aktiviert",
+        "enabledToastDescription": "Sie erhalten nun Browser-Push-Benachrichtigungen",
+        "enableFailedToast": "Push-Benachrichtigungen konnten nicht aktiviert werden",
+        "enableTitle": "Push-Benachrichtigungen aktivieren",
+        "errorToast": "Fehler bei Push-Benachrichtigung"
+      },
+      "toggleAria": "{channel}-Benachrichtigungen für {type}",
+      "updateFailed": "Einstellung konnte nicht aktualisiert werden"
     },
     "search": {
       "ariaLabel": "Benachrichtigungen durchsuchen",
@@ -272,6 +326,10 @@
       "retry": "Wiederholen",
       "syncing": "Synchronisiere {count} Ereignis(se)..."
     }
+  },
+  "presence": {
+    "clockedIn": "Eingestempelt",
+    "clockedOut": "Ausgestempelt"
   },
   "roles": {
     "admin": "Administrator",
@@ -331,6 +389,9 @@
     "hoursOnly": "{hours} Std.",
     "pm": "nachm."
   },
+  "userAvatar": {
+    "alt": "Benutzer-Avatar"
+  },
   "user": {
     "language": "Sprache",
     "logging-out": "Logge aus...",
@@ -340,6 +401,7 @@
     "theme-dark": "Dunkel",
     "theme-light": "Hell",
     "theme-system": "System",
+    "theme-toggle": "Design umschalten",
     "time-settings": "Zeiteinstellungen"
   },
   "validation": {

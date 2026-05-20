@@ -16,6 +16,15 @@ describe("implementation checklist status resolver", () => {
 		]);
 	});
 
+	it("exposes translation keys while preserving fallback copy", () => {
+		expect(IMPLEMENTATION_CHECKLIST_ITEMS[0]).toMatchObject({
+			title: "Organization structure",
+			description: "Confirm members, teams, and responsibility boundaries before rollout.",
+			titleKey: "settings.implementationChecklist.items.organizationStructure.title",
+			descriptionKey: "settings.implementationChecklist.items.organizationStructure.description",
+		});
+	});
+
 	it("marks automatic items complete from detector output", () => {
 		const items = resolveImplementationChecklistItems({
 			detectedCompleteIds: new Set(["holidays", "work-policies", "employee-import"]),
