@@ -37,6 +37,7 @@ export default async function AbsencesPage() {
 	const timezone = org?.timezone || "UTC";
 	const now = DateTime.now().setZone(timezone);
 	const calendarYear = now.year;
+	const currentDate = now.toISODate() ?? DateTime.utc().toISODate() ?? "9999-12-31";
 
 	// Fetch calendar-year data for the visual year calendar/table.
 	const calendarStart = DateTime.fromObject(
@@ -104,6 +105,7 @@ export default async function AbsencesPage() {
 					organizationId={employee.organizationId}
 					remainingDays={vacationBalance.remainingDays}
 					currentYear={calendarYear}
+					currentDate={currentDate}
 				/>
 			</div>
 		</div>

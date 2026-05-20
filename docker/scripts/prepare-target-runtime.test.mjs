@@ -16,6 +16,18 @@ test("root test script runs docker tracer tests", async () => {
   assert.match(packageJson.scripts.test, /docker\/scripts\/.+\.test\.mjs/);
 });
 
+test("pnpm settings live in workspace config", async () => {
+	const [packageJsonText, workspaceConfig] = await Promise.all([
+		fs.readFile(new URL("../../package.json", import.meta.url), "utf8"),
+		fs.readFile(new URL("../../pnpm-workspace.yaml", import.meta.url), "utf8"),
+	]);
+	const packageJson = JSON.parse(packageJsonText);
+
+	assert.equal(packageJson.pnpm, undefined);
+	assert.match(workspaceConfig, /^overrides:/m);
+	assert.match(workspaceConfig, /^allowBuilds:/m);
+});
+
 test("collectTarget lists traced worker runtime files and packages", async () => {
 	const result = await collectTarget("worker");
 
@@ -73,8 +85,11 @@ test("generated non-web manifests exclude obvious web-only type overrides", asyn
     await fs.writeFile(manifestUrl, originalManifest);
   }
 
-  assert.equal(packageJson.pnpm.overrides["@types/react"], undefined);
-  assert.equal(packageJson.pnpm.overrides["@types/react-dom"], undefined);
+  assert.equal(packageJson.pnpm, undefined);
+
+	const targetWorkspaceConfig = await fs.readFile(new URL("../targets/migration/pnpm-workspace.yaml", import.meta.url), "utf8");
+	assert.doesNotMatch(targetWorkspaceConfig, /@types\/react:/);
+	assert.doesNotMatch(targetWorkspaceConfig, /@types\/react-dom:/);
 });
 
 test("production worker and migration manifests use the trimmed runtime layout", async () => {

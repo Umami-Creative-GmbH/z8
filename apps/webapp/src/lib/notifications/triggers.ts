@@ -49,6 +49,16 @@ interface AbsenceRecordedByManagerParams extends AbsenceRequestParams {
 	days: number;
 }
 
+interface ApprovedAbsenceCancelledByEmployeeParams {
+	absenceId: string;
+	managerUserId: string;
+	employeeName: string;
+	organizationId: string;
+	categoryName: string;
+	startDate: string;
+	endDate: string;
+}
+
 /**
  * Notify employee that their absence request was submitted
  */
@@ -135,6 +145,32 @@ export async function onAbsenceRecordedByManager(
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger manager-recorded absence notification");
+	}
+}
+
+export async function onApprovedAbsenceCancelledByEmployee(
+	params: ApprovedAbsenceCancelledByEmployeeParams,
+): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.managerUserId,
+			organizationId: params.organizationId,
+			type: "absence_request_approved",
+			title: "Approved absence cancelled",
+			message: `${params.employeeName} cancelled approved ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}.`,
+			entityType: "absence_entry",
+			entityId: params.absenceId,
+			actionUrl: "/team/absences",
+			metadata: {
+				approvedAbsenceCancelled: true,
+				employeeName: params.employeeName,
+				startDate: params.startDate,
+				endDate: params.endDate,
+				absenceType: params.categoryName,
+			},
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger approved absence cancellation notification");
 	}
 }
 

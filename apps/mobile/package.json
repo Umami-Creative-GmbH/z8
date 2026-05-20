@@ -15,11 +15,11 @@
   "dependencies": {
     "@react-native-community/datetimepicker": "9.1.0",
     "@tanstack/react-form": "^1.32.0",
-    "@tanstack/react-query": "^5.100.10",
+    "@tanstack/react-query": "^5.100.11",
     "expo": "~55.0.24",
     "expo-constants": "~55.0.16",
     "expo-linking": "~55.0.15",
-    "expo-router": "~55.0.14",
+    "expo-router": "~56.2.1",
     "expo-secure-store": "~55.0.14",
     "expo-status-bar": "~55.0.6",
     "expo-web-browser": "~55.0.16",
@@ -27,8 +27,8 @@
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-native": "0.85.3",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.25.0",
+    "react-native-safe-area-context": "~5.8.0",
+    "react-native-screens": "~4.25.1",
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {

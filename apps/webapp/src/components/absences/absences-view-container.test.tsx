@@ -23,7 +23,9 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("./absence-entries-table", () => ({
-	AbsenceEntriesTable: () => <div>Absence entries</div>,
+	AbsenceEntriesTable: ({ currentDate }: { currentDate: string }) => (
+		<div data-current-date={currentDate}>Absence entries</div>
+	),
 }));
 
 vi.mock("./request-absence-dialog", () => ({
@@ -57,6 +59,7 @@ describe("AbsencesViewContainer", () => {
 				holidays={[]}
 				organizationId="org-1"
 				remainingDays={10}
+				currentDate="2026-05-20"
 			/>,
 		);
 
@@ -92,6 +95,7 @@ describe("AbsencesViewContainer", () => {
 				holidays={[]}
 				organizationId="org-1"
 				remainingDays={10}
+				currentDate="2026-05-20"
 			/>,
 		);
 

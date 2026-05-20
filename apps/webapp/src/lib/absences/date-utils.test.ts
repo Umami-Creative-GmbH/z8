@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCarryoverExpiryDate, getYearRange } from "./date-utils";
+import { calculateCarryoverExpiryDate, dateRangesOverlap, getYearRange } from "./date-utils";
 import vacationServiceSource from "./vacation.service.ts?raw";
 import vacationQueriesSource from "../query/vacation.queries.ts?raw";
 import vacationReportsSource from "../reporting/vacation-reports.ts?raw";
@@ -61,5 +61,16 @@ describe("absence date utilities", () => {
 		expect(vacationReportsSource).toContain("const timezone = org?.timezone || \"UTC\"");
 		expect(vacationReportsSource).toContain("getEnhancedVacationBalance({");
 		expect(vacationReportsSource).toContain("timezone,");
+	});
+
+	it("does not overlap the next logical day when an all-day range ends at next-day midnight", () => {
+		expect(
+			dateRangesOverlap(
+				"2026-05-21",
+				"2026-05-21",
+				new Date("2026-05-20T00:00:00.000Z"),
+				new Date("2026-05-21T00:00:00.000Z"),
+			),
+		).toBe(false);
 	});
 });
