@@ -24,7 +24,10 @@ type ManagerLinkForNotification = {
 	manager?: { userId?: string | null; organizationId?: string | null } | null;
 };
 
-async function notifyManagersOfApprovedSelfCancellation(absence: AbsenceForCancellation): Promise<void> {
+async function notifyManagersOfApprovedSelfCancellation(
+	absence: AbsenceForCancellation,
+	organizationId: string,
+): Promise<void> {
 	try {
 		const managerLinks = await db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, absence.employeeId),
@@ -33,7 +36,7 @@ async function notifyManagersOfApprovedSelfCancellation(absence: AbsenceForCance
 
 		for (const link of managerLinks as ManagerLinkForNotification[]) {
 			const managerUserId = link.manager?.userId;
-			if (!managerUserId || link.manager?.organizationId !== absence.organizationId) {
+			if (!managerUserId || link.manager?.organizationId !== organizationId) {
 				continue;
 			}
 
@@ -41,7 +44,7 @@ async function notifyManagersOfApprovedSelfCancellation(absence: AbsenceForCance
 				absenceId: absence.id,
 				managerUserId,
 				employeeName: absence.employee?.user?.name ?? "An employee",
-				organizationId: absence.organizationId,
+				organizationId,
 				categoryName: absence.category?.name ?? "absence",
 				startDate: absence.startDate,
 				endDate: absence.endDate,
@@ -82,9 +85,10 @@ export async function cancelAbsenceRequestForEmployee(
 	if (absence.organizationId !== currentEmployee.organizationId) {
 		return { success: false, error: "Absence not found in the active organization" };
 	}
+	const organizationId = currentEmployee.organizationId;
 
 	const org = await db.query.organization.findFirst({
-		where: (organization, { eq }) => eq(organization.id, absence.organizationId),
+		where: (organization, { eq }) => eq(organization.id, organizationId),
 		columns: { timezone: true },
 	});
 	const today =
@@ -120,7 +124,7 @@ export async function cancelAbsenceRequestForEmployee(
 	}
 
 	await removeCanonicalAbsenceRecord({
-		organizationId: absence.organizationId,
+		organizationId,
 		canonicalRecordId: absence.canonicalRecordId,
 	});
 
@@ -133,7 +137,7 @@ export async function cancelAbsenceRequestForEmployee(
 		);
 
 	if (shouldNotifyManagers) {
-		void notifyManagersOfApprovedSelfCancellation(absence);
+		void notifyManagersOfApprovedSelfCancellation(absence, organizationId);
 	}
 
 	return { success: true };
