@@ -22,6 +22,7 @@ import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/tim
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -1104,6 +1105,15 @@ export async function clockIn(
 		return { success: false, error: "Invalid work location type" };
 	}
 
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
+
 	try {
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
@@ -1217,6 +1227,15 @@ export async function clockOut(
 	} catch (error) {
 		// Log but don't fail clock-out if policy check fails
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
+	}
+
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
 	}
 
 	try {
@@ -2727,6 +2746,15 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	const requiresApproval = editCapability.type === "approval_required";
+
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
 
 	try {
 		// Check for overlapping work periods on the same day
