@@ -36,9 +36,10 @@ WORKDIR /app
 
 COPY --from=assembler /runtime/package.json ./package.json
 COPY --from=assembler /runtime/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=assembler /runtime/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --prod --frozen-lockfile --ignore-workspace
+    pnpm install --prod --frozen-lockfile
 
 COPY --from=assembler /runtime/ ./
 
