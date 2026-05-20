@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	decimal,
@@ -26,7 +27,7 @@ export const subscription = pgTable(
 			.unique(),
 
 		// Stripe IDs
-		stripeCustomerId: text("stripe_customer_id").notNull(),
+		stripeCustomerId: text("stripe_customer_id"),
 		stripeSubscriptionId: text("stripe_subscription_id"),
 		stripePriceId: text("stripe_price_id"),
 
@@ -63,7 +64,9 @@ export const subscription = pgTable(
 	(table) => [
 		index("subscription_organization_id_idx").on(table.organizationId),
 		index("subscription_status_idx").on(table.status),
-		uniqueIndex("subscription_stripe_customer_id_idx").on(table.stripeCustomerId),
+		uniqueIndex("subscription_stripe_customer_id_idx")
+			.on(table.stripeCustomerId)
+			.where(sql`${table.stripeCustomerId} is not null`),
 	],
 );
 
