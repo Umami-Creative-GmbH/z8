@@ -1,49 +1,6 @@
 {
 	"name": "z8",
 	"private": true,
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@parcel/watcher",
-			"@swc/core",
-			"esbuild",
-			"msgpackr-extract",
-			"msw",
-			"sharp"
-		],
-		"overrides": {
-			"@hono/node-server": "1.19.13",
-			"@xmldom/xmldom": "0.8.13",
-			"@types/react": "19.2.14",
-			"@types/react-dom": "19.2.3",
-			"dompurify": "3.4.0",
-			"esbuild": "0.25.12",
-			"axios": "1.16.1",
-			"effect": "3.21.2",
-			"fast-uri": "3.1.2",
-			"fast-xml-builder": "1.1.7",
-			"fast-xml-parser": "5.8.0",
-			"follow-redirects": "1.16.0",
-			"brace-expansion@1.1.12": "1.1.13",
-			"brace-expansion@2.0.2": "2.0.3",
-			"get-uri>basic-ftp": "5.3.0",
-			"get-uri": "6.0.5",
-			"glob@7.2.3>minimatch": "3.1.5",
-			"hono": "4.12.18",
-			"kysely": "0.28.17",
-			"lodash": "4.18.1",
-			"lodash-es": "4.18.1",
-			"minimatch@3.1.5>brace-expansion": "1.1.13",
-			"minimatch@5.1.9>brace-expansion": "2.0.3",
-			"pako": "1.0.11",
-			"postcss": "8.5.14",
-			"mermaid": "11.15.0",
-			"protobufjs": "8.0.2",
-			"srvx": "0.11.13",
-			"tinyglobby": "0.2.16",
-			"undici": "7.24.0",
-			"uuid": "14.0.0"
-		}
-	},
 	"workspaces": [
 		"apps/*",
 		"packages/*"
@@ -75,7 +32,7 @@
 		"docker:build:migration": "docker build -f docker/Dockerfile.migration -t z8-migration:latest .",
 		"docker:build:seed": "docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
 		"docker:build:all": "docker build -f docker/Dockerfile.webapp -t z8-webapp:latest . && docker build -f docker/Dockerfile.worker -t z8-worker:latest . && docker build -f docker/Dockerfile.migration -t z8-migration:latest . && docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .",
-		"docker:sync:non-web-targets": "pnpm node docker/scripts/prepare-target-runtime.mjs manifest worker && pnpm node docker/scripts/prepare-target-runtime.mjs manifest migration && pnpm node docker/scripts/prepare-target-runtime.mjs manifest db-seed && pnpm --dir docker/targets/worker install --lockfile-only --ignore-workspace && pnpm --dir docker/targets/migration install --lockfile-only --ignore-workspace && pnpm --dir docker/targets/db-seed install --lockfile-only --ignore-workspace",
+		"docker:sync:non-web-targets": "pnpm node docker/scripts/prepare-target-runtime.mjs manifest worker && pnpm node docker/scripts/prepare-target-runtime.mjs manifest migration && pnpm node docker/scripts/prepare-target-runtime.mjs manifest db-seed && pnpm --dir docker/targets/worker install --lockfile-only && pnpm --dir docker/targets/migration install --lockfile-only && pnpm --dir docker/targets/db-seed install --lockfile-only",
 		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
 		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",
 		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"

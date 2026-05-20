@@ -31,13 +31,60 @@ async function pathExists(filePath) {
   }
 }
 
+function parseWorkspacePnpmConfig(configText) {
+  const config = { allowBuilds: {}, overrides: {} };
+  let section = null;
+
+  for (const line of configText.split("\n")) {
+    if (/^allowBuilds:\s*$/.test(line)) {
+      section = "allowBuilds";
+      continue;
+    }
+
+    if (/^overrides:\s*$/.test(line)) {
+      section = "overrides";
+      continue;
+    }
+
+    if (/^\S/.test(line)) {
+      section = null;
+      continue;
+    }
+
+    if (!section) continue;
+
+    const match = line.match(/^\s{2}(.+?):\s*(.+?)\s*$/);
+    if (!match) continue;
+
+    const [, rawKey, rawValue] = match;
+    const key = rawKey.replace(/^['\"]|['\"]$/g, "");
+    const value = rawValue.replace(/^['\"]|['\"]$/g, "");
+    config[section][key] = section === "allowBuilds" ? value === "true" : value;
+  }
+
+  return config;
+}
+
+function stringifyTargetPnpmWorkspaceConfig(config) {
+  const lines = ["allowBuilds:"];
+
+  for (const [packageName, allowed] of Object.entries(config.allowBuilds ?? {})) {
+    lines.push(`  ${JSON.stringify(packageName)}: ${allowed ? "true" : "false"}`);
+  }
+
+  lines.push("", "overrides:");
+  for (const [packageName, version] of Object.entries(config.overrides ?? {})) {
+    lines.push(`  ${JSON.stringify(packageName)}: ${JSON.stringify(version)}`);
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
 function buildTargetPnpmConfig(rootPnpm) {
-  if (!rootPnpm) return undefined;
-
   const overrides = Object.fromEntries(
     Object.entries(rootPnpm.overrides ?? {}).filter(
       ([packageName]) => !NON_WEB_OVERRIDE_EXCLUSIONS.has(packageName),
@@ -155,6 +202,9 @@ export async function collectTarget(target) {
 
 async function writeTargetPackage(target) {
   const rootPackage = await readJson(path.join(REPO_ROOT, "package.json"));
+  const rootPnpmWorkspaceConfig = parseWorkspacePnpmConfig(
+    await fs.readFile(path.join(REPO_ROOT, "pnpm-workspace.yaml"), "utf8"),
+  );
   const webappPackage = await readJson(path.join(WEBAPP_ROOT, "package.json"));
   const { packages } = await collectTarget(target);
   const dependencyEntries = packages.map((packageName) => {
@@ -172,12 +222,15 @@ async function writeTargetPackage(target) {
     name: `@z8-target/${target}`,
     private: true,
     packageManager: rootPackage.packageManager,
-    pnpm: buildTargetPnpmConfig(rootPackage.pnpm),
     dependencies: Object.fromEntries(dependencyEntries),
   };
 
   const outputPath = path.join(TARGETS_ROOT, target, "package.json");
   await fs.writeFile(outputPath, `${JSON.stringify(targetPackage, null, 2)}\n`);
+  await fs.writeFile(
+    path.join(TARGETS_ROOT, target, "pnpm-workspace.yaml"),
+    stringifyTargetPnpmWorkspaceConfig(buildTargetPnpmConfig(rootPnpmWorkspaceConfig)),
+  );
   console.log(`wrote ${path.relative(REPO_ROOT, outputPath)}`);
 }
 
