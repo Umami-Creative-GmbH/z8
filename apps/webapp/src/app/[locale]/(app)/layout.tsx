@@ -67,6 +67,17 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 				}).pipe(Effect.provide(BillingEnforcementServiceLive)),
 			).catch(() => billingDisabledAccess)
 		: billingDisabledAccess;
+	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+	const isBillingRecoveryPath =
+		pathname === `/${locale}/settings/billing` ||
+		pathname.startsWith(`/${locale}/settings/billing/`) ||
+		pathname === `/${locale}/billing/suspended` ||
+		pathname.startsWith(`/${locale}/billing/suspended/`);
+
+	if (billingAccess.canAccess === false && !isBillingRecoveryPath) {
+		redirect(`/${locale}/billing/suspended`);
+	}
+
 	const trialDaysRemaining =
 		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining

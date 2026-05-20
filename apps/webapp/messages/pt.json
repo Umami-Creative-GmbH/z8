@@ -10,6 +10,7 @@
     }
   },
   "billing": {
+    "suspended": { "adminDescription": "Seu teste terminou ou a assinatura não é mais válida. Atualize a cobrança para continuar usando o Z8.", "goToBilling": "Ir para cobrança", "memberDescription": "Esta organização está suspensa. Entre em contato com um administrador da organização para atualizar a cobrança.", "title": "Organização suspensa" },
     "trialBanner": { "description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.", "title": "Teste de 14 dias ativo", "upgrade": "Fazer upgrade" }
   },
   "team": {

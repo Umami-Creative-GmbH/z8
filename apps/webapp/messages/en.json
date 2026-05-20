@@ -16,6 +16,7 @@
   },
   "billing": {
     "access": { "canceled": "Your subscription has been canceled. Resubscribe to regain access.", "paymentFailed": "Your last payment failed. Please update your payment method.", "required": "A subscription is required to use this application.", "trialExpired": "Your trial has expired. Subscribe to continue using the app." },
+    "suspended": { "adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.", "goToBilling": "Go to billing", "memberDescription": "This organization is suspended. Contact an organization admin to update billing.", "title": "Organization suspended" },
     "activeSeats": "Active Seats",
     "alerts": { "canceledDescription": "Checkout was canceled. You can try again whenever you're ready.", "subscriptionRequired": "Subscription Required", "successDescription": "Your subscription has been activated. Thank you for subscribing!", "successTitle": "Success!" },
     "bestValue": "Best Value",
