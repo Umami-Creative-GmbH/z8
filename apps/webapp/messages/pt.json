@@ -1,123 +1,116 @@
 {
-	"appSearch": {
-		"description": "Search pages, settings, people, and teams",
-		"empty": "No results found.",
-		"groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
-		"placeholder": "Search pages, settings, people, and teams…",
-		"search": "Search",
-		"teamAbsences": {
-			"description": "Revisar métricas de ausência de funcionários e registrar ausências"
-		}
-	},
-	"billing": {
-		"checkout": {
-			"trialContinuesDescription": "O Stripe Checkout coleta os dados de pagamento agora. Sua assinatura paga começa somente depois que o teste expirar.",
-			"trialContinuesTitle": "Seu teste continua após o upgrade"
-		},
-		"trialBanner": {
-			"description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.",
-			"title": "Teste de 14 dias ativo",
-			"upgrade": "Fazer upgrade"
-		}
-	},
-	"team": {
-		"absences": {
-			"actions": {
-				"recordForEmployee": "Registrar ausência para {name}"
-			},
-			"empty": {
-				"description": "Ajuste os filtros ou a pesquisa para encontrar membros da equipe.",
-				"label": "Nenhum funcionário encontrado",
-				"title": "Nenhum funcionário encontrado"
-			},
-			"filters": {
-				"allTeams": "Todas as equipes",
-				"searchLabel": "Pesquisar funcionários",
-				"searchPlaceholder": "Pesquisar funcionários…",
-				"searchSubmit": "Pesquisar",
-				"teamLabel": "Filtrar por equipe",
-				"teamPlaceholder": "Equipe",
-				"yearLabel": "Filtrar por ano",
-				"yearPlaceholder": "Ano"
-			},
-			"pagination": {
-				"next": "Próximo",
-				"nextLabel": "Próxima página",
-				"page": "Página {page} de {pageCount}",
-				"previous": "Anterior",
-				"previousLabel": "Página anterior",
-				"showing": "Exibindo {firstItem} a {lastItem} de {total}"
-			},
-			"recordDialog": {
-				"required": "{label} é obrigatório",
-				"titleForEmployee": "Registrar ausência para {name}"
-			},
-			"sort": {
-				"ascending": "crescente",
-				"by": "Ordenar por {label}",
-				"byWithDirection": "Ordenar por {label} ({direction})",
-				"descending": "decrescente"
-			},
-			"table": {
-				"actions": "Ações",
-				"allowance": "Saldo",
-				"employee": "Funcionário",
-				"left": "Restante",
-				"pending": "Pendente",
-				"sick": "Doença",
-				"teamOrPosition": "Equipe ou cargo",
-				"used": "Usado"
-			}
-		}
-	},
-	"surcharges": {
-		"reports": {
-			"details": {
-				"appliedRules": "Regras aplicadas",
-				"calculatedAt": "Calculado em",
-				"noAppliedRules": "Nenhuma regra aplicada registrada.",
-				"overlapPolicy": "Política de sobreposição",
-				"percentage": "Porcentagem",
-				"qualifying": "Qualificação",
-				"surcharge": "Sobretaxa",
-				"workPeriod": "Período de trabalho"
-			},
-			"empty": {
-				"description": "Nenhum cálculo de sobretaxa correspondeu aos filtros selecionados.",
-				"title": "Nenhum cálculo de sobretaxa encontrado"
-			},
-			"errors": {
-				"loadTitle": "Não foi possível carregar os cálculos"
-			},
-			"filters": {
-				"apply": "Aplicar filtros",
-				"employeeId": "ID do funcionário",
-				"endDate": "Data de término",
-				"startDate": "Data de início"
-			},
-			"loading": "Carregando cálculos…",
-			"previousResults": {
-				"description": "A última solicitação falhou, portanto, os resultados bem-sucedidos anteriores permanecem visíveis.",
-				"title": "Exibindo resultados anteriores."
-			},
-			"rowLimitNotice": "Exibindo os primeiros 500 cálculos correspondentes. Refine os filtros de data ou funcionário para ajustar os totais.",
-			"summary": {
-				"baseHours": "Horas base",
-				"calculations": "Cálculos",
-				"creditedHours": "Horas de sobretaxa creditadas",
-				"qualifyingHours": "Horas de sobretaxa qualificadas"
-			},
-			"table": {
-				"base": "Base",
-				"created": "Criado",
-				"credit": "Crédito",
-				"date": "Data",
-				"details": "Detalhes",
-				"employee": "Funcionário",
-				"percentage": "Percentagem",
-				"qualifying": "Qualificação"
-			},
-			"title": "Relatórios de sobretaxas"
-		}
-	}
+  "appSearch": {
+    "description": "Search pages, settings, people, and teams",
+    "empty": "No results found.",
+    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+    "placeholder": "Search pages, settings, people, and teams…",
+    "search": "Search",
+    "teamAbsences": {
+      "description": "Revisar métricas de ausência de funcionários e registrar ausências"
+    }
+  },
+  "billing": {
+    "checkout": { "trialContinuesDescription": "O Stripe Checkout coleta os dados de pagamento agora. Sua assinatura paga começa somente depois que o teste expirar.", "trialContinuesTitle": "Seu teste continua após o upgrade" },
+    "trialBanner": { "description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.", "title": "Teste de 14 dias ativo", "upgrade": "Fazer upgrade" }
+  },
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrar ausência para {name}"
+      },
+      "empty": {
+        "description": "Ajuste os filtros ou a pesquisa para encontrar membros da equipe.",
+        "label": "Nenhum funcionário encontrado",
+        "title": "Nenhum funcionário encontrado"
+      },
+      "filters": {
+        "allTeams": "Todas as equipes",
+        "searchLabel": "Pesquisar funcionários",
+        "searchPlaceholder": "Pesquisar funcionários…",
+        "searchSubmit": "Pesquisar",
+        "teamLabel": "Filtrar por equipe",
+        "teamPlaceholder": "Equipe",
+        "yearLabel": "Filtrar por ano",
+        "yearPlaceholder": "Ano"
+      },
+      "pagination": {
+        "next": "Próximo",
+        "nextLabel": "Próxima página",
+        "page": "Página {page} de {pageCount}",
+        "previous": "Anterior",
+        "previousLabel": "Página anterior",
+        "showing": "Exibindo {firstItem} a {lastItem} de {total}"
+      },
+      "recordDialog": {
+        "required": "{label} é obrigatório",
+        "titleForEmployee": "Registrar ausência para {name}"
+      },
+      "sort": {
+        "ascending": "crescente",
+        "by": "Ordenar por {label}",
+        "byWithDirection": "Ordenar por {label} ({direction})",
+        "descending": "decrescente"
+      },
+      "table": {
+        "actions": "Ações",
+        "allowance": "Saldo",
+        "employee": "Funcionário",
+        "left": "Restante",
+        "pending": "Pendente",
+        "sick": "Doença",
+        "teamOrPosition": "Equipe ou cargo",
+        "used": "Usado"
+      }
+    }
+  },
+  "surcharges": {
+    "reports": {
+      "details": {
+        "appliedRules": "Regras aplicadas",
+        "calculatedAt": "Calculado em",
+        "noAppliedRules": "Nenhuma regra aplicada registrada.",
+        "overlapPolicy": "Política de sobreposição",
+        "percentage": "Porcentagem",
+        "qualifying": "Qualificação",
+        "surcharge": "Sobretaxa",
+        "workPeriod": "Período de trabalho"
+      },
+      "empty": {
+        "description": "Nenhum cálculo de sobretaxa correspondeu aos filtros selecionados.",
+        "title": "Nenhum cálculo de sobretaxa encontrado"
+      },
+      "errors": {
+        "loadTitle": "Não foi possível carregar os cálculos"
+      },
+      "filters": {
+        "apply": "Aplicar filtros",
+        "employeeId": "ID do funcionário",
+        "endDate": "Data de término",
+        "startDate": "Data de início"
+      },
+      "loading": "Carregando cálculos…",
+      "previousResults": {
+        "description": "A última solicitação falhou, portanto, os resultados bem-sucedidos anteriores permanecem visíveis.",
+        "title": "Exibindo resultados anteriores."
+      },
+      "rowLimitNotice": "Exibindo os primeiros 500 cálculos correspondentes. Refine os filtros de data ou funcionário para ajustar os totais.",
+      "summary": {
+        "baseHours": "Horas base",
+        "calculations": "Cálculos",
+        "creditedHours": "Horas de sobretaxa creditadas",
+        "qualifyingHours": "Horas de sobretaxa qualificadas"
+      },
+      "table": {
+        "base": "Base",
+        "created": "Criado",
+        "credit": "Crédito",
+        "date": "Data",
+        "details": "Detalhes",
+        "employee": "Funcionário",
+        "percentage": "Percentagem",
+        "qualifying": "Qualificação"
+      },
+      "title": "Relatórios de sobretaxas"
+    }
+  }
 }

@@ -1,123 +1,116 @@
 {
-	"appSearch": {
-		"description": "Search pages, settings, people, and teams",
-		"empty": "No results found.",
-		"groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
-		"placeholder": "Search pages, settings, people, and teams…",
-		"search": "Search",
-		"teamAbsences": {
-			"description": "Revisar las métricas de ausencia de los empleados y registrar las ausencias"
-		}
-	},
-	"billing": {
-		"checkout": {
-			"trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Su suscripción de pago empieza solo cuando finaliza la prueba.",
-			"trialContinuesTitle": "Su prueba continúa después de mejorar el plan"
-		},
-		"trialBanner": {
-			"description": "Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.",
-			"title": "Prueba de 14 días activa",
-			"upgrade": "Mejorar plan"
-		}
-	},
-	"team": {
-		"absences": {
-			"actions": {
-				"recordForEmployee": "Registrar ausencia para {name}"
-			},
-			"empty": {
-				"description": "Ajuste los filtros o la búsqueda para encontrar miembros del equipo.",
-				"label": "No se encontraron empleados",
-				"title": "No se encontraron empleados"
-			},
-			"filters": {
-				"allTeams": "Todos los equipos",
-				"searchLabel": "Buscar empleados",
-				"searchPlaceholder": "Buscar empleados…",
-				"searchSubmit": "Buscar",
-				"teamLabel": "Filtrar por equipo",
-				"teamPlaceholder": "Equipo",
-				"yearLabel": "Filtrar por año",
-				"yearPlaceholder": "Año"
-			},
-			"pagination": {
-				"next": "Siguiente",
-				"nextLabel": "Página siguiente",
-				"page": "Página {page} de {pageCount}",
-				"previous": "Anterior",
-				"previousLabel": "Página anterior",
-				"showing": "Mostrando {firstItem} a {lastItem} de {total}"
-			},
-			"recordDialog": {
-				"required": "{label} es obligatorio",
-				"titleForEmployee": "Registrar ausencia para {name}"
-			},
-			"sort": {
-				"ascending": "ascendente",
-				"by": "Ordenar por {label}",
-				"byWithDirection": "Ordenar por {label} ({direction})",
-				"descending": "descendente"
-			},
-			"table": {
-				"actions": "Acciones",
-				"allowance": "Asignación",
-				"employee": "Empleado",
-				"left": "Restante",
-				"pending": "Pendiente",
-				"sick": "Enfermedad",
-				"teamOrPosition": "Equipo o puesto",
-				"used": "Usado"
-			}
-		}
-	},
-	"surcharges": {
-		"reports": {
-			"details": {
-				"appliedRules": "Reglas aplicadas",
-				"calculatedAt": "Calculado a las",
-				"noAppliedRules": "No hay reglas aplicadas registradas.",
-				"overlapPolicy": "Política de solapamiento",
-				"percentage": "Porcentaje",
-				"qualifying": "Calificable",
-				"surcharge": "Recargo",
-				"workPeriod": "Periodo de trabajo"
-			},
-			"empty": {
-				"description": "No se encontraron cálculos de recargos que coincidan con los filtros seleccionados.",
-				"title": "No se encontraron cálculos de recargos"
-			},
-			"errors": {
-				"loadTitle": "No se pudieron cargar los cálculos"
-			},
-			"filters": {
-				"apply": "Aplicar filtros",
-				"employeeId": "ID de empleado",
-				"endDate": "Fecha de fin",
-				"startDate": "Fecha de inicio"
-			},
-			"loading": "Cargando cálculos…",
-			"previousResults": {
-				"description": "La última solicitud falló, por lo que los resultados correctos anteriores siguen siendo visibles.",
-				"title": "Mostrando resultados anteriores."
-			},
-			"rowLimitNotice": "Mostrando los primeros 500 cálculos coincidentes. Ajuste los filtros de fecha o de empleado para refinar los totales.",
-			"summary": {
-				"baseHours": "Horas base",
-				"calculations": "Cálculos",
-				"creditedHours": "Horas de recargo acreditadas",
-				"qualifyingHours": "Horas de recargo calificables"
-			},
-			"table": {
-				"base": "Base",
-				"created": "Creado",
-				"credit": "Crédito",
-				"date": "Fecha",
-				"details": "Detalles",
-				"employee": "Empleado",
-				"percentage": "Porcentaje",
-				"qualifying": "Calificación"
-			},
-			"title": "Informes de recargos"
-		}
-	}
+  "appSearch": {
+    "description": "Search pages, settings, people, and teams",
+    "empty": "No results found.",
+    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+    "placeholder": "Search pages, settings, people, and teams…",
+    "search": "Search",
+    "teamAbsences": {
+      "description": "Revisar las métricas de ausencia de los empleados y registrar las ausencias"
+    }
+  },
+  "billing": {
+    "checkout": { "trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Su suscripción de pago empieza solo cuando finaliza la prueba.", "trialContinuesTitle": "Su prueba continúa después de mejorar el plan" },
+    "trialBanner": { "description": "Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.", "title": "Prueba de 14 días activa", "upgrade": "Mejorar plan" }
+  },
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrar ausencia para {name}"
+      },
+      "empty": {
+        "description": "Ajuste los filtros o la búsqueda para encontrar miembros del equipo.",
+        "label": "No se encontraron empleados",
+        "title": "No se encontraron empleados"
+      },
+      "filters": {
+        "allTeams": "Todos los equipos",
+        "searchLabel": "Buscar empleados",
+        "searchPlaceholder": "Buscar empleados…",
+        "searchSubmit": "Buscar",
+        "teamLabel": "Filtrar por equipo",
+        "teamPlaceholder": "Equipo",
+        "yearLabel": "Filtrar por año",
+        "yearPlaceholder": "Año"
+      },
+      "pagination": {
+        "next": "Siguiente",
+        "nextLabel": "Página siguiente",
+        "page": "Página {page} de {pageCount}",
+        "previous": "Anterior",
+        "previousLabel": "Página anterior",
+        "showing": "Mostrando {firstItem} a {lastItem} de {total}"
+      },
+      "recordDialog": {
+        "required": "{label} es obligatorio",
+        "titleForEmployee": "Registrar ausencia para {name}"
+      },
+      "sort": {
+        "ascending": "ascendente",
+        "by": "Ordenar por {label}",
+        "byWithDirection": "Ordenar por {label} ({direction})",
+        "descending": "descendente"
+      },
+      "table": {
+        "actions": "Acciones",
+        "allowance": "Asignación",
+        "employee": "Empleado",
+        "left": "Restante",
+        "pending": "Pendiente",
+        "sick": "Enfermedad",
+        "teamOrPosition": "Equipo o puesto",
+        "used": "Usado"
+      }
+    }
+  },
+  "surcharges": {
+    "reports": {
+      "details": {
+        "appliedRules": "Reglas aplicadas",
+        "calculatedAt": "Calculado a las",
+        "noAppliedRules": "No hay reglas aplicadas registradas.",
+        "overlapPolicy": "Política de solapamiento",
+        "percentage": "Porcentaje",
+        "qualifying": "Calificable",
+        "surcharge": "Recargo",
+        "workPeriod": "Periodo de trabajo"
+      },
+      "empty": {
+        "description": "No se encontraron cálculos de recargos que coincidan con los filtros seleccionados.",
+        "title": "No se encontraron cálculos de recargos"
+      },
+      "errors": {
+        "loadTitle": "No se pudieron cargar los cálculos"
+      },
+      "filters": {
+        "apply": "Aplicar filtros",
+        "employeeId": "ID de empleado",
+        "endDate": "Fecha de fin",
+        "startDate": "Fecha de inicio"
+      },
+      "loading": "Cargando cálculos…",
+      "previousResults": {
+        "description": "La última solicitud falló, por lo que los resultados correctos anteriores siguen siendo visibles.",
+        "title": "Mostrando resultados anteriores."
+      },
+      "rowLimitNotice": "Mostrando los primeros 500 cálculos coincidentes. Ajuste los filtros de fecha o de empleado para refinar los totales.",
+      "summary": {
+        "baseHours": "Horas base",
+        "calculations": "Cálculos",
+        "creditedHours": "Horas de recargo acreditadas",
+        "qualifyingHours": "Horas de recargo calificables"
+      },
+      "table": {
+        "base": "Base",
+        "created": "Creado",
+        "credit": "Crédito",
+        "date": "Fecha",
+        "details": "Detalles",
+        "employee": "Empleado",
+        "percentage": "Porcentaje",
+        "qualifying": "Calificación"
+      },
+      "title": "Informes de recargos"
+    }
+  }
 }

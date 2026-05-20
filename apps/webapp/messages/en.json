@@ -1,183 +1,153 @@
 {
-	"appSearch": {
-		"description": "Search pages, settings, people, and teams",
-		"empty": "No results found.",
-		"groups": {
-			"pages": "Pages",
-			"people": "People",
-			"settings": "Settings",
-			"teams": "Teams"
-		},
-		"placeholder": "Search pages, settings, people, and teams…",
-		"search": "Search",
-		"teamAbsences": {
-			"description": "Review employee absence metrics and record absences"
-		}
-	},
-	"billing": {
-		"access": {
-			"canceled": "Your subscription has been canceled. Resubscribe to regain access.",
-			"paymentFailed": "Your last payment failed. Please update your payment method.",
-			"required": "A subscription is required to use this application.",
-			"trialExpired": "Your trial has expired. Subscribe to continue using the app."
-		},
-		"activeSeats": "Active Seats",
-		"alerts": {
-			"canceledDescription": "Checkout was canceled. You can try again whenever you're ready.",
-			"subscriptionRequired": "Subscription Required",
-			"successDescription": "Your subscription has been activated. Thank you for subscribing!",
-			"successTitle": "Success!"
-		},
-		"bestValue": "Best Value",
-		"billedMonthly": "billed monthly",
-		"cancelsOn": "Cancels on {date}",
-		"checkout": {
-			"trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
-			"trialContinuesTitle": "Your trial continues after upgrade"
-		},
-		"checkoutCreateFailed": "Failed to create checkout session",
-		"checkoutStartFailed": "Failed to start checkout",
-		"choosePlan": "Choose Your Plan",
-		"choosePlanDescription": "Start with a 14-day free trial. No credit card required to start.",
-		"currentPlan": "Current Plan",
-		"days": "{count} days",
-		"description": "Manage your subscription and billing details",
-		"features": {
-			"allFeatures": "All features included",
-			"cancelAnytime": "Cancel anytime",
-			"trial": "14-day free trial",
-			"yearlyDiscount": "25% discount vs monthly"
-		},
-		"interval": { "monthlyBilling": "Monthly billing", "yearlyBilling": "Yearly billing" },
-		"manageBilling": "Manage Billing",
-		"monthlyCost": "Monthly Cost",
-		"nextBilling": "Next Billing",
-		"opening": "Opening...",
-		"perSeatMonth": "/seat/month",
-		"plans": {
-			"monthly": { "description": "Flexible month-to-month billing", "title": "Monthly" },
-			"yearly": { "description": "Save 25% with annual billing", "title": "Yearly" }
-		},
-		"portalOpenFailed": "Failed to open billing portal",
-		"priceSeatMonth": "€{price}/seat/mo",
-		"priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
-		"seatBilledAnnually": "€{price}/seat billed annually",
-		"starting": "Starting...",
-		"startTrial": "Start Free Trial",
-		"status": {
-			"canceled": "Canceled",
-			"noSubscription": "No Subscription",
-			"pastDue": "Past Due",
-			"trial": "Trial"
-		},
-		"title": "Billing & Subscription",
-		"trialEnds": "Trial Ends",
-		"trialBanner": {
-			"description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
-			"title": "14-day trial active",
-			"upgrade": "Upgrade"
-		},
-		"vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
-		"yearTotal": "€{amount}/year total"
-	},
-	"team": {
-		"absences": {
-			"actions": {
-				"recordForEmployee": "Record absence for {name}"
-			},
-			"empty": {
-				"description": "Try adjusting filters or search to find team members.",
-				"label": "No employees found",
-				"title": "No employees found"
-			},
-			"filters": {
-				"allTeams": "All teams",
-				"searchLabel": "Search employees",
-				"searchPlaceholder": "Search employees…",
-				"searchSubmit": "Search",
-				"teamLabel": "Filter by team",
-				"teamPlaceholder": "Team",
-				"yearLabel": "Filter by year",
-				"yearPlaceholder": "Year"
-			},
-			"pagination": {
-				"next": "Next",
-				"nextLabel": "Next page",
-				"page": "Page {page} of {pageCount}",
-				"previous": "Previous",
-				"previousLabel": "Previous page",
-				"showing": "Showing {firstItem} to {lastItem} of {total}"
-			},
-			"recordDialog": {
-				"required": "{label} is required",
-				"titleForEmployee": "Record absence for {name}"
-			},
-			"sort": {
-				"ascending": "ascending",
-				"by": "Sort by {label}",
-				"byWithDirection": "Sort by {label} ({direction})",
-				"descending": "descending"
-			},
-			"table": {
-				"actions": "Actions",
-				"allowance": "Allowance",
-				"employee": "Employee",
-				"left": "Left",
-				"pending": "Pending",
-				"sick": "Sick",
-				"teamOrPosition": "Team or Position",
-				"used": "Used"
-			}
-		}
-	},
-	"surcharges": {
-		"reports": {
-			"details": {
-				"appliedRules": "Applied rules",
-				"calculatedAt": "Calculated at",
-				"noAppliedRules": "No applied rules recorded.",
-				"overlapPolicy": "Overlap policy",
-				"percentage": "Percentage",
-				"qualifying": "Qualifying",
-				"surcharge": "Surcharge",
-				"workPeriod": "Work period"
-			},
-			"empty": {
-				"description": "No surcharge calculations matched the selected filters.",
-				"title": "No surcharge calculations found"
-			},
-			"errors": {
-				"loadTitle": "Unable to load calculations"
-			},
-			"filters": {
-				"apply": "Apply filters",
-				"employeeId": "Employee ID",
-				"endDate": "End date",
-				"startDate": "Start date"
-			},
-			"loading": "Loading calculations…",
-			"previousResults": {
-				"description": "The latest request failed, so the previous successful results remain visible.",
-				"title": "Showing previous results."
-			},
-			"rowLimitNotice": "Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
-			"summary": {
-				"baseHours": "Base hours",
-				"calculations": "Calculations",
-				"creditedHours": "Credited surcharge hours",
-				"qualifyingHours": "Qualifying surcharge hours"
-			},
-			"table": {
-				"base": "Base",
-				"created": "Created",
-				"credit": "Credit",
-				"date": "Date",
-				"details": "Details",
-				"employee": "Employee",
-				"percentage": "Percentage",
-				"qualifying": "Qualifying"
-			},
-			"title": "Surcharge reports"
-		}
-	}
+  "appSearch": {
+    "description": "Search pages, settings, people, and teams",
+    "empty": "No results found.",
+    "groups": {
+      "pages": "Pages",
+      "people": "People",
+      "settings": "Settings",
+      "teams": "Teams"
+    },
+    "placeholder": "Search pages, settings, people, and teams…",
+    "search": "Search",
+    "teamAbsences": {
+      "description": "Review employee absence metrics and record absences"
+    }
+  },
+  "billing": {
+    "access": { "canceled": "Your subscription has been canceled. Resubscribe to regain access.", "paymentFailed": "Your last payment failed. Please update your payment method.", "required": "A subscription is required to use this application.", "trialExpired": "Your trial has expired. Subscribe to continue using the app." },
+    "activeSeats": "Active Seats",
+    "alerts": { "canceledDescription": "Checkout was canceled. You can try again whenever you're ready.", "subscriptionRequired": "Subscription Required", "successDescription": "Your subscription has been activated. Thank you for subscribing!", "successTitle": "Success!" },
+    "bestValue": "Best Value",
+    "billedMonthly": "billed monthly",
+    "cancelsOn": "Cancels on {date}",
+    "checkout": { "trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.", "trialContinuesTitle": "Your trial continues after upgrade" },
+    "checkoutCreateFailed": "Failed to create checkout session",
+    "checkoutStartFailed": "Failed to start checkout",
+    "choosePlan": "Choose Your Plan",
+    "choosePlanDescription": "Start with a 14-day free trial. No credit card required to start.",
+    "currentPlan": "Current Plan",
+    "days": "{count} days",
+    "description": "Manage your subscription and billing details",
+    "features": { "allFeatures": "All features included", "cancelAnytime": "Cancel anytime", "trial": "14-day free trial", "yearlyDiscount": "25% discount vs monthly" },
+    "interval": { "monthlyBilling": "Monthly billing", "yearlyBilling": "Yearly billing" },
+    "manageBilling": "Manage Billing",
+    "monthlyCost": "Monthly Cost",
+    "nextBilling": "Next Billing",
+    "opening": "Opening...",
+    "perSeatMonth": "/seat/month",
+    "plans": { "monthly": { "description": "Flexible month-to-month billing", "title": "Monthly" }, "yearly": { "description": "Save 25% with annual billing", "title": "Yearly" } },
+    "portalOpenFailed": "Failed to open billing portal",
+    "priceSeatMonth": "€{price}/seat/mo",
+    "priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
+    "seatBilledAnnually": "€{price}/seat billed annually",
+    "starting": "Starting...",
+    "startTrial": "Start Free Trial",
+    "status": { "canceled": "Canceled", "noSubscription": "No Subscription", "pastDue": "Past Due", "trial": "Trial" },
+    "title": "Billing & Subscription",
+    "trialEnds": "Trial Ends",
+    "trialBanner": { "description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.", "title": "14-day trial active", "upgrade": "Upgrade" },
+    "vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
+    "yearTotal": "€{amount}/year total"
+  },
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Record absence for {name}"
+      },
+      "empty": {
+        "description": "Try adjusting filters or search to find team members.",
+        "label": "No employees found",
+        "title": "No employees found"
+      },
+      "filters": {
+        "allTeams": "All teams",
+        "searchLabel": "Search employees",
+        "searchPlaceholder": "Search employees…",
+        "searchSubmit": "Search",
+        "teamLabel": "Filter by team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filter by year",
+        "yearPlaceholder": "Year"
+      },
+      "pagination": {
+        "next": "Next",
+        "nextLabel": "Next page",
+        "page": "Page {page} of {pageCount}",
+        "previous": "Previous",
+        "previousLabel": "Previous page",
+        "showing": "Showing {firstItem} to {lastItem} of {total}"
+      },
+      "recordDialog": {
+        "required": "{label} is required",
+        "titleForEmployee": "Record absence for {name}"
+      },
+      "sort": {
+        "ascending": "ascending",
+        "by": "Sort by {label}",
+        "byWithDirection": "Sort by {label} ({direction})",
+        "descending": "descending"
+      },
+      "table": {
+        "actions": "Actions",
+        "allowance": "Allowance",
+        "employee": "Employee",
+        "left": "Left",
+        "pending": "Pending",
+        "sick": "Sick",
+        "teamOrPosition": "Team or Position",
+        "used": "Used"
+      }
+    }
+  },
+  "surcharges": {
+    "reports": {
+      "details": {
+        "appliedRules": "Applied rules",
+        "calculatedAt": "Calculated at",
+        "noAppliedRules": "No applied rules recorded.",
+        "overlapPolicy": "Overlap policy",
+        "percentage": "Percentage",
+        "qualifying": "Qualifying",
+        "surcharge": "Surcharge",
+        "workPeriod": "Work period"
+      },
+      "empty": {
+        "description": "No surcharge calculations matched the selected filters.",
+        "title": "No surcharge calculations found"
+      },
+      "errors": {
+        "loadTitle": "Unable to load calculations"
+      },
+      "filters": {
+        "apply": "Apply filters",
+        "employeeId": "Employee ID",
+        "endDate": "End date",
+        "startDate": "Start date"
+      },
+      "loading": "Loading calculations…",
+      "previousResults": {
+        "description": "The latest request failed, so the previous successful results remain visible.",
+        "title": "Showing previous results."
+      },
+      "rowLimitNotice": "Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
+      "summary": {
+        "baseHours": "Base hours",
+        "calculations": "Calculations",
+        "creditedHours": "Credited surcharge hours",
+        "qualifyingHours": "Qualifying surcharge hours"
+      },
+      "table": {
+        "base": "Base",
+        "created": "Created",
+        "credit": "Credit",
+        "date": "Date",
+        "details": "Details",
+        "employee": "Employee",
+        "percentage": "Percentage",
+        "qualifying": "Qualifying"
+      },
+      "title": "Surcharge reports"
+    }
+  }
 }

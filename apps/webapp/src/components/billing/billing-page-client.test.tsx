@@ -16,6 +16,10 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({}),
+}));
+
 describe("BillingPageClient", () => {
 	it("shows trial checkout clarification copy for trialing subscriptions", () => {
 		render(

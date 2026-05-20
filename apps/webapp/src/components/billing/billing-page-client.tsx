@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "@/navigation";
 
 interface SubscriptionInfo {
 	id: string;
@@ -48,8 +49,9 @@ const MONTHLY_PRICE = 4;
 const YEARLY_PRICE_PER_MONTH = 3;
 const YEARLY_PRICE_TOTAL = 36;
 
-export function BillingPageClient({ subscription, accessResult }: BillingPageClientProps) {
+export function BillingPageClient({ subscription, accessResult, isOwner }: BillingPageClientProps) {
 	const { t } = useTranslate();
+	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isPortalLoading, setIsPortalLoading] = useState(false);
@@ -74,9 +76,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 
 		const data = await response.json().catch(() => null);
 		if (!response.ok) {
-			toast.error(
-				data?.error || t("billing.checkoutCreateFailed", "Failed to create checkout session"),
-			);
+			toast.error(data?.error || t("billing.checkoutCreateFailed", "Failed to create checkout session"));
 			setIsLoading(false);
 			return;
 		}
@@ -136,12 +136,10 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 
 	const getStatusBadge = () => {
 		if (!subscription) {
-			return (
-				<Badge variant="outline">{t("billing.status.noSubscription", "No Subscription")}</Badge>
-			);
+			return <Badge variant="outline">{t("billing.status.noSubscription", "No Subscription")}</Badge>;
 		}
 
-		switch (subscription.status) {
+			switch (subscription.status) {
 			case "trialing":
 				return <Badge variant="default">{t("billing.status.trial", "Trial")}</Badge>;
 			case "active":
@@ -190,9 +188,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 			{!accessResult.canAccess && (
 				<Alert variant="destructive">
 					<IconAlertTriangle className="size-4" />
-					<AlertTitle>
-						{t("billing.alerts.subscriptionRequired", "Subscription Required")}
-					</AlertTitle>
+					<AlertTitle>{t("billing.alerts.subscriptionRequired", "Subscription Required")}</AlertTitle>
 					<AlertDescription>
 						{accessResult.reason === "trial_expired"
 							? t(
@@ -227,128 +223,117 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 			{/* Current Subscription Card */}
 			{subscription ? (
 				<>
-					<Card>
-						<CardHeader>
-							<div className="flex items-center justify-between">
+				<Card>
+					<CardHeader>
+						<div className="flex items-center justify-between">
+							<div>
+								<CardTitle className="flex items-center gap-2">
+									{t("billing.currentPlan", "Current Plan")} {getStatusBadge()}
+								</CardTitle>
+								<CardDescription>
+									{subscription.billingInterval === "year"
+										? t("billing.interval.yearlyBilling", "Yearly billing")
+										: t("billing.interval.monthlyBilling", "Monthly billing")}
+								</CardDescription>
+							</div>
+							<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
+								{isPortalLoading
+									? t("billing.opening", "Opening...")
+									: t("billing.manageBilling", "Manage Billing")}
+							</Button>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="grid gap-6 md:grid-cols-3">
+							{/* Seats */}
+							<div className="flex items-start gap-3">
+								<div className="p-2 bg-primary/10 rounded-lg">
+									<IconUsers className="size-5 text-primary" />
+								</div>
 								<div>
-									<CardTitle className="flex items-center gap-2">
-										{t("billing.currentPlan", "Current Plan")} {getStatusBadge()}
-									</CardTitle>
-									<CardDescription>
+									<p className="text-sm text-muted-foreground">{t("billing.activeSeats", "Active Seats")}</p>
+									<p className="text-2xl font-bold">{subscription.currentSeats}</p>
+									<p className="text-xs text-muted-foreground">
 										{subscription.billingInterval === "year"
-											? t("billing.interval.yearlyBilling", "Yearly billing")
-											: t("billing.interval.monthlyBilling", "Monthly billing")}
-									</CardDescription>
-								</div>
-								<Button variant="outline" onClick={handleManageBilling} disabled={isPortalLoading}>
-									{isPortalLoading
-										? t("billing.opening", "Opening...")
-										: t("billing.manageBilling", "Manage Billing")}
-								</Button>
-							</div>
-						</CardHeader>
-						<CardContent>
-							<div className="grid gap-6 md:grid-cols-3">
-								{/* Seats */}
-								<div className="flex items-start gap-3">
-									<div className="p-2 bg-primary/10 rounded-lg">
-										<IconUsers className="size-5 text-primary" />
-									</div>
-									<div>
-										<p className="text-sm text-muted-foreground">
-											{t("billing.activeSeats", "Active Seats")}
-										</p>
-										<p className="text-2xl font-bold">{subscription.currentSeats}</p>
-										<p className="text-xs text-muted-foreground">
-											{subscription.billingInterval === "year"
-												? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
-														price: YEARLY_PRICE_PER_MONTH,
-													})
-												: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
-										</p>
-									</div>
-								</div>
-
-								{/* Trial Info or Next Billing */}
-								<div className="flex items-start gap-3">
-									<div className="p-2 bg-primary/10 rounded-lg">
-										<IconCalendar className="size-5 text-primary" />
-									</div>
-									<div>
-										{subscription.isTrialing ? (
-											<>
-												<p className="text-sm text-muted-foreground">
-													{t("billing.trialEnds", "Trial Ends")}
-												</p>
-												<p className="text-2xl font-bold">
-													{t("billing.days", "{count} days", { count: getTrialDaysRemaining() })}
-												</p>
-												<p className="text-xs text-muted-foreground">
-													{formatDate(subscription.trialEnd)}
-												</p>
-											</>
-										) : (
-											<>
-												<p className="text-sm text-muted-foreground">
-													{t("billing.nextBilling", "Next Billing")}
-												</p>
-												<p className="text-2xl font-bold">
-													{formatDate(subscription.currentPeriodEnd)}
-												</p>
-												{subscription.cancelAt && (
-													<p className="text-xs text-destructive">
-														{t("billing.cancelsOn", "Cancels on {date}", {
-															date: formatDate(subscription.cancelAt),
-														})}
-													</p>
-												)}
-											</>
-										)}
-									</div>
-								</div>
-
-								{/* Monthly Cost */}
-								<div className="flex items-start gap-3">
-									<div className="p-2 bg-primary/10 rounded-lg">
-										<IconCreditCard className="size-5 text-primary" />
-									</div>
-									<div>
-										<p className="text-sm text-muted-foreground">
-											{t("billing.monthlyCost", "Monthly Cost")}
-										</p>
-										<p className="text-2xl font-bold">
-											€
-											{subscription.billingInterval === "year"
-												? (subscription.currentSeats * YEARLY_PRICE_PER_MONTH).toFixed(2)
-												: (subscription.currentSeats * MONTHLY_PRICE).toFixed(2)}
-										</p>
-										<p className="text-xs text-muted-foreground">
-											{subscription.billingInterval === "year"
-												? t("billing.yearTotal", "€{amount}/year total", {
-														amount: (subscription.currentSeats * YEARLY_PRICE_TOTAL).toFixed(2),
-													})
-												: t("billing.billedMonthly", "billed monthly")}
-										</p>
-									</div>
+										? t("billing.priceSeatMonthYearly", "€{price}/seat/mo (billed yearly)", {
+												price: YEARLY_PRICE_PER_MONTH,
+											})
+										: t("billing.priceSeatMonth", "€{price}/seat/mo", { price: MONTHLY_PRICE })}
+									</p>
 								</div>
 							</div>
-						</CardContent>
-					</Card>
 
-					{subscription.status === "trialing" && (
-						<Alert>
-							<IconCreditCard aria-hidden="true" className="size-4" />
-							<AlertTitle>
-								{t("billing.checkout.trialContinuesTitle", "Your trial continues after upgrade")}
-							</AlertTitle>
-							<AlertDescription>
-								{t(
-									"billing.checkout.trialContinuesDescription",
-									"Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
-								)}
-							</AlertDescription>
-						</Alert>
-					)}
+							{/* Trial Info or Next Billing */}
+							<div className="flex items-start gap-3">
+								<div className="p-2 bg-primary/10 rounded-lg">
+									<IconCalendar className="size-5 text-primary" />
+								</div>
+								<div>
+									{subscription.isTrialing ? (
+										<>
+											<p className="text-sm text-muted-foreground">{t("billing.trialEnds", "Trial Ends")}</p>
+											<p className="text-2xl font-bold">
+												{t("billing.days", "{count} days", { count: getTrialDaysRemaining() })}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{formatDate(subscription.trialEnd)}
+											</p>
+										</>
+									) : (
+										<>
+											<p className="text-sm text-muted-foreground">{t("billing.nextBilling", "Next Billing")}</p>
+											<p className="text-2xl font-bold">
+												{formatDate(subscription.currentPeriodEnd)}
+											</p>
+											{subscription.cancelAt && (
+												<p className="text-xs text-destructive">
+												{t("billing.cancelsOn", "Cancels on {date}", {
+													date: formatDate(subscription.cancelAt),
+												})}
+												</p>
+											)}
+										</>
+									)}
+								</div>
+							</div>
+
+							{/* Monthly Cost */}
+							<div className="flex items-start gap-3">
+								<div className="p-2 bg-primary/10 rounded-lg">
+									<IconCreditCard className="size-5 text-primary" />
+								</div>
+								<div>
+									<p className="text-sm text-muted-foreground">{t("billing.monthlyCost", "Monthly Cost")}</p>
+									<p className="text-2xl font-bold">
+										€
+										{subscription.billingInterval === "year"
+											? (subscription.currentSeats * YEARLY_PRICE_PER_MONTH).toFixed(2)
+											: (subscription.currentSeats * MONTHLY_PRICE).toFixed(2)}
+									</p>
+									<p className="text-xs text-muted-foreground">
+										{subscription.billingInterval === "year"
+										? t("billing.yearTotal", "€{amount}/year total", {
+												amount: (subscription.currentSeats * YEARLY_PRICE_TOTAL).toFixed(2),
+											})
+										: t("billing.billedMonthly", "billed monthly")}
+									</p>
+								</div>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+				{subscription.status === "trialing" && (
+					<Alert>
+						<IconCreditCard aria-hidden="true" className="size-4" />
+						<AlertTitle>{t("billing.checkout.trialContinuesTitle", "Your trial continues after upgrade")}</AlertTitle>
+						<AlertDescription>
+							{t(
+								"billing.checkout.trialContinuesDescription",
+								"Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
+							)}
+						</AlertDescription>
+					</Alert>
+				)}
 				</>
 			) : (
 				/* No Subscription - Show Pricing */
@@ -376,9 +361,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 									<CardContent className="space-y-4">
 										<div>
 											<span className="text-4xl font-bold">€{MONTHLY_PRICE}</span>
-											<span className="text-muted-foreground">
-												{t("billing.perSeatMonth", "/seat/month")}
-											</span>
+											<span className="text-muted-foreground">{t("billing.perSeatMonth", "/seat/month")}</span>
 										</div>
 										<ul className="space-y-2 text-sm">
 											<li className="flex items-center gap-2">
@@ -423,9 +406,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 									<CardContent className="space-y-4">
 										<div>
 											<span className="text-4xl font-bold">€{YEARLY_PRICE_PER_MONTH}</span>
-											<span className="text-muted-foreground">
-												{t("billing.perSeatMonth", "/seat/month")}
-											</span>
+											<span className="text-muted-foreground">{t("billing.perSeatMonth", "/seat/month")}</span>
 											<p className="text-sm text-muted-foreground">
 												{t("billing.seatBilledAnnually", "€{price}/seat billed annually", {
 													price: YEARLY_PRICE_TOTAL,
@@ -461,12 +442,12 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 						</CardContent>
 					</Card>
 
-					<p className="text-center text-sm text-muted-foreground">
-						{t(
-							"billing.vatNotice",
-							"Prices shown are net prices excluding VAT. VAT will be added where applicable.",
-						)}
-					</p>
+				<p className="text-center text-sm text-muted-foreground">
+					{t(
+						"billing.vatNotice",
+						"Prices shown are net prices excluding VAT. VAT will be added where applicable.",
+					)}
+				</p>
 				</div>
 			)}
 
@@ -477,9 +458,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div>
-						<h4 className="font-medium">
-							{t("billing.faq.perSeat.question", "How does per-seat billing work?")}
-						</h4>
+						<h4 className="font-medium">{t("billing.faq.perSeat.question", "How does per-seat billing work?")}</h4>
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"billing.faq.perSeat.answer",
@@ -488,9 +467,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 						</p>
 					</div>
 					<div>
-						<h4 className="font-medium">
-							{t("billing.faq.afterTrial.question", "What happens after the trial?")}
-						</h4>
+						<h4 className="font-medium">{t("billing.faq.afterTrial.question", "What happens after the trial?")}</h4>
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"billing.faq.afterTrial.answer",
@@ -499,9 +476,7 @@ export function BillingPageClient({ subscription, accessResult }: BillingPageCli
 						</p>
 					</div>
 					<div>
-						<h4 className="font-medium">
-							{t("billing.faq.switch.question", "Can I switch between monthly and yearly?")}
-						</h4>
+						<h4 className="font-medium">{t("billing.faq.switch.question", "Can I switch between monthly and yearly?")}</h4>
 						<p className="text-sm text-muted-foreground">
 							{t(
 								"billing.faq.switch.answer",
