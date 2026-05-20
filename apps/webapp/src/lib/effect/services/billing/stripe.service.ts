@@ -138,12 +138,12 @@ export const StripeServiceLive = Layer.effect(
 						if (!stripe) {
 							throw new Error("Stripe not configured");
 						}
-						const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+						const subscriptionData = {
 							metadata: { organizationId: params.organizationId },
+							...(params.trialPeriodDays && params.trialPeriodDays > 0
+								? { trial_period_days: params.trialPeriodDays }
+								: {}),
 						};
-						if (params.trialPeriodDays && params.trialPeriodDays > 0) {
-							subscriptionData.trial_period_days = params.trialPeriodDays;
-						}
 
 						return await stripe.checkout.sessions.create({
 							customer: params.customerId,
