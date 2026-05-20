@@ -1,115 +1,123 @@
 {
-  "appSearch": {
-    "description": "Search pages, settings, people, and teams",
-    "empty": "No results found.",
-    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
-    "placeholder": "Search pages, settings, people, and teams…",
-    "search": "Search",
-    "teamAbsences": {
-      "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
-    }
-  },
-  "billing": {
-    "trialBanner": { "description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.", "title": "Essai de 14 jours actif", "upgrade": "Mettre à niveau" }
-  },
-  "team": {
-    "absences": {
-      "actions": {
-        "recordForEmployee": "Enregistrer une absence pour {name}"
-      },
-      "empty": {
-        "description": "Ajustez les filtres ou la recherche pour trouver des membres de l'équipe.",
-        "label": "Aucun employé trouvé",
-        "title": "Aucun employé trouvé"
-      },
-      "filters": {
-        "allTeams": "Toutes les équipes",
-        "searchLabel": "Rechercher des employés",
-        "searchPlaceholder": "Rechercher des employés…",
-        "searchSubmit": "Rechercher",
-        "teamLabel": "Filtrer par équipe",
-        "teamPlaceholder": "Équipe",
-        "yearLabel": "Filtrer par année",
-        "yearPlaceholder": "Année"
-      },
-      "pagination": {
-        "next": "Suivant",
-        "nextLabel": "Page suivante",
-        "page": "Page {page} sur {pageCount}",
-        "previous": "Précédent",
-        "previousLabel": "Page précédente",
-        "showing": "Affichage de {firstItem} à {lastItem} sur {total}"
-      },
-      "recordDialog": {
-        "required": "{label} est requis",
-        "titleForEmployee": "Enregistrer une absence pour {name}"
-      },
-      "sort": {
-        "ascending": "croissant",
-        "by": "Trier par {label}",
-        "byWithDirection": "Trier par {label} ({direction})",
-        "descending": "décroissant"
-      },
-      "table": {
-        "actions": "Actions",
-        "allowance": "Droits",
-        "employee": "Employé",
-        "left": "Restant",
-        "pending": "En attente",
-        "sick": "Maladie",
-        "teamOrPosition": "Équipe ou poste",
-        "used": "Utilisé"
-      }
-    }
-  },
-  "surcharges": {
-    "reports": {
-      "details": {
-        "appliedRules": "Règles appliquées",
-        "calculatedAt": "Calculé le",
-        "noAppliedRules": "Aucune règle appliquée enregistrée.",
-        "overlapPolicy": "Politique de chevauchement",
-        "percentage": "Pourcentage",
-        "qualifying": "Éligible",
-        "surcharge": "Supplément",
-        "workPeriod": "Période de travail"
-      },
-      "empty": {
-        "description": "Aucun calcul de supplément ne correspond aux filtres sélectionnés.",
-        "title": "Aucun calcul de supplément trouvé"
-      },
-      "errors": {
-        "loadTitle": "Impossible de charger les calculs"
-      },
-      "filters": {
-        "apply": "Appliquer les filtres",
-        "employeeId": "ID employé",
-        "endDate": "Date de fin",
-        "startDate": "Date de début"
-      },
-      "loading": "Chargement des calculs…",
-      "previousResults": {
-        "description": "La dernière requête a échoué, les résultats précédents restent donc visibles.",
-        "title": "Affichage des résultats précédents."
-      },
-      "rowLimitNotice": "Affichage des 500 premiers calculs correspondants. Réduisez les filtres de date ou d'employé pour affiner les totaux.",
-      "summary": {
-        "baseHours": "Heures de base",
-        "calculations": "Calculs",
-        "creditedHours": "Heures de supplément créditées",
-        "qualifyingHours": "Heures de supplément éligibles"
-      },
-      "table": {
-        "base": "Base",
-        "created": "Créé",
-        "credit": "Crédit",
-        "date": "Date",
-        "details": "Détails",
-        "employee": "Employé",
-        "percentage": "Pourcentage",
-        "qualifying": "Qualifiant"
-      },
-      "title": "Rapports de surcharge"
-    }
-  }
+	"appSearch": {
+		"description": "Search pages, settings, people, and teams",
+		"empty": "No results found.",
+		"groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+		"placeholder": "Search pages, settings, people, and teams…",
+		"search": "Search",
+		"teamAbsences": {
+			"description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
+		}
+	},
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "Stripe Checkout collecte vos informations de paiement maintenant. Votre abonnement payant commencera seulement après la fin de l’essai.",
+			"trialContinuesTitle": "Votre essai continue après la mise à niveau"
+		},
+		"trialBanner": {
+			"description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.",
+			"title": "Essai de 14 jours actif",
+			"upgrade": "Mettre à niveau"
+		}
+	},
+	"team": {
+		"absences": {
+			"actions": {
+				"recordForEmployee": "Enregistrer une absence pour {name}"
+			},
+			"empty": {
+				"description": "Ajustez les filtres ou la recherche pour trouver des membres de l'équipe.",
+				"label": "Aucun employé trouvé",
+				"title": "Aucun employé trouvé"
+			},
+			"filters": {
+				"allTeams": "Toutes les équipes",
+				"searchLabel": "Rechercher des employés",
+				"searchPlaceholder": "Rechercher des employés…",
+				"searchSubmit": "Rechercher",
+				"teamLabel": "Filtrer par équipe",
+				"teamPlaceholder": "Équipe",
+				"yearLabel": "Filtrer par année",
+				"yearPlaceholder": "Année"
+			},
+			"pagination": {
+				"next": "Suivant",
+				"nextLabel": "Page suivante",
+				"page": "Page {page} sur {pageCount}",
+				"previous": "Précédent",
+				"previousLabel": "Page précédente",
+				"showing": "Affichage de {firstItem} à {lastItem} sur {total}"
+			},
+			"recordDialog": {
+				"required": "{label} est requis",
+				"titleForEmployee": "Enregistrer une absence pour {name}"
+			},
+			"sort": {
+				"ascending": "croissant",
+				"by": "Trier par {label}",
+				"byWithDirection": "Trier par {label} ({direction})",
+				"descending": "décroissant"
+			},
+			"table": {
+				"actions": "Actions",
+				"allowance": "Droits",
+				"employee": "Employé",
+				"left": "Restant",
+				"pending": "En attente",
+				"sick": "Maladie",
+				"teamOrPosition": "Équipe ou poste",
+				"used": "Utilisé"
+			}
+		}
+	},
+	"surcharges": {
+		"reports": {
+			"details": {
+				"appliedRules": "Règles appliquées",
+				"calculatedAt": "Calculé le",
+				"noAppliedRules": "Aucune règle appliquée enregistrée.",
+				"overlapPolicy": "Politique de chevauchement",
+				"percentage": "Pourcentage",
+				"qualifying": "Éligible",
+				"surcharge": "Supplément",
+				"workPeriod": "Période de travail"
+			},
+			"empty": {
+				"description": "Aucun calcul de supplément ne correspond aux filtres sélectionnés.",
+				"title": "Aucun calcul de supplément trouvé"
+			},
+			"errors": {
+				"loadTitle": "Impossible de charger les calculs"
+			},
+			"filters": {
+				"apply": "Appliquer les filtres",
+				"employeeId": "ID employé",
+				"endDate": "Date de fin",
+				"startDate": "Date de début"
+			},
+			"loading": "Chargement des calculs…",
+			"previousResults": {
+				"description": "La dernière requête a échoué, les résultats précédents restent donc visibles.",
+				"title": "Affichage des résultats précédents."
+			},
+			"rowLimitNotice": "Affichage des 500 premiers calculs correspondants. Réduisez les filtres de date ou d'employé pour affiner les totaux.",
+			"summary": {
+				"baseHours": "Heures de base",
+				"calculations": "Calculs",
+				"creditedHours": "Heures de supplément créditées",
+				"qualifyingHours": "Heures de supplément éligibles"
+			},
+			"table": {
+				"base": "Base",
+				"created": "Créé",
+				"credit": "Crédit",
+				"date": "Date",
+				"details": "Détails",
+				"employee": "Employé",
+				"percentage": "Pourcentage",
+				"qualifying": "Qualifiant"
+			},
+			"title": "Rapports de surcharge"
+		}
+	}
 }

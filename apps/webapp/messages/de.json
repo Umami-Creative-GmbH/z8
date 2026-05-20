@@ -1,115 +1,123 @@
 {
-  "appSearch": {
-    "description": "Search pages, settings, people, and teams",
-    "empty": "No results found.",
-    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
-    "placeholder": "Search pages, settings, people, and teams…",
-    "search": "Search",
-    "teamAbsences": {
-      "description": "Mitarbeiterabwesenheitskennzahlen überprüfen und Abwesenheiten erfassen"
-    }
-  },
-  "billing": {
-    "trialBanner": { "description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.", "title": "14-tägige Testphase aktiv", "upgrade": "Upgrade" }
-  },
-  "team": {
-    "absences": {
-      "actions": {
-        "recordForEmployee": "Abwesenheit für {name} erfassen"
-      },
-      "empty": {
-        "description": "Passen Sie Filter oder Suche an, um Teammitglieder zu finden.",
-        "label": "Keine Mitarbeiter gefunden",
-        "title": "Keine Mitarbeiter gefunden"
-      },
-      "filters": {
-        "allTeams": "Alle Teams",
-        "searchLabel": "Mitarbeiter suchen",
-        "searchPlaceholder": "Mitarbeiter suchen…",
-        "searchSubmit": "Suchen",
-        "teamLabel": "Nach Team filtern",
-        "teamPlaceholder": "Team",
-        "yearLabel": "Nach Jahr filtern",
-        "yearPlaceholder": "Jahr"
-      },
-      "pagination": {
-        "next": "Weiter",
-        "nextLabel": "Nächste Seite",
-        "page": "Seite {page} von {pageCount}",
-        "previous": "Zurück",
-        "previousLabel": "Vorherige Seite",
-        "showing": "Zeige {firstItem} bis {lastItem} von {total}"
-      },
-      "recordDialog": {
-        "required": "{label} ist erforderlich",
-        "titleForEmployee": "Abwesenheit für {name} erfassen"
-      },
-      "sort": {
-        "ascending": "aufsteigend",
-        "by": "Nach {label} sortieren",
-        "byWithDirection": "Nach {label} sortieren ({direction})",
-        "descending": "absteigend"
-      },
-      "table": {
-        "actions": "Aktionen",
-        "allowance": "Anspruch",
-        "employee": "Mitarbeiter",
-        "left": "Übrig",
-        "pending": "Ausstehend",
-        "sick": "Krank",
-        "teamOrPosition": "Team oder Position",
-        "used": "Genutzt"
-      }
-    }
-  },
-  "surcharges": {
-    "reports": {
-      "details": {
-        "appliedRules": "Angewendete Regeln",
-        "calculatedAt": "Berechnet am",
-        "noAppliedRules": "Keine angewendeten Regeln erfasst.",
-        "overlapPolicy": "Überschneidungsrichtlinie",
-        "percentage": "Prozentsatz",
-        "qualifying": "Qualifizierend",
-        "surcharge": "Zuschlag",
-        "workPeriod": "Arbeitszeitraum"
-      },
-      "empty": {
-        "description": "Keine Zuschlagsberechnungen entsprachen den ausgewählten Filtern.",
-        "title": "Keine Zuschlagsberechnungen gefunden"
-      },
-      "errors": {
-        "loadTitle": "Berechnungen konnten nicht geladen werden"
-      },
-      "filters": {
-        "apply": "Filter anwenden",
-        "employeeId": "Mitarbeiter-ID",
-        "endDate": "Enddatum",
-        "startDate": "Startdatum"
-      },
-      "loading": "Berechnungen werden geladen…",
-      "previousResults": {
-        "description": "Die letzte Anfrage ist fehlgeschlagen, daher bleiben die vorherigen erfolgreichen Ergebnisse sichtbar.",
-        "title": "Vorherige Ergebnisse werden angezeigt."
-      },
-      "rowLimitNotice": "Anzeige der ersten 500 passenden Berechnungen. Schränken Sie die Datums- oder Mitarbeiterfilter ein, um die Summen zu präzisieren.",
-      "summary": {
-        "baseHours": "Basisstunden",
-        "calculations": "Berechnungen",
-        "creditedHours": "Angerechnete Zuschlagsstunden",
-        "qualifyingHours": "Qualifizierende Zuschlagsstunden"
-      },
-      "table": {
-        "base": "Basis",
-        "created": "Erstellt",
-        "credit": "Guthaben",
-        "date": "Datum",
-        "details": "Details",
-        "employee": "Mitarbeiter",
-        "percentage": "Prozentsatz",
-        "qualifying": "Qualifizierend"
-      },
-      "title": "Zuschlagsberichte"
-    }
-  }
+	"appSearch": {
+		"description": "Search pages, settings, people, and teams",
+		"empty": "No results found.",
+		"groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+		"placeholder": "Search pages, settings, people, and teams…",
+		"search": "Search",
+		"teamAbsences": {
+			"description": "Mitarbeiterabwesenheitskennzahlen überprüfen und Abwesenheiten erfassen"
+		}
+	},
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdetails. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testphase.",
+			"trialContinuesTitle": "Ihre Testphase läuft nach dem Upgrade weiter"
+		},
+		"trialBanner": {
+			"description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.",
+			"title": "14-tägige Testphase aktiv",
+			"upgrade": "Upgrade"
+		}
+	},
+	"team": {
+		"absences": {
+			"actions": {
+				"recordForEmployee": "Abwesenheit für {name} erfassen"
+			},
+			"empty": {
+				"description": "Passen Sie Filter oder Suche an, um Teammitglieder zu finden.",
+				"label": "Keine Mitarbeiter gefunden",
+				"title": "Keine Mitarbeiter gefunden"
+			},
+			"filters": {
+				"allTeams": "Alle Teams",
+				"searchLabel": "Mitarbeiter suchen",
+				"searchPlaceholder": "Mitarbeiter suchen…",
+				"searchSubmit": "Suchen",
+				"teamLabel": "Nach Team filtern",
+				"teamPlaceholder": "Team",
+				"yearLabel": "Nach Jahr filtern",
+				"yearPlaceholder": "Jahr"
+			},
+			"pagination": {
+				"next": "Weiter",
+				"nextLabel": "Nächste Seite",
+				"page": "Seite {page} von {pageCount}",
+				"previous": "Zurück",
+				"previousLabel": "Vorherige Seite",
+				"showing": "Zeige {firstItem} bis {lastItem} von {total}"
+			},
+			"recordDialog": {
+				"required": "{label} ist erforderlich",
+				"titleForEmployee": "Abwesenheit für {name} erfassen"
+			},
+			"sort": {
+				"ascending": "aufsteigend",
+				"by": "Nach {label} sortieren",
+				"byWithDirection": "Nach {label} sortieren ({direction})",
+				"descending": "absteigend"
+			},
+			"table": {
+				"actions": "Aktionen",
+				"allowance": "Anspruch",
+				"employee": "Mitarbeiter",
+				"left": "Übrig",
+				"pending": "Ausstehend",
+				"sick": "Krank",
+				"teamOrPosition": "Team oder Position",
+				"used": "Genutzt"
+			}
+		}
+	},
+	"surcharges": {
+		"reports": {
+			"details": {
+				"appliedRules": "Angewendete Regeln",
+				"calculatedAt": "Berechnet am",
+				"noAppliedRules": "Keine angewendeten Regeln erfasst.",
+				"overlapPolicy": "Überschneidungsrichtlinie",
+				"percentage": "Prozentsatz",
+				"qualifying": "Qualifizierend",
+				"surcharge": "Zuschlag",
+				"workPeriod": "Arbeitszeitraum"
+			},
+			"empty": {
+				"description": "Keine Zuschlagsberechnungen entsprachen den ausgewählten Filtern.",
+				"title": "Keine Zuschlagsberechnungen gefunden"
+			},
+			"errors": {
+				"loadTitle": "Berechnungen konnten nicht geladen werden"
+			},
+			"filters": {
+				"apply": "Filter anwenden",
+				"employeeId": "Mitarbeiter-ID",
+				"endDate": "Enddatum",
+				"startDate": "Startdatum"
+			},
+			"loading": "Berechnungen werden geladen…",
+			"previousResults": {
+				"description": "Die letzte Anfrage ist fehlgeschlagen, daher bleiben die vorherigen erfolgreichen Ergebnisse sichtbar.",
+				"title": "Vorherige Ergebnisse werden angezeigt."
+			},
+			"rowLimitNotice": "Anzeige der ersten 500 passenden Berechnungen. Schränken Sie die Datums- oder Mitarbeiterfilter ein, um die Summen zu präzisieren.",
+			"summary": {
+				"baseHours": "Basisstunden",
+				"calculations": "Berechnungen",
+				"creditedHours": "Angerechnete Zuschlagsstunden",
+				"qualifyingHours": "Qualifizierende Zuschlagsstunden"
+			},
+			"table": {
+				"base": "Basis",
+				"created": "Erstellt",
+				"credit": "Guthaben",
+				"date": "Datum",
+				"details": "Details",
+				"employee": "Mitarbeiter",
+				"percentage": "Prozentsatz",
+				"qualifying": "Qualifizierend"
+			},
+			"title": "Zuschlagsberichte"
+		}
+	}
 }

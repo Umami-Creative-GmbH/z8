@@ -1,115 +1,123 @@
 {
-  "appSearch": {
-    "description": "Search pages, settings, people, and teams",
-    "empty": "No results found.",
-    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
-    "placeholder": "Search pages, settings, people, and teams…",
-    "search": "Search",
-    "teamAbsences": {
-      "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
-    }
-  },
-  "billing": {
-    "trialBanner": { "description": "Restano {days} giorni. Aggiungi ora i dati di pagamento; l’abbonamento a pagamento inizierà dopo la prova.", "title": "Prova di 14 giorni attiva", "upgrade": "Esegui l’upgrade" }
-  },
-  "team": {
-    "absences": {
-      "actions": {
-        "recordForEmployee": "Registra assenza per {name}"
-      },
-      "empty": {
-        "description": "Modifica i filtri o la ricerca per trovare membri del team.",
-        "label": "Nessun dipendente trovato",
-        "title": "Nessun dipendente trovato"
-      },
-      "filters": {
-        "allTeams": "Tutti i team",
-        "searchLabel": "Cerca dipendenti",
-        "searchPlaceholder": "Cerca dipendenti…",
-        "searchSubmit": "Cerca",
-        "teamLabel": "Filtra per team",
-        "teamPlaceholder": "Team",
-        "yearLabel": "Filtra per anno",
-        "yearPlaceholder": "Anno"
-      },
-      "pagination": {
-        "next": "Avanti",
-        "nextLabel": "Pagina successiva",
-        "page": "Pagina {page} di {pageCount}",
-        "previous": "Indietro",
-        "previousLabel": "Pagina precedente",
-        "showing": "Visualizzazione da {firstItem} a {lastItem} di {total}"
-      },
-      "recordDialog": {
-        "required": "{label} è obbligatorio",
-        "titleForEmployee": "Registra assenza per {name}"
-      },
-      "sort": {
-        "ascending": "crescente",
-        "by": "Ordina per {label}",
-        "byWithDirection": "Ordina per {label} ({direction})",
-        "descending": "decrescente"
-      },
-      "table": {
-        "actions": "Azioni",
-        "allowance": "Disponibilità",
-        "employee": "Dipendente",
-        "left": "Residuo",
-        "pending": "In sospeso",
-        "sick": "Malattia",
-        "teamOrPosition": "Team o posizione",
-        "used": "Usato"
-      }
-    }
-  },
-  "surcharges": {
-    "reports": {
-      "details": {
-        "appliedRules": "Regole applicate",
-        "calculatedAt": "Calcolato il",
-        "noAppliedRules": "Nessuna regola applicata registrata.",
-        "overlapPolicy": "Politica di sovrapposizione",
-        "percentage": "Percentuale",
-        "qualifying": "Qualificante",
-        "surcharge": "Supplemento",
-        "workPeriod": "Periodo lavorativo"
-      },
-      "empty": {
-        "description": "Nessun calcolo del supplemento corrisponde ai filtri selezionati.",
-        "title": "Nessun calcolo del supplemento trovato"
-      },
-      "errors": {
-        "loadTitle": "Impossibile caricare i calcoli"
-      },
-      "filters": {
-        "apply": "Applica filtri",
-        "employeeId": "ID dipendente",
-        "endDate": "Data di fine",
-        "startDate": "Data di inizio"
-      },
-      "loading": "Caricamento calcoli in corso…",
-      "previousResults": {
-        "description": "L'ultima richiesta non è riuscita, pertanto rimangono visibili i risultati precedenti.",
-        "title": "Visualizzazione dei risultati precedenti."
-      },
-      "rowLimitNotice": "Visualizzazione dei primi 500 calcoli corrispondenti. Restringi i filtri per data o dipendente per affinare i totali.",
-      "summary": {
-        "baseHours": "Ore base",
-        "calculations": "Calcoli",
-        "creditedHours": "Ore di supplemento accreditate",
-        "qualifyingHours": "Ore di supplemento qualificanti"
-      },
-      "table": {
-        "base": "Base",
-        "created": "Creato",
-        "credit": "Credito",
-        "date": "Data",
-        "details": "Dettagli",
-        "employee": "Dipendente",
-        "percentage": "Percentuale",
-        "qualifying": "Qualificante"
-      },
-      "title": "Report supplementi"
-    }
-  }
+	"appSearch": {
+		"description": "Search pages, settings, people, and teams",
+		"empty": "No results found.",
+		"groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+		"placeholder": "Search pages, settings, people, and teams…",
+		"search": "Search",
+		"teamAbsences": {
+			"description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
+		}
+	},
+	"billing": {
+		"checkout": {
+			"trialContinuesDescription": "Stripe Checkout raccoglie ora i dati di pagamento. L’abbonamento a pagamento inizierà solo dopo la scadenza della prova.",
+			"trialContinuesTitle": "La prova continua dopo l’upgrade"
+		},
+		"trialBanner": {
+			"description": "Restano {days} giorni. Aggiungi ora i dati di pagamento; l’abbonamento a pagamento inizierà dopo la prova.",
+			"title": "Prova di 14 giorni attiva",
+			"upgrade": "Esegui l’upgrade"
+		}
+	},
+	"team": {
+		"absences": {
+			"actions": {
+				"recordForEmployee": "Registra assenza per {name}"
+			},
+			"empty": {
+				"description": "Modifica i filtri o la ricerca per trovare membri del team.",
+				"label": "Nessun dipendente trovato",
+				"title": "Nessun dipendente trovato"
+			},
+			"filters": {
+				"allTeams": "Tutti i team",
+				"searchLabel": "Cerca dipendenti",
+				"searchPlaceholder": "Cerca dipendenti…",
+				"searchSubmit": "Cerca",
+				"teamLabel": "Filtra per team",
+				"teamPlaceholder": "Team",
+				"yearLabel": "Filtra per anno",
+				"yearPlaceholder": "Anno"
+			},
+			"pagination": {
+				"next": "Avanti",
+				"nextLabel": "Pagina successiva",
+				"page": "Pagina {page} di {pageCount}",
+				"previous": "Indietro",
+				"previousLabel": "Pagina precedente",
+				"showing": "Visualizzazione da {firstItem} a {lastItem} di {total}"
+			},
+			"recordDialog": {
+				"required": "{label} è obbligatorio",
+				"titleForEmployee": "Registra assenza per {name}"
+			},
+			"sort": {
+				"ascending": "crescente",
+				"by": "Ordina per {label}",
+				"byWithDirection": "Ordina per {label} ({direction})",
+				"descending": "decrescente"
+			},
+			"table": {
+				"actions": "Azioni",
+				"allowance": "Disponibilità",
+				"employee": "Dipendente",
+				"left": "Residuo",
+				"pending": "In sospeso",
+				"sick": "Malattia",
+				"teamOrPosition": "Team o posizione",
+				"used": "Usato"
+			}
+		}
+	},
+	"surcharges": {
+		"reports": {
+			"details": {
+				"appliedRules": "Regole applicate",
+				"calculatedAt": "Calcolato il",
+				"noAppliedRules": "Nessuna regola applicata registrata.",
+				"overlapPolicy": "Politica di sovrapposizione",
+				"percentage": "Percentuale",
+				"qualifying": "Qualificante",
+				"surcharge": "Supplemento",
+				"workPeriod": "Periodo lavorativo"
+			},
+			"empty": {
+				"description": "Nessun calcolo del supplemento corrisponde ai filtri selezionati.",
+				"title": "Nessun calcolo del supplemento trovato"
+			},
+			"errors": {
+				"loadTitle": "Impossibile caricare i calcoli"
+			},
+			"filters": {
+				"apply": "Applica filtri",
+				"employeeId": "ID dipendente",
+				"endDate": "Data di fine",
+				"startDate": "Data di inizio"
+			},
+			"loading": "Caricamento calcoli in corso…",
+			"previousResults": {
+				"description": "L'ultima richiesta non è riuscita, pertanto rimangono visibili i risultati precedenti.",
+				"title": "Visualizzazione dei risultati precedenti."
+			},
+			"rowLimitNotice": "Visualizzazione dei primi 500 calcoli corrispondenti. Restringi i filtri per data o dipendente per affinare i totali.",
+			"summary": {
+				"baseHours": "Ore base",
+				"calculations": "Calcoli",
+				"creditedHours": "Ore di supplemento accreditate",
+				"qualifyingHours": "Ore di supplemento qualificanti"
+			},
+			"table": {
+				"base": "Base",
+				"created": "Creato",
+				"credit": "Credito",
+				"date": "Data",
+				"details": "Dettagli",
+				"employee": "Dipendente",
+				"percentage": "Percentuale",
+				"qualifying": "Qualificante"
+			},
+			"title": "Report supplementi"
+		}
+	}
 }
