@@ -17,7 +17,7 @@ ARG PNPM_VERSION
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 ENV PNPM_HOME=/pnpm
-ENV PATH=${PNPM_HOME}:${PATH}
+ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
     PORT=8080
 
