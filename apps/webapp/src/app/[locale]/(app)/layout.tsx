@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Effect } from "effect";
 import type { ReactNode } from "react";
+import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
@@ -10,6 +12,11 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
+import {
+	type BillingAccessResult,
+	BillingEnforcementService,
+	BillingEnforcementServiceLive,
+} from "@/lib/effect/services/billing/billing-enforcement.service";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
@@ -49,6 +56,25 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		redirect(newPath);
 	}
 
+	const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
+	const activeOrganizationId = session.session?.activeOrganizationId;
+	const billingAccess = activeOrganizationId
+		? await Effect.runPromise(
+				Effect.gen(function* () {
+					const enforcementService = yield* BillingEnforcementService;
+
+					return yield* enforcementService.checkBillingAccess(activeOrganizationId);
+				}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			).catch(() => billingDisabledAccess)
+		: billingDisabledAccess;
+	const trialDaysRemaining =
+		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
+			? billingAccess.daysRemaining
+			: null;
+	const showTrialBanner =
+		billingAccess.state === "trialing" &&
+		trialDaysRemaining !== null;
+
 	return (
 		<PushPermissionProvider>
 			<UserPreferencesProvider weekStartDay={weekStartDay} timeFormat={timeFormat}>
@@ -64,6 +90,12 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 						<ServerAppSidebar variant="inset" />
 						<SidebarInset>
 							<SiteHeader />
+							{showTrialBanner ? (
+								<TrialBanner
+									daysRemaining={trialDaysRemaining}
+									billingHref={`/${locale}/settings/billing`}
+								/>
+							) : null}
 							<OrganizationDeletionBanner />
 							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
 						</SidebarInset>
