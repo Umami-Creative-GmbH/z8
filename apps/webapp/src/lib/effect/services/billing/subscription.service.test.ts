@@ -4,10 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { subscription } from "@/db/schema";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
 
-const { findFirst, insertValues, onConflictDoNothing, returning, setValues, updateWhere } = vi.hoisted(() => ({
+const {
+	findFirst,
+	insertValues,
+	onConflictDoNothing,
+	onConflictDoUpdate,
+	returning,
+	setValues,
+	updateWhere,
+} = vi.hoisted(() => ({
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
+	onConflictDoUpdate: vi.fn(),
 	returning: vi.fn(),
 	setValues: vi.fn(),
 	updateWhere: vi.fn(),
@@ -60,9 +69,11 @@ describe("SubscriptionService", () => {
 		findFirst.mockResolvedValue(existingSubscriptionRow);
 		insertValues.mockResolvedValue(undefined);
 		onConflictDoNothing.mockReturnValue({ returning });
+		onConflictDoUpdate.mockResolvedValue(undefined);
 		returning.mockResolvedValue([]);
 		updateWhere.mockResolvedValue(undefined);
 		setValues.mockReturnValue({ where: updateWhere });
+		process.env.BILLING_ENABLED = "false";
 	});
 
 	it("updates an existing placeholder subscription row when creating from checkout", async () => {
@@ -204,6 +215,83 @@ describe("SubscriptionService", () => {
 			id: "sub_raced_trial_123",
 			stripeCustomerId: null,
 			trialStart: now,
+		});
+	});
+
+	it("returns false for an expired trialing row when checking mutation access", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-06-04T10:00:00.000Z"));
+		process.env.BILLING_ENABLED = "true";
+		findFirst.mockResolvedValueOnce({
+			...existingSubscriptionRow,
+			status: "trialing",
+			trialEnd: new Date("2026-06-03T10:00:00.000Z"),
+		});
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.canMutateData("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive)),
+			);
+
+			expect(result).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("returns true for an unexpired trialing row when checking mutation access", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-06-03T10:00:00.000Z"));
+		process.env.BILLING_ENABLED = "true";
+		findFirst.mockResolvedValueOnce({
+			...existingSubscriptionRow,
+			status: "trialing",
+			trialEnd: new Date("2026-06-03T10:00:00.000Z"),
+		});
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.canMutateData("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive)),
+			);
+
+			expect(result).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("sets Stripe customer ID with conflict-safe insert update", async () => {
+		insertValues.mockReturnValueOnce({ onConflictDoUpdate });
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const subscriptionService = yield* SubscriptionService;
+
+				yield* subscriptionService.setStripeCustomerId("org_123", "cus_test_123");
+			}).pipe(Effect.provide(SubscriptionServiceLive)),
+		);
+
+		expect(findFirst).not.toHaveBeenCalled();
+		expect(insertValues).toHaveBeenCalledWith({
+			organizationId: "org_123",
+			stripeCustomerId: "cus_test_123",
+			status: "incomplete",
+			currentSeats: 0,
+		});
+		expect(onConflictDoUpdate).toHaveBeenCalledWith({
+			target: subscription.organizationId,
+			set: expect.objectContaining({
+				stripeCustomerId: "cus_test_123",
+				updatedAt: expect.any(Date),
+			}),
 		});
 	});
 });

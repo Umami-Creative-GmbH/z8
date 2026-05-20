@@ -213,7 +213,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 
 					if (existing) return mapToSubscriptionInfo(existing);
 
-					const trialEnd = DateTime.fromJSDate(now).plus({ days: 14 }).toJSDate();
+					const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
 					const inserted = await db
 						.insert(subscription)
 						.values({
@@ -348,25 +348,21 @@ export const SubscriptionServiceLive = Layer.succeed(
 		setStripeCustomerId: (organizationId, stripeCustomerId) =>
 			Effect.tryPromise({
 				try: async () => {
-					// Check if subscription record exists
-					const existing = await db.query.subscription.findFirst({
-						where: eq(subscription.organizationId, organizationId),
-					});
-
-					if (existing) {
-						await db
-							.update(subscription)
-							.set({ stripeCustomerId })
-							.where(eq(subscription.organizationId, organizationId));
-					} else {
-						// Create a minimal subscription record with customer ID
-						await db.insert(subscription).values({
+					await db
+						.insert(subscription)
+						.values({
 							organizationId,
 							stripeCustomerId,
 							status: "incomplete",
 							currentSeats: 0,
+						})
+						.onConflictDoUpdate({
+							target: subscription.organizationId,
+							set: {
+								stripeCustomerId,
+								updatedAt: new Date(),
+							},
 						});
-					}
 				},
 				catch: (error) =>
 					new DatabaseError({
@@ -401,6 +397,10 @@ export const SubscriptionServiceLive = Layer.succeed(
 
 				// No subscription = cannot mutate (needs to subscribe)
 				if (!sub) return false;
+
+				if (sub.status === "trialing") {
+					return sub.trialEnd !== null && sub.trialEnd.getTime() >= Date.now();
+				}
 
 				// Check status
 				const blockedStatuses = ["canceled", "unpaid", "past_due"];
