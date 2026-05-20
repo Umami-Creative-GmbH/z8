@@ -79,6 +79,25 @@ import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./acti
 import type { WorkPeriodWithEntries } from "./types";
 
 export async function addBreakToActiveSession(breakMinutes: number) {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
+
 	return addBreakToActiveSessionAction(breakMinutes);
 }
 
@@ -329,6 +348,15 @@ export async function editSameDayTimeEntry(
 			success: false,
 			error: validation.error || "Cannot update time entry for this period",
 			holidayName: validation.holidayName,
+		};
+	}
+
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
 		};
 	}
 
@@ -1638,6 +1666,25 @@ export async function createTimeEntry(params: {
 export async function requestTimeCorrection(
 	data: CorrectionRequest,
 ): Promise<ServerActionResult<{ approvalId: string }>> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { success: false, error: "Not authenticated" };
+	}
+
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return { success: false, error: "Employee profile not found" };
+	}
+
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
+
 	return requestTimeCorrectionEffect(data);
 }
 
@@ -1818,6 +1865,15 @@ export async function updateWorkPeriodNotes(
 			};
 		}
 
+		const billingAccess = await requireBillingForMutation(emp.organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
+			};
+		}
+
 		// Update the clock-out entry's notes
 		await db.update(timeEntry).set({ notes }).where(eq(timeEntry.id, period.clockOutId));
 
@@ -1874,6 +1930,15 @@ export async function deleteWorkPeriod(
 			return {
 				success: false,
 				error: "Cannot delete an active work period. Please clock out first.",
+			};
+		}
+
+		const billingAccess = await requireBillingForMutation(emp.organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
 			};
 		}
 
@@ -2005,6 +2070,15 @@ export async function splitWorkPeriod(
 			};
 		}
 
+		const billingAccess = await requireBillingForMutation(emp.organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
+			};
+		}
+
 		// Create clock-out entry for first period at split time
 		const firstClockOut = await createTimeEntry({
 			employeeId: emp.id,
@@ -2132,6 +2206,15 @@ export async function updateTimeEntryNotes(
 			return {
 				success: false,
 				error: "You can only update your own time entries",
+			};
+		}
+
+		const billingAccess = await requireBillingForMutation(emp.organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
 			};
 		}
 
@@ -2326,6 +2409,15 @@ export async function updateWorkPeriodProject(
 					error: projectValidation.error || "Cannot assign to this project",
 				};
 			}
+		}
+
+		const billingAccess = await requireBillingForMutation(emp.organizationId);
+		if (!isBillingMutationAllowed(billingAccess)) {
+			return {
+				success: false,
+				error: "billing_required",
+				code: billingAccess.reason ?? "subscription_required",
+			};
 		}
 
 		// Update the work period

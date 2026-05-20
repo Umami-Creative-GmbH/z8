@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
 
 function functionBody(name: string) {
-	const start = source.indexOf(`export async function ${name}`);
+	const match = new RegExp(`export async function ${name}\\s*\\(`).exec(source);
+	const start = match?.index ?? -1;
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
 	const nextExport = source.indexOf("export async function", start + 1);
 	return source.slice(start, nextExport === -1 ? undefined : nextExport);
@@ -39,7 +40,23 @@ describe("legacy time-tracking action billing guards", () => {
 		expectBillingGuardBeforeWrite("clockOut", "createTimeEntry({");
 	});
 
+	it("guards break insertion before delegating to the clocking mutation", () => {
+		expectBillingGuardBeforeWrite("addBreakToActiveSession", "addBreakToActiveSessionAction(breakMinutes)");
+	});
+
 	it("guards manual time-entry creation before creating time entries", () => {
 		expectBillingGuardBeforeWrite("createManualTimeEntry", "createTimeEntry({");
+	});
+
+	it.each([
+		["editSameDayTimeEntry", "createTimeEntry({"],
+		["requestTimeCorrection", "requestTimeCorrectionEffect(data)"],
+		["updateWorkPeriodNotes", "await db.update"],
+		["deleteWorkPeriod", ".update(timeEntry)"],
+		["splitWorkPeriod", "createTimeEntry({"],
+		["updateTimeEntryNotes", "await db.update"],
+		["updateWorkPeriodProject", ".update(workPeriod)"],
+	])("guards %s before writing time data", (name, writeMarker) => {
+		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
 });
