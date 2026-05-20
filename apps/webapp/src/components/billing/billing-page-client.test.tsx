@@ -71,7 +71,7 @@ describe("BillingPageClient", () => {
 
 			expect(settingsMessages.billing.checkout.trialContinuesTitle).toBeTruthy();
 			expect(settingsMessages.billing.checkout.trialContinuesDescription).toBeTruthy();
-			expect(rootMessages.billing.checkout).toBeUndefined();
+			expect(rootMessages.billing?.checkout).toBeUndefined();
 		}
 	});
 });
