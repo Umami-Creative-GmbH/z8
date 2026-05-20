@@ -11,6 +11,11 @@
 			"goToBilling": "Zur Abrechnung",
 			"memberDescription": "Diese Organisation ist gesperrt. Wenden Sie sich an einen Organisationsadministrator, um die Abrechnung zu aktualisieren.",
 			"title": "Organisation gesperrt"
+		},
+		"trialBanner": {
+			"description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.",
+			"title": "14-tägige Testphase aktiv",
+			"upgrade": "Upgrade"
 		}
 	},
 	"actions": {

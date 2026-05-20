@@ -11,6 +11,11 @@
 			"goToBilling": "Go to billing",
 			"memberDescription": "This organization is suspended. Contact an organization admin to update billing.",
 			"title": "Organization suspended"
+		},
+		"trialBanner": {
+			"description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
+			"title": "14-day trial active",
+			"upgrade": "Upgrade"
 		}
 	},
 	"actions": {

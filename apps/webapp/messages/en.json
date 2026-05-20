@@ -45,7 +45,6 @@
     "status": { "canceled": "Canceled", "noSubscription": "No Subscription", "pastDue": "Past Due", "trial": "Trial" },
     "title": "Billing & Subscription",
     "trialEnds": "Trial Ends",
-    "trialBanner": { "description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.", "title": "14-day trial active", "upgrade": "Upgrade" },
     "vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
     "yearTotal": "€{amount}/year total"
   },

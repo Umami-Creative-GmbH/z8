@@ -9,9 +9,6 @@
       "description": "Revisar las métricas de ausencia de los empleados y registrar las ausencias"
     }
   },
-  "billing": {
-    "trialBanner": { "description": "Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.", "title": "Prueba de 14 días activa", "upgrade": "Mejorar plan" }
-  },
   "team": {
     "absences": {
       "actions": {

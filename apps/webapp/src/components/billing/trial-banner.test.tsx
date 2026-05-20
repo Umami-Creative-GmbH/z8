@@ -86,9 +86,13 @@ describe("TrialBanner", () => {
 		};
 
 		for (const [locale, expected] of Object.entries(expectedMessages)) {
-			const messages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
+			const commonMessages = JSON.parse(
+				readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"),
+			);
+			const rootMessages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
 
-			expect(messages.billing.trialBanner).toEqual(expected);
+			expect(commonMessages.billing.trialBanner).toEqual(expected);
+			expect(rootMessages.billing?.trialBanner).toBeUndefined();
 		}
 	});
 

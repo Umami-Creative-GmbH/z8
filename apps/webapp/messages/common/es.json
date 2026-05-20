@@ -11,6 +11,11 @@
 			"goToBilling": "Ir a facturación",
 			"memberDescription": "Esta organización está suspendida. Contacte con un administrador de la organización para actualizar la facturación.",
 			"title": "Organización suspendida"
+		},
+		"trialBanner": {
+			"description": "Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.",
+			"title": "Prueba de 14 días activa",
+			"upgrade": "Mejorar plan"
 		}
 	},
 	"actions": {

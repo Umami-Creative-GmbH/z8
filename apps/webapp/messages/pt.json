@@ -9,9 +9,6 @@
       "description": "Revisar métricas de ausência de funcionários e registrar ausências"
     }
   },
-  "billing": {
-    "trialBanner": { "description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.", "title": "Teste de 14 dias ativo", "upgrade": "Fazer upgrade" }
-  },
   "team": {
     "absences": {
       "actions": {

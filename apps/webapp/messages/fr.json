@@ -9,9 +9,6 @@
       "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
     }
   },
-  "billing": {
-    "trialBanner": { "description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.", "title": "Essai de 14 jours actif", "upgrade": "Mettre à niveau" }
-  },
   "team": {
     "absences": {
       "actions": {
