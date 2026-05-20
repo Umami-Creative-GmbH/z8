@@ -49,8 +49,14 @@ interface AbsenceRecordedByManagerParams extends AbsenceRequestParams {
 	days: number;
 }
 
-interface ApprovedAbsenceCancelledByEmployeeParams extends AbsenceRequestParams {
+interface ApprovedAbsenceCancelledByEmployeeParams {
+	absenceId: string;
 	managerUserId: string;
+	employeeName: string;
+	organizationId: string;
+	categoryName: string;
+	startDate: string;
+	endDate: string;
 }
 
 /**
