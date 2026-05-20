@@ -118,6 +118,39 @@ test("generated non-web manifests exclude obvious web-only type overrides", asyn
 	assert.doesNotMatch(targetWorkspaceConfig, /@types\/react-dom:/);
 });
 
+test("target manifest check fails when generated dependencies drift", async () => {
+	const manifestUrl = new URL("../targets/migration/package.json", import.meta.url);
+	const originalManifest = await fs.readFile(manifestUrl, "utf8");
+	const staleManifest = JSON.parse(originalManifest);
+	delete staleManifest.dependencies.luxon;
+
+	try {
+		await fs.writeFile(manifestUrl, `${JSON.stringify(staleManifest, null, 2)}\n`);
+		await assert.rejects(
+			execFileAsync(process.execPath, ["docker/scripts/prepare-target-runtime.mjs", "check", "migration"], {
+				cwd: new URL("../../", import.meta.url),
+			}),
+			(error) => {
+				assert.match(`${error.stderr}${error.stdout}${error.message}`, /docker\/targets\/migration\/package\.json/);
+				assert.match(`${error.stderr}${error.stdout}${error.message}`, /pnpm docker:sync:non-web-targets/);
+				return true;
+			},
+		);
+	} finally {
+		await fs.writeFile(manifestUrl, originalManifest);
+	}
+});
+
+test("target manifest check passes for committed generated manifests", async () => {
+	await execFileAsync(
+		process.execPath,
+		["docker/scripts/prepare-target-runtime.mjs", "check", "worker", "migration", "db-seed"],
+		{
+			cwd: new URL("../../", import.meta.url),
+		},
+	);
+});
+
 test("copied migration runtime includes pnpm workspace config for frozen installs", async () => {
 	const outputUrl = new URL("../targets/.tmp-migration-runtime/", import.meta.url);
 

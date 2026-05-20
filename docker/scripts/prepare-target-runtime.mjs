@@ -234,6 +234,44 @@ async function writeTargetPackage(target) {
   console.log(`wrote ${path.relative(REPO_ROOT, outputPath)}`);
 }
 
+async function checkTargetPackage(target) {
+  const checkedFiles = [
+    path.join(TARGETS_ROOT, target, "package.json"),
+    path.join(TARGETS_ROOT, target, "pnpm-workspace.yaml"),
+  ];
+  const originalFiles = new Map();
+
+  for (const filePath of checkedFiles) {
+    originalFiles.set(filePath, await fs.readFile(filePath, "utf8"));
+  }
+
+  try {
+    await writeTargetPackage(target);
+
+    const driftedFiles = [];
+    for (const filePath of checkedFiles) {
+      const generated = await fs.readFile(filePath, "utf8");
+      if (generated !== originalFiles.get(filePath)) {
+        driftedFiles.push(path.relative(REPO_ROOT, filePath));
+      }
+    }
+
+    if (driftedFiles.length > 0) {
+      throw new Error(
+        [
+          `Docker target ${target} generated files are stale:`,
+          ...driftedFiles.map((filePath) => `- ${filePath}`),
+          "Run pnpm docker:sync:non-web-targets and commit the generated files.",
+        ].join("\n"),
+      );
+    }
+  } finally {
+    for (const [filePath, contents] of originalFiles) {
+      await fs.writeFile(filePath, contents);
+    }
+  }
+}
+
 async function copyTargetRuntime(target, outputDirectory) {
   const outputPath = path.resolve(outputDirectory);
   const { files } = await collectTarget(target);
@@ -266,7 +304,7 @@ async function main() {
   const [command, target, outputDirectory] = process.argv.slice(2);
 
   if (!command || !target) {
-    throw new Error("Usage: pnpm node docker/scripts/prepare-target-runtime.mjs <list|manifest|copy> <target> [outputDir]");
+    throw new Error("Usage: pnpm node docker/scripts/prepare-target-runtime.mjs <list|manifest|copy|check> <target> [outputDir]");
   }
 
   if (command === "list") {
@@ -284,6 +322,14 @@ async function main() {
       throw new Error("copy requires an output directory");
     }
     await copyTargetRuntime(target, outputDirectory);
+    return;
+  }
+
+  if (command === "check") {
+    const targets = process.argv.slice(3);
+    for (const targetName of targets) {
+      await checkTargetPackage(targetName);
+    }
     return;
   }
 
