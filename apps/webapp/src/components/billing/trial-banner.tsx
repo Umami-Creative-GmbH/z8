@@ -2,6 +2,7 @@
 
 import { IconCreditCard } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { Link } from "@/navigation";
 
 interface TrialBannerProps {
 	daysRemaining: number;
@@ -29,12 +30,12 @@ export function TrialBanner({ daysRemaining, billingHref }: TrialBannerProps) {
 						</p>
 					</div>
 				</div>
-				<a
+				<Link
 					href={billingHref}
 					className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-medium text-white shadow-xs transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-400"
 				>
 					{t("billing.trialBanner.upgrade", "Upgrade")}
-				</a>
+				</Link>
 			</div>
 		</aside>
 	);

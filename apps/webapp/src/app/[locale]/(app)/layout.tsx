@@ -93,7 +93,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 							{showTrialBanner ? (
 								<TrialBanner
 									daysRemaining={trialDaysRemaining}
-									billingHref={`/${locale}/settings/billing`}
+									billingHref="/settings/billing"
 								/>
 							) : null}
 							<OrganizationDeletionBanner />

@@ -9,6 +9,9 @@
       "description": "Mitarbeiterabwesenheitskennzahlen überprüfen und Abwesenheiten erfassen"
     }
   },
+  "billing": {
+    "trialBanner": { "description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.", "title": "14-tägige Testphase aktiv", "upgrade": "Upgrade" }
+  },
   "team": {
     "absences": {
       "actions": {
