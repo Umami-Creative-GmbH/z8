@@ -101,7 +101,7 @@ If a cancellation is scheduled for the end of the billing period, access remains
 |-------|-------------|-------------|
 | **Trialing** | Full access | Free trial period active |
 | **Active** | Full access | Subscription is current and paid |
-| **Past Due** | Full access (temporary) | Payment failed, retry in progress |
+| **Past Due** | Suspended | Payment failed; access is blocked until payment is resolved |
 | **Canceled** | Suspended | Subscription ended |
 | **Unpaid** | Suspended | Payment failed after all retries |
 
@@ -134,7 +134,7 @@ Platform administrators have access to a billing overview dashboard at **Admin >
 
 ### What happens if my payment fails?
 
-Stripe will automatically retry the payment over several days. During this time, your access remains unchanged. If all retries fail, your organization is suspended until an organization admin updates billing.
+Stripe may automatically retry the payment over several days. Your organization remains suspended until payment is resolved and Stripe reports a valid subscription state.
 
 ### Can I get a refund?
 
