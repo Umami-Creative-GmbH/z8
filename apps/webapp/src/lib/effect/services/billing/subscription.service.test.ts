@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { subscription } from "@/db/schema";
@@ -163,6 +164,45 @@ describe("SubscriptionService", () => {
 		});
 	});
 
+	it("calculates local trial end as exactly fourteen UTC days across DST", async () => {
+		const previousZone = Settings.defaultZone;
+		Settings.defaultZone = "America/New_York";
+		const now = new Date("2026-03-01T10:00:00.000Z");
+		const expectedTrialEnd = new Date("2026-03-15T10:00:00.000Z");
+		const localTrialRow = {
+			...existingSubscriptionRow,
+			id: "sub_dst_trial_123",
+			stripeCustomerId: null,
+			status: "trialing",
+			trialStart: now,
+			trialEnd: expectedTrialEnd,
+		};
+
+		findFirst.mockResolvedValueOnce(null);
+		insertValues.mockReturnValueOnce({ onConflictDoNothing });
+		returning.mockResolvedValueOnce([localTrialRow]);
+
+		try {
+			await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.ensureLocalTrial({
+						organizationId: "org_123",
+						now,
+					});
+				}).pipe(Effect.provide(SubscriptionServiceLive)),
+			);
+
+			const insertedTrialEnd = insertValues.mock.calls[0]?.[0]?.trialEnd;
+			expect(insertedTrialEnd).toBeInstanceOf(Date);
+			expect(insertedTrialEnd.getTime() - now.getTime()).toBe(14 * 24 * 60 * 60 * 1000);
+			expect(insertedTrialEnd.toISOString()).toBe("2026-03-15T10:00:00.000Z");
+		} finally {
+			Settings.defaultZone = previousZone;
+		}
+	});
+
 	it("does not replace an existing billing row when ensuring a local trial", async () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -243,9 +283,34 @@ describe("SubscriptionService", () => {
 		}
 	});
 
-	it("returns true for an unexpired trialing row when checking mutation access", async () => {
+	it("returns false for a trialing row that ends exactly now when checking mutation access", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-06-03T10:00:00.000Z"));
+		process.env.BILLING_ENABLED = "true";
+		findFirst.mockResolvedValueOnce({
+			...existingSubscriptionRow,
+			status: "trialing",
+			trialEnd: new Date("2026-06-03T10:00:00.000Z"),
+		});
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.canMutateData("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive)),
+			);
+
+			expect(result).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("returns true for an unexpired trialing row when checking mutation access", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-06-03T09:59:59.999Z"));
 		process.env.BILLING_ENABLED = "true";
 		findFirst.mockResolvedValueOnce({
 			...existingSubscriptionRow,

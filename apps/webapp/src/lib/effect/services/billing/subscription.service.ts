@@ -399,7 +399,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 				if (!sub) return false;
 
 				if (sub.status === "trialing") {
-					return sub.trialEnd !== null && sub.trialEnd.getTime() >= Date.now();
+					return sub.trialEnd !== null && sub.trialEnd.getTime() > Date.now();
 				}
 
 				// Check status
