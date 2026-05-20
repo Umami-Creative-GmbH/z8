@@ -11,6 +11,7 @@ vi.mock("./notification-service", () => ({
 import {
 	onAbsenceRecordedByManager,
 	onAbsenceRequestPendingApproval,
+	onApprovedAbsenceCancelledByEmployee,
 	onClockOutPendingApprovalToManager,
 	onShiftSwapRequestedToManager,
 	onTimeCorrectionPendingApproval,
@@ -96,6 +97,52 @@ describe("approval notification triggers", () => {
 				endDate: "2026-05-12",
 				days: 2,
 				managerName: "Morgan Manager",
+			}),
+		).resolves.toBeUndefined();
+	});
+
+	it("notifies a manager when an employee cancels an approved absence", async () => {
+		await onApprovedAbsenceCancelledByEmployee({
+			absenceId: "absence-1",
+			managerUserId: "user-manager",
+			employeeName: "Avery Employee",
+			organizationId: "org-1",
+			categoryName: "Vacation",
+			startDate: "2026-05-21",
+			endDate: "2026-05-22",
+		});
+
+		expect(createNotification).toHaveBeenCalledWith({
+			userId: "user-manager",
+			organizationId: "org-1",
+			type: "absence_request_approved",
+			title: "Approved absence cancelled",
+			message: "Avery Employee cancelled approved Vacation for May 21 - May 22.",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			actionUrl: "/team/absences",
+			metadata: {
+				approvedAbsenceCancelled: true,
+				employeeName: "Avery Employee",
+				startDate: "2026-05-21",
+				endDate: "2026-05-22",
+				absenceType: "Vacation",
+			},
+		});
+	});
+
+	it("swallows approved absence cancellation notification failures", async () => {
+		createNotification.mockRejectedValueOnce(new Error("notification failed"));
+
+		await expect(
+			onApprovedAbsenceCancelledByEmployee({
+				absenceId: "absence-1",
+				managerUserId: "user-manager",
+				employeeName: "Avery Employee",
+				organizationId: "org-1",
+				categoryName: "Vacation",
+				startDate: "2026-05-21",
+				endDate: "2026-05-22",
 			}),
 		).resolves.toBeUndefined();
 	});
