@@ -6,12 +6,23 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import {
+	type BillingAccessResult,
+	type SubscriptionInfo,
 	SubscriptionService,
 	SubscriptionServiceLive,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
 } from "@/lib/effect/services/billing";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("billing-settings-page");
+const billingCheckFailedAccess: BillingAccessResult = {
+	canAccess: false,
+	state: "suspended",
+	reason: "subscription_required",
+	status: "billing_check_failed",
+};
 
 export default async function BillingSettingsPage() {
 	await connection();
@@ -42,8 +53,8 @@ export default async function BillingSettingsPage() {
 		return { subscription, accessResult };
 	});
 
-	let subscription = null;
-	let accessResult = { canAccess: true };
+	let subscription: SubscriptionInfo | null = null;
+	let accessResult: BillingAccessResult = billingCheckFailedAccess;
 
 	try {
 		const result = await Effect.runPromise(
@@ -54,9 +65,16 @@ export default async function BillingSettingsPage() {
 		);
 		subscription = result.subscription;
 		accessResult = result.accessResult;
-	} catch {
-		// If billing service fails, show empty state
+	} catch (error) {
+		logger.error({ error, organizationId }, "Billing settings check failed");
 	}
+
+	const serializedAccessResult = {
+		canAccess: accessResult.canAccess,
+		reason: accessResult.reason,
+		trialEndsAt: accessResult.trialEndsAt?.toISOString() ?? null,
+		status: accessResult.status,
+	};
 
 	return (
 		<BillingPageClient
@@ -76,7 +94,7 @@ export default async function BillingSettingsPage() {
 						}
 					: null
 			}
-			accessResult={accessResult}
+			accessResult={serializedAccessResult}
 			isOwner={memberRecord?.role === "owner"}
 		/>
 	);

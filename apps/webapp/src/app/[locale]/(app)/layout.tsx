@@ -17,10 +17,20 @@ import {
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
 } from "@/lib/effect/services/billing/billing-enforcement.service";
+import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { setLanguage } from "@/tolgee/language";
+
+const logger = createLogger("app-layout");
+const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
+const billingCheckFailedAccess: BillingAccessResult = {
+	canAccess: false,
+	state: "suspended",
+	reason: "subscription_required",
+	status: "billing_check_failed",
+};
 
 interface AppLayoutProps {
 	children: ReactNode;
@@ -56,16 +66,20 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		redirect(newPath);
 	}
 
-	const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
+	const billingEnabled = process.env.BILLING_ENABLED === "true";
 	const activeOrganizationId = session.session?.activeOrganizationId;
-	const billingAccess = activeOrganizationId
+	const billingAccess = activeOrganizationId && billingEnabled
 		? await Effect.runPromise(
 				Effect.gen(function* () {
 					const enforcementService = yield* BillingEnforcementService;
 
 					return yield* enforcementService.checkBillingAccess(activeOrganizationId);
 				}).pipe(Effect.provide(BillingEnforcementServiceLive)),
-			).catch(() => billingDisabledAccess)
+			).catch((error) => {
+				logger.error({ error, organizationId: activeOrganizationId }, "Billing access check failed");
+
+				return billingCheckFailedAccess;
+			})
 		: billingDisabledAccess;
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 	const isBillingRecoveryPath =
