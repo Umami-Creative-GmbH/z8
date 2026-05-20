@@ -1,8 +1,9 @@
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { subscription } from "@/db/schema";
 import {
+	type BillingAccessResult,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
 } from "./billing-enforcement.service";
@@ -33,6 +34,12 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 }));
 
 describe("BillingEnforcementService", () => {
+	it("exports BillingAccessResult from the service module", () => {
+		expectTypeOf<BillingAccessResult>().toMatchTypeOf<{
+			canAccess: boolean;
+		}>();
+	});
+
 	const now = new Date("2026-05-20T10:00:00.000Z");
 	const trialEnd = new Date("2026-06-03T10:00:00.000Z");
 	const subscriptionRow = {

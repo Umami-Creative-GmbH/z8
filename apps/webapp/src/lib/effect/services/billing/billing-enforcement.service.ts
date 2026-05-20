@@ -6,6 +6,8 @@ import { subscription } from "@/db/schema";
 import { BillingError, DatabaseError } from "../../errors";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
 
+export type { BillingAccessResult } from "./billing-access";
+
 export interface CheckBillingAccessOptions {
 	now?: Date;
 	createTrialIfMissing?: boolean;
