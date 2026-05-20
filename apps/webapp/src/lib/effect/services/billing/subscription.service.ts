@@ -402,13 +402,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 					return sub.trialEnd !== null && sub.trialEnd.getTime() > Date.now();
 				}
 
-				// Check status
-				const blockedStatuses = ["canceled", "unpaid", "past_due"];
-				if (blockedStatuses.includes(sub.status)) {
-					return false;
-				}
-
-				return true;
+				return sub.status === "active";
 			}),
 	}),
 );

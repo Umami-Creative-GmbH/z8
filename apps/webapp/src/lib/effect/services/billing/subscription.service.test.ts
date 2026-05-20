@@ -333,6 +333,27 @@ describe("SubscriptionService", () => {
 		}
 	});
 
+	it.each(["incomplete", "paused", "unknown_status"])(
+		"returns false for %s status when checking mutation access",
+		async (status) => {
+			process.env.BILLING_ENABLED = "true";
+			findFirst.mockResolvedValueOnce({
+				...existingSubscriptionRow,
+				status,
+			});
+
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const subscriptionService = yield* SubscriptionService;
+
+					return yield* subscriptionService.canMutateData("org_123");
+				}).pipe(Effect.provide(SubscriptionServiceLive)),
+			);
+
+			expect(result).toBe(false);
+		},
+	);
+
 	it("sets Stripe customer ID with conflict-safe insert update", async () => {
 		insertValues.mockReturnValueOnce({ onConflictDoUpdate });
 
