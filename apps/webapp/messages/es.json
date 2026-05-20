@@ -1,63 +1,314 @@
 {
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "ver analíticas",
+      "restrictedDescription": "Las analíticas solo están disponibles para administradores y gerentes.",
+      "restrictedTitle": "Acceso restringido"
+    },
+    "common": {
+      "days": "Días",
+      "employee": "Empleado",
+      "employees": "Empleados",
+      "hours": "Horas",
+      "loadingOrganizationSettings": "Cargando la configuración de la organización antes de habilitar los ajustes preestablecidos.",
+      "noDataAvailable": "No hay datos disponibles",
+      "noDataForPeriod": "No hay datos disponibles para el período seleccionado",
+      "overtime": "Horas extra",
+      "overtimeHours": "Horas extra",
+      "team": "Equipo",
+      "totalHours": "Horas totales",
+      "unavailable": "No disponible",
+      "undertime": "Horas faltantes",
+      "undertimeHours": "Horas faltantes"
+    },
+    "layout": {
+      "description": "Información detallada sobre el rendimiento del equipo, las horas de trabajo y los patrones de ausencia",
+      "tabs": {
+        "overtimeBurnDown": "Reducción de horas extra",
+        "overview": "Resumen",
+        "teamPerformance": "Rendimiento del equipo",
+        "vacationTrends": "Tendencias de vacaciones",
+        "workHours": "Horas de trabajo"
+      },
+      "title": "Analíticas"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Desglose",
+      "breakdownDescription": "Detalles de reducción de horas extras a nivel de {label}",
+      "breakdownEmpty": "Aún no hay datos de desglose disponibles",
+      "byCostCenter": "Por centro de costes",
+      "byManager": "Por gerente",
+      "byTeam": "Por equipo",
+      "costCenter": "Centro de costes",
+      "currentOvertime": "Horas extras actuales",
+      "description": "Realice un seguimiento de la reducción semanal de horas extras en los equipos.",
+      "errors": {
+        "loadData": "Error al cargar los datos de reducción de horas extras"
+      },
+      "filters": {
+        "allCostCenters": "Todos los centros de costes",
+        "allManagers": "Todos los gerentes",
+        "allTeams": "Todos los equipos",
+        "breakdownLabel": "Dimensión de desglose",
+        "costCenterLabel": "Filtro de centro de costes",
+        "managerLabel": "Filtro de gerente",
+        "teamLabel": "Filtro de equipo"
+      },
+      "improvingGroups": "Grupos en mejora",
+      "improvingGroupsDescription": "Grupos con disminución de horas extras",
+      "manager": "Gerente",
+      "previousOvertime": "Horas extras anteriores",
+      "previousPeriodDescription": "En comparación con el periodo anterior",
+      "selectedRangeDescription": "Para el rango de fechas y filtros seleccionados",
+      "title": "Reducción de horas extras",
+      "trendDirection": "Dirección de la tendencia",
+      "trendDirectionDescription": "Trayectoria general de horas extra",
+      "trend": {
+        "down": "A la baja",
+        "flat": "Estable",
+        "up": "Subida"
+      },
+      "weeklyTrend": {
+        "description": "Tendencia semanal de reducción de horas extra",
+        "empty": "Aún no hay datos de tendencia disponibles",
+        "title": "Tendencia semanal de reducción de trabajo"
+      },
+      "weekOverWeek": "Semana a semana"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Distribución de ausencias por categoría",
+        "title": "Patrones de ausencia"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% aprobadas",
+        "avgDecision": "{hours}h de decisión promedio",
+        "byManager": "Por gerente",
+        "byTeam": "Por equipo",
+        "byType": "Por tipo",
+        "description": "Equipos y tipos de solicitud con trabajo pendiente o advertencias de SLA",
+        "empty": "No se encontraron cuellos de botella en las aprobaciones",
+        "pendingSummary": "{pendingCount} pendientes - {slaWarnings} advertencias de SLA",
+        "title": "Cuellos de botella en las aprobaciones",
+        "unavailable": "No se pudieron cargar los cuellos de botella en las aprobaciones"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "De las solicitudes decididas, aprobadas",
+          "title": "Tasa de aprobación",
+          "unavailableDescription": "No se pudieron cargar las analíticas de aprobación"
+        },
+        "avgWorkHours": {
+          "description": "Por empleado en el período seleccionado",
+          "title": "Horas de trabajo promedio"
+        },
+        "totalAbsenceDays": {
+          "description": "Días totales en el período seleccionado",
+          "title": "Total de días de ausencia"
+        },
+        "totalEmployees": {
+          "description": "Empleados activos en la organización",
+          "title": "Total de empleados"
+        }
+      },
+      "loadingLabel": "Cargando datos analíticos",
+      "workHoursByTeam": {
+        "description": "Total de horas de trabajo registradas por equipo",
+        "title": "Horas de trabajo por equipo"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Promedio por empleado",
+      "comparison": {
+        "description": "Total de horas de trabajo por equipo para el período seleccionado",
+        "title": "Comparación de equipos"
+      },
+      "details": {
+        "description": "Desglose de horas de trabajo por equipo y empleado",
+        "title": "Detalles de rendimiento del equipo"
+      },
+      "employeeCount": "Recuento de empleados",
+      "errors": {
+        "loadData": "Error al cargar los datos de rendimiento del equipo"
+      },
+      "onTrack": "En curso",
+      "variance": {
+        "description": "Variación de horas respecto a las horas de trabajo esperadas",
+        "empty": "No hay datos de variación disponibles",
+        "title": "Horas extras y horas faltantes"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Asignado",
+      "balance": {
+        "description": "Días asignados, tomados y restantes por empleado",
+        "title": "Saldo de vacaciones"
+      },
+      "daysRemaining": "{count} días restantes",
+      "daysTaken": "{count} días tomados",
+      "errors": {
+        "loadData": "Error al cargar los datos de tendencias de vacaciones"
+      },
+      "monthlyUsage": {
+        "description": "Días de vacaciones tomados por mes",
+        "empty": "No hay datos de uso mensual disponibles",
+        "title": "Uso mensual de vacaciones"
+      },
+      "peakMonths": {
+        "description": "Meses con mayor actividad de vacaciones",
+        "empty": "No hay datos disponibles sobre los meses pico",
+        "title": "Meses pico de vacaciones"
+      },
+      "remaining": "Restante",
+      "taken": "Tomado",
+      "utilization": {
+        "description": "Uso general de días de vacaciones en toda la organización",
+        "overall": "Utilización general",
+        "title": "Utilización de vacaciones"
+      },
+      "utilizationLabel": "Utilización",
+      "utilizationPercent": "% de utilización",
+      "vacationDays": "Días de vacaciones"
+    },
+    "workHours": {
+      "actualHours": "Horas reales",
+      "avgHoursPerWeek": "Promedio de horas/semana",
+      "daily": {
+        "description": "Horas de trabajo reales frente a las esperadas por día",
+        "empty": "No hay datos disponibles sobre las horas diarias",
+        "title": "Horas de trabajo diarias"
+      },
+      "distribution": {
+        "description": "Comparación de horas de trabajo de los empleados (barra horizontal)",
+        "empty": "No hay datos de distribución disponibles",
+        "title": "Distribución de horas de trabajo"
+      },
+      "employeeComparison": {
+        "description": "Total de horas y variación respecto a lo esperado por empleado",
+        "title": "Horas de trabajo de los empleados"
+      },
+      "errors": {
+        "loadData": "Error al cargar los datos de análisis de horas de trabajo"
+      },
+      "expectedHours": "Horas esperadas",
+      "variance": "Variación",
+      "varianceTrend": {
+        "description": "Variación de horas respecto a las horas de trabajo esperadas a lo largo del tiempo",
+        "empty": "No hay datos de tendencias disponibles",
+        "title": "Tendencia de horas extras y horas no trabajadas"
+      }
+    }
+  },
   "appSearch": {
-    "description": "Search pages, settings, people, and teams",
-    "empty": "No results found.",
-    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
-    "placeholder": "Search pages, settings, people, and teams…",
-    "search": "Search",
+    "description": "Buscar páginas, ajustes, personas y equipos",
+    "empty": "No se encontraron resultados.",
+    "groups": {
+      "pages": "Páginas",
+      "people": "Personas",
+      "settings": "Ajustes",
+      "teams": "Equipos"
+    },
+    "placeholder": "Buscar páginas, ajustes, personas y equipos…",
+    "search": "Buscar",
     "teamAbsences": {
       "description": "Revisar las métricas de ausencia de los empleados y registrar las ausencias"
     }
   },
-  "team": {
-    "absences": {
-      "actions": {
-        "recordForEmployee": "Registrar ausencia para {name}"
+  "billing": {
+    "access": {
+      "canceled": "Tu suscripción ha sido cancelada. Vuelve a suscribirte para recuperar el acceso.",
+      "paymentFailed": "Tu último pago falló. Por favor, actualiza tu método de pago.",
+      "required": "Se requiere una suscripción para utilizar esta aplicación.",
+      "trialExpired": "Tu prueba ha expirado. Suscríbete para seguir usando la aplicación."
+    },
+    "activeSeats": "Asientos activos",
+    "alerts": {
+      "canceledDescription": "El proceso de pago fue cancelado. Puedes intentarlo de nuevo cuando estés listo.",
+      "subscriptionRequired": "Suscripción requerida",
+      "successDescription": "Tu suscripción ha sido activada. ¡Gracias por suscribirte!",
+      "successTitle": "¡Éxito!"
+    },
+    "bestValue": "Mejor valor",
+    "billedMonthly": "facturado mensualmente",
+    "cancelsOn": "Se cancela el {date}",
+    "checkoutCreateFailed": "Error al crear la sesión de pago",
+    "checkoutStartFailed": "Error al iniciar el pago",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Tu suscripción de pago comienza solo después de que expire el período de prueba.",
+      "trialContinuesTitle": "Tu período de prueba continúa después de la actualización"
+    },
+    "choosePlan": "Elige tu plan",
+    "choosePlanDescription": "Comienza con una prueba gratuita de 14 días. No se requiere tarjeta de crédito para empezar.",
+    "currentPlan": "Plan actual",
+    "days": "{count} días",
+    "description": "Gestiona tu suscripción y los detalles de facturación",
+    "faq": {
+      "afterTrial": {
+        "answer": "Una vez finalizada la prueba de 14 días, se te cobrará el plan de suscripción seleccionado. Puedes cancelar en cualquier momento antes de que termine la prueba para evitar cargos.",
+        "question": "¿Qué sucede después de la prueba?"
       },
-      "empty": {
-        "description": "Ajuste los filtros o la búsqueda para encontrar miembros del equipo.",
-        "label": "No se encontraron empleados",
-        "title": "No se encontraron empleados"
+      "perSeat": {
+        "answer": "Se te factura según el número de miembros activos en tu organización. Cuando añades o eliminas miembros, tu suscripción se ajusta automáticamente.",
+        "question": "¿Cómo funciona la facturación por puesto?"
       },
-      "filters": {
-        "allTeams": "Todos los equipos",
-        "searchLabel": "Buscar empleados",
-        "searchPlaceholder": "Buscar empleados…",
-        "searchSubmit": "Buscar",
-        "teamLabel": "Filtrar por equipo",
-        "teamPlaceholder": "Equipo",
-        "yearLabel": "Filtrar por año",
-        "yearPlaceholder": "Año"
+      "switch": {
+        "answer": "¡Sí! Puedes cambiar de plan en cualquier momento a través del portal de facturación. Los cambios surten efecto en tu próximo ciclo de facturación.",
+        "question": "¿Puedo cambiar entre facturación mensual y anual?"
       },
-      "pagination": {
-        "next": "Siguiente",
-        "nextLabel": "Página siguiente",
-        "page": "Página {page} de {pageCount}",
-        "previous": "Anterior",
-        "previousLabel": "Página anterior",
-        "showing": "Mostrando {firstItem} a {lastItem} de {total}"
+      "title": "Preguntas frecuentes"
+    },
+    "features": {
+      "allFeatures": "Todas las funciones incluidas",
+      "cancelAnytime": "Cancela en cualquier momento",
+      "trial": "Prueba gratuita de 14 días",
+      "yearlyDiscount": "25% de descuento respecto al pago mensual"
+    },
+    "interval": {
+      "monthlyBilling": "Facturación mensual",
+      "yearlyBilling": "Facturación anual"
+    },
+    "manageBilling": "Gestionar facturación",
+    "monthlyCost": "Coste mensual",
+    "nextBilling": "Próxima facturación",
+    "opening": "Abriendo...",
+    "perSeatMonth": "/puesto/mes",
+    "plans": {
+      "monthly": {
+        "description": "Facturación mensual flexible",
+        "title": "Mensual"
       },
-      "recordDialog": {
-        "required": "{label} es obligatorio",
-        "titleForEmployee": "Registrar ausencia para {name}"
-      },
-      "sort": {
-        "ascending": "ascendente",
-        "by": "Ordenar por {label}",
-        "byWithDirection": "Ordenar por {label} ({direction})",
-        "descending": "descendente"
-      },
-      "table": {
-        "actions": "Acciones",
-        "allowance": "Asignación",
-        "employee": "Empleado",
-        "left": "Restante",
-        "pending": "Pendiente",
-        "sick": "Enfermedad",
-        "teamOrPosition": "Equipo o puesto",
-        "used": "Usado"
+      "yearly": {
+        "description": "Ahorra un 25% con la facturación anual",
+        "title": "Anual"
       }
-    }
+    },
+    "portalOpenFailed": "No se pudo abrir el portal de facturación",
+    "priceSeatMonth": "€{price}/usuario/mes",
+    "priceSeatMonthYearly": "€{price}/usuario/mes (facturado anualmente)",
+    "seatBilledAnnually": "€{price}/usuario facturado anualmente",
+    "starting": "Iniciando...",
+    "startTrial": "Iniciar prueba gratuita",
+    "status": {
+      "canceled": "Cancelado",
+      "noSubscription": "Sin suscripción",
+      "pastDue": "Vencido",
+      "trial": "Prueba"
+    },
+    "suspended": {
+      "adminDescription": "Tu período de prueba terminó o la suscripción ya no es válida. Actualiza la facturación para seguir usando Z8.",
+      "goToBilling": "Ir a facturación",
+      "memberDescription": "Esta organización está suspendida. Contacta a un administrador de la organización para actualizar la facturación.",
+      "title": "Organización suspendida"
+    },
+    "title": "Facturación y suscripción",
+    "trialBanner": {
+      "description": "{days} días restantes. Añade los datos de pago ahora; tu suscripción de pago comienza después del período de prueba.",
+      "title": "Período de prueba de 14 días activo",
+      "upgrade": "Actualizar"
+    },
+    "trialEnds": "La prueba finaliza",
+    "vatNotice": "Los precios mostrados son precios netos sin IVA. El IVA se añadirá cuando corresponda.",
+    "yearTotal": "€{amount}/año en total"
   },
   "surcharges": {
     "reports": {
@@ -108,5 +359,124 @@
       },
       "title": "Informes de recargos"
     }
+  },
+  "today": {
+    "approvals": {
+      "approve": "Aprobar",
+      "approveLabel": "Aprobar {title}",
+      "description": "Solicitudes pendientes de la decisión de un gerente.",
+      "empty": "No hay aprobaciones pendientes.",
+      "openInbox": "Abrir bandeja de entrada",
+      "pendingAriaLabel": "Aprobaciones pendientes",
+      "reject": "Rechazar",
+      "rejectLabel": "Rechazar {title}",
+      "title": "Aprobaciones",
+      "toast": {
+        "approved": "Solicitud aprobada",
+        "approveError": "No se pudo aprobar la solicitud",
+        "rejected": "Solicitud rechazada",
+        "rejectError": "No se pudo rechazar la solicitud"
+      }
+    },
+    "briefing": {
+      "badge": "Hoy",
+      "description": "Revise los elementos que requieren acción hoy y luego diríjase directamente al flujo de trabajo correcto.",
+      "needsAction": {
+        "description": "Comience aquí para el seguimiento operativo más urgente.",
+        "empty": "Todo despejado. No se requiere ninguna acción del gerente en este momento.",
+        "title": "Requiere acción"
+      },
+      "sections": {
+        "empty": "No se detectaron problemas."
+      },
+      "severity": {
+        "critical": "Crítico",
+        "high": "Alto",
+        "info": "Información",
+        "warning": "Advertencia"
+      },
+      "summaryAriaLabel": "Resumen de hoy",
+      "supportingSectionsAriaLabel": "Secciones de apoyo",
+      "title": "Informe diario del gerente",
+      "updatedAt": "{date} - Actualizado a las {time}"
+    }
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nueva reclamación"
+    },
+    "approvals": {
+      "description": "Abra la bandeja de entrada de aprobaciones unificada filtrada por gastos de viaje.",
+      "openInbox": "Abrir bandeja de entrada",
+      "title": "Revisar aprobaciones de gastos de viaje pendientes"
+    },
+    "claimTypes": {
+      "mileage": "Kilometraje",
+      "per_diem": "Viáticos",
+      "receipt": "Recibo"
+    },
+    "decision": {
+      "approve": "Aprobar",
+      "approved": "Reclamación aprobada correctamente",
+      "approveDescription": "Añada una nota opcional para el reclamante antes de aprobar.",
+      "approveTitle": "Aprobar reclamación",
+      "errors": {
+        "approve": "Error al aprobar la reclamación",
+        "missingClaim": "Falta la reclamación de gastos de viaje",
+        "reject": "Error al rechazar la reclamación",
+        "rejectionReason": "Por favor, indique un motivo de rechazo"
+      },
+      "noteOptional": "Nota (opcional)",
+      "notePlaceholder": "Todo correcto. Gracias por los detalles.",
+      "reasonPlaceholder": "Faltan los detalles del recibo para el importe enviado",
+      "reasonRequired": "Motivo (obligatorio)",
+      "reject": "Rechazar",
+      "rejectDescription": "Proporcione un motivo claro para ayudar al reclamante a actualizar y volver a enviar.",
+      "rejected": "Reclamación rechazada correctamente",
+      "rejectTitle": "Rechazar reclamación"
+    },
+    "description": "Cree y realice un seguimiento de sus reclamaciones de gastos de viaje",
+    "errors": {
+      "loadClaims": "Error al cargar las reclamaciones de gastos de viaje"
+    },
+    "feature": "gestionar gastos de viaje",
+    "form": {
+      "amount": "Importe",
+      "claimType": "Tipo de reclamación",
+      "created": "Borrador de gastos de viaje creado",
+      "createDraft": "Crear borrador",
+      "currency": "Moneda",
+      "currencyDescription": "Código ISO 4217, p. ej. EUR o USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Cree un nuevo borrador de solicitud para sus gastos de viaje recientes.",
+      "destinationCity": "Ciudad de destino",
+      "destinationCityPlaceholder": "Berlín",
+      "destinationCountry": "País de destino",
+      "destinationCountryPlaceholder": "Alemania",
+      "errors": {
+        "createDraft": "Error al crear el borrador de gastos de viaje",
+        "positiveAmount": "El importe debe ser un número positivo",
+        "tripEndBeforeStart": "La fecha de fin del viaje no puede ser anterior a la fecha de inicio",
+        "validTripDates": "Por favor, proporcione una fecha de inicio y fin de viaje válida",
+        "validTripEnd": "Por favor, proporcione una fecha de fin de viaje válida",
+        "validTripStart": "Por favor, proporcione una fecha de inicio de viaje válida"
+      },
+      "notes": "Notas",
+      "notesPlaceholder": "Añada contexto opcional para su aprobador",
+      "receiptAttachmentHint": "Las solicitudes con recibo requieren al menos un archivo adjunto. La carga de archivos adjuntos estará disponible después de crear el borrador.",
+      "selectClaimType": "Seleccione el tipo de solicitud",
+      "title": "Crear solicitud de gastos de viaje",
+      "tripEnd": "Fin del viaje",
+      "tripStart": "Inicio del viaje"
+    },
+    "list": {
+      "amount": "Importe",
+      "dateRange": "Rango de fechas",
+      "emptyDescription": "Cree su primera solicitud para iniciar el proceso de aprobación.",
+      "emptyTitle": "Aún no hay solicitudes de gastos de viaje",
+      "status": "Estado",
+      "type": "Tipo"
+    },
+    "title": "Gastos de viaje"
   }
 }

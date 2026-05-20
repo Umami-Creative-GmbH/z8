@@ -4,6 +4,7 @@
       "alreadyProcessed": "This approval has already been processed."
     },
     "cmd": {
+      "billingRequired": "Billing is required to continue using time tracking. Ask an organization admin to update billing.",
       "clockedin": {
         "header": "{active} of {total} team members currently clocked in:",
         "noneActive": "None of your {total} team members are currently clocked in.",

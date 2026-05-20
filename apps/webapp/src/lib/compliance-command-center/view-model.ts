@@ -60,7 +60,7 @@ function sortRecentCriticalEvents(events: ComplianceCriticalEvent[]): Compliance
 export function buildComplianceCommandCenterData(input: {
 	sections: ComplianceSectionCard[];
 	recentCriticalEvents: ComplianceCriticalEvent[];
-	coverageNotes: string[];
+	coverageNotes: ComplianceText[];
 	refreshedAt: string;
 }): ComplianceCommandCenterData {
 	return {

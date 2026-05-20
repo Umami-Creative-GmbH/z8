@@ -4,6 +4,7 @@
       "alreadyProcessed": "Esta aprobación ya ha sido procesada."
     },
     "cmd": {
+      "billingRequired": "[bot] Se requiere facturación para seguir usando el seguimiento de tiempo. Pide a un administrador de la organización que actualice la facturación.",
       "clockedin": {
         "header": "{active} de {total} miembros del equipo tienen el turno iniciado actualmente:",
         "noneActive": "Ninguno de tus {total} miembros del equipo tiene el turno iniciado actualmente.",

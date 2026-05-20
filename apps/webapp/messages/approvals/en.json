@@ -2,6 +2,8 @@
   "approvals": {
     "absenceApproved": "Absence request approved",
     "absenceRejected": "Absence request rejected",
+    "absenceRequests": "Absence Requests",
+    "absenceRequestsDescription": "Review and approve time-off requests from your team members",
     "age": "Age",
     "amount": "Amount",
     "approve": "Approve",
@@ -16,8 +18,6 @@
     "bulkRejectRequestFailed": "Bulk reject failed",
     "category": "Category",
     "changed": "Changed",
-    "absenceRequests": "Absence Requests",
-    "absenceRequestsDescription": "Review and approve time-off requests from your team members",
     "confirmReject": "Confirm Rejection",
     "correctedTimes": "Corrected Times",
     "date": "Date",

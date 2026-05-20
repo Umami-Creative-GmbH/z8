@@ -97,7 +97,8 @@
     },
     "subtitle": "Gérez vos congés et vos jours de vacances",
     "table": {
-      "cancelRequest": "Annuler la demande",
+      "cancelAbsence": "Annuler l'absence",
+      "cancelAbsenceTooltip": "Annuler l'absence",
       "end": "Fin",
       "headers": {
         "actions": "Actions",
@@ -209,17 +210,6 @@
       "workPeriod": "Période de travail",
       "workPeriodPending": "En attente d'approbation"
     },
-    "view": {
-      "day": "Jour",
-      "loading": "Chargement du calendrier…",
-      "month": "Mois",
-      "next": "Suivant",
-      "previous": "Précédent",
-      "refresh": "Actualiser",
-      "today": "Aujourd'hui",
-      "week": "Semaine",
-      "year": "Année"
-    },
     "split": {
       "confirm": "Diviser la période de travail",
       "currentPeriod": "Période de travail actuelle",
@@ -239,6 +229,17 @@
       "approved": "Approuvé",
       "pending": "En attente",
       "rejected": "Rejeté"
+    },
+    "view": {
+      "day": "Jour",
+      "loading": "Chargement du calendrier…",
+      "month": "Mois",
+      "next": "Suivant",
+      "previous": "Précédent",
+      "refresh": "Actualiser",
+      "today": "Aujourd'hui",
+      "week": "Semaine",
+      "year": "Année"
     }
   }
 }

@@ -1,4 +1,204 @@
 {
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "view analytics",
+      "restrictedDescription": "Analytics is only available to administrators and managers.",
+      "restrictedTitle": "Access Restricted"
+    },
+    "common": {
+      "days": "Days",
+      "employee": "Employee",
+      "employees": "Employees",
+      "hours": "Hours",
+      "loadingOrganizationSettings": "Loading organization settings before enabling presets.",
+      "noDataAvailable": "No data available",
+      "noDataForPeriod": "No data available for the selected period",
+      "overtime": "Overtime",
+      "overtimeHours": "Overtime Hours",
+      "team": "Team",
+      "totalHours": "Total Hours",
+      "unavailable": "Unavailable",
+      "undertime": "Undertime",
+      "undertimeHours": "Undertime Hours"
+    },
+    "layout": {
+      "description": "Comprehensive insights into team performance, work hours, and absence patterns",
+      "tabs": {
+        "overtimeBurnDown": "Overtime Burn-Down",
+        "overview": "Overview",
+        "teamPerformance": "Team Performance",
+        "vacationTrends": "Vacation Trends",
+        "workHours": "Work Hours"
+      },
+      "title": "Analytics"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Breakdown",
+      "breakdownDescription": "{label} level overtime burn-down details",
+      "breakdownEmpty": "No breakdown data available yet",
+      "byCostCenter": "By Cost Center",
+      "byManager": "By Manager",
+      "byTeam": "By Team",
+      "costCenter": "Cost Center",
+      "currentOvertime": "Current Overtime",
+      "description": "Track weekly overtime reduction across teams.",
+      "errors": {
+        "loadData": "Failed to load overtime burn-down data"
+      },
+      "filters": {
+        "allCostCenters": "All cost centers",
+        "allManagers": "All managers",
+        "allTeams": "All teams",
+        "breakdownLabel": "Breakdown dimension",
+        "costCenterLabel": "Cost center filter",
+        "managerLabel": "Manager filter",
+        "teamLabel": "Team filter"
+      },
+      "improvingGroups": "Improving Groups",
+      "improvingGroupsDescription": "Groups with decreasing overtime",
+      "manager": "Manager",
+      "previousOvertime": "Previous Overtime",
+      "previousPeriodDescription": "Compared with previous period",
+      "selectedRangeDescription": "For selected date range and filters",
+      "title": "Overtime Burn-Down",
+      "trendDirection": "Trend Direction",
+      "trendDirectionDescription": "Overall overtime trajectory",
+      "trend": {
+        "down": "Down",
+        "flat": "Flat",
+        "up": "Up"
+      },
+      "weeklyTrend": {
+        "description": "Weekly overtime reduction trend",
+        "empty": "No trend data available yet",
+        "title": "Weekly Burn-Down Trend"
+      },
+      "weekOverWeek": "Week-over-Week"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Absence distribution by category",
+        "title": "Absence Patterns"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% approved",
+        "avgDecision": "{hours}h avg decision",
+        "byManager": "By Manager",
+        "byTeam": "By Team",
+        "byType": "By Type",
+        "description": "Teams and request types with pending work or SLA warnings",
+        "empty": "No approval bottlenecks found",
+        "pendingSummary": "{pendingCount} pending - {slaWarnings} SLA warnings",
+        "title": "Approval Bottlenecks",
+        "unavailable": "Approval bottlenecks could not be loaded"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Of decided requests approved",
+          "title": "Approval Rate",
+          "unavailableDescription": "Approval analytics could not be loaded"
+        },
+        "avgWorkHours": {
+          "description": "Per employee in selected period",
+          "title": "Avg Work Hours"
+        },
+        "totalAbsenceDays": {
+          "description": "Total days in selected period",
+          "title": "Total Absence Days"
+        },
+        "totalEmployees": {
+          "description": "Active employees in organization",
+          "title": "Total Employees"
+        }
+      },
+      "loadingLabel": "Loading analytics data",
+      "workHoursByTeam": {
+        "description": "Total work hours logged per team",
+        "title": "Work Hours by Team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Avg per Employee",
+      "comparison": {
+        "description": "Total work hours by team for the selected period",
+        "title": "Team Comparison"
+      },
+      "details": {
+        "description": "Breakdown of work hours by team and employee",
+        "title": "Team Performance Details"
+      },
+      "employeeCount": "Employee Count",
+      "errors": {
+        "loadData": "Failed to load team performance data"
+      },
+      "onTrack": "On Track",
+      "variance": {
+        "description": "Hours variance from expected work hours",
+        "empty": "No variance data available",
+        "title": "Overtime & Undertime"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Allocated",
+      "balance": {
+        "description": "Days allocated, taken, and remaining by employee",
+        "title": "Vacation Balance"
+      },
+      "daysRemaining": "{count} days remaining",
+      "daysTaken": "{count} days taken",
+      "errors": {
+        "loadData": "Failed to load vacation trends data"
+      },
+      "monthlyUsage": {
+        "description": "Vacation days taken per month",
+        "empty": "No monthly usage data available",
+        "title": "Monthly Vacation Usage"
+      },
+      "peakMonths": {
+        "description": "Months with highest vacation activity",
+        "empty": "No peak month data available",
+        "title": "Peak Vacation Months"
+      },
+      "remaining": "Remaining",
+      "taken": "Taken",
+      "utilization": {
+        "description": "Overall vacation days usage across organization",
+        "overall": "Overall Utilization",
+        "title": "Vacation Utilization"
+      },
+      "utilizationLabel": "Utilization",
+      "utilizationPercent": "Utilization %",
+      "vacationDays": "Vacation Days"
+    },
+    "workHours": {
+      "actualHours": "Actual Hours",
+      "avgHoursPerWeek": "Avg Hours/Week",
+      "daily": {
+        "description": "Actual vs expected work hours per day",
+        "empty": "No daily hours data available",
+        "title": "Daily Work Hours"
+      },
+      "distribution": {
+        "description": "Employee work hours comparison (horizontal bar)",
+        "empty": "No distribution data available",
+        "title": "Work Hours Distribution"
+      },
+      "employeeComparison": {
+        "description": "Total hours and variance from expected by employee",
+        "title": "Employee Work Hours"
+      },
+      "errors": {
+        "loadData": "Failed to load work hours analytics data"
+      },
+      "expectedHours": "Expected Hours",
+      "variance": "Variance",
+      "varianceTrend": {
+        "description": "Hours variance from expected work hours over time",
+        "empty": "No trend data available",
+        "title": "Overtime & Undertime Trend"
+      }
+    }
+  },
   "appSearch": {
     "description": "Search pages, settings, people, and teams",
     "empty": "No results found.",
@@ -15,88 +215,100 @@
     }
   },
   "billing": {
-    "access": { "canceled": "Your subscription has been canceled. Resubscribe to regain access.", "paymentFailed": "Your last payment failed. Please update your payment method.", "required": "A subscription is required to use this application.", "trialExpired": "Your trial has expired. Subscribe to continue using the app." },
+    "access": {
+      "canceled": "Your subscription has been canceled. Resubscribe to regain access.",
+      "paymentFailed": "Your last payment failed. Please update your payment method.",
+      "required": "A subscription is required to use this application.",
+      "trialExpired": "Your trial has expired. Subscribe to continue using the app."
+    },
     "activeSeats": "Active Seats",
-    "alerts": { "canceledDescription": "Checkout was canceled. You can try again whenever you're ready.", "subscriptionRequired": "Subscription Required", "successDescription": "Your subscription has been activated. Thank you for subscribing!", "successTitle": "Success!" },
+    "alerts": {
+      "canceledDescription": "Checkout was canceled. You can try again whenever you're ready.",
+      "subscriptionRequired": "Subscription Required",
+      "successDescription": "Your subscription has been activated. Thank you for subscribing!",
+      "successTitle": "Success!"
+    },
     "bestValue": "Best Value",
     "billedMonthly": "billed monthly",
     "cancelsOn": "Cancels on {date}",
     "checkoutCreateFailed": "Failed to create checkout session",
     "checkoutStartFailed": "Failed to start checkout",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
+      "trialContinuesTitle": "Your trial continues after upgrade"
+    },
     "choosePlan": "Choose Your Plan",
     "choosePlanDescription": "Start with a 14-day free trial. No credit card required to start.",
     "currentPlan": "Current Plan",
     "days": "{count} days",
     "description": "Manage your subscription and billing details",
-    "features": { "allFeatures": "All features included", "cancelAnytime": "Cancel anytime", "trial": "14-day free trial", "yearlyDiscount": "25% discount vs monthly" },
-    "interval": { "monthlyBilling": "Monthly billing", "yearlyBilling": "Yearly billing" },
+    "faq": {
+      "afterTrial": {
+        "answer": "After your 14-day trial ends, you'll be charged for the subscription plan you selected. You can cancel anytime before the trial ends to avoid charges.",
+        "question": "What happens after the trial?"
+      },
+      "perSeat": {
+        "answer": "You're billed based on the number of active members in your organization. When you add or remove members, your subscription is automatically adjusted.",
+        "question": "How does per-seat billing work?"
+      },
+      "switch": {
+        "answer": "Yes! You can switch plans at any time through the billing portal. Changes take effect at your next billing cycle.",
+        "question": "Can I switch between monthly and yearly?"
+      },
+      "title": "Frequently Asked Questions"
+    },
+    "features": {
+      "allFeatures": "All features included",
+      "cancelAnytime": "Cancel anytime",
+      "trial": "14-day free trial",
+      "yearlyDiscount": "25% discount vs monthly"
+    },
+    "interval": {
+      "monthlyBilling": "Monthly billing",
+      "yearlyBilling": "Yearly billing"
+    },
     "manageBilling": "Manage Billing",
     "monthlyCost": "Monthly Cost",
     "nextBilling": "Next Billing",
     "opening": "Opening...",
     "perSeatMonth": "/seat/month",
-    "plans": { "monthly": { "description": "Flexible month-to-month billing", "title": "Monthly" }, "yearly": { "description": "Save 25% with annual billing", "title": "Yearly" } },
+    "plans": {
+      "monthly": {
+        "description": "Flexible month-to-month billing",
+        "title": "Monthly"
+      },
+      "yearly": {
+        "description": "Save 25% with annual billing",
+        "title": "Yearly"
+      }
+    },
     "portalOpenFailed": "Failed to open billing portal",
     "priceSeatMonth": "€{price}/seat/mo",
     "priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
     "seatBilledAnnually": "€{price}/seat billed annually",
     "starting": "Starting...",
     "startTrial": "Start Free Trial",
-    "status": { "canceled": "Canceled", "noSubscription": "No Subscription", "pastDue": "Past Due", "trial": "Trial" },
+    "status": {
+      "canceled": "Canceled",
+      "noSubscription": "No Subscription",
+      "pastDue": "Past Due",
+      "trial": "Trial"
+    },
+    "suspended": {
+      "adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
+      "goToBilling": "Go to billing",
+      "memberDescription": "This organization is suspended. Contact an organization admin to update billing.",
+      "title": "Organization suspended"
+    },
     "title": "Billing & Subscription",
+    "trialBanner": {
+      "description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
+      "title": "14-day trial active",
+      "upgrade": "Upgrade"
+    },
     "trialEnds": "Trial Ends",
     "vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
     "yearTotal": "€{amount}/year total"
-  },
-  "team": {
-    "absences": {
-      "actions": {
-        "recordForEmployee": "Record absence for {name}"
-      },
-      "empty": {
-        "description": "Try adjusting filters or search to find team members.",
-        "label": "No employees found",
-        "title": "No employees found"
-      },
-      "filters": {
-        "allTeams": "All teams",
-        "searchLabel": "Search employees",
-        "searchPlaceholder": "Search employees…",
-        "searchSubmit": "Search",
-        "teamLabel": "Filter by team",
-        "teamPlaceholder": "Team",
-        "yearLabel": "Filter by year",
-        "yearPlaceholder": "Year"
-      },
-      "pagination": {
-        "next": "Next",
-        "nextLabel": "Next page",
-        "page": "Page {page} of {pageCount}",
-        "previous": "Previous",
-        "previousLabel": "Previous page",
-        "showing": "Showing {firstItem} to {lastItem} of {total}"
-      },
-      "recordDialog": {
-        "required": "{label} is required",
-        "titleForEmployee": "Record absence for {name}"
-      },
-      "sort": {
-        "ascending": "ascending",
-        "by": "Sort by {label}",
-        "byWithDirection": "Sort by {label} ({direction})",
-        "descending": "descending"
-      },
-      "table": {
-        "actions": "Actions",
-        "allowance": "Allowance",
-        "employee": "Employee",
-        "left": "Left",
-        "pending": "Pending",
-        "sick": "Sick",
-        "teamOrPosition": "Team or Position",
-        "used": "Used"
-      }
-    }
   },
   "surcharges": {
     "reports": {
@@ -147,5 +359,124 @@
       },
       "title": "Surcharge reports"
     }
+  },
+  "today": {
+    "approvals": {
+      "approve": "Approve",
+      "approveLabel": "Approve {title}",
+      "description": "Requests waiting for a manager decision.",
+      "empty": "No approvals are waiting.",
+      "openInbox": "Open inbox",
+      "pendingAriaLabel": "Pending approvals",
+      "reject": "Reject",
+      "rejectLabel": "Reject {title}",
+      "title": "Approvals",
+      "toast": {
+        "approved": "Request approved",
+        "approveError": "Unable to approve request",
+        "rejected": "Request rejected",
+        "rejectError": "Unable to reject request"
+      }
+    },
+    "briefing": {
+      "badge": "Today",
+      "description": "Review the items that need action today, then move directly into the right workflow.",
+      "needsAction": {
+        "description": "Start here for the most urgent operational follow-up.",
+        "empty": "All clear. No manager action is needed right now.",
+        "title": "Needs Action"
+      },
+      "sections": {
+        "empty": "No issues detected."
+      },
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "info": "Info",
+        "warning": "Warning"
+      },
+      "summaryAriaLabel": "Today summary",
+      "supportingSectionsAriaLabel": "Supporting sections",
+      "title": "Manager Daily Briefing",
+      "updatedAt": "{date} - Updated {time}"
+    }
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "New Claim"
+    },
+    "approvals": {
+      "description": "Open the unified approvals inbox filtered to travel expenses.",
+      "openInbox": "Open Inbox",
+      "title": "Review Pending Travel Expense Approvals"
+    },
+    "claimTypes": {
+      "mileage": "Mileage",
+      "per_diem": "Per Diem",
+      "receipt": "Receipt"
+    },
+    "decision": {
+      "approve": "Approve",
+      "approved": "Claim approved successfully",
+      "approveDescription": "Add an optional note for the claimant before approving.",
+      "approveTitle": "Approve Claim",
+      "errors": {
+        "approve": "Failed to approve claim",
+        "missingClaim": "Travel expense claim is missing",
+        "reject": "Failed to reject claim",
+        "rejectionReason": "Please provide a rejection reason"
+      },
+      "noteOptional": "Note (optional)",
+      "notePlaceholder": "Looks good. Thanks for the details.",
+      "reasonPlaceholder": "Missing receipt details for the submitted amount",
+      "reasonRequired": "Reason (required)",
+      "reject": "Reject",
+      "rejectDescription": "Provide a clear reason to help the claimant update and resubmit.",
+      "rejected": "Claim rejected successfully",
+      "rejectTitle": "Reject Claim"
+    },
+    "description": "Create and track your travel expense claims",
+    "errors": {
+      "loadClaims": "Failed to load travel expense claims"
+    },
+    "feature": "manage travel expenses",
+    "form": {
+      "amount": "Amount",
+      "claimType": "Claim Type",
+      "created": "Travel expense draft created",
+      "createDraft": "Create Draft",
+      "currency": "Currency",
+      "currencyDescription": "ISO 4217 code, e.g. EUR or USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Create a new draft claim for your recent travel expenses.",
+      "destinationCity": "Destination City",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Destination Country",
+      "destinationCountryPlaceholder": "Germany",
+      "errors": {
+        "createDraft": "Failed to create travel expense draft",
+        "positiveAmount": "Amount must be a positive number",
+        "tripEndBeforeStart": "Trip end date cannot be before trip start date",
+        "validTripDates": "Please provide a valid trip start and end date",
+        "validTripEnd": "Please provide a valid trip end date",
+        "validTripStart": "Please provide a valid trip start date"
+      },
+      "notes": "Notes",
+      "notesPlaceholder": "Add optional context for your approver",
+      "receiptAttachmentHint": "Receipt claims require at least one attachment. Attachment upload will be available after draft creation.",
+      "selectClaimType": "Select claim type",
+      "title": "Create Travel Expense Claim",
+      "tripEnd": "Trip End",
+      "tripStart": "Trip Start"
+    },
+    "list": {
+      "amount": "Amount",
+      "dateRange": "Date Range",
+      "emptyDescription": "Create your first claim to start the approval process.",
+      "emptyTitle": "No travel expense claims yet",
+      "status": "Status",
+      "type": "Type"
+    },
+    "title": "Travel Expenses"
   }
 }

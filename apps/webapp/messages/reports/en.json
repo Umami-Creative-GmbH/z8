@@ -1,245 +1,245 @@
 {
-	"reports": {
-		"description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
-		"employeeSelector": {
-			"error": "Unable to load team members",
-			"label": "Employee",
-			"placeholder": "Select employee..."
-		},
-		"container": {
-			"error": "Error",
-			"generating": "Generating Report...",
-			"noReportYet": "No report generated yet",
-			"pleaseWait": "Please wait while we compile your data",
-			"selectPeriod": "Select a period and click \"Generate Report\" to get started"
-		},
-		"export": {
-			"csv": "Export CSV",
-			"description": "Download this report in your preferred format",
-			"downloaded": "Downloaded {filename}",
-			"errorDescription": "An error occurred while exporting the report",
-			"excel": "Export Excel",
-			"failed": "Export failed",
-			"generating": "Generating...",
-			"pdf": "Export PDF",
-			"success": "Export successful",
-			"title": "Export Report"
-		},
-		"feature": "generate reports",
-		"filter": {
-			"loadingSettings": "Loading organization settings before enabling presets.",
-			"period": "Period",
-			"selectPeriod": "Select period"
-		},
-		"generate": "Generate Report",
-		"generating": "Generating Report…",
-		"period": {
-			"currentMonth": "Current Month",
-			"currentYear": "Current Year",
-			"customRange": "Custom Range",
-			"lastMonth": "Last Month",
-			"lastYear": "Last Year",
-			"pickDateRange": "Pick a date range",
-			"yearToDate": "Year to Date"
-		},
-		"preview": {
-			"absencesByCategory": "Absences by Category",
-			"attendancePercentage": "Attendance Percentage",
-			"category": "Category",
-			"complianceMetrics": "Compliance Metrics",
-			"date": "Date",
-			"dateBreakdown": "Date-by-Date Breakdown",
-			"days": "Days",
-			"homeOfficeDescription": "Important for German tax purposes - shows home office days and hours worked",
-			"homeOfficeSummary": "Home Office Summary (Tax Relevant)",
-			"hours": "Hours",
-			"hoursWorked": "Hours Worked",
-			"month": "Month",
-			"noHomeOfficeDays": "No home office days recorded in this period.",
-			"overtime": "Overtime",
-			"total": "Total",
-			"totalHomeOfficeDays": "Total Home Office Days",
-			"totalHomeOfficeHours": "Total Hours Worked from Home",
-			"undertime": "Undertime",
-			"workHoursByMonth": "Work Hours by Month"
-		},
-		"projects": {
-			"budget": {
-				"exceededBy": "Exceeded budget by {hours} hours",
-				"hoursBudget": "{hours}h budget",
-				"hoursLogged": "Hours Logged",
-				"hoursRemaining": "{hours} hours remaining in budget",
-				"hoursUsed": "{hours}h used",
-				"nearLimit": "Near Budget Limit",
-				"onlyRemaining": "Only {hours} hours remaining",
-				"onTrack": "On Track",
-				"over": "Over",
-				"overBudget": "Over Budget",
-				"remaining": "Remaining",
-				"title": "Budget Progress",
-				"used": "Used"
-			},
-			"cards": {
-				"acrossAllProjects": "Across all projects",
-				"activeContributors": "Active contributors",
-				"activeCount": "{count} active",
-				"activeProjects": "Active Projects",
-				"budgetUsed": "Budget Used",
-				"currentlyInProgress": "Currently in progress",
-				"dailyAverage": "Daily Average",
-				"exceededBudget": "Exceeded budget",
-				"hoursOfBudget": "{used}h of {total}h",
-				"hoursPerDay": "Hours per day",
-				"na": "N/A",
-				"noBudgetSet": "No budget set",
-				"overBudget": "Over Budget",
-				"overdue": "Overdue",
-				"pastDeadline": "Past deadline",
-				"teamMembers": "Team Members",
-				"totalHours": "Total Hours",
-				"totalProjects": "Total Projects",
-				"workPeriods": "{count} work periods"
-			},
-			"chart": {
-				"cumulativeDescription": "Total hours accumulated over time",
-				"cumulativeHours": "Cumulative Hours",
-				"cumulativeLabel": "Cumulative",
-				"dailyDescription": "Hours worked per day during the selected period",
-				"dailyHours": "Daily Hours",
-				"hoursLabel": "Hours",
-				"hoursOverTime": "Hours Over Time",
-				"noDataAvailable": "No time tracking data available for this period",
-				"noWorkPeriods": "No work periods recorded in the selected date range"
-			},
-			"container": {
-				"error": "Error",
-				"generating": "Generating Report...",
-				"noReportYet": "No report generated yet",
-				"pleaseWait": "Please wait while we compile project data",
-				"portfolioOverview": "Portfolio Overview",
-				"projectDetails": "Project Details",
-				"selectPeriod": "Select a period and click \"Generate Report\" to get started"
-			},
-			"filter": {
-				"activeOnly": "Active Only",
-				"activePlanned": "Active & Planned",
-				"allStatuses": "All Statuses",
-				"archived": "Archived",
-				"completed": "Completed",
-				"period": "Period",
-				"selectStatus": "Select status filter",
-				"status": "Status"
-			},
-			"generate": "Generate Report",
-			"generating": "Generating Report...",
-			"healthAlerts": {
-				"budgetUsed": "{percent}% budget used",
-				"critical": "Critical",
-				"daysLeft": "{days}d left",
-				"daysOverdue": "{days}d overdue",
-				"description": "Budget and deadline risks that need attention in this report period.",
-				"dueToday": "Due today",
-				"empty": "No budget or deadline risks in this report period.",
-				"reason": {
-					"budget70": "Project has used at least 70% of its budget.",
-					"budget90": "Project has used at least 90% of its budget.",
-					"deadline": "Project deadline is approaching.",
-					"default": "Project needs attention.",
-					"dueToday": "Project is due today.",
-					"overBudget": "Project is over budget.",
-					"overdue": "Project deadline has passed."
-				},
-				"title": "Project Health Alerts",
-				"viewDetails": "View details",
-				"viewDetailsForProject": "View details for {projectName}",
-				"warning": "Warning"
-			},
-			"healthSummary": {
-				"atOrAbove70": "At or above 70%",
-				"atOrAbove70Description": "Budget usage elevated",
-				"atOrAbove90": "At or above 90%",
-				"atOrAbove90Description": "Near budget limit",
-				"forecastAtRisk": "Forecast at risk",
-				"forecastAtRiskDescription": "Projected to exceed plan",
-				"overBudget": "Over budget",
-				"overBudgetDescription": "Budget exceeded"
-			},
-			"page": {
-				"accessDenied": "Access Denied",
-				"description": "Analyze project hours, budget usage, and team contributions",
-				"feature": "view project reports",
-				"noPermission": "You don't have permission to view project reports.",
-				"title": "Project Reports"
-			},
-			"status": {
-				"active": "Active",
-				"archived": "Archived",
-				"completed": "Completed",
-				"paused": "Paused",
-				"planned": "Planned"
-			},
-			"table": {
-				"budget": "Budget",
-				"daysLeft": "{days}d left",
-				"daysOverdue": "{days}d overdue",
-				"deadline": "Deadline",
-				"dueToday": "Due today",
-				"forecastRisk": "Forecast risk",
-				"hours": "Hours",
-				"noProjectsFound": "No projects found",
-				"noProjectsMatch": "No projects match the selected filters",
-				"portfolioDescription": "Overview of all projects with budget and time tracking metrics",
-				"portfolioTitle": "Project Portfolio",
-				"project": "Project",
-				"searchPlaceholder": "Search by name, description, or status...",
-				"status": "Status",
-				"team": "Team",
-				"viewProject": "View project details"
-			},
-			"team": {
-				"byEmployee": "By Employee",
-				"byTeam": "By Team",
-				"description": "Hours distribution across team members and teams",
-				"employee": "Employee",
-				"hours": "Hours",
-				"hoursLabel": "Hours",
-				"noMembers": "No team members have logged time to this project",
-				"sessions": "Sessions",
-				"title": "Team Breakdown"
-			},
-			"toast": {
-				"failedGenerate": "Failed to generate report",
-				"failedPortfolio": "Failed to generate portfolio report",
-				"failedProject": "Failed to generate project report",
-				"failedProjectReport": "Failed to generate project report",
-				"portfolioGenerated": "Portfolio report generated",
-				"projectGenerated": "Report generated for {name}",
-				"unexpectedError": "An unexpected error occurred"
-			}
-		},
-		"title": "Employee Reports",
-		"summary": {
-			"averagePerDay": "Avg: {hours}h/day",
-			"homeOfficeDays": "Home Office Days",
-			"hourlyAverage": "{hours}h @ avg {rate}/h",
-			"otherDays": "Other: {count} days",
-			"pending": "{count} pending",
-			"ratePeriods": "{count} rate periods",
-			"sickDays": "Sick: {count} days",
-			"taxRelevant": "Tax relevant",
-			"totalAbsences": "Total Absences",
-			"totalEarnings": "Total Earnings",
-			"totalWorkHours": "Total Work Hours",
-			"vacationDays": "Vacation Days",
-			"workedFromHome": "{hours}h worked from home",
-			"workDays": "{count} work days"
-		},
-		"toast": {
-			"failedGenerate": "Failed to generate report",
-			"generatedFor": "Generated report for {name}",
-			"reportGenerated": "Report generated successfully",
-			"unexpectedError": "An unexpected error occurred",
-			"unknownError": "An unknown error occurred"
-		}
-	}
+  "reports": {
+    "container": {
+      "error": "Error",
+      "generating": "Generating Report...",
+      "noReportYet": "No report generated yet",
+      "pleaseWait": "Please wait while we compile your data",
+      "selectPeriod": "Select a period and click \"Generate Report\" to get started"
+    },
+    "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
+    "employeeSelector": {
+      "error": "Unable to load team members",
+      "label": "Employee",
+      "placeholder": "Select employee..."
+    },
+    "export": {
+      "csv": "Export CSV",
+      "description": "Download this report in your preferred format",
+      "downloaded": "Downloaded {filename}",
+      "errorDescription": "An error occurred while exporting the report",
+      "excel": "Export Excel",
+      "failed": "Export failed",
+      "generating": "Generating...",
+      "pdf": "Export PDF",
+      "success": "Export successful",
+      "title": "Export Report"
+    },
+    "feature": "generate reports",
+    "filter": {
+      "loadingSettings": "Loading organization settings before enabling presets.",
+      "period": "Period",
+      "selectPeriod": "Select period"
+    },
+    "generate": "Generate Report",
+    "generating": "Generating Report…",
+    "period": {
+      "currentMonth": "Current Month",
+      "currentYear": "Current Year",
+      "customRange": "Custom Range",
+      "lastMonth": "Last Month",
+      "lastYear": "Last Year",
+      "pickDateRange": "Pick a date range",
+      "yearToDate": "Year to Date"
+    },
+    "preview": {
+      "absencesByCategory": "Absences by Category",
+      "attendancePercentage": "Attendance Percentage",
+      "category": "Category",
+      "complianceMetrics": "Compliance Metrics",
+      "date": "Date",
+      "dateBreakdown": "Date-by-Date Breakdown",
+      "days": "Days",
+      "homeOfficeDescription": "Important for German tax purposes - shows home office days and hours worked",
+      "homeOfficeSummary": "Home Office Summary (Tax Relevant)",
+      "hours": "Hours",
+      "hoursWorked": "Hours Worked",
+      "month": "Month",
+      "noHomeOfficeDays": "No home office days recorded in this period.",
+      "overtime": "Overtime",
+      "total": "Total",
+      "totalHomeOfficeDays": "Total Home Office Days",
+      "totalHomeOfficeHours": "Total Hours Worked from Home",
+      "undertime": "Undertime",
+      "workHoursByMonth": "Work Hours by Month"
+    },
+    "projects": {
+      "budget": {
+        "exceededBy": "Exceeded budget by {hours} hours",
+        "hoursBudget": "{hours}h budget",
+        "hoursLogged": "Hours Logged",
+        "hoursRemaining": "{hours} hours remaining in budget",
+        "hoursUsed": "{hours}h used",
+        "nearLimit": "Near Budget Limit",
+        "onlyRemaining": "Only {hours} hours remaining",
+        "onTrack": "On Track",
+        "over": "Over",
+        "overBudget": "Over Budget",
+        "remaining": "Remaining",
+        "title": "Budget Progress",
+        "used": "Used"
+      },
+      "cards": {
+        "acrossAllProjects": "Across all projects",
+        "activeContributors": "Active contributors",
+        "activeCount": "{count} active",
+        "activeProjects": "Active Projects",
+        "budgetUsed": "Budget Used",
+        "currentlyInProgress": "Currently in progress",
+        "dailyAverage": "Daily Average",
+        "exceededBudget": "Exceeded budget",
+        "hoursOfBudget": "{used}h of {total}h",
+        "hoursPerDay": "Hours per day",
+        "na": "N/A",
+        "noBudgetSet": "No budget set",
+        "overBudget": "Over Budget",
+        "overdue": "Overdue",
+        "pastDeadline": "Past deadline",
+        "teamMembers": "Team Members",
+        "totalHours": "Total Hours",
+        "totalProjects": "Total Projects",
+        "workPeriods": "{count} work periods"
+      },
+      "chart": {
+        "cumulativeDescription": "Total hours accumulated over time",
+        "cumulativeHours": "Cumulative Hours",
+        "cumulativeLabel": "Cumulative",
+        "dailyDescription": "Hours worked per day during the selected period",
+        "dailyHours": "Daily Hours",
+        "hoursLabel": "Hours",
+        "hoursOverTime": "Hours Over Time",
+        "noDataAvailable": "No time tracking data available for this period",
+        "noWorkPeriods": "No work periods recorded in the selected date range"
+      },
+      "container": {
+        "error": "Error",
+        "generating": "Generating Report...",
+        "noReportYet": "No report generated yet",
+        "pleaseWait": "Please wait while we compile project data",
+        "portfolioOverview": "Portfolio Overview",
+        "projectDetails": "Project Details",
+        "selectPeriod": "Select a period and click \"Generate Report\" to get started"
+      },
+      "filter": {
+        "activeOnly": "Active Only",
+        "activePlanned": "Active & Planned",
+        "allStatuses": "All Statuses",
+        "archived": "Archived",
+        "completed": "Completed",
+        "period": "Period",
+        "selectStatus": "Select status filter",
+        "status": "Status"
+      },
+      "generate": "Generate Report",
+      "generating": "Generating Report...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% budget used",
+        "critical": "Critical",
+        "daysLeft": "{days}d left",
+        "daysOverdue": "{days}d overdue",
+        "description": "Budget and deadline risks that need attention in this report period.",
+        "dueToday": "Due today",
+        "empty": "No budget or deadline risks in this report period.",
+        "reason": {
+          "budget70": "Project has used at least 70% of its budget.",
+          "budget90": "Project has used at least 90% of its budget.",
+          "deadline": "Project deadline is approaching.",
+          "default": "Project needs attention.",
+          "dueToday": "Project is due today.",
+          "overBudget": "Project is over budget.",
+          "overdue": "Project deadline has passed."
+        },
+        "title": "Project Health Alerts",
+        "viewDetails": "View details",
+        "viewDetailsForProject": "View details for {projectName}",
+        "warning": "Warning"
+      },
+      "healthSummary": {
+        "atOrAbove70": "At or above 70%",
+        "atOrAbove70Description": "Budget usage elevated",
+        "atOrAbove90": "At or above 90%",
+        "atOrAbove90Description": "Near budget limit",
+        "forecastAtRisk": "Forecast at risk",
+        "forecastAtRiskDescription": "Projected to exceed plan",
+        "overBudget": "Over budget",
+        "overBudgetDescription": "Budget exceeded"
+      },
+      "page": {
+        "accessDenied": "Access Denied",
+        "description": "Analyze project hours, budget usage, and team contributions",
+        "feature": "view project reports",
+        "noPermission": "You don't have permission to view project reports.",
+        "title": "Project Reports"
+      },
+      "status": {
+        "active": "Active",
+        "archived": "Archived",
+        "completed": "Completed",
+        "paused": "Paused",
+        "planned": "Planned"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}d left",
+        "daysOverdue": "{days}d overdue",
+        "deadline": "Deadline",
+        "dueToday": "Due today",
+        "forecastRisk": "Forecast risk",
+        "hours": "Hours",
+        "noProjectsFound": "No projects found",
+        "noProjectsMatch": "No projects match the selected filters",
+        "portfolioDescription": "Overview of all projects with budget and time tracking metrics",
+        "portfolioTitle": "Project Portfolio",
+        "project": "Project",
+        "searchPlaceholder": "Search by name, description, or status...",
+        "status": "Status",
+        "team": "Team",
+        "viewProject": "View project details"
+      },
+      "team": {
+        "byEmployee": "By Employee",
+        "byTeam": "By Team",
+        "description": "Hours distribution across team members and teams",
+        "employee": "Employee",
+        "hours": "Hours",
+        "hoursLabel": "Hours",
+        "noMembers": "No team members have logged time to this project",
+        "sessions": "Sessions",
+        "title": "Team Breakdown"
+      },
+      "toast": {
+        "failedGenerate": "Failed to generate report",
+        "failedPortfolio": "Failed to generate portfolio report",
+        "failedProject": "Failed to generate project report",
+        "failedProjectReport": "Failed to generate project report",
+        "portfolioGenerated": "Portfolio report generated",
+        "projectGenerated": "Report generated for {name}",
+        "unexpectedError": "An unexpected error occurred"
+      }
+    },
+    "summary": {
+      "averagePerDay": "Avg: {hours}h/day",
+      "homeOfficeDays": "Home Office Days",
+      "hourlyAverage": "{hours}h @ avg {rate}/h",
+      "otherDays": "Other: {count} days",
+      "pending": "{count} pending",
+      "ratePeriods": "{count} rate periods",
+      "sickDays": "Sick: {count} days",
+      "taxRelevant": "Tax relevant",
+      "totalAbsences": "Total Absences",
+      "totalEarnings": "Total Earnings",
+      "totalWorkHours": "Total Work Hours",
+      "vacationDays": "Vacation Days",
+      "workDays": "{count} work days",
+      "workedFromHome": "{hours}h worked from home"
+    },
+    "title": "Employee Reports",
+    "toast": {
+      "failedGenerate": "Failed to generate report",
+      "generatedFor": "Generated report for {name}",
+      "reportGenerated": "Report generated successfully",
+      "unexpectedError": "An unexpected error occurred",
+      "unknownError": "An unknown error occurred"
+    }
+  }
 }

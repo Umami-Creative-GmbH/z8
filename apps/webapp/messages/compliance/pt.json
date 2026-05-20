@@ -1,5 +1,107 @@
 {
   "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Os controles de acesso apenas resumem eventos sensíveis do log de auditoria que já são capturados hoje.",
+        "auditEvidence": "A evidência de auditoria utiliza a configuração de exportação de auditoria ativa, solicitações de pacote de auditoria e resultados de verificação recentes.",
+        "workforceCompliance": "A conformidade da força de trabalho utiliza os últimos 7 dias de violações de política de trabalho e solicitações de exceção pendentes."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Trabalhos falhos recentes: {failedRequests}; verificações inválidas recentes: {invalidVerifications}",
+          "title": "Falhas na evidência de auditoria detectadas"
+        },
+        "auditPackFailure": {
+          "description": "Trabalhos falhos recentes: {failedRequests}",
+          "title": "Falha na geração do pacote de auditoria"
+        },
+        "auditVerificationFailure": {
+          "description": "Verificações inválidas recentes: {invalidVerifications}",
+          "title": "Falha na verificação de auditoria"
+        },
+        "sensitiveAction": {
+          "description": "{action} em {entityType}",
+          "title": "Ação sensível: {action}"
+        },
+        "workforceFindings": {
+          "description": "Descanso: {restPeriodViolations}, Outras políticas: {generalPolicyViolations}, Horas extras: {overtimeViolations}",
+          "title": "Descobertas recentes de políticas de força de trabalho"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Última ação sensível: {action}",
+          "latestSensitiveActionNone": "Última ação sensível: nenhuma",
+          "noSensitiveEvents": "Nenhuma alteração de controle sensível foi registrada nas últimas 24 horas.",
+          "recentSensitiveEvents": "Eventos sensíveis recentes: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Chave de assinatura ativa: {fingerprint}",
+          "lastSuccessfulAuditPack": "Último pacote de auditoria bem-sucedido: {timestamp}",
+          "missingSigningKey": "As chaves de assinatura ainda não foram configuradas.",
+          "noSuccessfulAuditPack": "Nenhum pacote de auditoria bem-sucedido foi registrado ainda.",
+          "recentFailedJobs": "Trabalhos de pacote de auditoria com falha recentes: {count}",
+          "recentInvalidVerifications": "Tentativas de verificação inválidas recentes: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Não foi possível carregar os eventos de controle de acesso.",
+          "auditEvidence": "Não foi possível carregar os dados de evidência de auditoria.",
+          "workforceCompliance": "Não foi possível carregar os dados de conformidade da força de trabalho."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Outras violações de política: {count}",
+          "overtimeViolations": "Violações de horas extras: {count}",
+          "pendingExceptions": "Exceções pendentes: {count}",
+          "restPeriodViolations": "Violações de período de descanso: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Inspecionar conformidade",
+        "inspectInAuditLog": "Inspecionar no Registro de Auditoria",
+        "openAuditExport": "Abrir Exportação de Auditoria",
+        "openAuditLog": "Abrir Registro de Auditoria",
+        "openComplianceSettings": "Abrir configurações de conformidade",
+        "reviewAuditExport": "Revisar exportação de auditoria"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Alterações de controle sensíveis precisam de revisão",
+            "healthy": "Nenhuma alteração de controle sensível foi registrada recentemente",
+            "warning": "Alterações de controle recentes foram detectadas"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Evidências de auditoria precisam de atenção",
+            "healthy": "Sinais de evidência de auditoria parecem saudáveis",
+            "warning": "Evidências de auditoria estão apenas parcialmente prontas"
+          }
+        },
+        "unavailable": {
+          "headline": "Sinal temporariamente indisponível"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Violações de política da força de trabalho precisam de revisão",
+            "healthy": "Nenhum problema recente de política da força de trabalho foi detectado",
+            "warning": "A conformidade da força de trabalho está se desviando"
+          }
+        }
+      },
+      "status": {
+        "critical": "crítico",
+        "healthy": "saudável",
+        "unavailable": "indisponível",
+        "warning": "aviso"
+      },
+      "summary": {
+        "critical": "Riscos críticos de conformidade precisam de atenção",
+        "healthy": "Nenhum problema ativo detectado nos sinais monitorados",
+        "unavailable": "Alguns sinais de conformidade estão indisponíveis",
+        "warning": "Sinais de conformidade precisam de revisão"
+      }
+    },
     "exception": {
       "approved": "Exceção Aprovada",
       "approvedDescription": "A exceção de conformidade foi aprovada.",
@@ -33,116 +135,6 @@
     "pendingExceptionsDescription": "Analise as solicitações de exceção que requerem sua aprovação",
     "requestException": "Solicitar exceção",
     "restPeriodMessage": "Você precisa de mais {{time}} de descanso antes de poder registrar o ponto. Próximo registro permitido: {{nextTime}}",
-    "restPeriodRequired": "Período de descanso necessário",
-    "commandCenter": {
-      "coverage": {
-        "accessControls": "Access controls only summarize sensitive audit-log events that are already captured today.",
-        "auditEvidence": "Audit evidence uses live audit-export configuration, audit-pack requests, and recent verification results.",
-        "workforceCompliance": "Workforce compliance uses the last 7 days of work-policy violations and pending exception requests."
-      },
-      "events": {
-        "auditEvidenceFailures": {
-          "description": "Recent failed jobs: {failedRequests}; recent invalid verifications: {invalidVerifications}",
-          "title": "Audit evidence failures detected"
-        },
-        "auditPackFailure": {
-          "description": "Recent failed jobs: {failedRequests}",
-          "title": "Audit pack generation failed"
-        },
-        "auditVerificationFailure": {
-          "description": "Recent invalid verifications: {invalidVerifications}",
-          "title": "Audit verification failed"
-        },
-        "sensitiveAction": {
-          "description": "{action} on {entityType}",
-          "title": "Sensitive action: {action}"
-        },
-        "workforceFindings": {
-          "description": "Rest: {restPeriodViolations}, Other policy: {generalPolicyViolations}, Overtime: {overtimeViolations}",
-          "title": "Recent workforce policy findings"
-        }
-      },
-      "facts": {
-        "access": {
-          "latestSensitiveAction": "Latest sensitive action: {action}",
-          "latestSensitiveActionNone": "Latest sensitive action: none",
-          "noSensitiveEvents": "No sensitive control changes were logged in the last 24 hours.",
-          "recentSensitiveEvents": "Recent sensitive events: {count}"
-        },
-        "audit": {
-          "activeSigningKey": "Active signing key: {fingerprint}",
-          "lastSuccessfulAuditPack": "Last successful audit pack: {timestamp}",
-          "missingSigningKey": "Signing keys are not configured yet.",
-          "noSuccessfulAuditPack": "No successful audit pack has been recorded yet.",
-          "recentFailedJobs": "Recent failed audit-pack jobs: {count}",
-          "recentInvalidVerifications": "Recent invalid verification attempts: {count}"
-        },
-        "unavailable": {
-          "accessControls": "Access-control events could not be loaded.",
-          "auditEvidence": "Audit evidence data could not be loaded.",
-          "workforceCompliance": "Workforce compliance data could not be loaded."
-        },
-        "workforce": {
-          "generalPolicyViolations": "Other policy violations: {count}",
-          "overtimeViolations": "Overtime violations: {count}",
-          "pendingExceptions": "Pending exceptions: {count}",
-          "restPeriodViolations": "Rest-period violations: {count}"
-        }
-      },
-      "footer": {
-        "lastRefreshed": "Last refreshed: {time}"
-      },
-      "links": {
-        "inspectCompliance": "Inspect compliance",
-        "inspectInAuditLog": "Inspect in Audit Log",
-        "openAuditExport": "Open Audit Export",
-        "openAuditLog": "Open Audit Log",
-        "openComplianceSettings": "Open Compliance Settings",
-        "reviewAuditExport": "Review audit export"
-      },
-      "overview": "Compliance overview",
-      "recentEvents": {
-        "empty": "No recent critical events were detected.",
-        "title": "Recent Critical Events"
-      },
-      "sections": {
-        "accessControls": {
-          "headline": {
-            "critical": "Sensitive control changes need review",
-            "healthy": "No sensitive control changes were logged recently",
-            "warning": "Recent control changes were detected"
-          }
-        },
-        "auditEvidence": {
-          "headline": {
-            "critical": "Audit evidence needs attention",
-            "healthy": "Audit evidence signals look healthy",
-            "warning": "Audit evidence is only partially ready"
-          }
-        },
-        "unavailable": {
-          "headline": "Signal temporarily unavailable"
-        },
-        "workforceCompliance": {
-          "headline": {
-            "critical": "Workforce policy violations need review",
-            "healthy": "No recent workforce policy issues were detected",
-            "warning": "Workforce compliance is drifting"
-          }
-        }
-      },
-      "status": {
-        "critical": "critical",
-        "healthy": "healthy",
-        "unavailable": "unavailable",
-        "warning": "warning"
-      },
-      "summary": {
-        "critical": "Critical compliance risks need attention",
-        "healthy": "No active issues detected in monitored signals",
-        "unavailable": "Some compliance signals are unavailable",
-        "warning": "Compliance signals need review"
-      }
-    }
+    "restPeriodRequired": "Período de descanso necessário"
   }
 }

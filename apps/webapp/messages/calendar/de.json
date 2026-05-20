@@ -97,7 +97,8 @@
     },
     "subtitle": "Verwalten Sie Ihre Freizeit und Urlaubstage",
     "table": {
-      "cancelRequest": "Antrag stornieren",
+      "cancelAbsence": "Abwesenheit stornieren",
+      "cancelAbsenceTooltip": "Abwesenheit stornieren",
       "end": "Ende",
       "headers": {
         "actions": "Aktionen",
@@ -209,17 +210,6 @@
       "workPeriod": "Arbeitszeitraum",
       "workPeriodPending": "Ausstehende Genehmigung"
     },
-    "view": {
-      "day": "Tag",
-      "loading": "Kalender wird geladen…",
-      "month": "Monat",
-      "next": "Weiter",
-      "previous": "Zurück",
-      "refresh": "Aktualisieren",
-      "today": "Heute",
-      "week": "Woche",
-      "year": "Jahr"
-    },
     "split": {
       "confirm": "Arbeitszeitraum teilen",
       "currentPeriod": "Aktueller Arbeitszeitraum",
@@ -239,6 +229,17 @@
       "approved": "Genehmigt",
       "pending": "Ausstehend",
       "rejected": "Abgelehnt"
+    },
+    "view": {
+      "day": "Tag",
+      "loading": "Kalender wird geladen…",
+      "month": "Monat",
+      "next": "Nächster",
+      "previous": "Vorheriger",
+      "refresh": "Aktualisieren",
+      "today": "Heute",
+      "week": "Woche",
+      "year": "Jahr"
     }
   }
 }

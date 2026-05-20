@@ -1,100 +1,100 @@
 {
-	"scheduling": {
-		"coverage": {
-			"adequate": "Angemessene Personalbesetzung",
-			"byLocation": "Nach Standort:",
-			"gapCount": "{{count}} Personalmangel",
-			"gaps": "Lücken",
-			"hideOverlay": "Abdeckungseinblendung ausblenden",
-			"metSlots": "{{count}} angemessen",
-			"overSlots": "{{count}} überbesetzt",
-			"overstaffed": "Überbesetzt",
-			"showOverlay": "Abdeckungsziele einblenden",
-			"summary": "Abdeckungsübersicht:",
-			"toggleLabel": "Abdeckung",
-			"underSlots": "{{count}} unterbesetzt",
-			"understaffed": "Unterbesetzt",
-			"utilization": "{{percent}}% Auslastung"
-		},
-		"scheduler": {
-			"complianceBanner": {
-				"findingsDetected": "{count} Befund(e) vor der Veröffentlichung erkannt.",
-				"maxHours": "Max. Stunden: {count}",
-				"overtime": "Überstunden: {count}",
-				"restTime": "Ruhezeit: {count}",
-				"title": "Compliance-Warnungen in diesem Datumsbereich"
-			},
-			"loading": "Dienstplan wird geladen...",
-			"publish": {
-				"failed": "Schichten konnten nicht veröffentlicht werden",
-				"published": "{count} Schicht(en) veröffentlicht"
-			},
-			"shiftUpdate": {
-				"failed": "Schicht konnte nicht aktualisiert werden",
-				"overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
-				"overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
-				"updated": "Schicht aktualisiert"
-			}
-		},
-		"shiftDialog": {
-			"anyoneCanPickUp": "Jeder kann übernehmen",
-			"assignTo": "Zuweisen an",
-			"confirmDelete": "Löschen bestätigen",
-			"createDescription": "Geben Sie die Details für die neue Schicht ein",
-			"created": "Schicht erstellt",
-			"createShift": "Schicht erstellen",
-			"createTitle": "Schicht erstellen",
-			"date": "Datum",
-			"deleted": "Schicht gelöscht",
-			"deleteFailed": "Schicht konnte nicht gelöscht werden",
-			"draft": "Entwurf",
-			"editDescription": "Aktualisieren Sie die Schichtdetails unten",
-			"editTitle": "Schicht bearbeiten",
-			"endTime": "Endzeit",
-			"noTemplate": "Keine Vorlage",
-			"notes": "Notizen (optional)",
-			"notesPlaceholder": "Besondere Anweisungen oder Notizen...",
-			"openShift": "Offene Schicht",
-			"openShiftHelp": "Als \"Offene Schicht\" belassen, damit Mitarbeitende sie übernehmen können",
-			"pickDate": "Datum auswählen",
-			"published": "Veröffentlicht",
-			"savedWithWarnings": "Schicht mit Warnungen gespeichert",
-			"saveFailed": "Schicht konnte nicht gespeichert werden",
-			"selectEmployee": "Mitarbeiter auswählen",
-			"selectSubarea": "Teilbereich auswählen…",
-			"selectTemplate": "Vorlage auswählen",
-			"startTime": "Startzeit",
-			"status": "Status:",
-			"subarea": "Teilbereich",
-			"subareaHelp": "Ort, an dem diese Schicht stattfindet",
-			"template": "Vorlage (optional)",
-			"templateHelp": "Durch Auswahl einer Vorlage werden die Zeiten automatisch ausgefüllt",
-			"updated": "Schicht aktualisiert",
-			"updateShift": "Schicht aktualisieren"
-		},
-		"skills": {
-			"expiredCertifications": "Abgelaufene Zertifizierungen:",
-			"expiredOn": "(Abgelaufen am {{date}})",
-			"missingPreferred": "Fehlende bevorzugte Qualifikationen:",
-			"missingPreferredCount": "{{count}} bevorzugte Qualifikationen fehlen",
-			"missingRequired": "Fehlende erforderliche Qualifikationen:",
-			"preferred": "Bevorzugt",
-			"preferredSkillsMissing": "Bevorzugte Qualifikationen fehlen",
-			"requirementsNotMet": "Qualifikationsanforderungen nicht erfüllt",
-			"unqualified": "Nicht qualifiziert",
-			"validating": "Qualifikationen werden validiert…",
-			"validatingDescription": "Mitarbeiterqualifikationen werden geprüft",
-			"warningMessage": "Sie können diese Schicht dennoch zuweisen, sie wird jedoch als manuelle Übersteuerung protokolliert."
-		},
-		"templates": {
-			"dragHint": "Ziehen Sie eine Vorlage auf den Kalender, um eine Schicht zu erstellen",
-			"empty": "Keine Vorlagen verfügbar. Erstellen Sie Vorlagen in den Einstellungen, um schnell Schichten hinzuzufügen.",
-			"title": "Schichtvorlagen"
-		},
-		"page": {
-			"employeeDescription": "View your shifts and pick up available shifts",
-			"managerDescription": "Manage and plan employee shifts",
-			"title": "Shift Schedule"
-		}
-	}
+  "scheduling": {
+    "coverage": {
+      "adequate": "Angemessene Personalbesetzung",
+      "byLocation": "Nach Standort:",
+      "gapCount": "{{count}} Personalmangel",
+      "gaps": "Lücken",
+      "hideOverlay": "Abdeckungseinblendung ausblenden",
+      "metSlots": "{{count}} angemessen",
+      "overSlots": "{{count}} überbesetzt",
+      "overstaffed": "Überbesetzt",
+      "showOverlay": "Abdeckungsziele einblenden",
+      "summary": "Abdeckungsübersicht:",
+      "toggleLabel": "Abdeckung",
+      "underSlots": "{{count}} unterbesetzt",
+      "understaffed": "Unterbesetzt",
+      "utilization": "{{percent}}% Auslastung"
+    },
+    "page": {
+      "employeeDescription": "Schichten ansehen und verfügbare Schichten übernehmen",
+      "managerDescription": "Mitarbeiterschichten verwalten und planen",
+      "title": "Schichtplan"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} Hinweis(e) vor Veröffentlichung erkannt.",
+        "maxHours": "Max. Stunden: {count}",
+        "overtime": "Überstunden: {count}",
+        "restTime": "Ruhezeit: {count}",
+        "title": "Compliance-Warnungen in diesem Datumsbereich"
+      },
+      "loading": "Schichtplan wird geladen...",
+      "publish": {
+        "failed": "Veröffentlichung der Schichten fehlgeschlagen",
+        "published": "{count} Schicht(en) veröffentlicht"
+      },
+      "shiftUpdate": {
+        "failed": "Aktualisierung der Schicht fehlgeschlagen",
+        "overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
+        "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
+        "updated": "Schicht aktualisiert"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Jeder kann die Schicht übernehmen",
+      "assignTo": "Zuweisen an",
+      "confirmDelete": "Löschen bestätigen",
+      "created": "Schicht erstellt",
+      "createDescription": "Geben Sie die Details für die neue Schicht ein",
+      "createShift": "Schicht erstellen",
+      "createTitle": "Schicht erstellen",
+      "date": "Datum",
+      "deleted": "Schicht gelöscht",
+      "deleteFailed": "Löschen der Schicht fehlgeschlagen",
+      "draft": "Entwurf",
+      "editDescription": "Aktualisieren Sie die Schichtdetails unten",
+      "editTitle": "Schicht bearbeiten",
+      "endTime": "Endzeit",
+      "noTemplate": "Keine Vorlage",
+      "notes": "Notizen (optional)",
+      "notesPlaceholder": "Besondere Anweisungen oder Notizen...",
+      "openShift": "Offene Schicht",
+      "openShiftHelp": "Als „Offene Schicht“ belassen, damit Mitarbeiter sie beanspruchen können",
+      "pickDate": "Datum auswählen",
+      "published": "Veröffentlicht",
+      "savedWithWarnings": "Schicht mit Warnungen gespeichert",
+      "saveFailed": "Speichern der Schicht fehlgeschlagen",
+      "selectEmployee": "Mitarbeiter auswählen",
+      "selectSubarea": "Unterbereich auswählen…",
+      "selectTemplate": "Vorlage auswählen",
+      "startTime": "Startzeit",
+      "status": "Status:",
+      "subarea": "Unterbereich",
+      "subareaHelp": "Ort, an dem diese Schicht stattfindet",
+      "template": "Vorlage (optional)",
+      "templateHelp": "Die Auswahl einer Vorlage füllt die Zeiten automatisch aus",
+      "updated": "Schicht aktualisiert",
+      "updateShift": "Schicht aktualisieren"
+    },
+    "skills": {
+      "expiredCertifications": "Abgelaufene Zertifizierungen:",
+      "expiredOn": "(Abgelaufen am {{date}})",
+      "missingPreferred": "Fehlende bevorzugte Qualifikationen:",
+      "missingPreferredCount": "{{count}} bevorzugte Qualifikationen fehlen",
+      "missingRequired": "Fehlende erforderliche Qualifikationen:",
+      "preferred": "Bevorzugt",
+      "preferredSkillsMissing": "Bevorzugte Qualifikationen fehlen",
+      "requirementsNotMet": "Qualifikationsanforderungen nicht erfüllt",
+      "unqualified": "Nicht qualifiziert",
+      "validating": "Qualifikationen werden validiert…",
+      "validatingDescription": "Mitarbeiterqualifikationen werden geprüft",
+      "warningMessage": "Sie können diese Schicht dennoch zuweisen, sie wird jedoch als manuelle Übersteuerung protokolliert."
+    },
+    "templates": {
+      "dragHint": "Ziehen Sie eine Vorlage auf den Kalender, um eine Schicht zu erstellen",
+      "empty": "Keine Vorlagen verfügbar. Erstellen Sie Vorlagen in den Einstellungen, um schnell Schichten hinzuzufügen.",
+      "title": "Schichtvorlagen"
+    }
+  }
 }

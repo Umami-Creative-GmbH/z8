@@ -4,6 +4,7 @@
       "alreadyProcessed": "Questa approvazione è già stata elaborata."
     },
     "cmd": {
+      "billingRequired": "[bot] La fatturazione è necessaria per continuare a usare il monitoraggio del tempo. Chiedi a un amministratore dell'organizzazione di aggiornare la fatturazione.",
       "clockedin": {
         "header": "{active} di {total} membri del team sono attualmente in servizio:",
         "noneActive": "Nessuno dei tuoi {total} membri del team è attualmente in servizio.",

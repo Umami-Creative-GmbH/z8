@@ -1,846 +1,414 @@
 {
-	"accessDenied": {
-		"contactAdmin": "Please contact your organization administrator to request access.",
-		"description": "Your account does not have permission to access the {{appLabel}}.",
-		"signOut": "Sign Out",
-		"title": "Access Restricted"
-	},
-	"billing": {
-		"suspended": {
-			"adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
-			"goToBilling": "Go to billing",
-			"memberDescription": "This organization is suspended. Contact an organization admin to update billing.",
-			"title": "Organization suspended"
-		},
-		"trialBanner": {
-			"description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
-			"title": "14-day trial active",
-			"upgrade": "Upgrade"
-		}
-	},
-	"actions": {
-		"cancel": "Cancel",
-		"delete": "Delete",
-		"refresh": "Refresh"
-	},
-	"analytics": {
-		"access": {
-			"noEmployeeFeature": "view analytics",
-			"restrictedDescription": "Analytics is only available to administrators and managers.",
-			"restrictedTitle": "Access Restricted"
-		},
-		"common": {
-			"days": "Days",
-			"employee": "Employee",
-			"employees": "Employees",
-			"hours": "Hours",
-			"loadingOrganizationSettings": "Loading organization settings before enabling presets.",
-			"noDataAvailable": "No data available",
-			"noDataForPeriod": "No data available for the selected period",
-			"overtime": "Overtime",
-			"overtimeHours": "Overtime Hours",
-			"team": "Team",
-			"totalHours": "Total Hours",
-			"undertime": "Undertime",
-			"undertimeHours": "Undertime Hours",
-			"unavailable": "Unavailable"
-		},
-		"layout": {
-			"description": "Comprehensive insights into team performance, work hours, and absence patterns",
-			"tabs": {
-				"overtimeBurnDown": "Overtime Burn-Down",
-				"overview": "Overview",
-				"teamPerformance": "Team Performance",
-				"vacationTrends": "Vacation Trends",
-				"workHours": "Work Hours"
-			},
-			"title": "Analytics"
-		},
-		"overview": {
-			"absencePatterns": {
-				"description": "Absence distribution by category",
-				"title": "Absence Patterns"
-			},
-			"approvalBottlenecks": {
-				"approvedRate": "{rate}% approved",
-				"avgDecision": "{hours}h avg decision",
-				"byManager": "By Manager",
-				"byTeam": "By Team",
-				"byType": "By Type",
-				"description": "Teams and request types with pending work or SLA warnings",
-				"empty": "No approval bottlenecks found",
-				"pendingSummary": "{pendingCount} pending - {slaWarnings} SLA warnings",
-				"title": "Approval Bottlenecks",
-				"unavailable": "Approval bottlenecks could not be loaded"
-			},
-			"errors": {
-				"loadData": "Failed to load analytics data"
-			},
-			"kpis": {
-				"approvalRate": {
-					"description": "Of decided requests approved",
-					"title": "Approval Rate",
-					"unavailableDescription": "Approval analytics could not be loaded"
-				},
-				"avgWorkHours": {
-					"description": "Per employee in selected period",
-					"title": "Avg Work Hours"
-				},
-				"totalAbsenceDays": {
-					"description": "Total days in selected period",
-					"title": "Total Absence Days"
-				},
-				"totalEmployees": {
-					"description": "Active employees in organization",
-					"title": "Total Employees"
-				}
-			},
-			"loadingLabel": "Loading analytics data",
-			"workHoursByTeam": {
-				"description": "Total work hours logged per team",
-				"title": "Work Hours by Team"
-			}
-		},
-		"overtimeBurnDown": {
-			"breakdown": "Breakdown",
-			"breakdownDescription": "{label} level overtime burn-down details",
-			"breakdownEmpty": "No breakdown data available yet",
-			"byCostCenter": "By Cost Center",
-			"byManager": "By Manager",
-			"byTeam": "By Team",
-			"costCenter": "Cost Center",
-			"currentOvertime": "Current Overtime",
-			"description": "Track weekly overtime reduction across teams.",
-			"errors": {
-				"loadData": "Failed to load overtime burn-down data"
-			},
-			"filters": {
-				"allCostCenters": "All cost centers",
-				"allManagers": "All managers",
-				"allTeams": "All teams",
-				"breakdownLabel": "Breakdown dimension",
-				"costCenterLabel": "Cost center filter",
-				"managerLabel": "Manager filter",
-				"teamLabel": "Team filter"
-			},
-			"improvingGroups": "Improving Groups",
-			"improvingGroupsDescription": "Groups with decreasing overtime",
-			"manager": "Manager",
-			"previousOvertime": "Previous Overtime",
-			"previousPeriodDescription": "Compared with previous period",
-			"selectedRangeDescription": "For selected date range and filters",
-			"title": "Overtime Burn-Down",
-			"trend": {
-				"down": "Down",
-				"flat": "Flat",
-				"up": "Up"
-			},
-			"trendDirection": "Trend Direction",
-			"trendDirectionDescription": "Overall overtime trajectory",
-			"weekOverWeek": "Week-over-Week",
-			"weeklyTrend": {
-				"description": "Weekly overtime reduction trend",
-				"empty": "No trend data available yet",
-				"title": "Weekly Burn-Down Trend"
-			}
-		},
-		"teamPerformance": {
-			"avgPerEmployee": "Avg per Employee",
-			"comparison": {
-				"description": "Total work hours by team for the selected period",
-				"title": "Team Comparison"
-			},
-			"details": {
-				"description": "Breakdown of work hours by team and employee",
-				"title": "Team Performance Details"
-			},
-			"employeeCount": "Employee Count",
-			"errors": {
-				"loadData": "Failed to load team performance data"
-			},
-			"onTrack": "On Track",
-			"variance": {
-				"description": "Hours variance from expected work hours",
-				"empty": "No variance data available",
-				"title": "Overtime & Undertime"
-			}
-		},
-		"vacationTrends": {
-			"allocated": "Allocated",
-			"balance": {
-				"description": "Days allocated, taken, and remaining by employee",
-				"title": "Vacation Balance"
-			},
-			"daysRemaining": "{count} days remaining",
-			"daysTaken": "{count} days taken",
-			"errors": {
-				"loadData": "Failed to load vacation trends data"
-			},
-			"monthlyUsage": {
-				"description": "Vacation days taken per month",
-				"empty": "No monthly usage data available",
-				"title": "Monthly Vacation Usage"
-			},
-			"peakMonths": {
-				"description": "Months with highest vacation activity",
-				"empty": "No peak month data available",
-				"title": "Peak Vacation Months"
-			},
-			"remaining": "Remaining",
-			"taken": "Taken",
-			"utilization": {
-				"description": "Overall vacation days usage across organization",
-				"overall": "Overall Utilization",
-				"title": "Vacation Utilization"
-			},
-			"utilizationLabel": "Utilization",
-			"utilizationPercent": "Utilization %",
-			"vacationDays": "Vacation Days"
-		},
-		"workHours": {
-			"actualHours": "Actual Hours",
-			"avgHoursPerWeek": "Avg Hours/Week",
-			"daily": {
-				"description": "Actual vs expected work hours per day",
-				"empty": "No daily hours data available",
-				"title": "Daily Work Hours"
-			},
-			"distribution": {
-				"description": "Employee work hours comparison (horizontal bar)",
-				"empty": "No distribution data available",
-				"title": "Work Hours Distribution"
-			},
-			"employeeComparison": {
-				"description": "Total hours and variance from expected by employee",
-				"title": "Employee Work Hours"
-			},
-			"errors": {
-				"loadData": "Failed to load work hours analytics data"
-			},
-			"expectedHours": "Expected Hours",
-			"variance": "Variance",
-			"varianceTrend": {
-				"description": "Hours variance from expected work hours over time",
-				"empty": "No trend data available",
-				"title": "Overtime & Undertime Trend"
-			}
-		},
-		"export": {
-			"export": "Export",
-			"exportAsCsv": "Export as CSV",
-			"exportAsExcel": "Export as Excel",
-			"exportedAsFormat": "Exported as {format}",
-			"exportingFormat": "Exporting {format}…",
-			"failedAsFormat": "Failed to export as {format}"
-		}
-	},
-	"colors": {
-		"blue": "Blue",
-		"green": "Green",
-		"indigo": "Indigo",
-		"orange": "Orange",
-		"pink": "Pink",
-		"purple": "Purple",
-		"red": "Red",
-		"teal": "Teal"
-	},
-	"common": {
-		"actions": "Actions",
-		"active": "Active",
-		"add": "Add",
-		"all": "All",
-		"approve": "Approve",
-		"assign": "Assign",
-		"back": "Back",
-		"cancel": "Cancel",
-		"clear": "Clear",
-		"clearSearch": "Clear search",
-		"clearSelection": "Clear",
-		"close": "Close",
-		"confirm": "Confirm",
-		"continue": "Continue",
-		"copy": "Copy",
-		"create": "Create",
-		"days": {
-			"friday": "Friday",
-			"label": "days",
-			"monday": "Monday",
-			"saturday": "Saturday",
-			"sunday": "Sunday",
-			"thursday": "Thursday",
-			"tuesday": "Tuesday",
-			"wednesday": "Wednesday"
-		},
-		"delete": "Delete",
-		"deleting": "Deleting...",
-		"description": "Description",
-		"deselectAll": "Deselect All",
-		"details": "Details",
-		"download": "Download",
-		"duplicate": "Duplicate",
-		"edit": "Edit",
-		"enabled": "Enabled",
-		"error": "Error",
-		"error-occurred": "An error occurred",
-		"gender": {
-			"female": "Female",
-			"male": "Male",
-			"other": "Other"
-		},
-		"goToDashboard": "Go to Dashboard",
-		"inactive": "Inactive",
-		"label": "Label",
-		"loading": "Loading...",
-		"loadMore": "Load More",
-		"months": {
-			"april": "April",
-			"august": "August",
-			"december": "December",
-			"february": "February",
-			"january": "January",
-			"july": "July",
-			"june": "June",
-			"march": "March",
-			"may": "May",
-			"november": "November",
-			"october": "October",
-			"september": "September"
-		},
-		"more": "more",
-		"moreActions": "More actions",
-		"moveDown": "Move down",
-		"moveUp": "Move up",
-		"name": "Name",
-		"new": "New",
-		"next": "Next",
-		"notApplicable": "N/A",
-		"not-available": "Not available",
-		"openEnded": "Open ended",
-		"openMenu": "Open menu",
-		"optional": "optional",
-		"or": "Or",
-		"previous": "Previous",
-		"recovering": "Recovering...",
-		"refresh": "Refresh",
-		"reject": "Reject",
-		"rejecting": "Rejecting…",
-		"remove": "Remove",
-		"removing": "Removing...",
-		"reset": "Reset",
-		"retry": "Retry",
-		"save": "Save",
-		"saveChanges": "Save Changes",
-		"saving": "Saving...",
-		"selectAll": "Select All",
-		"selected": "selected",
-		"select-language": "Select language",
-		"set": "set",
-		"sets": "sets",
-		"skip": "Skip",
-		"start": "Start",
-		"status": "Status",
-		"submitting": "Submitting…",
-		"to": "to",
-		"today": "Today",
-		"unexpectedError": "An unexpected error occurred",
-		"unknown": "Unknown",
-		"unknownEmployee": "Unknown Employee",
-		"unknownTeam": "Unknown Team",
-		"unnamed": "Unnamed",
-		"uploading": "Uploading...",
-		"validate": "Validate",
-		"validationError": "Validation error",
-		"weekdays": {
-			"fr": "Fr",
-			"fri": "Fri",
-			"mo": "Mo",
-			"mon": "Mon",
-			"sa": "Sa",
-			"sat": "Sat",
-			"su": "Su",
-			"sun": "Sun",
-			"th": "Th",
-			"thu": "Thu",
-			"tu": "Tu",
-			"tue": "Tue",
-			"we": "We",
-			"wed": "Wed"
-		},
-		"adding": "Adding...",
-		"refreshing": "Refreshing...",
-		"never": "Never",
-		"pending": "Pending",
-		"present": "Present",
-		"current": "Current",
-		"update": "Update"
-	},
-	"rateLimit": {
-		"countdownLabel": "seconds until you can retry",
-		"jsonMessage": "Rate limit exceeded. Please try again later.",
-		"message": "You've made too many requests. Please wait before trying again.",
-		"retryButton": "Try Again",
-		"retryingButton": "Retrying...",
-		"title": "Too Many Requests",
-		"waitingButton": "Please wait..."
-	},
-	"employeeSelect": {
-		"countSelected": "{count} employees selected",
-		"countWithMore": "{count} employees (+{more} more)",
-		"noEmployeesFound": "No employees found",
-		"role": "Role",
-		"searchPlaceholder": "Search by name, email, or position...",
-		"selected": "{count} selected",
-		"selectEmployee": "Select employee",
-		"selectEmployees": "Select employees",
-		"selectMultipleEmployees": "Choose one or more employees from the list",
-		"selectOneEmployee": "Choose an employee from the list",
-		"status": "Status",
-		"team": "Team",
-		"totalEmployees": "{count} employees",
-		"tryDifferentSearch": "Try adjusting your search or filters"
-	},
-	"errors": {
-		"failedToLoad": "Failed to load data",
-		"noEmployee": {
-			"contactAdmin": "Contact Administrator",
-			"createOrg": "Create Organization",
-			"description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
-			"emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
-			"emailSubject": "Employee Profile Setup Required",
-			"helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
-			"title": "Employee Profile Required"
-		},
-		"noOrganization": {
-			"createOrg": "Create Organization",
-			"description": "You're not part of any organization yet. Create one to get started or wait for an invitation.",
-			"title": "No Organization Found",
-			"waiting": "Waiting for an invitation?",
-			"waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
-		},
-		"unexpected": {
-			"digest": "Reference: {digest}"
-		}
-	},
-	"generic": {
-		"done": "Done",
-		"submit": "Submit"
-	},
-	"header": {
-		"clock-in": "Clock In",
-		"clock-out": "Clock Out"
-	},
-	"info": {
-		"back-to-login": "Back to login"
-	},
-	"today": {
-		"approvals": {
-			"approve": "Approve",
-			"approveLabel": "Approve {title}",
-			"description": "Requests waiting for a manager decision.",
-			"empty": "No approvals are waiting.",
-			"openInbox": "Open inbox",
-			"pendingAriaLabel": "Pending approvals",
-			"reject": "Reject",
-			"rejectLabel": "Reject {title}",
-			"title": "Approvals",
-			"toast": {
-				"approveError": "Unable to approve request",
-				"approved": "Request approved",
-				"rejectError": "Unable to reject request",
-				"rejected": "Request rejected"
-			}
-		},
-		"briefing": {
-			"badge": "Today",
-			"description": "Review the items that need action today, then move directly into the right workflow.",
-			"needsAction": {
-				"description": "Start here for the most urgent operational follow-up.",
-				"empty": "All clear. No manager action is needed right now.",
-				"title": "Needs Action"
-			},
-			"sections": {
-				"absences": {
-					"description": "Approved absences overlapping today.",
-					"empty": "No approved absences today.",
-					"title": "Absences"
-				},
-				"approvals": {
-					"description": "Pending requests waiting for a decision.",
-					"empty": "No approvals are waiting.",
-					"title": "Approvals"
-				},
-				"attendance": {
-					"description": "Clock-in exceptions for today's published shifts.",
-					"empty": "No attendance exceptions detected.",
-					"title": "Attendance"
-				},
-				"coverage": {
-					"description": "Coverage risks for today's schedule.",
-					"empty": "No coverage risks detected.",
-					"title": "Coverage"
-				},
-				"empty": "No issues detected.",
-				"overtime": {
-					"description": "Employees approaching overtime thresholds.",
-					"empty": "No overtime warnings detected.",
-					"title": "Overtime"
-				},
-				"payroll": {
-					"description": "Payroll readiness issues that may need setup.",
-					"empty": "No payroll setup issues detected.",
-					"title": "Payroll"
-				}
-			},
-			"items": {
-				"payrollWageMappings": {
-					"description": "No active wage type mappings are configured for the active payroll export setup.",
-					"title": "Payroll wage mappings are missing"
-				}
-			},
-			"severity": {
-				"critical": "Critical",
-				"high": "High",
-				"info": "Info",
-				"warning": "Warning"
-			},
-			"summary": {
-				"attendanceExceptions": {
-					"description": "Published shifts needing attention.",
-					"title": "Clock-in exceptions"
-				},
-				"coverageRisks": {
-					"description": "Minimum staffing risks for today.",
-					"title": "Coverage risks"
-				},
-				"criticalIssues": {
-					"description": "Highest-priority items across today.",
-					"title": "Critical issues"
-				},
-				"openApprovals": {
-					"description": "Requests waiting for a decision.",
-					"title": "Open approvals"
-				},
-				"overtimeWarnings": {
-					"description": "Employees nearing overtime thresholds.",
-					"title": "Overtime warnings"
-				},
-				"payrollIssues": {
-					"description": "Setup gaps before export readiness.",
-					"title": "Payroll issues"
-				}
-			},
-			"summaryAriaLabel": "Today summary",
-			"supportingSectionsAriaLabel": "Supporting sections",
-			"title": "Manager Daily Briefing",
-			"updatedAt": "{date} - Updated {time}"
-		}
-	},
-	"nav": {
-		"absences": "Absences",
-		"approvals": "Approvals",
-		"calendar": "Calendar",
-		"compliance": "Compliance",
-		"dashboard": "Dashboard",
-		"feedback": "Feedback",
-		"get-help": "Get Help",
-		"my-requests": "My Requests",
-		"org-explorer": "Org Explorer",
-		"platform-admin": "Platform Admin",
-		"reports": "Reports",
-		"scheduling": "Scheduling",
-		"settings": "Settings",
-		"team": "Team",
-		"teamAbsences": "Team Absences",
-		"team-label": "Team",
-		"time-tracking": "Time Tracking",
-		"travel-expenses": "Travel Expenses"
-	},
-	"notifications": {
-		"actions": {
-			"deleteAll": "Delete all",
-			"markAllRead": "Mark all read",
-			"markAsRead": "Mark as read",
-			"markRead": "Mark read",
-			"settings": "Notification settings",
-			"viewAll": "View all notifications"
-		},
-		"content": {
-			"teamMemberAdded": {
-				"message": "You have been added to the {teamName} team by {performedByName}.",
-				"title": "Added to team"
-			},
-			"teamMemberRemoved": {
-				"message": "You have been removed from the {teamName} team by {performedByName}.",
-				"title": "Removed from team"
-			}
-		},
-		"description": "Review updates, approvals, and system alerts in one timeline.",
-		"empty": {
-			"description": "You're all caught up! New notifications will appear here.",
-			"inboxDescription": "You are all caught up. New updates will appear here.",
-			"noMatchesDescription": "Adjust the search or read filter to widen this inbox view.",
-			"noMatchesTitle": "No matching notifications",
-			"title": "No notifications",
-			"unreadDescription": "You are all caught up. New unread updates will appear here.",
-			"unreadTitle": "No unread notifications"
-		},
-		"error": {
-			"title": "Could not load notifications"
-		},
-		"filters": {
-			"all": "All",
-			"ariaLabel": "Filter notifications by read status",
-			"read": "Read",
-			"unread": "Unread"
-		},
-		"preferences": {
-			"categories": {
-				"absences": {
-					"description": "Notifications about absence requests",
-					"title": "Absences"
-				},
-				"approvals": {
-					"description": "Notifications about approval requests and their status",
-					"title": "Approvals"
-				},
-				"reminders": {
-					"description": "Helpful reminders and alerts",
-					"title": "Reminders"
-				},
-				"scheduling": {
-					"description": "Notifications about shift assignments and swaps",
-					"title": "Shift Scheduling"
-				},
-				"security": {
-					"description": "Important security notifications",
-					"title": "Security"
-				},
-				"team": {
-					"description": "Notifications about team membership changes",
-					"title": "Team"
-				},
-				"time": {
-					"description": "Notifications about time tracking corrections",
-					"title": "Time Corrections"
-				}
-			},
-			"channels": {
-				"discord": {
-					"description": "Discord bot notifications",
-					"label": "Discord"
-				},
-				"email": {
-					"description": "Send email notifications",
-					"label": "Email"
-				},
-				"in_app": {
-					"description": "Show in notification bell",
-					"label": "In-App"
-				},
-				"push": {
-					"description": "Browser push notifications",
-					"label": "Push"
-				},
-				"slack": {
-					"description": "Slack bot notifications",
-					"label": "Slack"
-				},
-				"teams": {
-					"description": "Microsoft Teams notifications",
-					"label": "Teams"
-				},
-				"telegram": {
-					"description": "Telegram bot notifications",
-					"label": "Telegram"
-				}
-			},
-			"disabled": "Notification disabled",
-			"enabled": "Notification enabled",
-			"loadFailed": "Unable to load notification preferences",
-			"permissionModal": {
-				"benefits": {
-					"pendingApprovals": "Receive alerts for pending approval requests",
-					"requestUpdates": "Get notified when your requests are approved or rejected",
-					"teamSecurity": "Stay informed about team and security updates"
-				},
-				"description": "Enable push notifications to receive instant updates about approvals, time corrections, and important team changes - even when you're not using the app.",
-				"enable": "Enable Notifications",
-				"notNow": "Not Now",
-				"title": "Stay Updated"
-			},
-			"push": {
-				"blockedDescription": "Push notifications are blocked by your browser. To enable them, you need to update your browser settings.",
-				"blockedHelp": "Click the lock icon in your browser's address bar and allow notifications for this site, then refresh the page.",
-				"blockedTitle": "Push Notifications Blocked",
-				"enableButton": "Enable Push Notifications",
-				"enableDescription": "Get notified instantly even when you're not using the app",
-				"enableFailedToast": "Could not enable push notifications",
-				"enableTitle": "Enable Push Notifications",
-				"enabledIndicator": "Push notifications are enabled",
-				"enabledToast": "Push notifications enabled",
-				"enabledToastDescription": "You will now receive browser push notifications",
-				"errorToast": "Push notification error"
-			},
-			"toggleAria": "{channel} notifications for {type}",
-			"types": {
-				"absence_request_approved": "Request approved",
-				"absence_request_rejected": "Request rejected",
-				"absence_request_submitted": "Request submitted",
-				"approval_request_approved": "Request approved",
-				"approval_request_rejected": "Request rejected",
-				"approval_request_submitted": "Request submitted",
-				"birthday_reminder": "Birthday reminders",
-				"compliance_exception_approved": "Exception approved",
-				"compliance_exception_expired": "Exception expired",
-				"compliance_exception_rejected": "Exception rejected",
-				"compliance_exception_requested": "Exception requested",
-				"overtime_violation": "Overtime violation",
-				"overtime_warning": "Overtime warning",
-				"password_changed": "Password changed",
-				"project_budget_warning_100": "Budget exceeded",
-				"project_budget_warning_70": "Budget 70% used",
-				"project_budget_warning_90": "Budget 90% used",
-				"project_deadline_overdue": "Project overdue",
-				"project_deadline_warning_0d": "Deadline today",
-				"project_deadline_warning_14d": "Deadline in 14 days",
-				"project_deadline_warning_1d": "Deadline in 1 day",
-				"project_deadline_warning_7d": "Deadline in 7 days",
-				"rest_period_violation": "Rest period violation",
-				"rest_period_warning": "Rest period warning",
-				"schedule_published": "Schedule published",
-				"shift_assigned": "Shift assigned",
-				"shift_pickup_approved": "Pickup approved",
-				"shift_pickup_available": "Open shift available",
-				"shift_swap_approved": "Swap approved",
-				"shift_swap_rejected": "Swap rejected",
-				"shift_swap_requested": "Swap requested",
-				"team_member_added": "Member added",
-				"team_member_removed": "Member removed",
-				"time_correction_approved": "Correction approved",
-				"time_correction_rejected": "Correction rejected",
-				"time_correction_submitted": "Correction submitted",
-				"two_factor_disabled": "2FA disabled",
-				"two_factor_enabled": "2FA enabled",
-				"vacation_balance_alert": "Balance alerts",
-				"water_reminder": "Water reminders"
-			},
-			"updateFailed": "Failed to update preference"
-		},
-		"search": {
-			"ariaLabel": "Search notifications",
-			"placeholder": "Search notifications..."
-		},
-		"selection": {
-			"selectAll": "Select all visible",
-			"selectAllAria": "Select all visible notifications",
-			"selectNamedAria": "Select {title}",
-			"visibleSelected": "{count} visible selected"
-		},
-		"timeline": {
-			"earlier": "Earlier",
-			"today": "Today",
-			"yesterday": "Yesterday"
-		},
-		"title": "Notifications",
-		"toasts": {
-			"deleted": "Deleted {count} notifications",
-			"deleteFailed": "Failed to delete notifications",
-			"markedRead": "Marked {count} notifications as read",
-			"markReadFailed": "Failed to mark notifications as read"
-		},
-		"unreadBadge": "{count} unread"
-	},
-	"offline": {
-		"banner": {
-			"offline": "You're offline",
-			"offlineWithPending": "Offline - {count} event(s) pending",
-			"pending": "{count} event(s) pending sync",
-			"retry": "Retry",
-			"syncing": "Syncing {count} event(s)..."
-		}
-	},
-	"roles": {
-		"admin": "Admin",
-		"employee": "Employee",
-		"manager": "Manager"
-	},
-	"presence": {
-		"clockedIn": "Clocked in",
-		"clockedOut": "Clocked out"
-	},
-	"status": {
-		"active": "Active",
-		"inactive": "Inactive"
-	},
-	"table": {
-		"clearFilters": "Clear filters",
-		"clearSort": "Clear sort",
-		"description": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
-		"goToFirstPage": "Go to first page",
-		"goToLastPage": "Go to last page",
-		"goToNextPage": "Go to next page",
-		"goToPreviousPage": "Go to previous page",
-		"header": "Header",
-		"limit": "Limit",
-		"noResults": "No results.",
-		"pageOfPages": "Page {current} of {total}",
-		"reviewer": "Reviewer",
-		"rowsPerPage": "Rows per page",
-		"searchPlaceholder": "Search...",
-		"selectedOfTotal": "{selected} of {total} row(s) selected",
-		"select-reviewer": "Select a reviewer",
-		"select-status": "Select a status",
-		"select-type": "Select a type",
-		"showing-visitors": "Showing total visitors for the last 6 months",
-		"sortAscending": "Ascending",
-		"sortDescending": "Descending",
-		"status": "Status",
-		"status-options": {
-			"done": "Done",
-			"in-progress": "In Progress",
-			"not-started": "Not Started"
-		},
-		"target": "Target",
-		"totalRows": "{total} row(s)",
-		"trending-up": "Trending up by 5.2% this month",
-		"type": "Type",
-		"type-options": {
-			"capabilities": "Capabilities",
-			"cover-page": "Cover Page",
-			"design": "Design",
-			"executive-summary": "Executive Summary",
-			"focus-documents": "Focus Documents",
-			"narrative": "Narrative",
-			"table-of-contents": "Table of Contents",
-			"technical-approach": "Technical Approach"
-		}
-	},
-	"time": {
-		"am": "AM",
-		"hoursAndMinutes": "{hours}h {minutes}m",
-		"hoursOnly": "{hours}h",
-		"pm": "PM"
-	},
-	"user": {
-		"language": "Language",
-		"logging-out": "Logging out...",
-		"log-out": "Log out",
-		"profile": "Profile",
-		"theme": "Theme",
-		"theme-dark": "Dark",
-		"theme-light": "Light",
-		"theme-toggle": "Toggle theme",
-		"theme-system": "System",
-		"time-settings": "Time Settings"
-	},
-	"userAvatar": {
-		"alt": "User avatar"
-	},
-	"validation": {
-		"first-name-required": "First Name is required",
-		"invalid-email": "Invalid email address",
-		"invalid-password": "Invalid password",
-		"last-name-required": "Last Name is required",
-		"password-required": "Password is required"
-	}
+  "accessDenied": {
+    "contactAdmin": "Please contact your organization administrator to request access.",
+    "description": "Your account does not have permission to access the {{appLabel}}.",
+    "signOut": "Sign Out",
+    "title": "Access Restricted"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "refresh": "Refresh"
+  },
+  "analytics": {
+    "export": {
+      "export": "Export",
+      "exportAsCsv": "Export as CSV",
+      "exportAsExcel": "Export as Excel",
+      "exportedAsFormat": "Exported as {format}",
+      "exportingFormat": "Exporting {format}…",
+      "failedAsFormat": "Failed to export as {format}"
+    }
+  },
+  "colors": {
+    "blue": "Blue",
+    "green": "Green",
+    "indigo": "Indigo",
+    "orange": "Orange",
+    "pink": "Pink",
+    "purple": "Purple",
+    "red": "Red",
+    "teal": "Teal"
+  },
+  "common": {
+    "actions": "Actions",
+    "active": "Active",
+    "add": "Add",
+    "adding": "Adding...",
+    "all": "All",
+    "approve": "Approve",
+    "assign": "Assign",
+    "back": "Back",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "clearSearch": "Clear search",
+    "clearSelection": "Clear",
+    "close": "Close",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "copy": "Copy",
+    "create": "Create",
+    "current": "Current",
+    "days": {
+      "friday": "Friday",
+      "label": "days",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
+    },
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "description": "Description",
+    "deselectAll": "Deselect All",
+    "details": "Details",
+    "download": "Download",
+    "duplicate": "Duplicate",
+    "edit": "Edit",
+    "enabled": "Enabled",
+    "error": "Error",
+    "error-occurred": "An error occurred",
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "other": "Other"
+    },
+    "goToDashboard": "Go to Dashboard",
+    "inactive": "Inactive",
+    "label": "Label",
+    "loading": "Loading...",
+    "loadMore": "Load More",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "December",
+      "february": "February",
+      "january": "January",
+      "july": "July",
+      "june": "June",
+      "march": "March",
+      "may": "May",
+      "november": "November",
+      "october": "October",
+      "september": "September"
+    },
+    "more": "more",
+    "moreActions": "More actions",
+    "moveDown": "Move down",
+    "moveUp": "Move up",
+    "name": "Name",
+    "never": "Never",
+    "new": "New",
+    "next": "Next",
+    "notApplicable": "N/A",
+    "not-available": "Not available",
+    "openEnded": "Open ended",
+    "openMenu": "Open menu",
+    "optional": "optional",
+    "or": "Or",
+    "pending": "Pending",
+    "present": "Present",
+    "previous": "Previous",
+    "recovering": "Recovering...",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "reject": "Reject",
+    "rejecting": "Rejecting…",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "reset": "Reset",
+    "retry": "Retry",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "selectAll": "Select All",
+    "selected": "selected",
+    "select-language": "Select language",
+    "set": "set",
+    "sets": "sets",
+    "skip": "Skip",
+    "start": "Start",
+    "status": "Status",
+    "submitting": "Submitting…",
+    "to": "to",
+    "today": "Today",
+    "unexpectedError": "An unexpected error occurred",
+    "unknown": "Unknown",
+    "unknownEmployee": "Unknown Employee",
+    "unknownTeam": "Unknown Team",
+    "unnamed": "Unnamed",
+    "update": "Update",
+    "updating": "Updating...",
+    "uploading": "Uploading...",
+    "validate": "Validate",
+    "validationError": "Validation error",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fri",
+      "mo": "Mo",
+      "mon": "Mon",
+      "sa": "Sa",
+      "sat": "Sat",
+      "su": "Su",
+      "sun": "Sun",
+      "th": "Th",
+      "thu": "Thu",
+      "tu": "Tu",
+      "tue": "Tue",
+      "we": "We",
+      "wed": "Wed"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} employees selected",
+    "countWithMore": "{count} employees (+{more} more)",
+    "noEmployeesFound": "No employees found",
+    "role": "Role",
+    "searchPlaceholder": "Search by name, email, or position...",
+    "selected": "{count} selected",
+    "selectEmployee": "Select employee",
+    "selectEmployees": "Select employees",
+    "selectMultipleEmployees": "Choose one or more employees from the list",
+    "selectOneEmployee": "Choose an employee from the list",
+    "status": "Status",
+    "team": "Team",
+    "totalEmployees": "{count} employees",
+    "tryDifferentSearch": "Try adjusting your search or filters"
+  },
+  "errors": {
+    "failedToLoad": "Failed to load data",
+    "noEmployee": {
+      "contactAdmin": "Contact Administrator",
+      "createOrg": "Create Organization",
+      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
+      "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
+      "emailSubject": "Employee Profile Setup Required",
+      "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
+      "title": "Employee Profile Required"
+    },
+    "noOrganization": {
+      "createOrg": "Create Organization",
+      "description": "You're not part of any organization yet. Create one to get started or wait for an invitation.",
+      "title": "No Organization Found",
+      "waiting": "Waiting for an invitation?",
+      "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
+    },
+    "unexpected": {
+      "digest": "Reference: {digest}"
+    }
+  },
+  "generic": {
+    "done": "Done",
+    "submit": "Submit"
+  },
+  "header": {
+    "clock-in": "Clock In",
+    "clock-out": "Clock Out"
+  },
+  "info": {
+    "back-to-login": "Back to login"
+  },
+  "nav": {
+    "absences": "Absences",
+    "approvals": "Approvals",
+    "calendar": "Calendar",
+    "compliance": "Compliance",
+    "dashboard": "Dashboard",
+    "feedback": "Feedback",
+    "get-help": "Get Help",
+    "my-requests": "My Requests",
+    "org-explorer": "Org Explorer",
+    "platform-admin": "Platform Admin",
+    "reports": "Reports",
+    "scheduling": "Scheduling",
+    "settings": "Settings",
+    "team": "Team",
+    "teamAbsences": "Team Absences",
+    "team-label": "Team",
+    "time-tracking": "Time Tracking",
+    "travel-expenses": "Travel Expenses"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Delete all",
+      "markAllRead": "Mark all read",
+      "markAsRead": "Mark as read",
+      "markRead": "Mark read",
+      "settings": "Notification settings",
+      "viewAll": "View all notifications"
+    },
+    "content": {
+      "teamMemberAdded": {
+        "message": "You have been added to the {teamName} team by {performedByName}.",
+        "title": "Added to team"
+      }
+    },
+    "description": "Review updates, approvals, and system alerts in one timeline.",
+    "empty": {
+      "description": "You're all caught up! New notifications will appear here.",
+      "inboxDescription": "You are all caught up. New updates will appear here.",
+      "noMatchesDescription": "Adjust the search or read filter to widen this inbox view.",
+      "noMatchesTitle": "No matching notifications",
+      "title": "No notifications",
+      "unreadDescription": "You are all caught up. New unread updates will appear here.",
+      "unreadTitle": "No unread notifications"
+    },
+    "error": {
+      "title": "Could not load notifications"
+    },
+    "filters": {
+      "all": "All",
+      "ariaLabel": "Filter notifications by read status",
+      "read": "Read",
+      "unread": "Unread"
+    },
+    "preferences": {
+      "disabled": "Notification disabled",
+      "enabled": "Notification enabled",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Receive alerts for pending approval requests",
+          "requestUpdates": "Get notified when your requests are approved or rejected",
+          "teamSecurity": "Stay informed about team and security updates"
+        },
+        "description": "Enable push notifications to receive instant updates about approvals, time corrections, and important team changes - even when you're not using the app.",
+        "enable": "Enable Notifications",
+        "notNow": "Not Now",
+        "title": "Stay Updated"
+      },
+      "push": {
+        "blockedDescription": "Push notifications are blocked by your browser. To enable them, you need to update your browser settings.",
+        "blockedHelp": "Click the lock icon in your browser's address bar and allow notifications for this site, then refresh the page.",
+        "blockedTitle": "Push Notifications Blocked",
+        "enableButton": "Enable Push Notifications",
+        "enableDescription": "Get notified instantly even when you're not using the app",
+        "enabledIndicator": "Push notifications are enabled",
+        "enabledToast": "Push notifications enabled",
+        "enabledToastDescription": "You will now receive browser push notifications",
+        "enableFailedToast": "Could not enable push notifications",
+        "enableTitle": "Enable Push Notifications",
+        "errorToast": "Push notification error"
+      },
+      "toggleAria": "{channel} notifications for {type}",
+      "updateFailed": "Failed to update preference"
+    },
+    "search": {
+      "ariaLabel": "Search notifications",
+      "placeholder": "Search notifications..."
+    },
+    "selection": {
+      "selectAll": "Select all visible",
+      "selectAllAria": "Select all visible notifications",
+      "selectNamedAria": "Select {title}",
+      "visibleSelected": "{count} visible selected"
+    },
+    "timeline": {
+      "earlier": "Earlier",
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "title": "Notifications",
+    "toasts": {
+      "deleted": "Deleted {count} notifications",
+      "deleteFailed": "Failed to delete notifications",
+      "markedRead": "Marked {count} notifications as read",
+      "markReadFailed": "Failed to mark notifications as read"
+    },
+    "unreadBadge": "{count} unread"
+  },
+  "offline": {
+    "banner": {
+      "offline": "You're offline",
+      "offlineWithPending": "Offline - {count} event(s) pending",
+      "pending": "{count} event(s) pending sync",
+      "retry": "Retry",
+      "syncing": "Syncing {count} event(s)..."
+    }
+  },
+  "presence": {
+    "clockedIn": "Clocked in",
+    "clockedOut": "Clocked out"
+  },
+  "roles": {
+    "admin": "Admin",
+    "employee": "Employee",
+    "manager": "Manager"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "table": {
+    "clearFilters": "Clear filters",
+    "clearSort": "Clear sort",
+    "description": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+    "goToFirstPage": "Go to first page",
+    "goToLastPage": "Go to last page",
+    "goToNextPage": "Go to next page",
+    "goToPreviousPage": "Go to previous page",
+    "header": "Header",
+    "limit": "Limit",
+    "noResults": "No results.",
+    "pageOfPages": "Page {current} of {total}",
+    "reviewer": "Reviewer",
+    "rowsPerPage": "Rows per page",
+    "searchPlaceholder": "Search...",
+    "selectedOfTotal": "{selected} of {total} row(s) selected",
+    "select-reviewer": "Select a reviewer",
+    "select-status": "Select a status",
+    "select-type": "Select a type",
+    "showing-visitors": "Showing total visitors for the last 6 months",
+    "sortAscending": "Ascending",
+    "sortDescending": "Descending",
+    "status": "Status",
+    "status-options": {
+      "done": "Done",
+      "in-progress": "In Progress",
+      "not-started": "Not Started"
+    },
+    "target": "Target",
+    "totalRows": "{total} row(s)",
+    "trending-up": "Trending up by 5.2% this month",
+    "type": "Type",
+    "type-options": {
+      "capabilities": "Capabilities",
+      "cover-page": "Cover Page",
+      "design": "Design",
+      "executive-summary": "Executive Summary",
+      "focus-documents": "Focus Documents",
+      "narrative": "Narrative",
+      "table-of-contents": "Table of Contents",
+      "technical-approach": "Technical Approach"
+    }
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours}h {minutes}m",
+    "hoursOnly": "{hours}h",
+    "pm": "PM"
+  },
+  "userAvatar": {
+    "alt": "User avatar"
+  },
+  "user": {
+    "language": "Language",
+    "logging-out": "Logging out...",
+    "log-out": "Log out",
+    "profile": "Profile",
+    "theme": "Theme",
+    "theme-dark": "Dark",
+    "theme-light": "Light",
+    "theme-system": "System",
+    "theme-toggle": "Toggle theme",
+    "time-settings": "Time Settings"
+  },
+  "validation": {
+    "first-name-required": "First Name is required",
+    "invalid-email": "Invalid email address",
+    "invalid-password": "Invalid password",
+    "last-name-required": "Last Name is required",
+    "password-required": "Password is required"
+  }
 }

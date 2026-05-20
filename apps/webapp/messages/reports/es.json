@@ -1,12 +1,68 @@
 {
   "reports": {
+    "container": {
+      "error": "Error",
+      "generating": "Generando informe...",
+      "noReportYet": "Aún no se ha generado ningún informe",
+      "pleaseWait": "Por favor, espere mientras compilamos sus datos",
+      "selectPeriod": "Seleccione un período y haga clic en \"Generar informe\" para comenzar"
+    },
     "description": "Genere informes completos de horas de trabajo y ausencias con datos de home office relevantes para impuestos",
     "employeeSelector": {
       "error": "No se pudo cargar a los miembros del equipo",
       "label": "Empleado",
       "placeholder": "Seleccionar empleado..."
     },
+    "export": {
+      "csv": "Exportar CSV",
+      "description": "Descargar este informe en su formato preferido",
+      "downloaded": "Descargado {filename}",
+      "errorDescription": "Se produjo un error al exportar el informe",
+      "excel": "Exportar Excel",
+      "failed": "Error al exportar",
+      "generating": "Generando...",
+      "pdf": "Exportar PDF",
+      "success": "Exportación realizada con éxito",
+      "title": "Exportar informe"
+    },
     "feature": "generar informes",
+    "filter": {
+      "loadingSettings": "Cargando la configuración de la organización antes de habilitar los ajustes preestablecidos.",
+      "period": "Periodo",
+      "selectPeriod": "Seleccionar periodo"
+    },
+    "generate": "Generar informe",
+    "generating": "Generando informe…",
+    "period": {
+      "currentMonth": "Mes actual",
+      "currentYear": "Año actual",
+      "customRange": "Rango personalizado",
+      "lastMonth": "Mes anterior",
+      "lastYear": "Año anterior",
+      "pickDateRange": "Seleccionar un rango de fechas",
+      "yearToDate": "Año hasta la fecha"
+    },
+    "preview": {
+      "absencesByCategory": "Ausencias por categoría",
+      "attendancePercentage": "Porcentaje de asistencia",
+      "category": "Categoría",
+      "complianceMetrics": "Métricas de cumplimiento",
+      "date": "Fecha",
+      "dateBreakdown": "Desglose día a día",
+      "days": "Días",
+      "homeOfficeDescription": "Importante para fines fiscales en Alemania: muestra los días de teletrabajo y las horas trabajadas",
+      "homeOfficeSummary": "Resumen de teletrabajo (relevante para impuestos)",
+      "hours": "Horas",
+      "hoursWorked": "Horas trabajadas",
+      "month": "Mes",
+      "noHomeOfficeDays": "No se han registrado días de teletrabajo en este periodo.",
+      "overtime": "Horas extra",
+      "total": "Total",
+      "totalHomeOfficeDays": "Total de días de teletrabajo",
+      "totalHomeOfficeHours": "Total de horas trabajadas desde casa",
+      "undertime": "Horas menos",
+      "workHoursByMonth": "Horas de trabajo por mes"
+    },
     "projects": {
       "budget": {
         "exceededBy": "Presupuesto excedido por {hours} horas",
@@ -161,6 +217,29 @@
         "unexpectedError": "Ocurrió un error inesperado"
       }
     },
-    "title": "Informes de empleados"
+    "summary": {
+      "averagePerDay": "Promedio: {hours}h/día",
+      "homeOfficeDays": "Días de teletrabajo",
+      "hourlyAverage": "{hours}h a un promedio de {rate}/h",
+      "otherDays": "Otro: {count} días",
+      "pending": "{count} pendiente",
+      "ratePeriods": "{count} periodos de tarifa",
+      "sickDays": "Baja por enfermedad: {count} días",
+      "taxRelevant": "Relevante para impuestos",
+      "totalAbsences": "Total de ausencias",
+      "totalEarnings": "Ganancias totales",
+      "totalWorkHours": "Horas de trabajo totales",
+      "vacationDays": "Días de vacaciones",
+      "workDays": "{count} días de trabajo",
+      "workedFromHome": "{hours}h trabajadas desde casa"
+    },
+    "title": "Informes de empleados",
+    "toast": {
+      "failedGenerate": "Error al generar el informe",
+      "generatedFor": "Informe generado para {name}",
+      "reportGenerated": "Informe generado correctamente",
+      "unexpectedError": "Ocurrió un error inesperado",
+      "unknownError": "Ocurrió un error desconocido"
+    }
   }
 }

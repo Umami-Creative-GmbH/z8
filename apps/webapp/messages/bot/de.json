@@ -4,6 +4,7 @@
       "alreadyProcessed": "Diese Genehmigung wurde bereits bearbeitet."
     },
     "cmd": {
+      "billingRequired": "Zahlungsdaten sind erforderlich, um die Zeiterfassung weiterhin zu nutzen. Bitten Sie einen Organisationsadministrator, die Zahlungsdaten zu aktualisieren.",
       "clockedin": {
         "header": "{active} von {total} Teammitgliedern sind derzeit eingestempelt:",
         "noneActive": "Keines Ihrer {total} Teammitglieder ist derzeit eingestempelt.",
