@@ -138,6 +138,13 @@ export const StripeServiceLive = Layer.effect(
 						if (!stripe) {
 							throw new Error("Stripe not configured");
 						}
+						const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+							metadata: { organizationId: params.organizationId },
+						};
+						if (params.trialPeriodDays && params.trialPeriodDays > 0) {
+							subscriptionData.trial_period_days = params.trialPeriodDays;
+						}
+
 						return await stripe.checkout.sessions.create({
 							customer: params.customerId,
 							mode: "subscription",
@@ -150,10 +157,7 @@ export const StripeServiceLive = Layer.effect(
 							],
 							success_url: params.successUrl,
 							cancel_url: params.cancelUrl,
-							subscription_data: {
-								metadata: { organizationId: params.organizationId },
-								trial_period_days: params.trialPeriodDays,
-							},
+							subscription_data: subscriptionData,
 							allow_promotion_codes: true,
 							billing_address_collection: "auto",
 							tax_id_collection: { enabled: true },
