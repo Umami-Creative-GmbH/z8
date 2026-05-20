@@ -310,8 +310,10 @@ function SectionCard({ section, icon: Icon }: SectionCardProps) {
 
 function ActionRow({ item, compact = false }: { item: BriefingActionItem; compact?: boolean }) {
 	const { t } = useTranslate();
-	const title = item.titleKey ? t(item.titleKey, item.title) : item.title;
-	const description = item.descriptionKey ? t(item.descriptionKey, item.description) : item.description;
+	const title = item.titleKey ? t(item.titleKey, item.title, item.titleParams) : item.title;
+	const description = item.descriptionKey
+		? t(item.descriptionKey, item.description, item.descriptionParams)
+		: item.description;
 
 	return (
 		<Link

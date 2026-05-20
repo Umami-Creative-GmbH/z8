@@ -222,14 +222,14 @@ export default function OrganizationPage() {
 										validators={{
 											onChange: z
 												.string()
-												.min(2, "Slug must be at least 2 characters")
-												.max(50, "Slug must be less than 50 characters")
+												.min(2, t("organization.slugErrors.min", "Slug must be at least 2 characters"))
+												.max(50, t("organization.slugErrors.max", "Slug must be less than 50 characters"))
 												.regex(
 													/^[a-z0-9-]+$/,
-													"Slug must contain only lowercase letters, numbers, and hyphens",
+													t("organization.slugErrors.format", "Slug must contain only lowercase letters, numbers, and hyphens"),
 												)
 												.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
-													message: "Slug cannot start or end with a hyphen",
+													message: t("organization.slugErrors.hyphen", "Slug cannot start or end with a hyphen"),
 												}),
 										}}
 									>

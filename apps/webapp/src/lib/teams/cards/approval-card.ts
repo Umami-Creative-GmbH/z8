@@ -8,6 +8,7 @@
 import { DateTime } from "luxon";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import {
+	type BotTranslateFn,
 	fmtWeekdayShortDate,
 	fmtWeekdayShortDateTime,
 	fmtWeekdayShortDateYear,
@@ -26,48 +27,54 @@ export function buildApprovalCard(
 	data: ApprovalCardData,
 	callbackUrl: string,
 	locale: string = DEFAULT_LANGUAGE,
+	t: BotTranslateFn = (_key, defaultValue) => defaultValue,
 ): Record<string, unknown> {
 	const isAbsence = data.entityType === "absence_entry";
-	const title = isAbsence ? "Absence Request" : "Time Correction Request";
+	const title = isAbsence
+		? t("teamsBot:approval.absenceRequest", "Absence Request")
+		: t("teamsBot:approval.timeCorrectionRequest", "Time Correction Request");
 	const accentColor = isAbsence ? "accent" : "warning";
 
 	// Build facts section based on entity type
 	const facts: Array<{ title: string; value: string }> = [
-		{ title: "From", value: data.requesterName },
+		{ title: t("teamsBot:approval.facts.from", "From"), value: data.requesterName },
 	];
 
 	if (data.requesterEmail) {
-		facts.push({ title: "Email", value: data.requesterEmail });
+		facts.push({ title: t("teamsBot:approval.facts.email", "Email"), value: data.requesterEmail });
 	}
 
 	if (isAbsence) {
 		if (data.absenceCategory) {
-			facts.push({ title: "Type", value: data.absenceCategory });
+			facts.push({ title: t("teamsBot:approval.facts.type", "Type"), value: data.absenceCategory });
 		}
 		if (data.startDate && data.endDate) {
 			const start = fmtWeekdayShortDateYear(DateTime.fromISO(data.startDate), locale);
 			const end = fmtWeekdayShortDateYear(DateTime.fromISO(data.endDate), locale);
-			facts.push({ title: "Dates", value: `${start} - ${end}` });
+			facts.push({ title: t("teamsBot:approval.facts.dates", "Dates"), value: `${start} - ${end}` });
 		}
 		if (data.days !== undefined) {
-			facts.push({ title: "Duration", value: `${data.days} day${data.days !== 1 ? "s" : ""}` });
+			facts.push({
+				title: t("teamsBot:approval.facts.duration", "Duration"),
+				value: t("teamsBot:approval.durationDays", "{count, plural, one {# day} other {# days}}", { count: data.days }),
+			});
 		}
 	} else {
 		// Time correction
 		if (data.originalTime) {
-			facts.push({ title: "Original", value: data.originalTime });
+			facts.push({ title: t("teamsBot:approval.facts.original", "Original"), value: data.originalTime });
 		}
 		if (data.correctedTime) {
-			facts.push({ title: "Corrected", value: data.correctedTime });
+			facts.push({ title: t("teamsBot:approval.facts.corrected", "Corrected"), value: data.correctedTime });
 		}
 	}
 
 	if (data.reason) {
-		facts.push({ title: "Reason", value: data.reason });
+		facts.push({ title: t("teamsBot:approval.facts.reason", "Reason"), value: data.reason });
 	}
 
 	facts.push({
-		title: "Submitted",
+		title: t("teamsBot:approval.facts.submitted", "Submitted"),
 		value: fmtWeekdayShortDateTime(DateTime.fromJSDate(data.createdAt), locale),
 	});
 
@@ -100,7 +107,7 @@ export function buildApprovalCard(
 		actions: [
 			{
 				type: "Action.Http",
-				title: "Approve",
+				title: t("teamsBot:approval.actions.approve", "Approve"),
 				method: "POST",
 				url: callbackUrl,
 				body: JSON.stringify({
@@ -111,7 +118,7 @@ export function buildApprovalCard(
 			},
 			{
 				type: "Action.Http",
-				title: "Reject",
+				title: t("teamsBot:approval.actions.reject", "Reject"),
 				method: "POST",
 				url: callbackUrl,
 				body: JSON.stringify({
@@ -122,7 +129,7 @@ export function buildApprovalCard(
 			},
 			{
 				type: "Action.OpenUrl",
-				title: "View in Z8",
+				title: t("teamsBot:approval.actions.viewInZ8", "View in Z8"),
 				url: `${getDefaultAppBaseUrl()}/approvals/inbox`,
 			},
 		],
@@ -136,43 +143,49 @@ export function buildApprovalCard(
 export function buildApprovalCardWithInvoke(
 	data: ApprovalCardData,
 	locale: string = DEFAULT_LANGUAGE,
+	t: BotTranslateFn = (_key, defaultValue) => defaultValue,
 ): Record<string, unknown> {
 	const isAbsence = data.entityType === "absence_entry";
-	const title = isAbsence ? "Absence Request" : "Time Correction Request";
+	const title = isAbsence
+		? t("teamsBot:approval.absenceRequest", "Absence Request")
+		: t("teamsBot:approval.timeCorrectionRequest", "Time Correction Request");
 	const accentColor = isAbsence ? "accent" : "warning";
 
 	// Build facts section
 	const facts: Array<{ title: string; value: string }> = [
-		{ title: "From", value: data.requesterName },
+		{ title: t("teamsBot:approval.facts.from", "From"), value: data.requesterName },
 	];
 
 	if (isAbsence) {
 		if (data.absenceCategory) {
-			facts.push({ title: "Type", value: data.absenceCategory });
+			facts.push({ title: t("teamsBot:approval.facts.type", "Type"), value: data.absenceCategory });
 		}
 		if (data.startDate && data.endDate) {
 			const start = fmtWeekdayShortDate(DateTime.fromISO(data.startDate), locale);
 			const end = fmtWeekdayShortDate(DateTime.fromISO(data.endDate), locale);
-			facts.push({ title: "Dates", value: `${start} - ${end}` });
+			facts.push({ title: t("teamsBot:approval.facts.dates", "Dates"), value: `${start} - ${end}` });
 		}
 		if (data.days !== undefined) {
-			facts.push({ title: "Duration", value: `${data.days} day${data.days !== 1 ? "s" : ""}` });
+			facts.push({
+				title: t("teamsBot:approval.facts.duration", "Duration"),
+				value: t("teamsBot:approval.durationDays", "{count, plural, one {# day} other {# days}}", { count: data.days }),
+			});
 		}
 	} else {
 		if (data.originalTime) {
-			facts.push({ title: "Original", value: data.originalTime });
+			facts.push({ title: t("teamsBot:approval.facts.original", "Original"), value: data.originalTime });
 		}
 		if (data.correctedTime) {
-			facts.push({ title: "Corrected", value: data.correctedTime });
+			facts.push({ title: t("teamsBot:approval.facts.corrected", "Corrected"), value: data.correctedTime });
 		}
 	}
 
 	if (data.reason) {
-		facts.push({ title: "Reason", value: data.reason });
+		facts.push({ title: t("teamsBot:approval.facts.reason", "Reason"), value: data.reason });
 	}
 
 	facts.push({
-		title: "Submitted",
+		title: t("teamsBot:approval.facts.submitted", "Submitted"),
 		value: fmtWeekdayShortDateTime(DateTime.fromJSDate(data.createdAt), locale),
 	});
 
@@ -205,12 +218,12 @@ export function buildApprovalCardWithInvoke(
 		actions: [
 			{
 				type: "Action.Submit",
-				title: "Approve",
+				title: t("teamsBot:approval.actions.approve", "Approve"),
 				style: "positive",
 				data: {
 					msteams: {
 						type: "messageBack",
-						displayText: "Approving…",
+						displayText: t("teamsBot:approval.actions.approving", "Approving..."),
 						text: "approve",
 						value: {
 							action: "approve",
@@ -221,12 +234,12 @@ export function buildApprovalCardWithInvoke(
 			},
 			{
 				type: "Action.Submit",
-				title: "Reject",
+				title: t("teamsBot:approval.actions.reject", "Reject"),
 				style: "destructive",
 				data: {
 					msteams: {
 						type: "messageBack",
-						displayText: "Rejecting…",
+						displayText: t("teamsBot:approval.actions.rejecting", "Rejecting..."),
 						text: "reject",
 						value: {
 							action: "reject",
@@ -246,39 +259,46 @@ export function buildResolvedApprovalCard(
 	originalData: ApprovalCardData,
 	resolvedData: ApprovalCardResolvedData,
 	locale: string = DEFAULT_LANGUAGE,
+	t: BotTranslateFn = (_key, defaultValue) => defaultValue,
 ): Record<string, unknown> {
 	const isAbsence = originalData.entityType === "absence_entry";
-	const title = isAbsence ? "Absence Request" : "Time Correction Request";
+	const title = isAbsence
+		? t("teamsBot:approval.absenceRequest", "Absence Request")
+		: t("teamsBot:approval.timeCorrectionRequest", "Time Correction Request");
 	const statusColor = resolvedData.action === "approved" ? "good" : "attention";
-	const statusText = resolvedData.action === "approved" ? "APPROVED" : "REJECTED";
+	const statusText = resolvedData.action === "approved"
+		? t("teamsBot:approval.status.approved", "APPROVED")
+		: t("teamsBot:approval.status.rejected", "REJECTED");
 
 	const facts: Array<{ title: string; value: string }> = [
-		{ title: "From", value: originalData.requesterName },
+		{ title: t("teamsBot:approval.facts.from", "From"), value: originalData.requesterName },
 	];
 
 	if (isAbsence) {
 		if (originalData.absenceCategory) {
-			facts.push({ title: "Type", value: originalData.absenceCategory });
+			facts.push({ title: t("teamsBot:approval.facts.type", "Type"), value: originalData.absenceCategory });
 		}
 		if (originalData.startDate && originalData.endDate) {
 			const start = fmtWeekdayShortDate(DateTime.fromISO(originalData.startDate), locale);
 			const end = fmtWeekdayShortDate(DateTime.fromISO(originalData.endDate), locale);
-			facts.push({ title: "Dates", value: `${start} - ${end}` });
+			facts.push({ title: t("teamsBot:approval.facts.dates", "Dates"), value: `${start} - ${end}` });
 		}
 	}
 
 	facts.push({
-		title: "Status",
+		title: t("teamsBot:approval.facts.status", "Status"),
 		value: statusText,
 	});
 
 	facts.push({
-		title: resolvedData.action === "approved" ? "Approved by" : "Rejected by",
+		title: resolvedData.action === "approved"
+			? t("teamsBot:approval.facts.approvedBy", "Approved by")
+			: t("teamsBot:approval.facts.rejectedBy", "Rejected by"),
 		value: resolvedData.approverName,
 	});
 
 	facts.push({
-		title: "Resolved",
+		title: t("teamsBot:approval.facts.resolved", "Resolved"),
 		value: fmtWeekdayShortDateTime(DateTime.fromJSDate(resolvedData.resolvedAt), locale),
 	});
 

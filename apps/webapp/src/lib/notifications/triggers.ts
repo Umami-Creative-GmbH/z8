@@ -11,6 +11,24 @@ import { createNotification } from "./notification-service";
 
 const logger = createLogger("NotificationTriggers");
 
+const notificationCopy = {
+	absenceRequestSubmitted: {
+		titleDefault: "Absence request submitted",
+		messageDefault:
+			"Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+	},
+	passwordChanged: {
+		titleDefault: "Password changed",
+		messageDefault:
+			"Your password was successfully changed. If you didn't make this change, please contact support immediately.",
+	},
+	shiftAssigned: {
+		titleDefault: "Shift assigned",
+		messageDefault:
+			"You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
+	},
+} as const;
+
 function i18nMetadata(
 	titleKey: string,
 	titleDefault: string,
@@ -82,15 +100,27 @@ interface ApprovedAbsenceCancelledByEmployeeParams {
  */
 export async function onAbsenceRequestSubmitted(params: AbsenceRequestParams): Promise<void> {
 	try {
+		const dateRange = `${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}`;
+		const copy = notificationCopy.absenceRequestSubmitted;
+
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_submitted",
-			title: "Absence request submitted",
-			message: `Your ${params.categoryName} request for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} has been submitted and is pending approval.`,
+			title: copy.titleDefault,
+			message: copy.messageDefault
+				.replace("{categoryName}", params.categoryName)
+				.replace("{dateRange}", dateRange),
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
+			metadata: i18nMetadata(
+				"common:notifications.content.absenceRequestSubmitted.title",
+				copy.titleDefault,
+				"common:notifications.content.absenceRequestSubmitted.message",
+				copy.messageDefault,
+				{ categoryName: params.categoryName, dateRange },
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger absence submitted notification");
@@ -603,14 +633,21 @@ interface SecurityParams {
  */
 export async function onPasswordChanged(params: SecurityParams): Promise<void> {
 	try {
+		const copy = notificationCopy.passwordChanged;
+
 		await createNotification({
 			userId: params.userId,
 			organizationId: params.organizationId,
 			type: "password_changed",
-			title: "Password changed",
-			message:
-				"Your password was successfully changed. If you didn't make this change, please contact support immediately.",
+			title: copy.titleDefault,
+			message: copy.messageDefault,
 			actionUrl: "/settings/security",
+			metadata: i18nMetadata(
+				"common:notifications.content.passwordChanged.title",
+				copy.titleDefault,
+				"common:notifications.content.passwordChanged.message",
+				copy.messageDefault,
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger password changed notification");
@@ -822,16 +859,34 @@ export async function onShiftAssigned(params: ShiftAssignedParams): Promise<void
 	try {
 		const formatDate = (date: Date) =>
 			date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+		const shiftDate = formatDate(params.shiftDate);
+		const copy = notificationCopy.shiftAssigned;
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "shift_assigned",
-			title: "Shift assigned",
-			message: `You have been assigned a shift on ${formatDate(params.shiftDate)} from ${params.startTime} to ${params.endTime} by ${params.assignedByName}.`,
+			title: copy.titleDefault,
+			message: copy.messageDefault
+				.replace("{shiftDate}", shiftDate)
+				.replace("{startTime}", params.startTime)
+				.replace("{endTime}", params.endTime)
+				.replace("{assignedByName}", params.assignedByName),
 			entityType: "shift",
 			entityId: params.shiftId,
 			actionUrl: "/scheduling",
+			metadata: i18nMetadata(
+				"common:notifications.content.shiftAssigned.title",
+				copy.titleDefault,
+				"common:notifications.content.shiftAssigned.message",
+				copy.messageDefault,
+				{
+					shiftDate,
+					startTime: params.startTime,
+					endTime: params.endTime,
+					assignedByName: params.assignedByName,
+				},
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger shift assigned notification");

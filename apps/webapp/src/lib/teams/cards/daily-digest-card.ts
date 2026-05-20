@@ -371,45 +371,54 @@ export function buildDailyDigestCard(
 export function buildDailyDigestText(
 	data: DailyDigestData,
 	locale: string = DEFAULT_LANGUAGE,
+	t: BotTranslateFn = fallbackT,
 ): string {
 	const lines: string[] = [];
 	const dateFormatted = fmtFullDate(DateTime.fromJSDate(data.date).setZone(data.timezone), locale);
 
-	lines.push(`**Daily Digest - ${dateFormatted}**`);
+	lines.push(t("teamsBot:digest.textTitle", "**Daily Digest - {date}**", { date: dateFormatted }));
 	lines.push("");
 
 	// Pending approvals
 	if (data.pendingApprovals === 0) {
-		lines.push("**Pending Approvals:** None");
+		lines.push(t("teamsBot:digest.textPendingApprovalsNone", "**Pending Approvals:** None"));
 	} else {
-		lines.push(`**Pending Approvals:** ${data.pendingApprovals}`);
+		lines.push(t("teamsBot:digest.textPendingApprovalsCount", "**Pending Approvals:** {count}", { count: data.pendingApprovals }));
 	}
 	lines.push("");
 
 	// Who's out
-	lines.push("**Who's Out:**");
+	lines.push(t("teamsBot:digest.textWhosOut", "**Who's Out:**"));
 	if (data.employeesOut.length === 0) {
-		lines.push("Everyone is available");
+		lines.push(t("teamsBot:digest.everyoneAvailable", "Everyone is available today"));
 	} else {
 		for (const emp of data.employeesOut.slice(0, 5)) {
-			lines.push(`• ${emp.name} - ${emp.category} (returns ${emp.returnDate})`);
+			lines.push(t("teamsBot:digest.textEmployeeOut", "• {name} - {category} (returns {returnDate})", {
+				name: emp.name,
+				category: emp.category,
+				returnDate: emp.returnDate,
+			}));
 		}
 		if (data.employeesOut.length > 5) {
-			lines.push(`• +${data.employeesOut.length - 5} more`);
+			lines.push(t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesOut.length - 5 }));
 		}
 	}
 	lines.push("");
 
 	// Clocked in
-	lines.push("**Currently Clocked In:**");
+	lines.push(t("teamsBot:digest.textCurrentlyClockedIn", "**Currently Clocked In:**"));
 	if (data.employeesClockedIn.length === 0) {
-		lines.push("No one yet");
+		lines.push(t("teamsBot:digest.noOneClockedIn", "No one is clocked in yet"));
 	} else {
 		for (const emp of data.employeesClockedIn.slice(0, 5)) {
-			lines.push(`• ${emp.name} - since ${emp.clockedInAt} (${emp.durationSoFar})`);
+			lines.push(t("teamsBot:digest.textClockedInEmployee", "• {name} - since {clockedInAt} ({duration})", {
+				name: emp.name,
+				clockedInAt: emp.clockedInAt,
+				duration: emp.durationSoFar,
+			}));
 		}
 		if (data.employeesClockedIn.length > 5) {
-			lines.push(`• +${data.employeesClockedIn.length - 5} more`);
+			lines.push(t("teamsBot:common.moreBullet", "• +{count} more", { count: data.employeesClockedIn.length - 5 }));
 		}
 	}
 	lines.push("");
@@ -418,7 +427,7 @@ export function buildDailyDigestText(
 
 	// Coverage gaps
 	if (data.coverageGaps && data.coverageGaps.length > 0) {
-		lines.push("**🔴 Coverage Gaps:**");
+		lines.push(t("teamsBot:digest.textCoverageGaps", "**🔴 Coverage Gaps:**"));
 		for (const gap of data.coverageGaps) {
 			lines.push(
 				`• ${gap.locationName} - ${gap.subareaName}: ${gap.actual}/${gap.scheduled} (-${gap.shortage})`,
@@ -429,16 +438,21 @@ export function buildDailyDigestText(
 
 	// Open shifts
 	if (data.openShiftsToday || data.openShiftsTomorrow) {
-		lines.push("**📋 Open Shifts:**");
-		lines.push(`Today: ${data.openShiftsToday || 0} | Tomorrow: ${data.openShiftsTomorrow || 0}`);
+		lines.push(t("teamsBot:digest.textOpenShifts", "**📋 Open Shifts:**"));
+		lines.push(t("teamsBot:digest.todayTomorrow", "Today: {today} | Tomorrow: {tomorrow}", {
+			today: data.openShiftsToday || 0,
+			tomorrow: data.openShiftsTomorrow || 0,
+		}));
 		lines.push("");
 	}
 
 	// Compliance
 	if (data.compliancePending && data.compliancePending > 0) {
-		lines.push("**⚠️ Compliance:**");
+		lines.push(t("teamsBot:digest.textCompliance", "**⚠️ Compliance:**"));
 		lines.push(
-			`${data.compliancePending} pending exception request${data.compliancePending > 1 ? "s" : ""}`,
+			t("teamsBot:digest.pendingExceptionRequests", "{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}", {
+				count: data.compliancePending,
+			}),
 		);
 		lines.push("");
 	}

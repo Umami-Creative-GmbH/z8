@@ -95,6 +95,7 @@ async function complianceHandler(
 			daysBack,
 			appUrl,
 			locale: ctx.locale,
+			t,
 		});
 
 		const issueCount = summary.alerts.length + summary.pendingExceptions.length;

@@ -14,8 +14,10 @@ export interface BriefingActionItem {
 	severity: BriefingActionSeverity;
 	title: string;
 	titleKey?: string;
+	titleParams?: Record<string, string | number>;
 	description: string;
 	descriptionKey?: string;
+	descriptionParams?: Record<string, string | number>;
 	href: string;
 }
 

@@ -16,6 +16,13 @@ const severityRank: Record<BriefingActionItem["severity"], number> = {
 	info: 3,
 };
 
+const briefingCopy = {
+	notClockedInTitle: (employeeName: string) => `${employeeName} has not clocked in`,
+	clockedInLateTitle: (employeeName: string) => `${employeeName} clocked in late`,
+	absentTitle: (employeeName: string) => `${employeeName} is absent`,
+	understaffedTitle: (subareaName: string) => `${subareaName} is understaffed`,
+};
+
 export function sortActionItems(items: BriefingActionItem[]): BriefingActionItem[] {
 	return [...items].sort((left, right) => {
 		const severityDiff = severityRank[left.severity] - severityRank[right.severity];
@@ -74,8 +81,16 @@ export function detectAttendanceExceptions({
 					id: `attendance:${shift.id}`,
 					category: "attendance",
 					severity: "critical",
-					title: `${shift.employeeName} has not clocked in`,
+					title: briefingCopy.notClockedInTitle(shift.employeeName),
+					titleKey: "today.briefing.items.attendance.notClockedIn.title",
+					titleParams: { employeeName: shift.employeeName },
 					description: `${shift.employeeName} was scheduled to start at ${shift.startTime}${formatTeamSuffix(shift.teamName)}.`,
+					descriptionKey: "today.briefing.items.attendance.notClockedIn.description",
+					descriptionParams: {
+						employeeName: shift.employeeName,
+						startTime: shift.startTime,
+						teamSuffix: formatTeamSuffix(shift.teamName),
+					},
 					href: "/time-tracking",
 				},
 			];
@@ -87,8 +102,17 @@ export function detectAttendanceExceptions({
 					id: `attendance:${shift.id}`,
 					category: "attendance",
 					severity: "high",
-					title: `${shift.employeeName} clocked in late`,
+					title: briefingCopy.clockedInLateTitle(shift.employeeName),
+					titleKey: "today.briefing.items.attendance.clockedInLate.title",
+					titleParams: { employeeName: shift.employeeName },
 					description: `${shift.employeeName} was scheduled to start at ${shift.startTime} and clocked in at ${firstClockIn.toFormat("HH:mm")}${formatTeamSuffix(shift.teamName)}.`,
+					descriptionKey: "today.briefing.items.attendance.clockedInLate.description",
+					descriptionParams: {
+						employeeName: shift.employeeName,
+						startTime: shift.startTime,
+						clockInTime: firstClockIn.toFormat("HH:mm"),
+						teamSuffix: formatTeamSuffix(shift.teamName),
+					},
 					href: "/time-tracking",
 				},
 			];
@@ -130,8 +154,15 @@ export function detectAbsencesToday({
 					id: `absence:${absence.id}`,
 					category: "absence",
 					severity: "info",
-					title: `${absence.employeeName} is absent`,
+					title: briefingCopy.absentTitle(absence.employeeName),
+					titleKey: "today.briefing.items.absence.isAbsent.title",
+					titleParams: { employeeName: absence.employeeName },
 					description: `${absence.categoryName}${formatTeamSuffix(absence.teamName)}.`,
+					descriptionKey: "today.briefing.items.absence.isAbsent.description",
+					descriptionParams: {
+						categoryName: absence.categoryName,
+						teamSuffix: formatTeamSuffix(absence.teamName),
+					},
 					href: "/absences",
 				},
 			];
@@ -167,8 +198,17 @@ export function detectCoverageRisks({
 					id: `coverage:${rule.id}`,
 					category: "coverage",
 					severity: "high",
-					title: `${rule.subareaName} is understaffed`,
+					title: briefingCopy.understaffedTitle(rule.subareaName),
+					titleKey: "today.briefing.items.coverage.understaffed.title",
+					titleParams: { subareaName: rule.subareaName },
 					description: `${scheduledStaffCount} scheduled for ${rule.startTime}-${rule.endTime}; minimum is ${rule.minimumStaffCount}.`,
+					descriptionKey: "today.briefing.items.coverage.understaffed.description",
+					descriptionParams: {
+						scheduledStaffCount,
+						startTime: rule.startTime,
+						endTime: rule.endTime,
+						minimumStaffCount: rule.minimumStaffCount,
+					},
 					href: "/scheduling",
 				},
 			];

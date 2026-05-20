@@ -77,6 +77,50 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 			/description: "Full access to employee profiles and settings"/,
 		],
 	},
+	{
+		file: "src/components/settings/import/import-review-page.tsx",
+		patterns: [/>Import Review</, /toast\.error\([^\n]*"Failed to start import commit"/, /\? "Committing/],
+	},
+	{
+		file: "src/components/settings/import/import-review-table.tsx",
+		patterns: [/>Rows</, />No staged rows are available/, />Source ID</],
+	},
+	{
+		file: "src/components/settings/import/import-issue-groups.tsx",
+		patterns: [/>Issue groups</, /title: "Duplicates"/, />\s*Current rows include/],
+	},
+	{
+		file: "src/app/[locale]/onboarding/organization/page.tsx",
+		patterns: [/\.min\(2, "Slug must be at least 2 characters"/, /message: "Slug cannot start or end with a hyphen"/],
+	},
+	{
+		file: "src/lib/notifications/triggers.ts",
+		patterns: [/title: "Absence request submitted"/, /title: "Password changed"/, /title: "Shift assigned"/],
+	},
+	{
+		file: "src/lib/teams/cards/approval-card.ts",
+		patterns: [/const title = isAbsence \? "Absence Request"/, /title: "Approve"/, /title: "View in Z8"/],
+	},
+	{
+		file: "src/lib/teams/cards/compliance-card.ts",
+		patterns: [/text: "[^"\n]*Compliance Summary"/, /text: "Violations"/, /title: "View Compliance Dashboard"/],
+	},
+	{
+		file: "src/lib/teams/cards/coverage-card.ts",
+		patterns: [/text: "[^"\n]*Coverage Report"/, /text: "Scheduled"/, /text: "Variance"/],
+	},
+	{
+		file: "src/lib/teams/cards/daily-digest-card.ts",
+		patterns: [/lines\.push\("\*\*Pending Approvals:\*\* None"/, /lines\.push\("Everyone is available"/, /lines\.push\("No one yet"/],
+	},
+	{
+		file: "src/lib/manager-daily-briefing/get-manager-daily-briefing.ts",
+		patterns: [/title: "Approvals"/, /description: "Pending requests waiting for a decision\."/, /return "Section could not be loaded\."/],
+	},
+	{
+		file: "src/lib/manager-daily-briefing/logic.ts",
+		patterns: [/title: `[^`]*has not clocked in`/, /title: `[^`]*clocked in late`/, /title: `[^`]*is understaffed`/],
+	},
 ];
 
 describe("webapp i18n hardcoded sweep", () => {

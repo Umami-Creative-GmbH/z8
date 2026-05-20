@@ -80,12 +80,19 @@ type GetManagerDailyBriefingInput = {
 	now?: DateTime;
 };
 
+const SECTION_LOAD_ERROR = "Section could not be loaded.";
+
+const briefingSectionCopy = {
+	approvalsTitle: "Approvals",
+	approvalsDescription: "Pending requests waiting for a decision.",
+} as const;
+
 const SECTION_METADATA = {
 	approvals: {
 		id: "approvals",
-		title: "Approvals",
+		title: briefingSectionCopy.approvalsTitle,
 		titleKey: "today.briefing.sections.approvals.title",
-		description: "Pending requests waiting for a decision.",
+		description: briefingSectionCopy.approvalsDescription,
 		descriptionKey: "today.briefing.sections.approvals.description",
 		emptyState: "No approvals are waiting.",
 		emptyStateKey: "today.briefing.sections.approvals.empty",
@@ -615,7 +622,7 @@ function firstRejected(
 }
 
 function errorMessage(_reason: unknown): string {
-	return "Section could not be loaded.";
+	return SECTION_LOAD_ERROR;
 }
 
 function employeeDisplayName(row: {

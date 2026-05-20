@@ -15,7 +15,7 @@ import {
 	employee,
 } from "@/db/schema";
 import { user } from "@/db/auth-schema";
-import { getUserLocale } from "@/lib/bot-platform/i18n";
+import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { updateMessage } from "./bot-adapter";
 import { getStoredConversation } from "./conversation-manager";
@@ -126,11 +126,12 @@ export async function handleApprovalAction(
 				if (originalCardData) {
 					// Build resolved card
 					const userLocale = await getUserLocale(resolvedUser.userId);
+					const t = await getBotTranslate(userLocale);
 					const resolvedCard = buildResolvedApprovalCard(originalCardData, {
 						action: action === "approve" ? "approved" : "rejected",
 						approverName,
 						resolvedAt: new Date(),
-					}, userLocale);
+					}, userLocale, t);
 
 					// Update the card in Teams
 					try {
@@ -304,7 +305,8 @@ export async function sendApprovalCardToManager(
 
 		// Build and send card
 		const approverLocale = await getUserLocale(approverEmployee.userId);
-		const card = buildApprovalCardWithInvoke(cardData, approverLocale);
+		const t = await getBotTranslate(approverLocale);
+		const card = buildApprovalCardWithInvoke(cardData, approverLocale, t);
 		const activityId = await sendAdaptiveCard(
 			conversationRef,
 			card,
