@@ -256,7 +256,8 @@ export function dateRangesOverlap(
 	// Convert to DateTime if needed
 	const toDateTime = (d: Date | DateTime | string): DateTime => {
 		if (typeof d === "string") {
-			return DateTime.fromISO(d);
+			const [year, month, day] = d.split("-").map(Number);
+			return DateTime.utc(year, month, day);
 		}
 		if (d instanceof Date) {
 			return fromJSDate(d, "utc");
@@ -265,11 +266,27 @@ export function dateRangesOverlap(
 	};
 
 	const s1 = toDateTime(start1);
-	const e1 = toDateTime(end1);
+	const e1 = normalizeOverlapEnd(s1, toDateTime(end1), end1);
 	const s2 = toDateTime(start2);
-	const e2 = toDateTime(end2);
+	const e2 = normalizeOverlapEnd(s2, toDateTime(end2), end2);
 
 	return s1 <= e2 && s2 <= e1;
+}
+
+function normalizeOverlapEnd(
+	start: DateTime,
+	end: DateTime,
+	originalEnd: Date | DateTime | string,
+): DateTime {
+	if (typeof originalEnd === "string") {
+		return end;
+	}
+
+	if (end > start && end.equals(end.startOf("day"))) {
+		return end.minus({ milliseconds: 1 });
+	}
+
+	return end;
 }
 
 /**
