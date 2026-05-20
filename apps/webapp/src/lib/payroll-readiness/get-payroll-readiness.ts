@@ -16,6 +16,7 @@ export type PayrollReadinessCheckStatus = "pass" | "warning" | "fail" | "unavail
 export type PayrollReadinessGroup = {
 	id: "time" | "payrollSetup" | "exports" | "travelExpenses";
 	title: string;
+	titleKey: string;
 	status: PayrollReadinessCheckStatus;
 	checks: PayrollReadinessCheck[];
 };
@@ -29,7 +30,9 @@ export type PayrollReadinessCheck = {
 	id: string;
 	group: PayrollReadinessGroup["id"];
 	title: string;
+	titleKey: string;
 	description: string;
+	descriptionKey: string;
 	status: PayrollReadinessCheckStatus;
 	severity: PayrollReadinessSeverity;
 	required: boolean;
@@ -88,11 +91,17 @@ type PayrollExportJobLike = {
 	} | null;
 };
 
-const GROUP_TITLES: Record<PayrollReadinessGroup["id"], string> = {
-	time: "Time",
-	payrollSetup: "Payroll setup",
-	exports: "Exports",
-	travelExpenses: "Travel expenses",
+const GROUP_METADATA: Record<PayrollReadinessGroup["id"], { title: string; titleKey: string }> = {
+	time: { title: "Time", titleKey: "settings.payrollReadiness.groups.time.title" },
+	payrollSetup: {
+		title: "Payroll setup",
+		titleKey: "settings.payrollReadiness.groups.payrollSetup.title",
+	},
+	exports: { title: "Exports", titleKey: "settings.payrollReadiness.groups.exports.title" },
+	travelExpenses: {
+		title: "Travel expenses",
+		titleKey: "settings.payrollReadiness.groups.travelExpenses.title",
+	},
 };
 
 function normalizeAffectedEmployee(
@@ -169,7 +178,7 @@ function buildGroups(checks: PayrollReadinessCheck[]): PayrollReadinessGroup[] {
 
 		return {
 			id: groupId,
-			title: GROUP_TITLES[groupId],
+			...GROUP_METADATA[groupId],
 			status: groupStatus(groupChecks),
 			checks: groupChecks,
 		};
@@ -318,7 +327,9 @@ export async function getPayrollReadiness(
 			id: "pending-approvals",
 			group: "time",
 			title: "Pending approvals",
+			titleKey: "settings.payrollReadiness.checks.pendingApprovals.title",
 			description: "All time and absence approval requests must be resolved before payroll export.",
+			descriptionKey: "settings.payrollReadiness.checks.pendingApprovals.description",
 			status: pendingTimeRecords.length > 0 ? "fail" : "pass",
 			severity: "blocker",
 			required: true,
@@ -330,8 +341,10 @@ export async function getPayrollReadiness(
 			id: "stale-active-work",
 			group: "time",
 			title: "Stale active work periods",
+			titleKey: "settings.payrollReadiness.checks.staleActiveWork.title",
 			description:
 				"Open work periods older than 24 hours may need review but do not block payroll readiness.",
+			descriptionKey: "settings.payrollReadiness.checks.staleActiveWork.description",
 			status: staleActiveWorkRecords.length > 0 ? "warning" : "pass",
 			severity: staleActiveWorkRecords.length > 0 ? "warning" : "info",
 			required: false,
@@ -343,7 +356,9 @@ export async function getPayrollReadiness(
 			id: "no-time-without-absence",
 			group: "time",
 			title: "No time without absence",
+			titleKey: "settings.payrollReadiness.checks.noTimeWithoutAbsence.title",
 			description: "No missing time or absence coverage issues were detected.",
+			descriptionKey: "settings.payrollReadiness.checks.noTimeWithoutAbsence.description",
 			status: "pass",
 			severity: "info",
 			required: false,
@@ -353,7 +368,9 @@ export async function getPayrollReadiness(
 			id: "hours-outliers",
 			group: "time",
 			title: "Hours outliers",
+			titleKey: "settings.payrollReadiness.checks.hoursOutliers.title",
 			description: "No payroll-relevant hour outliers were detected.",
+			descriptionKey: "settings.payrollReadiness.checks.hoursOutliers.description",
 			status: "pass",
 			severity: "info",
 			required: false,
@@ -363,10 +380,15 @@ export async function getPayrollReadiness(
 			id: "missing-employment-history",
 			group: "payrollSetup",
 			title: "Employment history coverage",
+			titleKey: "settings.payrollReadiness.checks.missingEmploymentHistory.title",
 			description:
 				missingEmploymentHistory.length > 0
 					? "Some active employees do not have confirmed employment history for this payroll period."
 					: "All active employees have confirmed employment history for this payroll period.",
+			descriptionKey:
+				missingEmploymentHistory.length > 0
+					? "settings.payrollReadiness.checks.missingEmploymentHistory.descriptionWarning"
+					: "settings.payrollReadiness.checks.missingEmploymentHistory.descriptionPass",
 			status: missingEmploymentHistory.length > 0 ? "warning" : "pass",
 			severity: "warning",
 			required: false,
@@ -381,7 +403,9 @@ export async function getPayrollReadiness(
 			id: "payroll-export-targets",
 			group: "payrollSetup",
 			title: "Payroll export targets",
+			titleKey: "settings.payrollReadiness.checks.payrollExportTargets.title",
 			description: "At least one active payroll export target must be configured.",
+			descriptionKey: "settings.payrollReadiness.checks.payrollExportTargets.description",
 			status: exportConfigs.length > 0 ? "pass" : "fail",
 			severity: "blocker",
 			required: true,
@@ -392,7 +416,9 @@ export async function getPayrollReadiness(
 			id: "wage-type-mappings",
 			group: "payrollSetup",
 			title: "Wage type mappings",
+			titleKey: "settings.payrollReadiness.checks.wageTypeMappings.title",
 			description: "Active payroll wage type mappings must exist for export classification.",
+			descriptionKey: "settings.payrollReadiness.checks.wageTypeMappings.description",
 			status: wageMappings.length > 0 ? "pass" : "fail",
 			severity: "blocker",
 			required: true,
@@ -403,7 +429,9 @@ export async function getPayrollReadiness(
 			id: "latest-payroll-export",
 			group: "exports",
 			title: "Latest payroll export",
+			titleKey: "settings.payrollReadiness.checks.latestPayrollExport.title",
 			description: "The latest payroll export must not be in a failed state.",
+			descriptionKey: "settings.payrollReadiness.checks.latestPayrollExport.description",
 			status: latestExportJob?.status === "failed" ? "fail" : "pass",
 			severity: "blocker",
 			required: true,
@@ -414,7 +442,9 @@ export async function getPayrollReadiness(
 			id: "compliance-warnings",
 			group: "exports",
 			title: "Compliance warnings",
+			titleKey: "settings.payrollReadiness.checks.complianceWarnings.title",
 			description: "No payroll export compliance warnings were detected.",
+			descriptionKey: "settings.payrollReadiness.checks.complianceWarnings.description",
 			status: "pass",
 			severity: "info",
 			required: false,
@@ -424,8 +454,10 @@ export async function getPayrollReadiness(
 			id: "travel-expense-warnings",
 			group: "travelExpenses",
 			title: "Travel expense warnings",
+			titleKey: "settings.payrollReadiness.checks.travelExpenseWarnings.title",
 			description:
 				"Draft or submitted travel expense claims may need review but do not block payroll readiness.",
+			descriptionKey: "settings.payrollReadiness.checks.travelExpenseWarnings.description",
 			status: travelExpenseClaims.length > 0 ? "warning" : "pass",
 			severity: travelExpenseClaims.length > 0 ? "warning" : "info",
 			required: false,

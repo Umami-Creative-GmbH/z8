@@ -1,352 +1,737 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Póngase en contacto con el administrador de su organización para solicitar acceso.",
-    "description": "Su cuenta no tiene permiso para acceder a {{appLabel}}.",
-    "signOut": "Cerrar sesión",
-    "title": "Acceso restringido"
-  },
-  "actions": {
-    "cancel": "Cancelar",
-    "delete": "Eliminar",
-    "refresh": "Actualizar"
-  },
-  "colors": {
-    "blue": "Azul",
-    "green": "Verde",
-    "indigo": "Índigo",
-    "orange": "Naranja",
-    "pink": "Rosa",
-    "purple": "Morado",
-    "red": "Rojo",
-    "teal": "Verde azulado"
-  },
-  "common": {
-    "actions": "Acciones",
-    "active": "Activo",
-    "add": "Agregar",
-    "all": "Todo",
-    "approve": "Aprobar",
-    "assign": "Asignar",
-    "back": "Atrás",
-    "cancel": "Cancelar",
-    "clear": "Limpiar",
-    "clearSearch": "Limpiar búsqueda",
-    "clearSelection": "Borrar",
-    "close": "Cerrar",
-    "confirm": "Confirmar",
-    "continue": "Continuar",
-    "copy": "Copiar",
-    "create": "Crear",
-    "days": {
-      "friday": "Viernes",
-      "label": "días",
-      "monday": "Lunes",
-      "saturday": "Sábado",
-      "sunday": "Domingo",
-      "thursday": "Jueves",
-      "tuesday": "Martes",
-      "wednesday": "Miércoles"
-    },
-    "delete": "Eliminar",
-    "deleting": "Eliminando...",
-    "description": "Descripción",
-    "deselectAll": "Deseleccionar todo",
-    "details": "Detalles",
-    "download": "Descargar",
-    "duplicate": "Duplicar",
-    "edit": "Editar",
-    "enabled": "Habilitado",
-    "error": "Error",
-    "error-occurred": "Ocurrió un error",
-    "gender": {
-      "female": "Femenino",
-      "male": "Masculino",
-      "other": "Otro"
-    },
-    "goToDashboard": "Ir al panel de control",
-    "inactive": "Inactivo",
-    "label": "Etiqueta",
-    "loading": "Cargando...",
-    "loadMore": "Cargar más",
-    "months": {
-      "april": "Abril",
-      "august": "Agosto",
-      "december": "Diciembre",
-      "february": "Febrero",
-      "january": "Enero",
-      "july": "Julio",
-      "june": "Junio",
-      "march": "Marzo",
-      "may": "Mayo",
-      "november": "Noviembre",
-      "october": "Octubre",
-      "september": "Septiembre"
-    },
-    "more": "más",
-    "moreActions": "Más acciones",
-    "moveDown": "Bajar",
-    "moveUp": "Mover hacia arriba",
-    "name": "Nombre",
-    "new": "Nuevo",
-    "next": "Siguiente",
-    "notApplicable": "N/D",
-    "not-available": "No disponible",
-    "openEnded": "Sin fecha de finalización",
-    "openMenu": "Abrir menú",
-    "optional": "opcional",
-    "or": "O",
-    "previous": "Anterior",
-    "recovering": "Recuperando...",
-    "refresh": "Actualizar",
-    "reject": "Rechazar",
-    "rejecting": "Rechazando…",
-    "remove": "Quitar",
-    "removing": "Eliminando...",
-    "reset": "Restablecer",
-    "retry": "Reintentar",
-    "save": "Guardar",
-    "saveChanges": "Guardar cambios",
-    "saving": "Guardando...",
-    "selectAll": "Seleccionar todo",
-    "selected": "seleccionado",
-    "select-language": "Seleccionar idioma",
-    "set": "conjunto",
-    "sets": "conjuntos",
-    "skip": "Omitir",
-    "start": "Inicio",
-    "status": "Estado",
-    "submitting": "Enviando…",
-    "to": "a",
-    "today": "Hoy",
-    "unexpectedError": "Ocurrió un error inesperado",
-    "unknown": "Desconocido",
-    "unknownEmployee": "Empleado desconocido",
-    "unknownTeam": "Equipo desconocido",
-    "unnamed": "Sin nombre",
-    "uploading": "Subiendo...",
-    "validate": "Validar",
-    "validationError": "Error de validación",
-    "weekdays": {
-      "fr": "Vi",
-      "fri": "Vie",
-      "mo": "Lu",
-      "mon": "Lun",
-      "sa": "Sa",
-      "sat": "Sáb",
-      "su": "Do",
-      "sun": "Dom",
-      "th": "Ju",
-      "thu": "Jue",
-      "tu": "Ma",
-      "tue": "Mar",
-      "we": "Mi",
-      "wed": "Mié"
-    }
-  },
-  "employeeSelect": {
-    "countSelected": "{count} empleados seleccionados",
-    "countWithMore": "{count} empleados (+{more} más)",
-    "noEmployeesFound": "No se encontraron empleados",
-    "role": "Rol",
-    "searchPlaceholder": "Buscar por nombre, correo electrónico o puesto...",
-    "selected": "{count} seleccionado(s)",
-    "selectEmployee": "Seleccionar empleado",
-    "selectEmployees": "Seleccionar empleados",
-    "selectMultipleEmployees": "Elija uno o más empleados de la lista",
-    "selectOneEmployee": "Elija un empleado de la lista",
-    "status": "Estado",
-    "team": "Equipo",
-    "totalEmployees": "{count} empleados",
-    "tryDifferentSearch": "Intente ajustar su búsqueda o filtros"
-  },
-  "errors": {
-    "failedToLoad": "Error al cargar los datos",
-    "noEmployee": {
-      "contactAdmin": "Contactar con el administrador",
-      "createOrg": "Crear organización",
-      "description": "Necesita un perfil de empleado para ${feature}. Por favor cree una organización o contacte a su administrador.",
-      "emailBody": "Hola,\n\nnecesito que se configure un perfil de empleado para acceder a las funciones de la plataforma. ¿Podría ayudarme con esto?\n\n¡Gracias!",
-      "emailSubject": "Configuración del perfil de empleado requerida",
-      "helpText": "Si fue invitado a una organización, pida a su administrador que configure su perfil de empleado.",
-      "title": "Perfil de empleado requerido"
-    },
-    "noOrganization": {
-      "createOrg": "Crear organización",
-      "description": "Aún no forma parte de ninguna organización. Cree una para comenzar o espere una invitación.",
-      "title": "No se encontró organización",
-      "waiting": "¿Esperando una invitación?",
-      "waitingDesc": "Su administrador le enviará un correo de invitación. Revise su bandeja de entrada y carpeta de spam."
-    },
-    "unexpected": {
-      "digest": "Referencia: {digest}"
-    }
-  },
-  "generic": {
-    "done": "Hecho",
-    "submit": "Enviar"
-  },
-  "header": {
-    "clock-in": "Fichar entrada",
-    "clock-out": "Fichar salida"
-  },
-  "info": {
-    "back-to-login": "Volver al inicio de sesión"
-  },
-  "nav": {
-    "absences": "Ausencias",
-    "approvals": "Aprobaciones",
-    "calendar": "Calendario",
-    "compliance": "Cumplimiento",
-    "dashboard": "Tablero",
-    "feedback": "Comentarios",
-    "get-help": "Obtener Ayuda",
-    "my-requests": "Mis solicitudes",
-    "org-explorer": "Explorador de la organización",
-    "platform-admin": "Administrador de plataforma",
-    "reports": "Informes",
-    "scheduling": "Programación",
-    "settings": "Configuración",
-    "team": "Equipo",
-    "teamAbsences": "Ausencias del equipo",
-    "team-label": "Equipo",
-    "time-tracking": "Seguimiento de Tiempo",
-    "travel-expenses": "Gastos de viaje"
-  },
-  "notifications": {
-    "actions": {
-      "deleteAll": "Eliminar todo",
-      "markAllRead": "Marcar todo como leído",
-      "markAsRead": "Marcar como leído",
-      "markRead": "Marcar como leído",
-      "settings": "Configuración de notificaciones",
-      "viewAll": "Ver todas las notificaciones"
-    },
-    "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
-    "empty": {
-      "description": "¡Estás al día! Las nuevas notificaciones aparecerán aquí.",
-      "inboxDescription": "Estás al día. Las nuevas actualizaciones aparecerán aquí.",
-      "noMatchesDescription": "Ajusta la búsqueda o el filtro de lectura para ampliar esta vista de bandeja de entrada.",
-      "noMatchesTitle": "No hay notificaciones que coincidan",
-      "title": "No hay notificaciones",
-      "unreadDescription": "Estás al día. Las nuevas actualizaciones no leídas aparecerán aquí.",
-      "unreadTitle": "No hay notificaciones no leídas"
-    },
-    "error": {
-      "title": "No se pudieron cargar las notificaciones"
-    },
-    "filters": {
-      "all": "Todas",
-      "ariaLabel": "Filtrar notificaciones por estado de lectura",
-      "read": "Leídas",
-      "unread": "No leídas"
-    },
-    "search": {
-      "ariaLabel": "Buscar notificaciones",
-      "placeholder": "Buscar notificaciones..."
-    },
-    "selection": {
-      "selectAll": "Seleccionar todas las visibles",
-      "selectAllAria": "Seleccionar todas las notificaciones visibles",
-      "selectNamedAria": "Seleccionar {title}",
-      "visibleSelected": "{count} visibles seleccionadas"
-    },
-    "timeline": {
-      "earlier": "Anterior",
-      "today": "Hoy",
-      "yesterday": "Ayer"
-    },
-    "title": "Notificaciones",
-    "toasts": {
-      "deleted": "{count} notificaciones eliminadas",
-      "deleteFailed": "Error al eliminar las notificaciones",
-      "markedRead": "{count} notificaciones marcadas como leídas",
-      "markReadFailed": "Error al marcar las notificaciones como leídas"
-    },
-    "unreadBadge": "{count} sin leer"
-  },
-  "offline": {
-    "banner": {
-      "offline": "Estás sin conexión",
-      "offlineWithPending": "Sin conexión - {count} evento(s) pendiente(s)",
-      "pending": "{count} evento(s) pendiente(s) de sincronización",
-      "retry": "Reintentar",
-      "syncing": "Sincronizando {count} evento(s)..."
-    }
-  },
-  "roles": {
-    "admin": "Administrador",
-    "employee": "Empleado",
-    "manager": "Gerente"
-  },
-  "status": {
-    "active": "Activo",
-    "inactive": "Inactivo"
-  },
-  "table": {
-    "clearFilters": "Limpiar filtros",
-    "clearSort": "Limpiar orden",
-    "description": "Mostrando el total de visitantes de los últimos 6 meses. Esto es solo un texto aleatorio para probar el diseño. Abarca varias líneas y debería ajustarse automáticamente.",
-    "goToFirstPage": "Ir a la primera página",
-    "goToLastPage": "Ir a la última página",
-    "goToNextPage": "Ir a la página siguiente",
-    "goToPreviousPage": "Ir a la página anterior",
-    "header": "Encabezado",
-    "limit": "Límite",
-    "noResults": "Sin resultados.",
-    "pageOfPages": "Página {current} de {total}",
-    "reviewer": "Revisor",
-    "rowsPerPage": "Filas por página",
-    "searchPlaceholder": "Buscar...",
-    "selectedOfTotal": "{selected} de {total} fila(s) seleccionada(s)",
-    "select-reviewer": "Seleccionar un revisor",
-    "select-status": "Seleccionar un estado",
-    "select-type": "Seleccionar un tipo",
-    "showing-visitors": "Mostrando total de visitantes de los últimos 6 meses",
-    "sortAscending": "Ascendente",
-    "sortDescending": "Descendente",
-    "status": "Estado",
-    "status-options": {
-      "done": "Hecho",
-      "in-progress": "En Progreso",
-      "not-started": "No Iniciado"
-    },
-    "target": "Objetivo",
-    "totalRows": "{total} fila(s)",
-    "trending-up": "Tendencia alcista de 5.2% este mes",
-    "type": "Tipo",
-    "type-options": {
-      "capabilities": "Capacidades",
-      "cover-page": "Portada",
-      "design": "Diseño",
-      "executive-summary": "Resumen Ejecutivo",
-      "focus-documents": "Documentos de Enfoque",
-      "narrative": "Narrativa",
-      "table-of-contents": "Tabla de Contenidos",
-      "technical-approach": "Enfoque Técnico"
-    }
-  },
-  "time": {
-    "am": "AM",
-    "hoursAndMinutes": "{hours}h {minutes}m",
-    "hoursOnly": "{hours}h",
-    "pm": "PM"
-  },
-  "user": {
-    "language": "Idioma",
-    "logging-out": "Cerrando sesión...",
-    "log-out": "Cerrar Sesión",
-    "profile": "Perfil",
-    "theme": "Tema",
-    "theme-dark": "Oscuro",
-    "theme-light": "Claro",
-    "theme-system": "Sistema",
-    "time-settings": "Ajustes de tiempo"
-  },
-  "validation": {
-    "first-name-required": "El nombre es obligatorio",
-    "invalid-email": "Dirección de correo electrónico inválida",
-    "invalid-password": "Contraseña inválida",
-    "last-name-required": "El apellido es obligatorio",
-    "password-required": "La contraseña es obligatoria"
-  }
+	"accessDenied": {
+		"contactAdmin": "Póngase en contacto con el administrador de su organización para solicitar acceso.",
+		"description": "Su cuenta no tiene permiso para acceder a {{appLabel}}.",
+		"signOut": "Cerrar sesión",
+		"title": "Acceso restringido"
+	},
+	"actions": {
+		"cancel": "Cancelar",
+		"delete": "Eliminar",
+		"refresh": "Actualizar"
+	},
+	"analytics": {
+		"access": {
+			"noEmployeeFeature": "view analytics",
+			"restrictedDescription": "Analytics is only available to administrators and managers.",
+			"restrictedTitle": "Access Restricted"
+		},
+		"common": {
+			"days": "Days",
+			"employee": "Employee",
+			"employees": "Employees",
+			"hours": "Hours",
+			"loadingOrganizationSettings": "Loading organization settings before enabling presets.",
+			"noDataAvailable": "No data available",
+			"noDataForPeriod": "No data available for the selected period",
+			"overtime": "Overtime",
+			"overtimeHours": "Overtime Hours",
+			"team": "Team",
+			"totalHours": "Total Hours",
+			"undertime": "Undertime",
+			"undertimeHours": "Undertime Hours",
+			"unavailable": "Unavailable"
+		},
+		"layout": {
+			"description": "Comprehensive insights into team performance, work hours, and absence patterns",
+			"tabs": {
+				"overtimeBurnDown": "Overtime Burn-Down",
+				"overview": "Overview",
+				"teamPerformance": "Team Performance",
+				"vacationTrends": "Vacation Trends",
+				"workHours": "Work Hours"
+			},
+			"title": "Analytics"
+		},
+		"overview": {
+			"absencePatterns": {
+				"description": "Absence distribution by category",
+				"title": "Absence Patterns"
+			},
+			"approvalBottlenecks": {
+				"approvedRate": "{rate}% approved",
+				"avgDecision": "{hours}h avg decision",
+				"byManager": "By Manager",
+				"byTeam": "By Team",
+				"byType": "By Type",
+				"description": "Teams and request types with pending work or SLA warnings",
+				"empty": "No approval bottlenecks found",
+				"pendingSummary": "{pendingCount} pending - {slaWarnings} SLA warnings",
+				"title": "Approval Bottlenecks",
+				"unavailable": "Approval bottlenecks could not be loaded"
+			},
+			"errors": {
+				"loadData": "Failed to load analytics data"
+			},
+			"kpis": {
+				"approvalRate": {
+					"description": "Of decided requests approved",
+					"title": "Approval Rate",
+					"unavailableDescription": "Approval analytics could not be loaded"
+				},
+				"avgWorkHours": {
+					"description": "Per employee in selected period",
+					"title": "Avg Work Hours"
+				},
+				"totalAbsenceDays": {
+					"description": "Total days in selected period",
+					"title": "Total Absence Days"
+				},
+				"totalEmployees": {
+					"description": "Active employees in organization",
+					"title": "Total Employees"
+				}
+			},
+			"loadingLabel": "Loading analytics data",
+			"workHoursByTeam": {
+				"description": "Total work hours logged per team",
+				"title": "Work Hours by Team"
+			}
+		},
+		"overtimeBurnDown": {
+			"breakdown": "Breakdown",
+			"breakdownDescription": "{label} level overtime burn-down details",
+			"breakdownEmpty": "No breakdown data available yet",
+			"byCostCenter": "By Cost Center",
+			"byManager": "By Manager",
+			"byTeam": "By Team",
+			"costCenter": "Cost Center",
+			"currentOvertime": "Current Overtime",
+			"description": "Track weekly overtime reduction across teams.",
+			"errors": {
+				"loadData": "Failed to load overtime burn-down data"
+			},
+			"filters": {
+				"allCostCenters": "All cost centers",
+				"allManagers": "All managers",
+				"allTeams": "All teams",
+				"breakdownLabel": "Breakdown dimension",
+				"costCenterLabel": "Cost center filter",
+				"managerLabel": "Manager filter",
+				"teamLabel": "Team filter"
+			},
+			"improvingGroups": "Improving Groups",
+			"improvingGroupsDescription": "Groups with decreasing overtime",
+			"manager": "Manager",
+			"previousOvertime": "Previous Overtime",
+			"previousPeriodDescription": "Compared with previous period",
+			"selectedRangeDescription": "For selected date range and filters",
+			"title": "Overtime Burn-Down",
+			"trend": {
+				"down": "Down",
+				"flat": "Flat",
+				"up": "Up"
+			},
+			"trendDirection": "Trend Direction",
+			"trendDirectionDescription": "Overall overtime trajectory",
+			"weekOverWeek": "Week-over-Week",
+			"weeklyTrend": {
+				"description": "Weekly overtime reduction trend",
+				"empty": "No trend data available yet",
+				"title": "Weekly Burn-Down Trend"
+			}
+		},
+		"teamPerformance": {
+			"avgPerEmployee": "Avg per Employee",
+			"comparison": {
+				"description": "Total work hours by team for the selected period",
+				"title": "Team Comparison"
+			},
+			"details": {
+				"description": "Breakdown of work hours by team and employee",
+				"title": "Team Performance Details"
+			},
+			"employeeCount": "Employee Count",
+			"errors": {
+				"loadData": "Failed to load team performance data"
+			},
+			"onTrack": "On Track",
+			"variance": {
+				"description": "Hours variance from expected work hours",
+				"empty": "No variance data available",
+				"title": "Overtime & Undertime"
+			}
+		},
+		"vacationTrends": {
+			"allocated": "Allocated",
+			"balance": {
+				"description": "Days allocated, taken, and remaining by employee",
+				"title": "Vacation Balance"
+			},
+			"daysRemaining": "{count} days remaining",
+			"daysTaken": "{count} days taken",
+			"errors": {
+				"loadData": "Failed to load vacation trends data"
+			},
+			"monthlyUsage": {
+				"description": "Vacation days taken per month",
+				"empty": "No monthly usage data available",
+				"title": "Monthly Vacation Usage"
+			},
+			"peakMonths": {
+				"description": "Months with highest vacation activity",
+				"empty": "No peak month data available",
+				"title": "Peak Vacation Months"
+			},
+			"remaining": "Remaining",
+			"taken": "Taken",
+			"utilization": {
+				"description": "Overall vacation days usage across organization",
+				"overall": "Overall Utilization",
+				"title": "Vacation Utilization"
+			},
+			"utilizationLabel": "Utilization",
+			"utilizationPercent": "Utilization %",
+			"vacationDays": "Vacation Days"
+		},
+		"workHours": {
+			"actualHours": "Actual Hours",
+			"avgHoursPerWeek": "Avg Hours/Week",
+			"daily": {
+				"description": "Actual vs expected work hours per day",
+				"empty": "No daily hours data available",
+				"title": "Daily Work Hours"
+			},
+			"distribution": {
+				"description": "Employee work hours comparison (horizontal bar)",
+				"empty": "No distribution data available",
+				"title": "Work Hours Distribution"
+			},
+			"employeeComparison": {
+				"description": "Total hours and variance from expected by employee",
+				"title": "Employee Work Hours"
+			},
+			"errors": {
+				"loadData": "Failed to load work hours analytics data"
+			},
+			"expectedHours": "Expected Hours",
+			"variance": "Variance",
+			"varianceTrend": {
+				"description": "Hours variance from expected work hours over time",
+				"empty": "No trend data available",
+				"title": "Overtime & Undertime Trend"
+			}
+		},
+		"export": {
+			"export": "Exportar",
+			"exportAsCsv": "Exportar como CSV",
+			"exportAsExcel": "Exportar como Excel",
+			"exportedAsFormat": "Exportado como {format}",
+			"exportingFormat": "Exportando {format}…",
+			"failedAsFormat": "No se pudo exportar como {format}"
+		}
+	},
+	"colors": {
+		"blue": "Azul",
+		"green": "Verde",
+		"indigo": "Índigo",
+		"orange": "Naranja",
+		"pink": "Rosa",
+		"purple": "Morado",
+		"red": "Rojo",
+		"teal": "Verde azulado"
+	},
+	"common": {
+		"actions": "Acciones",
+		"active": "Activo",
+		"add": "Agregar",
+		"all": "Todo",
+		"approve": "Aprobar",
+		"assign": "Asignar",
+		"back": "Atrás",
+		"cancel": "Cancelar",
+		"clear": "Limpiar",
+		"clearSearch": "Limpiar búsqueda",
+		"clearSelection": "Borrar",
+		"close": "Cerrar",
+		"confirm": "Confirmar",
+		"continue": "Continuar",
+		"copy": "Copiar",
+		"create": "Crear",
+		"days": {
+			"friday": "Viernes",
+			"label": "días",
+			"monday": "Lunes",
+			"saturday": "Sábado",
+			"sunday": "Domingo",
+			"thursday": "Jueves",
+			"tuesday": "Martes",
+			"wednesday": "Miércoles"
+		},
+		"delete": "Eliminar",
+		"deleting": "Eliminando...",
+		"description": "Descripción",
+		"deselectAll": "Deseleccionar todo",
+		"details": "Detalles",
+		"download": "Descargar",
+		"duplicate": "Duplicar",
+		"edit": "Editar",
+		"enabled": "Habilitado",
+		"error": "Error",
+		"error-occurred": "Ocurrió un error",
+		"gender": {
+			"female": "Femenino",
+			"male": "Masculino",
+			"other": "Otro"
+		},
+		"goToDashboard": "Ir al panel de control",
+		"inactive": "Inactivo",
+		"label": "Etiqueta",
+		"loading": "Cargando...",
+		"loadMore": "Cargar más",
+		"months": {
+			"april": "Abril",
+			"august": "Agosto",
+			"december": "Diciembre",
+			"february": "Febrero",
+			"january": "Enero",
+			"july": "Julio",
+			"june": "Junio",
+			"march": "Marzo",
+			"may": "Mayo",
+			"november": "Noviembre",
+			"october": "Octubre",
+			"september": "Septiembre"
+		},
+		"more": "más",
+		"moreActions": "Más acciones",
+		"moveDown": "Bajar",
+		"moveUp": "Mover hacia arriba",
+		"name": "Nombre",
+		"new": "Nuevo",
+		"next": "Siguiente",
+		"notApplicable": "N/D",
+		"not-available": "No disponible",
+		"openEnded": "Sin fecha de finalización",
+		"openMenu": "Abrir menú",
+		"optional": "opcional",
+		"or": "O",
+		"previous": "Anterior",
+		"recovering": "Recuperando...",
+		"refresh": "Actualizar",
+		"reject": "Rechazar",
+		"rejecting": "Rechazando…",
+		"remove": "Quitar",
+		"removing": "Eliminando...",
+		"reset": "Restablecer",
+		"retry": "Reintentar",
+		"save": "Guardar",
+		"saveChanges": "Guardar cambios",
+		"saving": "Guardando...",
+		"selectAll": "Seleccionar todo",
+		"selected": "seleccionado",
+		"select-language": "Seleccionar idioma",
+		"set": "conjunto",
+		"sets": "conjuntos",
+		"skip": "Omitir",
+		"start": "Inicio",
+		"status": "Estado",
+		"submitting": "Enviando…",
+		"to": "a",
+		"today": "Hoy",
+		"unexpectedError": "Ocurrió un error inesperado",
+		"unknown": "Desconocido",
+		"unknownEmployee": "Empleado desconocido",
+		"unknownTeam": "Equipo desconocido",
+		"unnamed": "Sin nombre",
+		"uploading": "Subiendo...",
+		"validate": "Validar",
+		"validationError": "Error de validación",
+		"weekdays": {
+			"fr": "Vi",
+			"fri": "Vie",
+			"mo": "Lu",
+			"mon": "Lun",
+			"sa": "Sa",
+			"sat": "Sáb",
+			"su": "Do",
+			"sun": "Dom",
+			"th": "Ju",
+			"thu": "Jue",
+			"tu": "Ma",
+			"tue": "Mar",
+			"we": "Mi",
+			"wed": "Mié"
+		},
+		"adding": "Adding...",
+		"refreshing": "Refreshing...",
+		"never": "Never",
+		"pending": "Pending",
+		"present": "Present",
+		"current": "Current",
+		"update": "Update"
+	},
+	"employeeSelect": {
+		"countSelected": "{count} empleados seleccionados",
+		"countWithMore": "{count} empleados (+{more} más)",
+		"noEmployeesFound": "No se encontraron empleados",
+		"role": "Rol",
+		"searchPlaceholder": "Buscar por nombre, correo electrónico o puesto...",
+		"selected": "{count} seleccionado(s)",
+		"selectEmployee": "Seleccionar empleado",
+		"selectEmployees": "Seleccionar empleados",
+		"selectMultipleEmployees": "Elija uno o más empleados de la lista",
+		"selectOneEmployee": "Elija un empleado de la lista",
+		"status": "Estado",
+		"team": "Equipo",
+		"totalEmployees": "{count} empleados",
+		"tryDifferentSearch": "Intente ajustar su búsqueda o filtros"
+	},
+	"errors": {
+		"failedToLoad": "Error al cargar los datos",
+		"noEmployee": {
+			"contactAdmin": "Contactar con el administrador",
+			"createOrg": "Crear organización",
+			"description": "Necesita un perfil de empleado para ${feature}. Por favor cree una organización o contacte a su administrador.",
+			"emailBody": "Hola,\n\nnecesito que se configure un perfil de empleado para acceder a las funciones de la plataforma. ¿Podría ayudarme con esto?\n\n¡Gracias!",
+			"emailSubject": "Configuración del perfil de empleado requerida",
+			"helpText": "Si fue invitado a una organización, pida a su administrador que configure su perfil de empleado.",
+			"title": "Perfil de empleado requerido"
+		},
+		"noOrganization": {
+			"createOrg": "Crear organización",
+			"description": "Aún no forma parte de ninguna organización. Cree una para comenzar o espere una invitación.",
+			"title": "No se encontró organización",
+			"waiting": "¿Esperando una invitación?",
+			"waitingDesc": "Su administrador le enviará un correo de invitación. Revise su bandeja de entrada y carpeta de spam."
+		},
+		"unexpected": {
+			"digest": "Referencia: {digest}"
+		}
+	},
+	"generic": {
+		"done": "Hecho",
+		"submit": "Enviar"
+	},
+	"header": {
+		"clock-in": "Fichar entrada",
+		"clock-out": "Fichar salida"
+	},
+	"info": {
+		"back-to-login": "Volver al inicio de sesión"
+	},
+	"today": {
+		"approvals": {
+			"approve": "Approve",
+			"approveLabel": "Approve {title}",
+			"description": "Requests waiting for a manager decision.",
+			"empty": "No approvals are waiting.",
+			"openInbox": "Open inbox",
+			"pendingAriaLabel": "Pending approvals",
+			"reject": "Reject",
+			"rejectLabel": "Reject {title}",
+			"title": "Approvals",
+			"toast": {
+				"approveError": "Unable to approve request",
+				"approved": "Request approved",
+				"rejectError": "Unable to reject request",
+				"rejected": "Request rejected"
+			}
+		},
+		"briefing": {
+			"badge": "Today",
+			"description": "Review the items that need action today, then move directly into the right workflow.",
+			"needsAction": {
+				"description": "Start here for the most urgent operational follow-up.",
+				"empty": "All clear. No manager action is needed right now.",
+				"title": "Needs Action"
+			},
+			"sections": {
+				"empty": "No issues detected."
+			},
+			"severity": {
+				"critical": "Critical",
+				"high": "High",
+				"info": "Info",
+				"warning": "Warning"
+			},
+			"summary": {
+				"attendanceExceptions": {
+					"description": "Published shifts needing attention.",
+					"title": "Clock-in exceptions"
+				},
+				"coverageRisks": {
+					"description": "Minimum staffing risks for today.",
+					"title": "Coverage risks"
+				},
+				"criticalIssues": {
+					"description": "Highest-priority items across today.",
+					"title": "Critical issues"
+				},
+				"openApprovals": {
+					"description": "Requests waiting for a decision.",
+					"title": "Open approvals"
+				},
+				"overtimeWarnings": {
+					"description": "Employees nearing overtime thresholds.",
+					"title": "Overtime warnings"
+				},
+				"payrollIssues": {
+					"description": "Setup gaps before export readiness.",
+					"title": "Payroll issues"
+				}
+			},
+			"summaryAriaLabel": "Today summary",
+			"supportingSectionsAriaLabel": "Supporting sections",
+			"title": "Manager Daily Briefing",
+			"updatedAt": "{date} - Updated {time}"
+		}
+	},
+	"nav": {
+		"absences": "Ausencias",
+		"approvals": "Aprobaciones",
+		"calendar": "Calendario",
+		"compliance": "Cumplimiento",
+		"dashboard": "Tablero",
+		"feedback": "Comentarios",
+		"get-help": "Obtener Ayuda",
+		"my-requests": "Mis solicitudes",
+		"org-explorer": "Explorador de la organización",
+		"platform-admin": "Administrador de plataforma",
+		"reports": "Informes",
+		"scheduling": "Programación",
+		"settings": "Configuración",
+		"team": "Equipo",
+		"teamAbsences": "Ausencias del equipo",
+		"team-label": "Equipo",
+		"time-tracking": "Seguimiento de Tiempo",
+		"travel-expenses": "Gastos de viaje"
+	},
+	"notifications": {
+		"actions": {
+			"deleteAll": "Eliminar todo",
+			"markAllRead": "Marcar todo como leído",
+			"markAsRead": "Marcar como leído",
+			"markRead": "Marcar como leído",
+			"settings": "Configuración de notificaciones",
+			"viewAll": "Ver todas las notificaciones"
+		},
+		"description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
+		"empty": {
+			"description": "¡Estás al día! Las nuevas notificaciones aparecerán aquí.",
+			"inboxDescription": "Estás al día. Las nuevas actualizaciones aparecerán aquí.",
+			"noMatchesDescription": "Ajusta la búsqueda o el filtro de lectura para ampliar esta vista de bandeja de entrada.",
+			"noMatchesTitle": "No hay notificaciones que coincidan",
+			"title": "No hay notificaciones",
+			"unreadDescription": "Estás al día. Las nuevas actualizaciones no leídas aparecerán aquí.",
+			"unreadTitle": "No hay notificaciones no leídas"
+		},
+		"error": {
+			"title": "No se pudieron cargar las notificaciones"
+		},
+		"filters": {
+			"all": "Todas",
+			"ariaLabel": "Filtrar notificaciones por estado de lectura",
+			"read": "Leídas",
+			"unread": "No leídas"
+		},
+		"preferences": {
+			"categories": {
+				"absences": {
+					"description": "Notifications about absence requests",
+					"title": "Absences"
+				},
+				"approvals": {
+					"description": "Notifications about approval requests and their status",
+					"title": "Approvals"
+				},
+				"reminders": {
+					"description": "Helpful reminders and alerts",
+					"title": "Reminders"
+				},
+				"scheduling": {
+					"description": "Notifications about shift assignments and swaps",
+					"title": "Shift Scheduling"
+				},
+				"security": {
+					"description": "Important security notifications",
+					"title": "Security"
+				},
+				"team": {
+					"description": "Notifications about team membership changes",
+					"title": "Team"
+				},
+				"time": {
+					"description": "Notifications about time tracking corrections",
+					"title": "Time Corrections"
+				}
+			},
+			"channels": {
+				"discord": {
+					"description": "Discord bot notifications",
+					"label": "Discord"
+				},
+				"email": {
+					"description": "Send email notifications",
+					"label": "Email"
+				},
+				"in_app": {
+					"description": "Show in notification bell",
+					"label": "In-App"
+				},
+				"push": {
+					"description": "Browser push notifications",
+					"label": "Push"
+				},
+				"slack": {
+					"description": "Slack bot notifications",
+					"label": "Slack"
+				},
+				"teams": {
+					"description": "Microsoft Teams notifications",
+					"label": "Teams"
+				},
+				"telegram": {
+					"description": "Telegram bot notifications",
+					"label": "Telegram"
+				}
+			},
+			"disabled": "Notification disabled",
+			"enabled": "Notification enabled",
+			"loadFailed": "Unable to load notification preferences",
+			"permissionModal": {
+				"benefits": {
+					"pendingApprovals": "Receive alerts for pending approval requests",
+					"requestUpdates": "Get notified when your requests are approved or rejected",
+					"teamSecurity": "Stay informed about team and security updates"
+				},
+				"description": "Enable push notifications to receive instant updates about approvals, time corrections, and important team changes - even when you're not using the app.",
+				"enable": "Enable Notifications",
+				"notNow": "Not Now",
+				"title": "Stay Updated"
+			},
+			"push": {
+				"blockedDescription": "Push notifications are blocked by your browser. To enable them, you need to update your browser settings.",
+				"blockedHelp": "Click the lock icon in your browser's address bar and allow notifications for this site, then refresh the page.",
+				"blockedTitle": "Push Notifications Blocked",
+				"enableButton": "Enable Push Notifications",
+				"enableDescription": "Get notified instantly even when you're not using the app",
+				"enableFailedToast": "Could not enable push notifications",
+				"enableTitle": "Enable Push Notifications",
+				"enabledIndicator": "Push notifications are enabled",
+				"enabledToast": "Push notifications enabled",
+				"enabledToastDescription": "You will now receive browser push notifications",
+				"errorToast": "Push notification error"
+			},
+			"toggleAria": "{channel} notifications for {type}",
+			"types": {},
+			"updateFailed": "Failed to update preference"
+		},
+		"search": {
+			"ariaLabel": "Buscar notificaciones",
+			"placeholder": "Buscar notificaciones..."
+		},
+		"selection": {
+			"selectAll": "Seleccionar todas las visibles",
+			"selectAllAria": "Seleccionar todas las notificaciones visibles",
+			"selectNamedAria": "Seleccionar {title}",
+			"visibleSelected": "{count} visibles seleccionadas"
+		},
+		"timeline": {
+			"earlier": "Anterior",
+			"today": "Hoy",
+			"yesterday": "Ayer"
+		},
+		"title": "Notificaciones",
+		"toasts": {
+			"deleted": "{count} notificaciones eliminadas",
+			"deleteFailed": "Error al eliminar las notificaciones",
+			"markedRead": "{count} notificaciones marcadas como leídas",
+			"markReadFailed": "Error al marcar las notificaciones como leídas"
+		},
+		"unreadBadge": "{count} sin leer"
+	},
+	"offline": {
+		"banner": {
+			"offline": "Estás sin conexión",
+			"offlineWithPending": "Sin conexión - {count} evento(s) pendiente(s)",
+			"pending": "{count} evento(s) pendiente(s) de sincronización",
+			"retry": "Reintentar",
+			"syncing": "Sincronizando {count} evento(s)..."
+		}
+	},
+	"roles": {
+		"admin": "Administrador",
+		"employee": "Empleado",
+		"manager": "Gerente"
+	},
+	"presence": {
+		"clockedIn": "Fichado",
+		"clockedOut": "Salida registrada"
+	},
+	"status": {
+		"active": "Activo",
+		"inactive": "Inactivo"
+	},
+	"table": {
+		"clearFilters": "Limpiar filtros",
+		"clearSort": "Limpiar orden",
+		"description": "Mostrando el total de visitantes de los últimos 6 meses. Esto es solo un texto aleatorio para probar el diseño. Abarca varias líneas y debería ajustarse automáticamente.",
+		"goToFirstPage": "Ir a la primera página",
+		"goToLastPage": "Ir a la última página",
+		"goToNextPage": "Ir a la página siguiente",
+		"goToPreviousPage": "Ir a la página anterior",
+		"header": "Encabezado",
+		"limit": "Límite",
+		"noResults": "Sin resultados.",
+		"pageOfPages": "Página {current} de {total}",
+		"reviewer": "Revisor",
+		"rowsPerPage": "Filas por página",
+		"searchPlaceholder": "Buscar...",
+		"selectedOfTotal": "{selected} de {total} fila(s) seleccionada(s)",
+		"select-reviewer": "Seleccionar un revisor",
+		"select-status": "Seleccionar un estado",
+		"select-type": "Seleccionar un tipo",
+		"showing-visitors": "Mostrando total de visitantes de los últimos 6 meses",
+		"sortAscending": "Ascendente",
+		"sortDescending": "Descendente",
+		"status": "Estado",
+		"status-options": {
+			"done": "Hecho",
+			"in-progress": "En Progreso",
+			"not-started": "No Iniciado"
+		},
+		"target": "Objetivo",
+		"totalRows": "{total} fila(s)",
+		"trending-up": "Tendencia alcista de 5.2% este mes",
+		"type": "Tipo",
+		"type-options": {
+			"capabilities": "Capacidades",
+			"cover-page": "Portada",
+			"design": "Diseño",
+			"executive-summary": "Resumen Ejecutivo",
+			"focus-documents": "Documentos de Enfoque",
+			"narrative": "Narrativa",
+			"table-of-contents": "Tabla de Contenidos",
+			"technical-approach": "Enfoque Técnico"
+		}
+	},
+	"time": {
+		"am": "AM",
+		"hoursAndMinutes": "{hours}h {minutes}m",
+		"hoursOnly": "{hours}h",
+		"pm": "PM"
+	},
+	"user": {
+		"language": "Idioma",
+		"logging-out": "Cerrando sesión...",
+		"log-out": "Cerrar Sesión",
+		"profile": "Perfil",
+		"theme": "Tema",
+		"theme-dark": "Oscuro",
+		"theme-light": "Claro",
+		"theme-toggle": "Cambiar tema",
+		"theme-system": "Sistema",
+		"time-settings": "Ajustes de tiempo"
+	},
+	"userAvatar": {
+		"alt": "Avatar de usuario"
+	},
+	"validation": {
+		"first-name-required": "El nombre es obligatorio",
+		"invalid-email": "Dirección de correo electrónico inválida",
+		"invalid-password": "Contraseña inválida",
+		"last-name-required": "El apellido es obligatorio",
+		"password-required": "La contraseña es obligatoria"
+	}
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import {
@@ -33,6 +34,7 @@ export function useShiftSchedulerData({
 	dateRange,
 	isManager,
 }: UseShiftSchedulerDataOptions) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	const { data: shiftsResult, isLoading: shiftsLoading } = useQuery({
@@ -83,11 +85,18 @@ export function useShiftSchedulerData({
 		},
 		onSuccess: (result) => {
 			if (result.metadata.hasOverlap) {
-				toast.warning("Shift saved with overlap warning", {
-					description: `This shift overlaps with ${result.metadata.overlappingShifts.length} other shift(s)`,
-				});
+				toast.warning(
+					t("scheduling.scheduler.shiftUpdate.overlapWarning", "Shift saved with overlap warning"),
+					{
+						description: t(
+							"scheduling.scheduler.shiftUpdate.overlapDescription",
+							"This shift overlaps with {count} other shift(s)",
+							{ count: result.metadata.overlappingShifts.length },
+						),
+					},
+				);
 			} else {
-				toast.success("Shift updated");
+				toast.success(t("scheduling.scheduler.shiftUpdate.updated", "Shift updated"));
 			}
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 			queryClient.invalidateQueries({
@@ -95,7 +104,9 @@ export function useShiftSchedulerData({
 			});
 		},
 		onError: (error) => {
-			toast.error("Failed to update shift", { description: error.message });
+			toast.error(t("scheduling.scheduler.shiftUpdate.failed", "Failed to update shift"), {
+				description: error.message,
+			});
 		},
 	});
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
@@ -36,13 +37,19 @@ export function ShiftDialog({
 	defaultDate,
 	organizationId,
 }: ShiftDialogProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
 	const isEditing = !!shift;
-	const title = isEditing ? "Edit Shift" : "Create Shift";
+	const title = isEditing
+		? t("scheduling:scheduling.shiftDialog.editTitle", "Edit Shift")
+		: t("scheduling:scheduling.shiftDialog.createTitle", "Create Shift");
 	const description = isEditing
-		? "Update the shift details below"
-		: "Fill in the details for the new shift";
+		? t("scheduling:scheduling.shiftDialog.editDescription", "Update the shift details below")
+		: t(
+				"scheduling:scheduling.shiftDialog.createDescription",
+				"Fill in the details for the new shift",
+			);
 
 	const upsertMutation = useMutation({
 		mutationFn: async (values: ShiftDialogFormValues) => {
@@ -79,17 +86,26 @@ export function ShiftDialog({
 			}
 
 			if (warnings.length > 0) {
-				toast.warning("Shift saved with warnings", {
-					description: warnings.join(". "),
-				});
+				toast.warning(
+					t("scheduling:scheduling.shiftDialog.savedWithWarnings", "Shift saved with warnings"),
+					{
+						description: warnings.join(". "),
+					},
+				);
 			} else {
-				toast.success(isEditing ? "Shift updated" : "Shift created");
+				toast.success(
+					isEditing
+						? t("scheduling:scheduling.shiftDialog.updated", "Shift updated")
+						: t("scheduling:scheduling.shiftDialog.created", "Shift created"),
+				);
 			}
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 			onOpenChange(false);
 		},
 		onError: (error) => {
-			toast.error("Failed to save shift", { description: error.message });
+			toast.error(t("scheduling:scheduling.shiftDialog.saveFailed", "Failed to save shift"), {
+				description: error.message,
+			});
 		},
 	});
 
@@ -120,12 +136,14 @@ export function ShiftDialog({
 			return result.data;
 		},
 		onSuccess: () => {
-			toast.success("Shift deleted");
+			toast.success(t("scheduling:scheduling.shiftDialog.deleted", "Shift deleted"));
 			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 			onOpenChange(false);
 		},
 		onError: (error) => {
-			toast.error("Failed to delete shift", { description: error.message });
+			toast.error(t("scheduling:scheduling.shiftDialog.deleteFailed", "Failed to delete shift"), {
+				description: error.message,
+			});
 		},
 	});
 

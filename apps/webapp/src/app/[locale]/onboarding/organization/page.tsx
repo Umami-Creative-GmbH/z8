@@ -122,7 +122,7 @@ export default function OrganizationPage() {
 			router.push("/onboarding/profile");
 		} else {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip organization setup");
+			toast.error(result.error || t("onboarding.organization.skipError", "Failed to skip organization setup"));
 		}
 	}
 

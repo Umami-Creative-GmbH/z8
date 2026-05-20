@@ -54,13 +54,15 @@ export function DayDetails({ selectedDate, events }: DayDetailsProps) {
 							<div key={event.id} className="space-y-1">
 								<div className="flex items-center gap-2">
 									<div className="size-2 rounded-full" style={{ backgroundColor: event.color }} />
-									<span className="text-sm font-medium">{event.title}</span>
+									<span className="text-sm font-medium">{getEventTitle(event, t)}</span>
 									<Badge variant="secondary" className="text-xs">
 										{event.type}
 									</Badge>
 								</div>
 								{event.description && (
-									<p className="text-xs text-muted-foreground pl-4">{event.description}</p>
+									<p className="text-xs text-muted-foreground pl-4">
+										{getEventDescription(event, t)}
+									</p>
 								)}
 								{event.metadata && Object.keys(event.metadata).length > 0 && (
 									<div className="text-xs text-muted-foreground pl-4 space-y-1">
@@ -116,4 +118,32 @@ export function DayDetails({ selectedDate, events }: DayDetailsProps) {
 			</CardContent>
 		</Card>
 	);
+}
+
+function getEventTitle(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {
+	return event.titleKey ? t(event.titleKey, event.title, getEventTranslationParams(event)) : event.title;
+}
+
+function getEventDescription(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {
+	if (!event.description) return "";
+	return event.descriptionKey
+		? t(event.descriptionKey, event.description, getEventTranslationParams(event))
+		: event.description;
+}
+
+function getEventTranslationParams(event: CalendarEvent) {
+	return {
+		count: Number(event.metadata?.periodCount ?? 0),
+		duration: formatDurationParam(event.metadata?.durationMinutes),
+	};
+}
+
+function formatDurationParam(value: unknown) {
+	if (typeof value !== "number") return "";
+	const minutes = Math.round(value);
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	if (hours === 0) return `${mins}m`;
+	if (mins === 0) return `${hours}h`;
+	return `${hours}h ${mins}m`;
 }

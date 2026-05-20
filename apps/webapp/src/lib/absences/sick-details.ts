@@ -1,11 +1,15 @@
 import type { SickDetail } from "./types";
 
 export const sickDetailOptions = [
-	{ value: "child_sick", label: "Child sick" },
-	{ value: "with_certificate", label: "With certificate" },
-	{ value: "without_certificate", label: "Without certificate" },
-	{ value: "other", label: "Other" },
-] satisfies Array<{ value: SickDetail; label: string }>;
+	{ value: "child_sick", label: "Child sick", labelKey: "absences.sickDetail.child_sick" },
+	{ value: "with_certificate", label: "With certificate", labelKey: "absences.sickDetail.with_certificate" },
+	{
+		value: "without_certificate",
+		label: "Without certificate",
+		labelKey: "absences.sickDetail.without_certificate",
+	},
+	{ value: "other", label: "Other", labelKey: "absences.sickDetail.other" },
+] satisfies Array<{ value: SickDetail; label: string; labelKey: string }>;
 
 const sickDetailLabels = new Map<SickDetail, string>(
 	sickDetailOptions.map((option) => [option.value, option.label]),
@@ -13,6 +17,10 @@ const sickDetailLabels = new Map<SickDetail, string>(
 
 export function getSickDetailLabel(value: SickDetail): string {
 	return sickDetailLabels.get(value) ?? value;
+}
+
+export function getSickDetailLabelKey(value: SickDetail): string {
+	return sickDetailOptions.find((option) => option.value === value)?.labelKey ?? value;
 }
 
 export function validateSickDetailForCategory(input: {

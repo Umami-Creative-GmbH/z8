@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ function areDateRangesEqual(left: DateRange, right: DateRange) {
 }
 
 export default function TeamPerformancePage() {
+	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -104,7 +106,7 @@ export default function TeamPerformancePage() {
 				}
 
 				console.error("Failed to load team performance data:", error);
-				toast.error("Failed to load team performance data");
+				toast.error(t("analytics.teamPerformance.errors.loadData", "Failed to load team performance data"));
 			} finally {
 				if (isCurrent) {
 					setLoading(false);
@@ -144,17 +146,20 @@ export default function TeamPerformancePage() {
 					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 				) : (
 					<p className="text-sm text-muted-foreground">
-						Loading organization settings before enabling presets.
+						{t(
+							"analytics.common.loadingOrganizationSettings",
+							"Loading organization settings before enabling presets.",
+						)}
 					</p>
 				)}
 				<ExportButton
 					data={{
 						data: teams,
 						headers: [
-							{ key: "teamName", label: "Team" },
-							{ key: "totalHours", label: "Total Hours" },
-							{ key: "avgHoursPerEmployee", label: "Avg per Employee" },
-							{ key: "employeeCount", label: "Employee Count" },
+							{ key: "teamName", label: t("analytics.common.team", "Team") },
+							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
+							{ key: "avgHoursPerEmployee", label: t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee") },
+							{ key: "employeeCount", label: t("analytics.teamPerformance.employeeCount", "Employee Count") },
 						],
 						filename: `team-performance-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
@@ -173,15 +178,15 @@ export default function TeamPerformancePage() {
 					{/* Team Comparison Chart */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Team Comparison</CardTitle>
-							<CardDescription>Total work hours by team for the selected period</CardDescription>
+							<CardTitle>{t("analytics.teamPerformance.comparison.title", "Team Comparison")}</CardTitle>
+							<CardDescription>{t("analytics.teamPerformance.comparison.description", "Total work hours by team for the selected period")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{teamComparisonData.length > 0 ? (
 								<ChartContainer
 									config={{
 										hours: {
-											label: "Hours",
+										label: t("analytics.common.hours", "Hours"),
 											color: "hsl(var(--primary))",
 										},
 									}}
@@ -197,7 +202,7 @@ export default function TeamPerformancePage() {
 								</ChartContainer>
 							) : (
 								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									No data available
+									{t("analytics.common.noDataAvailable", "No data available")}
 								</div>
 							)}
 						</CardContent>
@@ -206,23 +211,23 @@ export default function TeamPerformancePage() {
 					{/* Team Performance Table */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Team Performance Details</CardTitle>
-							<CardDescription>Breakdown of work hours by team and employee</CardDescription>
+							<CardTitle>{t("analytics.teamPerformance.details.title", "Team Performance Details")}</CardTitle>
+							<CardDescription>{t("analytics.teamPerformance.details.description", "Breakdown of work hours by team and employee")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{teams.length === 0 ? (
 								<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-									No data available for the selected period
+									{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
 								</div>
 							) : (
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>Team</TableHead>
-											<TableHead className="text-right">Total Hours</TableHead>
-											<TableHead className="text-right">Avg per Employee</TableHead>
-											<TableHead className="text-right">Employee Count</TableHead>
-											<TableHead>Status</TableHead>
+										<TableHead>{t("analytics.common.team", "Team")}</TableHead>
+										<TableHead className="text-right">{t("analytics.common.totalHours", "Total Hours")}</TableHead>
+										<TableHead className="text-right">{t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee")}</TableHead>
+										<TableHead className="text-right">{t("analytics.teamPerformance.employeeCount", "Employee Count")}</TableHead>
+										<TableHead>{t("common.status", "Status")}</TableHead>
 										</TableRow>
 									</TableHeader>
 									<TableBody>
@@ -235,7 +240,7 @@ export default function TeamPerformancePage() {
 												</TableCell>
 												<TableCell className="text-right">{team.employeeCount}</TableCell>
 												<TableCell>
-													<Badge variant="outline">On Track</Badge>
+											<Badge variant="outline">{t("analytics.teamPerformance.onTrack", "On Track")}</Badge>
 												</TableCell>
 											</TableRow>
 										))}
@@ -248,19 +253,19 @@ export default function TeamPerformancePage() {
 					{/* Overtime/Undertime Breakdown */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Overtime & Undertime</CardTitle>
-							<CardDescription>Hours variance from expected work hours</CardDescription>
+							<CardTitle>{t("analytics.teamPerformance.variance.title", "Overtime & Undertime")}</CardTitle>
+							<CardDescription>{t("analytics.teamPerformance.variance.description", "Hours variance from expected work hours")}</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{overtimeData.length > 0 ? (
 								<ChartContainer
 									config={{
 										overtime: {
-											label: "Overtime",
+										label: t("analytics.common.overtime", "Overtime"),
 											color: "hsl(var(--chart-1))",
 										},
 										undertime: {
-											label: "Undertime",
+										label: t("analytics.common.undertime", "Undertime"),
 											color: "hsl(var(--chart-2))",
 										},
 									}}
@@ -277,7 +282,7 @@ export default function TeamPerformancePage() {
 								</ChartContainer>
 							) : (
 								<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-									No variance data available
+									{t("analytics.teamPerformance.variance.empty", "No variance data available")}
 								</div>
 							)}
 						</CardContent>

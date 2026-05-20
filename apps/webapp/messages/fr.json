@@ -1,7 +1,62 @@
 {
   "appSearch": {
+    "description": "Search pages, settings, people, and teams",
+    "empty": "No results found.",
+    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+    "placeholder": "Search pages, settings, people, and teams…",
+    "search": "Search",
     "teamAbsences": {
       "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
+    }
+  },
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Enregistrer une absence pour {name}"
+      },
+      "empty": {
+        "description": "Ajustez les filtres ou la recherche pour trouver des membres de l'équipe.",
+        "label": "Aucun employé trouvé",
+        "title": "Aucun employé trouvé"
+      },
+      "filters": {
+        "allTeams": "Toutes les équipes",
+        "searchLabel": "Rechercher des employés",
+        "searchPlaceholder": "Rechercher des employés…",
+        "searchSubmit": "Rechercher",
+        "teamLabel": "Filtrer par équipe",
+        "teamPlaceholder": "Équipe",
+        "yearLabel": "Filtrer par année",
+        "yearPlaceholder": "Année"
+      },
+      "pagination": {
+        "next": "Suivant",
+        "nextLabel": "Page suivante",
+        "page": "Page {page} sur {pageCount}",
+        "previous": "Précédent",
+        "previousLabel": "Page précédente",
+        "showing": "Affichage de {firstItem} à {lastItem} sur {total}"
+      },
+      "recordDialog": {
+        "required": "{label} est requis",
+        "titleForEmployee": "Enregistrer une absence pour {name}"
+      },
+      "sort": {
+        "ascending": "croissant",
+        "by": "Trier par {label}",
+        "byWithDirection": "Trier par {label} ({direction})",
+        "descending": "décroissant"
+      },
+      "table": {
+        "actions": "Actions",
+        "allowance": "Droits",
+        "employee": "Employé",
+        "left": "Restant",
+        "pending": "En attente",
+        "sick": "Maladie",
+        "teamOrPosition": "Équipe ou poste",
+        "used": "Utilisé"
+      }
     }
   },
   "surcharges": {

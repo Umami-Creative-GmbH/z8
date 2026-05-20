@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import {
 	ActionPanel,
@@ -56,6 +57,7 @@ export function DomainAuthConfigDialog({
 	organizationId: _organizationId,
 	onSave,
 }: DomainAuthConfigDialogProps) {
+	const { t } = useTranslate();
 	const [config, setConfig] = useState<AuthConfig>(() => getInitialConfig(domain));
 	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
@@ -104,10 +106,15 @@ export function DomainAuthConfigDialog({
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>Auth Configuration</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.enterprise.domains.authConfigTitle", "Auth Configuration")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
-						Configure which authentication methods are available for users signing in via{" "}
-						{domain.domain}
+						{t(
+							"settings.enterprise.domains.authConfigDescription",
+							"Configure which authentication methods are available for users signing in via {domain}",
+							{ domain: domain.domain },
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
@@ -115,9 +122,14 @@ export function DomainAuthConfigDialog({
 					{/* Email/Password */}
 					<div className="flex items-center justify-between">
 						<div className="space-y-0.5">
-							<Label htmlFor="email-password">Email & Password</Label>
+							<Label htmlFor="email-password">
+								{t("settings.enterprise.domains.emailPassword", "Email & Password")}
+							</Label>
 							<p className="text-sm text-muted-foreground">
-								Allow users to sign in with email and password
+								{t(
+									"settings.enterprise.domains.emailPasswordHelp",
+									"Allow users to sign in with email and password",
+								)}
 							</p>
 						</div>
 						<Switch
@@ -134,9 +146,12 @@ export function DomainAuthConfigDialog({
 					{/* Social Providers */}
 					<div className="space-y-3">
 						<div>
-							<Label>Social Providers</Label>
+							<Label>{t("settings.enterprise.domains.socialProviders", "Social Providers")}</Label>
 							<p className="text-sm text-muted-foreground">
-								Enable social login options for this domain
+								{t(
+									"settings.enterprise.domains.socialProvidersHelp",
+									"Enable social login options for this domain",
+								)}
 							</p>
 						</div>
 						<div className="grid grid-cols-2 gap-3">
@@ -162,8 +177,12 @@ export function DomainAuthConfigDialog({
 					{/* SSO */}
 					<div className="flex items-center justify-between">
 						<div className="space-y-0.5">
-							<Label htmlFor="sso">Single Sign-On (SSO)</Label>
-							<p className="text-sm text-muted-foreground">Allow OIDC-based enterprise sign-in</p>
+							<Label htmlFor="sso">
+								{t("settings.enterprise.domains.sso", "Single Sign-On (SSO)")}
+							</Label>
+							<p className="text-sm text-muted-foreground">
+								{t("settings.enterprise.domains.ssoHelp", "Allow OIDC-based enterprise sign-in")}
+							</p>
 						</div>
 						<Switch
 							id="sso"
@@ -177,9 +196,12 @@ export function DomainAuthConfigDialog({
 					{/* Passkey */}
 					<div className="flex items-center justify-between">
 						<div className="space-y-0.5">
-							<Label htmlFor="passkey">Passkey</Label>
+							<Label htmlFor="passkey">{t("settings.enterprise.domains.passkey", "Passkey")}</Label>
 							<p className="text-sm text-muted-foreground">
-								Allow passwordless sign-in with passkeys
+								{t(
+									"settings.enterprise.domains.passkeyHelp",
+									"Allow passwordless sign-in with passkeys",
+								)}
 							</p>
 						</div>
 						<Switch
@@ -196,14 +218,19 @@ export function DomainAuthConfigDialog({
 					{/* Cloudflare Turnstile */}
 					<div className="space-y-3">
 						<div>
-							<Label>Cloudflare Turnstile</Label>
+							<Label>{t("settings.enterprise.domains.turnstile", "Cloudflare Turnstile")}</Label>
 							<p className="text-sm text-muted-foreground">
-								Bot protection for auth forms. Required for enterprise domains.
+								{t(
+									"settings.enterprise.domains.turnstileHelp",
+									"Bot protection for auth forms. Required for enterprise domains.",
+								)}
 							</p>
 						</div>
 						<div className="space-y-3">
 							<div className="space-y-1.5">
-								<Label htmlFor="turnstile-site-key">Site Key</Label>
+								<Label htmlFor="turnstile-site-key">
+									{t("settings.enterprise.domains.siteKey", "Site Key")}
+								</Label>
 								<Input
 									id="turnstile-site-key"
 									name="turnstileSiteKey"
@@ -219,7 +246,9 @@ export function DomainAuthConfigDialog({
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<Label htmlFor="turnstile-secret-key">Secret Key</Label>
+								<Label htmlFor="turnstile-secret-key">
+									{t("settings.enterprise.domains.secretKey", "Secret Key")}
+								</Label>
 								<Input
 									id="turnstile-secret-key"
 									name="turnstileSecretKey"
@@ -227,12 +256,22 @@ export function DomainAuthConfigDialog({
 									type="password"
 									value={turnstileSecretKey}
 									onChange={(e) => setTurnstileSecretKey(e.target.value)}
-									placeholder={config.turnstileSiteKey ? "••••••••••••••••" : "Enter secret key"}
+									placeholder={
+										config.turnstileSiteKey
+											? "••••••••••••••••"
+											: t("settings.enterprise.domains.secretKeyPlaceholder", "Enter secret key")
+									}
 								/>
 								<p className="text-xs text-muted-foreground">
 									{config.turnstileSiteKey
-										? "Leave empty to keep existing secret key"
-										: "Required when setting a site key"}
+										? t(
+												"settings.enterprise.domains.keepExistingSecretKey",
+												"Leave empty to keep existing secret key",
+											)
+										: t(
+												"settings.enterprise.domains.secretKeyRequired",
+												"Required when setting a site key",
+											)}
 								</p>
 							</div>
 						</div>
@@ -242,10 +281,14 @@ export function DomainAuthConfigDialog({
 
 					<div className="space-y-3">
 						<div>
-							<Label htmlFor="cookie-consent-script">Cookie Consent Script</Label>
+							<Label htmlFor="cookie-consent-script">
+								{t("settings.enterprise.domains.cookieConsentScript", "Cookie Consent Script")}
+							</Label>
 							<p className="text-sm text-muted-foreground">
-								Injected on authentication pages for this custom domain only. Leave empty to
-								disable.
+								{t(
+									"settings.enterprise.domains.cookieConsentScriptHelp",
+									"Injected on authentication pages for this custom domain only. Leave empty to disable.",
+								)}
 							</p>
 						</div>
 						<Textarea
@@ -270,10 +313,12 @@ export function DomainAuthConfigDialog({
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Cancel
+						{t("common.cancel", "Cancel")}
 					</Button>
 					<Button onClick={handleSave} disabled={isSaving}>
-						{isSaving ? "Saving…" : "Save Configuration"}
+						{isSaving
+							? t("common.saving", "Saving…")
+							: t("settings.enterprise.domains.saveConfiguration", "Save Configuration")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>

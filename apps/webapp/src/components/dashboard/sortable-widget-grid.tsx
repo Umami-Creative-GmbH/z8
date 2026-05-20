@@ -13,6 +13,7 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
+import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useId, useState } from "react";
 import { DashboardWidgetDraggableProvider } from "./dashboard-widget";
 import type { WidgetId } from "./widget-registry";
@@ -32,6 +33,7 @@ interface SortableWidgetGridProps {
  * Uses visibility context to only include actually-rendered widgets in sortable context.
  */
 export function SortableWidgetGrid({ widgetOrder, onReorder, children }: SortableWidgetGridProps) {
+	const { t } = useTranslate();
 	const sortableId = useId();
 	const [activeId, setActiveId] = useState<WidgetId | null>(null);
 
@@ -97,14 +99,18 @@ export function SortableWidgetGrid({ widgetOrder, onReorder, children }: Sortabl
 		>
 			<SortableContext items={sortableItems} strategy={rectSortingStrategy}>
 				<div className="columns-1 @xl/main:columns-2 @5xl/main:columns-3 gap-4 px-4 lg:px-6">
-					<DashboardWidgetDraggableProvider value={false}>{children}</DashboardWidgetDraggableProvider>
+					<DashboardWidgetDraggableProvider value={false}>
+						{children}
+					</DashboardWidgetDraggableProvider>
 				</div>
 			</SortableContext>
 			<DragOverlay dropAnimation={null}>
 				{activeId ? (
 					<div className="opacity-90 scale-[1.02] shadow-2xl rounded-xl bg-card">
 						{/* Placeholder for drag overlay */}
-						<div className="p-6 text-muted-foreground text-center">Moving widget...</div>
+						<div className="p-6 text-muted-foreground text-center">
+							{t("dashboard.widgets.moving", "Moving widget…")}
+						</div>
 					</div>
 				) : null}
 			</DragOverlay>

@@ -209,6 +209,17 @@
       "workPeriod": "Período de trabajo",
       "workPeriodPending": "Pendiente de aprobación"
     },
+    "view": {
+      "day": "Día",
+      "loading": "Cargando calendario…",
+      "month": "Mes",
+      "next": "Siguiente",
+      "previous": "Anterior",
+      "refresh": "Actualizar",
+      "today": "Hoy",
+      "week": "Semana",
+      "year": "Año"
+    },
     "split": {
       "confirm": "Dividir período de trabajo",
       "currentPeriod": "Período de trabajo actual",

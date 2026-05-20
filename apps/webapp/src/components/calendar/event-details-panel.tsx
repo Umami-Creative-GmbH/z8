@@ -332,7 +332,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 				<SheetHeader>
 					<div className="flex items-center gap-2">
 						<div className="size-3 rounded-full" style={{ backgroundColor: event.color }} />
-						<SheetTitle>{event.title}</SheetTitle>
+						<SheetTitle>{getEventTitle(event, t)}</SheetTitle>
 					</div>
 					<SheetDescription className="flex items-center gap-2">
 						<Badge variant="outline">{getEventTypeLabel()}</Badge>
@@ -347,10 +347,38 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 						<span className="text-sm text-muted-foreground">
 							{t("calendar.details.notes", "Notes")}
 						</span>
-						<p className="mt-1 text-sm">{event.description}</p>
+						<p className="mt-1 text-sm">{getEventDescription(event, t)}</p>
 					</div>
 				)}
 			</SheetContent>
 		</Sheet>
 	);
+}
+
+function getEventTitle(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {
+	return event.titleKey ? t(event.titleKey, event.title, getEventTranslationParams(event)) : event.title;
+}
+
+function getEventDescription(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {
+	if (!event.description) return "";
+	return event.descriptionKey
+		? t(event.descriptionKey, event.description, getEventTranslationParams(event))
+		: event.description;
+}
+
+function getEventTranslationParams(event: CalendarEvent) {
+	return {
+		count: Number(event.metadata?.periodCount ?? 0),
+		duration: formatDurationParam(event.metadata?.durationMinutes),
+	};
+}
+
+function formatDurationParam(value: unknown) {
+	if (typeof value !== "number") return "";
+	const minutes = Math.round(value);
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	if (hours === 0) return `${mins}m`;
+	if (mins === 0) return `${hours}h`;
+	return `${hours}h ${mins}m`;
 }

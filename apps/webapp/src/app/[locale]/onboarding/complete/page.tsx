@@ -33,7 +33,7 @@ export default function CompletePage() {
 			const completeResult = await completeOnboarding();
 
 			if (!completeResult.success) {
-				toast.error(completeResult.error || "Failed to complete onboarding");
+				toast.error(completeResult.error || t("onboarding.complete.completeError", "Failed to complete onboarding"));
 				setLoading(false);
 				return;
 			}
@@ -44,14 +44,14 @@ export default function CompletePage() {
 			if (summaryResult.success) {
 				setSummary(summaryResult.data);
 			} else {
-				toast.error(summaryResult.error || "Failed to get onboarding summary");
+				toast.error(summaryResult.error || t("onboarding.complete.summaryError", "Failed to get onboarding summary"));
 			}
 
 			setLoading(false);
 		}
 
 		finishOnboarding();
-	}, []);
+	}, [t]);
 
 	const handleGoToDashboard = () => {
 		router.push("/init");

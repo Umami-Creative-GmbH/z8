@@ -68,6 +68,18 @@
     "timeCorrectionRejected": "Correction de temps rejetée",
     "timeline": "Chronologie",
     "tripDates": "Dates du voyage",
-    "type": "Type"
+    "absenceRequests": "Absence Requests",
+    "absenceRequestsDescription": "Review and approve time-off requests from your team members",
+    "approveActionNotice": "This action will approve the request and notify the employee.",
+    "openInbox": "Open Inbox",
+    "rejectionReasonClearPlaceholder": "Provide a clear reason for rejecting this request...",
+    "rejectionReasonRequired": "Please provide a reason for rejection",
+    "rejectionReasonRequiredLabel": "Reason for rejection *",
+    "timeCorrections": "Time Corrections",
+    "timeCorrectionsDescription": "Review and approve time entry correction requests from your team members",
+    "title": "Approvals",
+    "type": "Type",
+    "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
+    "unifiedInboxBannerTitle": "Try the new Unified Inbox"
   }
 }

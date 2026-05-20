@@ -11,6 +11,7 @@ import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
+import { getTranslate } from "@/tolgee/server";
 
 type Props = {
 	children: ReactNode;
@@ -63,6 +64,7 @@ function TranslatedMeta() {
 
 export default async function LocaleLayout({ children, params }: Props) {
 	const { locale } = await params;
+	const t = await getTranslate();
 
 	return (
 		<html lang={locale} suppressHydrationWarning>
@@ -96,7 +98,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 								minHeight: "100vh",
 							}}
 						>
-							<div>Loading...</div>
+							<div>{t("common.loading", "Loading...")}</div>
 						</div>
 					}
 				>

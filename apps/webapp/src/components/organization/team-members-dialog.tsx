@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconPlus, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
@@ -44,6 +45,7 @@ export function TeamMembersDialog({
 	onOpenChange,
 	canManageMembers,
 }: TeamMembersDialogProps) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
 	const presence = useEmployeeClockStatuses(
@@ -57,16 +59,16 @@ export function TeamMembersDialog({
 			addTeamMember(teamId, employeeId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Member added to team");
+				toast.success(t("organization.teams.members.addSuccess", "Member added to team"));
 				setSelectedEmployeeId("");
 				queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
 			} else {
-				toast.error(result.error || "Failed to add member");
+				toast.error(result.error || t("organization.teams.members.addError", "Failed to add member"));
 			}
 		},
 		onError: () => {
-			toast.error("Failed to add member");
+			toast.error(t("organization.teams.members.addError", "Failed to add member"));
 		},
 	});
 
@@ -76,15 +78,15 @@ export function TeamMembersDialog({
 			removeTeamMember(teamId, employeeId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success("Member removed from team");
+				toast.success(t("organization.teams.members.removeSuccess", "Member removed from team"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
 			} else {
-				toast.error(result.error || "Failed to remove member");
+				toast.error(result.error || t("organization.teams.members.removeError", "Failed to remove member"));
 			}
 		},
 		onError: () => {
-			toast.error("Failed to remove member");
+			toast.error(t("organization.teams.members.removeError", "Failed to remove member"));
 		},
 	});
 
@@ -126,9 +128,9 @@ export function TeamMembersDialog({
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
 						<IconUsers className="size-5" />
-						{team.name} - Team Members
+						{t("organization.teams.members.title", "{teamName} - Team Members", { teamName: team.name })}
 					</ActionPanelTitle>
-					<ActionPanelDescription>Manage who belongs to this team</ActionPanelDescription>
+					<ActionPanelDescription>{t("organization.teams.members.description", "Manage who belongs to this team")}</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<ActionPanelBody className="space-y-6">
@@ -139,7 +141,7 @@ export function TeamMembersDialog({
 								<div className="flex-1">
 									<Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
 										<SelectTrigger>
-											<SelectValue placeholder="Select an employee to add" />
+										<SelectValue placeholder={t("organization.teams.members.selectEmployee", "Select an employee to add")} />
 										</SelectTrigger>
 										<SelectContent>
 											{availableEmployees.map((member) => (
@@ -175,7 +177,7 @@ export function TeamMembersDialog({
 									) : (
 										<>
 											<IconPlus className="mr-2 size-4" />
-											Add
+											{t("common.add", "Add")}
 										</>
 									)}
 								</Button>
@@ -187,15 +189,15 @@ export function TeamMembersDialog({
 					{/* Current Members List */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
-							<h4 className="text-sm font-medium">Current Members ({teamMembers.length})</h4>
+							<h4 className="text-sm font-medium">{t("organization.teams.members.currentMembers", "Current Members ({count})", { count: teamMembers.length })}</h4>
 						</div>
 
 						{teamMembers.length === 0 ? (
 							<div className="text-center py-8 text-muted-foreground">
 								<IconUsers className="size-12 mx-auto mb-2 opacity-50" />
-								<p className="text-sm">No members in this team yet</p>
+								<p className="text-sm">{t("organization.teams.members.empty", "No members in this team yet")}</p>
 								{canManageMembers && (
-									<p className="text-xs mt-1">Add members using the dropdown above</p>
+									<p className="text-xs mt-1">{t("organization.teams.members.emptyHelp", "Add members using the dropdown above")}</p>
 								)}
 							</div>
 						) : (
@@ -246,7 +248,7 @@ export function TeamMembersDialog({
 
 				<ActionPanelFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Close
+					{t("common.close", "Close")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>

@@ -20,6 +20,16 @@ vi.mock("@/hooks/use-push-notifications", () => ({
 	usePushNotifications: vi.fn(),
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [key, value]) => text.replace(`{${key}}`, value),
+				fallback,
+			),
+	}),
+}));
+
 const useNotificationPreferencesMock = vi.mocked(useNotificationPreferences);
 const usePushNotificationsMock = vi.mocked(usePushNotifications);
 

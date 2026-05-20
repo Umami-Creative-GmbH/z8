@@ -161,7 +161,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 			}
 
 			setReviewBatchId(scanResult.data.batchId);
-			toast.success("Import review scan started. Review is required before records are committed.");
+			toast.success(t("settings.clockinImport.review.startSuccess", "Import review scan started. Review is required before records are committed."));
 			setStep("review");
 		} finally {
 			setBusyAction(null);
@@ -242,9 +242,9 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="grid gap-3 sm:grid-cols-3">
-							<PreviewStat label="Employees" value={preview.employees} />
-							<PreviewStat label="Workdays" value={preview.workdays} />
-							<PreviewStat label="Absences" value={preview.absences} />
+							<PreviewStat label={t("settings.clockinImport.preview.employees", "Employees")} value={preview.employees} />
+							<PreviewStat label={t("settings.clockinImport.preview.workdays", "Workdays")} value={preview.workdays} />
+							<PreviewStat label={t("settings.clockinImport.preview.absences", "Absences")} value={preview.absences} />
 						</div>
 						<div className="flex justify-between">
 							<Button variant="outline" onClick={() => setStep("connect")}>
@@ -289,16 +289,16 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									<div>
 										<p className="font-medium">{entry.clockinEmployeeName}</p>
 										<p className="text-sm text-muted-foreground">
-											{entry.clockinEmployeeEmail ?? "No email in Clockin"}
+										{entry.clockinEmployeeEmail ?? t("settings.clockinImport.mapping.noEmail", "No email in Clockin")}
 										</p>
 									</div>
 									<select
 										value={entry.employeeId ?? ""}
-										aria-label={`Map ${entry.clockinEmployeeName}`}
+						aria-label={`${t("settings.clockinImport.mapping.mapEmployee", "Map")} ${entry.clockinEmployeeName}`}
 										onChange={(event) => updateMapping(entry.clockinEmployeeId, event.target.value)}
 										className="h-10 rounded-md border border-input bg-background px-3 text-sm"
 									>
-										<option value="">Skip this employee</option>
+						<option value="">{t("settings.clockinImport.mapping.skipEmployee", "Skip this employee")}</option>
 										{z8Employees.map((employee) => (
 											<option key={employee.id} value={employee.id}>
 												{employee.name} ({employee.email})
@@ -342,7 +342,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									setSelections((current) => ({ ...current, workdays: event.target.checked }))
 								}
 							/>
-							<span>Workdays / Work periods</span>
+							<span>{t("settings.clockinImport.selection.workdays", "Workdays / Work periods")}</span>
 						</label>
 						<label className="flex items-center gap-3 text-sm">
 							<input
@@ -352,11 +352,11 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 									setSelections((current) => ({ ...current, absences: event.target.checked }))
 								}
 							/>
-							<span>Absences</span>
+							<span>{t("settings.clockinImport.selection.absences", "Absences")}</span>
 						</label>
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="space-y-2">
-								<Label htmlFor="clockin-start-date">Start date</Label>
+								<Label htmlFor="clockin-start-date">{t("settings.clockinImport.selection.startDate", "Start date")}</Label>
 								<DatePicker
 									id="clockin-start-date"
 									value={selections.dateRange.startDate}
@@ -369,7 +369,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="clockin-end-date">End date</Label>
+								<Label htmlFor="clockin-end-date">{t("settings.clockinImport.selection.endDate", "End date")}</Label>
 								<DatePicker
 									id="clockin-end-date"
 									value={selections.dateRange.endDate}
@@ -397,7 +397,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 								}
 							>
 								<IconArrowRight className="mr-2 size-4" />
-								Start Review Scan
+								{t("settings.clockinImport.selection.startReviewScan", "Start Review Scan")}
 							</Button>
 						</div>
 					</CardContent>
@@ -408,7 +408,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				<Card>
 					<CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
 						<IconLoader2 className="size-4 animate-spin" />
-						Starting Clockin import review scan…
+					{t("settings.clockinImport.review.starting", "Starting Clockin import review scan…")}
 					</CardContent>
 				</Card>
 			)}
@@ -418,18 +418,18 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<IconCheck className="size-5 text-green-600" aria-hidden="true" />
-							Import review scan started
+							{t("settings.clockinImport.review.startedTitle", "Import review scan started")}
 						</CardTitle>
 						<CardDescription>
-							Review batch {reviewBatchId} is scanning. Review and approve records before commit.
+						{t("settings.clockinImport.review.scanningDescription", "Review batch {reviewBatchId} is scanning. Review and approve records before commit.", { reviewBatchId })}
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<p className="text-sm text-muted-foreground">
-							No production records have been imported yet.
+						{t("settings.clockinImport.review.noProductionRecords", "No production records have been imported yet.")}
 						</p>
 						<Button asChild>
-							<Link href={`/settings/import/${reviewBatchId}`}>Open review</Link>
+					<Link href={`/settings/import/${reviewBatchId}`}>{t("settings.clockinImport.review.openReview", "Open review")}</Link>
 						</Button>
 					</CardContent>
 				</Card>

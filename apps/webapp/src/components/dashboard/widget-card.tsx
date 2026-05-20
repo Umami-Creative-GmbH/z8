@@ -1,4 +1,5 @@
 import { IconLoader2, IconRefresh } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ export function WidgetCard({
 	children,
 	action,
 }: WidgetCardProps) {
+	const { t } = useTranslate();
 	const RefreshButton = onRefresh ? (
 		<Button
 			variant="ghost"
@@ -31,7 +33,7 @@ export function WidgetCard({
 			onClick={onRefresh}
 			disabled={refreshing}
 			className="size-8"
-			aria-label="Refresh"
+			aria-label={t("dashboard.widgets.refresh", "Refresh")}
 		>
 			<IconRefresh
 				className={cn("size-4", refreshing && "animate-spin motion-reduce:animate-none")}

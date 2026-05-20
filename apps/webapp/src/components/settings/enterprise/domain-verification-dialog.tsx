@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -40,6 +41,7 @@ export function DomainVerificationDialog({
 	onRegenerateToken,
 	isVerifying,
 }: DomainVerificationDialogProps) {
+	const { t } = useTranslate();
 	const [copiedField, setCopiedField] = useState<string | null>(null);
 	const [isRegenerating, setIsRegenerating] = useState(false);
 
@@ -51,7 +53,7 @@ export function DomainVerificationDialog({
 	const copyToClipboard = async (text: string, field: string) => {
 		await navigator.clipboard.writeText(text);
 		setCopiedField(field);
-		toast.success("Copied to clipboard");
+		toast.success(t("settings.enterprise.domains.copiedToClipboard", "Copied to clipboard"));
 		setTimeout(() => setCopiedField(null), 2000);
 	};
 
@@ -68,29 +70,47 @@ export function DomainVerificationDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
-					<ActionPanelTitle>Verify Domain Ownership</ActionPanelTitle>
+					<ActionPanelTitle>
+						{t("settings.enterprise.domains.verifyOwnership", "Verify Domain Ownership")}
+					</ActionPanelTitle>
 					<ActionPanelDescription>
-						Add a DNS TXT record to verify ownership of {domain.domain}
+						{t(
+							"settings.enterprise.domains.verifyOwnershipDescription",
+							"Add a DNS TXT record to verify ownership of {domain}",
+							{ domain: domain.domain },
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<ActionPanelBody className="space-y-4">
 					{isExpired && (
 						<Alert variant="destructive">
-							<AlertTitle>Token Expired</AlertTitle>
+							<AlertTitle>
+								{t("settings.enterprise.domains.tokenExpired", "Token Expired")}
+							</AlertTitle>
 							<AlertDescription>
-								The verification token has expired. Please regenerate a new token.
+								{t(
+									"settings.enterprise.domains.tokenExpiredDescription",
+									"The verification token has expired. Please regenerate a new token.",
+								)}
 							</AlertDescription>
 						</Alert>
 					)}
 
 					<div className="space-y-4">
 						<div>
-							<p className="text-sm font-medium mb-2">Add the following TXT record to your DNS:</p>
+							<p className="text-sm font-medium mb-2">
+								{t(
+									"settings.enterprise.domains.txtRecordInstruction",
+									"Add the following TXT record to your DNS:",
+								)}
+							</p>
 							<div className="space-y-3">
 								<div className="bg-muted p-3 rounded-md">
 									<div className="flex items-center justify-between mb-1">
-										<span className="text-xs text-muted-foreground">Name / Host</span>
+										<span className="text-xs text-muted-foreground">
+											{t("settings.enterprise.domains.nameHost", "Name / Host")}
+										</span>
 										<Button
 											variant="ghost"
 											size="sm"
@@ -108,7 +128,9 @@ export function DomainVerificationDialog({
 
 								<div className="bg-muted p-3 rounded-md">
 									<div className="flex items-center justify-between mb-1">
-										<span className="text-xs text-muted-foreground">Value</span>
+										<span className="text-xs text-muted-foreground">
+											{t("settings.enterprise.domains.value", "Value")}
+										</span>
 										<Button
 											variant="ghost"
 											size="sm"
@@ -127,17 +149,22 @@ export function DomainVerificationDialog({
 						</div>
 
 						<Alert>
-							<AlertTitle>DNS Propagation</AlertTitle>
+							<AlertTitle>
+								{t("settings.enterprise.domains.dnsPropagation", "DNS Propagation")}
+							</AlertTitle>
 							<AlertDescription>
-								DNS changes can take up to 48 hours to propagate, though they often complete within
-								a few minutes. You can click &quot;Verify&quot; once you&apos;ve added the TXT
-								record.
+								{t(
+									"settings.enterprise.domains.dnsPropagationDescription",
+									'DNS changes can take up to 48 hours to propagate, though they often complete within a few minutes. You can click "Verify" once you have added the TXT record.',
+								)}
 							</AlertDescription>
 						</Alert>
 
 						{domain.verificationTokenExpiresAt && !isExpired && (
 							<p className="text-sm text-muted-foreground">
-								Token expires: {new Date(domain.verificationTokenExpiresAt).toLocaleDateString()}
+								{t("settings.enterprise.domains.tokenExpires", "Token expires: {date}", {
+									date: new Date(domain.verificationTokenExpiresAt).toLocaleDateString(),
+								})}
 							</p>
 						)}
 					</div>
@@ -146,10 +173,14 @@ export function DomainVerificationDialog({
 				<ActionPanelFooter className="flex-col sm:flex-row gap-2">
 					<Button variant="outline" onClick={handleRegenerateToken} disabled={isRegenerating}>
 						<IconRefresh className="mr-2 size-4" />
-						{isRegenerating ? "Regenerating..." : "Regenerate Token"}
+						{isRegenerating
+							? t("settings.enterprise.domains.regenerating", "Regenerating…")
+							: t("settings.enterprise.domains.regenerateToken", "Regenerate Token")}
 					</Button>
 					<Button onClick={() => onVerify(domain.id)} disabled={isVerifying || !!isExpired}>
-						{isVerifying ? "Verifying..." : "Verify Domain"}
+						{isVerifying
+							? t("settings.enterprise.domains.verifying", "Verifying…")
+							: t("settings.enterprise.domains.verifyDomain", "Verify Domain")}
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>

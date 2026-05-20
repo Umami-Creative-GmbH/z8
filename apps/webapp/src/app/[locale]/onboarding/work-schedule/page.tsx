@@ -86,7 +86,7 @@ export default function WorkSchedulePage() {
 
 		if (!result.success) {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip work schedule setup");
+			toast.error(result.error || t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup"));
 			return;
 		}
 		router.push(result.data.nextStep);
@@ -155,7 +155,7 @@ export default function WorkSchedulePage() {
 											type="number"
 											min={0}
 											max={168}
-											placeholder="40"
+											placeholder={t("onboarding.workSchedule.hoursPerWeekPlaceholder", "40")}
 											disabled={loading}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
@@ -193,7 +193,7 @@ export default function WorkSchedulePage() {
 											disabled={loading}
 										>
 											<SelectTrigger>
-												<SelectValue placeholder="Select classification" />
+												<SelectValue placeholder={t("onboarding.workSchedule.selectClassification", "Select classification")} />
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value="daily">

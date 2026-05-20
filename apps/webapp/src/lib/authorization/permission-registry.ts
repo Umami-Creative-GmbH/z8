@@ -25,8 +25,27 @@ export interface PermissionDefinition {
 	action: Action;
 	subject: Subject;
 	category: PermissionCategory;
+	labelKey: string;
+	descriptionKey: string;
 	label: string;
 	description: string;
+}
+
+type PermissionDefinitionInput = Omit<PermissionDefinition, "labelKey" | "descriptionKey"> &
+	Partial<Pick<PermissionDefinition, "labelKey" | "descriptionKey">>;
+
+function permissionCopy(
+	action: Action,
+	subject: Subject,
+	label: string,
+	description: string,
+): Pick<PermissionDefinition, "labelKey" | "descriptionKey" | "label" | "description"> {
+	return {
+		labelKey: `settings.roles.permissions.${action}.${subject}.label`,
+		descriptionKey: `settings.roles.permissions.${action}.${subject}.description`,
+		label,
+		description,
+	};
 }
 
 // ============================================
@@ -37,14 +56,18 @@ export interface PermissionDefinition {
  * All available permission pairs keyed by "action:subject".
  * These are the permissions that can be granted via custom roles.
  */
-export const PERMISSION_REGISTRY: Record<string, PermissionDefinition> = {
+const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 	// ---- Workforce ----
 	"manage:Employee": {
 		action: "manage",
 		subject: "Employee",
 		category: "workforce",
-		label: "Manage Employees",
-		description: "Full access to employee profiles and settings",
+		...permissionCopy(
+			"manage",
+			"Employee",
+			"Manage Employees",
+			"Full access to employee profiles and settings",
+		),
 	},
 	"read:Employee": {
 		action: "read",
@@ -312,6 +335,21 @@ export const PERMISSION_REGISTRY: Record<string, PermissionDefinition> = {
 	},
 };
 
+export const PERMISSION_REGISTRY: Record<string, PermissionDefinition> = Object.fromEntries(
+	Object.entries(PERMISSION_DEFINITIONS).map(([key, permission]) => [
+		key,
+		{
+			...permission,
+			labelKey:
+				permission.labelKey ??
+				`settings.roles.permissions.${permission.action}.${permission.subject}.label`,
+			descriptionKey:
+				permission.descriptionKey ??
+				`settings.roles.permissions.${permission.action}.${permission.subject}.description`,
+		},
+	]),
+);
+
 // ============================================
 // HELPERS
 // ============================================
@@ -324,6 +362,16 @@ const CATEGORY_LABELS: Record<PermissionCategory, string> = {
 	organization: "Organization",
 	projects: "Projects",
 	scheduling: "Scheduling",
+};
+
+const CATEGORY_LABEL_KEYS: Record<PermissionCategory, string> = {
+	workforce: "settings.roles.permissionCategories.workforce",
+	time_tracking: "settings.roles.permissionCategories.time_tracking",
+	approvals: "settings.roles.permissionCategories.approvals",
+	reporting: "settings.roles.permissionCategories.reporting",
+	organization: "settings.roles.permissionCategories.organization",
+	projects: "settings.roles.permissionCategories.projects",
+	scheduling: "settings.roles.permissionCategories.scheduling",
 };
 
 /**
@@ -347,10 +395,12 @@ export function getPermissionsByCategory(): Record<PermissionCategory, Permissio
  */
 export function getPermissionCategories(): Array<{
 	id: PermissionCategory;
+	labelKey: string;
 	label: string;
 }> {
 	return Object.entries(CATEGORY_LABELS).map(([id, label]) => ({
 		id: id as PermissionCategory,
+		labelKey: CATEGORY_LABEL_KEYS[id as PermissionCategory],
 		label,
 	}));
 }

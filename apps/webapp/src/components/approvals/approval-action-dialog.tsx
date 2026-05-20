@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -33,12 +34,15 @@ export function ApprovalActionDialog({
 	description,
 	onConfirm,
 }: ApprovalActionDialogProps) {
+	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
 
 	const handleConfirm = async () => {
 		if (action === "reject" && !rejectionReason.trim()) {
-			toast.error("Please provide a reason for rejection");
+			toast.error(
+				t("approvals:approvals.rejectionReasonRequired", "Please provide a reason for rejection"),
+			);
 			return;
 		}
 
@@ -64,10 +68,15 @@ export function ApprovalActionDialog({
 				<ActionPanelBody>
 					{action === "reject" && (
 						<div className="grid gap-2">
-							<Label htmlFor="reason">Reason for rejection *</Label>
+							<Label htmlFor="reason">
+								{t("approvals:approvals.rejectionReasonRequiredLabel", "Reason for rejection *")}
+							</Label>
 							<Textarea
 								id="reason"
-								placeholder="Provide a clear reason for rejecting this request..."
+								placeholder={t(
+									"approvals:approvals.rejectionReasonClearPlaceholder",
+									"Provide a clear reason for rejecting this request...",
+								)}
 								value={rejectionReason}
 								onChange={(e) => setRejectionReason(e.target.value)}
 								rows={4}
@@ -78,7 +87,10 @@ export function ApprovalActionDialog({
 
 					{action === "approve" && (
 						<p className="text-sm text-muted-foreground">
-							This action will approve the request and notify the employee.
+							{t(
+								"approvals:approvals.approveActionNotice",
+								"This action will approve the request and notify the employee.",
+							)}
 						</p>
 					)}
 				</ActionPanelBody>
@@ -90,7 +102,7 @@ export function ApprovalActionDialog({
 						onClick={() => onOpenChange(false)}
 						disabled={loading}
 					>
-						Cancel
+						{t("common.cancel", "Cancel")}
 					</Button>
 					<Button
 						type="button"
@@ -102,12 +114,12 @@ export function ApprovalActionDialog({
 						{action === "approve" ? (
 							<>
 								<IconCheck className="mr-2 size-4" />
-								Approve
+								{t("approvals:approvals.approve", "Approve")}
 							</>
 						) : (
 							<>
 								<IconX className="mr-2 size-4" />
-								Reject
+								{t("approvals:approvals.reject", "Reject")}
 							</>
 						)}
 					</Button>

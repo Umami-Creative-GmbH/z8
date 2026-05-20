@@ -9,6 +9,7 @@ import {
 	IconTrash,
 	IconX,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -54,6 +55,7 @@ interface SSOProviderManagementProps {
 }
 
 export function SSOProviderManagement({ initialProviders }: SSOProviderManagementProps) {
+	const { t } = useTranslate();
 	const [providers, setProviders] = useState<SSOProvider[]>(initialProviders);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [tokenByProviderId, setTokenByProviderId] = useState<Record<string, string>>(() =>
@@ -88,7 +90,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 		);
 
 		if (!result.ok || !result.response.domainVerificationToken) {
-			toast.error("Failed to generate domain verification token");
+			toast.error(t("settings.enterprise.sso.tokenError", "Failed to generate domain verification token"));
 			setBusyProviderId(null);
 			return;
 		}
@@ -97,7 +99,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			...prev,
 			[provider.providerId]: result.response.domainVerificationToken,
 		}));
-		toast.success("Verification token generated");
+		toast.success(t("settings.enterprise.sso.tokenGenerated", "Verification token generated"));
 		setBusyProviderId(null);
 	};
 
@@ -108,7 +110,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			.catch(() => false);
 
 		if (!verified) {
-			toast.error("Domain verification failed. Check your DNS TXT record and retry.");
+			toast.error(t("settings.enterprise.sso.verifyError", "Domain verification failed. Check your DNS TXT record and retry."));
 			setBusyProviderId(null);
 			return;
 		}
@@ -125,7 +127,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			delete next[provider.providerId];
 			return next;
 		});
-		toast.success("Domain verified");
+		toast.success(t("settings.enterprise.sso.domainVerified", "Domain verified"));
 		setBusyProviderId(null);
 	};
 
@@ -144,9 +146,9 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 				delete next[provider.providerId];
 				return next;
 			});
-			toast.success("SSO provider deleted");
+			toast.success(t("settings.enterprise.sso.deleteSuccess", "SSO provider deleted"));
 		} else {
-			toast.error("Failed to delete SSO provider");
+			toast.error(t("settings.enterprise.sso.deleteError", "Failed to delete SSO provider"));
 		}
 
 		setDeleteDialog({ isOpen: false, provider: null });
@@ -167,31 +169,31 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between">
 					<div>
-						<CardTitle>Identity Providers</CardTitle>
+						<CardTitle>{t("settings.enterprise.sso.title", "Identity Providers")}</CardTitle>
 						<CardDescription>
-							Add OIDC identity providers to enable SSO for your organization.
+							{t("settings.enterprise.sso.description", "Add OIDC identity providers to enable SSO for your organization.")}
 						</CardDescription>
 					</div>
 					<Button onClick={() => setIsAddDialogOpen(true)}>
 						<IconPlus className="mr-2 size-4" />
-						Add Provider
+						{t("settings.enterprise.addProvider", "Add Provider")}
 					</Button>
 				</CardHeader>
 				<CardContent>
 					{providers.length === 0 ? (
 						<div className="text-center py-8 text-muted-foreground">
-							<p>No SSO providers configured yet.</p>
-							<p className="text-sm">Add an OIDC provider to enable enterprise single sign-on.</p>
+						<p>{t("settings.enterprise.sso.empty", "No SSO providers configured yet.")}</p>
+						<p className="text-sm">{t("settings.enterprise.sso.emptyDescription", "Add an OIDC provider to enable enterprise single sign-on.")}</p>
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Provider</TableHead>
-									<TableHead>Domain</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Issuer URL</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
+							<TableHead>{t("settings.enterprise.provider", "Provider")}</TableHead>
+							<TableHead>{t("settings.enterprise.domain", "Domain")}</TableHead>
+							<TableHead>{t("common.status", "Status")}</TableHead>
+							<TableHead>{t("settings.enterprise.sso.issuerUrl", "Issuer URL")}</TableHead>
+							<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -209,17 +211,17 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 												{provider.domainVerified ? (
 													<Badge variant="default" className="bg-green-600">
 														<IconCheck className="mr-1 size-3" />
-														Verified
+							{t("settings.enterprise.sso.verified", "Verified")}
 													</Badge>
 												) : (
 													<Badge variant="secondary">
 														<IconX className="mr-1 size-3" />
-														Pending
+							{t("common.pending", "Pending")}
 													</Badge>
 												)}
 												{!provider.domainVerified && dnsToken && (
 													<p className="mt-1 text-xs text-muted-foreground">
-														TXT token: <code className="bg-muted px-1 rounded">{dnsToken}</code>
+						{t("settings.enterprise.sso.txtToken", "TXT token:")} <code className="bg-muted px-1 rounded">{dnsToken}</code>
 													</p>
 												)}
 											</TableCell>
@@ -245,7 +247,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 																onClick={() => handleRequestVerificationToken(provider)}
 															>
 																<IconKey className="mr-1 size-4" />
-																Token
+						{t("settings.enterprise.sso.token", "Token")}
 															</Button>
 															<Button
 																variant="outline"
@@ -254,7 +256,7 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 																onClick={() => handleVerifyDomain(provider)}
 															>
 																<IconRefresh className="mr-1 size-4" />
-																Verify
+						{t("settings.enterprise.sso.verify", "Verify")}
 															</Button>
 														</>
 													)}
@@ -277,19 +279,19 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			</Card>
 
 			<div className="mt-6 p-4 bg-muted rounded-lg">
-				<h3 className="font-medium mb-2">Setup Instructions</h3>
+			<h3 className="font-medium mb-2">{t("settings.enterprise.sso.setupInstructions", "Setup Instructions")}</h3>
 				<ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-					<li>Create an OIDC application in your identity provider (Okta, Azure AD, etc.)</li>
-					<li>
-						Configure the callback URL:{" "}
+				<li>{t("settings.enterprise.sso.instructions.createApp", "Create an OIDC application in your identity provider (Okta, Azure AD, etc.)")}</li>
+				<li>
+					{t("settings.enterprise.configureCallbackUrl", "Configure the callback URL:")}{" "}
 						<code className="bg-background px-1 rounded">
 							{typeof window !== "undefined"
 								? `${window.location.origin}/api/auth/sso/callback`
 								: "/api/auth/sso/callback"}
 						</code>
 					</li>
-					<li>Copy the Issuer URL, Client ID, and Client Secret from your IdP</li>
-					<li>Add the provider here and verify the email domain via DNS TXT record</li>
+				<li>{t("settings.enterprise.sso.instructions.copyCredentials", "Copy the Issuer URL, Client ID, and Client Secret from your IdP")}</li>
+				<li>{t("settings.enterprise.sso.instructions.verifyDomain", "Add the provider here and verify the email domain via DNS TXT record")}</li>
 				</ol>
 			</div>
 
@@ -305,19 +307,18 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Delete SSO Provider</AlertDialogTitle>
+						<AlertDialogTitle>{t("settings.enterprise.sso.deleteDialogTitle", "Delete SSO Provider")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete this SSO provider? Users will no longer be able to
-							sign in using this identity provider.
+							{t("settings.enterprise.sso.deleteDialogDescription", "Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.")}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDelete}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
-							Delete
+							{t("common.delete", "Delete")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

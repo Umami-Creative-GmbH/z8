@@ -1,7 +1,62 @@
 {
   "appSearch": {
+    "description": "Search pages, settings, people, and teams",
+    "empty": "No results found.",
+    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+    "placeholder": "Search pages, settings, people, and teams…",
+    "search": "Search",
     "teamAbsences": {
       "description": "Revisar métricas de ausência de funcionários e registrar ausências"
+    }
+  },
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrar ausência para {name}"
+      },
+      "empty": {
+        "description": "Ajuste os filtros ou a pesquisa para encontrar membros da equipe.",
+        "label": "Nenhum funcionário encontrado",
+        "title": "Nenhum funcionário encontrado"
+      },
+      "filters": {
+        "allTeams": "Todas as equipes",
+        "searchLabel": "Pesquisar funcionários",
+        "searchPlaceholder": "Pesquisar funcionários…",
+        "searchSubmit": "Pesquisar",
+        "teamLabel": "Filtrar por equipe",
+        "teamPlaceholder": "Equipe",
+        "yearLabel": "Filtrar por ano",
+        "yearPlaceholder": "Ano"
+      },
+      "pagination": {
+        "next": "Próximo",
+        "nextLabel": "Próxima página",
+        "page": "Página {page} de {pageCount}",
+        "previous": "Anterior",
+        "previousLabel": "Página anterior",
+        "showing": "Exibindo {firstItem} a {lastItem} de {total}"
+      },
+      "recordDialog": {
+        "required": "{label} é obrigatório",
+        "titleForEmployee": "Registrar ausência para {name}"
+      },
+      "sort": {
+        "ascending": "crescente",
+        "by": "Ordenar por {label}",
+        "byWithDirection": "Ordenar por {label} ({direction})",
+        "descending": "decrescente"
+      },
+      "table": {
+        "actions": "Ações",
+        "allowance": "Saldo",
+        "employee": "Funcionário",
+        "left": "Restante",
+        "pending": "Pendente",
+        "sick": "Doença",
+        "teamOrPosition": "Equipe ou cargo",
+        "used": "Usado"
+      }
     }
   },
   "surcharges": {

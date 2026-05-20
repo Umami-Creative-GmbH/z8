@@ -1,4 +1,10 @@
-import { IconCalendar, IconChartBar, IconChartLine, IconClock, IconUsers } from "@tabler/icons-react";
+import {
+	IconCalendar,
+	IconChartBar,
+	IconChartLine,
+	IconClock,
+	IconUsers,
+} from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -9,6 +15,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { Link } from "@/navigation";
+import { getTranslate } from "@/tolgee/server";
 
 async function getCurrentEmployee() {
 	const session = await auth.api.getSession({ headers: await headers() });
@@ -23,6 +30,7 @@ async function getCurrentEmployee() {
 
 export default async function AnalyticsLayout({ children }: { children: React.ReactNode }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
+	const t = await getTranslate();
 
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
@@ -34,7 +42,7 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 	if (!currentEmployee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature="view analytics" />
+				<NoEmployeeError feature={t("analytics.access.noEmployeeFeature", "view analytics")} />
 			</div>
 		);
 	}
@@ -44,9 +52,14 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
-					<h2 className="text-2xl font-bold">Access Restricted</h2>
+					<h2 className="text-2xl font-bold">
+						{t("analytics.access.restrictedTitle", "Access Restricted")}
+					</h2>
 					<p className="mt-2 text-muted-foreground">
-						Analytics is only available to administrators and managers.
+						{t(
+							"analytics.access.restrictedDescription",
+							"Analytics is only available to administrators and managers.",
+						)}
 					</p>
 				</div>
 			</div>
@@ -57,9 +70,14 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
 			<div className="px-4 lg:px-6">
-				<h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+				<h1 className="text-3xl font-bold tracking-tight">
+					{t("analytics.layout.title", "Analytics")}
+				</h1>
 				<p className="text-muted-foreground">
-					Comprehensive insights into team performance, work hours, and absence patterns
+					{t(
+						"analytics.layout.description",
+						"Comprehensive insights into team performance, work hours, and absence patterns",
+					)}
 				</p>
 			</div>
 
@@ -70,31 +88,31 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 						<TabsTrigger value="overview" asChild>
 							<Link href="/analytics">
 								<IconChartBar className="mr-2 size-4" />
-								Overview
+								{t("analytics.layout.tabs.overview", "Overview")}
 							</Link>
 						</TabsTrigger>
 						<TabsTrigger value="team-performance" asChild>
 							<Link href="/analytics/team-performance">
 								<IconUsers className="mr-2 size-4" />
-								Team Performance
+								{t("analytics.layout.tabs.teamPerformance", "Team Performance")}
 							</Link>
 						</TabsTrigger>
 						<TabsTrigger value="vacation-trends" asChild>
 							<Link href="/analytics/vacation-trends">
 								<IconCalendar className="mr-2 size-4" />
-								Vacation Trends
+								{t("analytics.layout.tabs.vacationTrends", "Vacation Trends")}
 							</Link>
 						</TabsTrigger>
 						<TabsTrigger value="work-hours" asChild>
 							<Link href="/analytics/work-hours">
 								<IconChartLine className="mr-2 size-4" />
-								Work Hours
+								{t("analytics.layout.tabs.workHours", "Work Hours")}
 							</Link>
 						</TabsTrigger>
 						<TabsTrigger value="overtime-burn-down" asChild>
 							<Link href="/analytics/overtime-burn-down">
 								<IconClock className="mr-2 size-4" />
-								Overtime Burn-Down
+								{t("analytics.layout.tabs.overtimeBurnDown", "Overtime Burn-Down")}
 							</Link>
 						</TabsTrigger>
 					</TabsList>

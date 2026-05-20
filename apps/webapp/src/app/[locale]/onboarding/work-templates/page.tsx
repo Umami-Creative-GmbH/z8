@@ -89,7 +89,7 @@ export default function WorkTemplatesPage() {
 			router.push("/onboarding/notifications");
 		} else {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip work schedule template setup");
+			toast.error(result.error || t("onboarding.workTemplates.skipError", "Failed to skip work schedule template setup"));
 		}
 	}
 
@@ -199,7 +199,7 @@ export default function WorkTemplatesPage() {
 											type="number"
 											min={0}
 											max={168}
-											placeholder="40"
+											placeholder={t("onboarding.workTemplates.hoursPerWeekPlaceholder", "40")}
 											disabled={loading}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}

@@ -95,6 +95,12 @@
       "pending": "Pending",
       "rejected": "Rejected"
     },
+	"sickDetail": {
+	  "child_sick": "Child sick",
+	  "other": "Other",
+	  "with_certificate": "With certificate",
+	  "without_certificate": "Without certificate"
+	},
     "subtitle": "Manage your time off and vacation days",
     "table": {
       "cancelRequest": "Cancel request",
@@ -146,6 +152,10 @@
       "success": "Work period converted to break",
       "title": "Convert to Break?"
     },
+	"break": {
+	  "description": "Break between work periods",
+	  "titleWithDuration": "Break - {duration}"
+	},
     "details": {
       "baseWorked": "Base worked",
       "blocksTimeEntry": "Blocks time tracking",
@@ -189,6 +199,11 @@
       "timeEntry": "Time Entry",
       "workPeriod": "Work Period"
     },
+	"workPeriod": {
+	  "aggregatedDescriptionOne": "{count} work period",
+	  "aggregatedDescriptionOther": "{count} work periods",
+	  "fallbackDescription": "Work period"
+	},
     "filter": {
       "absences": "Absences",
       "holidays": "Holidays",
@@ -208,6 +223,17 @@
       "undertime": "Undertime",
       "workPeriod": "Work Period",
       "workPeriodPending": "Pending Approval"
+    },
+    "view": {
+      "day": "Day",
+      "loading": "Loading calendar…",
+      "month": "Month",
+      "next": "Next",
+      "previous": "Previous",
+      "refresh": "Refresh",
+      "today": "Today",
+      "week": "Week",
+      "year": "Year"
     },
     "split": {
       "confirm": "Split Work Period",

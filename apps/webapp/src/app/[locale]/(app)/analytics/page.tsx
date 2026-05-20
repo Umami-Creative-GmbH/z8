@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCalendarOff, IconCheck, IconClock, IconLoader2, IconUsers } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -49,12 +50,12 @@ type BottleneckListRow = Pick<
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() &&
-		left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
 	);
 }
 
 export default function AnalyticsOverviewPage() {
+	const { t } = useTranslate();
 	const { isHydrated, timezone } = useOrganizationSettings(
 		useShallow((state) => ({
 			isHydrated: state.isHydrated,
@@ -71,6 +72,10 @@ export default function AnalyticsOverviewPage() {
 		managerDataUnavailable: false,
 	});
 	const { loading, teamData, absenceData, managerData, managerDataUnavailable } = analyticsData;
+	const loadAnalyticsError = t(
+		"analytics.overview.errors.loadData",
+		["Failed to load analytics", "data"].join(" "),
+	);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
@@ -96,10 +101,7 @@ export default function AnalyticsOverviewPage() {
 		}
 
 		const expectedDefaultDateRange = getDateRangeForPreset("current_month", { timezone });
-		if (
-			!hasUserChangedRange.current &&
-			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
-		) {
+		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
 			return;
 		}
 
@@ -121,8 +123,8 @@ export default function AnalyticsOverviewPage() {
 					(result) => result.status === "rejected" || !result.value.success,
 				);
 				if (failedResults.length > 0) {
-					console.error("Failed to load analytics data:", failedResults);
-					toast.error("Failed to load analytics data");
+					console.error(`${loadAnalyticsError}:`, failedResults);
+					toast.error(loadAnalyticsError);
 				}
 
 				setAnalyticsData({
@@ -155,7 +157,7 @@ export default function AnalyticsOverviewPage() {
 					return;
 				}
 
-				console.error("Failed to load analytics data:", error);
+				console.error(`${loadAnalyticsError}:`, error);
 				setAnalyticsData({
 					loading: false,
 					teamData: null,
@@ -163,13 +165,13 @@ export default function AnalyticsOverviewPage() {
 					managerData: null,
 					managerDataUnavailable: true,
 				});
-				toast.error("Failed to load analytics data");
+				toast.error(loadAnalyticsError);
 			});
 
 		return () => {
 			canceled = true;
 		};
-	}, [dateRange, isHydrated, timezone]);
+	}, [dateRange, isHydrated, loadAnalyticsError, timezone]);
 
 	// Calculate KPIs from loaded data
 	const kpiData = {
@@ -219,16 +221,19 @@ export default function AnalyticsOverviewPage() {
 					<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 				) : (
 					<p className="text-sm text-muted-foreground">
-						Loading organization settings before enabling presets.
+						{t(
+							"analytics.common.loadingOrganizationSettings",
+							"Loading organization settings before enabling presets.",
+						)}
 					</p>
 				)}
 				<ExportButton
 					data={{
 						data: teamData?.teams || [],
 						headers: [
-							{ key: "teamName", label: "Team" },
-							{ key: "totalHours", label: "Total Hours" },
-							{ key: "employeeCount", label: "Employees" },
+							{ key: "teamName", label: t("analytics.common.team", "Team") },
+							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
+							{ key: "employeeCount", label: t("analytics.common.employees", "Employees") },
 						],
 						filename: `analytics-overview-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
 					}}
@@ -241,7 +246,7 @@ export default function AnalyticsOverviewPage() {
 				<div
 					className="flex items-center justify-center py-12"
 					role="status"
-					aria-label="Loading analytics data"
+					aria-label={t("analytics.overview.loadingLabel", "Loading analytics data")}
 				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
 				</div>
@@ -253,52 +258,81 @@ export default function AnalyticsOverviewPage() {
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overview.kpis.totalEmployees.title", "Total Employees")}
+								</CardTitle>
 								<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">{kpiData.totalEmployees}</div>
-								<p className="text-xs text-muted-foreground">Active employees in organization</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overview.kpis.totalEmployees.description",
+										"Active employees in organization",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Avg Work Hours</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overview.kpis.avgWorkHours.title", "Avg Work Hours")}
+								</CardTitle>
 								<IconClock className="size-4 text-muted-foreground" aria-hidden="true" />
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">{kpiData.avgWorkHours.toFixed(1)}h</div>
-								<p className="text-xs text-muted-foreground">Per employee in selected period</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overview.kpis.avgWorkHours.description",
+										"Per employee in selected period",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Total Absence Days</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overview.kpis.totalAbsenceDays.title", "Total Absence Days")}
+								</CardTitle>
 								<IconCalendarOff className="size-4 text-muted-foreground" aria-hidden="true" />
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">{kpiData.absenceRate.toFixed(0)}</div>
-								<p className="text-xs text-muted-foreground">Total days in selected period</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"analytics.overview.kpis.totalAbsenceDays.description",
+										"Total days in selected period",
+									)}
+								</p>
 							</CardContent>
 						</Card>
 
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
+								<CardTitle className="text-sm font-medium">
+									{t("analytics.overview.kpis.approvalRate.title", "Approval Rate")}
+								</CardTitle>
 								<IconCheck className="size-4 text-muted-foreground" aria-hidden="true" />
 							</CardHeader>
 							<CardContent>
 								<div className="text-2xl font-bold">
 									{kpiData.approvalRate === null
-										? "Unavailable"
+										? t("analytics.common.unavailable", "Unavailable")
 										: `${kpiData.approvalRate.toFixed(1)}%`}
 								</div>
 								<p className="text-xs text-muted-foreground">
 									{managerDataUnavailable
-										? "Approval analytics could not be loaded"
-										: "Of decided requests approved"}
+										? t(
+												"analytics.overview.kpis.approvalRate.unavailableDescription",
+												"Approval analytics could not be loaded",
+											)
+										: t(
+												"analytics.overview.kpis.approvalRate.description",
+												"Of decided requests approved",
+											)}
 								</p>
 							</CardContent>
 						</Card>
@@ -308,15 +342,22 @@ export default function AnalyticsOverviewPage() {
 					<div className="grid gap-4 md:grid-cols-2">
 						<Card>
 							<CardHeader>
-								<CardTitle>Work Hours by Team</CardTitle>
-								<CardDescription>Total work hours logged per team</CardDescription>
+								<CardTitle>
+									{t("analytics.overview.workHoursByTeam.title", "Work Hours by Team")}
+								</CardTitle>
+								<CardDescription>
+									{t(
+										"analytics.overview.workHoursByTeam.description",
+										"Total work hours logged per team",
+									)}
+								</CardDescription>
 							</CardHeader>
 							<CardContent>
 								{workHoursChartData.length > 0 ? (
 									<ChartContainer
 										config={{
 											hours: {
-												label: "Hours",
+												label: t("analytics.common.hours", "Hours"),
 												color: "hsl(var(--primary))",
 											},
 										}}
@@ -332,7 +373,7 @@ export default function AnalyticsOverviewPage() {
 									</ChartContainer>
 								) : (
 									<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-										No data available
+										{t("analytics.common.noDataAvailable", "No data available")}
 									</div>
 								)}
 							</CardContent>
@@ -340,15 +381,22 @@ export default function AnalyticsOverviewPage() {
 
 						<Card>
 							<CardHeader>
-								<CardTitle>Absence Patterns</CardTitle>
-								<CardDescription>Absence distribution by category</CardDescription>
+								<CardTitle>
+									{t("analytics.overview.absencePatterns.title", "Absence Patterns")}
+								</CardTitle>
+								<CardDescription>
+									{t(
+										"analytics.overview.absencePatterns.description",
+										"Absence distribution by category",
+									)}
+								</CardDescription>
 							</CardHeader>
 							<CardContent>
 								{absencePatternsChartData.length > 0 ? (
 									<ChartContainer
 										config={{
 											days: {
-												label: "Days",
+												label: t("analytics.common.days", "Days"),
 												color: "hsl(var(--destructive))",
 											},
 										}}
@@ -364,7 +412,7 @@ export default function AnalyticsOverviewPage() {
 									</ChartContainer>
 								) : (
 									<div className="h-[300px] flex items-center justify-center text-muted-foreground">
-										No data available
+										{t("analytics.common.noDataAvailable", "No data available")}
 									</div>
 								)}
 							</CardContent>
@@ -373,30 +421,55 @@ export default function AnalyticsOverviewPage() {
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Approval Bottlenecks</CardTitle>
+							<CardTitle>
+								{t("analytics.overview.approvalBottlenecks.title", "Approval Bottlenecks")}
+							</CardTitle>
 							<CardDescription>
-								Teams and request types with pending work or SLA warnings
+								{t(
+									"analytics.overview.approvalBottlenecks.description",
+									"Teams and request types with pending work or SLA warnings",
+								)}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{managerDataUnavailable ? (
 								<p className="text-sm text-muted-foreground">
-									Approval bottlenecks could not be loaded
+									{t(
+										"analytics.overview.approvalBottlenecks.unavailable",
+										"Approval bottlenecks could not be loaded",
+									)}
 								</p>
 							) : hasApprovalBottlenecks ? (
 								<div className="grid gap-6 md:grid-cols-3">
 									{managerBottleneckRows.length ? (
-										<BottleneckList title="By Manager" rows={managerBottleneckRows} />
+										<BottleneckList
+											title={t("analytics.overview.approvalBottlenecks.byManager", "By Manager")}
+											rows={managerBottleneckRows}
+											t={t}
+										/>
 									) : null}
 									{managerData?.byTeam.length ? (
-										<BottleneckList title="By Team" rows={managerData.byTeam} />
+										<BottleneckList
+											title={t("analytics.overview.approvalBottlenecks.byTeam", "By Team")}
+											rows={managerData.byTeam}
+											t={t}
+										/>
 									) : null}
 									{managerData?.byType.length ? (
-										<BottleneckList title="By Type" rows={managerData.byType} />
+										<BottleneckList
+											title={t("analytics.overview.approvalBottlenecks.byType", "By Type")}
+											rows={managerData.byType}
+											t={t}
+										/>
 									) : null}
 								</div>
 							) : (
-								<p className="text-sm text-muted-foreground">No approval bottlenecks found</p>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"analytics.overview.approvalBottlenecks.empty",
+										"No approval bottlenecks found",
+									)}
+								</p>
 							)}
 						</CardContent>
 					</Card>
@@ -406,7 +479,15 @@ export default function AnalyticsOverviewPage() {
 	);
 }
 
-function BottleneckList({ title, rows }: { title: string; rows: BottleneckListRow[] }) {
+function BottleneckList({
+	title,
+	rows,
+	t,
+}: {
+	title: string;
+	rows: BottleneckListRow[];
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
 	const listId = `approval-bottlenecks-${title.toLowerCase().replaceAll(" ", "-")}`;
 
 	return (
@@ -420,12 +501,27 @@ function BottleneckList({ title, rows }: { title: string; rows: BottleneckListRo
 						<div className="min-w-0">
 							<p className="truncate font-medium">{row.label}</p>
 							<p className="text-xs text-muted-foreground">
-								{row.pendingCount} pending - {row.pendingSlaWarnings} SLA warnings
+								{t(
+									"analytics.overview.approvalBottlenecks.pendingSummary",
+									"{pendingCount} pending - {slaWarnings} SLA warnings",
+									{
+										pendingCount: row.pendingCount,
+										slaWarnings: row.pendingSlaWarnings,
+									},
+								)}
 							</p>
 						</div>
 						<div className="shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-							<p>{row.approvalRate.toFixed(1)}% approved</p>
-							<p>{row.avgDecisionTimeHours.toFixed(1)}h avg decision</p>
+							<p>
+								{t("analytics.overview.approvalBottlenecks.approvedRate", "{rate}% approved", {
+									rate: row.approvalRate.toFixed(1),
+								})}
+							</p>
+							<p>
+								{t("analytics.overview.approvalBottlenecks.avgDecision", "{hours}h avg decision", {
+									hours: row.avgDecisionTimeHours.toFixed(1),
+								})}
+							</p>
 						</div>
 					</li>
 				))}

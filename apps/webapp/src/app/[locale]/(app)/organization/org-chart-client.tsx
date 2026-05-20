@@ -214,7 +214,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 				</div>
 				<div className="relative w-full md:max-w-sm">
 					<input
-						aria-label="Search employees"
+						aria-label={t("organization.orgChart.searchLabel", "Search employees")}
 						className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary"
 						autoComplete="off"
 						name="org-chart-employee-search"
@@ -262,7 +262,10 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 
 			{graph.partial ? (
 				<p className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-					Showing part of a large organization. Expand nodes or search to continue.
+					{t(
+						"organization.orgChart.partialGraph",
+						"Showing part of a large organization. Expand nodes or search to continue.",
+					)}
 				</p>
 			) : null}
 			{statusText ? (
@@ -373,6 +376,7 @@ function getEdgeStyle(edge: OrgChartEdge): Edge["style"] {
 }
 
 function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
+	const { t } = useTranslate();
 	const node = data.orgNode as OrgChartEmployeeNode;
 	const canExpand = node.expandable.managers || node.expandable.reports || node.expandable.teams;
 	const pronouns = normalizePronouns(node.pronouns);
@@ -405,12 +409,14 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 				</span>
 				{canExpand ? (
 					<button
-						aria-label={`Expand ${displayName} neighborhood`}
+						aria-label={t("organization.orgChart.expandEmployeeLabel", "Expand {name} neighborhood", {
+							name: displayName,
+						})}
 						className="rounded-md border px-2 py-1 text-xs font-medium transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 						onClick={() => data.onExpandEmployee(node.employeeId)}
 						type="button"
 					>
-						Expand
+						{t("organization.orgChart.expand", "Expand")}
 					</button>
 				) : null}
 			</div>
@@ -419,6 +425,7 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 }
 
 function TeamFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
+	const { t } = useTranslate();
 	const node = data.orgNode as OrgChartTeamNode;
 	const canExpand = node.expandable.members || node.expandable.primaryManager;
 
@@ -427,10 +434,14 @@ function TeamFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0">
 					<p className="truncate text-sm font-semibold">{node.name}</p>
-					<p className="mt-1 text-xs text-muted-foreground">{node.memberCount} members</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						{t("organization.orgChart.memberCount", "{count} members", {
+							count: node.memberCount,
+						})}
+					</p>
 				</div>
 				<span className="rounded-full bg-background px-2 py-1 text-xs font-medium text-muted-foreground">
-					Team
+					{t("organization.orgChart.teamBadge", "Team")}
 				</span>
 			</div>
 			{node.description ? (
@@ -438,12 +449,14 @@ function TeamFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 			) : null}
 			{canExpand ? (
 				<button
-					aria-label={`Expand ${node.name} team`}
+				aria-label={t("organization.orgChart.expandTeamLabel", "Expand {name} team", {
+					name: node.name,
+				})}
 					className="mt-3 rounded-md border bg-background px-2 py-1 text-xs font-medium transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 					onClick={() => data.onExpandTeam(node.teamId)}
 					type="button"
 				>
-					Expand team
+				{t("organization.orgChart.expandTeam", "Expand team")}
 				</button>
 			) : null}
 		</div>

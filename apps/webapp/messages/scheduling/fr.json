@@ -1,34 +1,100 @@
 {
-  "scheduling": {
-    "coverage": {
-      "adequate": "Effectifs adéquats",
-      "byLocation": "Par emplacement :",
-      "gapCount": "{{count}} manque de personnel",
-      "gaps": "lacunes",
-      "hideOverlay": "Masquer la superposition de couverture",
-      "metSlots": "{{count}} adéquat",
-      "overSlots": "{{count}} sureffectif",
-      "overstaffed": "Sureffectif",
-      "showOverlay": "Afficher la superposition des objectifs de couverture",
-      "summary": "Résumé de la couverture :",
-      "toggleLabel": "Couverture",
-      "underSlots": "{{count}} sous-effectif",
-      "understaffed": "Sous-effectif",
-      "utilization": "{{percent}}% d'utilisation"
-    },
-    "skills": {
-      "expiredCertifications": "Certifications expirées :",
-      "expiredOn": "(Expiré le {{date}})",
-      "missingPreferred": "Compétences préférées manquantes :",
-      "missingPreferredCount": "{{count}} compétence préférée manquante",
-      "missingRequired": "Compétences requises manquantes :",
-      "preferred": "Préféré",
-      "preferredSkillsMissing": "Compétences préférées manquantes",
-      "requirementsNotMet": "Exigences de compétences non satisfaites",
-      "unqualified": "Non qualifié",
-      "validating": "Validation des compétences…",
-      "validatingDescription": "Vérification des qualifications de l'employé",
-      "warningMessage": "Vous pouvez toujours attribuer ce quart de travail, mais il sera enregistré comme une dérogation."
-    }
-  }
+	"scheduling": {
+		"coverage": {
+			"adequate": "Effectifs adéquats",
+			"byLocation": "Par emplacement :",
+			"gapCount": "{{count}} manque de personnel",
+			"gaps": "lacunes",
+			"hideOverlay": "Masquer la superposition de couverture",
+			"metSlots": "{{count}} adéquat",
+			"overSlots": "{{count}} sureffectif",
+			"overstaffed": "Sureffectif",
+			"showOverlay": "Afficher la superposition des objectifs de couverture",
+			"summary": "Résumé de la couverture :",
+			"toggleLabel": "Couverture",
+			"underSlots": "{{count}} sous-effectif",
+			"understaffed": "Sous-effectif",
+			"utilization": "{{percent}}% d'utilisation"
+		},
+		"scheduler": {
+			"complianceBanner": {
+				"findingsDetected": "{count} constat(s) détecté(s) avant publication.",
+				"maxHours": "Heures max : {count}",
+				"overtime": "Heures supplémentaires : {count}",
+				"restTime": "Temps de repos : {count}",
+				"title": "Avertissements de conformité dans cette plage de dates"
+			},
+			"loading": "Chargement du planning...",
+			"publish": {
+				"failed": "Impossible de publier les shifts",
+				"published": "{count} shift(s) publié(s)"
+			},
+			"shiftUpdate": {
+				"failed": "Impossible de mettre à jour le shift",
+				"overlapDescription": "Ce shift chevauche {count} autre(s) shift(s)",
+				"overlapWarning": "Shift enregistré avec un avertissement de chevauchement",
+				"updated": "Shift mis à jour"
+			}
+		},
+		"shiftDialog": {
+			"anyoneCanPickUp": "Anyone can pick up",
+			"assignTo": "Assign To",
+			"confirmDelete": "Confirm Delete",
+			"createDescription": "Fill in the details for the new shift",
+			"created": "Shift created",
+			"createShift": "Create Shift",
+			"createTitle": "Create Shift",
+			"date": "Date",
+			"deleted": "Shift deleted",
+			"deleteFailed": "Failed to delete shift",
+			"draft": "Draft",
+			"editDescription": "Update the shift details below",
+			"editTitle": "Edit Shift",
+			"endTime": "End Time",
+			"noTemplate": "No template",
+			"notes": "Notes (Optional)",
+			"notesPlaceholder": "Any special instructions or notes...",
+			"openShift": "Open Shift",
+			"openShiftHelp": "Leave as \"Open Shift\" to allow employees to claim it",
+			"pickDate": "Pick a date",
+			"published": "Published",
+			"savedWithWarnings": "Shift saved with warnings",
+			"saveFailed": "Failed to save shift",
+			"selectEmployee": "Select an employee",
+			"selectSubarea": "Select a subarea…",
+			"selectTemplate": "Select a template",
+			"startTime": "Start Time",
+			"status": "Status:",
+			"subarea": "Subarea",
+			"subareaHelp": "Where this shift will take place",
+			"template": "Template (Optional)",
+			"templateHelp": "Selecting a template will auto-fill the times",
+			"updated": "Shift updated",
+			"updateShift": "Update Shift"
+		},
+		"skills": {
+			"expiredCertifications": "Certifications expirées :",
+			"expiredOn": "(Expiré le {{date}})",
+			"missingPreferred": "Compétences préférées manquantes :",
+			"missingPreferredCount": "{{count}} compétence préférée manquante",
+			"missingRequired": "Compétences requises manquantes :",
+			"preferred": "Préféré",
+			"preferredSkillsMissing": "Compétences préférées manquantes",
+			"requirementsNotMet": "Exigences de compétences non satisfaites",
+			"unqualified": "Non qualifié",
+			"validating": "Validation des compétences…",
+			"validatingDescription": "Vérification des qualifications de l'employé",
+			"warningMessage": "Vous pouvez toujours attribuer ce quart de travail, mais il sera enregistré comme une dérogation."
+		},
+		"templates": {
+			"dragHint": "Drag a template onto the calendar to create a shift",
+			"empty": "No templates available. Create templates in Settings to quickly add shifts.",
+			"title": "Shift Templates"
+		},
+		"page": {
+			"employeeDescription": "View your shifts and pick up available shifts",
+			"managerDescription": "Manage and plan employee shifts",
+			"title": "Shift Schedule"
+		}
+	}
 }

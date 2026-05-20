@@ -228,22 +228,33 @@ export interface ScheduledExportsProcessorResult {
 /**
  * Preset schedule descriptions for UI
  */
-export const PRESET_SCHEDULES: Record<Exclude<ScheduleType, "cron">, { label: string; description: string }> = {
+export const PRESET_SCHEDULES: Record<
+	Exclude<ScheduleType, "cron">,
+	{ label: string; labelKey: string; description: string; descriptionKey: string }
+> = {
 	daily: {
 		label: "Daily",
+		labelKey: "settings.scheduledExports.scheduleType.daily",
 		description: "Runs every day at midnight",
+		descriptionKey: "settings.scheduledExports.scheduleType.dailyPresetDesc",
 	},
 	weekly: {
 		label: "Weekly",
+		labelKey: "settings.scheduledExports.scheduleType.weekly",
 		description: "Runs every Monday at midnight",
+		descriptionKey: "settings.scheduledExports.scheduleType.weeklyPresetDesc",
 	},
 	monthly: {
 		label: "Monthly",
+		labelKey: "settings.scheduledExports.scheduleType.monthly",
 		description: "Runs on the 1st of each month at midnight",
+		descriptionKey: "settings.scheduledExports.scheduleType.monthlyPresetDesc",
 	},
 	quarterly: {
 		label: "Quarterly",
+		labelKey: "settings.scheduledExports.scheduleType.quarterly",
 		description: "Runs on the 1st of Jan, Apr, Jul, Oct at midnight",
+		descriptionKey: "settings.scheduledExports.scheduleType.quarterlyPresetDesc",
 	},
 };
 

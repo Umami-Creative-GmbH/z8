@@ -3,6 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconGripVertical } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ export const DashboardWidgetDraggableProvider = DashboardWidgetDraggableContext.
  * ```
  */
 export function DashboardWidget({ id, children, draggable }: DashboardWidgetProps) {
+	const { t } = useTranslate();
 	// Register as visible when mounted
 	useRegisterVisibleWidget(id);
 	const contextDraggable = useContext(DashboardWidgetDraggableContext);
@@ -80,7 +82,7 @@ export function DashboardWidget({ id, children, draggable }: DashboardWidgetProp
 					)}
 					{...attributes}
 					{...listeners}
-					aria-label="Drag to reorder widget"
+					aria-label={t("dashboard.widgets.dragToReorder", "Drag to reorder widget")}
 				>
 					<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
 				</Button>

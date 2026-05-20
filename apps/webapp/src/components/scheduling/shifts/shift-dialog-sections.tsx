@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCalendar, IconLoader2, IconMapPin, IconTrash, IconUsers } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { type ComponentProps, useState } from "react";
 import { z } from "zod";
@@ -88,6 +89,8 @@ export function ShiftDialogSections({
 	isEditing,
 	shift,
 }: ShiftDialogSectionsProps) {
+	const { t } = useTranslate();
+
 	return (
 		<>
 			<form.Field
@@ -98,7 +101,7 @@ export function ShiftDialogSections({
 			>
 				{(field) => (
 					<div className="flex flex-col space-y-2">
-						<Label>Date</Label>
+						<Label>{t("scheduling:scheduling.shiftDialog.date", "Date")}</Label>
 						<Popover>
 							<PopoverTrigger asChild>
 								<Button
@@ -112,7 +115,7 @@ export function ShiftDialogSections({
 									{field.state.value ? (
 										DateTime.fromJSDate(field.state.value).toLocaleString(DateTime.DATE_MED)
 									) : (
-										<span>Pick a date</span>
+										<span>{t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}</span>
 									)}
 									<IconCalendar className="ml-auto size-4 opacity-50" />
 								</Button>
@@ -135,16 +138,20 @@ export function ShiftDialogSections({
 				<form.Field name="templateId">
 					{(field) => (
 						<div className="space-y-2">
-							<Label>Template (Optional)</Label>
+							<Label>{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}</Label>
 							<Select
 								onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
 								value={field.state.value || "none"}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select a template" />
+									<SelectValue
+										placeholder={t("scheduling:scheduling.shiftDialog.selectTemplate", "Select a template")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="none">No template</SelectItem>
+									<SelectItem value="none">
+										{t("scheduling:scheduling.shiftDialog.noTemplate", "No template")}
+									</SelectItem>
 									{templates
 										.filter((template) => template.isActive)
 										.map((template) => (
@@ -155,7 +162,10 @@ export function ShiftDialogSections({
 								</SelectContent>
 							</Select>
 							<p className="text-sm text-muted-foreground">
-								Selecting a template will auto-fill the times
+								{t(
+									"scheduling:scheduling.shiftDialog.templateHelp",
+									"Selecting a template will auto-fill the times",
+								)}
 							</p>
 						</div>
 					)}
@@ -171,7 +181,7 @@ export function ShiftDialogSections({
 				>
 					{(field) => (
 						<div className="space-y-2">
-							<Label>Start Time</Label>
+							<Label>{t("scheduling:scheduling.shiftDialog.startTime", "Start Time")}</Label>
 							<TimeInput
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
@@ -191,7 +201,7 @@ export function ShiftDialogSections({
 				>
 					{(field) => (
 						<div className="space-y-2">
-							<Label>End Time</Label>
+							<Label>{t("scheduling:scheduling.shiftDialog.endTime", "End Time")}</Label>
 							<TimeInput
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
@@ -211,13 +221,15 @@ export function ShiftDialogSections({
 							<Label>
 								<span className="flex items-center gap-2">
 									<IconMapPin className="size-4" aria-hidden="true" />
-									Subarea
+									{t("scheduling:scheduling.shiftDialog.subarea", "Subarea")}
 									<span className="text-destructive">*</span>
 								</span>
 							</Label>
 							<Select onValueChange={field.handleChange} value={field.state.value}>
 								<SelectTrigger>
-									<SelectValue placeholder="Select a subarea…" />
+									<SelectValue
+										placeholder={t("scheduling:scheduling.shiftDialog.selectSubarea", "Select a subarea…")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									{locations.flatMap((location) =>
@@ -231,7 +243,12 @@ export function ShiftDialogSections({
 									)}
 								</SelectContent>
 							</Select>
-							<p className="text-sm text-muted-foreground">Where this shift will take place</p>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"scheduling:scheduling.shiftDialog.subareaHelp",
+									"Where this shift will take place",
+								)}
+							</p>
 						</div>
 					)}
 				</form.Field>
@@ -244,7 +261,7 @@ export function ShiftDialogSections({
 							<Label>
 								<span className="flex items-center gap-2">
 									<IconUsers className="size-4" aria-hidden="true" />
-									Assign To
+									{t("scheduling:scheduling.shiftDialog.assignTo", "Assign To")}
 								</span>
 							</Label>
 							<Select
@@ -252,13 +269,19 @@ export function ShiftDialogSections({
 								value={field.state.value || "open"}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select an employee" />
+									<SelectValue
+										placeholder={t("scheduling:scheduling.shiftDialog.selectEmployee", "Select an employee")}
+									/>
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="open">
 										<span className="flex items-center gap-2">
-											<Badge variant="secondary">Open Shift</Badge>
-											<span className="text-muted-foreground">Anyone can pick up</span>
+											<Badge variant="secondary">
+												{t("scheduling:scheduling.shiftDialog.openShift", "Open Shift")}
+											</Badge>
+											<span className="text-muted-foreground">
+												{t("scheduling:scheduling.shiftDialog.anyoneCanPickUp", "Anyone can pick up")}
+											</span>
 										</span>
 									</SelectItem>
 									{employees.map((employee) => (
@@ -276,7 +299,10 @@ export function ShiftDialogSections({
 								</SelectContent>
 							</Select>
 							<p className="text-sm text-muted-foreground">
-								Leave as "Open Shift" to allow employees to claim it
+								{t(
+									"scheduling:scheduling.shiftDialog.openShiftHelp",
+									"Leave as \"Open Shift\" to allow employees to claim it",
+								)}
 							</p>
 						</div>
 					)}
@@ -291,9 +317,12 @@ export function ShiftDialogSections({
 				<form.Field name="notes">
 					{(field) => (
 						<div className="space-y-2">
-							<Label>Notes (Optional)</Label>
+							<Label>{t("scheduling:scheduling.shiftDialog.notes", "Notes (Optional)")}</Label>
 							<Textarea
-								placeholder="Any special instructions or notes..."
+								placeholder={t(
+									"scheduling:scheduling.shiftDialog.notesPlaceholder",
+									"Any special instructions or notes...",
+								)}
 								className="resize-none"
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
@@ -306,9 +335,13 @@ export function ShiftDialogSections({
 
 			{isEditing && shift && (
 				<div className="flex items-center gap-2 text-sm">
-					<span className="text-muted-foreground">Status:</span>
+					<span className="text-muted-foreground">
+						{t("scheduling:scheduling.shiftDialog.status", "Status:")}
+					</span>
 					<Badge variant={shift.status === "published" ? "default" : "secondary"}>
-						{shift.status === "published" ? "Published" : "Draft"}
+						{shift.status === "published"
+							? t("scheduling:scheduling.shiftDialog.published", "Published")
+							: t("scheduling:scheduling.shiftDialog.draft", "Draft")}
 					</Badge>
 				</div>
 			)}
@@ -325,6 +358,7 @@ export function ShiftDialogFooterActions({
 	onDelete,
 	onCancel,
 }: ShiftDialogFooterProps) {
+	const { t } = useTranslate();
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	return (
@@ -348,7 +382,9 @@ export function ShiftDialogFooterActions({
 					) : (
 						<>
 							<IconTrash className="size-4 mr-2" />
-							{showDeleteConfirm ? "Confirm Delete" : "Delete"}
+							{showDeleteConfirm
+								? t("scheduling:scheduling.shiftDialog.confirmDelete", "Confirm Delete")
+								: t("common.delete", "Delete")}
 						</>
 					)}
 				</Button>
@@ -362,19 +398,19 @@ export function ShiftDialogFooterActions({
 				}}
 				disabled={isPending}
 			>
-				Cancel
+				{t("common.cancel", "Cancel")}
 			</Button>
 			{isManager && (
 				<Button type="submit" disabled={isPending}>
 					{isSaving ? (
 						<>
 							<IconLoader2 className="size-4 mr-2 animate-spin" />
-							Saving...
+							{t("common.saving", "Saving...")}
 						</>
 					) : isEditing ? (
-						"Update Shift"
+						t("scheduling:scheduling.shiftDialog.updateShift", "Update Shift")
 					) : (
-						"Create Shift"
+						t("scheduling:scheduling.shiftDialog.createShift", "Create Shift")
 					)}
 				</Button>
 			)}

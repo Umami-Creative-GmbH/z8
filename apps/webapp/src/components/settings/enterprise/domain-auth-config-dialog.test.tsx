@@ -4,6 +4,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DomainAuthConfigDialog } from "./domain-auth-config-dialog";
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 const domain = {
 	id: "domain_123",
 	domain: "login.acme.test",

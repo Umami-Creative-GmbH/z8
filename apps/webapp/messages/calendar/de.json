@@ -209,6 +209,17 @@
       "workPeriod": "Arbeitszeitraum",
       "workPeriodPending": "Ausstehende Genehmigung"
     },
+    "view": {
+      "day": "Tag",
+      "loading": "Kalender wird geladen…",
+      "month": "Monat",
+      "next": "Weiter",
+      "previous": "Zurück",
+      "refresh": "Aktualisieren",
+      "today": "Heute",
+      "week": "Woche",
+      "year": "Jahr"
+    },
     "split": {
       "confirm": "Arbeitszeitraum teilen",
       "currentPeriod": "Aktueller Arbeitszeitraum",

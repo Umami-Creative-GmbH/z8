@@ -68,6 +68,37 @@ export const defaultAbsenceCategories = [
 	},
 ] satisfies Array<Omit<typeof absenceCategory.$inferInsert, "organizationId" | "isActive">>;
 
+export const defaultAbsenceCategoryI18n = {
+	vacation: {
+		nameKey: "settings.absenceCategories.defaults.vacation.name",
+		descriptionKey: "settings.absenceCategories.defaults.vacation.description",
+	},
+	sick: {
+		nameKey: "settings.absenceCategories.defaults.sick.name",
+		descriptionKey: "settings.absenceCategories.defaults.sick.description",
+	},
+	personal: {
+		nameKey: "settings.absenceCategories.defaults.personal.name",
+		descriptionKey: "settings.absenceCategories.defaults.personal.description",
+	},
+	home_office: {
+		nameKey: "settings.absenceCategories.defaults.homeOffice.name",
+		descriptionKey: "settings.absenceCategories.defaults.homeOffice.description",
+	},
+	unpaid: {
+		nameKey: "settings.absenceCategories.defaults.unpaid.name",
+		descriptionKey: "settings.absenceCategories.defaults.unpaid.description",
+	},
+	parental: {
+		nameKey: "settings.absenceCategories.defaults.parental.name",
+		descriptionKey: "settings.absenceCategories.defaults.parental.description",
+	},
+	bereavement: {
+		nameKey: "settings.absenceCategories.defaults.bereavement.name",
+		descriptionKey: "settings.absenceCategories.defaults.bereavement.description",
+	},
+} as const;
+
 export async function ensureDefaultAbsenceCategoriesForOrganization(organizationId: string) {
 	return db.transaction(async (tx) => {
 		await tx.execute(

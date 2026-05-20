@@ -9,12 +9,7 @@ import { eq } from "drizzle-orm";
 import type { DateTime } from "luxon";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema/user-settings";
-import {
-	ALL_LANGUAGES,
-	DEFAULT_LANGUAGE,
-	TolgeeBase,
-	loadNamespaces,
-} from "@/tolgee/shared";
+import { ALL_LANGUAGES, DEFAULT_LANGUAGE, TolgeeBase, loadNamespaces } from "@/tolgee/shared";
 
 /** The translate function signature returned by getBotTranslate */
 export type BotTranslateFn = (
@@ -51,10 +46,7 @@ export function fmtFullDate(dt: DateTime, locale: string): string {
 
 /** "January 15, 2024" / "15. Januar 2024" */
 export function fmtLongDate(dt: DateTime, locale: string): string {
-	return dt.toLocaleString(
-		{ year: "numeric", month: "long", day: "numeric" },
-		{ locale },
-	);
+	return dt.toLocaleString({ year: "numeric", month: "long", day: "numeric" }, { locale });
 }
 
 /** "14:30" / "2:30 PM" */
@@ -64,10 +56,7 @@ export function fmtTime(dt: DateTime, locale: string): string {
 
 /** "Mon, Jan 15" / "Mo., 15. Jan." */
 export function fmtWeekdayShortDate(dt: DateTime, locale: string): string {
-	return dt.toLocaleString(
-		{ weekday: "short", month: "short", day: "numeric" },
-		{ locale },
-	);
+	return dt.toLocaleString({ weekday: "short", month: "short", day: "numeric" }, { locale });
 }
 
 /** "Mon, Jan 15, 2024" / "Mo., 15. Jan. 2024" */
@@ -117,10 +106,7 @@ export async function getUserLocaleRaw(userId: string): Promise<string | null> {
  * Persist the user's locale preference to the database.
  * Upserts into userSettings.
  */
-export async function setUserLocale(
-	userId: string,
-	locale: string,
-): Promise<void> {
+export async function setUserLocale(userId: string, locale: string): Promise<void> {
 	if (!ALL_LANGUAGES.includes(locale)) return;
 
 	const existing = await db.query.userSettings.findFirst({
@@ -129,10 +115,7 @@ export async function setUserLocale(
 	});
 
 	if (existing) {
-		await db
-			.update(userSettings)
-			.set({ locale })
-			.where(eq(userSettings.userId, userId));
+		await db.update(userSettings).set({ locale }).where(eq(userSettings.userId, userId));
 	} else {
 		await db.insert(userSettings).values({
 			userId,
@@ -143,13 +126,11 @@ export async function setUserLocale(
 
 /**
  * Create a standalone translate function for bot messages.
- * Uses the "bot" namespace and operates without Next.js request context.
+ * Uses bot-related namespaces and operates without Next.js request context.
  */
-export async function getBotTranslate(
-	locale: string,
-): Promise<BotTranslateFn> {
+export async function getBotTranslate(locale: string): Promise<BotTranslateFn> {
 	const lang = ALL_LANGUAGES.includes(locale) ? locale : DEFAULT_LANGUAGE;
-	const staticData = await loadNamespaces(lang, ["bot"]);
+	const staticData = await loadNamespaces(lang, ["bot", "teamsBot"]);
 
 	const tolgee = TolgeeBase().init({
 		language: lang,
@@ -158,11 +139,7 @@ export async function getBotTranslate(
 
 	await tolgee.run();
 
-	return (
-		key: string,
-		defaultValue: string,
-		params?: Record<string, string | number>,
-	): string => {
+	return (key: string, defaultValue: string, params?: Record<string, string | number>): string => {
 		return tolgee.t({ key, defaultValue, params });
 	};
 }

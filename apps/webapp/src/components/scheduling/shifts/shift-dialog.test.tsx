@@ -20,6 +20,10 @@ vi.mock("sonner", () => ({
 	},
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
 	deleteShift: deleteShiftMock,
 	upsertShift: upsertShiftMock,

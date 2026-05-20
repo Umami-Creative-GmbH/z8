@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { startTransition, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ type ApprovalDecisionResponse = {
 const REJECT_REASON = "Rejected from manager daily briefing.";
 
 export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [actingApprovalId, setActingApprovalId] = useState<string | null>(null);
 	const [isRefreshPending, startRefreshTransition] = useTransition();
@@ -39,11 +41,15 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 		postApprovalDecision(item.approvalId, decision)
 			.then((result) => {
 				if (!result.success) {
-					toast.error(result.error || fallbackError(decision));
+					toast.error(result.error || fallbackError(t, decision));
 					return;
 				}
 
-				toast.success(decision === "approve" ? "Request approved" : "Request rejected");
+				toast.success(
+					decision === "approve"
+						? t("today.approvals.toast.approved", "Request approved")
+						: t("today.approvals.toast.rejected", "Request rejected"),
+				);
 				startTransition(() => {
 					startRefreshTransition(() => {
 						router.refresh();
@@ -51,7 +57,7 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 				});
 			})
 			.catch(() => {
-				toast.error(fallbackError(decision));
+				toast.error(fallbackError(t, decision));
 			})
 			.finally(() => {
 				setActingApprovalId(null);
@@ -63,15 +69,17 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 			<CardHeader className="gap-2">
 				<div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0 space-y-1">
-						<h2 className="font-semibold text-base leading-none">Approvals</h2>
+						<h2 className="font-semibold text-base leading-none">
+							{t("today.approvals.title", "Approvals")}
+						</h2>
 						<CardDescription className="break-words">
-							Requests waiting for a manager decision.
+							{t("today.approvals.description", "Requests waiting for a manager decision.")}
 						</CardDescription>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<Badge variant={items.length > 0 ? "default" : "secondary"}>{items.length}</Badge>
 						<Button asChild size="sm" variant="outline">
-							<Link href="/approvals/inbox">Open inbox</Link>
+							<Link href="/approvals/inbox">{t("today.approvals.openInbox", "Open inbox")}</Link>
 						</Button>
 					</div>
 				</div>
@@ -79,7 +87,10 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 			<CardContent className="space-y-3">
 				{error ? <SectionError message={error} /> : null}
 				{items.length > 0 ? (
-					<ul aria-label="Pending approvals" className="space-y-3">
+					<ul
+						aria-label={t("today.approvals.pendingAriaLabel", "Pending approvals")}
+						className="space-y-3"
+					>
 						{items.map((item) => (
 							<li
 								className="flex min-w-0 flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-start sm:justify-between"
@@ -94,23 +105,27 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 								</div>
 								<div className="flex shrink-0 gap-2">
 									<Button
-										aria-label={`Reject ${item.title}`}
+										aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
+											title: item.title,
+										})}
 										disabled={isBusy}
 										onClick={() => decideApproval(item, "reject")}
 										size="sm"
 										type="button"
 										variant="outline"
 									>
-										Reject
+										{t("today.approvals.reject", "Reject")}
 									</Button>
 									<Button
-										aria-label={`Approve ${item.title}`}
+										aria-label={t("today.approvals.approveLabel", "Approve {title}", {
+											title: item.title,
+										})}
 										disabled={isBusy}
 										onClick={() => decideApproval(item, "approve")}
 										size="sm"
 										type="button"
 									>
-										Approve
+										{t("today.approvals.approve", "Approve")}
 									</Button>
 								</div>
 							</li>
@@ -118,7 +133,7 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 					</ul>
 				) : (
 					<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
-						No approvals are waiting.
+						{t("today.approvals.empty", "No approvals are waiting.")}
 					</p>
 				)}
 			</CardContent>
@@ -165,8 +180,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function fallbackError(decision: ApprovalDecision) {
-	return decision === "approve" ? "Unable to approve request" : "Unable to reject request";
+function fallbackError(t: ReturnType<typeof useTranslate>["t"], decision: ApprovalDecision) {
+	return decision === "approve"
+		? t("today.approvals.toast.approveError", "Unable to approve request")
+		: t("today.approvals.toast.rejectError", "Unable to reject request");
 }
 
 function SectionError({ message }: { message: string }) {

@@ -17,6 +17,7 @@ import {
 	IconShield,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +34,16 @@ import {
 } from "@/lib/notifications/types";
 import { PushPermissionModal } from "./push-permission-modal";
 
+const LOAD_FAILED_FALLBACK = ["Unable to load", "notification preferences"].join(" ");
+
 // Group notification types by category for better UX
 const NOTIFICATION_CATEGORIES = [
 	{
 		id: "approvals",
-		title: "Approvals",
-		description: "Notifications about approval requests and their status",
+		titleKey: "common:notifications.preferences.categories.approvals.title",
+		titleFallback: "Approvals",
+		descriptionKey: "common:notifications.preferences.categories.approvals.description",
+		descriptionFallback: "Notifications about approval requests and their status",
 		icon: IconCheck,
 		types: [
 			"approval_request_submitted",
@@ -48,8 +53,10 @@ const NOTIFICATION_CATEGORIES = [
 	},
 	{
 		id: "time",
-		title: "Time Corrections",
-		description: "Notifications about time tracking corrections",
+		titleKey: "common:notifications.preferences.categories.time.title",
+		titleFallback: "Time Corrections",
+		descriptionKey: "common:notifications.preferences.categories.time.description",
+		descriptionFallback: "Notifications about time tracking corrections",
 		icon: IconClock,
 		types: [
 			"time_correction_submitted",
@@ -59,8 +66,10 @@ const NOTIFICATION_CATEGORIES = [
 	},
 	{
 		id: "absences",
-		title: "Absences",
-		description: "Notifications about absence requests",
+		titleKey: "common:notifications.preferences.categories.absences.title",
+		titleFallback: "Absences",
+		descriptionKey: "common:notifications.preferences.categories.absences.description",
+		descriptionFallback: "Notifications about absence requests",
 		icon: IconCalendar,
 		types: [
 			"absence_request_submitted",
@@ -70,29 +79,37 @@ const NOTIFICATION_CATEGORIES = [
 	},
 	{
 		id: "team",
-		title: "Team",
-		description: "Notifications about team membership changes",
+		titleKey: "common:notifications.preferences.categories.team.title",
+		titleFallback: "Team",
+		descriptionKey: "common:notifications.preferences.categories.team.description",
+		descriptionFallback: "Notifications about team membership changes",
 		icon: IconUsers,
 		types: ["team_member_added", "team_member_removed"] as NotificationType[],
 	},
 	{
 		id: "security",
-		title: "Security",
-		description: "Important security notifications",
+		titleKey: "common:notifications.preferences.categories.security.title",
+		titleFallback: "Security",
+		descriptionKey: "common:notifications.preferences.categories.security.description",
+		descriptionFallback: "Important security notifications",
 		icon: IconShield,
 		types: ["password_changed", "two_factor_enabled", "two_factor_disabled"] as NotificationType[],
 	},
 	{
 		id: "reminders",
-		title: "Reminders",
-		description: "Helpful reminders and alerts",
+		titleKey: "common:notifications.preferences.categories.reminders.title",
+		titleFallback: "Reminders",
+		descriptionKey: "common:notifications.preferences.categories.reminders.description",
+		descriptionFallback: "Helpful reminders and alerts",
 		icon: IconBell,
 		types: ["birthday_reminder", "vacation_balance_alert"] as NotificationType[],
 	},
 	{
 		id: "scheduling",
-		title: "Shift Scheduling",
-		description: "Notifications about shift assignments and swaps",
+		titleKey: "common:notifications.preferences.categories.scheduling.title",
+		titleFallback: "Shift Scheduling",
+		descriptionKey: "common:notifications.preferences.categories.scheduling.description",
+		descriptionFallback: "Notifications about shift assignments and swaps",
 		icon: IconCalendarEvent,
 		types: [
 			"schedule_published",
@@ -197,6 +214,7 @@ const CHANNEL_CONFIG: Record<
 };
 
 export function NotificationSettings() {
+	const { t } = useTranslate();
 	const { matrix, availableChannels, isLoading, updatePreference, isUpdating } =
 		useNotificationPreferences();
 
@@ -208,18 +226,30 @@ export function NotificationSettings() {
 		isLoading: isPushLoading,
 	} = usePushNotifications({
 		onSubscribe: () => {
-			toast.success("Push notifications enabled", {
-				description: "You will now receive browser push notifications",
+			toast.success(t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"), {
+				description: t(
+					"common:notifications.preferences.push.enabledToastDescription",
+					"You will now receive browser push notifications",
+				),
 			});
 		},
 		onError: (error) => {
-			toast.error("Push notification error", {
+			toast.error(t("common:notifications.preferences.push.errorToast", "Push notification error"), {
 				description: error.message,
 			});
 		},
 	});
 
 	const visibleChannels = NOTIFICATION_CHANNELS.filter((channel) => availableChannels[channel]);
+	const getChannelLabel = (channel: NotificationChannel) =>
+		t(`common:notifications.preferences.channels.${channel}.label`, CHANNEL_CONFIG[channel].label);
+	const getChannelDescription = (channel: NotificationChannel) =>
+		t(
+			`common:notifications.preferences.channels.${channel}.description`,
+			CHANNEL_CONFIG[channel].description,
+		);
+	const getTypeLabel = (type: NotificationType) =>
+		t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
 
 	const [pendingToggle, setPendingToggle] = useState<string | null>(null);
 	const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -258,10 +288,16 @@ export function NotificationSettings() {
 				{ notificationType: type, channel, enabled },
 				{
 					onSuccess: () => {
-						toast.success(enabled ? "Notification enabled" : "Notification disabled");
+						toast.success(
+							enabled
+								? t("common:notifications.preferences.enabled", "Notification enabled")
+								: t("common:notifications.preferences.disabled", "Notification disabled"),
+						);
 					},
 					onError: () => {
-						toast.error("Failed to update preference");
+						toast.error(
+							t("common:notifications.preferences.updateFailed", "Failed to update preference"),
+						);
 					},
 					onSettled: () => {
 						setPendingToggle(null);
@@ -281,7 +317,9 @@ export function NotificationSettings() {
 		return (
 			<Card>
 				<CardContent className="py-8 text-center">
-					<p className="text-muted-foreground">Unable to load notification preferences</p>
+					<p className="text-muted-foreground">
+						{t("common:notifications.preferences.loadFailed", LOAD_FAILED_FALLBACK)}
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -298,10 +336,18 @@ export function NotificationSettings() {
 								className="size-5 text-blue-600 dark:text-blue-400"
 								aria-hidden="true"
 							/>
-							<CardTitle className="text-base">Enable Push Notifications</CardTitle>
+							<CardTitle className="text-base">
+								{t(
+									"common:notifications.preferences.push.enableTitle",
+									"Enable Push Notifications",
+								)}
+							</CardTitle>
 						</div>
 						<CardDescription>
-							Get notified instantly even when you're not using the app
+							{t(
+								"common:notifications.preferences.push.enableDescription",
+								"Get notified instantly even when you're not using the app",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -309,7 +355,10 @@ export function NotificationSettings() {
 							{isPushLoading && (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
-							Enable Push Notifications
+							{t(
+								"common:notifications.preferences.push.enableButton",
+								"Enable Push Notifications",
+							)}
 						</Button>
 					</CardContent>
 				</Card>
@@ -324,17 +373,26 @@ export function NotificationSettings() {
 								className="size-5 text-amber-600 dark:text-amber-400"
 								aria-hidden="true"
 							/>
-							<CardTitle className="text-base">Push Notifications Blocked</CardTitle>
+							<CardTitle className="text-base">
+								{t(
+									"common:notifications.preferences.push.blockedTitle",
+									"Push Notifications Blocked",
+								)}
+							</CardTitle>
 						</div>
 						<CardDescription>
-							Push notifications are blocked by your browser. To enable them, you need to update
-							your browser settings.
+							{t(
+								"common:notifications.preferences.push.blockedDescription",
+								"Push notifications are blocked by your browser. To enable them, you need to update your browser settings.",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<p className="text-sm text-muted-foreground">
-							Click the lock icon in your browser's address bar and allow notifications for this
-							site, then refresh the page.
+							{t(
+								"common:notifications.preferences.push.blockedHelp",
+								"Click the lock icon in your browser's address bar and allow notifications for this site, then refresh the page.",
+							)}
 						</p>
 					</CardContent>
 				</Card>
@@ -348,10 +406,13 @@ export function NotificationSettings() {
 						aria-hidden="true"
 					/>
 					<span className="text-sm text-green-700 dark:text-green-300">
-						Push notifications are enabled
+						{t(
+							"common:notifications.preferences.push.enabledIndicator",
+							"Push notifications are enabled",
+						)}
 					</span>
 					<Badge variant="outline" className="ml-auto border-green-300 text-green-700">
-						Active
+						{t("common:common.active", "Active")}
 					</Badge>
 				</div>
 			)}
@@ -372,7 +433,7 @@ export function NotificationSettings() {
 					return (
 						<div key={channel} className="flex items-center gap-1.5">
 							<config.icon className="size-4" aria-hidden="true" />
-							<span>{config.label}</span>
+							<span>{getChannelLabel(channel)}</span>
 						</div>
 					);
 				})}
@@ -384,9 +445,13 @@ export function NotificationSettings() {
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
 							<category.icon className="size-5 text-muted-foreground" aria-hidden="true" />
-							<CardTitle className="text-base">{category.title}</CardTitle>
+							<CardTitle className="text-base">
+								{t(category.titleKey, category.titleFallback)}
+							</CardTitle>
 						</div>
-						<CardDescription>{category.description}</CardDescription>
+						<CardDescription>
+							{t(category.descriptionKey, category.descriptionFallback)}
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-3">
@@ -395,13 +460,15 @@ export function NotificationSettings() {
 									key={type}
 									className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
 								>
-									<span className="text-sm font-medium">{TYPE_LABELS[type]}</span>
+									<span className="text-sm font-medium">{getTypeLabel(type)}</span>
 									<div className="flex max-w-full flex-wrap items-center gap-3">
 										{visibleChannels.map((channel) => {
 											const isEnabled = matrix[type]?.[channel] ?? true;
 											const toggleId = `${type}-${channel}`;
 											const isPending = pendingToggle === toggleId;
 											const config = CHANNEL_CONFIG[channel];
+											const channelLabel = getChannelLabel(channel);
+											const typeLabel = getTypeLabel(type);
 
 											const isDisabled =
 												isPending || isUpdating || (channel === "push" && !isPushSupported);
@@ -410,7 +477,7 @@ export function NotificationSettings() {
 												<div
 													key={channel}
 													className="flex items-center gap-1.5"
-													title={config.description}
+													title={getChannelDescription(channel)}
 												>
 													<config.icon
 														className="size-3.5 text-muted-foreground"
@@ -420,7 +487,11 @@ export function NotificationSettings() {
 														checked={isEnabled}
 														onCheckedChange={(checked) => handleToggle(type, channel, checked)}
 														disabled={isDisabled}
-														aria-label={`${config.label} notifications for ${TYPE_LABELS[type]}`}
+														aria-label={t(
+															"common:notifications.preferences.toggleAria",
+															"{channel} notifications for {type}",
+															{ channel: channelLabel, type: typeLabel },
+														)}
 														className="data-[state=checked]:bg-primary"
 													/>
 												</div>

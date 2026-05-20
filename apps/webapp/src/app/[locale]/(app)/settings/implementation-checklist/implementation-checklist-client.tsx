@@ -21,9 +21,13 @@ type CompletionSource = "automatic" | "manual" | null;
 interface ImplementationChecklistItem {
 	id: string;
 	title: string;
+	titleKey?: string;
 	description: string;
+	descriptionKey?: string;
 	helperText: string;
+	helperTextKey?: string;
 	actionLabel: string;
+	actionLabelKey?: string;
 	href: string;
 	status: ChecklistStatus;
 	completionSource: CompletionSource;
@@ -141,9 +145,13 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 										<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 											<div className="space-y-1">
 												<CardTitle>
-													<h2 className="text-base font-semibold">{item.title}</h2>
+													<h2 className="text-base font-semibold">
+														{item.titleKey ? t(item.titleKey, item.title) : item.title}
+													</h2>
 												</CardTitle>
-												<CardDescription>{item.description}</CardDescription>
+												<CardDescription>
+													{item.descriptionKey ? t(item.descriptionKey, item.description) : item.description}
+												</CardDescription>
 											</div>
 											<Badge variant={item.status === "complete" ? "secondary" : "outline"}>
 												{getStatusLabel(item, t)}
@@ -153,10 +161,14 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								</div>
 							</CardHeader>
 							<CardContent className="space-y-4">
-								<p className="text-muted-foreground text-sm">{item.helperText}</p>
+								<p className="text-muted-foreground text-sm">
+									{item.helperTextKey ? t(item.helperTextKey, item.helperText) : item.helperText}
+								</p>
 								<div className="flex flex-wrap items-center gap-3">
 									<Button asChild size="sm">
-										<Link href={item.href}>{item.actionLabel}</Link>
+										<Link href={item.href}>
+											{item.actionLabelKey ? t(item.actionLabelKey, item.actionLabel) : item.actionLabel}
+										</Link>
 									</Button>
 									{item.canToggleManualCompletion ? (
 										<Button

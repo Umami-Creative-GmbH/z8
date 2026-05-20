@@ -11,6 +11,24 @@ import { createNotification } from "./notification-service";
 
 const logger = createLogger("NotificationTriggers");
 
+function i18nMetadata(
+	titleKey: string,
+	titleDefault: string,
+	messageKey: string,
+	messageDefault: string,
+	params?: Record<string, string | number | boolean | null | undefined>,
+) {
+	return {
+		i18n: {
+			titleKey,
+			titleDefault,
+			messageKey,
+			messageDefault,
+			params,
+		},
+	};
+}
+
 // Helper to format YYYY-MM-DD date strings
 const formatDateStr = (dateStr: string) => {
 	const dt = DateTime.fromISO(dateStr);
@@ -459,9 +477,7 @@ function formatTravelExpenseSummary(params: TravelExpenseDecisionParams): string
 /**
  * Notify requester that their travel expense claim was approved.
  */
-export async function onTravelExpenseApproved(
-	params: TravelExpenseDecisionParams,
-): Promise<void> {
+export async function onTravelExpenseApproved(params: TravelExpenseDecisionParams): Promise<void> {
 	try {
 		await createNotification({
 			userId: params.requesterUserId,
@@ -481,9 +497,7 @@ export async function onTravelExpenseApproved(
 /**
  * Notify requester that their travel expense claim was rejected.
  */
-export async function onTravelExpenseRejected(
-	params: TravelExpenseRejectionParams,
-): Promise<void> {
+export async function onTravelExpenseRejected(params: TravelExpenseRejectionParams): Promise<void> {
 	try {
 		const reasonText = params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
 
@@ -529,6 +543,16 @@ export async function onTeamMemberAdded(params: TeamMemberParams): Promise<void>
 			entityType: "team",
 			entityId: params.teamId,
 			actionUrl: "/team",
+			metadata: i18nMetadata(
+				"common:notifications.content.teamMemberAdded.title",
+				"Added to team",
+				"common:notifications.content.teamMemberAdded.message",
+				"You have been added to the {teamName} team by {performedByName}.",
+				{
+					teamName: params.teamName,
+					performedByName: params.performedByName,
+				},
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger team member added notification");
@@ -549,6 +573,16 @@ export async function onTeamMemberRemoved(params: TeamMemberParams): Promise<voi
 			entityType: "team",
 			entityId: params.teamId,
 			actionUrl: "/team",
+			metadata: i18nMetadata(
+				"common:notifications.content.teamMemberRemoved.title",
+				"Removed from team",
+				"common:notifications.content.teamMemberRemoved.message",
+				"You have been removed from the {teamName} team by {performedByName}.",
+				{
+					teamName: params.teamName,
+					performedByName: params.performedByName,
+				},
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger team member removed notification");

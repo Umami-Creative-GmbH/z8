@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrganizationDetails } from "@/app/[locale]/(app)/settings/organizations/actions";
@@ -31,6 +32,7 @@ export function EditOrganizationDialog({
 	open,
 	onOpenChange,
 }: EditOrganizationDialogProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 
@@ -61,11 +63,11 @@ export function EditOrganizationDialog({
 			});
 
 			if (result.success) {
-				toast.success("Organization updated successfully");
+				toast.success(t("organization.edit.updateSuccess", "Organization updated successfully"));
 				onOpenChange(false);
 				router.refresh();
 			} else {
-				toast.error(result.error || "Failed to update organization");
+				toast.error(result.error || t("organization.edit.updateError", "Failed to update organization"));
 			}
 		});
 	};
@@ -74,16 +76,19 @@ export function EditOrganizationDialog({
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
-					<ActionPanelTitle>Edit Organization</ActionPanelTitle>
+					<ActionPanelTitle>{t("organization.edit.title", "Edit Organization")}</ActionPanelTitle>
 					<ActionPanelDescription>
-						Update your organization details. Changes will be visible to all members.
+						{t(
+							"organization.edit.description",
+							"Update your organization details. Changes will be visible to all members.",
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
 					<ActionPanelBody className="space-y-4">
 						<div className="space-y-2">
-							<Label htmlFor="name">Organization Name</Label>
+							<Label htmlFor="name">{t("organization.edit.nameLabel", "Organization Name")}</Label>
 							<Input
 								id="name"
 								value={formData.name}
@@ -94,7 +99,7 @@ export function EditOrganizationDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="slug">Organization Slug</Label>
+							<Label htmlFor="slug">{t("organization.edit.slugLabel", "Organization Slug")}</Label>
 							<Input
 								id="slug"
 								value={formData.slug}
@@ -106,20 +111,23 @@ export function EditOrganizationDialog({
 								}
 								placeholder="acme-corp"
 								pattern="[a-z0-9-]+"
-								title="Only lowercase letters, numbers, and hyphens"
+								title={t("organization.edit.slugHelp", "Only lowercase letters, numbers, and hyphens")}
 							/>
 							<p className="text-xs text-muted-foreground">
-								Only lowercase letters, numbers, and hyphens
+								{t("organization.edit.slugHelp", "Only lowercase letters, numbers, and hyphens")}
 							</p>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="description">Description</Label>
+							<Label htmlFor="description">{t("common.description", "Description")}</Label>
 							<Textarea
 								id="description"
 								value={formData.description}
 								onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-								placeholder="A brief description of your organization"
+								placeholder={t(
+									"organization.edit.descriptionPlaceholder",
+									"A brief description of your organization",
+								)}
 								rows={3}
 							/>
 						</div>
@@ -132,11 +140,11 @@ export function EditOrganizationDialog({
 							onClick={() => onOpenChange(false)}
 							disabled={isPending}
 						>
-							Cancel
+							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isPending}>
 							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							Save Changes
+							{t("common.saveChanges", "Save Changes")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

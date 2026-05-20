@@ -8,6 +8,7 @@ import { createDragAndDropPlugin } from "@schedule-x/drag-and-drop";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
+import { useTranslate } from "@tolgee/react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import type {
@@ -44,6 +45,7 @@ export function ShiftScheduler({
 	employeeId: _employeeId,
 	isManager,
 }: ShiftSchedulerProps) {
+	const { t } = useTranslate();
 	const { resolvedTheme } = useTheme();
 	const [dateRange, setDateRange] = useState<DateRange>(getWeekDateRange);
 	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
@@ -209,7 +211,9 @@ export function ShiftScheduler({
 	if (shiftsLoading) {
 		return (
 			<div className="flex items-center justify-center py-20">
-				<div className="animate-pulse text-muted-foreground">Loading schedule...</div>
+				<div className="animate-pulse text-muted-foreground">
+					{t("scheduling:scheduling.scheduler.loading", "Loading schedule...")}
+				</div>
 			</div>
 		);
 	}

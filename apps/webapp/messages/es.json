@@ -1,7 +1,62 @@
 {
   "appSearch": {
+    "description": "Search pages, settings, people, and teams",
+    "empty": "No results found.",
+    "groups": { "pages": "Pages", "people": "People", "settings": "Settings", "teams": "Teams" },
+    "placeholder": "Search pages, settings, people, and teams…",
+    "search": "Search",
     "teamAbsences": {
       "description": "Revisar las métricas de ausencia de los empleados y registrar las ausencias"
+    }
+  },
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrar ausencia para {name}"
+      },
+      "empty": {
+        "description": "Ajuste los filtros o la búsqueda para encontrar miembros del equipo.",
+        "label": "No se encontraron empleados",
+        "title": "No se encontraron empleados"
+      },
+      "filters": {
+        "allTeams": "Todos los equipos",
+        "searchLabel": "Buscar empleados",
+        "searchPlaceholder": "Buscar empleados…",
+        "searchSubmit": "Buscar",
+        "teamLabel": "Filtrar por equipo",
+        "teamPlaceholder": "Equipo",
+        "yearLabel": "Filtrar por año",
+        "yearPlaceholder": "Año"
+      },
+      "pagination": {
+        "next": "Siguiente",
+        "nextLabel": "Página siguiente",
+        "page": "Página {page} de {pageCount}",
+        "previous": "Anterior",
+        "previousLabel": "Página anterior",
+        "showing": "Mostrando {firstItem} a {lastItem} de {total}"
+      },
+      "recordDialog": {
+        "required": "{label} es obligatorio",
+        "titleForEmployee": "Registrar ausencia para {name}"
+      },
+      "sort": {
+        "ascending": "ascendente",
+        "by": "Ordenar por {label}",
+        "byWithDirection": "Ordenar por {label} ({direction})",
+        "descending": "descendente"
+      },
+      "table": {
+        "actions": "Acciones",
+        "allowance": "Asignación",
+        "employee": "Empleado",
+        "left": "Restante",
+        "pending": "Pendiente",
+        "sick": "Enfermedad",
+        "teamOrPosition": "Equipo o puesto",
+        "used": "Usado"
+      }
     }
   },
   "surcharges": {

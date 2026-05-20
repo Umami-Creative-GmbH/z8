@@ -21,7 +21,12 @@ import {
 	shift,
 	workPeriod,
 } from "@/db/schema";
-import { fmtTime, fmtWeekdayShortDate, getUserLocale } from "@/lib/bot-platform/i18n";
+import {
+	fmtTime,
+	fmtWeekdayShortDate,
+	getBotTranslate,
+	getUserLocale,
+} from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
@@ -55,10 +60,7 @@ export async function runDailyDigestJob(): Promise<DailyDigestResult> {
 		const tenants = await getAllActiveTenants();
 		const digestEnabledTenants = tenants.filter((t) => t.enableDailyDigest);
 
-		logger.info(
-			{ tenantCount: digestEnabledTenants.length },
-			"Starting daily digest job",
-		);
+		logger.info({ tenantCount: digestEnabledTenants.length }, "Starting daily digest job");
 
 		for (const tenant of digestEnabledTenants) {
 			try {
@@ -128,15 +130,10 @@ async function processTenantDigest(tenant: {
 	}
 
 	// Get all managers in this organization who have Teams conversations
-	const conversations = await getOrganizationPersonalConversations(
-		tenant.organizationId,
-	);
+	const conversations = await getOrganizationPersonalConversations(tenant.organizationId);
 
 	if (conversations.length === 0) {
-		logger.debug(
-			{ organizationId: tenant.organizationId },
-			"No Teams conversations for digest",
-		);
+		logger.debug({ organizationId: tenant.organizationId }, "No Teams conversations for digest");
 		return 0;
 	}
 
@@ -172,7 +169,8 @@ async function processTenantDigest(tenant: {
 				);
 
 				// Build and send card
-				const card = buildDailyDigestCard(digestData, appUrl, userLocale);
+				const t = await getBotTranslate(userLocale);
+				const card = buildDailyDigestCard(digestData, appUrl, userLocale, t);
 
 				await sendAdaptiveCard(
 					conv.conversationReference,
@@ -182,18 +180,13 @@ async function processTenantDigest(tenant: {
 
 				return true;
 			} catch (error) {
-				logger.warn(
-					{ error, userId: conv.userId },
-					"Failed to send digest to user",
-				);
+				logger.warn({ error, userId: conv.userId }, "Failed to send digest to user");
 				return false;
 			}
 		}),
 	);
 
-	const sent = results.filter(
-		(r) => r.status === "fulfilled" && r.value === true,
-	).length;
+	const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
 
 	logger.info(
 		{ organizationId: tenant.organizationId, digestsSent: sent },
@@ -318,70 +311,63 @@ export async function buildDigestDataForManager(
 	let compliancePending: number | undefined;
 
 	if (managedEmployeeIds.length > 0) {
-		const [absences, activeWorkPeriodsResult, [pendingExceptionsResult]] =
-			await Promise.all([
-				// Employees out today
-				db
-					.select({
-						employeeId: absenceEntry.employeeId,
-						startDate: absenceEntry.startDate,
-						endDate: absenceEntry.endDate,
-						employeeName: user.name,
-						categoryName: absenceCategory.name,
-					})
-					.from(absenceEntry)
-					.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
-					.innerJoin(user, eq(employee.userId, user.id))
-					.leftJoin(
-						absenceCategory,
-						eq(absenceEntry.categoryId, absenceCategory.id),
-					)
-					.where(
-						and(
-							eq(absenceEntry.status, "approved"),
-							lte(absenceEntry.startDate, todayStr!),
-							gte(absenceEntry.endDate, todayStr!),
-							inArray(absenceEntry.employeeId, managedEmployeeIds),
-						),
+		const [absences, activeWorkPeriodsResult, [pendingExceptionsResult]] = await Promise.all([
+			// Employees out today
+			db
+				.select({
+					employeeId: absenceEntry.employeeId,
+					startDate: absenceEntry.startDate,
+					endDate: absenceEntry.endDate,
+					employeeName: user.name,
+					categoryName: absenceCategory.name,
+				})
+				.from(absenceEntry)
+				.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
+				.innerJoin(user, eq(employee.userId, user.id))
+				.leftJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+				.where(
+					and(
+						eq(absenceEntry.status, "approved"),
+						lte(absenceEntry.startDate, todayStr!),
+						gte(absenceEntry.endDate, todayStr!),
+						inArray(absenceEntry.employeeId, managedEmployeeIds),
 					),
-				// Employees clocked in
-				db
-					.select({
-						employeeId: workPeriod.employeeId,
-						startTime: workPeriod.startTime,
-						employeeName: user.name,
-					})
-					.from(workPeriod)
-					.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
-					.innerJoin(user, eq(employee.userId, user.id))
-					.where(
-						and(
-							eq(workPeriod.organizationId, organizationId),
-							eq(workPeriod.isActive, true),
-							inArray(workPeriod.employeeId, managedEmployeeIds),
-						),
+				),
+			// Employees clocked in
+			db
+				.select({
+					employeeId: workPeriod.employeeId,
+					startTime: workPeriod.startTime,
+					employeeName: user.name,
+				})
+				.from(workPeriod)
+				.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
+				.innerJoin(user, eq(employee.userId, user.id))
+				.where(
+					and(
+						eq(workPeriod.organizationId, organizationId),
+						eq(workPeriod.isActive, true),
+						inArray(workPeriod.employeeId, managedEmployeeIds),
 					),
-				// Pending compliance exceptions
-				db
-					.select({ count: sql<number>`count(*)` })
-					.from(complianceException)
-					.where(
-						and(
-							eq(complianceException.organizationId, organizationId),
-							eq(complianceException.status, "pending"),
-							inArray(complianceException.employeeId, managedEmployeeIds),
-						),
+				),
+			// Pending compliance exceptions
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(complianceException)
+				.where(
+					and(
+						eq(complianceException.organizationId, organizationId),
+						eq(complianceException.status, "pending"),
+						inArray(complianceException.employeeId, managedEmployeeIds),
 					),
-			]);
+				),
+		]);
 
 		// Process Phase 2 results
 		employeesOut = absences.map((a) => ({
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
-			returnDate: fmtWeekdayShortDate(
-				DateTime.fromISO(a.endDate).plus({ days: 1 }),
-				locale,
-			),
+			returnDate: fmtWeekdayShortDate(DateTime.fromISO(a.endDate).plus({ days: 1 }), locale),
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;
@@ -440,9 +426,7 @@ export async function buildDigestDataForManager(
 		const scheduledEmployeeIds = [
 			...new Set(scheduledShifts.map((s) => s.employeeId).filter(Boolean)),
 		] as string[];
-		const clockedInEmployeeIds = new Set(
-			activeWorkPeriods?.map((wp) => wp.employeeId) || [],
-		);
+		const clockedInEmployeeIds = new Set(activeWorkPeriods?.map((wp) => wp.employeeId) || []);
 
 		// Calculate gaps per subarea
 		const gaps: typeof coverageGaps = [];
@@ -451,9 +435,7 @@ export async function buildDigestDataForManager(
 			if (!subarea) continue;
 
 			// Count clocked-in employees and find time range in a single pass (O(n) instead of O(n log n))
-			const subareaShifts = scheduledShifts.filter(
-				(s) => s.subareaId === subareaId,
-			);
+			const subareaShifts = scheduledShifts.filter((s) => s.subareaId === subareaId);
 			if (subareaShifts.length === 0) continue;
 
 			let clockedIn = 0;

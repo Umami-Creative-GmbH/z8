@@ -120,6 +120,7 @@ export async function getWorkPeriodsForMonth(
 				endDate: period.endTime ?? undefined,
 				title,
 				description: notes || "Work period",
+				descriptionKey: notes ? undefined : "calendar.calendar.workPeriod.fallbackDescription",
 				color: eventColor,
 				metadata: {
 					durationMinutes,
@@ -208,6 +209,10 @@ function aggregateByDay(
 			date: group.date,
 			title: `${group.employeeName} - ${formatDuration(group.totalMinutes)}`,
 			description: `${group.periodCount} work ${group.periodCount === 1 ? "period" : "periods"}`,
+			descriptionKey:
+				group.periodCount === 1
+					? "calendar.calendar.workPeriod.aggregatedDescriptionOne"
+					: "calendar.calendar.workPeriod.aggregatedDescriptionOther",
 			color: "#6366f1", // Indigo-500
 			metadata: {
 				durationMinutes: group.totalMinutes,

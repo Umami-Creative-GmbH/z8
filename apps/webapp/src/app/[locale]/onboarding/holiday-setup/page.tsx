@@ -103,7 +103,7 @@ export default function HolidaySetupPage() {
 			router.push("/onboarding/work-templates");
 		} else {
 			setLoading(false);
-			toast.error(result.error || "Failed to skip holiday setup");
+			toast.error(result.error || t("onboarding.holidaySetup.skipError", "Failed to skip holiday setup"));
 		}
 	}
 

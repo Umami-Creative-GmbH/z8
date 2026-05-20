@@ -7,6 +7,7 @@ import {
 	type ReactFormExtendedApi,
 	useForm,
 } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -120,7 +121,7 @@ function dateInputToDate(value: string) {
 
 function formatDate(value: Date | string | null | undefined) {
 	const date = toDateTime(value);
-	return date?.isValid ? date.toLocaleString(DateTime.DATE_MED) : "Present";
+	return date?.isValid ? date.toLocaleString(DateTime.DATE_MED) : null;
 }
 
 function formatCurrency(amount: string | null, currency: string) {
@@ -130,7 +131,7 @@ function formatCurrency(amount: string | null, currency: string) {
 
 function formatWeeklyHours(minutes: number) {
 	const hours = minutes / 60;
-	return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h / week`;
+	return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
 }
 
 function isCurrentConfirmed(entry: EmploymentHistoryEntry, now: DateTime) {
@@ -163,6 +164,7 @@ export function EmployeeEmploymentHistoryCard({
 	isCreating,
 	isMutating,
 }: EmployeeEmploymentHistoryCardProps) {
+	const { t } = useTranslate();
 	const [isAdding, setIsAdding] = useState(false);
 	const now = DateTime.utc();
 	const sortedHistory = history.toSorted((a, b) => {
@@ -201,50 +203,50 @@ export function EmployeeEmploymentHistoryCard({
 			}).catch(() => null);
 
 			if (!result) {
-				toast.error("An unexpected error occurred");
+				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 				return;
 			}
 
 			if (result.success) {
-				toast.success("Employment history change added");
+				toast.success(t("settings.employmentHistory.addSuccess", "Employment history change added"));
 				form.reset();
 				setIsAdding(false);
 				return;
 			}
 
-			toast.error(result.error || "Failed to add employment history change");
+			toast.error(result.error || t("settings.employmentHistory.addError", "Failed to add employment history change"));
 		},
 	});
 
 	const handleConfirm = async (historyId: string) => {
 		const result = await onConfirm(historyId).catch(() => null);
 		if (result?.success) {
-			toast.success("Employment history change confirmed");
+			toast.success(t("settings.employmentHistory.confirmSuccess", "Employment history change confirmed"));
 			return;
 		}
-		toast.error(result?.error || "Failed to confirm employment history change");
+		toast.error(result?.error || t("settings.employmentHistory.confirmError", "Failed to confirm employment history change"));
 	};
 
 	const handleCancel = async (historyId: string) => {
 		const confirmed = window.confirm(
-			"Cancel this employment change? This removes the scheduled or draft employment change.",
+			t("settings.employmentHistory.cancelConfirm", "Cancel this employment change? This removes the scheduled or draft employment change."),
 		);
 		if (!confirmed) return;
 
 		const result = await onCancel(historyId).catch(() => null);
 		if (result?.success) {
-			toast.success("Employment history change canceled");
+			toast.success(t("settings.employmentHistory.cancelSuccess", "Employment history change canceled"));
 			return;
 		}
-		toast.error(result?.error || "Failed to cancel employment history change");
+		toast.error(result?.error || t("settings.employmentHistory.cancelError", "Failed to cancel employment history change"));
 	};
 
 	return (
 		<Card>
 			<CardHeader className="flex flex-row items-start justify-between gap-4">
 				<div>
-					<CardTitle>Contract & Work Model</CardTitle>
-					<CardDescription>Confirmed context and scheduled employment changes</CardDescription>
+					<CardTitle>{t("settings.employmentHistory.title", "Contract & Work Model")}</CardTitle>
+					<CardDescription>{t("settings.employmentHistory.description", "Confirmed context and scheduled employment changes")}</CardDescription>
 				</div>
 				{canManage && (
 					<Button
@@ -253,21 +255,23 @@ export function EmployeeEmploymentHistoryCard({
 						onClick={() => setIsAdding(!isAdding)}
 					>
 						<IconPlus className="mr-2 size-4" aria-hidden="true" />
-						Add Change
+						{t("settings.employmentHistory.addChange", "Add Change")}
 					</Button>
 				)}
 			</CardHeader>
 			<CardContent className="space-y-6">
 				<div className="grid gap-3 md:grid-cols-2">
 					<ContextPanel
-						label="Current confirmed"
+						label={t("settings.employmentHistory.currentConfirmed", "Current confirmed")}
 						entry={current}
-						empty="No confirmed contract context"
+						empty={t("settings.employmentHistory.noCurrentContext", "No confirmed contract context")}
+						t={t}
 					/>
 					<ContextPanel
-						label="Next scheduled confirmed"
+						label={t("settings.employmentHistory.nextScheduledConfirmed", "Next scheduled confirmed")}
 						entry={nextConfirmed}
-						empty="No confirmed change scheduled"
+						empty={t("settings.employmentHistory.noScheduledChange", "No confirmed change scheduled")}
+						t={t}
 					/>
 				</div>
 
@@ -284,21 +288,23 @@ export function EmployeeEmploymentHistoryCard({
 							<DateField
 								form={form}
 								name="validFrom"
-								label="Effective Date"
+								label={t("settings.employmentHistory.effectiveDate", "Effective Date")}
 								disabled={isCreating}
+								description={t("settings.employmentHistory.effectiveDateHelp", "When this contract context takes effect")}
+								requiredMessage={t("settings.employmentHistory.effectiveDateRequired", "Effective Date is required")}
 								required
 							/>
 							<TextField
 								form={form}
 								name="weeklyHours"
-								label="Weekly Hours"
+								label={t("settings.employmentHistory.weeklyHours", "Weekly Hours")}
 								type="number"
 								disabled={isCreating}
 							/>
 							<form.Field name="reviewState">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>Review State</TFormLabel>
+							<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.reviewState", "Review State")}</TFormLabel>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as ReviewState)}
@@ -306,13 +312,13 @@ export function EmployeeEmploymentHistoryCard({
 										>
 											<TFormControl hasError={fieldHasError(field)}>
 												<SelectTrigger>
-													<SelectValue placeholder="Select review state" />
+								<SelectValue placeholder={t("settings.employmentHistory.selectReviewState", "Select review state")} />
 												</SelectTrigger>
 											</TFormControl>
 											<SelectContent>
-												<SelectItem value="draft">draft</SelectItem>
-												<SelectItem value="pending">pending</SelectItem>
-												<SelectItem value="confirmed">confirmed</SelectItem>
+								<SelectItem value="draft">{t("settings.employmentHistory.states.draft", "draft")}</SelectItem>
+								<SelectItem value="pending">{t("settings.employmentHistory.states.pending", "pending")}</SelectItem>
+								<SelectItem value="confirmed">{t("settings.employmentHistory.states.confirmed", "confirmed")}</SelectItem>
 											</SelectContent>
 										</Select>
 										<TFormMessage field={field} />
@@ -322,7 +328,7 @@ export function EmployeeEmploymentHistoryCard({
 							<form.Field name="workModel">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>Work Model</TFormLabel>
+						<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.workModel", "Work Model")}</TFormLabel>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as WorkModel)}
@@ -330,14 +336,14 @@ export function EmployeeEmploymentHistoryCard({
 										>
 											<TFormControl hasError={fieldHasError(field)}>
 												<SelectTrigger>
-													<SelectValue placeholder="Select work model" />
+							<SelectValue placeholder={t("settings.employmentHistory.selectWorkModel", "Select work model")} />
 												</SelectTrigger>
 											</TFormControl>
 											<SelectContent>
-												<SelectItem value="onsite">onsite</SelectItem>
-												<SelectItem value="hybrid">hybrid</SelectItem>
-												<SelectItem value="remote">remote</SelectItem>
-												<SelectItem value="flexible">flexible</SelectItem>
+							<SelectItem value="onsite">{t("settings.employmentHistory.workModels.onsite", "onsite")}</SelectItem>
+							<SelectItem value="hybrid">{t("settings.employmentHistory.workModels.hybrid", "hybrid")}</SelectItem>
+							<SelectItem value="remote">{t("settings.employmentHistory.workModels.remote", "remote")}</SelectItem>
+							<SelectItem value="flexible">{t("settings.employmentHistory.workModels.flexible", "flexible")}</SelectItem>
 											</SelectContent>
 										</Select>
 										<TFormMessage field={field} />
@@ -347,7 +353,7 @@ export function EmployeeEmploymentHistoryCard({
 							<form.Field name="contractType">
 								{(field) => (
 									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>Contract Type</TFormLabel>
+						<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.contractType", "Contract Type")}</TFormLabel>
 										<Select
 											value={field.state.value}
 											onValueChange={(value) => field.handleChange(value as ContractType)}
@@ -355,12 +361,12 @@ export function EmployeeEmploymentHistoryCard({
 										>
 											<TFormControl hasError={fieldHasError(field)}>
 												<SelectTrigger>
-													<SelectValue placeholder="Select contract type" />
+							<SelectValue placeholder={t("settings.employmentHistory.selectContractType", "Select contract type")} />
 												</SelectTrigger>
 											</TFormControl>
 											<SelectContent>
-												<SelectItem value="fixed">fixed</SelectItem>
-												<SelectItem value="hourly">hourly</SelectItem>
+							<SelectItem value="fixed">{t("settings.employmentHistory.contractTypes.fixed", "fixed")}</SelectItem>
+							<SelectItem value="hourly">{t("settings.employmentHistory.contractTypes.hourly", "hourly")}</SelectItem>
 											</SelectContent>
 										</Select>
 										<TFormMessage field={field} />
@@ -370,27 +376,27 @@ export function EmployeeEmploymentHistoryCard({
 							<TextField
 								form={form}
 								name="hourlyRate"
-								label="Hourly Rate"
+					label={t("settings.employmentHistory.hourlyRate", "Hourly Rate")}
 								type="number"
 								disabled={isCreating}
 							/>
 							<DateField
 								form={form}
 								name="probationStartsOn"
-								label="Probation Start"
+					label={t("settings.employmentHistory.probationStart", "Probation Start")}
 								disabled={isCreating}
 							/>
 							<DateField
 								form={form}
 								name="probationEndsOn"
-								label="Probation End"
+					label={t("settings.employmentHistory.probationEnd", "Probation End")}
 								disabled={isCreating}
 							/>
 						</div>
 						<form.Field name="changeReason">
 							{(field) => (
 								<TFormItem className="mt-4">
-									<TFormLabel hasError={fieldHasError(field)}>Reason / Note</TFormLabel>
+				<TFormLabel hasError={fieldHasError(field)}>{t("settings.employmentHistory.reasonNote", "Reason / Note")}</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
 										<Textarea
 											name="changeReason"
@@ -399,7 +405,7 @@ export function EmployeeEmploymentHistoryCard({
 											onBlur={field.handleBlur}
 											disabled={isCreating}
 											autoComplete="off"
-											placeholder="Annual review, role change, or work-model update…"
+					placeholder={t("settings.employmentHistory.reasonPlaceholder", "Annual review, role change, or work-model update…")}
 											rows={2}
 										/>
 									</TFormControl>
@@ -414,23 +420,23 @@ export function EmployeeEmploymentHistoryCard({
 								onClick={() => setIsAdding(false)}
 								disabled={isCreating}
 							>
-								Cancel
+					{t("common.cancel", "Cancel")}
 							</Button>
 							<Button type="submit" disabled={isCreating}>
 								{isCreating && (
 									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								)}
-								Save Change
+					{t("settings.employmentHistory.saveChange", "Save Change")}
 							</Button>
 						</div>
 					</form>
 				)}
 
 				<div className="space-y-3">
-					<div className="text-sm font-medium">Timeline</div>
+			<div className="text-sm font-medium">{t("settings.employmentHistory.timeline", "Timeline")}</div>
 					{sortedHistory.length === 0 ? (
 						<div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-							No contract or work-model history yet.
+				{t("settings.employmentHistory.emptyTimeline", "No contract or work-model history yet.")}
 						</div>
 					) : (
 						<div className="space-y-3">
@@ -441,9 +447,10 @@ export function EmployeeEmploymentHistoryCard({
 									canManage={canManage}
 									isMutating={isMutating}
 									now={now}
-									onConfirm={handleConfirm}
-									onCancel={handleCancel}
-								/>
+								onConfirm={handleConfirm}
+								onCancel={handleCancel}
+								t={t}
+							/>
 							))}
 						</div>
 					)}
@@ -457,10 +464,12 @@ function ContextPanel({
 	entry,
 	label,
 	empty,
+	t,
 }: {
 	entry?: EmploymentHistoryEntry;
 	label: string;
 	empty: string;
+	t: ReturnType<typeof useTranslate>["t"];
 }) {
 	return (
 		<div className="rounded-lg border p-4">
@@ -468,16 +477,16 @@ function ContextPanel({
 			{entry ? (
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="default">{formatWeeklyHours(entry.weeklyContractMinutes)}</Badge>
+						<Badge variant="default">{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", { hours: formatWeeklyHours(entry.weeklyContractMinutes) })}</Badge>
 						<Badge variant="outline">{entry.workModel}</Badge>
 						<Badge variant="secondary">{entry.contractType}</Badge>
 					</div>
 					<div className="flex items-center gap-2 text-xs text-muted-foreground">
 						<IconCalendar className="size-3" aria-hidden="true" />
-						<span>Effective {formatDate(entry.validFrom)}</span>
+						<span>{t("settings.employmentHistory.effectiveDateValue", "Effective {date}", { date: formatDate(entry.validFrom) ?? t("common.present", "Present") })}</span>
 					</div>
 					{entry.contractType === "hourly" && entry.hourlyRate && (
-						<div className="text-sm">{formatCurrency(entry.hourlyRate, entry.currency)} / hour</div>
+					<div className="text-sm">{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", { rate: formatCurrency(entry.hourlyRate, entry.currency) })}</div>
 					)}
 				</div>
 			) : (
@@ -494,6 +503,7 @@ function TimelineRow({
 	now,
 	onConfirm,
 	onCancel,
+	t,
 }: {
 	entry: EmploymentHistoryEntry;
 	canManage: boolean;
@@ -501,6 +511,7 @@ function TimelineRow({
 	now: DateTime;
 	onConfirm: (historyId: string) => void;
 	onCancel: (historyId: string) => void;
+	t: ReturnType<typeof useTranslate>["t"];
 }) {
 	const current = isCurrentConfirmed(entry, now);
 	const hourlyRate = formatCurrency(entry.hourlyRate, entry.currency);
@@ -511,12 +522,12 @@ function TimelineRow({
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
 						<span className={cn("font-medium", current && "text-primary")}>
-							{formatWeeklyHours(entry.weeklyContractMinutes)}
+				{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", { hours: formatWeeklyHours(entry.weeklyContractMinutes) })}
 						</span>
 						<Badge variant={entry.reviewState === "confirmed" ? "default" : "secondary"}>
 							{entry.reviewState}
 						</Badge>
-						{current && <Badge variant="outline">Current</Badge>}
+			{current && <Badge variant="outline">{t("common.current", "Current")}</Badge>}
 					</div>
 					<div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
 						<span>{entry.workModel}</span>
@@ -525,17 +536,17 @@ function TimelineRow({
 						{hourlyRate && (
 							<>
 								<span aria-hidden="true">·</span>
-								<span>{hourlyRate} / hour</span>
+				<span>{t("settings.employmentHistory.hourlyRateValue", "{rate} / hour", { rate: hourlyRate })}</span>
 							</>
 						)}
 					</div>
 					<div className="text-xs text-muted-foreground">
 						{formatDate(entry.validFrom)} -{" "}
-						{entry.validUntil ? formatDate(entry.validUntil) : "Present"}
+			{entry.validUntil ? formatDate(entry.validUntil) : t("common.present", "Present")}
 					</div>
 					{entry.probationStartsOn && entry.probationEndsOn && (
 						<div className="text-xs text-muted-foreground">
-							Probation {formatDate(entry.probationStartsOn)} - {formatDate(entry.probationEndsOn)}
+			{t("settings.employmentHistory.probationRange", "Probation {startDate} - {endDate}", { startDate: formatDate(entry.probationStartsOn) ?? "", endDate: formatDate(entry.probationEndsOn) ?? "" })}
 						</div>
 					)}
 					{entry.changeReason && (
@@ -556,7 +567,7 @@ function TimelineRow({
 								) : (
 									<IconCheck className="mr-2 size-4" aria-hidden="true" />
 								)}
-								Confirm
+				{t("common.confirm", "Confirm")}
 							</Button>
 						)}
 						{canCancel(entry, now) && (
@@ -567,7 +578,7 @@ function TimelineRow({
 								disabled={isMutating}
 							>
 								<IconX className="mr-2 size-4" aria-hidden="true" />
-								Cancel
+				{t("common.cancel", "Cancel")}
 							</Button>
 						)}
 					</div>
@@ -619,12 +630,16 @@ function DateField({
 	name,
 	label,
 	disabled,
+	description,
+	requiredMessage,
 	required,
 }: {
 	form: EmploymentHistoryFormApi;
 	name: "validFrom" | "probationStartsOn" | "probationEndsOn";
 	label: string;
 	disabled?: boolean;
+	description?: string;
+	requiredMessage?: string;
 	required?: boolean;
 }) {
 	return (
@@ -632,7 +647,7 @@ function DateField({
 			name={name}
 			validators={{
 				onSubmit: required
-					? ({ value }) => (value ? undefined : `${label} is required`)
+					? ({ value }) => (value ? undefined : requiredMessage)
 					: undefined,
 			}}
 		>
@@ -651,9 +666,7 @@ function DateField({
 							required={required}
 						/>
 					</TFormControl>
-					{name === "validFrom" && (
-						<TFormDescription>When this contract context takes effect</TFormDescription>
-					)}
+			{description && <TFormDescription>{description}</TFormDescription>}
 					<TFormMessage field={field} />
 				</TFormItem>
 			)}
