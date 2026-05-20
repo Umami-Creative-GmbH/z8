@@ -1,5 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 import { eq } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { DatabaseError, NotFoundError } from "../../errors";
@@ -14,6 +15,7 @@ export interface SubscriptionInfo {
 	isTrialing: boolean;
 	isPastDue: boolean;
 	currentSeats: number;
+	trialStart: Date | null;
 	trialEnd: Date | null;
 	currentPeriodEnd: Date | null;
 	billingInterval: string | null;
@@ -67,6 +69,11 @@ export class SubscriptionService extends Context.Tag("SubscriptionService")<
 			organizationId: string,
 		) => Effect.Effect<SubscriptionInfo, NotFoundError | DatabaseError>;
 
+		readonly ensureLocalTrial: (params: {
+			organizationId: string;
+			now?: Date;
+		}) => Effect.Effect<SubscriptionInfo, DatabaseError>;
+
 		readonly create: (params: CreateSubscriptionParams) => Effect.Effect<void, DatabaseError>;
 
 		readonly updateFromStripe: (
@@ -99,6 +106,7 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 		isTrialing: sub.status === "trialing",
 		isPastDue: sub.status === "past_due",
 		currentSeats: sub.currentSeats,
+		trialStart: sub.trialStart,
 		trialEnd: sub.trialEnd,
 		currentPeriodEnd: sub.currentPeriodEnd,
 		billingInterval: sub.billingInterval,
@@ -194,6 +202,51 @@ export const SubscriptionServiceLive = Layer.succeed(
 				}
 
 				return mapToSubscriptionInfo(sub);
+			}),
+
+		ensureLocalTrial: ({ organizationId, now = new Date() }) =>
+			Effect.tryPromise({
+				try: async () => {
+					const existing = await db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, organizationId),
+					});
+
+					if (existing) return mapToSubscriptionInfo(existing);
+
+					const trialEnd = DateTime.fromJSDate(now).plus({ days: 14 }).toJSDate();
+					const inserted = await db
+						.insert(subscription)
+						.values({
+							organizationId,
+							stripeCustomerId: null,
+							status: "trialing",
+							trialStart: now,
+							trialEnd,
+							currentSeats: 0,
+						})
+						.onConflictDoNothing({ target: subscription.organizationId })
+						.returning();
+
+					const localTrial = inserted[0];
+					if (localTrial) return mapToSubscriptionInfo(localTrial);
+
+					const raced = await db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, organizationId),
+					});
+
+					if (!raced) {
+						throw new Error("Local trial insert returned no row");
+					}
+
+					return mapToSubscriptionInfo(raced);
+				},
+				catch: (error) =>
+					new DatabaseError({
+						message: "Failed to ensure local trial subscription",
+						operation: "ensureLocalTrial",
+						table: "subscription",
+						cause: error,
+					}),
 			}),
 
 		create: (params) =>
