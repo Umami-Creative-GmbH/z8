@@ -10,6 +10,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -35,6 +36,17 @@ export const clockInCommand: BotCommand = {
 
 			if (!emp) {
 				return { type: "text", text: t("bot.cmd.clockin.noProfile", "Employee profile not found.") };
+			}
+
+			const billingAccess = await requireBillingForMutation(emp.organizationId);
+			if (!isBillingMutationAllowed(billingAccess)) {
+				return {
+					type: "text",
+					text: t(
+						"bot.cmd.billingRequired",
+						"Billing is required to continue using time tracking. Ask an organization admin to update billing.",
+					),
+				};
 			}
 
 			// Get user timezone from userSettings
