@@ -5,6 +5,14 @@
 		"signOut": "Déconnexion",
 		"title": "Accès restreint"
 	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "Votre essai est terminé ou votre abonnement n’est plus valide. Mettez à jour la facturation pour continuer à utiliser Z8.",
+			"goToBilling": "Accéder à la facturation",
+			"memberDescription": "Cette organisation est suspendue. Contactez un administrateur de l’organisation pour mettre à jour la facturation.",
+			"title": "Organisation suspendue"
+		}
+	},
 	"actions": {
 		"cancel": "Annuler",
 		"delete": "Supprimer",

@@ -5,6 +5,14 @@
 		"signOut": "Sair",
 		"title": "Acesso restrito"
 	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "Seu teste terminou ou a assinatura não é mais válida. Atualize a cobrança para continuar usando o Z8.",
+			"goToBilling": "Ir para cobrança",
+			"memberDescription": "Esta organização está suspensa. Entre em contato com um administrador da organização para atualizar a cobrança.",
+			"title": "Organização suspensa"
+		}
+	},
 	"actions": {
 		"cancel": "Cancelar",
 		"delete": "Excluir",

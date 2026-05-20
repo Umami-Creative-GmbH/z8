@@ -5,6 +5,14 @@
 		"signOut": "Sign Out",
 		"title": "Access Restricted"
 	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
+			"goToBilling": "Go to billing",
+			"memberDescription": "This organization is suspended. Contact an organization admin to update billing.",
+			"title": "Organization suspended"
+		}
+	},
 	"actions": {
 		"cancel": "Cancel",
 		"delete": "Delete",

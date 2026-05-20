@@ -10,7 +10,6 @@
     }
   },
   "billing": {
-    "suspended": { "adminDescription": "Votre essai est terminé ou votre abonnement n’est plus valide. Mettez à jour la facturation pour continuer à utiliser Z8.", "goToBilling": "Accéder à la facturation", "memberDescription": "Cette organisation est suspendue. Contactez un administrateur de l’organisation pour mettre à jour la facturation.", "title": "Organisation suspendue" },
     "trialBanner": { "description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.", "title": "Essai de 14 jours actif", "upgrade": "Mettre à niveau" }
   },
   "team": {

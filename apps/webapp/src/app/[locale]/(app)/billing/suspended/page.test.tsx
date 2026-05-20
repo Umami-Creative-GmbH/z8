@@ -37,7 +37,7 @@ describe("suspended billing recovery route", () => {
 		expect(layoutSource).toContain('redirect(`/${locale}/billing/suspended`)');
 	});
 
-	it("defines suspended billing messages for supported locales", () => {
+	it("defines suspended billing messages in the loaded common namespace", () => {
 		const expectedEnglish = {
 			title: "Organization suspended",
 			adminDescription:
@@ -48,12 +48,14 @@ describe("suspended billing recovery route", () => {
 		};
 
 		for (const locale of ["de", "en", "es", "fr", "it", "pt"]) {
-			const messages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
+			const messages = JSON.parse(readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"));
+			const rootMessages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
 
 			expect(messages.billing.suspended).toBeDefined();
+			expect(rootMessages.billing?.suspended).toBeUndefined();
 		}
 
-		const englishMessages = JSON.parse(readFileSync(join(process.cwd(), "messages/en.json"), "utf8"));
+		const englishMessages = JSON.parse(readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"));
 		expect(englishMessages.billing.suspended).toEqual(expectedEnglish);
 	});
 });

@@ -5,6 +5,14 @@
 		"signOut": "Disconnetti",
 		"title": "Accesso limitato"
 	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "La prova è terminata o l’abbonamento non è più valido. Aggiorna la fatturazione per continuare a usare Z8.",
+			"goToBilling": "Vai alla fatturazione",
+			"memberDescription": "Questa organizzazione è sospesa. Contatta un amministratore dell’organizzazione per aggiornare la fatturazione.",
+			"title": "Organizzazione sospesa"
+		}
+	},
 	"actions": {
 		"cancel": "Annulla",
 		"delete": "Elimina",

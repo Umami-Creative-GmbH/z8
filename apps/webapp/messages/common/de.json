@@ -5,6 +5,14 @@
 		"signOut": "Abmelden",
 		"title": "Zugriff eingeschränkt"
 	},
+	"billing": {
+		"suspended": {
+			"adminDescription": "Ihre Testphase ist beendet oder das Abonnement ist nicht mehr gültig. Aktualisieren Sie die Abrechnung, um Z8 weiter zu nutzen.",
+			"goToBilling": "Zur Abrechnung",
+			"memberDescription": "Diese Organisation ist gesperrt. Wenden Sie sich an einen Organisationsadministrator, um die Abrechnung zu aktualisieren.",
+			"title": "Organisation gesperrt"
+		}
+	},
 	"actions": {
 		"cancel": "Abbrechen",
 		"delete": "Löschen",
