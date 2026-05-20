@@ -7,7 +7,7 @@ import { DatabaseError, NotFoundError } from "../../errors";
 export interface SubscriptionInfo {
 	id: string;
 	organizationId: string;
-	stripeCustomerId: string;
+	stripeCustomerId: string | null;
 	stripeSubscriptionId: string | null;
 	status: string;
 	isActive: boolean;
