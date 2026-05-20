@@ -6,10 +6,12 @@ const mockState = vi.hoisted(() => ({
 	findManagerLinks: vi.fn(),
 	dbDelete: vi.fn(),
 	canCancelAbsence: vi.fn(),
+	isBillingMutationAllowed: vi.fn(),
 	addCalendarSyncJob: vi.fn(),
 	removeCanonicalAbsenceRecord: vi.fn(),
 	getCurrentEmployee: vi.fn(),
 	onApprovedAbsenceCancelledByEmployee: vi.fn(),
+	requireBillingForMutation: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -37,6 +39,11 @@ vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob: mockState.addCalendarSyncJob,
 }));
 
+vi.mock("@/lib/billing/guard", () => ({
+	isBillingMutationAllowed: mockState.isBillingMutationAllowed,
+	requireBillingForMutation: mockState.requireBillingForMutation,
+}));
+
 vi.mock("./actions.canonical", () => ({
 	removeCanonicalAbsenceRecord: mockState.removeCanonicalAbsenceRecord,
 }));
@@ -60,6 +67,8 @@ describe("absence mutations", () => {
 		mockState.dbDelete.mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
 		mockState.removeCanonicalAbsenceRecord.mockResolvedValue(undefined);
 		mockState.canCancelAbsence.mockResolvedValue(true);
+		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
+		mockState.isBillingMutationAllowed.mockReturnValue(true);
 	});
 
 	it("rejects cancellation when the absence belongs to another organization", async () => {
@@ -138,6 +147,34 @@ describe("absence mutations", () => {
 			success: false,
 			error: "Approved absences can only be cancelled before they start",
 		});
+		expect(mockState.addCalendarSyncJob).not.toHaveBeenCalled();
+		expect(mockState.removeCanonicalAbsenceRecord).not.toHaveBeenCalled();
+		expect(mockState.dbDelete).not.toHaveBeenCalled();
+	});
+
+	it("rejects cancellation before write side effects when billing access is suspended", async () => {
+		mockState.findAbsence.mockResolvedValue({
+			id: "absence-1",
+			employeeId: "emp-1",
+			organizationId: "org-1",
+			status: "pending",
+			startDate: "2026-05-22",
+			endDate: "2026-05-23",
+			canonicalRecordId: "record-1",
+		});
+		mockState.requireBillingForMutation.mockResolvedValue({
+			canAccess: false,
+			reason: "trial_expired",
+		});
+		mockState.isBillingMutationAllowed.mockReturnValue(false);
+
+		const result = await mutations.cancelAbsenceRequestForEmployee("absence-1", {
+			id: "emp-1",
+			organizationId: "org-1",
+		});
+
+		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
+		expect(result).toEqual({ success: false, error: "billing_required" });
 		expect(mockState.addCalendarSyncJob).not.toHaveBeenCalled();
 		expect(mockState.removeCanonicalAbsenceRecord).not.toHaveBeenCalled();
 		expect(mockState.dbDelete).not.toHaveBeenCalled();

@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Effect } from "effect";
 import type { ReactNode } from "react";
+import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
@@ -10,10 +12,25 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
+import {
+	type BillingAccessResult,
+	BillingEnforcementService,
+	BillingEnforcementServiceLive,
+} from "@/lib/effect/services/billing/billing-enforcement.service";
+import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { setLanguage } from "@/tolgee/language";
+
+const logger = createLogger("app-layout");
+const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
+const billingCheckFailedAccess: BillingAccessResult = {
+	canAccess: false,
+	state: "suspended",
+	reason: "subscription_required",
+	status: "billing_check_failed",
+};
 
 interface AppLayoutProps {
 	children: ReactNode;
@@ -49,6 +66,40 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		redirect(newPath);
 	}
 
+	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const activeOrganizationId = session.session?.activeOrganizationId;
+	const billingAccess = activeOrganizationId && billingEnabled
+		? await Effect.runPromise(
+				Effect.gen(function* () {
+					const enforcementService = yield* BillingEnforcementService;
+
+					return yield* enforcementService.checkBillingAccess(activeOrganizationId);
+				}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+			).catch((error) => {
+				logger.error({ error, organizationId: activeOrganizationId }, "Billing access check failed");
+
+				return billingCheckFailedAccess;
+			})
+		: billingDisabledAccess;
+	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+	const isBillingRecoveryPath =
+		pathname === `/${locale}/settings/billing` ||
+		pathname.startsWith(`/${locale}/settings/billing/`) ||
+		pathname === `/${locale}/billing/suspended` ||
+		pathname.startsWith(`/${locale}/billing/suspended/`);
+
+	if (billingAccess.canAccess === false && !isBillingRecoveryPath) {
+		redirect(`/${locale}/billing/suspended`);
+	}
+
+	const trialDaysRemaining =
+		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
+			? billingAccess.daysRemaining
+			: null;
+	const showTrialBanner =
+		billingAccess.state === "trialing" &&
+		trialDaysRemaining !== null;
+
 	return (
 		<PushPermissionProvider>
 			<UserPreferencesProvider weekStartDay={weekStartDay} timeFormat={timeFormat}>
@@ -64,6 +115,12 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 						<ServerAppSidebar variant="inset" />
 						<SidebarInset>
 							<SiteHeader />
+							{showTrialBanner ? (
+								<TrialBanner
+									daysRemaining={trialDaysRemaining}
+									billingHref="/settings/billing"
+								/>
+							) : null}
 							<OrganizationDeletionBanner />
 							<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
 						</SidebarInset>

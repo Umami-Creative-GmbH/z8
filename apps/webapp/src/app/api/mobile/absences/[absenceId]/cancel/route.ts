@@ -22,6 +22,18 @@ export async function POST(
 		const result = await cancelAbsenceRequestForEmployee(absenceId, employeeRecord);
 
 		if (!result.success) {
+			if (result.error === "billing_required") {
+				const reason =
+					"reason" in result && typeof result.reason === "string"
+						? result.reason
+						: "subscription_required";
+
+				return NextResponse.json(
+					{ error: "billing_required", reason },
+					{ status: 402 },
+				);
+			}
+
 			return NextResponse.json({ error: result.error ?? "Failed to cancel absence" }, { status: 400 });
 		}
 

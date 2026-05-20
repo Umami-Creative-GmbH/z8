@@ -222,6 +222,7 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 
 			{/* Current Subscription Card */}
 			{subscription ? (
+				<>
 				<Card>
 					<CardHeader>
 						<div className="flex items-center justify-between">
@@ -321,6 +322,19 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 						</div>
 					</CardContent>
 				</Card>
+				{subscription.status === "trialing" && (
+					<Alert>
+						<IconCreditCard aria-hidden="true" className="size-4" />
+						<AlertTitle>{t("billing.checkout.trialContinuesTitle", "Your trial continues after upgrade")}</AlertTitle>
+						<AlertDescription>
+							{t(
+								"billing.checkout.trialContinuesDescription",
+								"Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
+							)}
+						</AlertDescription>
+					</Alert>
+				)}
+				</>
 			) : (
 				/* No Subscription - Show Pricing */
 				<div className="space-y-6">

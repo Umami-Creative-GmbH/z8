@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -85,6 +86,15 @@ export async function clockIn(
 		return { success: false, error: "Invalid work location type" };
 	}
 
+	const billingAccess = await requireBillingForMutation(currentEmployee.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
+
 	try {
 		const entry = await createTimeEntry({
 			employeeId: currentEmployee.id,
@@ -152,6 +162,15 @@ export async function clockOut(
 				error: projectValidation.error || "Cannot assign to this project",
 			};
 		}
+	}
+
+	const billingAccess = await requireBillingForMutation(currentEmployee.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			success: false,
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
 	}
 
 	try {

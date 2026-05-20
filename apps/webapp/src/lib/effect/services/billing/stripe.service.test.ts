@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Effect } from "effect";
 import Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -72,5 +74,69 @@ describe("StripeService", () => {
 				}),
 			}),
 		);
+	});
+
+	it("passes positive trial days to subscription checkout sessions", async () => {
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const stripeService = yield* StripeService;
+
+				yield* stripeService.createCheckoutSession({
+					customerId: "cus_test_123",
+					priceId: "price_monthly_123",
+					organizationId: "org_123",
+					quantity: 5,
+					successUrl: "https://app.test/settings/billing?success=true",
+					cancelUrl: "https://app.test/settings/billing?canceled=true",
+					trialPeriodDays: 6,
+				});
+			}).pipe(Effect.provide(StripeServiceLive)),
+		);
+
+		expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				subscription_data: expect.objectContaining({
+					metadata: { organizationId: "org_123" },
+					trial_period_days: 6,
+				}),
+			}),
+		);
+	});
+
+	it("omits trial days from subscription checkout sessions when zero", async () => {
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const stripeService = yield* StripeService;
+
+				yield* stripeService.createCheckoutSession({
+					customerId: "cus_test_123",
+					priceId: "price_monthly_123",
+					organizationId: "org_123",
+					quantity: 5,
+					successUrl: "https://app.test/settings/billing?success=true",
+					cancelUrl: "https://app.test/settings/billing?canceled=true",
+					trialPeriodDays: 0,
+				});
+			}).pipe(Effect.provide(StripeServiceLive)),
+		);
+
+		const checkoutParams = checkoutSessionsCreate.mock.calls[0]?.[0] as {
+			subscription_data?: Record<string, unknown>;
+		};
+
+		expect(checkoutParams.subscription_data).toEqual({
+			metadata: { organizationId: "org_123" },
+		});
+	});
+
+	it("checkout route computes remaining trial days instead of starting a fresh trial", () => {
+		const routeSource = readFileSync(
+			join(process.cwd(), "src/app/api/billing/checkout/route.ts"),
+			"utf8",
+		);
+
+		expect(routeSource).toContain("getDaysRemaining");
+		expect(routeSource).toContain("getDaysRemaining(existing.trialEnd)");
+		expect(routeSource).not.toContain("trialPeriodDays: 14");
 	});
 });

@@ -1,14 +1,75 @@
-import { Context, Effect, Layer } from "effect";
 import { eq } from "drizzle-orm";
+import { Context, Effect, Layer } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { BillingError, DatabaseError } from "../../errors";
+import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
 
-export interface BillingAccessResult {
-	canAccess: boolean;
-	reason?: "subscription_required" | "trial_expired" | "payment_failed" | "canceled";
-	trialEndsAt?: Date | null;
-	status?: string;
+export type { BillingAccessResult } from "./billing-access";
+
+export interface CheckBillingAccessOptions {
+	now?: Date;
+	createTrialIfMissing?: boolean;
+}
+
+function checkBillingAccess(
+	organizationId: string,
+	{ now = new Date(), createTrialIfMissing = true }: CheckBillingAccessOptions = {},
+) {
+	return Effect.gen(function* () {
+		const billingEnabled = process.env.BILLING_ENABLED === "true";
+
+		if (!billingEnabled) {
+			return evaluateBillingAccess({ billingEnabled, subscription: null, now });
+		}
+
+		const sub = yield* Effect.tryPromise({
+			try: async () => {
+				const existing = await db.query.subscription.findFirst({
+					where: eq(subscription.organizationId, organizationId),
+				});
+
+				if (existing || !createTrialIfMissing) return existing ?? null;
+
+				const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
+				const inserted = await db
+					.insert(subscription)
+					.values({
+						organizationId,
+						stripeCustomerId: null,
+						status: "trialing",
+						trialStart: now,
+						trialEnd,
+						currentSeats: 0,
+					})
+					.onConflictDoNothing({ target: subscription.organizationId })
+					.returning();
+
+				const localTrial = inserted[0];
+				if (localTrial) return localTrial;
+
+				const raced = await db.query.subscription.findFirst({
+					where: eq(subscription.organizationId, organizationId),
+				});
+
+				if (!raced) {
+					throw new Error("Local trial insert returned no row");
+				}
+
+				return raced;
+			},
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to check billing access",
+					operation: "checkBillingAccess",
+					table: "subscription",
+					cause: error,
+				}),
+		});
+
+		return evaluateBillingAccess({ billingEnabled, subscription: sub, now });
+	});
 }
 
 /**
@@ -23,6 +84,7 @@ export class BillingEnforcementService extends Context.Tag("BillingEnforcementSe
 		 */
 		readonly checkBillingAccess: (
 			organizationId: string,
+			options?: CheckBillingAccessOptions,
 		) => Effect.Effect<BillingAccessResult, DatabaseError>;
 
 		/**
@@ -44,143 +106,19 @@ export const BillingEnforcementServiceLive = Layer.succeed(
 	BillingEnforcementService.of({
 		isBillingEnabled: () => process.env.BILLING_ENABLED === "true",
 
-		checkBillingAccess: (organizationId) =>
-			Effect.gen(function* () {
-				// If billing is not enabled, always allow
-				if (process.env.BILLING_ENABLED !== "true") {
-					return { canAccess: true };
-				}
-
-				const sub = yield* Effect.tryPromise({
-					try: async () => {
-						return await db.query.subscription.findFirst({
-							where: eq(subscription.organizationId, organizationId),
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to check billing access",
-							operation: "checkBillingAccess",
-							table: "subscription",
-							cause: error,
-						}),
-				});
-
-				// No subscription record = needs to subscribe
-				if (!sub) {
-					return {
-						canAccess: false,
-						reason: "subscription_required" as const,
-					};
-				}
-
-				// Check status
-				switch (sub.status) {
-					case "trialing":
-						// Check if trial has expired
-						if (sub.trialEnd && sub.trialEnd < new Date()) {
-							return {
-								canAccess: false,
-								reason: "trial_expired" as const,
-								trialEndsAt: sub.trialEnd,
-								status: sub.status,
-							};
-						}
-						return {
-							canAccess: true,
-							trialEndsAt: sub.trialEnd,
-							status: sub.status,
-						};
-
-					case "active":
-						return {
-							canAccess: true,
-							status: sub.status,
-						};
-
-					case "past_due":
-						// Allow read access but this is a warning state
-						return {
-							canAccess: false,
-							reason: "payment_failed" as const,
-							status: sub.status,
-						};
-
-					case "canceled":
-					case "unpaid":
-						return {
-							canAccess: false,
-							reason: "canceled" as const,
-							status: sub.status,
-						};
-
-					default:
-						// Unknown status - be conservative
-						return {
-							canAccess: false,
-							reason: "subscription_required" as const,
-							status: sub.status,
-						};
-				}
-			}),
+		checkBillingAccess,
 
 		requireActiveSubscription: (organizationId) =>
 			Effect.gen(function* () {
-				// If billing is not enabled, always pass
-				if (process.env.BILLING_ENABLED !== "true") {
-					return;
-				}
+				const access = yield* checkBillingAccess(organizationId);
 
-				const sub = yield* Effect.tryPromise({
-					try: async () => {
-						return await db.query.subscription.findFirst({
-							where: eq(subscription.organizationId, organizationId),
-						});
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to check subscription",
-							operation: "requireActiveSubscription",
-							table: "subscription",
-							cause: error,
-						}),
-				});
-
-				if (!sub) {
+				if (!access.canAccess) {
 					return yield* Effect.fail(
 						new BillingError({
-							message: "No subscription found",
-							reason: "subscription_required",
-							organizationId,
-						}),
-					);
-				}
-
-				// Check if subscription is active
-				const activeStatuses = ["trialing", "active"];
-				if (!activeStatuses.includes(sub.status)) {
-					const reason =
-						sub.status === "past_due"
-							? "payment_failed"
-							: sub.status === "canceled" || sub.status === "unpaid"
-								? "canceled"
-								: "subscription_required";
-
-					return yield* Effect.fail(
-						new BillingError({
-							message: `Subscription is ${sub.status}`,
-							reason,
-							organizationId,
-						}),
-					);
-				}
-
-				// For trialing, check if trial has expired
-				if (sub.status === "trialing" && sub.trialEnd && sub.trialEnd < new Date()) {
-					return yield* Effect.fail(
-						new BillingError({
-							message: "Trial has expired",
-							reason: "trial_expired",
+							message: access.reason
+								? `Billing access denied: ${access.reason}`
+								: "Billing access denied",
+							reason: access.reason ?? "subscription_required",
 							organizationId,
 						}),
 					);

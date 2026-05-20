@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, employeeManagers } from "@/db/schema";
 import { canCancelAbsence } from "@/lib/absences/permissions";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { onApprovedAbsenceCancelledByEmployee } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { removeCanonicalAbsenceRecord } from "./actions.canonical";
@@ -109,6 +110,11 @@ export async function cancelAbsenceRequestForEmployee(
 				? "Approved absences can only be cancelled before they start"
 				: "You do not have permission to cancel this absence",
 		};
+	}
+
+	const billingAccess = await requireBillingForMutation(organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return { success: false, error: "billing_required" };
 	}
 
 	const shouldNotifyManagers = absence.status === "approved" && absence.employeeId === currentEmployee.id;

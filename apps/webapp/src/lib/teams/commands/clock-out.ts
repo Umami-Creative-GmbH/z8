@@ -11,6 +11,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, employeeManagers, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import {
@@ -47,6 +48,17 @@ export const clockOutCommand: BotCommand = {
 
 			if (!emp) {
 				return { type: "text", text: t("bot.cmd.clockout.noProfile", "Employee profile not found.") };
+			}
+
+			const billingAccess = await requireBillingForMutation(emp.organizationId);
+			if (!isBillingMutationAllowed(billingAccess)) {
+				return {
+					type: "text",
+					text: t(
+						"bot.cmd.billingRequired",
+						"Billing is required to continue using time tracking. Ask an organization admin to update billing.",
+					),
+				};
 			}
 
 			// Get user timezone from userSettings
