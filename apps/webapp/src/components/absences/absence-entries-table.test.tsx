@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 
 vi.mock("@tolgee/react", () => ({
@@ -16,7 +17,42 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	cancelAbsenceRequest: vi.fn(),
 }));
 
+function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCategory {
+	return {
+		id: "absence-1",
+		employeeId: "employee-1",
+		startDate: "2026-05-21",
+		startPeriod: "full_day",
+		endDate: "2026-05-21",
+		endPeriod: "full_day",
+		status: "pending",
+		notes: null,
+		sickDetail: null,
+		category: {
+			id: "category-vacation",
+			name: "Vacation",
+			type: "vacation",
+			color: null,
+			countsAgainstVacation: true,
+		},
+		approvedBy: null,
+		approvedAt: null,
+		rejectionReason: null,
+		createdAt: new Date("2026-05-01T00:00:00Z"),
+		...overrides,
+	};
+}
+
 describe("AbsenceEntriesTable", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-20T10:00:00.000Z"));
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	it("shows sick detail labels for sick absences only", () => {
 		render(
 			<AbsenceEntriesTable
@@ -71,5 +107,32 @@ describe("AbsenceEntriesTable", () => {
 
 		expect(screen.getByText("Child sick")).toBeTruthy();
 		expect(screen.queryByText("With certificate")).toBeNull();
+	});
+
+	it("shows cancel actions for pending and future approved absences", () => {
+		render(
+			<AbsenceEntriesTable
+				absences={[
+					buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-20" }),
+					buildAbsence({ id: "approved-future", status: "approved", startDate: "2026-05-21" }),
+				]}
+			/>,
+		);
+
+		expect(screen.getAllByLabelText("Cancel absence")).toHaveLength(2);
+	});
+
+	it("hides cancel actions for approved absences starting today or earlier", () => {
+		render(
+			<AbsenceEntriesTable
+				absences={[
+					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-20" }),
+					buildAbsence({ id: "approved-past", status: "approved", startDate: "2026-05-19" }),
+					buildAbsence({ id: "rejected-future", status: "rejected", startDate: "2026-05-21" }),
+				]}
+			/>,
+		);
+
+		expect(screen.queryByLabelText("Cancel absence")).toBeNull();
 	});
 });

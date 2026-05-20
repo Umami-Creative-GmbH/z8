@@ -3,6 +3,7 @@
 import { IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
@@ -35,11 +36,18 @@ interface AbsenceEntriesTableProps {
 	onUpdate?: () => void;
 }
 
+function canShowCancelAction(absence: AbsenceWithCategory, today: string): boolean {
+	if (absence.status === "pending") return true;
+	if (absence.status === "approved") return absence.startDate > today;
+	return false;
+}
+
 export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
+	const today = DateTime.now().toISODate() ?? "9999-12-31";
 
 	// Format period for display
 	const formatPeriod = (period: DayPeriod): string => {
@@ -73,7 +81,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 		setCancelingId(null);
 
 		if (result.success) {
-			toast.success(t("absences.toast.requestCancelled", "Absence request cancelled"));
+			toast.success(t("absences.toast.requestCancelled", "Absence cancelled"));
 			// Revalidate the page data to reflect the cancelled absence
 			router.refresh();
 			onUpdate?.();
@@ -199,7 +207,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 				),
 				cell: ({ row }) => {
 					const absence = row.original;
-					if (absence.status !== "pending") return null;
+					if (!canShowCancelAction(absence, today)) return null;
 
 					return (
 						<div className="flex justify-end">
@@ -209,7 +217,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 										variant="ghost"
 										size="sm"
 										disabled={cancelingId === absence.id}
-										aria-label={t("absences.table.cancelRequest", "Cancel request")}
+										aria-label={t("absences.table.cancelRequest", "Cancel absence")}
 									>
 										<IconX className="size-4" />
 									</Button>
@@ -217,12 +225,12 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 								<AlertDialogContent>
 									<AlertDialogHeader>
 										<AlertDialogTitle>
-											{t("absences.dialog.cancelTitle", "Cancel Absence Request")}
+											{t("absences.dialog.cancelTitle", "Cancel Absence")}
 										</AlertDialogTitle>
 										<AlertDialogDescription>
 											{t(
 												"absences.dialog.cancelDescription",
-												"Are you sure you want to cancel this absence request? This action cannot be undone.",
+												"Are you sure you want to cancel this absence? This action cannot be undone.",
 											)}
 										</AlertDialogDescription>
 									</AlertDialogHeader>
@@ -232,7 +240,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 											onClick={() => handleCancel(absence.id)}
 											className="bg-destructive text-white hover:bg-destructive/90"
 										>
-											{t("absences.dialog.confirmCancel", "Yes, cancel request")}
+											{t("absences.dialog.confirmCancel", "Yes, cancel absence")}
 										</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
@@ -242,7 +250,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 				},
 			},
 		],
-		[t, cancelingId],
+		[t, cancelingId, today],
 	);
 
 	return (
