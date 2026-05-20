@@ -111,9 +111,10 @@ export async function canEditOrgSettings(employeeId: string): Promise<boolean> {
  * Check if an employee can cancel an absence request
  *
  * Rules:
- * - Can cancel own pending requests
- * - Cannot cancel approved/rejected requests
- * - Admins can cancel any pending request
+ * - Owners can cancel pending requests
+ * - Owners can cancel approved requests before the start date
+ * - Rejected requests cannot be cancelled
+ * - Admins can cancel other employees' pending requests
  *
  * @param employeeId - ID of the employee trying to cancel
  * @param absenceOwnerId - ID of the employee who owns the absence
