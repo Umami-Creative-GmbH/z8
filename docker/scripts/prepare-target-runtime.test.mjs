@@ -118,6 +118,54 @@ test("generated non-web manifests exclude obvious web-only type overrides", asyn
 	assert.doesNotMatch(targetWorkspaceConfig, /@types\/react-dom:/);
 });
 
+test("copied migration runtime includes pnpm workspace config for frozen installs", async () => {
+	const outputUrl = new URL("../targets/.tmp-migration-runtime/", import.meta.url);
+
+	try {
+		await execFileAsync(process.execPath, [
+			"docker/scripts/prepare-target-runtime.mjs",
+			"copy",
+			"migration",
+			new URL(".", outputUrl).pathname,
+		], {
+			cwd: new URL("../../", import.meta.url),
+		});
+
+		const workspaceConfig = await fs.readFile(new URL("pnpm-workspace.yaml", outputUrl), "utf8");
+		assert.match(workspaceConfig, /^overrides:/m);
+		assert.match(workspaceConfig, /"postcss":/);
+	} finally {
+		await fs.rm(outputUrl, { recursive: true, force: true });
+	}
+});
+
+test("trimmed runtime Dockerfiles copy pnpm workspace config before install", async () => {
+	const dockerfiles = ["Dockerfile.db-seed", "Dockerfile.migration", "Dockerfile.worker"];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+		const workspaceCopyIndex = contents.indexOf("/runtime/pnpm-workspace.yaml");
+		const installIndex = contents.indexOf("pnpm install --prod --frozen-lockfile");
+
+		assert.notEqual(workspaceCopyIndex, -1, `${dockerfile} must copy pnpm-workspace.yaml`);
+		assert.notEqual(installIndex, -1, `${dockerfile} must run a frozen production install`);
+		assert.ok(workspaceCopyIndex < installIndex, `${dockerfile} must copy pnpm-workspace.yaml before install`);
+	}
+});
+
+test("trimmed runtime Dockerfiles allow pnpm to read workspace overrides", async () => {
+	const dockerfiles = ["Dockerfile.db-seed", "Dockerfile.migration", "Dockerfile.worker"];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+		assert.doesNotMatch(
+			contents,
+			/pnpm install --prod --frozen-lockfile --ignore-workspace/,
+			`${dockerfile} must not ignore the generated pnpm-workspace.yaml during frozen install`,
+		);
+	}
+});
+
 test("production worker and migration manifests use the trimmed runtime layout", async () => {
   const [workerManifest, migrationManifest] = await Promise.all([
     fs.readFile(new URL("../../infra/hetzner-k8s/k8s/app/worker-deployment.yaml", import.meta.url), "utf8"),

@@ -256,6 +256,10 @@ async function copyTargetRuntime(target, outputDirectory) {
     path.join(TARGETS_ROOT, target, "pnpm-lock.yaml"),
     path.join(outputPath, "pnpm-lock.yaml"),
   );
+  await fs.copyFile(
+    path.join(TARGETS_ROOT, target, "pnpm-workspace.yaml"),
+    path.join(outputPath, "pnpm-workspace.yaml"),
+  );
 }
 
 async function main() {
