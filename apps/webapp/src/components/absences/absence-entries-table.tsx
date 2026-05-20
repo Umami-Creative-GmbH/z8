@@ -3,7 +3,6 @@
 import { IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
@@ -33,6 +32,7 @@ import { CategoryBadge } from "./category-badge";
 
 interface AbsenceEntriesTableProps {
 	absences: AbsenceWithCategory[];
+	currentDate: string;
 	onUpdate?: () => void;
 }
 
@@ -42,12 +42,11 @@ function canShowCancelAction(absence: AbsenceWithCategory, today: string): boole
 	return false;
 }
 
-export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableProps) {
+export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
-	const today = DateTime.now().toISODate() ?? "9999-12-31";
 
 	// Format period for display
 	const formatPeriod = (period: DayPeriod): string => {
@@ -207,7 +206,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 				),
 				cell: ({ row }) => {
 					const absence = row.original;
-					if (!canShowCancelAction(absence, today)) return null;
+					if (!canShowCancelAction(absence, currentDate)) return null;
 
 					return (
 						<div className="flex justify-end">
@@ -250,7 +249,7 @@ export function AbsenceEntriesTable({ absences, onUpdate }: AbsenceEntriesTableP
 				},
 			},
 		],
-		[t, cancelingId, today],
+		[t, cancelingId, currentDate],
 	);
 
 	return (

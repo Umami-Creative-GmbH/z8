@@ -28,6 +28,7 @@ interface AbsencesViewContainerProps {
 	organizationId: string;
 	remainingDays: number;
 	currentYear: number;
+	currentDate: string;
 }
 
 export function AbsencesViewContainer({
@@ -37,6 +38,7 @@ export function AbsencesViewContainer({
 	organizationId,
 	remainingDays,
 	currentYear,
+	currentDate,
 }: AbsencesViewContainerProps) {
 	const { t } = useTranslate();
 	const [activeView, setActiveView] = useState<ViewType>("calendar");
@@ -120,7 +122,7 @@ export function AbsencesViewContainer({
 							{t("absences.table.subtitle", "Recent and upcoming absence requests")}
 						</p>
 					</div>
-					<AbsenceEntriesTable absences={calendarAbsences} />
+					<AbsenceEntriesTable absences={calendarAbsences} currentDate={currentDate} />
 				</TabsContent>
 			</Tabs>
 
