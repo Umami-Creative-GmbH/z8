@@ -15,7 +15,7 @@ import "@xyflow/react/dist/style.css";
 import { useTranslate } from "@tolgee/react";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { generateAvatarDataUri } from "@/lib/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { getEmployeeNeighborhood, getTeamNeighborhood, searchOrgEmployees } from "./actions";
 import { mergeOrgChartGraphs } from "./org-chart-graph";
@@ -302,7 +302,7 @@ function buildFlowNodes(
 	nodes: OrgChartNode[],
 	handlers: Pick<OrgChartFlowNodeData, "onExpandEmployee" | "onExpandTeam">,
 ): OrgChartFlowNode[] {
-	const orderedNodes = [...nodes].sort((first, second) => {
+	const orderedNodes = nodes.toSorted((first, second) => {
 		if (first.kind !== second.kind) {
 			return first.kind === "employee" ? -1 : 1;
 		}
@@ -381,7 +381,6 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 	const canExpand = node.expandable.managers || node.expandable.reports || node.expandable.teams;
 	const pronouns = normalizePronouns(node.pronouns);
 	const displayName = pronouns ? `${node.name} (${pronouns})` : node.name;
-	const avatarUrl = node.image || generateAvatarDataUri({ seed: node.userId || node.employeeId, size: 80 });
 
 	return (
 		<div
@@ -390,10 +389,13 @@ function EmployeeFlowNode({ data }: NodeProps<OrgChartFlowNode>) {
 			}`}
 		>
 			<div className="flex items-start gap-3">
-				<img
-					alt={`${node.name} avatar`}
-					className="size-10 shrink-0 rounded-full border border-border bg-primary/10 object-cover"
-					src={avatarUrl}
+				<UserAvatar
+					className="border border-border bg-primary/10"
+					clockStatus="unknown"
+					image={node.image}
+					name={node.name}
+					seed={node.userId || node.employeeId}
+					size="md"
 				/>
 				<div className="min-w-0 flex-1">
 					<p className="truncate text-sm font-semibold">{displayName}</p>

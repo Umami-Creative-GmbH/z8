@@ -73,7 +73,7 @@ export function ScheduleXCalendarWrapper({
 	const isDark = resolvedTheme === "dark";
 
 	// Track current date for display
-	const [currentDate, setCurrentDate] = useState<DateTime>(DateTime.now());
+	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
 
 	// Create calendar plugins (must be stable references)
 	const calendarControlsRef = useRef(createCalendarControlsPlugin());

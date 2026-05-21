@@ -82,7 +82,11 @@ vi.mock("@/components/organization-switcher", () => ({
 }));
 
 vi.mock("@/components/nav-secondary", () => ({
-	NavSecondary: ({ items }: { items: Array<{ title: string; url: string; icon: unknown }> }) => {
+	NavSecondary: ({
+		items,
+	}: {
+		items: Array<{ title: string; url: string; icon: unknown; external?: boolean }>;
+	}) => {
 		navSecondarySpy(items);
 
 		return (
@@ -212,11 +216,13 @@ describe("app sidebar compliance navigation", () => {
 					title: "Get Help",
 					url: "https://docs.z8-time.app/docs",
 					icon: IconHelp,
+					external: true,
 				}),
 				expect.objectContaining({
 					title: "Feedback",
 					url: "https://feedback.z8-time.app/",
 					icon: IconMessageCircle,
+					external: true,
 				}),
 			]),
 		);

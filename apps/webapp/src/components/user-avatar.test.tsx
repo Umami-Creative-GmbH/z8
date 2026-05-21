@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import type React from "react";
+import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { UserAvatar } from "./user-avatar";
 
@@ -21,9 +21,8 @@ vi.mock("@/components/ui/avatar", () => ({
 			{children}
 		</span>
 	),
-	AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-		<img data-slot="avatar-image" {...props} />
-	),
+	AvatarImage: (props: React.ImgHTMLAttributes<HTMLImageElement>) =>
+		React.createElement("img", { alt: props.alt ?? "", "data-slot": "avatar-image", ...props }),
 }));
 
 vi.mock("@tolgee/react", () => ({

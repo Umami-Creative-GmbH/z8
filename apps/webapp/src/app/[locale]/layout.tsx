@@ -98,7 +98,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 								minHeight: "100vh",
 							}}
 						>
-							<div>Loading...</div>
+							<div>Loading…</div>
 						</div>
 					}
 				>

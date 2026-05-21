@@ -18,7 +18,7 @@ type JoinResult = {
 
 function VerifyEmailContent() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const searchParams = useSearchParams();
 	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 	const [errorMessage, setErrorMessage] = useState<string>("");
@@ -26,6 +26,9 @@ function VerifyEmailContent() {
 	const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(null);
 
 	useEffect(() => {
+		let isMounted = true;
+		let redirectTimeout: ReturnType<typeof setTimeout> | undefined;
+
 		const verifyEmail = async () => {
 			const token = searchParams.get("token");
 
@@ -61,12 +64,16 @@ function VerifyEmailContent() {
 			// Process any pending invite code after successful verification
 			let pendingJoinResult: JoinResult = null;
 			const pendingResult = await processPendingInviteCode().catch(() => null);
+			if (!isMounted) return;
+
 			if (pendingResult?.success && pendingResult.data) {
 				pendingJoinResult = pendingResult.data;
 				setJoinResult(pendingJoinResult);
 			}
 
 			const pendingInvitationResult = await getPendingInvitation().catch(() => null);
+			if (!isMounted) return;
+
 			const invitationId =
 				pendingInvitationResult?.success && pendingInvitationResult.data
 					? pendingInvitationResult.data
@@ -74,19 +81,26 @@ function VerifyEmailContent() {
 			setPendingInvitationId(invitationId);
 
 			setStatus("success");
-			setTimeout(() => {
+			redirectTimeout = setTimeout(() => {
 				if (pendingJoinResult) {
-					router.push("/onboarding");
+					push("/onboarding");
 				} else if (invitationId) {
-					router.push(`/accept-invitation/${invitationId}`);
+					push(`/accept-invitation/${invitationId}`);
 				} else {
-					router.push("/sign-in");
+					push("/sign-in");
 				}
 			}, 3000);
 		};
 
 		verifyEmail();
-	}, [searchParams, router, t]);
+
+		return () => {
+			isMounted = false;
+			if (redirectTimeout) {
+				clearTimeout(redirectTimeout);
+			}
+		};
+	}, [searchParams, push, t]);
 
 	const getTitle = () => {
 		if (status === "loading") return t("auth.verifying-email", "Verifying your email...");
@@ -142,7 +156,7 @@ function VerifyEmailContent() {
 					<Button
 						className="mt-4 w-full"
 						onClick={() =>
-							router.push(
+							push(
 								joinResult
 									? "/onboarding"
 									: pendingInvitationId
