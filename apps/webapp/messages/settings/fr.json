@@ -1262,9 +1262,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "${clearResult.absencesDeleted} absences supprimées",
+          "absencesDeleted": "{count} absences supprimées",
           "button": "Effacer toutes les données",
-          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} politiques de changement supprimées",
+          "changePoliciesDeleted": "{count} politiques de changement supprimées",
           "dialog": {
             "confirm": "Effacer toutes les données",
             "description": "Cette action ne peut pas être annulée. Toutes les saisies de temps, absences, équipes, projets et données associées seront définitivement supprimés.",
@@ -1280,26 +1280,26 @@
             "vacationAllowances": "Toutes les allocations de congés",
             "workCategories": "Toutes les catégories de travail"
           },
-          "locationsDeleted": "${clearResult.locationsDeleted} lieux supprimés",
-          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} affectations de gestionnaires supprimées",
-          "projectsDeleted": "${clearResult.projectsDeleted} projets supprimés",
-          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} demandes de quart supprimées",
-          "shiftsDeleted": "${clearResult.shiftsDeleted} quarts supprimés",
-          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} modèles de quart supprimés",
-          "subareasDeleted": "${clearResult.subareasDeleted} sous-zones supprimées",
+          "locationsDeleted": "{count} lieux supprimés",
+          "managerAssignmentsDeleted": "{count} affectations de gestionnaires supprimées",
+          "projectsDeleted": "{count} projets supprimés",
+          "shiftRequestsDeleted": "{count} demandes de quart supprimées",
+          "shiftsDeleted": "{count} quarts supprimés",
+          "shiftTemplatesDeleted": "{count} modèles de quart supprimés",
+          "subareasDeleted": "{count} sous-zones supprimées",
           "successTitle": "Données effacées avec succès !",
-          "teamsDeleted": "${clearResult.teamsDeleted} équipes supprimées",
-          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} entrées de temps supprimées",
+          "teamsDeleted": "{count} équipes supprimées",
+          "timeEntriesDeleted": "{count} entrées de temps supprimées",
           "title": "Effacer les données de temps",
-          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} allocations de congés réinitialisées",
+          "vacationAllowancesReset": "{count} allocations de congés réinitialisées",
           "willDelete": "Ceci supprimera définitivement :",
-          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} catégories de travail supprimées",
-          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} ensembles de catégories de travail supprimés",
-          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} périodes de travail supprimées"
+          "workCategoriesDeleted": "{count} catégories de travail supprimées",
+          "workCategorySetsDeleted": "{count} ensembles de catégories de travail supprimés",
+          "workPeriodsDeleted": "{count} périodes de travail supprimées"
         },
         "clearing": "Suppression en cours...",
         "deleteNonAdmin": {
-          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} absences supprimées",
+          "absencesDeleted": "{count} absences supprimées",
           "adminPreserved": "Les comptes administrateurs seront préservés",
           "button": "Supprimer les employés non-administrateurs",
           "dialog": {
@@ -1307,18 +1307,18 @@
             "description": "Cette action ne peut pas être annulée. Tous les employés non-administrateurs et leurs données associées seront définitivement supprimés.",
             "title": "Supprimer les employés non-administrateurs ?"
           },
-          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} employés supprimés",
+          "employeesDeleted": "{count} employés supprimés",
           "items": {
             "demoUsers": "Tous les comptes d'utilisateurs de démonstration",
             "employees": "Tous les employés non-administrateurs",
             "managerAssignments": "Toutes les affectations de managers",
             "timeEntries": "Leurs entrées de temps et périodes de travail"
           },
-          "membersDeleted": "${deleteNonAdminResult.membersDeleted} membres supprimés",
+          "membersDeleted": "{count} membres supprimés",
           "successTitle": "Employés non-administrateurs supprimés avec succès !",
-          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} entrées de temps supprimées",
+          "timeEntriesDeleted": "{count} entrées de temps supprimées",
           "title": "Supprimer les employés non-administrateurs",
-          "usersDeleted": "${deleteNonAdminResult.usersDeleted} utilisateurs supprimés",
+          "usersDeleted": "{count} utilisateurs supprimés",
           "willDelete": "Ceci supprimera définitivement :"
         },
         "deleting": "Suppression en cours...",
@@ -1382,7 +1382,7 @@
           "thisYear": "Cette année"
         },
         "employees": {
-          "all": "Tous les employés (${employees.length})",
+          "all": "Tous les employés ({count})",
           "label": "Employés",
           "selectSpecific": "Sélectionner des employés spécifiques"
         }
@@ -1393,19 +1393,19 @@
         "title": "Générer des données de démonstration"
       },
       "generateEmployees": {
-        "button": "Générer ${employeeCount} employés",
+        "button": "Générer {count} employés",
         "countHint": "Maximum 50 employés à la fois",
         "countLabel": "Nombre d'employés",
         "description": "Créer des comptes d'employés de démonstration pour les tests",
-        "employeesCreated": "${employeeResult.employeesCreated} employés créés",
+        "employeesCreated": "{count} employés créés",
         "generating": "Génération en cours...",
         "includeManagers": "Inclure les affectations de managers",
-        "managersCreated": "${employeeResult.managersCreated} affectations de managers",
+        "managersCreated": "{count} affectations de managers",
         "managersHint": "Assigner aléatoirement des managers aux nouveaux employés",
         "options": "Options",
         "successTitle": "Employés générés avec succès !",
         "title": "Générer des employés",
-        "usersCreated": "${employeeResult.usersCreated} utilisateurs créés"
+        "usersCreated": "{count} utilisateurs créés"
       },
       "results": {
         "success": "Données de démonstration générées avec succès !"

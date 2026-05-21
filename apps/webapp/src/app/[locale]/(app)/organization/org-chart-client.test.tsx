@@ -33,6 +33,12 @@ vi.mock("./actions", () => ({
 	getTeamNeighborhood: teamNeighborhoodMock,
 }));
 
+vi.mock("@/components/user-avatar", () => ({
+	UserAvatar: ({ image, name }: { image?: string | null; name?: string | null }) => (
+		<img alt={`${name ?? "User"} avatar`} src={image ?? "data:image/svg+xml,fallback"} />
+	),
+}));
+
 type MockFlowNode = {
 	id: string;
 	type?: string;

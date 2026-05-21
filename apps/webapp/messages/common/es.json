@@ -28,9 +28,9 @@
       "title": "Organización suspendida"
     },
     "trialBanner": {
-      "description": "{days} días restantes. Agregue los detalles de pago ahora; su suscripción de pago comienza después de la prueba.",
+      "description": "Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.",
       "title": "Prueba de 14 días activa",
-      "upgrade": "Actualizar"
+      "upgrade": "Mejorar plan"
     }
   },
   "colors": {

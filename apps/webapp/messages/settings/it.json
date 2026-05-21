@@ -1262,9 +1262,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "${clearResult.absencesDeleted} assenze eliminate",
+          "absencesDeleted": "{count} assenze eliminate",
           "button": "Cancella tutti i dati",
-          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} criteri di modifica eliminati",
+          "changePoliciesDeleted": "{count} criteri di modifica eliminati",
           "dialog": {
             "confirm": "Cancella tutti i dati",
             "description": "Questa azione non può essere annullata. Tutti gli inserimenti orari, le assenze, i team, i progetti e i dati correlati verranno eliminati in modo permanente.",
@@ -1280,26 +1280,26 @@
             "vacationAllowances": "Tutte le indennità di ferie",
             "workCategories": "Tutte le categorie di lavoro"
           },
-          "locationsDeleted": "${clearResult.locationsDeleted} sedi eliminate",
-          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} assegnazioni manager eliminate",
-          "projectsDeleted": "${clearResult.projectsDeleted} progetti eliminati",
-          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} richieste di turno eliminate",
-          "shiftsDeleted": "${clearResult.shiftsDeleted} turni eliminati",
-          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} modelli di turno eliminati",
-          "subareasDeleted": "${clearResult.subareasDeleted} sottoaree eliminate",
+          "locationsDeleted": "{count} sedi eliminate",
+          "managerAssignmentsDeleted": "{count} assegnazioni manager eliminate",
+          "projectsDeleted": "{count} progetti eliminati",
+          "shiftRequestsDeleted": "{count} richieste di turno eliminate",
+          "shiftsDeleted": "{count} turni eliminati",
+          "shiftTemplatesDeleted": "{count} modelli di turno eliminati",
+          "subareasDeleted": "{count} sottoaree eliminate",
           "successTitle": "Dati cancellati con successo!",
-          "teamsDeleted": "${clearResult.teamsDeleted} team eliminati",
-          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} voci di tempo eliminate",
+          "teamsDeleted": "{count} team eliminati",
+          "timeEntriesDeleted": "{count} voci di tempo eliminate",
           "title": "Cancella dati temporali",
-          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} indennità di ferie ripristinate",
+          "vacationAllowancesReset": "{count} indennità di ferie ripristinate",
           "willDelete": "Questo eliminerà permanentemente:",
-          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} categorie di lavoro eliminate",
-          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} set di categorie di lavoro eliminati",
-          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} periodi di lavoro eliminati"
+          "workCategoriesDeleted": "{count} categorie di lavoro eliminate",
+          "workCategorySetsDeleted": "{count} set di categorie di lavoro eliminati",
+          "workPeriodsDeleted": "{count} periodi di lavoro eliminati"
         },
         "clearing": "Cancellazione in corso...",
         "deleteNonAdmin": {
-          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} assenze eliminate",
+          "absencesDeleted": "{count} assenze eliminate",
           "adminPreserved": "Gli account amministratore saranno preservati",
           "button": "Elimina dipendenti non amministratori",
           "dialog": {
@@ -1307,18 +1307,18 @@
             "description": "Questa azione non può essere annullata. Tutti i dipendenti non amministratori e i relativi dati associati verranno eliminati in modo permanente.",
             "title": "Eliminare i dipendenti non amministratori?"
           },
-          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} dipendenti eliminati",
+          "employeesDeleted": "{count} dipendenti eliminati",
           "items": {
             "demoUsers": "Tutti gli account utente demo",
             "employees": "Tutti i dipendenti non amministratori",
             "managerAssignments": "Tutte le assegnazioni dei manager",
             "timeEntries": "Le loro voci di tempo e i periodi di lavoro"
           },
-          "membersDeleted": "${deleteNonAdminResult.membersDeleted} membri eliminati",
+          "membersDeleted": "{count} membri eliminati",
           "successTitle": "Dipendenti non amministratori eliminati con successo!",
-          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} voci di tempo eliminate",
+          "timeEntriesDeleted": "{count} voci di tempo eliminate",
           "title": "Elimina dipendenti non amministratori",
-          "usersDeleted": "${deleteNonAdminResult.usersDeleted} utenti eliminati",
+          "usersDeleted": "{count} utenti eliminati",
           "willDelete": "Questo eliminerà permanentemente:"
         },
         "deleting": "Eliminazione in corso...",
@@ -1382,7 +1382,7 @@
           "thisYear": "Quest'anno"
         },
         "employees": {
-          "all": "Tutti i dipendenti (${employees.length})",
+          "all": "Tutti i dipendenti ({count})",
           "label": "Dipendenti",
           "selectSpecific": "Seleziona dipendenti specifici"
         }
@@ -1393,19 +1393,19 @@
         "title": "Genera dati demo"
       },
       "generateEmployees": {
-        "button": "Genera ${employeeCount} dipendenti",
+        "button": "Genera {count} dipendenti",
         "countHint": "Massimo 50 dipendenti alla volta",
         "countLabel": "Numero di dipendenti",
         "description": "Crea account dipendente demo per i test",
-        "employeesCreated": "${employeeResult.employeesCreated} dipendenti creati",
+        "employeesCreated": "{count} dipendenti creati",
         "generating": "Generazione in corso...",
         "includeManagers": "Includi assegnazioni responsabili",
-        "managersCreated": "${employeeResult.managersCreated} assegnazioni responsabili",
+        "managersCreated": "{count} assegnazioni responsabili",
         "managersHint": "Assegna casualmente i responsabili ai nuovi dipendenti",
         "options": "Opzioni",
         "successTitle": "Dipendenti generati con successo!",
         "title": "Genera dipendenti",
-        "usersCreated": "${employeeResult.usersCreated} utenti creati"
+        "usersCreated": "{count} utenti creati"
       },
       "results": {
         "success": "Dati demo generati con successo!"

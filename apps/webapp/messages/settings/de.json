@@ -1262,9 +1262,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "${clearResult.absencesDeleted} Abwesenheiten gelöscht",
+          "absencesDeleted": "{count} Abwesenheiten gelöscht",
           "button": "Alle Daten löschen",
-          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} Änderungsrichtlinien gelöscht",
+          "changePoliciesDeleted": "{count} Änderungsrichtlinien gelöscht",
           "dialog": {
             "confirm": "Alle Daten löschen",
             "description": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Zeiteinträge, Abwesenheiten, Teams, Projekte und zugehörigen Daten werden dauerhaft gelöscht.",
@@ -1280,26 +1280,26 @@
             "vacationAllowances": "Alle Urlaubsansprüche",
             "workCategories": "Alle Arbeitskategorien"
           },
-          "locationsDeleted": "${clearResult.locationsDeleted} Standorte gelöscht",
-          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} Manager-Zuweisungen gelöscht",
-          "projectsDeleted": "${clearResult.projectsDeleted} Projekte gelöscht",
-          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} Schichtanfragen gelöscht",
-          "shiftsDeleted": "${clearResult.shiftsDeleted} Schichten gelöscht",
-          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} Schichtvorlagen gelöscht",
-          "subareasDeleted": "${clearResult.subareasDeleted} Unterbereiche gelöscht",
+          "locationsDeleted": "{count} Standorte gelöscht",
+          "managerAssignmentsDeleted": "{count} Manager-Zuweisungen gelöscht",
+          "projectsDeleted": "{count} Projekte gelöscht",
+          "shiftRequestsDeleted": "{count} Schichtanfragen gelöscht",
+          "shiftsDeleted": "{count} Schichten gelöscht",
+          "shiftTemplatesDeleted": "{count} Schichtvorlagen gelöscht",
+          "subareasDeleted": "{count} Unterbereiche gelöscht",
           "successTitle": "Daten erfolgreich gelöscht!",
-          "teamsDeleted": "${clearResult.teamsDeleted} Teams gelöscht",
-          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} Zeiteinträge gelöscht",
+          "teamsDeleted": "{count} Teams gelöscht",
+          "timeEntriesDeleted": "{count} Zeiteinträge gelöscht",
           "title": "Zeitdaten löschen",
-          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} Urlaubsansprüche zurückgesetzt",
+          "vacationAllowancesReset": "{count} Urlaubsansprüche zurückgesetzt",
           "willDelete": "Dies wird dauerhaft gelöscht:",
-          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} Arbeitskategorien gelöscht",
-          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} Arbeitskategorie-Sets gelöscht",
-          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} Arbeitsperioden gelöscht"
+          "workCategoriesDeleted": "{count} Arbeitskategorien gelöscht",
+          "workCategorySetsDeleted": "{count} Arbeitskategorie-Sets gelöscht",
+          "workPeriodsDeleted": "{count} Arbeitsperioden gelöscht"
         },
         "clearing": "Wird geleert...",
         "deleteNonAdmin": {
-          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} Abwesenheiten gelöscht",
+          "absencesDeleted": "{count} Abwesenheiten gelöscht",
           "adminPreserved": "Administrator-Konten bleiben erhalten",
           "button": "Nicht-Admin-Mitarbeiter löschen",
           "dialog": {
@@ -1307,18 +1307,18 @@
             "description": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Nicht-Admin-Mitarbeiter und die damit verbundenen Daten werden dauerhaft gelöscht.",
             "title": "Nicht-Admin-Mitarbeiter löschen?"
           },
-          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} Mitarbeiter gelöscht",
+          "employeesDeleted": "{count} Mitarbeiter gelöscht",
           "items": {
             "demoUsers": "Alle Demo-Benutzerkonten",
             "employees": "Alle Nicht-Admin-Mitarbeiter",
             "managerAssignments": "Alle Manager-Zuweisungen",
             "timeEntries": "Deren Zeiteinträge und Arbeitsperioden"
           },
-          "membersDeleted": "${deleteNonAdminResult.membersDeleted} Mitglieder gelöscht",
+          "membersDeleted": "{count} Mitglieder gelöscht",
           "successTitle": "Nicht-Admin-Mitarbeiter erfolgreich gelöscht!",
-          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} Zeiteinträge gelöscht",
+          "timeEntriesDeleted": "{count} Zeiteinträge gelöscht",
           "title": "Nicht-Admin-Mitarbeiter löschen",
-          "usersDeleted": "${deleteNonAdminResult.usersDeleted} Benutzer gelöscht",
+          "usersDeleted": "{count} Benutzer gelöscht",
           "willDelete": "Dies wird dauerhaft gelöscht:"
         },
         "deleting": "Wird gelöscht...",
@@ -1382,7 +1382,7 @@
           "thisYear": "Dieses Jahr"
         },
         "employees": {
-          "all": "Alle Mitarbeiter (${employees.length})",
+          "all": "Alle Mitarbeiter ({count})",
           "label": "Mitarbeiter",
           "selectSpecific": "Bestimmte Mitarbeiter auswählen"
         }
@@ -1393,19 +1393,19 @@
         "title": "Demodaten generieren"
       },
       "generateEmployees": {
-        "button": "${employeeCount} Mitarbeiter generieren",
+        "button": "{count} Mitarbeiter generieren",
         "countHint": "Maximal 50 Mitarbeiter gleichzeitig",
         "countLabel": "Anzahl der Mitarbeiter",
         "description": "Demo-Mitarbeiterkonten für Testzwecke erstellen",
-        "employeesCreated": "${employeeResult.employeesCreated} Mitarbeiter erstellt",
+        "employeesCreated": "{count} Mitarbeiter erstellt",
         "generating": "Wird generiert...",
         "includeManagers": "Manager-Zuweisungen einschließen",
-        "managersCreated": "${employeeResult.managersCreated} Manager-Zuweisungen",
+        "managersCreated": "{count} Manager-Zuweisungen",
         "managersHint": "Zufällige Zuweisung von Managern zu neuen Mitarbeitern",
         "options": "Optionen",
         "successTitle": "Mitarbeiter erfolgreich generiert!",
         "title": "Mitarbeiter generieren",
-        "usersCreated": "${employeeResult.usersCreated} Benutzer erstellt"
+        "usersCreated": "{count} Benutzer erstellt"
       },
       "results": {
         "success": "Demodaten erfolgreich generiert!"

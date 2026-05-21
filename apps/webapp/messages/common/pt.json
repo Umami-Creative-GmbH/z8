@@ -28,9 +28,9 @@
       "title": "Organização suspensa"
     },
     "trialBanner": {
-      "description": "{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
+      "description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.",
       "title": "Teste de 14 dias ativo",
-      "upgrade": "Atualizar"
+      "upgrade": "Fazer upgrade"
     }
   },
   "colors": {
