@@ -67,6 +67,28 @@ describe("tolgee extractor", () => {
 		]);
 	});
 
+	it("extracts billing page FAQ keys into the settings namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function BillingFaq() {
+				const { t } = useTranslate();
+				return t("billing.faq.title", "Frequently Asked Questions");
+			}
+		`,
+			"billing-page-client.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Frequently Asked Questions",
+				keyName: "billing.faq.title",
+				namespace: "settings",
+			}),
+		]);
+	});
+
 	it("extracts namespace-qualified keys from data-driven key maps", () => {
 		const result = extractor(
 			`
