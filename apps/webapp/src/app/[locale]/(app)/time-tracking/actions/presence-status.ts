@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 
 type PresenceMode = "minimum_count" | "fixed_days";
+export type PresenceEvaluationPeriod = "weekly" | "biweekly" | "monthly";
 export type PresenceDayOfWeek =
 	| "monday"
 	| "tuesday"
@@ -18,6 +19,25 @@ const WEEKDAY_BY_NUMBER: Record<number, PresenceDayOfWeek> = {
 	5: "friday",
 	6: "saturday",
 	7: "sunday",
+};
+
+const PRESENCE_DAYS = new Set<PresenceDayOfWeek>(Object.values(WEEKDAY_BY_NUMBER));
+
+export type PresenceStatusSummary = {
+	presenceEnabled: boolean;
+	available: boolean;
+	period: PresenceEvaluationPeriod;
+	periodStart: string;
+	periodEnd: string;
+	mode: PresenceMode;
+	homeOfficeDaysLeft: number;
+	officeDaysRequiredLeft: number;
+	officeDaysCompleted: number;
+	homeOfficeDaysUsed: number;
+	workingDaysRemaining: number;
+	requiredOfficeDays: number;
+	fixedOfficeDays: PresenceDayOfWeek[];
+	message: string | null;
 };
 
 export function calculatePresenceStatusCounts({
@@ -55,5 +75,141 @@ export function calculatePresenceStatusCounts({
 		required:
 			presenceMode === "minimum_count" ? (requiredOnsiteDays ?? 0) : requiredFixedDaySet.size,
 		actual: onsiteDates.size,
+	};
+}
+
+export function parsePresenceFixedDays(value: string | null): PresenceDayOfWeek[] | null {
+	if (value === null) return null;
+
+	try {
+		const parsed: unknown = JSON.parse(value);
+		if (!Array.isArray(parsed)) return null;
+
+		const fixedDays: PresenceDayOfWeek[] = [];
+		for (const day of parsed) {
+			if (typeof day !== "string" || !PRESENCE_DAYS.has(day as PresenceDayOfWeek)) {
+				return null;
+			}
+
+			fixedDays.push(day as PresenceDayOfWeek);
+		}
+
+		return fixedDays;
+	} catch {
+		return null;
+	}
+}
+
+export function calculatePresenceStatusSummary({
+	presenceMode,
+	requiredOnsiteDays,
+	requiredOnsiteFixedDays,
+	period,
+	periodStart,
+	periodEnd,
+	now,
+	timezone,
+	workDays,
+	workPeriods,
+}: {
+	presenceMode: PresenceMode;
+	requiredOnsiteDays: number | null;
+	requiredOnsiteFixedDays: PresenceDayOfWeek[] | null;
+	period: PresenceEvaluationPeriod;
+	periodStart: DateTime;
+	periodEnd: DateTime;
+	now: DateTime;
+	timezone: string;
+	workDays: PresenceDayOfWeek[] | null;
+	workPeriods: Array<{ startTime: Date; workLocationType: string | null }>;
+}): PresenceStatusSummary {
+	const zone = timezone || "utc";
+	const start = periodStart.setZone(zone).startOf("day");
+	const end = periodEnd.setZone(zone).endOf("day");
+	const today = now.setZone(zone).startOf("day");
+	const scheduledDays = new Set(
+		workDays?.length
+			? workDays
+			: (["monday", "tuesday", "wednesday", "thursday", "friday"] as PresenceDayOfWeek[]),
+	);
+	const fixedOfficeDays = requiredOnsiteFixedDays ?? [];
+	const fixedOfficeDaySet = new Set(fixedOfficeDays);
+	const officeDates = new Set<string>();
+	const homeDates = new Set<string>();
+	const workedDates = new Set<string>();
+
+	for (const workPeriod of workPeriods) {
+		const dateTime = DateTime.fromJSDate(workPeriod.startTime, { zone });
+		if (dateTime < start || dateTime > end) continue;
+
+		const date = dateTime.toISODate();
+		if (!date) continue;
+
+		workedDates.add(date);
+		if (workPeriod.workLocationType === "office") {
+			officeDates.add(date);
+		} else if (workPeriod.workLocationType === "home") {
+			homeDates.add(date);
+		}
+	}
+
+	let totalScheduledWorkDays = 0;
+	let workingDaysRemaining = 0;
+	let fixedOfficeDates = 0;
+	let officeDaysRequiredLeft = 0;
+	let homeOfficeDaysLeft = 0;
+	let cursor = start;
+
+	while (cursor <= end) {
+		const weekday = WEEKDAY_BY_NUMBER[cursor.weekday];
+		const date = cursor.toISODate();
+		if (date && scheduledDays.has(weekday)) {
+			totalScheduledWorkDays += 1;
+
+			const isRemaining = cursor >= today && !workedDates.has(date);
+			if (isRemaining) {
+				workingDaysRemaining += 1;
+			}
+
+			if (presenceMode === "fixed_days" && fixedOfficeDaySet.has(weekday)) {
+				fixedOfficeDates += 1;
+				if (isRemaining && !officeDates.has(date)) {
+					officeDaysRequiredLeft += 1;
+				}
+			} else if (presenceMode === "fixed_days" && isRemaining) {
+				homeOfficeDaysLeft += 1;
+			}
+		}
+
+		cursor = cursor.plus({ days: 1 });
+	}
+
+	const officeDaysCompleted = officeDates.size;
+	const homeOfficeDaysUsed = Array.from(homeDates).filter((date) => !officeDates.has(date)).length;
+	const requiredOfficeDays =
+		presenceMode === "minimum_count"
+			? Math.min(requiredOnsiteDays ?? 0, totalScheduledWorkDays)
+			: fixedOfficeDates;
+
+	if (presenceMode === "minimum_count") {
+		officeDaysRequiredLeft = Math.max(requiredOfficeDays - officeDaysCompleted, 0);
+		homeOfficeDaysLeft = Math.max(workingDaysRemaining - officeDaysRequiredLeft, 0);
+	}
+
+	return {
+		presenceEnabled: true,
+		available: true,
+		period,
+		periodStart: start.toISO() ?? periodStart.toISO() ?? "",
+		periodEnd: end.toISO() ?? periodEnd.toISO() ?? "",
+		mode: presenceMode,
+		homeOfficeDaysLeft,
+		officeDaysRequiredLeft,
+		officeDaysCompleted,
+		homeOfficeDaysUsed,
+		workingDaysRemaining,
+		requiredOfficeDays,
+		fixedOfficeDays,
+		message: null,
 	};
 }
