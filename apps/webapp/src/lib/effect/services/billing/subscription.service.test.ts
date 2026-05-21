@@ -3,6 +3,7 @@ import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { subscription } from "@/db/schema";
+import { member } from "@/db/auth-schema";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
 
 const {
@@ -13,6 +14,9 @@ const {
 	returning,
 	setValues,
 	updateWhere,
+	select,
+	selectFrom,
+	selectWhere,
 } = vi.hoisted(() => ({
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
@@ -21,6 +25,9 @@ const {
 	returning: vi.fn(),
 	setValues: vi.fn(),
 	updateWhere: vi.fn(),
+	select: vi.fn(),
+	selectFrom: vi.fn(),
+	selectWhere: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -36,6 +43,7 @@ vi.mock("@/db", () => ({
 		update: vi.fn(() => ({
 			set: setValues,
 		})),
+		select,
 	},
 }));
 
@@ -74,6 +82,9 @@ describe("SubscriptionService", () => {
 		returning.mockResolvedValue([]);
 		updateWhere.mockResolvedValue(undefined);
 		setValues.mockReturnValue({ where: updateWhere });
+		select.mockReturnValue({ from: selectFrom });
+		selectFrom.mockReturnValue({ where: selectWhere });
+		selectWhere.mockResolvedValue([{ count: 3 }]);
 		process.env.BILLING_ENABLED = "false";
 	});
 
@@ -113,7 +124,30 @@ describe("SubscriptionService", () => {
 		expect(insertValues).not.toHaveBeenCalled();
 	});
 
-	it("creates a local trial without a Stripe customer", async () => {
+	it("returns current organization member count instead of stale stored seats", async () => {
+		findFirst.mockResolvedValueOnce({
+			...existingSubscriptionRow,
+			status: "trialing",
+			currentSeats: 0,
+		});
+		selectWhere.mockResolvedValueOnce([{ count: 3 }]);
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const subscriptionService = yield* SubscriptionService;
+
+				return yield* subscriptionService.getByOrganization("org_123");
+			}).pipe(Effect.provide(SubscriptionServiceLive)),
+		);
+
+		expect(result).toMatchObject({
+			organizationId: "org_123",
+			currentSeats: 3,
+		});
+		expect(selectFrom).toHaveBeenCalledWith(member);
+	});
+
+	it("creates a local trial without a Stripe customer using current organization seats", async () => {
 		const now = new Date("2026-05-20T10:00:00.000Z");
 		const trialEnd = new Date("2026-06-03T10:00:00.000Z");
 		const localTrialRow = {
@@ -123,6 +157,7 @@ describe("SubscriptionService", () => {
 			status: "trialing",
 			trialStart: now,
 			trialEnd,
+			currentSeats: 3,
 		};
 
 		findFirst.mockResolvedValueOnce(null);
@@ -146,8 +181,9 @@ describe("SubscriptionService", () => {
 			status: "trialing",
 			trialStart: now,
 			trialEnd,
-			currentSeats: 0,
+			currentSeats: 3,
 		});
+		expect(selectFrom).toHaveBeenCalledWith(member);
 		expect(onConflictDoNothing).toHaveBeenCalledWith({
 			target: subscription.organizationId,
 		});
@@ -158,7 +194,7 @@ describe("SubscriptionService", () => {
 			status: "trialing",
 			trialStart: now,
 			trialEnd,
-			currentSeats: 0,
+			currentSeats: 3,
 			isTrialing: true,
 			isActive: true,
 		});
