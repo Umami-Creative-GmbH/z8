@@ -462,7 +462,7 @@ export async function getPayrollReadiness(
 			severity: travelExpenseClaims.length > 0 ? "warning" : "info",
 			required: false,
 			count: travelExpenseClaims.length,
-			actionHref: "/travel-expenses/approvals",
+			actionHref: "/approvals/inbox?types=travel_expense_claim",
 			affectedEmployees: uniqueAffectedEmployees(travelExpenseClaims),
 		}),
 	];

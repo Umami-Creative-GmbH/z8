@@ -2,14 +2,14 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
 import { Link } from "@/navigation";
 
-export default function VerifyEmailPendingPage() {
+function VerifyEmailPendingContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
 	const { data: session } = useSession();
@@ -123,5 +123,13 @@ export default function VerifyEmailPendingPage() {
 				</div>
 			</div>
 		</AuthFormWrapper>
+	);
+}
+
+export default function VerifyEmailPendingPage() {
+	return (
+		<Suspense fallback={null}>
+			<VerifyEmailPendingContent />
+		</Suspense>
 	);
 }

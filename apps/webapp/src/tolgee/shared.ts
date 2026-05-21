@@ -54,7 +54,6 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/absences": ["common", "calendar"],
 	"/time-tracking": ["common", "timeTracking", "compliance"],
 	"/travel-expenses": ["common", "settings"],
-	"/travel-expenses/approvals": ["common", "settings", "approvals"],
 	"/reports": ["common", "reports"],
 	"/team": ["common", "settings"],
 	"/scheduling": ["common", "scheduling", "compliance"],

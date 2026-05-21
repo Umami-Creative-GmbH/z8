@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ComplianceExceptionsManager } from "@/components/settings/compliance-exceptions-manager";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 
 export const metadata = {
@@ -9,7 +11,7 @@ export const metadata = {
 	description: "Configure ArbZG compliance settings and manage exception requests",
 };
 
-export default async function ComplianceSettingsPage() {
+async function ComplianceSettingsContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const authContext = await getAuthContext();
@@ -33,5 +35,25 @@ export default async function ComplianceSettingsPage() {
 			employeeId={authContext.employee.id}
 			isAdmin={authContext.employee.role === "admin"}
 		/>
+	);
+}
+
+function ComplianceSettingsLoading() {
+	return (
+		<div className="p-6">
+			<div className="mx-auto max-w-4xl space-y-4">
+				<Skeleton className="h-8 w-56" />
+				<Skeleton className="h-5 w-80" />
+				<Skeleton className="h-[360px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function ComplianceSettingsPage() {
+	return (
+		<Suspense fallback={<ComplianceSettingsLoading />}>
+			<ComplianceSettingsContent />
+		</Suspense>
 	);
 }

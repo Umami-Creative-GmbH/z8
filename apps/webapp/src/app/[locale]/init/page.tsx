@@ -3,7 +3,7 @@
 import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { getLastOrganization, saveLastOrganization } from "@/lib/org-persistence";
@@ -20,7 +20,7 @@ type Status = "checking" | "selecting" | "activating" | "redirecting";
  * redirecting to the dashboard. This page is outside the main app shell
  * so the organization context is fully established before loading the app.
  */
-export default function InitPage() {
+function InitPageContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
 	const redirectUrl = sanitizeCallbackUrl(
@@ -233,5 +233,13 @@ export default function InitPage() {
 				</p>
 			</div>
 		</div>
+	);
+}
+
+export default function InitPage() {
+	return (
+		<Suspense fallback={null}>
+			<InitPageContent />
+		</Suspense>
 	);
 }

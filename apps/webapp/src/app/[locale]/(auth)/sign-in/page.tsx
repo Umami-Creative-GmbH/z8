@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
@@ -6,5 +7,9 @@ export async function generateStaticParams() {
 }
 
 export default function Page() {
-	return <LoginForm />;
+	return (
+		<Suspense fallback={null}>
+			<LoginForm />
+		</Suspense>
+	);
 }

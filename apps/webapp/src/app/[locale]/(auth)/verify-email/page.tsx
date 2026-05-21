@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { getPendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
@@ -16,7 +16,7 @@ type JoinResult = {
 	organizationName: string;
 } | null;
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -177,5 +177,13 @@ export default function VerifyEmailPage() {
 				</div>
 			)}
 		</AuthFormWrapper>
+	);
+}
+
+export default function VerifyEmailPage() {
+	return (
+		<Suspense fallback={null}>
+			<VerifyEmailContent />
+		</Suspense>
 	);
 }

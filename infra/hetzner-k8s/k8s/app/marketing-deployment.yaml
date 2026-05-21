@@ -19,7 +19,7 @@ spec:
       containers:
         - name: marketing
           image: ghcr.io/umami-creative-gmbh/z8-marketing:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
               name: http

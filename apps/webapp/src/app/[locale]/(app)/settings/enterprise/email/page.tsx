@@ -1,9 +1,14 @@
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { EmailConfigForm } from "@/components/settings/enterprise/email-config-form";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getEmailConfig, getVaultConnectionStatus } from "./actions";
 
-export default async function EmailConfigPage() {
+async function EmailConfigContent() {
+	await connection();
+
 	const [{ organizationId }, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
@@ -36,5 +41,25 @@ export default async function EmailConfigPage() {
 				/>
 			</div>
 		</div>
+	);
+}
+
+function EmailConfigLoading() {
+	return (
+		<div className="p-6">
+			<div className="mx-auto max-w-4xl space-y-4">
+				<Skeleton className="h-8 w-64" />
+				<Skeleton className="h-5 w-96" />
+				<Skeleton className="h-[380px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function EmailConfigPage() {
+	return (
+		<Suspense fallback={<EmailConfigLoading />}>
+			<EmailConfigContent />
+		</Suspense>
 	);
 }

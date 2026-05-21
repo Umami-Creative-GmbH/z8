@@ -1,7 +1,10 @@
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { BillingPageClient } from "@/components/billing/billing-page-client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -13,7 +16,6 @@ import {
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
 } from "@/lib/effect/services/billing";
-import { BillingPageClient } from "@/components/billing/billing-page-client";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("billing-settings-page");
@@ -24,7 +26,7 @@ const billingCheckFailedAccess: BillingAccessResult = {
 	status: "billing_check_failed",
 };
 
-export default async function BillingSettingsPage() {
+async function BillingSettingsContent() {
 	await connection();
 
 	// Check if billing is enabled
@@ -97,5 +99,25 @@ export default async function BillingSettingsPage() {
 			accessResult={serializedAccessResult}
 			isOwner={memberRecord?.role === "owner"}
 		/>
+	);
+}
+
+function BillingSettingsLoading() {
+	return (
+		<div className="p-6">
+			<div className="mx-auto max-w-4xl space-y-4">
+				<Skeleton className="h-8 w-56" />
+				<Skeleton className="h-5 w-80" />
+				<Skeleton className="h-[420px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function BillingSettingsPage() {
+	return (
+		<Suspense fallback={<BillingSettingsLoading />}>
+			<BillingSettingsContent />
+		</Suspense>
 	);
 }

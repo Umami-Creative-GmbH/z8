@@ -45,22 +45,29 @@ const approvalsDir = dirname(fileURLToPath(import.meta.url));
 	});
 
 	it("routes travel expense approvals through the unified inbox entry point", () => {
-		const legacyApprovalsPageSource = readFileSync(
-			join(approvalsDir, "../travel-expenses/approvals/page.tsx"),
-			"utf8",
-		);
 		const travelExpensesPageSource = readFileSync(
 			join(approvalsDir, "../travel-expenses/page.tsx"),
 			"utf8",
 		);
 
-		expect(legacyApprovalsPageSource).toContain("params: Promise<{ locale: string }>");
-		expect(legacyApprovalsPageSource).toContain(
-			'redirect(`/${locale}/approvals/inbox?types=travel_expense_claim`)',
-		);
+		expect(
+			existsSync(join(approvalsDir, "../travel-expenses/approvals/page.tsx")),
+		).toBe(false);
 		expect(travelExpensesPageSource).toContain(
 			'"/approvals/inbox?types=travel_expense_claim"',
 		);
+	});
+
+	it("routes payroll readiness travel expense actions through the filtered unified inbox", () => {
+		const payrollReadinessSource = readFileSync(
+			join(approvalsDir, "../../../../lib/payroll-readiness/get-payroll-readiness.ts"),
+			"utf8",
+		);
+
+		expect(payrollReadinessSource).toContain(
+			'actionHref: "/approvals/inbox?types=travel_expense_claim"',
+		);
+		expect(payrollReadinessSource).not.toContain('actionHref: "/travel-expenses/approvals"');
 	});
 
 	it("removes the legacy travel expense approval queue implementation", () => {

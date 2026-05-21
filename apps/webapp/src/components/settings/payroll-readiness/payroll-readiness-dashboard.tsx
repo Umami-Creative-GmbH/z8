@@ -216,7 +216,7 @@ function getActionLabel(href: string | undefined, t: TranslateFn) {
 			return t("settings.payrollReadiness.actions.timeTracking", "Review time tracking");
 		case "/settings/payroll-export":
 			return t("settings.payrollReadiness.actions.payrollExport", "Open payroll export settings");
-		case "/travel-expenses/approvals":
+		case "/approvals/inbox?types=travel_expense_claim":
 			return t("settings.payrollReadiness.actions.travelExpenses", "Review travel expenses");
 		default:
 			return undefined;
