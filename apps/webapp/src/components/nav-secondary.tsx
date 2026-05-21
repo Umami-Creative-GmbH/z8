@@ -1,6 +1,6 @@
 "use client";
 
-import type { Icon } from "@tabler/icons-react";
+import { IconExternalLink, type Icon } from "@tabler/icons-react";
 import type * as React from "react";
 
 import {
@@ -20,6 +20,7 @@ export function NavSecondary({
 		title: string;
 		url: string;
 		icon: Icon;
+		external?: boolean;
 	}[];
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
 	return (
@@ -29,9 +30,20 @@ export function NavSecondary({
 					{items.map((item) => (
 						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton asChild>
-								<Link href={item.url}>
+								<Link
+									href={item.url}
+									rel={item.external ? "noreferrer" : undefined}
+									target={item.external ? "_blank" : undefined}
+								>
 									<item.icon />
 									<span>{item.title}</span>
+									{item.external && (
+										<IconExternalLink
+											aria-hidden="true"
+											className="ml-auto"
+											data-testid="external-link-icon"
+										/>
+									)}
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>

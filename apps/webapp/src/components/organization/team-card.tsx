@@ -27,9 +27,11 @@ interface TeamCardProps {
 	onManageMembers?: () => void;
 }
 
+const EMPTY_EMPLOYEES: NonNullable<TeamCardProps["employees"]> = [];
+
 export function TeamCard({
 	team,
-	employees = [],
+	employees = EMPTY_EMPLOYEES,
 	primaryManager = null,
 	canManageMembers,
 	canManageSettings,

@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconGripVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
+import { createContext, use, type CSSProperties, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { WidgetId } from "./widget-registry";
@@ -47,7 +47,7 @@ export function DashboardWidget({ id, children, draggable }: DashboardWidgetProp
 	const { t } = useTranslate();
 	// Register as visible when mounted
 	useRegisterVisibleWidget(id);
-	const contextDraggable = useContext(DashboardWidgetDraggableContext);
+	const contextDraggable = use(DashboardWidgetDraggableContext);
 	const effectiveDraggable = draggable ?? contextDraggable;
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

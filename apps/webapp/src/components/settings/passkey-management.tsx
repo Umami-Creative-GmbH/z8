@@ -3,7 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { DateTime } from "luxon";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -31,7 +32,7 @@ export function PasskeyManagement() {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [passkeyToDelete, setPasskeyToDelete] = useState<string | null>(null);
+	const passkeyToDelete = useRef<string | null>(null);
 
 	// Query for passkeys list
 	const passkeysQuery = useQuery({
@@ -80,7 +81,7 @@ export function PasskeyManagement() {
 		onSuccess: () => {
 			toast.success(t("settings.passkeys.deleteSuccess", "Passkey deleted successfully"));
 			setDeleteDialogOpen(false);
-			setPasskeyToDelete(null);
+			passkeyToDelete.current = null;
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.passkeys() });
 		},
 		onError: (error) => {
@@ -91,12 +92,12 @@ export function PasskeyManagement() {
 	});
 
 	const handleDeletePasskey = () => {
-		if (!passkeyToDelete) return;
-		deletePasskeyMutation.mutate(passkeyToDelete);
+		if (!passkeyToDelete.current) return;
+		deletePasskeyMutation.mutate(passkeyToDelete.current);
 	};
 
 	const confirmDelete = (passkeyId: string) => {
-		setPasskeyToDelete(passkeyId);
+		passkeyToDelete.current = passkeyId;
 		setDeleteDialogOpen(true);
 	};
 
@@ -116,7 +117,7 @@ export function PasskeyManagement() {
 					onClick={() => addPasskeyMutation.mutate()}
 					disabled={addPasskeyMutation.isPending || isPending}
 				>
-					{addPasskeyMutation.isPending ? t("common.adding", "Adding...") : t("settings.passkeys.add", "Add Passkey")}
+					{addPasskeyMutation.isPending ? t("common.adding", "Adding…") : t("settings.passkeys.add", "Add Passkey")}
 				</Button>
 			</div>
 
@@ -139,7 +140,9 @@ export function PasskeyManagement() {
 									<div>
 							<CardTitle className="text-base">{passkey.name || t("settings.passkeys.unnamed", "Unnamed Passkey")}</CardTitle>
 							<CardDescription>
-								{t("settings.passkeys.addedOn", "Added on {date}", { date: new Date(passkey.createdAt).toLocaleDateString() })}
+								{t("settings.passkeys.addedOn", "Added on {date}", {
+									date: DateTime.fromJSDate(passkey.createdAt).toLocaleString(DateTime.DATE_MED),
+								})}
 										</CardDescription>
 									</div>
 									<Button

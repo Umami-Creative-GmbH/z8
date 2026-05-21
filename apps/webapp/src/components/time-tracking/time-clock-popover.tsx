@@ -2,7 +2,7 @@
 
 import { IconCheck, IconClock, IconClockPause, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,7 +50,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 
 	// State for showing notes input after clock-out
 	const [showNotesInput, setShowNotesInput] = useState(false);
-	const [lastClockOutEntryId, setLastClockOutEntryId] = useState<string | null>(null);
+	const lastClockOutEntryId = useRef<string | null>(null);
 	const [notesText, setNotesText] = useState("");
 	// State for project selection
 	const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
@@ -122,7 +122,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 			setSelectedWorkCategoryId(undefined);
 			// Show notes input and store the entry ID for patching (only for non-queued)
 			if ("data" in result && result.data?.id) {
-				setLastClockOutEntryId(result.data.id);
+				lastClockOutEntryId.current = result.data.id;
 				setShowNotesInput(true);
 				setNotesText("");
 			} else {
@@ -148,13 +148,13 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 	};
 
 	const handleSaveNotes = async () => {
-		if (!lastClockOutEntryId || !notesText.trim()) {
+		if (!lastClockOutEntryId.current || !notesText.trim()) {
 			setShowNotesInput(false);
 			setOpen(false);
 			return;
 		}
 
-		const result = await updateNotes({ entryId: lastClockOutEntryId, notes: notesText.trim() });
+		const result = await updateNotes({ entryId: lastClockOutEntryId.current, notes: notesText.trim() });
 
 		if (result.success) {
 			toast.success(t("timeTracking.notesSaved", "Notes saved"));
@@ -163,14 +163,14 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		}
 
 		setShowNotesInput(false);
-		setLastClockOutEntryId(null);
+		lastClockOutEntryId.current = null;
 		setNotesText("");
 		setOpen(false);
 	};
 
 	const handleDismissNotes = () => {
 		setShowNotesInput(false);
-		setLastClockOutEntryId(null);
+		lastClockOutEntryId.current = null;
 		setNotesText("");
 		setOpen(false);
 	};
@@ -225,7 +225,6 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 									onChange={(e) => setNotesText(e.target.value)}
 									rows={3}
 									className="resize-none"
-									autoFocus
 								/>
 								<div className="flex gap-2">
 									<Button

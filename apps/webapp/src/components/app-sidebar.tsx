@@ -166,11 +166,13 @@ export function AppSidebar({
 			title: t("nav.get-help", "Get Help"),
 			url: "https://docs.z8-time.app/docs",
 			icon: IconHelp,
+			external: true,
 		},
 		{
 			title: t("nav.feedback", "Feedback"),
 			url: "https://feedback.z8-time.app/",
 			icon: IconMessageCircle,
+			external: true,
 		},
 		...(showPlatformAdminNav
 			? [

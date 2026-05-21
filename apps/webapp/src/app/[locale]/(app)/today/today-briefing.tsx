@@ -318,7 +318,7 @@ function ActionRow({ item, compact = false }: { item: BriefingActionItem; compac
 	return (
 		<Link
 			href={item.href}
-			className="group flex items-start justify-between gap-3 px-3 py-3 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
+			className="group flex items-start justify-between gap-3 p-3 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
 		>
 			<div className="min-w-0 space-y-1 break-words">
 				<div className="flex flex-wrap items-center gap-2">
