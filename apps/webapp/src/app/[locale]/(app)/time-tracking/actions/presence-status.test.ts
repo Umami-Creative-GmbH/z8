@@ -31,10 +31,7 @@ describe("calculatePresenceStatusCounts", () => {
 
 describe("parsePresenceFixedDays", () => {
 	it("returns valid configured weekdays", () => {
-		expect(parsePresenceFixedDays('["monday","wednesday"]')).toEqual([
-			"monday",
-			"wednesday",
-		]);
+		expect(parsePresenceFixedDays('["monday","wednesday"]')).toEqual(["monday", "wednesday"]);
 	});
 
 	it("rejects malformed fixed day JSON", () => {
@@ -178,9 +175,7 @@ describe("calculatePresenceStatusSummary", () => {
 			now: DateTime.fromISO("2026-05-06T08:00:00.000Z", { zone: "utc" }),
 			timezone: "utc",
 			workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-			workPeriods: [
-				{ startTime: new Date("2026-05-06T09:00:00.000Z"), workLocationType: "home" },
-			],
+			workPeriods: [{ startTime: new Date("2026-05-06T09:00:00.000Z"), workLocationType: "home" }],
 		});
 
 		expect(summary.officeDaysRequiredLeft).toBe(1);

@@ -87,13 +87,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const queryClient = useQueryClient();
 
 	// Offline support
-	const {
-		isOnline,
-		isOffline,
-		pendingCount,
-		isSyncing,
-		queueClockEvent,
-	} = useOfflineClock();
+	const { isOnline, isOffline, pendingCount, isSyncing, queueClockEvent } = useOfflineClock();
 
 	// Query for time clock status
 	const statusQuery = useQuery({

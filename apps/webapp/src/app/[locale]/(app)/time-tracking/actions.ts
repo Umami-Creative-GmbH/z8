@@ -18,9 +18,9 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -64,22 +64,19 @@ import {
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import {
-	isWorkLocationType,
-	type WorkLocationType,
-} from "@/lib/time-tracking/work-location";
-import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
-import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
+import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
 import {
 	calculatePresenceStatusSummary,
 	getPresencePeriodBounds,
 	getPresenceWorkDays,
-	parsePresenceFixedDays,
 	type PresenceEvaluationPeriod,
 	type PresenceStatusSummary,
+	parsePresenceFixedDays,
 } from "./actions/presence-status";
-import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
+import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
 export async function addBreakToActiveSession(breakMinutes: number) {
@@ -137,7 +134,8 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 			createTimeCorrectionApprovalWorkflow(approvalDbService, {
 				organizationId: params.organizationId,
 				requesterEmployeeId: params.employeeId,
-				teamId: requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+				teamId:
+					requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
 				workPeriodId: params.workPeriodId,
 				defaultApproverId: params.managerId,
 				reason: params.reason,
@@ -145,7 +143,10 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 			}),
 		);
 	} catch (error) {
-		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
+		logger.error(
+			{ error, workPeriodId: params.workPeriodId },
+			"Failed to resolve time-entry approval policy; using manager fallback",
+		);
 		const [approval] = await db
 			.insert(approvalRequest)
 			.values({
@@ -3162,9 +3163,9 @@ async function createManualEntryApprovalRequest(params: {
  * Get presence status for an employee
  * Returns on-site requirement progress for the current evaluation period
  */
-export async function getPresenceStatus(employeeId: string): Promise<
-	ServerActionResult<PresenceStatusSummary>
-> {
+export async function getPresenceStatus(
+	employeeId: string,
+): Promise<ServerActionResult<PresenceStatusSummary>> {
 	const parsed = z
 		.object({ employeeId: z.string().uuid("Invalid employee ID") })
 		.safeParse({ employeeId });

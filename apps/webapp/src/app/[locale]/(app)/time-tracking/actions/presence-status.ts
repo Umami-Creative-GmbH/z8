@@ -197,9 +197,7 @@ export function calculatePresenceStatusSummary({
 	const start = periodStart.setZone(zone).startOf("day");
 	const end = periodEnd.setZone(zone).endOf("day");
 	const today = now.setZone(zone).startOf("day");
-	const scheduledDays = new Set(
-		workDays?.length ? workDays : DEFAULT_WORK_DAYS,
-	);
+	const scheduledDays = new Set(workDays?.length ? workDays : DEFAULT_WORK_DAYS);
 	const fixedOfficeDays = requiredOnsiteFixedDays ?? [];
 	const fixedOfficeDaySet = new Set(fixedOfficeDays);
 	const officeDates = new Set<string>();
