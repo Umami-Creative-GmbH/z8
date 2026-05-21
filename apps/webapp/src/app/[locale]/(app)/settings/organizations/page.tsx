@@ -1,17 +1,22 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { and, eq } from "drizzle-orm";
 import {
 	OrganizationsPageClient,
 	type InvitationWithInviter,
 	type MemberWithUserAndEmployee,
 } from "@/components/organization/organizations-page-client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
-export default async function OrganizationsPage() {
+async function OrganizationsPageContent() {
+	await connection();
+
 	const [settingsRouteContext, t] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		getTranslate(),
@@ -99,5 +104,25 @@ export default async function OrganizationsPage() {
 				authContext.user.canCreateOrganizations || authContext.user.role === "admin"
 			}
 		/>
+	);
+}
+
+function OrganizationsPageLoading() {
+	return (
+		<div className="flex-1 p-6">
+			<div className="mx-auto max-w-4xl space-y-4">
+				<Skeleton className="h-8 w-64" />
+				<Skeleton className="h-5 w-96" />
+				<Skeleton className="h-[420px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function OrganizationsPage() {
+	return (
+		<Suspense fallback={<OrganizationsPageLoading />}>
+			<OrganizationsPageContent />
+		</Suspense>
 	);
 }

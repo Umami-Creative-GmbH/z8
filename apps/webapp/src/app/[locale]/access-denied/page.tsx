@@ -2,7 +2,7 @@
 
 import { IconLock, IconLogout } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { use } from "react";
+import { Suspense, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
@@ -14,7 +14,7 @@ const appTypeLabels: Record<string, string> = {
 	mobile: "mobile application",
 };
 
-export default function AccessDeniedPage({
+function AccessDeniedContent({
 	searchParams,
 }: {
 	searchParams: Promise<{ app?: string }>;
@@ -62,5 +62,13 @@ export default function AccessDeniedPage({
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+export default function AccessDeniedPage(props: { searchParams: Promise<{ app?: string }> }) {
+	return (
+		<Suspense fallback={null}>
+			<AccessDeniedContent {...props} />
+		</Suspense>
 	);
 }

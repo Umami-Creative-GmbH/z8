@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SignupForm } from "@/components/signup-form";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
@@ -15,7 +16,7 @@ interface PageProps {
 	}>;
 }
 
-export default async function Page({ searchParams }: PageProps) {
+async function SignUpPageContent({ searchParams }: PageProps) {
 	const { callbackUrl, inviteCode, invitedEmail, invitationId, organizationName } = await searchParams;
 	return (
 		<SignupForm
@@ -25,5 +26,13 @@ export default async function Page({ searchParams }: PageProps) {
 			initialOrganizationName={organizationName}
 			inviteCode={inviteCode}
 		/>
+	);
+}
+
+export default function Page(props: PageProps) {
+	return (
+		<Suspense fallback={null}>
+			<SignUpPageContent {...props} />
+		</Suspense>
 	);
 }

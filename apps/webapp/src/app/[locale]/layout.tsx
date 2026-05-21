@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { setRequestLocale } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
@@ -11,7 +12,6 @@ import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
-import { getTranslate } from "@/tolgee/server";
 
 type Props = {
 	children: ReactNode;
@@ -64,7 +64,7 @@ function TranslatedMeta() {
 
 export default async function LocaleLayout({ children, params }: Props) {
 	const { locale } = await params;
-	const t = await getTranslate();
+	setRequestLocale(locale);
 
 	return (
 		<html lang={locale} suppressHydrationWarning>
@@ -98,7 +98,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 								minHeight: "100vh",
 							}}
 						>
-							<div>{t("common.loading", "Loading...")}</div>
+							<div>Loading...</div>
 						</div>
 					}
 				>

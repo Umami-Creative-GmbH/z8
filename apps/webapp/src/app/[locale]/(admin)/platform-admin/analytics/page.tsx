@@ -17,8 +17,6 @@ export default async function PlatformAnalyticsPage({
 }: {
 	searchParams?: Promise<PlatformAnalyticsSearchParams>;
 }) {
-	await connection();
-
 	const [t, params] = await Promise.all([getTranslate(), searchParams]);
 	const parsedParams = parsePlatformAnalyticsParams(params ?? {});
 
@@ -72,6 +70,8 @@ async function PlatformAnalyticsDataSection({
 }: {
 	parsedParams: ParsedPlatformAnalyticsParams;
 }) {
+	await connection();
+
 	const data = await getPlatformAnalyticsData(parsedParams);
 
 	return <PlatformAnalyticsCharts data={data} />;

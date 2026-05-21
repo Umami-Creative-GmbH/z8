@@ -1,5 +1,7 @@
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
@@ -11,7 +13,7 @@ interface TimeTrackingPageProps {
 	searchParams: Promise<TimeTrackingPageSearchParams>;
 }
 
-export default async function TimeTrackingPage({ searchParams }: TimeTrackingPageProps) {
+async function TimeTrackingPageContent({ searchParams }: TimeTrackingPageProps) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const pageData = await getTimeTrackingPageData(await searchParams);
@@ -51,5 +53,34 @@ export default async function TimeTrackingPage({ searchParams }: TimeTrackingPag
 				/>
 			</div>
 		</div>
+	);
+}
+
+function TimeTrackingPageLoading() {
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<div className="px-4 lg:px-6">
+				<Skeleton className="h-40 w-full" />
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton className="h-64 w-full" />
+			</div>
+			<div className="grid gap-4 px-4 md:grid-cols-2 lg:px-6 xl:grid-cols-4">
+				{["week", "hours", "breaks", "balance"].map((key) => (
+					<Skeleton key={key} className="h-28 w-full" />
+				))}
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton className="h-80 w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function TimeTrackingPage(props: TimeTrackingPageProps) {
+	return (
+		<Suspense fallback={<TimeTrackingPageLoading />}>
+			<TimeTrackingPageContent {...props} />
+		</Suspense>
 	);
 }

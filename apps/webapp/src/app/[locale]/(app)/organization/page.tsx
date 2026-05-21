@@ -1,11 +1,13 @@
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getOrgChartInitialGraph } from "./actions";
 import { OrgChartClient } from "./org-chart-client";
 
-export default async function OrganizationPage() {
+async function OrganizationPageContent() {
 	await connection();
 
 	const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);
@@ -52,5 +54,27 @@ export default async function OrganizationPage() {
 				<OrgChartClient initialGraph={result.data} />
 			</div>
 		</div>
+	);
+}
+
+function OrganizationPageLoading() {
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<div className="space-y-3 px-4 lg:px-6">
+				<Skeleton className="h-9 w-48" />
+				<Skeleton className="h-5 w-full max-w-2xl" />
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton className="h-[680px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function OrganizationPage() {
+	return (
+		<Suspense fallback={<OrganizationPageLoading />}>
+			<OrganizationPageContent />
+		</Suspense>
 	);
 }

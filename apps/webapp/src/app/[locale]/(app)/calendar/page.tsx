@@ -1,9 +1,11 @@
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 
-export default async function CalendarPage() {
+async function CalendarPageContent() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	const authContext = await getAuthContext();
@@ -21,5 +23,25 @@ export default async function CalendarPage() {
 			organizationId={authContext.employee.organizationId}
 			currentEmployeeId={authContext.employee.id}
 		/>
+	);
+}
+
+function CalendarPageLoading() {
+	return (
+		<div className="flex flex-1 flex-col p-4">
+			<div className="space-y-4">
+				<Skeleton className="h-8 w-52" />
+				<Skeleton className="h-5 w-80" />
+				<Skeleton className="h-[560px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function CalendarPage() {
+	return (
+		<Suspense fallback={<CalendarPageLoading />}>
+			<CalendarPageContent />
+		</Suspense>
 	);
 }
