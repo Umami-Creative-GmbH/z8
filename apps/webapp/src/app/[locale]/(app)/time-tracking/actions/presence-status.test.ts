@@ -115,6 +115,44 @@ describe("calculatePresenceStatusSummary", () => {
 		});
 	});
 
+	it("keeps a fixed office day required when the employee works from home that day", () => {
+		const summary = calculatePresenceStatusSummary({
+			presenceMode: "fixed_days",
+			requiredOnsiteDays: null,
+			requiredOnsiteFixedDays: ["wednesday"],
+			period: "weekly",
+			periodStart,
+			periodEnd,
+			now: DateTime.fromISO("2026-05-06T08:00:00.000Z", { zone: "utc" }),
+			timezone: "utc",
+			workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			workPeriods: [
+				{ startTime: new Date("2026-05-06T09:00:00.000Z"), workLocationType: "home" },
+			],
+		});
+
+		expect(summary.officeDaysRequiredLeft).toBe(1);
+	});
+
+	it("does not count non-fixed office weekdays as completed fixed office days", () => {
+		const summary = calculatePresenceStatusSummary({
+			presenceMode: "fixed_days",
+			requiredOnsiteDays: null,
+			requiredOnsiteFixedDays: ["monday", "wednesday"],
+			period: "weekly",
+			periodStart,
+			periodEnd,
+			now: DateTime.fromISO("2026-05-06T08:00:00.000Z", { zone: "utc" }),
+			timezone: "utc",
+			workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			workPeriods: [
+				{ startTime: new Date("2026-05-05T09:00:00.000Z"), workLocationType: "office" },
+			],
+		});
+
+		expect(summary.officeDaysCompleted).toBe(0);
+	});
+
 	it("counts multiple work periods on one date once and keeps remote distinct from home", () => {
 		const summary = calculatePresenceStatusSummary({
 			presenceMode: "minimum_count",

@@ -173,7 +173,7 @@ export function calculatePresenceStatusSummary({
 
 			if (presenceMode === "fixed_days" && fixedOfficeDaySet.has(weekday)) {
 				fixedOfficeDates += 1;
-				if (isRemaining && !officeDates.has(date)) {
+				if (cursor >= today && !officeDates.has(date)) {
 					officeDaysRequiredLeft += 1;
 				}
 			} else if (presenceMode === "fixed_days" && isRemaining) {
@@ -184,7 +184,13 @@ export function calculatePresenceStatusSummary({
 		cursor = cursor.plus({ days: 1 });
 	}
 
-	const officeDaysCompleted = officeDates.size;
+	const officeDaysCompleted =
+		presenceMode === "minimum_count"
+			? officeDates.size
+			: Array.from(officeDates).filter((date) => {
+					const dateTime = DateTime.fromISO(date, { zone });
+					return fixedOfficeDaySet.has(WEEKDAY_BY_NUMBER[dateTime.weekday]);
+				}).length;
 	const homeOfficeDaysUsed = Array.from(homeDates).filter((date) => !officeDates.has(date)).length;
 	const requiredOfficeDays =
 		presenceMode === "minimum_count"
