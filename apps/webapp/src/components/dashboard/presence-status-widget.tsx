@@ -4,10 +4,19 @@ import { IconMapPin } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/time-tracking/actions";
-import { Progress } from "@/components/ui/progress";
 import { usePresenceStatus } from "@/hooks/use-presence-status";
 import { DashboardWidget } from "./dashboard-widget";
 import { WidgetCard } from "./widget-card";
+
+const WEEKDAY_LABELS: Record<string, string> = {
+	monday: "Mon",
+	tuesday: "Tue",
+	wednesday: "Wed",
+	thursday: "Thu",
+	friday: "Fri",
+	saturday: "Sat",
+	sunday: "Sun",
+};
 
 export function PresenceStatusWidget() {
 	const { t } = useTranslate();
@@ -42,57 +51,71 @@ export function PresenceStatusWidget() {
 		return null;
 	}
 
-	const percentage =
-		status && status.required > 0 ? Math.min((status.actual / status.required) * 100, 100) : 100;
-	const isBehind = status ? status.actual < status.required : false;
-
-	const periodLabel = status
-		? status.period === "weekly"
-			? t("settings.workPolicies.presenceEvaluationWeekly", "week")
-			: status.period === "biweekly"
-				? t("settings.workPolicies.presenceEvaluationBiweekly", "2 weeks")
-				: t("settings.workPolicies.presenceEvaluationMonthly", "month")
-		: "";
+	const fixedOfficeDays = status?.fixedOfficeDays
+		?.map((day) => WEEKDAY_LABELS[day] ?? day)
+		.join(", ");
+	const showOfficeWarning =
+		status?.available && status.officeDaysRequiredLeft > status.workingDaysRemaining;
 
 	return (
 		<DashboardWidget id="presence-status">
 			<WidgetCard
-				title={t("dashboard.presenceStatus", "Presence")}
-				description={t("dashboard.presenceDescription", "On-site attendance tracking")}
-				icon={<IconMapPin className="size-4 text-teal-500" />}
+				title={t("dashboard.presence.workLocation", "Work location")}
+				description={t("dashboard.presence.periodDescription", "This period")}
+				icon={<IconMapPin aria-hidden="true" className="size-4 text-teal-500" />}
 				loading={isLoading || !employeeResolved || !employeeId}
 			>
-				{status && (
+				{status?.available ? (
 					<div className="space-y-3">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-2xl font-bold">
-									{status.actual}/{status.required}
+						<div className="grid grid-cols-2 gap-3">
+							<div className="rounded-lg border bg-muted/30 p-3">
+								<p className="text-2xl font-semibold tabular-nums">{status.homeOfficeDaysLeft}</p>
+								<p className="text-xs text-muted-foreground">
+									{t("dashboard.presence.homeOfficeLeft", "Home office left")}
+								</p>
+							</div>
+							<div className="rounded-lg border bg-muted/30 p-3">
+								<p className="text-2xl font-semibold tabular-nums">
+									{status.officeDaysRequiredLeft}
 								</p>
 								<p className="text-xs text-muted-foreground">
-									{t("dashboard.presenceProgress", "days on-site this {period}", {
-										period: periodLabel,
-									})}
+									{t("dashboard.presence.officeStillRequired", "Office still required")}
 								</p>
 							</div>
 						</div>
-						<Progress
-							value={percentage}
-							className={
-								isBehind
-									? "[&_[data-slot=progress-indicator]]:bg-amber-500"
-									: "[&_[data-slot=progress-indicator]]:bg-green-500"
-							}
-						/>
-						{isBehind && (
-							<p className="text-xs text-amber-600 dark:text-amber-400">
-								{t("dashboard.presenceBehind", "{remaining} more days needed", {
-									remaining: status.required - status.actual,
+						{status.mode === "fixed_days" ? (
+							<p className="text-xs text-muted-foreground">
+								{t("dashboard.presence.fixedOfficeDays", "Fixed office days: {days}", {
+									days: fixedOfficeDays,
 								})}
+							</p>
+						) : (
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"dashboard.presence.flexibleOfficePolicy",
+									"Flexible office policy for this period",
+								)}
+							</p>
+						)}
+						{showOfficeWarning && (
+							<p className="text-xs text-amber-600 dark:text-amber-400">
+								{t(
+									"dashboard.presence.officeDaysWarning",
+									"Office requirement exceeds remaining work days",
+									{
+										required: status.officeDaysRequiredLeft,
+										remaining: status.workingDaysRemaining,
+									},
+								)}
 							</p>
 						)}
 					</div>
-				)}
+				) : status?.presenceEnabled ? (
+					<p className="text-sm text-muted-foreground">
+						{status.message ??
+							t("dashboard.presence.unavailable", "Presence policy is unavailable.")}
+					</p>
+				) : null}
 			</WidgetCard>
 		</DashboardWidget>
 	);
