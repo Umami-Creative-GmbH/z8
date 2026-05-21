@@ -28,7 +28,7 @@ import type { ICSFeedOptions } from "@/lib/calendar-sync/types";
 // ROUTE HANDLER
 // ============================================
 
-export async function GET(
+async function handleCalendarIcsFeed(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ secret: string }> },
 ) {
@@ -143,6 +143,8 @@ export async function GET(
 		return new NextResponse("Internal server error", { status: 500 });
 	}
 }
+
+export { handleCalendarIcsFeed as GET };
 
 // ============================================
 // HELPERS

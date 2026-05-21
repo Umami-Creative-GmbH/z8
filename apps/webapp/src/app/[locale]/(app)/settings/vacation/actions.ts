@@ -65,7 +65,9 @@ function normalizeOptionalText(value: string | null | undefined) {
 	return trimmed ? trimmed : null;
 }
 
-const unsafeTranslationKeys = new Set(["__proto__", "constructor", "prototype"]);
+function isUnsafeTranslationKey(key: string) {
+	return key === "__proto__" || key === "constructor" || key === "prototype";
+}
 
 function normalizeTranslationMap(value: unknown) {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -79,8 +81,7 @@ function normalizeTranslationMap(value: unknown) {
 		)
 		.map(([locale, translation]) => [locale.trim(), translation.trim()] as const)
 		.filter(
-			([locale, translation]) =>
-				locale && translation && !unsafeTranslationKeys.has(locale),
+			([locale, translation]) => locale && translation && !isUnsafeTranslationKey(locale),
 		);
 
 	return entries.length > 0 ? Object.fromEntries(entries) : null;

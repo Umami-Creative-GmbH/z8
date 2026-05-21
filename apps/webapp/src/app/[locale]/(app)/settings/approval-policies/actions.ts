@@ -34,7 +34,9 @@ const employeeGroupInputSchema = z.object({
 type DatabaseApproverType = Exclude<PolicyInput["stages"][number]["approverType"], "team_lead">;
 type OvertimeRiskValue = "none" | "warning" | "violation";
 
-const overtimeRiskValues = new Set<string>(["none", "warning", "violation"]);
+function isOvertimeRiskValue(value: string): value is OvertimeRiskValue {
+	return value === "none" || value === "warning" || value === "violation";
+}
 
 function valuesForReferenceCondition(condition: PolicyInput["conditions"][number]) {
 	if (condition.operator === "equals") {
@@ -172,7 +174,7 @@ function conditionInsertValue(
 ) {
 	const valueJson = { value: condition.value, values: condition.values };
 	const equalValue = condition.operator === "equals" ? condition.value : undefined;
-	const overtimeRisk = overtimeRiskValues.has(equalValue ?? "")
+	const overtimeRisk = isOvertimeRiskValue(equalValue ?? "")
 		? (equalValue as OvertimeRiskValue)
 		: undefined;
 

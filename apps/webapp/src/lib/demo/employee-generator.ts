@@ -20,28 +20,30 @@ export interface GenerateEmployeesResult {
 /**
  * Common job positions for demo employees
  */
-const positions = [
-	"Software Engineer",
-	"Senior Software Engineer",
-	"Frontend Developer",
-	"Backend Developer",
-	"Full Stack Developer",
-	"DevOps Engineer",
-	"QA Engineer",
-	"Product Manager",
-	"Project Manager",
-	"UX Designer",
-	"UI Designer",
-	"Data Analyst",
-	"Marketing Specialist",
-	"Sales Representative",
-	"Customer Support",
-	"HR Specialist",
-	"Finance Analyst",
-	"Technical Writer",
-	"System Administrator",
-	"Business Analyst",
-];
+function getDemoEmployeePositions() {
+	return [
+		"Software Engineer",
+		"Senior Software Engineer",
+		"Frontend Developer",
+		"Backend Developer",
+		"Full Stack Developer",
+		"DevOps Engineer",
+		"QA Engineer",
+		"Product Manager",
+		"Project Manager",
+		"UX Designer",
+		"UI Designer",
+		"Data Analyst",
+		"Marketing Specialist",
+		"Sales Representative",
+		"Customer Support",
+		"HR Specialist",
+		"Finance Analyst",
+		"Technical Writer",
+		"System Administrator",
+		"Business Analyst",
+	] as const;
+}
 
 /**
  * Generate demo employees with fake user accounts
@@ -51,6 +53,7 @@ export async function generateDemoEmployees(
 	options: GenerateEmployeesOptions,
 ): Promise<GenerateEmployeesResult> {
 	const { organizationId, count, includeManagers } = options;
+	const positions = getDemoEmployeePositions();
 
 	let usersCreated = 0;
 	let employeesCreated = 0;
