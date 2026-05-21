@@ -1,9 +1,88 @@
 {
   "billing": {
+    "access": {
+      "canceled": "Your subscription has been canceled. Resubscribe to regain access.",
+      "paymentFailed": "Your last payment failed. Please update your payment method.",
+      "required": "A subscription is required to use this application.",
+      "trialExpired": "Your trial has expired. Subscribe to continue using the app."
+    },
+    "activeSeats": "Active Seats",
+    "alerts": {
+      "canceledDescription": "Checkout was canceled. You can try again whenever you're ready.",
+      "subscriptionRequired": "Subscription Required",
+      "successDescription": "Your subscription has been activated. Thank you for subscribing!",
+      "successTitle": "Success!"
+    },
+    "bestValue": "Best Value",
+    "billedMonthly": "billed monthly",
+    "cancelsOn": "Cancels on {date}",
+    "checkoutCreateFailed": "Failed to create checkout session",
+    "checkoutStartFailed": "Failed to start checkout",
     "checkout": {
       "trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
       "trialContinuesTitle": "Your trial continues after upgrade"
-    }
+    },
+    "choosePlan": "Choose Your Plan",
+    "choosePlanDescription": "Start with a 14-day free trial. No credit card required to start.",
+    "currentPlan": "Current Plan",
+    "days": "{count} days",
+    "description": "Manage your subscription and billing details",
+    "faq": {
+      "afterTrial": {
+        "answer": "After your 14-day trial ends, you'll be charged for the subscription plan you selected. You can cancel anytime before the trial ends to avoid charges.",
+        "question": "What happens after the trial?"
+      },
+      "perSeat": {
+        "answer": "You're billed based on the number of active members in your organization. When you add or remove members, your subscription is automatically adjusted.",
+        "question": "How does per-seat billing work?"
+      },
+      "switch": {
+        "answer": "Yes! You can switch plans at any time through the billing portal. Changes take effect at your next billing cycle.",
+        "question": "Can I switch between monthly and yearly?"
+      },
+      "title": "Frequently Asked Questions"
+    },
+    "features": {
+      "allFeatures": "All features included",
+      "cancelAnytime": "Cancel anytime",
+      "trial": "14-day free trial",
+      "yearlyDiscount": "25% discount vs monthly"
+    },
+    "interval": {
+      "monthlyBilling": "Monthly billing",
+      "yearlyBilling": "Yearly billing"
+    },
+    "manageBilling": "Manage Billing",
+    "monthlyCost": "Monthly Cost",
+    "nextBilling": "Next Billing",
+    "opening": "Opening...",
+    "perSeatMonth": "/seat/month",
+    "plans": {
+      "monthly": {
+        "description": "Flexible month-to-month billing",
+        "title": "Monthly"
+      },
+      "yearly": {
+        "description": "Save 25% with annual billing",
+        "title": "Yearly"
+      }
+    },
+    "portalOpenFailed": "Failed to open billing portal",
+    "priceSeatMonth": "€{price}/seat/mo",
+    "priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
+    "seatBilledAnnually": "€{price}/seat billed annually",
+    "starting": "Starting...",
+    "startTrial": "Start Free Trial",
+    "status": {
+      "canceled": "Canceled",
+      "noSubscription": "No Subscription",
+      "pastDue": "Past Due",
+      "trial": "Trial"
+    },
+    "title": "Billing & Subscription",
+    "trialEnds": "Trial Ends",
+    "vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
+    "yearTotal": "€{amount}/year total"
   },
   "organization": {
     "create": "Create Organization",
@@ -1183,9 +1262,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "{count} absences deleted",
+          "absencesDeleted": "${clearResult.absencesDeleted} absences deleted",
           "button": "Clear All Data",
-          "changePoliciesDeleted": "{count} change policies deleted",
+          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} change policies deleted",
           "dialog": {
             "confirm": "Clear All Data",
             "description": "This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.",
@@ -1201,26 +1280,26 @@
             "vacationAllowances": "All vacation allowances",
             "workCategories": "All work categories"
           },
-          "locationsDeleted": "{count} locations deleted",
-          "managerAssignmentsDeleted": "{count} manager assignments deleted",
-          "projectsDeleted": "{count} projects deleted",
-          "shiftRequestsDeleted": "{count} shift requests deleted",
-          "shiftsDeleted": "{count} shifts deleted",
-          "shiftTemplatesDeleted": "{count} shift templates deleted",
-          "subareasDeleted": "{count} subareas deleted",
+          "locationsDeleted": "${clearResult.locationsDeleted} locations deleted",
+          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} manager assignments deleted",
+          "projectsDeleted": "${clearResult.projectsDeleted} projects deleted",
+          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} shift requests deleted",
+          "shiftsDeleted": "${clearResult.shiftsDeleted} shifts deleted",
+          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} shift templates deleted",
+          "subareasDeleted": "${clearResult.subareasDeleted} subareas deleted",
           "successTitle": "Data cleared successfully!",
-          "teamsDeleted": "{count} teams deleted",
-          "timeEntriesDeleted": "{count} time entries deleted",
+          "teamsDeleted": "${clearResult.teamsDeleted} teams deleted",
+          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} time entries deleted",
           "title": "Clear Time Data",
-          "vacationAllowancesReset": "{count} vacation allowances reset",
+          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} vacation allowances reset",
           "willDelete": "This will permanently delete:",
-          "workCategoriesDeleted": "{count} work categories deleted",
-          "workCategorySetsDeleted": "{count} work category sets deleted",
-          "workPeriodsDeleted": "{count} work periods deleted"
+          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} work categories deleted",
+          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} work category sets deleted",
+          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} work periods deleted"
         },
         "clearing": "Clearing...",
         "deleteNonAdmin": {
-          "absencesDeleted": "{count} absences deleted",
+          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} absences deleted",
           "adminPreserved": "Admin accounts will be preserved",
           "button": "Delete Non-Admin Employees",
           "dialog": {
@@ -1228,18 +1307,18 @@
             "description": "This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.",
             "title": "Delete Non-Admin Employees?"
           },
-          "employeesDeleted": "{count} employees deleted",
+          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} employees deleted",
           "items": {
             "demoUsers": "All demo user accounts",
             "employees": "All non-admin employees",
             "managerAssignments": "All manager assignments",
             "timeEntries": "Their time entries and work periods"
           },
-          "membersDeleted": "{count} members deleted",
+          "membersDeleted": "${deleteNonAdminResult.membersDeleted} members deleted",
           "successTitle": "Non-admin employees deleted successfully!",
-          "timeEntriesDeleted": "{count} time entries deleted",
+          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} time entries deleted",
           "title": "Delete Non-Admin Employees",
-          "usersDeleted": "{count} users deleted",
+          "usersDeleted": "${deleteNonAdminResult.usersDeleted} users deleted",
           "willDelete": "This will permanently delete:"
         },
         "deleting": "Deleting...",
@@ -1303,7 +1382,7 @@
           "thisYear": "This year"
         },
         "employees": {
-          "all": "All employees ({count})",
+          "all": "All employees (${employees.length})",
           "label": "Employees",
           "selectSpecific": "Select specific employees"
         }
@@ -1314,19 +1393,19 @@
         "title": "Generate Demo Data"
       },
       "generateEmployees": {
-        "button": "Generate {count} Employees",
+        "button": "Generate ${employeeCount} Employees",
         "countHint": "Maximum 50 employees at a time",
         "countLabel": "Number of Employees",
         "description": "Create demo employee accounts for testing",
-        "employeesCreated": "{count} employees created",
+        "employeesCreated": "${employeeResult.employeesCreated} employees created",
         "generating": "Generating...",
         "includeManagers": "Include Manager Assignments",
-        "managersCreated": "{count} manager assignments",
+        "managersCreated": "${employeeResult.managersCreated} manager assignments",
         "managersHint": "Randomly assign managers to new employees",
         "options": "Options",
         "successTitle": "Employees generated successfully!",
         "title": "Generate Employees",
-        "usersCreated": "{count} users created"
+        "usersCreated": "${employeeResult.usersCreated} users created"
       },
       "results": {
         "success": "Demo data generated successfully!"

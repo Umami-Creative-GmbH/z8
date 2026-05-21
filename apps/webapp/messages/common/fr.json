@@ -10,19 +10,6 @@
     "delete": "Supprimer",
     "refresh": "Actualiser"
   },
-  "billing": {
-    "suspended": {
-      "adminDescription": "Votre essai a expiré ou l'abonnement n'est plus valide. Mettez à jour la facturation pour continuer à utiliser Z8.",
-      "goToBilling": "Accéder à la facturation",
-      "memberDescription": "Cette organisation est suspendue. Contactez un administrateur d'organisation pour mettre à jour la facturation.",
-      "title": "Organisation suspendue"
-    },
-    "trialBanner": {
-      "description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.",
-      "title": "Essai de 14 jours actif",
-      "upgrade": "Mettre à niveau"
-    }
-  },
   "analytics": {
     "export": {
       "export": "Exporter",
@@ -31,6 +18,19 @@
       "exportedAsFormat": "Exporté au format {format}",
       "exportingFormat": "Exportation au format {format}…",
       "failedAsFormat": "Échec de l'exportation au format {format}"
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Votre essai a expiré ou votre abonnement n'est plus valide. Mettez à jour votre facturation pour continuer à utiliser Z8.",
+      "goToBilling": "Accéder à la facturation",
+      "memberDescription": "Cette organisation est suspendue. Contactez un administrateur de l'organisation pour mettre à jour la facturation.",
+      "title": "Organisation suspendue"
+    },
+    "trialBanner": {
+      "description": "{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
+      "title": "Essai de 14 jours actif",
+      "upgrade": "Mettre à niveau"
     }
   },
   "colors": {

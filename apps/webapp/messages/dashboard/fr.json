@@ -74,10 +74,16 @@
       "time-corrections": "Corrections de temps",
       "title": "Approbations en attente"
     },
-    "presenceBehind": "{remaining} jours restants nécessaires",
-    "presenceDescription": "Suivi de présence sur site",
-    "presenceProgress": "jours sur site pour cette {period}",
-    "presenceStatus": "Presence",
+    "presence": {
+      "fixedOfficeDays": "Jours de présence fixes : {days}",
+      "flexibleOfficePolicy": "Politique de bureau flexible pour cette période",
+      "homeOfficeLeft": "Télétravail restant",
+      "officeDaysWarning": "L'obligation de présence au bureau dépasse les jours de travail restants",
+      "officeStillRequired": "Présence au bureau toujours requise",
+      "periodDescription": "Cette période",
+      "unavailable": "La politique de présence est indisponible.",
+      "workLocation": "Lieu de travail"
+    },
     "quick-stats": {
       "behind": "En retard",
       "description": "Votre progression hebdomadaire et mensuelle",

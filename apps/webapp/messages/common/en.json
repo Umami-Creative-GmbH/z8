@@ -10,6 +10,16 @@
     "delete": "Delete",
     "refresh": "Refresh"
   },
+  "analytics": {
+    "export": {
+      "export": "Export",
+      "exportAsCsv": "Export as CSV",
+      "exportAsExcel": "Export as Excel",
+      "exportedAsFormat": "Exported as {format}",
+      "exportingFormat": "Exporting {format}…",
+      "failedAsFormat": "Failed to export as {format}"
+    }
+  },
   "billing": {
     "suspended": {
       "adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
@@ -21,16 +31,6 @@
       "description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
       "title": "14-day trial active",
       "upgrade": "Upgrade"
-    }
-  },
-  "analytics": {
-    "export": {
-      "export": "Export",
-      "exportAsCsv": "Export as CSV",
-      "exportAsExcel": "Export as Excel",
-      "exportedAsFormat": "Exported as {format}",
-      "exportingFormat": "Exporting {format}…",
-      "failedAsFormat": "Failed to export as {format}"
     }
   },
   "colors": {

@@ -1,9 +1,88 @@
 {
   "billing": {
+    "access": {
+      "canceled": "Ihr Abonnement wurde gekündigt. Abonnieren Sie erneut, um wieder Zugriff zu erhalten.",
+      "paymentFailed": "Ihre letzte Zahlung ist fehlgeschlagen. Bitte aktualisieren Sie Ihre Zahlungsmethode.",
+      "required": "Für die Nutzung dieser Anwendung ist ein Abonnement erforderlich.",
+      "trialExpired": "Ihre Testversion ist abgelaufen. Abonnieren Sie, um die App weiterhin zu nutzen."
+    },
+    "activeSeats": "Aktive Plätze",
+    "alerts": {
+      "canceledDescription": "Der Bezahlvorgang wurde abgebrochen. Sie können es jederzeit erneut versuchen.",
+      "subscriptionRequired": "Abonnement erforderlich",
+      "successDescription": "Ihr Abonnement wurde aktiviert. Vielen Dank für Ihr Abonnement!",
+      "successTitle": "Erfolgreich!"
+    },
+    "bestValue": "Beste Preis-Leistung",
+    "billedMonthly": "monatlich abgerechnet",
+    "cancelsOn": "Kündigt am {date}",
+    "checkoutCreateFailed": "Fehler beim Erstellen der Checkout-Sitzung",
+    "checkoutStartFailed": "Fehler beim Starten des Checkouts",
     "checkout": {
-      "trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdaten. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testversion.",
+      "trialContinuesDescription": "Stripe Checkout erfasst jetzt die Zahlungsinformationen. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testphase.",
       "trialContinuesTitle": "Ihre Testversion läuft nach dem Upgrade weiter"
-    }
+    },
+    "choosePlan": "Wählen Sie Ihren Plan",
+    "choosePlanDescription": "Starten Sie mit einer 14-tägigen kostenlosen Testversion. Keine Kreditkarte erforderlich.",
+    "currentPlan": "Aktueller Plan",
+    "days": "{count} Tage",
+    "description": "Verwalten Sie Ihr Abonnement und Ihre Zahlungsdetails",
+    "faq": {
+      "afterTrial": {
+        "answer": "Nach Ablauf Ihrer 14-tägigen Testversion wird Ihnen der von Ihnen ausgewählte Abonnementplan in Rechnung gestellt. Sie können jederzeit vor Ende der Testversion kündigen, um Kosten zu vermeiden.",
+        "question": "Was passiert nach der Testversion?"
+      },
+      "perSeat": {
+        "answer": "Die Abrechnung erfolgt basierend auf der Anzahl aktiver Mitglieder in Ihrer Organisation. Wenn Sie Mitglieder hinzufügen oder entfernen, wird Ihr Abonnement automatisch angepasst.",
+        "question": "Wie funktioniert die Pro-Sitzplatz-Abrechnung?"
+      },
+      "switch": {
+        "answer": "Ja! Sie können jederzeit über das Abrechnungsportal den Tarif wechseln. Änderungen werden mit Ihrem nächsten Abrechnungszeitraum wirksam.",
+        "question": "Kann ich zwischen monatlicher und jährlicher Abrechnung wechseln?"
+      },
+      "title": "Häufig gestellte Fragen"
+    },
+    "features": {
+      "allFeatures": "Alle Funktionen enthalten",
+      "cancelAnytime": "Jederzeit kündbar",
+      "trial": "14-tägige kostenlose Testversion",
+      "yearlyDiscount": "25 % Rabatt gegenüber monatlicher Abrechnung"
+    },
+    "interval": {
+      "monthlyBilling": "Monatliche Abrechnung",
+      "yearlyBilling": "Jährliche Abrechnung"
+    },
+    "manageBilling": "Abrechnung verwalten",
+    "monthlyCost": "Monatliche Kosten",
+    "nextBilling": "Nächste Abrechnung",
+    "opening": "Wird geöffnet...",
+    "perSeatMonth": "/Sitzplatz/Monat",
+    "plans": {
+      "monthly": {
+        "description": "Flexible monatliche Abrechnung",
+        "title": "Monatlich"
+      },
+      "yearly": {
+        "description": "25 % sparen mit jährlicher Abrechnung",
+        "title": "Jährlich"
+      }
+    },
+    "portalOpenFailed": "Fehler beim Öffnen des Abrechnungsportals",
+    "priceSeatMonth": "€{price}/Sitzplatz/Monat",
+    "priceSeatMonthYearly": "€{price}/Sitzplatz/Monat (jährlich abgerechnet)",
+    "seatBilledAnnually": "€{price}/Sitzplatz jährlich abgerechnet",
+    "starting": "Wird gestartet...",
+    "startTrial": "Kostenlose Testversion starten",
+    "status": {
+      "canceled": "Gekündigt",
+      "noSubscription": "Kein Abonnement",
+      "pastDue": "Überfällig",
+      "trial": "Testversion"
+    },
+    "title": "Abrechnung & Abonnement",
+    "trialEnds": "Testversion endet",
+    "vatNotice": "Die angezeigten Preise sind Nettopreise ohne MwSt. Die MwSt. wird gegebenenfalls hinzugefügt.",
+    "yearTotal": "€{amount}/Jahr insgesamt"
   },
   "organization": {
     "create": "Organisation erstellen",

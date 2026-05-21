@@ -10,19 +10,6 @@
     "delete": "Excluir",
     "refresh": "Atualizar"
   },
-  "billing": {
-    "suspended": {
-      "adminDescription": "Seu período de teste terminou ou a assinatura não é mais válida. Atualize o faturamento para continuar usando o Z8.",
-      "goToBilling": "Ir para faturamento",
-      "memberDescription": "Esta organização está suspensa. Entre em contato com um administrador da organização para atualizar o faturamento.",
-      "title": "Organização suspensa"
-    },
-    "trialBanner": {
-      "description": "Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.",
-      "title": "Teste de 14 dias ativo",
-      "upgrade": "Fazer upgrade"
-    }
-  },
   "analytics": {
     "export": {
       "export": "Exportar",
@@ -31,6 +18,19 @@
       "exportedAsFormat": "Exportado como {format}",
       "exportingFormat": "Exportando {format}…",
       "failedAsFormat": "Falha ao exportar como {format}"
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Seu teste terminou ou a assinatura não é mais válida. Atualize o faturamento para continuar usando o Z8.",
+      "goToBilling": "Ir para faturamento",
+      "memberDescription": "Esta organização está suspensa. Entre em contato com um administrador da organização para atualizar o faturamento.",
+      "title": "Organização suspensa"
+    },
+    "trialBanner": {
+      "description": "{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
+      "title": "Teste de 14 dias ativo",
+      "upgrade": "Atualizar"
     }
   },
   "colors": {
