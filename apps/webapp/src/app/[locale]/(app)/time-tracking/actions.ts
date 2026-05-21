@@ -75,6 +75,7 @@ import {
 	type PresenceEvaluationPeriod,
 	type PresenceStatusSummary,
 	parsePresenceFixedDays,
+	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
 import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
@@ -3311,6 +3312,29 @@ export async function getPresenceStatus(
 				requiredOfficeDays: 0,
 				fixedOfficeDays: [],
 				message: "Presence policy has invalid fixed office days.",
+			};
+		}
+
+		const fixedDaysConfigMessage = validatePresenceFixedDaysConfig(
+			presenceConfig.presenceMode,
+			fixedOfficeDays,
+		);
+		if (fixedDaysConfigMessage) {
+			return {
+				presenceEnabled: true,
+				available: false,
+				period: presenceConfig.evaluationPeriod as PresenceEvaluationPeriod,
+				periodStart: periodStart.toISO() ?? "",
+				periodEnd: periodEnd.toISO() ?? "",
+				mode: presenceConfig.presenceMode,
+				homeOfficeDaysLeft: 0,
+				officeDaysRequiredLeft: 0,
+				officeDaysCompleted: 0,
+				homeOfficeDaysUsed: 0,
+				workingDaysRemaining: 0,
+				requiredOfficeDays: 0,
+				fixedOfficeDays: [],
+				message: fixedDaysConfigMessage,
 			};
 		}
 

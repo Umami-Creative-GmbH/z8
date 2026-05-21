@@ -108,6 +108,17 @@ export function parsePresenceFixedDays(value: string | null): PresenceDayOfWeek[
 	}
 }
 
+export function validatePresenceFixedDaysConfig(
+	presenceMode: PresenceMode,
+	fixedOfficeDays: PresenceDayOfWeek[] | null,
+) {
+	if (presenceMode === "fixed_days" && !fixedOfficeDays?.length) {
+		return "Presence policy has no fixed office days configured.";
+	}
+
+	return null;
+}
+
 function getStartOfWeek(date: DateTime, weekStartDay: "sunday" | "monday" | 0 | 1) {
 	if (weekStartDay === "monday" || weekStartDay === 1) {
 		return date.startOf("week").startOf("day");
@@ -229,6 +240,13 @@ export function calculatePresenceStatusSummary({
 	while (cursor <= end) {
 		const weekday = WEEKDAY_BY_NUMBER[cursor.weekday];
 		const date = cursor.toISODate();
+		if (date && presenceMode === "fixed_days" && fixedOfficeDaySet.has(weekday)) {
+			fixedOfficeDates += 1;
+			if (cursor >= today && !officeDates.has(date)) {
+				officeDaysRequiredLeft += 1;
+			}
+		}
+
 		if (date && scheduledDays.has(weekday)) {
 			totalScheduledWorkDays += 1;
 
@@ -237,12 +255,7 @@ export function calculatePresenceStatusSummary({
 				workingDaysRemaining += 1;
 			}
 
-			if (presenceMode === "fixed_days" && fixedOfficeDaySet.has(weekday)) {
-				fixedOfficeDates += 1;
-				if (cursor >= today && !officeDates.has(date)) {
-					officeDaysRequiredLeft += 1;
-				}
-			} else if (presenceMode === "fixed_days" && isRemaining) {
+			if (presenceMode === "fixed_days" && !fixedOfficeDaySet.has(weekday) && isRemaining) {
 				homeOfficeDaysLeft += 1;
 			}
 		}

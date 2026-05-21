@@ -6,6 +6,7 @@ import {
 	getPresencePeriodBounds,
 	getPresenceWorkDays,
 	parsePresenceFixedDays,
+	validatePresenceFixedDaysConfig,
 } from "./presence-status";
 
 const periodStart = DateTime.fromISO("2026-05-04T00:00:00.000Z", { zone: "utc" });
@@ -37,6 +38,22 @@ describe("parsePresenceFixedDays", () => {
 	it("rejects malformed fixed day JSON", () => {
 		expect(parsePresenceFixedDays("not-json")).toBeNull();
 		expect(parsePresenceFixedDays('["monday","funday"]')).toBeNull();
+	});
+});
+
+describe("validatePresenceFixedDaysConfig", () => {
+	it("treats fixed policies without fixed weekdays as unavailable", () => {
+		expect(validatePresenceFixedDaysConfig("fixed_days", null)).toBe(
+			"Presence policy has no fixed office days configured.",
+		);
+		expect(validatePresenceFixedDaysConfig("fixed_days", [])).toBe(
+			"Presence policy has no fixed office days configured.",
+		);
+	});
+
+	it("allows configured fixed policies and flexible policies", () => {
+		expect(validatePresenceFixedDaysConfig("fixed_days", ["monday"])).toBeNull();
+		expect(validatePresenceFixedDaysConfig("minimum_count", null)).toBeNull();
 	});
 });
 
@@ -162,6 +179,25 @@ describe("calculatePresenceStatusSummary", () => {
 			requiredOfficeDays: 2,
 			fixedOfficeDays: ["monday", "wednesday"],
 		});
+	});
+
+	it("counts fixed office dates even when they are not scheduled workdays", () => {
+		const summary = calculatePresenceStatusSummary({
+			presenceMode: "fixed_days",
+			requiredOnsiteDays: null,
+			requiredOnsiteFixedDays: ["sunday"],
+			period: "weekly",
+			periodStart,
+			periodEnd,
+			now: DateTime.fromISO("2026-05-04T08:00:00.000Z", { zone: "utc" }),
+			timezone: "utc",
+			workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			workPeriods: [],
+		});
+
+		expect(summary.requiredOfficeDays).toBe(1);
+		expect(summary.officeDaysRequiredLeft).toBe(1);
+		expect(summary.homeOfficeDaysLeft).toBe(5);
 	});
 
 	it("keeps a fixed office day required when the employee works from home that day", () => {

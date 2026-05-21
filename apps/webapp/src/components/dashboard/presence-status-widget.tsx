@@ -52,7 +52,7 @@ export function PresenceStatusWidget() {
 	}
 
 	const fixedOfficeDays = status?.fixedOfficeDays
-		?.map((day) => WEEKDAY_LABELS[day] ?? day)
+		?.map((day) => t(`dashboard.presence.weekdays.${day}`, WEEKDAY_LABELS[day] ?? day))
 		.join(", ");
 	const showOfficeWarning =
 		status?.available && status.officeDaysRequiredLeft > status.workingDaysRemaining;

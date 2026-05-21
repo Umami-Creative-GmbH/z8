@@ -13,6 +13,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) => {
+			const translatedWeekdays: Record<string, string> = {
+				"dashboard.presence.weekdays.monday": "Mo.",
+				"dashboard.presence.weekdays.wednesday": "We.",
+			};
+			if (!params && translatedWeekdays[_key]) return translatedWeekdays[_key];
 			if (!params) return fallback;
 			return Object.entries(params).reduce(
 				(text, [key, value]) => text.replace(`{${key}}`, String(value)),
@@ -94,7 +99,7 @@ describe("PresenceStatusWidget", () => {
 		expect(screen.getByText("2")).toBeTruthy();
 	});
 
-	it("renders fixed office day notes", async () => {
+	it("renders localized fixed office day notes", async () => {
 		mockEmployee();
 		mocks.usePresenceStatus.mockReturnValue({
 			isLoading: false,
@@ -118,7 +123,34 @@ describe("PresenceStatusWidget", () => {
 
 		render(<PresenceStatusWidget />);
 
-		expect(await screen.findByText("Fixed office days: Mon, Wed")).toBeTruthy();
+		expect(await screen.findByText("Fixed office days: Mo., We.")).toBeTruthy();
+	});
+
+	it("renders fixed office day notes with fallback weekday labels", async () => {
+		mockEmployee();
+		mocks.usePresenceStatus.mockReturnValue({
+			isLoading: false,
+			data: {
+				presenceEnabled: true,
+				available: true,
+				period: "weekly",
+				periodStart: "2026-05-04T00:00:00.000Z",
+				periodEnd: "2026-05-10T23:59:59.999Z",
+				mode: "fixed_days",
+				homeOfficeDaysLeft: 3,
+				officeDaysRequiredLeft: 1,
+				officeDaysCompleted: 1,
+				homeOfficeDaysUsed: 0,
+				workingDaysRemaining: 4,
+				requiredOfficeDays: 2,
+				fixedOfficeDays: ["tuesday", "thursday"],
+				message: null,
+			},
+		});
+
+		render(<PresenceStatusWidget />);
+
+		expect(await screen.findByText("Fixed office days: Tue, Thu")).toBeTruthy();
 	});
 
 	it("hides when presence is disabled", async () => {
