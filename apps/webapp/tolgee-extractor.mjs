@@ -77,6 +77,14 @@ const NAMESPACE_PREFIXES = {
  * @returns {string|undefined} - The namespace or undefined for default
  */
 function inferNamespace(keyName) {
+	if (keyName.startsWith("billing.suspended.") || keyName.startsWith("billing.trialBanner.")) {
+		return "common";
+	}
+
+	if (keyName.startsWith("billing.")) {
+		return "settings";
+	}
+
 	// Get the top-level prefix (first segment before the dot)
 	const firstDot = keyName.indexOf(".");
 	const prefix = firstDot > 0 ? keyName.substring(0, firstDot) : keyName;

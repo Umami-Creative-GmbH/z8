@@ -1,9 +1,88 @@
 {
   "billing": {
+    "access": {
+      "canceled": "Ihr Abonnement wurde gekündigt. Abonnieren Sie erneut, um wieder Zugriff zu erhalten.",
+      "paymentFailed": "Ihre letzte Zahlung ist fehlgeschlagen. Bitte aktualisieren Sie Ihre Zahlungsmethode.",
+      "required": "Für die Nutzung dieser Anwendung ist ein Abonnement erforderlich.",
+      "trialExpired": "Ihre Testversion ist abgelaufen. Abonnieren Sie, um die App weiterhin zu nutzen."
+    },
+    "activeSeats": "Aktive Plätze",
+    "alerts": {
+      "canceledDescription": "Der Bezahlvorgang wurde abgebrochen. Sie können es jederzeit erneut versuchen.",
+      "subscriptionRequired": "Abonnement erforderlich",
+      "successDescription": "Ihr Abonnement wurde aktiviert. Vielen Dank für Ihr Abonnement!",
+      "successTitle": "Erfolgreich!"
+    },
+    "bestValue": "Beste Preis-Leistung",
+    "billedMonthly": "monatlich abgerechnet",
+    "cancelsOn": "Kündigt am {date}",
+    "checkoutCreateFailed": "Fehler beim Erstellen der Checkout-Sitzung",
+    "checkoutStartFailed": "Fehler beim Starten des Checkouts",
     "checkout": {
-      "trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdaten. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testversion.",
+      "trialContinuesDescription": "Stripe Checkout erfasst jetzt die Zahlungsinformationen. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testphase.",
       "trialContinuesTitle": "Ihre Testversion läuft nach dem Upgrade weiter"
-    }
+    },
+    "choosePlan": "Wählen Sie Ihren Plan",
+    "choosePlanDescription": "Starten Sie mit einer 14-tägigen kostenlosen Testversion. Keine Kreditkarte erforderlich.",
+    "currentPlan": "Aktueller Plan",
+    "days": "{count} Tage",
+    "description": "Verwalten Sie Ihr Abonnement und Ihre Zahlungsdetails",
+    "faq": {
+      "afterTrial": {
+        "answer": "Nach Ablauf Ihrer 14-tägigen Testversion wird Ihnen der von Ihnen ausgewählte Abonnementplan in Rechnung gestellt. Sie können jederzeit vor Ende der Testversion kündigen, um Kosten zu vermeiden.",
+        "question": "Was passiert nach der Testversion?"
+      },
+      "perSeat": {
+        "answer": "Die Abrechnung erfolgt basierend auf der Anzahl aktiver Mitglieder in Ihrer Organisation. Wenn Sie Mitglieder hinzufügen oder entfernen, wird Ihr Abonnement automatisch angepasst.",
+        "question": "Wie funktioniert die Pro-Sitzplatz-Abrechnung?"
+      },
+      "switch": {
+        "answer": "Ja! Sie können jederzeit über das Abrechnungsportal den Tarif wechseln. Änderungen werden mit Ihrem nächsten Abrechnungszeitraum wirksam.",
+        "question": "Kann ich zwischen monatlicher und jährlicher Abrechnung wechseln?"
+      },
+      "title": "Häufig gestellte Fragen"
+    },
+    "features": {
+      "allFeatures": "Alle Funktionen enthalten",
+      "cancelAnytime": "Jederzeit kündbar",
+      "trial": "14-tägige kostenlose Testversion",
+      "yearlyDiscount": "25 % Rabatt gegenüber monatlicher Abrechnung"
+    },
+    "interval": {
+      "monthlyBilling": "Monatliche Abrechnung",
+      "yearlyBilling": "Jährliche Abrechnung"
+    },
+    "manageBilling": "Abrechnung verwalten",
+    "monthlyCost": "Monatliche Kosten",
+    "nextBilling": "Nächste Abrechnung",
+    "opening": "Wird geöffnet...",
+    "perSeatMonth": "/Sitzplatz/Monat",
+    "plans": {
+      "monthly": {
+        "description": "Flexible monatliche Abrechnung",
+        "title": "Monatlich"
+      },
+      "yearly": {
+        "description": "25 % sparen mit jährlicher Abrechnung",
+        "title": "Jährlich"
+      }
+    },
+    "portalOpenFailed": "Fehler beim Öffnen des Abrechnungsportals",
+    "priceSeatMonth": "€{price}/Sitzplatz/Monat",
+    "priceSeatMonthYearly": "€{price}/Sitzplatz/Monat (jährlich abgerechnet)",
+    "seatBilledAnnually": "€{price}/Sitzplatz jährlich abgerechnet",
+    "starting": "Wird gestartet...",
+    "startTrial": "Kostenlose Testversion starten",
+    "status": {
+      "canceled": "Gekündigt",
+      "noSubscription": "Kein Abonnement",
+      "pastDue": "Überfällig",
+      "trial": "Testversion"
+    },
+    "title": "Abrechnung & Abonnement",
+    "trialEnds": "Testversion endet",
+    "vatNotice": "Die angezeigten Preise sind Nettopreise ohne MwSt. Die MwSt. wird gegebenenfalls hinzugefügt.",
+    "yearTotal": "€{amount}/Jahr insgesamt"
   },
   "organization": {
     "create": "Organisation erstellen",
@@ -1183,9 +1262,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "${clearResult.absencesDeleted} Abwesenheiten gelöscht",
+          "absencesDeleted": "{count} Abwesenheiten gelöscht",
           "button": "Alle Daten löschen",
-          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} Änderungsrichtlinien gelöscht",
+          "changePoliciesDeleted": "{count} Änderungsrichtlinien gelöscht",
           "dialog": {
             "confirm": "Alle Daten löschen",
             "description": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Zeiteinträge, Abwesenheiten, Teams, Projekte und zugehörigen Daten werden dauerhaft gelöscht.",
@@ -1201,26 +1280,26 @@
             "vacationAllowances": "Alle Urlaubsansprüche",
             "workCategories": "Alle Arbeitskategorien"
           },
-          "locationsDeleted": "${clearResult.locationsDeleted} Standorte gelöscht",
-          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} Manager-Zuweisungen gelöscht",
-          "projectsDeleted": "${clearResult.projectsDeleted} Projekte gelöscht",
-          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} Schichtanfragen gelöscht",
-          "shiftsDeleted": "${clearResult.shiftsDeleted} Schichten gelöscht",
-          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} Schichtvorlagen gelöscht",
-          "subareasDeleted": "${clearResult.subareasDeleted} Unterbereiche gelöscht",
+          "locationsDeleted": "{count} Standorte gelöscht",
+          "managerAssignmentsDeleted": "{count} Manager-Zuweisungen gelöscht",
+          "projectsDeleted": "{count} Projekte gelöscht",
+          "shiftRequestsDeleted": "{count} Schichtanfragen gelöscht",
+          "shiftsDeleted": "{count} Schichten gelöscht",
+          "shiftTemplatesDeleted": "{count} Schichtvorlagen gelöscht",
+          "subareasDeleted": "{count} Unterbereiche gelöscht",
           "successTitle": "Daten erfolgreich gelöscht!",
-          "teamsDeleted": "${clearResult.teamsDeleted} Teams gelöscht",
-          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} Zeiteinträge gelöscht",
+          "teamsDeleted": "{count} Teams gelöscht",
+          "timeEntriesDeleted": "{count} Zeiteinträge gelöscht",
           "title": "Zeitdaten löschen",
-          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} Urlaubsansprüche zurückgesetzt",
+          "vacationAllowancesReset": "{count} Urlaubsansprüche zurückgesetzt",
           "willDelete": "Dies wird dauerhaft gelöscht:",
-          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} Arbeitskategorien gelöscht",
-          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} Arbeitskategorie-Sets gelöscht",
-          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} Arbeitsperioden gelöscht"
+          "workCategoriesDeleted": "{count} Arbeitskategorien gelöscht",
+          "workCategorySetsDeleted": "{count} Arbeitskategorie-Sets gelöscht",
+          "workPeriodsDeleted": "{count} Arbeitsperioden gelöscht"
         },
         "clearing": "Wird geleert...",
         "deleteNonAdmin": {
-          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} Abwesenheiten gelöscht",
+          "absencesDeleted": "{count} Abwesenheiten gelöscht",
           "adminPreserved": "Administrator-Konten bleiben erhalten",
           "button": "Nicht-Admin-Mitarbeiter löschen",
           "dialog": {
@@ -1228,18 +1307,18 @@
             "description": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Nicht-Admin-Mitarbeiter und die damit verbundenen Daten werden dauerhaft gelöscht.",
             "title": "Nicht-Admin-Mitarbeiter löschen?"
           },
-          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} Mitarbeiter gelöscht",
+          "employeesDeleted": "{count} Mitarbeiter gelöscht",
           "items": {
             "demoUsers": "Alle Demo-Benutzerkonten",
             "employees": "Alle Nicht-Admin-Mitarbeiter",
             "managerAssignments": "Alle Manager-Zuweisungen",
             "timeEntries": "Deren Zeiteinträge und Arbeitsperioden"
           },
-          "membersDeleted": "${deleteNonAdminResult.membersDeleted} Mitglieder gelöscht",
+          "membersDeleted": "{count} Mitglieder gelöscht",
           "successTitle": "Nicht-Admin-Mitarbeiter erfolgreich gelöscht!",
-          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} Zeiteinträge gelöscht",
+          "timeEntriesDeleted": "{count} Zeiteinträge gelöscht",
           "title": "Nicht-Admin-Mitarbeiter löschen",
-          "usersDeleted": "${deleteNonAdminResult.usersDeleted} Benutzer gelöscht",
+          "usersDeleted": "{count} Benutzer gelöscht",
           "willDelete": "Dies wird dauerhaft gelöscht:"
         },
         "deleting": "Wird gelöscht...",
@@ -1303,7 +1382,7 @@
           "thisYear": "Dieses Jahr"
         },
         "employees": {
-          "all": "Alle Mitarbeiter (${employees.length})",
+          "all": "Alle Mitarbeiter ({count})",
           "label": "Mitarbeiter",
           "selectSpecific": "Bestimmte Mitarbeiter auswählen"
         }
@@ -1314,19 +1393,19 @@
         "title": "Demodaten generieren"
       },
       "generateEmployees": {
-        "button": "${employeeCount} Mitarbeiter generieren",
+        "button": "{count} Mitarbeiter generieren",
         "countHint": "Maximal 50 Mitarbeiter gleichzeitig",
         "countLabel": "Anzahl der Mitarbeiter",
         "description": "Demo-Mitarbeiterkonten für Testzwecke erstellen",
-        "employeesCreated": "${employeeResult.employeesCreated} Mitarbeiter erstellt",
+        "employeesCreated": "{count} Mitarbeiter erstellt",
         "generating": "Wird generiert...",
         "includeManagers": "Manager-Zuweisungen einschließen",
-        "managersCreated": "${employeeResult.managersCreated} Manager-Zuweisungen",
+        "managersCreated": "{count} Manager-Zuweisungen",
         "managersHint": "Zufällige Zuweisung von Managern zu neuen Mitarbeitern",
         "options": "Optionen",
         "successTitle": "Mitarbeiter erfolgreich generiert!",
         "title": "Mitarbeiter generieren",
-        "usersCreated": "${employeeResult.usersCreated} Benutzer erstellt"
+        "usersCreated": "{count} Benutzer erstellt"
       },
       "results": {
         "success": "Demodaten erfolgreich generiert!"

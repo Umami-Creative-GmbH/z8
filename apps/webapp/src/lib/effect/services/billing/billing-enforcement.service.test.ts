@@ -2,17 +2,21 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { subscription } from "@/db/schema";
+import { member } from "@/db/auth-schema";
 import {
 	type BillingAccessResult,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
 } from "./billing-enforcement.service";
 
-const { findFirst, insertValues, onConflictDoNothing, returning } = vi.hoisted(() => ({
+const { findFirst, insertValues, onConflictDoNothing, returning, select, selectFrom, selectWhere } = vi.hoisted(() => ({
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
 	returning: vi.fn(),
+	select: vi.fn(),
+	selectFrom: vi.fn(),
+	selectWhere: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -25,6 +29,7 @@ vi.mock("@/db", () => ({
 		insert: vi.fn(() => ({
 			values: insertValues,
 		})),
+		select,
 	},
 }));
 
@@ -70,9 +75,12 @@ describe("BillingEnforcementService", () => {
 		insertValues.mockReturnValue({ onConflictDoNothing });
 		onConflictDoNothing.mockReturnValue({ returning });
 		returning.mockResolvedValue([]);
+		select.mockReturnValue({ from: selectFrom });
+		selectFrom.mockReturnValue({ where: selectWhere });
+		selectWhere.mockResolvedValue([{ count: 3 }]);
 	});
 
-	it("creates a local trial lazily when billing is enabled and no row exists", async () => {
+	it("creates a local trial lazily with current organization seats when billing is enabled and no row exists", async () => {
 		findFirst.mockResolvedValueOnce(null);
 		returning.mockResolvedValueOnce([subscriptionRow]);
 
@@ -90,8 +98,9 @@ describe("BillingEnforcementService", () => {
 			status: "trialing",
 			trialStart: now,
 			trialEnd,
-			currentSeats: 0,
+			currentSeats: 3,
 		});
+		expect(selectFrom).toHaveBeenCalledWith(member);
 		expect(onConflictDoNothing).toHaveBeenCalledWith({
 			target: subscription.organizationId,
 		});

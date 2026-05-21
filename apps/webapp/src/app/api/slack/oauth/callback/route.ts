@@ -17,7 +17,7 @@ import { storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("SlackOAuthCallback");
 
-export async function GET(request: NextRequest) {
+async function handleSlackOAuthCallback(request: NextRequest) {
 	await connection();
 
 	const { searchParams } = new URL(request.url);
@@ -136,3 +136,5 @@ export async function GET(request: NextRequest) {
 		return NextResponse.redirect(`${settingsUrl}?slack_error=internal_error`);
 	}
 }
+
+export { handleSlackOAuthCallback as GET };

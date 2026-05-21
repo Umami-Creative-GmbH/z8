@@ -103,33 +103,25 @@ describe("TimeClockPopover", () => {
 		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
 	});
 
-	it("adds a break from the header clock popover while clocked in", async () => {
+	it("does not show an add break button in the header while clocked in", () => {
 		isClockedInMock = true;
 		activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
 
 		render(<TimeClockPopover />);
 
 		fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
-		fireEvent.click(screen.getAllByRole("button", { name: "Add break" }).at(-1)!);
-		fireEvent.change(screen.getByLabelText("Break duration in minutes"), {
-			target: { value: "30" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
 
-		await waitFor(() => expect(addBreakMock).toHaveBeenCalledWith({ breakMinutes: 30 }));
-		expect(toastMocks.success).toHaveBeenCalledWith("Break added", {
-			description: "You are still clocked in.",
-		});
+		expect(screen.queryByRole("button", { name: "Add break" })).toBeNull();
 	});
 
-	it("shows an icon-only quick break trigger next to the header clock-out button while clocked in", () => {
+	it("does not show an icon-only quick break trigger next to the header clock-out button while clocked in", () => {
 		isClockedInMock = true;
 		activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
 
 		render(<TimeClockPopover />);
 
 		expect(screen.getByRole("button", { name: /Clock Out/ })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Add break" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Add break" })).toBeNull();
 	});
 
 	it("does not show the header quick break trigger while clocked out", () => {

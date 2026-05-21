@@ -74,10 +74,16 @@
       "time-corrections": "Correcciones de tiempo",
       "title": "Aprobaciones pendientes"
     },
-    "presenceBehind": "Faltan {remaining} días",
-    "presenceDescription": "Seguimiento de asistencia presencial",
-    "presenceProgress": "días presenciales este {period}",
-    "presenceStatus": "Presencia",
+    "presence": {
+      "fixedOfficeDays": "Días fijos de oficina: {days}",
+      "flexibleOfficePolicy": "Política flexible de oficina para este período",
+      "homeOfficeLeft": "Home office restante",
+      "officeDaysWarning": "El requisito de oficina supera los días laborables restantes",
+      "officeStillRequired": "Oficina aún requerida",
+      "periodDescription": "Este período",
+      "unavailable": "La política de presencia no está disponible.",
+      "workLocation": "Ubicación de trabajo"
+    },
     "quick-stats": {
       "behind": "Con retraso",
       "description": "Su progreso semanal y mensual",

@@ -74,10 +74,16 @@
       "time-corrections": "Time Corrections",
       "title": "Pending Approvals"
     },
-    "presenceBehind": "{remaining} more days needed",
-    "presenceDescription": "On-site attendance tracking",
-    "presenceProgress": "days on-site this {period}",
-    "presenceStatus": "Presence",
+    "presence": {
+      "fixedOfficeDays": "Fixed office days: {days}",
+      "flexibleOfficePolicy": "Flexible office policy for this period",
+      "homeOfficeLeft": "Home office left",
+      "officeDaysWarning": "Office requirement exceeds remaining work days",
+      "officeStillRequired": "Office still required",
+      "periodDescription": "This period",
+      "unavailable": "Presence policy is unavailable.",
+      "workLocation": "Work location"
+    },
     "quick-stats": {
       "behind": "Behind",
       "description": "Your weekly and monthly progress",

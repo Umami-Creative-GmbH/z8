@@ -42,7 +42,7 @@ const STATE_MAX_AGE_MS = 10 * 60 * 1000;
 // ROUTE HANDLER
 // ============================================
 
-export async function GET(
+async function handleCalendarOAuthCallback(
 	request: NextRequest,
 	{ params }: { params: Promise<{ provider: string }> },
 ) {
@@ -201,6 +201,8 @@ export async function GET(
 		return redirectWithError("Failed to connect calendar");
 	}
 }
+
+export { handleCalendarOAuthCallback as GET };
 
 // ============================================
 // HELPERS

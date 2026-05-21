@@ -1,9 +1,88 @@
 {
   "billing": {
+    "access": {
+      "canceled": "Su suscripción ha sido cancelada. Vuelva a suscribirse para recuperar el acceso.",
+      "paymentFailed": "Su último pago falló. Por favor actualice su método de pago.",
+      "required": "Se requiere una suscripción para usar esta aplicación.",
+      "trialExpired": "Su prueba ha expirado. Suscríbase para seguir usando la aplicación."
+    },
+    "activeSeats": "Asientos activos",
+    "alerts": {
+      "canceledDescription": "El pago fue cancelado. Puede intentarlo de nuevo cuando esté listo.",
+      "subscriptionRequired": "Suscripción requerida",
+      "successDescription": "Su suscripción ha sido activada. ¡Gracias por suscribirse!",
+      "successTitle": "¡Éxito!"
+    },
+    "bestValue": "Mejor valor",
+    "billedMonthly": "Facturado mensualmente",
+    "cancelsOn": "Se cancela el {date}",
+    "checkoutCreateFailed": "Error al crear la sesión de pago",
+    "checkoutStartFailed": "Error al iniciar el pago",
     "checkout": {
-      "trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Tu suscripción de pago comienza solo después de que expire el período de prueba.",
+      "trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Tu suscripción de pago comienza solo después de que finalice el período de prueba.",
       "trialContinuesTitle": "Tu período de prueba continúa después de la actualización"
-    }
+    },
+    "choosePlan": "Elige tu plan",
+    "choosePlanDescription": "Comienza con una prueba gratuita de 14 días. No se requiere tarjeta de crédito para empezar.",
+    "currentPlan": "Plan actual",
+    "days": "{count} días",
+    "description": "Administra tu suscripción y los detalles de facturación",
+    "faq": {
+      "afterTrial": {
+        "answer": "Después de que finalice tu prueba de 14 días, se te cobrará el plan de suscripción que seleccionaste. Puedes cancelar en cualquier momento antes de que finalice la prueba para evitar cargos.",
+        "question": "¿Qué sucede después de la prueba?"
+      },
+      "perSeat": {
+        "answer": "Se te factura según el número de miembros activos en tu organización. Cuando agregas o eliminas miembros, tu suscripción se ajusta automáticamente.",
+        "question": "¿Cómo funciona la facturación por usuario?"
+      },
+      "switch": {
+        "answer": "¡Sí! Puedes cambiar de plan en cualquier momento a través del portal de facturación. Los cambios surten efecto en tu próximo ciclo de facturación.",
+        "question": "¿Puedo cambiar entre facturación mensual y anual?"
+      },
+      "title": "Preguntas frecuentes"
+    },
+    "features": {
+      "allFeatures": "Todas las funciones incluidas",
+      "cancelAnytime": "Cancela en cualquier momento",
+      "trial": "Prueba gratuita de 14 días",
+      "yearlyDiscount": "25% de descuento frente al plan mensual"
+    },
+    "interval": {
+      "monthlyBilling": "Facturación mensual",
+      "yearlyBilling": "Facturación anual"
+    },
+    "manageBilling": "Administrar facturación",
+    "monthlyCost": "Costo mensual",
+    "nextBilling": "Próxima facturación",
+    "opening": "Abriendo...",
+    "perSeatMonth": "/asiento/mes",
+    "plans": {
+      "monthly": {
+        "description": "Facturación flexible mes a mes",
+        "title": "Mensual"
+      },
+      "yearly": {
+        "description": "Ahorra un 25% con facturación anual",
+        "title": "Anual"
+      }
+    },
+    "portalOpenFailed": "Error al abrir el portal de facturación",
+    "priceSeatMonth": "€{price}/asiento/mes",
+    "priceSeatMonthYearly": "€{price}/asiento/mes (facturado anualmente)",
+    "seatBilledAnnually": "€{price}/asiento facturado anualmente",
+    "starting": "Iniciando...",
+    "startTrial": "Iniciar prueba gratuita",
+    "status": {
+      "canceled": "Cancelado",
+      "noSubscription": "Sin suscripción",
+      "pastDue": "Vencido",
+      "trial": "Prueba"
+    },
+    "title": "Facturación y suscripción",
+    "trialEnds": "La prueba termina",
+    "vatNotice": "Los precios mostrados son precios netos sin IVA. El IVA se añadirá cuando corresponda.",
+    "yearTotal": "€{amount}/año total"
   },
   "organization": {
     "create": "Crear organización",
@@ -1183,9 +1262,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "${clearResult.absencesDeleted} ausencias eliminadas",
+          "absencesDeleted": "{count} ausencias eliminadas",
           "button": "Borrar todos los datos",
-          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} políticas de cambio eliminadas",
+          "changePoliciesDeleted": "{count} políticas de cambio eliminadas",
           "dialog": {
             "confirm": "Borrar todos los datos",
             "description": "Esta acción no se puede deshacer. Todas las entradas de tiempo, ausencias, equipos, proyectos y datos relacionados se eliminarán de forma permanente.",
@@ -1201,26 +1280,26 @@
             "vacationAllowances": "Todas las asignaciones de vacaciones",
             "workCategories": "Todas las categorías de trabajo"
           },
-          "locationsDeleted": "${clearResult.locationsDeleted} ubicaciones eliminadas",
-          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} asignaciones de responsables eliminadas",
-          "projectsDeleted": "${clearResult.projectsDeleted} proyectos eliminados",
-          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} solicitudes de turno eliminadas",
-          "shiftsDeleted": "${clearResult.shiftsDeleted} turnos eliminados",
-          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} plantillas de turno eliminadas",
-          "subareasDeleted": "${clearResult.subareasDeleted} subáreas eliminadas",
+          "locationsDeleted": "{count} ubicaciones eliminadas",
+          "managerAssignmentsDeleted": "{count} asignaciones de responsables eliminadas",
+          "projectsDeleted": "{count} proyectos eliminados",
+          "shiftRequestsDeleted": "{count} solicitudes de turno eliminadas",
+          "shiftsDeleted": "{count} turnos eliminados",
+          "shiftTemplatesDeleted": "{count} plantillas de turno eliminadas",
+          "subareasDeleted": "{count} subáreas eliminadas",
           "successTitle": "¡Datos borrados con éxito!",
-          "teamsDeleted": "${clearResult.teamsDeleted} equipos eliminados",
-          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} entradas de tiempo eliminadas",
+          "teamsDeleted": "{count} equipos eliminados",
+          "timeEntriesDeleted": "{count} entradas de tiempo eliminadas",
           "title": "Borrar datos de tiempo",
-          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} asignaciones de vacaciones restablecidas",
+          "vacationAllowancesReset": "{count} asignaciones de vacaciones restablecidas",
           "willDelete": "Esto eliminará permanentemente:",
-          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} categorías de trabajo eliminadas",
-          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} conjuntos de categorías de trabajo eliminados",
-          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} periodos de trabajo eliminados"
+          "workCategoriesDeleted": "{count} categorías de trabajo eliminadas",
+          "workCategorySetsDeleted": "{count} conjuntos de categorías de trabajo eliminados",
+          "workPeriodsDeleted": "{count} periodos de trabajo eliminados"
         },
         "clearing": "Borrando...",
         "deleteNonAdmin": {
-          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} ausencias eliminadas",
+          "absencesDeleted": "{count} ausencias eliminadas",
           "adminPreserved": "Las cuentas de administrador se conservarán",
           "button": "Eliminar empleados no administradores",
           "dialog": {
@@ -1228,18 +1307,18 @@
             "description": "Esta acción no se puede deshacer. Todos los empleados que no sean administradores y sus datos asociados se eliminarán permanentemente.",
             "title": "¿Eliminar empleados no administradores?"
           },
-          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} empleados eliminados",
+          "employeesDeleted": "{count} empleados eliminados",
           "items": {
             "demoUsers": "Todas las cuentas de usuario de demostración",
             "employees": "Todos los empleados no administradores",
             "managerAssignments": "Todas las asignaciones de gerentes",
             "timeEntries": "Sus entradas de tiempo y periodos de trabajo"
           },
-          "membersDeleted": "${deleteNonAdminResult.membersDeleted} miembros eliminados",
+          "membersDeleted": "{count} miembros eliminados",
           "successTitle": "¡Empleados no administradores eliminados con éxito!",
-          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} entradas de tiempo eliminadas",
+          "timeEntriesDeleted": "{count} entradas de tiempo eliminadas",
           "title": "Eliminar empleados no administradores",
-          "usersDeleted": "${deleteNonAdminResult.usersDeleted} usuarios eliminados",
+          "usersDeleted": "{count} usuarios eliminados",
           "willDelete": "Esto eliminará permanentemente:"
         },
         "deleting": "Eliminando...",
@@ -1303,7 +1382,7 @@
           "thisYear": "Este año"
         },
         "employees": {
-          "all": "Todos los empleados (${employees.length})",
+          "all": "Todos los empleados ({count})",
           "label": "Empleados",
           "selectSpecific": "Seleccionar empleados específicos"
         }
@@ -1314,19 +1393,19 @@
         "title": "Generar datos de demostración"
       },
       "generateEmployees": {
-        "button": "Generar ${employeeCount} empleados",
+        "button": "Generar {count} empleados",
         "countHint": "Máximo 50 empleados a la vez",
         "countLabel": "Número de empleados",
         "description": "Crear cuentas de empleados de demostración para pruebas",
-        "employeesCreated": "${employeeResult.employeesCreated} empleados creados",
+        "employeesCreated": "{count} empleados creados",
         "generating": "Generando...",
         "includeManagers": "Incluir asignaciones de gerentes",
-        "managersCreated": "${employeeResult.managersCreated} asignaciones de gerentes",
+        "managersCreated": "{count} asignaciones de gerentes",
         "managersHint": "Asignar gerentes aleatoriamente a los nuevos empleados",
         "options": "Opciones",
         "successTitle": "¡Empleados generados con éxito!",
         "title": "Generar empleados",
-        "usersCreated": "${employeeResult.usersCreated} usuarios creados"
+        "usersCreated": "{count} usuarios creados"
       },
       "results": {
         "success": "¡Datos de demostración generados con éxito!"

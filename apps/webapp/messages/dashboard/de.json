@@ -74,10 +74,16 @@
       "time-corrections": "Zeitkorrekturen",
       "title": "Ausstehende Genehmigungen"
     },
-    "presenceBehind": "{remaining} weitere Tage benötigt",
-    "presenceDescription": "Anwesenheitsverfolgung vor Ort",
-    "presenceProgress": "Tage vor Ort in diesem {period}",
-    "presenceStatus": "Anwesenheit",
+    "presence": {
+      "fixedOfficeDays": "Feste Bürotage: {days}",
+      "flexibleOfficePolicy": "Flexible Büroregelung für diesen Zeitraum",
+      "homeOfficeLeft": "Home Office übrig",
+      "officeDaysWarning": "Büroanforderung übersteigt verbleibende Arbeitstage",
+      "officeStillRequired": "Büro weiterhin erforderlich",
+      "periodDescription": "Dieser Zeitraum",
+      "unavailable": "Anwesenheitsregelung nicht verfügbar",
+      "workLocation": "Arbeitsort"
+    },
     "quick-stats": {
       "behind": "Im Rückstand",
       "description": "Ihr wöchentlicher und monatlicher Fortschritt",
