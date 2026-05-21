@@ -36,25 +36,24 @@ import { calculateHash } from "@/lib/time-tracking/blockchain";
 /**
  * Generate realistic work descriptions using faker
  */
-const workDescriptionGenerators = [
-	() => `Working on ${faker.company.buzzPhrase().toLowerCase()}`,
-	() => `Meeting with ${faker.company.name()}`,
-	() => `Code review for ${faker.git.branch()}`,
-	() => "Sprint planning session",
-	() => "Documentation updates",
-	() => `Bug fix: ${faker.hacker.phrase().toLowerCase()}`,
-	() => `Feature: ${faker.hacker.verb()} ${faker.hacker.noun()}`,
-	() => `Email correspondence with ${faker.person.fullName()}`,
-	() => "Team standup and planning",
-	() => `Reviewing ${faker.commerce.productName()} requirements`,
-	() => `Testing ${faker.commerce.productAdjective().toLowerCase()} functionality`,
-	() => "Database optimization work",
-	() => `Client call: ${faker.company.name()}`,
-	() => "Infrastructure monitoring",
-	() => `Research: ${faker.company.buzzNoun()}`,
-];
-
 function generateWorkDescription(): string {
+	const workDescriptionGenerators = [
+		() => `Working on ${faker.company.buzzPhrase().toLowerCase()}`,
+		() => `Meeting with ${faker.company.name()}`,
+		() => `Code review for ${faker.git.branch()}`,
+		() => "Sprint planning session",
+		() => "Documentation updates",
+		() => `Bug fix: ${faker.hacker.phrase().toLowerCase()}`,
+		() => `Feature: ${faker.hacker.verb()} ${faker.hacker.noun()}`,
+		() => `Email correspondence with ${faker.person.fullName()}`,
+		() => "Team standup and planning",
+		() => `Reviewing ${faker.commerce.productName()} requirements`,
+		() => `Testing ${faker.commerce.productAdjective().toLowerCase()} functionality`,
+		() => "Database optimization work",
+		() => `Client call: ${faker.company.name()}`,
+		() => "Infrastructure monitoring",
+		() => `Research: ${faker.company.buzzNoun()}`,
+	];
 	const generator = faker.helpers.arrayElement(workDescriptionGenerators);
 	return generator();
 }
@@ -750,25 +749,29 @@ function generateRandomAbsence(
 /**
  * Team name generators for realistic department/team names
  */
-const teamNameGenerators = [
-	() => `${faker.company.buzzAdjective()} ${faker.commerce.department()}`,
-	() => `${faker.commerce.department()} Team`,
-	() => `${faker.company.buzzNoun()} Division`,
-	() => `${faker.hacker.adjective()} ${faker.hacker.noun()} Team`,
-];
+function getTeamNameGenerators() {
+	return [
+		() => `${faker.company.buzzAdjective()} ${faker.commerce.department()}`,
+		() => `${faker.commerce.department()} Team`,
+		() => `${faker.company.buzzNoun()} Division`,
+		() => `${faker.hacker.adjective()} ${faker.hacker.noun()} Team`,
+	];
+}
 
-const defaultTeamNames = [
-	"Engineering",
-	"Product",
-	"Design",
-	"Marketing",
-	"Sales",
-	"Customer Success",
-	"Operations",
-	"HR & People",
-	"Finance",
-	"Legal",
-];
+function getDefaultTeamNames() {
+	return [
+		"Engineering",
+		"Product",
+		"Design",
+		"Marketing",
+		"Sales",
+		"Customer Success",
+		"Operations",
+		"HR & People",
+		"Finance",
+		"Legal",
+	] as const;
+}
 
 /**
  * Generate demo teams and assign random employees to them
@@ -779,6 +782,9 @@ export async function generateDemoTeams(
 	if (!options.includeTeams) {
 		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
 	}
+
+	const defaultTeamNames = getDefaultTeamNames();
+	const teamNameGenerators = getTeamNameGenerators();
 
 	// Get employees for the organization
 	const employees = await db.query.employee.findMany({
@@ -865,60 +871,68 @@ export async function generateDemoTeams(
 /**
  * Project name generators for realistic project names
  */
-const projectNameGenerators = [
-	() => `${faker.company.buzzAdjective()} ${faker.company.buzzNoun()}`,
-	() => {
-		const adj = faker.word.adjective();
-		return `Project ${adj.charAt(0).toUpperCase() + adj.slice(1)}`;
-	},
-	() => `${faker.hacker.verb()} ${faker.hacker.noun()}`,
-	() => `${faker.commerce.productAdjective()} ${faker.commerce.product()}`,
-];
+function getProjectNameGenerators() {
+	return [
+		() => `${faker.company.buzzAdjective()} ${faker.company.buzzNoun()}`,
+		() => {
+			const adj = faker.word.adjective();
+			return `Project ${adj.charAt(0).toUpperCase() + adj.slice(1)}`;
+		},
+		() => `${faker.hacker.verb()} ${faker.hacker.noun()}`,
+		() => `${faker.commerce.productAdjective()} ${faker.commerce.product()}`,
+	];
+}
 
-const defaultProjectNames = [
-	"Website Redesign",
-	"Mobile App Development",
-	"API Integration",
-	"Database Migration",
-	"Customer Portal",
-	"Internal Tools",
-	"Analytics Dashboard",
-	"Security Audit",
-	"Performance Optimization",
-	"Documentation Update",
-	"Cloud Migration",
-	"Payment System",
-];
+function getDefaultProjectNames() {
+	return [
+		"Website Redesign",
+		"Mobile App Development",
+		"API Integration",
+		"Database Migration",
+		"Customer Portal",
+		"Internal Tools",
+		"Analytics Dashboard",
+		"Security Audit",
+		"Performance Optimization",
+		"Documentation Update",
+		"Cloud Migration",
+		"Payment System",
+	] as const;
+}
 
-const projectColors = [
-	"#ef4444", // red
-	"#f97316", // orange
-	"#eab308", // yellow
-	"#22c55e", // green
-	"#14b8a6", // teal
-	"#06b6d4", // cyan
-	"#3b82f6", // blue
-	"#6366f1", // indigo
-	"#8b5cf6", // violet
-	"#a855f7", // purple
-	"#ec4899", // pink
-	"#f43f5e", // rose
-];
+function getProjectColors() {
+	return [
+		"#ef4444", // red
+		"#f97316", // orange
+		"#eab308", // yellow
+		"#22c55e", // green
+		"#14b8a6", // teal
+		"#06b6d4", // cyan
+		"#3b82f6", // blue
+		"#6366f1", // indigo
+		"#8b5cf6", // violet
+		"#a855f7", // purple
+		"#ec4899", // pink
+		"#f43f5e", // rose
+	] as const;
+}
 
-const projectIcons = [
-	"IconCode",
-	"IconDevices",
-	"IconDatabase",
-	"IconCloud",
-	"IconLock",
-	"IconChartBar",
-	"IconUsers",
-	"IconSettings",
-	"IconRocket",
-	"IconBulb",
-	"IconPalette",
-	"IconShoppingCart",
-];
+function getProjectIcons() {
+	return [
+		"IconCode",
+		"IconDevices",
+		"IconDatabase",
+		"IconCloud",
+		"IconLock",
+		"IconChartBar",
+		"IconUsers",
+		"IconSettings",
+		"IconRocket",
+		"IconBulb",
+		"IconPalette",
+		"IconShoppingCart",
+	] as const;
+}
 
 /**
  * Generate demo projects
@@ -936,6 +950,11 @@ export async function generateDemoProjects(
 	if (projectCount <= 0) {
 		return { projectsCreated: 0 };
 	}
+
+	const defaultProjectNames = getDefaultProjectNames();
+	const projectNameGenerators = getProjectNameGenerators();
+	const projectColors = getProjectColors();
+	const projectIcons = getProjectIcons();
 
 	// Use default project names first, then generate random ones if needed
 	const projectNames: string[] = [];
@@ -1067,29 +1086,33 @@ export async function generateDemoManagerAssignments(
 // NEW: LOCATION GENERATORS
 // ============================================
 
-const defaultLocationNames = [
-	"Main Office",
-	"Downtown Branch",
-	"Warehouse",
-	"Distribution Center",
-	"Manufacturing Plant",
-	"Regional Office",
-	"Retail Store",
-	"Service Center",
-];
+function getDefaultLocationNames() {
+	return [
+		"Main Office",
+		"Downtown Branch",
+		"Warehouse",
+		"Distribution Center",
+		"Manufacturing Plant",
+		"Regional Office",
+		"Retail Store",
+		"Service Center",
+	] as const;
+}
 
-const defaultSubareaNames = [
-	"Reception",
-	"Cashier",
-	"Storage",
-	"Office Area",
-	"Kitchen",
-	"Warehouse Floor",
-	"Loading Dock",
-	"Meeting Rooms",
-	"Break Room",
-	"Production Line",
-];
+function getDefaultSubareaNames() {
+	return [
+		"Reception",
+		"Cashier",
+		"Storage",
+		"Office Area",
+		"Kitchen",
+		"Warehouse Floor",
+		"Loading Dock",
+		"Meeting Rooms",
+		"Break Room",
+		"Production Line",
+	] as const;
+}
 
 /**
  * Generate demo locations with subareas
@@ -1115,7 +1138,7 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 	let subareasCreated = 0;
 	let supervisorAssignmentsCreated = 0;
 
-	const shuffledLocationNames = faker.helpers.shuffle([...defaultLocationNames]);
+	const shuffledLocationNames = faker.helpers.shuffle([...getDefaultLocationNames()]);
 	const shuffledEmployees = faker.helpers.shuffle([...employees]);
 
 	for (let i = 0; i < locationCount; i++) {
@@ -1155,7 +1178,7 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 		}
 
 		// Create subareas for this location
-		const shuffledSubareaNames = faker.helpers.shuffle([...defaultSubareaNames]);
+		const shuffledSubareaNames = faker.helpers.shuffle([...getDefaultSubareaNames()]);
 		for (let j = 0; j < subareasPerLocation && j < shuffledSubareaNames.length; j++) {
 			const [newSubarea] = await db
 				.insert(locationSubarea)
@@ -1192,24 +1215,28 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 // NEW: WORK CATEGORY GENERATORS
 // ============================================
 
-const workCategoryTemplates = [
-	{ name: "Normal Work", factor: "1.00", color: "#10b981" },
-	{ name: "Training", factor: "1.00", color: "#8b5cf6" },
-	{ name: "Meeting", factor: "1.00", color: "#3b82f6" },
-	{ name: "Passive Travel", factor: "0.50", color: "#94a3b8" },
-	{ name: "Active Travel", factor: "0.75", color: "#06b6d4" },
-	{ name: "Standby Duty", factor: "0.50", color: "#f59e0b" },
-	{ name: "Overtime", factor: "1.25", color: "#f97316" },
-	{ name: "Night Work", factor: "1.25", color: "#6366f1" },
-	{ name: "Hazardous Work", factor: "1.50", color: "#ef4444" },
-	{ name: "Weekend Work", factor: "1.50", color: "#ec4899" },
-];
+function getWorkCategoryTemplates() {
+	return [
+		{ name: "Normal Work", factor: "1.00", color: "#10b981" },
+		{ name: "Training", factor: "1.00", color: "#8b5cf6" },
+		{ name: "Meeting", factor: "1.00", color: "#3b82f6" },
+		{ name: "Passive Travel", factor: "0.50", color: "#94a3b8" },
+		{ name: "Active Travel", factor: "0.75", color: "#06b6d4" },
+		{ name: "Standby Duty", factor: "0.50", color: "#f59e0b" },
+		{ name: "Overtime", factor: "1.25", color: "#f97316" },
+		{ name: "Night Work", factor: "1.25", color: "#6366f1" },
+		{ name: "Hazardous Work", factor: "1.50", color: "#ef4444" },
+		{ name: "Weekend Work", factor: "1.50", color: "#ec4899" },
+	] as const;
+}
 
-const workCategorySetTemplates = [
-	{ name: "Standard Categories", description: "Default work categories for most employees" },
-	{ name: "Field Work Categories", description: "Categories for field workers with travel time" },
-	{ name: "Manufacturing Categories", description: "Categories for production and manufacturing" },
-];
+function getWorkCategorySetTemplates() {
+	return [
+		{ name: "Standard Categories", description: "Default work categories for most employees" },
+		{ name: "Field Work Categories", description: "Categories for field workers with travel time" },
+		{ name: "Manufacturing Categories", description: "Categories for production and manufacturing" },
+	] as const;
+}
 
 /**
  * Generate demo work category sets and categories
@@ -1223,6 +1250,8 @@ export async function generateDemoWorkCategories(options: DemoDataOptions): Prom
 		return { setsCreated: 0, categoriesCreated: 0, assignmentsCreated: 0 };
 	}
 
+	const workCategoryTemplates = getWorkCategoryTemplates();
+	const workCategorySetTemplates = getWorkCategorySetTemplates();
 	const setCount = options.workCategorySetCount ?? 2;
 	const categoryCount = options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
 
@@ -1338,36 +1367,38 @@ export async function generateDemoWorkCategories(options: DemoDataOptions): Prom
 // NEW: CHANGE POLICY GENERATORS
 // ============================================
 
-const changePolicyTemplates = [
-	{
-		name: "Standard Policy",
-		description: "Default policy with same-day free edits, 7-day approval window",
-		selfServiceDays: 0,
-		approvalDays: 7,
-		noApprovalRequired: false,
-	},
-	{
-		name: "Flexible Policy",
-		description: "Liberal policy allowing edits within 3 days without approval",
-		selfServiceDays: 3,
-		approvalDays: 14,
-		noApprovalRequired: false,
-	},
-	{
-		name: "Trust Policy",
-		description: "No approval required - full trust mode",
-		selfServiceDays: 0,
-		approvalDays: 0,
-		noApprovalRequired: true,
-	},
-	{
-		name: "Strict Policy",
-		description: "All clock-outs require manager approval",
-		selfServiceDays: 0,
-		approvalDays: 0,
-		noApprovalRequired: false,
-	},
-];
+function getChangePolicyTemplates() {
+	return [
+		{
+			name: "Standard Policy",
+			description: "Default policy with same-day free edits, 7-day approval window",
+			selfServiceDays: 0,
+			approvalDays: 7,
+			noApprovalRequired: false,
+		},
+		{
+			name: "Flexible Policy",
+			description: "Liberal policy allowing edits within 3 days without approval",
+			selfServiceDays: 3,
+			approvalDays: 14,
+			noApprovalRequired: false,
+		},
+		{
+			name: "Trust Policy",
+			description: "No approval required - full trust mode",
+			selfServiceDays: 0,
+			approvalDays: 0,
+			noApprovalRequired: true,
+		},
+		{
+			name: "Strict Policy",
+			description: "All clock-outs require manager approval",
+			selfServiceDays: 0,
+			approvalDays: 0,
+			noApprovalRequired: false,
+		},
+	] as const;
+}
 
 /**
  * Generate demo change policies
@@ -1380,6 +1411,7 @@ export async function generateDemoChangePolicies(options: DemoDataOptions): Prom
 		return { policiesCreated: 0, assignmentsCreated: 0 };
 	}
 
+	const changePolicyTemplates = getChangePolicyTemplates();
 	const policyCount = options.changePolicyCount ?? 2;
 	let policiesCreated = 0;
 	let assignmentsCreated = 0;
@@ -1428,14 +1460,16 @@ export async function generateDemoChangePolicies(options: DemoDataOptions): Prom
 // NEW: SHIFT SCHEDULING GENERATORS
 // ============================================
 
-const shiftTemplateData = [
-	{ name: "Morning Shift", startTime: "06:00", endTime: "14:00", color: "#fbbf24" },
-	{ name: "Day Shift", startTime: "09:00", endTime: "17:00", color: "#10b981" },
-	{ name: "Afternoon Shift", startTime: "14:00", endTime: "22:00", color: "#3b82f6" },
-	{ name: "Night Shift", startTime: "22:00", endTime: "06:00", color: "#6366f1" },
-	{ name: "Split Shift", startTime: "10:00", endTime: "18:00", color: "#ec4899" },
-	{ name: "Flex Shift", startTime: "08:00", endTime: "16:00", color: "#14b8a6" },
-];
+function getShiftTemplateData() {
+	return [
+		{ name: "Morning Shift", startTime: "06:00", endTime: "14:00", color: "#fbbf24" },
+		{ name: "Day Shift", startTime: "09:00", endTime: "17:00", color: "#10b981" },
+		{ name: "Afternoon Shift", startTime: "14:00", endTime: "22:00", color: "#3b82f6" },
+		{ name: "Night Shift", startTime: "22:00", endTime: "06:00", color: "#6366f1" },
+		{ name: "Split Shift", startTime: "10:00", endTime: "18:00", color: "#ec4899" },
+		{ name: "Flex Shift", startTime: "08:00", endTime: "16:00", color: "#14b8a6" },
+	] as const;
+}
 
 /**
  * Generate demo shift templates
@@ -1461,6 +1495,7 @@ export async function generateDemoShiftTemplates(
 		where: inArray(locationSubarea.locationId, locationIds),
 	});
 
+	const shiftTemplateData = getShiftTemplateData();
 	const templateCount = options.shiftTemplateCount ?? Math.min(4, shiftTemplateData.length);
 	let templatesCreated = 0;
 

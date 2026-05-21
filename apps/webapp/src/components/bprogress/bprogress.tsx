@@ -20,25 +20,27 @@ export function BProgressBar() {
 	}, [isFetchingGlobal]);
 
 	useEffect(() => {
-		const handleAnchorClick = (event: MouseEvent) => {
-			const targetUrl = (event.currentTarget as HTMLAnchorElement).href;
+		const abortController = new AbortController();
+		const originalPushState = window.history.pushState;
+
+		const handleDocumentClick = (event: MouseEvent) => {
+			if (!(event.target instanceof Element)) {
+				return;
+			}
+
+			const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
+			if (!anchor) {
+				return;
+			}
+
+			const targetUrl = anchor.href;
 			const currentUrl = window.location.href;
 			if (targetUrl !== currentUrl) {
 				BProgress.start();
 			}
 		};
 
-		const handleMutation: MutationCallback = () => {
-			const anchorElements: NodeListOf<HTMLAnchorElement> = document.querySelectorAll("a[href]");
-
-			for (const anchor of anchorElements) {
-				anchor.addEventListener("click", handleAnchorClick);
-			}
-		};
-
-		const mutationObserver = new MutationObserver(handleMutation);
-
-		mutationObserver.observe(document, { childList: true, subtree: true });
+		document.addEventListener("click", handleDocumentClick, { signal: abortController.signal });
 
 		window.history.pushState = new Proxy(window.history.pushState, {
 			apply: (target, thisArg, argArray: PushStateInput) => {
@@ -46,6 +48,12 @@ export function BProgressBar() {
 				return target.apply(thisArg, argArray);
 			},
 		});
+
+		return () => {
+			document.removeEventListener("click", handleDocumentClick);
+			abortController.abort();
+			window.history.pushState = originalPushState;
+		};
 	}, []);
 
 	return null;

@@ -23,6 +23,8 @@ export interface JobStatus {
 	error?: string;
 }
 
+type JobStatusEntry = [jobId: string, status: JobStatus];
+
 interface UseJobStatusOptions {
 	/**
 	 * Polling interval in milliseconds
@@ -146,39 +148,51 @@ export function useJobStatuses(
 	pendingCount: number;
 } {
 	const { refreshInterval = 2000, enabled = true } = options;
+	const shouldFetch = enabled && jobIds.length > 0;
 
-	// Use SWR for each job (SWR handles deduplication automatically)
-	// This pattern is intentional - jobIds array must be stable for correct behavior
-	const results = jobIds.map((id) => {
-		// biome-ignore lint/correctness/useHookAtTopLevel: SWR pattern for watching multiple items with stable array
-		return useSWR<JobStatus>(enabled ? `/api/jobs/${id}/status` : null, fetcher, {
+	const { data: results = [], isLoading } = useSWR<JobStatusEntry[]>(
+		shouldFetch ? ["job-statuses", ...jobIds] : null,
+		async ([, ...ids]: [string, ...string[]]) => {
+			const settledStatuses = await Promise.allSettled(
+				ids.map((id) => fetcher(`/api/jobs/${id}/status`)),
+			);
+
+			return settledStatuses.flatMap((result, index): JobStatusEntry[] => {
+				if (result.status !== "fulfilled") {
+					return [];
+				}
+
+				return [[ids[index], result.value]];
+			});
+		},
+		{
 			dedupingInterval: 1000,
-			refreshInterval: (data: JobStatus | undefined) => {
+			refreshInterval: (data: JobStatusEntry[] | undefined) => {
 				if (!data) return refreshInterval;
-				if (data.state === "completed" || data.state === "failed") {
+				if (
+					data.length === jobIds.length &&
+					data.every(([, status]) => status.state === "completed" || status.state === "failed")
+				) {
 					return 0;
 				}
 				return refreshInterval;
 			},
-		});
-	});
+		},
+	);
 
 	const statuses = new Map<string, JobStatus>();
 	let completedCount = 0;
 	let failedCount = 0;
-	let pendingCount = 0;
-	let isLoading = false;
+	let pendingCount = jobIds.length;
 
-	results.forEach((result, index) => {
-		const jobId = jobIds[index];
-		if (result.isLoading) {
-			isLoading = true;
-		}
-		if (result.data) {
-			statuses.set(jobId, result.data);
-			if (result.data.state === "completed") completedCount++;
-			else if (result.data.state === "failed") failedCount++;
-			else pendingCount++;
+	results.forEach(([jobId, status]) => {
+		statuses.set(jobId, status);
+		if (status.state === "completed") {
+			completedCount++;
+			pendingCount--;
+		} else if (status.state === "failed") {
+			failedCount++;
+			pendingCount--;
 		}
 	});
 

@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { getBaseUrlFromHost } from "@/lib/app-url";
@@ -36,7 +35,7 @@ function isValidCallbackURL(url: string): boolean {
  *
  * GET /api/auth/social-org/[provider]?callbackURL=/dashboard
  */
-export async function GET(
+async function handleSocialOrgOAuthInitiation(
 	request: NextRequest,
 	{ params }: { params: Promise<{ provider: string }> },
 ) {
@@ -101,9 +100,9 @@ export async function GET(
 		nonce,
 	});
 
-	// Store state in cookie
-	const cookieStore = await cookies();
-	cookieStore.set(STATE_COOKIE_NAME, JSON.stringify(state), {
+	// Redirect to provider and store state in a response cookie.
+	const response = NextResponse.redirect(authUrl);
+	response.cookies.set(STATE_COOKIE_NAME, JSON.stringify(state), {
 		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
 		sameSite: "lax",
@@ -120,6 +119,7 @@ export async function GET(
 		"Initiating OAuth flow",
 	);
 
-	// Redirect to provider
-	return NextResponse.redirect(authUrl);
+	return response;
 }
+
+export { handleSocialOrgOAuthInitiation as GET };

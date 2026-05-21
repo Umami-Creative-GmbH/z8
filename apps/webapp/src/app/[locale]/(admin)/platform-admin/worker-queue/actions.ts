@@ -53,8 +53,11 @@ export interface WorkerQueueStats {
 	fetchedAt: string;
 }
 
-const HIDDEN_WORKER_NAMES = new Set(["cron:telemetry"]);
 const RELIABILITY_WINDOW_DAYS = 30;
+
+function isHiddenWorkerName(name: string) {
+	return name === "cron:telemetry";
+}
 
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
@@ -102,7 +105,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			);
 
 			repeatableJobs = repeatables
-				.filter((job) => !HIDDEN_WORKER_NAMES.has(job.name))
+				.filter((job) => !isHiddenWorkerName(job.name))
 				.map((job) => ({
 					name: job.name,
 					pattern: job.pattern || "",
@@ -121,7 +124,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		});
 
 		const recentExecutions: RecentExecution[] = executions
-			.filter((exec) => !HIDDEN_WORKER_NAMES.has(exec.jobName))
+			.filter((exec) => !isHiddenWorkerName(exec.jobName))
 			.map((exec) => ({
 				id: exec.id,
 				jobName: exec.jobName,
@@ -143,7 +146,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		});
 
 		const jobMetrics: JobMetric[] = metrics
-			.filter((m) => !HIDDEN_WORKER_NAMES.has(m.jobName))
+			.filter((m) => !isHiddenWorkerName(m.jobName))
 			.map((m) => ({
 				jobName: m.jobName,
 				totalRuns: m.totalRuns,
@@ -170,7 +173,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			now: new Date(),
 			windowDays: RELIABILITY_WINDOW_DAYS,
 			executions: reliabilityExecutions
-				.filter((exec) => !HIDDEN_WORKER_NAMES.has(exec.jobName))
+				.filter((exec) => !isHiddenWorkerName(exec.jobName))
 				.map((exec) => ({
 					id: exec.id,
 					jobName: exec.jobName,

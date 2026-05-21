@@ -43,32 +43,40 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const GENERIC_SCAN_START_ERROR = "Failed to start import review scan";
 const GENERIC_COMMIT_START_ERROR = "Failed to start import commit";
-const IMPORT_PROVIDERS = new Set<ImportProvider>(["clockodo", "clockin"]);
-const IMPORT_ROW_STATUSES = new Set<ImportRowStatus>([
-	"staged",
-	"accepted",
-	"rejected",
-	"blocked",
-	"needs_mapping",
-	"committing",
-	"committed",
-	"commit_failed",
-]);
-const IMPORT_ENTITY_TYPES = new Set<ImportEntityType>([
-	"employee",
-	"team",
-	"service",
-	"work_category",
-	"absence_category",
-	"target_hours",
-	"work_policy",
-	"holiday_quota",
-	"holiday",
-	"surcharge",
-	"absence",
-	"time_entry",
-	"work_period",
-]);
+function isImportProvider(value: string): value is ImportProvider {
+	return value === "clockodo" || value === "clockin";
+}
+
+function isImportRowStatus(value: string): value is ImportRowStatus {
+	return (
+		value === "staged" ||
+		value === "accepted" ||
+		value === "rejected" ||
+		value === "blocked" ||
+		value === "needs_mapping" ||
+		value === "committing" ||
+		value === "committed" ||
+		value === "commit_failed"
+	);
+}
+
+function isImportEntityType(value: string): value is ImportEntityType {
+	return (
+		value === "employee" ||
+		value === "team" ||
+		value === "service" ||
+		value === "work_category" ||
+		value === "absence_category" ||
+		value === "target_hours" ||
+		value === "work_policy" ||
+		value === "holiday_quota" ||
+		value === "holiday" ||
+		value === "surcharge" ||
+		value === "absence" ||
+		value === "time_entry" ||
+		value === "work_period"
+	);
+}
 
 export interface StartImportReviewScanInput {
 	organizationId: string;
@@ -167,7 +175,7 @@ function validateListImportReviewRowsInput(input: unknown): ListImportReviewRows
 
 	if (
 		input.status !== undefined &&
-		(typeof input.status !== "string" || !IMPORT_ROW_STATUSES.has(input.status as ImportRowStatus))
+		(typeof input.status !== "string" || !isImportRowStatus(input.status))
 	) {
 		throw new Error("Invalid import review row status");
 	}
@@ -229,7 +237,7 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 
 	if (
 		typeof input.provider !== "string" ||
-		!IMPORT_PROVIDERS.has(input.provider as ImportProvider)
+		!isImportProvider(input.provider)
 	) {
 		throw new Error("Invalid import provider");
 	}
@@ -313,7 +321,7 @@ function validateStartImportReviewScanInput(input: unknown): ValidatedStartImpor
 	if (
 		input.entityTypes.some(
 			(entityType) =>
-				typeof entityType !== "string" || !IMPORT_ENTITY_TYPES.has(entityType as ImportEntityType),
+				typeof entityType !== "string" || !isImportEntityType(entityType),
 		)
 	) {
 		throw new Error("Invalid import entity type");

@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
@@ -16,7 +15,6 @@ import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
  * - Respects locale from the request
  */
 export async function GET(request: NextRequest) {
-	const cookieStore = await cookies();
 	const { searchParams } = request.nextUrl;
 
 	// Get locale from query param or detect from path/headers
@@ -37,14 +35,6 @@ export async function GET(request: NextRequest) {
 		"better-auth.session_token.sig",
 	];
 
-	// Clear all auth cookies
-	for (const cookieName of authCookies) {
-		cookieStore.delete({
-			name: cookieName,
-			path: "/",
-		});
-	}
-
 	// Build sign-in URL with locale
 	const signInUrl = new URL(`/${locale}/sign-in`, request.url);
 
@@ -53,5 +43,15 @@ export async function GET(request: NextRequest) {
 		signInUrl.searchParams.set("callbackUrl", callbackUrl);
 	}
 
-	return NextResponse.redirect(signInUrl);
+	const response = NextResponse.redirect(signInUrl);
+
+	// Clear all auth cookies on the redirect response.
+	for (const cookieName of authCookies) {
+		response.cookies.delete({
+			name: cookieName,
+			path: "/",
+		});
+	}
+
+	return response;
 }

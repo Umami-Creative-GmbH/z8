@@ -23,7 +23,7 @@ import type { CalendarProvider } from "@/lib/calendar-sync/types";
 // ROUTE HANDLER
 // ============================================
 
-export async function GET(
+async function handleCalendarOAuthInitiation(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ provider: string }> },
 ) {
@@ -112,3 +112,5 @@ export async function GET(
 		return NextResponse.json({ error: "Failed to initiate calendar connection" }, { status: 500 });
 	}
 }
+
+export { handleCalendarOAuthInitiation as GET };
