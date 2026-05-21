@@ -59,10 +59,14 @@ describe("useTimeClock presence invalidation", () => {
 		mocks.clockIn.mockResolvedValue({ success: true });
 
 		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockIn({});
 
 		await waitFor(() => {
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
+			});
 		});
 	});
 
@@ -72,10 +76,14 @@ describe("useTimeClock presence invalidation", () => {
 		mocks.clockOut.mockResolvedValue({ success: true });
 
 		const { result } = renderHook(() => useTimeClock(), { wrapper: wrapper(client) });
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 		await result.current.clockOut({});
 
 		await waitFor(() => {
 			expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.employeeClockStatuses.all });
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: queryKeys.workPolicies.presence.status("emp-1"),
+			});
 		});
 	});
 

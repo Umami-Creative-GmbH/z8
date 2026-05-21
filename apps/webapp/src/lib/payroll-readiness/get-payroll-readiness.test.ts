@@ -506,7 +506,7 @@ describe("getPayrollReadiness", () => {
 			status: "warning",
 			severity: "warning",
 			count: 1,
-			actionHref: "/travel-expenses/approvals",
+			actionHref: "/approvals/inbox?types=travel_expense_claim",
 			affectedEmployees: [
 				{
 					id: "employee-1",

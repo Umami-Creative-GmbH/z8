@@ -1,12 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { TelegramSettings } from "@/components/settings/telegram-settings";
+import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
-export default async function TelegramSettingsPage() {
+async function TelegramSettingsContent() {
 	await connection();
 
 	const [{ authContext, organizationId }, t] = await Promise.all([
@@ -77,5 +79,25 @@ export default async function TelegramSettingsPage() {
 				/>
 			</div>
 		</div>
+	);
+}
+
+function TelegramSettingsLoading() {
+	return (
+		<div className="p-6">
+			<div className="mx-auto max-w-3xl space-y-4">
+				<Skeleton className="h-8 w-48" />
+				<Skeleton className="h-5 w-96" />
+				<Skeleton className="h-[380px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function TelegramSettingsPage() {
+	return (
+		<Suspense fallback={<TelegramSettingsLoading />}>
+			<TelegramSettingsContent />
+		</Suspense>
 	);
 }

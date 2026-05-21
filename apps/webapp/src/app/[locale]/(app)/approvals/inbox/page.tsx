@@ -3,7 +3,7 @@
 import { IconCheck, IconInbox, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -84,7 +84,7 @@ export function getInitialApprovalInboxFilters(
 	};
 }
 
-export default function ApprovalInboxPage() {
+function ApprovalInboxContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
 	const [filters, setFilters] = useState<ApprovalInboxFilters>(() =>
@@ -479,5 +479,13 @@ export default function ApprovalInboxPage() {
 				</ActionPanelContent>
 			</ActionPanel>
 		</div>
+	);
+}
+
+export default function ApprovalInboxPage() {
+	return (
+		<Suspense fallback={null}>
+			<ApprovalInboxContent />
+		</Suspense>
 	);
 }

@@ -233,10 +233,6 @@
     "cancelsOn": "Wird am {date} gekündigt",
     "checkoutCreateFailed": "Fehler beim Erstellen der Checkout-Sitzung",
     "checkoutStartFailed": "Fehler beim Starten des Checkouts",
-    "checkout": {
-      "trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdaten. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testversion.",
-      "trialContinuesTitle": "Ihre Testversion läuft nach dem Upgrade weiter"
-    },
     "choosePlan": "Wählen Sie Ihren Plan",
     "choosePlanDescription": "Starten Sie mit einer 14-tägigen kostenlosen Testversion. Keine Kreditkarte erforderlich.",
     "currentPlan": "Aktueller Plan",
@@ -294,18 +290,7 @@
       "pastDue": "Überfällig",
       "trial": "Testversion"
     },
-    "suspended": {
-      "adminDescription": "Ihre Testversion ist abgelaufen oder das Abonnement ist nicht mehr gültig. Aktualisieren Sie die Zahlungsdaten, um Z8 weiterhin zu nutzen.",
-      "goToBilling": "Zu den Zahlungsdaten",
-      "memberDescription": "Diese Organisation wurde gesperrt. Kontaktieren Sie einen Organisationsadministrator, um die Zahlungsdaten zu aktualisieren.",
-      "title": "Organisation gesperrt"
-    },
     "title": "Abrechnung & Abonnement",
-    "trialBanner": {
-      "description": "{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdaten hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
-      "title": "14-tägige Testversion aktiv",
-      "upgrade": "Upgrade"
-    },
     "trialEnds": "Testversion endet",
     "vatNotice": "Die angezeigten Preise sind Nettopreise exklusive MwSt. Die MwSt. wird gegebenenfalls hinzugerechnet.",
     "yearTotal": "€{amount}/Jahr gesamt"

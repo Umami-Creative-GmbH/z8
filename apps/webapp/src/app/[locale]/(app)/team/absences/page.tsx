@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getAbsenceCategories } from "../../absences/actions";
 import { getCurrentEmployee } from "../actions";
@@ -26,7 +29,9 @@ function parsePositiveInteger(value: string | undefined): number | undefined {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-export default async function TeamAbsencesPage({ searchParams }: TeamAbsencesPageProps) {
+export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPageProps) {
+	await connection();
+
 	const [t, currentEmployee, params] = await Promise.all([
 		getTranslate(),
 		getCurrentEmployee(),
@@ -95,5 +100,27 @@ export default async function TeamAbsencesPage({ searchParams }: TeamAbsencesPag
 				<TeamAbsencesTable data={listResult.data} categories={categories} search={search} />
 			</div>
 		</div>
+	);
+}
+
+function TeamAbsencesPageLoading() {
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<div className="space-y-2 px-4 lg:px-6">
+				<Skeleton className="h-8 w-44" />
+				<Skeleton className="h-5 w-full max-w-2xl" />
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton className="h-[520px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function TeamAbsencesPage(props: TeamAbsencesPageProps) {
+	return (
+		<Suspense fallback={<TeamAbsencesPageLoading />}>
+			<TeamAbsencesPageContent {...props} />
+		</Suspense>
 	);
 }

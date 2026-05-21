@@ -233,10 +233,6 @@
     "cancelsOn": "Cancels on {date}",
     "checkoutCreateFailed": "Failed to create checkout session",
     "checkoutStartFailed": "Failed to start checkout",
-    "checkout": {
-      "trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
-      "trialContinuesTitle": "Your trial continues after upgrade"
-    },
     "choosePlan": "Choose Your Plan",
     "choosePlanDescription": "Start with a 14-day free trial. No credit card required to start.",
     "currentPlan": "Current Plan",
@@ -294,18 +290,7 @@
       "pastDue": "Past Due",
       "trial": "Trial"
     },
-    "suspended": {
-      "adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",
-      "goToBilling": "Go to billing",
-      "memberDescription": "This organization is suspended. Contact an organization admin to update billing.",
-      "title": "Organization suspended"
-    },
     "title": "Billing & Subscription",
-    "trialBanner": {
-      "description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
-      "title": "14-day trial active",
-      "upgrade": "Upgrade"
-    },
     "trialEnds": "Trial Ends",
     "vatNotice": "Prices shown are net prices excluding VAT. VAT will be added where applicable.",
     "yearTotal": "€{amount}/year total"

@@ -1,9 +1,0 @@
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: deploy-webhook-request-buffer
-  namespace: app-prod
-spec:
-  buffering:
-    maxRequestBodyBytes: 1048576
-    memRequestBodyBytes: 1048576

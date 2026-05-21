@@ -233,10 +233,6 @@
     "cancelsOn": "Si annulla il {date}",
     "checkoutCreateFailed": "Impossibile creare la sessione di checkout",
     "checkoutStartFailed": "Impossibile avviare il checkout",
-    "checkout": {
-      "trialContinuesDescription": "Stripe Checkout raccoglie i dati di pagamento ora. Il tuo abbonamento a pagamento inizia solo dopo la scadenza del periodo di prova.",
-      "trialContinuesTitle": "La tua prova continua dopo l'aggiornamento"
-    },
     "choosePlan": "Scegli il tuo piano",
     "choosePlanDescription": "Inizia con una prova gratuita di 14 giorni. Non è richiesta alcuna carta di credito per iniziare.",
     "currentPlan": "Piano attuale",
@@ -294,18 +290,7 @@
       "pastDue": "Scaduto",
       "trial": "Prova"
     },
-    "suspended": {
-      "adminDescription": "Il periodo di prova è terminato o l'abbonamento non è più valido. Aggiorna la fatturazione per continuare a usare Z8.",
-      "goToBilling": "Vai alla fatturazione",
-      "memberDescription": "Questa organizzazione è sospesa. Contatta un amministratore dell'organizzazione per aggiornare la fatturazione.",
-      "title": "Organizzazione sospesa"
-    },
     "title": "Fatturazione e abbonamento",
-    "trialBanner": {
-      "description": "{days} giorni rimanenti. Aggiungi i dati di pagamento ora; il tuo abbonamento a pagamento inizia dopo il periodo di prova.",
-      "title": "Prova di 14 giorni attiva",
-      "upgrade": "Aggiorna"
-    },
     "trialEnds": "La prova termina il",
     "vatNotice": "I prezzi indicati sono prezzi netti IVA esclusa. L'IVA verrà aggiunta ove applicabile.",
     "yearTotal": "€{amount}/anno totale"

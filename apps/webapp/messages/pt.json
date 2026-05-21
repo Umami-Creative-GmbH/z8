@@ -233,10 +233,6 @@
     "cancelsOn": "Cancela em {date}",
     "checkoutCreateFailed": "Falha ao criar sessão de checkout",
     "checkoutStartFailed": "Falha ao iniciar o checkout",
-    "checkout": {
-      "trialContinuesDescription": "O Stripe Checkout coleta os detalhes de pagamento agora. Sua assinatura paga começa somente após o término do período de teste.",
-      "trialContinuesTitle": "Seu período de teste continua após a atualização"
-    },
     "choosePlan": "Escolha seu plano",
     "choosePlanDescription": "Comece com um teste gratuito de 14 dias. Não é necessário cartão de crédito para começar.",
     "currentPlan": "Plano atual",
@@ -294,18 +290,7 @@
       "pastDue": "Vencido",
       "trial": "Teste"
     },
-    "suspended": {
-      "adminDescription": "Seu período de teste terminou ou a assinatura não é mais válida. Atualize o faturamento para continuar usando o Z8.",
-      "goToBilling": "Ir para faturamento",
-      "memberDescription": "Esta organização está suspensa. Entre em contato com um administrador da organização para atualizar o faturamento.",
-      "title": "Organização suspensa"
-    },
     "title": "Cobrança e assinatura",
-    "trialBanner": {
-      "description": "{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o período de teste.",
-      "title": "Período de teste de 14 dias ativo",
-      "upgrade": "Atualizar"
-    },
     "trialEnds": "O teste termina em",
     "vatNotice": "Os preços exibidos são preços líquidos, excluindo IVA. O IVA será adicionado quando aplicável.",
     "yearTotal": "€{amount}/ano no total"

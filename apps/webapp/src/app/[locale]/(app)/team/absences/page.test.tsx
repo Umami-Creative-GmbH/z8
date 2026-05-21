@@ -6,6 +6,10 @@ vi.mock("next/navigation", () => ({
 	redirect: vi.fn(),
 }));
 
+vi.mock("next/server", () => ({
+	connection: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/components/errors/no-employee-error", () => ({
 	NoEmployeeError: () => null,
 }));
@@ -34,7 +38,7 @@ vi.mock("./team-absences-table", () => ({
 	TeamAbsencesTable: () => null,
 }));
 
-const { default: TeamAbsencesPage } = await import("./page");
+const { TeamAbsencesPageContent } = await import("./page");
 
 describe("TeamAbsencesPage", () => {
 	beforeEach(() => {
@@ -53,7 +57,7 @@ describe("TeamAbsencesPage", () => {
 	});
 
 	it("passes team and sort URL state to the manager absence list", async () => {
-		await TeamAbsencesPage({
+		await TeamAbsencesPageContent({
 			searchParams: Promise.resolve({
 				search: " Ada ",
 				page: "2",

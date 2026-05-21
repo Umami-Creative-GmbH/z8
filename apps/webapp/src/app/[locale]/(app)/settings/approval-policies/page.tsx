@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { ApprovalPolicyManagement } from "@/components/settings/approval-policy-management";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
-export default async function ApprovalPoliciesSettingsPage() {
+async function ApprovalPoliciesSettingsContent() {
 	await connection();
 
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -19,4 +21,24 @@ export default async function ApprovalPoliciesSettingsPage() {
 	}
 
 	return <ApprovalPolicyManagement organizationId={organizationId} />;
+}
+
+function ApprovalPoliciesSettingsLoading() {
+	return (
+		<div className="p-6">
+			<div className="mx-auto max-w-4xl space-y-4">
+				<Skeleton className="h-8 w-64" />
+				<Skeleton className="h-5 w-96" />
+				<Skeleton className="h-[420px] w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function ApprovalPoliciesSettingsPage() {
+	return (
+		<Suspense fallback={<ApprovalPoliciesSettingsLoading />}>
+			<ApprovalPoliciesSettingsContent />
+		</Suspense>
+	);
 }

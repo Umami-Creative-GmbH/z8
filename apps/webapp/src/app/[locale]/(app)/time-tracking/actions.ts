@@ -18,9 +18,9 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -64,18 +64,20 @@ import {
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import {
-	isWorkLocationType,
-	type WorkLocationType,
-} from "@/lib/time-tracking/work-location";
-import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
-import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
-import {
-	calculatePresenceStatusCounts,
-	type PresenceDayOfWeek,
-} from "./actions/presence-status";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
+import {
+	calculatePresenceStatusSummary,
+	getPresencePeriodBounds,
+	getPresenceWorkDays,
+	type PresenceEvaluationPeriod,
+	type PresenceStatusSummary,
+	parsePresenceFixedDays,
+	validatePresenceFixedDaysConfig,
+} from "./actions/presence-status";
+import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
 export async function addBreakToActiveSession(breakMinutes: number) {
@@ -133,7 +135,8 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 			createTimeCorrectionApprovalWorkflow(approvalDbService, {
 				organizationId: params.organizationId,
 				requesterEmployeeId: params.employeeId,
-				teamId: requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+				teamId:
+					requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
 				workPeriodId: params.workPeriodId,
 				defaultApproverId: params.managerId,
 				reason: params.reason,
@@ -141,7 +144,10 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 			}),
 		);
 	} catch (error) {
-		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
+		logger.error(
+			{ error, workPeriodId: params.workPeriodId },
+			"Failed to resolve time-entry approval policy; using manager fallback",
+		);
 		const [approval] = await db
 			.insert(approvalRequest)
 			.values({
@@ -3158,15 +3164,9 @@ async function createManualEntryApprovalRequest(params: {
  * Get presence status for an employee
  * Returns on-site requirement progress for the current evaluation period
  */
-export async function getPresenceStatus(employeeId: string): Promise<
-	ServerActionResult<{
-		required: number;
-		actual: number;
-		period: string;
-		mode: string;
-		presenceEnabled: boolean;
-	}>
-> {
+export async function getPresenceStatus(
+	employeeId: string,
+): Promise<ServerActionResult<PresenceStatusSummary>> {
 	const parsed = z
 		.object({ employeeId: z.string().uuid("Invalid employee ID") })
 		.safeParse({ employeeId });
@@ -3177,6 +3177,22 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		};
 	}
 	const validatedEmployeeId = parsed.data.employeeId;
+	const disabledPresenceStatus = (message: string): PresenceStatusSummary => ({
+		presenceEnabled: false,
+		available: false,
+		period: "weekly",
+		periodStart: "",
+		periodEnd: "",
+		mode: "minimum_count",
+		homeOfficeDaysLeft: 0,
+		officeDaysRequiredLeft: 0,
+		officeDaysCompleted: 0,
+		homeOfficeDaysUsed: 0,
+		workingDaysRemaining: 0,
+		requiredOfficeDays: 0,
+		fixedOfficeDays: [],
+		message,
+	});
 
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -3228,13 +3244,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(validatedEmployeeId));
 
 		if (!effectivePolicy) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
+			return disabledPresenceStatus("No effective work policy found.");
 		}
 
 		// Check if presence is enabled on the policy
@@ -3248,13 +3258,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		);
 
 		if (!policyRow?.presenceEnabled) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
+			return disabledPresenceStatus("Presence policy is not enabled.");
 		}
 
 		// Load presence config
@@ -3267,48 +3271,98 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		);
 
 		if (!presenceConfig) {
+			return disabledPresenceStatus("Presence policy configuration is missing.");
+		}
+
+		const now = DateTime.now();
+		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
+		const settingsData = yield* _(
+			dbService.query("getUserTimezone", async () => {
+				return await dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, session.user.id),
+					columns: { timezone: true },
+				});
+			}),
+		);
+		const timezone = settingsData?.timezone || "UTC";
+		const { start: periodStart, end: periodEnd } = getPresencePeriodBounds({
+			period: presenceConfig.evaluationPeriod,
+			now,
+			weekStartDay,
+			timezone,
+		});
+
+		const fixedOfficeDays = presenceConfig.requiredOnsiteFixedDays
+			? parsePresenceFixedDays(presenceConfig.requiredOnsiteFixedDays)
+			: null;
+
+		if (presenceConfig.requiredOnsiteFixedDays && fixedOfficeDays === null) {
 			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
+				presenceEnabled: true,
+				available: false,
+				period: presenceConfig.evaluationPeriod as PresenceEvaluationPeriod,
+				periodStart: periodStart.toISO() ?? "",
+				periodEnd: periodEnd.toISO() ?? "",
+				mode: presenceConfig.presenceMode,
+				homeOfficeDaysLeft: 0,
+				officeDaysRequiredLeft: 0,
+				officeDaysCompleted: 0,
+				homeOfficeDaysUsed: 0,
+				workingDaysRemaining: 0,
+				requiredOfficeDays: 0,
+				fixedOfficeDays: [],
+				message: "Presence policy has invalid fixed office days.",
 			};
 		}
 
-		// Get current week's work periods for this employee
-		const now = DateTime.now();
-		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
-		const { start: weekStart, end: weekEnd } = getWeekBounds(now, weekStartDay);
+		const fixedDaysConfigMessage = validatePresenceFixedDaysConfig(
+			presenceConfig.presenceMode,
+			fixedOfficeDays,
+		);
+		if (fixedDaysConfigMessage) {
+			return {
+				presenceEnabled: true,
+				available: false,
+				period: presenceConfig.evaluationPeriod as PresenceEvaluationPeriod,
+				periodStart: periodStart.toISO() ?? "",
+				periodEnd: periodEnd.toISO() ?? "",
+				mode: presenceConfig.presenceMode,
+				homeOfficeDaysLeft: 0,
+				officeDaysRequiredLeft: 0,
+				officeDaysCompleted: 0,
+				homeOfficeDaysUsed: 0,
+				workingDaysRemaining: 0,
+				requiredOfficeDays: 0,
+				fixedOfficeDays: [],
+				message: fixedDaysConfigMessage,
+			};
+		}
 
 		const periods = yield* _(
-			dbService.query("getWeekWorkPeriods", async () => {
+			dbService.query("getPresenceWorkPeriods", async () => {
 				return await dbService.db.query.workPeriod.findMany({
 					where: and(
 						eq(workPeriod.employeeId, validatedEmployeeId),
-						gte(workPeriod.startTime, weekStart.toJSDate()),
-						lte(workPeriod.startTime, weekEnd.toJSDate()),
+						gte(workPeriod.startTime, periodStart.toJSDate()),
+						lte(workPeriod.startTime, periodEnd.toJSDate()),
 					),
+					columns: { startTime: true, workLocationType: true },
 				});
 			}),
 		);
 
-		const { actual, required } = calculatePresenceStatusCounts({
+		return calculatePresenceStatusSummary({
 			presenceMode: presenceConfig.presenceMode,
 			requiredOnsiteDays: presenceConfig.requiredOnsiteDays,
-			requiredOnsiteFixedDays: presenceConfig.requiredOnsiteFixedDays
-				? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as PresenceDayOfWeek[])
-				: null,
+			requiredOnsiteFixedDays: fixedOfficeDays,
+			period: presenceConfig.evaluationPeriod,
+			periodStart,
+			periodEnd,
+			now,
+			timezone,
+			workDays: getPresenceWorkDays(effectivePolicy.schedule?.days ?? null),
 			workPeriods: periods,
 		});
-
-		return {
-			required,
-			actual,
-			period: presenceConfig.evaluationPeriod,
-			mode: presenceConfig.presenceMode,
-			presenceEnabled: true,
-		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

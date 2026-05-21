@@ -10,6 +10,19 @@
     "delete": "Löschen",
     "refresh": "Aktualisieren"
   },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Ihre Testversion ist abgelaufen oder das Abonnement ist nicht mehr gültig. Aktualisieren Sie die Zahlungsdaten, um Z8 weiterhin zu nutzen.",
+      "goToBilling": "Zu den Zahlungsdaten",
+      "memberDescription": "Diese Organisation wurde gesperrt. Kontaktieren Sie einen Organisationsadministrator, um die Zahlungsdaten zu aktualisieren.",
+      "title": "Organisation gesperrt"
+    },
+    "trialBanner": {
+      "description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.",
+      "title": "14-tägige Testphase aktiv",
+      "upgrade": "Upgrade"
+    }
+  },
   "analytics": {
     "export": {
       "export": "Exportieren",

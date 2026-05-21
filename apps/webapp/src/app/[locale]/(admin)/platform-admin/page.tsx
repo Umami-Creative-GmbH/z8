@@ -298,7 +298,7 @@ function QuickActionCard({ title, description, href, icon }: QuickActionCardProp
 	);
 }
 
-export default async function AdminDashboardPage() {
+async function AdminDashboardContent() {
 	const t = await getTranslate();
 
 	return (
@@ -389,5 +389,32 @@ export default async function AdminDashboardPage() {
 				</div>
 			</section>
 		</div>
+	);
+}
+
+function AdminDashboardLoading() {
+	return (
+		<div className="space-y-10">
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-36" />
+				<Skeleton className="h-5 w-72" />
+			</div>
+			<section className="space-y-4">
+				<Skeleton className="h-5 w-36" />
+				<DashboardStatsLoading />
+			</section>
+			<section className="space-y-4">
+				<Skeleton className="h-5 w-36" />
+				<DashboardAnalyticsPreviewLoading />
+			</section>
+		</div>
+	);
+}
+
+export default function AdminDashboardPage() {
+	return (
+		<Suspense fallback={<AdminDashboardLoading />}>
+			<AdminDashboardContent />
+		</Suspense>
 	);
 }
