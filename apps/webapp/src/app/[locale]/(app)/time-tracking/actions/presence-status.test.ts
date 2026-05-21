@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
 	calculatePresenceStatusCounts,
 	calculatePresenceStatusSummary,
+	getPresencePeriodBounds,
+	getPresenceWorkDays,
 	parsePresenceFixedDays,
 } from "./presence-status";
 
@@ -38,6 +40,54 @@ describe("parsePresenceFixedDays", () => {
 	it("rejects malformed fixed day JSON", () => {
 		expect(parsePresenceFixedDays("not-json")).toBeNull();
 		expect(parsePresenceFixedDays('["monday","funday"]')).toBeNull();
+	});
+});
+
+describe("getPresencePeriodBounds", () => {
+	it("returns monthly bounds for the current month", () => {
+		const bounds = getPresencePeriodBounds({
+			period: "monthly",
+			now: DateTime.fromISO("2026-05-21T12:00:00.000Z", { zone: "utc" }),
+			weekStartDay: 1,
+			timezone: "utc",
+		});
+
+		expect(bounds.start.toISO()).toBe("2026-05-01T00:00:00.000Z");
+		expect(bounds.end.toISO()).toBe("2026-05-31T23:59:59.999Z");
+	});
+
+	it("returns a two-week range for biweekly policies", () => {
+		const bounds = getPresencePeriodBounds({
+			period: "biweekly",
+			now: DateTime.fromISO("2026-05-21T12:00:00.000Z", { zone: "utc" }),
+			weekStartDay: 1,
+			timezone: "utc",
+		});
+
+		expect(bounds.end.diff(bounds.start, "days").days).toBeCloseTo(14, 3);
+		expect(bounds.start.weekday).toBe(1);
+	});
+});
+
+describe("getPresenceWorkDays", () => {
+	it("uses detailed schedule workdays when available", () => {
+		expect(
+			getPresenceWorkDays([
+				{ dayOfWeek: "monday", isWorkDay: true },
+				{ dayOfWeek: "tuesday", isWorkDay: false },
+				{ dayOfWeek: "wednesday", isWorkDay: true },
+			]),
+		).toEqual(["monday", "wednesday"]);
+	});
+
+	it("falls back to Monday through Friday", () => {
+		expect(getPresenceWorkDays(null)).toEqual([
+			"monday",
+			"tuesday",
+			"wednesday",
+			"thursday",
+			"friday",
+		]);
 	});
 });
 

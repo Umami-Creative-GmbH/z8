@@ -72,8 +72,12 @@ import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-st
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { canonicalTimeEntryClient, canonicalWorkRecordClient } from "./actions.canonical";
 import {
-	calculatePresenceStatusCounts,
-	type PresenceDayOfWeek,
+	calculatePresenceStatusSummary,
+	getPresencePeriodBounds,
+	getPresenceWorkDays,
+	parsePresenceFixedDays,
+	type PresenceEvaluationPeriod,
+	type PresenceStatusSummary,
 } from "./actions/presence-status";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
 import type { WorkPeriodWithEntries } from "./types";
@@ -3159,13 +3163,7 @@ async function createManualEntryApprovalRequest(params: {
  * Returns on-site requirement progress for the current evaluation period
  */
 export async function getPresenceStatus(employeeId: string): Promise<
-	ServerActionResult<{
-		required: number;
-		actual: number;
-		period: string;
-		mode: string;
-		presenceEnabled: boolean;
-	}>
+	ServerActionResult<PresenceStatusSummary>
 > {
 	const parsed = z
 		.object({ employeeId: z.string().uuid("Invalid employee ID") })
@@ -3177,6 +3175,22 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		};
 	}
 	const validatedEmployeeId = parsed.data.employeeId;
+	const disabledPresenceStatus = (message: string): PresenceStatusSummary => ({
+		presenceEnabled: false,
+		available: false,
+		period: "weekly",
+		periodStart: "",
+		periodEnd: "",
+		mode: "minimum_count",
+		homeOfficeDaysLeft: 0,
+		officeDaysRequiredLeft: 0,
+		officeDaysCompleted: 0,
+		homeOfficeDaysUsed: 0,
+		workingDaysRemaining: 0,
+		requiredOfficeDays: 0,
+		fixedOfficeDays: [],
+		message,
+	});
 
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -3228,13 +3242,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(validatedEmployeeId));
 
 		if (!effectivePolicy) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
+			return disabledPresenceStatus("No effective work policy found.");
 		}
 
 		// Check if presence is enabled on the policy
@@ -3248,13 +3256,7 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		);
 
 		if (!policyRow?.presenceEnabled) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
+			return disabledPresenceStatus("Presence policy is not enabled.");
 		}
 
 		// Load presence config
@@ -3267,48 +3269,67 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		);
 
 		if (!presenceConfig) {
+			return disabledPresenceStatus("Presence policy configuration is missing.");
+		}
+
+		const now = DateTime.now();
+		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
+		const timezone = (session.user as { timezone?: string | null }).timezone ?? "Europe/Berlin";
+		const { start: periodStart, end: periodEnd } = getPresencePeriodBounds({
+			period: presenceConfig.evaluationPeriod,
+			now,
+			weekStartDay,
+			timezone,
+		});
+
+		const fixedOfficeDays = presenceConfig.requiredOnsiteFixedDays
+			? parsePresenceFixedDays(presenceConfig.requiredOnsiteFixedDays)
+			: null;
+
+		if (presenceConfig.requiredOnsiteFixedDays && fixedOfficeDays === null) {
 			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
+				presenceEnabled: true,
+				available: false,
+				period: presenceConfig.evaluationPeriod as PresenceEvaluationPeriod,
+				periodStart: periodStart.toISO() ?? "",
+				periodEnd: periodEnd.toISO() ?? "",
+				mode: presenceConfig.presenceMode,
+				homeOfficeDaysLeft: 0,
+				officeDaysRequiredLeft: 0,
+				officeDaysCompleted: 0,
+				homeOfficeDaysUsed: 0,
+				workingDaysRemaining: 0,
+				requiredOfficeDays: 0,
+				fixedOfficeDays: [],
+				message: "Presence policy has invalid fixed office days.",
 			};
 		}
 
-		// Get current week's work periods for this employee
-		const now = DateTime.now();
-		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
-		const { start: weekStart, end: weekEnd } = getWeekBounds(now, weekStartDay);
-
 		const periods = yield* _(
-			dbService.query("getWeekWorkPeriods", async () => {
+			dbService.query("getPresenceWorkPeriods", async () => {
 				return await dbService.db.query.workPeriod.findMany({
 					where: and(
 						eq(workPeriod.employeeId, validatedEmployeeId),
-						gte(workPeriod.startTime, weekStart.toJSDate()),
-						lte(workPeriod.startTime, weekEnd.toJSDate()),
+						gte(workPeriod.startTime, periodStart.toJSDate()),
+						lte(workPeriod.startTime, periodEnd.toJSDate()),
 					),
+					columns: { startTime: true, workLocationType: true },
 				});
 			}),
 		);
 
-		const { actual, required } = calculatePresenceStatusCounts({
+		return calculatePresenceStatusSummary({
 			presenceMode: presenceConfig.presenceMode,
 			requiredOnsiteDays: presenceConfig.requiredOnsiteDays,
-			requiredOnsiteFixedDays: presenceConfig.requiredOnsiteFixedDays
-				? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as PresenceDayOfWeek[])
-				: null,
+			requiredOnsiteFixedDays: fixedOfficeDays,
+			period: presenceConfig.evaluationPeriod,
+			periodStart,
+			periodEnd,
+			now,
+			timezone,
+			workDays: getPresenceWorkDays(effectivePolicy.schedule?.days ?? null),
 			workPeriods: periods,
 		});
-
-		return {
-			required,
-			actual,
-			period: presenceConfig.evaluationPeriod,
-			mode: presenceConfig.presenceMode,
-			presenceEnabled: true,
-		};
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

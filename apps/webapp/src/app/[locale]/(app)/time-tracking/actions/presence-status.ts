@@ -23,6 +23,14 @@ const WEEKDAY_BY_NUMBER: Record<number, PresenceDayOfWeek> = {
 
 const PRESENCE_DAYS = new Set<PresenceDayOfWeek>(Object.values(WEEKDAY_BY_NUMBER));
 
+export const DEFAULT_WORK_DAYS: PresenceDayOfWeek[] = [
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+];
+
 export type PresenceStatusSummary = {
 	presenceEnabled: boolean;
 	available: boolean;
@@ -100,6 +108,68 @@ export function parsePresenceFixedDays(value: string | null): PresenceDayOfWeek[
 	}
 }
 
+function getStartOfWeek(date: DateTime, weekStartDay: "sunday" | "monday" | 0 | 1) {
+	if (weekStartDay === "monday" || weekStartDay === 1) {
+		return date.startOf("week").startOf("day");
+	}
+
+	const daysSinceSunday = date.weekday % 7;
+	return date.minus({ days: daysSinceSunday }).startOf("day");
+}
+
+export function getPresenceWorkDays(
+	scheduleDays: Array<{ dayOfWeek: string; isWorkDay: boolean }> | null | undefined,
+): PresenceDayOfWeek[] {
+	const workDays =
+		scheduleDays
+			?.filter((day) => day.isWorkDay && PRESENCE_DAYS.has(day.dayOfWeek as PresenceDayOfWeek))
+			.map((day) => day.dayOfWeek as PresenceDayOfWeek) ?? [];
+
+	return workDays.length ? workDays : DEFAULT_WORK_DAYS;
+}
+
+export function getPresencePeriodBounds({
+	period,
+	now,
+	weekStartDay,
+	timezone,
+}: {
+	period: PresenceEvaluationPeriod;
+	now: DateTime;
+	weekStartDay: "sunday" | "monday" | 0 | 1;
+	timezone: string;
+}) {
+	const zone = timezone || "utc";
+	const zonedNow = now.setZone(zone);
+
+	if (period === "monthly") {
+		return {
+			start: zonedNow.startOf("month"),
+			end: zonedNow.endOf("month"),
+		};
+	}
+
+	const weekStart = getStartOfWeek(zonedNow, weekStartDay);
+	if (period === "weekly") {
+		return {
+			start: weekStart,
+			end: weekStart.plus({ days: 6 }).endOf("day"),
+		};
+	}
+
+	// Monday 2026-01-05 is the deterministic first full biweekly anchor week.
+	const mondayAnchor = DateTime.fromISO("2026-01-05T00:00:00.000", { zone });
+	const anchor = getStartOfWeek(mondayAnchor, weekStartDay);
+	const daysSinceAnchor = Math.floor(weekStart.diff(anchor, "days").days);
+	const periodOffsetDays = Math.floor(daysSinceAnchor / 14) * 14;
+	const start = anchor.plus({ days: periodOffsetDays });
+
+	return {
+		start,
+		end: start.plus({ days: 13 }).endOf("day"),
+	};
+}
+
 export function calculatePresenceStatusSummary({
 	presenceMode,
 	requiredOnsiteDays,
@@ -128,9 +198,7 @@ export function calculatePresenceStatusSummary({
 	const end = periodEnd.setZone(zone).endOf("day");
 	const today = now.setZone(zone).startOf("day");
 	const scheduledDays = new Set(
-		workDays?.length
-			? workDays
-			: (["monday", "tuesday", "wednesday", "thursday", "friday"] as PresenceDayOfWeek[]),
+		workDays?.length ? workDays : DEFAULT_WORK_DAYS,
 	);
 	const fixedOfficeDays = requiredOnsiteFixedDays ?? [];
 	const fixedOfficeDaySet = new Set(fixedOfficeDays);
