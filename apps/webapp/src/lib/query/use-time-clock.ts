@@ -87,13 +87,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const queryClient = useQueryClient();
 
 	// Offline support
-	const {
-		isOnline,
-		isOffline,
-		pendingCount,
-		isSyncing,
-		queueClockEvent,
-	} = useOfflineClock();
+	const { isOnline, isOffline, pendingCount, isSyncing, queueClockEvent } = useOfflineClock();
 
 	// Query for time clock status
 	const statusQuery = useQuery({
@@ -154,6 +148,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				// Only invalidate for non-queued success (server confirmed)
 				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
 				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+				if (status?.employeeId) {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
+					});
+				}
 			}
 		},
 	});
@@ -202,6 +201,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				// Only invalidate for non-queued success (server confirmed)
 				queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
 				queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+				if (status?.employeeId) {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
+					});
+				}
 			}
 		},
 	});
