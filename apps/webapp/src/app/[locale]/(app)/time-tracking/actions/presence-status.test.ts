@@ -64,6 +64,8 @@ describe("getPresencePeriodBounds", () => {
 			timezone: "utc",
 		});
 
+		expect(bounds.start.toISO()).toBe("2026-05-11T00:00:00.000Z");
+		expect(bounds.end.toISO()).toBe("2026-05-24T23:59:59.999Z");
 		expect(bounds.end.diff(bounds.start, "days").days).toBeCloseTo(14, 3);
 		expect(bounds.start.weekday).toBe(1);
 	});

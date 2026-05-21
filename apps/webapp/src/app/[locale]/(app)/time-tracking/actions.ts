@@ -3274,7 +3274,15 @@ export async function getPresenceStatus(employeeId: string): Promise<
 
 		const now = DateTime.now();
 		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
-		const timezone = (session.user as { timezone?: string | null }).timezone ?? "Europe/Berlin";
+		const settingsData = yield* _(
+			dbService.query("getUserTimezone", async () => {
+				return await dbService.db.query.userSettings.findFirst({
+					where: eq(userSettings.userId, session.user.id),
+					columns: { timezone: true },
+				});
+			}),
+		);
+		const timezone = settingsData?.timezone || "UTC";
 		const { start: periodStart, end: periodEnd } = getPresencePeriodBounds({
 			period: presenceConfig.evaluationPeriod,
 			now,
