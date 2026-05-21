@@ -38,16 +38,18 @@ vi.mock("./widget-card", () => ({
 	WidgetCard: ({
 		children,
 		description,
+		loading,
 		title,
 	}: {
 		children: ReactNode;
 		description: string;
+		loading?: boolean;
 		title: string;
 	}) => (
 		<section aria-label={title}>
 			<h2>{title}</h2>
 			<p>{description}</p>
-			{children}
+			{loading ? <p>Loading widget</p> : children}
 		</section>
 	),
 }));
@@ -129,6 +131,23 @@ describe("PresenceStatusWidget", () => {
 		const { container } = render(<PresenceStatusWidget />);
 
 		await waitFor(() => expect(container.innerHTML).toBe(""));
+	});
+
+	it("does not force loading when employee lookup returns no employee", async () => {
+		mocks.getCurrentEmployee.mockResolvedValue(null);
+		mocks.usePresenceStatus.mockReturnValue({
+			isLoading: false,
+			data: {
+				presenceEnabled: true,
+				available: false,
+				message: "Presence policy is unavailable.",
+			},
+		});
+
+		render(<PresenceStatusWidget />);
+
+		await waitFor(() => expect(screen.queryByText("Loading widget")).toBeNull());
+		expect(screen.getByText("Presence policy is unavailable.")).toBeTruthy();
 	});
 
 	it("shows an unavailable state for enabled malformed policies", async () => {

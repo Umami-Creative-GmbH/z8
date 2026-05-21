@@ -63,7 +63,7 @@ export function PresenceStatusWidget() {
 				title={t("dashboard.presence.workLocation", "Work location")}
 				description={t("dashboard.presence.periodDescription", "This period")}
 				icon={<IconMapPin aria-hidden="true" className="size-4 text-teal-500" />}
-				loading={isLoading || !employeeResolved || !employeeId}
+				loading={isLoading || !employeeResolved}
 			>
 				{status?.available ? (
 					<div className="space-y-3">
