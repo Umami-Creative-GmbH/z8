@@ -1,4 +1,10 @@
 {
+  "billing": {
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout collects payment details now. Your paid subscription starts only after the trial expires.",
+      "trialContinuesTitle": "Your trial continues after upgrade"
+    }
+  },
   "organization": {
     "create": "Create Organization",
     "createDialog": {
@@ -1177,9 +1183,9 @@
       },
       "dangerZone": {
         "clearData": {
-          "absencesDeleted": "${clearResult.absencesDeleted} absences deleted",
+          "absencesDeleted": "{count} absences deleted",
           "button": "Clear All Data",
-          "changePoliciesDeleted": "${clearResult.changePoliciesDeleted} change policies deleted",
+          "changePoliciesDeleted": "{count} change policies deleted",
           "dialog": {
             "confirm": "Clear All Data",
             "description": "This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.",
@@ -1195,26 +1201,26 @@
             "vacationAllowances": "All vacation allowances",
             "workCategories": "All work categories"
           },
-          "locationsDeleted": "${clearResult.locationsDeleted} locations deleted",
-          "managerAssignmentsDeleted": "${clearResult.managerAssignmentsDeleted} manager assignments deleted",
-          "projectsDeleted": "${clearResult.projectsDeleted} projects deleted",
-          "shiftRequestsDeleted": "${clearResult.shiftRequestsDeleted} shift requests deleted",
-          "shiftsDeleted": "${clearResult.shiftsDeleted} shifts deleted",
-          "shiftTemplatesDeleted": "${clearResult.shiftTemplatesDeleted} shift templates deleted",
-          "subareasDeleted": "${clearResult.subareasDeleted} subareas deleted",
+          "locationsDeleted": "{count} locations deleted",
+          "managerAssignmentsDeleted": "{count} manager assignments deleted",
+          "projectsDeleted": "{count} projects deleted",
+          "shiftRequestsDeleted": "{count} shift requests deleted",
+          "shiftsDeleted": "{count} shifts deleted",
+          "shiftTemplatesDeleted": "{count} shift templates deleted",
+          "subareasDeleted": "{count} subareas deleted",
           "successTitle": "Data cleared successfully!",
-          "teamsDeleted": "${clearResult.teamsDeleted} teams deleted",
-          "timeEntriesDeleted": "${clearResult.timeEntriesDeleted} time entries deleted",
+          "teamsDeleted": "{count} teams deleted",
+          "timeEntriesDeleted": "{count} time entries deleted",
           "title": "Clear Time Data",
-          "vacationAllowancesReset": "${clearResult.vacationAllowancesReset} vacation allowances reset",
+          "vacationAllowancesReset": "{count} vacation allowances reset",
           "willDelete": "This will permanently delete:",
-          "workCategoriesDeleted": "${clearResult.workCategoriesDeleted} work categories deleted",
-          "workCategorySetsDeleted": "${clearResult.workCategorySetsDeleted} work category sets deleted",
-          "workPeriodsDeleted": "${clearResult.workPeriodsDeleted} work periods deleted"
+          "workCategoriesDeleted": "{count} work categories deleted",
+          "workCategorySetsDeleted": "{count} work category sets deleted",
+          "workPeriodsDeleted": "{count} work periods deleted"
         },
         "clearing": "Clearing...",
         "deleteNonAdmin": {
-          "absencesDeleted": "${deleteNonAdminResult.absencesDeleted} absences deleted",
+          "absencesDeleted": "{count} absences deleted",
           "adminPreserved": "Admin accounts will be preserved",
           "button": "Delete Non-Admin Employees",
           "dialog": {
@@ -1222,18 +1228,18 @@
             "description": "This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.",
             "title": "Delete Non-Admin Employees?"
           },
-          "employeesDeleted": "${deleteNonAdminResult.employeesDeleted} employees deleted",
+          "employeesDeleted": "{count} employees deleted",
           "items": {
             "demoUsers": "All demo user accounts",
             "employees": "All non-admin employees",
             "managerAssignments": "All manager assignments",
             "timeEntries": "Their time entries and work periods"
           },
-          "membersDeleted": "${deleteNonAdminResult.membersDeleted} members deleted",
+          "membersDeleted": "{count} members deleted",
           "successTitle": "Non-admin employees deleted successfully!",
-          "timeEntriesDeleted": "${deleteNonAdminResult.timeEntriesDeleted} time entries deleted",
+          "timeEntriesDeleted": "{count} time entries deleted",
           "title": "Delete Non-Admin Employees",
-          "usersDeleted": "${deleteNonAdminResult.usersDeleted} users deleted",
+          "usersDeleted": "{count} users deleted",
           "willDelete": "This will permanently delete:"
         },
         "deleting": "Deleting...",
@@ -1297,7 +1303,7 @@
           "thisYear": "This year"
         },
         "employees": {
-          "all": "All employees (${employees.length})",
+          "all": "All employees ({count})",
           "label": "Employees",
           "selectSpecific": "Select specific employees"
         }
@@ -1308,19 +1314,19 @@
         "title": "Generate Demo Data"
       },
       "generateEmployees": {
-        "button": "Generate ${employeeCount} Employees",
+        "button": "Generate {count} Employees",
         "countHint": "Maximum 50 employees at a time",
         "countLabel": "Number of Employees",
         "description": "Create demo employee accounts for testing",
-        "employeesCreated": "${employeeResult.employeesCreated} employees created",
+        "employeesCreated": "{count} employees created",
         "generating": "Generating...",
         "includeManagers": "Include Manager Assignments",
-        "managersCreated": "${employeeResult.managersCreated} manager assignments",
+        "managersCreated": "{count} manager assignments",
         "managersHint": "Randomly assign managers to new employees",
         "options": "Options",
         "successTitle": "Employees generated successfully!",
         "title": "Generate Employees",
-        "usersCreated": "${employeeResult.usersCreated} users created"
+        "usersCreated": "{count} users created"
       },
       "results": {
         "success": "Demo data generated successfully!"

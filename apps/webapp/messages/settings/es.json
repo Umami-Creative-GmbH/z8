@@ -1,4 +1,10 @@
 {
+  "billing": {
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Tu suscripción de pago comienza solo después de que expire el período de prueba.",
+      "trialContinuesTitle": "Tu período de prueba continúa después de la actualización"
+    }
+  },
   "organization": {
     "create": "Crear organización",
     "createDialog": {

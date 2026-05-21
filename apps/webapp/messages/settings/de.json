@@ -1,4 +1,10 @@
 {
+  "billing": {
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout erfasst jetzt Zahlungsdaten. Ihr kostenpflichtiges Abonnement beginnt erst nach Ablauf der Testversion.",
+      "trialContinuesTitle": "Ihre Testversion läuft nach dem Upgrade weiter"
+    }
+  },
   "organization": {
     "create": "Organisation erstellen",
     "createDialog": {

@@ -12,6 +12,13 @@ vi.mock("sonner", () => ({
 	},
 }));
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? "")),
+	}),
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
 	startImportCommitAction: vi.fn(),
 }));

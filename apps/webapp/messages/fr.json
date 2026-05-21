@@ -233,10 +233,6 @@
     "cancelsOn": "Annulation le {date}",
     "checkoutCreateFailed": "Échec de la création de la session de paiement",
     "checkoutStartFailed": "Échec du démarrage du paiement",
-    "checkout": {
-      "trialContinuesDescription": "Stripe Checkout collecte vos informations de paiement maintenant. Votre abonnement payé commence seulement après l'expiration de l'essai.",
-      "trialContinuesTitle": "Votre essai se poursuit après la mise à niveau"
-    },
     "choosePlan": "Choisissez votre forfait",
     "choosePlanDescription": "Commencez avec un essai gratuit de 14 jours. Aucune carte de crédit requise pour commencer.",
     "currentPlan": "Forfait actuel",
@@ -294,18 +290,7 @@
       "pastDue": "En retard",
       "trial": "Essai"
     },
-    "suspended": {
-      "adminDescription": "Votre essai a expiré ou l'abonnement n'est plus valide. Mettez à jour la facturation pour continuer à utiliser Z8.",
-      "goToBilling": "Accéder à la facturation",
-      "memberDescription": "Cette organisation est suspendue. Contactez un administrateur d'organisation pour mettre à jour la facturation.",
-      "title": "Organisation suspendue"
-    },
     "title": "Facturation et abonnement",
-    "trialBanner": {
-      "description": "{days} jours restants. Ajoutez vos informations de paiement maintenant ; votre abonnement payé commence après l'essai.",
-      "title": "Essai de 14 jours actif",
-      "upgrade": "Mettre à niveau"
-    },
     "trialEnds": "Fin de l'essai",
     "vatNotice": "Les prix indiqués sont des prix nets hors TVA. La TVA sera ajoutée le cas échéant.",
     "yearTotal": "{amount} €/an au total"

@@ -29,7 +29,7 @@ function parsePositiveInteger(value: string | undefined): number | undefined {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPageProps) {
+export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPageProps) {
 	await connection();
 
 	const [t, currentEmployee, params] = await Promise.all([
