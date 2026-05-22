@@ -15,8 +15,9 @@ import * as schema from "@/db/auth-schema";
 import { employee, scimProvisioningLog } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
+import { getAuthAllowedHosts, getStaticTrustedOrigins } from "@/lib/auth-domain-config";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
-import { getDefaultAppBaseUrl, getOrganizationBaseUrl } from "./app-url";
+import { getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
 import { renderOrganizationEmailTemplate } from "./email/template-renderer";
@@ -164,11 +165,7 @@ async function syncBillingSeats({
 export const auth = betterAuth({
 	secrets: getAuthSecrets(),
 	baseURL: {
-		allowedHosts: [
-			env.APP_URL || "ui.z8-time.app",
-			"ui.z8-time.app", // Production
-			"localhost:3000", // Local development
-		],
+		allowedHosts: getAuthAllowedHosts(),
 		fallback: env.APP_URL || "https://ui.z8-time.app",
 		protocol: "auto",
 	},
@@ -177,7 +174,7 @@ export const auth = betterAuth({
 	// Dynamic trusted origins for custom domains
 	// This allows auth requests from verified custom domains that proxy to the app
 	trustedOrigins: async (request) => {
-		const origins = [getDefaultAppBaseUrl()];
+		const origins = getStaticTrustedOrigins();
 
 		if (!request) return origins;
 
