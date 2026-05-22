@@ -60,6 +60,8 @@ function getRequiredMinutesForDay(
 	if (!schedule) return 0;
 
 	if (schedule.scheduleType === "detailed") {
+		if (schedule.scheduleCycle !== "weekly") return 0;
+
 		const configuredDay = schedule.days.find(
 			(day) => day.dayOfWeek === dayName && day.isWorkDay,
 		);

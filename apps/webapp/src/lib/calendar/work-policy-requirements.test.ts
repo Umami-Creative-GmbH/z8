@@ -70,6 +70,26 @@ describe("buildDailyWorkRequirements", () => {
 		expect(requirements["2026-05-06"]).toBeUndefined();
 	});
 
+	it("does not guess unsupported non-weekly detailed cycle requirements", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "biweekly",
+				scheduleType: "detailed",
+				workingDaysPreset: "custom",
+				hoursPerCycle: null,
+				homeOfficeDaysPerCycle: 0,
+				days: [
+					{ dayOfWeek: "monday", hoursPerDay: "7.5", isWorkDay: true },
+					{ dayOfWeek: "tuesday", hoursPerDay: "8", isWorkDay: true },
+				],
+			}),
+			startDate: new Date("2026-05-04T00:00:00.000Z"),
+			endDate: new Date("2026-05-10T23:59:59.999Z"),
+		});
+
+		expect(requirements).toEqual({});
+	});
+
 	it("does not guess unsupported non-weekly simple cycle requirements", () => {
 		const requirements = buildDailyWorkRequirements({
 			policy: basePolicy({
