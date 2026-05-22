@@ -28,6 +28,7 @@ const mockState = vi.hoisted(() => ({
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
 	logger: {
+		info: vi.fn(),
 		warn: vi.fn(),
 		error: vi.fn(),
 	},
@@ -427,6 +428,7 @@ describe("createManualTimeEntry", () => {
 			type: "approval_required",
 			reason: "outside_direct_edit_window",
 		});
+		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.findManyWorkPeriods.mockResolvedValue([]);
 		mockState.transaction.mockImplementation(async (callback) =>
 			callback({
@@ -485,6 +487,61 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.transaction).toHaveBeenCalledTimes(1);
+	});
+
+	it("marks the work balance dirty from the manual clock-in date after creating an approved entry", async () => {
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1" })
+			.mockResolvedValueOnce({ id: "clock-out-1" });
+		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-04",
+		});
+		expect(mockState.insertReturning.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("keeps manual entry creation successful when dirty marking fails", async () => {
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "direct", reason: "within_window" });
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1" })
+			.mockResolvedValueOnce({ id: "clock-out-1" });
+		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				workPeriodId: "period-1",
+			}),
+			"Failed to mark work balance dirty after manual time entry",
+		);
 	});
 });
 

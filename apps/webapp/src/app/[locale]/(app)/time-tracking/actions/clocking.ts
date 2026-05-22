@@ -65,6 +65,17 @@ async function markWorkBalanceDirtyAfterClockOutBestEffort(
 	}
 }
 
+async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
+	input: WorkBalanceDirtyInput,
+	context: Record<string, unknown>,
+) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error({ error, ...context }, "Failed to mark work balance dirty after manual time entry");
+	}
+}
+
 export async function clockIn(
 	workLocationType?: WorkLocationType,
 ): Promise<ServerActionResult<Awaited<ReturnType<typeof createTimeEntry>>>> {
@@ -773,6 +784,20 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		if (!requiresApproval) {
 			await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
 		}
+
+		await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(adjustedClockIn, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: createdWorkPeriod.id,
+			},
+		);
 
 		logger.info(
 			{

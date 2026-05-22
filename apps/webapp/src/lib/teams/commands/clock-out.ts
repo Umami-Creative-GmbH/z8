@@ -22,6 +22,7 @@ import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { validateTimeEntry } from "@/lib/time-tracking/validation";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	calculateAndPersistSurcharges,
 	checkComplianceAfterClockOut,
@@ -163,6 +164,25 @@ export const clockOutCommand: BotCommand = {
 					updatedAt: new Date(),
 				})
 				.where(eq(workPeriod.id, activePeriod.id));
+
+			try {
+				await markEmployeeWorkBalanceDirty({
+					employeeId: emp.id,
+					organizationId: emp.organizationId,
+					dirtyFromDate:
+						DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+				});
+			} catch (error) {
+				logger.error(
+					{
+						error,
+						employeeId: emp.id,
+						organizationId: emp.organizationId,
+						workPeriodId: activePeriod.id,
+					},
+					"Failed to mark work balance dirty after Teams clock-out",
+				);
+			}
 
 			// If clock-out needs approval, find the primary manager and create request
 			if (needsClockOutApproval) {
