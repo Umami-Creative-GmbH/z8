@@ -85,28 +85,28 @@ export function WebhookDeliveryLogsDialog({
 				return (
 					<Badge variant="default" className="bg-green-600">
 						<IconCheck className="mr-1 size-3" aria-hidden="true" />
-						{t("settings:webhooks.logs.success", "Success")}
+						{t("webhooks:webhooks.logs.success", "Success")}
 					</Badge>
 				);
 			case "failed":
 				return (
 					<Badge variant="destructive">
 						<IconX className="mr-1 size-3" aria-hidden="true" />
-						{t("settings:webhooks.logs.failed", "Failed")}
+						{t("webhooks:webhooks.logs.failed", "Failed")}
 					</Badge>
 				);
 			case "retrying":
 				return (
 					<Badge variant="outline" className="border-yellow-500 text-yellow-600">
 						<IconRefresh className="mr-1 size-3" aria-hidden="true" />
-						{t("settings:webhooks.logs.retrying", "Retrying")}
+						{t("webhooks:webhooks.logs.retrying", "Retrying")}
 					</Badge>
 				);
 			default:
 				return (
 					<Badge variant="secondary">
 						<IconLoader2 className="mr-1 size-3 animate-spin" aria-hidden="true" />
-						{t("settings:webhooks.logs.pending", "Pending")}
+						{t("webhooks:webhooks.logs.pending", "Pending")}
 					</Badge>
 				);
 		}
@@ -117,11 +117,11 @@ export function WebhookDeliveryLogsDialog({
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t("settings:webhooks.logs.title", "Delivery Logs")} - {webhookName}
+						{t("webhooks:webhooks.logs.title", "Delivery Logs")} - {webhookName}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
-							"settings:webhooks.logs.description",
+							"webhooks:webhooks.logs.description",
 							"Recent webhook delivery attempts and their results.",
 						)}
 					</ActionPanelDescription>
@@ -139,7 +139,7 @@ export function WebhookDeliveryLogsDialog({
 					) : deliveries.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<p className="text-muted-foreground">
-								{t("settings:webhooks.logs.empty", "No delivery logs yet")}
+								{t("webhooks:webhooks.logs.empty", "No delivery logs yet")}
 							</p>
 						</div>
 					) : (
@@ -147,22 +147,22 @@ export function WebhookDeliveryLogsDialog({
 							<TableHeader>
 								<TableRow>
 									<TableHead className="w-[140px]">
-										{t("settings:webhooks.logs.time", "Time")}
+										{t("webhooks:webhooks.logs.time", "Time")}
 									</TableHead>
 									<TableHead className="w-[180px]">
-										{t("settings:webhooks.logs.event", "Event")}
+										{t("webhooks:webhooks.logs.event", "Event")}
 									</TableHead>
 									<TableHead className="w-[100px]">
-										{t("settings:webhooks.logs.status", "Status")}
+										{t("webhooks:webhooks.logs.status", "Status")}
 									</TableHead>
 									<TableHead className="w-[80px]">
-										{t("settings:webhooks.logs.http", "HTTP")}
+										{t("webhooks:webhooks.logs.http", "HTTP")}
 									</TableHead>
 									<TableHead className="w-[80px]">
-										{t("settings:webhooks.logs.duration", "Duration")}
+										{t("webhooks:webhooks.logs.duration", "Duration")}
 									</TableHead>
 									<TableHead className="w-[80px]">
-										{t("settings:webhooks.logs.attempt", "Attempt")}
+										{t("webhooks:webhooks.logs.attempt", "Attempt")}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -212,7 +212,7 @@ export function WebhookDeliveryLogsDialog({
 															{delivery.errorMessage && (
 																<div>
 																	<span className="text-sm font-medium text-red-600">
-																		{t("settings:webhooks.logs.error", "Error")}:
+																		{t("webhooks:webhooks.logs.error", "Error")}:
 																	</span>
 																	<p className="text-sm text-muted-foreground">
 																		{delivery.errorMessage}
@@ -221,7 +221,7 @@ export function WebhookDeliveryLogsDialog({
 															)}
 															<div>
 																<span className="text-sm font-medium">
-																	{t("settings:webhooks.logs.payload", "Payload")}:
+																	{t("webhooks:webhooks.logs.payload", "Payload")}:
 																</span>
 																<pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto max-h-40">
 																	{JSON.stringify(delivery.payload, null, 2)}
@@ -230,7 +230,7 @@ export function WebhookDeliveryLogsDialog({
 															{delivery.responseBody && (
 																<div>
 																	<span className="text-sm font-medium">
-																		{t("settings:webhooks.logs.response", "Response")}:
+																		{t("webhooks:webhooks.logs.response", "Response")}:
 																	</span>
 																	<pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto max-h-40">
 																		{delivery.responseBody}
@@ -253,7 +253,7 @@ export function WebhookDeliveryLogsDialog({
 				{total > limit && (
 					<div className="flex items-center justify-between pt-4 border-t">
 						<p className="text-sm text-muted-foreground">
-							{t("settings:webhooks.logs.showing", "Showing {{start}}-{{end}} of {{total}}", {
+							{t("webhooks:webhooks.logs.showing", "Showing {{start}}-{{end}} of {{total}}", {
 								start: offset + 1,
 								end: Math.min(offset + deliveries.length, total),
 								total,
