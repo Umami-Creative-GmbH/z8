@@ -12,6 +12,7 @@ import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeTimeFormat } from "@/lib/user-preferences/time-format";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
+import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import { getTranslate } from "@/tolgee/server";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
 import type {
@@ -57,7 +58,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	});
 	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
-	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, workBalance] = await Promise.all([
 		getActiveWorkPeriod(currentEmployee.id),
 		getWorkPeriods(currentEmployee.id, startDate, endDate),
 		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
@@ -68,6 +69,10 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 			timezone,
 			timeFormat,
 			dateParam: searchParams.date,
+		}),
+		getEmployeeWorkBalance({
+			employeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
 		}),
 	]);
 
@@ -80,6 +85,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		workPeriods,
 		canApproveTimeEntries,
 		summary,
+		workBalance,
 		t,
 		timelineResult: serializeWorkdayTimelineResult(timelineResult),
 	} as const;

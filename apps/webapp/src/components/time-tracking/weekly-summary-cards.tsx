@@ -2,11 +2,14 @@
 
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import { formatDuration } from "@/lib/time-tracking/time-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
+import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
 interface Props {
 	summary: TimeSummary;
+	workBalance: EmployeeWorkBalancePayload | null;
 }
 
 interface SummaryCardProps {
@@ -51,14 +54,14 @@ function SummaryCard({
 	);
 }
 
-export function WeeklySummaryCards({ summary }: Props) {
+export function WeeklySummaryCards({ summary, workBalance }: Props) {
 	const { t } = useTranslate();
 
 	const baseWorkedLabel = t("timeTracking.summary.baseWorked", "Base worked");
 	const surchargeLabel = t("timeTracking.summary.surcharge", "Surcharge");
 
 	return (
-		<div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-3">
+		<div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-4">
 			{/* Today */}
 			<SummaryCard
 				label={t("timeTracking.summary.today", "Today")}
@@ -85,6 +88,8 @@ export function WeeklySummaryCards({ summary }: Props) {
 				baseMinutes={summary.monthMinutes}
 				surchargeMinutes={summary.monthSurchargeMinutes}
 			/>
+
+			<WorkBalanceCard balance={workBalance} />
 		</div>
 	);
 }

@@ -40,7 +40,7 @@ async function TimeTrackingPageContent({ searchParams }: TimeTrackingPageProps) 
 				<PersonalWorkdayTimeline result={pageData.timelineResult} />
 			</div>
 
-			<WeeklySummaryCards summary={pageData.summary} />
+			<WeeklySummaryCards summary={pageData.summary} workBalance={pageData.workBalance} />
 
 			<div className="px-4 lg:px-6">
 				<TimeEntriesTable
