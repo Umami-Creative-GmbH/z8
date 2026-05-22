@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNotNull, isNull, lte, min, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNotNull, isNull, lt, lte, min, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { absenceEntry, employee, employeeWorkBalance, workPeriod } from "@/db/schema";
@@ -29,6 +29,17 @@ export function buildWorkBalanceValues(input: {
 		lastError: null,
 		updatedAt: input.computedAt,
 	};
+}
+
+export function getWorkBalanceBatchCutoffDate(now = new Date()): string {
+	return DateTime.fromJSDate(now, { zone: "utc" }).toISODate()!;
+}
+
+export function shouldIncludeWorkBalanceInBatch(
+	balance: { isDirty: boolean; computedThroughDate: string } | null,
+	todayDate: string,
+): boolean {
+	return !balance || balance.isDirty || balance.computedThroughDate < todayDate;
 }
 
 export async function getEmployeeWorkBalance(input: {
@@ -217,7 +228,9 @@ export async function markEmployeeWorkBalanceFailed(input: {
 		);
 }
 
-export async function listEmployeesForWorkBalanceBatch(limit = 1000) {
+export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new Date()) {
+	const todayDate = getWorkBalanceBatchCutoffDate(now);
+
 	return db
 		.select({ id: employee.id, organizationId: employee.organizationId })
 		.from(employee)
@@ -230,8 +243,13 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000) {
 		)
 		.where(
 			and(
+				eq(employee.isActive, true),
 				isNotNull(employee.organizationId),
-				or(isNull(employeeWorkBalance.id), eq(employeeWorkBalance.isDirty, true)),
+				or(
+					isNull(employeeWorkBalance.id),
+					eq(employeeWorkBalance.isDirty, true),
+					lt(employeeWorkBalance.computedThroughDate, todayDate),
+				),
 			),
 		)
 		.orderBy(asc(employeeWorkBalance.refreshRequestedAt), asc(employee.id))

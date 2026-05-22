@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
-import { buildWorkBalanceValues } from "./service";
+import {
+	buildWorkBalanceValues,
+	getWorkBalanceBatchCutoffDate,
+	shouldIncludeWorkBalanceInBatch,
+} from "./service";
 
 describe("work balance helpers", () => {
 	it("builds all-time work balance values", () => {
@@ -43,5 +47,46 @@ describe("work balance helpers", () => {
 		expect(getWorkBalanceStatus(1)).toBe("positive");
 		expect(getWorkBalanceStatus(0)).toBe("neutral");
 		expect(getWorkBalanceStatus(-1)).toBe("negative");
+	});
+
+	it("uses today's UTC date as the batch cutoff", () => {
+		expect(getWorkBalanceBatchCutoffDate(new Date("2026-05-22T23:30:00.000-05:00"))).toBe(
+			"2026-05-23",
+		);
+	});
+
+	it("includes missing dirty or stale balances in batch selection", () => {
+		const todayDate = "2026-05-22";
+
+		expect(shouldIncludeWorkBalanceInBatch(null, todayDate)).toBe(true);
+		expect(
+			shouldIncludeWorkBalanceInBatch(
+				{ isDirty: true, computedThroughDate: "2026-05-22" },
+				todayDate,
+			),
+		).toBe(true);
+		expect(
+			shouldIncludeWorkBalanceInBatch(
+				{ isDirty: false, computedThroughDate: "2026-05-21" },
+				todayDate,
+			),
+		).toBe(true);
+	});
+
+	it("excludes clean current or future balances from batch selection", () => {
+		const todayDate = "2026-05-22";
+
+		expect(
+			shouldIncludeWorkBalanceInBatch(
+				{ isDirty: false, computedThroughDate: "2026-05-22" },
+				todayDate,
+			),
+		).toBe(false);
+		expect(
+			shouldIncludeWorkBalanceInBatch(
+				{ isDirty: false, computedThroughDate: "2026-05-23" },
+				todayDate,
+			),
+		).toBe(false);
 	});
 });
