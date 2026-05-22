@@ -8,6 +8,7 @@ const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers()),
 	getCookieConsentScript: vi.fn(async () => null),
 	getDomainConfig: vi.fn(),
+	getPlatformDomainConfig: vi.fn(),
 	env: {},
 }));
 
@@ -51,6 +52,7 @@ vi.mock("@/lib/auth/domain-auth-context", () => ({
 
 vi.mock("@/lib/domain", () => ({
 	getDomainConfig: mockState.getDomainConfig,
+	getPlatformDomainConfig: mockState.getPlatformDomainConfig,
 }));
 
 vi.mock("@/lib/platform-settings", () => ({
@@ -67,7 +69,9 @@ describe("AuthLayout", () => {
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getCookieConsentScript.mockResolvedValue(null);
 		mockState.getDomainConfig.mockResolvedValue(null);
+		mockState.getPlatformDomainConfig.mockResolvedValue(null);
 		mockState.env.MAIN_DOMAIN = "app.z8.test";
+		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
 	});
 
 	it("keeps the image panel fixed while the left side scrolls", async () => {
@@ -119,6 +123,42 @@ describe("AuthLayout", () => {
 		expect(mockState.getDomainConfig).toHaveBeenCalledWith("login.acme.test");
 		expect(mockState.getCookieConsentScript).not.toHaveBeenCalled();
 		expect(screen.queryByTestId("cookie-consent")).toBeNull();
+	});
+
+	it("uses platform organization context on platform subdomains", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ host: "acme.ui.z8-time.app" }));
+		mockState.getCookieConsentScript.mockResolvedValue("platform()");
+		mockState.getPlatformDomainConfig.mockResolvedValue({
+			organizationId: "org_123",
+			organizationSlug: "acme",
+			domain: "acme.ui.z8-time.app",
+			canonicalDomain: "acme.ui.z8-time.app",
+			isCanonical: true,
+			authConfig: {
+				emailPasswordEnabled: true,
+				socialProvidersEnabled: ["google"],
+				ssoEnabled: false,
+				passkeyEnabled: true,
+			},
+			branding: null,
+			socialOAuthConfigured: {
+				google: true,
+				github: false,
+				linkedin: false,
+				apple: false,
+			},
+			turnstile: {
+				enabled: false,
+				siteKey: null,
+				isEnterprise: false,
+			},
+		});
+
+		render(await AuthLayout({ children: <div>Auth content</div> }));
+
+		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("acme.ui.z8-time.app");
+		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
+		expect(mockState.getCookieConsentScript).toHaveBeenCalled();
 	});
 
 	it("renders external cookie consent snippets as src scripts", async () => {

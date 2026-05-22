@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	checkRateLimit: vi.fn(),
 	getDomainConfig: vi.fn(),
+	getPlatformDomainConfig: vi.fn(),
 	verifyTurnstileToken: vi.fn(),
 	env: {
 		MAIN_DOMAIN: "app.z8.test",
+		PLATFORM_DOMAIN: "ui.z8-time.app",
 	},
 }));
 
@@ -13,6 +15,7 @@ vi.mock("@/env", () => ({ env: mockState.env }));
 
 vi.mock("@/lib/domain", () => ({
 	getDomainConfig: mockState.getDomainConfig,
+	getPlatformDomainConfig: mockState.getPlatformDomainConfig,
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -31,7 +34,9 @@ describe("POST /api/auth/verify-turnstile", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.env.MAIN_DOMAIN = "app.z8.test";
+		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
 		mockState.checkRateLimit.mockResolvedValue({ allowed: true });
+		mockState.getPlatformDomainConfig.mockResolvedValue(null);
 		mockState.verifyTurnstileToken.mockResolvedValue({ success: true });
 	});
 
@@ -49,6 +54,23 @@ describe("POST /api/auth/verify-turnstile", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.getDomainConfig).toHaveBeenCalledWith("login.acme.test");
 		expect(mockState.verifyTurnstileToken).toHaveBeenCalledWith("token_123", "org_123", true);
+	});
+
+	it("derives platform organization Turnstile context from platform subdomains", async () => {
+		mockState.getPlatformDomainConfig.mockResolvedValue({ organizationId: "org_123" });
+
+		const response = await POST(
+			new Request("https://acme.ui.z8-time.app/api/auth/verify-turnstile", {
+				method: "POST",
+				headers: { host: "acme.ui.z8-time.app" },
+				body: JSON.stringify({ token: "token_123" }),
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("acme.ui.z8-time.app");
+		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
+		expect(mockState.verifyTurnstileToken).toHaveBeenCalledWith("token_123", "org_123", false);
 	});
 
 	it("ignores spoofed x-z8-domain headers on the main domain", async () => {

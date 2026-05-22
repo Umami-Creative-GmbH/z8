@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { getBaseUrlFromHost } from "@/lib/app-url";
-import { getDomainConfig } from "@/lib/domain/domain-service";
+import { getDomainConfig, getPlatformDomainConfig } from "@/lib/domain";
 import { createLogger } from "@/lib/logger";
 import {
 	buildAuthorizationUrl,
@@ -58,7 +58,8 @@ async function handleSocialOrgOAuthInitiation(
 	if (host) {
 		const normalizedHost = host.toLowerCase().replace(/:\d+$/, "");
 		try {
-			const domainConfig = await getDomainConfig(normalizedHost);
+			const platformDomainConfig = await getPlatformDomainConfig(normalizedHost);
+			const domainConfig = platformDomainConfig ?? (await getDomainConfig(normalizedHost));
 			if (domainConfig) {
 				organizationId = domainConfig.organizationId;
 			}

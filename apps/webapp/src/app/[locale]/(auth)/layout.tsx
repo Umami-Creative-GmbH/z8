@@ -8,7 +8,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
-import { type DomainAuthContext, getDomainConfig } from "@/lib/domain";
+import { type DomainAuthContext, getDomainConfig, getPlatformDomainConfig } from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
@@ -23,11 +23,15 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 
 	// Derive custom domains from the trusted request Host header.
 	const headersList = await headers();
+	const host = headersList.get("host");
 	const customDomain = getCustomDomainFromHeaders(headersList);
 
-	// Fetch domain config if on custom domain, otherwise use global config
+	// Fetch domain config if on a platform or custom domain, otherwise use global config
 	let domainContext: DomainAuthContext | null = null;
-	if (customDomain) {
+	const platformDomainContext = await getPlatformDomainConfig(host ?? "");
+	if (platformDomainContext) {
+		domainContext = platformDomainContext;
+	} else if (customDomain) {
 		domainContext = await getDomainConfig(customDomain);
 	} else {
 		// Main domain: use global Turnstile config from env vars
