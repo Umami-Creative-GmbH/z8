@@ -174,15 +174,6 @@ export const ManagerServiceLive = Layer.effect(
 							}),
 						);
 
-						// Sync with employee.managerId for backward compatibility
-						yield* _(
-							dbService.query("syncEmployeeManagerId", async () => {
-								await dbService.db
-									.update(employee)
-									.set({ managerId })
-									.where(eq(employee.id, employeeId));
-							}),
-						);
 					}
 				}),
 
@@ -236,14 +227,6 @@ export const ManagerServiceLive = Layer.effect(
 										.set({ isPrimary: true })
 										.where(eq(employeeManagers.id, newPrimaryId));
 
-									// Sync with employee.managerId
-									const newPrimary = managers.find((m) => m.id === newPrimaryId);
-									if (newPrimary) {
-										await dbService.db
-											.update(employee)
-											.set({ managerId: newPrimary.managerId })
-											.where(eq(employee.id, employeeId));
-									}
 								}),
 							);
 						}
