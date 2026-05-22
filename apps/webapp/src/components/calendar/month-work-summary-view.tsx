@@ -356,20 +356,12 @@ export function MonthWorkSummaryView({
 					</Button>
 				</div>
 
-				<Tabs value={viewMode}>
+				<Tabs value={viewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
 					<TabsList>
-						<TabsTrigger value="day" onClick={() => onViewModeChange("day")}>
-							{t("calendar.view.day", "Day")}
-						</TabsTrigger>
-						<TabsTrigger value="week" onClick={() => onViewModeChange("week")}>
-							{t("calendar.view.week", "Week")}
-						</TabsTrigger>
-						<TabsTrigger value="month" onClick={() => onViewModeChange("month")}>
-							{t("calendar.view.month", "Month")}
-						</TabsTrigger>
-						<TabsTrigger value="year" onClick={() => onViewModeChange("year")}>
-							{t("calendar.view.year", "Year")}
-						</TabsTrigger>
+						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
+						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
+						<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
+						<TabsTrigger value="year">{t("calendar.view.year", "Year")}</TabsTrigger>
 					</TabsList>
 				</Tabs>
 			</div>

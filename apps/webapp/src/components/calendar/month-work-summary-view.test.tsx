@@ -104,7 +104,10 @@ describe("MonthWorkSummaryView", () => {
 		const props = renderView();
 
 		fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
-		fireEvent.click(screen.getByRole("tab", { name: "Week" }));
+		fireEvent.mouseDown(screen.getByRole("tab", { name: "Week" }), {
+			button: 0,
+			ctrlKey: false,
+		});
 
 		const previousMonth = DateTime.fromJSDate(props.onMonthChange.mock.calls[0][0]);
 		expect(previousMonth.toObject()).toMatchObject({ year: 2026, month: 4, day: 1 });
