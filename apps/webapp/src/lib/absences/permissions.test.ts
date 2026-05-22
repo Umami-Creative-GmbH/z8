@@ -18,9 +18,25 @@ vi.mock("@/db", () => ({
 const findEmployeeMock = vi.mocked(db.query.employee.findFirst);
 const findEmployeeManagerMock = vi.mocked(db.query.employeeManagers.findFirst);
 
-const adminEmployee = { id: "admin_employee", role: "admin", managerId: null };
-const managerEmployee = { id: "manager_employee", role: "manager", managerId: null };
-const targetEmployee = { id: "target_employee", role: "employee", managerId: null };
+const adminEmployee = {
+	id: "admin_employee",
+	organizationId: "org_1",
+	role: "admin",
+	managerId: null,
+};
+const managerEmployee = {
+	id: "manager_employee",
+	organizationId: "org_1",
+	role: "manager",
+	managerId: null,
+};
+const targetEmployee = {
+	id: "target_employee",
+	organizationId: "org_1",
+	role: "employee",
+	managerId: null,
+};
+const crossOrgTargetEmployee = { ...targetEmployee, organizationId: "org_2" };
 
 function mockEmployees(approver: object | null, target: object | null) {
 	findEmployeeMock.mockResolvedValueOnce(approver);
@@ -69,6 +85,14 @@ describe("canApproveAbsence", () => {
 		expect(findEmployeeManagerMock).not.toHaveBeenCalled();
 	});
 
+	it("rejects admins from another organization", async () => {
+		mockEmployees(adminEmployee, crossOrgTargetEmployee);
+		findEmployeeManagerMock.mockResolvedValue(null);
+
+		await expect(canApproveAbsence(adminEmployee.id, targetEmployee.id)).resolves.toBe(false);
+		expect(findEmployeeManagerMock).not.toHaveBeenCalled();
+	});
+
 	it("allows managers when the employee manager link exists", async () => {
 		mockEmployees(managerEmployee, targetEmployee);
 		findEmployeeManagerMock.mockResolvedValue({
@@ -86,6 +110,17 @@ describe("canApproveAbsence", () => {
 
 		await expect(canApproveAbsence(managerEmployee.id, targetEmployee.id)).resolves.toBe(false);
 	});
+
+	it("rejects managers from another organization even when a manager link exists", async () => {
+		mockEmployees(managerEmployee, crossOrgTargetEmployee);
+		findEmployeeManagerMock.mockResolvedValue({
+			employeeId: targetEmployee.id,
+			managerId: managerEmployee.id,
+		});
+
+		await expect(canApproveAbsence(managerEmployee.id, targetEmployee.id)).resolves.toBe(false);
+		expect(findEmployeeManagerMock).not.toHaveBeenCalled();
+	});
 });
 
 describe("canEditEmployeeAllowance", () => {
@@ -95,6 +130,16 @@ describe("canEditEmployeeAllowance", () => {
 
 		await expect(canEditEmployeeAllowance(adminEmployee.id, targetEmployee.id)).resolves.toBe(
 			true,
+		);
+		expect(findEmployeeManagerMock).not.toHaveBeenCalled();
+	});
+
+	it("rejects admins from another organization", async () => {
+		mockEmployees(adminEmployee, crossOrgTargetEmployee);
+		findEmployeeManagerMock.mockResolvedValue(null);
+
+		await expect(canEditEmployeeAllowance(adminEmployee.id, targetEmployee.id)).resolves.toBe(
+			false,
 		);
 		expect(findEmployeeManagerMock).not.toHaveBeenCalled();
 	});
@@ -119,5 +164,18 @@ describe("canEditEmployeeAllowance", () => {
 		await expect(canEditEmployeeAllowance(managerEmployee.id, targetEmployee.id)).resolves.toBe(
 			false,
 		);
+	});
+
+	it("rejects managers from another organization even when a manager link exists", async () => {
+		mockEmployees(managerEmployee, crossOrgTargetEmployee);
+		findEmployeeManagerMock.mockResolvedValue({
+			employeeId: targetEmployee.id,
+			managerId: managerEmployee.id,
+		});
+
+		await expect(canEditEmployeeAllowance(managerEmployee.id, targetEmployee.id)).resolves.toBe(
+			false,
+		);
+		expect(findEmployeeManagerMock).not.toHaveBeenCalled();
 	});
 });

@@ -31,6 +31,10 @@ export async function canApproveAbsence(
 		return false;
 	}
 
+	if (approver.organizationId !== target.organizationId) {
+		return false;
+	}
+
 	// Admins can approve all absences
 	if (approver.role === "admin") {
 		return true;
@@ -77,6 +81,10 @@ export async function canEditEmployeeAllowance(
 	]);
 
 	if (!editor || !target) {
+		return false;
+	}
+
+	if (editor.organizationId !== target.organizationId) {
 		return false;
 	}
 
