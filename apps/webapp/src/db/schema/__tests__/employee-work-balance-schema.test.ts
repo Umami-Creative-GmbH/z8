@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { employee } from "../organization";
 import { employeeWorkBalance } from "../time-tracking";
 
-const migration0026Url = new URL(
-	"../../../../drizzle/0026_employee_work_balance.sql",
+const employeeWorkBalanceMigrationUrl = new URL(
+	"../../../../drizzle/0027_employee_work_balance.sql",
 	import.meta.url,
 );
 const migrationJournal = JSON.parse(
@@ -53,9 +53,9 @@ describe("employee work balance schema", () => {
 	});
 
 	it("includes a migration for the all-time balance table", () => {
-		expect(existsSync(migration0026Url)).toBe(true);
+		expect(existsSync(employeeWorkBalanceMigrationUrl)).toBe(true);
 
-		const migration = readFileSync(migration0026Url, "utf8");
+		const migration = readFileSync(employeeWorkBalanceMigrationUrl, "utf8");
 		expect(migration).toContain('CREATE TABLE "employee_work_balance"');
 		expect(migration).toContain(
 			'CREATE UNIQUE INDEX "employeeWorkBalance_org_employee_idx"',
@@ -73,7 +73,7 @@ describe("employee work balance schema", () => {
 			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
 		);
 		expect(migrationJournal.entries).toContainEqual(
-			expect.objectContaining({ idx: 26, tag: "0026_employee_work_balance" }),
+			expect.objectContaining({ idx: 27, tag: "0027_employee_work_balance" }),
 		);
 	});
 });

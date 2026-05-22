@@ -17211,12 +17211,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "manager_id": {
-          "name": "manager_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "first_name": {
           "name": "first_name",
           "type": "text",
@@ -17351,21 +17345,6 @@
           "columns": [
             {
               "expression": "team_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "employee_managerId_idx": {
-          "name": "employee_managerId_idx",
-          "columns": [
-            {
-              "expression": "manager_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
