@@ -1,5 +1,11 @@
+import { Effect } from "effect";
 import { DateTime } from "luxon";
-import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	WorkPolicyService,
+	WorkPolicyServiceLive,
+	type EffectiveWorkPolicy,
+} from "@/lib/effect/services/work-policy.service";
 import type { DailyWorkRequirements } from "./types";
 
 type EffectiveWorkPolicyScheduleDayName = NonNullable<
@@ -107,4 +113,22 @@ export function buildDailyWorkRequirements({
 	}
 
 	return requirements;
+}
+
+export async function getDailyWorkRequirementsForEmployee(params: {
+	employeeId: string;
+	startDate: Date;
+	endDate: Date;
+}): Promise<DailyWorkRequirements> {
+	return Effect.runPromise(
+		Effect.gen(function* (_) {
+			const service = yield* _(WorkPolicyService);
+			const policy = yield* _(service.getEffectivePolicy(params.employeeId));
+			return buildDailyWorkRequirements({
+				policy,
+				startDate: params.startDate,
+				endDate: params.endDate,
+			});
+		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive)),
+	);
 }
