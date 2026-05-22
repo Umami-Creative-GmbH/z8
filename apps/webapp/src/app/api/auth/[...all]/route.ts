@@ -5,22 +5,32 @@ import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain";
 
 const handlers = toNextJsHandler(auth);
 
-async function rejectUnsupportedPlatformHost(request: Request) {
-	const classification = classifyDomainHost(request.headers.get("host"));
-	if (classification?.type === "unknownPlatform") {
-		return NextResponse.json({ error: "Not found" }, { status: 404 });
+export async function rejectUnsupportedPlatformHost(request: Request) {
+	const hosts = [request.headers.get("x-forwarded-host"), request.headers.get("host")];
+	const resolvedLabels = new Map<string, boolean>();
+
+	for (const host of hosts) {
+		const classification = classifyDomainHost(host);
+		if (classification?.type === "unknownPlatform") {
+			return NextResponse.json({ error: "Not found" }, { status: 404 });
+		}
+
+		if (classification?.type !== "platformOrganization") {
+			continue;
+		}
+
+		let organizationExists = resolvedLabels.get(classification.label);
+		if (organizationExists === undefined) {
+			organizationExists = Boolean(await resolvePlatformOrganization(classification.label));
+			resolvedLabels.set(classification.label, organizationExists);
+		}
+
+		if (!organizationExists) {
+			return NextResponse.json({ error: "Not found" }, { status: 404 });
+		}
 	}
 
-	if (classification?.type !== "platformOrganization") {
-		return null;
-	}
-
-	const platformOrganization = await resolvePlatformOrganization(classification.label);
-	if (platformOrganization) {
-		return null;
-	}
-
-	return NextResponse.json({ error: "Not found" }, { status: 404 });
+	return null;
 }
 
 export async function GET(request: Request) {
