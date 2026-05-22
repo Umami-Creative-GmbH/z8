@@ -137,7 +137,6 @@ export const employee = pgTable(
 		teamId: uuid("team_id").references((): AnyPgColumn => team.id, {
 			onDelete: "set null",
 		}),
-		managerId: uuid("manager_id"), // DEPRECATED: Use employee_managers table instead
 
 		// Personal information
 		firstName: text("first_name"),
@@ -170,7 +169,6 @@ export const employee = pgTable(
 		index("employee_userId_idx").on(table.userId),
 		index("employee_organizationId_idx").on(table.organizationId),
 		index("employee_teamId_idx").on(table.teamId),
-		index("employee_managerId_idx").on(table.managerId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
 		unique("employee_id_organizationId_idx").on(table.id, table.organizationId),
 	],

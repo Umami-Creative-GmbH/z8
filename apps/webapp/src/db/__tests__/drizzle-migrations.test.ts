@@ -18,6 +18,7 @@ const migration0019 = readFileSync(
 	"utf8",
 );
 const migration0020Url = new URL("../../../drizzle/0020_drop_organization_fiscal_year.sql", import.meta.url);
+const migration0026Url = new URL("../../../drizzle/0026_remove_employee_manager_id.sql", import.meta.url);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -84,5 +85,23 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0020.trim()).toBe(
 			'ALTER TABLE "organization" DROP COLUMN "fiscal_year_start_month";',
 		);
+	});
+
+	it("registers the employee manager_id removal migration", () => {
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0026_remove_employee_manager_id")).toBe(
+			true,
+		);
+		expect(existsSync(migration0026Url)).toBe(true);
+
+		const migration0026 = readFileSync(migration0026Url, "utf8");
+
+		expect(migration0026).toContain('INSERT INTO "employee_managers"');
+		expect(migration0026).toContain('FROM "employee" AS "e"');
+		expect(migration0026).toContain('"e"."manager_id" IS NOT NULL');
+		expect(migration0026).toContain('NOT EXISTS (');
+		expect(migration0026).toContain('"existing_primary"."is_primary" = true');
+		expect(migration0026).toContain('"e"."user_id"');
+		expect(migration0026).toContain('DROP INDEX IF EXISTS "employee_managerId_idx";');
+		expect(migration0026).toContain('ALTER TABLE "employee" DROP COLUMN "manager_id";');
 	});
 });
