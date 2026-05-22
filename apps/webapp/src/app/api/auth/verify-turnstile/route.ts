@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDomainConfig, getPlatformDomainConfig } from "@/lib/domain";
+import { getDomainConfig, getPlatformOrganizationLabel, resolvePlatformOrganization } from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
@@ -28,10 +28,13 @@ export async function POST(request: Request) {
 		// Determine organization context from the trusted Host header.
 		// Don't trust client-supplied organizationId - derive it from the request context
 		const host = request.headers.get("host");
-		const platformDomainConfig = await getPlatformDomainConfig(host ?? "");
-		const customDomain = platformDomainConfig ? null : getCustomDomainFromHeaders(request.headers);
-		const domainConfig = platformDomainConfig ?? (customDomain ? await getDomainConfig(customDomain) : null);
-		const organizationId = domainConfig?.organizationId;
+		const platformOrganizationLabel = getPlatformOrganizationLabel(host);
+		const platformOrganization = platformOrganizationLabel
+			? await resolvePlatformOrganization(platformOrganizationLabel)
+			: null;
+		const customDomain = platformOrganization ? null : getCustomDomainFromHeaders(request.headers);
+		const domainConfig = customDomain ? await getDomainConfig(customDomain) : null;
+		const organizationId = platformOrganization?.id ?? domainConfig?.organizationId;
 		const isEnterprise = !!customDomain;
 
 		const result = await verifyTurnstileToken(token, organizationId, isEnterprise);
