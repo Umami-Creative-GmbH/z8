@@ -143,7 +143,10 @@ const MiniMonth = memo(function MiniMonth({
 					const dayLabel =
 						workStatus === "none"
 							? dateLabel
-							: `${dateLabel}, ${getWorkStatusLabel(workStatus, t)}`;
+							: t("calendar.year.dayWithWorkStatus", "{date}, {status}", {
+									date: dateLabel,
+									status: getWorkStatusLabel(workStatus, t),
+								});
 
 					// Determine if there are events to show
 					const hasHoliday = dayEvents.some((e) => e.type === "holiday");
