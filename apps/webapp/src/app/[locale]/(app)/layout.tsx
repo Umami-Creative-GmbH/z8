@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import type { ReactNode } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
@@ -10,6 +11,9 @@ import { UserPreferencesProvider } from "@/components/providers/user-preferences
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { db } from "@/db";
+import { member } from "@/db/auth-schema";
+import { subscription } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
 import {
@@ -81,6 +85,19 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 				return billingCheckFailedAccess;
 			})
 		: billingDisabledAccess;
+	const [membershipRecord, subscriptionRow] = activeOrganizationId && billingEnabled
+		? await Promise.all([
+				db.query.member.findFirst({
+					where: and(
+						eq(member.userId, session.user.id),
+						eq(member.organizationId, activeOrganizationId),
+					),
+				}),
+				db.query.subscription.findFirst({
+					where: eq(subscription.organizationId, activeOrganizationId),
+				}),
+			])
+		: [null, null];
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
@@ -96,9 +113,14 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
+	const membershipRole = membershipRecord?.role;
+	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
+	const hasPreparedTrialSubscription =
+		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
-		trialDaysRemaining !== null;
+		trialDaysRemaining !== null &&
+		!hasPreparedTrialSubscription;
 
 	return (
 		<PushPermissionProvider>
@@ -119,6 +141,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 								<TrialBanner
 									daysRemaining={trialDaysRemaining}
 									billingHref="/settings/billing"
+									showUpgradeButton={canManageBilling}
 								/>
 							) : null}
 							<OrganizationDeletionBanner />
