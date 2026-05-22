@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
-import { classifyDomainHost } from "@/lib/domain/platform-domain";
+import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
@@ -61,6 +61,14 @@ export async function proxy(request: NextRequest) {
 		const response = new NextResponse("Not found", { status: 404 });
 		applySecurityHeaders(response);
 		return response;
+	}
+	if (domainClassification?.type === "platformOrganization") {
+		const platformOrganization = await resolvePlatformOrganization(domainClassification.label);
+		if (!platformOrganization) {
+			const response = new NextResponse("Not found", { status: 404 });
+			applySecurityHeaders(response);
+			return response;
+		}
 	}
 
 	// Platform setup check - redirect to /setup if not configured

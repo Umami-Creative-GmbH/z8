@@ -41,6 +41,9 @@ export async function POST(request: Request) {
 		const platformOrganization = platformOrganizationLabel
 			? await resolvePlatformOrganization(platformOrganizationLabel)
 			: null;
+		if (platformOrganizationLabel && !platformOrganization) {
+			return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+		}
 		const customDomain = platformOrganization ? null : getCustomDomainFromHeaders(request.headers);
 		const domainConfig = customDomain ? await getDomainConfig(customDomain) : null;
 		const organizationId = platformOrganization?.id ?? domainConfig?.organizationId;

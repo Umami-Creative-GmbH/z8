@@ -128,4 +128,29 @@ describe("POST /api/auth/verify-turnstile", () => {
 		expect(mockState.resolvePlatformOrganization).not.toHaveBeenCalled();
 		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
 	});
+
+	it("rejects missing platform organizations before verifying Turnstile", async () => {
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "platformOrganization",
+			hostname: "missing.ui.z8-time.app",
+			label: "missing",
+			rootDomain: "ui.z8-time.app",
+		});
+		mockState.getPlatformOrganizationLabel.mockReturnValue("missing");
+		mockState.resolvePlatformOrganization.mockResolvedValue(null);
+
+		const response = await POST(
+			new Request("https://missing.ui.z8-time.app/api/auth/verify-turnstile", {
+				method: "POST",
+				headers: { host: "missing.ui.z8-time.app" },
+				body: JSON.stringify({ token: "token_123" }),
+			}),
+		);
+
+		expect(response.status).toBe(404);
+		await expect(response.json()).resolves.toEqual({ success: false, error: "Not found" });
+		expect(mockState.resolvePlatformOrganization).toHaveBeenCalledWith("missing");
+		expect(mockState.verifyTurnstileToken).not.toHaveBeenCalled();
+		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
+	});
 });

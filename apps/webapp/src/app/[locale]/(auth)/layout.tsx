@@ -30,7 +30,8 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	// Derive custom domains from the trusted request Host header.
 	const headersList = await headers();
 	const host = headersList.get("host");
-	if (classifyDomainHost(host)?.type === "unknownPlatform") {
+	const domainClassification = classifyDomainHost(host);
+	if (domainClassification?.type === "unknownPlatform") {
 		notFound();
 	}
 	const customDomain = getCustomDomainFromHeaders(headersList);
@@ -48,6 +49,8 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 				isEnterprise: false,
 			},
 		};
+	} else if (domainClassification?.type === "platformOrganization") {
+		notFound();
 	} else if (customDomain) {
 		domainContext = await getDomainConfig(customDomain);
 	} else {

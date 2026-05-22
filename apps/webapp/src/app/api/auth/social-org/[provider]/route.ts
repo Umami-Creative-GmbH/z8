@@ -72,7 +72,9 @@ async function handleSocialOrgOAuthInitiation(
 			const platformOrganization = platformOrganizationLabel
 				? await resolvePlatformOrganization(platformOrganizationLabel)
 				: null;
-			if (platformOrganization) {
+			if (platformOrganizationLabel && !platformOrganization) {
+				return NextResponse.json({ error: "Not found" }, { status: 404 });
+			} else if (platformOrganization) {
 				organizationId = platformOrganization.id;
 			} else {
 				const domainConfig = await getDomainConfig(normalizedHost);

@@ -210,11 +210,33 @@ describe("AuthLayout", () => {
 			rootDomain: "ui.z8-time.app",
 		});
 
-		await expect(AuthLayout({ children: <div>Auth content</div> })).rejects.toThrow("NEXT_NOT_FOUND");
+		await expect(AuthLayout({ children: <div>Auth content</div> })).rejects.toThrow(
+			"NEXT_NOT_FOUND",
+		);
 
 		expect(mockState.notFound).toHaveBeenCalled();
 		expect(mockState.getPlatformDomainConfig).not.toHaveBeenCalled();
 		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
+	});
+
+	it("rejects missing platform organizations instead of using global auth context", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ host: "missing.ui.z8-time.app" }));
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "platformOrganization",
+			hostname: "missing.ui.z8-time.app",
+			label: "missing",
+			rootDomain: "ui.z8-time.app",
+		});
+		mockState.getPlatformDomainConfig.mockResolvedValue(null);
+
+		await expect(AuthLayout({ children: <div>Auth content</div> })).rejects.toThrow(
+			"NEXT_NOT_FOUND",
+		);
+
+		expect(mockState.notFound).toHaveBeenCalled();
+		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("missing.ui.z8-time.app");
+		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
+		expect(mockState.domainAuthProviderContext).toBeNull();
 	});
 
 	it("renders external cookie consent snippets as src scripts", async () => {
