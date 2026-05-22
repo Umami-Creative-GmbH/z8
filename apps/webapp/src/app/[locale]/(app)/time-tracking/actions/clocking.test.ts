@@ -382,6 +382,27 @@ describe("clockOut", () => {
 		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
 	});
+
+	it("fails approval-required clock-out when approval request creation fails", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			teamId: null,
+			managerId: "manager-1",
+		});
+		mockState.createClockOutApprovalRequest.mockRejectedValueOnce(new Error("approval failed"));
+
+		const result = await clockOut();
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to clock out. Please try again.",
+		});
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
+		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+	});
 });
 
 describe("createManualTimeEntry", () => {
@@ -423,11 +444,43 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.insertValues).not.toHaveBeenCalled();
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 	});
+
+	it("fails approval-required manual entries when approval request creation fails", async () => {
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			teamId: null,
+			managerId: "manager-1",
+		});
+		mockState.createManualEntryApprovalRequest.mockRejectedValueOnce(new Error("approval failed"));
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1" })
+			.mockResolvedValueOnce({ id: "clock-out-1" });
+		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to create time entry. Please try again.",
+		});
+		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+			expect.objectContaining({ workPeriodId: "period-1", managerId: "manager-1" }),
+		);
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+	});
 });
 
 describe("addBreakToActiveSession", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.insertReturning.mockReset();
 		mockState.updateReturning.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));

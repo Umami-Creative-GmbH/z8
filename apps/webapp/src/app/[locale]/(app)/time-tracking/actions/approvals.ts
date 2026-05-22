@@ -179,6 +179,7 @@ export async function createClockOutApprovalRequest(params: {
 			{ error, workPeriodId: params.workPeriodId },
 			"Failed to create clock-out approval request",
 		);
+		throw error;
 	}
 }
 
@@ -219,5 +220,6 @@ export async function createManualEntryApprovalRequest(params: {
 			{ error, workPeriodId: params.workPeriodId },
 			"Failed to create manual entry approval request",
 		);
+		throw error;
 	}
 }

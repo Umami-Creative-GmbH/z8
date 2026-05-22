@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
 
 function functionBody(name: string) {
-	const match = new RegExp(`export async function ${name}\\s*\\(`).exec(source);
+	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(source);
 	const start = match?.index ?? -1;
 	expect(start, `${name} should exist`).toBeGreaterThanOrEqual(0);
 	const nextExport = source.indexOf("export async function", start + 1);
@@ -23,6 +23,18 @@ function expectBillingGuardBeforeWrite(name: string, writeMarker: string) {
 	expect(body).toContain('code: billingAccess.reason ?? "subscription_required"');
 	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
 	expect(guardIndex, `${name} should guard before database writes`).toBeLessThan(writeIndex);
+}
+
+function expectNoManagerApprovalGuardBeforeWrite(name: string, writeMarker: string) {
+	const body = functionBody(name);
+	const guardIndex = body.indexOf(
+		'return { success: false, error: "No manager assigned to approve time changes" }',
+	);
+	const writeIndex = body.indexOf(writeMarker);
+
+	expect(guardIndex, `${name} should reject unapprovable approval-required changes`).toBeGreaterThanOrEqual(0);
+	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
+	expect(guardIndex, `${name} should reject missing managers before database writes`).toBeLessThan(writeIndex);
 }
 
 describe("legacy time-tracking action billing guards", () => {
@@ -85,6 +97,22 @@ describe("legacy time-tracking action billing guards", () => {
 		"does not mark work balances dirty after %s metadata changes",
 		(name) => {
 			expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
+		},
+	);
+
+	it.each([
+		["clockOut", "createTimeEntry({"],
+		["createManualTimeEntry", "createTimeEntry({"],
+	])("rejects approval-required %s without a manager before writing", (name, writeMarker) => {
+		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
+	});
+
+	it.each(["createClockOutApprovalRequest", "createManualEntryApprovalRequest"])(
+		"does not swallow %s creation failures",
+		(name) => {
+			const body = functionBody(name);
+			expect(body).toContain("catch (error)");
+			expect(body).toContain("throw error");
 		},
 	);
 });

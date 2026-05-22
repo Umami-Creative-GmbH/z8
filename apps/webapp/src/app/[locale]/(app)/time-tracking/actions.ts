@@ -1293,6 +1293,9 @@ export async function clockOut(
 		// Log but don't fail clock-out if policy check fails
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
 	}
+	if (needsClockOutApproval && !emp.managerId) {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
 
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
 	if (!isBillingMutationAllowed(billingAccess)) {
@@ -2585,8 +2588,8 @@ export async function createClockOutApprovalRequest(params: {
 			"Clock-out approval request created",
 		);
 	} catch (error) {
-		// Log but don't fail - approval request is secondary to clock-out completing
 		logger.error({ error, workPeriodId }, "Failed to create clock-out approval request");
+		throw error;
 	}
 }
 
@@ -2894,6 +2897,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	const requiresApproval = editCapability.type === "approval_required";
+	if (requiresApproval && !emp.managerId) {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
 
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
 	if (!isBillingMutationAllowed(billingAccess)) {
@@ -3214,8 +3220,8 @@ async function createManualEntryApprovalRequest(params: {
 			"Manual entry approval request created",
 		);
 	} catch (error) {
-		// Log but don't fail - approval request is secondary to entry creation
 		logger.error({ error, workPeriodId }, "Failed to create manual entry approval request");
+		throw error;
 	}
 }
 
