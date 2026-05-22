@@ -467,6 +467,55 @@ function applyTimeCorrection(
 	});
 }
 
+function activateApprovedTimeCorrectionEntries(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	clockInCorrection: CorrectionEntry,
+	clockOutCorrection: CorrectionEntry | null,
+) {
+	return dbService.query("activateApprovedTimeCorrectionEntries", async () => {
+		const correctionEntryIds = [clockInCorrection.id, clockOutCorrection?.id].filter(
+			(id): id is string => Boolean(id),
+		);
+
+		await dbService.db
+			.update(timeEntry)
+			.set({ isSuperseded: false, supersededById: null })
+			.where(
+				and(
+					eq(timeEntry.type, "correction"),
+					eq(timeEntry.employeeId, period.employeeId),
+					eq(timeEntry.organizationId, period.organizationId),
+					inArray(timeEntry.id, correctionEntryIds),
+				),
+			);
+
+		await dbService.db
+			.update(timeEntry)
+			.set({ isSuperseded: true, supersededById: clockInCorrection.id })
+			.where(
+				and(
+					eq(timeEntry.employeeId, period.employeeId),
+					eq(timeEntry.organizationId, period.organizationId),
+					eq(timeEntry.id, period.clockInId),
+				),
+			);
+
+		if (period.clockOutId && clockOutCorrection) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: true, supersededById: clockOutCorrection.id })
+				.where(
+					and(
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						eq(timeEntry.id, period.clockOutId),
+					),
+				);
+		}
+	});
+}
+
 function getDirtyFromDateForCorrection(period: WorkPeriodRecord, clockInCorrection: CorrectionEntry) {
 	const dirtyFromDateSource =
 		period.startTime.getTime() <= clockInCorrection.timestamp.getTime()
@@ -529,12 +578,13 @@ function rollbackRejectedTimeCorrection(
 	dbService: ApprovalDbService,
 	period: WorkPeriodRecord,
 	correctionEntries: CorrectionEntry[],
+	reactivateOriginals: boolean,
 ) {
 	return dbService.query("rollbackRejectedTimeCorrection", async () => {
 		const originalEntryIds = [period.clockInId, period.clockOutId].filter((id): id is string => Boolean(id));
 		const correctionEntryIds = correctionEntries.map((entry) => entry.id);
 
-		if (originalEntryIds.length > 0) {
+		if (reactivateOriginals && originalEntryIds.length > 0) {
 			await dbService.db
 				.update(timeEntry)
 				.set({ isSuperseded: false, supersededById: null })
@@ -597,6 +647,7 @@ function handleApprovedTimeCorrection(
 		yield* _(validateCorrectedPeriodRange(clockInCorrection, clockOutCorrection?.timestamp ?? period.endTime));
 		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
+		yield* _(activateApprovedTimeCorrectionEntries(dbService, period, clockInCorrection, clockOutCorrection));
 		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
 		const workBalanceDirtyMark = {
 			employeeId: period.employeeId,
@@ -658,6 +709,7 @@ function handleRejectedTimeCorrection(
 				dbService,
 				period,
 				correctionEntries.filter((entry): entry is CorrectionEntry => Boolean(entry)),
+				!correctionEntryIds,
 			),
 		);
 		notifyRejectedCorrection(period, entityId, currentEmployee, reason);

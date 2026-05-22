@@ -29,8 +29,9 @@ export async function createTimeEntry(params: {
 	createdBy: string;
 	replacesEntryId?: string;
 	notes?: string;
+	isSuperseded?: boolean;
 }, client: TimeEntryDbClient = db): Promise<typeof timeEntry.$inferSelect> {
-	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes } = params;
+	const { employeeId, organizationId, type, timestamp, createdBy, replacesEntryId, notes, isSuperseded } = params;
 
 	const [previousEntry] = await client
 		.select()
@@ -62,6 +63,7 @@ export async function createTimeEntry(params: {
 			createdBy,
 			replacesEntryId,
 			notes,
+			...(isSuperseded === undefined ? {} : { isSuperseded }),
 		})
 		.returning();
 

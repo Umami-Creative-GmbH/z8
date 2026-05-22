@@ -497,11 +497,10 @@ export async function requestTimeCorrectionEffect(
 							createdBy: session.user.id,
 							replacesEntryId: selectedWorkPeriod.clockInId,
 							notes: data.reason,
+							isSuperseded: true,
 						},
 						tx,
 					);
-
-					await markTimeEntrySuperseded(selectedWorkPeriod.clockInId, clockInCorrection.id, tx);
 
 					let clockOutCorrectionId: string | undefined;
 					if (data.newClockOutTime && selectedWorkPeriod.clockOutId && correctedClockOutDate) {
@@ -514,12 +513,12 @@ export async function requestTimeCorrectionEffect(
 								createdBy: session.user.id,
 								replacesEntryId: selectedWorkPeriod.clockOutId ?? undefined,
 								notes: data.reason,
+								isSuperseded: true,
 							},
 							tx,
 						);
 
 						clockOutCorrectionId = clockOutCorrection.id;
-						await markTimeEntrySuperseded(selectedWorkPeriod.clockOutId, clockOutCorrection.id, tx);
 					}
 
 					const approval = await Effect.runPromise(

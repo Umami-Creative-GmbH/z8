@@ -32,7 +32,7 @@ describe("time correction request safety", () => {
 		["modular", modularSource],
 		["legacy", legacySource],
 	])(
-		"creates %s correction entries, supersede updates, and approval workflow in one transaction",
+		"creates %s inactive correction entries and approval workflow in one transaction",
 		(_name, source) => {
 			const body = functionBody(source, "requestTimeCorrectionEffect");
 			const transactionIndex = body.indexOf("dbService.db.transaction");
@@ -40,18 +40,15 @@ describe("time correction request safety", () => {
 				body.indexOf("createTimeEntry("),
 				body.indexOf("createCorrectionEntry"),
 			);
-			const supersedeIndex = Math.max(
-				body.indexOf("markTimeEntrySuperseded"),
-				body.indexOf("createCorrectionEntry"),
-			);
 			const approvalIndex = body.indexOf("createTimeCorrectionApprovalWorkflow(transactionalDbService");
 			const emailIndex = body.indexOf("emailService.send");
 
 			expect(transactionIndex).toBeGreaterThanOrEqual(0);
 			expect(clockInIndex).toBeGreaterThan(transactionIndex);
-			expect(supersedeIndex).toBeGreaterThan(transactionIndex);
 			expect(approvalIndex).toBeGreaterThan(transactionIndex);
 			expect(emailIndex).toBeGreaterThan(approvalIndex);
+			expect(body).toContain("isSuperseded: true");
+			expect(body).not.toContain("markTimeEntrySuperseded");
 		},
 	);
 

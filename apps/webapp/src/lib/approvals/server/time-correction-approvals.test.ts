@@ -270,6 +270,47 @@ describe("time correction requester decision notifications", () => {
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
 
+	it("activates linked pending corrections and supersedes originals after approving a time correction request", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: {
+					clockInCorrectionId: correction.id,
+					clockOutCorrectionId: clockOutCorrection.id,
+				},
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst)
+			.mockResolvedValueOnce({ ...correction, isSuperseded: true })
+			.mockResolvedValueOnce({ ...clockOutCorrection, isSuperseded: true });
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([
+				{ isSuperseded: false, supersededById: null },
+				{ isSuperseded: true, supersededById: correction.id },
+			]),
+		);
+	});
+
 	it("approves the active correction instead of an older rejected correction for the same period", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		vi.mocked(dbService.db.select).mockReturnValueOnce({
@@ -451,16 +492,30 @@ describe("time correction requester decision notifications", () => {
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 	});
 
-	it("rolls back superseded entries when rejecting a pending time correction", async () => {
+	it("keeps linked pending corrections inactive without reactivating originals after rejection", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
 			...period,
 			clockOutId: "entry-clock-out-original",
 		});
-		vi.mocked(dbService.db.select).mockReturnValueOnce({
-			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
-		} as never);
-		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce(clockOutCorrection);
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: {
+				timeCorrection: {
+					clockInCorrectionId: correction.id,
+					clockOutCorrectionId: clockOutCorrection.id,
+				},
+			},
+		});
+		vi.mocked(dbService.db.query.timeEntry.findFirst)
+			.mockResolvedValueOnce({ ...correction, isSuperseded: true })
+			.mockResolvedValueOnce({ ...clockOutCorrection, isSuperseded: true });
 
 		await runTimeCorrectionDecisionEffect(
 			rejectTimeCorrectionWithCurrentApproverEffect(
@@ -472,10 +527,10 @@ describe("time correction requester decision notifications", () => {
 		);
 
 		expect(dbService.updateSets).toEqual(
-			expect.arrayContaining([
-				{ isSuperseded: false, supersededById: null },
-				{ isSuperseded: true, supersededById: null },
-			]),
+			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
+		);
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([{ isSuperseded: false, supersededById: null }]),
 		);
 	});
 

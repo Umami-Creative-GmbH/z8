@@ -694,7 +694,7 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
-		// Step 7: Create correction entries, supersede originals, and approval atomically.
+		// Step 7: Create inactive correction entries and approval atomically.
 		const { approval, clockInCorrection, clockOutCorrectionId } = yield* _(
 			dbService.query("createTimeCorrectionRequest", async () => {
 				return await dbService.db.transaction(async (tx) => {
@@ -716,6 +716,7 @@ export async function requestTimeCorrectionEffect(
 										timestamp: input.timestamp,
 										createdBy: session.user.id,
 										notes: data.reason,
+										isSuperseded: true,
 									}),
 								);
 							}).pipe(
