@@ -9,7 +9,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { approvalRequest, employee } from "@/db/schema";
 import {
 	ApprovalQueryService,
 	ApprovalQueryServiceLive,
@@ -24,7 +24,12 @@ import type {
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import {
+	accessibleByDrizzle,
+	ForbiddenError,
+	toHttpError,
+	UnsupportedAuthorizationConditionError,
+} from "@/lib/authorization";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 
@@ -74,6 +79,32 @@ export async function GET(request: NextRequest) {
 
 		if (!canApproveOrManage) {
 			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
+		let approvalAccess: ReturnType<typeof accessibleByDrizzle> | null = null;
+		try {
+			approvalAccess = accessibleByDrizzle(ability, "read", "Approval", {
+				organizationId: approvalRequest.organizationId,
+				requestedBy: approvalRequest.requestedBy,
+				approverId: approvalRequest.approverId,
+				status: approvalRequest.status,
+			});
+		} catch (error) {
+			if (!(error instanceof UnsupportedAuthorizationConditionError)) {
+				throw error;
+			}
+
+			if (!canManageApprovals) {
+				const forbidden = new ForbiddenError("read", "Approval");
+				const httpError = toHttpError(forbidden);
+				return NextResponse.json(httpError.body, { status: httpError.status });
+			}
+		}
+
+		if (!canManageApprovals && !approvalAccess) {
+			const error = new ForbiddenError("read", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
