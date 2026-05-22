@@ -74,6 +74,10 @@ export function buildBaseConditions(entityType: ApprovalType, params: ApprovalQu
 		eq(approvalRequest.status, params.status || "pending"),
 	];
 
+	if (params.authorizationPredicate) {
+		conditions.push(params.authorizationPredicate);
+	}
+
 	if (!params.includeAllApprovers) {
 		const assignedApproverCondition = eq(approvalRequest.approverId, params.approverId);
 		const eligibleApprovalScopeConditions = params.eligibleApprovalScopes

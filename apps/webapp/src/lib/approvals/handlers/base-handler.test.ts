@@ -296,6 +296,20 @@ describe("fetchApprovals", () => {
 		expect(conditions).toHaveLength(4);
 	});
 
+	it("includes the authorization predicate in approval request conditions", () => {
+		const authorizationPredicate = { sql: "approval access predicate" };
+
+		const conditions = buildBaseConditions("absence_entry", {
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 20,
+			authorizationPredicate: authorizationPredicate as never,
+		});
+
+		expect(conditions).toContain(authorizationPredicate);
+	});
+
 	it("includes assigned approver or manager-routed eligible requester approvals", () => {
 		const conditions = buildBaseConditions("absence_entry", {
 			approverId: "manager-1",

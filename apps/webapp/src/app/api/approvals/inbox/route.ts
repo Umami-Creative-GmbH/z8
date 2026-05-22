@@ -146,6 +146,7 @@ export async function GET(request: NextRequest) {
 		// Build query params
 		const params: ApprovalQueryParams = {
 			approverId: currentEmployee.id,
+			authorizationPredicate: approvalAccess ?? undefined,
 			includeAllApprovers: canManageApprovals || undefined,
 			organizationId: currentEmployee.organizationId,
 			status,

@@ -130,7 +130,7 @@ describe("GET /api/approvals/inbox", () => {
 			organizationId: "org-1",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
-		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql" });
+		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql", source: "approval-access" });
 		mockState.getApprovals.mockReturnValue(
 			Effect.succeed({
 				items: [],
@@ -207,6 +207,7 @@ describe("GET /api/approvals/inbox", () => {
 		expect(eq).toHaveBeenCalledWith("isActive", true);
 		expect(mockState.getApprovals).toHaveBeenCalledWith({
 			approverId: "employee-1",
+			authorizationPredicate: { type: "sql", source: "approval-access" },
 			includeAllApprovers: undefined,
 			organizationId: "org-1",
 			status: "pending",

@@ -6,6 +6,7 @@
  */
 
 import type { Effect } from "effect";
+import type { SQL } from "drizzle-orm";
 import type { ComponentType } from "react";
 import type { AnyAppError } from "@/lib/effect/errors";
 
@@ -138,6 +139,9 @@ export interface ApprovalQueryParams {
 
 	/** Search by requester name/email */
 	search?: string;
+
+	/** Authorization predicate generated from fixed approval request field mappings. */
+	authorizationPredicate?: SQL<unknown>;
 
 	/** Filter by requester employee IDs before pagination */
 	requesterEmployeeIds?: string[];
