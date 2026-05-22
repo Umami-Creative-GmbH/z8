@@ -41,6 +41,18 @@ describe("platform domain host helpers", () => {
 		expect(getPlatformOrganizationLabel("org_123.ui.z8-time.app")).toBe("org_123");
 	});
 
+	it("classifies one-label localhost platform subdomains as organizations", () => {
+		mockState.env.PLATFORM_DOMAIN = "localhost:3000";
+		mockState.env.MAIN_DOMAIN = "localhost:3000";
+
+		expect(classifyDomainHost("acme.localhost:3000")).toEqual({
+			type: "platformOrganization",
+			hostname: "acme.localhost",
+			label: "acme",
+			rootDomain: "localhost",
+		});
+	});
+
 	it("does not classify multi-level platform hosts as organization subdomains", () => {
 		expect(classifyDomainHost("deep.acme.ui.z8-time.app")).toEqual({
 			type: "unknownPlatform",

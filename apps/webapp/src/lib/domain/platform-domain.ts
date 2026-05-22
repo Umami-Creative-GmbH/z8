@@ -39,8 +39,7 @@ export function classifyDomainHost(host: string | null): DomainHostClassificatio
 	if (
 		hostname === mainDomain ||
 		hostname === platformRootDomain ||
-		hostname === "localhost" ||
-		hostname.endsWith(".localhost")
+		hostname === "localhost"
 	) {
 		return { type: "main", hostname };
 	}
@@ -53,6 +52,10 @@ export function classifyDomainHost(host: string | null): DomainHostClassificatio
 		}
 
 		return { type: "unknownPlatform", hostname, rootDomain: platformRootDomain };
+	}
+
+	if (hostname.endsWith(".localhost")) {
+		return { type: "main", hostname };
 	}
 
 	return { type: "customDomain", hostname };
