@@ -441,6 +441,17 @@ export async function editSameDayTimeEntry(
 			})
 			.where(eq(workPeriod.id, period.id));
 
+		const dirtyFromDateSource =
+			period.startTime.getTime() <= correctedClockInDate.getTime()
+				? period.startTime
+				: correctedClockInDate;
+		await markEmployeeWorkBalanceDirty({
+			employeeId: emp.id,
+			organizationId: emp.organizationId,
+			dirtyFromDate:
+				DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined,
+		});
+
 		logger.info(
 			{
 				workPeriodId: data.workPeriodId,

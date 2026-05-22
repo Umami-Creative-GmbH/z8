@@ -1,10 +1,13 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { onTimeCorrectionApproved, onTimeCorrectionRejected } = vi.hoisted(() => ({
-	onTimeCorrectionApproved: vi.fn(),
-	onTimeCorrectionRejected: vi.fn(),
-}));
+const { markEmployeeWorkBalanceDirty, onTimeCorrectionApproved, onTimeCorrectionRejected } = vi.hoisted(
+	() => ({
+		markEmployeeWorkBalanceDirty: vi.fn().mockResolvedValue(undefined),
+		onTimeCorrectionApproved: vi.fn(),
+		onTimeCorrectionRejected: vi.fn(),
+	}),
+);
 
 vi.mock("@/env", () => ({
 	env: {
@@ -25,6 +28,10 @@ vi.mock("@/lib/notifications/triggers", () => ({
 	onTimeCorrectionRejected,
 }));
 
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty,
+}));
+
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import {
@@ -37,6 +44,7 @@ import {
 import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
 
 beforeEach(() => {
+	markEmployeeWorkBalanceDirty.mockClear();
 	onTimeCorrectionApproved.mockClear();
 	onTimeCorrectionRejected.mockClear();
 });
@@ -177,6 +185,28 @@ describe("calculateCorrectedDurationMinutes", () => {
 });
 
 describe("time correction requester decision notifications", () => {
+	it("marks work balances dirty after approving a time correction request", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			employeeId: "emp-requester",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-11",
+		});
+		expect(dbService.db.transaction).toHaveBeenCalled();
+		expect(
+			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
+		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
+	});
+
 	it("notifies the requester after approving a time correction request", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 

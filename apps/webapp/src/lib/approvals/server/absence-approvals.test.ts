@@ -228,7 +228,10 @@ describe("absence requester decision notifications", () => {
 						entityId: string,
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
-				) => updateEntity(dbService, entityId, currentEmployee),
+				) => Effect.gen(function* (_) {
+					yield* _(Effect.promise(() => dbService.db.transaction(async () => undefined)));
+					return yield* _(updateEntity(dbService, entityId, currentEmployee));
+				}),
 			),
 		}));
 		const { approveAbsenceWithCurrentApproverEffect } = await import(
@@ -245,6 +248,10 @@ describe("absence requester decision notifications", () => {
 			organizationId: "org-1",
 			dirtyFromDate: "2026-05-11",
 		});
+		expect(dbService.db.transaction).toHaveBeenCalled();
+		expect(
+			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
+		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 

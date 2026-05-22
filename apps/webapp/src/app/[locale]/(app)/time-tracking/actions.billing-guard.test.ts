@@ -66,7 +66,7 @@ describe("legacy time-tracking action billing guards", () => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
 
-	it.each(["clockOut", "createManualTimeEntry", "deleteWorkPeriod"])(
+	it.each(["clockOut", "createManualTimeEntry", "deleteWorkPeriod", "editSameDayTimeEntry"])(
 		"marks work balances dirty after %s changes payable time",
 		(name) => {
 			const body = functionBody(name);

@@ -1,11 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
@@ -44,6 +46,17 @@ interface CorrectionEntry {
 	timestamp: Date;
 	replacesEntryId: string | null;
 }
+
+type WorkBalanceDirtyMark = {
+	employeeId: string;
+	organizationId: string;
+	dirtyFromDate?: string;
+};
+
+type TimeCorrectionApprovalResult = {
+	period: WorkPeriodRecord;
+	workBalanceDirtyMark?: WorkBalanceDirtyMark;
+};
 
 function ensureWorkPeriod(
 	period: WorkPeriodRecord | null,
@@ -235,7 +248,7 @@ export function approveTimeCorrectionWithCurrentApproverEffect(
 		handleApprovedTimeCorrection,
 		undefined,
 		{ ...options, transactional: true },
-	);
+	).pipe(Effect.tap((result) => markWorkBalanceDirtyAfterCommit(result?.workBalanceDirtyMark)));
 }
 
 export function rejectTimeCorrectionWithCurrentApproverEffect(
@@ -308,6 +321,25 @@ function applyTimeCorrection(
 	});
 }
 
+function getDirtyFromDateForCorrection(period: WorkPeriodRecord, clockInCorrection: CorrectionEntry) {
+	const dirtyFromDateSource =
+		period.startTime.getTime() <= clockInCorrection.timestamp.getTime()
+			? period.startTime
+			: clockInCorrection.timestamp;
+	return DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined;
+}
+
+function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
+	return mark
+		? Effect.promise(() => markEmployeeWorkBalanceDirty(mark))
+		: Effect.void;
+}
+
+async function markEmployeeWorkBalanceDirtyIfNeeded(mark?: WorkBalanceDirtyMark) {
+	if (!mark) return;
+	await markEmployeeWorkBalanceDirty(mark);
+}
+
 function notifyApprovedCorrection(
 	period: WorkPeriodRecord,
 	entityId: string,
@@ -360,6 +392,11 @@ function handleApprovedTimeCorrection(
 		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
 		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
+		const workBalanceDirtyMark = {
+			employeeId: period.employeeId,
+			organizationId: period.organizationId,
+			dirtyFromDate: getDirtyFromDateForCorrection(period, clockInCorrection),
+		};
 		yield* _(
 			Effect.promise(() =>
 				syncCanonicalWorkCorrection({
@@ -374,7 +411,7 @@ function handleApprovedTimeCorrection(
 		);
 		notifyApprovedCorrection(period, entityId, currentEmployee, clockInCorrection);
 
-		return period;
+		return { period, workBalanceDirtyMark } satisfies TimeCorrectionApprovalResult;
 	});
 }
 
@@ -387,7 +424,7 @@ function handleRejectedTimeCorrection(
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
 		notifyRejectedCorrection(period, entityId, currentEmployee, reason);
-		return period;
+		return { period } satisfies TimeCorrectionApprovalResult;
 	});
 }
 
@@ -405,6 +442,9 @@ export async function approveTimeCorrectionEffect(
 	);
 
 	if (!result) return { success: true, data: undefined };
+	if (result.success && result.data) {
+		await markEmployeeWorkBalanceDirtyIfNeeded(result.data.workBalanceDirtyMark);
+	}
 	return result.success ? { success: true, data: undefined } : result;
 }
 
