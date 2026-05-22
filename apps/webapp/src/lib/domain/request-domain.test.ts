@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockEnv = vi.hoisted(() => ({
 	env: {
 		MAIN_DOMAIN: "app.z8.test",
+		PLATFORM_DOMAIN: "ui.z8-time.app",
 	},
 }));
 
@@ -13,6 +14,7 @@ const { getCustomDomainFromHeaders } = await import("./request-domain");
 describe("getCustomDomainFromHeaders", () => {
 	beforeEach(() => {
 		mockEnv.env.MAIN_DOMAIN = "app.z8.test";
+		mockEnv.env.PLATFORM_DOMAIN = "ui.z8-time.app";
 	});
 
 	it("returns null for the configured main domain", () => {
@@ -36,6 +38,11 @@ describe("getCustomDomainFromHeaders", () => {
 				new Headers({ host: "app.z8.test", "x-z8-domain": "login.acme.test" }),
 			),
 		).toBeNull();
+	});
+
+	it("returns null for platform organization subdomains", () => {
+		expect(getCustomDomainFromHeaders(new Headers({ host: "acme.ui.z8-time.app" }))).toBeNull();
+		expect(getCustomDomainFromHeaders(new Headers({ host: "org_123.ui.z8-time.app" }))).toBeNull();
 	});
 
 	it("defaults the main domain to localhost:3000", () => {
