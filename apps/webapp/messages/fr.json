@@ -381,6 +381,12 @@
       "status": "Statut",
       "type": "Type"
     },
-    "title": "Notes de frais"
+    "title": "Notes de frais",
+    "status": {
+      "draft": "Brouillon",
+      "submitted": "Soumis",
+      "approved": "Approuvé",
+      "rejected": "Rejeté"
+    }
   }
 }

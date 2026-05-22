@@ -381,6 +381,12 @@
       "status": "Stato",
       "type": "Tipo"
     },
-    "title": "Spese di viaggio"
+    "title": "Spese di viaggio",
+    "status": {
+      "draft": "Bozza",
+      "submitted": "Inviata",
+      "approved": "Approvata",
+      "rejected": "Respinta"
+    }
   }
 }

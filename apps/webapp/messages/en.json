@@ -381,6 +381,12 @@
       "status": "Status",
       "type": "Type"
     },
-    "title": "Travel Expenses"
+    "title": "Travel Expenses",
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
   }
 }

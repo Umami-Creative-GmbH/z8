@@ -4986,5 +4986,89 @@
     "updated": "Webhook atualizado",
     "update-failed": "Falha ao atualizar webhook",
     "view-logs": "Ver logs"
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nova Solicitação"
+    },
+    "approvals": {
+      "description": "Abra a caixa de entrada de aprovações unificada filtrada para despesas de viagem.",
+      "openInbox": "Abrir Caixa de Entrada",
+      "title": "Revisar Aprovações de Despesas de Viagem Pendentes"
+    },
+    "claimTypes": {
+      "mileage": "Quilometragem",
+      "per_diem": "Diária",
+      "receipt": "Recibo"
+    },
+    "decision": {
+      "approve": "Aprovar",
+      "approved": "Reivindicação aprovada com sucesso",
+      "approveDescription": "Adicione uma nota opcional para o requerente antes de aprovar.",
+      "approveTitle": "Aprovar Reivindicação",
+      "errors": {
+        "approve": "Falha ao aprovar reivindicação",
+        "missingClaim": "A reivindicação de despesas de viagem está faltando",
+        "reject": "Falha ao rejeitar reivindicação",
+        "rejectionReason": "Por favor, forneça um motivo para a rejeição"
+      },
+      "noteOptional": "Nota (opcional)",
+      "notePlaceholder": "Parece bom. Obrigado pelos detalhes.",
+      "reasonPlaceholder": "Detalhes do recibo faltando para o valor enviado",
+      "reasonRequired": "Motivo (obrigatório)",
+      "reject": "Rejeitar",
+      "rejectDescription": "Forneça um motivo claro para ajudar o requerente a atualizar e reenviar.",
+      "rejected": "Reivindicação rejeitada com sucesso",
+      "rejectTitle": "Rejeitar Reivindicação"
+    },
+    "description": "Crie e acompanhe suas reivindicações de despesas de viagem",
+    "errors": {
+      "loadClaims": "Falha ao carregar reivindicações de despesas de viagem"
+    },
+    "feature": "gerenciar despesas de viagem",
+    "form": {
+      "amount": "Valor",
+      "claimType": "Tipo de Reivindicação",
+      "created": "Rascunho de despesa de viagem criado",
+      "createDraft": "Criar Rascunho",
+      "currency": "Moeda",
+      "currencyDescription": "Código ISO 4217, por exemplo, EUR ou USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Crie um novo rascunho de solicitação para suas despesas de viagem recentes.",
+      "destinationCity": "Cidade de destino",
+      "destinationCityPlaceholder": "Berlim",
+      "destinationCountry": "País de destino",
+      "destinationCountryPlaceholder": "Alemanha",
+      "errors": {
+        "createDraft": "Falha ao criar rascunho de despesa de viagem",
+        "positiveAmount": "O valor deve ser um número positivo",
+        "tripEndBeforeStart": "A data de término da viagem não pode ser anterior à data de início",
+        "validTripDates": "Por favor, forneça uma data de início e término de viagem válida",
+        "validTripEnd": "Por favor, forneça uma data de término de viagem válida",
+        "validTripStart": "Por favor, forneça uma data de início de viagem válida"
+      },
+      "notes": "Observações",
+      "notesPlaceholder": "Adicione um contexto opcional para o seu aprovador",
+      "receiptAttachmentHint": "Solicitações de reembolso exigem pelo menos um anexo. O upload de anexos estará disponível após a criação do rascunho.",
+      "selectClaimType": "Selecione o tipo de solicitação",
+      "title": "Criar Solicitação de Despesa de Viagem",
+      "tripEnd": "Término da Viagem",
+      "tripStart": "Início da Viagem"
+    },
+    "list": {
+      "amount": "Valor",
+      "dateRange": "Intervalo de Datas",
+      "emptyDescription": "Crie sua primeira solicitação para iniciar o processo de aprovação.",
+      "emptyTitle": "Nenhuma solicitação de despesa de viagem ainda",
+      "status": "Status",
+      "type": "Tipo"
+    },
+    "title": "Despesas de Viagem",
+    "status": {
+      "draft": "Rascunho",
+      "submitted": "Enviado",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado"
+    }
   }
 }

@@ -4986,5 +4986,89 @@
     "updated": "Webhook aggiornato",
     "update-failed": "Aggiornamento del webhook non riuscito",
     "view-logs": "Visualizza log"
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nuova richiesta di rimborso"
+    },
+    "approvals": {
+      "description": "Apri la posta in arrivo unificata delle approvazioni filtrata per le spese di viaggio.",
+      "openInbox": "Apri posta in arrivo",
+      "title": "Esamina le approvazioni delle spese di viaggio in sospeso"
+    },
+    "claimTypes": {
+      "mileage": "Chilometraggio",
+      "per_diem": "Indennità giornaliera",
+      "receipt": "Ricevuta"
+    },
+    "decision": {
+      "approve": "Approva",
+      "approved": "Richiesta approvata correttamente",
+      "approveDescription": "Aggiungi una nota facoltativa per il richiedente prima di approvare.",
+      "approveTitle": "Approva richiesta",
+      "errors": {
+        "approve": "Impossibile approvare la richiesta",
+        "missingClaim": "La richiesta di rimborso spese di viaggio è mancante",
+        "reject": "Impossibile rifiutare la richiesta",
+        "rejectionReason": "Si prega di fornire un motivo per il rifiuto"
+      },
+      "noteOptional": "Nota (facoltativa)",
+      "notePlaceholder": "Sembra tutto a posto. Grazie per i dettagli.",
+      "reasonPlaceholder": "Dettagli della ricevuta mancanti per l'importo inviato",
+      "reasonRequired": "Motivo (obbligatorio)",
+      "reject": "Rifiuta",
+      "rejectDescription": "Fornisci un motivo chiaro per aiutare il richiedente ad aggiornare e inviare nuovamente.",
+      "rejected": "Richiesta rifiutata correttamente",
+      "rejectTitle": "Rifiuta richiesta"
+    },
+    "description": "Crea e monitora le tue richieste di rimborso spese di viaggio",
+    "errors": {
+      "loadClaims": "Impossibile caricare le richieste di rimborso spese di viaggio"
+    },
+    "feature": "gestisci spese di viaggio",
+    "form": {
+      "amount": "Importo",
+      "claimType": "Tipo di richiesta",
+      "created": "Bozza di spesa di viaggio creata",
+      "createDraft": "Crea bozza",
+      "currency": "Valuta",
+      "currencyDescription": "Codice ISO 4217, ad es. EUR o USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Crea una nuova bozza di richiesta di rimborso per le tue recenti spese di viaggio.",
+      "destinationCity": "Città di destinazione",
+      "destinationCityPlaceholder": "Berlino",
+      "destinationCountry": "Paese di destinazione",
+      "destinationCountryPlaceholder": "Germania",
+      "errors": {
+        "createDraft": "Impossibile creare la bozza della spesa di viaggio",
+        "positiveAmount": "L'importo deve essere un numero positivo",
+        "tripEndBeforeStart": "La data di fine viaggio non può essere precedente alla data di inizio",
+        "validTripDates": "Si prega di fornire una data di inizio e di fine viaggio valida",
+        "validTripEnd": "Si prega di fornire una data di fine viaggio valida",
+        "validTripStart": "Si prega di fornire una data di inizio viaggio valida"
+      },
+      "notes": "Note",
+      "notesPlaceholder": "Aggiungi un contesto facoltativo per il tuo approvatore",
+      "receiptAttachmentHint": "Le richieste di rimborso con ricevuta richiedono almeno un allegato. Il caricamento degli allegati sarà disponibile dopo la creazione della bozza.",
+      "selectClaimType": "Seleziona il tipo di richiesta",
+      "title": "Crea richiesta di rimborso spese di viaggio",
+      "tripEnd": "Fine viaggio",
+      "tripStart": "Inizio viaggio"
+    },
+    "list": {
+      "amount": "Importo",
+      "dateRange": "Intervallo date",
+      "emptyDescription": "Crea la tua prima richiesta per avviare il processo di approvazione.",
+      "emptyTitle": "Nessuna richiesta di rimborso spese di viaggio ancora presente",
+      "status": "Stato",
+      "type": "Tipo"
+    },
+    "title": "Spese di viaggio",
+    "status": {
+      "draft": "Bozza",
+      "submitted": "Inviata",
+      "approved": "Approvata",
+      "rejected": "Respinta"
+    }
   }
 }

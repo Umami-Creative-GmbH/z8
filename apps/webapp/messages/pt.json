@@ -381,6 +381,12 @@
       "status": "Status",
       "type": "Tipo"
     },
-    "title": "Despesas de Viagem"
+    "title": "Despesas de Viagem",
+    "status": {
+      "draft": "Rascunho",
+      "submitted": "Enviado",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado"
+    }
   }
 }

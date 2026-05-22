@@ -381,6 +381,12 @@
       "status": "Estado",
       "type": "Tipo"
     },
-    "title": "Gastos de viaje"
+    "title": "Gastos de viaje",
+    "status": {
+      "draft": "Borrador",
+      "submitted": "Enviado",
+      "approved": "Aprobado",
+      "rejected": "Rechazado"
+    }
   }
 }

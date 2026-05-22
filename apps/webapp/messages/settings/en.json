@@ -4986,5 +4986,89 @@
     "updated": "Webhook updated",
     "update-failed": "Failed to update webhook",
     "view-logs": "View Logs"
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "New Claim"
+    },
+    "approvals": {
+      "description": "Open the unified approvals inbox filtered to travel expenses.",
+      "openInbox": "Open Inbox",
+      "title": "Review Pending Travel Expense Approvals"
+    },
+    "claimTypes": {
+      "mileage": "Mileage",
+      "per_diem": "Per Diem",
+      "receipt": "Receipt"
+    },
+    "decision": {
+      "approve": "Approve",
+      "approved": "Claim approved successfully",
+      "approveDescription": "Add an optional note for the claimant before approving.",
+      "approveTitle": "Approve Claim",
+      "errors": {
+        "approve": "Failed to approve claim",
+        "missingClaim": "Travel expense claim is missing",
+        "reject": "Failed to reject claim",
+        "rejectionReason": "Please provide a rejection reason"
+      },
+      "noteOptional": "Note (optional)",
+      "notePlaceholder": "Looks good. Thanks for the details.",
+      "reasonPlaceholder": "Missing receipt details for the submitted amount",
+      "reasonRequired": "Reason (required)",
+      "reject": "Reject",
+      "rejectDescription": "Provide a clear reason to help the claimant update and resubmit.",
+      "rejected": "Claim rejected successfully",
+      "rejectTitle": "Reject Claim"
+    },
+    "description": "Create and track your travel expense claims",
+    "errors": {
+      "loadClaims": "Failed to load travel expense claims"
+    },
+    "feature": "manage travel expenses",
+    "form": {
+      "amount": "Amount",
+      "claimType": "Claim Type",
+      "created": "Travel expense draft created",
+      "createDraft": "Create Draft",
+      "currency": "Currency",
+      "currencyDescription": "ISO 4217 code, e.g. EUR or USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Create a new draft claim for your recent travel expenses.",
+      "destinationCity": "Destination City",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Destination Country",
+      "destinationCountryPlaceholder": "Germany",
+      "errors": {
+        "createDraft": "Failed to create travel expense draft",
+        "positiveAmount": "Amount must be a positive number",
+        "tripEndBeforeStart": "Trip end date cannot be before trip start date",
+        "validTripDates": "Please provide a valid trip start and end date",
+        "validTripEnd": "Please provide a valid trip end date",
+        "validTripStart": "Please provide a valid trip start date"
+      },
+      "notes": "Notes",
+      "notesPlaceholder": "Add optional context for your approver",
+      "receiptAttachmentHint": "Receipt claims require at least one attachment. Attachment upload will be available after draft creation.",
+      "selectClaimType": "Select claim type",
+      "title": "Create Travel Expense Claim",
+      "tripEnd": "Trip End",
+      "tripStart": "Trip Start"
+    },
+    "list": {
+      "amount": "Amount",
+      "dateRange": "Date Range",
+      "emptyDescription": "Create your first claim to start the approval process.",
+      "emptyTitle": "No travel expense claims yet",
+      "status": "Status",
+      "type": "Type"
+    },
+    "title": "Travel Expenses",
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
   }
 }

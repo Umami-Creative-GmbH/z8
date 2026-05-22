@@ -381,6 +381,12 @@
       "status": "Status",
       "type": "Typ"
     },
-    "title": "Reisekosten"
+    "title": "Reisekosten",
+    "status": {
+      "draft": "Entwurf",
+      "submitted": "Eingereicht",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    }
   }
 }

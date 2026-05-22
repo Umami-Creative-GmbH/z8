@@ -62,6 +62,7 @@ const NAMESPACE_PREFIXES = {
 	// settings namespace
 	settings: "settings",
 	organization: "settings",
+	travelExpenses: "settings",
 	vacation: "settings",
 	team: "settings",
 	webhooks: "settings",

@@ -89,6 +89,28 @@ describe("tolgee extractor", () => {
 		]);
 	});
 
+	it("extracts travel expense view keys into the settings namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function TravelExpenseHeader() {
+				const { t } = useTranslate();
+				return t("travelExpenses.title", "Travel Expenses");
+			}
+		`,
+			"travel-expense-management.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Travel Expenses",
+				keyName: "travelExpenses.title",
+				namespace: "settings",
+			}),
+		]);
+	});
+
 	it("extracts namespace-qualified keys from data-driven key maps", () => {
 		const result = extractor(
 			`

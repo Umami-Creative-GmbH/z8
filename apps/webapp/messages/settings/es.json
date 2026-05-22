@@ -4986,5 +4986,89 @@
     "updated": "Webhook actualizado",
     "update-failed": "Error al actualizar el webhook",
     "view-logs": "Ver registros"
+  },
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nueva reclamación"
+    },
+    "approvals": {
+      "description": "Abra la bandeja de entrada de aprobaciones unificada filtrada por gastos de viaje.",
+      "openInbox": "Abrir bandeja de entrada",
+      "title": "Revisar aprobaciones de gastos de viaje pendientes"
+    },
+    "claimTypes": {
+      "mileage": "Kilometraje",
+      "per_diem": "Viáticos",
+      "receipt": "Recibo"
+    },
+    "decision": {
+      "approve": "Aprobar",
+      "approved": "Reclamación aprobada correctamente",
+      "approveDescription": "Añada una nota opcional para el reclamante antes de aprobar.",
+      "approveTitle": "Aprobar reclamación",
+      "errors": {
+        "approve": "Error al aprobar la reclamación",
+        "missingClaim": "Falta la reclamación de gastos de viaje",
+        "reject": "Error al rechazar la reclamación",
+        "rejectionReason": "Por favor, indique un motivo de rechazo"
+      },
+      "noteOptional": "Nota (opcional)",
+      "notePlaceholder": "Todo correcto. Gracias por los detalles.",
+      "reasonPlaceholder": "Faltan los detalles del recibo para el importe enviado",
+      "reasonRequired": "Motivo (obligatorio)",
+      "reject": "Rechazar",
+      "rejectDescription": "Proporcione un motivo claro para ayudar al reclamante a actualizar y volver a enviar.",
+      "rejected": "Reclamación rechazada correctamente",
+      "rejectTitle": "Rechazar reclamación"
+    },
+    "description": "Cree y realice un seguimiento de sus reclamaciones de gastos de viaje",
+    "errors": {
+      "loadClaims": "Error al cargar las reclamaciones de gastos de viaje"
+    },
+    "feature": "gestionar gastos de viaje",
+    "form": {
+      "amount": "Importe",
+      "claimType": "Tipo de reclamación",
+      "created": "Borrador de gastos de viaje creado",
+      "createDraft": "Crear borrador",
+      "currency": "Moneda",
+      "currencyDescription": "Código ISO 4217, p. ej. EUR o USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Cree un nuevo borrador de solicitud para sus gastos de viaje recientes.",
+      "destinationCity": "Ciudad de destino",
+      "destinationCityPlaceholder": "Berlín",
+      "destinationCountry": "País de destino",
+      "destinationCountryPlaceholder": "Alemania",
+      "errors": {
+        "createDraft": "Error al crear el borrador de gastos de viaje",
+        "positiveAmount": "El importe debe ser un número positivo",
+        "tripEndBeforeStart": "La fecha de fin del viaje no puede ser anterior a la fecha de inicio",
+        "validTripDates": "Por favor, proporcione una fecha de inicio y fin de viaje válida",
+        "validTripEnd": "Por favor, proporcione una fecha de fin de viaje válida",
+        "validTripStart": "Por favor, proporcione una fecha de inicio de viaje válida"
+      },
+      "notes": "Notas",
+      "notesPlaceholder": "Añada contexto opcional para su aprobador",
+      "receiptAttachmentHint": "Las solicitudes con recibo requieren al menos un archivo adjunto. La carga de archivos adjuntos estará disponible después de crear el borrador.",
+      "selectClaimType": "Seleccione el tipo de solicitud",
+      "title": "Crear solicitud de gastos de viaje",
+      "tripEnd": "Fin del viaje",
+      "tripStart": "Inicio del viaje"
+    },
+    "list": {
+      "amount": "Importe",
+      "dateRange": "Rango de fechas",
+      "emptyDescription": "Cree su primera solicitud para iniciar el proceso de aprobación.",
+      "emptyTitle": "Aún no hay solicitudes de gastos de viaje",
+      "status": "Estado",
+      "type": "Tipo"
+    },
+    "title": "Gastos de viaje",
+    "status": {
+      "draft": "Borrador",
+      "submitted": "Enviado",
+      "approved": "Aprobado",
+      "rejected": "Rechazado"
+    }
   }
 }
