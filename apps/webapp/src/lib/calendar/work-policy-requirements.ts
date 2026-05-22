@@ -170,17 +170,24 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 							eq(employee.id, params.employeeId),
 							eq(employee.organizationId, params.organizationId),
 						),
-						columns: { id: true },
+						columns: { id: true, startDate: true },
 					});
 				}),
 			);
 			if (!scopedEmployee) return {};
 
+			const requestedStartDate = DateTime.fromJSDate(params.startDate, { zone: "utc" });
+			const employeeStartDate = scopedEmployee.startDate
+				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
+				: requestedStartDate;
+			const effectiveStartDate = DateTime.max(requestedStartDate, employeeStartDate).toJSDate();
+			if (effectiveStartDate > params.endDate) return {};
+
 			const service = yield* _(WorkPolicyService);
 			const policy = yield* _(service.getEffectivePolicy(params.employeeId));
 			const requirements = buildDailyWorkRequirements({
 				policy,
-				startDate: params.startDate,
+				startDate: effectiveStartDate,
 				endDate: params.endDate,
 			});
 			const approvedAbsences = yield* _(
@@ -189,7 +196,7 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 						database,
 						organizationId: params.organizationId,
 						employeeId: params.employeeId,
-						startDate: params.startDate,
+						startDate: effectiveStartDate,
 						endDate: params.endDate,
 					}),
 				),

@@ -14,7 +14,6 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
-import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
@@ -134,14 +133,7 @@ export async function editSameDayTimeEntry(
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability");
-		if (!isSameDayInTimezone(selectedWorkPeriod.startTime, timezone)) {
-			return {
-				success: false,
-				error: "Past entries require manager approval. Please use the correction request.",
-			};
-		}
-
-		editCapability = { type: "direct", reason: "within_self_service" };
+		return { success: false, error: "Failed to verify edit policy. Please try again." };
 	}
 
 	if (editCapability.type === "forbidden") {

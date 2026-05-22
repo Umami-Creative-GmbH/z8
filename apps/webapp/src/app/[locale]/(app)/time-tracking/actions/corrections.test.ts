@@ -75,6 +75,16 @@ describe("time correction request safety", () => {
 	});
 
 	it.each([
+		["modular", modularSource],
+		["legacy", legacySource],
+	])("fails closed for %s same-day edits when policy verification fails", (_name, source) => {
+		const body = functionBody(source, "editSameDayTimeEntry");
+
+		expect(body).toContain("Failed to verify edit policy. Please try again.");
+		expect(body).not.toContain('editCapability = { type: "direct", reason: "within_self_service" };');
+	});
+
+	it.each([
 		["modular", modularSource, "selectedWorkPeriod.endTime"],
 		["legacy", legacySource, "period.endTime"],
 	])(

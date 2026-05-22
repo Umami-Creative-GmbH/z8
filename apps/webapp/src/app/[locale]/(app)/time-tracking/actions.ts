@@ -57,7 +57,6 @@ import {
 	checkProjectBudgetWarnings,
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
-import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
 	getMonthRangeInTimezone,
 	getTodayRangeInTimezone,
@@ -226,14 +225,7 @@ export async function editSameDayTimeEntry(
 		editCapability = await Effect.runPromise(capabilityEffect);
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability");
-		// Default to legacy same-day check if policy service fails
-		if (!isSameDayInTimezone(period.startTime, timezone)) {
-			return {
-				success: false,
-				error: "Past entries require manager approval. Please use the correction request.",
-			};
-		}
-		editCapability = { type: "direct", reason: "within_self_service" };
+		return { success: false, error: "Failed to verify edit policy. Please try again." };
 	}
 
 	// Handle different capabilities

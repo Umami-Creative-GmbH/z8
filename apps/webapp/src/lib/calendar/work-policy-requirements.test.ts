@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import {
 	applyApprovedAbsencesToDailyRequirements,
 	buildDailyWorkRequirements,
 } from "./work-policy-requirements";
+
+const source = readFileSync(fileURLToPath(new URL("./work-policy-requirements.ts", import.meta.url)), "utf8");
 
 function basePolicy(schedule: EffectiveWorkPolicy["schedule"]): EffectiveWorkPolicy {
 	return {
@@ -166,5 +170,15 @@ describe("buildDailyWorkRequirements", () => {
 		]);
 
 		expect(adjusted["2026-05-18"]?.requiredMinutes).toBe(240);
+	});
+});
+
+describe("getDailyWorkRequirementsForEmployee", () => {
+	it("clamps generated requirements to the employee start date", () => {
+		expect(source).toContain("columns: { id: true, startDate: true }");
+		expect(source).toContain("const effectiveStartDate");
+		expect(source).toContain("scopedEmployee.startDate");
+		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
+		expect(source).toContain("startDate: effectiveStartDate");
 	});
 });
