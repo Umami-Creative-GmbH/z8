@@ -53,6 +53,13 @@ export type {
 
 export { asAppSubject } from "./subjects";
 
+export {
+	accessibleByDrizzle,
+	UnsupportedAuthorizationConditionError,
+} from "./query";
+
+export type { AccessiblePredicate, DrizzleFieldMap } from "./query";
+
 // Ability builder
 export {
 	defineAbilityFor,
