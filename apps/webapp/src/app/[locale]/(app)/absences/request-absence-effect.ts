@@ -25,6 +25,7 @@ import {
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -50,6 +51,8 @@ import {
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
+	getMissingAbsenceApproverMessage,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -59,7 +62,6 @@ const logger = createLogger("AbsenceActionsEffect");
 export interface RequestAbsenceEmployeeContext {
 	id: string;
 	organizationId: string;
-	managerId: string | null;
 	teamId?: string | null;
 }
 
@@ -90,6 +92,7 @@ function checkForOverlappingAbsences(
 	currentEmployee: RequestAbsenceEmployeeContext,
 	data: AbsenceRequest,
 	category: { type: string; requiresApproval: boolean },
+	hasManagerApprovalWorkflow: boolean,
 ) {
 	return Effect.gen(function* (_) {
 		const overlappingAbsences = yield* _(
@@ -119,7 +122,7 @@ function checkForOverlappingAbsences(
 				existingStatus: existing.status,
 				existingCountsAgainstVacation: existing.category.countsAgainstVacation,
 				incomingRequiresApproval: category.requiresApproval,
-				hasManagerApprovalWorkflow: Boolean(currentEmployee.managerId),
+				hasManagerApprovalWorkflow,
 			});
 
 			if (message) {
@@ -209,8 +212,9 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 	data: NormalizedAbsenceDurationInput & Pick<AbsenceRequest, "sickDetail">;
 	category: { countsAgainstVacation: boolean; requiresApproval: boolean; type: string };
 	createdBy: string;
+	hasManagerApprovalWorkflow: boolean;
 }) {
-	const { dbService, currentEmployee, data, category, createdBy } = params;
+	const { dbService, currentEmployee, data, category, createdBy, hasManagerApprovalWorkflow } = params;
 
 	return dbService.query("createRequestedAbsenceRecords", async () => {
 		return await dbService.db.transaction(async (tx) => {
@@ -226,7 +230,7 @@ function createRequestedAbsenceRecordsInTransaction(params: {
 					startPeriod: data.startPeriod,
 					endPeriod: data.endPeriod,
 					requiresApproval: category.requiresApproval,
-					hasManagerApprovalWorkflow: Boolean(currentEmployee.managerId),
+					hasManagerApprovalWorkflow,
 				})
 			) {
 				vacationOverrideSummary = await adjustVacationAbsencesForSickness({
@@ -313,6 +317,19 @@ function createApprovalWorkflow(
 			employee: { teamId: currentEmployee.teamId ?? null },
 		},
 		defaultApproverId: approverId,
+	});
+}
+
+function getAbsenceDefaultApproverId(
+	dbService: typeof DatabaseService.Service,
+	currentEmployee: RequestAbsenceEmployeeContext,
+) {
+	return dbService.query("getAbsenceDefaultApprover", async () => {
+		return await getPrimaryEligibleManagerIdForRequester({
+			db: dbService.db,
+			requesterEmployeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+		});
 	});
 }
 
@@ -555,7 +572,34 @@ function requestAbsenceWithResolverEffect(
 					);
 				}
 
-				yield* _(checkForOverlappingAbsences(dbService, currentEmployee, requestData, category));
+
+				const defaultApproverId = category.requiresApproval
+					? yield* _(getAbsenceDefaultApproverId(dbService, currentEmployee))
+					: null;
+				const missingApproverMessage = getMissingAbsenceApproverMessage({
+					requiresApproval: category.requiresApproval,
+					approverId: defaultApproverId,
+				});
+				if (missingApproverMessage) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: missingApproverMessage,
+								field: "managerId",
+							}),
+						),
+					);
+				}
+
+				yield* _(
+					checkForOverlappingAbsences(
+						dbService,
+						currentEmployee,
+						requestData,
+						category,
+						Boolean(defaultApproverId),
+					),
+				);
 
 				span.setAttribute("absence.category_name", category.name);
 				span.setAttribute("absence.requires_approval", category.requiresApproval);
@@ -586,6 +630,7 @@ function requestAbsenceWithResolverEffect(
 						data: requestData,
 						category,
 						createdBy: userId,
+						hasManagerApprovalWorkflow: Boolean(defaultApproverId),
 					}),
 				);
 
@@ -599,23 +644,22 @@ function requestAbsenceWithResolverEffect(
 
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 
-				const managerId = currentEmployee.managerId;
-				if (category.requiresApproval && managerId) {
+				if (category.requiresApproval && defaultApproverId) {
 					yield* _(
 						createApprovalWorkflow(
 							dbService,
 							currentEmployee,
 							newAbsence.id,
 							requestData.categoryId,
-							managerId,
+							defaultApproverId,
 						),
 					);
 
 					span.setAttribute("absence.has_approval_request", true);
-					span.setAttribute("absence.approver_id", managerId);
+					span.setAttribute("absence.approver_id", defaultApproverId);
 
 					const [manager, employeeRecord] = yield* _(
-						getManagerAndEmployeeDetails(dbService, managerId, currentEmployee.id),
+						getManagerAndEmployeeDetails(dbService, defaultApproverId, currentEmployee.id),
 					);
 
 					const { employeeHtml, managerHtml } = yield* _(
@@ -667,6 +711,16 @@ function requestAbsenceWithResolverEffect(
 					);
 				} else if (!category.requiresApproval) {
 					yield* _(updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveAbsence"));
+					yield* _(
+						Effect.promise(() =>
+							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								absenceId: newAbsence.id,
+								startDate: requestData.startDate,
+							}),
+						),
+					);
 
 					yield* _(
 						Effect.promise(() =>
@@ -690,6 +744,16 @@ function requestAbsenceWithResolverEffect(
 					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
 				} else {
 					yield* _(updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveNoManager"));
+					yield* _(
+						Effect.promise(() =>
+							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								absenceId: newAbsence.id,
+								startDate: requestData.startDate,
+							}),
+						),
+					);
 
 					yield* _(
 						Effect.promise(() =>

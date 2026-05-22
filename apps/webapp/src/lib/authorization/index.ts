@@ -43,7 +43,22 @@ export type {
 	EmployeeScopedSubject,
 	ApprovalSubject,
 	SubjectTypeMap,
+	DatabaseSubjectName,
+	AppSubjectRecord,
+	EmployeeAuthorizationSubject,
+	TimeEntryAuthorizationSubject,
+	AbsenceAuthorizationSubject,
+	ApprovalAuthorizationSubject,
 } from "./types";
+
+export { asAppSubject } from "./subjects";
+
+export {
+	accessibleByDrizzle,
+	UnsupportedAuthorizationConditionError,
+} from "./query";
+
+export type { AccessiblePredicate, DrizzleFieldMap } from "./query";
 
 // Ability builder
 export {

@@ -5,10 +5,134 @@
  * Uses the employeeManagers junction table for manager relationships.
  */
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
+import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import type { AccessibleEmployee } from "./types";
+
+type ReportEmployeeAuthorizationSource = {
+	id: string;
+	organizationId: string;
+	role: "admin" | "manager" | "employee";
+	teamId?: string | null;
+};
+
+type ReportEmployeeSource = {
+	id: string;
+	organizationId: string;
+	user: {
+		firstName: string | null;
+		lastName: string | null;
+		name: string | null;
+		email: string;
+		image: string | null;
+	};
+	pronouns: string | null;
+	position: string | null;
+	role: "admin" | "manager" | "employee";
+};
+
+export function getReportAccessibleEmployeeIds(input: {
+	currentEmployeeId: string;
+	role: "admin" | "manager" | "employee";
+	managedEmployeeIds: string[];
+}): string[] | null {
+	if (input.role === "admin") return null;
+	if (input.role === "manager") return [input.currentEmployeeId, ...input.managedEmployeeIds];
+	return [input.currentEmployeeId];
+}
+
+function createReportAbility(input: {
+	currentEmployee: ReportEmployeeAuthorizationSource;
+	managedEmployeeIds: string[];
+}) {
+	return defineAbilityFor({
+		activeOrganizationId: input.currentEmployee.organizationId,
+		customRoles: [],
+		employee: {
+			id: input.currentEmployee.id,
+			organizationId: input.currentEmployee.organizationId,
+			role: input.currentEmployee.role,
+			teamId: input.currentEmployee.teamId ?? null,
+		},
+		isPlatformAdmin: false,
+		managedEmployeeIds: input.managedEmployeeIds,
+		orgMembership: {
+			organizationId: input.currentEmployee.organizationId,
+			role: "member",
+			status: "active",
+		},
+		permissions: {
+			byTeamId: new Map(),
+			orgWide: null,
+		},
+		userId: input.currentEmployee.id,
+	});
+}
+
+export function canReadReportEmployee(input: {
+	currentEmployee: ReportEmployeeAuthorizationSource;
+	managedEmployeeIds: string[];
+	targetEmployee: ReportEmployeeAuthorizationSource;
+}): boolean {
+	const ability = createReportAbility({
+		currentEmployee: input.currentEmployee,
+		managedEmployeeIds: input.managedEmployeeIds,
+	});
+
+	return ability.can(
+		"read",
+		asAppSubject("Employee", {
+			id: input.targetEmployee.id,
+			employeeId: input.targetEmployee.id,
+			organizationId: input.targetEmployee.organizationId,
+			teamId: input.targetEmployee.teamId ?? null,
+		}),
+	);
+}
+
+function toAccessibleEmployee(emp: ReportEmployeeSource): AccessibleEmployee {
+	return {
+		id: emp.id,
+		firstName: emp.user.firstName,
+		lastName: emp.user.lastName,
+		name: emp.user.name || emp.user.email,
+		email: emp.user.email,
+		image: emp.user.image,
+		pronouns: emp.pronouns,
+		position: emp.position,
+		role: emp.role,
+	};
+}
+
+export function getManagerReportAccessibleEmployees(input: {
+	currentEmployee: ReportEmployeeSource;
+	directReports: ReportEmployeeSource[];
+}): AccessibleEmployee[] {
+	const managedEmployeeIds = input.directReports.map((directReport) => directReport.id);
+	const seenEmployeeIds = new Set<string>([input.currentEmployee.id]);
+	const accessibleEmployees = [toAccessibleEmployee(input.currentEmployee)];
+
+	for (const directReport of input.directReports) {
+		if (directReport.organizationId !== input.currentEmployee.organizationId) continue;
+		if (seenEmployeeIds.has(directReport.id)) continue;
+		if (
+			!canReadReportEmployee({
+				currentEmployee: input.currentEmployee,
+				managedEmployeeIds,
+				targetEmployee: directReport,
+			})
+		) {
+			continue;
+		}
+
+		seenEmployeeIds.add(directReport.id);
+		accessibleEmployees.push(toAccessibleEmployee(directReport));
+	}
+
+	return accessibleEmployees;
+}
 
 /**
  * Check if an employee can generate a report for a target employee
@@ -26,11 +150,6 @@ export async function canGenerateReport(
 	currentEmployeeId: string,
 	targetEmployeeId: string,
 ): Promise<boolean> {
-	// Employee can access own reports
-	if (currentEmployeeId === targetEmployeeId) {
-		return true;
-	}
-
 	const [currentEmp, targetEmp] = await Promise.all([
 		db.query.employee.findFirst({
 			where: eq(employee.id, currentEmployeeId),
@@ -49,25 +168,19 @@ export async function canGenerateReport(
 		return false;
 	}
 
-	// Admins can generate reports for all employees in their organization
-	if (currentEmp.role === "admin") {
-		return true;
-	}
-
-	// Managers can generate reports for their direct reports (via employeeManagers junction table)
+	let managedEmployeeIds: string[] = [];
 	if (currentEmp.role === "manager") {
-		const managerRelation = await db.query.employeeManagers.findFirst({
-			where: and(
-				eq(employeeManagers.employeeId, targetEmployeeId),
-				eq(employeeManagers.managerId, currentEmployeeId),
-			),
+		const managerRelations = await db.query.employeeManagers.findMany({
+			where: eq(employeeManagers.managerId, currentEmployeeId),
 		});
-		if (managerRelation) {
-			return true;
-		}
+		managedEmployeeIds = managerRelations.map((rel) => rel.employeeId);
 	}
 
-	return false;
+	return canReadReportEmployee({
+		currentEmployee: currentEmp,
+		managedEmployeeIds,
+		targetEmployee: targetEmp,
+	});
 }
 
 /**
@@ -95,8 +208,28 @@ export async function getAccessibleEmployees(
 		return [];
 	}
 
+	const managerRelations =
+		currentEmp.role === "manager"
+			? await db.query.employeeManagers.findMany({
+					where: eq(employeeManagers.managerId, currentEmployeeId),
+					with: {
+						employee: {
+							with: {
+								user: true,
+							},
+						},
+					},
+				})
+			: [];
+
+	const accessibleEmployeeIds = getReportAccessibleEmployeeIds({
+		currentEmployeeId,
+		role: currentEmp.role,
+		managedEmployeeIds: managerRelations.map((rel) => rel.employeeId),
+	});
+
 	// For admins: get all employees in organization (current employee first)
-	if (currentEmp.role === "admin") {
+	if (accessibleEmployeeIds === null) {
 		const allEmployees = await db.query.employee.findMany({
 			where: eq(employee.organizationId, currentEmp.organizationId),
 			with: {
@@ -119,6 +252,13 @@ export async function getAccessibleEmployees(
 
 		const otherEmployees = allEmployees
 			.filter((emp) => emp.id !== currentEmployeeId)
+			.filter((emp) =>
+				canReadReportEmployee({
+					currentEmployee: currentEmp,
+					managedEmployeeIds: [],
+					targetEmployee: emp,
+				}),
+			)
 			.map((emp) => ({
 				id: emp.id,
 				firstName: emp.user.firstName,
@@ -136,42 +276,10 @@ export async function getAccessibleEmployees(
 
 	// For managers: get self and direct reports (via employeeManagers junction table)
 	if (currentEmp.role === "manager") {
-		const managerRelations = await db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.managerId, currentEmployeeId),
-			with: {
-				employee: {
-					with: {
-						user: true,
-					},
-				},
-			},
+		return getManagerReportAccessibleEmployees({
+			currentEmployee: currentEmp,
+			directReports: managerRelations.map((rel) => rel.employee),
 		});
-
-		// Include self and direct reports
-		return [
-			{
-				id: currentEmp.id,
-				firstName: currentEmp.user.firstName,
-				lastName: currentEmp.user.lastName,
-				name: currentEmp.user.name || currentEmp.user.email,
-				email: currentEmp.user.email,
-				image: currentEmp.user.image,
-				pronouns: currentEmp.pronouns,
-				position: currentEmp.position,
-				role: currentEmp.role,
-			},
-			...managerRelations.map((rel) => ({
-				id: rel.employee.id,
-				firstName: rel.employee.user.firstName,
-				lastName: rel.employee.user.lastName,
-				name: rel.employee.user.name || rel.employee.user.email,
-				email: rel.employee.user.email,
-				image: rel.employee.user.image,
-				pronouns: rel.employee.pronouns,
-				position: rel.employee.position,
-				role: rel.employee.role,
-			})),
-		];
 	}
 
 	// For employees: only self

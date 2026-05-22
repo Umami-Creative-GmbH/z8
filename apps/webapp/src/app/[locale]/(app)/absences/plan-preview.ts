@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, coverageRule, shift } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
 	type AbsencePlanPreview,
 	buildAbsencePlanPreview,
@@ -79,28 +80,34 @@ export async function getAbsencePlanPreview(
 		});
 		const timezone = org?.timezone || "UTC";
 
-		const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
-			getVacationBalance(currentEmployee.id, range.start.year, timezone),
-			getHolidays(currentEmployee.id, range.startDate, range.endDate),
-			db.query.absenceEntry.findMany({
-				where: and(
-					eq(absenceEntry.employeeId, currentEmployee.id),
-					eq(absenceEntry.organizationId, currentEmployee.organizationId),
-					lte(absenceEntry.startDate, request.endDate),
-					gte(absenceEntry.endDate, request.startDate),
-				),
-				with: { category: true },
-			}),
-			db.query.shift.findMany({
-				where: and(
-					eq(shift.organizationId, currentEmployee.organizationId),
-					eq(shift.employeeId, currentEmployee.id),
-					eq(shift.status, "published"),
-					gte(shift.date, range.startDate),
-					lte(shift.date, range.endDate),
-				),
-			}),
-		]);
+		const [vacationBalance, holidays, existingAbsences, affectedShifts, managerId] =
+			await Promise.all([
+				getVacationBalance(currentEmployee.id, range.start.year, timezone),
+				getHolidays(currentEmployee.id, range.startDate, range.endDate),
+				db.query.absenceEntry.findMany({
+					where: and(
+						eq(absenceEntry.employeeId, currentEmployee.id),
+						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+						lte(absenceEntry.startDate, request.endDate),
+						gte(absenceEntry.endDate, request.startDate),
+					),
+					with: { category: true },
+				}),
+				db.query.shift.findMany({
+					where: and(
+						eq(shift.organizationId, currentEmployee.organizationId),
+						eq(shift.employeeId, currentEmployee.id),
+						eq(shift.status, "published"),
+						gte(shift.date, range.startDate),
+						lte(shift.date, range.endDate),
+					),
+				}),
+				getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			]);
 
 		const typedExistingAbsences = existingAbsences as unknown as ExistingAbsenceRow[];
 		const typedAffectedShifts = affectedShifts as AffectedShift[];
@@ -131,7 +138,7 @@ export async function getAbsencePlanPreview(
 			})) satisfies ExistingAbsenceInput[],
 			affectedShifts: typedAffectedShifts,
 			coverage,
-			hasManager: Boolean(currentEmployee.managerId),
+			hasManager: Boolean(managerId),
 		});
 
 		return { success: true, data };

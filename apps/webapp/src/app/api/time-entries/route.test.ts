@@ -1,6 +1,14 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => {
+	class UnsupportedAuthorizationConditionError extends Error {
+		constructor(message: string) {
+			super(message);
+			this.name = "UnsupportedAuthorizationConditionError";
+		}
+	}
+
 	const limit = vi.fn();
 	const where = vi.fn(() => ({ limit }));
 	const from = vi.fn(() => ({ where }));
@@ -9,8 +17,12 @@ const mockState = vi.hoisted(() => {
 	const insert = vi.fn(() => ({ values }));
 
 	return {
+		UnsupportedAuthorizationConditionError,
+		accessibleByDrizzle: vi.fn(),
+		asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
 		connection: vi.fn(),
 		createBillingForbiddenResponse: vi.fn(),
+		getAbility: vi.fn(),
 		getSession: vi.fn(),
 		headers: vi.fn(),
 		insert,
@@ -43,14 +55,20 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: {
+		employee: {
 		id: "employee.id",
 		isActive: "employee.isActive",
 		organizationId: "employee.organizationId",
 		userId: "employee.userId",
 	},
+	timeEntry: {
+		employeeId: "timeEntry.employeeId",
+		organizationId: "timeEntry.organizationId",
+	},
 	workPeriod: {
+		employeeId: "workPeriod.employeeId",
 		id: "workPeriod.id",
+		organizationId: "workPeriod.organizationId",
 	},
 }));
 
@@ -63,7 +81,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
-	getAbility: vi.fn(),
+	getAbility: mockState.getAbility,
 }));
 
 vi.mock("@/lib/billing/guard", () => ({
@@ -73,6 +91,9 @@ vi.mock("@/lib/billing/guard", () => ({
 }));
 
 vi.mock("@/lib/authorization", () => ({
+	UnsupportedAuthorizationConditionError: mockState.UnsupportedAuthorizationConditionError,
+	accessibleByDrizzle: mockState.accessibleByDrizzle,
+	asAppSubject: mockState.asAppSubject,
 	ForbiddenError: class ForbiddenError extends Error {},
 	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
 }));
@@ -93,11 +114,166 @@ vi.mock("drizzle-orm", () => ({
 	isNull: (column: unknown) => ({ column, type: "isNull" }),
 }));
 
-const { POST } = await import("./route");
+const { GET, POST } = await import("./route");
+
+function createGetRequest(employeeId: string) {
+	return {
+		nextUrl: new URL(`https://z8.test/api/time-entries?employeeId=${employeeId}`),
+	} as never;
+}
+
+describe("GET /api/time-entries authorization source", () => {
+	it("uses CASL query adapter and subject checks for time entry reads", () => {
+		const source = readFileSync("src/app/api/time-entries/route.ts", "utf8");
+
+		expect(source).toContain("accessibleByDrizzle");
+		expect(source).toContain("asAppSubject");
+		expect(source).toContain("TimeEntry");
+		expect(source).toContain("timeEntry.organizationId");
+		expect(source).toContain("timeEntry.employeeId");
+		expect(source).toContain("authorizationPredicate");
+	});
+});
+
+describe("GET /api/time-entries", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.accessibleByDrizzle.mockReset();
+		mockState.asAppSubject.mockReset();
+		mockState.getAbility.mockReset();
+		mockState.getSession.mockReset();
+		mockState.headers.mockReset();
+		mockState.limit.mockReset();
+		mockState.runPromise.mockReset();
+		mockState.headers.mockResolvedValue(new Headers());
+		mockState.getSession.mockResolvedValue({
+			session: { activeOrganizationId: "org-1" },
+			user: { id: "user-1" },
+		});
+		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql" });
+		mockState.asAppSubject.mockImplementation((subject, data) => ({
+			...data,
+			__caslSubjectType__: subject,
+		}));
+		mockState.getAbility.mockResolvedValue({
+			can: vi.fn(() => true),
+		});
+		mockState.limit.mockResolvedValue([
+			{
+				id: "employee-1",
+				organizationId: "org-1",
+			},
+		]);
+		mockState.runPromise.mockResolvedValue([{ id: "entry-1" }]);
+	});
+
+	it("allows direct-report reads when the query adapter cannot translate legacy rules", async () => {
+		const ability = { can: vi.fn(() => true) };
+		mockState.getAbility.mockResolvedValue(ability);
+		mockState.accessibleByDrizzle.mockImplementation(() => {
+			throw new mockState.UnsupportedAuthorizationConditionError(
+				"Unconditional database authorization is not supported",
+			);
+		});
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1" }])
+			.mockResolvedValueOnce([{ id: "employee-2", organizationId: "org-1" }]);
+
+		const response = await GET(createGetRequest("employee-2"));
+
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ entries: [{ id: "entry-1" }] });
+		expect(ability.can).toHaveBeenCalledWith(
+			"read",
+			expect.objectContaining({
+				employeeId: "employee-2",
+				organizationId: "org-1",
+			}),
+		);
+		expect(mockState.runPromise).toHaveBeenCalledTimes(1);
+	});
+
+	it("passes translated authorization predicates to the time entry service", async () => {
+		const predicate = { type: "sql", source: "time-entry-access" };
+		mockState.accessibleByDrizzle.mockReturnValue(predicate);
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1" }])
+			.mockResolvedValueOnce([{ id: "employee-2", organizationId: "org-1" }]);
+
+		const source = readFileSync("src/app/api/time-entries/route.ts", "utf8");
+		const response = await GET(createGetRequest("employee-2"));
+
+		expect(response.status).toBe(200);
+		expect(mockState.accessibleByDrizzle).toHaveBeenCalledWith(
+			expect.anything(),
+			"read",
+			"TimeEntry",
+			expect.objectContaining({
+				employeeId: "timeEntry.employeeId",
+				organizationId: "timeEntry.organizationId",
+			}),
+		);
+		expect(source).toContain("authorizationPredicate: timeEntryAccess ?? undefined");
+		expect(mockState.runPromise).toHaveBeenCalledTimes(1);
+	});
+
+	it("returns 403 for cross-employee reads without an ability", async () => {
+		mockState.getAbility.mockResolvedValue(undefined);
+		mockState.limit.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1" }]);
+
+		const response = await GET(createGetRequest("employee-2"));
+
+		expect(response.status).toBe(403);
+		expect(mockState.accessibleByDrizzle).not.toHaveBeenCalled();
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+	});
+
+	it("returns 403 for same-organization targets denied by record authorization", async () => {
+		const ability = { can: vi.fn(() => false) };
+		mockState.getAbility.mockResolvedValue(ability);
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1" }])
+			.mockResolvedValueOnce([{ id: "employee-2", organizationId: "org-1" }]);
+
+		const response = await GET(createGetRequest("employee-2"));
+
+		expect(response.status).toBe(403);
+		expect(ability.can).toHaveBeenCalledWith(
+			"read",
+			expect.objectContaining({
+				employeeId: "employee-2",
+				organizationId: "org-1",
+			}),
+		);
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 for cross-organization or missing targets before fetching entries", async () => {
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1" }])
+			.mockResolvedValueOnce([]);
+
+		const response = await GET(createGetRequest("employee-2"));
+
+		expect(response.status).toBe(404);
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+	});
+});
 
 describe("POST /api/time-entries", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.accessibleByDrizzle.mockReset();
+		mockState.asAppSubject.mockReset();
+		mockState.getAbility.mockReset();
+		mockState.getSession.mockReset();
+		mockState.headers.mockReset();
+		mockState.limit.mockReset();
+		mockState.runPromise.mockReset();
+		mockState.values.mockReset();
+		mockState.requireBillingForMutation.mockReset();
+		mockState.isBillingMutationAllowed.mockReset();
+		mockState.createBillingForbiddenResponse.mockReset();
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
 			session: { activeOrganizationId: "org-1" },

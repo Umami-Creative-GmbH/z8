@@ -3,7 +3,7 @@ import "temporal-polyfill/global";
 import { describe, expect, it } from "vitest";
 
 import { calendarEventToScheduleX, generateBreakEvents } from "./schedule-x-adapter";
-import type { HolidayEvent, WorkPeriodEvent } from "./types";
+import type { AbsenceEvent, HolidayEvent, WorkPeriodEvent } from "./types";
 
 describe("calendarEventToScheduleX", () => {
 	it("renders timed work periods in the configured timezone instead of the runtime timezone", () => {
@@ -50,6 +50,27 @@ describe("calendarEventToScheduleX", () => {
 
 		expect(scheduleXEvent?.start.toString()).toBe("2026-05-01");
 		expect(scheduleXEvent?.end.toString()).toBe("2026-05-02");
+	});
+
+	it("keeps multi-day absences on their stored inclusive date range", () => {
+		const absence: AbsenceEvent = {
+			id: "absence-1",
+			type: "absence",
+			date: new Date("2026-05-20T00:00:00.000Z"),
+			endDate: new Date("2026-05-21T00:00:00.000Z"),
+			title: "Home office",
+			color: "#3b82f6",
+			metadata: {
+				categoryName: "Home office",
+				status: "approved",
+				employeeName: "Kai Hentschel",
+			},
+		};
+
+		const scheduleXEvent = calendarEventToScheduleX(absence);
+
+		expect(scheduleXEvent?.start.toString()).toBe("2026-05-20");
+		expect(scheduleXEvent?.end.toString()).toBe("2026-05-21");
 	});
 });
 

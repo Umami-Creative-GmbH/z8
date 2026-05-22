@@ -14,8 +14,10 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) => {
 			const translatedWeekdays: Record<string, string> = {
-				"dashboard.presence.weekdays.monday": "Mo.",
-				"dashboard.presence.weekdays.wednesday": "We.",
+				"common.weekdays.mon": "Mo",
+				"common.weekdays.tue": "Di",
+				"common.weekdays.wed": "Mi",
+				"common.weekdays.thu": "Do",
 			};
 			if (!params && translatedWeekdays[_key]) return translatedWeekdays[_key];
 			if (!params) return fallback;
@@ -123,10 +125,10 @@ describe("PresenceStatusWidget", () => {
 
 		render(<PresenceStatusWidget />);
 
-		expect(await screen.findByText("Fixed office days: Mo., We.")).toBeTruthy();
+		expect(await screen.findByText("Fixed office days: Mo, Mi")).toBeTruthy();
 	});
 
-	it("renders fixed office day notes with fallback weekday labels", async () => {
+	it("renders fixed office day notes with common localized weekday labels", async () => {
 		mockEmployee();
 		mocks.usePresenceStatus.mockReturnValue({
 			isLoading: false,
@@ -150,7 +152,7 @@ describe("PresenceStatusWidget", () => {
 
 		render(<PresenceStatusWidget />);
 
-		expect(await screen.findByText("Fixed office days: Tue, Thu")).toBeTruthy();
+		expect(await screen.findByText("Fixed office days: Di, Do")).toBeTruthy();
 	});
 
 	it("hides when presence is disabled", async () => {

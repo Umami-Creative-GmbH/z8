@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, type SQL } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, timeEntry } from "@/db/schema";
 import {
@@ -35,6 +35,7 @@ export interface CreateCorrectionInput {
 	notes: string;
 	ipAddress?: string;
 	deviceInfo?: string;
+	isSuperseded?: boolean;
 }
 
 export interface GetTimeEntriesInput {
@@ -43,6 +44,7 @@ export interface GetTimeEntriesInput {
 	from?: Date;
 	to?: Date;
 	includeSuperseded?: boolean;
+	authorizationPredicate?: SQL<unknown>;
 }
 
 export class TimeEntryService extends Context.Tag("TimeEntryService")<
@@ -276,7 +278,7 @@ export const TimeEntryServiceLive = Layer.effect(
 						previousHash: previousEntry?.hash ?? null,
 					});
 
-					// Create correction entry and mark original as superseded in a transaction
+					// Create correction entry and optionally keep it inactive while approval is pending.
 					const correctionEntry = yield* _(
 						dbService.query("createCorrectionEntry", async () => {
 							// Insert the correction entry with organizationId
@@ -295,17 +297,21 @@ export const TimeEntryServiceLive = Layer.effect(
 									ipAddress: input.ipAddress,
 									deviceInfo: input.deviceInfo,
 									createdBy: input.createdBy,
+									...(input.isSuperseded === undefined
+										? {}
+										: { isSuperseded: input.isSuperseded }),
 								})
 								.returning();
 
-							// Mark the original entry as superseded
-							await dbService.db
-								.update(timeEntry)
-								.set({
-									isSuperseded: true,
-									supersededById: newEntry.id,
-								})
-								.where(eq(timeEntry.id, input.replacesEntryId));
+							if (!input.isSuperseded) {
+								await dbService.db
+									.update(timeEntry)
+									.set({
+										isSuperseded: true,
+										supersededById: newEntry.id,
+									})
+									.where(eq(timeEntry.id, input.replacesEntryId));
+							}
 
 							return newEntry;
 						}),
@@ -333,6 +339,10 @@ export const TimeEntryServiceLive = Layer.effect(
 
 							if (input.to) {
 								conditions.push(lte(timeEntry.timestamp, input.to));
+							}
+
+							if (input.authorizationPredicate) {
+								conditions.push(input.authorizationPredicate);
 							}
 
 							return await dbService.db

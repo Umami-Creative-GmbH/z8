@@ -10,6 +10,7 @@ import type {
 	RestPeriodCheckResult,
 } from "@/db/schema";
 import { complianceException, employee, userSettings } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -288,6 +289,7 @@ export async function requestComplianceException(input: {
 				span.setAttribute("employee.id", emp.id);
 				span.setAttribute("organization.id", emp.organizationId);
 
+				const dbService = yield* _(DatabaseService);
 				const complianceService = yield* _(ComplianceGuardrailService);
 				const exceptionId = yield* _(
 					complianceService.requestException({
@@ -299,9 +301,17 @@ export async function requestComplianceException(input: {
 						createdBy: userId,
 					}),
 				);
+				const managerId = yield* _(
+					dbService.query("getComplianceExceptionPrimaryManager", async () => {
+						return await getPrimaryEligibleManagerIdForRequester({
+							db: dbService.db,
+							requesterEmployeeId: emp.id,
+							organizationId: emp.organizationId,
+						});
+					}),
+				);
 
 				// Trigger notification to manager (fire-and-forget)
-				// Use the employee's direct manager if available
 				void onComplianceExceptionRequested({
 					exceptionId,
 					employeeId: emp.id,
@@ -309,7 +319,7 @@ export async function requestComplianceException(input: {
 					organizationId: emp.organizationId,
 					exceptionType: input.exceptionType,
 					reason: input.reason,
-					managerId: emp.managerId || undefined,
+					managerId: managerId ?? undefined,
 				});
 
 				logger.info(

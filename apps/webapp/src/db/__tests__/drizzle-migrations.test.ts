@@ -17,7 +17,10 @@ const migration0019 = readFileSync(
 	new URL("../../../drizzle/0019_regular_sandman.sql", import.meta.url),
 	"utf8",
 );
+const migration0003SnapshotUrl = new URL("../../../drizzle/meta/0003_snapshot.json", import.meta.url);
 const migration0020Url = new URL("../../../drizzle/0020_drop_organization_fiscal_year.sql", import.meta.url);
+const migration0026Url = new URL("../../../drizzle/0026_remove_employee_manager_id.sql", import.meta.url);
+const migration0026SnapshotUrl = new URL("../../../drizzle/meta/0026_snapshot.json", import.meta.url);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -84,5 +87,69 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0020.trim()).toBe(
 			'ALTER TABLE "organization" DROP COLUMN "fiscal_year_start_month";',
 		);
+	});
+
+	it("registers the employee manager_id removal migration", () => {
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0026_remove_employee_manager_id")).toBe(
+			true,
+		);
+		expect(existsSync(migration0026Url)).toBe(true);
+
+		const migration0026 = readFileSync(migration0026Url, "utf8");
+		const guardPosition = migration0026.indexOf("DO $$");
+		const insertPosition = migration0026.indexOf('INSERT INTO "employee_managers"');
+		const duplicateGuardPosition = migration0026.indexOf(
+			"Duplicate employee manager assignments must be resolved before removing employee.manager_id",
+		);
+		const existingCrossOrganizationGuardPosition = migration0026.indexOf(
+			"Cross-organization employee manager assignments must be resolved before removing employee.manager_id",
+		);
+		const primaryUpdatePosition = migration0026.indexOf(
+			'UPDATE "employee_managers" AS "existing_assignment"',
+		);
+		const uniqueIndexPosition = migration0026.indexOf(
+			'CREATE UNIQUE INDEX "employeeManagers_unique_idx"',
+		);
+
+		expect(guardPosition).toBeGreaterThanOrEqual(0);
+		expect(guardPosition).toBeLessThan(insertPosition);
+		expect(duplicateGuardPosition).toBeGreaterThanOrEqual(0);
+		expect(duplicateGuardPosition).toBeLessThan(primaryUpdatePosition);
+		expect(duplicateGuardPosition).toBeLessThan(uniqueIndexPosition);
+		expect(existingCrossOrganizationGuardPosition).toBeGreaterThanOrEqual(0);
+		expect(existingCrossOrganizationGuardPosition).toBeLessThan(insertPosition);
+		expect(existingCrossOrganizationGuardPosition).toBeLessThan(primaryUpdatePosition);
+		expect(existingCrossOrganizationGuardPosition).toBeLessThan(uniqueIndexPosition);
+		expect(migration0026).toContain("RAISE EXCEPTION");
+		expect(migration0026).toContain('GROUP BY "employee_id", "manager_id"');
+		expect(migration0026).toContain("HAVING count(*) > 1");
+		expect(migration0026).toContain('FROM "employee_managers" AS "em"');
+		expect(migration0026).toContain('INNER JOIN "employee" AS "managed"');
+		expect(migration0026).toContain('INNER JOIN "employee" AS "manager"');
+		expect(migration0026).toContain('"managed"."organization_id" <> "manager"."organization_id"');
+		expect(migration0026).toContain('"manager"."organization_id" = "e"."organization_id"');
+		expect(migration0026).toContain('"manager"."id" IS NULL');
+		expect(migration0026).toContain('"assigned_user"."id" IS NULL');
+		expect(migration0026).toContain('UPDATE "employee_managers" AS "existing_assignment"');
+		expect(migration0026).toContain('SET "is_primary" = true');
+		expect(migration0026).toContain('"existing_assignment"."is_primary" = false');
+		expect(migration0026).toContain('DROP INDEX IF EXISTS "employeeManagers_unique_idx";');
+		expect(migration0026).toContain(
+			'CREATE UNIQUE INDEX "employeeManagers_unique_idx" ON "employee_managers" USING btree ("employee_id","manager_id");',
+		);
+		expect(migration0026).toContain('INSERT INTO "employee_managers"');
+		expect(migration0026).toContain('FROM "employee" AS "e"');
+		expect(migration0026).toContain('"e"."manager_id" IS NOT NULL');
+		expect(migration0026).toContain('NOT EXISTS (');
+		expect(migration0026).toContain('"existing_primary"."is_primary" = true');
+		expect(migration0026).toContain('"e"."user_id"');
+		expect(migration0026).toContain('DROP INDEX IF EXISTS "employee_managerId_idx";');
+		expect(migration0026).toContain('ALTER TABLE "employee" DROP COLUMN "manager_id";');
+	});
+
+	it("keeps manual follow-up migrations journal-only when no snapshot was generated", () => {
+		// Some existing hand-authored follow-up migrations are journaled without a snapshot.
+		expect(existsSync(migration0003SnapshotUrl)).toBe(false);
+		expect(existsSync(migration0026SnapshotUrl)).toBe(false);
 	});
 });

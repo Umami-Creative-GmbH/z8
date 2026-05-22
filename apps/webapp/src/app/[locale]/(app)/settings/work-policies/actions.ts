@@ -28,6 +28,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	filterItemsToManagedEmployees,
@@ -580,6 +581,8 @@ export async function updateWorkPolicy(
 		}
 
 		// Update main policy
+		const shouldDirtyWorkBalances = data.scheduleEnabled !== undefined || data.schedule !== undefined;
+
 		yield* _(
 			dbService.query("updatePolicy", async () => {
 				await dbService.db
@@ -775,6 +778,14 @@ export async function updateWorkPolicy(
 			);
 		}
 
+		if (shouldDirtyWorkBalances) {
+			yield* _(
+				Effect.promise(() =>
+					markOrganizationWorkBalancesDirty({ organizationId: existingPolicy!.organizationId }),
+				),
+			);
+		}
+
 		return updatedPolicy as WorkPolicyWithDetails;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -841,6 +852,12 @@ export async function deleteWorkPolicy(policyId: string): Promise<ServerActionRe
 					})
 					.where(eq(workPolicy.id, policyId));
 			}),
+		);
+
+		yield* _(
+			Effect.promise(() =>
+				markOrganizationWorkBalancesDirty({ organizationId: existingPolicy!.organizationId }),
+			),
 		);
 
 		return undefined;
@@ -1028,6 +1045,10 @@ export async function createWorkPolicyAssignment(
 			}),
 		);
 
+		yield* _(
+			Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId: actor.organizationId })),
+		);
+
 		return { id: assignment.id };
 	}).pipe(Effect.provide(AppLayer));
 
@@ -1095,6 +1116,12 @@ export async function deleteWorkPolicyAssignment(
 						),
 					);
 			}),
+		);
+
+		yield* _(
+			Effect.promise(() =>
+				markOrganizationWorkBalancesDirty({ organizationId: assignment.organizationId }),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 
@@ -1329,6 +1356,10 @@ export async function setDefaultWorkPolicy(policyId: string): Promise<ServerActi
 					})
 					.where(eq(workPolicy.id, policyId));
 			}),
+		);
+
+		yield* _(
+			Effect.promise(() => markOrganizationWorkBalancesDirty({ organizationId: policy!.organizationId })),
 		);
 
 		return undefined;

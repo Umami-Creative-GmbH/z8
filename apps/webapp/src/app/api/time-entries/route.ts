@@ -3,10 +3,16 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee, workPeriod } from "@/db/schema";
+import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import {
+	accessibleByDrizzle,
+	asAppSubject,
+	ForbiddenError,
+	toHttpError,
+	UnsupportedAuthorizationConditionError,
+} from "@/lib/authorization";
 import {
 	createBillingForbiddenResponse,
 	isBillingMutationAllowed,
@@ -69,14 +75,28 @@ export async function GET(request: NextRequest) {
 
 		// Determine which employee's entries to fetch
 		const targetEmployeeId = employeeId || currentEmployee.id;
+		let timeEntryAccess: ReturnType<typeof accessibleByDrizzle> | null = null;
 
-		// Only allow viewing own entries unless user can manage time entries
+		// Only allow viewing own entries unless CASL permits this employee's entries.
 		if (targetEmployeeId !== currentEmployee.id) {
 			const ability = await getAbility();
-			if (!ability || ability.cannot("manage", "TimeEntry")) {
+			if (!ability) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
+			}
+
+			try {
+				timeEntryAccess = accessibleByDrizzle(ability, "read", "TimeEntry", {
+					organizationId: timeEntry.organizationId,
+					employeeId: timeEntry.employeeId,
+				});
+			} catch (error) {
+				if (!(error instanceof UnsupportedAuthorizationConditionError)) {
+					throw error;
+				}
+				// Legacy string grants may not be query-translatable yet;
+				// the object check below is authoritative.
 			}
 
 			// Verify target employee is in same organization
@@ -94,6 +114,20 @@ export async function GET(request: NextRequest) {
 			if (!targetEmployee) {
 				return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 			}
+
+			if (
+				!ability.can(
+					"read",
+					asAppSubject("TimeEntry", {
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+					}),
+				)
+			) {
+				const error = new ForbiddenError("read", "TimeEntry");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
+			}
 		}
 
 		const effect = Effect.gen(function* (_) {
@@ -105,6 +139,7 @@ export async function GET(request: NextRequest) {
 					from: from ? new Date(from) : undefined,
 					to: to ? new Date(to) : undefined,
 					includeSuperseded,
+					authorizationPredicate: timeEntryAccess ?? undefined,
 				}),
 			);
 		});

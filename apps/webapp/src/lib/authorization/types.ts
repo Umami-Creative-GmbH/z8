@@ -236,3 +236,32 @@ export type SubjectTypeMap = {
 	// Wildcard
 	all: "all";
 };
+
+export type DatabaseSubjectName = "Employee" | "TimeEntry" | "Absence" | "Approval";
+
+export interface EmployeeAuthorizationSubject extends EmployeeScopedSubject {
+	id: string;
+	teamId?: string | null;
+}
+
+export interface TimeEntryAuthorizationSubject extends EmployeeScopedSubject {
+	teamId?: string | null;
+	private?: boolean;
+}
+
+export interface AbsenceAuthorizationSubject extends EmployeeScopedSubject {
+	teamId?: string | null;
+	status?: "pending" | "approved" | "rejected";
+}
+
+export interface ApprovalAuthorizationSubject extends OrgScopedSubject {
+	requestedBy: string;
+	approverId: string;
+	status?: "pending" | "approved" | "rejected";
+}
+
+export type AppSubjectRecord =
+	| EmployeeAuthorizationSubject
+	| TimeEntryAuthorizationSubject
+	| AbsenceAuthorizationSubject
+	| ApprovalAuthorizationSubject;

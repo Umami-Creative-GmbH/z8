@@ -15,10 +15,15 @@ vi.mock("@/hooks/use-calendar-data", () => ({
 		events: [],
 		dailyRequirements: new Map(),
 		dailyActualMinutes: new Map(),
+		workBalance: null,
 		isLoading: false,
 		error: null,
 		refetch,
 	}),
+}));
+
+vi.mock("@/components/work-balance/work-balance-card", () => ({
+	WorkBalanceCard: () => <div data-testid="work-balance-card" />,
 }));
 
 vi.mock("./calendar-employee-selector", () => ({
@@ -88,6 +93,7 @@ describe("CalendarView", () => {
 		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-view-mode")).toBe(
 			"month",
 		);
+		expect(screen.getByTestId("work-balance-card")).toBeTruthy();
 		expect(screen.queryByTestId("schedule-x-wrapper")).toBeNull();
 
 		fireEvent.click(screen.getByRole("button", { name: "Refresh month" }));

@@ -1,11 +1,20 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	ConflictError,
+	DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { createLogger } from "@/lib/logger";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
@@ -16,7 +25,9 @@ import type {
 	ApprovalPolicyOvertimeRisk,
 } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
-import type { ApprovalDbService, CurrentApprover } from "./types";
+import type { ApprovalDbService, CurrentApprover, PendingApprovalRequest } from "./types";
+
+const logger = createLogger("TimeCorrectionApprovals");
 
 interface WorkPeriodRecord {
 	id: string;
@@ -43,7 +54,26 @@ interface CorrectionEntry {
 	id: string;
 	timestamp: Date;
 	replacesEntryId: string | null;
+	isSuperseded: boolean;
 }
+
+type WorkBalanceDirtyMark = {
+	employeeId: string;
+	organizationId: string;
+	dirtyFromDate?: string;
+};
+
+type TimeCorrectionApprovalResult = {
+	period: WorkPeriodRecord;
+	workBalanceDirtyMark?: WorkBalanceDirtyMark;
+};
+
+type TimeCorrectionApprovalMetadata = {
+	timeCorrection?: {
+		clockInCorrectionId?: string;
+		clockOutCorrectionId?: string;
+	};
+};
 
 function ensureWorkPeriod(
 	period: WorkPeriodRecord | null,
@@ -56,6 +86,22 @@ function ensureWorkPeriod(
 					entityType: "work_period",
 				}),
 			);
+}
+
+function isPendingApprovalUniqueConflict(error: DatabaseError) {
+	const cause = error.cause as { code?: unknown; constraint?: unknown } | undefined;
+	return (
+		cause?.code === "23505" &&
+		cause.constraint === "approvalRequest_pending_entity_unique_idx"
+	);
+}
+
+function pendingTimeCorrectionConflict(workPeriodId: string) {
+	return new ConflictError({
+		message: "A time correction approval is already pending for this work period",
+		conflictType: "pending_time_correction_approval",
+		details: { workPeriodId },
+	});
 }
 
 function loadWorkPeriod(
@@ -78,7 +124,11 @@ function loadWorkPeriod(
 		);
 }
 
-function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: WorkPeriodRecord) {
+function loadActiveCorrectionEntries(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	replacesEntryId: string,
+) {
 	return dbService
 		.query("getCorrectionEntries", async () => {
 			return await dbService.db
@@ -88,28 +138,79 @@ function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: Work
 					and(
 						eq(timeEntry.type, "correction"),
 						eq(timeEntry.employeeId, period.employeeId),
-						eq(timeEntry.replacesEntryId, period.clockInId),
+						eq(timeEntry.organizationId, period.organizationId),
+						eq(timeEntry.replacesEntryId, replacesEntryId),
+						eq(timeEntry.isSuperseded, false),
 					),
 				);
 		})
-		.pipe(Effect.map((entries) => entries as CorrectionEntry[]));
+		.pipe(Effect.map((entries) => (entries as CorrectionEntry[]).filter((entry) => !entry.isSuperseded)));
 }
 
-function loadClockOutCorrection(dbService: ApprovalDbService, period: WorkPeriodRecord) {
+function correctionEntryIdsFromApproval(approval: PendingApprovalRequest) {
+	const metadata = approval.metadata as TimeCorrectionApprovalMetadata | null;
+	return metadata?.timeCorrection;
+}
+
+function loadApprovalLinkedCorrectionEntry(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	correctionId: string | undefined,
+	replacesEntryId: string | null,
+) {
 	return dbService
-		.query("getClockOutCorrection", async () => {
-			if (!period.clockOutId) {
+		.query("getApprovalLinkedCorrectionEntry", async () => {
+			if (!correctionId || !replacesEntryId) {
 				return null;
 			}
 
 			return await dbService.db.query.timeEntry.findFirst({
 				where: and(
+					eq(timeEntry.id, correctionId),
 					eq(timeEntry.type, "correction"),
-					eq(timeEntry.replacesEntryId, period.clockOutId),
+					eq(timeEntry.employeeId, period.employeeId),
+					eq(timeEntry.organizationId, period.organizationId),
+					eq(timeEntry.replacesEntryId, replacesEntryId),
 				),
 			});
 		})
 		.pipe(Effect.map((entry) => entry as CorrectionEntry | null));
+}
+
+function resolveCorrectionEntryForApproval(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	correctionId: string | undefined,
+	replacesEntryId: string | null,
+	allowLegacyFallback: boolean,
+) {
+	if (correctionId) {
+		return loadApprovalLinkedCorrectionEntry(dbService, period, correctionId, replacesEntryId);
+	}
+
+	if (!allowLegacyFallback || !replacesEntryId) {
+		return Effect.succeed(null);
+	}
+
+	return loadActiveCorrectionEntries(dbService, period, replacesEntryId).pipe(
+		Effect.flatMap((entries) => {
+			if (entries.length === 1) {
+				return Effect.succeed(entries[0]);
+			}
+
+			if (entries.length === 0) {
+				return Effect.succeed(null);
+			}
+
+			return Effect.fail(
+				new ConflictError({
+					message: "Cannot resolve ambiguous legacy time correction approval",
+					conflictType: "ambiguous_legacy_time_correction_approval",
+					details: { workPeriodId: period.id, replacesEntryId },
+				}),
+			);
+		}),
+	);
 }
 
 function ensureClockInCorrection(
@@ -161,32 +262,58 @@ export function createTimeCorrectionApprovalWorkflow(
 		defaultApproverId: string;
 		reason?: string;
 		overtimeRisk: ApprovalPolicyOvertimeRisk;
+		correctionEntryIds?: {
+			clockInCorrectionId: string;
+			clockOutCorrectionId?: string;
+		};
 	},
 ): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
-	return resolvePolicyAndCreateApproval(dbService, {
-		context: buildTimeCorrectionApprovalPolicyContext(input),
-		defaultApproverId: input.defaultApproverId,
-		reason: input.reason,
-	}).pipe(
-		Effect.catchTag("ValidationError", () =>
-			dbService.query("createDefaultTimeCorrectionApprovalFallback", async () => {
-				const [approval] = await dbService.db
-					.insert(approvalRequest)
-					.values({
-						organizationId: input.organizationId,
-						entityType: "time_entry",
-						entityId: input.workPeriodId,
-						requestedBy: input.requesterEmployeeId,
-						approverId: input.defaultApproverId,
-						status: "pending",
-						reason: input.reason,
-					})
-					.returning({ id: approvalRequest.id });
+	const metadata: Record<string, unknown> | undefined = input.correctionEntryIds
+		? {
+				timeCorrection: {
+					clockInCorrectionId: input.correctionEntryIds.clockInCorrectionId,
+					clockOutCorrectionId: input.correctionEntryIds.clockOutCorrectionId,
+				},
+			}
+		: undefined;
 
-				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.workPeriodId };
+	return ensureNoPendingTimeCorrectionApproval(dbService, input.workPeriodId).pipe(
+		Effect.flatMap(() =>
+			resolvePolicyAndCreateApproval(dbService, {
+				context: buildTimeCorrectionApprovalPolicyContext(input),
+				defaultApproverId: input.defaultApproverId,
+				reason: input.reason,
+				metadata,
 			}),
 		),
+		Effect.catchAll((error) => {
+			if (error instanceof DatabaseError && isPendingApprovalUniqueConflict(error)) {
+				return Effect.fail(pendingTimeCorrectionConflict(input.workPeriodId));
+			}
+
+			return Effect.fail(error);
+		}),
 	);
+}
+
+function ensureNoPendingTimeCorrectionApproval(dbService: ApprovalDbService, workPeriodId: string) {
+	return dbService
+		.query("getPendingTimeCorrectionApproval", async () => {
+			return await dbService.db.query.approvalRequest.findFirst({
+				where: and(
+					eq(approvalRequest.entityType, "time_entry"),
+					eq(approvalRequest.entityId, workPeriodId),
+					eq(approvalRequest.status, "pending"),
+				),
+			});
+		})
+		.pipe(
+			Effect.flatMap((pendingApproval) =>
+				pendingApproval
+					? Effect.fail(pendingTimeCorrectionConflict(workPeriodId))
+					: Effect.void,
+			),
+		);
 }
 
 export async function syncCanonicalWorkCorrection(input: {
@@ -235,7 +362,7 @@ export function approveTimeCorrectionWithCurrentApproverEffect(
 		handleApprovedTimeCorrection,
 		undefined,
 		{ ...options, transactional: true },
-	);
+	).pipe(Effect.tap((result) => markWorkBalanceDirtyAfterCommit(result?.workBalanceDirtyMark)));
 }
 
 export function rejectTimeCorrectionWithCurrentApproverEffect(
@@ -252,8 +379,8 @@ export function rejectTimeCorrectionWithCurrentApproverEffect(
 		workPeriodId,
 		"reject",
 		reason,
-		(decisionDbService, entityId, approver) =>
-			handleRejectedTimeCorrection(decisionDbService, entityId, approver, reason),
+		(decisionDbService, entityId, approver, approval) =>
+			handleRejectedTimeCorrection(decisionDbService, entityId, approver, reason, approval),
 		undefined,
 		{ ...options, transactional: true },
 	);
@@ -287,6 +414,19 @@ function calculateCorrectedPeriod(
 	};
 }
 
+function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOut: Date | null) {
+	if (effectiveClockOut && effectiveClockOut <= clockIn.timestamp) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Clock out time must be after clock in time",
+				field: "clockOut",
+			}),
+		);
+	}
+
+	return Effect.void;
+}
+
 function applyTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
@@ -306,6 +446,78 @@ function applyTimeCorrection(
 			})
 			.where(eq(workPeriod.id, entityId));
 	});
+}
+
+function activateApprovedTimeCorrectionEntries(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	clockInCorrection: CorrectionEntry,
+	clockOutCorrection: CorrectionEntry | null,
+) {
+	return dbService.query("activateApprovedTimeCorrectionEntries", async () => {
+		const correctionEntryIds = [clockInCorrection.id, clockOutCorrection?.id].filter(
+			(id): id is string => Boolean(id),
+		);
+
+		await dbService.db
+			.update(timeEntry)
+			.set({ isSuperseded: false, supersededById: null })
+			.where(
+				and(
+					eq(timeEntry.type, "correction"),
+					eq(timeEntry.employeeId, period.employeeId),
+					eq(timeEntry.organizationId, period.organizationId),
+					inArray(timeEntry.id, correctionEntryIds),
+				),
+			);
+
+		await dbService.db
+			.update(timeEntry)
+			.set({ isSuperseded: true, supersededById: clockInCorrection.id })
+			.where(
+				and(
+					eq(timeEntry.employeeId, period.employeeId),
+					eq(timeEntry.organizationId, period.organizationId),
+					eq(timeEntry.id, period.clockInId),
+				),
+			);
+
+		if (period.clockOutId && clockOutCorrection) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: true, supersededById: clockOutCorrection.id })
+				.where(
+					and(
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						eq(timeEntry.id, period.clockOutId),
+					),
+				);
+		}
+	});
+}
+
+function getDirtyFromDateForCorrection(period: WorkPeriodRecord, clockInCorrection: CorrectionEntry) {
+	const dirtyFromDateSource =
+		period.startTime.getTime() <= clockInCorrection.timestamp.getTime()
+			? period.startTime
+			: clockInCorrection.timestamp;
+	return DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined;
+}
+
+function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
+	return mark
+		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
+		: Effect.void;
+}
+
+async function markEmployeeWorkBalanceDirtyIfNeeded(mark?: WorkBalanceDirtyMark) {
+	if (!mark) return;
+	try {
+		await markEmployeeWorkBalanceDirty(mark);
+	} catch (error) {
+		logger.error({ error, ...mark }, "Failed to mark work balance dirty");
+	}
 }
 
 function notifyApprovedCorrection(
@@ -343,23 +555,86 @@ function notifyRejectedCorrection(
 	});
 }
 
+function rollbackRejectedTimeCorrection(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	correctionEntries: CorrectionEntry[],
+	reactivateOriginals: boolean,
+) {
+	return dbService.query("rollbackRejectedTimeCorrection", async () => {
+		const originalEntryIds = [period.clockInId, period.clockOutId].filter((id): id is string => Boolean(id));
+		const correctionEntryIds = correctionEntries.map((entry) => entry.id);
+
+		if (reactivateOriginals && originalEntryIds.length > 0) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: false, supersededById: null })
+				.where(
+					and(
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						inArray(timeEntry.id, originalEntryIds),
+					),
+				);
+		}
+
+		if (correctionEntryIds.length > 0) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: true, supersededById: null })
+				.where(
+					and(
+						eq(timeEntry.type, "correction"),
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						inArray(timeEntry.id, correctionEntryIds),
+					),
+				);
+		}
+	});
+}
+
 function handleApprovedTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
 	currentEmployee: CurrentApprover,
+	approval: PendingApprovalRequest,
 ) {
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
-		const correctionEntries = yield* _(loadClockInCorrectionEntries(dbService, period));
-		const clockInCorrection = yield* _(
-			ensureClockInCorrection(
-				correctionEntries.find((entry) => entry.replacesEntryId === period.clockInId),
+		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
+		const linkedClockInCorrection = yield* _(
+			resolveCorrectionEntryForApproval(
+				dbService,
+				period,
+				correctionEntryIds?.clockInCorrectionId,
+				period.clockInId,
+				!correctionEntryIds,
 			),
 		);
-		const clockOutCorrection = yield* _(loadClockOutCorrection(dbService, period));
+		const clockInCorrection = yield* _(
+			ensureClockInCorrection(linkedClockInCorrection as CorrectionEntry | undefined),
+		);
+		const linkedClockOutCorrection = yield* _(
+			resolveCorrectionEntryForApproval(
+				dbService,
+				period,
+				correctionEntryIds?.clockOutCorrectionId,
+				period.clockOutId,
+				!correctionEntryIds,
+			),
+		);
+		const clockOutCorrection = linkedClockOutCorrection as CorrectionEntry | null;
+		yield* _(validateCorrectedPeriodRange(clockInCorrection, clockOutCorrection?.timestamp ?? period.endTime));
 		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
+		yield* _(activateApprovedTimeCorrectionEntries(dbService, period, clockInCorrection, clockOutCorrection));
 		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
+		const workBalanceDirtyMark = {
+			employeeId: period.employeeId,
+			organizationId: period.organizationId,
+			dirtyFromDate: getDirtyFromDateForCorrection(period, clockInCorrection),
+		};
 		yield* _(
 			Effect.promise(() =>
 				syncCanonicalWorkCorrection({
@@ -374,7 +649,7 @@ function handleApprovedTimeCorrection(
 		);
 		notifyApprovedCorrection(period, entityId, currentEmployee, clockInCorrection);
 
-		return period;
+		return { period, workBalanceDirtyMark } satisfies TimeCorrectionApprovalResult;
 	});
 }
 
@@ -383,11 +658,43 @@ function handleRejectedTimeCorrection(
 	entityId: string,
 	currentEmployee: CurrentApprover,
 	reason: string,
+	approval: PendingApprovalRequest,
 ) {
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
+		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
+		const clockInCorrection = yield* _(
+			resolveCorrectionEntryForApproval(
+				dbService,
+				period,
+				correctionEntryIds?.clockInCorrectionId,
+				period.clockInId,
+				!correctionEntryIds,
+			),
+		);
+		const clockOutCorrection = yield* _(
+			resolveCorrectionEntryForApproval(
+				dbService,
+				period,
+				correctionEntryIds?.clockOutCorrectionId,
+				period.clockOutId,
+				!correctionEntryIds,
+			),
+		);
+		const correctionEntries = clockOutCorrection
+			? [clockInCorrection, clockOutCorrection]
+			: [clockInCorrection];
+
+		yield* _(
+			rollbackRejectedTimeCorrection(
+				dbService,
+				period,
+				correctionEntries.filter((entry): entry is CorrectionEntry => Boolean(entry)),
+				!correctionEntryIds,
+			),
+		);
 		notifyRejectedCorrection(period, entityId, currentEmployee, reason);
-		return period;
+		return { period } satisfies TimeCorrectionApprovalResult;
 	});
 }
 
@@ -405,6 +712,9 @@ export async function approveTimeCorrectionEffect(
 	);
 
 	if (!result) return { success: true, data: undefined };
+	if (result.success && result.data) {
+		await markEmployeeWorkBalanceDirtyIfNeeded(result.data.workBalanceDirtyMark);
+	}
 	return result.success ? { success: true, data: undefined } : result;
 }
 
@@ -417,8 +727,8 @@ export async function rejectTimeCorrectionEffect(
 		workPeriodId,
 		"reject",
 		reason,
-		(dbService, entityId, currentEmployee) =>
-			handleRejectedTimeCorrection(dbService, entityId, currentEmployee, reason),
+		(dbService, entityId, currentEmployee, approval) =>
+			handleRejectedTimeCorrection(dbService, entityId, currentEmployee, reason, approval),
 		undefined,
 		{ transactional: true },
 	);

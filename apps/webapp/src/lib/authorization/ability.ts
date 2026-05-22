@@ -16,6 +16,7 @@
 import {
 	AbilityBuilder,
 	createMongoAbility,
+	type ForcedSubject,
 	type MongoAbility,
 } from "@casl/ability";
 import type {
@@ -23,6 +24,10 @@ import type {
 	Subject,
 	PrincipalContext,
 	OrgScopedSubject,
+	EmployeeAuthorizationSubject,
+	TimeEntryAuthorizationSubject,
+	AbsenceAuthorizationSubject,
+	ApprovalAuthorizationSubject,
 } from "./types";
 
 // ============================================
@@ -30,9 +35,18 @@ import type {
 // ============================================
 
 /**
- * Application ability type using string subjects
+ * Application ability type using string subjects and CASL object subjects
  */
-export type AppAbility = MongoAbility<[Action, Subject]>;
+type AppObjectSubject =
+	| (EmployeeAuthorizationSubject & ForcedSubject<"Employee">)
+	| (TimeEntryAuthorizationSubject & ForcedSubject<"TimeEntry">)
+	| (AbsenceAuthorizationSubject & ForcedSubject<"Absence">)
+	| (ApprovalAuthorizationSubject & ForcedSubject<"Approval">);
+
+export type AppAbility = MongoAbility<[
+	Action,
+	Subject | AppObjectSubject,
+]>;
 
 // ============================================
 // ABILITY BUILDER
@@ -116,21 +130,42 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 	if (principal.employee && principal.activeOrganizationId) {
 		const empRole = principal.employee.role;
 		const teamId = principal.employee.teamId;
+		const orgCondition = { organizationId: principal.activeOrganizationId };
+		const selfCondition = {
+			organizationId: principal.activeOrganizationId,
+			employeeId: principal.employee.id,
+		};
+		const directReportCondition = {
+			organizationId: principal.activeOrganizationId,
+			employeeId: { $in: principal.managedEmployeeIds },
+		};
+		const visibleEmployeeIds = [principal.employee.id, ...principal.managedEmployeeIds];
+		const outsideOrgCondition = {
+			organizationId: { $ne: principal.activeOrganizationId },
+		};
+		const employeeActions: Action[] = ["create", "read", "update", "delete", "manage"];
+		const timeEntryActions: Action[] = ["create", "read", "update", "delete", "manage"];
+		const absenceActions: Action[] = [
+			"create",
+			"read",
+			"update",
+			"delete",
+			"manage",
+			"approve",
+			"reject",
+		];
+		const approvalActions: Action[] = ["read", "approve", "reject", "manage"];
 
 		// Employee admin - full workforce access within org
 		if (empRole === "admin") {
 			can("manage", "Team");
-			can("manage", "Employee");
-			can("manage", "TimeEntry");
 			can("manage", "Shift");
 			can("manage", "Project");
 			can("manage", "LeaveRequest");
-			can("manage", "Approval");
 			can("manage", "Report");
 			can("generate", "Report");
 			can("manage", "Location");
 			// Additional workforce subjects
-			can("manage", "Absence");
 			can("manage", "AbsenceAllowance");
 			can("manage", "Schedule");
 			can("manage", "Calendar");
@@ -141,8 +176,6 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		// Manager - can manage direct reports + approvals
 		if (empRole === "manager") {
 			// Self-service for own data
-			can("read", "Employee");
-			can("update", "Employee");
 			can("manage", "TimeEntry");
 			can("manage", "LeaveRequest");
 			can("manage", "Absence");
@@ -156,12 +189,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			}
 
 			// Can approve/reject if has direct reports
-			if (principal.managedEmployeeIds.length > 0) {
-				can("approve", "Approval");
-				can("reject", "Approval");
-				can("approve", "Absence");
-				can("reject", "Absence");
-			}
+			// Object-subject approval grants are applied after additive rules below.
 
 			// Reports access (limited)
 			can("read", "Report");
@@ -170,8 +198,6 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 
 		// Regular employee - self-service only
 		if (empRole === "employee") {
-			can("read", "Employee");
-			can("update", "Employee");
 			can("manage", "TimeEntry");
 			can("create", "LeaveRequest");
 			can("read", "LeaveRequest");
@@ -209,6 +235,70 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			for (const perm of customRole.permissions) {
 				can(perm.action, perm.subject);
 			}
+		}
+
+		// Object-subject guardrails must run after additive grants because CASL
+		// string-subject grants also match `subject(name, object)` checks.
+		if (empRole === "admin") {
+			cannot("manage", "Employee", outsideOrgCondition);
+			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
+			cannot(absenceActions, "Absence", outsideOrgCondition);
+			cannot(approvalActions, "Approval", outsideOrgCondition);
+			can("manage", "Employee", orgCondition);
+			can("manage", "TimeEntry", orgCondition);
+			can("manage", "Absence", orgCondition);
+			can("manage", "Approval", orgCondition);
+		}
+
+		if (empRole === "manager") {
+			cannot(employeeActions, "Employee", outsideOrgCondition);
+			cannot(employeeActions, "Employee", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
+			cannot(timeEntryActions, "TimeEntry", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot(absenceActions, "Absence", outsideOrgCondition);
+			cannot(absenceActions, "Absence", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot(["update", "delete", "manage", "approve", "reject"], "Absence", orgCondition);
+			cannot(approvalActions, "Approval", outsideOrgCondition);
+			cannot(approvalActions, "Approval", orgCondition);
+			can(["read", "update"], "Employee", selfCondition);
+			can("read", "Employee", directReportCondition);
+			can("read", "TimeEntry", selfCondition);
+			can("read", "TimeEntry", directReportCondition);
+			can(["read", "create"], "Absence", selfCondition);
+			can(["read", "approve", "reject"], "Absence", directReportCondition);
+
+			if (principal.managedEmployeeIds.length > 0) {
+				can(["read", "approve", "reject"], "Approval", {
+					organizationId: principal.activeOrganizationId,
+					requestedBy: { $in: principal.managedEmployeeIds },
+				});
+			}
+		}
+
+		if (empRole === "employee") {
+			cannot(employeeActions, "Employee", outsideOrgCondition);
+			cannot(employeeActions, "Employee", {
+				employeeId: { $ne: principal.employee.id },
+			});
+			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
+			cannot(timeEntryActions, "TimeEntry", {
+				employeeId: { $ne: principal.employee.id },
+			});
+			cannot(absenceActions, "Absence", outsideOrgCondition);
+			cannot(absenceActions, "Absence", {
+				employeeId: { $ne: principal.employee.id },
+			});
+			cannot(approvalActions, "Approval", outsideOrgCondition);
+			cannot(approvalActions, "Approval", orgCondition);
+			can(["read", "update"], "Employee", selfCondition);
+			can("read", "TimeEntry", selfCondition);
+			can(["read", "create"], "Absence", selfCondition);
 		}
 	}
 

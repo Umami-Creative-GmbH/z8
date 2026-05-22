@@ -9,6 +9,9 @@ const mockState = vi.hoisted(() => ({
 	getTimeEntriesForMonth: vi.fn(async () => []),
 	getWorkPeriodsForMonth: vi.fn(async () => []),
 	getDailyWorkRequirementsForEmployee: vi.fn(async () => ({})),
+	getEmployeeWorkBalance: vi.fn(async () => null),
+	findEmployee: vi.fn(),
+	findManagerLinks: vi.fn(),
 }));
 
 vi.mock("next/server", async () => {
@@ -21,6 +24,19 @@ vi.mock("next/server", async () => {
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getVerifiedOrgContext: mockState.getVerifiedOrgContext,
+}));
+
+vi.mock("@/db", () => ({
+	db: {
+		query: {
+			employee: {
+				findFirst: mockState.findEmployee,
+			},
+			employeeManagers: {
+				findMany: mockState.findManagerLinks,
+			},
+		},
+	},
 }));
 
 vi.mock("@/lib/calendar/absence-service", () => ({
@@ -43,6 +59,10 @@ vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
 }));
 
+vi.mock("@/lib/work-balance/service", () => ({
+	getEmployeeWorkBalance: mockState.getEmployeeWorkBalance,
+}));
+
 const { GET } = await import("./route");
 
 function createRequest(url: string): NextRequest {
@@ -61,11 +81,20 @@ describe("GET /api/calendar/events", () => {
 		mockState.connection.mockResolvedValue(undefined);
 		mockState.getVerifiedOrgContext.mockResolvedValue({
 			isValid: true,
+			user: { id: "user-1", role: "user" },
 			userId: "user-1",
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			role: "employee",
 		});
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			isActive: true,
+			role: "employee",
+			teamId: null,
+		});
+		mockState.findManagerLinks.mockResolvedValue([]);
 	});
 
 	it("scopes employee calendar event requests to the caller's employee record", async () => {
@@ -136,6 +165,64 @@ describe("GET /api/calendar/events", () => {
 		expect(response.status).toBe(200);
 		expect(body.dailyRequirements).toEqual({});
 		consoleError.mockRestore();
+	});
+
+	it("returns materialized work balance for the scoped employee", async () => {
+		mockState.getEmployeeWorkBalance.mockResolvedValueOnce({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 2520,
+			requiredMinutes: 2400,
+			balanceMinutes: 120,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getEmployeeWorkBalance).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+		});
+		expect(body.workBalance).toMatchObject({
+			balanceMinutes: 120,
+			actualMinutes: 2520,
+			requiredMinutes: 2400,
+		});
+	});
+
+	it("rejects employee-scoped calendar data for an unauthorized requested employee", async () => {
+		mockState.findEmployee
+			.mockResolvedValueOnce({
+				id: "employee-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+				teamId: null,
+			})
+			.mockResolvedValueOnce({
+				id: "employee-2",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+				teamId: null,
+			});
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&employeeId=employee-2&year=2026&month=4&showAbsences=true",
+			),
+		);
+
+		expect(response.status).toBe(403);
+		expect(mockState.getAbsencesForMonth).not.toHaveBeenCalled();
 	});
 
 	it("omits hidden work period events but still returns daily actual minutes", async () => {

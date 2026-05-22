@@ -1,4 +1,5 @@
-import { foreignKey, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { foreignKey, index, jsonb, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { approvalStatusEnum } from "./enums";
@@ -37,6 +38,7 @@ export const approvalRequest = pgTable(
 		status: approvalStatusEnum("status").default("pending").notNull(),
 		reason: text("reason"),
 		notes: text("notes"),
+		metadata: jsonb("metadata").$type<Record<string, unknown>>(),
 
 		approvedAt: timestamp("approved_at"),
 		rejectionReason: text("rejection_reason"),
@@ -50,6 +52,9 @@ export const approvalRequest = pgTable(
 		index("approvalRequest_organizationId_idx").on(table.organizationId),
 		unique("approvalRequest_id_organizationId_idx").on(table.id, table.organizationId),
 		index("approvalRequest_entityType_entityId_idx").on(table.entityType, table.entityId),
+		uniqueIndex("approvalRequest_pending_entity_unique_idx")
+			.on(table.organizationId, table.entityType, table.entityId)
+			.where(sql`status = 'pending'`),
 		index("approvalRequest_org_canonicalRecordId_idx").on(
 			table.organizationId,
 			table.canonicalRecordId,

@@ -5,12 +5,27 @@
  * Ensures proper tenant isolation and permission flag grants.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, expectTypeOf } from "vitest";
+import type { ForcedSubject } from "@casl/ability";
 import {
 	defineAbilityFor,
 	createEmptyAbility,
 	type PrincipalContext,
 } from "../index";
+import { asAppSubject } from "../subjects";
+
+describe("asAppSubject types", () => {
+	it("preserves the literal forced subject type for ability checks", () => {
+		const ability = createEmptyAbility();
+		const timeEntrySubject = asAppSubject("TimeEntry", {
+			employeeId: EMPLOYEE_1,
+			organizationId: ORG_1,
+		});
+
+		expectTypeOf(timeEntrySubject).toMatchTypeOf<ForcedSubject<"TimeEntry">>();
+		expect(ability.can("read", timeEntrySubject)).toBe(false);
+	});
+});
 
 // ============================================
 // TEST FIXTURES
@@ -650,5 +665,410 @@ describe("Custom Roles", () => {
 		// No extra permissions
 		expect(ability.can("approve", "Approval")).toBe(false);
 		expect(ability.can("manage", "Report")).toBe(false);
+	});
+});
+
+describe("Object Subject Conditions", () => {
+	const selfEmployee = {
+		id: EMPLOYEE_1,
+		employeeId: EMPLOYEE_1,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const managedEmployee = {
+		id: EMPLOYEE_2,
+		employeeId: EMPLOYEE_2,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const otherOrgEmployee = {
+		id: "emp-other-org",
+		employeeId: "emp-other-org",
+		organizationId: ORG_2,
+		teamId: TEAM_1,
+	};
+
+	const unmanagedEmployee = {
+		id: "emp-unmanaged",
+		employeeId: "emp-unmanaged",
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const selfTimeEntry = {
+		employeeId: EMPLOYEE_1,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const managedTimeEntry = {
+		employeeId: EMPLOYEE_2,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const otherOrgTimeEntry = {
+		employeeId: EMPLOYEE_1,
+		organizationId: ORG_2,
+		teamId: TEAM_1,
+	};
+
+	const unmanagedTimeEntry = {
+		employeeId: "emp-unmanaged",
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const selfAbsence = {
+		employeeId: EMPLOYEE_1,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+		status: "pending" as const,
+	};
+
+	const managedAbsence = {
+		employeeId: EMPLOYEE_2,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+		status: "pending" as const,
+	};
+
+	const otherOrgAbsence = {
+		employeeId: EMPLOYEE_2,
+		organizationId: ORG_2,
+		teamId: TEAM_1,
+		status: "pending" as const,
+	};
+
+	const unmanagedAbsence = {
+		employeeId: "emp-unmanaged",
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+		status: "pending" as const,
+	};
+
+	const managedApproval = {
+		organizationId: ORG_1,
+		requestedBy: EMPLOYEE_2,
+		approverId: EMPLOYEE_1,
+		status: "pending" as const,
+	};
+
+	const otherOrgApproval = {
+		organizationId: ORG_2,
+		requestedBy: EMPLOYEE_2,
+		approverId: EMPLOYEE_1,
+		status: "pending" as const,
+	};
+
+	const unmanagedApproval = {
+		organizationId: ORG_1,
+		requestedBy: "emp-unmanaged",
+		approverId: EMPLOYEE_1,
+		status: "pending" as const,
+	};
+
+	it("allows employees to read and update their own employee record only in their organization", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+
+		expect(ability.can("read", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("update", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", managedEmployee))).toBe(false);
+		expect(ability.can("read", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
+	});
+
+	it("allows managers to read managed employees in their organization", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("read", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", managedEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
+	});
+
+	it("allows workforce admins to manage workforce records in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "admin",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+
+		expect(ability.can("manage", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("manage", asAppSubject("Employee", managedEmployee))).toBe(true);
+		expect(ability.can("manage", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
+	});
+
+	it("allows employees to manage their own time entries in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+
+		expect(ability.can("manage", "TimeEntry")).toBe(true);
+		expect(ability.can("read", asAppSubject("TimeEntry", selfTimeEntry))).toBe(true);
+		expect(ability.can("update", asAppSubject("TimeEntry", selfTimeEntry))).toBe(true);
+		expect(ability.can("read", asAppSubject("TimeEntry", managedTimeEntry))).toBe(false);
+		expect(ability.can("update", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
+	});
+
+	it("allows managers to read time entries for themselves and direct reports in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("manage", "TimeEntry")).toBe(true);
+		expect(ability.can("read", asAppSubject("TimeEntry", selfTimeEntry))).toBe(true);
+		expect(ability.can("read", asAppSubject("TimeEntry", managedTimeEntry))).toBe(true);
+		expect(ability.can("read", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
+	});
+
+	it("allows managers to approve direct-report absences in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("manage", "Absence")).toBe(true);
+		expect(ability.can("read", asAppSubject("Absence", selfAbsence))).toBe(true);
+		expect(ability.can("approve", asAppSubject("Absence", managedAbsence))).toBe(true);
+		expect(ability.can("approve", asAppSubject("Absence", selfAbsence))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Absence", otherOrgAbsence))).toBe(false);
+	});
+
+	it("allows managers to approve direct-report approvals in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("approve", asAppSubject("Approval", managedApproval))).toBe(true);
+		expect(ability.can("approve", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+	});
+
+	it("keeps permission-flag approval grants scoped for approval object subjects", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+				permissions: {
+					orgWide: { canApproveTeamRequests: true },
+					byTeamId: new Map(),
+				},
+			}),
+		);
+
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("approve", asAppSubject("Approval", managedApproval))).toBe(true);
+		expect(ability.can("approve", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+	});
+
+	it("keeps custom-role approval grants scoped for approval object subjects", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+				customRoles: [
+					{
+						roleId: "role-approval-reader",
+						roleName: "Approval Reader",
+						baseTier: "employee",
+						permissions: [
+							{ action: "read", subject: "Approval" },
+							{ action: "approve", subject: "Approval" },
+						],
+					},
+				],
+			}),
+		);
+
+		expect(ability.can("read", "Approval")).toBe(true);
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("read", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("read", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+	});
+
+	it("keeps custom-role employee grants scoped for employee object subjects", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+				customRoles: [
+					{
+						roleId: "role-employee-reader",
+						roleName: "Employee Reader",
+						baseTier: "employee",
+						permissions: [
+							{ action: "read", subject: "Employee" },
+						],
+					},
+				],
+			}),
+		);
+
+		expect(ability.can("read", "Employee")).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", unmanagedEmployee))).toBe(false);
+		expect(ability.can("read", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
+	});
+
+	it("denies direct manage checks for unmanaged or cross-org employee time entries", () => {
+		const employeeAbility = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+		const managerAbility = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(employeeAbility.can("manage", "TimeEntry")).toBe(true);
+		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", selfTimeEntry))).toBe(true);
+		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", unmanagedTimeEntry))).toBe(false);
+		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
+		expect(managerAbility.can("manage", "TimeEntry")).toBe(true);
+		expect(managerAbility.can("manage", asAppSubject("TimeEntry", managedTimeEntry))).toBe(true);
+		expect(managerAbility.can("manage", asAppSubject("TimeEntry", unmanagedTimeEntry))).toBe(false);
+		expect(managerAbility.can("manage", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
+	});
+
+	it("denies direct manage checks for unmanaged or cross-org employee absences", () => {
+		const employeeAbility = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+		const managerAbility = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(employeeAbility.can("manage", "Absence")).toBe(false);
+		expect(employeeAbility.can("read", asAppSubject("Absence", selfAbsence))).toBe(true);
+		expect(employeeAbility.can("manage", asAppSubject("Absence", selfAbsence))).toBe(false);
+		expect(employeeAbility.can("manage", asAppSubject("Absence", unmanagedAbsence))).toBe(false);
+		expect(employeeAbility.can("manage", asAppSubject("Absence", otherOrgAbsence))).toBe(false);
+		expect(managerAbility.can("manage", "Absence")).toBe(true);
+		expect(managerAbility.can("manage", asAppSubject("Absence", managedAbsence))).toBe(false);
+		expect(managerAbility.can("manage", asAppSubject("Absence", unmanagedAbsence))).toBe(false);
+		expect(managerAbility.can("manage", asAppSubject("Absence", otherOrgAbsence))).toBe(false);
+	});
+
+	it("allows workforce admins to manage time entries, absences, and approvals in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "admin",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+
+		expect(ability.can("manage", "TimeEntry")).toBe(true);
+		expect(ability.can("manage", "Absence")).toBe(true);
+		expect(ability.can("manage", "Approval")).toBe(true);
+		expect(ability.can("manage", asAppSubject("TimeEntry", managedTimeEntry))).toBe(true);
+		expect(ability.can("manage", asAppSubject("Absence", managedAbsence))).toBe(true);
+		expect(ability.can("manage", asAppSubject("Approval", managedApproval))).toBe(true);
+		expect(ability.can("manage", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
+		expect(ability.can("manage", asAppSubject("Absence", otherOrgAbsence))).toBe(false);
+		expect(ability.can("manage", asAppSubject("Approval", otherOrgApproval))).toBe(false);
 	});
 });

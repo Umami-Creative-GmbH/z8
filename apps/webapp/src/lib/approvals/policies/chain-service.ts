@@ -100,6 +100,7 @@ export interface ResolvePolicyAndCreateApprovalInput {
 	context: ApprovalPolicyEvaluationContext;
 	defaultApproverId: string;
 	reason?: string;
+	metadata?: Record<string, unknown>;
 }
 
 export type ResolvePolicyAndCreateApprovalResult =
@@ -204,6 +205,7 @@ async function insertApprovalRequest(
 			approverId,
 			status: "pending",
 			reason: input.reason,
+			metadata: input.metadata,
 		})
 		.returning({ id: approvalRequest.id });
 
@@ -577,26 +579,33 @@ export function progressApprovalChainIfLinked(
 		const next = nextStage as ChainStageInstanceRecord;
 		const nextApprovalRequestId = yield* _(
 			dbService.query("createNextApprovalRequest", () =>
-				insertApprovalRequest(
-					dbService,
-					{
-						context: {
-							organizationId: chainRecord.organizationId,
-							approvalType: chainRecord.entityType as ApprovalPolicyEvaluationContext["approvalType"],
-							requesterEmployeeId: chainRecord.requesterEmployeeId,
-							teamId: null,
-							locationId: null,
-							absenceCategoryId: null,
-							travelExpenseAmount: null,
-							overtimeRisk: null,
-							employeeGroupIds: [],
-							entityType: chainRecord.entityType,
-							entityId: chainRecord.entityId,
+				(async () => {
+					const currentApproval = await dbService.db.query.approvalRequest.findFirst({
+						where: eq(approvalRequest.id, input.approvalRequestId),
+					});
+
+					return insertApprovalRequest(
+						dbService,
+						{
+							context: {
+								organizationId: chainRecord.organizationId,
+								approvalType: chainRecord.entityType as ApprovalPolicyEvaluationContext["approvalType"],
+								requesterEmployeeId: chainRecord.requesterEmployeeId,
+								teamId: null,
+								locationId: null,
+								absenceCategoryId: null,
+								travelExpenseAmount: null,
+								overtimeRisk: null,
+								employeeGroupIds: [],
+								entityType: chainRecord.entityType,
+								entityId: chainRecord.entityId,
+							},
+							defaultApproverId: next.resolvedApproverEmployeeId,
+							metadata: (currentApproval as { metadata?: Record<string, unknown> } | null)?.metadata,
 						},
-						defaultApproverId: next.resolvedApproverEmployeeId,
-					},
-					next.resolvedApproverEmployeeId,
-				),
+						next.resolvedApproverEmployeeId,
+					);
+				})(),
 			),
 		);
 

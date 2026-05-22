@@ -1,15 +1,30 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
 import { logger } from "./shared";
 import { calculateDurationMinutes, setTimeOnStoredDate } from "./time-utils";
+
+type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
+
+async function markWorkBalanceDirtyAfterDeleteBestEffort(
+	input: WorkBalanceDirtyInput,
+	context: Record<string, unknown>,
+) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error({ error, ...context }, "Failed to mark work balance dirty after work period delete");
+	}
+}
 
 export async function approveWorkPeriod(
 	workPeriodId: string,
@@ -170,6 +185,20 @@ export async function deleteWorkPeriod(
 			.set({ isSuperseded: true, notes: deletionNote })
 			.where(eq(timeEntry.id, selectedWorkPeriod.clockOutId));
 		await db.delete(workPeriod).where(eq(workPeriod.id, workPeriodId));
+
+		await markWorkBalanceDirtyAfterDeleteBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId,
+			},
+		);
 
 		logger.info(
 			{

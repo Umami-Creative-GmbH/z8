@@ -127,6 +127,15 @@ export interface ScheduledExportsResult {
 	errors: Array<{ scheduleId: string; error: string }>;
 }
 
+export interface WorkBalanceRefreshResult {
+	success: boolean;
+	employeesProcessed: number;
+	balancesUpdated: number;
+	skipped: number;
+	batchLimit: number;
+	errors: Array<{ employeeId: string; organizationId: string; error: string }>;
+}
+
 /** Result from Teams daily digest job */
 export interface TeamsDailyDigestResult {
 	success: boolean;
@@ -287,6 +296,16 @@ export const CRON_JOBS = {
 			return runScheduledExportsProcessor();
 		},
 		defaultJobOptions: { attempts: 2, priority: 4 },
+	},
+
+	"cron:work-balance": {
+		schedule: "0 */3 * * *",
+		description: "Refresh materialized all-time employee work balances",
+		processor: async (): Promise<WorkBalanceRefreshResult> => {
+			const { runWorkBalanceRefresh } = await import("@/lib/jobs/work-balance");
+			return runWorkBalanceRefresh();
+		},
+		defaultJobOptions: { attempts: 2, priority: 5 },
 	},
 
 	"cron:teams-daily-digest": {

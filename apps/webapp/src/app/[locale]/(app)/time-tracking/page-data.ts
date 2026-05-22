@@ -6,14 +6,17 @@ import type {
 } from "@/components/time-tracking/personal-workday-timeline";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, userSettings } from "@/db/schema";
+import { userSettings } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeTimeFormat } from "@/lib/user-preferences/time-format";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
+import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import { getTranslate } from "@/tolgee/server";
 import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
+import { getCurrentEmployee } from "./actions/auth";
 import type {
 	SelectedWorkdayDate,
 	WorkdayTimelineItem,
@@ -29,9 +32,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	const session = (await auth.api.getSession({ headers: await headers() }))!;
 
 	const [currentEmployee, settings] = await Promise.all([
-		db.query.employee.findFirst({
-			where: eq(employee.userId, session.user.id),
-		}),
+		getCurrentEmployee(),
 		db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, session.user.id),
 			columns: { timezone: true, weekStartDay: true, timeFormat: true },
@@ -57,19 +58,29 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	});
 	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
-	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
-		getActiveWorkPeriod(currentEmployee.id),
-		getWorkPeriods(currentEmployee.id, startDate, endDate),
-		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
-		getTranslate(),
-		getWorkdayTimelineData({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			timezone,
-			timeFormat,
-			dateParam: searchParams.date,
-		}),
-	]);
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, workBalance, managerId] =
+		await Promise.all([
+			getActiveWorkPeriod(currentEmployee.id),
+			getWorkPeriods(currentEmployee.id, startDate, endDate),
+			getTimeSummary(currentEmployee.id, timezone, weekStartDay),
+			getTranslate(),
+			getWorkdayTimelineData({
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				timezone,
+				timeFormat,
+				dateParam: searchParams.date,
+			}),
+			getSafeEmployeeWorkBalance({
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
+			getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
+		]);
 
 	return {
 		session,
@@ -78,11 +89,24 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		timeFormat,
 		activeWorkPeriod,
 		workPeriods,
+		hasManager: Boolean(managerId),
 		canApproveTimeEntries,
 		summary,
+		workBalance,
 		t,
 		timelineResult: serializeWorkdayTimelineResult(timelineResult),
 	} as const;
+}
+
+export async function getSafeEmployeeWorkBalance(
+	params: Parameters<typeof getEmployeeWorkBalance>[0],
+) {
+	try {
+		return await getEmployeeWorkBalance(params);
+	} catch (error) {
+		console.error("Failed to load employee work balance", { ...params, error });
+		return null;
+	}
 }
 
 function serializeWorkdayTimelineResult(

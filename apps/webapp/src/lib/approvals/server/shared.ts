@@ -93,11 +93,13 @@ function loadPendingApprovalRequest(
 				where: approvalRequestId
 					? and(
 							eq(approvalRequest.id, approvalRequestId),
+							eq(approvalRequest.organizationId, actorOrganizationId),
 							eq(approvalRequest.entityType, entityType),
 							eq(approvalRequest.entityId, entityId),
 							eq(approvalRequest.status, "pending"),
 						)
 					: and(
+							eq(approvalRequest.organizationId, actorOrganizationId),
 							eq(approvalRequest.entityType, entityType),
 							eq(approvalRequest.entityId, entityId),
 							eq(approvalRequest.approverId, approverId),
@@ -138,6 +140,7 @@ function loadPendingApprovalRequest(
 function updatePendingApprovalRequest(
 	dbService: ApprovalDbService,
 	approvalId: string,
+	organizationId: string,
 	statusUpdate: ApprovalStatusUpdate,
 ) {
 	return dbService
@@ -145,7 +148,13 @@ function updatePendingApprovalRequest(
 			const updateQuery = dbService.db
 				.update(approvalRequest)
 				.set(statusUpdate)
-				.where(and(eq(approvalRequest.id, approvalId), eq(approvalRequest.status, "pending")));
+				.where(
+					and(
+						eq(approvalRequest.id, approvalId),
+						eq(approvalRequest.organizationId, organizationId),
+						eq(approvalRequest.status, "pending"),
+					),
+				);
 
 			const updatedRows =
 				updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
@@ -179,6 +188,7 @@ function executeApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		approval: PendingApprovalRequest,
 	) => Effect.Effect<T, AnyAppError, unknown>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
@@ -219,7 +229,9 @@ function executeApprovalWithCurrentEmployee<T>(
 			"Processing approval action",
 		);
 
-		yield* _(updatePendingApprovalRequest(dbService, approval.id, statusUpdate));
+		yield* _(
+			updatePendingApprovalRequest(dbService, approval.id, currentEmployee.organizationId, statusUpdate),
+		);
 
 		const chainResult = yield* _(
 			progressApprovalChainIfLinked(dbService, {
@@ -237,7 +249,7 @@ function executeApprovalWithCurrentEmployee<T>(
 
 		let domainResult: T | undefined;
 		if (updateEntity && shouldRunDomainSideEffect) {
-			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee));
+			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee, approval));
 		}
 
 		yield* _(
@@ -279,6 +291,7 @@ export function processApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		approval: PendingApprovalRequest,
 	) => Effect.Effect<T, AnyAppError, unknown>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
@@ -360,6 +373,7 @@ export async function processApproval<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		approval: PendingApprovalRequest,
 	) => Effect.Effect<T, AnyAppError, unknown>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
