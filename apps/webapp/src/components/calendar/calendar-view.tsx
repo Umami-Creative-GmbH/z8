@@ -5,7 +5,7 @@ import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import type { CalendarEvent } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
+import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
@@ -69,7 +69,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, isLoading, error, refetch } = useCalendarData({
+	const { events, dailyRequirements, dailyActualMinutes, isLoading, error, refetch } = useCalendarData({
 		organizationId,
 		month: currentMonth.getMonth(),
 		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
@@ -77,22 +77,10 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 		fullYear: viewMode === "year",
 	});
 
-	// Calculate work hours data from work periods
-	const workHoursData = useMemo(() => {
-		const map = new Map<string, { expected: number; actual: number }>();
-
-		// Group work periods by date and sum up actual hours
-		for (const event of events) {
-			if (event.type === "work_period") {
-				const dateKey = format(event.date, "yyyy-MM-dd");
-				const existing = map.get(dateKey) || { expected: 8 * 60, actual: 0 }; // Default 8h expected
-				existing.actual += event.metadata.durationMinutes || 0;
-				map.set(dateKey, existing);
-			}
-		}
-
-		return map;
-	}, [events]);
+	const workHoursData = useMemo(
+		() => buildDailyWorkHoursSummaries({ events, dailyRequirements, dailyActualMinutes }),
+		[events, dailyRequirements, dailyActualMinutes],
+	);
 
 	// Handle event click
 	const handleEventClick = useCallback((event: CalendarEvent) => {
@@ -206,6 +194,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							onEventClick={handleEventClick}
 							onRangeChange={handleRangeChange}
 							onRefresh={refetch}
+							workHoursData={workHoursData}
 						/>
 					)}
 				</div>

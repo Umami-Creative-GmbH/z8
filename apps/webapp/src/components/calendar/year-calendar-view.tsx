@@ -6,7 +6,11 @@ import { memo, useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkHoursStatus,
+	DailyWorkHoursSummaries,
+} from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
@@ -19,7 +23,7 @@ interface YearCalendarViewProps {
 	onYearChange: (year: number) => void;
 	onViewModeChange: (mode: ViewMode) => void;
 	onDayClick?: (date: Date) => void;
-	workHoursData?: Map<string, { expected: number; actual: number }>;
+	workHoursData?: DailyWorkHoursSummaries;
 }
 
 const MONTH_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -52,6 +56,21 @@ function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStart
 	return weekStartDay === "monday" ? (day + 6) % 7 : day;
 }
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function getWorkStatusLabel(status: DailyWorkHoursStatus, t: Translate): string {
+	switch (status) {
+		case "met":
+			return t("calendar.workStatus.requirementMet", "requirement met");
+		case "over":
+			return t("calendar.workStatus.overRequirement", "over requirement");
+		case "under":
+			return t("calendar.workStatus.underRequirement", "under requirement");
+		case "missing":
+			return t("calendar.workStatus.requiredHoursMissing", "required hours missing");
+	}
+}
+
 interface MiniMonthProps {
 	year: number;
 	month: number;
@@ -59,7 +78,9 @@ interface MiniMonthProps {
 	eventsByDate: Map<string, CalendarEvent[]>;
 	weekdays: string[];
 	weekStartDay: WeekStartDay;
-	workHoursData?: Map<string, { expected: number; actual: number }>;
+	locale: string;
+	t: Translate;
+	workHoursData?: DailyWorkHoursSummaries;
 	onDayClick?: (date: Date) => void;
 }
 
@@ -70,11 +91,17 @@ const MiniMonth = memo(function MiniMonth({
 	eventsByDate,
 	weekdays,
 	weekStartDay,
+	locale,
+	t,
 	workHoursData,
 	onDayClick,
 }: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
+	const dayLabelFormatter = useMemo(
+		() => new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", year: "numeric" }),
+		[locale],
+	);
 	const today = new Date();
 	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
@@ -106,22 +133,20 @@ const MiniMonth = memo(function MiniMonth({
 				{/* Actual days */}
 				{days.map((date) => {
 					const dateKey = format(date, "yyyy-MM-dd");
+					const dateLabel = dayLabelFormatter.format(date);
 					const dayEvents = eventsByDate.get(dateKey) || [];
 					const workHours = workHoursData?.get(dateKey);
 					const isToday = isCurrentMonth && date.getDate() === today.getDate();
 					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
-					// Determine work hours status
-					let workStatus: "met" | "overtime" | "undertime" | "none" = "none";
-					if (workHours && workHours.expected > 0) {
-						if (workHours.actual >= workHours.expected * 1.1) {
-							workStatus = "overtime";
-						} else if (workHours.actual >= workHours.expected * 0.95) {
-							workStatus = "met";
-						} else if (workHours.actual > 0) {
-							workStatus = "undertime";
-						}
-					}
+					const workStatus: DailyWorkHoursStatus | "none" = workHours?.status ?? "none";
+					const dayLabel =
+						workStatus === "none"
+							? dateLabel
+							: t("calendar.year.dayWithWorkStatus", "{date}, {status}", {
+									date: dateLabel,
+									status: getWorkStatusLabel(workStatus, t),
+								});
 
 					// Determine if there are events to show
 					const hasHoliday = dayEvents.some((e) => e.type === "holiday");
@@ -131,6 +156,7 @@ const MiniMonth = memo(function MiniMonth({
 						<button
 							key={date.getTime()}
 							type="button"
+							aria-label={dayLabel}
 							onClick={() => onDayClick?.(date)}
 							className={cn(
 								"aspect-square flex flex-col items-center justify-center text-[10px] rounded-sm relative",
@@ -149,8 +175,9 @@ const MiniMonth = memo(function MiniMonth({
 									className={cn(
 										"absolute bottom-0.5 left-1/2 -translate-x-1/2 size-1 rounded-full",
 										workStatus === "met" && "bg-green-500",
-										workStatus === "overtime" && "bg-purple-500",
-										workStatus === "undertime" && "bg-orange-500",
+										workStatus === "over" && "bg-green-500",
+										workStatus === "under" && "bg-red-500",
+										workStatus === "missing" && "bg-muted-foreground",
 									)}
 								/>
 							)}
@@ -238,15 +265,15 @@ export function YearCalendarView({
 			<div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
 				<div className="flex items-center gap-1">
 					<div className="size-2 rounded-full bg-green-500" />
-					<span>{t("calendar.legend.hoursMet", "Hours Met")}</span>
+					<span>{t("calendar.legend.requirementMetOrOver", "Requirement met/over")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="size-2 rounded-full bg-purple-500" />
-					<span>{t("calendar.legend.overtime", "Overtime")}</span>
+					<div className="size-2 rounded-full bg-red-500" />
+					<span>{t("calendar.legend.underRequirement", "Under requirement")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="size-2 rounded-full bg-orange-500" />
-					<span>{t("calendar.legend.undertime", "Undertime")}</span>
+					<div className="size-2 rounded-full bg-muted-foreground" />
+					<span>{t("calendar.legend.missingRequiredWork", "Missing required work")}</span>
 				</div>
 				<div className="flex items-center gap-1">
 					<div className="size-3 rounded bg-amber-100 dark:bg-amber-900/30 border" />
@@ -269,6 +296,8 @@ export function YearCalendarView({
 						eventsByDate={eventsByDate}
 						weekdays={weekdays}
 						weekStartDay={weekStartDay}
+						locale={locale}
+						t={t}
 						workHoursData={workHoursData}
 						onDayClick={onDayClick}
 					/>

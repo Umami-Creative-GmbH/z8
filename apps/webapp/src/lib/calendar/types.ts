@@ -13,6 +13,26 @@ export interface CalendarEvent {
 	metadata: Record<string, any>;
 }
 
+export interface DailyWorkRequirement {
+	requiredMinutes: number;
+	policyId: string;
+	policyName: string;
+}
+
+export type DailyWorkRequirements = Record<string, DailyWorkRequirement>;
+
+export type DailyWorkActualMinutes = Record<string, number>;
+
+export type DailyWorkHoursStatus = "met" | "over" | "under" | "missing";
+
+export interface DailyWorkHoursSummary extends DailyWorkRequirement {
+	actualMinutes: number;
+	deltaMinutes: number;
+	status: DailyWorkHoursStatus;
+}
+
+export type DailyWorkHoursSummaries = Map<string, DailyWorkHoursSummary>;
+
 export interface HolidayEvent extends CalendarEvent {
 	type: "holiday";
 	metadata: {
