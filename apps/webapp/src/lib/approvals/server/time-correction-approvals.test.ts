@@ -339,6 +339,94 @@ describe("time correction requester decision notifications", () => {
 		expect(dbService.db.query.timeEntry.findFirst).toHaveBeenCalled();
 	});
 
+	it("rejects approval application when a clock-in-only correction is after the existing clock-out", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const invalidCorrection = {
+			...correction,
+			timestamp: new Date("2026-05-11T17:00:00.000Z"),
+		};
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce(invalidCorrection);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("Clock out time must be after clock in time");
+
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockInId: invalidCorrection.id })]),
+		);
+	});
+
+	it("approves a legacy pending correction without metadata when one active correction is unambiguous", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: null,
+		});
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ clockInId: correction.id, startTime: correction.timestamp }),
+			]),
+		);
+	});
+
+	it("rejects a legacy pending correction without metadata when active corrections are ambiguous", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const secondCorrection = {
+			id: "entry-second-correction",
+			timestamp: new Date("2026-05-11T08:45:00.000Z"),
+			replacesEntryId: "entry-original",
+			isSuperseded: false,
+		};
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: null,
+		});
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction, secondCorrection]) }),
+		} as never);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).rejects.toThrow("ambiguous legacy time correction approval");
+
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ clockInId: correction.id })]),
+		);
+	});
+
 	it("notifies the requester after rejecting a time correction request", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 
@@ -448,6 +536,74 @@ describe("time correction requester decision notifications", () => {
 
 		expect(dbService.db.query.timeEntry.findFirst).toHaveBeenCalled();
 		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
+		);
+	});
+
+	it("rejects a legacy pending correction without metadata when one active correction is unambiguous", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: null,
+		});
+
+		await runTimeCorrectionDecisionEffect(
+			rejectTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+				"Incorrect correction",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
+		);
+	});
+
+	it("does not roll back legacy pending corrections without metadata when active corrections are ambiguous", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const secondCorrection = {
+			id: "entry-second-correction",
+			timestamp: new Date("2026-05-11T08:45:00.000Z"),
+			replacesEntryId: "entry-original",
+			isSuperseded: false,
+		};
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: null,
+		});
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction, secondCorrection]) }),
+		} as never);
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				rejectTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+					"Incorrect correction",
+				),
+			),
+		).rejects.toThrow("ambiguous legacy time correction approval");
+
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([{ isSuperseded: false, supersededById: null }]),
+		);
+		expect(dbService.updateSets).not.toEqual(
 			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
 		);
 	});

@@ -182,14 +182,15 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Clock out time cannot be in the future" };
 	}
 
-	if (correctedClockOutDate && correctedClockOutDate <= correctedClockInDate) {
+	const effectiveClockOut = correctedClockOutDate ?? selectedWorkPeriod.endTime;
+	if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
 		return { success: false, error: "Clock out time must be after clock in time" };
 	}
 
 	const validation = await validateTimeEntryRange(
 		currentEmployee.organizationId,
 		correctedClockInDate,
-		correctedClockOutDate || correctedClockInDate,
+		effectiveClockOut || correctedClockInDate,
 	);
 
 	if (!validation.isValid) {
@@ -434,6 +435,18 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
+		const effectiveClockOut = correctedClockOutDate ?? selectedWorkPeriod.endTime;
+		if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Clock out time must be after clock in time",
+						field: "newClockOutTime",
+					}),
+				),
+			);
+		}
+
 		yield* _(
 			Effect.annotateCurrentSpan(
 				"correction.corrected_clock_in",
@@ -454,7 +467,7 @@ export async function requestTimeCorrectionEffect(
 				validateTimeEntryRange(
 					currentEmployee.organizationId,
 					correctedClockInDate,
-					correctedClockOutDate || correctedClockInDate,
+					effectiveClockOut || correctedClockInDate,
 				),
 			),
 		);

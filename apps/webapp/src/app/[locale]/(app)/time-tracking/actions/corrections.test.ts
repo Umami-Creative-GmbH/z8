@@ -76,4 +76,32 @@ describe("time correction request safety", () => {
 		expect(body).toContain("pending_time_correction_approval");
 		expect(body).toContain("A time correction approval is already pending for this work period");
 	});
+
+	it.each([
+		["modular", modularSource, "selectedWorkPeriod.endTime"],
+		["legacy", legacySource, "period.endTime"],
+	])(
+		"rejects %s direct clock-in-only edits after the existing clock-out",
+		(_name, source, existingClockOutExpression) => {
+			const body = functionBody(source, "editSameDayTimeEntry");
+
+			expect(body).toContain(`const effectiveClockOut = correctedClockOutDate ?? ${existingClockOutExpression}`);
+			expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
+			expect(body).toContain("Clock out time must be after clock in time");
+		},
+	);
+
+	it.each([
+		["modular", modularSource, "selectedWorkPeriod.endTime"],
+		["legacy", legacySource, "period.endTime"],
+	])(
+		"rejects %s approval requests when clock-in-only correction is after the existing clock-out",
+		(_name, source, existingClockOutExpression) => {
+			const body = functionBody(source, "requestTimeCorrectionEffect");
+
+			expect(body).toContain(`const effectiveClockOut = correctedClockOutDate ?? ${existingClockOutExpression}`);
+			expect(body).toContain("if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)");
+			expect(body).toContain("Clock out time must be after clock in time");
+		},
+	);
 });

@@ -4,7 +4,13 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import {
+	type AnyAppError,
+	ConflictError,
+	DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
@@ -118,7 +124,11 @@ function loadWorkPeriod(
 		);
 }
 
-function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: WorkPeriodRecord) {
+function loadActiveCorrectionEntries(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	replacesEntryId: string,
+) {
 	return dbService
 		.query("getCorrectionEntries", async () => {
 			return await dbService.db
@@ -129,37 +139,12 @@ function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: Work
 						eq(timeEntry.type, "correction"),
 						eq(timeEntry.employeeId, period.employeeId),
 						eq(timeEntry.organizationId, period.organizationId),
-						eq(timeEntry.replacesEntryId, period.clockInId),
+						eq(timeEntry.replacesEntryId, replacesEntryId),
 						eq(timeEntry.isSuperseded, false),
 					),
 				);
 		})
 		.pipe(Effect.map((entries) => (entries as CorrectionEntry[]).filter((entry) => !entry.isSuperseded)));
-}
-
-function loadClockOutCorrection(dbService: ApprovalDbService, period: WorkPeriodRecord) {
-	return dbService
-		.query("getClockOutCorrection", async () => {
-			if (!period.clockOutId) {
-				return null;
-			}
-
-			return await dbService.db.query.timeEntry.findFirst({
-				where: and(
-					eq(timeEntry.type, "correction"),
-					eq(timeEntry.employeeId, period.employeeId),
-					eq(timeEntry.organizationId, period.organizationId),
-					eq(timeEntry.replacesEntryId, period.clockOutId),
-					eq(timeEntry.isSuperseded, false),
-				),
-			});
-		})
-		.pipe(
-			Effect.map((entry) => {
-				const correction = entry as CorrectionEntry | null;
-				return correction?.isSuperseded ? null : correction;
-			}),
-		);
 }
 
 function correctionEntryIdsFromApproval(approval: PendingApprovalRequest) {
@@ -190,6 +175,42 @@ function loadApprovalLinkedCorrectionEntry(
 			});
 		})
 		.pipe(Effect.map((entry) => entry as CorrectionEntry | null));
+}
+
+function resolveCorrectionEntryForApproval(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	correctionId: string | undefined,
+	replacesEntryId: string | null,
+	allowLegacyFallback: boolean,
+) {
+	if (correctionId) {
+		return loadApprovalLinkedCorrectionEntry(dbService, period, correctionId, replacesEntryId);
+	}
+
+	if (!allowLegacyFallback || !replacesEntryId) {
+		return Effect.succeed(null);
+	}
+
+	return loadActiveCorrectionEntries(dbService, period, replacesEntryId).pipe(
+		Effect.flatMap((entries) => {
+			if (entries.length === 1) {
+				return Effect.succeed(entries[0]);
+			}
+
+			if (entries.length === 0) {
+				return Effect.succeed(null);
+			}
+
+			return Effect.fail(
+				new ConflictError({
+					message: "Cannot resolve ambiguous legacy time correction approval",
+					conflictType: "ambiguous_legacy_time_correction_approval",
+					details: { workPeriodId: period.id, replacesEntryId },
+				}),
+			);
+		}),
+	);
 }
 
 function ensureClockInCorrection(
@@ -412,6 +433,19 @@ function calculateCorrectedPeriod(
 	};
 }
 
+function validateCorrectedPeriodRange(clockIn: CorrectionEntry, effectiveClockOut: Date | null) {
+	if (effectiveClockOut && effectiveClockOut <= clockIn.timestamp) {
+		return Effect.fail(
+			new ValidationError({
+				message: "Clock out time must be after clock in time",
+				field: "clockOut",
+			}),
+		);
+	}
+
+	return Effect.void;
+}
+
 function applyTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
@@ -539,25 +573,28 @@ function handleApprovedTimeCorrection(
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
 		const linkedClockInCorrection = yield* _(
-			loadApprovalLinkedCorrectionEntry(
+			resolveCorrectionEntryForApproval(
 				dbService,
 				period,
 				correctionEntryIds?.clockInCorrectionId,
 				period.clockInId,
+				!correctionEntryIds,
 			),
 		);
 		const clockInCorrection = yield* _(
 			ensureClockInCorrection(linkedClockInCorrection as CorrectionEntry | undefined),
 		);
 		const linkedClockOutCorrection = yield* _(
-			loadApprovalLinkedCorrectionEntry(
+			resolveCorrectionEntryForApproval(
 				dbService,
 				period,
 				correctionEntryIds?.clockOutCorrectionId,
 				period.clockOutId,
+				!correctionEntryIds,
 			),
 		);
 		const clockOutCorrection = linkedClockOutCorrection as CorrectionEntry | null;
+		yield* _(validateCorrectedPeriodRange(clockInCorrection, clockOutCorrection?.timestamp ?? period.endTime));
 		const correctedPeriod = calculateCorrectedPeriod(period, clockInCorrection, clockOutCorrection);
 
 		yield* _(applyTimeCorrection(dbService, entityId, clockInCorrection, correctedPeriod));
@@ -595,19 +632,21 @@ function handleRejectedTimeCorrection(
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
 		const correctionEntryIds = correctionEntryIdsFromApproval(approval);
 		const clockInCorrection = yield* _(
-			loadApprovalLinkedCorrectionEntry(
+			resolveCorrectionEntryForApproval(
 				dbService,
 				period,
 				correctionEntryIds?.clockInCorrectionId,
 				period.clockInId,
+				!correctionEntryIds,
 			),
 		);
 		const clockOutCorrection = yield* _(
-			loadApprovalLinkedCorrectionEntry(
+			resolveCorrectionEntryForApproval(
 				dbService,
 				period,
 				correctionEntryIds?.clockOutCorrectionId,
 				period.clockOutId,
+				!correctionEntryIds,
 			),
 		);
 		const correctionEntries = clockOutCorrection

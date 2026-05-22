@@ -315,7 +315,8 @@ export async function editSameDayTimeEntry(
 	}
 
 	// Validate time span - clock out must be after clock in
-	if (correctedClockOutDate && correctedClockOutDate <= correctedClockInDate) {
+	const effectiveClockOut = correctedClockOutDate ?? period.endTime;
+	if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
 		return {
 			success: false,
 			error: "Clock out time must be after clock in time",
@@ -326,7 +327,7 @@ export async function editSameDayTimeEntry(
 	const validation = await validateTimeEntryRange(
 		emp.organizationId,
 		correctedClockInDate,
-		correctedClockOutDate || correctedClockInDate,
+		effectiveClockOut || correctedClockInDate,
 	);
 
 	if (!validation.isValid) {
@@ -643,6 +644,18 @@ export async function requestTimeCorrectionEffect(
 			}
 		}
 
+		const effectiveClockOut = correctedClockOutDate ?? period.endTime;
+		if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Clock out time must be after clock in time",
+						field: "newClockOutTime",
+					}),
+				),
+			);
+		}
+
 		yield* _(
 			Effect.annotateCurrentSpan(
 				"correction.corrected_clock_in",
@@ -664,7 +677,7 @@ export async function requestTimeCorrectionEffect(
 				validateTimeEntryRange(
 					currentEmployee.organizationId,
 					correctedClockInDate,
-					correctedClockOutDate || correctedClockInDate,
+					effectiveClockOut || correctedClockInDate,
 				),
 			),
 		);
