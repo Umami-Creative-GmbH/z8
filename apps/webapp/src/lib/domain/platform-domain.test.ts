@@ -112,15 +112,26 @@ describe("platform organization resolution", () => {
 		});
 	});
 
-	it("resolves platform labels by slug before id", async () => {
+	it("resolves platform labels by slug when no id matches", async () => {
 		mockState.db.query.organization.findFirst
 			.mockResolvedValueOnce({ id: "org_slug", slug: "acme", name: "Acme" })
-			.mockResolvedValueOnce({ id: "org_id", slug: "other", name: "Other" });
+			.mockResolvedValueOnce(null);
 
 		const result = await resolvePlatformOrganization("acme");
 
 		expect(result).toEqual({ id: "org_slug", slug: "acme", name: "Acme" });
-		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(1);
+		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it("prefers organization id aliases when a slug shadows another organization id", async () => {
+		mockState.db.query.organization.findFirst
+			.mockResolvedValueOnce({ id: "org_shadow", slug: "org_victim", name: "Shadow" })
+			.mockResolvedValueOnce({ id: "org_victim", slug: "victim", name: "Victim" });
+
+		const result = await resolvePlatformOrganization("org_victim");
+
+		expect(result).toEqual({ id: "org_victim", slug: "victim", name: "Victim" });
+		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
 	});
 
 	it("falls back to organization id when no slug matches", async () => {

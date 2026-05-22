@@ -111,16 +111,12 @@ export async function resolvePlatformOrganization(
 		columns: { id: true, slug: true, name: true },
 	});
 
-	if (bySlug) {
-		return bySlug;
-	}
-
 	const byId = await db.query.organization.findFirst({
 		where: eq(organization.id, label),
 		columns: { id: true, slug: true, name: true },
 	});
 
-	return byId ?? null;
+	return byId ?? bySlug ?? null;
 }
 
 export function getCanonicalPlatformDomain(organizationSlug: string): string {
