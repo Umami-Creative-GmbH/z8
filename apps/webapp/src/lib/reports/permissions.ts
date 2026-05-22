@@ -5,10 +5,20 @@
  * Uses the employeeManagers junction table for manager relationships.
  */
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import type { AccessibleEmployee } from "./types";
+
+export function getReportAccessibleEmployeeIds(input: {
+	currentEmployeeId: string;
+	role: "admin" | "manager" | "employee";
+	managedEmployeeIds: string[];
+}): string[] | null {
+	if (input.role === "admin") return null;
+	if (input.role === "manager") return [input.currentEmployeeId, ...input.managedEmployeeIds];
+	return [input.currentEmployeeId];
+}
 
 /**
  * Check if an employee can generate a report for a target employee
@@ -26,11 +36,6 @@ export async function canGenerateReport(
 	currentEmployeeId: string,
 	targetEmployeeId: string,
 ): Promise<boolean> {
-	// Employee can access own reports
-	if (currentEmployeeId === targetEmployeeId) {
-		return true;
-	}
-
 	const [currentEmp, targetEmp] = await Promise.all([
 		db.query.employee.findFirst({
 			where: eq(employee.id, currentEmployeeId),
@@ -49,25 +54,21 @@ export async function canGenerateReport(
 		return false;
 	}
 
-	// Admins can generate reports for all employees in their organization
-	if (currentEmp.role === "admin") {
-		return true;
-	}
-
-	// Managers can generate reports for their direct reports (via employeeManagers junction table)
+	let managedEmployeeIds: string[] = [];
 	if (currentEmp.role === "manager") {
-		const managerRelation = await db.query.employeeManagers.findFirst({
-			where: and(
-				eq(employeeManagers.employeeId, targetEmployeeId),
-				eq(employeeManagers.managerId, currentEmployeeId),
-			),
+		const managerRelations = await db.query.employeeManagers.findMany({
+			where: eq(employeeManagers.managerId, currentEmployeeId),
 		});
-		if (managerRelation) {
-			return true;
-		}
+		managedEmployeeIds = managerRelations.map((rel) => rel.employeeId);
 	}
 
-	return false;
+	const accessibleEmployeeIds = getReportAccessibleEmployeeIds({
+		currentEmployeeId,
+		role: currentEmp.role,
+		managedEmployeeIds,
+	});
+
+	return accessibleEmployeeIds === null || accessibleEmployeeIds.includes(targetEmployeeId);
 }
 
 /**
@@ -95,8 +96,28 @@ export async function getAccessibleEmployees(
 		return [];
 	}
 
+	let managerRelations: Awaited<ReturnType<typeof db.query.employeeManagers.findMany>> = [];
+	if (currentEmp.role === "manager") {
+		managerRelations = await db.query.employeeManagers.findMany({
+			where: eq(employeeManagers.managerId, currentEmployeeId),
+			with: {
+				employee: {
+					with: {
+						user: true,
+					},
+				},
+			},
+		});
+	}
+
+	const accessibleEmployeeIds = getReportAccessibleEmployeeIds({
+		currentEmployeeId,
+		role: currentEmp.role,
+		managedEmployeeIds: managerRelations.map((rel) => rel.employeeId),
+	});
+
 	// For admins: get all employees in organization (current employee first)
-	if (currentEmp.role === "admin") {
+	if (accessibleEmployeeIds === null) {
 		const allEmployees = await db.query.employee.findMany({
 			where: eq(employee.organizationId, currentEmp.organizationId),
 			with: {
@@ -136,17 +157,6 @@ export async function getAccessibleEmployees(
 
 	// For managers: get self and direct reports (via employeeManagers junction table)
 	if (currentEmp.role === "manager") {
-		const managerRelations = await db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.managerId, currentEmployeeId),
-			with: {
-				employee: {
-					with: {
-						user: true,
-					},
-				},
-			},
-		});
-
 		// Include self and direct reports
 		return [
 			{
