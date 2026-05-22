@@ -169,6 +169,13 @@
       "when": 1779299200000,
       "tag": "0023_billing_local_trials",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1779443910353,
+      "tag": "0024_employee_time_balance",
+      "breakpoints": true
     }
   ]
 }
