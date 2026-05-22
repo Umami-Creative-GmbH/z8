@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	buildMonthWorkSummary,
-	groupCalendarEventsByDate,
 	type MonthWorkDay,
 	type MonthWorkWeek,
 	type WorkPeriodTotal,
@@ -302,7 +301,6 @@ export function MonthWorkSummaryView({
 	const activeMonth = DateTime.fromJSDate(monthDate).startOf("month");
 	const monthTitle = activeMonth.setLocale(locale).toFormat("LLLL yyyy");
 	const weekdays = useMemo(() => getWeekdayNames(locale, weekStartDay), [locale, weekStartDay]);
-	const eventsByDate = useMemo(() => groupCalendarEventsByDate(events), [events]);
 	const monthSummary = useMemo(
 		() =>
 			buildMonthWorkSummary({
@@ -310,9 +308,9 @@ export function MonthWorkSummaryView({
 				monthIndex: activeMonth.month - 1,
 				weekStartDay,
 				workHoursData,
-				events: Array.from(eventsByDate.values()).flat(),
+				events,
 			}),
-		[activeMonth.month, activeMonth.year, eventsByDate, weekStartDay, workHoursData],
+		[activeMonth.month, activeMonth.year, events, weekStartDay, workHoursData],
 	);
 
 	return (

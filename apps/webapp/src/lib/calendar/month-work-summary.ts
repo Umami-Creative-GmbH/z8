@@ -85,12 +85,23 @@ export function groupCalendarEventsByDate(events: CalendarEvent[]): Map<string, 
 	const grouped = new Map<string, CalendarEvent[]>();
 
 	for (const event of events) {
-		const dateKey = DateTime.fromJSDate(event.date, { zone: "utc" }).toISODate();
-		if (!dateKey) continue;
+		const startDate = DateTime.fromJSDate(event.date, { zone: "utc" }).startOf("day");
+		const endDate = event.endDate
+			? DateTime.fromJSDate(event.endDate, { zone: "utc" }).startOf("day")
+			: startDate;
+		const lastDate = endDate < startDate ? startDate : endDate;
 
-		const existing = grouped.get(dateKey) ?? [];
-		existing.push(event);
-		grouped.set(dateKey, existing);
+		let current = startDate;
+		while (current <= lastDate) {
+			const dateKey = current.toISODate();
+			if (dateKey) {
+				const existing = grouped.get(dateKey) ?? [];
+				existing.push(event);
+				grouped.set(dateKey, existing);
+			}
+
+			current = current.plus({ days: 1 });
+		}
 	}
 
 	return grouped;

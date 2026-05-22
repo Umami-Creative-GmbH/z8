@@ -51,6 +51,18 @@ function event(date: string, type: CalendarEvent["type"], title: string): Calend
 	};
 }
 
+function multiDayEvent(
+	startDate: string,
+	endDate: string,
+	type: CalendarEvent["type"],
+	title: string,
+): CalendarEvent {
+	return {
+		...event(startDate, type, title),
+		endDate: new Date(`${endDate}T00:00:00.000Z`),
+	};
+}
+
 function renderView(overrides: Partial<Parameters<typeof MonthWorkSummaryView>[0]> = {}) {
 	const props = {
 		monthDate: new Date("2026-05-01T00:00:00.000Z"),
@@ -132,5 +144,20 @@ describe("MonthWorkSummaryView", () => {
 		expect(screen.getByRole("button", { name: "Thursday, April 30, 2026" })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: /April 30, 2026:.*5:00 recorded/ })).toBeNull();
 		expect(screen.queryByText("under requirement")).toBeNull();
+	});
+
+	it("renders multi-day event badges on active month cells they span", () => {
+		renderView({
+			events: [multiDayEvent("2026-04-30", "2026-05-02", "absence", "Vacation")],
+			workHoursData: new Map(),
+		});
+
+		expect(screen.getAllByText("Vacation")).toHaveLength(3);
+		expect(
+			screen.getByRole("button", { name: "Friday, May 1, 2026. 1 event: Vacation" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Saturday, May 2, 2026. 1 event: Vacation" }),
+		).toBeTruthy();
 	});
 });

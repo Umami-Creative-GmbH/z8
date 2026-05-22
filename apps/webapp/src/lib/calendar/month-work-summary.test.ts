@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { CalendarEvent, DailyWorkHoursSummaries } from "./types";
 import {
 	buildMonthWorkSummary,
 	groupCalendarEventsByDate,
 	totalWorkSummaries,
 } from "./month-work-summary";
+import type { CalendarEvent, DailyWorkHoursSummaries } from "./types";
 
 function summary(requiredMinutes: number, actualMinutes: number) {
 	const deltaMinutes = actualMinutes - requiredMinutes;
@@ -33,6 +33,17 @@ function event(date: string, type: CalendarEvent["type"]): CalendarEvent {
 		title: type,
 		color: "#10b981",
 		metadata: {},
+	};
+}
+
+function multiDayEvent(
+	startDate: string,
+	endDate: string,
+	type: CalendarEvent["type"],
+): CalendarEvent {
+	return {
+		...event(startDate, type),
+		endDate: new Date(`${endDate}T00:00:00.000Z`),
 	};
 }
 
@@ -123,6 +134,22 @@ describe("buildMonthWorkSummary", () => {
 			"2026-05-02",
 		]);
 	});
+
+	it("exposes multi-day events on active month days they span", () => {
+		const spanningEvent = multiDayEvent("2026-04-30", "2026-05-02", "absence");
+
+		const month = buildMonthWorkSummary({
+			year: 2026,
+			monthIndex: 4,
+			weekStartDay: "monday",
+			workHoursData: new Map(),
+			events: [spanningEvent],
+		});
+
+		const days = month.weeks.flatMap((week) => week.days);
+		expect(days.find((day) => day.dateKey === "2026-05-01")?.events).toContain(spanningEvent);
+		expect(days.find((day) => day.dateKey === "2026-05-02")?.events).toContain(spanningEvent);
+	});
 });
 
 describe("totalWorkSummaries", () => {
@@ -150,5 +177,15 @@ describe("groupCalendarEventsByDate", () => {
 
 		expect(grouped.get("2026-05-04")?.map((item) => item.type)).toEqual(["holiday", "absence"]);
 		expect(grouped.get("2026-05-05")?.map((item) => item.type)).toEqual(["work_period"]);
+	});
+
+	it("groups multi-day events under every date they span", () => {
+		const spanningEvent = multiDayEvent("2026-04-30", "2026-05-02", "absence");
+
+		const grouped = groupCalendarEventsByDate([spanningEvent]);
+
+		expect(grouped.get("2026-04-30")).toContain(spanningEvent);
+		expect(grouped.get("2026-05-01")).toContain(spanningEvent);
+		expect(grouped.get("2026-05-02")).toContain(spanningEvent);
 	});
 });
