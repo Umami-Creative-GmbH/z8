@@ -48,6 +48,19 @@ describe("QuickBreakPopover", () => {
 		expect(button.textContent).toBe("");
 	});
 
+	it("renders the trigger at the large action button height", () => {
+		render(
+			<QuickBreakPopover
+				onAddBreak={async () => ({ success: true })}
+				isAddingBreak={false}
+				isDisabled={false}
+				t={t}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Add break" }).className).toContain("h-10");
+	});
+
 	it("shows a local error for break durations below one minute", async () => {
 		const onAddBreak = vi.fn().mockResolvedValue({ success: true });
 

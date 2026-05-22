@@ -93,7 +93,7 @@ export function QuickBreakPopover({
 				<Button
 					type="button"
 					variant="outline"
-					size="sm"
+					size="lg"
 					className={buttonClassName}
 					disabled={isDisabled}
 					aria-label={addBreakLabel}
