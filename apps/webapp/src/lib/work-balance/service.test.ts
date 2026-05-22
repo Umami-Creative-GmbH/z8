@@ -9,10 +9,17 @@ const mockState = vi.hoisted(() => ({
 				findFirst: vi.fn(),
 			},
 		},
+		select: vi.fn(),
+		insert: vi.fn(),
 		update: vi.fn(),
 	},
+	selectFrom: vi.fn(),
+	selectWhere: vi.fn(),
+	insertValues: vi.fn(),
+	onConflictDoUpdate: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
+	getDailyWorkRequirementsForEmployee: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
@@ -35,13 +42,19 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 
 vi.mock("@/db", () => ({ db: mockState.db }));
 
+vi.mock("@/lib/calendar/work-policy-requirements", () => ({
+	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
+}));
+
 import {
 	buildEmptyWorkBalanceValues,
 	buildWorkBalanceValues,
+	computeEmployeeWorkBalance,
 	getEmployeeWorkBalance,
 	getWorkBalanceBatchCutoffDate,
 	markOrganizationWorkBalancesDirty,
 	shouldIncludeWorkBalanceInBatch,
+	upsertEmployeeWorkBalance,
 } from "./service";
 
 describe("work balance helpers", () => {
@@ -50,6 +63,14 @@ describe("work balance helpers", () => {
 		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
 		mockState.db.update.mockReturnValue({ set: mockState.updateSet });
+		mockState.selectWhere.mockReset();
+		mockState.selectFrom.mockReset();
+		mockState.db.select.mockReset();
+		mockState.insertValues.mockReset();
+		mockState.onConflictDoUpdate.mockReset();
+		mockState.db.insert.mockReturnValue({ values: mockState.insertValues });
+		mockState.insertValues.mockReturnValue({ onConflictDoUpdate: mockState.onConflictDoUpdate });
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({});
 	});
 
 	it("builds all-time work balance values", () => {
@@ -204,5 +225,70 @@ describe("work balance helpers", () => {
 		);
 		expect(mockState.updateWhere).toHaveBeenCalledTimes(1);
 		expect(eq).toHaveBeenCalledWith(expect.anything(), "org-1");
+	});
+
+	it("preserves dirty state when a newer refresh request arrives during computation", async () => {
+		const values = buildWorkBalanceValues({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 480,
+			requiredMinutes: 480,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt: new Date("2026-05-22T12:00:10.000Z"),
+		});
+		const refreshStartedAt = new Date("2026-05-22T12:00:00.000Z");
+
+		await upsertEmployeeWorkBalance(values, { refreshStartedAt });
+
+		expect(mockState.onConflictDoUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				set: expect.objectContaining({
+					isDirty: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+					dirtyFromDate: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+					refreshRequestedAt: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+				}),
+			}),
+		);
+	});
+
+	it("uses the employee start date as the all-time balance start when it predates work and absences", async () => {
+		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
+		mockState.selectFrom
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere
+			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
+			.mockResolvedValueOnce([{ value: "2026-05-08" }])
+			.mockResolvedValueOnce([{ value: new Date("2026-05-01T00:00:00.000Z") }])
+			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
+			"2026-05-01": { requiredMinutes: 480 },
+			"2026-05-04": { requiredMinutes: 480 },
+		});
+
+		const result = await computeEmployeeWorkBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				computedFromDate: "2026-05-01",
+				actualMinutes: 480,
+				requiredMinutes: 960,
+				balanceMinutes: -480,
+			}),
+		);
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				startDate: new Date("2026-05-01T00:00:00.000Z"),
+			}),
+		);
 	});
 });

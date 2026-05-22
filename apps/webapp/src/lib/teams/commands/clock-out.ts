@@ -99,6 +99,13 @@ export const clockOutCommand: BotCommand = {
 				needsClockOutApproval = await Effect.runPromise(checkEffect);
 			} catch (error) {
 				logger.warn({ error }, "Failed to check clock-out approval requirement");
+				return {
+					type: "text",
+					text: t(
+						"bot.cmd.clockout.policyCheckFailed",
+						"Could not verify time approval policy. Please try again.",
+					),
+				};
 			}
 
 			if (needsClockOutApproval) {

@@ -33,23 +33,26 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 	for (const employee of employees) {
 		result.employeesProcessed += 1;
 		try {
+			const refreshStartedAt = new Date();
 			const values = await computeEmployeeWorkBalance({
 				employeeId: employee.id,
 				organizationId: employee.organizationId,
+				now: refreshStartedAt,
 			});
 			if (!values) {
 				await upsertEmployeeWorkBalance(
 					buildEmptyWorkBalanceValues({
 						employeeId: employee.id,
 						organizationId: employee.organizationId,
-						computedAt: new Date(),
+						computedAt: refreshStartedAt,
 					}),
+					{ refreshStartedAt },
 				);
 				result.skipped += 1;
 				continue;
 			}
 
-			await upsertEmployeeWorkBalance(values);
+			await upsertEmployeeWorkBalance(values, { refreshStartedAt });
 			result.balancesUpdated += 1;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);

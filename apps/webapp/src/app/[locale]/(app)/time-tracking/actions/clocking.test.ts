@@ -313,6 +313,20 @@ describe("clockOut", () => {
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
 	});
 
+	it("fails closed when the clock-out approval check fails before mutating", async () => {
+		mockState.checkClockOutNeedsApproval.mockRejectedValueOnce(new Error("policy unavailable"));
+
+		const result = await clockOut();
+
+		expect(result).toEqual({
+			success: false,
+			error: "Could not verify time approval policy. Please try again.",
+		});
+		expect(mockState.transaction).not.toHaveBeenCalled();
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.updateSet).not.toHaveBeenCalled();
+	});
+
 	it("marks the work balance dirty from the active period start date after closing the period", async () => {
 		const result = await clockOut();
 
@@ -469,6 +483,25 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.transaction).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the manual-entry edit capability check fails before mutating", async () => {
+		mockState.getEditCapabilityForPeriod.mockRejectedValueOnce(new Error("policy unavailable"));
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Could not verify time approval policy. Please try again.",
+		});
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 		expect(mockState.transaction).not.toHaveBeenCalled();
 	});
 

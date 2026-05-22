@@ -49,6 +49,18 @@ function expectUnsupportedApprovalGuardBeforeWrite(name: string, writeMarker: st
 	expect(guardIndex, `${name} should reject unsupported approvals before database writes`).toBeLessThan(writeIndex);
 }
 
+function expectPolicyCheckFailureBeforeWrite(name: string, writeMarker: string) {
+	const body = functionBody(name);
+	const guardIndex = body.indexOf(
+		'error: "Could not verify time approval policy. Please try again."',
+	);
+	const writeIndex = body.indexOf(writeMarker);
+
+	expect(guardIndex, `${name} should fail closed when policy checks fail`).toBeGreaterThanOrEqual(0);
+	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
+	expect(guardIndex, `${name} should fail closed before database writes`).toBeLessThan(writeIndex);
+}
+
 describe("legacy time-tracking action billing guards", () => {
 	it("imports the shared billing mutation guard helpers", () => {
 		expect(source).toContain(
@@ -134,5 +146,12 @@ describe("legacy time-tracking action billing guards", () => {
 		const approvalIndex = body.indexOf(approvalMarker);
 
 		expect(approvalIndex, `${name} should not create approval requests`).toBe(-1);
+	});
+
+	it.each([
+		["clockOut", "createTimeEntry({"],
+		["createManualTimeEntry", "createTimeEntry({"],
+	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
+		expectPolicyCheckFailureBeforeWrite(name, writeMarker);
 	});
 });

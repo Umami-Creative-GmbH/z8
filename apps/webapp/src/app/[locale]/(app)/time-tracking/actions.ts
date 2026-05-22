@@ -1226,8 +1226,8 @@ export async function clockOut(
 
 		needsClockOutApproval = await Effect.runPromise(checkEffect);
 	} catch (error) {
-		// Log but don't fail clock-out if policy check fails
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
+		return { success: false, error: "Could not verify time approval policy. Please try again." };
 	}
 	if (needsClockOutApproval && !emp.managerId) {
 		return { success: false, error: "No manager assigned to approve time changes" };
@@ -2702,8 +2702,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		editCapability = await Effect.runPromise(capabilityEffect);
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability for manual entry");
-		// Default to direct if policy service fails
-		editCapability = { type: "direct", reason: "no_policy" };
+		return { success: false, error: "Could not verify time approval policy. Please try again." };
 	}
 
 	// Handle forbidden case

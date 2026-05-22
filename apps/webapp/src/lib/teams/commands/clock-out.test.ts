@@ -44,6 +44,17 @@ describe("Teams clock-out command approvals", () => {
 		expect(updateIndex).toBeGreaterThan(unsupportedIndex);
 	});
 
+	it("fails closed when approval policy lookup fails before mutating", () => {
+		const source = readClockOutSource();
+		const failureIndex = source.indexOf("Could not verify time approval policy. Please try again.");
+		const insertIndex = source.indexOf(".insert(timeEntry)");
+		const updateIndex = source.indexOf(".update(workPeriod)");
+
+		expect(failureIndex).toBeGreaterThanOrEqual(0);
+		expect(insertIndex).toBeGreaterThan(failureIndex);
+		expect(updateIndex).toBeGreaterThan(failureIndex);
+	});
+
 	it("does not create approval requests for clock-out", () => {
 		const source = readClockOutSource();
 

@@ -112,11 +112,27 @@ async function getFirstRelevantDate(input: {
 			),
 		);
 
+	const [employeeStart] = await db
+		.select({ value: min(employee.startDate) })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.id, input.employeeId),
+				eq(employee.organizationId, input.organizationId),
+				isNotNull(employee.startDate),
+			),
+		);
+
 	const workDate = firstWorkPeriod?.value
 		? DateTime.fromJSDate(firstWorkPeriod.value, { zone: "utc" }).toISODate()
 		: null;
 	const absenceDate = firstAbsence?.value ?? null;
-	const dates = [workDate, absenceDate].filter((value): value is string => Boolean(value));
+	const employeeStartDate = employeeStart?.value
+		? DateTime.fromJSDate(employeeStart.value, { zone: "utc" }).toISODate()
+		: null;
+	const dates = [workDate, absenceDate, employeeStartDate].filter((value): value is string =>
+		Boolean(value),
+	);
 	if (dates.length === 0) return null;
 	return dates.sort()[0]!;
 }
@@ -183,7 +199,11 @@ export async function computeEmployeeWorkBalance(input: {
 	});
 }
 
-export async function upsertEmployeeWorkBalance(values: ReturnType<typeof buildWorkBalanceValues>) {
+export async function upsertEmployeeWorkBalance(
+	values: ReturnType<typeof buildWorkBalanceValues>,
+	options?: { refreshStartedAt?: Date },
+) {
+	const refreshStartedAt = options?.refreshStartedAt ?? values.computedAt;
 	await db
 		.insert(employeeWorkBalance)
 		.values(values)
@@ -196,9 +216,9 @@ export async function upsertEmployeeWorkBalance(values: ReturnType<typeof buildW
 				computedFromDate: values.computedFromDate,
 				computedThroughDate: values.computedThroughDate,
 				computedAt: values.computedAt,
-				isDirty: false,
-				dirtyFromDate: null,
-				refreshRequestedAt: null,
+				isDirty: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then true else false end`,
+				dirtyFromDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.dirtyFromDate} else null end`,
+				refreshRequestedAt: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.refreshRequestedAt} else null end`,
 				lastError: null,
 				updatedAt: values.updatedAt,
 			},

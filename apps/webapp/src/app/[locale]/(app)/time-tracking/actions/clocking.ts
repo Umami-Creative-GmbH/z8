@@ -55,6 +55,7 @@ type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
 const UNSUPPORTED_TIME_APPROVAL_ERROR =
 	"Time changes requiring approval are not supported for this action yet";
+const APPROVAL_POLICY_CHECK_ERROR = "Could not verify time approval policy. Please try again.";
 
 async function markWorkBalanceDirtyAfterClockOutBestEffort(
 	input: WorkBalanceDirtyInput,
@@ -205,6 +206,7 @@ export async function clockOut(
 		needsClockOutApproval = await checkClockOutNeedsApproval(currentEmployee.id);
 	} catch (error) {
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
+		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 	}
 	if (needsClockOutApproval && !currentEmployee.managerId) {
 		return { success: false, error: "No manager assigned to approve time changes" };
@@ -647,7 +649,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability for manual entry");
-		editCapability = { type: "direct", reason: "no_policy" };
+		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 	}
 
 	if (editCapability.type === "forbidden") {
