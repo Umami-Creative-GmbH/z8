@@ -64,9 +64,15 @@ async function fetchDailyRequirements(params: {
 	endDate: Date;
 }): Promise<DailyWorkRequirements> {
 	if (!params.employeeId) return {};
+	const employeeId = params.employeeId;
 
 	try {
-		return await getDailyWorkRequirementsForEmployee(params);
+		return await getDailyWorkRequirementsForEmployee({
+			organizationId: params.organizationId,
+			employeeId,
+			startDate: params.startDate,
+			endDate: params.endDate,
+		});
 	} catch (error) {
 		console.error("Error fetching calendar work policy requirements:", error);
 		return {};
