@@ -4,7 +4,7 @@ import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { absenceCategory, absenceEntry, coverageRule, shift } from "@/db/schema";
+import { absenceCategory, absenceEntry, coverageRule, employeeManagers, shift } from "@/db/schema";
 import {
 	type AbsencePlanPreview,
 	buildAbsencePlanPreview,
@@ -79,7 +79,7 @@ export async function getAbsencePlanPreview(
 		});
 		const timezone = org?.timezone || "UTC";
 
-		const [vacationBalance, holidays, existingAbsences, affectedShifts] = await Promise.all([
+		const [vacationBalance, holidays, existingAbsences, affectedShifts, primaryManagerLink] = await Promise.all([
 			getVacationBalance(currentEmployee.id, range.start.year, timezone),
 			getHolidays(currentEmployee.id, range.startDate, range.endDate),
 			db.query.absenceEntry.findMany({
@@ -99,6 +99,13 @@ export async function getAbsencePlanPreview(
 					gte(shift.date, range.startDate),
 					lte(shift.date, range.endDate),
 				),
+			}),
+			db.query.employeeManagers.findFirst({
+				where: and(
+					eq(employeeManagers.employeeId, currentEmployee.id),
+					eq(employeeManagers.isPrimary, true),
+				),
+				columns: { id: true },
 			}),
 		]);
 
@@ -131,7 +138,7 @@ export async function getAbsencePlanPreview(
 			})) satisfies ExistingAbsenceInput[],
 			affectedShifts: typedAffectedShifts,
 			coverage,
-			hasManager: Boolean(currentEmployee.managerId),
+			hasManager: Boolean(primaryManagerLink),
 		});
 
 		return { success: true, data };

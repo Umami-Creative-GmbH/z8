@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import type {
 	ComplianceAlert,
@@ -9,7 +9,7 @@ import type {
 	OvertimeStats,
 	RestPeriodCheckResult,
 } from "@/db/schema";
-import { complianceException, employee, userSettings } from "@/db/schema";
+import { complianceException, employee, employeeManagers, userSettings } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -288,6 +288,7 @@ export async function requestComplianceException(input: {
 				span.setAttribute("employee.id", emp.id);
 				span.setAttribute("organization.id", emp.organizationId);
 
+				const dbService = yield* _(DatabaseService);
 				const complianceService = yield* _(ComplianceGuardrailService);
 				const exceptionId = yield* _(
 					complianceService.requestException({
@@ -299,9 +300,19 @@ export async function requestComplianceException(input: {
 						createdBy: userId,
 					}),
 				);
+				const primaryManagerLink = yield* _(
+					dbService.query("getComplianceExceptionPrimaryManager", async () => {
+						return await dbService.db.query.employeeManagers.findFirst({
+							where: and(
+								eq(employeeManagers.employeeId, emp.id),
+								eq(employeeManagers.isPrimary, true),
+							),
+							columns: { managerId: true },
+						});
+					}),
+				);
 
 				// Trigger notification to manager (fire-and-forget)
-				// Use the employee's direct manager if available
 				void onComplianceExceptionRequested({
 					exceptionId,
 					employeeId: emp.id,
@@ -309,7 +320,7 @@ export async function requestComplianceException(input: {
 					organizationId: emp.organizationId,
 					exceptionType: input.exceptionType,
 					reason: input.reason,
-					managerId: emp.managerId || undefined,
+					managerId: primaryManagerLink?.managerId,
 				});
 
 				logger.info(

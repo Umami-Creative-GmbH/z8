@@ -6,7 +6,7 @@ import type {
 } from "@/components/time-tracking/personal-workday-timeline";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, userSettings } from "@/db/schema";
+import { employee, employeeManagers, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -57,19 +57,27 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	});
 	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
-	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
-		getActiveWorkPeriod(currentEmployee.id),
-		getWorkPeriods(currentEmployee.id, startDate, endDate),
-		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
-		getTranslate(),
-		getWorkdayTimelineData({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			timezone,
-			timeFormat,
-			dateParam: searchParams.date,
-		}),
-	]);
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, primaryManagerLink] =
+		await Promise.all([
+			getActiveWorkPeriod(currentEmployee.id),
+			getWorkPeriods(currentEmployee.id, startDate, endDate),
+			getTimeSummary(currentEmployee.id, timezone, weekStartDay),
+			getTranslate(),
+			getWorkdayTimelineData({
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				timezone,
+				timeFormat,
+				dateParam: searchParams.date,
+			}),
+			db.query.employeeManagers.findFirst({
+				where: and(
+					eq(employeeManagers.employeeId, currentEmployee.id),
+					eq(employeeManagers.isPrimary, true),
+				),
+				columns: { id: true },
+			}),
+		]);
 
 	return {
 		session,
@@ -78,6 +86,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		timeFormat,
 		activeWorkPeriod,
 		workPeriods,
+		hasManager: Boolean(primaryManagerLink),
 		canApproveTimeEntries,
 		summary,
 		t,

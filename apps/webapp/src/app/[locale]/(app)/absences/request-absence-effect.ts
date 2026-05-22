@@ -61,7 +61,6 @@ const logger = createLogger("AbsenceActionsEffect");
 export interface RequestAbsenceEmployeeContext {
 	id: string;
 	organizationId: string;
-	managerId: string | null;
 	teamId?: string | null;
 }
 
