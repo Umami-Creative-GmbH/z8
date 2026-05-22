@@ -46,18 +46,19 @@ describe("Teams clock-out command approvals", () => {
 		expect(updateIndex).toBeGreaterThan(noManagerIndex);
 	});
 
-	it("awaits approval creation and compensates primary mutations before returning failure", () => {
+	it("creates approval requests in the same transaction as primary mutations", () => {
 		const source = readClockOutSource();
 		const createIndex = source.indexOf("await createClockOutApprovalRequest");
-		const rollbackEntryIndex = source.indexOf(".delete(timeEntry)");
-		const rollbackPeriodIndex = source.indexOf("clockOutId: activePeriod.clockOutId");
+		const transactionIndex = source.indexOf("const entry = await db.transaction");
+		const transactionEndIndex = source.indexOf("return createdEntry", createIndex);
+		const notifyIndex = source.indexOf("sendClockOutApprovalNotifications(approvalParams");
 		const dirtyIndex = source.indexOf("await markEmployeeWorkBalanceDirty");
-		const approvalBlock = source.slice(createIndex, rollbackEntryIndex);
 
 		expect(createIndex).toBeGreaterThanOrEqual(0);
-		expect(approvalBlock).not.toContain(".catch((err) =>");
-		expect(rollbackEntryIndex).toBeGreaterThan(createIndex);
-		expect(rollbackPeriodIndex).toBeGreaterThan(createIndex);
+		expect(createIndex).toBeGreaterThan(transactionIndex);
+		expect(createIndex).toBeLessThan(transactionEndIndex);
+		expect(source.slice(createIndex, transactionEndIndex)).toContain("notify: false");
+		expect(notifyIndex).toBeGreaterThan(transactionEndIndex);
 		expect(dirtyIndex).toBeGreaterThan(createIndex);
 	});
 });

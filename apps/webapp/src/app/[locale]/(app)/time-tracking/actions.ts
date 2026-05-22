@@ -195,6 +195,11 @@ const approvalDbService = {
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 } satisfies ApprovalDbService;
 
+type ApprovalRequestOptions = {
+	dbService?: ApprovalDbService;
+	notify?: boolean;
+};
+
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
@@ -209,15 +214,16 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 	organizationId: string;
 	reason: string;
 	overtimeRisk: "none" | "warning" | "violation";
-}) {
-	const requester = await db.query.employee.findFirst({
+}, options?: ApprovalRequestOptions) {
+	const requestDbService = options?.dbService ?? approvalDbService;
+	const requester = await requestDbService.db.query.employee.findFirst({
 		where: eq(employee.id, params.employeeId),
 		columns: { organizationId: true, teamId: true },
 	});
 
 	try {
 		return await Effect.runPromise(
-			createTimeCorrectionApprovalWorkflow(approvalDbService, {
+			createTimeCorrectionApprovalWorkflow(requestDbService, {
 				organizationId: params.organizationId,
 				requesterEmployeeId: params.employeeId,
 				teamId:
@@ -233,7 +239,7 @@ async function createPolicyAwareTimeEntryApprovalRequest(params: {
 			{ error, workPeriodId: params.workPeriodId },
 			"Failed to resolve time-entry approval policy; using manager fallback",
 		);
-		const [approval] = await db
+		const [approval] = await requestDbService.db
 			.insert(approvalRequest)
 			.values({
 				organizationId: params.organizationId,
@@ -2579,7 +2585,7 @@ export async function createClockOutApprovalRequest(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
-}): Promise<void> {
+}, options?: ApprovalRequestOptions): Promise<void> {
 	const {
 		workPeriodId,
 		employeeId,
@@ -2599,52 +2605,10 @@ export async function createClockOutApprovalRequest(params: {
 			organizationId,
 			reason: "Clock-out requires approval (0-day policy)",
 			overtimeRisk: "warning",
-		});
+		}, options);
 
-		// Get employee and manager details for notifications
-		const [employeeData, managerData] = await Promise.all([
-			db.query.employee.findFirst({
-				where: eq(employee.id, employeeId),
-				with: { user: { columns: { id: true, name: true } } },
-			}),
-			db.query.employee.findFirst({
-				where: eq(employee.id, managerId),
-				columns: { userId: true },
-			}),
-		]);
-
-		const employeeUserId = employeeData?.userId;
-		const employeeName = employeeData?.user?.name || "Employee";
-		const managerUserId = managerData?.userId;
-
-		// Fire-and-forget: Send notifications
-		if (employeeUserId) {
-			void onClockOutPendingApproval({
-				workPeriodId,
-				employeeUserId,
-				employeeName,
-				organizationId,
-				startTime,
-				endTime,
-				durationMinutes,
-			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send clock-out pending notification to employee");
-			});
-		}
-
-		if (managerUserId) {
-			void onClockOutPendingApprovalToManager({
-				workPeriodId,
-				employeeUserId: employeeUserId || "",
-				employeeName,
-				organizationId,
-				startTime,
-				endTime,
-				durationMinutes,
-				managerUserId,
-			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send clock-out pending notification to manager");
-			});
+		if (options?.notify !== false) {
+			await sendClockOutApprovalNotifications(params);
 		}
 
 		logger.info(
@@ -2659,6 +2623,69 @@ export async function createClockOutApprovalRequest(params: {
 	} catch (error) {
 		logger.error({ error, workPeriodId }, "Failed to create clock-out approval request");
 		throw error;
+	}
+}
+
+export async function sendClockOutApprovalNotifications(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+}) {
+	const {
+		workPeriodId,
+		employeeId,
+		managerId,
+		organizationId,
+		startTime,
+		endTime,
+		durationMinutes,
+	} = params;
+	const [employeeData, managerData] = await Promise.all([
+		db.query.employee.findFirst({
+			where: eq(employee.id, employeeId),
+			with: { user: { columns: { id: true, name: true } } },
+		}),
+		db.query.employee.findFirst({
+			where: eq(employee.id, managerId),
+			columns: { userId: true },
+		}),
+	]);
+
+	const employeeUserId = employeeData?.userId;
+	const employeeName = employeeData?.user?.name || "Employee";
+	const managerUserId = managerData?.userId;
+
+	if (employeeUserId) {
+		void onClockOutPendingApproval({
+			workPeriodId,
+			employeeUserId,
+			employeeName,
+			organizationId,
+			startTime,
+			endTime,
+			durationMinutes,
+		}).catch((err) => {
+			logger.error({ error: err }, "Failed to send clock-out pending notification to employee");
+		});
+	}
+
+	if (managerUserId) {
+		void onClockOutPendingApprovalToManager({
+			workPeriodId,
+			employeeUserId: employeeUserId || "",
+			employeeName,
+			organizationId,
+			startTime,
+			endTime,
+			durationMinutes,
+			managerUserId,
+		}).catch((err) => {
+			logger.error({ error: err }, "Failed to send clock-out pending notification to manager");
+		});
 	}
 }
 

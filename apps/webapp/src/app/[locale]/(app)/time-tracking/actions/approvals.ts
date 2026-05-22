@@ -85,14 +85,19 @@ const approvalDbService = {
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 } satisfies ApprovalDbService;
 
+type ApprovalRequestOptions = {
+	dbService?: ApprovalDbService;
+	notify?: boolean;
+};
+
 async function createDefaultTimeEntryApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
 	managerId: string;
 	organizationId: string;
 	reason: string;
-}) {
-	await db.insert(approvalRequest).values({
+}, dbService: ApprovalDbService) {
+	await dbService.db.insert(approvalRequest).values({
 		organizationId: params.organizationId,
 		entityType: "time_entry",
 		entityId: params.workPeriodId,
@@ -110,15 +115,16 @@ export async function createTimeEntryApprovalRequest(params: {
 	organizationId: string;
 	reason: string;
 	overtimeRisk: ApprovalPolicyOvertimeRisk;
-}) {
-	const requester = await db.query.employee.findFirst({
+}, options?: ApprovalRequestOptions) {
+	const requestDbService = options?.dbService ?? approvalDbService;
+	const requester = await requestDbService.db.query.employee.findFirst({
 		where: eq(employee.id, params.employeeId),
 		columns: { teamId: true, organizationId: true },
 	});
 
 	try {
 		await Effect.runPromise(
-			resolvePolicyAndCreateApproval(approvalDbService, {
+			resolvePolicyAndCreateApproval(requestDbService, {
 				context: {
 					organizationId: params.organizationId,
 					approvalType: "time_entry",
@@ -139,7 +145,7 @@ export async function createTimeEntryApprovalRequest(params: {
 		);
 	} catch (error) {
 		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to resolve time-entry approval policy; using manager fallback");
-		await createDefaultTimeEntryApprovalRequest(params);
+		await createDefaultTimeEntryApprovalRequest(params, requestDbService);
 	}
 }
 
@@ -151,19 +157,17 @@ export async function createClockOutApprovalRequest(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
-}): Promise<void> {
+}, options?: ApprovalRequestOptions): Promise<void> {
 	try {
 		await createTimeEntryApprovalRequest({
 			...params,
 			reason: "Clock-out requires approval (0-day policy)",
 			overtimeRisk: "warning",
-		});
+		}, options);
 
-		await sendPendingApprovalNotifications({
-			...params,
-			employeeLogMessage: "Failed to send clock-out pending notification to employee",
-			managerLogMessage: "Failed to send clock-out pending notification to manager",
-		});
+		if (options?.notify !== false) {
+			await sendClockOutApprovalNotifications(params);
+		}
 
 		logger.info(
 			{
@@ -183,6 +187,22 @@ export async function createClockOutApprovalRequest(params: {
 	}
 }
 
+export async function sendClockOutApprovalNotifications(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+}) {
+	await sendPendingApprovalNotifications({
+		...params,
+		employeeLogMessage: "Failed to send clock-out pending notification to employee",
+		managerLogMessage: "Failed to send clock-out pending notification to manager",
+	});
+}
+
 export async function createManualEntryApprovalRequest(params: {
 	workPeriodId: string;
 	employeeId: string;
@@ -192,19 +212,17 @@ export async function createManualEntryApprovalRequest(params: {
 	endTime: Date;
 	durationMinutes: number;
 	reason: string;
-}): Promise<void> {
+}, options?: ApprovalRequestOptions): Promise<void> {
 	try {
 		await createTimeEntryApprovalRequest({
 			...params,
 			reason: `Manual time entry: ${params.reason}`,
 			overtimeRisk: "none",
-		});
+		}, options);
 
-		await sendPendingApprovalNotifications({
-			...params,
-			employeeLogMessage: "Failed to send manual entry pending notification to employee",
-			managerLogMessage: "Failed to send manual entry pending notification to manager",
-		});
+		if (options?.notify !== false) {
+			await sendManualEntryApprovalNotifications(params);
+		}
 
 		logger.info(
 			{
@@ -222,4 +240,20 @@ export async function createManualEntryApprovalRequest(params: {
 		);
 		throw error;
 	}
+}
+
+export async function sendManualEntryApprovalNotifications(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+}) {
+	await sendPendingApprovalNotifications({
+		...params,
+		employeeLogMessage: "Failed to send manual entry pending notification to employee",
+		managerLogMessage: "Failed to send manual entry pending notification to manager",
+	});
 }

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
@@ -104,6 +104,7 @@ function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: Work
 					and(
 						eq(timeEntry.type, "correction"),
 						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
 						eq(timeEntry.replacesEntryId, period.clockInId),
 					),
 				);
@@ -121,6 +122,8 @@ function loadClockOutCorrection(dbService: ApprovalDbService, period: WorkPeriod
 			return await dbService.db.query.timeEntry.findFirst({
 				where: and(
 					eq(timeEntry.type, "correction"),
+					eq(timeEntry.employeeId, period.employeeId),
+					eq(timeEntry.organizationId, period.organizationId),
 					eq(timeEntry.replacesEntryId, period.clockOutId),
 				),
 			});
@@ -382,6 +385,44 @@ function notifyRejectedCorrection(
 	});
 }
 
+function rollbackRejectedTimeCorrection(
+	dbService: ApprovalDbService,
+	period: WorkPeriodRecord,
+	correctionEntries: CorrectionEntry[],
+) {
+	return dbService.query("rollbackRejectedTimeCorrection", async () => {
+		const originalEntryIds = [period.clockInId, period.clockOutId].filter((id): id is string => Boolean(id));
+		const correctionEntryIds = correctionEntries.map((entry) => entry.id);
+
+		if (originalEntryIds.length > 0) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: false, supersededById: null })
+				.where(
+					and(
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						inArray(timeEntry.id, originalEntryIds),
+					),
+				);
+		}
+
+		if (correctionEntryIds.length > 0) {
+			await dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: true, supersededById: null })
+				.where(
+					and(
+						eq(timeEntry.type, "correction"),
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.organizationId, period.organizationId),
+						inArray(timeEntry.id, correctionEntryIds),
+					),
+				);
+		}
+	});
+}
+
 function handleApprovedTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
@@ -430,6 +471,13 @@ function handleRejectedTimeCorrection(
 ) {
 	return Effect.gen(function* (_) {
 		const period = yield* _(loadWorkPeriod(dbService, entityId));
+		const clockInCorrections = yield* _(loadClockInCorrectionEntries(dbService, period));
+		const clockOutCorrection = yield* _(loadClockOutCorrection(dbService, period));
+		const correctionEntries = clockOutCorrection
+			? [...clockInCorrections, clockOutCorrection]
+			: clockInCorrections;
+
+		yield* _(rollbackRejectedTimeCorrection(dbService, period, correctionEntries));
 		notifyRejectedCorrection(period, entityId, currentEmployee, reason);
 		return { period } satisfies TimeCorrectionApprovalResult;
 	});

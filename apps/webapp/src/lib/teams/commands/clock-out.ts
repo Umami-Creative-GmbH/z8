@@ -28,6 +28,7 @@ import {
 	checkComplianceAfterClockOut,
 	createClockOutApprovalRequest,
 	enforceBreaksAfterClockOut,
+	sendClockOutApprovalNotifications,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 
 const logger = createLogger("BotCommand:ClockOut");
@@ -160,7 +161,24 @@ export const clockOutCommand: BotCommand = {
 					}
 				: null;
 
+			const approvalParams = needsClockOutApproval && primaryManagerId
+				? {
+						workPeriodId: activePeriod.id,
+						employeeId: emp.id,
+						managerId: primaryManagerId,
+						organizationId: emp.organizationId,
+						startTime: activePeriod.startTime,
+						endTime: now,
+						durationMinutes,
+					}
+				: null;
+
 			const entry = await db.transaction(async (tx) => {
+				const transactionalDbService = {
+					db: tx,
+					query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+				};
+
 				// Create clock-out time entry
 				const [createdEntry] = await tx
 					.insert(timeEntry)
@@ -194,62 +212,20 @@ export const clockOutCommand: BotCommand = {
 					})
 					.where(eq(workPeriod.id, activePeriod.id));
 
+				if (approvalParams) {
+					await createClockOutApprovalRequest(approvalParams, {
+						dbService: transactionalDbService,
+						notify: false,
+					});
+				}
+
 				return createdEntry;
 			});
 
-			if (needsClockOutApproval) {
-				if (!primaryManagerId) {
-					throw new Error("Primary manager is required for clock-out approval");
-				}
-
-				try {
-					await createClockOutApprovalRequest({
-						workPeriodId: activePeriod.id,
-						employeeId: emp.id,
-						managerId: primaryManagerId,
-						organizationId: emp.organizationId,
-						startTime: activePeriod.startTime,
-						endTime: now,
-						durationMinutes,
-					});
-				} catch (error) {
-					logger.error(
-						{ error, workPeriodId: activePeriod.id, timeEntryId: entry.id },
-						"Failed to create clock-out approval request; rolling back Teams clock-out",
-					);
-
-					try {
-						await db.transaction(async (tx) => {
-							await tx
-								.update(workPeriod)
-								.set({
-									clockOutId: activePeriod.clockOutId,
-									endTime: activePeriod.endTime,
-									durationMinutes: activePeriod.durationMinutes,
-									isActive: activePeriod.isActive,
-									approvalStatus: activePeriod.approvalStatus,
-									pendingChanges: activePeriod.pendingChanges,
-									updatedAt: new Date(),
-								})
-								.where(eq(workPeriod.id, activePeriod.id));
-
-							await tx.delete(timeEntry).where(eq(timeEntry.id, entry.id));
-						});
-					} catch (rollbackError) {
-						logger.error(
-							{ error: rollbackError, workPeriodId: activePeriod.id, timeEntryId: entry.id },
-							"Failed to roll back Teams clock-out after approval request failure",
-						);
-					}
-
-					return {
-						type: "text",
-						text: t(
-							"bot.cmd.clockout.approvalFailed",
-							"Failed to request clock-out approval. Please try again.",
-						),
-					};
-				}
+			if (approvalParams) {
+				void sendClockOutApprovalNotifications(approvalParams).catch((error) => {
+					logger.error({ error, workPeriodId: activePeriod.id, timeEntryId: entry.id }, "Failed to send Teams clock-out approval notifications");
+				});
 			}
 
 			try {

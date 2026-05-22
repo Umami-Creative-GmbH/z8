@@ -12,6 +12,8 @@ const mockState = vi.hoisted(() => ({
 	checkClockOutNeedsApproval: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
 	createManualEntryApprovalRequest: vi.fn(),
+	sendClockOutApprovalNotifications: vi.fn(),
+	sendManualEntryApprovalNotifications: vi.fn(),
 	getEditCapabilityForPeriod: vi.fn(),
 	calculateAndPersistSurcharges: vi.fn(),
 	checkComplianceAfterClockOut: vi.fn(),
@@ -79,6 +81,8 @@ vi.mock("@/lib/work-balance/service", () => ({
 vi.mock("./approvals", () => ({
 	createClockOutApprovalRequest: mockState.createClockOutApprovalRequest,
 	createManualEntryApprovalRequest: mockState.createManualEntryApprovalRequest,
+	sendClockOutApprovalNotifications: mockState.sendClockOutApprovalNotifications,
+	sendManualEntryApprovalNotifications: mockState.sendManualEntryApprovalNotifications,
 }));
 
 vi.mock("./auth", () => ({
@@ -233,10 +237,12 @@ describe("clockOut", () => {
 			timestamp: new Date("2026-05-04T10:00:00.000Z"),
 		});
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
+		mockState.sendClockOutApprovalNotifications.mockResolvedValue(undefined);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
+		mockState.sendManualEntryApprovalNotifications.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 	});
@@ -297,15 +303,18 @@ describe("clockOut", () => {
 				},
 			}),
 		);
-		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith({
-			workPeriodId: "period-1",
-			employeeId: "employee-1",
-			managerId: "manager-1",
-			organizationId: "org-1",
-			startTime: new Date("2026-05-04T09:00:00.000Z"),
-			endTime: new Date("2026-05-04T10:00:00.000Z"),
-			durationMinutes: 60,
-		});
+		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: "period-1",
+				employeeId: "employee-1",
+				managerId: "manager-1",
+				organizationId: "org-1",
+				startTime: new Date("2026-05-04T09:00:00.000Z"),
+				endTime: new Date("2026-05-04T10:00:00.000Z"),
+				durationMinutes: 60,
+			}),
+			expect.objectContaining({ notify: false, dbService: expect.any(Object) }),
+		);
 	});
 
 	it("rejects approval-required clock-out when no manager is assigned", async () => {
@@ -483,6 +492,7 @@ describe("createManualTimeEntry", () => {
 		});
 		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
 			expect.objectContaining({ workPeriodId: "period-1", managerId: "manager-1" }),
+			expect.objectContaining({ notify: false, dbService: expect.any(Object) }),
 		);
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();

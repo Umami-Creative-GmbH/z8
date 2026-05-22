@@ -130,7 +130,14 @@ const correction = {
 	replacesEntryId: "entry-original",
 };
 
+const clockOutCorrection = {
+	id: "entry-clock-out-correction",
+	timestamp: new Date("2026-05-11T16:15:00.000Z"),
+	replacesEntryId: "entry-clock-out-original",
+};
+
 function createTimeCorrectionDecisionDbService() {
+	const updateSets: Record<string, unknown>[] = [];
 	const db = {
 		query: {
 			approvalRequest: {
@@ -151,15 +158,21 @@ function createTimeCorrectionDecisionDbService() {
 		select: vi.fn().mockReturnValue({
 			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
 		}),
-		update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn() }) }),
+		update: vi.fn().mockReturnValue({
+			set: vi.fn((values: Record<string, unknown>) => {
+				updateSets.push(values);
+				return { where: vi.fn() };
+			}),
+		}),
 		insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
 		transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn(db)),
 	};
 
 	return {
 		db,
+		updateSets,
 		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-	} as unknown as ApprovalDbService;
+	} as unknown as ApprovalDbService & { updateSets: Record<string, unknown>[] };
 }
 
 function runTimeCorrectionDecisionEffect(effect: Effect.Effect<unknown, unknown, unknown>) {
@@ -268,6 +281,34 @@ describe("time correction requester decision notifications", () => {
 			}),
 		);
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
+	});
+
+	it("rolls back superseded entries when rejecting a pending time correction", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.query.workPeriod.findFirst).mockResolvedValueOnce({
+			...period,
+			clockOutId: "entry-clock-out-original",
+		});
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
+		} as never);
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce(clockOutCorrection);
+
+		await runTimeCorrectionDecisionEffect(
+			rejectTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+				"Incorrect correction",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([
+				{ isSuperseded: false, supersededById: null },
+				{ isSuperseded: true, supersededById: null },
+			]),
+		);
 	});
 });
 
