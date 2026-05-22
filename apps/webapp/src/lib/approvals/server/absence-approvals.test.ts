@@ -1,8 +1,14 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { addCalendarSyncJob, onAbsenceRequestApproved, onAbsenceRequestRejected } = vi.hoisted(() => ({
+const {
+	addCalendarSyncJob,
+	markEmployeeWorkBalanceDirty,
+	onAbsenceRequestApproved,
+	onAbsenceRequestRejected,
+} = vi.hoisted(() => ({
 	addCalendarSyncJob: vi.fn().mockResolvedValue(undefined),
+	markEmployeeWorkBalanceDirty: vi.fn().mockResolvedValue(undefined),
 	onAbsenceRequestApproved: vi.fn(),
 	onAbsenceRequestRejected: vi.fn(),
 }));
@@ -47,6 +53,10 @@ vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob,
 }));
 
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty,
+}));
+
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
 	buildAbsenceApprovalPolicyContext,
@@ -59,6 +69,7 @@ import { EmailService } from "@/lib/effect/services/email.service";
 
 beforeEach(() => {
 	addCalendarSyncJob.mockClear();
+	markEmployeeWorkBalanceDirty.mockClear();
 	onAbsenceRequestApproved.mockClear();
 	onAbsenceRequestRejected.mockClear();
 });
@@ -200,6 +211,43 @@ describe("formatAbsenceDateForEmail", () => {
 });
 
 describe("absence requester decision notifications", () => {
+	it("marks work balances dirty when approving an absence", async () => {
+		vi.resetModules();
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApproval: vi.fn(),
+			processApprovalWithCurrentEmployee: vi.fn(
+				(
+					dbService: ApprovalDbService,
+					currentEmployee: CurrentApprover,
+					_entityType: string,
+					entityId: string,
+					_action: string,
+					_reason: string | undefined,
+					updateEntity: (
+						dbService: ApprovalDbService,
+						entityId: string,
+						currentEmployee: CurrentApprover,
+					) => Effect.Effect<unknown, unknown, unknown>,
+				) => updateEntity(dbService, entityId, currentEmployee),
+			),
+		}));
+		const { approveAbsenceWithCurrentApproverEffect } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const dbService = createAbsenceDecisionDbService();
+
+		await runAbsenceDecisionEffect(
+			approveAbsenceWithCurrentApproverEffect(dbService, absenceCurrentApprover, "absence-1"),
+		);
+
+		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			employeeId: "emp-requester",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-11",
+		});
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("applies sick vacation overrides when approving a full-day sick absence", async () => {
 		vi.resetModules();
 		const syncCanonicalAbsenceApprovalState = vi.fn().mockResolvedValue(undefined);

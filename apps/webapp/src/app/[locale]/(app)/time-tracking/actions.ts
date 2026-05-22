@@ -69,6 +69,7 @@ import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/v
 import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
 import {
 	calculatePresenceStatusSummary,
@@ -1336,6 +1337,13 @@ export async function clockOut(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
 
+		await markEmployeeWorkBalanceDirty({
+			employeeId: emp.id,
+			organizationId: emp.organizationId,
+			dirtyFromDate:
+				DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+		});
+
 		// If clock-out needs approval, create an approval request
 		if (needsClockOutApproval && emp.managerId) {
 			await createClockOutApprovalRequest({
@@ -1971,6 +1979,12 @@ export async function deleteWorkPeriod(
 
 		// Delete the work period record
 		await db.delete(workPeriod).where(eq(workPeriod.id, workPeriodId));
+
+		await markEmployeeWorkBalanceDirty({
+			employeeId: period.employeeId,
+			organizationId: period.organizationId,
+			dirtyFromDate: DateTime.fromJSDate(period.startTime, { zone: "utc" }).toISODate() ?? undefined,
+		});
 
 		logger.info(
 			{
@@ -3005,6 +3019,12 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				pendingChanges: pendingChangesData,
 			})
 			.returning();
+
+		await markEmployeeWorkBalanceDirty({
+			employeeId: emp.id,
+			organizationId: emp.organizationId,
+			dirtyFromDate: DateTime.fromJSDate(clockInDate, { zone: "utc" }).toISODate() ?? undefined,
+		});
 
 		// If approval required, create approval request and notify manager
 		if (requiresApproval && emp.managerId) {

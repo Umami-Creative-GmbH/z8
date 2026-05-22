@@ -32,6 +32,12 @@ describe("legacy time-tracking action billing guards", () => {
 		);
 	});
 
+	it("imports the work balance dirty marker", () => {
+		expect(source).toContain(
+			'import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service"',
+		);
+	});
+
 	it("guards clock-in before creating time entries", () => {
 		expectBillingGuardBeforeWrite("clockIn", "createTimeEntry({");
 	});
@@ -59,4 +65,20 @@ describe("legacy time-tracking action billing guards", () => {
 	])("guards %s before writing time data", (name, writeMarker) => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});
+
+	it.each(["clockOut", "createManualTimeEntry", "deleteWorkPeriod"])(
+		"marks work balances dirty after %s changes payable time",
+		(name) => {
+			const body = functionBody(name);
+			expect(body).toContain("await markEmployeeWorkBalanceDirty({");
+			expect(body).toContain("dirtyFromDate:");
+		},
+	);
+
+	it.each(["updateWorkPeriodProject", "updateWorkPeriodNotes"])(
+		"does not mark work balances dirty after %s metadata changes",
+		(name) => {
+			expect(functionBody(name)).not.toContain("markEmployeeWorkBalanceDirty");
+		},
+	);
 });

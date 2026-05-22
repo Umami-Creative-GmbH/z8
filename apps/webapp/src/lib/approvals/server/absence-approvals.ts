@@ -15,6 +15,7 @@ import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
@@ -120,6 +121,16 @@ function updateAbsenceStatus(
 ) {
 	return dbService
 		.query("updateAbsenceStatus", async () => {
+			const previousAbsence = await dbService.db.query.absenceEntry.findFirst({
+				where: eq(absenceEntry.id, entityId),
+				columns: {
+					employeeId: true,
+					organizationId: true,
+					startDate: true,
+					status: true,
+				},
+			});
+
 			await dbService.db
 				.update(absenceEntry)
 				.set({
@@ -130,13 +141,26 @@ function updateAbsenceStatus(
 				})
 				.where(eq(absenceEntry.id, entityId));
 
-			return await dbService.db.query.absenceEntry.findFirst({
+			const updatedAbsence = await dbService.db.query.absenceEntry.findFirst({
 				where: eq(absenceEntry.id, entityId),
 				with: {
 					category: true,
 					employee: { with: { user: true } },
 				},
 			});
+
+			if (
+				updatedAbsence?.organizationId &&
+				(status === "approved" || previousAbsence?.status === "approved")
+			) {
+				await markEmployeeWorkBalanceDirty({
+					employeeId: updatedAbsence.employeeId,
+					organizationId: updatedAbsence.organizationId,
+					dirtyFromDate: updatedAbsence.startDate,
+				});
+			}
+
+			return updatedAbsence;
 		})
 		.pipe(
 			Effect.flatMap((absence) => ensureAbsenceRecord(absence as unknown as AbsenceRecord | null)),
