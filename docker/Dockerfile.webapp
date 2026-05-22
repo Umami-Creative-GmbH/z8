@@ -15,16 +15,17 @@ RUN apk add --no-cache \
     tini
 
 ARG PNPM_VERSION
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
-
 ENV PNPM_HOME=/pnpm
+ENV COREPACK_HOME=/corepack
 ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN mkdir -p "${PNPM_HOME}"
+RUN mkdir -p "${PNPM_HOME}" "${COREPACK_HOME}" && \
+    corepack enable && \
+    corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 
@@ -65,6 +66,7 @@ FROM base AS webapp
 RUN pnpm add -g tsx
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
+RUN chown -R app:nodejs /app /corepack
 
 COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
 COPY --from=deps --chown=app:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules
