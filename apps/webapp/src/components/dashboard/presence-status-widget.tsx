@@ -18,6 +18,16 @@ const WEEKDAY_LABELS: Record<string, string> = {
 	sunday: "Sun",
 };
 
+const WEEKDAY_TRANSLATION_KEYS: Record<string, string> = {
+	monday: "common.weekdays.mon",
+	tuesday: "common.weekdays.tue",
+	wednesday: "common.weekdays.wed",
+	thursday: "common.weekdays.thu",
+	friday: "common.weekdays.fri",
+	saturday: "common.weekdays.sat",
+	sunday: "common.weekdays.sun",
+};
+
 export function PresenceStatusWidget() {
 	const { t } = useTranslate();
 	const [employeeId, setEmployeeId] = useState<string | undefined>(undefined);
@@ -52,7 +62,9 @@ export function PresenceStatusWidget() {
 	}
 
 	const fixedOfficeDays = status?.fixedOfficeDays
-		?.map((day) => t(`dashboard.presence.weekdays.${day}`, WEEKDAY_LABELS[day] ?? day))
+		?.map((day) =>
+			t(WEEKDAY_TRANSLATION_KEYS[day] ?? `common.weekdays.${day}`, WEEKDAY_LABELS[day] ?? day),
+		)
 		.join(", ");
 	const showOfficeWarning =
 		status?.available && status.officeDaysRequiredLeft > status.workingDaysRemaining;
