@@ -1,4 +1,9 @@
+import { eq } from "drizzle-orm";
+
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { getDomainConfigByOrganization } from "@/lib/domain/domain-service";
+import { getCanonicalPlatformDomain } from "@/lib/domain/platform-domain";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("AppUrl");
@@ -44,6 +49,19 @@ export async function getOrganizationBaseUrl(organizationId?: string): Promise<s
 		}
 	} catch (error) {
 		logger.warn({ error, organizationId }, "Failed to get custom domain for organization");
+	}
+
+	try {
+		const org = await db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { slug: true },
+		});
+
+		if (org?.slug) {
+			return `https://${getCanonicalPlatformDomain(org.slug)}`;
+		}
+	} catch (error) {
+		logger.warn({ error, organizationId }, "Failed to get organization slug for platform URL");
 	}
 
 	return defaultUrl;
