@@ -15,10 +15,13 @@ describe("getEligibleApprovalScopesForManager", () => {
 				employee: {
 					findMany: vi.fn(async () => [
 						{ id: "requester-1", organizationId: "org-1", isActive: true, role: "employee" },
+						{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
 				},
 				employeeManagers: {
-					findMany: vi.fn(async () => []),
+					findMany: vi.fn(async () => [
+						{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
+					]),
 				},
 				teamMembership: {
 					findMany: vi.fn(async () => {
@@ -37,7 +40,9 @@ describe("getEligibleApprovalScopesForManager", () => {
 				managerEmployeeId: "manager-1",
 				organizationId: "org-1",
 			}),
-		).resolves.toEqual([]);
+		).resolves.toEqual([
+			{ requesterEmployeeId: "requester-1", eligibleApproverIds: ["manager-1"] },
+		]);
 	});
 });
 
