@@ -56,7 +56,7 @@ export function DailyRequirementStrip({ dates, summaries }: DailyRequirementStri
 						{summary ? (
 							<>
 								<div className="font-semibold">{formatTimeHours(summary.requiredMinutes)}</div>
-								{summary.actualMinutes > 0 && (
+								{summary.status !== "met" && (
 									<div className="text-muted-foreground">
 										{formatSignedMinutes(summary.deltaMinutes)}
 									</div>
