@@ -57,6 +57,69 @@ describe("getAbsenceDayFraction", () => {
 		expect(getAbsenceDayFraction({ date: "2026-05-19", ...absence })).toBe(1);
 		expect(getAbsenceDayFraction({ date: "2026-05-20", ...absence })).toBe(0.5);
 	});
+
+	it("returns zero for dates before the absence range", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-17",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-20",
+				endPeriod: "full_day",
+			}),
+		).toBe(0);
+	});
+
+	it("returns zero for dates after the absence range", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-21",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-20",
+				endPeriod: "full_day",
+			}),
+		).toBe(0);
+	});
+
+	it("returns zero for invalid dates or ranges", () => {
+		expect(
+			getAbsenceDayFraction({
+				date: "not-a-date",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "2026-05-20",
+				endPeriod: "full_day",
+			}),
+		).toBe(0);
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-18",
+				startDate: "not-a-date",
+				startPeriod: "full_day",
+				endDate: "2026-05-20",
+				endPeriod: "full_day",
+			}),
+		).toBe(0);
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-18",
+				startDate: "2026-05-18",
+				startPeriod: "full_day",
+				endDate: "not-a-date",
+				endPeriod: "full_day",
+			}),
+		).toBe(0);
+		expect(
+			getAbsenceDayFraction({
+				date: "2026-05-18",
+				startDate: "2026-05-20",
+				startPeriod: "full_day",
+				endDate: "2026-05-18",
+				endPeriod: "full_day",
+			}),
+		).toBe(0);
+	});
 });
 
 describe("applyAbsenceAdjustmentsToRequirements", () => {

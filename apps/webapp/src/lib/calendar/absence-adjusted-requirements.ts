@@ -15,6 +15,11 @@ interface AbsenceDayFractionInput extends ApprovedAbsenceRange {
 }
 
 export function getAbsenceDayFraction(input: AbsenceDayFractionInput): number {
+	const date = DateTime.fromISO(input.date, { zone: "utc" }).startOf("day");
+	const start = DateTime.fromISO(input.startDate, { zone: "utc" }).startOf("day");
+	const end = DateTime.fromISO(input.endDate, { zone: "utc" }).startOf("day");
+	if (!date.isValid || !start.isValid || !end.isValid || end < start || date < start || date > end) return 0;
+
 	if (input.startDate === input.endDate) {
 		if (input.startPeriod === "full_day" || input.endPeriod === "full_day") return 1;
 		return input.startPeriod === input.endPeriod ? 0.5 : 1;
