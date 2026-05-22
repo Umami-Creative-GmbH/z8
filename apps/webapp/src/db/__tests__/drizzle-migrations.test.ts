@@ -98,10 +98,24 @@ describe("drizzle follow-up migrations", () => {
 		const migration0026 = readFileSync(migration0026Url, "utf8");
 		const guardPosition = migration0026.indexOf("DO $$");
 		const insertPosition = migration0026.indexOf('INSERT INTO "employee_managers"');
+		const duplicateGuardPosition = migration0026.indexOf(
+			"Duplicate employee manager assignments must be resolved before removing employee.manager_id",
+		);
+		const primaryUpdatePosition = migration0026.indexOf(
+			'UPDATE "employee_managers" AS "existing_assignment"',
+		);
+		const uniqueIndexPosition = migration0026.indexOf(
+			'CREATE UNIQUE INDEX "employeeManagers_unique_idx"',
+		);
 
 		expect(guardPosition).toBeGreaterThanOrEqual(0);
 		expect(guardPosition).toBeLessThan(insertPosition);
+		expect(duplicateGuardPosition).toBeGreaterThanOrEqual(0);
+		expect(duplicateGuardPosition).toBeLessThan(primaryUpdatePosition);
+		expect(duplicateGuardPosition).toBeLessThan(uniqueIndexPosition);
 		expect(migration0026).toContain("RAISE EXCEPTION");
+		expect(migration0026).toContain('GROUP BY "employee_id", "manager_id"');
+		expect(migration0026).toContain("HAVING count(*) > 1");
 		expect(migration0026).toContain('"manager"."organization_id" = "e"."organization_id"');
 		expect(migration0026).toContain('"manager"."id" IS NULL');
 		expect(migration0026).toContain('"assigned_user"."id" IS NULL');

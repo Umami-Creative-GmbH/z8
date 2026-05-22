@@ -2,6 +2,15 @@ DO $$
 BEGIN
 	IF EXISTS (
 		SELECT 1
+		FROM "employee_managers"
+		GROUP BY "employee_id", "manager_id"
+		HAVING count(*) > 1
+	) THEN
+		RAISE EXCEPTION 'Duplicate employee manager assignments must be resolved before removing employee.manager_id';
+	END IF;
+
+	IF EXISTS (
+		SELECT 1
 		FROM "employee" AS "e"
 		LEFT JOIN "employee" AS "manager"
 			ON "manager"."id" = "e"."manager_id"
