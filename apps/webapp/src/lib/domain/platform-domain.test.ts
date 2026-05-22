@@ -5,18 +5,45 @@ const mockState = vi.hoisted(() => ({
 		MAIN_DOMAIN: "ui.z8-time.app",
 		PLATFORM_DOMAIN: "ui.z8-time.app",
 	},
+	db: {
+		query: {
+			organization: {
+				findFirst: vi.fn(),
+			},
+			organizationBranding: {
+				findFirst: vi.fn(),
+			},
+		},
+	},
+	getConfiguredProviders: vi.fn(),
 }));
 
 vi.mock("@/env", () => ({ env: mockState.env }));
+vi.mock("@/db", () => ({ db: mockState.db }));
+vi.mock("@/lib/social-oauth", () => ({ getConfiguredProviders: mockState.getConfiguredProviders }));
 
-const { classifyDomainHost, getPlatformOrganizationLabel, normalizeDomainHost } = await import(
-	"./platform-domain"
-);
+const {
+	classifyDomainHost,
+	getPlatformDomainConfig,
+	getPlatformOrganizationLabel,
+	normalizeDomainHost,
+	resolvePlatformOrganization,
+} = await import("./platform-domain");
 
 describe("platform domain host helpers", () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.db.query.organization.findFirst.mockReset();
+		mockState.db.query.organizationBranding.findFirst.mockReset();
+		mockState.getConfiguredProviders.mockReset();
 		mockState.env.MAIN_DOMAIN = "ui.z8-time.app";
 		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
+		mockState.getConfiguredProviders.mockResolvedValue({
+			google: false,
+			github: false,
+			linkedin: false,
+			apple: false,
+		});
 	});
 
 	it("normalizes hosts by lowercasing and removing ports", () => {
@@ -66,5 +93,120 @@ describe("platform domain host helpers", () => {
 			type: "customDomain",
 			hostname: "login.acme.test",
 		});
+	});
+});
+
+describe("platform organization resolution", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.db.query.organization.findFirst.mockReset();
+		mockState.db.query.organizationBranding.findFirst.mockReset();
+		mockState.getConfiguredProviders.mockReset();
+		mockState.env.MAIN_DOMAIN = "ui.z8-time.app";
+		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
+		mockState.getConfiguredProviders.mockResolvedValue({
+			google: false,
+			github: false,
+			linkedin: false,
+			apple: false,
+		});
+	});
+
+	it("resolves platform labels by slug before id", async () => {
+		mockState.db.query.organization.findFirst
+			.mockResolvedValueOnce({ id: "org_slug", slug: "acme", name: "Acme" })
+			.mockResolvedValueOnce({ id: "org_id", slug: "other", name: "Other" });
+
+		const result = await resolvePlatformOrganization("acme");
+
+		expect(result).toEqual({ id: "org_slug", slug: "acme", name: "Acme" });
+		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(1);
+	});
+
+	it("falls back to organization id when no slug matches", async () => {
+		mockState.db.query.organization.findFirst
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({ id: "org_123", slug: "acme", name: "Acme" });
+
+		const result = await resolvePlatformOrganization("org_123");
+
+		expect(result).toEqual({ id: "org_123", slug: "acme", name: "Acme" });
+		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it("returns null when neither slug nor id matches", async () => {
+		mockState.db.query.organization.findFirst.mockResolvedValue(null);
+
+		await expect(resolvePlatformOrganization("missing")).resolves.toBeNull();
+	});
+
+	it("builds a domain auth context for platform organization subdomains", async () => {
+		mockState.db.query.organization.findFirst.mockResolvedValueOnce({
+			id: "org_123",
+			slug: "acme",
+			name: "Acme",
+		});
+		mockState.db.query.organizationBranding.findFirst.mockResolvedValueOnce({
+			logoUrl: "https://cdn.example/logo.png",
+			backgroundImageUrl: null,
+			appName: "Acme Time",
+			primaryColor: "#2563eb",
+			accentColor: "#0ea5e9",
+		});
+		mockState.getConfiguredProviders.mockResolvedValueOnce({
+			google: true,
+			github: false,
+			linkedin: false,
+			apple: false,
+		});
+
+		const result = await getPlatformDomainConfig("acme.ui.z8-time.app");
+
+		expect(result).toEqual({
+			organizationId: "org_123",
+			organizationSlug: "acme",
+			domain: "acme.ui.z8-time.app",
+			canonicalDomain: "acme.ui.z8-time.app",
+			isCanonical: true,
+			authConfig: {
+				emailPasswordEnabled: true,
+				socialProvidersEnabled: ["google", "github", "linkedin", "apple"],
+				ssoEnabled: false,
+				passkeyEnabled: true,
+			},
+			branding: {
+				logoUrl: "https://cdn.example/logo.png",
+				backgroundImageUrl: null,
+				appName: "Acme Time",
+				primaryColor: "#2563eb",
+				accentColor: "#0ea5e9",
+			},
+			socialOAuthConfigured: {
+				google: true,
+				github: false,
+				linkedin: false,
+				apple: false,
+			},
+			turnstile: {
+				enabled: false,
+				siteKey: null,
+				isEnterprise: false,
+			},
+		});
+	});
+
+	it("marks organization id hosts as aliases with slug canonical domain", async () => {
+		mockState.db.query.organization.findFirst
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({ id: "org_123", slug: "acme", name: "Acme" });
+		mockState.db.query.organizationBranding.findFirst.mockResolvedValueOnce(null);
+
+		const result = await getPlatformDomainConfig("org_123.ui.z8-time.app");
+
+		expect(result?.organizationId).toBe("org_123");
+		expect(result?.organizationSlug).toBe("acme");
+		expect(result?.domain).toBe("org_123.ui.z8-time.app");
+		expect(result?.canonicalDomain).toBe("acme.ui.z8-time.app");
+		expect(result?.isCanonical).toBe(false);
 	});
 });
