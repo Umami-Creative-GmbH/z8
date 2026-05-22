@@ -39,6 +39,9 @@ describe("buildDailyWorkRequirements", () => {
 		});
 
 		expect(requirements["2026-05-04"]?.requiredMinutes).toBe(480);
+		expect(requirements["2026-05-05"]?.requiredMinutes).toBe(480);
+		expect(requirements["2026-05-06"]?.requiredMinutes).toBe(480);
+		expect(requirements["2026-05-07"]?.requiredMinutes).toBe(480);
 		expect(requirements["2026-05-08"]?.requiredMinutes).toBe(480);
 		expect(requirements["2026-05-09"]).toBeUndefined();
 		expect(requirements["2026-05-10"]).toBeUndefined();
