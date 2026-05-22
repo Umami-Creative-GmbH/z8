@@ -71,7 +71,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 				timeFormat,
 				dateParam: searchParams.date,
 			}),
-			getEmployeeWorkBalance({
+			getSafeEmployeeWorkBalance({
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 			}),
@@ -90,6 +90,17 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		t,
 		timelineResult: serializeWorkdayTimelineResult(timelineResult),
 	} as const;
+}
+
+export async function getSafeEmployeeWorkBalance(
+	params: Parameters<typeof getEmployeeWorkBalance>[0],
+) {
+	try {
+		return await getEmployeeWorkBalance(params);
+	} catch (error) {
+		console.error("Failed to load employee work balance", { ...params, error });
+		return null;
+	}
 }
 
 function serializeWorkdayTimelineResult(
