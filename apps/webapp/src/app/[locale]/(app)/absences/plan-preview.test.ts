@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	absenceFindMany: vi.fn(),
 	shiftFindMany: vi.fn(),
 	coverageRuleFindMany: vi.fn(),
+	getPrimaryEligibleManagerIdForRequester: vi.fn(),
 	and: vi.fn((...conditions: unknown[]) => ({ op: "and", conditions })),
 	eq: vi.fn((column: unknown, value: unknown) => ({ op: "eq", column, value })),
 	gte: vi.fn((column: unknown, value: unknown) => ({ op: "gte", column, value })),
@@ -39,6 +40,10 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	getPrimaryEligibleManagerIdForRequester: mockState.getPrimaryEligibleManagerIdForRequester,
+}));
+
 vi.mock("./current-employee", () => ({
 	getCurrentEmployee: mockState.getCurrentEmployee,
 }));
@@ -64,8 +69,8 @@ describe("getAbsencePlanPreview", () => {
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "emp-current",
 			organizationId: "org-current",
-			managerId: "manager-1",
 		});
+		mockState.getPrimaryEligibleManagerIdForRequester.mockResolvedValue("manager-1");
 		mockState.categoryFindFirst.mockResolvedValue({
 			id: "cat-vacation",
 			name: "Vacation",
@@ -94,6 +99,24 @@ describe("getAbsencePlanPreview", () => {
 			expect(result.data.requestedDays).toBe(2);
 			expect(result.data.balance?.remainingAfterRequest).toBe(12);
 			expect(result.data.approvalSignal).toBe("likely");
+		}
+	});
+
+	it("uses canonical manager eligibility to determine whether the current employee has a manager", async () => {
+		const result = await getAbsencePlanPreview(previewRequest);
+
+		expect(mockState.getPrimaryEligibleManagerIdForRequester).toHaveBeenCalledWith(
+			expect.objectContaining({
+				requesterEmployeeId: "emp-current",
+				organizationId: "org-current",
+			}),
+		);
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.reasons).toContain("Request follows the normal approval path.");
+			expect(result.data.reasons).not.toContain(
+				"No manager is assigned, so this request follows the current auto-approval behavior.",
+			);
 		}
 	});
 

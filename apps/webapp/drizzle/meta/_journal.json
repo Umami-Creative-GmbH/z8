@@ -183,6 +183,13 @@
       "when": 1779454874208,
       "tag": "0025_scaleway_secret_store",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1779460000000,
+      "tag": "0026_remove_employee_manager_id",
+      "breakpoints": true
     }
   ]
 }

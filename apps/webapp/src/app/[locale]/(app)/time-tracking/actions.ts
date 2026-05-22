@@ -20,6 +20,7 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
@@ -112,6 +113,29 @@ const approvalDbService = {
 	db,
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 } satisfies ApprovalDbService;
+
+type ManagerResolverDb = Parameters<typeof getPrimaryEligibleManagerIdForRequester>[0]["db"];
+
+export async function resolveTimeApprovalManagerId(input: {
+	db: ManagerResolverDb;
+	requiresApproval: boolean;
+	requesterEmployeeId: string;
+	organizationId: string;
+}): Promise<string | null> {
+	if (!input.requiresApproval) {
+		return null;
+	}
+
+	const managerId = await getPrimaryEligibleManagerIdForRequester({
+		db: input.db,
+		requesterEmployeeId: input.requesterEmployeeId,
+		organizationId: input.organizationId,
+	});
+	if (!managerId) {
+		throw new Error("No manager assigned to approve time changes");
+	}
+	return managerId;
+}
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
@@ -503,9 +527,19 @@ export async function requestTimeCorrectionEffect(
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
 		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
 
-		// Step 3: Check if employee has a manager
-		if (!currentEmployee.managerId) {
-			yield* _(
+		// Step 3: Resolve the employee's active approver from manager links
+		const managerId = yield* _(
+			Effect.promise(() =>
+				getPrimaryEligibleManagerIdForRequester({
+					db: dbService.db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			),
+		);
+
+		if (!managerId) {
+			return yield* _(
 				Effect.fail(
 					new ValidationError({
 						message: "No manager assigned to approve corrections",
@@ -514,8 +548,9 @@ export async function requestTimeCorrectionEffect(
 				),
 			);
 		}
+		const resolvedManagerId = managerId;
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
+		yield* _(Effect.annotateCurrentSpan("manager.id", resolvedManagerId));
 
 		// Get user's timezone for time conversion from userSettings
 		const settingsData = yield* _(
@@ -532,7 +567,7 @@ export async function requestTimeCorrectionEffect(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
-				managerId: currentEmployee.managerId,
+				managerId: resolvedManagerId,
 				timezone,
 			},
 			"Processing time correction request",
@@ -768,7 +803,7 @@ export async function requestTimeCorrectionEffect(
 				requesterEmployeeId: currentEmployee.id,
 				teamId: currentEmployee.teamId ?? null,
 				workPeriodId: period.id,
-				defaultApproverId: currentEmployee.managerId!,
+				defaultApproverId: resolvedManagerId,
 				reason: data.reason,
 				overtimeRisk: "warning",
 			}),
@@ -781,7 +816,7 @@ export async function requestTimeCorrectionEffect(
 			Effect.all([
 				dbService.query("getManagerWithUser", async () => {
 					const mgr = await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, currentEmployee.managerId!),
+						where: eq(employee.id, resolvedManagerId),
 						with: { user: true },
 					});
 
@@ -1275,6 +1310,18 @@ export async function clockOut(
 		};
 	}
 
+	let managerId: string | null = null;
+	try {
+		managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval: needsClockOutApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
+	} catch {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
+
 	try {
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
@@ -1336,12 +1383,11 @@ export async function clockOut(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
 
-		// If clock-out needs approval, create an approval request
-		if (needsClockOutApproval && emp.managerId) {
+		if (needsClockOutApproval && managerId) {
 			await createClockOutApprovalRequest({
 				workPeriodId: activePeriod.id,
 				employeeId: emp.id,
-				managerId: emp.managerId,
+				managerId,
 				organizationId: emp.organizationId,
 				startTime: activePeriod.startTime,
 				endTime: now,
@@ -2857,6 +2903,18 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		};
 	}
 
+	let managerId: string | null = null;
+	try {
+		managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
+	} catch {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
+
 	try {
 		// Check for overlapping work periods on the same day
 		const existingPeriods = await db.query.workPeriod.findMany({
@@ -2959,7 +3017,6 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		// Determine approval status based on policy
 		const approvalStatus = requiresApproval ? "pending" : "approved";
-
 		// Prepare pending changes data if approval is needed
 		const pendingChangesData = requiresApproval
 			? {
@@ -3007,11 +3064,11 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			.returning();
 
 		// If approval required, create approval request and notify manager
-		if (requiresApproval && emp.managerId) {
+		if (requiresApproval && managerId) {
 			await createManualEntryApprovalRequest({
 				workPeriodId: period.id,
 				employeeId: emp.id,
-				managerId: emp.managerId,
+				managerId,
 				organizationId: emp.organizationId,
 				startTime: finalClockIn,
 				endTime: finalClockOut,

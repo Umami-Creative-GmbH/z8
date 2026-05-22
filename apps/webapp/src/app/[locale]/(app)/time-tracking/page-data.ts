@@ -7,6 +7,7 @@ import type {
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -57,19 +58,25 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	});
 	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
-	const [activeWorkPeriod, workPeriods, summary, t, timelineResult] = await Promise.all([
-		getActiveWorkPeriod(currentEmployee.id),
-		getWorkPeriods(currentEmployee.id, startDate, endDate),
-		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
-		getTranslate(),
-		getWorkdayTimelineData({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			timezone,
-			timeFormat,
-			dateParam: searchParams.date,
-		}),
-	]);
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, managerId] =
+		await Promise.all([
+			getActiveWorkPeriod(currentEmployee.id),
+			getWorkPeriods(currentEmployee.id, startDate, endDate),
+			getTimeSummary(currentEmployee.id, timezone, weekStartDay),
+			getTranslate(),
+			getWorkdayTimelineData({
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				timezone,
+				timeFormat,
+				dateParam: searchParams.date,
+			}),
+			getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
+		]);
 
 	return {
 		session,
@@ -78,6 +85,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		timeFormat,
 		activeWorkPeriod,
 		workPeriods,
+		hasManager: Boolean(managerId),
 		canApproveTimeEntries,
 		summary,
 		t,

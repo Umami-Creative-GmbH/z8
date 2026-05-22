@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -17,7 +18,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { createManualEntryApprovalRequest } from "./approvals";
+import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
 	calculateAndPersistSurcharges,
@@ -30,7 +31,7 @@ import {
 	createTimeEntry,
 	validateProjectAssignment,
 } from "./entry-helpers";
-import { getEditCapabilityForPeriod } from "./policy-helpers";
+import { checkClockOutNeedsApproval, getEditCapabilityForPeriod } from "./policy-helpers";
 import { getActiveWorkPeriod, getTimeSummary } from "./queries";
 import {
 	BREAK_WARNING_THRESHOLD_MINUTES,
@@ -173,7 +174,25 @@ export async function clockOut(
 		};
 	}
 
+	let needsClockOutApproval = false;
 	try {
+		needsClockOutApproval = await checkClockOutNeedsApproval(currentEmployee.id);
+	} catch (error) {
+		logger.warn({ error }, "Failed to check clock-out approval requirement");
+	}
+
+	try {
+		const managerId = needsClockOutApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				})
+			: null;
+		if (needsClockOutApproval && !managerId) {
+			return { success: false, error: "No manager assigned to approve time changes" };
+		}
+
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
 				{
@@ -187,6 +206,17 @@ export async function clockOut(
 			);
 
 			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+			const approvalStatus = needsClockOutApproval ? "pending" : "approved";
+			const pendingChanges = needsClockOutApproval
+				? {
+						originalStartTime: activeWorkPeriod.startTime.toISOString(),
+						originalEndTime: now.toISOString(),
+						originalDurationMinutes: sessionDurationMinutes,
+						requestedAt: now.toISOString(),
+						requestedBy: session.user.id,
+						isNewClockOut: true,
+					}
+				: null;
 
 			const [closedWorkPeriod] = await tx
 				.update(workPeriod)
@@ -197,8 +227,8 @@ export async function clockOut(
 					projectId: projectId || null,
 					workCategoryId: workCategoryId || null,
 					isActive: false,
-					approvalStatus: "approved",
-					pendingChanges: null,
+					approvalStatus,
+					pendingChanges,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -220,6 +250,17 @@ export async function clockOut(
 		});
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
+		if (needsClockOutApproval && managerId) {
+			await createClockOutApprovalRequest({
+				workPeriodId: activeWorkPeriod.id,
+				employeeId: currentEmployee.id,
+				managerId,
+				organizationId: currentEmployee.organizationId,
+				startTime: activeWorkPeriod.startTime,
+				endTime: now,
+				durationMinutes,
+			});
+		}
 
 		const complianceWarnings = await checkComplianceAfterClockOut(
 			currentEmployee.id,
@@ -250,6 +291,7 @@ export async function clockOut(
 			success: true,
 			data: {
 				...entry,
+				pendingApproval: needsClockOutApproval || undefined,
 				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
@@ -623,7 +665,16 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
-		const managerId = currentEmployee.managerId;
+		const managerId = requiresApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				})
+			: null;
+		if (requiresApproval && !managerId) {
+			return { success: false, error: "No manager assigned to approve time changes" };
+		}
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
 		const clockInEntry = await createTimeEntry({
 			employeeId: currentEmployee.id,
