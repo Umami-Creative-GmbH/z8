@@ -6,7 +6,7 @@ import { memo, useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ interface YearCalendarViewProps {
 	onYearChange: (year: number) => void;
 	onViewModeChange: (mode: ViewMode) => void;
 	onDayClick?: (date: Date) => void;
-	workHoursData?: Map<string, { expected: number; actual: number }>;
+	workHoursData?: DailyWorkHoursSummaries;
 }
 
 const MONTH_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -59,7 +59,7 @@ interface MiniMonthProps {
 	eventsByDate: Map<string, CalendarEvent[]>;
 	weekdays: string[];
 	weekStartDay: WeekStartDay;
-	workHoursData?: Map<string, { expected: number; actual: number }>;
+	workHoursData?: DailyWorkHoursSummaries;
 	onDayClick?: (date: Date) => void;
 }
 
@@ -113,12 +113,12 @@ const MiniMonth = memo(function MiniMonth({
 
 					// Determine work hours status
 					let workStatus: "met" | "overtime" | "undertime" | "none" = "none";
-					if (workHours && workHours.expected > 0) {
-						if (workHours.actual >= workHours.expected * 1.1) {
+					if (workHours && workHours.requiredMinutes > 0) {
+						if (workHours.actualMinutes >= workHours.requiredMinutes * 1.1) {
 							workStatus = "overtime";
-						} else if (workHours.actual >= workHours.expected * 0.95) {
+						} else if (workHours.actualMinutes >= workHours.requiredMinutes * 0.95) {
 							workStatus = "met";
-						} else if (workHours.actual > 0) {
+						} else if (workHours.actualMinutes > 0) {
 							workStatus = "undertime";
 						}
 					}

@@ -32,9 +32,10 @@ import {
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
+import { DailyRequirementStrip } from "./daily-requirement-strip";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -46,6 +47,7 @@ interface ScheduleXCalendarWrapperProps {
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
+	workHoursData?: DailyWorkHoursSummaries;
 }
 
 // Map view mode to Schedule-X view names
@@ -64,6 +66,7 @@ export function ScheduleXCalendarWrapper({
 	onEventClick,
 	onRangeChange,
 	onRefresh,
+	workHoursData = new Map(),
 }: ScheduleXCalendarWrapperProps) {
 	const { resolvedTheme } = useTheme();
 	const { t } = useTranslate();
@@ -176,6 +179,15 @@ export function ScheduleXCalendarWrapper({
 				return localizedCurrentDate.toFormat("MMMM d, yyyy");
 		}
 	}, [viewMode, currentDate, weekStartDay, locale]);
+
+	const visibleRequirementDates = useMemo(() => {
+		if (viewMode === "day") return [currentDate.startOf("day")];
+		if (viewMode === "week") {
+			const { start } = getWeekBounds(currentDate, weekStartDay);
+			return Array.from({ length: 7 }, (_, index) => start.plus({ days: index }));
+		}
+		return [];
+	}, [currentDate, viewMode, weekStartDay]);
 
 	// Handle event click - Schedule-X passes the event object
 	const handleEventClick = useCallback(
@@ -352,6 +364,8 @@ export function ScheduleXCalendarWrapper({
 					</TabsList>
 				</Tabs>
 			</div>
+
+			<DailyRequirementStrip dates={visibleRequirementDates} summaries={workHoursData} />
 
 			{/* Calendar with internal scroll - styles applied via style tag above */}
 			<div

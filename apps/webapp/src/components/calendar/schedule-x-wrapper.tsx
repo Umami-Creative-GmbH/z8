@@ -3,7 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import type { ViewMode } from "./schedule-x-calendar";
 
 function CalendarLoading() {
@@ -35,6 +35,7 @@ interface ScheduleXWrapperProps {
 	onEventClick?: (event: CalendarEvent) => void;
 	onRangeChange?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
+	workHoursData?: DailyWorkHoursSummaries;
 }
 
 /**
