@@ -1,0 +1,546 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Aktiv",
+      "copyKey": "API-Schlüssel kopieren",
+      "copyPrefix": "Präfix kopieren",
+      "create": "Schlüssel erstellen",
+      "created": "API-Schlüssel erfolgreich erstellt",
+      "createDescription": "Erstellen Sie einen neuen API-Schlüssel für den programmatischen Zugriff. Der Schlüssel wird nur einmal angezeigt.",
+      "createdOn": "Erstellt am {date}",
+      "createTitle": "API-Schlüssel erstellen",
+      "deleted": "API-Schlüssel gelöscht",
+      "deleteDescription": "Sind Sie sicher, dass Sie den API-Schlüssel \"{name}\" löschen möchten? Alle Anwendungen, die diesen Schlüssel verwenden, verlieren sofort den Zugriff. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteTitle": "API-Schlüssel löschen",
+      "description": "Verwalten Sie API-Schlüssel für den programmatischen Zugriff auf Ihre Organisationsdaten",
+      "disabled": "Deaktiviert",
+      "editCreated": "Erstellt am {date}",
+      "editDescription": "Aktualisieren Sie die Einstellungen für diesen API-Schlüssel. Hinweis: Sie können den Schlüssel selbst nicht einsehen oder ändern.",
+      "editTitle": "API-Schlüssel bearbeiten",
+      "empty": {
+        "description": "Erstellen Sie Ihren ersten API-Schlüssel, um den programmatischen Zugriff auf Ihre Organisation zu ermöglichen.",
+        "title": "Keine API-Schlüssel"
+      },
+      "expires": "Läuft ab",
+      "form": {
+        "create": "Schlüssel erstellen",
+        "enabled": "Schlüssel aktiviert",
+        "enabledHelp": "Deaktivierte Schlüssel lehnen alle API-Anfragen ab",
+        "expiration": "Ablaufdatum",
+        "name": "Name",
+        "nameHelp": "Ein beschreibender Name zur Identifizierung dieses Schlüssels",
+        "namePlaceholder": "z. B. Produktions-API",
+        "rateLimit": "Ratenbegrenzung aktivieren",
+        "rateLimitMax": "Maximale Anfragen pro Minute",
+        "scopes": "Berechtigungen",
+        "scopesRequired": "Wählen Sie mindestens eine Berechtigung aus"
+      },
+      "keyCopied": "API-Schlüssel in die Zwischenablage kopiert",
+      "lastUsed": "Zuletzt verwendet",
+      "name": "Name",
+      "prefix": "Schlüssel-Präfix",
+      "prefixCopied": "Schlüssel-Präfix kopiert",
+      "scopes": "Berechtigungen",
+      "security": {
+        "description": "API-Schlüssel bieten vollen Zugriff auf Ihre Organisationsdaten innerhalb ihres Berechtigungsumfangs. Bewahren Sie sie sicher auf und geben Sie sie niemals in öffentlichen Repositories oder clientseitigem Code weiter.",
+        "title": "Sicherheitshinweis"
+      },
+      "showClose": "Schließen",
+      "showCloseAnyway": "Trotzdem schließen",
+      "showConfirmWarning": "Sind Sie sicher? Sie haben den Schlüssel noch nicht kopiert.",
+      "showCopied": "Schlüssel in die Zwischenablage kopiert",
+      "showDescription": "Ihr neuer API-Schlüssel \"{name}\" wurde erstellt. Kopieren Sie ihn jetzt – Sie werden ihn nicht erneut sehen können!",
+      "showDone": "Fertig",
+      "showExpires": "Läuft ab:",
+      "showLabel": "Ihr API-Schlüssel",
+      "showName": "Name:",
+      "showNever": "Niemals",
+      "showTitle": "API-Schlüssel erstellt",
+      "showWarning": "Dies ist das einzige Mal, dass Sie diesen Schlüssel sehen werden. Stellen Sie sicher, dass Sie ihn kopieren und sicher aufbewahren.",
+      "showWarningTitle": "Wichtig:",
+      "status": "Status",
+      "title": "API-Schlüssel",
+      "updated": "API-Schlüssel aktualisiert",
+      "usage": "{count} von {max} Schlüsseln verwendet"
+    },
+    "branding": {
+      "appName": {
+        "description": "Überschreiben Sie den Standard-App-Namen, der auf der Anmeldeseite angezeigt wird.",
+        "title": "App-Name"
+      },
+      "background": {
+        "description": "Laden Sie ein benutzerdefiniertes Hintergrundbild für die Anmeldeseite hoch.",
+        "hint": "Empfohlen: 1920x1080px oder größer, hochwertiges JPEG oder PNG",
+        "preview": "Hintergrundvorschau",
+        "remove": "Hintergrund entfernen",
+        "title": "Hintergrundbild",
+        "upload": "Hintergrundbild hochladen"
+      },
+      "backgroundUploadFailed": "Hintergrundbild konnte nicht hochgeladen werden",
+      "backgroundUploadSuccess": "Hintergrundbild erfolgreich hochgeladen",
+      "colors": {
+        "accent": "Akzentfarbe (Optional)",
+        "accentHex": "Hex-Wert der Akzentfarbe",
+        "accentHint": "Sekundärfarbe für Hervorhebungen",
+        "description": "Passen Sie die Primär- und Akzentfarben für Ihre Anmeldeseite an.",
+        "primary": "Primärfarbe",
+        "primaryHex": "Hex-Wert der Primärfarbe",
+        "primaryHint": "Wird für Schaltflächen, Links und Fokus-Zustände verwendet",
+        "title": "Design-Farben"
+      },
+      "logo": {
+        "description": "Laden Sie Ihr Organisationslogo hoch, um es auf der Anmeldeseite anzuzeigen.",
+        "hint": "Empfohlen: 200x200px, PNG oder SVG mit transparentem Hintergrund",
+        "preview": "Logovorschau",
+        "remove": "Logo entfernen",
+        "title": "Logo",
+        "upload": "Logobild hochladen"
+      },
+      "logoUploadFailed": "Logo konnte nicht hochgeladen werden",
+      "logoUploadSuccess": "Logo erfolgreich hochgeladen",
+      "save": "Branding-Einstellungen speichern",
+      "saveFailed": "Branding-Einstellungen konnten nicht gespeichert werden",
+      "saveSuccess": "Branding-Einstellungen gespeichert"
+    },
+    "enterprise": {
+      "addProvider": "Anbieter hinzufügen",
+      "clientId": "Client-ID",
+      "clientIdRequired": "Client-ID ist erforderlich",
+      "clientSecret": "Client-Geheimnis",
+      "clientSecretRequired": "Client-Geheimnis ist erforderlich",
+      "configureCallbackUrl": "Konfigurieren Sie die Callback-URL:",
+      "domain": "Domain",
+      "domains": {
+        "add": "Benutzerdefinierte Domain hinzufügen",
+        "addDescription": "Fügen Sie eine benutzerdefinierte Domain hinzu, um organisationsspezifische Anmeldeseiten zu ermöglichen. Sie müssen die Inhaberschaft über DNS-Einträge bestätigen.",
+        "addDomain": "Domain hinzufügen",
+        "added": "Domain erfolgreich hinzugefügt",
+        "addFailed": "Domain konnte nicht hinzugefügt werden",
+        "adding": "Wird hinzugefügt…",
+        "authConfigDescription": "Konfigurieren Sie, welche Authentifizierungsmethoden für Benutzer verfügbar sind, die sich über {domain} anmelden",
+        "authConfigTitle": "Authentifizierungskonfiguration",
+        "authConfigUpdated": "Authentifizierungskonfiguration aktualisiert",
+        "authConfigUpdateFailed": "Fehler beim Aktualisieren der Authentifizierungskonfiguration",
+        "authMethod": {
+          "emailPassword": "E-Mail/Passwort",
+          "passkey": "Passkey",
+          "social": "Soziale Netzwerke ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "konfiguriert",
+        "cookieConsentScript": "Cookie-Einwilligungs-Skript",
+        "cookieConsentScriptHelp": "Wird nur auf Authentifizierungsseiten für diese benutzerdefinierte Domain eingefügt. Leer lassen, um es zu deaktivieren.",
+        "cookieConsentStatus": "Cookie-Einwilligung {status}",
+        "copiedToClipboard": "In die Zwischenablage kopiert",
+        "customDomain": "Benutzerdefinierte Domain",
+        "customDomainDescription": "Konfigurieren Sie eine benutzerdefinierte Domain, um eine organisationsspezifische Anmeldeseite mit Ihrem Branding zu ermöglichen.",
+        "deleteAria": "Benutzerdefinierte Domain {domain} löschen",
+        "deleted": "Domain gelöscht",
+        "deleteDescription": "Sind Sie sicher, dass Sie \"{domain}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden. Benutzer können sich dann nicht mehr über diese benutzerdefinierte Domain anmelden.",
+        "deleteFailed": "Fehler beim Löschen der Domain",
+        "deleteTitle": "Domain löschen",
+        "description": "Konfigurieren Sie die benutzerdefinierte Anmeldedomain, das Branding und die SSO-Anbieter Ihrer Organisation.",
+        "dnsPropagation": "DNS-Propagierung",
+        "dnsPropagationDescription": "DNS-Änderungen können bis zu 48 Stunden dauern, bis sie vollständig propagiert sind, obwohl dies oft innerhalb weniger Minuten geschieht. Sie können auf \"Überprüfen\" klicken, sobald Sie den TXT-Eintrag hinzugefügt haben.",
+        "domain": "Domain",
+        "domainHelp": "Geben Sie die Domain ein, über die Benutzer auf die Anmeldeseite zugreifen werden.",
+        "domainInvalid": "Bitte geben Sie eine gültige Domain ein (z. B. login.example.com)",
+        "domainPageSettings": "Domain-Seiteneinstellungen",
+        "domainRequired": "Domain ist erforderlich",
+        "editAuthSettingsAria": "Authentifizierungseinstellungen für {domain} bearbeiten",
+        "emailPassword": "E-Mail & Passwort",
+        "emailPasswordHelp": "Benutzern die Anmeldung mit E-Mail und Passwort erlauben",
+        "empty": "Noch keine benutzerdefinierte Domain konfiguriert.",
+        "enabledAuthMethods": "Aktivierte Authentifizierungsmethoden",
+        "guidedSetup": {
+          "action": "Geführte Einrichtung",
+          "description": "Konfigurieren Sie SSO, SCIM, Zugriffsrichtlinien und Aktivierungsprüfungen in einem geführten Ablauf.",
+          "title": "Geführte Einrichtung"
+        },
+        "keepExistingSecretKey": "Leer lassen, um den vorhandenen geheimen Schlüssel beizubehalten",
+        "nameHost": "Name / Host",
+        "notConfigured": "nicht konfiguriert",
+        "passkey": "Passkey",
+        "passkeyHelp": "Passwortlose Anmeldung mit Passkeys erlauben",
+        "regenerateToken": "Token neu generieren",
+        "regenerateTokenFailed": "Fehler beim Neu-Generieren des Tokens",
+        "regenerateTokenSuccess": "Neues Verifizierungstoken generiert",
+        "regenerating": "Wird neu generiert…",
+        "saveConfiguration": "Konfiguration speichern",
+        "secretKey": "Geheimer Schlüssel",
+        "secretKeyPlaceholder": "Geheimen Schlüssel eingeben",
+        "secretKeyRequired": "Erforderlich beim Festlegen eines Site-Schlüssels",
+        "siteKey": "Site-Schlüssel",
+        "socialProviders": "Soziale Anbieter",
+        "socialProvidersHelp": "Social-Login-Optionen für diese Domain aktivieren",
+        "sso": "Single Sign-On (SSO)",
+        "ssoHelp": "OIDC-basierte Unternehmensanmeldung erlauben",
+        "status": {
+          "pending": "Überprüfung ausstehend",
+          "verified": "Verifiziert"
+        },
+        "title": "Benutzerdefinierte Domain & Branding",
+        "tokenExpired": "Token abgelaufen",
+        "tokenExpiredDescription": "Das Verifizierungs-Token ist abgelaufen. Bitte generieren Sie ein neues Token.",
+        "tokenExpires": "Token läuft ab: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Bot-Schutz für Authentifizierungsformulare. Erforderlich für Unternehmens-Domains.",
+        "turnstileSiteKeyStatus": "Turnstile-Site-Key {status}",
+        "txtRecordInstruction": "Fügen Sie den folgenden TXT-Eintrag zu Ihrem DNS hinzu:",
+        "value": "Wert",
+        "verifiedSuccess": "Domain erfolgreich verifiziert",
+        "verify": "Verifizieren",
+        "verifyDomain": "Domain verifizieren",
+        "verifyFailed": "Domain-Verifizierung fehlgeschlagen",
+        "verifying": "Wird verifiziert…",
+        "verifyOwnership": "Domain-Inhaberschaft verifizieren",
+        "verifyOwnershipDescription": "Fügen Sie einen DNS-TXT-Eintrag hinzu, um die Inhaberschaft von {domain} zu verifizieren"
+      },
+      "email": {
+        "apiKey": "API-Schlüssel",
+        "apiKeyHint": "Leer lassen, um den bestehenden Schlüssel beizubehalten. Erhalten Sie Ihren API-Schlüssel von resend.com",
+        "create": "Konfiguration erstellen",
+        "delete": "Konfiguration löschen",
+        "deleteConfirm": "Sind Sie sicher, dass Sie diese E-Mail-Konfiguration löschen möchten?",
+        "deleted": "E-Mail-Konfiguration gelöscht",
+        "deleteFailed": "Löschen fehlgeschlagen",
+        "description": "Konfigurieren Sie einen benutzerdefinierten E-Mail-Anbieter für Ihre Organisation. Alle E-Mails der Organisation verwenden diese Konfiguration anstelle des Systemstandards.",
+        "fromEmail": "Absender-E-Mail",
+        "fromName": "Absendername",
+        "isActive": "Diese E-Mail-Konfiguration aktivieren",
+        "lastTest": "Letzter Test",
+        "passwordHint": "Leer lassen, um das bestehende Passwort beizubehalten",
+        "recommended": "Empfohlen",
+        "resendConfig": "Resend-Konfiguration",
+        "save": "Änderungen speichern",
+        "saved": "E-Mail-Konfiguration gespeichert",
+        "saveFailed": "Speichern fehlgeschlagen",
+        "secretSet": "Festlegen",
+        "sendTest": "Test senden",
+        "smtpConfig": "SMTP-Konfiguration",
+        "smtpHost": "SMTP-Host",
+        "smtpPassword": "Passwort",
+        "smtpPort": "Port",
+        "smtpRequireTls": "STARTTLS-Upgrade erforderlich",
+        "smtpSecure": "TLS verwenden (Port 465)",
+        "smtpServer": "SMTP-Server",
+        "smtpUsername": "Benutzername",
+        "testEmailRequired": "Bitte geben Sie eine Test-E-Mail-Adresse ein",
+        "testFailed": "Senden der Test-E-Mail fehlgeschlagen",
+        "testFailure": "Fehlgeschlagen",
+        "testSection": "IconTest-E-Mail senden",
+        "testSent": "Test-E-Mail erfolgreich gesendet",
+        "testSuccess": "Erfolg",
+        "title": "E-Mail-Konfiguration",
+        "transportType": "E-Mail-Anbieter",
+        "vaultConnected": "Vault verbunden",
+        "vaultConnectedDesc": "Geheimnisse werden sicher in HashiCorp Vault gespeichert.",
+        "vaultSealed": "Vault versiegelt",
+        "vaultSealedDesc": "HashiCorp Vault ist versiegelt. Bitte entsiegeln Sie ihn, um Geheimnisse zu speichern.",
+        "vaultUnavailable": "Vault nicht verfügbar",
+        "vaultUnavailableDesc": "HashiCorp Vault ist nicht verfügbar. Geheimnisse können nicht sicher gespeichert werden."
+      },
+      "enableProviderHelp": "Diesen Anbieter aktivieren oder deaktivieren",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Zugriffsrichtlinie speichern"
+          },
+          "defaultRoleTemplate": "Standard-Rollenvorlage",
+          "description": "Legen Sie Domäne, Einladung und SSO-Durchsetzung fest, nachdem der Pilotversuch erfolgreich war.",
+          "noDefaultTemplate": "Keine Standardvorlage",
+          "placeholder": {
+            "roleTemplate": "Rollenvorlage auswählen"
+          },
+          "requireSso": "SSO erforderlich",
+          "requireSsoHelp": "Mitarbeiter müssen den Unternehmens-IdP verwenden.",
+          "restrictDomain": "Auf verifizierte Domäne beschränken",
+          "restrictDomainHelp": "Konten außerhalb der ausgewählten Domäne blockieren.",
+          "restrictInvites": "Einladungen einschränken",
+          "restrictInvitesHelp": "Nur Einladungen zulassen, die der Zugriffsrichtlinie entsprechen.",
+          "title": "Zugriffsrichtlinie"
+        },
+        "badge": {
+          "now": "Jetzt",
+          "queued": "In der Warteschlange",
+          "ready": "Bereit"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Domänenstatus prüfen"
+          },
+          "description": "Validieren Sie die Mandantengrenze, bevor Sie SSO für Mitarbeiter erzwingen.",
+          "help": "Die DNS-Verifizierung verwendet die bestehenden SSO-Domänenverifizierungsaktionen. Schließen Sie diese Verifizierung ab, bevor Sie die Durchsetzung aktivieren.",
+          "notSelected": "Nicht ausgewählt",
+          "selected": "Ausgewählte Domäne",
+          "status": {
+            "pending": "Ausstehend",
+            "verified": "Verifiziert"
+          },
+          "title": "Domäne"
+        },
+        "hero": {
+          "description": "Konfigurieren Sie SSO, SCIM und Durchsetzung für die Organisation {organizationId} mit geschützter Aktivierung.",
+          "eyebrow": "Unternehmensidentität",
+          "title": "Checkliste für operative Befehle"
+        },
+        "provider": {
+          "action": {
+            "save": "Anbieter speichern"
+          },
+          "description": "Wählen Sie die Identitätsanbieter-Voreinstellung, das Protokoll, die Anbieter-ID und die E-Mail-Domäne.",
+          "error": {
+            "domainRequired": "Domäne ist erforderlich",
+            "providerIdRequired": "Anbieter-ID ist erforderlich"
+          },
+          "label": {
+            "domain": "E-Mail-Domäne",
+            "preset": "Anbieter-Voreinstellung",
+            "protocol": "Protokoll",
+            "providerId": "Anbieter-ID"
+          },
+          "placeholder": {
+            "domain": "z. B. beispiel.de…",
+            "protocol": "Protokoll auswählen",
+            "provider": "Anbieter auswählen",
+            "providerId": "z. B. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Verwenden Sie einen beliebigen standardkonformen OIDC- oder SAML 2.0-Identitätsanbieter."
+            },
+            "googleWorkspace": {
+              "description": "Verwenden Sie Google Workspace OIDC für SSO und optionale Verzeichnissynchronisierung."
+            },
+            "microsoftEntra": {
+              "description": "Verwenden Sie Microsoft Entra ID für Enterprise-SSO und optionale Bereitstellung."
+            },
+            "okta": {
+              "description": "Verwenden Sie Okta Workforce Identity für SAML- oder OIDC-Single-Sign-On."
+            }
+          },
+          "title": "Anbieter"
+        },
+        "rail": {
+          "title": "Bereitschaftsprüfung"
+        },
+        "review": {
+          "action": {
+            "activate": "Enterprise-Identität aktivieren"
+          },
+          "activationSummary": "Aktivierungszusammenfassung",
+          "description": "Überprüfen Sie die Sicherheitsvorkehrungen für die Aktivierung, bevor Sie die Enterprise-Identitätskontrollen aktivieren.",
+          "lockoutWarning": "Warnung vor Aussperrung des aktuellen Administrators",
+          "lockoutWarningHelp": "Stellen Sie sicher, dass sich Ihr aktuelles Administratorkonto über den konfigurierten Anbieter anmelden kann, bevor Sie die Aktivierung durchführen. Die Durchsetzung kann den Passwort-Fallback für die ausgewählte Domäne blockieren.",
+          "missingRequirement": "{item} ist vor der Aktivierung erforderlich",
+          "prerequisitesComplete": "Anbieter, verifizierte Domäne und SSO-Testvoraussetzungen sind vollständig.",
+          "requirement": {
+            "domain": "Verifizierte Domäne",
+            "provider": "Anbieter",
+            "ssoTest": "SSO-Test"
+          },
+          "title": "Überprüfen & Aktivieren"
+        },
+        "scim": {
+          "action": {
+            "copyToken": "Token kopieren",
+            "generateToken": "Token generieren",
+            "refreshStatus": "Status aktualisieren"
+          },
+          "baseUrl": "Basis-URL",
+          "cardDescription": "Generieren Sie das Bereitstellungs-Token und überwachen Sie den Verbindungsstatus.",
+          "description": "Die SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter eine Testbenutzer- oder Gruppenänderung gesendet hat.",
+          "error": {
+            "saveProviderFirst": "Speichern Sie den Anbieter, bevor Sie ein SCIM-Token generieren"
+          },
+          "status": {
+            "none": "Noch keine Bereitstellungsaktivität",
+            "observed": "Bereitstellungsaktivität beobachtet"
+          },
+          "title": "SCIM-Bereitstellung",
+          "tokenShownOnce": "Dieses Token wird nur einmal angezeigt"
+        },
+        "sso": {
+          "action": {
+            "register": "SSO-Anbieter registrieren"
+          },
+          "description": "Registrieren Sie den externen IdP mithilfe von OIDC-Client-Anmeldeinformationen oder SAML-Metadaten.",
+          "error": {
+            "saveProviderFirst": "Speichern Sie Anbieter und Domäne, bevor Sie SSO registrieren"
+          },
+          "label": {
+            "clientId": "Client-ID",
+            "clientSecret": "Client-Geheimnis",
+            "issuer": "Aussteller",
+            "metadata": "SAML-Metadaten"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "IdP-Metadaten-XML einfügen…"
+          },
+          "title": "SSO-Konfiguration"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Datensatz fehlgeschlagen",
+            "recordPass": "Datensatz erfolgreich"
+          },
+          "defaultFailure": "Live-SSO-Test fehlgeschlagen",
+          "description": "Zeichnen Sie das Ergebnis eines Live-externen SSO-Tests vor der Durchsetzung auf.",
+          "error": {
+            "saveProviderFirst": "Speichern Sie den Anbieter, bevor Sie einen Test aufzeichnen"
+          },
+          "help": "Dies zeichnet ein Live-Ergebnis eines externen SSO-Tests auf. Führen Sie die Anmeldung zuerst im IdP durch und erfassen Sie dann hier Erfolg oder Misserfolg für die Aktivierungssicherung.",
+          "label": {
+            "email": "Test-Benutzer-E-Mail",
+            "failureNote": "Fehlerhinweis"
+          },
+          "status": {
+            "failed": "Fehlgeschlagen",
+            "notRun": "Nicht ausgeführt",
+            "passed": "Bestanden"
+          },
+          "title": "Test-Benutzer"
+        },
+        "status": {
+          "activated": "Aktiviert",
+          "draft": "Entwurf"
+        },
+        "step": {
+          "accessPolicy": "Zugriffsrichtlinie",
+          "accessPolicy.description": "Durchsetzungsregeln festlegen",
+          "domain": "Domain",
+          "domain.description": "Mandantengrenze bestätigen",
+          "provider": "Anbieter",
+          "provider.description": "Identitätsquelle auswählen",
+          "review": "Überprüfen & Aktivieren",
+          "review.description": "Guard-Aktivierung",
+          "scim": "SCIM-Bereitstellung",
+          "scim.description": "Bereitstellungs-Token ausstellen",
+          "sso": "SSO-Konfiguration",
+          "sso.description": "OIDC oder SAML registrieren",
+          "ssoTest": "Test-Benutzer",
+          "ssoTest.description": "Live-Anmeldeergebnis aufzeichnen"
+        },
+        "toast": {
+          "accessPolicyFailed": "Speichern der Zugriffsrichtlinie fehlgeschlagen",
+          "accessPolicySaved": "Zugriffsrichtlinie gespeichert",
+          "activated": "Enterprise-Identitätseinrichtung aktiviert",
+          "activateFailed": "Aktivierung der Einrichtung fehlgeschlagen",
+          "domainStatusFailed": "Aktualisierung des Domain-Status fehlgeschlagen",
+          "domainStatusRefreshed": "Domain-Status aktualisiert",
+          "providerSaved": "Identitätsanbieter gespeichert",
+          "providerSaveFailed": "Speichern des Anbieters fehlgeschlagen",
+          "scimStatusFailed": "Aktualisierung des SCIM-Status fehlgeschlagen",
+          "scimStatusRefreshed": "SCIM-Status aktualisiert",
+          "scimTokenFailed": "Generierung des SCIM-Tokens fehlgeschlagen",
+          "scimTokenGenerated": "SCIM-Token generiert",
+          "ssoRegistered": "SSO-Anbieter registriert",
+          "ssoRegisterFailed": "Registrierung des SSO-Anbieters fehlgeschlagen",
+          "ssoTestFailed": "SSO-Test als fehlgeschlagen markiert",
+          "ssoTestPassed": "SSO-Test als bestanden markiert",
+          "ssoTestRecordFailed": "Aufzeichnung des SSO-Tests fehlgeschlagen"
+        }
+      },
+      "keepExistingSecretHelp": "Leer lassen, um das bestehende Geheimnis beizubehalten",
+      "leaveBlankKeepExisting": "Leer lassen, um das Bestehende beizubehalten",
+      "provider": "Anbieter",
+      "socialOAuth": {
+        "addDescription": "Konfigurieren Sie Ihre eigene OAuth-App für Social Login.",
+        "addProviderError": "Hinzufügen des Anbieters fehlgeschlagen",
+        "addTitle": "Social-OAuth-Anbieter hinzufügen",
+        "appleKeyIdHelp": "Die mit Ihrem privaten Schlüssel verknüpfte Schlüssel-ID",
+        "appleKeyIdRequired": "Schlüssel-ID ist für Apple erforderlich",
+        "appleTeamIdHelp": "Zu finden in Ihrem Apple Developer-Account",
+        "appleTeamIdRequired": "Team-ID ist für Apple erforderlich",
+        "clientIdPlaceholder": "Ihre OAuth-Client-ID",
+        "clientSecretPlaceholder": "Ihr OAuth-Client-Secret",
+        "configured": "{provider} OAuth erfolgreich konfiguriert",
+        "createAppAt": "Erstellen Sie eine OAuth-App unter",
+        "deleteError": "Fehler beim Löschen der OAuth-Konfiguration",
+        "description": "Konfigurieren Sie Ihre eigenen OAuth-Anmeldedaten für den Social-Login. Dies ermöglicht es Ihren Benutzern, sich mit den OAuth-Apps Ihrer Organisation anstelle von geteilten Anmeldedaten anzumelden.",
+        "developerConsole": "{provider} Entwicklerkonsole",
+        "editDescription": "Aktualisieren Sie Ihre OAuth-Anmeldedaten.",
+        "editTitle": "{provider} OAuth bearbeiten",
+        "empty": "Keine benutzerdefinierten Social-OAuth-Anbieter konfiguriert.",
+        "emptyDescription": "Fügen Sie Ihre eigenen OAuth-Anmeldedaten hinzu, um die geteilten Anmeldedaten zu ersetzen.",
+        "howItWorks": "So funktioniert es",
+        "instructions": {
+          "addProvider": "Fügen Sie den Anbieter hier mit Ihren Anmeldedaten hinzu",
+          "copyCredentials": "Kopieren Sie die Client-ID und das Client-Secret",
+          "createApp": "Erstellen Sie eine OAuth-App in der Entwicklerkonsole des Anbieters",
+          "customDomain": "Benutzer, die sich über Ihre benutzerdefinierte Domain anmelden, verwenden Ihre OAuth-App"
+        },
+        "keyId": "Key-ID",
+        "lastTested": "Zuletzt getestet",
+        "notTested": "Nicht getestet",
+        "privateKey": "Privater Schlüssel (.p8)",
+        "removed": "{provider} OAuth entfernt",
+        "removeDialogDescription": "Sind Sie sicher, dass Sie diese OAuth-Konfiguration entfernen möchten? Benutzer werden auf die geteilten OAuth-Anmeldedaten zurückgreifen (falls verfügbar).",
+        "removeDialogTitle": "Social-OAuth-Anbieter entfernen",
+        "teamId": "Team-ID",
+        "title": "Social-Login-Anbieter",
+        "updateConfigError": "Fehler beim Aktualisieren der Konfiguration",
+        "updated": "{provider} OAuth erfolgreich aktualisiert",
+        "working": "Funktioniert"
+      },
+      "sso": {
+        "addDescription": "Konfigurieren Sie einen OIDC-Identitätsanbieter für Enterprise Single Sign-On.",
+        "addError": "Fehler beim Hinzufügen des SSO-Anbieters",
+        "addSuccess": "SSO-Anbieter erfolgreich hinzugefügt",
+        "addTitle": "SSO-Anbieter hinzufügen",
+        "clientIdPlaceholder": "Ihre OIDC-Client-ID",
+        "clientSecretPlaceholder": "Ihr OIDC-Client-Secret",
+        "deleteDialogDescription": "Sind Sie sicher, dass Sie diesen SSO-Anbieter löschen möchten? Benutzer können sich dann nicht mehr über diesen Identitätsanbieter anmelden.",
+        "deleteDialogTitle": "SSO-Anbieter löschen",
+        "deleteError": "Fehler beim Löschen des SSO-Anbieters",
+        "deleteSuccess": "SSO-Anbieter gelöscht",
+        "description": "Fügen Sie OIDC-Identitätsanbieter hinzu, um SSO für Ihre Organisation zu aktivieren.",
+        "domainInvalid": "Bitte geben Sie eine gültige Domain ein (z. B. example.com)",
+        "domainRequired": "Domain ist erforderlich",
+        "domainVerified": "Domain verifiziert",
+        "emailDomain": "E-Mail-Domain",
+        "emailDomainHelp": "Benutzer mit dieser E-Mail-Domain können SSO verwenden",
+        "empty": "Noch keine SSO-Anbieter konfiguriert.",
+        "emptyDescription": "Fügen Sie einen OIDC-Anbieter hinzu, um Enterprise Single Sign-On zu aktivieren.",
+        "instructions": {
+          "copyCredentials": "Kopieren Sie die Issuer-URL, Client-ID und das Client-Secret von Ihrem IdP",
+          "createApp": "Erstellen Sie eine OIDC-Anwendung in Ihrem Identitätsanbieter (Okta, Azure AD, etc.)",
+          "verifyDomain": "Fügen Sie den Anbieter hier hinzu und verifizieren Sie die E-Mail-Domain über einen DNS-TXT-Eintrag"
+        },
+        "issuerUrl": "Issuer-URL",
+        "issuerUrlHelp": "Die OIDC-Issuer-URL Ihres Identitätsanbieters",
+        "issuerUrlRequired": "Issuer-URL ist erforderlich",
+        "providerId": "Provider-ID",
+        "providerIdHelp": "Ein eindeutiger Bezeichner für diesen Anbieter (kleingeschrieben, keine Leerzeichen)",
+        "providerIdInvalid": "Die Provider-ID darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
+        "providerIdRequired": "Provider-ID ist erforderlich",
+        "setupInstructions": "Einrichtungsanleitung",
+        "title": "Identitätsanbieter",
+        "token": "Token",
+        "tokenError": "Fehler beim Generieren des Domain-Verifizierungstokens",
+        "tokenGenerated": "Verifizierungstoken generiert",
+        "txtToken": "TXT-Token:",
+        "validUrlRequired": "Bitte geben Sie eine gültige URL ein",
+        "verified": "Verifiziert",
+        "verify": "Verifizieren",
+        "verifyError": "Domain-Verifizierung fehlgeschlagen. Überprüfen Sie Ihren DNS-TXT-Eintrag und versuchen Sie es erneut."
+      },
+      "tab": {
+        "branding": "Branding",
+        "domains": "Benutzerdefinierte Domain",
+        "social-oauth": "Social Login",
+        "sso": "SSO-Anbieter"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Verwalten Sie SSO, SCIM-Bereitstellung, Domain-Beschränkungen, Einladungsrichtlinien und Standardrollen für diese Organisation.",
+      "title": "Enterprise-Identitätseinrichtung"
+    }
+  }
+}

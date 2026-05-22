@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Enregistrer une absence pour {name}"
+      },
+      "description": "Examinez les droits et enregistrez les absences approuvées pour votre équipe.",
+      "empty": {
+        "description": "Essayez d'ajuster les filtres ou la recherche pour trouver des membres de l'équipe.",
+        "label": "Aucun employé trouvé",
+        "title": "Aucun employé trouvé"
+      },
+      "error": {
+        "description": "Veuillez réessayer dans un instant.",
+        "title": "Impossible de charger les absences"
+      },
+      "feature": "gérer les absences de l'équipe",
+      "filters": {
+        "allTeams": "Toutes les équipes",
+        "searchLabel": "Rechercher des employés",
+        "searchPlaceholder": "Rechercher des employés…",
+        "searchSubmit": "Rechercher",
+        "teamLabel": "Filtrer par équipe",
+        "teamPlaceholder": "Équipe",
+        "yearLabel": "Filtrer par année",
+        "yearPlaceholder": "Année"
+      },
+      "pagination": {
+        "next": "Suivant",
+        "nextLabel": "Page suivante",
+        "page": "Page {page} sur {pageCount}",
+        "previous": "Précédent",
+        "previousLabel": "Page précédente",
+        "showing": "Affichage de {firstItem} à {lastItem} sur {total}"
+      },
+      "recordDialog": {
+        "category": "Catégorie",
+        "categoryPlaceholder": "Sélectionnez une catégorie d'absence…",
+        "description": "Enregistrez une absence approuvée directement pour l'employé sélectionné.",
+        "endDate": "Date de fin",
+        "endDateHelper": "Laisser vide pour une absence le jour même.",
+        "failure": "Échec de l'enregistrement de l'absence",
+        "noCategories": "Aucune catégorie disponible",
+        "noEmployee": "Sélectionnez un employé avant d'enregistrer une absence",
+        "notes": "Notes",
+        "notesPlaceholder": "Ajoutez un contexte interne pour cet enregistrement…",
+        "pickEndDate": "Choisissez la date de fin…",
+        "pickStartDate": "Choisissez la date de début…",
+        "recording": "Enregistrement en cours…",
+        "required": "{label} est requis",
+        "sickDetail": "Détail de maladie",
+        "sickDetailPlaceholder": "Sélectionner le détail de maladie…",
+        "startDate": "Date de début",
+        "submit": "Enregistrer l'absence",
+        "success": "Absence enregistrée",
+        "title": "Enregistrer l'absence",
+        "titleForEmployee": "Enregistrer une absence pour {name}"
+      },
+      "sort": {
+        "ascending": "croissant",
+        "by": "Trier par {label}",
+        "byWithDirection": "Trier par {label} ({direction})",
+        "descending": "décroissant"
+      },
+      "table": {
+        "actions": "Actions",
+        "allowance": "Allocation",
+        "employee": "Employé",
+        "left": "Restant",
+        "pending": "En attente",
+        "sick": "Maladie",
+        "teamOrPosition": "Équipe ou poste",
+        "used": "Utilisé"
+      },
+      "title": "Absences de l'équipe"
+    },
+    "balance": {
+      "noBalance": "Aucun solde"
+    },
+    "description": "Voir et gérer les employés que vous supervisez directement",
+    "empty": {
+      "action": "Aller aux paramètres des employés",
+      "description": "Les employés qui vous sont assignés en tant que manager apparaîtront ici. Vous pouvez gérer les assignations d'équipe dans les paramètres des employés.",
+      "title": "Aucun membre d'équipe pour le moment"
+    },
+    "error": {
+      "description": "Impossible de charger les membres de votre équipe.",
+      "title": "Quelque chose s'est mal passé"
+    },
+    "feature": "voir votre équipe",
+    "member": "membre",
+    "members": "membres",
+    "member.you": "Vous",
+    "noResults": {
+      "action": "Effacer la recherche",
+      "description": "Aucun membre de l'équipe ne correspond à \"{query}\"",
+      "title": "Aucun résultat trouvé"
+    },
+    "pagination": {
+      "next": "Suivant",
+      "previous": "Précédent",
+      "showing": "Affichage de {from} à {to} sur {total}"
+    },
+    "primaryManager": "Vous êtes le manager principal",
+    "search": {
+      "ariaLabel": "Rechercher des membres de l'équipe",
+      "placeholder": "Rechercher par nom, email, poste ou équipe..."
+    },
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "table": {
+      "employee": "Employé",
+      "position": "Poste",
+      "role": "Rôle",
+      "sort": {
+        "ascending": "croissant",
+        "descending": "décroissant"
+      },
+      "sortByTimeBalance": "Trier par solde annuel",
+      "sortByTimeBalanceWithDirection": "Trier par solde annuel ({direction})",
+      "status": "Statut",
+      "team": "Équipe",
+      "timeBalance": "Solde annuel"
+    },
+    "title": "Votre équipe",
+    "view": {
+      "cards": "Vue cartes",
+      "table": "Vue tableau"
+    }
+  }
+}

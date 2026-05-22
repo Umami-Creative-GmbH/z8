@@ -1,0 +1,87 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Votre abonnement a été annulé. Réabonnez-vous pour retrouver l'accès.",
+      "paymentFailed": "Votre dernier paiement a échoué. Veuillez mettre à jour votre mode de paiement.",
+      "required": "Un abonnement est requis pour utiliser cette application.",
+      "trialExpired": "Votre essai a expiré. Abonnez-vous pour continuer à utiliser l'application."
+    },
+    "activeSeats": "Sièges actifs",
+    "alerts": {
+      "canceledDescription": "Le paiement a été annulé. Vous pouvez réessayer quand vous serez prêt.",
+      "subscriptionRequired": "Abonnement requis",
+      "successDescription": "Votre abonnement a été activé. Merci de vous être abonné !",
+      "successTitle": "Succès !"
+    },
+    "bestValue": "Meilleur rapport qualité-prix",
+    "billedMonthly": "facturé mensuellement",
+    "cancelsOn": "Annule le {date}",
+    "checkoutCreateFailed": "Échec de la création de la session de paiement",
+    "checkoutStartFailed": "Échec du lancement du paiement",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout collecte les informations de paiement maintenant. Votre abonnement payant ne commence qu'après la fin de l'essai.",
+      "trialContinuesTitle": "Votre essai se poursuit après la mise à niveau"
+    },
+    "choosePlan": "Choisissez votre formule",
+    "choosePlanDescription": "Commencez avec un essai gratuit de 14 jours. Aucune carte bancaire requise pour commencer.",
+    "currentPlan": "Formule actuelle",
+    "days": "{count} jours",
+    "description": "Gérez votre abonnement et vos informations de facturation",
+    "faq": {
+      "afterTrial": {
+        "answer": "Après la fin de votre essai de 14 jours, vous serez facturé pour la formule d'abonnement que vous avez choisie. Vous pouvez annuler à tout moment avant la fin de l'essai pour éviter des frais.",
+        "question": "Que se passe-t-il après l'essai ?"
+      },
+      "perSeat": {
+        "answer": "Vous êtes facturé en fonction du nombre de membres actifs dans votre organisation. Lorsque vous ajoutez ou supprimez des membres, votre abonnement est automatiquement ajusté.",
+        "question": "Comment fonctionne la facturation par siège ?"
+      },
+      "switch": {
+        "answer": "Oui ! Vous pouvez changer de formule à tout moment via le portail de facturation. Les modifications prennent effet lors de votre prochain cycle de facturation.",
+        "question": "Puis-je passer de mensuel à annuel ?"
+      },
+      "title": "Questions fréquentes"
+    },
+    "features": {
+      "allFeatures": "Toutes les fonctionnalités incluses",
+      "cancelAnytime": "Annulez à tout moment",
+      "trial": "Essai gratuit de 14 jours",
+      "yearlyDiscount": "25 % de réduction par rapport au mensuel"
+    },
+    "interval": {
+      "monthlyBilling": "Facturation mensuelle",
+      "yearlyBilling": "Facturation annuelle"
+    },
+    "manageBilling": "Gérer la facturation",
+    "monthlyCost": "Coût mensuel",
+    "nextBilling": "Prochaine facturation",
+    "opening": "Ouverture...",
+    "perSeatMonth": "/siège/mois",
+    "plans": {
+      "monthly": {
+        "description": "Facturation flexible au mois",
+        "title": "Mensuel"
+      },
+      "yearly": {
+        "description": "Économisez 25% avec la facturation annuelle",
+        "title": "Annuel"
+      }
+    },
+    "portalOpenFailed": "Échec de l'ouverture du portail de facturation",
+    "priceSeatMonth": "€{price}/siège/mois",
+    "priceSeatMonthYearly": "€{price}/siège/mois (facturé annuellement)",
+    "seatBilledAnnually": "€{price}/siège facturé annuellement",
+    "starting": "Démarrage...",
+    "startTrial": "Commencer l'essai gratuit",
+    "status": {
+      "canceled": "Annulé",
+      "noSubscription": "Aucun abonnement",
+      "pastDue": "En retard",
+      "trial": "Essai"
+    },
+    "title": "Facturation et abonnement",
+    "trialEnds": "Fin de l'essai",
+    "vatNotice": "Les prix affichés sont des prix nets hors TVA. La TVA sera ajoutée le cas échéant.",
+    "yearTotal": "€{amount}/an total"
+  }
+}

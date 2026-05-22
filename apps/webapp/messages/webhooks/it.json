@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Impossibile copiare negli appunti",
+    "create": "Aggiungi webhook",
+    "create-failed": "Impossibile creare il webhook",
+    "delete-confirm": {
+      "description": "Questa operazione eliminerà definitivamente l'endpoint del webhook e tutta la cronologia delle consegne. Questa azione non può essere annullata.",
+      "title": "Eliminare il webhook?"
+    },
+    "deleted": "Webhook eliminato",
+    "delete-failed": "Impossibile eliminare il webhook",
+    "deliveries": "Consegne",
+    "description": "Configura gli endpoint dei webhook per ricevere notifiche in tempo reale quando si verificano eventi nella tua organizzazione.",
+    "disabled": "Webhook disabilitato",
+    "empty": {
+      "description": "Crea il tuo primo webhook per iniziare a ricevere notifiche sugli eventi.",
+      "title": "Nessun webhook configurato"
+    },
+    "enabled": "Webhook abilitato",
+    "events": "Eventi",
+    "form": {
+      "create": "Crea webhook",
+      "create-description": "Configura un nuovo endpoint webhook per ricevere notifiche sugli eventi.",
+      "create-title": "Crea webhook",
+      "description": "Descrizione",
+      "description-placeholder": "A cosa serve questo webhook?",
+      "deselect-all": "Deseleziona tutto",
+      "edit-description": "Aggiorna la configurazione dell'endpoint webhook.",
+      "edit-title": "Modifica webhook",
+      "events": "Eventi da ricevere",
+      "events-hint": "Eventi selezionati: {{count}}",
+      "events-required": "È necessario selezionare almeno un evento",
+      "name": "Nome",
+      "name-placeholder": "Il mio webhook",
+      "name-required": "Il nome è obbligatorio",
+      "select-all": "Seleziona tutto",
+      "url": "URL endpoint",
+      "url-hint": "HTTPS è richiesto in produzione. Gli eventi verranno inviati come richieste POST.",
+      "url-required": "L'URL è obbligatorio"
+    },
+    "last-delivery": "Ultimo",
+    "logs": {
+      "attempt": "Tentativo",
+      "description": "Tentativi recenti di invio webhook e relativi risultati.",
+      "duration": "Durata",
+      "empty": "Nessun registro di invio disponibile",
+      "error": "Errore",
+      "event": "Evento",
+      "failed": "Non riuscito",
+      "http": "HTTP",
+      "payload": "Payload",
+      "pending": "In attesa",
+      "response": "Risposta",
+      "retrying": "Riprovo",
+      "showing": "Visualizzazione di {{start}}-{{end}} su {{total}}",
+      "status": "Stato",
+      "success": "Riuscito",
+      "time": "Ora",
+      "title": "Registri di invio"
+    },
+    "regenerate-failed": "Impossibile rigenerare il segreto",
+    "regenerate-secret": "Rigenera segreto",
+    "secret-copied": "Segreto copiato negli appunti",
+    "secret-dialog": {
+      "copy-secret": "Copia il segreto negli appunti",
+      "description": "Questo segreto viene utilizzato per verificare le firme dei webhook. Conservalo in modo sicuro.",
+      "done": "Ho salvato il segreto",
+      "secret": "Segreto di firma",
+      "title": "Segreto webhook",
+      "verification": "Verifica della firma",
+      "verification-hint": "Verifica le firme dei webhook utilizzando HMAC-SHA256. La firma viene inviata nell'intestazione X-Z8-Signature.",
+      "warning": "Questo segreto verrà mostrato solo una volta. Assicurati di salvarlo ora.",
+      "warning-title": "Importante"
+    },
+    "secret-regenerated": "Segreto rigenerato",
+    "status": {
+      "degraded": "Degradato",
+      "failing": "In errore",
+      "healthy": "Integro",
+      "inactive": "Inattivo"
+    },
+    "success-rate": "Operazione riuscita",
+    "test": "Invia test",
+    "test-failed": "Invio del webhook di test non riuscito",
+    "test-sent": "Webhook di test inviato",
+    "title": "Webhook",
+    "toggle-active": "Attiva/disattiva webhook",
+    "updated": "Webhook aggiornato",
+    "update-failed": "Aggiornamento del webhook non riuscito",
+    "view-logs": "Visualizza log"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Abwesenheit für {name} erfassen"
+      },
+      "description": "Überprüfen Sie die Freistellungen und erfassen Sie genehmigte Abwesenheiten für Ihr Team.",
+      "empty": {
+        "description": "Versuchen Sie, die Filter oder die Suche anzupassen, um Teammitglieder zu finden.",
+        "label": "Keine Mitarbeiter gefunden",
+        "title": "Keine Mitarbeiter gefunden"
+      },
+      "error": {
+        "description": "Bitte versuchen Sie es in einem Moment erneut.",
+        "title": "Abwesenheiten konnten nicht geladen werden"
+      },
+      "feature": "Team-Abwesenheiten verwalten",
+      "filters": {
+        "allTeams": "Alle Teams",
+        "searchLabel": "Mitarbeiter suchen",
+        "searchPlaceholder": "Mitarbeiter suchen…",
+        "searchSubmit": "Suchen",
+        "teamLabel": "Nach Team filtern",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Nach Jahr filtern",
+        "yearPlaceholder": "Jahr"
+      },
+      "pagination": {
+        "next": "Weiter",
+        "nextLabel": "Nächste Seite",
+        "page": "Seite {page} von {pageCount}",
+        "previous": "Zurück",
+        "previousLabel": "Vorherige Seite",
+        "showing": "{firstItem} bis {lastItem} von {total} werden angezeigt"
+      },
+      "recordDialog": {
+        "category": "Kategorie",
+        "categoryPlaceholder": "Abwesenheitskategorie auswählen…",
+        "description": "Erfassen Sie eine genehmigte Abwesenheit direkt für den ausgewählten Mitarbeiter.",
+        "endDate": "Enddatum",
+        "endDateHelper": "Für eine Abwesenheit am selben Tag leer lassen.",
+        "failure": "Abwesenheit konnte nicht erfasst werden",
+        "noCategories": "Keine Kategorien verfügbar",
+        "noEmployee": "Wählen Sie einen Mitarbeiter aus, bevor Sie eine Abwesenheit erfassen",
+        "notes": "Notizen",
+        "notesPlaceholder": "Fügen Sie internen Kontext für diesen Datensatz hinzu…",
+        "pickEndDate": "Enddatum wählen…",
+        "pickStartDate": "Startdatum wählen…",
+        "recording": "Wird erfasst…",
+        "required": "{label} ist erforderlich",
+        "sickDetail": "Krankheitsdetails",
+        "sickDetailPlaceholder": "Krankheitsdetails auswählen…",
+        "startDate": "Startdatum",
+        "submit": "Abwesenheit erfassen",
+        "success": "Abwesenheit erfasst",
+        "title": "Abwesenheit erfassen",
+        "titleForEmployee": "Abwesenheit für {name} erfassen"
+      },
+      "sort": {
+        "ascending": "aufsteigend",
+        "by": "Nach {label} sortieren",
+        "byWithDirection": "Nach {label} sortieren ({direction})",
+        "descending": "absteigend"
+      },
+      "table": {
+        "actions": "Aktionen",
+        "allowance": "Urlaubsanspruch",
+        "employee": "Mitarbeiter",
+        "left": "Verbleibend",
+        "pending": "Ausstehend",
+        "sick": "Krank",
+        "teamOrPosition": "Team oder Position",
+        "used": "Genutzt"
+      },
+      "title": "Team-Abwesenheiten"
+    },
+    "balance": {
+      "noBalance": "Kein Guthaben"
+    },
+    "description": "Anzeigen und Verwalten der Mitarbeiter, die Sie direkt betreuen",
+    "empty": {
+      "action": "Zu den Mitarbeitereinstellungen gehen",
+      "description": "Mitarbeiter, die Ihnen als Manager zugewiesen sind, erscheinen hier. Sie können Teamzuweisungen in den Mitarbeitereinstellungen verwalten.",
+      "title": "Noch keine Teammitglieder"
+    },
+    "error": {
+      "description": "Ihre Teammitglieder konnten nicht geladen werden.",
+      "title": "Etwas ist schief gelaufen"
+    },
+    "feature": "Ihr Team anzeigen",
+    "member": "Mitglied",
+    "members": "Mitglieder",
+    "member.you": "Du",
+    "noResults": {
+      "action": "Suche löschen",
+      "description": "Keine Teammitglieder entsprechen \"{query}\"",
+      "title": "Keine Ergebnisse gefunden"
+    },
+    "pagination": {
+      "next": "Weiter",
+      "previous": "Zurück",
+      "showing": "Zeige {from} bis {to} von {total}"
+    },
+    "primaryManager": "Sie sind der Hauptmanager",
+    "search": {
+      "ariaLabel": "Teammitglieder suchen",
+      "placeholder": "Suche nach Name, E-Mail, Position oder Team..."
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "table": {
+      "employee": "Mitarbeiter",
+      "position": "Position",
+      "role": "Rolle",
+      "sort": {
+        "ascending": "aufsteigend",
+        "descending": "absteigend"
+      },
+      "sortByTimeBalance": "Nach Jahresbilanz sortieren",
+      "sortByTimeBalanceWithDirection": "Nach Jahresbilanz sortieren ({direction})",
+      "status": "Status",
+      "team": "Team",
+      "timeBalance": "Jahresbilanz"
+    },
+    "title": "Ihr Team",
+    "view": {
+      "cards": "Kartenansicht",
+      "table": "Tabellenansicht"
+    }
+  }
+}

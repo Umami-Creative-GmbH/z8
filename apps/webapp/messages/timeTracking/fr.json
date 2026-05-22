@@ -122,7 +122,8 @@
       "approving": "Approbation en cours...",
       "emptyState": "Aucune entrée de temps trouvée pour cette semaine.",
       "rowActions": "Actions sur les entrées de temps",
-      "title": "Entrées de temps"
+      "title": "Entrées de temps",
+      "viewCalendar": "Voir le calendrier"
     },
     "timeline": {
       "dayPicker": "Sélecteur de jour de la chronologie",

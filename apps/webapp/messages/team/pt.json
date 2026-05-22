@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrar ausência para {name}"
+      },
+      "description": "Revise as permissões e registre as ausências aprovadas da sua equipe.",
+      "empty": {
+        "description": "Tente ajustar os filtros ou a pesquisa para encontrar membros da equipe.",
+        "label": "Nenhum funcionário encontrado",
+        "title": "Nenhum funcionário encontrado"
+      },
+      "error": {
+        "description": "Por favor, tente novamente em instantes.",
+        "title": "Não foi possível carregar as ausências"
+      },
+      "feature": "gerenciar ausências da equipe",
+      "filters": {
+        "allTeams": "Todas as equipes",
+        "searchLabel": "Pesquisar funcionários",
+        "searchPlaceholder": "Pesquisar funcionários…",
+        "searchSubmit": "Pesquisar",
+        "teamLabel": "Filtrar por equipe",
+        "teamPlaceholder": "Equipe",
+        "yearLabel": "Filtrar por ano",
+        "yearPlaceholder": "Ano"
+      },
+      "pagination": {
+        "next": "Próximo",
+        "nextLabel": "Próxima página",
+        "page": "Página {page} de {pageCount}",
+        "previous": "Anterior",
+        "previousLabel": "Página anterior",
+        "showing": "Exibindo {firstItem} a {lastItem} de {total}"
+      },
+      "recordDialog": {
+        "category": "Categoria",
+        "categoryPlaceholder": "Selecione uma categoria de ausência…",
+        "description": "Registre uma ausência aprovada diretamente para o funcionário selecionado.",
+        "endDate": "Data de término",
+        "endDateHelper": "Deixe vazio para uma ausência no mesmo dia.",
+        "failure": "Falha ao registrar ausência",
+        "noCategories": "Nenhuma categoria disponível",
+        "noEmployee": "Selecione um funcionário antes de registrar uma ausência",
+        "notes": "Observações",
+        "notesPlaceholder": "Adicione um contexto interno para este registro…",
+        "pickEndDate": "Escolha a data de término…",
+        "pickStartDate": "Escolha a data de início…",
+        "recording": "Registrando…",
+        "required": "{label} é obrigatório",
+        "sickDetail": "Detalhe de doença",
+        "sickDetailPlaceholder": "Selecione o detalhe de doença…",
+        "startDate": "Data de início",
+        "submit": "Registrar ausência",
+        "success": "Ausência registrada",
+        "title": "Registrar ausência",
+        "titleForEmployee": "Registrar ausência para {name}"
+      },
+      "sort": {
+        "ascending": "ascendente",
+        "by": "Ordenar por {label}",
+        "byWithDirection": "Ordenar por {label} ({direction})",
+        "descending": "descendente"
+      },
+      "table": {
+        "actions": "Ações",
+        "allowance": "Subsídio",
+        "employee": "Funcionário",
+        "left": "Restante",
+        "pending": "Pendente",
+        "sick": "Doença",
+        "teamOrPosition": "Equipe ou Cargo",
+        "used": "Usado"
+      },
+      "title": "Ausências da equipe"
+    },
+    "balance": {
+      "noBalance": "Sem saldo"
+    },
+    "description": "Veja e gerencie os funcionários que você supervisiona diretamente",
+    "empty": {
+      "action": "Ir para Configurações de Funcionários",
+      "description": "Funcionários atribuídos a você como gerente aparecerão aqui. Você pode gerenciar atribuições de equipe nas configurações de funcionários.",
+      "title": "Ainda sem membros na equipe"
+    },
+    "error": {
+      "description": "Não foi possível carregar os membros da sua equipe.",
+      "title": "Algo deu errado"
+    },
+    "feature": "ver sua equipe",
+    "member": "membro",
+    "members": "membros",
+    "member.you": "Você",
+    "noResults": {
+      "action": "Limpar busca",
+      "description": "Nenhum membro da equipe corresponde a \"{query}\"",
+      "title": "Nenhum resultado encontrado"
+    },
+    "pagination": {
+      "next": "Próximo",
+      "previous": "Anterior",
+      "showing": "Mostrando {from} a {to} de {total}"
+    },
+    "primaryManager": "Você é o gerente principal",
+    "search": {
+      "ariaLabel": "Pesquisar membros da equipe",
+      "placeholder": "Buscar por nome, email, cargo ou equipe..."
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "table": {
+      "employee": "Funcionário",
+      "position": "Cargo",
+      "role": "Função",
+      "sort": {
+        "ascending": "ascendente",
+        "descending": "descendente"
+      },
+      "sortByTimeBalance": "Ordenar por saldo do ano",
+      "sortByTimeBalanceWithDirection": "Ordenar por saldo do ano ({direction})",
+      "status": "Status",
+      "team": "Equipe",
+      "timeBalance": "Saldo do ano"
+    },
+    "title": "Sua Equipe",
+    "view": {
+      "cards": "Visualização em cartões",
+      "table": "Visualização em tabela"
+    }
+  }
+}

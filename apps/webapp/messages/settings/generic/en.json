@@ -1,0 +1,920 @@
+{
+  "settings": {
+    "avv": {
+      "contractDetails": {
+        "controller": "Client (Controller)",
+        "descriptionPrefix": "This agreement governs the processing of personal data on behalf of your organization and ",
+        "processor": "Contractor (Processor)",
+        "title": "Contract details"
+      },
+      "description": "Download your data processing agreement in accordance with Art. 28 GDPR.",
+      "hosting": {
+        "descriptionPrefix": "All data is hosted on servers of ",
+        "descriptionSuffix": ". No further sub-processors are used.",
+        "title": "Hosting & Sub-processors"
+      },
+      "title": "Data Processing Agreement (DPA)"
+    },
+    "billing": {
+      "description": "Manage your subscription, payment methods, and invoices",
+      "title": "Billing & Subscription"
+    },
+    "compliance": {
+      "description": "Review and manage compliance exception requests from team members",
+      "title": "ArbZG Compliance"
+    },
+    "customDomains": {
+      "description": "Configure custom domain, branding, and SSO for your organization",
+      "title": "Domain & Branding"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Contact Person",
+        "email": "Email",
+        "name": "Company Name",
+        "phone": "Phone"
+      },
+      "create": "Add Customer",
+      "created": "Customer created",
+      "createFailed": "Failed to create customer",
+      "deleted": "Customer deleted",
+      "delete": {
+        "description": "Are you sure you want to delete \"{name}\"? Projects assigned to this customer will keep working but the customer reference will be removed.",
+        "title": "Delete Customer"
+      },
+      "deleteFailed": "Failed to delete customer",
+      "description": "Manage customer contacts for project assignments",
+      "dialog": {
+        "create": "Add Customer",
+        "createDescription": "Add a new customer for project assignments",
+        "createTitle": "Add Customer",
+        "editDescription": "Update customer details",
+        "editTitle": "Edit Customer",
+        "save": "Save Changes"
+      },
+      "empty": {
+        "description": "Add your first customer to assign them to projects.",
+        "title": "No customers yet"
+      },
+      "field": {
+        "address": "Address",
+        "addressPlaceholder": "Street, City, ZIP",
+        "contactPerson": "Contact Person",
+        "contactPersonPlaceholder": "e.g., John Smith",
+        "email": "Email",
+        "name": "Company Name",
+        "namePlaceholder": "Enter company name",
+        "phone": "Phone",
+        "project": "Project",
+        "projectPlaceholder": "Select a project",
+        "vatId": "VAT ID",
+        "website": "Website"
+      },
+      "list": {
+        "description": "{count} customers total",
+        "title": "All Customers"
+      },
+      "managerNoProjects": "No managed projects available. Create or manage a project before adding customers.",
+      "projectRequired": "Select a project first",
+      "title": "Customers",
+      "updated": "Customer updated",
+      "updateFailed": "Failed to update customer"
+    },
+    "dataExport": {
+      "description": "Export your organization's data",
+      "form": {
+        "aboutAsync": "Exports are processed asynchronously",
+        "aboutEmail": "You'll receive an email when ready",
+        "aboutLinkValidity": "Download links are valid for 24 hours",
+        "aboutOrgDataOnly": "Only your organization's data is included",
+        "aboutStorageDuration": "Export files are stored for 7 days",
+        "aboutTitle": "About Data Export",
+        "description": "Select the data categories you want to export",
+        "selectAll": "Select All",
+        "selectAtLeastOne": "Please select at least one category",
+        "startExport": "Start Export (${selectedCategories.size})",
+        "startingExport": "Starting Export...",
+        "submitError": "Failed to start export",
+        "submitSuccess": "Export started successfully",
+        "title": "Export Data",
+        "unexpectedError": "An unexpected error occurred"
+      },
+      "history": {
+        "columnActions": "Actions",
+        "columnCategories": "Categories",
+        "columnDate": "Date",
+        "columnSize": "Size",
+        "columnStatus": "Status",
+        "deleteDialogDescription": "Are you sure you want to delete this export? This action cannot be undone.",
+        "deleteDialogTitle": "Delete Export",
+        "deleteError": "Failed to delete export",
+        "deleteSuccess": "Export deleted",
+        "description": "Your previous data exports",
+        "download": "Download",
+        "downloadError": "Failed to download",
+        "downloadSuccess": "Download started",
+        "emptyDescription": "No exports yet",
+        "emptyHint": "Create your first export using the form above",
+        "moreCategories": "+${exp.categories.length - 3} more",
+        "statusCompleted": "Completed",
+        "statusFailed": "Failed",
+        "statusPending": "Pending",
+        "statusProcessing": "Processing",
+        "title": "Export History",
+        "unexpectedError": "An unexpected error occurred"
+      },
+      "storage": {
+        "accessKeyDescription": "Your AWS access key ID",
+        "accessKeyId": "Access Key ID",
+        "bucketDescription": "The name of your S3 bucket",
+        "bucketName": "Bucket Name",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Connection Failed",
+        "connectionSuccess": "Connection Successful",
+        "deleteDialogDescription": "Are you sure you want to delete this storage configuration?",
+        "deleteDialogTitle": "Delete Configuration",
+        "deleteError": "Failed to delete configuration",
+        "deleteSuccess": "Configuration deleted",
+        "description": "Configure your own S3-compatible storage for exports",
+        "endpoint": "Custom Endpoint (Optional)",
+        "endpointDescription": "For S3-compatible services like MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Leave blank to keep existing credentials",
+        "lastVerified": "Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "region": "Region",
+        "regionDescription": "AWS region where your bucket is located",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Save Configuration",
+        "saveError": "Failed to save configuration",
+        "saveSuccess": "Configuration saved",
+        "saveSuccessDescription": "Your S3 storage settings have been saved",
+        "saving": "Saving...",
+        "secretAccessKey": "Secret Access Key",
+        "secretKeyDescription": "Your AWS secret access key",
+        "testConnection": "Test Connection",
+        "testFailed": "Connection test failed",
+        "testing": "Testing...",
+        "title": "S3 Storage Configuration",
+        "unexpectedError": "An unexpected error occurred",
+        "verified": "Verified"
+      },
+      "storageNotConfigured": {
+        "description": "Configure S3 storage before creating exports",
+        "title": "Storage Not Configured"
+      },
+      "tabs": {
+        "exportHistory": "Export History",
+        "newExport": "New Export",
+        "storageSettings": "Storage Settings"
+      },
+      "title": "Data Export"
+    },
+    "emailConfig": {
+      "description": "Configure a custom email provider for organization emails",
+      "title": "Email Configuration"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Reset to system template",
+        "save": "Save",
+        "sendTest": "Send test"
+      },
+      "defaultFallback": "Default fallback",
+      "defaultFallbackDescription": "If this template uses the system default, Z8 sends the system copy and subject:",
+      "description": "Customize the emails your organization sends",
+      "editBodyBeforeSaving": "Edit the email body before saving a first custom template.",
+      "empty": "No email templates are available for this organization.",
+      "eyebrow": "Operational communications",
+      "reset": "Email template reset to system template",
+      "resetFailed": "Failed to reset email template",
+      "saved": "Email template saved",
+      "saveFailed": "Failed to save email template",
+      "status": {
+        "customized": "Customized",
+        "default": "Default"
+      },
+      "systemTemplates": "System templates",
+      "testFailed": "Failed to send test email",
+      "testSent": "Test email sent to your account",
+      "title": "Email Templates"
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Back to Settings",
+        "tryAgain": "Try Again"
+      },
+      "description": "An error occurred while loading the settings page. This might be a temporary issue.",
+      "errorId": "Error ID: {{digest}}",
+      "title": "Something went wrong"
+    },
+    "export": {
+      "description": "Export organization data for backup or migration",
+      "title": "Data Export"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Audit export request recorded.",
+          "title": "Audit export"
+        },
+        "payroll": {
+          "description": "Payroll export job recorded.",
+          "title": "Payroll export"
+        },
+        "scheduled": {
+          "description": "Scheduled export execution recorded.",
+          "title": "Scheduled export"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "The latest audit export request did not complete.",
+          "title": "Audit export failed"
+        },
+        "blockedSchedule": {
+          "description": "{name} needs a payroll export configuration before it can run.",
+          "title": "Scheduled payroll export is blocked"
+        },
+        "payrollFailed": {
+          "description": "The latest payroll export did not complete.",
+          "title": "Payroll export failed"
+        },
+        "scheduledFailed": {
+          "description": "{name} did not complete successfully.",
+          "title": "Scheduled export failed"
+        }
+      },
+      "description": "Monitor payroll, audit, and scheduled export activity for your organization.",
+      "errors": {
+        "alerts": "Some alerts may be incomplete while export data is unavailable.",
+        "recentActivity": "Some activity data is temporarily unavailable.",
+        "summary": "Counts are based on the export data that could be loaded.",
+        "upcomingRuns": "Scheduled export data is temporarily unavailable."
+      },
+      "title": "Export Operations"
+    },
+    "group": {
+      "account": "Account",
+      "administration": "Administration",
+      "data": "Data",
+      "enterprise": "Enterprise",
+      "notifications": "Notifications",
+      "organization": "Organization"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Mark complete",
+        "markIncomplete": "Mark incomplete"
+      },
+      "description": "Finish the setup steps before inviting your full team so time tracking, approvals, and payroll workflows are ready for daily use.",
+      "errors": {
+        "updateItem": "Failed to update checklist item."
+      },
+      "eyebrow": "Customer implementation",
+      "progress": {
+        "ariaLabel": "Implementation checklist progress",
+        "completedCount": "{{completed}} of {{total}} complete",
+        "label": "Setup progress",
+        "percentComplete": "{{percent}}% complete"
+      },
+      "status": {
+        "complete": "Complete",
+        "manuallyComplete": "Manually complete",
+        "needsReview": "Needs review",
+        "notStarted": "Not started"
+      },
+      "title": "Implementation checklist"
+    },
+    "import": {
+      "description": "Import data from supported providers like Clockodo and Clockin.",
+      "review": {
+        "commitAccepted": "Commit accepted rows",
+        "commitFailed": "Failed to start import commit",
+        "commitQueued": "Queued {count} accepted rows for commit",
+        "committing": "Committing...",
+        "description": "Review staged import rows, resolve blocking issues, and commit accepted records when the batch is ready.",
+        "issueGroups": {
+          "currentMarkers": "Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
+          "description": "Grouped review areas help keep quality checks visible before accepted rows are committed.",
+          "title": "Issue groups"
+        },
+        "rows": {
+          "empty": "No staged rows are available for this import batch.",
+          "entity": "Entity",
+          "rowId": "Row ID",
+          "sourceId": "Source ID",
+          "status": "Status",
+          "title": "Rows"
+        },
+        "title": "Import Review"
+      },
+      "title": "Import Data"
+    },
+    "licenses": {
+      "footer": "This application uses open source software. Thank you to all the maintainers and contributors of these packages.",
+      "homepage": "Homepage",
+      "license": "License",
+      "licenseTypesCount": "{count} license types",
+      "links": "Links",
+      "noPackages": "No packages found.",
+      "package": "Package",
+      "packagesCount": "{count} packages",
+      "repository": "Repository",
+      "searchPlaceholder": "Search packages or licenses...",
+      "unknown": "Unknown"
+    },
+    "locations": {
+      "address": "Address",
+      "assignEmployee": "Assign Employee",
+      "assignEmployeeDescription": "Assign an employee as a supervisor for this location",
+      "assignEmployeeToSubarea": "Assign Employee to Subarea",
+      "assignEmployeeToSubareaDescription": "Assign an employee as a supervisor for {subareaName}",
+      "backToList": "Back to Locations",
+      "create": "Create Location",
+      "created": "Location created",
+      "createFailed": "Failed to create location",
+      "deleted": "Location deleted",
+      "deleteDescription": "Are you sure you want to delete this location? This will also delete all subareas and employee assignments.",
+      "deleteFailed": "Failed to delete location",
+      "deleteSubareaDescription": "Are you sure you want to delete this subarea? This will also remove all employee assignments.",
+      "deleteSubareaTitle": "Delete Subarea",
+      "deleteTitle": "Delete Location",
+      "description": "Manage organization locations and subareas",
+      "details": "Location Details",
+      "dialog": {
+        "create": "Create Location",
+        "createDescription": "Create a new location for your organization",
+        "createTitle": "Create Location",
+        "editDescription": "Update location details",
+        "editTitle": "Edit Location",
+        "save": "Save Changes"
+      },
+      "employee": "Employee",
+      "employeeAssigned": "Employee assigned",
+      "employeeAssignFailed": "Failed to assign employee",
+      "employeeRemoved": "Employee removed",
+      "employeeRemoveFailed": "Failed to remove employee",
+      "field": {
+        "active": "Active",
+        "activeHelp": "Inactive locations won't appear in selection lists",
+        "city": "City",
+        "cityPlaceholder": "e.g., New York",
+        "cityPostal": "City / Postal Code",
+        "country": "Country Code",
+        "countryHelp": "ISO 3166-1 alpha-2 code",
+        "countryPlaceholder": "e.g., US, DE",
+        "name": "Name",
+        "namePlaceholder": "e.g., Main Office",
+        "postalCode": "Postal Code",
+        "postalCodePlaceholder": "e.g., 10001",
+        "street": "Street",
+        "streetPlaceholder": "e.g., 123 Main St",
+        "subareaActiveHelp": "Inactive subareas won't appear in selection lists",
+        "subareaName": "Name",
+        "subareaNamePlaceholder": "e.g., Cashier, Storage, Bistro"
+      },
+      "name": "Name",
+      "noAvailableEmployees": "All employees are already assigned to this location",
+      "noAvailableEmployeesSubarea": "All employees are already assigned to this subarea",
+      "noLocations": "No locations yet",
+      "noLocationsDescription": "Create your first location to organize your workspace.",
+      "noSubareas": "No subareas yet",
+      "noSupervisors": "No supervisors assigned",
+      "notFound": "Location not found",
+      "primary": "Primary",
+      "primarySupervisor": "Primary Supervisor",
+      "primarySupervisorHelp": "Mark as the main supervisor for this location",
+      "primarySupervisorSubareaHelp": "Mark as the main supervisor for this subarea",
+      "selectEmployee": "Please select an employee",
+      "selectEmployeePlaceholder": "Select an employee",
+      "subareaCreated": "Subarea created",
+      "subareaCreateFailed": "Failed to create subarea",
+      "subareaDeleted": "Subarea deleted",
+      "subareaDeleteFailed": "Failed to delete subarea",
+      "subareaDialog": {
+        "create": "Add Subarea",
+        "createDescription": "Add a new subarea to this location",
+        "createTitle": "Add Subarea",
+        "editDescription": "Update subarea details",
+        "editTitle": "Edit Subarea",
+        "save": "Save Changes"
+      },
+      "subareas": "Subareas",
+      "subareasDescription": "Areas within this location",
+      "subareaUpdated": "Subarea updated",
+      "subareaUpdateFailed": "Failed to update subarea",
+      "supervisors": "Supervisors",
+      "supervisorsDescription": "Employees assigned to this location",
+      "title": "Locations",
+      "updated": "Location updated",
+      "updateFailed": "Failed to update location"
+    },
+    "notifications": {
+      "approvals": "Approval notifications",
+      "approvalsDescription": "Send approval requests and approval status updates.",
+      "commands": "Commands",
+      "commandsDescription": "Allow supported workplace commands from this channel.",
+      "connectBeforeChanging": "Connect or configure this integration before changing notification settings.",
+      "dailyDigest": "Daily digest",
+      "dailyDigestDescription": "Send a daily summary of absences, schedules, and pending work.",
+      "description": "Choose how and when you want to be notified",
+      "digestTime": "Digest time",
+      "discord": {
+        "description": "Configure Discord notifications for your organization."
+      },
+      "escalations": "Escalations",
+      "escalationsDescription": "Escalate unanswered approval requests after the configured timeout.",
+      "featureSettings": "Feature Settings",
+      "featureSettingsDescription": "Choose which organization notifications and commands are available through this channel.",
+      "hours": "hours",
+      "manageEnabledFeatures": "Manage which notification features are enabled for this integration.",
+      "notConnected": "{channelName} is not connected",
+      "saved": "{channelName} notification settings saved",
+      "saveFailed": "Failed to save {channelName} notification settings",
+      "saveSettings": "Save Settings",
+      "slack": {
+        "description": "Configure Slack notifications for your organization."
+      },
+      "status": {
+        "active": "Active",
+        "configured": "Configured",
+        "disabled": "Disabled",
+        "disconnected": "Disconnected",
+        "error": "Error",
+        "notConfigured": "Not configured",
+        "pending": "Pending",
+        "unknown": "Unknown status"
+      },
+      "teams": {
+        "description": "Configure Microsoft Teams notifications for your organization."
+      },
+      "timeout": "Timeout",
+      "timezone": "Timezone",
+      "timezonePlaceholder": "Europe/Berlin…",
+      "title": "Notification Settings"
+    },
+    "organizations": {
+      "description": "Manage organization members, invitations, and details",
+      "notFound": {
+        "description": "The organization could not be found or you don't have access to it.",
+        "title": "Organization Not Found"
+      },
+      "title": "Organization"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Team created successfully",
+          "description": "Create a new team to organize your employees",
+          "descriptionLabel": "Description (Optional)",
+          "descriptionPlaceholder": "A brief description of this team",
+          "fallbackManagerHelp": "Used for approvals when a team member has no direct manager.",
+          "fallbackManagerLabel": "Fallback Manager",
+          "fallbackManagerPlaceholder": "Select a fallback manager",
+          "nameLabel": "Team Name",
+          "namePlaceholder": "Engineering, Sales, Marketing...",
+          "noFallbackManager": "No fallback manager",
+          "submit": "Create Team",
+          "title": "Create Team"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Add Passkey",
+      "addedOn": "Added on {date}",
+      "addError": "Failed to add passkey",
+      "addSuccess": "Passkey added successfully",
+      "defaultName": "Passkey {date}",
+      "deleteDialogDescription": "This passkey will no longer be able to access your account. This action cannot be undone.",
+      "deleteDialogTitle": "Delete Passkey?",
+      "deleteError": "Failed to delete passkey",
+      "deleteSuccess": "Passkey deleted successfully",
+      "description": "Manage passkeys for passwordless authentication",
+      "empty": "No passkeys configured",
+      "emptyDescription": "Add a passkey to enable passwordless authentication",
+      "loadError": "Failed to load passkeys",
+      "title": "Passkeys",
+      "unnamed": "Unnamed Passkey"
+    },
+    "profile": {
+      "avatarRemoved": "Avatar removed successfully",
+      "avatarRemoveFailed": "Failed to remove avatar",
+      "avatarSaveFailed": "Failed to save avatar",
+      "avatarUploaded": "Avatar uploaded successfully",
+      "avatarUploadFailed": "Failed to upload avatar",
+      "birthday": {
+        "hint": "Your birthday helps us celebrate with you",
+        "label": "Birthday",
+        "placeholder": "Pick your birthday"
+      },
+      "changePicture": "Change Picture",
+      "description": "Manage your personal information and preferences",
+      "email": "Email",
+      "emailReadonly": "Email cannot be changed",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Female",
+        "label": "Gender",
+        "male": "Male",
+        "other": "Other"
+      },
+      "information": "Profile Information",
+      "informationDescription": "Update your personal information and profile picture",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Personal Information",
+      "pictureHint": "JPG, PNG or WebP. Max 5MB. Recommended 400x400px",
+      "profilePicture": "Profile Picture",
+      "pronouns": "Pronouns",
+      "pronouns.custom": "Custom pronouns",
+      "pronouns.customPlaceholder": "e.g., xe/xem…",
+      "pronouns.placeholder": "Select pronouns",
+      "removePicture": "Remove Picture",
+      "saving": "Saving…",
+      "title": "Profile Settings",
+      "updateFailed": "Failed to update profile",
+      "updateProfile": "Update Profile",
+      "updateSuccess": "Profile updated successfully",
+      "uploading": "Uploading",
+      "uploadProfilePicture": "Upload profile picture"
+    },
+    "projects": {
+      "column": {
+        "budget": "Budget",
+        "customer": "Customer",
+        "deadline": "Deadline",
+        "name": "Name",
+        "status": "Status",
+        "team": "Team"
+      },
+      "create": "Create Project",
+      "created": "Project created",
+      "createFailed": "Failed to create project",
+      "description": "Manage projects, budgets, deadlines, and time assignments",
+      "dialog": {
+        "create": "Create Project",
+        "createDescription": "Create a new project for time tracking",
+        "createTitle": "Create Project",
+        "editDescription": "Update project details",
+        "editTitle": "Edit Project",
+        "save": "Save Changes"
+      },
+      "empty": {
+        "description": "Create your first project to start tracking time against it.",
+        "title": "No projects yet"
+      },
+      "field": {
+        "budget": "Budget (hours)",
+        "budgetHelp": "Leave empty for unlimited budget",
+        "budgetPlaceholder": "e.g., 100",
+        "color": "Color",
+        "customer": "Customer",
+        "customerPlaceholder": "Select a customer",
+        "deadline": "Deadline",
+        "description": "Description",
+        "descriptionPlaceholder": "Optional project description",
+        "name": "Name",
+        "namePlaceholder": "Enter project name",
+        "noCustomer": "No customer",
+        "status": "Status"
+      },
+      "list": {
+        "description": "{count} projects total",
+        "title": "All Projects"
+      },
+      "title": "Projects",
+      "updated": "Project updated",
+      "updateFailed": "Failed to update project"
+    },
+    "security": {
+      "description": "Manage your password, two-factor authentication, passkeys, and active sessions",
+      "title": "Security Settings",
+      "twoFactor": {
+        "backupCodesCopied": "Backup codes copied to clipboard",
+        "backupCodesRegenerated": "Backup codes regenerated",
+        "cancel": "Cancel",
+        "confirmPasswordToEnable": "Please confirm your password to enable two-factor authentication",
+        "confirmPasswordToRegenerate": "Please confirm your password to regenerate backup codes",
+        "continue": "Continue",
+        "copyCodes": "Copy Codes",
+        "description": "Add an extra layer of security to your account",
+        "disable": "Disable",
+        "disable2fa": "Disable 2FA",
+        "disableDescription": "This will remove the extra layer of security from your account. Please enter your password to confirm.",
+        "disabledToast": "Two-factor authentication disabled",
+        "disableFailed": "Failed to disable 2FA",
+        "disableTitle": "Disable Two-Factor Authentication?",
+        "enable": "Enable Two-Factor Authentication",
+        "enabledToast": "Two-factor authentication enabled",
+        "enablePasswordRequiredDescription": "Please enter your password to enable 2FA",
+        "enterAuthenticatorCode": "Enter the 6-digit code from your authenticator app",
+        "enterPasswordTitle": "Enter Your Password",
+        "enterSixDigitCode": "Please enter a 6-digit code",
+        "invalidCode": "Invalid code",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Enter your password…",
+        "passwordRequired": "Password required",
+        "regenerateBackupCodes": "Regenerate Backup Codes",
+        "regenerateCodes": "Regenerate Codes",
+        "regenerateFailed": "Failed to regenerate backup codes",
+        "saveBackupCodesDescription": "Keep these codes in a safe place. You can use them to access your account if you lose access to your authenticator app. Each code can only be used once.",
+        "saveBackupCodesTitle": "Save Your Backup Codes",
+        "savedCodes": "I've Saved These Codes",
+        "scanQrCode": "Scan the QR code with your authenticator app",
+        "setupFailed": "Failed to setup 2FA",
+        "setupTitle": "Setup Two-Factor Authentication",
+        "status": {
+          "disabled": "Disabled",
+          "enabled": "Enabled"
+        },
+        "title": "Two-Factor Authentication",
+        "unexpectedError": "An unexpected error occurred",
+        "verificationFailed": "Verification failed",
+        "verifyAndEnable": "Verify and Enable"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} on {os}",
+      "current": "Current Session",
+      "description": "Manage your active sessions across different devices",
+      "devices": {
+        "desktop": "Desktop",
+        "mobile": "Mobile",
+        "tablet": "Tablet"
+      },
+      "none": "No active sessions",
+      "othersRevoked": "All other sessions revoked successfully",
+      "revoke": "Revoke",
+      "revokeAllFailed": "Failed to revoke other sessions",
+      "revokeAllOthers": "Revoke All Other Sessions",
+      "revoked": "Session revoked successfully",
+      "revokeFailed": "Failed to revoke session",
+      "revoking": "Revoking…",
+      "securityTip": "If you see a session you don't recognize, revoke it immediately and change your password.",
+      "signedIn": "Signed in",
+      "title": "Active Sessions",
+      "unknownBrowser": "Unknown Browser",
+      "unknownOs": "Unknown OS"
+    },
+    "socialAccounts": {
+      "connect": "Connect",
+      "connected": "Connected",
+      "connectedAs": "Connected as {accountId}",
+      "connecting": "Connecting…",
+      "connectProvider": "Connect your {provider} account",
+      "description": "Link your social accounts for easier sign-in",
+      "disconnect": "Disconnect",
+      "disconnectDescription": "This will remove the link to your social account. You can reconnect it at any time.",
+      "disconnectFailed": "Failed to disconnect account",
+      "disconnectSuccess": "Account disconnected successfully",
+      "disconnectTitle": "Disconnect Account?",
+      "loadFailed": "Failed to load connected accounts",
+      "title": "Social Accounts",
+      "unexpectedError": "An unexpected error occurred"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Active Sessions",
+        "activeSessionsDescription": "Current database sessions",
+        "approvalRequests": "Approval Requests",
+        "approvedAbsences": "Approved Absences",
+        "employees": "Employees",
+        "employeesDescription": "{active} active, {inactive} inactive",
+        "pendingAbsences": "Pending Absences",
+        "pendingCount": "{count} pending",
+        "rejectedAbsences": "Rejected Absences",
+        "teams": "Teams",
+        "thisMonth": "This Month",
+        "timeEntries": "Time entries",
+        "totalAbsences": "Total Absences",
+        "totalTimeEntries": "Total Time Entries",
+        "vsLastMonth": "vs last month"
+      },
+      "description": "View statistics and metrics about your instance",
+      "lastUpdated": "Last updated",
+      "loadError": "Failed to load statistics",
+      "managerDescription": "Review read-only analytics for the teams you manage.",
+      "sections": {
+        "absenceBreakdown": "Absence Breakdown",
+        "activityMetrics": "Activity Metrics",
+        "coreCounts": "Core Counts",
+        "managedScope": "Managed Team Scope",
+        "systemHealth": "System Health"
+      },
+      "title": "Statistics"
+    },
+    "timeFormat": {
+      "description": "Choose how clock times are shown across the app.",
+      "label": "Time format",
+      "options": {
+        "12h": "12-hour (8:00 AM)",
+        "24h": "24-hour (08:00)"
+      },
+      "save": "Save Time Format",
+      "title": "Time Format",
+      "updateError": "An error occurred while updating time format",
+      "updateFailed": "Failed to update time format",
+      "updateSuccess": "Time format updated successfully"
+    },
+    "timezone": {
+      "currentTimePrefix": "Current time in {timezone}:",
+      "description": "Set your timezone for accurate date and time display across the application",
+      "picker": {
+        "empty": "No timezone found.",
+        "groups": {
+          "africa": "Africa",
+          "americas": "Americas",
+          "asia": "Asia",
+          "australiaPacific": "Australia & Pacific",
+          "europe": "Europe",
+          "utcOther": "UTC/Other"
+        },
+        "labels": {
+          "africaCairo": "Eastern European Time (Cairo)",
+          "africaJohannesburg": "South Africa Time (Johannesburg)",
+          "africaLagos": "West Africa Time (Lagos)",
+          "africaNairobi": "East Africa Time (Nairobi)",
+          "americaAnchorage": "Alaska Time (Anchorage)",
+          "americaBuenosAires": "Argentina Time (Buenos Aires)",
+          "americaChicago": "Central Time (Chicago)",
+          "americaDenver": "Mountain Time (Denver)",
+          "americaLosAngeles": "Pacific Time (Los Angeles)",
+          "americaMexicoCity": "Central Time (Mexico City)",
+          "americaNewYork": "Eastern Time (New York)",
+          "americaSaoPaulo": "Brasilia Time (São Paulo)",
+          "americaToronto": "Eastern Time (Toronto)",
+          "americaVancouver": "Pacific Time (Vancouver)",
+          "asiaBangkok": "Indochina Time (Bangkok)",
+          "asiaDubai": "Gulf Standard Time (Dubai)",
+          "asiaHongKong": "Hong Kong Time (Hong Kong)",
+          "asiaKolkata": "India Standard Time (Kolkata)",
+          "asiaSeoul": "Korea Standard Time (Seoul)",
+          "asiaShanghai": "China Standard Time (Shanghai)",
+          "asiaSingapore": "Singapore Time (Singapore)",
+          "asiaTokyo": "Japan Standard Time (Tokyo)",
+          "australiaBrisbane": "Australian Eastern Time (Brisbane)",
+          "australiaMelbourne": "Australian Eastern Time (Melbourne)",
+          "australiaPerth": "Australian Western Time (Perth)",
+          "australiaSydney": "Australian Eastern Time (Sydney)",
+          "europeAmsterdam": "Central European Time (Amsterdam)",
+          "europeAthens": "Eastern European Time (Athens)",
+          "europeBerlin": "Central European Time (Berlin)",
+          "europeBrussels": "Central European Time (Brussels)",
+          "europeHelsinki": "Eastern European Time (Helsinki)",
+          "europeIstanbul": "Turkey Time (Istanbul)",
+          "europeLondon": "GMT/BST (London)",
+          "europeMadrid": "Central European Time (Madrid)",
+          "europeMoscow": "Moscow Time (Moscow)",
+          "europeParis": "Central European Time (Paris)",
+          "europeRome": "Central European Time (Rome)",
+          "europeStockholm": "Central European Time (Stockholm)",
+          "europeVienna": "Central European Time (Vienna)",
+          "europeWarsaw": "Central European Time (Warsaw)",
+          "pacificAuckland": "New Zealand Time (Auckland)",
+          "pacificHonolulu": "Hawaii Time (Honolulu)",
+          "utc": "Coordinated Universal Time (UTC)"
+        },
+        "search": "IconSearch timezone…"
+      },
+      "save": "Save Timezone",
+      "title": "Timezone",
+      "updateError": "An error occurred while updating timezone",
+      "updateFailed": "Failed to update timezone",
+      "updateSuccess": "Timezone updated successfully"
+    },
+    "title": "Settings",
+    "travelExpenses": {
+      "activeDescription": "When enabled, this policy becomes the active default for new claims.",
+      "activeLabel": "Active Policy",
+      "addPolicy": "Add Policy",
+      "created": "Travel expense policy created",
+      "createPolicy": "Create Travel Expense Policy",
+      "currency": "Currency",
+      "description": "Configure reimbursement rates and effective periods for mileage and per diem claims.",
+      "dialogDescription": "Set effective dates and default reimbursement rates for mileage and per diem claims.",
+      "editPolicy": "Edit Travel Expense Policy",
+      "effectiveFrom": "Effective From",
+      "effectiveFromRequired": "Effective from is required",
+      "effectiveTo": "Effective To",
+      "empty": "No policies configured yet. Create your first travel expense policy.",
+      "loading": "Loading policies…",
+      "mileageRate": "Mileage / km",
+      "perDiemRate": "Per diem / day",
+      "policies": "Policies",
+      "policiesDescription": "Only one policy should be active at a time. Active policy is used for new claims.",
+      "saveFailed": "Failed to save travel expense policy",
+      "title": "Travel Expense Policies",
+      "updated": "Travel expense policy updated"
+    },
+    "webhooks": {
+      "description": "Configure webhook endpoints to receive real-time event notifications",
+      "title": "Webhooks"
+    },
+    "weekStart": {
+      "description": "Choose whether calendars and weekly summaries start on Sunday or Monday.",
+      "label": "First day of the week",
+      "save": "Save Week Start",
+      "title": "Week Starts On",
+      "updateError": "An error occurred while updating week start day",
+      "updateFailed": "Failed to update week start day",
+      "updateSuccess": "Week start day updated successfully"
+    },
+    "wellness": {
+      "cardDescShort": "Stay hydrated while you work",
+      "cardTitle": "Water Reminders",
+      "dailyGoal": "Daily Goal",
+      "description": "Configure water reminders and hydration tracking during your work sessions",
+      "glasses": "glasses",
+      "reminderFrequency": "Reminder Frequency",
+      "saved": "Wellness settings saved",
+      "saveError": "Failed to save wellness settings",
+      "title": "Wellness Settings"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Active",
+        "activeDescription": "Currently processing",
+        "completed": "Completed",
+        "completedDescription": "Recently completed",
+        "delayed": "Delayed",
+        "delayedDescription": "Scheduled for later",
+        "failed": "Failed",
+        "failedDescription": "Recently failed",
+        "paused": "Paused",
+        "pausedDescription": "Paused jobs",
+        "waiting": "Waiting",
+        "waitingDescription": "Jobs waiting to be processed"
+      },
+      "common": {
+        "unknown": "Unknown"
+      },
+      "connected": "Connected",
+      "description": "Monitor background job processing and cron job executions",
+      "disconnected": "Disconnected",
+      "lastUpdated": "Last updated",
+      "loadError": "Failed to load queue status",
+      "noExecutions": "No recent executions found",
+      "noScheduledJobs": "No scheduled jobs found",
+      "recentExecutionsDescription": "Last 50 job executions tracked in the database.",
+      "reliability": {
+        "averageDuration": "Average duration",
+        "avgDuration": "Avg Duration",
+        "avgDurationDescription": "Executions with duration data",
+        "completed": "Completed",
+        "durationTrend": "Duration Trend",
+        "durationTrendDescription": "Average runtime for executions that reported duration data.",
+        "failed": "Failed",
+        "failedRuns": "Failed Runs",
+        "failedRunsDescription": "Last 30 days",
+        "failing": "Failing",
+        "healthy": "Healthy",
+        "jobHealth": "Job Health",
+        "jobHealthDescription": "Per-job reliability based on recent executions and repeatable schedules.",
+        "noDurationData": "No duration data is available for this period.",
+        "noExecutionHistory": "No cron execution history is available for this period.",
+        "noJobs": "No reliability data found",
+        "runOutcomes": "Run Outcomes",
+        "runOutcomesDescription": "Completed and failed cron executions over the last {days} days.",
+        "stale": "Stale",
+        "staleJobs": "Stale Jobs",
+        "staleJobsDescription": "Past expected schedule",
+        "successRate": "Success rate",
+        "successRateDescription": "Terminal cron executions",
+        "title": "Reliability",
+        "unknown": "Unknown",
+        "warning": "Warning"
+      },
+      "scheduledJobsDescription": "Repeatable jobs configured in the worker. These run automatically on schedule.",
+      "sections": {
+        "jobMetrics": "Job Metrics (Last 30 Days)",
+        "queueCounts": "Queue Status",
+        "recentExecutions": "Recent Executions",
+        "scheduledJobs": "Scheduled Cron Jobs"
+      },
+      "status": {
+        "completed": "Completed",
+        "failed": "Failed",
+        "pending": "Pending",
+        "running": "Running"
+      },
+      "table": {
+        "avgDuration": "Avg Duration",
+        "duration": "Duration",
+        "error": "Error",
+        "failed": "Failed",
+        "health": "Health",
+        "jobName": "Job Name",
+        "lastRun": "Last Run",
+        "nextRun": "Next Run",
+        "schedule": "Schedule",
+        "startedAt": "Started At",
+        "status": "Status",
+        "successful": "Successful",
+        "successRate": "Success Rate",
+        "totalRuns": "Total Runs"
+      },
+      "title": "Worker Queue"
+    }
+  }
+}

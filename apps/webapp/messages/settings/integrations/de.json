@@ -1,0 +1,260 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Passen Sie an, wie Abwesenheitsereignisse in externen Kalendern angezeigt werden.",
+        "descriptionPlaceholder": "Abwesenheit in Z8 erfasst",
+        "descriptionTemplate": "Ereignisbeschreibung (optional)",
+        "title": "Ereignisanpassung",
+        "titleHelp": "Verfügbare Variablen: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Vorlage für Ereignistitel"
+      },
+      "description": "Konfigurieren Sie Kalenderanbieter, ICS-Feeds und Synchronisierungseinstellungen für Ihre Organisation",
+      "icsFeeds": {
+        "description": "Ermöglichen Sie Benutzern das Abonnieren von Abwesenheitskalendern im ICS/iCal-Format.",
+        "personal": "Persönliche ICS-Feeds",
+        "personalDesc": "Mitarbeiter können schreibgeschützte Kalenderabonnements für ihre Abwesenheiten erstellen",
+        "team": "Team-ICS-Feeds",
+        "teamDesc": "Teamleiter können freigegebene Feeds erstellen, die alle Teamabwesenheiten anzeigen",
+        "title": "ICS-Feeds"
+      },
+      "integrations": {
+        "description": "Verbundene Mitarbeiterkalender, die in Ihren aktuellen Einstellungsbereich fallen.",
+        "empty": "In Ihrem aktuellen Bereich sind noch keine Kalenderintegrationen verfügbar.",
+        "needsAttention": "Erfordert Aufmerksamkeit",
+        "pushOff": "Push aus",
+        "pushOn": "Push an",
+        "title": "Relevante Integrationen"
+      },
+      "managerDescription": "Überprüfen Sie Kalenderintegrationen, die Ihre Teams, Bereiche und verwalteten Projekte betreffen.",
+      "noProvidersConfigured": "Es sind keine Kalenderanbieter konfiguriert. Kontaktieren Sie Ihren Systemadministrator, um OAuth-Anmeldeinformationen einzurichten.",
+      "notConfigured": "Nicht konfiguriert",
+      "providers": {
+        "description": "Aktivieren oder deaktivieren Sie die Kalendersynchronisierung für bestimmte Anbieter. Mitarbeiter können ihre Konten verbinden, wenn dies aktiviert ist.",
+        "google": "Google Kalender",
+        "googleDesc": "Abwesenheiten mit Google Kalender synchronisieren",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Abwesenheiten mit Outlook Kalender synchronisieren",
+        "title": "Kalenderanbieter"
+      },
+      "readOnlyManagerNotice": "Manager können die Abdeckung der Kalendersynchronisierung für ihre Teams, Bereiche und Projekte überprüfen, aber nur Organisationsadministratoren können diese Einstellungen ändern.",
+      "saved": "Kalendereinstellungen gespeichert",
+      "saveError": "Speichern der Kalendereinstellungen fehlgeschlagen",
+      "syncBehavior": {
+        "autoSync": "Automatische Synchronisierung bei Genehmigung",
+        "autoSyncDesc": "Abwesenheiten bei Genehmigung automatisch mit verbundenen Kalendern synchronisieren",
+        "conflictRequired": "Konfliktprüfung erforderlich",
+        "conflictRequiredDesc": "Mitarbeiter müssen vor dem Einreichen von Abwesenheiten auf Kalenderkonflikte prüfen",
+        "description": "Konfigurieren Sie, wie die Kalendersynchronisierung für Ihr Unternehmen funktioniert.",
+        "title": "Synchronisierungsverhalten"
+      },
+      "title": "Kalendersynchronisierung"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Verbinden & Vorschau",
+        "description": "Geben Sie ein Clockin-Kunden-API-Bearer-Token ein. Das Token wird nur für diese Importsitzung verwendet.",
+        "title": "Clockin-API-Token",
+        "token": "Bearer-Token"
+      },
+      "mapping": {
+        "description": "Clockin-Mitarbeiter mit bestehenden Z8-Mitarbeitern abgleichen. Automatische E-Mail-Übereinstimmungen sind vorausgewählt.",
+        "mapEmployee": "Zuordnen",
+        "noEmail": "Keine E-Mail in Clockin",
+        "skipEmployee": "Diesen Mitarbeiter überspringen",
+        "summary": "Zugeordnete Mitarbeiter",
+        "title": "Mitarbeiter zuordnen"
+      },
+      "preview": {
+        "absences": "Abwesenheiten",
+        "description": "Überprüfen Sie, welche Clockin-Daten verfügbar sind, bevor Sie Mitarbeiter zuordnen und Datensätze scannen.",
+        "employees": "Mitarbeiter",
+        "next": "Mitarbeiter zuordnen",
+        "title": "Clockin-Vorschau",
+        "workdays": "Arbeitstage"
+      },
+      "review": {
+        "noProductionRecords": "Es wurden noch keine Produktionsdatensätze importiert.",
+        "openReview": "Überprüfung öffnen",
+        "scanningDescription": "Überprüfungs-Batch {reviewBatchId} wird gescannt. Überprüfen und genehmigen Sie die Datensätze vor dem Übertragen.",
+        "startedTitle": "Import-Überprüfungsscan gestartet",
+        "starting": "Starte Clockin-Import-Überprüfungsscan…",
+        "startSuccess": "Import-Überprüfungsscan gestartet. Eine Überprüfung ist erforderlich, bevor Datensätze übertragen werden."
+      },
+      "selection": {
+        "absences": "Abwesenheiten",
+        "description": "Wählen Sie aus, welche Clockin-Datensätze für die Überprüfung gescannt werden sollen. Datensätze müssen vor der Übertragung überprüft werden.",
+        "endDate": "Enddatum",
+        "startDate": "Startdatum",
+        "startReviewScan": "Überprüfungsscan starten",
+        "title": "Importumfang",
+        "workdays": "Arbeitstage / Arbeitszeiträume"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Überprüfungs-Batch {batchId} wird gescannt.",
+        "description": "Eine Überprüfung ist erforderlich, bevor Clockodo-Datensätze in die Produktion übertragen werden.",
+        "openReview": "Überprüfung öffnen",
+        "successTitle": "Import-Überprüfungsscan gestartet"
+      },
+      "credentials": {
+        "apiKey": "API-Schlüssel",
+        "apiKeyHint": "Sie finden Ihren API-Schlüssel in Ihrem Clockodo-Profil:",
+        "connect": "Verbinden & Vorschau",
+        "description": "Geben Sie Ihre Clockodo-E-Mail-Adresse und Ihren API-Schlüssel ein. Sie finden Ihren API-Schlüssel in Clockodo unter Mein Profil > API-Schlüssel. Anmeldedaten werden nicht gespeichert.",
+        "email": "Clockodo-E-Mail",
+        "title": "Clockodo-Anmeldedaten"
+      },
+      "entity": {
+        "absences": "Abwesenheiten",
+        "entries": "Zeiteinträge",
+        "holidayQuotas": "Urlaubskontingente",
+        "nonBusinessDays": "Arbeitsfreie Tage",
+        "services": "Dienstleistungen / Arbeitskategorien",
+        "surcharges": "Zuschläge",
+        "targetHours": "Sollstunden / Arbeitszeitrichtlinien",
+        "teams": "Teams",
+        "users": "Benutzer / Mitarbeiter"
+      },
+      "errors": {
+        "connectionFailed": "Verbindung zu Clockodo fehlgeschlagen",
+        "fetchUsersFailed": "Abrufen der Benutzerdaten fehlgeschlagen",
+        "importFailed": "Import-Prüfscan fehlgeschlagen",
+        "saveMappingsFailed": "Speichern der Benutzerzuordnungen fehlgeschlagen"
+      },
+      "importing": {
+        "description": "Bitte schließen Sie diese Seite nicht. Der Prüfscan wird in die Warteschlange gestellt und kann bei großen Datensätzen einige Zeit in Anspruch nehmen.",
+        "patience": "Clockodo-Daten für die Überprüfung werden abgerufen…",
+        "title": "Prüfscan wird gestartet…"
+      },
+      "mapping": {
+        "autoMatched": "Automatisch zugeordnet",
+        "createNew": "Neu erstellen",
+        "skip": "Überspringen"
+      },
+      "mappingStatus": {
+        "auto": "Automatisch",
+        "manual": "Manuell",
+        "new": "Neu",
+        "skip": "Überspringen"
+      },
+      "preview": {
+        "dataType": "Datentyp",
+        "description": "Hier ist eine Zusammenfassung der in Ihrem Clockodo-Konto gefundenen Daten. Bestehende Z8-Daten werden zum Vergleich angezeigt.",
+        "inClockodo": "In Clockodo",
+        "inZ8": "Bereits in Z8",
+        "next": "Benutzer zuordnen",
+        "title": "Datenvorschau"
+      },
+      "review": {
+        "startedToast": "Import-Prüfscan gestartet. Eine Überprüfung ist erforderlich, bevor Datensätze übernommen werden."
+      },
+      "selection": {
+        "dateRange": "Datumsbereich für Zeiteinträge & Abwesenheiten",
+        "dateRangeDescription": "Dies betrifft nur Zeiteinträge und Abwesenheiten. Andere Daten (Benutzer, Teams usw.) werden immer vollständig gescannt.",
+        "dependencyWarning": "Abhängigkeiten werden automatisch gescannt",
+        "description": "Wählen Sie die zu scannenden Datentypen aus. Eine Überprüfung ist erforderlich, bevor Datensätze übernommen werden.",
+        "emptyUserScope": "Wählen Sie mindestens einen Clockodo-Benutzer aus, bevor Sie den Scan starten.",
+        "incompleteCustomDateRange": "Wählen Sie sowohl ein Start- als auch ein Enddatum aus, bevor Sie den Scan starten.",
+        "selectDateRange": "Datumsbereich auswählen",
+        "startImport": "Prüfscan starten",
+        "title": "Daten für die Überprüfung auswählen"
+      },
+      "step": {
+        "complete": "Überprüfung gestartet",
+        "credentials": "Anmeldedaten",
+        "import": "Überprüfung",
+        "preview": "Vorschau",
+        "selection": "Auswahl",
+        "userMapping": "Benutzerzuordnung"
+      },
+      "userMapping": {
+        "action": "Aktion",
+        "autoMatched": "{count} automatisch zugeordnet",
+        "clockodoUser": "Clockodo-Benutzer",
+        "continue": "Weiter",
+        "description": "Ordnen Sie Clockodo-Benutzer bestehenden Z8-Mitarbeitern zu oder erstellen Sie neue Konten. Benutzer, die über ihre E-Mail-Adresse übereinstimmen, werden automatisch zugeordnet.",
+        "email": "E-Mail",
+        "mappedTo": "Zugeordnet zu",
+        "newEmployees": "{count} neu",
+        "onlyMapped": "Nur zugeordnete Benutzer scannen (keine neuen Konten für nicht zugeordnete Benutzer erstellen)",
+        "skippedCount": "{count} übersprungen",
+        "status": "Status",
+        "title": "Benutzer zuordnen"
+      }
+    },
+    "discord": {
+      "description": "Discord-Benachrichtigungen für Ihre Organisation konfigurieren",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Slack-Benachrichtigungen für Ihre Organisation konfigurieren",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Microsoft Teams-Benachrichtigungen für Ihre Organisation konfigurieren",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Verbinden Sie einen Telegram-Bot, um Benachrichtigungen und Befehle für Ihre Organisation zu aktivieren.",
+        "title": "Telegram-Bot"
+      },
+      "botToken": "Bot-Token",
+      "botTokenHelp": "Erstellen Sie einen Bot mit @BotFather auf Telegram und fügen Sie den Token hier ein.",
+      "connect": "Bot verbinden",
+      "connected": "Telegram-Bot erfolgreich verbunden",
+      "connectError": "Verbindung zum Telegram-Bot fehlgeschlagen",
+      "description": "Telegram-Bot-Integration für Benachrichtigungen und Befehle konfigurieren",
+      "disconnect": "Trennen",
+      "disconnectConfirm": {
+        "description": "Dies deaktiviert alle Telegram-Benachrichtigungen und -Befehle für Ihre Organisation. Mitarbeiter-Kontoverknüpfungen bleiben erhalten.",
+        "title": "Telegram-Bot trennen?"
+      },
+      "disconnected": "Telegram-Bot getrennt",
+      "disconnectError": "Trennen des Telegram-Bots fehlgeschlagen",
+      "features": {
+        "approvals": "Genehmigungsbenachrichtigungen",
+        "approvalsDesc": "Genehmigungsanfragen senden und Genehmigen/Ablehnen über Telegram ermöglichen",
+        "commands": "Bot-Befehle",
+        "commandsDesc": "Aktivieren Sie /clockedin, /whosout, /pending und andere Befehle",
+        "description": "Konfigurieren Sie, welche Funktionen für den Telegram-Bot aktiviert sind.",
+        "digest": "Tägliche Zusammenfassung",
+        "digestDesc": "Senden Sie eine tägliche Zusammenfassung von Abwesenheiten und Zeitplänen",
+        "digestTime": "Zeit",
+        "digestTimezone": "Zeitzone",
+        "escalations": "Eskalationen",
+        "escalationsDesc": "Nicht beantwortete Genehmigungen an den nächsten Manager eskalieren",
+        "escalationTimeout": "Timeout",
+        "hours": "Stunden",
+        "title": "Funktionen"
+      },
+      "linked": "Verknüpft",
+      "linkError": "Link-Code konnte nicht generiert werden",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Verknüpfen Sie Ihr Telegram-Konto, um persönliche Benachrichtigungen zu erhalten.",
+        "generateCode": "Link-Code generieren",
+        "instructions": "Senden Sie diesen Befehl an den Bot auf Telegram:",
+        "linkedStatus": "Ihr Telegram-Konto ist verknüpft",
+        "title": "Telegram-Konto"
+      },
+      "notConfigured": "Telegram ist für diese Organisation nicht konfiguriert. Kontaktieren Sie Ihren Administrator.",
+      "saved": "Telegram-Einstellungen gespeichert",
+      "status": {
+        "active": "Aktiv"
+      },
+      "title": "Telegram",
+      "unlink": "Verknüpfung aufheben",
+      "unlinkConfirm": {
+        "description": "Sie erhalten keine Telegram-Benachrichtigungen mehr. Sie können die Verknüpfung später erneut herstellen.",
+        "title": "Telegram-Konto entknüpfen?"
+      },
+      "unlinked": "Telegram-Konto entknüpft",
+      "unlinkError": "Entknüpfen des Telegram-Kontos fehlgeschlagen",
+      "webhookActive": "Webhook registriert",
+      "webhookPending": "Webhook ausstehend"
+    }
+  }
+}

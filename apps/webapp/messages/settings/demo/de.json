@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Abwesenheiten (Urlaub, Krankheit)",
+        "changePolicies": "Änderungsrichtlinien",
+        "description": "Arten von Demodaten, die Sie generieren können",
+        "locations": "Standorte und Unterbereiche",
+        "shifts": "Schichtvorlagen und Schichten",
+        "supported": "Derzeit unterstützt:",
+        "teamsProjects": "Teams und Projekte",
+        "timeEntries": "Zeiteinträge und Arbeitsperioden",
+        "title": "Verfügbare Datentypen",
+        "workCategories": "Arbeitskategoriensätze"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} Abwesenheiten gelöscht",
+          "button": "Alle Daten löschen",
+          "changePoliciesDeleted": "{count} Änderungsrichtlinien gelöscht",
+          "dialog": {
+            "confirm": "Alle Daten löschen",
+            "description": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Zeiteinträge, Abwesenheiten, Teams, Projekte und zugehörige Daten werden dauerhaft gelöscht.",
+            "title": "Alle Zeitdaten löschen?"
+          },
+          "items": {
+            "absences": "Alle Abwesenheitseinträge",
+            "changePolicies": "Alle Änderungsrichtlinien",
+            "locations": "Alle Standorte und Unterbereiche",
+            "shifts": "Alle Schichtvorlagen und Schichten",
+            "teamsProjects": "Alle Teams und Projekte",
+            "timeEntries": "Alle Zeiteinträge und Arbeitsperioden",
+            "vacationAllowances": "Alle Urlaubsansprüche",
+            "workCategories": "Alle Arbeitskategorien"
+          },
+          "locationsDeleted": "{count} Standorte gelöscht",
+          "managerAssignmentsDeleted": "{count} Manager-Zuweisungen gelöscht",
+          "projectsDeleted": "{count} Projekte gelöscht",
+          "shiftRequestsDeleted": "{count} Schichtanfragen gelöscht",
+          "shiftsDeleted": "{count} Schichten gelöscht",
+          "shiftTemplatesDeleted": "{count} Schichtvorlagen gelöscht",
+          "subareasDeleted": "{count} Unterbereiche gelöscht",
+          "successTitle": "Daten erfolgreich gelöscht!",
+          "teamsDeleted": "{count} Teams gelöscht",
+          "timeEntriesDeleted": "{count} Zeiteinträge gelöscht",
+          "title": "Zeitdaten löschen",
+          "vacationAllowancesReset": "{count} Urlaubsansprüche zurückgesetzt",
+          "willDelete": "Dies löscht dauerhaft:",
+          "workCategoriesDeleted": "{count} Arbeitskategorien gelöscht",
+          "workCategorySetsDeleted": "{count} Arbeitskategoriensätze gelöscht",
+          "workPeriodsDeleted": "{count} Arbeitsperioden gelöscht"
+        },
+        "clearing": "Wird gelöscht...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count, plural, one {# Abwesenheit gelöscht} other {# Abwesenheiten gelöscht}}",
+          "adminPreserved": "Admin-Konten bleiben erhalten",
+          "button": "Nicht-Admin-Mitarbeiter löschen",
+          "dialog": {
+            "confirm": "Nicht-Admin-Mitarbeiter löschen",
+            "description": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Nicht-Admin-Mitarbeiter und deren zugehörige Daten werden dauerhaft gelöscht.",
+            "title": "Nicht-Admin-Mitarbeiter löschen?"
+          },
+          "employeesDeleted": "{count, plural, one {# Mitarbeiter gelöscht} other {# Mitarbeiter gelöscht}}",
+          "items": {
+            "demoUsers": "Alle Demo-Benutzerkonten",
+            "employees": "Alle Nicht-Admin-Mitarbeiter",
+            "managerAssignments": "Alle Manager-Zuweisungen",
+            "timeEntries": "Deren Zeiteinträge und Arbeitsperioden"
+          },
+          "membersDeleted": "{count, plural, one {# Mitglied gelöscht} other {# Mitglieder gelöscht}}",
+          "successTitle": "Nicht-Admin-Mitarbeiter erfolgreich gelöscht!",
+          "timeEntriesDeleted": "{count, plural, one {# Zeiteintrag gelöscht} other {# Zeiteinträge gelöscht}}",
+          "title": "Nicht-Admin-Mitarbeiter löschen",
+          "usersDeleted": "{count, plural, one {# Benutzer gelöscht} other {# Benutzer gelöscht}}",
+          "willDelete": "Dies löscht dauerhaft:"
+        },
+        "deleting": "Wird gelöscht...",
+        "description": "Destruktive Aktionen, die nicht rückgängig gemacht werden können",
+        "title": "Gefahrenbereich",
+        "typeDelete": "Geben Sie DELETE ein, um zu bestätigen",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Beispieldaten für Tests generieren oder vorhandene zeitbezogene Daten löschen",
+      "errors": {
+        "generationFailed": "Generierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "noOrganization": "Keine Organisation ausgewählt"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Urlaub, Krankheitsstand und andere Abwesenheiten",
+            "title": "Abwesenheiten"
+          },
+          "changePolicies": {
+            "description": "Richtlinien für Zeiteintragsänderungen",
+            "title": "Änderungsrichtlinien"
+          },
+          "label": "Datentypen",
+          "locations": {
+            "countLabel": "Anzahl der Standorte:",
+            "description": "Arbeitsstandorte und Unterbereiche",
+            "title": "Standorte"
+          },
+          "projects": {
+            "countLabel": "Anzahl der Projekte:",
+            "description": "Beispielprojekte für die Zeiterfassung",
+            "title": "Projekte"
+          },
+          "shiftScheduling": {
+            "description": "Schichtvorlagen und geplante Schichten",
+            "requiresLocations": "Erfordert aktivierte Standorte",
+            "title": "Schichtplanung"
+          },
+          "teams": {
+            "countLabel": "Anzahl der Teams:",
+            "description": "Teams erstellen und Mitarbeiter zuweisen",
+            "title": "Teams"
+          },
+          "timeEntries": {
+            "description": "Stempelzeiten und Arbeitsperioden",
+            "title": "Zeiteinträge"
+          },
+          "workCategories": {
+            "assignLabel": "Auch Arbeitsperioden zuweisen",
+            "description": "Kategoriensätze für Arbeitsperioden",
+            "title": "Arbeitskategorien"
+          }
+        },
+        "dateRange": {
+          "hint": "Zeitraum für generierte Daten",
+          "label": "Zeitraum",
+          "last30": "Letzte 30 Tage",
+          "last60": "Letzte 60 Tage",
+          "last90": "Letzte 90 Tage",
+          "thisYear": "Dieses Jahr"
+        },
+        "employees": {
+          "all": "Alle Mitarbeiter ({count})",
+          "label": "Mitarbeiter",
+          "selectSpecific": "Bestimmte Mitarbeiter auswählen"
+        }
+      },
+      "generateData": {
+        "button": "Daten generieren",
+        "description": "Erstellen Sie realistische Beispieldaten für Ihr Unternehmen",
+        "title": "Demodaten generieren"
+      },
+      "generateEmployees": {
+        "button": "{count} Mitarbeiter generieren",
+        "countHint": "Maximal 50 Mitarbeiter auf einmal",
+        "countLabel": "Anzahl der Mitarbeiter",
+        "description": "Demo-Mitarbeiterkonten zu Testzwecken erstellen",
+        "employeesCreated": "{count} Mitarbeiter erstellt",
+        "generating": "Wird generiert...",
+        "includeManagers": "Manager-Zuweisungen einbeziehen",
+        "managersCreated": "{count} Manager-Zuweisungen",
+        "managersHint": "Manager zufällig neuen Mitarbeitern zuweisen",
+        "options": "Optionen",
+        "successTitle": "Mitarbeiter erfolgreich generiert!",
+        "title": "Mitarbeiter generieren",
+        "usersCreated": "{count} Benutzer erstellt"
+      },
+      "results": {
+        "success": "Demodaten erfolgreich generiert!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Abwesenheitseinträge werden erstellt",
+          "label": "Abwesenheiten"
+        },
+        "assignCategories": {
+          "description": "Arbeitskategorien werden Zeiträumen zugewiesen",
+          "label": "Kategorien zuweisen"
+        },
+        "changePolicies": {
+          "description": "Änderungsrichtlinien werden erstellt",
+          "label": "Änderungsrichtlinien"
+        },
+        "locations": {
+          "description": "Standorte und Unterbereiche werden erstellt",
+          "label": "Standorte"
+        },
+        "managers": {
+          "description": "Manager werden Mitarbeitern zugewiesen",
+          "label": "Manager-Zuweisungen"
+        },
+        "projects": {
+          "description": "Beispielprojekte werden erstellt",
+          "label": "Projekte"
+        },
+        "shifts": {
+          "description": "Schichten und Anfragen werden erstellt",
+          "label": "Schichten"
+        },
+        "shiftTemplates": {
+          "description": "Schichtvorlagen werden erstellt",
+          "label": "Schichtvorlagen"
+        },
+        "teams": {
+          "description": "Teams werden erstellt und Mitarbeiter zugewiesen",
+          "label": "Teams"
+        },
+        "timeEntries": {
+          "description": "Zeiteinträge und Arbeitsperioden werden erstellt",
+          "label": "Zeiteinträge"
+        },
+        "workCategories": {
+          "description": "Arbeitskategoriensätze und Kategorien werden erstellt",
+          "label": "Arbeitskategorien"
+        }
+      },
+      "title": "Demodaten",
+      "wizard": {
+        "backToConfig": "Zurück zur Konfiguration",
+        "complete": "Abgeschlossen",
+        "configure": "Konfigurieren",
+        "generate": "Generieren",
+        "generateMore": "Mehr Daten generieren"
+      }
+    },
+    "demoData": {
+      "description": "Beispieldaten für Tests generieren oder alle zeitbezogenen Daten löschen",
+      "title": "Demodaten"
+    }
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Personnalisez la façon dont les événements d'absence apparaissent dans les calendriers externes.",
+        "descriptionPlaceholder": "Absence enregistrée dans Z8",
+        "descriptionTemplate": "Description de l'événement (facultatif)",
+        "title": "Personnalisation de l'événement",
+        "titleHelp": "Variables disponibles : {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Modèle de titre d'événement"
+      },
+      "description": "Configurez les fournisseurs de calendrier, les flux ICS et les paramètres de synchronisation pour votre organisation",
+      "icsFeeds": {
+        "description": "Permettre aux utilisateurs de s'abonner aux calendriers d'absences via le format ICS/iCal.",
+        "personal": "Flux ICS personnels",
+        "personalDesc": "Les employés peuvent créer des abonnements de calendrier en lecture seule pour leurs absences",
+        "team": "Flux ICS d'équipe",
+        "teamDesc": "Les chefs d'équipe peuvent créer des flux partagés affichant toutes les absences de l'équipe",
+        "title": "Flux ICS"
+      },
+      "integrations": {
+        "description": "Calendriers des employés connectés qui entrent dans le cadre de vos paramètres actuels.",
+        "empty": "Aucune intégration de calendrier n'est disponible dans votre périmètre actuel pour le moment.",
+        "needsAttention": "Nécessite une attention",
+        "pushOff": "Désactiver",
+        "pushOn": "Activer",
+        "title": "Intégrations pertinentes"
+      },
+      "managerDescription": "Examinez les intégrations de calendrier qui affectent vos équipes, zones et projets gérés.",
+      "noProvidersConfigured": "Aucun fournisseur de calendrier n'est configuré. Contactez votre administrateur système pour configurer les identifiants OAuth.",
+      "notConfigured": "Non configuré",
+      "providers": {
+        "description": "Activez ou désactivez la synchronisation du calendrier pour des fournisseurs spécifiques. Les employés peuvent connecter leurs comptes une fois activés.",
+        "google": "Google Calendar",
+        "googleDesc": "Synchroniser les absences avec Google Calendar",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Synchroniser les absences avec Outlook Calendar",
+        "title": "Fournisseurs de calendrier"
+      },
+      "readOnlyManagerNotice": "Les managers peuvent examiner la couverture de synchronisation du calendrier pour leurs équipes, zones et projets, mais seuls les administrateurs de l'organisation peuvent modifier ces paramètres.",
+      "saved": "Paramètres de calendrier enregistrés",
+      "saveError": "Échec de l'enregistrement des paramètres du calendrier",
+      "syncBehavior": {
+        "autoSync": "Synchronisation automatique lors de l'approbation",
+        "autoSyncDesc": "Synchroniser automatiquement les absences avec les calendriers connectés une fois approuvées",
+        "conflictRequired": "Exiger une vérification des conflits",
+        "conflictRequiredDesc": "Exiger que les employés vérifient les conflits de calendrier avant de soumettre leurs absences",
+        "description": "Configurez le fonctionnement de la synchronisation de calendrier pour votre organisation.",
+        "title": "Comportement de synchronisation"
+      },
+      "title": "Synchronisation de calendrier"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Connecter et prévisualiser",
+        "description": "Entrez un jeton d'accès (bearer token) API client Clockin. Le jeton est utilisé uniquement pour cette session d'importation.",
+        "title": "Jeton API Clockin",
+        "token": "Jeton d'accès (Bearer Token)"
+      },
+      "mapping": {
+        "description": "Associez les employés Clockin aux employés Z8 existants. Les correspondances d'e-mails automatiques sont présélectionnées.",
+        "mapEmployee": "Associer",
+        "noEmail": "Aucun e-mail dans Clockin",
+        "skipEmployee": "Ignorer cet employé",
+        "summary": "Employés associés",
+        "title": "Associer les employés"
+      },
+      "preview": {
+        "absences": "Absences",
+        "description": "Examinez les données Clockin disponibles avant d'associer les employés et de scanner les enregistrements.",
+        "employees": "Employés",
+        "next": "Associer les employés",
+        "title": "Prévisualisation Clockin",
+        "workdays": "Jours travaillés"
+      },
+      "review": {
+        "noProductionRecords": "Aucun enregistrement de production n'a encore été importé.",
+        "openReview": "Ouvrir l'examen",
+        "scanningDescription": "Le lot d'examen {reviewBatchId} est en cours d'analyse. Examinez et approuvez les enregistrements avant la validation.",
+        "startedTitle": "Analyse d'examen d'importation démarrée",
+        "starting": "Démarrage de l'analyse d'examen d'importation Clockin…",
+        "startSuccess": "L'analyse d'examen d'importation a démarré. Un examen est requis avant que les enregistrements ne soient validés."
+      },
+      "selection": {
+        "absences": "Absences",
+        "description": "Choisissez les enregistrements Clockin à scanner pour examen. Les enregistrements doivent être examinés avant la validation.",
+        "endDate": "Date de fin",
+        "startDate": "Date de début",
+        "startReviewScan": "Démarrer l'analyse d'examen",
+        "title": "Portée de l'importation",
+        "workdays": "Jours travaillés / Périodes de travail"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Le lot d'examen {batchId} est en cours d'analyse.",
+        "description": "Un examen est requis avant que les enregistrements Clockodo ne soient validés en production.",
+        "openReview": "Ouvrir l'examen",
+        "successTitle": "Analyse d'examen d'importation démarrée"
+      },
+      "credentials": {
+        "apiKey": "Clé API",
+        "apiKeyHint": "Vous pouvez trouver votre clé API dans votre profil Clockodo :",
+        "connect": "Connecter et prévisualiser",
+        "description": "Entrez votre e-mail Clockodo et votre clé API. Vous pouvez trouver votre clé API dans Clockodo sous Mon profil > Clé API. Les identifiants ne sont pas stockés.",
+        "email": "E-mail Clockodo",
+        "title": "Identifiants Clockodo"
+      },
+      "entity": {
+        "absences": "Absences",
+        "entries": "Saisies de temps",
+        "holidayQuotas": "Quotas de congés",
+        "nonBusinessDays": "Jours non ouvrés",
+        "services": "Services / Catégories de travail",
+        "surcharges": "Surcharges",
+        "targetHours": "Heures cibles / Politiques de travail",
+        "teams": "Équipes",
+        "users": "Utilisateurs / Employés"
+      },
+      "errors": {
+        "connectionFailed": "Échec de la connexion à Clockodo",
+        "fetchUsersFailed": "Échec de la récupération des données utilisateur",
+        "importFailed": "L'analyse de révision de l'importation a échoué",
+        "saveMappingsFailed": "Échec de l'enregistrement des correspondances utilisateur"
+      },
+      "importing": {
+        "description": "Veuillez ne pas fermer cette page. L'analyse de révision est en file d'attente et peut prendre un certain temps pour les grands ensembles de données.",
+        "patience": "Récupération des données Clockodo pour révision…",
+        "title": "Démarrage de l'analyse de révision…"
+      },
+      "mapping": {
+        "autoMatched": "Auto-correspondance",
+        "createNew": "Créer nouveau",
+        "skip": "Ignorer"
+      },
+      "mappingStatus": {
+        "auto": "Auto",
+        "manual": "Manuel",
+        "new": "Nouveau",
+        "skip": "Ignorer"
+      },
+      "preview": {
+        "dataType": "Type de données",
+        "description": "Voici un résumé des données trouvées dans votre compte Clockodo. Les données Z8 existantes sont affichées pour comparaison.",
+        "inClockodo": "Dans Clockodo",
+        "inZ8": "Déjà dans Z8",
+        "next": "Mapper les utilisateurs",
+        "title": "Aperçu des données"
+      },
+      "review": {
+        "startedToast": "L'analyse de révision de l'importation a démarré. Une révision est requise avant que les enregistrements ne soient validés."
+      },
+      "selection": {
+        "dateRange": "Plage de dates pour les entrées de temps et les absences",
+        "dateRangeDescription": "Ceci n'affecte que les entrées de temps et les absences. Les autres données (utilisateurs, équipes, etc.) sont toujours analysées intégralement.",
+        "dependencyWarning": "Les dépendances seront analysées automatiquement",
+        "description": "Choisissez les types de données à analyser. Une révision est requise avant que les enregistrements ne soient validés.",
+        "emptyUserScope": "Sélectionnez au moins un utilisateur Clockodo avant de démarrer l'analyse.",
+        "incompleteCustomDateRange": "Sélectionnez une date de début et une date de fin avant de démarrer l'analyse.",
+        "selectDateRange": "Sélectionner la plage de dates",
+        "startImport": "Démarrer l'analyse de révision",
+        "title": "Sélectionner les données pour révision"
+      },
+      "step": {
+        "complete": "Révision démarrée",
+        "credentials": "Identifiants",
+        "import": "Révision",
+        "preview": "Aperçu",
+        "selection": "Sélection",
+        "userMapping": "Mappage utilisateur"
+      },
+      "userMapping": {
+        "action": "Action",
+        "autoMatched": "{count} auto-correspondances",
+        "clockodoUser": "Utilisateur Clockodo",
+        "continue": "Continuer",
+        "description": "Mappez les utilisateurs Clockodo vers des employés Z8 existants ou choisissez de créer de nouveaux comptes. Les utilisateurs correspondants par e-mail sont auto-mappés.",
+        "email": "E-mail",
+        "mappedTo": "Mappé vers",
+        "newEmployees": "{count} nouveau",
+        "onlyMapped": "Scanner uniquement les utilisateurs mappés (ne pas créer de nouveaux comptes pour les utilisateurs non mappés)",
+        "skippedCount": "{count} ignoré(s)",
+        "status": "Statut",
+        "title": "Mapper les utilisateurs"
+      }
+    },
+    "discord": {
+      "description": "Configurer les notifications Discord pour votre organisation",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Configurer les notifications Slack pour votre organisation",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Configurer les notifications Microsoft Teams pour votre organisation",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Connectez un bot Telegram pour activer les notifications et les commandes pour votre organisation.",
+        "title": "Bot Telegram"
+      },
+      "botToken": "Jeton du bot",
+      "botTokenHelp": "Créez un bot avec @BotFather sur Telegram et collez le jeton ici.",
+      "connect": "Connecter le bot",
+      "connected": "Bot Telegram connecté avec succès",
+      "connectError": "Échec de la connexion au bot Telegram",
+      "description": "Configurer l'intégration du bot Telegram pour les notifications et les commandes",
+      "disconnect": "Déconnecter",
+      "disconnectConfirm": {
+        "description": "Cela désactivera toutes les notifications et commandes Telegram pour votre organisation. Les liens vers les comptes des employés seront conservés.",
+        "title": "Déconnecter le bot Telegram ?"
+      },
+      "disconnected": "Bot Telegram déconnecté",
+      "disconnectError": "Échec de la déconnexion du bot Telegram",
+      "features": {
+        "approvals": "Notifications d'approbation",
+        "approvalsDesc": "Envoyer des demandes d'approbation et permettre d'approuver/rejeter via Telegram",
+        "commands": "Commandes du bot",
+        "commandsDesc": "Activer /clockedin, /whosout, /pending et d'autres commandes",
+        "description": "Configurez les fonctionnalités activées pour le bot Telegram.",
+        "digest": "Résumé quotidien",
+        "digestDesc": "Envoyer un résumé quotidien des absences et des plannings",
+        "digestTime": "Heure",
+        "digestTimezone": "Fuseau horaire",
+        "escalations": "Escalades",
+        "escalationsDesc": "Transférer les approbations sans réponse au responsable suivant",
+        "escalationTimeout": "Délai d'attente",
+        "hours": "heures",
+        "title": "Fonctionnalités"
+      },
+      "linked": "Lié",
+      "linkError": "Échec de la génération du code de lien",
+      "linking": {
+        "botLink": "Bot : @{botUsername}",
+        "description": "Liez votre compte Telegram pour recevoir des notifications personnelles.",
+        "generateCode": "Générer le code de lien",
+        "instructions": "Envoyez cette commande au bot sur Telegram :",
+        "linkedStatus": "Votre compte Telegram est lié",
+        "title": "Compte Telegram"
+      },
+      "notConfigured": "Telegram n'est pas configuré pour cette organisation. Contactez votre administrateur.",
+      "saved": "Paramètres Telegram enregistrés",
+      "status": {
+        "active": "Actif"
+      },
+      "title": "Telegram",
+      "unlink": "Dissocier",
+      "unlinkConfirm": {
+        "description": "Vous ne recevrez plus de notifications Telegram. Vous pourrez vous reconnecter plus tard.",
+        "title": "Dissocier le compte Telegram ?"
+      },
+      "unlinked": "Compte Telegram dissocié",
+      "unlinkError": "Échec de la dissociation du compte Telegram",
+      "webhookActive": "Webhook enregistré",
+      "webhookPending": "Webhook en attente"
+    }
+  }
+}

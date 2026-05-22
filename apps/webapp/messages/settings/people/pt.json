@@ -1,0 +1,517 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Coortes de funcionários reutilizáveis para políticas que precisam de cadeias de aprovação específicas por grupo.",
+      "empty": "Nenhum grupo de funcionários configurado ainda. Os grupos podem ser usados como condições de política após serem criados.",
+      "loadFailed": "Não foi possível carregar os grupos de funcionários.",
+      "loading": "Carregando grupos de funcionários…",
+      "members": "Membros",
+      "status": "Status",
+      "status.active": "Ativo",
+      "status.inactive": "Inativo",
+      "title": "Grupos de funcionários"
+    },
+    "employees": {
+      "description": "Gerenciar perfis, equipes e permissões de funcionários",
+      "details": "Detalhes do funcionário",
+      "detailView": {
+        "loadingEmployeeData": "Carregando dados dos funcionários",
+        "manageEmployees": "gerenciar funcionários",
+        "unexpectedError": "Ocorreu um erro inesperado",
+        "updateFailed": "Falha ao atualizar funcionário",
+        "updateSuccess": "Funcionário atualizado com sucesso"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "Ver detalhes"
+        },
+        "contract": {
+          "fixed": "Fixo",
+          "hourly": "Horista"
+        },
+        "countFound": "{count} funcionário(s) encontrado(s)",
+        "emptyState": "Nenhum funcionário encontrado",
+        "inviteEmployee": "Convidar funcionário",
+        "loading": "Carregando funcionários...",
+        "noEmployeeFeature": "gerenciar funcionários",
+        "pagination": {
+          "next": "Próximo",
+          "pageOf": "Página {page} de {total}",
+          "previous": "Anterior"
+        },
+        "refresh": "Atualizar",
+        "roleFilter": "Filtrar por função",
+        "roles": {
+          "admin": "Administrador",
+          "all": "Todas as funções",
+          "employee": "Funcionário",
+          "manager": "Gerente"
+        },
+        "searchLabel": "Pesquisar funcionários",
+        "searchPlaceholder": "Pesquisar por nome, e-mail ou cargo...",
+        "statuses": {
+          "active": "Ativo",
+          "all": "Todos os status",
+          "inactive": "Inativo"
+        },
+        "statusFilter": "Filtrar por status",
+        "table": {
+          "actions": "Ações",
+          "contract": "Contrato",
+          "employee": "Funcionário",
+          "position": "Cargo",
+          "role": "Função",
+          "status": "Status",
+          "team": "Equipe"
+        },
+        "title": "Diretório de Funcionários"
+      },
+      "title": "Funcionários"
+    },
+    "employmentHistory": {
+      "addChange": "Adicionar alteração",
+      "addError": "Falha ao adicionar alteração no histórico de emprego",
+      "addSuccess": "Alteração no histórico de emprego adicionada",
+      "cancelConfirm": "Cancelar esta alteração de emprego? Isso removerá a alteração de emprego agendada ou em rascunho.",
+      "cancelError": "Falha ao cancelar alteração no histórico de emprego",
+      "cancelSuccess": "Alteração no histórico de emprego cancelada",
+      "confirmError": "Falha ao confirmar alteração no histórico de emprego",
+      "confirmSuccess": "Alteração no histórico de emprego confirmada",
+      "contractType": "Tipo de Contrato",
+      "contractTypes": {
+        "fixed": "fixo",
+        "hourly": "por hora"
+      },
+      "currentConfirmed": "Confirmado atual",
+      "description": "Contexto confirmado e alterações de emprego agendadas",
+      "effectiveDate": "Data de Vigência",
+      "effectiveDateHelp": "Quando este contexto de contrato entra em vigor",
+      "effectiveDateRequired": "A Data de Vigência é obrigatória",
+      "effectiveDateValue": "Vigente em {date}",
+      "emptyTimeline": "Ainda não há histórico de contrato ou modelo de trabalho.",
+      "hourlyRate": "Taxa Horária",
+      "hourlyRateValue": "{rate} / hora",
+      "nextScheduledConfirmed": "Próximo agendamento confirmado",
+      "noCurrentContext": "Nenhum contexto de contrato confirmado",
+      "noScheduledChange": "Nenhuma alteração confirmada agendada",
+      "probationEnd": "Fim do Período de Experiência",
+      "probationRange": "Período de Experiência {startDate} - {endDate}",
+      "probationStart": "Início do Período de Experiência",
+      "reasonNote": "Motivo / Observação",
+      "reasonPlaceholder": "Avaliação anual, mudança de função ou atualização do modelo de trabalho…",
+      "reviewState": "Estado da Revisão",
+      "saveChange": "Salvar Alteração",
+      "selectContractType": "Selecione o tipo de contrato",
+      "selectReviewState": "Selecione o estado da revisão",
+      "selectWorkModel": "Selecione o modelo de trabalho",
+      "states": {
+        "confirmed": "confirmado",
+        "draft": "rascunho",
+        "pending": "pendente"
+      },
+      "timeline": "Linha do Tempo",
+      "title": "Contrato e Modelo de Trabalho",
+      "weeklyHours": "Horas Semanais",
+      "weeklyHoursValue": "{hours} / semana",
+      "workModel": "Modelo de Trabalho",
+      "workModels": {
+        "flexible": "flexível",
+        "hybrid": "híbrido",
+        "onsite": "presencial",
+        "remote": "remoto"
+      }
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Já possui uma conta?",
+      "alreadyMember": "Já é um membro",
+      "alreadyMemberMessage": "Você já é um membro desta organização.",
+      "approval": "Aprovação",
+      "auto": "Automático",
+      "code": "Código",
+      "codeCopied": "Código de convite copiado",
+      "codeHelp": "4-20 caracteres, apenas letras, números e hifens",
+      "codePlaceholder": "EQUIPE-ABC123",
+      "copyCode": "Copiar código",
+      "copyUrl": "Copiar URL de convite",
+      "create": "Criar",
+      "createCode": "Criar código",
+      "created": "Código de convite criado",
+      "createDescription": "Crie um novo código de convite para usuários entrarem na sua organização",
+      "defaultTeam": "Equipe padrão",
+      "defaultTeamHelp": "Novos membros serão sugeridos para esta equipe durante a aprovação",
+      "deleted": "Código de convite excluído",
+      "deleteDescription": "Tem certeza de que deseja excluir o código de convite \"{code}\"? Esta ação não pode ser desfeita.",
+      "deleteTitle": "Excluir código de convite",
+      "description": "Crie códigos compartilháveis para usuários entrarem na sua organização",
+      "descriptionPlaceholder": "Descrição opcional...",
+      "downloadFormat": "Baixar {format}",
+      "editCode": "Editar código de convite",
+      "editDescription": "Atualize as configurações deste código de convite",
+      "enterCodeDescription": "Insira um código de convite para entrar em uma organização",
+      "expires": "Expira em",
+      "expiresAt": "Data de expiração",
+      "expiresAtHelp": "Deixe vazio para não expirar",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Gerar novo código",
+      "generatingQR": "Gerando código QR...",
+      "invalidCode": "Código de convite inválido",
+      "inviteCode": "Código de convite",
+      "joinedMessage": "Você entrou com sucesso em {organization}.",
+      "joinedSuccessfully": "Entrada realizada com sucesso",
+      "joining": "Entrando...",
+      "joiningOrganization": "Você está prestes a entrar em {organization}",
+      "joinOrganization": "Entrar na organização",
+      "joinRequestSent": "Solicitação de entrada enviada",
+      "label": "Rótulo",
+      "labelPlaceholder": "ex: Recrutamento Público 2024",
+      "maxUses": "Usos máximos",
+      "maxUsesHelp": "Deixe vazio para usos ilimitados",
+      "needAccount": "Não tem uma conta?",
+      "noCodes": "Nenhum código de convite ainda. Crie um para começar.",
+      "noDefaultTeam": "Sem equipe padrão",
+      "pendingApproval": "Aguardando aprovação",
+      "pendingApprovalDescription": "Você será notificado assim que sua associação for aprovada.",
+      "pendingApprovalMessage": "Sua solicitação para entrar em {organization} foi enviada. Um administrador analisará seu pedido.",
+      "qrAlt": "Código QR para {code}",
+      "qrCode": "Código QR",
+      "qrDescription": "Escaneie este código QR para entrar na organização",
+      "qrDownloaded": "Código QR baixado",
+      "required": "Obrigatório",
+      "requiresApproval": "Exigir aprovação do administrador",
+      "requiresApprovalHelp": "Quando ativado, novos membros ficarão pendentes até que um administrador os aprove",
+      "signInToJoin": "Faça login para entrar",
+      "status": "Status",
+      "status.active": "Ativo",
+      "status.paused": "Pausado",
+      "title": "Códigos de convite",
+      "unlimited": "Ilimitado",
+      "updated": "Código de convite atualizado",
+      "urlCopied": "URL de convite copiada para a área de transferência",
+      "usage": "Uso",
+      "validatingCode": "Validando código...",
+      "validCodeDescription": "Este código de convite é válido. Clique no botão abaixo para entrar."
+    },
+    "managerAssignment": {
+      "assignFailed": "Falha ao atribuir gerentes",
+      "assignSuccess": "Gerentes atribuídos com sucesso",
+      "availableManagers": "Gerentes disponíveis",
+      "description": "Selecione um ou mais gerentes para este funcionário. Designe um como principal.",
+      "empty": "Nenhum gerente disponível",
+      "primaryDescription": "O gerente principal será o padrão para aprovações e notificações",
+      "primaryManager": "Gerente principal",
+      "save": "Salvar gerentes",
+      "title": "Atribuição de gerente",
+      "unexpectedError": "Ocorreu um erro inesperado",
+      "validation": {
+        "primary": "Por favor, designe um gerente principal",
+        "selectOne": "Por favor, selecione pelo menos um gerente"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Aprovar",
+      "approved": "Membro aprovado",
+      "approveMember": "Aprovar {name}",
+      "approveSelected": "Aprovar selecionados",
+      "assignTeam": "Atribuir equipe",
+      "bulkApproved": "{count} membros aprovados",
+      "bulkRejectDescription": "Tem certeza de que deseja rejeitar {count} membros selecionados? Eles serão removidos da lista de pendentes.",
+      "bulkRejected": "{count} membros rejeitados",
+      "bulkRejectTitle": "Rejeitar membros selecionados",
+      "description": "Revise e aprove membros aguardando para entrar na sua organização",
+      "email": "E-mail",
+      "joinedVia": "Entrou via",
+      "noTeam": "Sem equipe",
+      "reject": "Rejeitar",
+      "rejectDescription": "Tem certeza de que deseja rejeitar {name}? Eles serão removidos da lista de pendentes e precisarão solicitar acesso novamente.",
+      "rejected": "Membro rejeitado",
+      "rejectMember": "Rejeitar {name}",
+      "rejectSelected": "Rejeitar selecionados",
+      "rejectTitle": "Rejeitar membro",
+      "requestedAt": "Solicitado",
+      "selectAll": "Selecionar todos os membros pendentes",
+      "selectMember": "Selecionar {name}",
+      "sso": "SSO",
+      "title": "Membros pendentes",
+      "user": "Usuário"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Editar"
+      },
+      "adminRequired": "Acesso de administrador necessário",
+      "allTeams": "Todas as equipes (em toda a organização)",
+      "allTeamsHelp": "As permissões se aplicam a todas as equipes da organização",
+      "badge": {
+        "allPermissions": "Todas as permissões",
+        "permissionCount": "{count} permissão(ões)"
+      },
+      "description": "Gerenciar permissões de funcionários para operações de equipe",
+      "editor": {
+        "title": "Editar permissões - {name}"
+      },
+      "employeePermissions": {
+        "description": "Clique em um funcionário para editar suas permissões",
+        "title": "Permissões de funcionário"
+      },
+      "emptyState": "Nenhum funcionário encontrado",
+      "noEmployeeFeature": "gerenciar permissões",
+      "noPermissions": "Nenhuma permissão",
+      "permissions": "Permissões",
+      "refresh": "Atualizar",
+      "revokeAll": "Revogar tudo",
+      "revokeError": "Falha ao revogar permissões",
+      "revokeSuccess": "Permissões revogadas com sucesso",
+      "save": "Salvar permissões",
+      "scope": "Escopo da permissão",
+      "searchLabel": "Pesquisar funcionários",
+      "searchPlaceholder": "Pesquisar por nome, e-mail ou cargo...",
+      "selectedTeamHelp": "As permissões se aplicam apenas à equipe selecionada",
+      "table": {
+        "actions": "Ações",
+        "employee": "Funcionário",
+        "permissions": "Permissões",
+        "position": "Cargo",
+        "role": "Função"
+      },
+      "title": "Permissões da equipe",
+      "toast": {
+        "adminRequired": "Você deve ser um administrador para gerenciar permissões",
+        "loadEmployeesFailed": "Falha ao carregar funcionários"
+      },
+      "updateError": "Falha ao atualizar permissões",
+      "updateSuccess": "Permissões atualizadas com sucesso"
+    },
+    "rateHistory": {
+      "changeRate": "Alterar taxa",
+      "currentRate": "Taxa atual: {rate}",
+      "description": "A taxa horária muda ao longo do tempo",
+      "effectiveFrom": "Efetivo a partir de",
+      "effectiveFromHelp": "Quando a nova taxa entra em vigor",
+      "empty": "Nenhum histórico de taxa disponível",
+      "newHourlyRate": "Nova taxa horária",
+      "reasonOptional": "Motivo (opcional)",
+      "reasonPlaceholder": "por exemplo, Avaliação anual, Promoção, etc.",
+      "title": "Histórico de taxas",
+      "updateDescription": "Criar uma nova entrada de taxa. A taxa atual será encerrada automaticamente.",
+      "updateError": "Falha ao atualizar a taxa",
+      "updateRate": "Atualizar taxa",
+      "updateSuccess": "Taxa atualizada com sucesso",
+      "updateTitle": "Atualizar taxa horária"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Atribuir função",
+        "create": "Criar função",
+        "deleteNamed": "Excluir {name}",
+        "editNamed": "Editar {name}",
+        "removeNamed": "Remover {name}",
+        "saveChanges": "Salvar alterações"
+      },
+      "assignPanel": {
+        "description": "Selecione uma função para atribuir a este funcionário.",
+        "empty": "Não há funções disponíveis para atribuir. Todas as funções já foram atribuídas ou nenhuma foi criada.",
+        "permissionCount": "{count} permissões",
+        "title": "Atribuir função personalizada"
+      },
+      "baseTiers": {
+        "admin": "Administrador",
+        "employee": "Funcionário",
+        "manager": "Gerente"
+      },
+      "createPanel": {
+        "description": "Defina uma nova função com permissões específicas para sua organização.",
+        "title": "Criar função personalizada"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Esta função está atualmente atribuída a {count} funcionário. Ele perderá as permissões concedidas por esta função.",
+          "other": "Esta função está atualmente atribuída a {count} funcionários. Eles perderão as permissões concedidas por esta função."
+        },
+        "confirm": "Tem certeza de que deseja excluir \"{name}\"?",
+        "title": "Excluir função"
+      },
+      "description": "Crie funções de permissão personalizadas para sua organização",
+      "editor": {
+        "baseTier": "Nível base",
+        "color": "Cor",
+        "description": "Descrição",
+        "descriptionPlaceholder": "Para que serve esta função...",
+        "errors": {
+          "createFailed": "Falha ao criar função",
+          "nameRequired": "O nome da função é obrigatório",
+          "permissionsFailed": "Falha ao salvar permissões da função",
+          "updateFailed": "Falha ao atualizar função"
+        },
+        "inherited": "Herdado",
+        "name": "Nome",
+        "namePlaceholder": "por exemplo, Líder de equipe, Gerente de RH...",
+        "permissions": "Permissões",
+        "permissionsHelp": "Selecione permissões adicionais para esta função. As permissões herdadas do nível base são exibidas como bloqueadas.",
+        "selectColor": "Selecionar cor {color}"
+      },
+      "editPanel": {
+        "description": "Atualize os detalhes e as permissões da função.",
+        "title": "Editar função personalizada"
+      },
+      "employeeCard": {
+        "description": "Funções de permissão adicionais atribuídas a este funcionário",
+        "empty": "Nenhuma função personalizada atribuída.",
+        "permissionCount": {
+          "one": "({count} permissão)",
+          "other": "({count} permissões)"
+        }
+      },
+      "empty": {
+        "description": "Crie uma para começar.",
+        "title": "Ainda não há funções personalizadas"
+      },
+      "introduction": "Crie funções de permissão personalizadas que podem ser atribuídas aos funcionários. As funções personalizadas adicionam permissões além do nível base.",
+      "table": {
+        "actions": "Ações",
+        "assigned": "Atribuído",
+        "assignedCount": {
+          "one": "{count} funcionário",
+          "other": "{count} funcionários"
+        },
+        "baseTier": "Nível Base",
+        "name": "Nome",
+        "permissionCount": {
+          "one": "{count} permissão",
+          "other": "{count} permissões"
+        },
+        "permissions": "Permissões"
+      },
+      "title": "Funções Personalizadas",
+      "toast": {
+        "assigned": "Função atribuída",
+        "created": "Função criada",
+        "deleted": "Função excluída",
+        "removed": "Função removida",
+        "updated": "Função atualizada"
+      }
+    },
+    "skills": {
+      "addSkill": "Adicionar Habilidade",
+      "assign": "Atribuir",
+      "assignError": "Falha ao atribuir habilidade",
+      "assignSkill": "Atribuir Habilidade",
+      "assignSkillDescription": "Adicione uma habilidade ou certificação a este funcionário",
+      "assignSkillHint": "Clique em 'Atribuir Habilidade' para adicionar qualificações",
+      "catalog": "Catálogo de Habilidades",
+      "catalogDescription": "Defina habilidades que podem ser exigidas para subáreas e modelos de turno",
+      "category": "Categoria",
+      "confirmDelete": "Tem certeza de que deseja excluir esta habilidade?",
+      "confirmRemove": "Remover \"{skillName}\" deste funcionário?",
+      "createError": "Falha ao criar habilidade",
+      "createSkill": "Criar Habilidade",
+      "createSkillDescription": "Crie uma nova habilidade que pode ser atribuída aos funcionários",
+      "customCategoryName": "Nome da Categoria Personalizada",
+      "customCategoryPlaceholder": "ex: Conformidade",
+      "deleteError": "Falha ao excluir habilidade",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Descrição opcional da habilidade ou certificação",
+      "editSkill": "Editar Habilidade",
+      "editSkillDescription": "Atualize os detalhes da habilidade",
+      "employeeSkills": "Habilidades e Qualificações",
+      "employeeSkillsDescription": "Certificações e habilidades atribuídas a este funcionário",
+      "expired": "Expirado",
+      "expiredOn": "Expirou em {{date}}",
+      "expiresOn": "Expira em {{date}}",
+      "expiringSoon": "Expirando em breve",
+      "expiry": "Rastreamento de Expiração",
+      "expiryDate": "Data de Expiração",
+      "expiryRequired": "Obrigatório",
+      "expiryRequiredHint": "Esta certificação requer uma data de expiração",
+      "name": "Nome",
+      "namePlaceholder": "ex: Licença de Empilhadeira",
+      "noAvailableSkills": "Todas as habilidades foram atribuídas ou nenhuma habilidade está definida",
+      "noExpiry": "Não",
+      "noSkills": "Nenhuma competência definida ainda",
+      "noSkillsAssigned": "Nenhuma competência atribuída",
+      "noSkillsHint": "Crie sua primeira competência para começar",
+      "notes": "Notas",
+      "notesPlaceholder": "ex.: Número do certificado, data de treinamento…",
+      "removeError": "Falha ao remover competência",
+      "requiresExpiry": "Requer data de validade",
+      "requiresExpiryHint": "Ative se esta certificação precisar de renovação (ex.: Primeiros Socorros)",
+      "selectCategory": "Selecionar categoria",
+      "selectSkill": "Selecionar uma competência",
+      "skill": "Competência",
+      "skillAssigned": "Competência atribuída",
+      "skillCreated": "Competência criada",
+      "skillDeleted": "Competência excluída",
+      "skillName": "Nome",
+      "skillRemoved": "Competência removida",
+      "skillUpdated": "Competência atualizada",
+      "title": "Competências e Qualificações",
+      "updateError": "Falha ao atualizar competência"
+    },
+    "teams": {
+      "description": "Organize funcionários em equipes e gerencie as atribuições das equipes",
+      "detail": {
+        "actions": {
+          "cancel": "Cancelar",
+          "edit": "Editar",
+          "save": "Salvar"
+        },
+        "addMember": {
+          "description": "Selecione um funcionário para adicionar a esta equipe",
+          "selectEmployee": "Selecionar funcionário",
+          "title": "Adicionar membro à equipe"
+        },
+        "back": "Voltar para equipes",
+        "delete": {
+          "description": "Tem certeza de que deseja excluir esta equipe? Esta ação não pode ser desfeita. Os membros da equipe não serão excluídos.",
+          "title": "Excluir equipe"
+        },
+        "description": "Gerenciar informações e membros da equipe",
+        "errors": {
+          "addTeamMember": "Falha ao adicionar membro à equipe",
+          "deleteTeam": "Falha ao excluir equipe",
+          "loadTeam": "Falha ao carregar equipe",
+          "removeTeamMember": "Falha ao remover membro da equipe",
+          "updateTeam": "Falha ao atualizar equipe"
+        },
+        "info": {
+          "description": "Descrição",
+          "descriptionPlaceholder": "Insira a descrição da equipe",
+          "members": "Membros",
+          "noPrimaryManager": "Nenhum gerente principal atribuído",
+          "primaryManager": "Gerente Principal",
+          "teamName": "Nome da Equipe",
+          "teamNamePlaceholder": "Insira o nome da equipe",
+          "title": "Informações da Equipe"
+        },
+        "members": {
+          "add": "Adicionar membro",
+          "description": "Funcionários atribuídos a esta equipe",
+          "empty": "Nenhum membro nesta equipe",
+          "remove": "Remover membro da equipe",
+          "title": "Membros da Equipe"
+        },
+        "removeMember": {
+          "confirm": "Remover",
+          "description": "Tem certeza de que deseja remover este funcionário da equipe? Ele ainda terá acesso à organização.",
+          "title": "Remover membro da equipe"
+        },
+        "selectEmployee": "Selecionar funcionário",
+        "title": "Detalhes da equipe",
+        "toasts": {
+          "teamDeleted": "Equipe excluída com sucesso",
+          "teamMemberAdded": "Membro da equipe adicionado com sucesso",
+          "teamMemberRemoved": "Membro da equipe removido com sucesso",
+          "teamUpdated": "Equipe atualizada com sucesso"
+        },
+        "validation": {
+          "invalidInput": "Entrada inválida",
+          "selectEmployee": "Por favor, selecione um funcionário",
+          "teamNameRequired": "O nome da equipe é obrigatório",
+          "teamNameTooLong": "O nome da equipe é muito longo"
+        }
+      },
+      "details": "Detalhes da equipe",
+      "title": "Equipes"
+    }
+  }
+}

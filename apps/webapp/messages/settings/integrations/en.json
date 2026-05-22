@@ -1,0 +1,260 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Customize how absence events appear in external calendars.",
+        "descriptionPlaceholder": "Absence recorded in Z8",
+        "descriptionTemplate": "Event Description (optional)",
+        "title": "Event Customization",
+        "titleHelp": "Available variables: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Event Title Template"
+      },
+      "description": "Configure calendar providers, ICS feeds, and sync settings for your organization",
+      "icsFeeds": {
+        "description": "Allow users to subscribe to absence calendars via ICS/iCal format.",
+        "personal": "Personal ICS Feeds",
+        "personalDesc": "Employees can create read-only calendar subscriptions for their absences",
+        "team": "Team ICS Feeds",
+        "teamDesc": "Team leads can create shared feeds showing all team absences",
+        "title": "ICS Feeds"
+      },
+      "integrations": {
+        "description": "Connected employee calendars that fall inside your current settings scope.",
+        "empty": "No calendar integrations are available in your current scope yet.",
+        "needsAttention": "Needs attention",
+        "pushOff": "Push off",
+        "pushOn": "Push on",
+        "title": "Relevant Integrations"
+      },
+      "managerDescription": "Review calendar integrations that affect your teams, areas, and managed projects.",
+      "noProvidersConfigured": "No calendar providers are configured. Contact your system administrator to set up OAuth credentials.",
+      "notConfigured": "Not Configured",
+      "providers": {
+        "description": "Enable or disable calendar sync for specific providers. Employees can connect their accounts when enabled.",
+        "google": "Google Calendar",
+        "googleDesc": "Sync absences with Google Calendar",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Sync absences with Outlook Calendar",
+        "title": "Calendar Providers"
+      },
+      "readOnlyManagerNotice": "Managers can review calendar sync coverage for their teams, areas, and projects, but only organization admins can change these settings.",
+      "saved": "Calendar settings saved",
+      "saveError": "Failed to save calendar settings",
+      "syncBehavior": {
+        "autoSync": "Auto-sync on approval",
+        "autoSyncDesc": "Automatically sync absences to connected calendars when approved",
+        "conflictRequired": "Require conflict check",
+        "conflictRequiredDesc": "Require employees to check for calendar conflicts before submitting absences",
+        "description": "Configure how calendar sync works for your organization.",
+        "title": "Sync Behavior"
+      },
+      "title": "Calendar Sync"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Connect & Preview",
+        "description": "Enter a Clockin customer API bearer token. The token is only used for this import session.",
+        "title": "Clockin API Token",
+        "token": "Bearer Token"
+      },
+      "mapping": {
+        "description": "Match Clockin employees to existing Z8 employees. Automatic email matches are preselected.",
+        "mapEmployee": "Map",
+        "noEmail": "No email in Clockin",
+        "skipEmployee": "Skip this employee",
+        "summary": "Mapped employees",
+        "title": "Map Employees"
+      },
+      "preview": {
+        "absences": "Absences",
+        "description": "Review what Clockin data is available before mapping employees and scanning records.",
+        "employees": "Employees",
+        "next": "Map Employees",
+        "title": "Clockin Preview",
+        "workdays": "Workdays"
+      },
+      "review": {
+        "noProductionRecords": "No production records have been imported yet.",
+        "openReview": "Open review",
+        "scanningDescription": "Review batch {reviewBatchId} is scanning. Review and approve records before commit.",
+        "startedTitle": "Import review scan started",
+        "starting": "Starting Clockin import review scan…",
+        "startSuccess": "Import review scan started. Review is required before records are committed."
+      },
+      "selection": {
+        "absences": "Absences",
+        "description": "Choose which Clockin records to scan for review. Records must be reviewed before commit.",
+        "endDate": "End date",
+        "startDate": "Start date",
+        "startReviewScan": "Start Review Scan",
+        "title": "Import Scope",
+        "workdays": "Workdays / Work periods"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Review batch {batchId} is scanning.",
+        "description": "Review is required before Clockodo records are committed to production.",
+        "openReview": "Open review",
+        "successTitle": "Import review scan started"
+      },
+      "credentials": {
+        "apiKey": "API Key",
+        "apiKeyHint": "You can find your API key in your Clockodo profile:",
+        "connect": "Connect & Preview",
+        "description": "Enter your Clockodo email and API key. You can find your API key in Clockodo under My Profile > API Key. Credentials are not stored.",
+        "email": "Clockodo Email",
+        "title": "Clockodo Credentials"
+      },
+      "entity": {
+        "absences": "Absences",
+        "entries": "Time Entries",
+        "holidayQuotas": "Holiday Quotas",
+        "nonBusinessDays": "Non-Business Days",
+        "services": "Services / Work Categories",
+        "surcharges": "Surcharges",
+        "targetHours": "Target Hours / Work Policies",
+        "teams": "Teams",
+        "users": "Users / Employees"
+      },
+      "errors": {
+        "connectionFailed": "Failed to connect to Clockodo",
+        "fetchUsersFailed": "Failed to fetch user data",
+        "importFailed": "Import review scan failed",
+        "saveMappingsFailed": "Failed to save user mappings"
+      },
+      "importing": {
+        "description": "Please do not close this page. The review scan is being queued and may take a while for large datasets.",
+        "patience": "Fetching Clockodo data for review…",
+        "title": "Starting Review Scan…"
+      },
+      "mapping": {
+        "autoMatched": "Auto-matched",
+        "createNew": "Create new",
+        "skip": "Skip"
+      },
+      "mappingStatus": {
+        "auto": "Auto",
+        "manual": "Manual",
+        "new": "New",
+        "skip": "Skip"
+      },
+      "preview": {
+        "dataType": "Data Type",
+        "description": "Here is a summary of the data found in your Clockodo account. Existing Z8 data is shown for comparison.",
+        "inClockodo": "In Clockodo",
+        "inZ8": "Already in Z8",
+        "next": "Map Users",
+        "title": "Data Preview"
+      },
+      "review": {
+        "startedToast": "Import review scan started. Review is required before records are committed."
+      },
+      "selection": {
+        "dateRange": "Date range for time entries & absences",
+        "dateRangeDescription": "This only affects time entries and absences. Other data (users, teams, etc.) is always scanned fully.",
+        "dependencyWarning": "Dependencies will be scanned automatically",
+        "description": "Choose which data types to scan. Review is required before records are committed.",
+        "emptyUserScope": "Select at least one Clockodo user before starting the scan.",
+        "incompleteCustomDateRange": "Select both a start and end date before starting the scan.",
+        "selectDateRange": "Select date range",
+        "startImport": "Start Review Scan",
+        "title": "Select Data for Review"
+      },
+      "step": {
+        "complete": "Review Started",
+        "credentials": "Credentials",
+        "import": "Review",
+        "preview": "Preview",
+        "selection": "Selection",
+        "userMapping": "User Mapping"
+      },
+      "userMapping": {
+        "action": "Action",
+        "autoMatched": "{count} auto-matched",
+        "clockodoUser": "Clockodo User",
+        "continue": "Continue",
+        "description": "Map Clockodo users to existing Z8 employees or choose to create new accounts. Users matched by email are auto-mapped.",
+        "email": "Email",
+        "mappedTo": "Mapped To",
+        "newEmployees": "{count} new",
+        "onlyMapped": "Only scan mapped users (don't create new accounts for unmapped users)",
+        "skippedCount": "{count} skipped",
+        "status": "Status",
+        "title": "Map Users"
+      }
+    },
+    "discord": {
+      "description": "Configure Discord notifications for your organization",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Configure Slack notifications for your organization",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Configure Microsoft Teams notifications for your organization",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Connect a Telegram bot to enable notifications and commands for your organization.",
+        "title": "Telegram Bot"
+      },
+      "botToken": "Bot Token",
+      "botTokenHelp": "Create a bot with @BotFather on Telegram and paste the token here.",
+      "connect": "Connect Bot",
+      "connected": "Telegram bot connected successfully",
+      "connectError": "Failed to connect Telegram bot",
+      "description": "Configure Telegram bot integration for notifications and commands",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": {
+        "description": "This will disable all Telegram notifications and commands for your organization. Employee account links will be preserved.",
+        "title": "Disconnect Telegram Bot?"
+      },
+      "disconnected": "Telegram bot disconnected",
+      "disconnectError": "Failed to disconnect Telegram bot",
+      "features": {
+        "approvals": "Approval Notifications",
+        "approvalsDesc": "Send approval requests and allow approve/reject via Telegram",
+        "commands": "Bot Commands",
+        "commandsDesc": "Enable /clockedin, /whosout, /pending and other commands",
+        "description": "Configure which features are enabled for the Telegram bot.",
+        "digest": "Daily Digest",
+        "digestDesc": "Send a daily summary of absences and schedules",
+        "digestTime": "Time",
+        "digestTimezone": "Timezone",
+        "escalations": "Escalations",
+        "escalationsDesc": "Escalate unanswered approvals to the next manager",
+        "escalationTimeout": "Timeout",
+        "hours": "hours",
+        "title": "Features"
+      },
+      "linked": "Linked",
+      "linkError": "Failed to generate link code",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Link your Telegram account to receive personal notifications.",
+        "generateCode": "Generate Link Code",
+        "instructions": "Send this command to the bot on Telegram:",
+        "linkedStatus": "Your Telegram account is linked",
+        "title": "Telegram Account"
+      },
+      "notConfigured": "Telegram is not configured for this organization. Contact your administrator.",
+      "saved": "Telegram settings saved",
+      "status": {
+        "active": "Active"
+      },
+      "title": "Telegram",
+      "unlink": "Unlink",
+      "unlinkConfirm": {
+        "description": "You will stop receiving Telegram notifications. You can link again later.",
+        "title": "Unlink Telegram Account?"
+      },
+      "unlinked": "Telegram account unlinked",
+      "unlinkError": "Failed to unlink Telegram account",
+      "webhookActive": "Webhook registered",
+      "webhookPending": "Webhook pending"
+    }
+  }
+}

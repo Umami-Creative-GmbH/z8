@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Absences (congés, arrêts maladie)",
+        "changePolicies": "Politiques de changement",
+        "description": "Types de données de démonstration que vous pouvez générer",
+        "locations": "Emplacements et sous-zones",
+        "shifts": "Modèles de quarts et quarts de travail",
+        "supported": "Actuellement pris en charge :",
+        "teamsProjects": "Équipes et projets",
+        "timeEntries": "Entrées de temps et périodes de travail",
+        "title": "Types de données disponibles",
+        "workCategories": "Ensembles de catégories de travail"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} absences supprimées",
+          "button": "Effacer toutes les données",
+          "changePoliciesDeleted": "{count} politiques de changement supprimées",
+          "dialog": {
+            "confirm": "Effacer toutes les données",
+            "description": "Cette action est irréversible. Toutes les entrées de temps, absences, équipes, projets et données associées seront définitivement supprimées.",
+            "title": "Effacer toutes les données temporelles ?"
+          },
+          "items": {
+            "absences": "Toutes les entrées d'absence",
+            "changePolicies": "Toutes les politiques de changement",
+            "locations": "Tous les emplacements et sous-zones",
+            "shifts": "Tous les modèles de quarts et quarts de travail",
+            "teamsProjects": "Toutes les équipes et tous les projets",
+            "timeEntries": "Toutes les entrées de temps et périodes de travail",
+            "vacationAllowances": "Tous les droits aux congés",
+            "workCategories": "Toutes les catégories de travail"
+          },
+          "locationsDeleted": "{count} emplacements supprimés",
+          "managerAssignmentsDeleted": "{count} affectations de gestionnaires supprimées",
+          "projectsDeleted": "{count} projets supprimés",
+          "shiftRequestsDeleted": "{count} demandes de quarts supprimées",
+          "shiftsDeleted": "{count} quarts supprimés",
+          "shiftTemplatesDeleted": "{count} modèles de quarts supprimés",
+          "subareasDeleted": "{count} sous-zones supprimées",
+          "successTitle": "Données effacées avec succès !",
+          "teamsDeleted": "{count} équipes supprimées",
+          "timeEntriesDeleted": "{count} entrées de temps supprimées",
+          "title": "Effacer les données temporelles",
+          "vacationAllowancesReset": "{count} droits aux congés réinitialisés",
+          "willDelete": "Ceci supprimera définitivement :",
+          "workCategoriesDeleted": "{count} catégories de travail supprimées",
+          "workCategorySetsDeleted": "{count} ensembles de catégories de travail supprimés",
+          "workPeriodsDeleted": "{count} périodes de travail supprimées"
+        },
+        "clearing": "Effacement en cours...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count, plural, one {{count} absence supprimée} other {{count} absences supprimées}}",
+          "adminPreserved": "Les comptes administrateur seront conservés",
+          "button": "Supprimer les employés non-administrateurs",
+          "dialog": {
+            "confirm": "Supprimer les employés non-administrateurs",
+            "description": "Cette action est irréversible. Tous les employés non-administrateurs et leurs données associées seront définitivement supprimés.",
+            "title": "Supprimer les employés non-administrateurs ?"
+          },
+          "employeesDeleted": "{count, plural, one {{count} employé supprimé} other {{count} employés supprimés}}",
+          "items": {
+            "demoUsers": "Tous les comptes utilisateurs de démonstration",
+            "employees": "Tous les employés non-administrateurs",
+            "managerAssignments": "Toutes les affectations de managers",
+            "timeEntries": "Leurs entrées de temps et périodes de travail"
+          },
+          "membersDeleted": "{count, plural, one {{count} membre supprimé} other {{count} membres supprimés}}",
+          "successTitle": "Employés non-administrateurs supprimés avec succès !",
+          "timeEntriesDeleted": "{count, plural, one {{count} entrée de temps supprimée} other {{count} entrées de temps supprimées}}",
+          "title": "Supprimer les employés non-administrateurs",
+          "usersDeleted": "{count, plural, one {{count} utilisateur supprimé} other {{count} utilisateurs supprimés}}",
+          "willDelete": "Ceci supprimera définitivement :"
+        },
+        "deleting": "Suppression en cours...",
+        "description": "Actions destructrices irréversibles",
+        "title": "Zone de danger",
+        "typeDelete": "Tapez DELETE pour confirmer",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Générer des données d'exemple pour les tests ou effacer les données temporelles existantes",
+      "errors": {
+        "generationFailed": "La génération a échoué. Veuillez réessayer.",
+        "noOrganization": "Aucune organisation sélectionnée"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Vacances, congés maladie et autres absences",
+            "title": "Absences"
+          },
+          "changePolicies": {
+            "description": "Politiques de modification des entrées de temps",
+            "title": "Politiques de modification"
+          },
+          "label": "Types de données",
+          "locations": {
+            "countLabel": "Nombre d'emplacements :",
+            "description": "Lieux de travail et sous-zones",
+            "title": "Emplacements"
+          },
+          "projects": {
+            "countLabel": "Nombre de projets :",
+            "description": "Exemples de projets pour le suivi du temps",
+            "title": "Projets"
+          },
+          "shiftScheduling": {
+            "description": "Modèles de quarts et quarts planifiés",
+            "requiresLocations": "Nécessite l'activation des emplacements",
+            "title": "Planification des quarts"
+          },
+          "teams": {
+            "countLabel": "Nombre d'équipes :",
+            "description": "Créer des équipes et affecter des employés",
+            "title": "Équipes"
+          },
+          "timeEntries": {
+            "description": "Enregistrements de pointage et périodes de travail",
+            "title": "Entrées de temps"
+          },
+          "workCategories": {
+            "assignLabel": "Affecter également aux périodes de travail",
+            "description": "Ensembles de catégories pour les périodes de travail",
+            "title": "Catégories de travail"
+          }
+        },
+        "dateRange": {
+          "hint": "Plage temporelle pour les données générées",
+          "label": "Plage de dates",
+          "last30": "30 derniers jours",
+          "last60": "60 derniers jours",
+          "last90": "90 derniers jours",
+          "thisYear": "Cette année"
+        },
+        "employees": {
+          "all": "Tous les employés ({count})",
+          "label": "Employés",
+          "selectSpecific": "Sélectionner des employés spécifiques"
+        }
+      },
+      "generateData": {
+        "button": "Générer des données",
+        "description": "Créer des données d'exemple réalistes pour votre organisation",
+        "title": "Générer des données de démonstration"
+      },
+      "generateEmployees": {
+        "button": "Générer {count} employés",
+        "countHint": "Maximum 50 employés à la fois",
+        "countLabel": "Nombre d'employés",
+        "description": "Créer des comptes employés de démonstration pour les tests",
+        "employeesCreated": "{count} employés créés",
+        "generating": "Génération en cours...",
+        "includeManagers": "Inclure les affectations de managers",
+        "managersCreated": "{count} affectations de managers",
+        "managersHint": "Assigner aléatoirement des managers aux nouveaux employés",
+        "options": "Options",
+        "successTitle": "Employés générés avec succès !",
+        "title": "Générer des employés",
+        "usersCreated": "{count} utilisateurs créés"
+      },
+      "results": {
+        "success": "Données de démonstration générées avec succès !"
+      },
+      "steps": {
+        "absences": {
+          "description": "Création des entrées d'absences",
+          "label": "Absences"
+        },
+        "assignCategories": {
+          "description": "Assignation des catégories de travail aux périodes",
+          "label": "Assigner des catégories"
+        },
+        "changePolicies": {
+          "description": "Création des politiques de changement",
+          "label": "Politiques de changement"
+        },
+        "locations": {
+          "description": "Création des emplacements et sous-zones",
+          "label": "Emplacements"
+        },
+        "managers": {
+          "description": "Assignation des managers aux employés",
+          "label": "Affectations de managers"
+        },
+        "projects": {
+          "description": "Création des projets d'exemple",
+          "label": "Projets"
+        },
+        "shifts": {
+          "description": "Création des quarts et des demandes",
+          "label": "Quarts"
+        },
+        "shiftTemplates": {
+          "description": "Création des modèles de quart",
+          "label": "Modèles de quart"
+        },
+        "teams": {
+          "description": "Création des équipes et assignation des employés",
+          "label": "Équipes"
+        },
+        "timeEntries": {
+          "description": "Création des entrées de temps et des périodes de travail",
+          "label": "Entrées de temps"
+        },
+        "workCategories": {
+          "description": "Création des ensembles de catégories de travail et des catégories",
+          "label": "Catégories de travail"
+        }
+      },
+      "title": "Données de démonstration",
+      "wizard": {
+        "backToConfig": "Retour à la configuration",
+        "complete": "Terminé",
+        "configure": "Configurer",
+        "generate": "Générer",
+        "generateMore": "Générer plus de données"
+      }
+    },
+    "demoData": {
+      "description": "Générer des données d'exemple pour les tests ou effacer toutes les données temporelles",
+      "title": "Données de démonstration"
+    }
+  }
+}

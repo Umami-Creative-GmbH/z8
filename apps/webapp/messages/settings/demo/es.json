@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Ausencias (vacaciones, baja por enfermedad)",
+        "changePolicies": "Cambiar políticas",
+        "description": "Tipos de datos de demostración que puede generar",
+        "locations": "Ubicaciones y subáreas",
+        "shifts": "Plantillas de turnos y turnos",
+        "supported": "Actualmente admitido:",
+        "teamsProjects": "Equipos y proyectos",
+        "timeEntries": "Entradas de tiempo y periodos de trabajo",
+        "title": "Tipos de datos disponibles",
+        "workCategories": "Conjuntos de categorías de trabajo"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} ausencias eliminadas",
+          "button": "Borrar todos los datos",
+          "changePoliciesDeleted": "{count} políticas de cambio eliminadas",
+          "dialog": {
+            "confirm": "Borrar todos los datos",
+            "description": "Esta acción no se puede deshacer. Todas las entradas de tiempo, ausencias, equipos, proyectos y datos relacionados se eliminarán permanentemente.",
+            "title": "¿Borrar todos los datos de tiempo?"
+          },
+          "items": {
+            "absences": "Todas las entradas de ausencia",
+            "changePolicies": "Todas las políticas de cambio",
+            "locations": "Todas las ubicaciones y subáreas",
+            "shifts": "Todas las plantillas de turnos y turnos",
+            "teamsProjects": "Todos los equipos y proyectos",
+            "timeEntries": "Todas las entradas de tiempo y periodos de trabajo",
+            "vacationAllowances": "Todos los permisos de vacaciones",
+            "workCategories": "Todas las categorías de trabajo"
+          },
+          "locationsDeleted": "{count} ubicaciones eliminadas",
+          "managerAssignmentsDeleted": "{count} asignaciones de gerente eliminadas",
+          "projectsDeleted": "{count} proyectos eliminados",
+          "shiftRequestsDeleted": "{count} solicitudes de turno eliminadas",
+          "shiftsDeleted": "{count} turnos eliminados",
+          "shiftTemplatesDeleted": "{count} plantillas de turno eliminadas",
+          "subareasDeleted": "{count} subáreas eliminadas",
+          "successTitle": "¡Datos borrados correctamente!",
+          "teamsDeleted": "{count} equipos eliminados",
+          "timeEntriesDeleted": "{count} entradas de tiempo eliminadas",
+          "title": "Borrar datos de tiempo",
+          "vacationAllowancesReset": "{count} permisos de vacaciones restablecidos",
+          "willDelete": "Esto eliminará permanentemente:",
+          "workCategoriesDeleted": "{count} categorías de trabajo eliminadas",
+          "workCategorySetsDeleted": "{count} conjuntos de categorías de trabajo eliminados",
+          "workPeriodsDeleted": "{count} periodos de trabajo eliminados"
+        },
+        "clearing": "Borrando...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count, plural, one {{count} ausencia eliminada} other {{count} ausencias eliminadas}}",
+          "adminPreserved": "Las cuentas de administrador se conservarán",
+          "button": "Eliminar empleados que no son administradores",
+          "dialog": {
+            "confirm": "Eliminar empleados que no son administradores",
+            "description": "Esta acción no se puede deshacer. Todos los empleados que no son administradores y sus datos asociados se eliminarán permanentemente.",
+            "title": "¿Eliminar empleados que no son administradores?"
+          },
+          "employeesDeleted": "{count, plural, one {{count} empleado eliminado} other {{count} empleados eliminados}}",
+          "items": {
+            "demoUsers": "Todas las cuentas de usuario de demostración",
+            "employees": "Todos los empleados que no son administradores",
+            "managerAssignments": "Todas las asignaciones de gerentes",
+            "timeEntries": "Sus registros de tiempo y periodos de trabajo"
+          },
+          "membersDeleted": "{count, plural, one {{count} miembro eliminado} other {{count} miembros eliminados}}",
+          "successTitle": "¡Empleados que no son administradores eliminados correctamente!",
+          "timeEntriesDeleted": "{count, plural, one {{count} registro de tiempo eliminado} other {{count} registros de tiempo eliminados}}",
+          "title": "Eliminar empleados que no son administradores",
+          "usersDeleted": "{count, plural, one {{count} usuario eliminado} other {{count} usuarios eliminados}}",
+          "willDelete": "Esto eliminará permanentemente:"
+        },
+        "deleting": "Eliminando...",
+        "description": "Acciones destructivas que no se pueden deshacer",
+        "title": "Zona de peligro",
+        "typeDelete": "Escriba ELIMINAR para confirmar",
+        "typeDeletePlaceholder": "ELIMINAR"
+      },
+      "description": "Generar datos de muestra para pruebas o borrar los datos existentes relacionados con el tiempo",
+      "errors": {
+        "generationFailed": "Error en la generación. Por favor, inténtelo de nuevo.",
+        "noOrganization": "No se ha seleccionado ninguna organización"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Vacaciones, bajas por enfermedad y otras ausencias",
+            "title": "Ausencias"
+          },
+          "changePolicies": {
+            "description": "Políticas de cambio de registros de tiempo",
+            "title": "Políticas de cambio"
+          },
+          "label": "Tipos de datos",
+          "locations": {
+            "countLabel": "Número de ubicaciones:",
+            "description": "Ubicaciones de trabajo y subáreas",
+            "title": "Ubicaciones"
+          },
+          "projects": {
+            "countLabel": "Número de proyectos:",
+            "description": "Proyectos de muestra para el seguimiento del tiempo",
+            "title": "Proyectos"
+          },
+          "shiftScheduling": {
+            "description": "Plantillas de turnos y turnos programados",
+            "requiresLocations": "Requiere que las ubicaciones estén habilitadas",
+            "title": "Programación de turnos"
+          },
+          "teams": {
+            "countLabel": "Número de equipos:",
+            "description": "Crear equipos y asignar empleados",
+            "title": "Equipos"
+          },
+          "timeEntries": {
+            "description": "Registros de entrada/salida y periodos de trabajo",
+            "title": "Registros de tiempo"
+          },
+          "workCategories": {
+            "assignLabel": "Asignar también a periodos de trabajo",
+            "description": "Conjuntos de categorías para periodos de trabajo",
+            "title": "Categorías de trabajo"
+          }
+        },
+        "dateRange": {
+          "hint": "Rango de tiempo para los datos generados",
+          "label": "Rango de fechas",
+          "last30": "Últimos 30 días",
+          "last60": "Últimos 60 días",
+          "last90": "Últimos 90 días",
+          "thisYear": "Este año"
+        },
+        "employees": {
+          "all": "Todos los empleados ({count})",
+          "label": "Empleados",
+          "selectSpecific": "Seleccionar empleados específicos"
+        }
+      },
+      "generateData": {
+        "button": "Generar datos",
+        "description": "Cree datos de muestra realistas para su organización",
+        "title": "Generar datos de demostración"
+      },
+      "generateEmployees": {
+        "button": "Generar {count} empleados",
+        "countHint": "Máximo 50 empleados a la vez",
+        "countLabel": "Número de empleados",
+        "description": "Crear cuentas de empleado de demostración para pruebas",
+        "employeesCreated": "{count} empleados creados",
+        "generating": "Generando...",
+        "includeManagers": "Incluir asignaciones de gerentes",
+        "managersCreated": "{count} asignaciones de gerentes",
+        "managersHint": "Asignar gerentes aleatoriamente a los nuevos empleados",
+        "options": "Opciones",
+        "successTitle": "¡Empleados generados correctamente!",
+        "title": "Generar empleados",
+        "usersCreated": "{count} usuarios creados"
+      },
+      "results": {
+        "success": "¡Datos de demostración generados correctamente!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Creando entradas de ausencia",
+          "label": "Ausencias"
+        },
+        "assignCategories": {
+          "description": "Asignando categorías de trabajo a periodos",
+          "label": "Asignar categorías"
+        },
+        "changePolicies": {
+          "description": "Creando políticas de cambio",
+          "label": "Políticas de cambio"
+        },
+        "locations": {
+          "description": "Creando ubicaciones y subáreas",
+          "label": "Ubicaciones"
+        },
+        "managers": {
+          "description": "Asignando gerentes a los empleados",
+          "label": "Asignaciones de gerentes"
+        },
+        "projects": {
+          "description": "Creando proyectos de muestra",
+          "label": "Proyectos"
+        },
+        "shifts": {
+          "description": "Creando turnos y solicitudes",
+          "label": "Turnos"
+        },
+        "shiftTemplates": {
+          "description": "Creando plantillas de turnos",
+          "label": "Plantillas de turnos"
+        },
+        "teams": {
+          "description": "Creando equipos y asignando empleados",
+          "label": "Equipos"
+        },
+        "timeEntries": {
+          "description": "Creando registros de tiempo y periodos de trabajo",
+          "label": "Registros de tiempo"
+        },
+        "workCategories": {
+          "description": "Creando conjuntos de categorías de trabajo y categorías",
+          "label": "Categorías de trabajo"
+        }
+      },
+      "title": "Datos de demostración",
+      "wizard": {
+        "backToConfig": "Volver a la configuración",
+        "complete": "Completado",
+        "configure": "Configurar",
+        "generate": "Generar",
+        "generateMore": "Generar más datos"
+      }
+    },
+    "demoData": {
+      "description": "Generar datos de muestra para pruebas o borrar todos los datos relacionados con el tiempo",
+      "title": "Datos de demostración"
+    }
+  }
+}

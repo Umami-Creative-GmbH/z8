@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Ausências (férias, licença médica)",
+        "changePolicies": "Políticas de alteração",
+        "description": "Tipos de dados de demonstração que você pode gerar",
+        "locations": "Locais e subáreas",
+        "shifts": "Modelos de turno e turnos",
+        "supported": "Atualmente suportado:",
+        "teamsProjects": "Equipes e projetos",
+        "timeEntries": "Registros de tempo e períodos de trabalho",
+        "title": "Tipos de dados disponíveis",
+        "workCategories": "Conjuntos de categorias de trabalho"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} ausências excluídas",
+          "button": "Limpar todos os dados",
+          "changePoliciesDeleted": "{count} políticas de alteração excluídas",
+          "dialog": {
+            "confirm": "Limpar todos os dados",
+            "description": "Esta ação não pode ser desfeita. Todos os registros de tempo, ausências, equipes, projetos e dados relacionados serão excluídos permanentemente.",
+            "title": "Limpar todos os dados de tempo?"
+          },
+          "items": {
+            "absences": "Todos os registros de ausência",
+            "changePolicies": "Todas as políticas de alteração",
+            "locations": "Todos os locais e subáreas",
+            "shifts": "Todos os modelos de turno e turnos",
+            "teamsProjects": "Todas as equipes e projetos",
+            "timeEntries": "Todos os registros de tempo e períodos de trabalho",
+            "vacationAllowances": "Todos os subsídios de férias",
+            "workCategories": "Todas as categorias de trabalho"
+          },
+          "locationsDeleted": "{count} locais excluídos",
+          "managerAssignmentsDeleted": "{count} atribuições de gerente excluídas",
+          "projectsDeleted": "{count} projetos excluídos",
+          "shiftRequestsDeleted": "{count} solicitações de turno excluídas",
+          "shiftsDeleted": "{count} turnos excluídos",
+          "shiftTemplatesDeleted": "{count} modelos de turno excluídos",
+          "subareasDeleted": "{count} subáreas excluídas",
+          "successTitle": "Dados limpos com sucesso!",
+          "teamsDeleted": "{count} equipes excluídas",
+          "timeEntriesDeleted": "{count} registros de tempo excluídos",
+          "title": "Limpar dados de tempo",
+          "vacationAllowancesReset": "{count} subsídios de férias redefinidos",
+          "willDelete": "Isso excluirá permanentemente:",
+          "workCategoriesDeleted": "{count} categorias de trabalho excluídas",
+          "workCategorySetsDeleted": "{count} conjuntos de categorias de trabalho excluídos",
+          "workPeriodsDeleted": "{count} períodos de trabalho excluídos"
+        },
+        "clearing": "Limpando...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} ausências excluídas",
+          "adminPreserved": "Contas de administrador serão preservadas",
+          "button": "Excluir funcionários não administradores",
+          "dialog": {
+            "confirm": "Excluir funcionários não administradores",
+            "description": "Esta ação não pode ser desfeita. Todos os funcionários não administradores e seus dados associados serão excluídos permanentemente.",
+            "title": "Excluir funcionários não administradores?"
+          },
+          "employeesDeleted": "{count} funcionários excluídos",
+          "items": {
+            "demoUsers": "Todas as contas de usuário de demonstração",
+            "employees": "Todos os funcionários não administradores",
+            "managerAssignments": "Todas as atribuições de gerente",
+            "timeEntries": "Seus registros de tempo e períodos de trabalho"
+          },
+          "membersDeleted": "{count} membros excluídos",
+          "successTitle": "Funcionários não administradores excluídos com sucesso!",
+          "timeEntriesDeleted": "{count} registros de tempo excluídos",
+          "title": "Excluir funcionários não administradores",
+          "usersDeleted": "{count} usuários excluídos",
+          "willDelete": "Isso excluirá permanentemente:"
+        },
+        "deleting": "Excluindo...",
+        "description": "Ações destrutivas que não podem ser desfeitas",
+        "title": "Zona de Perigo",
+        "typeDelete": "Digite DELETE para confirmar",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Gerar dados de exemplo para teste ou limpar dados existentes relacionados ao tempo",
+      "errors": {
+        "generationFailed": "A geração falhou. Por favor, tente novamente.",
+        "noOrganization": "Nenhuma organização selecionada"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Férias, licença médica e outras ausências",
+            "title": "Ausências"
+          },
+          "changePolicies": {
+            "description": "Políticas de alteração de registro de tempo",
+            "title": "Políticas de Alteração"
+          },
+          "label": "Tipos de Dados",
+          "locations": {
+            "countLabel": "Número de locais:",
+            "description": "Locais de trabalho e subáreas",
+            "title": "Locais"
+          },
+          "projects": {
+            "countLabel": "Número de projetos:",
+            "description": "Projetos de exemplo para controle de tempo",
+            "title": "Projetos"
+          },
+          "shiftScheduling": {
+            "description": "Modelos de turno e turnos agendados",
+            "requiresLocations": "Requer que Locais estejam habilitados",
+            "title": "Agendamento de Turnos"
+          },
+          "teams": {
+            "countLabel": "Número de equipes:",
+            "description": "Criar equipes e atribuir funcionários",
+            "title": "Equipes"
+          },
+          "timeEntries": {
+            "description": "Registros de ponto e períodos de trabalho",
+            "title": "Registros de Tempo"
+          },
+          "workCategories": {
+            "assignLabel": "Também atribuir a períodos de trabalho",
+            "description": "Conjuntos de categorias para períodos de trabalho",
+            "title": "Categorias de Trabalho"
+          }
+        },
+        "dateRange": {
+          "hint": "Intervalo de tempo para dados gerados",
+          "label": "Intervalo de Datas",
+          "last30": "Últimos 30 dias",
+          "last60": "Últimos 60 dias",
+          "last90": "Últimos 90 dias",
+          "thisYear": "Este ano"
+        },
+        "employees": {
+          "all": "Todos os funcionários ({count})",
+          "label": "Funcionários",
+          "selectSpecific": "Selecionar funcionários específicos"
+        }
+      },
+      "generateData": {
+        "button": "Gerar dados",
+        "description": "Crie dados de exemplo realistas para sua organização",
+        "title": "Gerar dados de demonstração"
+      },
+      "generateEmployees": {
+        "button": "Gerar {count} funcionários",
+        "countHint": "Máximo de 50 funcionários por vez",
+        "countLabel": "Número de funcionários",
+        "description": "Criar contas de funcionários de demonstração para testes",
+        "employeesCreated": "{count} funcionários criados",
+        "generating": "Gerando...",
+        "includeManagers": "Incluir atribuições de gerentes",
+        "managersCreated": "{count} atribuições de gerentes",
+        "managersHint": "Atribuir gerentes aleatoriamente aos novos funcionários",
+        "options": "Opções",
+        "successTitle": "Funcionários gerados com sucesso!",
+        "title": "Gerar funcionários",
+        "usersCreated": "{count} usuários criados"
+      },
+      "results": {
+        "success": "Dados de demonstração gerados com sucesso!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Criando registros de ausência",
+          "label": "Ausências"
+        },
+        "assignCategories": {
+          "description": "Atribuindo categorias de trabalho aos períodos",
+          "label": "Atribuir categorias"
+        },
+        "changePolicies": {
+          "description": "Criando políticas de alteração",
+          "label": "Políticas de alteração"
+        },
+        "locations": {
+          "description": "Criando locais e subáreas",
+          "label": "Locais"
+        },
+        "managers": {
+          "description": "Atribuindo gerentes aos funcionários",
+          "label": "Atribuições de gerentes"
+        },
+        "projects": {
+          "description": "Criando projetos de exemplo",
+          "label": "Projetos"
+        },
+        "shifts": {
+          "description": "Criando turnos e solicitações",
+          "label": "Turnos"
+        },
+        "shiftTemplates": {
+          "description": "Criando modelos de turno",
+          "label": "Modelos de turno"
+        },
+        "teams": {
+          "description": "Criando equipes e atribuindo funcionários",
+          "label": "Equipes"
+        },
+        "timeEntries": {
+          "description": "Criando registros de tempo e períodos de trabalho",
+          "label": "Registros de tempo"
+        },
+        "workCategories": {
+          "description": "Criando conjuntos de categorias de trabalho e categorias",
+          "label": "Categorias de trabalho"
+        }
+      },
+      "title": "Dados de demonstração",
+      "wizard": {
+        "backToConfig": "Voltar para a configuração",
+        "complete": "Concluído",
+        "configure": "Configurar",
+        "generate": "Gerar",
+        "generateMore": "Gerar mais dados"
+      }
+    },
+    "demoData": {
+      "description": "Gerar dados de exemplo para testes ou limpar todos os dados relacionados ao tempo",
+      "title": "Dados de demonstração"
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Record absence for {name}"
+      },
+      "description": "Review allowances and record approved absences for your team.",
+      "empty": {
+        "description": "Try adjusting filters or search to find team members.",
+        "label": "No employees found",
+        "title": "No employees found"
+      },
+      "error": {
+        "description": "Please try again in a moment.",
+        "title": "Unable to load absences"
+      },
+      "feature": "manage team absences",
+      "filters": {
+        "allTeams": "All teams",
+        "searchLabel": "Search employees",
+        "searchPlaceholder": "Search employees…",
+        "searchSubmit": "Search",
+        "teamLabel": "Filter by team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filter by year",
+        "yearPlaceholder": "Year"
+      },
+      "pagination": {
+        "next": "Next",
+        "nextLabel": "Next page",
+        "page": "Page {page} of {pageCount}",
+        "previous": "Previous",
+        "previousLabel": "Previous page",
+        "showing": "Showing {firstItem} to {lastItem} of {total}"
+      },
+      "recordDialog": {
+        "category": "Category",
+        "categoryPlaceholder": "Select an absence category…",
+        "description": "Record an approved absence directly for the selected employee.",
+        "endDate": "End date",
+        "endDateHelper": "Leave empty for a same-day absence.",
+        "failure": "Failed to record absence",
+        "noCategories": "No categories available",
+        "noEmployee": "Select an employee before recording an absence",
+        "notes": "Notes",
+        "notesPlaceholder": "Add internal context for this record…",
+        "pickEndDate": "Pick end date…",
+        "pickStartDate": "Pick start date…",
+        "recording": "Recording…",
+        "required": "{label} is required",
+        "sickDetail": "Sick detail",
+        "sickDetailPlaceholder": "Select sick detail…",
+        "startDate": "Start date",
+        "submit": "Record absence",
+        "success": "Absence recorded",
+        "title": "Record absence",
+        "titleForEmployee": "Record absence for {name}"
+      },
+      "sort": {
+        "ascending": "ascending",
+        "by": "Sort by {label}",
+        "byWithDirection": "Sort by {label} ({direction})",
+        "descending": "descending"
+      },
+      "table": {
+        "actions": "Actions",
+        "allowance": "Allowance",
+        "employee": "Employee",
+        "left": "Left",
+        "pending": "Pending",
+        "sick": "Sick",
+        "teamOrPosition": "Team or Position",
+        "used": "Used"
+      },
+      "title": "Team absences"
+    },
+    "balance": {
+      "noBalance": "No balance"
+    },
+    "description": "View and manage employees you directly supervise",
+    "empty": {
+      "action": "Go to Employee Settings",
+      "description": "Employees assigned to you as their manager will appear here. You can manage team assignments in the employee settings.",
+      "title": "No team members yet"
+    },
+    "error": {
+      "description": "Unable to load your team members.",
+      "title": "Something went wrong"
+    },
+    "feature": "view your team",
+    "member": "member",
+    "members": "members",
+    "member.you": "You",
+    "noResults": {
+      "action": "Clear search",
+      "description": "No team members match \"{query}\"",
+      "title": "No results found"
+    },
+    "pagination": {
+      "next": "Next",
+      "previous": "Previous",
+      "showing": "Showing {from} to {to} of {total}"
+    },
+    "primaryManager": "You are the primary manager",
+    "search": {
+      "ariaLabel": "Search team members",
+      "placeholder": "Search by name, email, position, or team..."
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "employee": "Employee",
+      "position": "Position",
+      "role": "Role",
+      "sort": {
+        "ascending": "ascending",
+        "descending": "descending"
+      },
+      "sortByTimeBalance": "Sort by Year balance",
+      "sortByTimeBalanceWithDirection": "Sort by Year balance ({direction})",
+      "status": "Status",
+      "team": "Team",
+      "timeBalance": "Year balance"
+    },
+    "title": "Your Team",
+    "view": {
+      "cards": "Card view",
+      "table": "Table view"
+    }
+  }
+}

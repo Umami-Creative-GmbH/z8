@@ -28,8 +28,8 @@
       "title": "Organisation deaktiviert"
     },
     "trialBanner": {
-      "description": "Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.",
-      "title": "14-tägige Testphase aktiv",
+      "description": "{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
+      "title": "14-tägige Testversion aktiv",
       "upgrade": "Upgrade"
     }
   },

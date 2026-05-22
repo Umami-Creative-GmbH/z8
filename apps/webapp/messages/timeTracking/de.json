@@ -122,7 +122,8 @@
       "approving": "Wird genehmigt...",
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
       "rowActions": "Aktionen für Zeiteinträge",
-      "title": "Zeiteinträge"
+      "title": "Zeiteinträge",
+      "viewCalendar": "Kalender anzeigen"
     },
     "timeline": {
       "dayPicker": "Zeitstrahl-Tagesauswahl",

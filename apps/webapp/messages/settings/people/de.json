@@ -1,0 +1,517 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Wiederverwendbare Mitarbeitergruppen für Richtlinien, die gruppenspezifische Genehmigungsketten erfordern.",
+      "empty": "Noch keine Mitarbeitergruppen konfiguriert. Gruppen können nach der Erstellung als Richtlinienbedingungen verwendet werden.",
+      "loadFailed": "Mitarbeitergruppen konnten nicht geladen werden.",
+      "loading": "Mitarbeitergruppen werden geladen…",
+      "members": "Mitglieder",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.inactive": "Inaktiv",
+      "title": "Mitarbeitergruppen"
+    },
+    "employees": {
+      "description": "Mitarbeiterprofile, Teams und Berechtigungen verwalten",
+      "details": "Mitarbeiterdetails",
+      "detailView": {
+        "loadingEmployeeData": "Mitarbeiterdaten werden geladen",
+        "manageEmployees": "Mitarbeiter verwalten",
+        "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+        "updateFailed": "Mitarbeiter konnte nicht aktualisiert werden",
+        "updateSuccess": "Mitarbeiter erfolgreich aktualisiert"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "Details anzeigen"
+        },
+        "contract": {
+          "fixed": "Festgehalt",
+          "hourly": "Stundenlohn"
+        },
+        "countFound": "{count} Mitarbeiter gefunden",
+        "emptyState": "Keine Mitarbeiter gefunden",
+        "inviteEmployee": "Mitarbeiter einladen",
+        "loading": "Mitarbeiter werden geladen...",
+        "noEmployeeFeature": "Mitarbeiter verwalten",
+        "pagination": {
+          "next": "Weiter",
+          "pageOf": "Seite {page} von {total}",
+          "previous": "Zurück"
+        },
+        "refresh": "Aktualisieren",
+        "roleFilter": "Nach Rolle filtern",
+        "roles": {
+          "admin": "Administrator",
+          "all": "Alle Rollen",
+          "employee": "Mitarbeiter",
+          "manager": "Manager"
+        },
+        "searchLabel": "Mitarbeiter suchen",
+        "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
+        "statuses": {
+          "active": "Aktiv",
+          "all": "Alle Status",
+          "inactive": "Inaktiv"
+        },
+        "statusFilter": "Nach Status filtern",
+        "table": {
+          "actions": "Aktionen",
+          "contract": "Vertrag",
+          "employee": "Mitarbeiter",
+          "position": "Position",
+          "role": "Rolle",
+          "status": "Status",
+          "team": "Team"
+        },
+        "title": "Mitarbeiterverzeichnis"
+      },
+      "title": "Mitarbeiter"
+    },
+    "employmentHistory": {
+      "addChange": "Änderung hinzufügen",
+      "addError": "Hinzufügen der Beschäftigungshistorien-Änderung fehlgeschlagen",
+      "addSuccess": "Beschäftigungshistorien-Änderung hinzugefügt",
+      "cancelConfirm": "Diese Beschäftigungsänderung abbrechen? Dies entfernt die geplante oder als Entwurf gespeicherte Beschäftigungsänderung.",
+      "cancelError": "Abbrechen der Beschäftigungshistorien-Änderung fehlgeschlagen",
+      "cancelSuccess": "Beschäftigungshistorien-Änderung abgebrochen",
+      "confirmError": "Bestätigen der Beschäftigungshistorien-Änderung fehlgeschlagen",
+      "confirmSuccess": "Beschäftigungshistorien-Änderung bestätigt",
+      "contractType": "Vertragstyp",
+      "contractTypes": {
+        "fixed": "fest",
+        "hourly": "stündlich"
+      },
+      "currentConfirmed": "Aktuell bestätigt",
+      "description": "Bestätigter Kontext und geplante Beschäftigungsänderungen",
+      "effectiveDate": "Datum des Inkrafttretens",
+      "effectiveDateHelp": "Wann dieser Vertragskontext in Kraft tritt",
+      "effectiveDateRequired": "Datum des Inkrafttretens ist erforderlich",
+      "effectiveDateValue": "Inkrafttreten am {date}",
+      "emptyTimeline": "Noch keine Vertrags- oder Arbeitsmodellhistorie vorhanden.",
+      "hourlyRate": "Stundensatz",
+      "hourlyRateValue": "{rate} / Stunde",
+      "nextScheduledConfirmed": "Nächste geplante Bestätigung",
+      "noCurrentContext": "Kein bestätigter Vertragskontext",
+      "noScheduledChange": "Keine bestätigte Änderung geplant",
+      "probationEnd": "Ende der Probezeit",
+      "probationRange": "Probezeit {startDate} - {endDate}",
+      "probationStart": "Beginn der Probezeit",
+      "reasonNote": "Grund / Notiz",
+      "reasonPlaceholder": "Jährliche Überprüfung, Rollenänderung oder Aktualisierung des Arbeitsmodells…",
+      "reviewState": "Überprüfungsstatus",
+      "saveChange": "Änderung speichern",
+      "selectContractType": "Vertragstyp auswählen",
+      "selectReviewState": "Überprüfungsstatus auswählen",
+      "selectWorkModel": "Arbeitsmodell auswählen",
+      "states": {
+        "confirmed": "bestätigt",
+        "draft": "Entwurf",
+        "pending": "ausstehend"
+      },
+      "timeline": "Zeitstrahl",
+      "title": "Vertrag & Arbeitsmodell",
+      "weeklyHours": "Wöchentliche Arbeitszeit",
+      "weeklyHoursValue": "{hours} / Woche",
+      "workModel": "Arbeitsmodell",
+      "workModels": {
+        "flexible": "flexibel",
+        "hybrid": "Hybrid",
+        "onsite": "Vor Ort",
+        "remote": "Remote"
+      }
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+      "alreadyMember": "Bereits Mitglied",
+      "alreadyMemberMessage": "Sie sind bereits Mitglied dieser Organisation.",
+      "approval": "Genehmigung",
+      "auto": "Automatisch",
+      "code": "Code",
+      "codeCopied": "Einladungscode kopiert",
+      "codeHelp": "4-20 Zeichen, nur Buchstaben, Zahlen und Bindestriche",
+      "codePlaceholder": "TEAM-ABC123",
+      "copyCode": "Code kopieren",
+      "copyUrl": "Einladungs-URL kopieren",
+      "create": "Erstellen",
+      "createCode": "Code erstellen",
+      "created": "Einladungscode erstellt",
+      "createDescription": "Erstellen Sie einen neuen Einladungscode, damit Benutzer Ihrer Organisation beitreten können",
+      "defaultTeam": "Standard-Team",
+      "defaultTeamHelp": "Neue Mitglieder werden während der Genehmigung für dieses Team vorgeschlagen",
+      "deleted": "Einladungscode gelöscht",
+      "deleteDescription": "Sind Sie sicher, dass Sie den Einladungscode \"{code}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteTitle": "Einladungscode löschen",
+      "description": "Erstellen Sie teilbare Codes, damit Benutzer Ihrer Organisation beitreten können",
+      "descriptionPlaceholder": "Optionale Beschreibung...",
+      "downloadFormat": "{format} herunterladen",
+      "editCode": "Einladungscode bearbeiten",
+      "editDescription": "Aktualisieren Sie die Einstellungen für diesen Einladungscode",
+      "enterCodeDescription": "Geben Sie einen Einladungscode ein, um einer Organisation beizutreten",
+      "expires": "Läuft ab",
+      "expiresAt": "Ablaufdatum",
+      "expiresAtHelp": "Leer lassen für kein Ablaufdatum",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Neuen Code generieren",
+      "generatingQR": "QR-Code wird generiert...",
+      "invalidCode": "Ungültiger Einladungscode",
+      "inviteCode": "Einladungscode",
+      "joinedMessage": "Sie sind {organization} erfolgreich beigetreten.",
+      "joinedSuccessfully": "Erfolgreich beigetreten",
+      "joining": "Beitritt läuft...",
+      "joiningOrganization": "Sie sind dabei, {organization} beizutreten",
+      "joinOrganization": "Organisation beitreten",
+      "joinRequestSent": "Beitrittsanfrage gesendet",
+      "label": "Bezeichnung",
+      "labelPlaceholder": "z. B. Öffentliche Rekrutierung 2024",
+      "maxUses": "Maximale Verwendungen",
+      "maxUsesHelp": "Leer lassen für unbegrenzte Verwendungen",
+      "needAccount": "Sie haben noch kein Konto?",
+      "noCodes": "Noch keine Einladungscodes vorhanden. Erstellen Sie einen, um zu beginnen.",
+      "noDefaultTeam": "Kein Standardteam",
+      "pendingApproval": "Ausstehende Genehmigung",
+      "pendingApprovalDescription": "Sie werden benachrichtigt, sobald Ihre Mitgliedschaft genehmigt wurde.",
+      "pendingApprovalMessage": "Ihre Anfrage zum Beitritt zu {organization} wurde übermittelt. Ein Administrator wird Ihre Anfrage prüfen.",
+      "qrAlt": "QR-Code für {code}",
+      "qrCode": "QR-Code",
+      "qrDescription": "Scannen Sie diesen QR-Code, um der Organisation beizutreten",
+      "qrDownloaded": "QR-Code heruntergeladen",
+      "required": "Erforderlich",
+      "requiresApproval": "Administratorgenehmigung erforderlich",
+      "requiresApprovalHelp": "Wenn diese Option aktiviert ist, bleiben neue Mitglieder ausstehend, bis sie von einem Administrator genehmigt werden",
+      "signInToJoin": "Zum Beitritt anmelden",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.paused": "Pausiert",
+      "title": "Einladungscodes",
+      "unlimited": "Unbegrenzt",
+      "updated": "Einladungscode aktualisiert",
+      "urlCopied": "Einladungs-URL in die Zwischenablage kopiert",
+      "usage": "Nutzung",
+      "validatingCode": "Code wird validiert...",
+      "validCodeDescription": "Dieser Einladungscode ist gültig. Klicken Sie auf die Schaltfläche unten, um beizutreten."
+    },
+    "managerAssignment": {
+      "assignFailed": "Zuweisung der Manager fehlgeschlagen",
+      "assignSuccess": "Manager erfolgreich zugewiesen",
+      "availableManagers": "Verfügbare Manager",
+      "description": "Wählen Sie einen oder mehrere Manager für diesen Mitarbeiter aus. Bestimmen Sie einen als Hauptmanager.",
+      "empty": "Keine verfügbaren Manager",
+      "primaryDescription": "Der Hauptmanager ist der Standard für Genehmigungen und Benachrichtigungen",
+      "primaryManager": "Hauptmanager",
+      "save": "Manager speichern",
+      "title": "Managerzuweisung",
+      "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
+      "validation": {
+        "primary": "Bitte bestimmen Sie einen Hauptmanager",
+        "selectOne": "Bitte wählen Sie mindestens einen Manager aus"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Genehmigen",
+      "approved": "Mitglied genehmigt",
+      "approveMember": "{name} genehmigen",
+      "approveSelected": "Ausgewählte genehmigen",
+      "assignTeam": "Team zuweisen",
+      "bulkApproved": "{count} Mitglieder genehmigt",
+      "bulkRejectDescription": "Sind Sie sicher, dass Sie {count} ausgewählte Mitglieder ablehnen möchten? Sie werden aus der Liste der ausstehenden Anfragen entfernt.",
+      "bulkRejected": "{count} Mitglieder abgelehnt",
+      "bulkRejectTitle": "Ausgewählte Mitglieder ablehnen",
+      "description": "Überprüfen und genehmigen Sie Mitglieder, die darauf warten, Ihrer Organisation beizutreten",
+      "email": "E-Mail",
+      "joinedVia": "Beigetreten über",
+      "noTeam": "Kein Team",
+      "reject": "Ablehnen",
+      "rejectDescription": "Sind Sie sicher, dass Sie {name} ablehnen möchten? Die Person wird aus der Liste der ausstehenden Anfragen entfernt und muss den Zugriff erneut anfordern.",
+      "rejected": "Mitglied abgelehnt",
+      "rejectMember": "{name} ablehnen",
+      "rejectSelected": "Ausgewählte ablehnen",
+      "rejectTitle": "Mitglied ablehnen",
+      "requestedAt": "Angefragt",
+      "selectAll": "Alle ausstehenden Mitglieder auswählen",
+      "selectMember": "{name} auswählen",
+      "sso": "SSO",
+      "title": "Ausstehende Mitglieder",
+      "user": "Benutzer"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Bearbeiten"
+      },
+      "adminRequired": "Administratorzugriff erforderlich",
+      "allTeams": "Alle Teams (organisationsweit)",
+      "allTeamsHelp": "Berechtigungen gelten für alle Teams in der Organisation",
+      "badge": {
+        "allPermissions": "Alle Berechtigungen",
+        "permissionCount": "{count} Berechtigung(en)"
+      },
+      "description": "Mitarbeiterberechtigungen für Teamvorgänge verwalten",
+      "editor": {
+        "title": "Berechtigungen bearbeiten - {name}"
+      },
+      "employeePermissions": {
+        "description": "Klicken Sie auf einen Mitarbeiter, um dessen Berechtigungen zu bearbeiten",
+        "title": "Mitarbeiterberechtigungen"
+      },
+      "emptyState": "Keine Mitarbeiter gefunden",
+      "noEmployeeFeature": "Berechtigungen verwalten",
+      "noPermissions": "Keine Berechtigungen",
+      "permissions": "Berechtigungen",
+      "refresh": "Aktualisieren",
+      "revokeAll": "Alle widerrufen",
+      "revokeError": "Widerruf der Berechtigungen fehlgeschlagen",
+      "revokeSuccess": "Berechtigungen erfolgreich widerrufen",
+      "save": "Berechtigungen speichern",
+      "scope": "Berechtigungsumfang",
+      "searchLabel": "Mitarbeiter suchen",
+      "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
+      "selectedTeamHelp": "Berechtigungen gelten nur für das ausgewählte Team",
+      "table": {
+        "actions": "Aktionen",
+        "employee": "Mitarbeiter",
+        "permissions": "Berechtigungen",
+        "position": "Position",
+        "role": "Rolle"
+      },
+      "title": "Teamberechtigungen",
+      "toast": {
+        "adminRequired": "Sie müssen Administrator sein, um Berechtigungen verwalten zu können",
+        "loadEmployeesFailed": "Laden der Mitarbeiter fehlgeschlagen"
+      },
+      "updateError": "Aktualisierung der Berechtigungen fehlgeschlagen",
+      "updateSuccess": "Berechtigungen erfolgreich aktualisiert"
+    },
+    "rateHistory": {
+      "changeRate": "Satz ändern",
+      "currentRate": "Aktueller Satz: {rate}",
+      "description": "Stundensatz ändert sich im Laufe der Zeit",
+      "effectiveFrom": "Gültig ab",
+      "effectiveFromHelp": "Wann der neue Satz in Kraft tritt",
+      "empty": "Kein Satzverlauf verfügbar",
+      "newHourlyRate": "Neuer Stundensatz",
+      "reasonOptional": "Grund (optional)",
+      "reasonPlaceholder": "z. B. Jährliche Überprüfung, Beförderung usw.",
+      "title": "Verlauf der Stundensätze",
+      "updateDescription": "Einen neuen Stundensatz erstellen. Der aktuelle Satz wird automatisch geschlossen.",
+      "updateError": "Aktualisierung des Stundensatzes fehlgeschlagen",
+      "updateRate": "Stundensatz aktualisieren",
+      "updateSuccess": "Stundensatz erfolgreich aktualisiert",
+      "updateTitle": "Stundensatz aktualisieren"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Rolle zuweisen",
+        "create": "Rolle erstellen",
+        "deleteNamed": "{name} löschen",
+        "editNamed": "{name} bearbeiten",
+        "removeNamed": "{name} entfernen",
+        "saveChanges": "Änderungen speichern"
+      },
+      "assignPanel": {
+        "description": "Wählen Sie eine Rolle aus, die diesem Mitarbeiter zugewiesen werden soll.",
+        "empty": "Keine verfügbaren Rollen zur Zuweisung. Alle Rollen sind bereits zugewiesen oder es wurden keine erstellt.",
+        "permissionCount": "{count} Berechtigungen",
+        "title": "Benutzerdefinierte Rolle zuweisen"
+      },
+      "baseTiers": {
+        "admin": "Administrator",
+        "employee": "Mitarbeiter",
+        "manager": "Manager"
+      },
+      "createPanel": {
+        "description": "Definieren Sie eine neue Rolle mit spezifischen Berechtigungen für Ihr Unternehmen.",
+        "title": "Benutzerdefinierte Rolle erstellen"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Diese Rolle ist derzeit {count} Mitarbeiter zugewiesen. Er verliert die durch diese Rolle gewährten Berechtigungen.",
+          "other": "Diese Rolle ist derzeit {count} Mitarbeitern zugewiesen. Sie verlieren die durch diese Rolle gewährten Berechtigungen."
+        },
+        "confirm": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten?",
+        "title": "Rolle löschen"
+      },
+      "description": "Erstellen Sie benutzerdefinierte Berechtigungsrollen für Ihr Unternehmen",
+      "editor": {
+        "baseTier": "Basisebene",
+        "color": "Farbe",
+        "description": "Beschreibung",
+        "descriptionPlaceholder": "Wozu diese Rolle dient...",
+        "errors": {
+          "createFailed": "Erstellung der Rolle fehlgeschlagen",
+          "nameRequired": "Rollenname ist erforderlich",
+          "permissionsFailed": "Speichern der Rollenberechtigungen fehlgeschlagen",
+          "updateFailed": "Aktualisierung der Rolle fehlgeschlagen"
+        },
+        "inherited": "Geerbt",
+        "name": "Name",
+        "namePlaceholder": "z. B. Teamleiter, HR-Manager...",
+        "permissions": "Berechtigungen",
+        "permissionsHelp": "Wählen Sie zusätzliche Berechtigungen für diese Rolle aus. Von der Basisebene geerbte Berechtigungen werden als gesperrt angezeigt.",
+        "selectColor": "Farbe {color} auswählen"
+      },
+      "editPanel": {
+        "description": "Aktualisieren Sie die Rollendetails und Berechtigungen.",
+        "title": "Benutzerdefinierte Rolle bearbeiten"
+      },
+      "employeeCard": {
+        "description": "Zusätzliche Berechtigungsrollen, die diesem Mitarbeiter zugewiesen sind",
+        "empty": "Keine benutzerdefinierten Rollen zugewiesen.",
+        "permissionCount": {
+          "one": "({count} Berechtigung)",
+          "other": "({count} Berechtigungen)"
+        }
+      },
+      "empty": {
+        "description": "Erstellen Sie eine, um zu beginnen.",
+        "title": "Noch keine benutzerdefinierten Rollen"
+      },
+      "introduction": "Erstellen Sie benutzerdefinierte Berechtigungsrollen, die Mitarbeitern zugewiesen werden können. Benutzerdefinierte Rollen fügen Berechtigungen zur Basisebene hinzu.",
+      "table": {
+        "actions": "Aktionen",
+        "assigned": "Zugewiesen",
+        "assignedCount": {
+          "one": "{count} Mitarbeiter",
+          "other": "{count} Mitarbeiter"
+        },
+        "baseTier": "Basisebene",
+        "name": "Name",
+        "permissionCount": {
+          "one": "{count} Berechtigung",
+          "other": "{count} Berechtigungen"
+        },
+        "permissions": "Berechtigungen"
+      },
+      "title": "Benutzerdefinierte Rollen",
+      "toast": {
+        "assigned": "Rolle zugewiesen",
+        "created": "Rolle erstellt",
+        "deleted": "Rolle gelöscht",
+        "removed": "Rolle entfernt",
+        "updated": "Rolle aktualisiert"
+      }
+    },
+    "skills": {
+      "addSkill": "Fähigkeit hinzufügen",
+      "assign": "Zuweisen",
+      "assignError": "Zuweisung der Fähigkeit fehlgeschlagen",
+      "assignSkill": "Fähigkeit zuweisen",
+      "assignSkillDescription": "Fügen Sie diesem Mitarbeiter eine Fähigkeit oder Zertifizierung hinzu",
+      "assignSkillHint": "Klicken Sie auf 'Fähigkeit zuweisen', um Qualifikationen hinzuzufügen",
+      "catalog": "Fähigkeitskatalog",
+      "catalogDescription": "Definieren Sie Fähigkeiten, die für Teilbereiche und Schichtvorlagen erforderlich sein können",
+      "category": "Kategorie",
+      "confirmDelete": "Sind Sie sicher, dass Sie diese Fähigkeit löschen möchten?",
+      "confirmRemove": "\"{skillName}\" von diesem Mitarbeiter entfernen?",
+      "createError": "Erstellung der Fähigkeit fehlgeschlagen",
+      "createSkill": "Fähigkeit erstellen",
+      "createSkillDescription": "Erstellen Sie eine neue Fähigkeit, die Mitarbeitern zugewiesen werden kann",
+      "customCategoryName": "Benutzerdefinierter Kategoriename",
+      "customCategoryPlaceholder": "z. B. Compliance",
+      "deleteError": "Löschen der Fähigkeit fehlgeschlagen",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Optionale Beschreibung der Fähigkeit oder Zertifizierung",
+      "editSkill": "Fähigkeit bearbeiten",
+      "editSkillDescription": "Aktualisieren Sie die Details der Fähigkeit",
+      "employeeSkills": "Fähigkeiten & Qualifikationen",
+      "employeeSkillsDescription": "Diesem Mitarbeiter zugewiesene Zertifizierungen und Fähigkeiten",
+      "expired": "Abgelaufen",
+      "expiredOn": "Abgelaufen am {{date}}",
+      "expiresOn": "Läuft am {{date}} ab",
+      "expiringSoon": "Läuft bald ab",
+      "expiry": "Ablaufverfolgung",
+      "expiryDate": "Ablaufdatum",
+      "expiryRequired": "Erforderlich",
+      "expiryRequiredHint": "Diese Zertifizierung erfordert ein Ablaufdatum",
+      "name": "Name",
+      "namePlaceholder": "z. B. Gabelstaplerschein",
+      "noAvailableSkills": "Alle Fähigkeiten wurden zugewiesen oder es sind keine Fähigkeiten definiert",
+      "noExpiry": "Nein",
+      "noSkills": "Noch keine Fähigkeiten definiert",
+      "noSkillsAssigned": "Keine Fähigkeiten zugewiesen",
+      "noSkillsHint": "Erstellen Sie Ihre erste Fähigkeit, um zu beginnen",
+      "notes": "Notizen",
+      "notesPlaceholder": "z. B. Zertifikatsnummer, Schulungsdatum…",
+      "removeError": "Fähigkeit konnte nicht entfernt werden",
+      "requiresExpiry": "Ablaufdatum erforderlich",
+      "requiresExpiryHint": "Aktivieren, wenn diese Zertifizierung erneuert werden muss (z. B. Erste Hilfe)",
+      "selectCategory": "Kategorie auswählen",
+      "selectSkill": "Fähigkeit auswählen",
+      "skill": "Fähigkeit",
+      "skillAssigned": "Fähigkeit zugewiesen",
+      "skillCreated": "Fähigkeit erstellt",
+      "skillDeleted": "Fähigkeit gelöscht",
+      "skillName": "Name",
+      "skillRemoved": "Fähigkeit entfernt",
+      "skillUpdated": "Fähigkeit aktualisiert",
+      "title": "Fähigkeiten & Qualifikationen",
+      "updateError": "Fähigkeit konnte nicht aktualisiert werden"
+    },
+    "teams": {
+      "description": "Organisieren Sie Mitarbeiter in Teams und verwalten Sie Teamzuweisungen",
+      "detail": {
+        "actions": {
+          "cancel": "Abbrechen",
+          "edit": "Bearbeiten",
+          "save": "Speichern"
+        },
+        "addMember": {
+          "description": "Wählen Sie einen Mitarbeiter aus, der diesem Team hinzugefügt werden soll",
+          "selectEmployee": "Mitarbeiter auswählen",
+          "title": "Teammitglied hinzufügen"
+        },
+        "back": "Zurück zu den Teams",
+        "delete": {
+          "description": "Sind Sie sicher, dass Sie dieses Team löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden. Teammitglieder werden nicht gelöscht.",
+          "title": "Team löschen"
+        },
+        "description": "Teaminformationen und Mitglieder verwalten",
+        "errors": {
+          "addTeamMember": "Teammitglied konnte nicht hinzugefügt werden",
+          "deleteTeam": "Team konnte nicht gelöscht werden",
+          "loadTeam": "Team konnte nicht geladen werden",
+          "removeTeamMember": "Teammitglied konnte nicht entfernt werden",
+          "updateTeam": "Team konnte nicht aktualisiert werden"
+        },
+        "info": {
+          "description": "Beschreibung",
+          "descriptionPlaceholder": "Teambeschreibung eingeben",
+          "members": "Mitglieder",
+          "noPrimaryManager": "Kein Hauptmanager zugewiesen",
+          "primaryManager": "Hauptmanager",
+          "teamName": "Teamname",
+          "teamNamePlaceholder": "Teamname eingeben",
+          "title": "Teaminformationen"
+        },
+        "members": {
+          "add": "Mitglied hinzufügen",
+          "description": "Diesem Team zugewiesene Mitarbeiter",
+          "empty": "Keine Mitglieder in diesem Team",
+          "remove": "Teammitglied entfernen",
+          "title": "Teammitglieder"
+        },
+        "removeMember": {
+          "confirm": "Entfernen",
+          "description": "Sind Sie sicher, dass Sie diesen Mitarbeiter aus dem Team entfernen möchten? Er behält weiterhin Zugriff auf die Organisation.",
+          "title": "Teammitglied entfernen"
+        },
+        "selectEmployee": "Mitarbeiter auswählen",
+        "title": "Teamdetails",
+        "toasts": {
+          "teamDeleted": "Team erfolgreich gelöscht",
+          "teamMemberAdded": "Teammitglied erfolgreich hinzugefügt",
+          "teamMemberRemoved": "Teammitglied erfolgreich entfernt",
+          "teamUpdated": "Team erfolgreich aktualisiert"
+        },
+        "validation": {
+          "invalidInput": "Ungültige Eingabe",
+          "selectEmployee": "Bitte wählen Sie einen Mitarbeiter aus",
+          "teamNameRequired": "Teamname ist erforderlich",
+          "teamNameTooLong": "Teamname ist zu lang"
+        }
+      },
+      "details": "Teamdetails",
+      "title": "Teams"
+    }
+  }
+}

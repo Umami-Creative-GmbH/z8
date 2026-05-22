@@ -1,0 +1,87 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Su suscripción ha sido cancelada. Vuelva a suscribirse para recuperar el acceso.",
+      "paymentFailed": "Su último pago falló. Por favor actualice su método de pago.",
+      "required": "Se requiere una suscripción para usar esta aplicación.",
+      "trialExpired": "Su prueba ha expirado. Suscríbase para seguir usando la aplicación."
+    },
+    "activeSeats": "Asientos activos",
+    "alerts": {
+      "canceledDescription": "El pago fue cancelado. Puede intentarlo de nuevo cuando esté listo.",
+      "subscriptionRequired": "Suscripción requerida",
+      "successDescription": "Su suscripción ha sido activada. ¡Gracias por suscribirse!",
+      "successTitle": "¡Éxito!"
+    },
+    "bestValue": "Mejor valor",
+    "billedMonthly": "Facturado mensualmente",
+    "cancelsOn": "Se cancela el {date}",
+    "checkoutCreateFailed": "Error al crear la sesión de pago",
+    "checkoutStartFailed": "Error al iniciar el pago",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout recopila los datos de pago ahora. Tu suscripción de pago comienza solo después de que finalice el período de prueba.",
+      "trialContinuesTitle": "Tu período de prueba continúa después de la actualización"
+    },
+    "choosePlan": "Elige tu plan",
+    "choosePlanDescription": "Comienza con una prueba gratuita de 14 días. No se requiere tarjeta de crédito para empezar.",
+    "currentPlan": "Plan actual",
+    "days": "{count} días",
+    "description": "Administra tu suscripción y los detalles de facturación",
+    "faq": {
+      "afterTrial": {
+        "answer": "Después de que finalice tu prueba de 14 días, se te cobrará el plan de suscripción que seleccionaste. Puedes cancelar en cualquier momento antes de que finalice la prueba para evitar cargos.",
+        "question": "¿Qué sucede después de la prueba?"
+      },
+      "perSeat": {
+        "answer": "Se te factura según el número de miembros activos en tu organización. Cuando agregas o eliminas miembros, tu suscripción se ajusta automáticamente.",
+        "question": "¿Cómo funciona la facturación por usuario?"
+      },
+      "switch": {
+        "answer": "¡Sí! Puedes cambiar de plan en cualquier momento a través del portal de facturación. Los cambios surten efecto en tu próximo ciclo de facturación.",
+        "question": "¿Puedo cambiar entre facturación mensual y anual?"
+      },
+      "title": "Preguntas frecuentes"
+    },
+    "features": {
+      "allFeatures": "Todas las funciones incluidas",
+      "cancelAnytime": "Cancela en cualquier momento",
+      "trial": "Prueba gratuita de 14 días",
+      "yearlyDiscount": "25% de descuento frente al plan mensual"
+    },
+    "interval": {
+      "monthlyBilling": "Facturación mensual",
+      "yearlyBilling": "Facturación anual"
+    },
+    "manageBilling": "Administrar facturación",
+    "monthlyCost": "Costo mensual",
+    "nextBilling": "Próxima facturación",
+    "opening": "Abriendo...",
+    "perSeatMonth": "/asiento/mes",
+    "plans": {
+      "monthly": {
+        "description": "Facturación flexible mes a mes",
+        "title": "Mensual"
+      },
+      "yearly": {
+        "description": "Ahorra un 25% con facturación anual",
+        "title": "Anual"
+      }
+    },
+    "portalOpenFailed": "Error al abrir el portal de facturación",
+    "priceSeatMonth": "€{price}/asiento/mes",
+    "priceSeatMonthYearly": "€{price}/asiento/mes (facturado anualmente)",
+    "seatBilledAnnually": "€{price}/asiento facturado anualmente",
+    "starting": "Iniciando...",
+    "startTrial": "Iniciar prueba gratuita",
+    "status": {
+      "canceled": "Cancelado",
+      "noSubscription": "Sin suscripción",
+      "pastDue": "Vencido",
+      "trial": "Prueba"
+    },
+    "title": "Facturación y suscripción",
+    "trialEnds": "La prueba termina",
+    "vatNotice": "Los precios mostrados son precios netos sin IVA. El IVA se añadirá cuando corresponda.",
+    "yearTotal": "€{amount}/año total"
+  }
+}
