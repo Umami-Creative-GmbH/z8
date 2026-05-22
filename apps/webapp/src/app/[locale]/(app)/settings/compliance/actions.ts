@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import type {
 	ComplianceAlert,
@@ -9,7 +9,8 @@ import type {
 	OvertimeStats,
 	RestPeriodCheckResult,
 } from "@/db/schema";
-import { complianceException, employee, employeeManagers, userSettings } from "@/db/schema";
+import { complianceException, employee, userSettings } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -300,14 +301,12 @@ export async function requestComplianceException(input: {
 						createdBy: userId,
 					}),
 				);
-				const primaryManagerLink = yield* _(
+				const managerId = yield* _(
 					dbService.query("getComplianceExceptionPrimaryManager", async () => {
-						return await dbService.db.query.employeeManagers.findFirst({
-							where: and(
-								eq(employeeManagers.employeeId, emp.id),
-								eq(employeeManagers.isPrimary, true),
-							),
-							columns: { managerId: true },
+						return await getPrimaryEligibleManagerIdForRequester({
+							db: dbService.db,
+							requesterEmployeeId: emp.id,
+							organizationId: emp.organizationId,
 						});
 					}),
 				);
@@ -320,7 +319,7 @@ export async function requestComplianceException(input: {
 					organizationId: emp.organizationId,
 					exceptionType: input.exceptionType,
 					reason: input.reason,
-					managerId: primaryManagerLink?.managerId,
+					managerId: managerId ?? undefined,
 				});
 
 				logger.info(
