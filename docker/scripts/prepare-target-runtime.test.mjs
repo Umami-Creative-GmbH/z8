@@ -88,6 +88,12 @@ test("Next.js runtime Dockerfiles start without pnpm dependency status checks", 
 	}
 });
 
+test("docs runtime Dockerfile starts Next.js on the Kubernetes service port", async () => {
+	const contents = await fs.readFile(new URL("../Dockerfile.docs", import.meta.url), "utf8");
+
+	assert.match(contents, /CMD \["node", "node_modules\/next\/dist\/bin\/next", "start", "-p", "3001"\]/);
+});
+
 test("collectTarget lists traced worker runtime files and packages", async () => {
 	const result = await collectTarget("worker");
 
