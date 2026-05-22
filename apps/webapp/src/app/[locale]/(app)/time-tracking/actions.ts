@@ -7,6 +7,8 @@ import { headers } from "next/headers";
 import * as z from "zod";
 import { db } from "@/db";
 import {
+	absenceCategory,
+	absenceEntry,
 	approvalRequest,
 	employee,
 	project,
@@ -70,6 +72,7 @@ import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
 import {
 	calculatePresenceStatusSummary,
+	expandApprovedHomeOfficeDates,
 	getPresencePeriodBounds,
 	getPresenceWorkDays,
 	type PresenceEvaluationPeriod,
@@ -3251,7 +3254,10 @@ export async function getPresenceStatus(
 		const policyRow = yield* _(
 			dbService.query("getWorkPolicy", async () => {
 				return await dbService.db.query.workPolicy.findFirst({
-					where: eq(workPolicy.id, effectivePolicy.policyId),
+					where: and(
+						eq(workPolicy.id, effectivePolicy.policyId),
+						eq(workPolicy.organizationId, session.session.activeOrganizationId!),
+					),
 					columns: { presenceEnabled: true },
 				});
 			}),
@@ -3343,6 +3349,7 @@ export async function getPresenceStatus(
 				return await dbService.db.query.workPeriod.findMany({
 					where: and(
 						eq(workPeriod.employeeId, validatedEmployeeId),
+						eq(workPeriod.organizationId, session.session.activeOrganizationId!),
 						gte(workPeriod.startTime, periodStart.toJSDate()),
 						lte(workPeriod.startTime, periodEnd.toJSDate()),
 					),
@@ -3350,6 +3357,38 @@ export async function getPresenceStatus(
 				});
 			}),
 		);
+		const periodStartDate = periodStart.toISODate() ?? "";
+		const periodEndDate = periodEnd.toISODate() ?? "";
+
+		const approvedHomeOfficeEntries = yield* _(
+			dbService.query("getApprovedHomeOfficeEntries", async () => {
+				return await dbService.db
+					.select({
+						startDate: absenceEntry.startDate,
+						endDate: absenceEntry.endDate,
+					})
+					.from(absenceEntry)
+					.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+					.where(
+						and(
+							eq(absenceEntry.employeeId, validatedEmployeeId),
+							eq(absenceEntry.organizationId, session.session.activeOrganizationId!),
+							eq(absenceEntry.status, "approved"),
+							eq(absenceCategory.organizationId, session.session.activeOrganizationId!),
+							eq(absenceCategory.type, "home_office"),
+							lte(absenceEntry.startDate, periodEndDate),
+							gte(absenceEntry.endDate, periodStartDate),
+						),
+					);
+			}),
+		);
+
+		const approvedHomeOfficeDates = expandApprovedHomeOfficeDates({
+			entries: approvedHomeOfficeEntries,
+			periodStart,
+			periodEnd,
+			timezone,
+		});
 
 		return calculatePresenceStatusSummary({
 			presenceMode: presenceConfig.presenceMode,
@@ -3362,6 +3401,7 @@ export async function getPresenceStatus(
 			timezone,
 			workDays: getPresenceWorkDays(effectivePolicy.schedule?.days ?? null),
 			workPeriods: periods,
+			approvedHomeOfficeDates,
 		});
 	}).pipe(Effect.provide(AppLayer));
 
