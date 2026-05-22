@@ -87,9 +87,6 @@ describe("travel expenses i18n", () => {
 				actions: {
 					newClaim: "Neuer Anspruch",
 				},
-				status: {
-					draft: "Entwurf",
-				},
 				title: "Reisekosten",
 			},
 		});

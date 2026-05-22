@@ -60,17 +60,17 @@ describe("BillingPageClient", () => {
 		expect(source).toContain("billing.checkout.trialContinuesDescription");
 	});
 
-	it("defines checkout copy in the loaded settings namespace for supported locales", () => {
+	it("defines checkout copy in the loaded billing namespace for supported locales", () => {
 		const locales = ["en", "de", "es", "fr", "it", "pt"];
 
 		for (const locale of locales) {
-			const settingsMessages = JSON.parse(
-				readFileSync(join(process.cwd(), `messages/settings/${locale}.json`), "utf8"),
+			const billingMessages = JSON.parse(
+				readFileSync(join(process.cwd(), `messages/billing/${locale}.json`), "utf8"),
 			);
 			const rootMessages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
 
-			expect(settingsMessages.billing.checkout.trialContinuesTitle).toBeTruthy();
-			expect(settingsMessages.billing.checkout.trialContinuesDescription).toBeTruthy();
+			expect(billingMessages.billing.checkout.trialContinuesTitle).toBeTruthy();
+			expect(billingMessages.billing.checkout.trialContinuesDescription).toBeTruthy();
 			expect(rootMessages.billing?.checkout).toBeUndefined();
 		}
 	});

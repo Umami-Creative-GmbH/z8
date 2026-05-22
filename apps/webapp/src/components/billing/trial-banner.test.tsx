@@ -73,34 +73,34 @@ describe("TrialBanner", () => {
 				upgrade: "Upgrade",
 			},
 			de: {
-				title: "14-tägige Testphase aktiv",
+				title: "14-tägige Testversion aktiv",
 				description:
-					"Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.",
+					"{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
 				upgrade: "Upgrade",
 			},
 			es: {
 				title: "Prueba de 14 días activa",
 				description:
-					"Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.",
-				upgrade: "Mejorar plan",
+					"{days} días restantes. Agregue los detalles de pago ahora; su suscripción de pago comienza después de la prueba.",
+				upgrade: "Actualizar",
 			},
 			fr: {
 				title: "Essai de 14 jours actif",
 				description:
-					"Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.",
+					"{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
 				upgrade: "Mettre à niveau",
 			},
 			it: {
 				title: "Prova di 14 giorni attiva",
 				description:
-					"Restano {days} giorni. Aggiungi ora i dati di pagamento; l’abbonamento a pagamento inizierà dopo la prova.",
-				upgrade: "Esegui l’upgrade",
+					"{days} giorni rimanenti. Aggiungi ora i dettagli di pagamento; l'abbonamento a pagamento inizierà dopo la prova.",
+				upgrade: "Aggiorna",
 			},
 			pt: {
 				title: "Teste de 14 dias ativo",
 				description:
-					"Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.",
-				upgrade: "Fazer upgrade",
+					"{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
+				upgrade: "Atualizar",
 			},
 		};
 
