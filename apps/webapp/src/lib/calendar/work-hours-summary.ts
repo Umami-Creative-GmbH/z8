@@ -1,6 +1,7 @@
 import { format } from "@/lib/datetime/luxon-utils";
 import type {
 	CalendarEvent,
+	DailyWorkActualMinutes,
 	DailyWorkHoursStatus,
 	DailyWorkHoursSummaries,
 	DailyWorkRequirements,
@@ -9,6 +10,7 @@ import type {
 interface BuildDailyWorkHoursSummariesOptions {
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
+	dailyActualMinutes?: DailyWorkActualMinutes;
 }
 
 function getStatus(actualMinutes: number, requiredMinutes: number): DailyWorkHoursStatus {
@@ -21,21 +23,14 @@ function getStatus(actualMinutes: number, requiredMinutes: number): DailyWorkHou
 export function buildDailyWorkHoursSummaries({
 	events,
 	dailyRequirements,
+	dailyActualMinutes,
 }: BuildDailyWorkHoursSummariesOptions): DailyWorkHoursSummaries {
-	const actualByDate = new Map<string, number>();
-
-	for (const event of events) {
-		if (event.type !== "work_period") continue;
-		const dateKey = format(event.date, "yyyy-MM-dd");
-		const durationMinutes = Number(event.metadata.durationMinutes ?? 0);
-		if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) continue;
-		actualByDate.set(dateKey, (actualByDate.get(dateKey) ?? 0) + durationMinutes);
-	}
+	const actualByDate = dailyActualMinutes ?? buildDailyActualMinutes(events);
 
 	const summaries: DailyWorkHoursSummaries = new Map();
 
 	for (const [dateKey, requirement] of Object.entries(dailyRequirements)) {
-		const actualMinutes = actualByDate.get(dateKey) ?? 0;
+		const actualMinutes = actualByDate[dateKey] ?? 0;
 		const deltaMinutes = actualMinutes - requirement.requiredMinutes;
 		summaries.set(dateKey, {
 			...requirement,
@@ -46,6 +41,20 @@ export function buildDailyWorkHoursSummaries({
 	}
 
 	return summaries;
+}
+
+export function buildDailyActualMinutes(events: CalendarEvent[]): DailyWorkActualMinutes {
+	const actualByDate: DailyWorkActualMinutes = {};
+
+	for (const event of events) {
+		if (event.type !== "work_period") continue;
+		const dateKey = format(event.date, "yyyy-MM-dd");
+		const durationMinutes = Number(event.metadata.durationMinutes ?? 0);
+		if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) continue;
+		actualByDate[dateKey] = (actualByDate[dateKey] ?? 0) + durationMinutes;
+	}
+
+	return actualByDate;
 }
 
 export function formatTimeHours(minutes: number): string {

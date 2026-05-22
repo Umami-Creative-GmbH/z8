@@ -40,9 +40,13 @@ describe("DailyRequirementStrip", () => {
 		expect(screen.getByText("8:00h")).toBeTruthy();
 		expect(screen.getByText("-8:00h")).toBeTruthy();
 		expect(
-			screen.getByLabelText(
+			screen.getByRole("list", { name: "Daily work policy requirement summary" }),
+		).toBeTruthy();
+		expect(screen.getByRole("listitem")).toBeTruthy();
+		expect(
+			screen.getByText(
 				"Friday, May 22: 8:00h required, 0:00h recorded, -8:00h delta, missing recorded time",
 			),
-		).toBeTruthy();
+		).toHaveProperty("className", "sr-only");
 	});
 });

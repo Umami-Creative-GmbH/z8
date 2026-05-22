@@ -28,6 +28,8 @@ export const dailyWorkRequirementSchema = z.object({
 
 export const dailyWorkRequirementsSchema = z.record(z.string(), dailyWorkRequirementSchema);
 
+export const dailyWorkActualMinutesSchema = z.record(z.string(), z.number().int().nonnegative());
+
 /**
  * Holiday event schema with typed metadata
  */

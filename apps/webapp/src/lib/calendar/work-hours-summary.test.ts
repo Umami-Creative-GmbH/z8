@@ -62,6 +62,24 @@ describe("buildDailyWorkHoursSummaries", () => {
 		});
 	});
 
+	it("uses supplied daily actual minutes when work period events are not present", () => {
+		const summaries = buildDailyWorkHoursSummaries({
+			events: [],
+			dailyRequirements: {
+				"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard" },
+			},
+			dailyActualMinutes: {
+				"2026-05-04": 480,
+			},
+		});
+
+		expect(summaries.get("2026-05-04")).toMatchObject({
+			actualMinutes: 480,
+			deltaMinutes: 0,
+			status: "met",
+		});
+	});
+
 	it("does not create summaries without a policy requirement", () => {
 		const summaries = buildDailyWorkHoursSummaries({
 			events: [workPeriod("2026-05-04", 480)],

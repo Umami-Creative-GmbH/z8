@@ -3,11 +3,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import type { CalendarEvent, DailyWorkRequirements } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkActualMinutes, DailyWorkRequirements } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query/keys";
 import { parseSuperJsonResponse } from "@/lib/superjson";
-import { calendarEventSchema, dailyWorkRequirementsSchema } from "@/lib/validations/calendar";
+import {
+	calendarEventSchema,
+	dailyWorkActualMinutesSchema,
+	dailyWorkRequirementsSchema,
+} from "@/lib/validations/calendar";
 
 export interface CalendarFilters {
 	showHolidays: boolean;
@@ -28,6 +32,7 @@ export interface UseCalendarDataOptions {
 export interface UseCalendarDataResult {
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
+	dailyActualMinutes: DailyWorkActualMinutes;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
 	error: Error | null;
@@ -43,7 +48,11 @@ async function fetchCalendarEvents(
 	month: number | undefined,
 	fullYear: boolean,
 	filters: CalendarFilters,
-): Promise<{ events: CalendarEvent[]; dailyRequirements: DailyWorkRequirements }> {
+): Promise<{
+	events: CalendarEvent[];
+	dailyRequirements: DailyWorkRequirements;
+	dailyActualMinutes: DailyWorkActualMinutes;
+}> {
 	const params = new URLSearchParams({
 		organizationId,
 		year: year.toString(),
@@ -74,6 +83,7 @@ async function fetchCalendarEvents(
 		events: unknown[];
 		total: number;
 		dailyRequirements?: unknown;
+		dailyActualMinutes?: unknown;
 	}>(response);
 
 	// Validate events with Zod schema
@@ -81,6 +91,7 @@ async function fetchCalendarEvents(
 	return {
 		events: eventsSchema.parse(data.events),
 		dailyRequirements: dailyWorkRequirementsSchema.parse(data.dailyRequirements ?? {}),
+		dailyActualMinutes: dailyWorkActualMinutesSchema.parse(data.dailyActualMinutes ?? {}),
 	};
 }
 
@@ -111,7 +122,7 @@ export function useCalendarData({
 	};
 
 	const {
-		data: calendarData = { events: [], dailyRequirements: {} },
+		data: calendarData = { events: [], dailyRequirements: {}, dailyActualMinutes: {} },
 		isLoading,
 		error,
 	} = useQuery({
@@ -144,6 +155,7 @@ export function useCalendarData({
 	return {
 		events: calendarData.events,
 		dailyRequirements: calendarData.dailyRequirements,
+		dailyActualMinutes: calendarData.dailyActualMinutes,
 		eventsByDate,
 		isLoading,
 		error: error instanceof Error ? error : null,

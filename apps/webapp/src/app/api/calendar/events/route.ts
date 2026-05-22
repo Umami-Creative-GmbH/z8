@@ -4,7 +4,8 @@ import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
-import type { CalendarEvent, DailyWorkRequirements } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkActualMinutes, DailyWorkRequirements } from "@/lib/calendar/types";
+import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 import { superJsonResponse } from "@/lib/superjson";
@@ -26,16 +27,22 @@ async function fetchMonthEvents(
 	showAbsences: boolean,
 	showTimeEntries: boolean,
 	showWorkPeriods: boolean,
-): Promise<CalendarEvent[]> {
+	includeWorkPeriodActuals: boolean,
+): Promise<{ events: CalendarEvent[]; dailyActualMinutes: DailyWorkActualMinutes }> {
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
 		showHolidays ? getHolidaysForMonth(organizationId, month, year) : [],
 		showAbsences ? getAbsencesForMonth(month, year, { organizationId, employeeId }) : [],
 		showTimeEntries ? getTimeEntriesForMonth(month, year, { organizationId, employeeId }) : [],
-		showWorkPeriods ? getWorkPeriodsForMonth(month, year, { organizationId, employeeId }) : [],
+		showWorkPeriods || includeWorkPeriodActuals
+			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId })
+			: [],
 	]);
 
-	return [...holidays, ...absences, ...timeEntries, ...workPeriods];
+	return {
+		events: [...holidays, ...absences, ...timeEntries, ...(showWorkPeriods ? workPeriods : [])],
+		dailyActualMinutes: includeWorkPeriodActuals ? buildDailyActualMinutes(workPeriods) : {},
+	};
 }
 
 function getRequestDateRange(year: number, month: number | null, fullYear: boolean) {
@@ -113,7 +120,9 @@ export async function GET(request: NextRequest) {
 		const monthNum = month === null ? null : parseInt(month, 10);
 		const { startDate, endDate } = getRequestDateRange(yearNum, monthNum, fullYear);
 		let dailyRequirements: DailyWorkRequirements = {};
+		let dailyActualMinutes: DailyWorkActualMinutes = {};
 		let events: CalendarEvent[] = [];
+		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
 
 		if (fullYear) {
 			// Fetch all 12 months in parallel
@@ -127,14 +136,19 @@ export async function GET(request: NextRequest) {
 					showAbsences,
 					showTimeEntries,
 					showWorkPeriods,
+					includeWorkPeriodActuals,
 				),
 			);
 
 			const monthResults = await Promise.all(monthPromises);
-			events = monthResults.flat();
+			events = monthResults.flatMap((result) => result.events);
+			dailyActualMinutes = monthResults.reduce<DailyWorkActualMinutes>(
+				(acc, result) => ({ ...acc, ...result.dailyActualMinutes }),
+				{},
+			);
 		} else {
 			// Fetch single month
-			events = await fetchMonthEvents(
+			const monthResult = await fetchMonthEvents(
 				organizationId,
 				monthNum!,
 				yearNum,
@@ -143,7 +157,10 @@ export async function GET(request: NextRequest) {
 				showAbsences,
 				showTimeEntries,
 				showWorkPeriods,
+				includeWorkPeriodActuals,
 			);
+			events = monthResult.events;
+			dailyActualMinutes = monthResult.dailyActualMinutes;
 		}
 
 		dailyRequirements = await fetchDailyRequirements({
@@ -158,6 +175,7 @@ export async function GET(request: NextRequest) {
 			events,
 			total: events.length,
 			dailyRequirements,
+			dailyActualMinutes,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar events:", error);

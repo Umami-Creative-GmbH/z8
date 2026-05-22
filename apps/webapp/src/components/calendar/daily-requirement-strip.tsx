@@ -43,6 +43,7 @@ export function DailyRequirementStrip({ dates, summaries }: DailyRequirementStri
 
 	return (
 		<div
+			role="list"
 			className="grid border-x border-t bg-background/80 text-right text-[11px] leading-tight tabular-nums"
 			style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}
 			aria-label={t("calendar.requirements.summaryLabel", "Daily work policy requirement summary")}
@@ -53,32 +54,32 @@ export function DailyRequirementStrip({ dates, summaries }: DailyRequirementStri
 				const requiredHours = summary ? formatTimeHours(summary.requiredMinutes) : "";
 				const actualHours = summary ? formatTimeHours(summary.actualMinutes) : "";
 				const deltaHours = summary ? formatSignedMinutes(summary.deltaMinutes) : "";
+				const accessibleLabel = summary
+					? t(
+							"calendar.requirements.dayLabel",
+							"{date}: {required} required, {actual} recorded, {delta} delta, {status}",
+							{
+								date: date.toFormat("cccc, LLLL d"),
+								required: requiredHours,
+								actual: actualHours,
+								delta: deltaHours,
+								status: getStatusLabel(summary, t),
+							},
+						)
+					: undefined;
 
 				return (
 					<div
 						key={dateKey}
+						role="listitem"
 						className={cn(
 							"min-h-12 border-r border-t-4 px-3 py-2 last:border-r-0",
 							getStatusClass(summary),
 						)}
-						aria-label={
-							summary
-								? t(
-										"calendar.requirements.dayLabel",
-										"{date}: {required} required, {actual} recorded, {delta} delta, {status}",
-										{
-											date: date.toFormat("cccc, LLLL d"),
-											required: requiredHours,
-											actual: actualHours,
-											delta: deltaHours,
-											status: getStatusLabel(summary, t),
-										},
-									)
-								: undefined
-						}
 					>
 						{summary ? (
 							<>
+								<span className="sr-only">{accessibleLabel}</span>
 								<div className="font-semibold">{requiredHours}</div>
 								{summary.status !== "met" && (
 									<div className="text-muted-foreground">{deltaHours}</div>

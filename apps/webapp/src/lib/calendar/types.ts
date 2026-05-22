@@ -21,6 +21,8 @@ export interface DailyWorkRequirement {
 
 export type DailyWorkRequirements = Record<string, DailyWorkRequirement>;
 
+export type DailyWorkActualMinutes = Record<string, number>;
+
 export type DailyWorkHoursStatus = "met" | "over" | "under" | "missing";
 
 export interface DailyWorkHoursSummary extends DailyWorkRequirement {

@@ -137,4 +137,30 @@ describe("GET /api/calendar/events", () => {
 		expect(body.dailyRequirements).toEqual({});
 		consoleError.mockRestore();
 	});
+
+	it("omits hidden work period events but still returns daily actual minutes", async () => {
+		mockState.getWorkPeriodsForMonth.mockResolvedValueOnce([
+			{
+				id: "work-period-1",
+				type: "work_period",
+				date: new Date("2026-05-04T08:00:00.000Z"),
+				title: "Work period",
+				color: "#10b981",
+				metadata: { durationMinutes: 480, employeeName: "Ada" },
+			},
+		]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=false",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.events).toEqual([]);
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-05-04": 480,
+		});
+	});
 });
