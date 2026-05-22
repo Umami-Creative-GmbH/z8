@@ -56,6 +56,21 @@ function getFirstDayOfMonth(year: number, month: number, weekStartDay: WeekStart
 	return weekStartDay === "monday" ? (day + 6) % 7 : day;
 }
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function getWorkStatusLabel(status: DailyWorkHoursStatus, t: Translate): string {
+	switch (status) {
+		case "met":
+			return t("calendar.workStatus.requirementMet", "requirement met");
+		case "over":
+			return t("calendar.workStatus.overRequirement", "over requirement");
+		case "under":
+			return t("calendar.workStatus.underRequirement", "under requirement");
+		case "missing":
+			return t("calendar.workStatus.requiredHoursMissing", "required hours missing");
+	}
+}
+
 interface MiniMonthProps {
 	year: number;
 	month: number;
@@ -63,6 +78,8 @@ interface MiniMonthProps {
 	eventsByDate: Map<string, CalendarEvent[]>;
 	weekdays: string[];
 	weekStartDay: WeekStartDay;
+	locale: string;
+	t: Translate;
 	workHoursData?: DailyWorkHoursSummaries;
 	onDayClick?: (date: Date) => void;
 }
@@ -74,11 +91,17 @@ const MiniMonth = memo(function MiniMonth({
 	eventsByDate,
 	weekdays,
 	weekStartDay,
+	locale,
+	t,
 	workHoursData,
 	onDayClick,
 }: MiniMonthProps) {
 	const days = getDaysInMonth(year, month);
 	const firstDay = getFirstDayOfMonth(year, month, weekStartDay);
+	const dayLabelFormatter = useMemo(
+		() => new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", year: "numeric" }),
+		[locale],
+	);
 	const today = new Date();
 	const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
@@ -110,12 +133,17 @@ const MiniMonth = memo(function MiniMonth({
 				{/* Actual days */}
 				{days.map((date) => {
 					const dateKey = format(date, "yyyy-MM-dd");
+					const dateLabel = dayLabelFormatter.format(date);
 					const dayEvents = eventsByDate.get(dateKey) || [];
 					const workHours = workHoursData?.get(dateKey);
 					const isToday = isCurrentMonth && date.getDate() === today.getDate();
 					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
 					const workStatus: DailyWorkHoursStatus | "none" = workHours?.status ?? "none";
+					const dayLabel =
+						workStatus === "none"
+							? dateLabel
+							: `${dateLabel}, ${getWorkStatusLabel(workStatus, t)}`;
 
 					// Determine if there are events to show
 					const hasHoliday = dayEvents.some((e) => e.type === "holiday");
@@ -125,6 +153,7 @@ const MiniMonth = memo(function MiniMonth({
 						<button
 							key={date.getTime()}
 							type="button"
+							aria-label={dayLabel}
 							onClick={() => onDayClick?.(date)}
 							className={cn(
 								"aspect-square flex flex-col items-center justify-center text-[10px] rounded-sm relative",
@@ -264,6 +293,8 @@ export function YearCalendarView({
 						eventsByDate={eventsByDate}
 						weekdays={weekdays}
 						weekStartDay={weekStartDay}
+						locale={locale}
+						t={t}
 						workHoursData={workHoursData}
 						onDayClick={onDayClick}
 					/>
