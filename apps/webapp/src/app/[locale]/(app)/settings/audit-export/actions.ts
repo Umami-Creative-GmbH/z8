@@ -596,7 +596,7 @@ export async function getAuditPackDownloadUrlAction(
 		}
 
 		const url = yield* _(
-			Effect.promise(() => getPresignedUrl(organizationId, artifact!.s3Key!, 86400)),
+			Effect.promise(() => getPresignedUrl(organizationId, artifact!.s3Key!)),
 		);
 
 		yield* _(
