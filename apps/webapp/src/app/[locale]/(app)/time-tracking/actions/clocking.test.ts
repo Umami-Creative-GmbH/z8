@@ -6,10 +6,13 @@ const mockState = vi.hoisted(() => ({
 	getUserTimezone: vi.fn(),
 	getActiveWorkPeriod: vi.fn(),
 	validateTimeEntry: vi.fn(),
+	validateTimeEntryRange: vi.fn(),
 	validateProjectAssignment: vi.fn(),
 	createTimeEntry: vi.fn(),
 	checkClockOutNeedsApproval: vi.fn(),
+	getEditCapabilityForPeriod: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
+	createManualEntryApprovalRequest: vi.fn(),
 	calculateAndPersistSurcharges: vi.fn(),
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
@@ -18,11 +21,17 @@ const mockState = vi.hoisted(() => ({
 	requireBillingForMutation: vi.fn(),
 	insertValues: vi.fn(),
 	insertReturning: vi.fn(),
+	findWorkPeriods: vi.fn(),
+	findEmployees: vi.fn(),
+	findManagerLinks: vi.fn(),
+	findTeamMemberships: vi.fn(),
+	findTeams: vi.fn(),
 	transaction: vi.fn(),
 	updateReturning: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
 	logger: {
+		info: vi.fn(),
 		warn: vi.fn(),
 		error: vi.fn(),
 	},
@@ -30,6 +39,13 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		query: {
+			employee: { findMany: mockState.findEmployees },
+			employeeManagers: { findMany: mockState.findManagerLinks },
+			teamMembership: { findMany: mockState.findTeamMemberships },
+			team: { findMany: mockState.findTeams },
+			workPeriod: { findMany: mockState.findWorkPeriods },
+		},
 		insert: vi.fn(() => ({
 			values: (...args: unknown[]) => mockState.insertValues(...args),
 		})),
@@ -49,11 +65,24 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "workPeriod.organizationId",
 		startTime: "workPeriod.startTime",
 	},
+	employee: {
+		organizationId: "employee.organizationId",
+	},
+	employeeManagers: {
+		employeeId: "employeeManagers.employeeId",
+	},
+	teamMembership: {
+		employeeId: "teamMembership.employeeId",
+		organizationId: "teamMembership.organizationId",
+	},
+	team: {
+		organizationId: "team.organizationId",
+	},
 }));
 
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntry: mockState.validateTimeEntry,
-	validateTimeEntryRange: vi.fn(),
+	validateTimeEntryRange: mockState.validateTimeEntryRange,
 }));
 
 vi.mock("@/lib/billing/guard", () => ({
@@ -63,7 +92,7 @@ vi.mock("@/lib/billing/guard", () => ({
 
 vi.mock("./approvals", () => ({
 	createClockOutApprovalRequest: mockState.createClockOutApprovalRequest,
-	createManualEntryApprovalRequest: vi.fn(),
+	createManualEntryApprovalRequest: mockState.createManualEntryApprovalRequest,
 }));
 
 vi.mock("./auth", () => ({
@@ -87,7 +116,7 @@ vi.mock("./entry-helpers", () => ({
 
 vi.mock("./policy-helpers", () => ({
 	checkClockOutNeedsApproval: mockState.checkClockOutNeedsApproval,
-	getEditCapabilityForPeriod: vi.fn(),
+	getEditCapabilityForPeriod: mockState.getEditCapabilityForPeriod,
 }));
 
 vi.mock("./queries", () => ({
@@ -108,7 +137,7 @@ vi.mock("./shared", () => ({
 	ONE_MINUTE_MS: 60_000,
 }));
 
-const { addBreakToActiveSession, clockIn, clockOut } = await import("./clocking");
+const { addBreakToActiveSession, clockIn, clockOut, createManualTimeEntry } = await import("./clocking");
 
 describe("clockIn", () => {
 	beforeEach(() => {
@@ -283,6 +312,67 @@ describe("clockOut", () => {
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+	});
+});
+
+describe("createManualTimeEntry", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
+
+		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			teamId: null,
+		});
+		mockState.getUserTimezone.mockResolvedValue("UTC");
+		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
+		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({ type: "approval_required", daysBack: 7 });
+		mockState.findWorkPeriods.mockResolvedValue([]);
+		mockState.findEmployees.mockResolvedValue([
+			{ id: "employee-1", organizationId: "org-1", isActive: true, role: "employee" },
+			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+		]);
+		mockState.findManagerLinks.mockResolvedValue([
+			{ employeeId: "employee-1", managerId: "manager-1", isPrimary: true },
+		]);
+		mockState.findTeamMemberships.mockResolvedValue([]);
+		mockState.findTeams.mockResolvedValue([]);
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
+			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
+		mockState.insertValues.mockReturnValue({
+			returning: vi.fn().mockResolvedValue([{ id: "period-1" }]),
+		});
+		mockState.createManualEntryApprovalRequest.mockResolvedValue(undefined);
+		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+	});
+
+	it("routes approval-required manual entries through the primary manager link", async () => {
+		const result = await createManualTimeEntry({
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: "period-1",
+				employeeId: "employee-1",
+				managerId: "manager-1",
+				organizationId: "org-1",
+			}),
+		);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalStatus: "pending",
+			}),
+		);
 	});
 });
 

@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -623,7 +624,13 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
-		const managerId = currentEmployee.managerId;
+		const managerId = requiresApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				})
+			: null;
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
 		const clockInEntry = await createTimeEntry({
 			employeeId: currentEmployee.id,

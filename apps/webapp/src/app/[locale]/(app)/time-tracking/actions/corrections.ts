@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -267,7 +268,17 @@ export async function requestTimeCorrectionEffect(
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
 		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
 
-		if (!currentEmployee.managerId) {
+		const managerId = yield* _(
+			Effect.promise(() =>
+				getPrimaryEligibleManagerIdForRequester({
+					db: dbService.db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			),
+		);
+
+		if (!managerId) {
 			yield* _(
 				Effect.fail(
 					new ValidationError({
@@ -278,7 +289,7 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId));
+		yield* _(Effect.annotateCurrentSpan("manager.id", managerId));
 
 		const timezone = yield* _(Effect.promise(() => getUserTimezone(session.user.id)));
 
@@ -286,7 +297,7 @@ export async function requestTimeCorrectionEffect(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
-				managerId: currentEmployee.managerId,
+				managerId,
 				timezone,
 			},
 			"Processing time correction request",
@@ -480,7 +491,7 @@ export async function requestTimeCorrectionEffect(
 				requesterEmployeeId: currentEmployee.id,
 				teamId: currentEmployee.teamId ?? null,
 				workPeriodId: selectedWorkPeriod.id,
-				defaultApproverId: currentEmployee.managerId!,
+				defaultApproverId: managerId,
 				reason: data.reason,
 				overtimeRisk: "warning",
 			}),
@@ -492,7 +503,7 @@ export async function requestTimeCorrectionEffect(
 			Effect.all([
 				dbService.query("getManagerWithUser", async () => {
 					const managerRecord = await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, currentEmployee.managerId!),
+						where: eq(employee.id, managerId),
 						with: { user: true },
 					});
 

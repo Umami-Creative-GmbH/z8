@@ -20,6 +20,7 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
@@ -503,8 +504,18 @@ export async function requestTimeCorrectionEffect(
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
 		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
 
-		// Step 3: Check if employee has a manager
-		if (!currentEmployee.managerId) {
+		// Step 3: Resolve the employee's active approver from manager links
+		const managerId = yield* _(
+			Effect.promise(() =>
+				getPrimaryEligibleManagerIdForRequester({
+					db: dbService.db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			),
+		);
+
+		if (!managerId) {
 			yield* _(
 				Effect.fail(
 					new ValidationError({
@@ -515,7 +526,7 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
+		yield* _(Effect.annotateCurrentSpan("manager.id", managerId));
 
 		// Get user's timezone for time conversion from userSettings
 		const settingsData = yield* _(
@@ -532,7 +543,7 @@ export async function requestTimeCorrectionEffect(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
-				managerId: currentEmployee.managerId,
+				managerId,
 				timezone,
 			},
 			"Processing time correction request",
@@ -768,7 +779,7 @@ export async function requestTimeCorrectionEffect(
 				requesterEmployeeId: currentEmployee.id,
 				teamId: currentEmployee.teamId ?? null,
 				workPeriodId: period.id,
-				defaultApproverId: currentEmployee.managerId!,
+				defaultApproverId: managerId,
 				reason: data.reason,
 				overtimeRisk: "warning",
 			}),
@@ -781,7 +792,7 @@ export async function requestTimeCorrectionEffect(
 			Effect.all([
 				dbService.query("getManagerWithUser", async () => {
 					const mgr = await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, currentEmployee.managerId!),
+						where: eq(employee.id, managerId),
 						with: { user: true },
 					});
 
@@ -1337,11 +1348,18 @@ export async function clockOut(
 			);
 
 		// If clock-out needs approval, create an approval request
-		if (needsClockOutApproval && emp.managerId) {
+		const managerId = needsClockOutApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: emp.id,
+					organizationId: emp.organizationId,
+				})
+			: null;
+		if (needsClockOutApproval && managerId) {
 			await createClockOutApprovalRequest({
 				workPeriodId: activePeriod.id,
 				employeeId: emp.id,
-				managerId: emp.managerId,
+				managerId,
 				organizationId: emp.organizationId,
 				startTime: activePeriod.startTime,
 				endTime: now,
@@ -2959,6 +2977,13 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		// Determine approval status based on policy
 		const approvalStatus = requiresApproval ? "pending" : "approved";
+		const managerId = requiresApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: emp.id,
+					organizationId: emp.organizationId,
+				})
+			: null;
 
 		// Prepare pending changes data if approval is needed
 		const pendingChangesData = requiresApproval
@@ -3007,11 +3032,11 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			.returning();
 
 		// If approval required, create approval request and notify manager
-		if (requiresApproval && emp.managerId) {
+		if (requiresApproval && managerId) {
 			await createManualEntryApprovalRequest({
 				workPeriodId: period.id,
 				employeeId: emp.id,
-				managerId: emp.managerId,
+				managerId,
 				organizationId: emp.organizationId,
 				startTime: finalClockIn,
 				endTime: finalClockOut,
