@@ -6,7 +6,12 @@ import { db } from "@/db";
 import { employee, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import {
+	accessibleByDrizzle,
+	asAppSubject,
+	ForbiddenError,
+	toHttpError,
+} from "@/lib/authorization";
 import {
 	createBillingForbiddenResponse,
 	isBillingMutationAllowed,
@@ -70,10 +75,21 @@ export async function GET(request: NextRequest) {
 		// Determine which employee's entries to fetch
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow viewing own entries unless user can manage time entries
+		// Only allow viewing own entries unless CASL permits this employee's entries.
 		if (targetEmployeeId !== currentEmployee.id) {
 			const ability = await getAbility();
-			if (!ability || ability.cannot("manage", "TimeEntry")) {
+			if (!ability) {
+				const error = new ForbiddenError("read", "TimeEntry");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
+			}
+
+			const timeEntryAccess = accessibleByDrizzle(ability, "read", "TimeEntry", {
+				organizationId: workPeriod.organizationId,
+				employeeId: workPeriod.employeeId,
+			});
+
+			if (!timeEntryAccess) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
@@ -93,6 +109,20 @@ export async function GET(request: NextRequest) {
 
 			if (!targetEmployee) {
 				return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+			}
+
+			if (
+				!ability.can(
+					"read",
+					asAppSubject("TimeEntry", {
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+					}),
+				)
+			) {
+				const error = new ForbiddenError("read", "TimeEntry");
+				const httpError = toHttpError(error);
+				return NextResponse.json(httpError.body, { status: httpError.status });
 			}
 		}
 

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => {
@@ -50,7 +51,9 @@ vi.mock("@/db/schema", () => ({
 		userId: "employee.userId",
 	},
 	workPeriod: {
+		employeeId: "workPeriod.employeeId",
 		id: "workPeriod.id",
+		organizationId: "workPeriod.organizationId",
 	},
 }));
 
@@ -73,6 +76,8 @@ vi.mock("@/lib/billing/guard", () => ({
 }));
 
 vi.mock("@/lib/authorization", () => ({
+	accessibleByDrizzle: vi.fn(),
+	asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
 	ForbiddenError: class ForbiddenError extends Error {},
 	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
 }));
@@ -94,6 +99,18 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 const { POST } = await import("./route");
+
+describe("GET /api/time-entries authorization source", () => {
+	it("uses CASL query adapter and subject checks for time entry reads", () => {
+		const source = readFileSync("src/app/api/time-entries/route.ts", "utf8");
+
+		expect(source).toContain("accessibleByDrizzle");
+		expect(source).toContain("asAppSubject");
+		expect(source).toContain("TimeEntry");
+		expect(source).toContain("workPeriod.organizationId");
+		expect(source).toContain("workPeriod.employeeId");
+	});
+});
 
 describe("POST /api/time-entries", () => {
 	beforeEach(() => {
