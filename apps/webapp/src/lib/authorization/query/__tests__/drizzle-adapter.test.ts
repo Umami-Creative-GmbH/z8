@@ -55,6 +55,31 @@ describe("accessibleByDrizzle", () => {
 		expect(toSql(predicate)).toContain('"documents"."owner_id" in ($2, $3)');
 	});
 
+	it("returns a predicate for explicit $and, $or, and $not conditions", () => {
+		const ability = buildAbility((can) => {
+			can("read", "Document", {
+				$and: [
+					{ organizationId: "org-1" },
+					{
+						$or: [
+							{ ownerId: "employee-1" },
+							{ $not: { private: true } },
+						],
+					},
+				],
+			});
+		});
+
+		const predicate = accessibleByDrizzle(ability, "read", "Document", fields);
+
+		expect(predicate).not.toBeNull();
+		expect(toSql(predicate)).toContain('"documents"."organization_id" = $1');
+		expect(toSql(predicate)).toContain('"documents"."owner_id" = $2');
+		expect(toSql(predicate)).toContain('not "documents"."private" = $3');
+		expect(toSql(predicate)).toContain(" and ");
+		expect(toSql(predicate)).toContain(" or ");
+	});
+
 	it("throws for unsupported field", () => {
 		const ability = buildAbility((can) => {
 			can("read", "Document", { missingField: "x" });
@@ -65,7 +90,7 @@ describe("accessibleByDrizzle", () => {
 		);
 	});
 
-	it("preserves CASL v7 cannot priority for narrower allow rules", () => {
+	it("preserves CASL v7 cannot priority for narrower allow rules with boolean composition", () => {
 		const ability = buildAbility((can, cannot) => {
 			can("read", "Document", { organizationId: "org-1" });
 			cannot("read", "Document", { private: true });
@@ -75,9 +100,19 @@ describe("accessibleByDrizzle", () => {
 		const predicate = accessibleByDrizzle(ability, "read", "Document", fields);
 
 		expect(predicate).not.toBeNull();
-		expect(toSql(predicate)).toContain('not "documents"."private" = $');
-		expect(toSql(predicate)).toContain('"documents"."owner_id" = $');
-		expect(toSql(predicate)).toContain('"documents"."id" = $');
+		expect(toSql(predicate)).toBe(
+			'(("documents"."owner_id" = $1 and "documents"."id" = $2) or ("documents"."organization_id" = $3 and not "documents"."private" = $4))',
+		);
+	});
+
+	it("throws for unconditional database access", () => {
+		const ability = buildAbility((can) => {
+			can("read", "Document");
+		});
+
+		expect(() => accessibleByDrizzle(ability, "read", "Document", fields)).toThrow(
+			UnsupportedAuthorizationConditionError,
+		);
 	});
 
 	it("throws for unsupported operator shape", () => {
