@@ -2,9 +2,21 @@
 
 import { render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { DailyRequirementStrip } from "./daily-requirement-strip";
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string>) => {
+			if (!params) return fallback;
+			return Object.entries(params).reduce(
+				(text, [key, value]) => text.replaceAll(`{${key}}`, value),
+				fallback,
+			);
+		},
+	}),
+}));
 
 describe("DailyRequirementStrip", () => {
 	it("shows the negative delta for required days with no recorded work", () => {
@@ -27,5 +39,10 @@ describe("DailyRequirementStrip", () => {
 
 		expect(screen.getByText("8:00h")).toBeTruthy();
 		expect(screen.getByText("-8:00h")).toBeTruthy();
+		expect(
+			screen.getByLabelText(
+				"Friday, May 22: 8:00h required, 0:00h recorded, -8:00h delta, missing recorded time",
+			),
+		).toBeTruthy();
 	});
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import type { DateTime } from "luxon";
 import type { DailyWorkHoursSummaries, DailyWorkHoursSummary } from "@/lib/calendar/types";
 import { formatSignedMinutes, formatTimeHours } from "@/lib/calendar/work-hours-summary";
@@ -17,14 +18,24 @@ function getStatusClass(summary: DailyWorkHoursSummary | undefined): string {
 	return "border-emerald-500 text-emerald-950 dark:text-emerald-100";
 }
 
-function getStatusLabel(summary: DailyWorkHoursSummary): string {
-	if (summary.status === "under") return "under requirement";
-	if (summary.status === "missing") return "missing recorded time";
-	if (summary.status === "over") return "over requirement";
-	return "requirement met";
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function getStatusLabel(summary: DailyWorkHoursSummary, t: Translate): string {
+	if (summary.status === "under") {
+		return t("calendar.requirements.status.under", "under requirement");
+	}
+	if (summary.status === "missing") {
+		return t("calendar.requirements.status.missing", "missing recorded time");
+	}
+	if (summary.status === "over") {
+		return t("calendar.requirements.status.over", "over requirement");
+	}
+	return t("calendar.requirements.status.met", "requirement met");
 }
 
 export function DailyRequirementStrip({ dates, summaries }: DailyRequirementStripProps) {
+	const { t } = useTranslate();
+
 	if (dates.length === 0) return null;
 
 	const hasAnyRequirement = dates.some((date) => summaries.has(date.toFormat("yyyy-MM-dd")));
@@ -34,11 +45,14 @@ export function DailyRequirementStrip({ dates, summaries }: DailyRequirementStri
 		<div
 			className="grid border-x border-t bg-background/80 text-right text-[11px] leading-tight tabular-nums"
 			style={{ gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))` }}
-			aria-label="Daily work policy requirement summary"
+			aria-label={t("calendar.requirements.summaryLabel", "Daily work policy requirement summary")}
 		>
 			{dates.map((date) => {
 				const dateKey = date.toFormat("yyyy-MM-dd");
 				const summary = summaries.get(dateKey);
+				const requiredHours = summary ? formatTimeHours(summary.requiredMinutes) : "";
+				const actualHours = summary ? formatTimeHours(summary.actualMinutes) : "";
+				const deltaHours = summary ? formatSignedMinutes(summary.deltaMinutes) : "";
 
 				return (
 					<div
@@ -49,17 +63,25 @@ export function DailyRequirementStrip({ dates, summaries }: DailyRequirementStri
 						)}
 						aria-label={
 							summary
-								? `${date.toFormat("cccc, LLLL d")}: ${formatTimeHours(summary.requiredMinutes)} required, ${getStatusLabel(summary)}`
+								? t(
+										"calendar.requirements.dayLabel",
+										"{date}: {required} required, {actual} recorded, {delta} delta, {status}",
+										{
+											date: date.toFormat("cccc, LLLL d"),
+											required: requiredHours,
+											actual: actualHours,
+											delta: deltaHours,
+											status: getStatusLabel(summary, t),
+										},
+									)
 								: undefined
 						}
 					>
 						{summary ? (
 							<>
-								<div className="font-semibold">{formatTimeHours(summary.requiredMinutes)}</div>
+								<div className="font-semibold">{requiredHours}</div>
 								{summary.status !== "met" && (
-									<div className="text-muted-foreground">
-										{formatSignedMinutes(summary.deltaMinutes)}
-									</div>
+									<div className="text-muted-foreground">{deltaHours}</div>
 								)}
 							</>
 						) : null}

@@ -6,7 +6,11 @@ import { memo, useMemo } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkHoursStatus,
+	DailyWorkHoursSummaries,
+} from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
@@ -111,17 +115,7 @@ const MiniMonth = memo(function MiniMonth({
 					const isToday = isCurrentMonth && date.getDate() === today.getDate();
 					const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
-					// Determine work hours status
-					let workStatus: "met" | "overtime" | "undertime" | "none" = "none";
-					if (workHours && workHours.requiredMinutes > 0) {
-						if (workHours.actualMinutes >= workHours.requiredMinutes * 1.1) {
-							workStatus = "overtime";
-						} else if (workHours.actualMinutes >= workHours.requiredMinutes * 0.95) {
-							workStatus = "met";
-						} else if (workHours.actualMinutes > 0) {
-							workStatus = "undertime";
-						}
-					}
+					const workStatus: DailyWorkHoursStatus | "none" = workHours?.status ?? "none";
 
 					// Determine if there are events to show
 					const hasHoliday = dayEvents.some((e) => e.type === "holiday");
@@ -149,8 +143,9 @@ const MiniMonth = memo(function MiniMonth({
 									className={cn(
 										"absolute bottom-0.5 left-1/2 -translate-x-1/2 size-1 rounded-full",
 										workStatus === "met" && "bg-green-500",
-										workStatus === "overtime" && "bg-purple-500",
-										workStatus === "undertime" && "bg-orange-500",
+										workStatus === "over" && "bg-green-500",
+										workStatus === "under" && "bg-red-500",
+										workStatus === "missing" && "bg-muted-foreground",
 									)}
 								/>
 							)}
