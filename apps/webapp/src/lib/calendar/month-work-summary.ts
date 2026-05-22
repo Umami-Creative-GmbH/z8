@@ -7,14 +7,16 @@ import type {
 	DailyWorkHoursSummary,
 } from "./types";
 
-export interface MonthWorkSummaryTotal {
+type WorkPeriodTotalStatus = Exclude<DailyWorkHoursStatus, "missing">;
+
+export interface WorkPeriodTotal {
 	requiredMinutes: number;
 	actualMinutes: number;
 	deltaMinutes: number;
-	status: DailyWorkHoursStatus;
+	status: WorkPeriodTotalStatus;
 }
 
-export interface MonthWorkSummaryDay {
+export interface MonthWorkDay {
 	date: DateTime;
 	dateKey: string;
 	isActiveMonth: boolean;
@@ -22,17 +24,17 @@ export interface MonthWorkSummaryDay {
 	events: CalendarEvent[];
 }
 
-export interface MonthWorkSummaryWeek {
+export interface MonthWorkWeek {
 	weekNumber: number;
-	days: MonthWorkSummaryDay[];
-	total: MonthWorkSummaryTotal | null;
+	days: MonthWorkDay[];
+	total: WorkPeriodTotal | null;
 }
 
 export interface MonthWorkSummary {
 	year: number;
 	monthIndex: number;
-	weeks: MonthWorkSummaryWeek[];
-	monthTotal: MonthWorkSummaryTotal | null;
+	weeks: MonthWorkWeek[];
+	monthTotal: WorkPeriodTotal | null;
 }
 
 interface BuildMonthWorkSummaryOptions {
@@ -43,10 +45,9 @@ interface BuildMonthWorkSummaryOptions {
 	events?: CalendarEvent[];
 }
 
-function getStatus(actualMinutes: number, requiredMinutes: number): DailyWorkHoursStatus {
-	if (actualMinutes === 0) return "missing";
-	if (actualMinutes > requiredMinutes) return "over";
-	if (actualMinutes === requiredMinutes) return "met";
+function getTotalStatus(deltaMinutes: number): WorkPeriodTotalStatus {
+	if (deltaMinutes > 0) return "over";
+	if (deltaMinutes === 0) return "met";
 	return "under";
 }
 
@@ -65,7 +66,7 @@ function getGridEnd(date: DateTime, weekStartDay: WeekStartDay): DateTime {
 	return endOfMonth.plus({ days: daysUntilWeekEnd });
 }
 
-export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): MonthWorkSummaryTotal | null {
+export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): WorkPeriodTotal | null {
 	if (summaries.length === 0) return null;
 
 	const requiredMinutes = summaries.reduce((total, summary) => total + summary.requiredMinutes, 0);
@@ -76,7 +77,7 @@ export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): MonthWor
 		requiredMinutes,
 		actualMinutes,
 		deltaMinutes,
-		status: getStatus(actualMinutes, requiredMinutes),
+		status: getTotalStatus(deltaMinutes),
 	};
 }
 
@@ -106,12 +107,12 @@ export function buildMonthWorkSummary({
 	const gridStart = getGridStart(monthStart, weekStartDay);
 	const gridEnd = getGridEnd(monthStart, weekStartDay);
 	const eventsByDate = groupCalendarEventsByDate(events);
-	const weeks: MonthWorkSummaryWeek[] = [];
+	const weeks: MonthWorkWeek[] = [];
 	const monthSummaries: DailyWorkHoursSummary[] = [];
 
 	let current = gridStart;
 	while (current <= gridEnd) {
-		const days: MonthWorkSummaryDay[] = [];
+		const days: MonthWorkDay[] = [];
 		const weekSummaries: DailyWorkHoursSummary[] = [];
 
 		for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {

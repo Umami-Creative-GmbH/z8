@@ -129,6 +129,15 @@ describe("totalWorkSummaries", () => {
 	it("returns null when no summaries exist", () => {
 		expect(totalWorkSummaries([])).toBeNull();
 	});
+
+	it("uses delta-based status for aggregate totals with zero actual minutes", () => {
+		expect(totalWorkSummaries([summary(480, 0)])).toMatchObject({
+			requiredMinutes: 480,
+			actualMinutes: 0,
+			deltaMinutes: -480,
+			status: "under",
+		});
+	});
 });
 
 describe("groupCalendarEventsByDate", () => {
