@@ -53,8 +53,7 @@ export async function getAuditLogs(filters: AuditLogFilters): Promise<{
 	// Build where conditions
 	const conditions = [];
 
-	// Organization filter (from metadata)
-	conditions.push(sql`${auditLog.metadata}::jsonb->>'organizationId' = ${filters.organizationId}`);
+	conditions.push(eq(auditLog.organizationId, filters.organizationId));
 
 	if (filters.entityType) {
 		conditions.push(eq(auditLog.entityType, filters.entityType));
@@ -208,7 +207,7 @@ export async function getAuditLogStats(
 	byUser: Array<{ userId: string; userName: string; count: number }>;
 	topIpAddresses: Array<{ ipAddress: string; count: number }>;
 }> {
-	const orgFilter = sql`${auditLog.metadata}::jsonb->>'organizationId' = ${organizationId}`;
+	const orgFilter = eq(auditLog.organizationId, organizationId);
 	const dateFilter = and(gte(auditLog.timestamp, startDate), lte(auditLog.timestamp, endDate));
 	const whereClause = and(orgFilter, dateFilter);
 
