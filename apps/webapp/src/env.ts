@@ -23,16 +23,25 @@ export const env = createEnv({
 		REDIS_PORT: z.string().optional(),
 		REDIS_PASSWORD: z.string().optional(),
 
-		// AWS S3 / Object Storage (REQUIRED)
-		// S3-compatible storage is required for file uploads
+		// Public AWS S3 / Object Storage (REQUIRED)
+		// S3-compatible storage is required for public file uploads
 		// Use RustFS (included in docker-compose) or external provider (AWS S3, Cloudflare R2, MinIO)
-		S3_BUCKET: z.string().min(1, "S3_BUCKET is required"),
-		S3_ACCESS_KEY_ID: z.string().min(1, "S3_ACCESS_KEY_ID is required"),
-		S3_SECRET_ACCESS_KEY: z.string().min(1, "S3_SECRET_ACCESS_KEY is required"),
-		S3_ENDPOINT: z.string().url("S3_ENDPOINT must be a valid URL"),
-		S3_REGION: z.string().default("us-east-1"),
-		S3_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
+		S3_PUBLIC_BUCKET: z.string().min(1, "S3_PUBLIC_BUCKET is required"),
+		S3_PUBLIC_ACCESS_KEY_ID: z.string().min(1, "S3_PUBLIC_ACCESS_KEY_ID is required"),
+		S3_PUBLIC_SECRET_ACCESS_KEY: z.string().min(1, "S3_PUBLIC_SECRET_ACCESS_KEY is required"),
+		S3_PUBLIC_ENDPOINT: z.string().url("S3_PUBLIC_ENDPOINT must be a valid URL"),
+		S3_PUBLIC_REGION: z.string().default("us-east-1"),
+		S3_PUBLIC_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
 		S3_PUBLIC_URL: z.string().url("S3_PUBLIC_URL must be a valid URL"),
+
+		// Private AWS S3 / Object Storage for exports and audit artifacts
+		S3_PRIVATE_BUCKET: z.string().optional(),
+		S3_PRIVATE_ACCESS_KEY_ID: z.string().optional(),
+		S3_PRIVATE_SECRET_ACCESS_KEY: z.string().optional(),
+		S3_PRIVATE_ENDPOINT: z.string().url("S3_PRIVATE_ENDPOINT must be a valid URL").optional(),
+		S3_PRIVATE_REGION: z.string().default("us-east-1"),
+		S3_PRIVATE_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
+		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: z.string().default("900"),
 
 		// Worker / Jobs
 		ENABLE_CRON_JOBS: z.string().optional(),
@@ -126,13 +135,20 @@ export const env = createEnv({
 		REDIS_PORT: process.env.REDIS_PORT,
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 
-		S3_BUCKET: process.env.S3_BUCKET,
-		S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
-		S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
-		S3_ENDPOINT: process.env.S3_ENDPOINT,
-		S3_REGION: process.env.S3_REGION,
-		S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE,
+		S3_PUBLIC_BUCKET: process.env.S3_PUBLIC_BUCKET,
+		S3_PUBLIC_ACCESS_KEY_ID: process.env.S3_PUBLIC_ACCESS_KEY_ID,
+		S3_PUBLIC_SECRET_ACCESS_KEY: process.env.S3_PUBLIC_SECRET_ACCESS_KEY,
+		S3_PUBLIC_ENDPOINT: process.env.S3_PUBLIC_ENDPOINT,
+		S3_PUBLIC_REGION: process.env.S3_PUBLIC_REGION,
+		S3_PUBLIC_FORCE_PATH_STYLE: process.env.S3_PUBLIC_FORCE_PATH_STYLE,
 		S3_PUBLIC_URL: process.env.S3_PUBLIC_URL,
+		S3_PRIVATE_BUCKET: process.env.S3_PRIVATE_BUCKET,
+		S3_PRIVATE_ACCESS_KEY_ID: process.env.S3_PRIVATE_ACCESS_KEY_ID,
+		S3_PRIVATE_SECRET_ACCESS_KEY: process.env.S3_PRIVATE_SECRET_ACCESS_KEY,
+		S3_PRIVATE_ENDPOINT: process.env.S3_PRIVATE_ENDPOINT,
+		S3_PRIVATE_REGION: process.env.S3_PRIVATE_REGION,
+		S3_PRIVATE_FORCE_PATH_STYLE: process.env.S3_PRIVATE_FORCE_PATH_STYLE,
+		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: process.env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS,
 
 		ENABLE_CRON_JOBS: process.env.ENABLE_CRON_JOBS,
 		WORKER_CONCURRENCY: process.env.WORKER_CONCURRENCY,

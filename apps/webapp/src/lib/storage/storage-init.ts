@@ -43,7 +43,7 @@ function parseS3Error(error: unknown): StorageInitError {
 					message: "Invalid S3 access key ID",
 					details: "The access key provided does not exist in the S3 service",
 					remedy:
-						"Verify S3_ACCESS_KEY_ID is correct and the key exists in your S3-compatible service",
+						"Verify S3_PUBLIC_ACCESS_KEY_ID is correct and the key exists in your S3-compatible service",
 				};
 
 			case "SignatureDoesNotMatch":
@@ -52,7 +52,7 @@ function parseS3Error(error: unknown): StorageInitError {
 					message: "Invalid S3 secret access key",
 					details: "The signature calculated does not match the one provided",
 					remedy:
-						"Verify S3_SECRET_ACCESS_KEY is correct and matches the access key",
+						"Verify S3_PUBLIC_SECRET_ACCESS_KEY is correct and matches the access key",
 				};
 
 			case "AccessDenied":
@@ -89,7 +89,7 @@ function parseS3Error(error: unknown): StorageInitError {
 					code: "CONNECTION_FAILED",
 					message: "Cannot connect to S3 endpoint",
 					details: error.message,
-					remedy: `Verify S3_ENDPOINT is correct and the service is reachable. Current endpoint: ${process.env.S3_ENDPOINT}`,
+					remedy: `Verify S3_PUBLIC_ENDPOINT is correct and the service is reachable. Current endpoint: ${process.env.S3_PUBLIC_ENDPOINT}`,
 				};
 
 			default:
@@ -113,10 +113,10 @@ function parseS3Error(error: unknown): StorageInitError {
  */
 function validateConfig(): StorageInitError | null {
 	const required = [
-		"S3_BUCKET",
-		"S3_ACCESS_KEY_ID",
-		"S3_SECRET_ACCESS_KEY",
-		"S3_ENDPOINT",
+		"S3_PUBLIC_BUCKET",
+		"S3_PUBLIC_ACCESS_KEY_ID",
+		"S3_PUBLIC_SECRET_ACCESS_KEY",
+		"S3_PUBLIC_ENDPOINT",
 	];
 
 	const missing = required.filter((key) => !process.env[key]);
@@ -194,21 +194,22 @@ export async function initializeStorage(): Promise<StorageInitResult> {
 		return { success: false, error: configError };
 	}
 
-	const bucket = process.env.S3_BUCKET!;
-	const region = process.env.S3_REGION || "us-east-1";
+	const bucket = process.env.S3_PUBLIC_BUCKET!;
+	const privateBucket = process.env.S3_PRIVATE_BUCKET;
+	const region = process.env.S3_PUBLIC_REGION || "us-east-1";
 
 	// Step 2: Create S3 client
 	// Import dynamically to avoid issues if env vars aren't set during module load
 	const { S3Client } = await import("@aws-sdk/client-s3");
 
 	const client = new S3Client({
-		endpoint: process.env.S3_ENDPOINT,
+		endpoint: process.env.S3_PUBLIC_ENDPOINT,
 		region,
 		credentials: {
-			accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-			secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+			accessKeyId: process.env.S3_PUBLIC_ACCESS_KEY_ID!,
+			secretAccessKey: process.env.S3_PUBLIC_SECRET_ACCESS_KEY!,
 		},
-		forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+		forcePathStyle: process.env.S3_PUBLIC_FORCE_PATH_STYLE === "true",
 	});
 
 	// Step 3: Check if bucket exists
@@ -217,6 +218,10 @@ export async function initializeStorage(): Promise<StorageInitResult> {
 
 		if (exists) {
 			logger.info({ bucket }, "S3 bucket verified");
+			if (privateBucket && privateBucket !== bucket && !(await bucketExists(client, privateBucket))) {
+				await createBucket(client, privateBucket, region);
+				logger.info({ bucket: privateBucket }, "Private S3 bucket created successfully");
+			}
 			return { success: true, bucket, bucketCreated: false };
 		}
 
@@ -226,6 +231,10 @@ export async function initializeStorage(): Promise<StorageInitResult> {
 		try {
 			await createBucket(client, bucket, region);
 			logger.info({ bucket }, "S3 bucket created successfully");
+			if (privateBucket && privateBucket !== bucket && !(await bucketExists(client, privateBucket))) {
+				await createBucket(client, privateBucket, region);
+				logger.info({ bucket: privateBucket }, "Private S3 bucket created successfully");
+			}
 			return { success: true, bucket, bucketCreated: true };
 		} catch (createError) {
 			const s3Error = createError as S3ServiceException;

@@ -4,7 +4,7 @@ import { Server } from "@tus/server";
 import { headers } from "next/headers";
 import { NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
-import { S3_BUCKET, S3_REGION } from "@/lib/storage/s3-client";
+import { S3_PUBLIC_BUCKET, S3_PUBLIC_REGION } from "@/lib/storage/s3-client";
 import { createOwnedTusFileKey, isTusFileKeyOwnedByUser } from "@/lib/upload/tus-ownership";
 import { env } from "@/env";
 
@@ -17,13 +17,13 @@ const tusUploadOwnerContext = new AsyncLocalStorage<string>();
 const store = new S3Store({
 	partSize: 8 * 1024 * 1024, // 8MB parts for efficient multipart uploads
 	s3ClientConfig: {
-		bucket: S3_BUCKET,
-		region: S3_REGION,
-		endpoint: env.S3_ENDPOINT,
-		forcePathStyle: env.S3_FORCE_PATH_STYLE === "true",
+		bucket: S3_PUBLIC_BUCKET,
+		region: S3_PUBLIC_REGION,
+		endpoint: env.S3_PUBLIC_ENDPOINT,
+		forcePathStyle: env.S3_PUBLIC_FORCE_PATH_STYLE === "true",
 		credentials: {
-			accessKeyId: env.S3_ACCESS_KEY_ID,
-			secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+			accessKeyId: env.S3_PUBLIC_ACCESS_KEY_ID,
+			secretAccessKey: env.S3_PUBLIC_SECRET_ACCESS_KEY,
 		},
 	},
 });
