@@ -181,6 +181,40 @@ export function getPresencePeriodBounds({
 	};
 }
 
+export function expandApprovedHomeOfficeDates({
+	entries,
+	periodStart,
+	periodEnd,
+	timezone,
+}: {
+	entries: Array<{ startDate: string; endDate: string }>;
+	periodStart: DateTime;
+	periodEnd: DateTime;
+	timezone: string;
+}): string[] {
+	const zone = timezone || "utc";
+	const start = periodStart.setZone(zone).startOf("day");
+	const end = periodEnd.setZone(zone).endOf("day");
+	const dates = new Set<string>();
+
+	for (const entry of entries) {
+		let cursor = DateTime.fromISO(entry.startDate, { zone }).startOf("day");
+		const entryEnd = DateTime.fromISO(entry.endDate, { zone }).startOf("day");
+
+		if (!cursor.isValid || !entryEnd.isValid || entryEnd < cursor) continue;
+		if (cursor < start) cursor = start;
+		const clippedEnd = entryEnd > end ? end.startOf("day") : entryEnd;
+
+		while (cursor <= clippedEnd) {
+			const date = cursor.toISODate();
+			if (date) dates.add(date);
+			cursor = cursor.plus({ days: 1 });
+		}
+	}
+
+	return Array.from(dates).sort();
+}
+
 export function calculatePresenceStatusSummary({
 	presenceMode,
 	requiredOnsiteDays,
@@ -192,6 +226,7 @@ export function calculatePresenceStatusSummary({
 	timezone,
 	workDays,
 	workPeriods,
+	approvedHomeOfficeDates = [],
 }: {
 	presenceMode: PresenceMode;
 	requiredOnsiteDays: number | null;
@@ -203,6 +238,7 @@ export function calculatePresenceStatusSummary({
 	timezone: string;
 	workDays: PresenceDayOfWeek[] | null;
 	workPeriods: Array<{ startTime: Date; workLocationType: string | null }>;
+	approvedHomeOfficeDates?: string[];
 }): PresenceStatusSummary {
 	const zone = timezone || "utc";
 	const start = periodStart.setZone(zone).startOf("day");
@@ -214,6 +250,7 @@ export function calculatePresenceStatusSummary({
 	const officeDates = new Set<string>();
 	const homeDates = new Set<string>();
 	const workedDates = new Set<string>();
+	const approvedHomeOfficeDateSet = new Set(approvedHomeOfficeDates);
 
 	for (const workPeriod of workPeriods) {
 		const dateTime = DateTime.fromJSDate(workPeriod.startTime, { zone });
@@ -233,6 +270,7 @@ export function calculatePresenceStatusSummary({
 	let totalScheduledWorkDays = 0;
 	let workingDaysRemaining = 0;
 	let fixedOfficeDates = 0;
+	let approvedScheduledHomeOfficeDates = 0;
 	let officeDaysRequiredLeft = 0;
 	let homeOfficeDaysLeft = 0;
 	let cursor = start;
@@ -240,7 +278,15 @@ export function calculatePresenceStatusSummary({
 	while (cursor <= end) {
 		const weekday = WEEKDAY_BY_NUMBER[cursor.weekday];
 		const date = cursor.toISODate();
-		if (date && presenceMode === "fixed_days" && fixedOfficeDaySet.has(weekday)) {
+		const hasApprovedHomeOfficeException = date
+			? approvedHomeOfficeDateSet.has(date)
+			: false;
+		if (
+			date &&
+			presenceMode === "fixed_days" &&
+			fixedOfficeDaySet.has(weekday) &&
+			!hasApprovedHomeOfficeException
+		) {
 			fixedOfficeDates += 1;
 			if (cursor >= today && !officeDates.has(date)) {
 				officeDaysRequiredLeft += 1;
@@ -249,13 +295,20 @@ export function calculatePresenceStatusSummary({
 
 		if (date && scheduledDays.has(weekday)) {
 			totalScheduledWorkDays += 1;
+			if (hasApprovedHomeOfficeException) {
+				approvedScheduledHomeOfficeDates += 1;
+			}
 
 			const isRemaining = cursor >= today && !workedDates.has(date);
 			if (isRemaining) {
 				workingDaysRemaining += 1;
 			}
 
-			if (presenceMode === "fixed_days" && !fixedOfficeDaySet.has(weekday) && isRemaining) {
+			if (
+				presenceMode === "fixed_days" &&
+				(!fixedOfficeDaySet.has(weekday) || hasApprovedHomeOfficeException) &&
+				isRemaining
+			) {
 				homeOfficeDaysLeft += 1;
 			}
 		}
@@ -273,7 +326,10 @@ export function calculatePresenceStatusSummary({
 	const homeOfficeDaysUsed = Array.from(homeDates).filter((date) => !officeDates.has(date)).length;
 	const requiredOfficeDays =
 		presenceMode === "minimum_count"
-			? Math.min(requiredOnsiteDays ?? 0, totalScheduledWorkDays)
+			? Math.min(
+					requiredOnsiteDays ?? 0,
+					Math.max(totalScheduledWorkDays - approvedScheduledHomeOfficeDates, 0),
+				)
 			: fixedOfficeDates;
 
 	if (presenceMode === "minimum_count") {

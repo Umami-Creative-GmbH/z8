@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { isQueueHealthy } from "@/lib/queue";
-import { S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
+import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { valkey } from "@/lib/valkey";
 
 const logger = createLogger("Health");
@@ -79,11 +79,11 @@ export async function checkCache(): Promise<ServiceHealth> {
 export async function checkStorage(): Promise<ServiceHealth> {
 	const start = performance.now();
 	try {
-		await s3Client.send(new HeadBucketCommand({ Bucket: S3_BUCKET }));
+		await s3Client.send(new HeadBucketCommand({ Bucket: S3_PUBLIC_BUCKET }));
 		return {
 			status: "healthy",
 			latencyMs: Math.round(performance.now() - start),
-			details: { bucket: S3_BUCKET },
+			details: { bucket: S3_PUBLIC_BUCKET },
 		};
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
@@ -91,7 +91,7 @@ export async function checkStorage(): Promise<ServiceHealth> {
 			status: "unhealthy",
 			latencyMs: Math.round(performance.now() - start),
 			error: message,
-			details: { bucket: S3_BUCKET },
+			details: { bucket: S3_PUBLIC_BUCKET },
 		};
 	}
 }

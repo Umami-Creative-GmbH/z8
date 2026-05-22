@@ -1,0 +1,546 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Attivo",
+      "copyKey": "Copia chiave API",
+      "copyPrefix": "Copia prefisso",
+      "create": "Crea chiave",
+      "created": "Chiave API creata correttamente",
+      "createDescription": "Crea una nuova chiave API per l'accesso programmatico. La chiave verrà mostrata una sola volta.",
+      "createdOn": "Creata il {date}",
+      "createTitle": "Crea chiave API",
+      "deleted": "Chiave API eliminata",
+      "deleteDescription": "Sei sicuro di voler eliminare la chiave API \"{name}\"? Tutte le applicazioni che utilizzano questa chiave perderanno immediatamente l'accesso. Questa azione non può essere annullata.",
+      "deleteTitle": "Elimina chiave API",
+      "description": "Gestisci le chiavi API per l'accesso programmatico ai dati della tua organizzazione",
+      "disabled": "Disabilitato",
+      "editCreated": "Creata il {date}",
+      "editDescription": "Aggiorna le impostazioni per questa chiave API. Nota: non è possibile visualizzare o modificare la chiave stessa.",
+      "editTitle": "Modifica chiave API",
+      "empty": {
+        "description": "Crea la tua prima chiave API per abilitare l'accesso programmatico alla tua organizzazione.",
+        "title": "Nessuna chiave API"
+      },
+      "expires": "Scade",
+      "form": {
+        "create": "Crea chiave",
+        "enabled": "Chiave abilitata",
+        "enabledHelp": "Le chiavi disabilitate rifiuteranno tutte le richieste API",
+        "expiration": "Scadenza",
+        "name": "Nome",
+        "nameHelp": "Un nome descrittivo per identificare questa chiave",
+        "namePlaceholder": "es. API di produzione",
+        "rateLimit": "Abilita limitazione della frequenza",
+        "rateLimitMax": "Richieste massime al minuto",
+        "scopes": "Autorizzazioni",
+        "scopesRequired": "Seleziona almeno un'autorizzazione"
+      },
+      "keyCopied": "Chiave API copiata negli appunti",
+      "lastUsed": "Ultimo utilizzo",
+      "name": "Nome",
+      "prefix": "Prefisso chiave",
+      "prefixCopied": "Prefisso chiave copiato",
+      "scopes": "Autorizzazioni",
+      "security": {
+        "description": "Le chiavi API forniscono accesso completo ai dati della tua organizzazione entro l'ambito delle autorizzazioni. Mantienile al sicuro e non condividerle mai in repository pubblici o codice lato client.",
+        "title": "Avviso di sicurezza"
+      },
+      "showClose": "Chiudi",
+      "showCloseAnyway": "Chiudi comunque",
+      "showConfirmWarning": "Sei sicuro? Non hai ancora copiato la chiave.",
+      "showCopied": "Chiave copiata negli appunti",
+      "showDescription": "La tua nuova chiave API \"{name}\" è stata creata. Copiala ora: non potrai più visualizzarla!",
+      "showDone": "Fatto",
+      "showExpires": "Scade:",
+      "showLabel": "La tua chiave API",
+      "showName": "Nome:",
+      "showNever": "Mai",
+      "showTitle": "Chiave API creata",
+      "showWarning": "Questa è l'unica volta in cui vedrai questa chiave. Assicurati di copiarla e conservarla in modo sicuro.",
+      "showWarningTitle": "Importante:",
+      "status": "Stato",
+      "title": "Chiavi API",
+      "updated": "Chiave API aggiornata",
+      "usage": "{count} di {max} chiavi utilizzate"
+    },
+    "branding": {
+      "appName": {
+        "description": "Sovrascrivi il nome predefinito dell'app mostrato nella pagina di accesso.",
+        "title": "Nome app"
+      },
+      "background": {
+        "description": "Carica un'immagine di sfondo personalizzata per la pagina di accesso.",
+        "hint": "Consigliato: 1920x1080px o superiore, JPEG o PNG di alta qualità",
+        "preview": "Anteprima sfondo",
+        "remove": "Rimuovi sfondo",
+        "title": "Immagine di sfondo",
+        "upload": "Carica immagine di sfondo"
+      },
+      "backgroundUploadFailed": "Caricamento dell'immagine di sfondo non riuscito",
+      "backgroundUploadSuccess": "Immagine di sfondo caricata correttamente",
+      "colors": {
+        "accent": "Colore accento (opzionale)",
+        "accentHex": "Valore esadecimale del colore accento",
+        "accentHint": "Colore secondario per gli elementi in evidenza",
+        "description": "Personalizza i colori primario e accento per la tua pagina di accesso.",
+        "primary": "Colore primario",
+        "primaryHex": "Valore esadecimale del colore primario",
+        "primaryHint": "Utilizzato per pulsanti, collegamenti e stati di attivazione",
+        "title": "Colori del tema"
+      },
+      "logo": {
+        "description": "Carica il logo della tua organizzazione da visualizzare nella pagina di accesso.",
+        "hint": "Consigliato: 200x200px, PNG o SVG con sfondo trasparente",
+        "preview": "Anteprima logo",
+        "remove": "Rimuovi logo",
+        "title": "Logo",
+        "upload": "Carica immagine logo"
+      },
+      "logoUploadFailed": "Caricamento del logo non riuscito",
+      "logoUploadSuccess": "Logo caricato correttamente",
+      "save": "Salva impostazioni di branding",
+      "saveFailed": "Salvataggio delle impostazioni di branding non riuscito",
+      "saveSuccess": "Impostazioni di branding salvate"
+    },
+    "enterprise": {
+      "addProvider": "Aggiungi provider",
+      "clientId": "ID client",
+      "clientIdRequired": "L'ID client è obbligatorio",
+      "clientSecret": "Segreto client",
+      "clientSecretRequired": "Il segreto client è obbligatorio",
+      "configureCallbackUrl": "Configura l'URL di callback:",
+      "domain": "Dominio",
+      "domains": {
+        "add": "Aggiungi dominio personalizzato",
+        "addDescription": "Aggiungi un dominio personalizzato per abilitare pagine di accesso specifiche per l'organizzazione. Dovrai verificare la proprietà tramite i record DNS.",
+        "addDomain": "Aggiungi dominio",
+        "added": "Dominio aggiunto correttamente",
+        "addFailed": "Aggiunta del dominio non riuscita",
+        "adding": "Aggiunta in corso...",
+        "authConfigDescription": "Configura quali metodi di autenticazione sono disponibili per gli utenti che accedono tramite {domain}",
+        "authConfigTitle": "Configurazione autenticazione",
+        "authConfigUpdated": "Configurazione di autenticazione aggiornata",
+        "authConfigUpdateFailed": "Aggiornamento della configurazione di autenticazione non riuscito",
+        "authMethod": {
+          "emailPassword": "Email/Password",
+          "passkey": "Passkey",
+          "social": "Social ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "configurato",
+        "cookieConsentScript": "Script di consenso cookie",
+        "cookieConsentScriptHelp": "Iniettato nelle pagine di autenticazione solo per questo dominio personalizzato. Lascia vuoto per disabilitare.",
+        "cookieConsentStatus": "Consenso cookie {status}",
+        "copiedToClipboard": "Copiato negli appunti",
+        "customDomain": "Dominio personalizzato",
+        "customDomainDescription": "Configura un dominio personalizzato per abilitare una pagina di accesso specifica per l'organizzazione con il tuo branding.",
+        "deleteAria": "Elimina dominio personalizzato {domain}",
+        "deleted": "Dominio eliminato",
+        "deleteDescription": "Sei sicuro di voler eliminare \"{domain}\"? Questa azione non può essere annullata. Gli utenti non potranno più accedere tramite questo dominio personalizzato.",
+        "deleteFailed": "Eliminazione del dominio non riuscita",
+        "deleteTitle": "Elimina dominio",
+        "description": "Configura il dominio di accesso personalizzato, il branding e i provider SSO della tua organizzazione.",
+        "dnsPropagation": "Propagazione DNS",
+        "dnsPropagationDescription": "Le modifiche DNS possono richiedere fino a 48 ore per propagarsi, sebbene spesso si completino in pochi minuti. Puoi fare clic su \"Verifica\" una volta aggiunto il record TXT.",
+        "domain": "Dominio",
+        "domainHelp": "Inserisci il dominio in cui gli utenti accederanno alla pagina di login.",
+        "domainInvalid": "Inserisci un dominio valido (es. login.example.com)",
+        "domainPageSettings": "Impostazioni pagina dominio",
+        "domainRequired": "Il dominio è obbligatorio",
+        "editAuthSettingsAria": "Modifica le impostazioni di autenticazione per {domain}",
+        "emailPassword": "Email e password",
+        "emailPasswordHelp": "Consenti agli utenti di accedere con email e password",
+        "empty": "Nessun dominio personalizzato configurato ancora.",
+        "enabledAuthMethods": "Metodi di autenticazione abilitati",
+        "guidedSetup": {
+          "action": "Configurazione guidata",
+          "description": "Configura SSO, SCIM, policy di accesso e controlli di attivazione in un unico flusso guidato.",
+          "title": "Configurazione guidata"
+        },
+        "keepExistingSecretKey": "Lascia vuoto per mantenere la chiave segreta esistente",
+        "nameHost": "Nome / Host",
+        "notConfigured": "non configurato",
+        "passkey": "Passkey",
+        "passkeyHelp": "Consenti l'accesso senza password con le passkey",
+        "regenerateToken": "Rigenera token",
+        "regenerateTokenFailed": "Rigenerazione del token non riuscita",
+        "regenerateTokenSuccess": "Nuovo token di verifica generato",
+        "regenerating": "Rigenerazione in corso...",
+        "saveConfiguration": "Salva configurazione",
+        "secretKey": "Chiave segreta",
+        "secretKeyPlaceholder": "Inserisci la chiave segreta",
+        "secretKeyRequired": "Obbligatorio quando si imposta una chiave del sito",
+        "siteKey": "Chiave del sito",
+        "socialProviders": "Provider social",
+        "socialProvidersHelp": "Abilita le opzioni di accesso social per questo dominio",
+        "sso": "Single Sign-On (SSO)",
+        "ssoHelp": "Consenti l'accesso enterprise basato su OIDC",
+        "status": {
+          "pending": "Verifica in sospeso",
+          "verified": "Verificato"
+        },
+        "title": "Dominio personalizzato e branding",
+        "tokenExpired": "Token scaduto",
+        "tokenExpiredDescription": "Il token di verifica è scaduto. Si prega di rigenerarne uno nuovo.",
+        "tokenExpires": "Il token scade il: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Protezione dai bot per i moduli di autenticazione. Obbligatoria per i domini enterprise.",
+        "turnstileSiteKeyStatus": "Chiave del sito Turnstile {status}",
+        "txtRecordInstruction": "Aggiungi il seguente record TXT al tuo DNS:",
+        "value": "Valore",
+        "verifiedSuccess": "Dominio verificato con successo",
+        "verify": "Verifica",
+        "verifyDomain": "Verifica dominio",
+        "verifyFailed": "Verifica del dominio non riuscita",
+        "verifying": "Verifica in corso…",
+        "verifyOwnership": "Verifica la proprietà del dominio",
+        "verifyOwnershipDescription": "Aggiungi un record DNS TXT per verificare la proprietà di {domain}"
+      },
+      "email": {
+        "apiKey": "Chiave API",
+        "apiKeyHint": "Lascia vuoto per mantenere la chiave esistente. Ottieni la tua chiave API da resend.com",
+        "create": "Crea configurazione",
+        "delete": "Elimina configurazione",
+        "deleteConfirm": "Sei sicuro di voler eliminare questa configurazione email?",
+        "deleted": "Configurazione email eliminata",
+        "deleteFailed": "Eliminazione non riuscita",
+        "description": "Configura un provider email personalizzato per la tua organizzazione. Tutte le email dell'organizzazione utilizzeranno questa configurazione invece di quella predefinita di sistema.",
+        "fromEmail": "Email mittente",
+        "fromName": "Nome mittente",
+        "isActive": "Abilita questa configurazione email",
+        "lastTest": "Ultimo test",
+        "passwordHint": "Lascia vuoto per mantenere la password esistente",
+        "recommended": "Consigliato",
+        "resendConfig": "Configurazione Resend",
+        "save": "Salva modifiche",
+        "saved": "Configurazione email salvata",
+        "saveFailed": "Salvataggio non riuscito",
+        "secretSet": "Imposta",
+        "sendTest": "Invia test",
+        "smtpConfig": "Configurazione SMTP",
+        "smtpHost": "Host SMTP",
+        "smtpPassword": "Password",
+        "smtpPort": "Porta",
+        "smtpRequireTls": "Richiedi aggiornamento STARTTLS",
+        "smtpSecure": "Usa TLS (porta 465)",
+        "smtpServer": "Server SMTP",
+        "smtpUsername": "Nome utente",
+        "testEmailRequired": "Inserisci un indirizzo email di prova",
+        "testFailed": "Invio dell'email di prova non riuscito",
+        "testFailure": "Non riuscito",
+        "testSection": "IconaInvia email di prova",
+        "testSent": "Email di prova inviata correttamente",
+        "testSuccess": "Operazione riuscita",
+        "title": "Configurazione email",
+        "transportType": "Provider email",
+        "vaultConnected": "Vault connesso",
+        "vaultConnectedDesc": "I segreti sono archiviati in modo sicuro in HashiCorp Vault.",
+        "vaultSealed": "Vault sigillato",
+        "vaultSealedDesc": "HashiCorp Vault è sigillato. Si prega di sbloccarlo per archiviare i segreti.",
+        "vaultUnavailable": "Vault non disponibile",
+        "vaultUnavailableDesc": "HashiCorp Vault non è disponibile. I segreti non possono essere archiviati in modo sicuro."
+      },
+      "enableProviderHelp": "Abilita o disabilita questo provider",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Salva policy di accesso"
+          },
+          "defaultRoleTemplate": "Modello di ruolo predefinito",
+          "description": "Imposta dominio, inviti e applicazione SSO dopo il superamento del test pilota.",
+          "noDefaultTemplate": "Nessun modello predefinito",
+          "placeholder": {
+            "roleTemplate": "Seleziona modello di ruolo"
+          },
+          "requireSso": "Richiedi SSO",
+          "requireSsoHelp": "I dipendenti devono utilizzare l'IdP aziendale.",
+          "restrictDomain": "Limita al dominio verificato",
+          "restrictDomainHelp": "Blocca gli account al di fuori del dominio selezionato.",
+          "restrictInvites": "Limita gli inviti",
+          "restrictInvitesHelp": "Consenti solo inviti in linea con la policy di accesso.",
+          "title": "Policy di accesso"
+        },
+        "badge": {
+          "now": "Ora",
+          "queued": "In coda",
+          "ready": "Pronto"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Controlla lo stato del dominio"
+          },
+          "description": "Convalida il perimetro del tenant prima di imporre l'SSO per i dipendenti.",
+          "help": "La verifica DNS utilizza le azioni di verifica del dominio SSO esistenti. Completa tale verifica prima di attivare l'applicazione.",
+          "notSelected": "Non selezionato",
+          "selected": "Dominio selezionato",
+          "status": {
+            "pending": "In sospeso",
+            "verified": "Verificato"
+          },
+          "title": "Dominio"
+        },
+        "hero": {
+          "description": "Configura SSO, SCIM e l'applicazione per l'organizzazione {organizationId} con attivazione protetta.",
+          "eyebrow": "Identità aziendale",
+          "title": "Lista di controllo operativa"
+        },
+        "provider": {
+          "action": {
+            "save": "Salva provider"
+          },
+          "description": "Scegli il preset del provider di identità, il protocollo, l'ID provider e il dominio email.",
+          "error": {
+            "domainRequired": "Il dominio è obbligatorio",
+            "providerIdRequired": "L'ID provider è obbligatorio"
+          },
+          "label": {
+            "domain": "Dominio email",
+            "preset": "Preset provider",
+            "protocol": "Protocollo",
+            "providerId": "ID provider"
+          },
+          "placeholder": {
+            "domain": "es. example.com…",
+            "protocol": "Seleziona protocollo",
+            "provider": "Seleziona provider",
+            "providerId": "es. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Utilizza qualsiasi identity provider OIDC o SAML 2.0 conforme agli standard."
+            },
+            "googleWorkspace": {
+              "description": "Utilizza Google Workspace OIDC per SSO e sincronizzazione directory opzionale."
+            },
+            "microsoftEntra": {
+              "description": "Utilizza Microsoft Entra ID per SSO aziendale e provisioning opzionale."
+            },
+            "okta": {
+              "description": "Utilizza Okta Workforce Identity per single sign-on SAML o OIDC."
+            }
+          },
+          "title": "Provider"
+        },
+        "rail": {
+          "title": "Percorso di preparazione"
+        },
+        "review": {
+          "action": {
+            "activate": "Attiva identità aziendale"
+          },
+          "activationSummary": "Riepilogo attivazione",
+          "description": "Esamina i controlli di attivazione protetti prima di abilitare i controlli dell'identità aziendale.",
+          "lockoutWarning": "Avviso di blocco dell'amministratore corrente",
+          "lockoutWarningHelp": "Verifica che il tuo account amministratore corrente possa accedere tramite il provider configurato prima dell'attivazione. L'applicazione potrebbe bloccare il fallback della password per il dominio selezionato.",
+          "missingRequirement": "{item} è richiesto prima dell'attivazione",
+          "prerequisitesComplete": "I prerequisiti di provider, dominio verificato e test SSO sono completati.",
+          "requirement": {
+            "domain": "Dominio verificato",
+            "provider": "Provider",
+            "ssoTest": "Test SSO"
+          },
+          "title": "Revisione e attivazione"
+        },
+        "scim": {
+          "action": {
+            "copyToken": "Copia token",
+            "generateToken": "Genera token",
+            "refreshStatus": "Aggiorna stato"
+          },
+          "baseUrl": "URL di base",
+          "cardDescription": "Genera il token di provisioning e monitora lo stato della connessione.",
+          "description": "La verifica SCIM si aggiorna dopo che il tuo identity provider invia una modifica a un utente o gruppo di test.",
+          "error": {
+            "saveProviderFirst": "Salva il provider prima di generare un token SCIM"
+          },
+          "status": {
+            "none": "Nessuna attività di provisioning ancora",
+            "observed": "Attività di provisioning rilevata"
+          },
+          "title": "Provisioning SCIM",
+          "tokenShownOnce": "Questo token viene mostrato una sola volta"
+        },
+        "sso": {
+          "action": {
+            "register": "Registra provider SSO"
+          },
+          "description": "Registra l'IdP esterno utilizzando le credenziali client OIDC o i metadati SAML.",
+          "error": {
+            "saveProviderFirst": "Salva provider e dominio prima di registrare SSO"
+          },
+          "label": {
+            "clientId": "ID client",
+            "clientSecret": "Segreto client",
+            "issuer": "Emittente",
+            "metadata": "Metadati SAML"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Incolla XML metadati IdP…"
+          },
+          "title": "Configurazione SSO"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Registra fallimento",
+            "recordPass": "Registra successo"
+          },
+          "defaultFailure": "Test SSO live fallito",
+          "description": "Registra il risultato di un test SSO esterno live prima dell'applicazione.",
+          "error": {
+            "saveProviderFirst": "Salva il provider prima di registrare un test"
+          },
+          "help": "Questo registra il risultato di un test SSO esterno live. Esegui prima l'accesso nell'IdP, quindi acquisisci il successo o il fallimento qui per la protezione dell'attivazione.",
+          "label": {
+            "email": "Email utente di test",
+            "failureNote": "Nota di errore"
+          },
+          "status": {
+            "failed": "Non riuscito",
+            "notRun": "Non eseguito",
+            "passed": "Riuscito"
+          },
+          "title": "Utente di test"
+        },
+        "status": {
+          "activated": "Attivato",
+          "draft": "Bozza"
+        },
+        "step": {
+          "accessPolicy": "Criteri di accesso",
+          "accessPolicy.description": "Imposta regole di applicazione",
+          "domain": "Dominio",
+          "domain.description": "Conferma limite tenant",
+          "provider": "Provider",
+          "provider.description": "Seleziona l'origine dell'identità",
+          "review": "Revisione e attivazione",
+          "review.description": "Attivazione protezione",
+          "scim": "Provisioning SCIM",
+          "scim.description": "Emetti token di provisioning",
+          "sso": "Configurazione SSO",
+          "sso.description": "Registra OIDC o SAML",
+          "ssoTest": "Utente di test",
+          "ssoTest.description": "Registra risultato accesso live"
+        },
+        "toast": {
+          "accessPolicyFailed": "Salvataggio criteri di accesso non riuscito",
+          "accessPolicySaved": "Criteri di accesso salvati",
+          "activated": "Configurazione identità aziendale attivata",
+          "activateFailed": "Attivazione configurazione non riuscita",
+          "domainStatusFailed": "Aggiornamento stato dominio non riuscito",
+          "domainStatusRefreshed": "Stato dominio aggiornato",
+          "providerSaved": "Identity provider salvato",
+          "providerSaveFailed": "Salvataggio provider non riuscito",
+          "scimStatusFailed": "Aggiornamento stato SCIM non riuscito",
+          "scimStatusRefreshed": "Stato SCIM aggiornato",
+          "scimTokenFailed": "Generazione token SCIM non riuscita",
+          "scimTokenGenerated": "Token SCIM generato",
+          "ssoRegistered": "Provider SSO registrato",
+          "ssoRegisterFailed": "Registrazione provider SSO non riuscita",
+          "ssoTestFailed": "Test SSO contrassegnato come non riuscito",
+          "ssoTestPassed": "Test SSO contrassegnato come riuscito",
+          "ssoTestRecordFailed": "Registrazione test SSO non riuscita"
+        }
+      },
+      "keepExistingSecretHelp": "Lasciare vuoto per mantenere il segreto esistente",
+      "leaveBlankKeepExisting": "Lasciare vuoto per mantenere quello esistente",
+      "provider": "Provider",
+      "socialOAuth": {
+        "addDescription": "Configura la tua app OAuth per il social login.",
+        "addProviderError": "Aggiunta provider non riuscita",
+        "addTitle": "Aggiungi provider OAuth social",
+        "appleKeyIdHelp": "L'ID chiave associato alla tua chiave privata",
+        "appleKeyIdRequired": "L'ID chiave è richiesto per Apple",
+        "appleTeamIdHelp": "Si trova nel tuo account Apple Developer",
+        "appleTeamIdRequired": "L'ID team è richiesto per Apple",
+        "clientIdPlaceholder": "Il tuo ID client OAuth",
+        "clientSecretPlaceholder": "Il tuo client secret OAuth",
+        "configured": "OAuth di {provider} configurato correttamente",
+        "createAppAt": "Crea un'app OAuth su",
+        "deleteError": "Impossibile eliminare la configurazione OAuth",
+        "description": "Configura le tue credenziali OAuth per il social login. Questo consente ai tuoi utenti di accedere utilizzando le app OAuth della tua organizzazione invece delle credenziali condivise.",
+        "developerConsole": "Console sviluppatori di {provider}",
+        "editDescription": "Aggiorna le tue credenziali OAuth.",
+        "editTitle": "Modifica OAuth di {provider}",
+        "empty": "Nessun provider OAuth social personalizzato configurato.",
+        "emptyDescription": "Aggiungi le tue credenziali OAuth per sostituire quelle condivise.",
+        "howItWorks": "Come funziona",
+        "instructions": {
+          "addProvider": "Aggiungi qui il provider con le tue credenziali",
+          "copyCredentials": "Copia il Client ID e il Client Secret",
+          "createApp": "Crea un'app OAuth nella console sviluppatori del provider",
+          "customDomain": "Gli utenti che accedono tramite il tuo dominio personalizzato utilizzeranno la tua app OAuth"
+        },
+        "keyId": "ID chiave",
+        "lastTested": "Ultimo test",
+        "notTested": "Non testato",
+        "privateKey": "Chiave privata (.p8)",
+        "removed": "OAuth di {provider} rimosso",
+        "removeDialogDescription": "Sei sicuro di voler rimuovere questa configurazione OAuth? Gli utenti torneranno a utilizzare le credenziali OAuth condivise (se disponibili).",
+        "removeDialogTitle": "Rimuovi provider OAuth social",
+        "teamId": "ID team",
+        "title": "Provider di social login",
+        "updateConfigError": "Impossibile aggiornare la configurazione",
+        "updated": "OAuth di {provider} aggiornato correttamente",
+        "working": "In lavorazione"
+      },
+      "sso": {
+        "addDescription": "Configura un provider di identità OIDC per il single sign-on aziendale.",
+        "addError": "Impossibile aggiungere il provider SSO",
+        "addSuccess": "Provider SSO aggiunto correttamente",
+        "addTitle": "Aggiungi provider SSO",
+        "clientIdPlaceholder": "Il tuo client ID OIDC",
+        "clientSecretPlaceholder": "Il tuo client secret OIDC",
+        "deleteDialogDescription": "Sei sicuro di voler eliminare questo provider SSO? Gli utenti non potranno più accedere utilizzando questo provider di identità.",
+        "deleteDialogTitle": "Elimina provider SSO",
+        "deleteError": "Impossibile eliminare il provider SSO",
+        "deleteSuccess": "Provider SSO eliminato",
+        "description": "Aggiungi provider di identità OIDC per abilitare il SSO per la tua organizzazione.",
+        "domainInvalid": "Inserisci un dominio valido (es. example.com)",
+        "domainRequired": "Il dominio è obbligatorio",
+        "domainVerified": "Dominio verificato",
+        "emailDomain": "Dominio email",
+        "emailDomainHelp": "Gli utenti con questo dominio email potranno utilizzare il SSO",
+        "empty": "Nessun provider SSO configurato al momento.",
+        "emptyDescription": "Aggiungi un provider OIDC per abilitare il single sign-on aziendale.",
+        "instructions": {
+          "copyCredentials": "Copia l'URL dell'emittente (Issuer URL), il Client ID e il Client Secret dal tuo IdP",
+          "createApp": "Crea un'applicazione OIDC nel tuo provider di identità (Okta, Azure AD, ecc.)",
+          "verifyDomain": "Aggiungi qui il provider e verifica il dominio email tramite record DNS TXT"
+        },
+        "issuerUrl": "URL dell'emittente",
+        "issuerUrlHelp": "L'URL dell'emittente OIDC dal tuo provider di identità",
+        "issuerUrlRequired": "L'URL dell'emittente è obbligatoria",
+        "providerId": "ID provider",
+        "providerIdHelp": "Un identificativo univoco per questo provider (minuscolo, senza spazi)",
+        "providerIdInvalid": "L'ID provider deve contenere solo lettere minuscole, numeri e trattini",
+        "providerIdRequired": "L'ID provider è obbligatorio",
+        "setupInstructions": "Istruzioni di configurazione",
+        "title": "Identity Provider",
+        "token": "Token",
+        "tokenError": "Generazione del token di verifica del dominio non riuscita",
+        "tokenGenerated": "Token di verifica generato",
+        "txtToken": "Token TXT:",
+        "validUrlRequired": "Inserisci un URL valido",
+        "verified": "Verificato",
+        "verify": "Verifica",
+        "verifyError": "Verifica del dominio non riuscita. Controlla il tuo record DNS TXT e riprova."
+      },
+      "tab": {
+        "branding": "Branding",
+        "domains": "Dominio personalizzato",
+        "social-oauth": "Accesso social",
+        "sso": "Provider SSO"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Guida a SSO, provisioning SCIM, restrizioni di dominio, policy di invito e ruoli predefiniti per questa organizzazione.",
+      "title": "Configurazione identità aziendale"
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registra assenza per {name}"
+      },
+      "description": "Esamina le indennità e registra le assenze approvate per il tuo team.",
+      "empty": {
+        "description": "Prova a modificare i filtri o la ricerca per trovare i membri del team.",
+        "label": "Nessun dipendente trovato",
+        "title": "Nessun dipendente trovato"
+      },
+      "error": {
+        "description": "Riprova tra un momento.",
+        "title": "Impossibile caricare le assenze"
+      },
+      "feature": "gestisci le assenze del team",
+      "filters": {
+        "allTeams": "Tutti i team",
+        "searchLabel": "Cerca dipendenti",
+        "searchPlaceholder": "Cerca dipendenti…",
+        "searchSubmit": "Cerca",
+        "teamLabel": "Filtra per team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filtra per anno",
+        "yearPlaceholder": "Anno"
+      },
+      "pagination": {
+        "next": "Avanti",
+        "nextLabel": "Pagina successiva",
+        "page": "Pagina {page} di {pageCount}",
+        "previous": "Indietro",
+        "previousLabel": "Pagina precedente",
+        "showing": "Visualizzazione da {firstItem} a {lastItem} di {total}"
+      },
+      "recordDialog": {
+        "category": "Categoria",
+        "categoryPlaceholder": "Seleziona una categoria di assenza…",
+        "description": "Registra un'assenza approvata direttamente per il dipendente selezionato.",
+        "endDate": "Data di fine",
+        "endDateHelper": "Lascia vuoto per un'assenza in giornata.",
+        "failure": "Impossibile registrare l'assenza",
+        "noCategories": "Nessuna categoria disponibile",
+        "noEmployee": "Seleziona un dipendente prima di registrare un'assenza",
+        "notes": "Note",
+        "notesPlaceholder": "Aggiungi un contesto interno per questa registrazione…",
+        "pickEndDate": "Seleziona data di fine…",
+        "pickStartDate": "Seleziona data di inizio…",
+        "recording": "Registrazione in corso…",
+        "required": "{label} è obbligatorio",
+        "sickDetail": "Dettaglio malattia",
+        "sickDetailPlaceholder": "Seleziona dettaglio malattia…",
+        "startDate": "Data di inizio",
+        "submit": "Registra assenza",
+        "success": "Assenza registrata",
+        "title": "Registra assenza",
+        "titleForEmployee": "Registra assenza per {name}"
+      },
+      "sort": {
+        "ascending": "crescente",
+        "by": "Ordina per {label}",
+        "byWithDirection": "Ordina per {label} ({direction})",
+        "descending": "decrescente"
+      },
+      "table": {
+        "actions": "Azioni",
+        "allowance": "Indennità",
+        "employee": "Dipendente",
+        "left": "Rimanente",
+        "pending": "In attesa",
+        "sick": "Malattia",
+        "teamOrPosition": "Team o Posizione",
+        "used": "Utilizzato"
+      },
+      "title": "Assenze del team"
+    },
+    "balance": {
+      "noBalance": "Nessun saldo"
+    },
+    "description": "Visualizza e gestisci i dipendenti che supervisioni direttamente",
+    "empty": {
+      "action": "Vai alle impostazioni dipendenti",
+      "description": "I dipendenti assegnati a te come manager appariranno qui. Puoi gestire le assegnazioni del team nelle impostazioni dipendenti.",
+      "title": "Nessun membro del team ancora"
+    },
+    "error": {
+      "description": "Impossibile caricare i membri del tuo team.",
+      "title": "Qualcosa è andato storto"
+    },
+    "feature": "vedi il tuo team",
+    "member": "membro",
+    "members": "membri",
+    "member.you": "Tu",
+    "noResults": {
+      "action": "Cancella ricerca",
+      "description": "Nessun membro del team corrisponde a \"{query}\"",
+      "title": "Nessun risultato trovato"
+    },
+    "pagination": {
+      "next": "Successivo",
+      "previous": "Precedente",
+      "showing": "Visualizzazione da {from} a {to} di {total}"
+    },
+    "primaryManager": "Sei il manager principale",
+    "search": {
+      "ariaLabel": "Cerca membri del team",
+      "placeholder": "Cerca per nome, email, posizione o team..."
+    },
+    "status": {
+      "active": "Attivo",
+      "inactive": "Inattivo"
+    },
+    "table": {
+      "employee": "Dipendente",
+      "position": "Posizione",
+      "role": "Ruolo",
+      "sort": {
+        "ascending": "crescente",
+        "descending": "decrescente"
+      },
+      "sortByTimeBalance": "Ordina per saldo annuale",
+      "sortByTimeBalanceWithDirection": "Ordina per saldo annuale ({direction})",
+      "status": "Stato",
+      "team": "Team",
+      "timeBalance": "Saldo annuale"
+    },
+    "title": "Il tuo team",
+    "view": {
+      "cards": "Visualizzazione schede",
+      "table": "Visualizzazione tabella"
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Failed to copy to clipboard",
+    "create": "Add Webhook",
+    "create-failed": "Failed to create webhook",
+    "delete-confirm": {
+      "description": "This will permanently delete the webhook endpoint and all delivery history. This action cannot be undone.",
+      "title": "Delete webhook?"
+    },
+    "deleted": "Webhook deleted",
+    "delete-failed": "Failed to delete webhook",
+    "deliveries": "Deliveries",
+    "description": "Configure webhook endpoints to receive real-time notifications when events occur in your organization.",
+    "disabled": "Webhook disabled",
+    "empty": {
+      "description": "Create your first webhook to start receiving event notifications.",
+      "title": "No webhooks configured"
+    },
+    "enabled": "Webhook enabled",
+    "events": "Events",
+    "form": {
+      "create": "Create Webhook",
+      "create-description": "Configure a new webhook endpoint to receive event notifications.",
+      "create-title": "Create Webhook",
+      "description": "Description",
+      "description-placeholder": "What is this webhook used for?",
+      "deselect-all": "Deselect All",
+      "edit-description": "Update the webhook endpoint configuration.",
+      "edit-title": "Edit Webhook",
+      "events": "Events to receive",
+      "events-hint": "Selected events: {{count}}",
+      "events-required": "At least one event must be selected",
+      "name": "Name",
+      "name-placeholder": "My Webhook",
+      "name-required": "Name is required",
+      "select-all": "Select All",
+      "url": "Endpoint URL",
+      "url-hint": "HTTPS is required in production. Events will be sent as POST requests.",
+      "url-required": "URL is required"
+    },
+    "last-delivery": "Last",
+    "logs": {
+      "attempt": "Attempt",
+      "description": "Recent webhook delivery attempts and their results.",
+      "duration": "Duration",
+      "empty": "No delivery logs yet",
+      "error": "Error",
+      "event": "Event",
+      "failed": "Failed",
+      "http": "HTTP",
+      "payload": "Payload",
+      "pending": "Pending",
+      "response": "Response",
+      "retrying": "Retrying",
+      "showing": "Showing {{start}}-{{end}} of {{total}}",
+      "status": "Status",
+      "success": "Success",
+      "time": "Time",
+      "title": "Delivery Logs"
+    },
+    "regenerate-failed": "Failed to regenerate secret",
+    "regenerate-secret": "Regenerate Secret",
+    "secret-copied": "Secret copied to clipboard",
+    "secret-dialog": {
+      "copy-secret": "Copy secret to clipboard",
+      "description": "This secret is used to verify webhook signatures. Store it securely.",
+      "done": "I've saved the secret",
+      "secret": "Signing Secret",
+      "title": "Webhook Secret",
+      "verification": "Signature Verification",
+      "verification-hint": "Verify webhook signatures using HMAC-SHA256. The signature is sent in the X-Z8-Signature header.",
+      "warning": "This secret will only be shown once. Make sure to save it now.",
+      "warning-title": "Important"
+    },
+    "secret-regenerated": "Secret regenerated",
+    "status": {
+      "degraded": "Degraded",
+      "failing": "Failing",
+      "healthy": "Healthy",
+      "inactive": "Inactive"
+    },
+    "success-rate": "Success",
+    "test": "Send Test",
+    "test-failed": "Failed to send test webhook",
+    "test-sent": "Test webhook sent",
+    "title": "Webhooks",
+    "toggle-active": "Toggle webhook active",
+    "updated": "Webhook updated",
+    "update-failed": "Failed to update webhook",
+    "view-logs": "View Logs"
+  }
+}

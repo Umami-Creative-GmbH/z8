@@ -166,18 +166,18 @@ export function WebhookFormDialog({
 		e.preventDefault();
 
 		if (!name.trim()) {
-			toast.error(t("settings:webhooks.form.name-required", "Name is required"));
+			toast.error(t("webhooks:webhooks.form.name-required", "Name is required"));
 			return;
 		}
 
 		if (!url.trim()) {
-			toast.error(t("settings:webhooks.form.url-required", "URL is required"));
+			toast.error(t("webhooks:webhooks.form.url-required", "URL is required"));
 			return;
 		}
 
 		if (selectedEvents.size === 0) {
 			toast.error(
-				t("settings:webhooks.form.events-required", "At least one event must be selected"),
+				t("webhooks:webhooks.form.events-required", "At least one event must be selected"),
 			);
 			return;
 		}
@@ -192,12 +192,12 @@ export function WebhookFormDialog({
 
 			if (result.success) {
 				onSuccess(result.data.endpoint);
-				toast.success(t("settings:webhooks.updated", "Webhook updated"));
+				toast.success(t("webhooks:webhooks.updated", "Webhook updated"));
 				onOpenChange(false);
 				startTransition(() => router.refresh());
 			} else {
 				toast.error(
-					result.error ?? t("settings:webhooks.update-failed", "Failed to update webhook"),
+					result.error ?? t("webhooks:webhooks.update-failed", "Failed to update webhook"),
 				);
 			}
 		} else {
@@ -222,7 +222,7 @@ export function WebhookFormDialog({
 				setSelectedEvents(new Set());
 			} else {
 				toast.error(
-					result.error ?? t("settings:webhooks.create-failed", "Failed to create webhook"),
+					result.error ?? t("webhooks:webhooks.create-failed", "Failed to create webhook"),
 				);
 			}
 		}
@@ -237,17 +237,17 @@ export function WebhookFormDialog({
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{isEditing
-								? t("settings:webhooks.form.edit-title", "Edit Webhook")
-								: t("settings:webhooks.form.create-title", "Create Webhook")}
+								? t("webhooks:webhooks.form.edit-title", "Edit Webhook")
+								: t("webhooks:webhooks.form.create-title", "Create Webhook")}
 						</ActionPanelTitle>
 						<ActionPanelDescription>
 							{isEditing
 								? t(
-										"settings:webhooks.form.edit-description",
+										"webhooks:webhooks.form.edit-description",
 										"Update the webhook endpoint configuration.",
 									)
 								: t(
-										"settings:webhooks.form.create-description",
+										"webhooks:webhooks.form.create-description",
 										"Configure a new webhook endpoint to receive event notifications.",
 									)}
 						</ActionPanelDescription>
@@ -258,19 +258,19 @@ export function WebhookFormDialog({
 							{/* Basic Info */}
 							<div className="space-y-4">
 								<div className="space-y-2">
-									<Label htmlFor="webhook-name">{t("settings:webhooks.form.name", "Name")}</Label>
+									<Label htmlFor="webhook-name">{t("webhooks:webhooks.form.name", "Name")}</Label>
 									<Input
 										id="webhook-name"
 										value={name}
 										onChange={(e) => setName(e.target.value)}
-										placeholder={t("settings:webhooks.form.name-placeholder", "My Webhook")}
+										placeholder={t("webhooks:webhooks.form.name-placeholder", "My Webhook")}
 										required
 									/>
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="webhook-url">
-										{t("settings:webhooks.form.url", "Endpoint URL")}
+										{t("webhooks:webhooks.form.url", "Endpoint URL")}
 									</Label>
 									<Input
 										id="webhook-url"
@@ -282,7 +282,7 @@ export function WebhookFormDialog({
 									/>
 									<p className="text-xs text-muted-foreground">
 										{t(
-											"settings:webhooks.form.url-hint",
+											"webhooks:webhooks.form.url-hint",
 											"HTTPS is required in production. Events will be sent as POST requests.",
 										)}
 									</p>
@@ -290,7 +290,7 @@ export function WebhookFormDialog({
 
 								<div className="space-y-2">
 									<Label htmlFor="webhook-description">
-										{t("settings:webhooks.form.description", "Description")} (
+										{t("webhooks:webhooks.form.description", "Description")} (
 										{t("common.optional", "optional")})
 									</Label>
 									<Textarea
@@ -298,7 +298,7 @@ export function WebhookFormDialog({
 										value={description}
 										onChange={(e) => setDescription(e.target.value)}
 										placeholder={t(
-											"settings:webhooks.form.description-placeholder",
+											"webhooks:webhooks.form.description-placeholder",
 											"What is this webhook used for?",
 										)}
 										rows={2}
@@ -309,11 +309,11 @@ export function WebhookFormDialog({
 							{/* Event Selection */}
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
-									<Label>{t("settings:webhooks.form.events", "Events to receive")}</Label>
+									<Label>{t("webhooks:webhooks.form.events", "Events to receive")}</Label>
 									<Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
 										{selectedEvents.size === allEventsCount
-											? t("settings:webhooks.form.deselect-all", "Deselect All")
-											: t("settings:webhooks.form.select-all", "Select All")}
+											? t("webhooks:webhooks.form.deselect-all", "Deselect All")
+											: t("webhooks:webhooks.form.select-all", "Select All")}
 									</Button>
 								</div>
 
@@ -355,7 +355,7 @@ export function WebhookFormDialog({
 														onCheckedChange={() => handleCategoryToggle(key)}
 													/>
 													<CollapsibleTrigger className="flex-1 text-left text-sm font-medium">
-														{t(`settings:webhooks.categories.${key}`, category.label)}
+														{t(`webhooks:webhooks.categories.${key}`, category.label)}
 													</CollapsibleTrigger>
 													<span className="text-xs text-muted-foreground">
 														{selectedCount}/{categoryEvents.length}
@@ -381,7 +381,7 @@ export function WebhookFormDialog({
 
 								<p className="text-xs text-muted-foreground flex items-center gap-1">
 									<IconInfoCircle className="size-3" aria-hidden="true" />
-									{t("settings:webhooks.form.events-hint", "Selected events: {{count}}", {
+									{t("webhooks:webhooks.form.events-hint", "Selected events: {{count}}", {
 										count: selectedEvents.size,
 									})}
 								</p>
@@ -398,7 +398,7 @@ export function WebhookFormDialog({
 								)}
 								{isEditing
 									? t("common.save", "Save")
-									: t("settings:webhooks.form.create", "Create Webhook")}
+									: t("webhooks:webhooks.form.create", "Create Webhook")}
 							</Button>
 						</ActionPanelFooter>
 					</form>

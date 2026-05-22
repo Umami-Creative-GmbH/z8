@@ -9,18 +9,18 @@ import { env } from "@/env";
  * For local development, use RustFS included in docker-compose.
  */
 export const s3Client = new S3Client({
-	endpoint: env.S3_ENDPOINT,
-	region: env.S3_REGION,
+	endpoint: env.S3_PUBLIC_ENDPOINT,
+	region: env.S3_PUBLIC_REGION,
 	credentials: {
-		accessKeyId: env.S3_ACCESS_KEY_ID,
-		secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+		accessKeyId: env.S3_PUBLIC_ACCESS_KEY_ID,
+		secretAccessKey: env.S3_PUBLIC_SECRET_ACCESS_KEY,
 	},
-	forcePathStyle: env.S3_FORCE_PATH_STYLE === "true",
+	forcePathStyle: env.S3_PUBLIC_FORCE_PATH_STYLE === "true",
 });
 
-export const S3_BUCKET = env.S3_BUCKET;
+export const S3_PUBLIC_BUCKET = env.S3_PUBLIC_BUCKET;
 export const S3_PUBLIC_URL = env.S3_PUBLIC_URL;
-export const S3_REGION = env.S3_REGION;
+export const S3_PUBLIC_REGION = env.S3_PUBLIC_REGION;
 
 /**
  * Get the public URL for an uploaded file

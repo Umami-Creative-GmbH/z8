@@ -24,7 +24,7 @@ k8s/
 ## Services to Deploy
 
 - **webapp** - Next.js application
-- **postgres** - PostgreSQL (or use managed RDS/Cloud SQL)
+- **postgres** - PostgreSQL (or use managed RDS/Cloud SQL). Managed providers that require TLS should use the individual `POSTGRES_*` variables with `POSTGRES_SSL_MODE=verify-full` and either `POSTGRES_SSL_ROOT_CERT_PATH=/path/to/provider-ca.pem` for a mounted CA file or `POSTGRES_SSL_CA_CERT` for inline PEM content.
 - **valkey** - Redis-compatible cache
 - **vault** - Secrets management (or use cloud-native secrets)
 - **workers** - Background job processors

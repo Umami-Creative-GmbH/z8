@@ -208,8 +208,7 @@ export async function regeneratePresignedUrl(
 		throw new Error("Export has no S3 key");
 	}
 
-	// Generate new presigned URL (24 hours)
-	const url = await getPresignedUrl(exportRecord.organizationId, exportRecord.s3Key, 86400);
+	const url = await getPresignedUrl(exportRecord.organizationId, exportRecord.s3Key);
 
 	logger.info({ exportId }, "Regenerated presigned URL");
 

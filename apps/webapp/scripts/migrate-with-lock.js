@@ -1,5 +1,47 @@
 const { spawnSync } = require("node:child_process");
+const { readFileSync } = require("node:fs");
 const { Client } = require("pg");
+
+const sslModes = new Set([
+  "disable",
+  "prefer",
+  "require",
+  "verify-ca",
+  "verify-full",
+]);
+
+function getPostgresSslConfig(
+  env = process.env,
+  readCertificateFile = (path) => readFileSync(path, "utf8")
+) {
+  const mode = env.POSTGRES_SSL_MODE || "disable";
+
+  if (!sslModes.has(mode)) {
+    throw new Error(
+      `POSTGRES_SSL_MODE must be one of: ${Array.from(sslModes).join(", ")}`
+    );
+  }
+
+  if (mode === "disable") {
+    return false;
+  }
+
+  const ca =
+    env.POSTGRES_SSL_CA_CERT ||
+    (env.POSTGRES_SSL_ROOT_CERT_PATH
+      ? readCertificateFile(env.POSTGRES_SSL_ROOT_CERT_PATH)
+      : undefined);
+
+  if (mode === "prefer" || mode === "require") {
+    return ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false };
+  }
+
+  return {
+    ...(ca ? { ca } : {}),
+    ...(mode === "verify-ca" ? { checkServerIdentity: () => undefined } : {}),
+    rejectUnauthorized: true,
+  };
+}
 
 const lockIdRaw = process.env.DB_MIGRATION_LOCK_ID ?? "74382643";
 const lockId = Number.parseInt(lockIdRaw, 10);
@@ -34,8 +76,16 @@ const migrateCommand =
   process.env.DRIZZLE_MIGRATE_COMMAND ??
   "pnpm exec drizzle-kit migrate --config ./drizzle.config.ts";
 
+const hasExplicitSslConfig =
+  process.env.POSTGRES_SSL_MODE ||
+  process.env.POSTGRES_SSL_CA_CERT ||
+  process.env.POSTGRES_SSL_ROOT_CERT_PATH;
+
 const run = async () => {
-  const client = new Client({ connectionString: databaseUrl });
+  const client = new Client({
+    connectionString: databaseUrl,
+    ...(hasExplicitSslConfig ? { ssl: getPostgresSslConfig() } : {}),
+  });
   await client.connect();
 
   try {

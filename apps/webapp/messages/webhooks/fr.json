@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Échec de la copie dans le presse-papiers",
+    "create": "Ajouter un webhook",
+    "create-failed": "Échec de la création du webhook",
+    "delete-confirm": {
+      "description": "Ceci supprimera définitivement le point de terminaison du webhook et tout l'historique de livraison. Cette action est irréversible.",
+      "title": "Supprimer le webhook ?"
+    },
+    "deleted": "Webhook supprimé",
+    "delete-failed": "Échec de la suppression du webhook",
+    "deliveries": "Livraisons",
+    "description": "Configurez des points de terminaison de webhook pour recevoir des notifications en temps réel lorsque des événements surviennent dans votre organisation.",
+    "disabled": "Webhook désactivé",
+    "empty": {
+      "description": "Créez votre premier webhook pour commencer à recevoir des notifications d'événements.",
+      "title": "Aucun webhook configuré"
+    },
+    "enabled": "Webhook activé",
+    "events": "Événements",
+    "form": {
+      "create": "Créer un webhook",
+      "create-description": "Configurez un nouveau point de terminaison de webhook pour recevoir des notifications d'événements.",
+      "create-title": "Créer un webhook",
+      "description": "Description",
+      "description-placeholder": "À quoi sert ce webhook ?",
+      "deselect-all": "Tout désélectionner",
+      "edit-description": "Mettre à jour la configuration du point de terminaison du webhook.",
+      "edit-title": "Modifier le webhook",
+      "events": "Événements à recevoir",
+      "events-hint": "Événements sélectionnés : {{count}}",
+      "events-required": "Au moins un événement doit être sélectionné",
+      "name": "Nom",
+      "name-placeholder": "Mon webhook",
+      "name-required": "Le nom est requis",
+      "select-all": "Tout sélectionner",
+      "url": "URL du point de terminaison",
+      "url-hint": "HTTPS est requis en production. Les événements seront envoyés sous forme de requêtes POST.",
+      "url-required": "L'URL est requise"
+    },
+    "last-delivery": "Dernier",
+    "logs": {
+      "attempt": "Tentative",
+      "description": "Tentatives récentes de livraison de webhook et leurs résultats.",
+      "duration": "Durée",
+      "empty": "Aucun journal de livraison pour le moment",
+      "error": "Erreur",
+      "event": "Événement",
+      "failed": "Échec",
+      "http": "HTTP",
+      "payload": "Charge utile",
+      "pending": "En attente",
+      "response": "Réponse",
+      "retrying": "Réessai en cours",
+      "showing": "Affichage de {{start}}-{{end}} sur {{total}}",
+      "status": "Statut",
+      "success": "Succès",
+      "time": "Heure",
+      "title": "Journaux de livraison"
+    },
+    "regenerate-failed": "Échec de la régénération du secret",
+    "regenerate-secret": "Régénérer le secret",
+    "secret-copied": "Secret copié dans le presse-papiers",
+    "secret-dialog": {
+      "copy-secret": "Copier le secret dans le presse-papiers",
+      "description": "Ce secret est utilisé pour vérifier les signatures de webhook. Stockez-le en toute sécurité.",
+      "done": "J'ai enregistré le secret",
+      "secret": "Secret de signature",
+      "title": "Secret du webhook",
+      "verification": "Vérification de signature",
+      "verification-hint": "Vérifiez les signatures des webhooks en utilisant HMAC-SHA256. La signature est envoyée dans l'en-tête X-Z8-Signature.",
+      "warning": "Ce secret ne sera affiché qu'une seule fois. Assurez-vous de le sauvegarder maintenant.",
+      "warning-title": "Important"
+    },
+    "secret-regenerated": "Secret régénéré",
+    "status": {
+      "degraded": "Dégradé",
+      "failing": "En échec",
+      "healthy": "Opérationnel",
+      "inactive": "Inactif"
+    },
+    "success-rate": "Succès",
+    "test": "Envoyer un test",
+    "test-failed": "Échec de l'envoi du webhook de test",
+    "test-sent": "Webhook de test envoyé",
+    "title": "Webhooks",
+    "toggle-active": "Activer/désactiver le webhook",
+    "updated": "Webhook mis à jour",
+    "update-failed": "Échec de la mise à jour du webhook",
+    "view-logs": "Voir les journaux"
+  }
+}

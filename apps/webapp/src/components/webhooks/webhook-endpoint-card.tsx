@@ -76,24 +76,24 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 	const getStatusBadge = () => {
 		if (!webhook.isActive) {
 			return (
-				<Badge variant="secondary">{t("settings:webhooks.status.inactive", "Inactive")}</Badge>
+				<Badge variant="secondary">{t("webhooks:webhooks.status.inactive", "Inactive")}</Badge>
 			);
 		}
 		if (webhook.consecutiveFailures >= 5) {
 			return (
-				<Badge variant="destructive">{t("settings:webhooks.status.failing", "Failing")}</Badge>
+				<Badge variant="destructive">{t("webhooks:webhooks.status.failing", "Failing")}</Badge>
 			);
 		}
 		if (webhook.consecutiveFailures > 0) {
 			return (
 				<Badge variant="outline" className="border-yellow-500 text-yellow-600">
-					{t("settings:webhooks.status.degraded", "Degraded")}
+					{t("webhooks:webhooks.status.degraded", "Degraded")}
 				</Badge>
 			);
 		}
 		return (
 			<Badge variant="default" className="bg-green-600">
-				{t("settings:webhooks.status.healthy", "Healthy")}
+				{t("webhooks:webhooks.status.healthy", "Healthy")}
 			</Badge>
 		);
 	};
@@ -104,12 +104,12 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 			onUpdated(result.data.endpoint);
 			toast.success(
 				checked
-					? t("settings:webhooks.enabled", "Webhook enabled")
-					: t("settings:webhooks.disabled", "Webhook disabled"),
+					? t("webhooks:webhooks.enabled", "Webhook enabled")
+					: t("webhooks:webhooks.disabled", "Webhook disabled"),
 			);
 			startTransition(() => router.refresh());
 		} else {
-			toast.error(result.error ?? t("settings:webhooks.update-failed", "Failed to update webhook"));
+			toast.error(result.error ?? t("webhooks:webhooks.update-failed", "Failed to update webhook"));
 		}
 	};
 
@@ -117,21 +117,21 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 		const result = await deleteWebhook(webhook.id);
 		if (result.success) {
 			onDeleted(webhook.id);
-			toast.success(t("settings:webhooks.deleted", "Webhook deleted"));
+			toast.success(t("webhooks:webhooks.deleted", "Webhook deleted"));
 			setIsDeleteDialogOpen(false);
 			startTransition(() => router.refresh());
 		} else {
-			toast.error(result.error ?? t("settings:webhooks.delete-failed", "Failed to delete webhook"));
+			toast.error(result.error ?? t("webhooks:webhooks.delete-failed", "Failed to delete webhook"));
 		}
 	};
 
 	const handleTest = async () => {
 		const result = await testWebhook(webhook.id);
 		if (result.success) {
-			toast.success(t("settings:webhooks.test-sent", "Test webhook sent"));
+			toast.success(t("webhooks:webhooks.test-sent", "Test webhook sent"));
 		} else {
 			toast.error(
-				result.error ?? t("settings:webhooks.test-failed", "Failed to send test webhook"),
+				result.error ?? t("webhooks:webhooks.test-failed", "Failed to send test webhook"),
 			);
 		}
 	};
@@ -141,10 +141,10 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 		if (result.success) {
 			setNewSecret(result.data.secret);
 			setIsSecretDialogOpen(true);
-			toast.success(t("settings:webhooks.secret-regenerated", "Secret regenerated"));
+			toast.success(t("webhooks:webhooks.secret-regenerated", "Secret regenerated"));
 		} else {
 			toast.error(
-				result.error ?? t("settings:webhooks.regenerate-failed", "Failed to regenerate secret"),
+				result.error ?? t("webhooks:webhooks.regenerate-failed", "Failed to regenerate secret"),
 			);
 		}
 	};
@@ -165,7 +165,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 							checked={webhook.isActive}
 							onCheckedChange={handleToggleActive}
 							disabled={isPending}
-							aria-label={t("settings:webhooks.toggle-active", "Toggle webhook active")}
+							aria-label={t("webhooks:webhooks.toggle-active", "Toggle webhook active")}
 						/>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -177,11 +177,11 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem onClick={handleTest}>
 									<IconPlayerPlay className="mr-2 size-4" aria-hidden="true" />
-									{t("settings:webhooks.test", "Send Test")}
+									{t("webhooks:webhooks.test", "Send Test")}
 								</DropdownMenuItem>
 								<DropdownMenuItem onClick={() => setIsLogsDialogOpen(true)}>
 									<IconHistory className="mr-2 size-4" aria-hidden="true" />
-									{t("settings:webhooks.view-logs", "View Logs")}
+									{t("webhooks:webhooks.view-logs", "View Logs")}
 								</DropdownMenuItem>
 								<DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
 									<IconEdit className="mr-2 size-4" aria-hidden="true" />
@@ -189,7 +189,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 								</DropdownMenuItem>
 								<DropdownMenuItem onClick={handleRegenerateSecret}>
 									<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-									{t("settings:webhooks.regenerate-secret", "Regenerate Secret")}
+									{t("webhooks:webhooks.regenerate-secret", "Regenerate Secret")}
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
@@ -206,24 +206,24 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 				<CardContent>
 					<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
 						<div>
-							<span className="font-medium">{t("settings:webhooks.events", "Events")}:</span>{" "}
+							<span className="font-medium">{t("webhooks:webhooks.events", "Events")}:</span>{" "}
 							{(webhook.subscribedEvents as string[]).length}
 						</div>
 						<div>
 							<span className="font-medium">
-								{t("settings:webhooks.deliveries", "Deliveries")}:
+								{t("webhooks:webhooks.deliveries", "Deliveries")}:
 							</span>{" "}
 							{webhook.totalDeliveries}
 						</div>
 						<div>
-							<span className="font-medium">{t("settings:webhooks.success-rate", "Success")}:</span>{" "}
+							<span className="font-medium">{t("webhooks:webhooks.success-rate", "Success")}:</span>{" "}
 							{webhook.totalDeliveries > 0
 								? `${Math.round((webhook.totalSuccesses / webhook.totalDeliveries) * 100)}%`
 								: "-"}
 						</div>
 						{lastDeliveryTime && (
 							<div>
-								<span className="font-medium">{t("settings:webhooks.last-delivery", "Last")}:</span>{" "}
+								<span className="font-medium">{t("webhooks:webhooks.last-delivery", "Last")}:</span>{" "}
 								{lastDeliveryTime}
 							</div>
 						)}
@@ -262,11 +262,11 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings:webhooks.delete-confirm.title", "Delete webhook?")}
+							{t("webhooks:webhooks.delete-confirm.title", "Delete webhook?")}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
-								"settings:webhooks.delete-confirm.description",
+								"webhooks:webhooks.delete-confirm.description",
 								"This will permanently delete the webhook endpoint and all delivery history. This action cannot be undone.",
 							)}
 						</AlertDialogDescription>

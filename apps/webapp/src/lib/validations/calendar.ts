@@ -20,6 +20,16 @@ export const calendarEventSchema = z.object({
 	metadata: z.record(z.string(), z.any()),
 });
 
+export const dailyWorkRequirementSchema = z.object({
+	requiredMinutes: z.number().int().nonnegative(),
+	policyId: z.string(),
+	policyName: z.string(),
+});
+
+export const dailyWorkRequirementsSchema = z.record(z.string(), dailyWorkRequirementSchema);
+
+export const dailyWorkActualMinutesSchema = z.record(z.string(), z.number().int().nonnegative());
+
 /**
  * Holiday event schema with typed metadata
  */

@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { createLogger } from "@/lib/logger";
 import * as authSchema from "./auth-schema";
+import { getPostgresSslConfig } from "./postgres-ssl";
 import * as schema from "./schema";
 
 const logger = createLogger("Database");
@@ -26,6 +27,7 @@ function createPool(): Pool {
 		database: process.env.POSTGRES_DB!,
 		user: process.env.POSTGRES_USER!,
 		password: process.env.POSTGRES_PASSWORD!,
+		ssl: getPostgresSslConfig(),
 		// With PgBouncer handling connection pooling, we can use smaller app-side pools
 		// PgBouncer manages the actual connections to PostgreSQL
 		max: parseInt(process.env.POSTGRES_POOL_MAX || "10", 10),
@@ -176,6 +178,8 @@ export {
 	notificationTypeEnum,
 	organizationBranding,
 	organizationBrandingRelations,
+	organizationSecret,
+	organizationSecretKey,
 	// Enterprise tables
 	organizationDomain,
 	organizationDomainRelations,
@@ -267,4 +271,5 @@ export {
 	scheduledExportRelations,
 	scheduledExportExecution,
 	scheduledExportExecutionRelations,
+	secretStoreProviderEnum,
 } from "./schema";

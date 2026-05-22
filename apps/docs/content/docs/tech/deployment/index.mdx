@@ -74,6 +74,24 @@ docker run -p 3000:3000 z8-webapp:latest
 
 Z8 uses PostgreSQL with Drizzle ORM. Auth/schema generation and migrations use `pnpm`:
 
+```ini
+POSTGRES_HOST=postgres.example.com
+POSTGRES_PORT=5432
+POSTGRES_DB=z8
+POSTGRES_USER=z8
+POSTGRES_PASSWORD=<password>
+POSTGRES_SSL_MODE=disable
+```
+
+For managed PostgreSQL providers that require TLS, keep the individual connection variables and set the SSL mode explicitly. If the provider documents `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, configure:
+
+```ini
+POSTGRES_SSL_MODE=verify-full
+POSTGRES_SSL_ROOT_CERT_PATH=/etc/postgres-certs/provider-ca.pem
+```
+
+Use `POSTGRES_SSL_CA_CERT` instead of `POSTGRES_SSL_ROOT_CERT_PATH` only when storing the PEM certificate content as an environment variable is preferable to mounting a CA file.
+
 ```bash
 pnpm --dir apps/webapp run auth:migrate
 ```

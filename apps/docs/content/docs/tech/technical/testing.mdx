@@ -36,7 +36,17 @@ Required environment variables:
 
 ```ini
 # Database
-DATABASE_URL=postgresql://user:pass@host:5432/db
+POSTGRES_HOST=host
+POSTGRES_PORT=5432
+POSTGRES_DB=db
+POSTGRES_USER=user
+POSTGRES_PASSWORD=pass
+POSTGRES_SSL_MODE=disable
+
+# Managed PostgreSQL TLS, when required
+# POSTGRES_SSL_MODE=verify-full
+# POSTGRES_SSL_ROOT_CERT_PATH=/etc/postgres-certs/provider-ca.pem
+# POSTGRES_SSL_CA_CERT=<pem-certificate-content>
 
 # Authentication
 BETTER_AUTH_SECRET=<secret>

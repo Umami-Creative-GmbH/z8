@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	calculatePresenceStatusCounts,
 	calculatePresenceStatusSummary,
+	expandApprovedHomeOfficeDates,
 	getPresencePeriodBounds,
 	getPresenceWorkDays,
 	parsePresenceFixedDays,
@@ -257,5 +258,83 @@ describe("calculatePresenceStatusSummary", () => {
 
 		expect(summary.officeDaysCompleted).toBe(1);
 		expect(summary.homeOfficeDaysUsed).toBe(1);
+	});
+
+	it("does not require a fixed office day with an approved home-office exception", () => {
+		const summary = calculatePresenceStatusSummary({
+			presenceMode: "fixed_days",
+			requiredOnsiteDays: null,
+			requiredOnsiteFixedDays: ["wednesday"],
+			period: "weekly",
+			periodStart,
+			periodEnd,
+			now: DateTime.fromISO("2026-05-04T08:00:00.000Z", { zone: "utc" }),
+			timezone: "utc",
+			workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			workPeriods: [],
+			approvedHomeOfficeDates: ["2026-05-06"],
+		});
+
+		expect(summary.requiredOfficeDays).toBe(0);
+		expect(summary.officeDaysRequiredLeft).toBe(0);
+		expect(summary.homeOfficeDaysLeft).toBe(5);
+	});
+
+	it("reduces flexible required office days by approved home-office exceptions", () => {
+		const summary = calculatePresenceStatusSummary({
+			presenceMode: "minimum_count",
+			requiredOnsiteDays: 5,
+			requiredOnsiteFixedDays: [],
+			period: "weekly",
+			periodStart,
+			periodEnd,
+			now: DateTime.fromISO("2026-05-04T08:00:00.000Z", { zone: "utc" }),
+			timezone: "utc",
+			workDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+			workPeriods: [],
+			approvedHomeOfficeDates: ["2026-05-06", "2026-05-07"],
+		});
+
+		expect(summary.requiredOfficeDays).toBe(3);
+		expect(summary.officeDaysRequiredLeft).toBe(3);
+		expect(summary.homeOfficeDaysLeft).toBe(2);
+	});
+});
+
+describe("expandApprovedHomeOfficeDates", () => {
+	it("deduplicates and clips approved ranges to the presence period", () => {
+		const dates = expandApprovedHomeOfficeDates({
+			periodStart,
+			periodEnd,
+			timezone: "utc",
+			entries: [
+				{ startDate: "2026-05-03", endDate: "2026-05-06" },
+				{ startDate: "2026-05-06", endDate: "2026-05-12" },
+			],
+		});
+
+		expect(dates).toEqual([
+			"2026-05-04",
+			"2026-05-05",
+			"2026-05-06",
+			"2026-05-07",
+			"2026-05-08",
+			"2026-05-09",
+			"2026-05-10",
+		]);
+	});
+
+	it("ignores malformed approved ranges", () => {
+		const dates = expandApprovedHomeOfficeDates({
+			periodStart,
+			periodEnd,
+			timezone: "utc",
+			entries: [
+				{ startDate: "not-a-date", endDate: "2026-05-06" },
+				{ startDate: "2026-05-08", endDate: "2026-05-07" },
+			],
+		});
+
+		expect(dates).toEqual([]);
 	});
 });

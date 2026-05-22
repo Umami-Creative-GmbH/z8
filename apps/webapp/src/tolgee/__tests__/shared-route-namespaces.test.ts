@@ -15,7 +15,7 @@ describe("route namespaces", () => {
 		expect(getNamespacesForRoute("/platform-admin/worker-queue")).toEqual([
 			"common",
 			"admin",
-			"settings",
+			"settings/generic",
 		]);
 	});
 
@@ -23,7 +23,7 @@ describe("route namespaces", () => {
 		expect(getNamespacesForRoute("/platform-admin/worker-queue/jobs/123")).toEqual([
 			"common",
 			"admin",
-			"settings",
+			"settings/generic",
 		]);
 	});
 
@@ -36,7 +36,7 @@ describe("route namespaces", () => {
 	});
 
 	it("loads common+settings namespaces for /travel-expenses", () => {
-		expect(getNamespacesForRoute("/travel-expenses")).toEqual(["common", "settings"]);
+		expect(getNamespacesForRoute("/travel-expenses")).toEqual(["common", "travelExpenses"]);
 	});
 
 	it("loads the approvals namespace for approval routes", () => {
@@ -48,7 +48,7 @@ describe("route namespaces", () => {
 	});
 
 	it("loads settings translations for team routes", () => {
-		expect(getNamespacesForRoute("/team")).toEqual(["common", "settings"]);
+		expect(getNamespacesForRoute("/team")).toEqual(["common", "team"]);
 	});
 
 	it("loads scheduling and compliance namespaces for scheduling routes", () => {
@@ -64,7 +64,29 @@ describe("route namespaces", () => {
 	});
 
 	it("loads webhooks translations only for webhook settings routes", () => {
-		expect(getNamespacesForRoute("/settings/webhooks")).toEqual(["common", "settings"]);
+		expect(getNamespacesForRoute("/settings/webhooks")).toEqual([
+			"common",
+			"settings/generic",
+			"webhooks",
+		]);
+	});
+
+	it("loads focused settings namespaces for nested settings routes", () => {
+		expect(getNamespacesForRoute("/settings/billing")).toEqual([
+			"common",
+			"settings/generic",
+			"billing",
+		]);
+		expect(getNamespacesForRoute("/settings/enterprise/email")).toEqual([
+			"common",
+			"settings/generic",
+			"settings/enterprise",
+		]);
+		expect(getNamespacesForRoute("/settings/holidays")).toEqual([
+			"common",
+			"settings/generic",
+			"settings/holidays",
+		]);
 	});
 
 	it("loads setup translations for setup and init routes", () => {

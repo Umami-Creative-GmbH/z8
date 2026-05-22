@@ -1,11 +1,12 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
 import { NextResponse, type NextRequest, connection } from "next/server";
 import { db } from "@/db";
 import { travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
+import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
+import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { isAllowedTravelExpenseMime } from "@/lib/travel-expenses/attachment-validation";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
 
 		const getResponse = await s3Client.send(
 			new GetObjectCommand({
-				Bucket: S3_BUCKET,
+				Bucket: S3_PUBLIC_BUCKET,
 				Key: safeTusFileKey,
 			}),
 		);
@@ -98,18 +99,16 @@ export async function POST(request: NextRequest) {
 		const timestamp = Date.now();
 		const finalStorageKey = `travel-expenses/${claim.organizationId}/${claim.id}/${timestamp}-${finalName}`;
 
-		await s3Client.send(
-			new PutObjectCommand({
-				Bucket: S3_BUCKET,
-				Key: finalStorageKey,
-				Body: buffer,
-				ContentType: detectedType.mime,
-				Metadata: {
-					"uploaded-by": authContext.employee.id,
-					"original-key": safeTusFileKey,
-					"upload-timestamp": new Date().toISOString(),
-				},
-			}),
+		const privateUpload = await uploadPrivateObject(
+			claim.organizationId,
+			finalStorageKey,
+			buffer,
+			detectedType.mime,
+			{
+				"uploaded-by": authContext.employee.id,
+				"original-key": safeTusFileKey,
+				"upload-timestamp": new Date().toISOString(),
+			},
 		);
 
 		const [createdAttachment] = await db
@@ -117,8 +116,8 @@ export async function POST(request: NextRequest) {
 			.values({
 				organizationId: claim.organizationId,
 				claimId: claim.id,
-				storageProvider: "s3",
-				storageBucket: S3_BUCKET,
+				storageProvider: "s3-private",
+				storageBucket: privateUpload.bucket,
 				storageKey: finalStorageKey,
 				fileName: finalName,
 				mimeType: detectedType.mime,
@@ -139,7 +138,7 @@ export async function POST(request: NextRequest) {
 
 		await s3Client.send(
 			new DeleteObjectCommand({
-				Bucket: S3_BUCKET,
+				Bucket: S3_PUBLIC_BUCKET,
 				Key: safeTusFileKey,
 			}),
 		);

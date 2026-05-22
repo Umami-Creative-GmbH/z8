@@ -122,7 +122,8 @@
       "approving": "Approvazione in corso...",
       "emptyState": "Nessuna voce oraria trovata per questa settimana.",
       "rowActions": "Azioni voce di tempo",
-      "title": "Voci orarie"
+      "title": "Voci orarie",
+      "viewCalendar": "Visualizza calendario"
     },
     "timeline": {
       "dayPicker": "Selettore giorno della timeline",

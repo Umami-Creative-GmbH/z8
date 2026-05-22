@@ -1,0 +1,517 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Reusable employee cohorts for policies that need group-specific approval chains.",
+      "empty": "No employee groups configured yet. Groups can be used as policy conditions once created.",
+      "loadFailed": "Employee groups could not be loaded.",
+      "loading": "Loading employee groups…",
+      "members": "Members",
+      "status": "Status",
+      "status.active": "Active",
+      "status.inactive": "Inactive",
+      "title": "Employee Groups"
+    },
+    "employees": {
+      "description": "Manage employee profiles, teams, and permissions",
+      "details": "Employee Details",
+      "detailView": {
+        "loadingEmployeeData": "Loading employee data",
+        "manageEmployees": "manage employees",
+        "unexpectedError": "An unexpected error occurred",
+        "updateFailed": "Failed to update employee",
+        "updateSuccess": "Employee updated successfully"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "View Details"
+        },
+        "contract": {
+          "fixed": "Fixed",
+          "hourly": "Hourly"
+        },
+        "countFound": "{count} employee(s) found",
+        "emptyState": "No employees found",
+        "inviteEmployee": "Invite Employee",
+        "loading": "Loading employees...",
+        "noEmployeeFeature": "manage employees",
+        "pagination": {
+          "next": "Next",
+          "pageOf": "Page {page} of {total}",
+          "previous": "Previous"
+        },
+        "refresh": "Refresh",
+        "roleFilter": "Filter by role",
+        "roles": {
+          "admin": "Admin",
+          "all": "All Roles",
+          "employee": "Employee",
+          "manager": "Manager"
+        },
+        "searchLabel": "Search employees",
+        "searchPlaceholder": "Search by name, email, or position...",
+        "statuses": {
+          "active": "Active",
+          "all": "All Status",
+          "inactive": "Inactive"
+        },
+        "statusFilter": "Filter by status",
+        "table": {
+          "actions": "Actions",
+          "contract": "Contract",
+          "employee": "Employee",
+          "position": "Position",
+          "role": "Role",
+          "status": "Status",
+          "team": "Team"
+        },
+        "title": "Employee Directory"
+      },
+      "title": "Employees"
+    },
+    "employmentHistory": {
+      "addChange": "Add Change",
+      "addError": "Failed to add employment history change",
+      "addSuccess": "Employment history change added",
+      "cancelConfirm": "Cancel this employment change? This removes the scheduled or draft employment change.",
+      "cancelError": "Failed to cancel employment history change",
+      "cancelSuccess": "Employment history change canceled",
+      "confirmError": "Failed to confirm employment history change",
+      "confirmSuccess": "Employment history change confirmed",
+      "contractType": "Contract Type",
+      "contractTypes": {
+        "fixed": "fixed",
+        "hourly": "hourly"
+      },
+      "currentConfirmed": "Current confirmed",
+      "description": "Confirmed context and scheduled employment changes",
+      "effectiveDate": "Effective Date",
+      "effectiveDateHelp": "When this contract context takes effect",
+      "effectiveDateRequired": "Effective Date is required",
+      "effectiveDateValue": "Effective {date}",
+      "emptyTimeline": "No contract or work-model history yet.",
+      "hourlyRate": "Hourly Rate",
+      "hourlyRateValue": "{rate} / hour",
+      "nextScheduledConfirmed": "Next scheduled confirmed",
+      "noCurrentContext": "No confirmed contract context",
+      "noScheduledChange": "No confirmed change scheduled",
+      "probationEnd": "Probation End",
+      "probationRange": "Probation {startDate} - {endDate}",
+      "probationStart": "Probation Start",
+      "reasonNote": "Reason / Note",
+      "reasonPlaceholder": "Annual review, role change, or work-model update…",
+      "reviewState": "Review State",
+      "saveChange": "Save Change",
+      "selectContractType": "Select contract type",
+      "selectReviewState": "Select review state",
+      "selectWorkModel": "Select work model",
+      "states": {
+        "confirmed": "confirmed",
+        "draft": "draft",
+        "pending": "pending"
+      },
+      "timeline": "Timeline",
+      "title": "Contract & Work Model",
+      "weeklyHours": "Weekly Hours",
+      "weeklyHoursValue": "{hours} / week",
+      "workModel": "Work Model",
+      "workModels": {
+        "flexible": "flexible",
+        "hybrid": "hybrid",
+        "onsite": "onsite",
+        "remote": "remote"
+      }
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Already have an account?",
+      "alreadyMember": "Already a Member",
+      "alreadyMemberMessage": "You are already a member of this organization.",
+      "approval": "Approval",
+      "auto": "Auto",
+      "code": "Code",
+      "codeCopied": "Invite code copied",
+      "codeHelp": "4-20 characters, letters, numbers, and hyphens only",
+      "codePlaceholder": "TEAM-ABC123",
+      "copyCode": "Copy code",
+      "copyUrl": "Copy invite URL",
+      "create": "Create",
+      "createCode": "Create Code",
+      "created": "Invite code created",
+      "createDescription": "Create a new invite code for users to join your organization",
+      "defaultTeam": "Default Team",
+      "defaultTeamHelp": "New members will be suggested for this team during approval",
+      "deleted": "Invite code deleted",
+      "deleteDescription": "Are you sure you want to delete the invite code \"{code}\"? This action cannot be undone.",
+      "deleteTitle": "Delete Invite Code",
+      "description": "Create shareable codes for users to join your organization",
+      "descriptionPlaceholder": "Optional description...",
+      "downloadFormat": "Download {format}",
+      "editCode": "Edit Invite Code",
+      "editDescription": "Update the settings for this invite code",
+      "enterCodeDescription": "Enter an invite code to join an organization",
+      "expires": "Expires",
+      "expiresAt": "Expiration Date",
+      "expiresAtHelp": "Leave empty for no expiration",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Generate new code",
+      "generatingQR": "Generating QR code...",
+      "invalidCode": "Invalid invite code",
+      "inviteCode": "Invite Code",
+      "joinedMessage": "You have successfully joined {organization}.",
+      "joinedSuccessfully": "Joined Successfully",
+      "joining": "Joining...",
+      "joiningOrganization": "You're about to join {organization}",
+      "joinOrganization": "Join Organization",
+      "joinRequestSent": "Join Request Sent",
+      "label": "Label",
+      "labelPlaceholder": "e.g., Public Recruitment 2024",
+      "maxUses": "Maximum Uses",
+      "maxUsesHelp": "Leave empty for unlimited uses",
+      "needAccount": "Don't have an account?",
+      "noCodes": "No invite codes yet. Create one to get started.",
+      "noDefaultTeam": "No default team",
+      "pendingApproval": "Pending Approval",
+      "pendingApprovalDescription": "You will be notified once your membership is approved.",
+      "pendingApprovalMessage": "Your request to join {organization} has been submitted. An administrator will review your request.",
+      "qrAlt": "QR code for {code}",
+      "qrCode": "QR Code",
+      "qrDescription": "Scan this QR code to join the organization",
+      "qrDownloaded": "QR code downloaded",
+      "required": "Required",
+      "requiresApproval": "Require admin approval",
+      "requiresApprovalHelp": "When enabled, new members will be pending until an admin approves them",
+      "signInToJoin": "Sign in to Join",
+      "status": "Status",
+      "status.active": "Active",
+      "status.paused": "Paused",
+      "title": "Invite Codes",
+      "unlimited": "Unlimited",
+      "updated": "Invite code updated",
+      "urlCopied": "Invite URL copied to clipboard",
+      "usage": "Usage",
+      "validatingCode": "Validating code...",
+      "validCodeDescription": "This invite code is valid. Click the button below to join."
+    },
+    "managerAssignment": {
+      "assignFailed": "Failed to assign managers",
+      "assignSuccess": "Managers assigned successfully",
+      "availableManagers": "Available Managers",
+      "description": "Select one or more managers for this employee. Designate one as primary.",
+      "empty": "No available managers",
+      "primaryDescription": "The primary manager will be the default for approvals and notifications",
+      "primaryManager": "Primary Manager",
+      "save": "Save Managers",
+      "title": "Manager Assignment",
+      "unexpectedError": "An unexpected error occurred",
+      "validation": {
+        "primary": "Please designate a primary manager",
+        "selectOne": "Please select at least one manager"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Approve",
+      "approved": "Member approved",
+      "approveMember": "Approve {name}",
+      "approveSelected": "Approve Selected",
+      "assignTeam": "Assign Team",
+      "bulkApproved": "{count} members approved",
+      "bulkRejectDescription": "Are you sure you want to reject {count} selected members? They will be removed from the pending list.",
+      "bulkRejected": "{count} members rejected",
+      "bulkRejectTitle": "Reject Selected Members",
+      "description": "Review and approve members waiting to join your organization",
+      "email": "Email",
+      "joinedVia": "Joined Via",
+      "noTeam": "No team",
+      "reject": "Reject",
+      "rejectDescription": "Are you sure you want to reject {name}? They will be removed from the pending list and will need to request access again.",
+      "rejected": "Member rejected",
+      "rejectMember": "Reject {name}",
+      "rejectSelected": "Reject Selected",
+      "rejectTitle": "Reject Member",
+      "requestedAt": "Requested",
+      "selectAll": "Select all pending members",
+      "selectMember": "Select {name}",
+      "sso": "SSO",
+      "title": "Pending Members",
+      "user": "User"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Edit"
+      },
+      "adminRequired": "Admin access required",
+      "allTeams": "All Teams (Organization-wide)",
+      "allTeamsHelp": "Permissions apply to all teams in the organization",
+      "badge": {
+        "allPermissions": "All Permissions",
+        "permissionCount": "{count} permission(s)"
+      },
+      "description": "Manage employee permissions for team operations",
+      "editor": {
+        "title": "Edit Permissions - {name}"
+      },
+      "employeePermissions": {
+        "description": "Click on an employee to edit their permissions",
+        "title": "Employee Permissions"
+      },
+      "emptyState": "No employees found",
+      "noEmployeeFeature": "manage permissions",
+      "noPermissions": "No permissions",
+      "permissions": "Permissions",
+      "refresh": "Refresh",
+      "revokeAll": "Revoke All",
+      "revokeError": "Failed to revoke permissions",
+      "revokeSuccess": "Permissions revoked successfully",
+      "save": "Save Permissions",
+      "scope": "Permission Scope",
+      "searchLabel": "Search employees",
+      "searchPlaceholder": "Search by name, email, or position...",
+      "selectedTeamHelp": "Permissions apply only to the selected team",
+      "table": {
+        "actions": "Actions",
+        "employee": "Employee",
+        "permissions": "Permissions",
+        "position": "Position",
+        "role": "Role"
+      },
+      "title": "Team Permissions",
+      "toast": {
+        "adminRequired": "You must be an admin to manage permissions",
+        "loadEmployeesFailed": "Failed to load employees"
+      },
+      "updateError": "Failed to update permissions",
+      "updateSuccess": "Permissions updated successfully"
+    },
+    "rateHistory": {
+      "changeRate": "Change Rate",
+      "currentRate": "Current rate: {rate}",
+      "description": "Hourly rate changes over time",
+      "effectiveFrom": "Effective From",
+      "effectiveFromHelp": "When the new rate takes effect",
+      "empty": "No rate history available",
+      "newHourlyRate": "New Hourly Rate",
+      "reasonOptional": "Reason (Optional)",
+      "reasonPlaceholder": "e.g., Annual review, Promotion, etc.",
+      "title": "Rate History",
+      "updateDescription": "Create a new rate entry. The current rate will be closed automatically.",
+      "updateError": "Failed to update rate",
+      "updateRate": "Update Rate",
+      "updateSuccess": "Rate updated successfully",
+      "updateTitle": "Update Hourly Rate"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Assign Role",
+        "create": "Create Role",
+        "deleteNamed": "Delete {name}",
+        "editNamed": "Edit {name}",
+        "removeNamed": "Remove {name}",
+        "saveChanges": "Save Changes"
+      },
+      "assignPanel": {
+        "description": "Select a role to assign to this employee.",
+        "empty": "No available roles to assign. All roles are already assigned or none have been created.",
+        "permissionCount": "{count} perms",
+        "title": "Assign Custom Role"
+      },
+      "baseTiers": {
+        "admin": "Admin",
+        "employee": "Employee",
+        "manager": "Manager"
+      },
+      "createPanel": {
+        "description": "Define a new role with specific permissions for your organization.",
+        "title": "Create Custom Role"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "This role is currently assigned to {count} employee. They will lose the permissions granted by this role.",
+          "other": "This role is currently assigned to {count} employees. They will lose the permissions granted by this role."
+        },
+        "confirm": "Are you sure you want to delete \"{name}\"?",
+        "title": "Delete Role"
+      },
+      "description": "Create custom permission roles for your organization",
+      "editor": {
+        "baseTier": "Base Tier",
+        "color": "Color",
+        "description": "Description",
+        "descriptionPlaceholder": "What this role is foru2026",
+        "errors": {
+          "createFailed": "Failed to create role",
+          "nameRequired": "Role name is required",
+          "permissionsFailed": "Failed to save role permissions",
+          "updateFailed": "Failed to update role"
+        },
+        "inherited": "Inherited",
+        "name": "Name",
+        "namePlaceholder": "e.g. Team Lead, HR Manageru2026",
+        "permissions": "Permissions",
+        "permissionsHelp": "Select additional permissions for this role. Permissions inherited from the base tier are shown as locked.",
+        "selectColor": "Select color {color}"
+      },
+      "editPanel": {
+        "description": "Update the role details and permissions.",
+        "title": "Edit Custom Role"
+      },
+      "employeeCard": {
+        "description": "Additional permission roles assigned to this employee",
+        "empty": "No custom roles assigned.",
+        "permissionCount": {
+          "one": "({count} perm)",
+          "other": "({count} perms)"
+        }
+      },
+      "empty": {
+        "description": "Create one to get started.",
+        "title": "No custom roles yet"
+      },
+      "introduction": "Create custom permission roles that can be assigned to employees. Custom roles add permissions on top of the base tier.",
+      "table": {
+        "actions": "Actions",
+        "assigned": "Assigned",
+        "assignedCount": {
+          "one": "{count} employee",
+          "other": "{count} employees"
+        },
+        "baseTier": "Base Tier",
+        "name": "Name",
+        "permissionCount": {
+          "one": "{count} permission",
+          "other": "{count} permissions"
+        },
+        "permissions": "Permissions"
+      },
+      "title": "Custom Roles",
+      "toast": {
+        "assigned": "Role assigned",
+        "created": "Role created",
+        "deleted": "Role deleted",
+        "removed": "Role removed",
+        "updated": "Role updated"
+      }
+    },
+    "skills": {
+      "addSkill": "Add Skill",
+      "assign": "Assign",
+      "assignError": "Failed to assign skill",
+      "assignSkill": "Assign Skill",
+      "assignSkillDescription": "Add a skill or certification to this employee",
+      "assignSkillHint": "Click 'Assign Skill' to add qualifications",
+      "catalog": "Skill Catalog",
+      "catalogDescription": "Define skills that can be required for subareas and shift templates",
+      "category": "Category",
+      "confirmDelete": "Are you sure you want to delete this skill?",
+      "confirmRemove": "Remove \"${skillName}\" from this employee?",
+      "createError": "Failed to create skill",
+      "createSkill": "Create Skill",
+      "createSkillDescription": "Create a new skill that can be assigned to employees",
+      "customCategoryName": "Custom Category Name",
+      "customCategoryPlaceholder": "e.g., Compliance",
+      "deleteError": "Failed to delete skill",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description of the skill or certification",
+      "editSkill": "Edit Skill",
+      "editSkillDescription": "Update the skill details",
+      "employeeSkills": "Skills & Qualifications",
+      "employeeSkillsDescription": "Certifications and skills assigned to this employee",
+      "expired": "Expired",
+      "expiredOn": "Expired on {{date}}",
+      "expiresOn": "Expires {{date}}",
+      "expiringSoon": "Expiring Soon",
+      "expiry": "Expiry Tracking",
+      "expiryDate": "Expiry Date",
+      "expiryRequired": "Required",
+      "expiryRequiredHint": "This certification requires an expiry date",
+      "name": "Name",
+      "namePlaceholder": "e.g., Forklift License",
+      "noAvailableSkills": "All skills have been assigned or no skills are defined",
+      "noExpiry": "No",
+      "noSkills": "No skills defined yet",
+      "noSkillsAssigned": "No skills assigned",
+      "noSkillsHint": "Create your first skill to get started",
+      "notes": "Notes",
+      "notesPlaceholder": "e.g., Certificate number, training date…",
+      "removeError": "Failed to remove skill",
+      "requiresExpiry": "Requires Expiry Date",
+      "requiresExpiryHint": "Enable if this certification needs renewal (e.g., First Aid)",
+      "selectCategory": "Select category",
+      "selectSkill": "Select a skill",
+      "skill": "Skill",
+      "skillAssigned": "Skill assigned",
+      "skillCreated": "Skill created",
+      "skillDeleted": "Skill deleted",
+      "skillName": "Name",
+      "skillRemoved": "Skill removed",
+      "skillUpdated": "Skill updated",
+      "title": "Skills & Qualifications",
+      "updateError": "Failed to update skill"
+    },
+    "teams": {
+      "description": "Organize employees into teams and manage team assignments",
+      "detail": {
+        "actions": {
+          "cancel": "Cancel",
+          "edit": "Edit",
+          "save": "Save"
+        },
+        "addMember": {
+          "description": "Select an employee to add to this team",
+          "selectEmployee": "Select employee",
+          "title": "Add Team Member"
+        },
+        "back": "Back to teams",
+        "delete": {
+          "description": "Are you sure you want to delete this team? This action cannot be undone. Team members will not be deleted.",
+          "title": "Delete Team"
+        },
+        "description": "Manage team information and members",
+        "errors": {
+          "addTeamMember": "Failed to add team member",
+          "deleteTeam": "Failed to delete team",
+          "loadTeam": "Failed to load team",
+          "removeTeamMember": "Failed to remove team member",
+          "updateTeam": "Failed to update team"
+        },
+        "info": {
+          "description": "Description",
+          "descriptionPlaceholder": "Enter team description",
+          "members": "Members",
+          "noPrimaryManager": "No primary manager assigned",
+          "primaryManager": "Primary Manager",
+          "teamName": "Team Name",
+          "teamNamePlaceholder": "Enter team name",
+          "title": "Team Information"
+        },
+        "members": {
+          "add": "Add Member",
+          "description": "Employees assigned to this team",
+          "empty": "No members in this team",
+          "remove": "Remove team member",
+          "title": "Team Members"
+        },
+        "removeMember": {
+          "confirm": "Remove",
+          "description": "Are you sure you want to remove this employee from the team? They will still have access to the organization.",
+          "title": "Remove Team Member"
+        },
+        "selectEmployee": "Select employee",
+        "title": "Team Details",
+        "toasts": {
+          "teamDeleted": "Team deleted successfully",
+          "teamMemberAdded": "Team member added successfully",
+          "teamMemberRemoved": "Team member removed successfully",
+          "teamUpdated": "Team updated successfully"
+        },
+        "validation": {
+          "invalidInput": "Invalid input",
+          "selectEmployee": "Please select an employee",
+          "teamNameRequired": "Team name is required",
+          "teamNameTooLong": "Team name is too long"
+        }
+      },
+      "details": "Team Details",
+      "title": "Teams"
+    }
+  }
+}

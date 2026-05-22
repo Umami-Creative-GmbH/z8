@@ -22,9 +22,20 @@ describe("dashboard widget registry", () => {
 	it("defines display metadata for every widget", () => {
 		expect(WIDGET_CONFIGS.map((widget) => widget.id)).toEqual(DEFAULT_WIDGET_ORDER);
 		expect(WIDGET_CONFIGS.every((widget) => widget.label.length > 0)).toBe(true);
-		expect(WIDGET_CONFIGS.every((widget) => widget.labelKey.startsWith("dashboard.widgets."))).toBe(
-			true,
-		);
+		expect(WIDGET_CONFIGS.map((widget) => widget.labelKey)).toEqual([
+			"dashboard.manager-today.title",
+			"dashboard.managed-employees.title",
+			"dashboard.pending-approvals.title",
+			"dashboard.team-overview.title",
+			"dashboard.quick-stats.title",
+			"dashboard.presence.workLocation",
+			"dashboard.whos-out.title",
+			"dashboard.upcoming-time-off.title",
+			"dashboard.recently-approved.title",
+			"dashboard.birthday.title",
+			"dashboard.hydration.title",
+			"dashboard.vacation.title",
+		]);
 	});
 
 	it("normalizes missing hidden widgets to an empty list", () => {

@@ -28,7 +28,7 @@
       "title": "Organisation suspendue"
     },
     "trialBanner": {
-      "description": "Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.",
+      "description": "{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
       "title": "Essai de 14 jours actif",
       "upgrade": "Mettre à niveau"
     }

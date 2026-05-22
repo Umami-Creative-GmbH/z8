@@ -1,0 +1,546 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Active",
+      "copyKey": "Copy API key",
+      "copyPrefix": "Copy prefix",
+      "create": "Create Key",
+      "created": "API key created successfully",
+      "createDescription": "Create a new API key for programmatic access. The key will only be shown once.",
+      "createdOn": "Created {date}",
+      "createTitle": "Create API Key",
+      "deleted": "API key deleted",
+      "deleteDescription": "Are you sure you want to delete the API key \"{name}\"? Any applications using this key will immediately lose access. This action cannot be undone.",
+      "deleteTitle": "Delete API Key",
+      "description": "Manage API keys for programmatic access to your organization data",
+      "disabled": "Disabled",
+      "editCreated": "Created {date}",
+      "editDescription": "Update the settings for this API key. Note: You cannot view or change the key itself.",
+      "editTitle": "Edit API Key",
+      "empty": {
+        "description": "Create your first API key to enable programmatic access to your organization.",
+        "title": "No API Keys"
+      },
+      "expires": "Expires",
+      "form": {
+        "create": "Create Key",
+        "enabled": "Key Enabled",
+        "enabledHelp": "Disabled keys will reject all API requests",
+        "expiration": "Expiration",
+        "name": "Name",
+        "nameHelp": "A descriptive name to identify this key",
+        "namePlaceholder": "e.g., Production API",
+        "rateLimit": "Enable rate limiting",
+        "rateLimitMax": "Max requests per minute",
+        "scopes": "Permissions",
+        "scopesRequired": "Select at least one permission"
+      },
+      "keyCopied": "API key copied to clipboard",
+      "lastUsed": "Last Used",
+      "name": "Name",
+      "prefix": "Key Prefix",
+      "prefixCopied": "Key prefix copied",
+      "scopes": "Permissions",
+      "security": {
+        "description": "API keys provide full access to your organization data within their permission scope. Keep them secure and never share them in public repositories or client-side code.",
+        "title": "Security Notice"
+      },
+      "showClose": "Close",
+      "showCloseAnyway": "Close Anyway",
+      "showConfirmWarning": "Are you sure? You haven't copied the key yet.",
+      "showCopied": "Key copied to clipboard",
+      "showDescription": "Your new API key \"{name}\" has been created. Copy it now - you won't be able to see it again!",
+      "showDone": "Done",
+      "showExpires": "Expires:",
+      "showLabel": "Your API Key",
+      "showName": "Name:",
+      "showNever": "Never",
+      "showTitle": "API Key Created",
+      "showWarning": "This is the only time you will see this key. Make sure to copy and store it securely.",
+      "showWarningTitle": "Important:",
+      "status": "Status",
+      "title": "API Keys",
+      "updated": "API key updated",
+      "usage": "{count} of {max} keys used"
+    },
+    "branding": {
+      "appName": {
+        "description": "Override the default app name shown on the login page.",
+        "title": "App Name"
+      },
+      "background": {
+        "description": "Upload a custom background image for the login page.",
+        "hint": "Recommended: 1920x1080px or larger, high quality JPEG or PNG",
+        "preview": "Background preview",
+        "remove": "Remove background",
+        "title": "Background Image",
+        "upload": "Upload background image"
+      },
+      "backgroundUploadFailed": "Failed to upload background image",
+      "backgroundUploadSuccess": "Background image uploaded successfully",
+      "colors": {
+        "accent": "Accent Color (Optional)",
+        "accentHex": "Accent color hex value",
+        "accentHint": "Secondary color for highlights",
+        "description": "Customize the primary and accent colors for your login page.",
+        "primary": "Primary Color",
+        "primaryHex": "Primary color hex value",
+        "primaryHint": "Used for buttons, links, and focus states",
+        "title": "Theme Colors"
+      },
+      "logo": {
+        "description": "Upload your organization logo to display on the login page.",
+        "hint": "Recommended: 200x200px, PNG or SVG with transparent background",
+        "preview": "Logo preview",
+        "remove": "Remove logo",
+        "title": "Logo",
+        "upload": "Upload logo image"
+      },
+      "logoUploadFailed": "Failed to upload logo",
+      "logoUploadSuccess": "Logo uploaded successfully",
+      "save": "Save Branding Settings",
+      "saveFailed": "Failed to save branding settings",
+      "saveSuccess": "Branding settings saved"
+    },
+    "enterprise": {
+      "addProvider": "Add Provider",
+      "clientId": "Client ID",
+      "clientIdRequired": "Client ID is required",
+      "clientSecret": "Client Secret",
+      "clientSecretRequired": "Client Secret is required",
+      "configureCallbackUrl": "Configure the callback URL:",
+      "domain": "Domain",
+      "domains": {
+        "add": "Add Custom Domain",
+        "addDescription": "Add a custom domain to enable organization-specific login pages. You will need to verify ownership via DNS records.",
+        "addDomain": "Add Domain",
+        "added": "Domain added successfully",
+        "addFailed": "Failed to add domain",
+        "adding": "Adding…",
+        "authConfigDescription": "Configure which authentication methods are available for users signing in via {domain}",
+        "authConfigTitle": "Auth Configuration",
+        "authConfigUpdated": "Auth configuration updated",
+        "authConfigUpdateFailed": "Failed to update auth configuration",
+        "authMethod": {
+          "emailPassword": "Email/Password",
+          "passkey": "Passkey",
+          "social": "Social ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "configured",
+        "cookieConsentScript": "Cookie Consent Script",
+        "cookieConsentScriptHelp": "Injected on authentication pages for this custom domain only. Leave empty to disable.",
+        "cookieConsentStatus": "Cookie consent {status}",
+        "copiedToClipboard": "Copied to clipboard",
+        "customDomain": "Custom Domain",
+        "customDomainDescription": "Configure a custom domain to enable an organization-specific login page with your branding.",
+        "deleteAria": "Delete custom domain {domain}",
+        "deleted": "Domain deleted",
+        "deleteDescription": "Are you sure you want to delete \"{domain}\"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.",
+        "deleteFailed": "Failed to delete domain",
+        "deleteTitle": "Delete Domain",
+        "description": "Configure your organization's custom login domain, branding, and SSO providers.",
+        "dnsPropagation": "DNS Propagation",
+        "dnsPropagationDescription": "DNS changes can take up to 48 hours to propagate, though they often complete within a few minutes. You can click \"Verify\" once you have added the TXT record.",
+        "domain": "Domain",
+        "domainHelp": "Enter the domain where users will access the login page.",
+        "domainInvalid": "Please enter a valid domain (e.g., login.example.com)",
+        "domainPageSettings": "Domain Page Settings",
+        "domainRequired": "Domain is required",
+        "editAuthSettingsAria": "Edit authentication settings for {domain}",
+        "emailPassword": "Email & Password",
+        "emailPasswordHelp": "Allow users to sign in with email and password",
+        "empty": "No custom domain configured yet.",
+        "enabledAuthMethods": "Enabled Auth Methods",
+        "guidedSetup": {
+          "action": "Guided setup",
+          "description": "Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
+          "title": "Guided setup"
+        },
+        "keepExistingSecretKey": "Leave empty to keep existing secret key",
+        "nameHost": "Name / Host",
+        "notConfigured": "not configured",
+        "passkey": "Passkey",
+        "passkeyHelp": "Allow passwordless sign-in with passkeys",
+        "regenerateToken": "Regenerate Token",
+        "regenerateTokenFailed": "Failed to regenerate token",
+        "regenerateTokenSuccess": "New verification token generated",
+        "regenerating": "Regenerating…",
+        "saveConfiguration": "Save Configuration",
+        "secretKey": "Secret Key",
+        "secretKeyPlaceholder": "Enter secret key",
+        "secretKeyRequired": "Required when setting a site key",
+        "siteKey": "Site Key",
+        "socialProviders": "Social Providers",
+        "socialProvidersHelp": "Enable social login options for this domain",
+        "sso": "Single Sign-On (SSO)",
+        "ssoHelp": "Allow OIDC-based enterprise sign-in",
+        "status": {
+          "pending": "Pending Verification",
+          "verified": "Verified"
+        },
+        "title": "Custom Domain & Branding",
+        "tokenExpired": "Token Expired",
+        "tokenExpiredDescription": "The verification token has expired. Please regenerate a new token.",
+        "tokenExpires": "Token expires: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Bot protection for auth forms. Required for enterprise domains.",
+        "turnstileSiteKeyStatus": "Turnstile site key {status}",
+        "txtRecordInstruction": "Add the following TXT record to your DNS:",
+        "value": "Value",
+        "verifiedSuccess": "Domain verified successfully",
+        "verify": "Verify",
+        "verifyDomain": "Verify Domain",
+        "verifyFailed": "Failed to verify domain",
+        "verifying": "Verifying…",
+        "verifyOwnership": "Verify Domain Ownership",
+        "verifyOwnershipDescription": "Add a DNS TXT record to verify ownership of {domain}"
+      },
+      "email": {
+        "apiKey": "API Key",
+        "apiKeyHint": "Leave blank to keep existing key. Get your API key from resend.com",
+        "create": "Create Configuration",
+        "delete": "Delete Configuration",
+        "deleteConfirm": "Are you sure you want to delete this email configuration?",
+        "deleted": "Email configuration deleted",
+        "deleteFailed": "Failed to delete",
+        "description": "Configure a custom email provider for your organization. All organization emails will use this configuration instead of the system default.",
+        "fromEmail": "From Email",
+        "fromName": "From Name",
+        "isActive": "Enable this email configuration",
+        "lastTest": "Last Test",
+        "passwordHint": "Leave blank to keep existing password",
+        "recommended": "Recommended",
+        "resendConfig": "Resend Configuration",
+        "save": "Save Changes",
+        "saved": "Email configuration saved",
+        "saveFailed": "Failed to save",
+        "secretSet": "Set",
+        "sendTest": "IconSend Test",
+        "smtpConfig": "SMTP Configuration",
+        "smtpHost": "SMTP Host",
+        "smtpPassword": "Password",
+        "smtpPort": "Port",
+        "smtpRequireTls": "Require STARTTLS upgrade",
+        "smtpSecure": "Use TLS (port 465)",
+        "smtpServer": "SMTP Server",
+        "smtpUsername": "Username",
+        "testEmailRequired": "Please enter a test email address",
+        "testFailed": "Failed to send test email",
+        "testFailure": "Failed",
+        "testSection": "IconSend Test Email",
+        "testSent": "Test email sent successfully",
+        "testSuccess": "Success",
+        "title": "Email Configuration",
+        "transportType": "Email Provider",
+        "vaultConnected": "Vault Connected",
+        "vaultConnectedDesc": "Secrets are stored securely in HashiCorp Vault.",
+        "vaultSealed": "Vault Sealed",
+        "vaultSealedDesc": "HashiCorp Vault is sealed. Please unseal it to store secrets.",
+        "vaultUnavailable": "Vault Unavailable",
+        "vaultUnavailableDesc": "HashiCorp Vault is not available. Secrets cannot be stored securely."
+      },
+      "enableProviderHelp": "Enable or disable this provider",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Save access policy"
+          },
+          "defaultRoleTemplate": "Default role template",
+          "description": "Set domain, invite, and SSO enforcement after the pilot test passes.",
+          "noDefaultTemplate": "No default template",
+          "placeholder": {
+            "roleTemplate": "Select role template"
+          },
+          "requireSso": "Require SSO",
+          "requireSsoHelp": "Employees must use the enterprise IdP.",
+          "restrictDomain": "Restrict to verified domain",
+          "restrictDomainHelp": "Block accounts outside the selected domain.",
+          "restrictInvites": "Restrict invites",
+          "restrictInvitesHelp": "Only allow invitations aligned with access policy.",
+          "title": "Access Policy"
+        },
+        "badge": {
+          "now": "Now",
+          "queued": "Queued",
+          "ready": "Ready"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Check domain status"
+          },
+          "description": "Validate the tenant boundary before enforcing SSO for employees.",
+          "help": "DNS verification uses the existing SSO domain verification actions. Complete that verification before activating enforcement.",
+          "notSelected": "Not selected",
+          "selected": "Selected domain",
+          "status": {
+            "pending": "Pending",
+            "verified": "Verified"
+          },
+          "title": "Domain"
+        },
+        "hero": {
+          "description": "Configure SSO, SCIM, and enforcement for organization {organizationId} with guarded activation.",
+          "eyebrow": "Enterprise identity",
+          "title": "Operational command checklist"
+        },
+        "provider": {
+          "action": {
+            "save": "Save provider"
+          },
+          "description": "Choose the identity provider preset, protocol, provider ID, and email domain.",
+          "error": {
+            "domainRequired": "Domain is required",
+            "providerIdRequired": "Provider ID is required"
+          },
+          "label": {
+            "domain": "Email domain",
+            "preset": "Provider preset",
+            "protocol": "Protocol",
+            "providerId": "Provider ID"
+          },
+          "placeholder": {
+            "domain": "e.g. example.com…",
+            "protocol": "Select protocol",
+            "provider": "Select provider",
+            "providerId": "e.g. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Use any standards-compliant OIDC or SAML 2.0 identity provider."
+            },
+            "googleWorkspace": {
+              "description": "Use Google Workspace OIDC for SSO and optional directory sync."
+            },
+            "microsoftEntra": {
+              "description": "Use Microsoft Entra ID for enterprise SSO and optional provisioning."
+            },
+            "okta": {
+              "description": "Use Okta Workforce Identity for SAML or OIDC single sign-on."
+            }
+          },
+          "title": "Provider"
+        },
+        "rail": {
+          "title": "Readiness rail"
+        },
+        "review": {
+          "action": {
+            "activate": "Activate enterprise identity"
+          },
+          "activationSummary": "Activation summary",
+          "description": "Review guarded activation checks before enabling enterprise identity controls.",
+          "lockoutWarning": "Current-admin lockout warning",
+          "lockoutWarningHelp": "Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain.",
+          "missingRequirement": "{item} is required before activation",
+          "prerequisitesComplete": "Provider, verified domain, and SSO test prerequisites are complete.",
+          "requirement": {
+            "domain": "Verified domain",
+            "provider": "Provider",
+            "ssoTest": "SSO test"
+          },
+          "title": "Review & Activate"
+        },
+        "scim": {
+          "action": {
+            "copyToken": "Copy token",
+            "generateToken": "Generate token",
+            "refreshStatus": "Refresh status"
+          },
+          "baseUrl": "Base URL",
+          "cardDescription": "Generate the provisioning token and monitor connection health.",
+          "description": "SCIM verification updates after your identity provider sends a test user or group change.",
+          "error": {
+            "saveProviderFirst": "Save provider before generating a SCIM token"
+          },
+          "status": {
+            "none": "No provisioning activity yet",
+            "observed": "Provisioning activity observed"
+          },
+          "title": "SCIM Provisioning",
+          "tokenShownOnce": "This token is shown once"
+        },
+        "sso": {
+          "action": {
+            "register": "Register SSO provider"
+          },
+          "description": "Register the external IdP using OIDC client credentials or SAML metadata.",
+          "error": {
+            "saveProviderFirst": "Save provider and domain before registering SSO"
+          },
+          "label": {
+            "clientId": "Client ID",
+            "clientSecret": "Client secret",
+            "issuer": "Issuer",
+            "metadata": "SAML metadata"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Paste IdP metadata XML…"
+          },
+          "title": "SSO Configuration"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Record fail",
+            "recordPass": "Record pass"
+          },
+          "defaultFailure": "Live SSO test failed",
+          "description": "Record the result of a live external SSO test before enforcement.",
+          "error": {
+            "saveProviderFirst": "Save provider before recording a test"
+          },
+          "help": "This records a live external SSO test result. Run the login in the IdP first, then capture pass or fail here for the activation guard.",
+          "label": {
+            "email": "Test user email",
+            "failureNote": "Failure note"
+          },
+          "status": {
+            "failed": "Failed",
+            "notRun": "Not run",
+            "passed": "Passed"
+          },
+          "title": "Test User"
+        },
+        "status": {
+          "activated": "Activated",
+          "draft": "Draft"
+        },
+        "step": {
+          "accessPolicy": "Access Policy",
+          "accessPolicy.description": "Set enforcement rules",
+          "domain": "Domain",
+          "domain.description": "Confirm tenant boundary",
+          "provider": "Provider",
+          "provider.description": "Pick the identity source",
+          "review": "Review & Activate",
+          "review.description": "Guard activation",
+          "scim": "SCIM Provisioning",
+          "scim.description": "Issue provisioning token",
+          "sso": "SSO Configuration",
+          "sso.description": "Register OIDC or SAML",
+          "ssoTest": "Test User",
+          "ssoTest.description": "Record live sign-in result"
+        },
+        "toast": {
+          "accessPolicyFailed": "Failed to save access policy",
+          "accessPolicySaved": "Access policy saved",
+          "activated": "Enterprise identity setup activated",
+          "activateFailed": "Failed to activate setup",
+          "domainStatusFailed": "Failed to refresh domain status",
+          "domainStatusRefreshed": "Domain status refreshed",
+          "providerSaved": "Identity provider saved",
+          "providerSaveFailed": "Failed to save provider",
+          "scimStatusFailed": "Failed to refresh SCIM status",
+          "scimStatusRefreshed": "SCIM status refreshed",
+          "scimTokenFailed": "Failed to generate SCIM token",
+          "scimTokenGenerated": "SCIM token generated",
+          "ssoRegistered": "SSO provider registered",
+          "ssoRegisterFailed": "Failed to register SSO provider",
+          "ssoTestFailed": "SSO test marked failed",
+          "ssoTestPassed": "SSO test marked passed",
+          "ssoTestRecordFailed": "Failed to record SSO test"
+        }
+      },
+      "keepExistingSecretHelp": "Leave blank to keep the existing secret",
+      "leaveBlankKeepExisting": "Leave blank to keep existing",
+      "provider": "Provider",
+      "socialOAuth": {
+        "addDescription": "Configure your own OAuth app for social login.",
+        "addProviderError": "Failed to add provider",
+        "addTitle": "Add Social OAuth Provider",
+        "appleKeyIdHelp": "The Key ID associated with your private key",
+        "appleKeyIdRequired": "Key ID is required for Apple",
+        "appleTeamIdHelp": "Found in your Apple Developer account",
+        "appleTeamIdRequired": "Team ID is required for Apple",
+        "clientIdPlaceholder": "Your OAuth client ID",
+        "clientSecretPlaceholder": "Your OAuth client secret",
+        "configured": "{provider} OAuth configured successfully",
+        "createAppAt": "Create an OAuth app at",
+        "deleteError": "Failed to delete OAuth config",
+        "description": "Configure your own OAuth credentials for social login. This allows your users to sign in using your organization's OAuth apps instead of shared credentials.",
+        "developerConsole": "{provider} Developer Console",
+        "editDescription": "Update your OAuth credentials.",
+        "editTitle": "Edit {provider} OAuth",
+        "empty": "No custom social OAuth providers configured.",
+        "emptyDescription": "Add your own OAuth credentials to replace the shared credentials.",
+        "howItWorks": "How it Works",
+        "instructions": {
+          "addProvider": "Add the provider here with your credentials",
+          "copyCredentials": "Copy the Client ID and Client Secret",
+          "createApp": "Create an OAuth app in the provider's developer console",
+          "customDomain": "Users signing in via your custom domain will use your OAuth app"
+        },
+        "keyId": "Key ID",
+        "lastTested": "Last Tested",
+        "notTested": "Not Tested",
+        "privateKey": "Private Key (.p8)",
+        "removed": "{provider} OAuth removed",
+        "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
+        "removeDialogTitle": "Remove Social OAuth Provider",
+        "teamId": "Team ID",
+        "title": "Social Login Providers",
+        "updateConfigError": "Failed to update config",
+        "updated": "{provider} OAuth updated successfully",
+        "working": "Working"
+      },
+      "sso": {
+        "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",
+        "addError": "Failed to add SSO provider",
+        "addSuccess": "SSO provider added successfully",
+        "addTitle": "Add SSO Provider",
+        "clientIdPlaceholder": "Your OIDC client ID",
+        "clientSecretPlaceholder": "Your OIDC client secret",
+        "deleteDialogDescription": "Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
+        "deleteDialogTitle": "Delete SSO Provider",
+        "deleteError": "Failed to delete SSO provider",
+        "deleteSuccess": "SSO provider deleted",
+        "description": "Add OIDC identity providers to enable SSO for your organization.",
+        "domainInvalid": "Please enter a valid domain (e.g., example.com)",
+        "domainRequired": "Domain is required",
+        "domainVerified": "Domain verified",
+        "emailDomain": "Email Domain",
+        "emailDomainHelp": "Users with this email domain will be able to use SSO",
+        "empty": "No SSO providers configured yet.",
+        "emptyDescription": "Add an OIDC provider to enable enterprise single sign-on.",
+        "instructions": {
+          "copyCredentials": "Copy the Issuer URL, Client ID, and Client Secret from your IdP",
+          "createApp": "Create an OIDC application in your identity provider (Okta, Azure AD, etc.)",
+          "verifyDomain": "Add the provider here and verify the email domain via DNS TXT record"
+        },
+        "issuerUrl": "Issuer URL",
+        "issuerUrlHelp": "The OIDC issuer URL from your identity provider",
+        "issuerUrlRequired": "Issuer URL is required",
+        "providerId": "Provider ID",
+        "providerIdHelp": "A unique identifier for this provider (lowercase, no spaces)",
+        "providerIdInvalid": "Provider ID must contain only lowercase letters, numbers, and hyphens",
+        "providerIdRequired": "Provider ID is required",
+        "setupInstructions": "Setup Instructions",
+        "title": "Identity Providers",
+        "token": "Token",
+        "tokenError": "Failed to generate domain verification token",
+        "tokenGenerated": "Verification token generated",
+        "txtToken": "TXT token:",
+        "validUrlRequired": "Please enter a valid URL",
+        "verified": "Verified",
+        "verify": "Verify",
+        "verifyError": "Domain verification failed. Check your DNS TXT record and retry."
+      },
+      "tab": {
+        "branding": "Branding",
+        "domains": "Custom Domain",
+        "social-oauth": "Social Login",
+        "sso": "SSO Providers"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
+      "title": "Enterprise Identity Setup"
+    }
+  }
+}

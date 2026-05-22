@@ -42,7 +42,7 @@ describe("tolgee extractor", () => {
 					t("myRequests:myRequests.title", "My Requests"),
 					t("scheduling:scheduling.coverage.toggleLabel", "Coverage"),
 					t("setup:setup.title", "Create Platform Admin"),
-					t("settings:webhooks.title", "Webhooks"),
+					t("webhooks:webhooks.title", "Webhooks"),
 					t("setup:init.checking", "Checking session..."),
 				];
 			}
@@ -62,12 +62,34 @@ describe("tolgee extractor", () => {
 				namespace: "scheduling",
 			}),
 			expect.objectContaining({ keyName: "setup.title", namespace: "setup" }),
-			expect.objectContaining({ keyName: "webhooks.title", namespace: "settings" }),
+			expect.objectContaining({ keyName: "webhooks.title", namespace: "webhooks" }),
 			expect.objectContaining({ keyName: "init.checking", namespace: "setup" }),
 		]);
 	});
 
-	it("extracts billing page FAQ keys into the settings namespace", () => {
+	it("keeps global billing banner keys in the common namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function TrialBanner() {
+				const { t } = useTranslate();
+				return t("billing.trialBanner.title", "14-day trial active");
+			}
+		`,
+			"trial-banner.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "14-day trial active",
+				keyName: "billing.trialBanner.title",
+				namespace: "common",
+			}),
+		]);
+	});
+
+	it("extracts billing page keys into the billing namespace", () => {
 		const result = extractor(
 			`
 			import { useTranslate } from "@tolgee/react";
@@ -84,7 +106,64 @@ describe("tolgee extractor", () => {
 			expect.objectContaining({
 				defaultValue: "Frequently Asked Questions",
 				keyName: "billing.faq.title",
-				namespace: "settings",
+				namespace: "billing",
+			}),
+		]);
+	});
+
+	it("extracts nested settings keys into focused settings namespaces", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function SettingsExample() {
+				const { t } = useTranslate();
+				return [
+					t("settings.enterprise.email.title", "Email Configuration"),
+					t("settings.payrollExport.title", "Payroll Export"),
+					t("settings.holidays.title", "Holidays"),
+					t("settings.title", "Settings"),
+				];
+			}
+		`,
+			"settings-example.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				keyName: "settings.enterprise.email.title",
+				namespace: "settings/enterprise",
+			}),
+			expect.objectContaining({
+				keyName: "settings.payrollExport.title",
+				namespace: "settings/payrollExport",
+			}),
+			expect.objectContaining({
+				keyName: "settings.holidays.title",
+				namespace: "settings/holidays",
+			}),
+			expect.objectContaining({ keyName: "settings.title", namespace: "settings/generic" }),
+		]);
+	});
+
+	it("extracts travel expense view keys into the travel expenses namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function TravelExpenseHeader() {
+				const { t } = useTranslate();
+				return t("travelExpenses.title", "Travel Expenses");
+			}
+		`,
+			"travel-expense-management.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Travel Expenses",
+				keyName: "travelExpenses.title",
+				namespace: "travelExpenses",
 			}),
 		]);
 	});

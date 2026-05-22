@@ -160,7 +160,7 @@ export class AuditExportOrchestrator {
 			await this.storeFileHashes(packageId, manifest);
 
 			// Generate download URL
-			const downloadUrl = await getPresignedUrl(organizationId, s3Key, 86400); // 24 hours
+			const downloadUrl = await getPresignedUrl(organizationId, s3Key);
 
 			logger.info(
 				{

@@ -2,6 +2,10 @@
 
 Employee time tracking and workforce management SaaS.
 
+## Concurrent Agent Work
+
+Many agents may be running in parallel in this repository. If files have changed and this agent session did not make those changes, treat them as user or peer-agent work. Do not revert, overwrite, discard, or "clean up" those changes unless the user explicitly asks you to do so.
+
 ## Package Manager
 
 Use **pnpm** (not npm or bun).

@@ -2,7 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import settingsMessages from "../../../messages/settings/en.json";
+import settingsDemoMessages from "../../../messages/settings/demo/en.json";
 import { DemoDataWizard } from "./demo-data-wizard";
 
 vi.mock("@/app/[locale]/(app)/settings/demo/actions", () => ({
@@ -28,7 +28,7 @@ vi.mock("@/navigation", () => ({
 
 const getMessage = (key: string): string | undefined => {
 	const parts = key.split(".");
-	let current: unknown = settingsMessages;
+	let current: unknown = settingsDemoMessages;
 
 	for (const part of parts) {
 		if (!current || typeof current !== "object" || !(part in current)) {

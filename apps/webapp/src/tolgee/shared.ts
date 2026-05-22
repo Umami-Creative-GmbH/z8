@@ -22,7 +22,23 @@ export const ALL_NAMESPACES = [
 	"myRequests",
 	"scheduling",
 	"setup",
-	"settings",
+	"settings/generic",
+	"billing",
+	"organization",
+	"team",
+	"travelExpenses",
+	"webhooks",
+	"settings/enterprise",
+	"settings/payrollExport",
+	"settings/scheduledExports",
+	"settings/holidays",
+	"settings/workPolicies",
+	"settings/vacation",
+	"settings/auditExport",
+	"settings/demo",
+	"settings/rules",
+	"settings/people",
+	"settings/integrations",
 	"onboarding",
 	"bot",
 	"teamsBot",
@@ -43,7 +59,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/verify-email": ["common", "auth"],
 	// Platform admin routes
 	"/platform-admin": ["common", "admin"],
-	"/platform-admin/worker-queue": ["common", "admin", "settings"],
+	"/platform-admin/worker-queue": ["common", "admin", "settings/generic"],
 	"/setup": ["common", "setup"],
 	"/init": ["common", "setup"],
 	"/approvals": ["common", "approvals"],
@@ -53,13 +69,41 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/calendar": ["common", "calendar"],
 	"/absences": ["common", "calendar"],
 	"/time-tracking": ["common", "timeTracking", "compliance"],
-	"/travel-expenses": ["common", "settings"],
+	"/travel-expenses": ["common", "travelExpenses"],
 	"/reports": ["common", "reports"],
-	"/team": ["common", "settings"],
+	"/team": ["common", "team"],
 	"/scheduling": ["common", "scheduling", "compliance"],
-	"/settings": ["common", "settings"],
-	"/settings/compliance": ["common", "settings", "compliance"],
-	"/settings/webhooks": ["common", "settings"],
+	"/settings/billing": ["common", "settings/generic", "billing"],
+	"/settings": ["common", "settings/generic"],
+	"/settings/approval-policies": ["common", "settings/generic", "settings/rules"],
+	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
+	"/settings/audit-log": ["common", "settings/generic", "settings/auditExport"],
+	"/settings/calendar": ["common", "settings/generic", "settings/integrations"],
+	"/settings/change-policies": ["common", "settings/generic", "settings/rules"],
+	"/settings/clockodo-import": ["common", "settings/generic", "settings/integrations"],
+	"/settings/coverage-rules": ["common", "settings/generic", "settings/rules"],
+	"/settings/demo": ["common", "settings/generic", "settings/demo"],
+	"/settings/discord": ["common", "settings/generic", "settings/integrations"],
+	"/settings/employees": ["common", "settings/generic", "settings/people"],
+	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise"],
+	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
+	"/settings/permissions": ["common", "settings/generic", "settings/people"],
+	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/roles": ["common", "settings/generic", "settings/people"],
+	"/settings/scheduled-exports": ["common", "settings/generic", "settings/scheduledExports"],
+	"/settings/shifts": ["common", "settings/generic", "settings/rules"],
+	"/settings/slack": ["common", "settings/generic", "settings/integrations"],
+	"/settings/surcharges": ["common", "settings/generic", "settings/rules"],
+	"/settings/teams": ["common", "settings/generic", "settings/people"],
+	"/settings/teams-notifications": ["common", "settings/generic", "settings/integrations"],
+	"/settings/telegram": ["common", "settings/generic", "settings/integrations"],
+	"/settings/travel-expenses": ["common", "settings/generic", "travelExpenses"],
+	"/settings/vacation": ["common", "settings/generic", "settings/vacation"],
+	"/settings/webhooks": ["common", "settings/generic", "webhooks"],
+	"/settings/work-categories": ["common", "settings/generic", "settings/rules"],
+	"/settings/work-policies": ["common", "settings/generic", "settings/workPolicies"],
+	"/settings/compliance": ["common", "settings/generic", "compliance"],
 	"/onboarding": ["common", "onboarding"],
 };
 
@@ -89,7 +133,8 @@ export function getNamespacesForRoute(pathname: string): Namespace[] {
 }
 
 /**
- * Dynamic import functions for each namespace and language
+ * Dynamic import functions for each namespace and language.
+ * Tolgee CLI owns the generated JSON files after this manual split.
  */
 const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>> = {
 	common: {
@@ -188,13 +233,141 @@ const namespaceImports: Record<Namespace, Record<string, () => Promise<unknown>>
 		it: () => import("../../messages/setup/it.json"),
 		pt: () => import("../../messages/setup/pt.json"),
 	},
-	settings: {
-		en: () => import("../../messages/settings/en.json"),
-		de: () => import("../../messages/settings/de.json"),
-		fr: () => import("../../messages/settings/fr.json"),
-		es: () => import("../../messages/settings/es.json"),
-		it: () => import("../../messages/settings/it.json"),
-		pt: () => import("../../messages/settings/pt.json"),
+	"settings/generic": {
+		en: () => import("../../messages/settings/generic/en.json"),
+		de: () => import("../../messages/settings/generic/de.json"),
+		fr: () => import("../../messages/settings/generic/fr.json"),
+		es: () => import("../../messages/settings/generic/es.json"),
+		it: () => import("../../messages/settings/generic/it.json"),
+		pt: () => import("../../messages/settings/generic/pt.json"),
+	},
+	billing: {
+		en: () => import("../../messages/billing/en.json"),
+		de: () => import("../../messages/billing/de.json"),
+		fr: () => import("../../messages/billing/fr.json"),
+		es: () => import("../../messages/billing/es.json"),
+		it: () => import("../../messages/billing/it.json"),
+		pt: () => import("../../messages/billing/pt.json"),
+	},
+	organization: {
+		en: () => import("../../messages/organization/en.json"),
+		de: () => import("../../messages/organization/de.json"),
+		fr: () => import("../../messages/organization/fr.json"),
+		es: () => import("../../messages/organization/es.json"),
+		it: () => import("../../messages/organization/it.json"),
+		pt: () => import("../../messages/organization/pt.json"),
+	},
+	team: {
+		en: () => import("../../messages/team/en.json"),
+		de: () => import("../../messages/team/de.json"),
+		fr: () => import("../../messages/team/fr.json"),
+		es: () => import("../../messages/team/es.json"),
+		it: () => import("../../messages/team/it.json"),
+		pt: () => import("../../messages/team/pt.json"),
+	},
+	travelExpenses: {
+		en: () => import("../../messages/travelExpenses/en.json"),
+		de: () => import("../../messages/travelExpenses/de.json"),
+		fr: () => import("../../messages/travelExpenses/fr.json"),
+		es: () => import("../../messages/travelExpenses/es.json"),
+		it: () => import("../../messages/travelExpenses/it.json"),
+		pt: () => import("../../messages/travelExpenses/pt.json"),
+	},
+	webhooks: {
+		en: () => import("../../messages/webhooks/en.json"),
+		de: () => import("../../messages/webhooks/de.json"),
+		fr: () => import("../../messages/webhooks/fr.json"),
+		es: () => import("../../messages/webhooks/es.json"),
+		it: () => import("../../messages/webhooks/it.json"),
+		pt: () => import("../../messages/webhooks/pt.json"),
+	},
+	"settings/enterprise": {
+		en: () => import("../../messages/settings/enterprise/en.json"),
+		de: () => import("../../messages/settings/enterprise/de.json"),
+		fr: () => import("../../messages/settings/enterprise/fr.json"),
+		es: () => import("../../messages/settings/enterprise/es.json"),
+		it: () => import("../../messages/settings/enterprise/it.json"),
+		pt: () => import("../../messages/settings/enterprise/pt.json"),
+	},
+	"settings/payrollExport": {
+		en: () => import("../../messages/settings/payrollExport/en.json"),
+		de: () => import("../../messages/settings/payrollExport/de.json"),
+		fr: () => import("../../messages/settings/payrollExport/fr.json"),
+		es: () => import("../../messages/settings/payrollExport/es.json"),
+		it: () => import("../../messages/settings/payrollExport/it.json"),
+		pt: () => import("../../messages/settings/payrollExport/pt.json"),
+	},
+	"settings/scheduledExports": {
+		en: () => import("../../messages/settings/scheduledExports/en.json"),
+		de: () => import("../../messages/settings/scheduledExports/de.json"),
+		fr: () => import("../../messages/settings/scheduledExports/fr.json"),
+		es: () => import("../../messages/settings/scheduledExports/es.json"),
+		it: () => import("../../messages/settings/scheduledExports/it.json"),
+		pt: () => import("../../messages/settings/scheduledExports/pt.json"),
+	},
+	"settings/holidays": {
+		en: () => import("../../messages/settings/holidays/en.json"),
+		de: () => import("../../messages/settings/holidays/de.json"),
+		fr: () => import("../../messages/settings/holidays/fr.json"),
+		es: () => import("../../messages/settings/holidays/es.json"),
+		it: () => import("../../messages/settings/holidays/it.json"),
+		pt: () => import("../../messages/settings/holidays/pt.json"),
+	},
+	"settings/workPolicies": {
+		en: () => import("../../messages/settings/workPolicies/en.json"),
+		de: () => import("../../messages/settings/workPolicies/de.json"),
+		fr: () => import("../../messages/settings/workPolicies/fr.json"),
+		es: () => import("../../messages/settings/workPolicies/es.json"),
+		it: () => import("../../messages/settings/workPolicies/it.json"),
+		pt: () => import("../../messages/settings/workPolicies/pt.json"),
+	},
+	"settings/vacation": {
+		en: () => import("../../messages/settings/vacation/en.json"),
+		de: () => import("../../messages/settings/vacation/de.json"),
+		fr: () => import("../../messages/settings/vacation/fr.json"),
+		es: () => import("../../messages/settings/vacation/es.json"),
+		it: () => import("../../messages/settings/vacation/it.json"),
+		pt: () => import("../../messages/settings/vacation/pt.json"),
+	},
+	"settings/auditExport": {
+		en: () => import("../../messages/settings/auditExport/en.json"),
+		de: () => import("../../messages/settings/auditExport/de.json"),
+		fr: () => import("../../messages/settings/auditExport/fr.json"),
+		es: () => import("../../messages/settings/auditExport/es.json"),
+		it: () => import("../../messages/settings/auditExport/it.json"),
+		pt: () => import("../../messages/settings/auditExport/pt.json"),
+	},
+	"settings/demo": {
+		en: () => import("../../messages/settings/demo/en.json"),
+		de: () => import("../../messages/settings/demo/de.json"),
+		fr: () => import("../../messages/settings/demo/fr.json"),
+		es: () => import("../../messages/settings/demo/es.json"),
+		it: () => import("../../messages/settings/demo/it.json"),
+		pt: () => import("../../messages/settings/demo/pt.json"),
+	},
+	"settings/rules": {
+		en: () => import("../../messages/settings/rules/en.json"),
+		de: () => import("../../messages/settings/rules/de.json"),
+		fr: () => import("../../messages/settings/rules/fr.json"),
+		es: () => import("../../messages/settings/rules/es.json"),
+		it: () => import("../../messages/settings/rules/it.json"),
+		pt: () => import("../../messages/settings/rules/pt.json"),
+	},
+	"settings/people": {
+		en: () => import("../../messages/settings/people/en.json"),
+		de: () => import("../../messages/settings/people/de.json"),
+		fr: () => import("../../messages/settings/people/fr.json"),
+		es: () => import("../../messages/settings/people/es.json"),
+		it: () => import("../../messages/settings/people/it.json"),
+		pt: () => import("../../messages/settings/people/pt.json"),
+	},
+	"settings/integrations": {
+		en: () => import("../../messages/settings/integrations/en.json"),
+		de: () => import("../../messages/settings/integrations/de.json"),
+		fr: () => import("../../messages/settings/integrations/fr.json"),
+		es: () => import("../../messages/settings/integrations/es.json"),
+		it: () => import("../../messages/settings/integrations/it.json"),
+		pt: () => import("../../messages/settings/integrations/pt.json"),
 	},
 	onboarding: {
 		en: () => import("../../messages/onboarding/en.json"),
@@ -254,9 +427,8 @@ export async function loadNamespaces(
 
 	// Merge all namespace translations into a single object
 	// This allows t("auth.login") to work without specifying namespace
-	const merged: TreeTranslationsData = {};
+	const merged = mergeTreeTranslations(loaded.map(({ data }) => data));
 	for (const { ns, data } of loaded) {
-		Object.assign(merged, data);
 		addNamespaceKeyAliases(merged, ns, data);
 	}
 
@@ -284,6 +456,32 @@ export async function loadRouteTranslations(
 // Tolgee's expected translation data type
 type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
 
+export function mergeTreeTranslations(items: readonly TreeTranslationsData[]): TreeTranslationsData {
+	const merged: TreeTranslationsData = {};
+
+	for (const item of items) {
+		mergeTreeTranslationInto(merged, item);
+	}
+
+	return merged;
+}
+
+function mergeTreeTranslationInto(target: TreeTranslationsData, source: TreeTranslationsData) {
+	for (const [key, value] of Object.entries(source)) {
+		const targetValue = target[key];
+		if (isTreeTranslationsData(targetValue) && isTreeTranslationsData(value)) {
+			mergeTreeTranslationInto(targetValue, value);
+			continue;
+		}
+
+		target[key] = value;
+	}
+}
+
+function isTreeTranslationsData(value: unknown): value is TreeTranslationsData {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function addNamespaceKeyAliases(
 	target: TreeTranslationsData,
 	namespace: Namespace,
@@ -302,7 +500,7 @@ function addNamespaceKeyAliases(
  * Load and merge all namespaces for a language
  */
 async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslationsData> {
-	const merged: TreeTranslationsData = {};
+	const loaded: { ns: Namespace; data: TreeTranslationsData }[] = [];
 	for (const ns of ALL_NAMESPACES) {
 		const importFn = namespaceImports[ns]?.[lang];
 		if (importFn) {
@@ -310,12 +508,15 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 				const mod = await importFn();
 				const data =
 					(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
-				Object.assign(merged, data);
-				addNamespaceKeyAliases(merged, ns, data);
+				loaded.push({ ns, data });
 			} catch (error) {
 				console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
 			}
 		}
+	}
+	const merged = mergeTreeTranslations(loaded.map(({ data }) => data));
+	for (const { ns, data } of loaded) {
+		addNamespaceKeyAliases(merged, ns, data);
 	}
 	return merged;
 }

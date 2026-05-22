@@ -3,11 +3,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkActualMinutes, DailyWorkRequirements } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query/keys";
 import { parseSuperJsonResponse } from "@/lib/superjson";
-import { calendarEventSchema } from "@/lib/validations/calendar";
+import {
+	calendarEventSchema,
+	dailyWorkActualMinutesSchema,
+	dailyWorkRequirementsSchema,
+} from "@/lib/validations/calendar";
 
 export interface CalendarFilters {
 	showHolidays: boolean;
@@ -27,6 +31,8 @@ export interface UseCalendarDataOptions {
 
 export interface UseCalendarDataResult {
 	events: CalendarEvent[];
+	dailyRequirements: DailyWorkRequirements;
+	dailyActualMinutes: DailyWorkActualMinutes;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
 	error: Error | null;
@@ -42,7 +48,11 @@ async function fetchCalendarEvents(
 	month: number | undefined,
 	fullYear: boolean,
 	filters: CalendarFilters,
-): Promise<CalendarEvent[]> {
+): Promise<{
+	events: CalendarEvent[];
+	dailyRequirements: DailyWorkRequirements;
+	dailyActualMinutes: DailyWorkActualMinutes;
+}> {
 	const params = new URLSearchParams({
 		organizationId,
 		year: year.toString(),
@@ -69,11 +79,20 @@ async function fetchCalendarEvents(
 	}
 
 	// Use SuperJSON to parse response - dates are now actual Date objects
-	const data = await parseSuperJsonResponse<{ events: unknown[]; total: number }>(response);
+	const data = await parseSuperJsonResponse<{
+		events: unknown[];
+		total: number;
+		dailyRequirements?: unknown;
+		dailyActualMinutes?: unknown;
+	}>(response);
 
 	// Validate events with Zod schema
 	const eventsSchema = z.array(calendarEventSchema);
-	return eventsSchema.parse(data.events);
+	return {
+		events: eventsSchema.parse(data.events),
+		dailyRequirements: dailyWorkRequirementsSchema.parse(data.dailyRequirements ?? {}),
+		dailyActualMinutes: dailyWorkActualMinutesSchema.parse(data.dailyActualMinutes ?? {}),
+	};
 }
 
 /**
@@ -103,7 +122,7 @@ export function useCalendarData({
 	};
 
 	const {
-		data: events = [],
+		data: calendarData = { events: [], dailyRequirements: {}, dailyActualMinutes: {} },
 		isLoading,
 		error,
 	} = useQuery({
@@ -116,7 +135,7 @@ export function useCalendarData({
 
 	// Group events by date for easy lookup (memoized)
 	const eventsByDate = useMemo(() => {
-		return events.reduce((acc, event) => {
+		return calendarData.events.reduce((acc, event) => {
 			const dateKey = format(event.date, "yyyy-MM-dd");
 			if (!acc.has(dateKey)) {
 				acc.set(dateKey, []);
@@ -124,7 +143,7 @@ export function useCalendarData({
 			acc.get(dateKey)?.push(event);
 			return acc;
 		}, new Map<string, CalendarEvent[]>());
-	}, [events]);
+	}, [calendarData.events]);
 
 	// Refetch function that invalidates the query cache
 	const refetch = () => {
@@ -134,7 +153,9 @@ export function useCalendarData({
 	};
 
 	return {
-		events,
+		events: calendarData.events,
+		dailyRequirements: calendarData.dailyRequirements,
+		dailyActualMinutes: calendarData.dailyActualMinutes,
 		eventsByDate,
 		isLoading,
 		error: error instanceof Error ? error : null,

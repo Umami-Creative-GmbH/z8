@@ -1,0 +1,87 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Il tuo abbonamento è stato annullato. Riabbonati per riottenere l'accesso.",
+      "paymentFailed": "L'ultimo pagamento non è andato a buon fine. Aggiorna il metodo di pagamento.",
+      "required": "È necessario un abbonamento per utilizzare questa applicazione.",
+      "trialExpired": "La tua prova è scaduta. Abbonati per continuare a usare l'app."
+    },
+    "activeSeats": "Posti attivi",
+    "alerts": {
+      "canceledDescription": "Il pagamento è stato annullato. Puoi riprovare quando sei pronto.",
+      "subscriptionRequired": "Abbonamento richiesto",
+      "successDescription": "Il tuo abbonamento è stato attivato. Grazie per esserti abbonato!",
+      "successTitle": "Operazione riuscita!"
+    },
+    "bestValue": "Miglior rapporto qualità-prezzo",
+    "billedMonthly": "Fatturato mensilmente",
+    "cancelsOn": "Annulla il {date}",
+    "checkoutCreateFailed": "Impossibile creare la sessione di checkout",
+    "checkoutStartFailed": "Impossibile avviare il checkout",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout raccoglie i dati di pagamento ora. Il tuo abbonamento a pagamento inizia solo dopo la scadenza del periodo di prova.",
+      "trialContinuesTitle": "La tua prova continua dopo l'aggiornamento"
+    },
+    "choosePlan": "Scegli il tuo piano",
+    "choosePlanDescription": "Inizia con una prova gratuita di 14 giorni. Nessuna carta di credito richiesta per iniziare.",
+    "currentPlan": "Piano attuale",
+    "days": "{count} giorni",
+    "description": "Gestisci il tuo abbonamento e i dettagli di fatturazione",
+    "faq": {
+      "afterTrial": {
+        "answer": "Dopo la fine del periodo di prova di 14 giorni, ti verrà addebitato il costo del piano di abbonamento selezionato. Puoi annullare in qualsiasi momento prima della scadenza del periodo di prova per evitare addebiti.",
+        "question": "Cosa succede dopo il periodo di prova?"
+      },
+      "perSeat": {
+        "answer": "La fatturazione si basa sul numero di membri attivi nella tua organizzazione. Quando aggiungi o rimuovi membri, il tuo abbonamento viene regolato automaticamente.",
+        "question": "Come funziona la fatturazione per posto?"
+      },
+      "switch": {
+        "answer": "Sì! Puoi cambiare piano in qualsiasi momento tramite il portale di fatturazione. Le modifiche avranno effetto al tuo prossimo ciclo di fatturazione.",
+        "question": "Posso passare da mensile ad annuale?"
+      },
+      "title": "Domande frequenti"
+    },
+    "features": {
+      "allFeatures": "Tutte le funzionalità incluse",
+      "cancelAnytime": "Annulla in qualsiasi momento",
+      "trial": "Prova gratuita di 14 giorni",
+      "yearlyDiscount": "Sconto del 25% rispetto al mensile"
+    },
+    "interval": {
+      "monthlyBilling": "Fatturazione mensile",
+      "yearlyBilling": "Fatturazione annuale"
+    },
+    "manageBilling": "Gestisci fatturazione",
+    "monthlyCost": "Costo Mensile",
+    "nextBilling": "Prossima Fatturazione",
+    "opening": "Apertura in corso...",
+    "perSeatMonth": "/posto/mese",
+    "plans": {
+      "monthly": {
+        "description": "Fatturazione flessibile mese per mese",
+        "title": "Mensile"
+      },
+      "yearly": {
+        "description": "Risparmia il 25% con fatturazione annuale",
+        "title": "Annuale"
+      }
+    },
+    "portalOpenFailed": "Impossibile aprire il portale di fatturazione",
+    "priceSeatMonth": "€{price}/posto/mese",
+    "priceSeatMonthYearly": "€{price}/posto/mese (fatturato annualmente)",
+    "seatBilledAnnually": "€{price}/posto fatturato annualmente",
+    "starting": "Avvio in corso...",
+    "startTrial": "Avvia Prova Gratuita",
+    "status": {
+      "canceled": "Annullato",
+      "noSubscription": "Nessun Abbonamento",
+      "pastDue": "Scaduto",
+      "trial": "Prova"
+    },
+    "title": "Fatturazione e Abbonamento",
+    "trialEnds": "Fine Prova",
+    "vatNotice": "I prezzi mostrati sono prezzi netti IVA esclusa. L'IVA verrà aggiunta ove applicabile.",
+    "yearTotal": "€{amount}/anno totale"
+  }
+}

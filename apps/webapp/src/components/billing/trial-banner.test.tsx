@@ -23,8 +23,14 @@ vi.mock("@/navigation", () => ({
 }));
 
 describe("TrialBanner", () => {
-	it("renders trial messaging and upgrade link", () => {
-		render(<TrialBanner daysRemaining={9} billingHref="/en/settings/billing" />);
+	it("renders trial messaging and upgrade link when billing management is allowed", () => {
+		render(
+			<TrialBanner
+				daysRemaining={9}
+				billingHref="/en/settings/billing"
+				showUpgradeButton={true}
+			/>,
+		);
 
 		expect(screen.getByText("14-day trial active")).toBeTruthy();
 		expect(
@@ -35,6 +41,19 @@ describe("TrialBanner", () => {
 
 		const link = screen.getByRole("link", { name: "Upgrade" });
 		expect(link.getAttribute("href")).toBe("/en/settings/billing");
+	});
+
+	it("hides the upgrade link when billing management is not allowed", () => {
+		render(
+			<TrialBanner
+				daysRemaining={9}
+				billingHref="/en/settings/billing"
+				showUpgradeButton={false}
+			/>,
+		);
+
+		expect(screen.getByText("14-day trial active")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Upgrade" })).toBeNull();
 	});
 
 	it("uses the localized app navigation link", () => {
@@ -54,34 +73,34 @@ describe("TrialBanner", () => {
 				upgrade: "Upgrade",
 			},
 			de: {
-				title: "14-tägige Testphase aktiv",
+				title: "14-tägige Testversion aktiv",
 				description:
-					"Noch {days} Tage. Hinterlegen Sie jetzt Zahlungsdetails; Ihr kostenpflichtiges Abonnement beginnt nach der Testphase.",
+					"{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
 				upgrade: "Upgrade",
 			},
 			es: {
 				title: "Prueba de 14 días activa",
 				description:
-					"Quedan {days} días. Añada los datos de pago ahora; su suscripción de pago comenzará después de la prueba.",
-				upgrade: "Mejorar plan",
+					"{days} días restantes. Agregue los detalles de pago ahora; su suscripción de pago comienza después de la prueba.",
+				upgrade: "Actualizar",
 			},
 			fr: {
 				title: "Essai de 14 jours actif",
 				description:
-					"Il reste {days} jours. Ajoutez vos informations de paiement maintenant ; votre abonnement payant commencera après l’essai.",
+					"{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
 				upgrade: "Mettre à niveau",
 			},
 			it: {
 				title: "Prova di 14 giorni attiva",
 				description:
-					"Restano {days} giorni. Aggiungi ora i dati di pagamento; l’abbonamento a pagamento inizierà dopo la prova.",
-				upgrade: "Esegui l’upgrade",
+					"{days} giorni rimanenti. Aggiungi ora i dettagli di pagamento; l'abbonamento a pagamento inizierà dopo la prova.",
+				upgrade: "Aggiorna",
 			},
 			pt: {
 				title: "Teste de 14 dias ativo",
 				description:
-					"Restam {days} dias. Adicione os dados de pagamento agora; sua assinatura paga começará após o teste.",
-				upgrade: "Fazer upgrade",
+					"{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
+				upgrade: "Atualizar",
 			},
 		};
 
@@ -108,5 +127,16 @@ describe("TrialBanner", () => {
 		expect(layoutSource).toContain("checkBillingAccess(activeOrganizationId)");
 		expect(layoutSource).toContain("<TrialBanner");
 		expect(layoutSource).toContain('billingAccess.state === "trialing"');
+		expect(layoutSource).toContain('import { and, eq } from "drizzle-orm"');
+		expect(layoutSource).toContain('import { db } from "@/db"');
+		expect(layoutSource).toContain('import { member } from "@/db/auth-schema"');
+		expect(layoutSource).toContain('import { subscription } from "@/db/schema"');
+		expect(layoutSource).toContain("member.userId");
+		expect(layoutSource).toContain("member.organizationId");
+		expect(layoutSource).toContain('membershipRole === "owner" || membershipRole === "admin"');
+		expect(layoutSource).toContain('subscriptionRow?.status === "trialing"');
+		expect(layoutSource).toContain("Boolean(subscriptionRow?.stripeSubscriptionId)");
+		expect(layoutSource).toContain("!hasPreparedTrialSubscription");
+		expect(layoutSource).toContain("showUpgradeButton={canManageBilling}");
 	});
 });

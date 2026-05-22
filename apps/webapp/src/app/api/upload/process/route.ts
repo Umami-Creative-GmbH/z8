@@ -3,7 +3,7 @@ import { fileTypeFromBuffer } from "file-type";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
-import { getPublicUrl, S3_BUCKET, s3Client } from "@/lib/storage/s3-client";
+import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
 		// Read the uploaded file from S3
 		const getResponse = await s3Client.send(
-			new GetObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }),
+			new GetObjectCommand({ Bucket: S3_PUBLIC_BUCKET, Key: safeTusFileKey }),
 		);
 
 		// Check file size from S3 metadata before reading
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
 		// Upload optimized image to S3
 		await s3Client.send(
 			new PutObjectCommand({
-				Bucket: S3_BUCKET,
+				Bucket: S3_PUBLIC_BUCKET,
 				Key: finalKey,
 				Body: optimized,
 				ContentType: "image/webp",
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
 		);
 
 		// Delete temp file from S3
-		await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: safeTusFileKey }));
+		await s3Client.send(new DeleteObjectCommand({ Bucket: S3_PUBLIC_BUCKET, Key: safeTusFileKey }));
 
 		const publicUrl = getPublicUrl(finalKey);
 

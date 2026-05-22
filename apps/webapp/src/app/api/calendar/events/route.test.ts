@@ -8,6 +8,7 @@ const mockState = vi.hoisted(() => ({
 	getHolidaysForMonth: vi.fn(async () => []),
 	getTimeEntriesForMonth: vi.fn(async () => []),
 	getWorkPeriodsForMonth: vi.fn(async () => []),
+	getDailyWorkRequirementsForEmployee: vi.fn(async () => ({})),
 }));
 
 vi.mock("next/server", async () => {
@@ -38,12 +39,20 @@ vi.mock("@/lib/calendar/work-period-service", () => ({
 	getWorkPeriodsForMonth: mockState.getWorkPeriodsForMonth,
 }));
 
+vi.mock("@/lib/calendar/work-policy-requirements", () => ({
+	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
+}));
+
 const { GET } = await import("./route");
 
 function createRequest(url: string): NextRequest {
 	return {
 		nextUrl: new URL(url),
 	} as unknown as NextRequest;
+}
+
+function getResponsePayload<T>(body: T | { json: T }): T {
+	return "json" in (body as { json?: T }) ? (body as { json: T }).json : (body as T);
 }
 
 describe("GET /api/calendar/events", () => {
@@ -78,6 +87,80 @@ describe("GET /api/calendar/events", () => {
 		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(4, 2026, {
 			organizationId: "org-1",
 			employeeId: "employee-1",
+		});
+	});
+
+	it("returns daily requirements for the scoped employee", async () => {
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValueOnce({
+			"2026-05-04": {
+				requiredMinutes: 480,
+				policyId: "policy-1",
+				policyName: "Standard Hours",
+			},
+		});
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startDate: new Date("2026-05-01T00:00:00.000Z"),
+			endDate: new Date("2026-05-31T23:59:59.999Z"),
+		});
+		expect(body.dailyRequirements).toEqual({
+			"2026-05-04": {
+				requiredMinutes: 480,
+				policyId: "policy-1",
+				policyName: "Standard Hours",
+			},
+		});
+	});
+
+	it("returns empty daily requirements when policy calculation fails", async () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		mockState.getDailyWorkRequirementsForEmployee.mockRejectedValueOnce(new Error("policy failed"));
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.dailyRequirements).toEqual({});
+		consoleError.mockRestore();
+	});
+
+	it("omits hidden work period events but still returns daily actual minutes", async () => {
+		mockState.getWorkPeriodsForMonth.mockResolvedValueOnce([
+			{
+				id: "work-period-1",
+				type: "work_period",
+				date: new Date("2026-05-04T08:00:00.000Z"),
+				title: "Work period",
+				color: "#10b981",
+				metadata: { durationMinutes: 480, employeeName: "Ada" },
+			},
+		]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=false",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(body.events).toEqual([]);
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-05-04": 480,
 		});
 	});
 });

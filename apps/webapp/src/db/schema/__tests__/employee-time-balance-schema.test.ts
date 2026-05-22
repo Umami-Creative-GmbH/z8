@@ -1,7 +1,16 @@
+import { existsSync, readFileSync } from "node:fs";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { employee } from "../organization";
 import { employeeTimeBalance } from "../time-tracking";
+
+const migration0024Url = new URL(
+	"../../../../drizzle/0024_employee_time_balance.sql",
+	import.meta.url,
+);
+const migrationJournal = JSON.parse(
+	readFileSync(new URL("../../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
+) as { entries: Array<{ idx: number; tag: string }> };
 
 describe("employee time balance schema", () => {
 	it("defines organization-scoped yearly balance columns", () => {
@@ -34,5 +43,22 @@ describe("employee time balance schema", () => {
 				);
 			}),
 		).toBe(true);
+	});
+
+	it("includes a migration for the persisted balance table", () => {
+		expect(existsSync(migration0024Url)).toBe(true);
+
+		const migration = readFileSync(migration0024Url, "utf8");
+
+		expect(migration).toContain('CREATE TABLE "employee_time_balance"');
+		expect(migration).toContain(
+			'CREATE UNIQUE INDEX "employeeTimeBalance_org_employee_year_idx"',
+		);
+		expect(migration).toContain(
+			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
+		);
+		expect(migrationJournal.entries).toContainEqual(
+			expect.objectContaining({ idx: 24, tag: "0024_employee_time_balance" }),
+		);
 	});
 });

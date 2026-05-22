@@ -122,7 +122,8 @@
       "approving": "Approving...",
       "emptyState": "No time entries found for this week.",
       "rowActions": "Time entry actions",
-      "title": "Time Entries"
+      "title": "Time Entries",
+      "viewCalendar": "View Calendar"
     },
     "timeline": {
       "dayPicker": "Timeline day picker",

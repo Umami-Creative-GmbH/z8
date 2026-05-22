@@ -9,6 +9,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { eq } from "drizzle-orm";
 import { db, exportStorageConfig } from "@/db";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 
@@ -23,6 +24,27 @@ export interface S3StorageConfig {
 	secretAccessKey: string;
 	region: string;
 	endpoint?: string | null;
+	forcePathStyle?: boolean;
+}
+
+function getDefaultPresignedUrlTtlSeconds(): number {
+	const parsed = Number.parseInt(env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS, 10);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : 900;
+}
+
+function getPrivateStorageConfig(): S3StorageConfig | null {
+	if (!env.S3_PRIVATE_BUCKET || !env.S3_PRIVATE_ACCESS_KEY_ID || !env.S3_PRIVATE_SECRET_ACCESS_KEY) {
+		return null;
+	}
+
+	return {
+		bucket: env.S3_PRIVATE_BUCKET,
+		accessKeyId: env.S3_PRIVATE_ACCESS_KEY_ID,
+		secretAccessKey: env.S3_PRIVATE_SECRET_ACCESS_KEY,
+		region: env.S3_PRIVATE_REGION,
+		endpoint: env.S3_PRIVATE_ENDPOINT,
+		forcePathStyle: env.S3_PRIVATE_FORCE_PATH_STYLE === "true",
+	};
 }
 
 /**
@@ -36,7 +58,7 @@ export async function getStorageConfig(organizationId: string): Promise<S3Storag
 	});
 
 	if (!config) {
-		return null;
+		return getPrivateStorageConfig();
 	}
 
 	// Fetch secrets from Vault
@@ -56,6 +78,7 @@ export async function getStorageConfig(organizationId: string): Promise<S3Storag
 		secretAccessKey,
 		region: config.region,
 		endpoint: config.endpoint,
+		forcePathStyle: !!config.endpoint,
 	};
 }
 
@@ -91,7 +114,7 @@ function createS3Client(config: S3StorageConfig): S3Client {
 			accessKeyId: config.accessKeyId,
 			secretAccessKey: config.secretAccessKey,
 		},
-		forcePathStyle: !!config.endpoint, // Required for MinIO and other S3-compatible services
+		forcePathStyle: config.forcePathStyle ?? !!config.endpoint,
 	});
 }
 
@@ -151,6 +174,16 @@ export async function uploadExport(
 	data: Buffer | Uint8Array | string,
 	contentType = "application/zip",
 ): Promise<void> {
+	await uploadPrivateObject(organizationId, key, data, contentType);
+}
+
+export async function uploadPrivateObject(
+	organizationId: string,
+	key: string,
+	data: Buffer | Uint8Array | string,
+	contentType: string,
+	metadata?: Record<string, string>,
+): Promise<{ bucket: string }> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {
 		throw new Error("S3 storage is not configured for this organization");
@@ -173,11 +206,14 @@ export async function uploadExport(
 		Key: key,
 		Body: data,
 		ContentType: contentType,
+		Metadata: metadata,
 	});
 
 	await client.send(command);
 
 	logger.info({ organizationId, key }, "Export uploaded successfully");
+
+	return { bucket: config.bucket };
 }
 
 /**
@@ -255,7 +291,7 @@ export async function getExportSize(organizationId: string, key: string): Promis
 export async function getPresignedUrl(
 	organizationId: string,
 	key: string,
-	expiresIn = 86400,
+	expiresIn = getDefaultPresignedUrlTtlSeconds(),
 ): Promise<string> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {

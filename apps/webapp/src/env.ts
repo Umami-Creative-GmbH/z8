@@ -1,11 +1,19 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-export const env = createEnv({
+const skipEnvValidation =
+	process.env.SKIP_ENV_VALIDATION === "1" ||
+	process.env.SKIP_ENV_VALIDATION === "true" ||
+	process.env.CI === "true";
+
+const parsedEnv = createEnv({
 	server: {
 		APP_URL: z.url().optional(),
 		BETTER_AUTH_SECRET: z.string().min(32),
 		BETTER_AUTH_SECRETS: z.string().optional(),
+
+		// Secret store provider
+		SECRET_STORE_PROVIDER: z.enum(["vault", "scaleway"]).default("vault"),
 
 		// DATABASE_URL: z.string().url(), // Not used, using individual vars
 		// Postgres connection details
@@ -14,6 +22,11 @@ export const env = createEnv({
 		POSTGRES_DB: z.string().optional(),
 		POSTGRES_USER: z.string().optional(),
 		POSTGRES_PASSWORD: z.string().optional(),
+		POSTGRES_SSL_MODE: z
+			.enum(["disable", "prefer", "require", "verify-ca", "verify-full"])
+			.default("disable"),
+		POSTGRES_SSL_CA_CERT: z.string().optional(),
+		POSTGRES_SSL_ROOT_CERT_PATH: z.string().optional(),
 
 		// Valkey / Redis
 		VALKEY_HOST: z.string().optional(),
@@ -23,16 +36,25 @@ export const env = createEnv({
 		REDIS_PORT: z.string().optional(),
 		REDIS_PASSWORD: z.string().optional(),
 
-		// AWS S3 / Object Storage (REQUIRED)
-		// S3-compatible storage is required for file uploads
+		// Public AWS S3 / Object Storage (REQUIRED)
+		// S3-compatible storage is required for public file uploads
 		// Use RustFS (included in docker-compose) or external provider (AWS S3, Cloudflare R2, MinIO)
-		S3_BUCKET: z.string().min(1, "S3_BUCKET is required"),
-		S3_ACCESS_KEY_ID: z.string().min(1, "S3_ACCESS_KEY_ID is required"),
-		S3_SECRET_ACCESS_KEY: z.string().min(1, "S3_SECRET_ACCESS_KEY is required"),
-		S3_ENDPOINT: z.string().url("S3_ENDPOINT must be a valid URL"),
-		S3_REGION: z.string().default("us-east-1"),
-		S3_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
+		S3_PUBLIC_BUCKET: z.string().min(1, "S3_PUBLIC_BUCKET is required"),
+		S3_PUBLIC_ACCESS_KEY_ID: z.string().min(1, "S3_PUBLIC_ACCESS_KEY_ID is required"),
+		S3_PUBLIC_SECRET_ACCESS_KEY: z.string().min(1, "S3_PUBLIC_SECRET_ACCESS_KEY is required"),
+		S3_PUBLIC_ENDPOINT: z.string().url("S3_PUBLIC_ENDPOINT must be a valid URL"),
+		S3_PUBLIC_REGION: z.string().default("us-east-1"),
+		S3_PUBLIC_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
 		S3_PUBLIC_URL: z.string().url("S3_PUBLIC_URL must be a valid URL"),
+
+		// Private AWS S3 / Object Storage for exports and audit artifacts
+		S3_PRIVATE_BUCKET: z.string().optional(),
+		S3_PRIVATE_ACCESS_KEY_ID: z.string().optional(),
+		S3_PRIVATE_SECRET_ACCESS_KEY: z.string().optional(),
+		S3_PRIVATE_ENDPOINT: z.string().url("S3_PRIVATE_ENDPOINT must be a valid URL").optional(),
+		S3_PRIVATE_REGION: z.string().default("us-east-1"),
+		S3_PRIVATE_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
+		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: z.string().default("900"),
 
 		// Worker / Jobs
 		ENABLE_CRON_JOBS: z.string().optional(),
@@ -42,6 +64,15 @@ export const env = createEnv({
 		// Vault
 		VAULT_ADDR: z.string().optional(),
 		VAULT_TOKEN: z.string().optional(),
+
+		// Scaleway Key Manager
+		SCALEWAY_ACCESS_KEY: z.string().optional(),
+		SCALEWAY_SECRET_KEY: z.string().optional(),
+		SCALEWAY_PROJECT_ID: z.string().optional(),
+		SCALEWAY_REGION: z.enum(["fr-par", "nl-ams", "pl-waw"]).default("fr-par"),
+		SCALEWAY_KEY_MANAGER_API_URL: z
+			.url()
+			.default("https://api.scaleway.com"),
 
 		// Tolgee (Server side)
 		TOLGEE_PROJECT_ID: z.string().optional(),
@@ -75,6 +106,7 @@ export const env = createEnv({
 
 		// Domain configuration (server-side only for runtime flexibility)
 		MAIN_DOMAIN: z.string().optional(),
+		PLATFORM_DOMAIN: z.string().optional(),
 
 		// Social OAuth - Global/fallback credentials (optional, orgs can configure their own)
 		GOOGLE_CLIENT_ID: z.string().optional(),
@@ -116,9 +148,13 @@ export const env = createEnv({
 		POSTGRES_DB: process.env.POSTGRES_DB,
 		POSTGRES_USER: process.env.POSTGRES_USER,
 		POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
+		POSTGRES_SSL_MODE: process.env.POSTGRES_SSL_MODE,
+		POSTGRES_SSL_CA_CERT: process.env.POSTGRES_SSL_CA_CERT,
+		POSTGRES_SSL_ROOT_CERT_PATH: process.env.POSTGRES_SSL_ROOT_CERT_PATH,
 
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,
+		SECRET_STORE_PROVIDER: process.env.SECRET_STORE_PROVIDER ?? "vault",
 		VALKEY_HOST: process.env.VALKEY_HOST,
 		VALKEY_PORT: process.env.VALKEY_PORT,
 		VALKEY_PASSWORD: process.env.VALKEY_PASSWORD,
@@ -126,19 +162,32 @@ export const env = createEnv({
 		REDIS_PORT: process.env.REDIS_PORT,
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 
-		S3_BUCKET: process.env.S3_BUCKET,
-		S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
-		S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
-		S3_ENDPOINT: process.env.S3_ENDPOINT,
-		S3_REGION: process.env.S3_REGION,
-		S3_FORCE_PATH_STYLE: process.env.S3_FORCE_PATH_STYLE,
+		S3_PUBLIC_BUCKET: process.env.S3_PUBLIC_BUCKET,
+		S3_PUBLIC_ACCESS_KEY_ID: process.env.S3_PUBLIC_ACCESS_KEY_ID,
+		S3_PUBLIC_SECRET_ACCESS_KEY: process.env.S3_PUBLIC_SECRET_ACCESS_KEY,
+		S3_PUBLIC_ENDPOINT: process.env.S3_PUBLIC_ENDPOINT,
+		S3_PUBLIC_REGION: process.env.S3_PUBLIC_REGION,
+		S3_PUBLIC_FORCE_PATH_STYLE: process.env.S3_PUBLIC_FORCE_PATH_STYLE,
 		S3_PUBLIC_URL: process.env.S3_PUBLIC_URL,
+		S3_PRIVATE_BUCKET: process.env.S3_PRIVATE_BUCKET,
+		S3_PRIVATE_ACCESS_KEY_ID: process.env.S3_PRIVATE_ACCESS_KEY_ID,
+		S3_PRIVATE_SECRET_ACCESS_KEY: process.env.S3_PRIVATE_SECRET_ACCESS_KEY,
+		S3_PRIVATE_ENDPOINT: process.env.S3_PRIVATE_ENDPOINT,
+		S3_PRIVATE_REGION: process.env.S3_PRIVATE_REGION,
+		S3_PRIVATE_FORCE_PATH_STYLE: process.env.S3_PRIVATE_FORCE_PATH_STYLE,
+		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: process.env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS,
 
 		ENABLE_CRON_JOBS: process.env.ENABLE_CRON_JOBS,
 		WORKER_CONCURRENCY: process.env.WORKER_CONCURRENCY,
 		CRON_SECRET: process.env.CRON_SECRET,
 		VAULT_ADDR: process.env.VAULT_ADDR,
 		VAULT_TOKEN: process.env.VAULT_TOKEN,
+		SCALEWAY_ACCESS_KEY: process.env.SCALEWAY_ACCESS_KEY,
+		SCALEWAY_SECRET_KEY: process.env.SCALEWAY_SECRET_KEY,
+		SCALEWAY_PROJECT_ID: process.env.SCALEWAY_PROJECT_ID,
+		SCALEWAY_REGION: process.env.SCALEWAY_REGION ?? "fr-par",
+		SCALEWAY_KEY_MANAGER_API_URL:
+			process.env.SCALEWAY_KEY_MANAGER_API_URL ?? "https://api.scaleway.com",
 		TOLGEE_PROJECT_ID: process.env.TOLGEE_PROJECT_ID,
 		TOLGEE_API_KEY: process.env.TOLGEE_API_KEY,
 		TOLGEE_API_URL: process.env.TOLGEE_API_URL,
@@ -161,6 +210,7 @@ export const env = createEnv({
 		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 		NEXT_PUBLIC_BUILD_HASH: process.env.NEXT_PUBLIC_BUILD_HASH,
 		MAIN_DOMAIN: process.env.MAIN_DOMAIN,
+		PLATFORM_DOMAIN: process.env.PLATFORM_DOMAIN,
 		NEXT_PUBLIC_TOLGEE_API_KEY: process.env.NEXT_PUBLIC_TOLGEE_API_KEY,
 		NEXT_PUBLIC_TOLGEE_API_URL: process.env.NEXT_PUBLIC_TOLGEE_API_URL,
 		GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
@@ -181,10 +231,7 @@ export const env = createEnv({
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
 		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
 	},
-	skipValidation:
-		process.env.SKIP_ENV_VALIDATION === "1" ||
-		process.env.SKIP_ENV_VALIDATION === "true" ||
-		process.env.CI === "true",
+	skipValidation: skipEnvValidation,
 	emptyStringAsUndefined: true,
 	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
@@ -194,3 +241,23 @@ export const env = createEnv({
 		process.exit(1);
 	},
 });
+
+if (!skipEnvValidation && parsedEnv.SECRET_STORE_PROVIDER === "scaleway") {
+	const missingScalewayEnvVars = [
+		"SCALEWAY_ACCESS_KEY",
+		"SCALEWAY_SECRET_KEY",
+		"SCALEWAY_PROJECT_ID",
+	].filter((key) => !parsedEnv[key as keyof typeof parsedEnv]);
+
+	if (missingScalewayEnvVars.length > 0) {
+		console.error("❌ Invalid environment variables:");
+		for (const key of missingScalewayEnvVars) {
+			console.error(
+				`   - ${key}: Required when SECRET_STORE_PROVIDER=scaleway`
+			);
+		}
+		process.exit(1);
+	}
+}
+
+export const env = parsedEnv;

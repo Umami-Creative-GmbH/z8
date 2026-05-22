@@ -8,6 +8,26 @@ icon: Database
 
 The database uses Drizzle ORM on PostgreSQL with organization-scoped tables across auth, workforce, time, export, and audit domains.
 
+Runtime database connections use individual environment variables rather than a single connection string:
+
+```ini
+POSTGRES_HOST=postgres.example.com
+POSTGRES_PORT=5432
+POSTGRES_DB=z8
+POSTGRES_USER=z8
+POSTGRES_PASSWORD=<password>
+POSTGRES_SSL_MODE=disable
+```
+
+Managed PostgreSQL providers may require TLS. For providers that document `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, use:
+
+```ini
+POSTGRES_SSL_MODE=verify-full
+POSTGRES_SSL_ROOT_CERT_PATH=/etc/postgres-certs/provider-ca.pem
+```
+
+`POSTGRES_SSL_CA_CERT` can be used instead when the CA certificate PEM content is supplied through the secret store rather than mounted as a file.
+
 - **users** - Authentication and account-level fields
 - **organizations** - Tenant boundary for all scoped data
 - **members** - Organization membership and role assignment

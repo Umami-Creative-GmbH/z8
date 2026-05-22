@@ -5,12 +5,13 @@ import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import type { CalendarEvent } from "@/lib/calendar/types";
-import { format } from "@/lib/datetime/luxon-utils";
+import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { CalendarEmployeeSelector } from "./calendar-employee-selector";
 import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
 import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
 import { EventDetailsPanel } from "./event-details-panel";
+import { MonthWorkSummaryView } from "./month-work-summary-view";
 import type { ViewMode } from "./schedule-x-calendar";
 import { ScheduleXWrapper } from "./schedule-x-wrapper";
 import { SplitWorkPeriodDialog } from "./split-work-period-dialog";
@@ -69,30 +70,19 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, isLoading, error, refetch } = useCalendarData({
-		organizationId,
-		month: currentMonth.getMonth(),
-		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
-		filters,
-		fullYear: viewMode === "year",
-	});
+	const { events, dailyRequirements, dailyActualMinutes, isLoading, error, refetch } =
+		useCalendarData({
+			organizationId,
+			month: currentMonth.getMonth(),
+			year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
+			filters,
+			fullYear: viewMode === "year",
+		});
 
-	// Calculate work hours data from work periods
-	const workHoursData = useMemo(() => {
-		const map = new Map<string, { expected: number; actual: number }>();
-
-		// Group work periods by date and sum up actual hours
-		for (const event of events) {
-			if (event.type === "work_period") {
-				const dateKey = format(event.date, "yyyy-MM-dd");
-				const existing = map.get(dateKey) || { expected: 8 * 60, actual: 0 }; // Default 8h expected
-				existing.actual += event.metadata.durationMinutes || 0;
-				map.set(dateKey, existing);
-			}
-		}
-
-		return map;
-	}, [events]);
+	const workHoursData = useMemo(
+		() => buildDailyWorkHoursSummaries({ events, dailyRequirements, dailyActualMinutes }),
+		[events, dailyRequirements, dailyActualMinutes],
+	);
 
 	// Handle event click
 	const handleEventClick = useCallback((event: CalendarEvent) => {
@@ -197,6 +187,17 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							onDayClick={handleDayClick}
 							workHoursData={workHoursData}
 						/>
+					) : viewMode === "month" ? (
+						<MonthWorkSummaryView
+							monthDate={currentMonth}
+							events={events}
+							workHoursData={workHoursData}
+							viewMode={viewMode}
+							onViewModeChange={setViewMode}
+							onMonthChange={setCurrentMonth}
+							onDayClick={handleDayClick}
+							onRefresh={refetch}
+						/>
 					) : (
 						<ScheduleXWrapper
 							events={events}
@@ -206,6 +207,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							onEventClick={handleEventClick}
 							onRangeChange={handleRangeChange}
 							onRefresh={refetch}
+							workHoursData={workHoursData}
 						/>
 					)}
 				</div>

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { getNamespacesForRoute, loadNamespaces } from "../../tolgee/shared";
 
 const componentsDir = import.meta.dirname;
 const appDir = join(componentsDir, "../../app/[locale]/(app)/travel-expenses");
@@ -76,5 +77,18 @@ describe("travel expenses i18n", () => {
 				);
 			}
 		}
+	});
+
+	it("loads travel expense translations for the route namespace", async () => {
+		const translations = await loadNamespaces("de", getNamespacesForRoute("/travel-expenses"));
+
+		expect(translations.de).toMatchObject({
+			travelExpenses: {
+				actions: {
+					newClaim: "Neuer Anspruch",
+				},
+				title: "Reisekosten",
+			},
+		});
 	});
 });

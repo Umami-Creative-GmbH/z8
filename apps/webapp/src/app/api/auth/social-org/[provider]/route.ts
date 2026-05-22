@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { getBaseUrlFromHost } from "@/lib/app-url";
-import { getDomainConfig } from "@/lib/domain/domain-service";
+import {
+	classifyDomainHost,
+	getDomainConfig,
+	getPlatformOrganizationLabel,
+	resolvePlatformOrganization,
+} from "@/lib/domain";
 import { createLogger } from "@/lib/logger";
 import {
 	buildAuthorizationUrl,
@@ -57,10 +62,25 @@ async function handleSocialOrgOAuthInitiation(
 
 	if (host) {
 		const normalizedHost = host.toLowerCase().replace(/:\d+$/, "");
+		const domainClassification = classifyDomainHost(normalizedHost);
+		if (domainClassification?.type === "unknownPlatform") {
+			return NextResponse.json({ error: "Not found" }, { status: 404 });
+		}
+
 		try {
-			const domainConfig = await getDomainConfig(normalizedHost);
-			if (domainConfig) {
-				organizationId = domainConfig.organizationId;
+			const platformOrganizationLabel = getPlatformOrganizationLabel(normalizedHost);
+			const platformOrganization = platformOrganizationLabel
+				? await resolvePlatformOrganization(platformOrganizationLabel)
+				: null;
+			if (platformOrganizationLabel && !platformOrganization) {
+				return NextResponse.json({ error: "Not found" }, { status: 404 });
+			} else if (platformOrganization) {
+				organizationId = platformOrganization.id;
+			} else {
+				const domainConfig = await getDomainConfig(normalizedHost);
+				if (domainConfig) {
+					organizationId = domainConfig.organizationId;
+				}
 			}
 		} catch (error) {
 			logger.warn({ error, host }, "Failed to get domain config");

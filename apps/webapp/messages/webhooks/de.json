@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Kopieren in die Zwischenablage fehlgeschlagen",
+    "create": "Webhook hinzufügen",
+    "create-failed": "Erstellen des Webhooks fehlgeschlagen",
+    "delete-confirm": {
+      "description": "Dies löscht den Webhook-Endpunkt und den gesamten Zustellungsverlauf dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "title": "Webhook löschen?"
+    },
+    "deleted": "Webhook gelöscht",
+    "delete-failed": "Löschen des Webhooks fehlgeschlagen",
+    "deliveries": "Zustellungen",
+    "description": "Konfigurieren Sie Webhook-Endpunkte, um Echtzeit-Benachrichtigungen zu erhalten, wenn Ereignisse in Ihrer Organisation auftreten.",
+    "disabled": "Webhook deaktiviert",
+    "empty": {
+      "description": "Erstellen Sie Ihren ersten Webhook, um Ereignisbenachrichtigungen zu erhalten.",
+      "title": "Keine Webhooks konfiguriert"
+    },
+    "enabled": "Webhook aktiviert",
+    "events": "Ereignisse",
+    "form": {
+      "create": "Webhook erstellen",
+      "create-description": "Konfigurieren Sie einen neuen Webhook-Endpunkt, um Ereignisbenachrichtigungen zu erhalten.",
+      "create-title": "Webhook erstellen",
+      "description": "Beschreibung",
+      "description-placeholder": "Wofür wird dieser Webhook verwendet?",
+      "deselect-all": "Alle abwählen",
+      "edit-description": "Aktualisieren Sie die Konfiguration des Webhook-Endpunkts.",
+      "edit-title": "Webhook bearbeiten",
+      "events": "Zu empfangende Ereignisse",
+      "events-hint": "Ausgewählte Ereignisse: {{count}}",
+      "events-required": "Es muss mindestens ein Ereignis ausgewählt werden",
+      "name": "Name",
+      "name-placeholder": "Mein Webhook",
+      "name-required": "Name ist erforderlich",
+      "select-all": "Alle auswählen",
+      "url": "Endpunkt-URL",
+      "url-hint": "HTTPS ist in der Produktion erforderlich. Ereignisse werden als POST-Anfragen gesendet.",
+      "url-required": "URL ist erforderlich"
+    },
+    "last-delivery": "Letzte",
+    "logs": {
+      "attempt": "Versuch",
+      "description": "Kürzliche Webhook-Zustellungsversuche und deren Ergebnisse.",
+      "duration": "Dauer",
+      "empty": "Noch keine Zustellungsprotokolle vorhanden",
+      "error": "Fehler",
+      "event": "Ereignis",
+      "failed": "Fehlgeschlagen",
+      "http": "HTTP",
+      "payload": "Nutzlast",
+      "pending": "Ausstehend",
+      "response": "Antwort",
+      "retrying": "Wird wiederholt",
+      "showing": "Zeige {{start}}-{{end}} von {{total}}",
+      "status": "Status",
+      "success": "Erfolgreich",
+      "time": "Zeit",
+      "title": "Zustellungsprotokolle"
+    },
+    "regenerate-failed": "Geheimnis konnte nicht neu generiert werden",
+    "regenerate-secret": "Geheimnis neu generieren",
+    "secret-copied": "Geheimnis in die Zwischenablage kopiert",
+    "secret-dialog": {
+      "copy-secret": "Geheimnis in die Zwischenablage kopieren",
+      "description": "Dieses Geheimnis wird zur Überprüfung von Webhook-Signaturen verwendet. Bewahren Sie es sicher auf.",
+      "done": "Ich habe das Geheimnis gespeichert",
+      "secret": "Signatur-Geheimnis",
+      "title": "Webhook-Geheimnis",
+      "verification": "Signaturüberprüfung",
+      "verification-hint": "Webhook-Signaturen mittels HMAC-SHA256 überprüfen. Die Signatur wird im Header X-Z8-Signature gesendet.",
+      "warning": "Dieses Geheimnis wird nur einmal angezeigt. Stellen Sie sicher, dass Sie es jetzt speichern.",
+      "warning-title": "Wichtig"
+    },
+    "secret-regenerated": "Geheimnis neu generiert",
+    "status": {
+      "degraded": "Eingeschränkt",
+      "failing": "Fehlerhaft",
+      "healthy": "Fehlerfrei",
+      "inactive": "Inaktiv"
+    },
+    "success-rate": "Erfolgreich",
+    "test": "Test senden",
+    "test-failed": "Test-Webhook konnte nicht gesendet werden",
+    "test-sent": "Test-Webhook gesendet",
+    "title": "Webhooks",
+    "toggle-active": "Webhook-Aktivierung umschalten",
+    "updated": "Webhook aktualisiert",
+    "update-failed": "Webhook konnte nicht aktualisiert werden",
+    "view-logs": "Protokolle anzeigen"
+  }
+}

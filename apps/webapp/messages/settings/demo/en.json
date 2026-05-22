@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Absences (vacation, sick leave)",
+        "changePolicies": "Change policies",
+        "description": "Types of demo data you can generate",
+        "locations": "Locations and subareas",
+        "shifts": "Shift templates and shifts",
+        "supported": "Currently supported:",
+        "teamsProjects": "Teams and projects",
+        "timeEntries": "Time entries and work periods",
+        "title": "Available Data Types",
+        "workCategories": "Work category sets"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} absences deleted",
+          "button": "Clear All Data",
+          "changePoliciesDeleted": "{count} change policies deleted",
+          "dialog": {
+            "confirm": "Clear All Data",
+            "description": "This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.",
+            "title": "Clear All Time Data?"
+          },
+          "items": {
+            "absences": "All absence entries",
+            "changePolicies": "All change policies",
+            "locations": "All locations and subareas",
+            "shifts": "All shift templates and shifts",
+            "teamsProjects": "All teams and projects",
+            "timeEntries": "All time entries and work periods",
+            "vacationAllowances": "All vacation allowances",
+            "workCategories": "All work categories"
+          },
+          "locationsDeleted": "{count} locations deleted",
+          "managerAssignmentsDeleted": "{count} manager assignments deleted",
+          "projectsDeleted": "{count} projects deleted",
+          "shiftRequestsDeleted": "{count} shift requests deleted",
+          "shiftsDeleted": "{count} shifts deleted",
+          "shiftTemplatesDeleted": "{count} shift templates deleted",
+          "subareasDeleted": "{count} subareas deleted",
+          "successTitle": "Data cleared successfully!",
+          "teamsDeleted": "{count} teams deleted",
+          "timeEntriesDeleted": "{count} time entries deleted",
+          "title": "Clear Time Data",
+          "vacationAllowancesReset": "{count} vacation allowances reset",
+          "willDelete": "This will permanently delete:",
+          "workCategoriesDeleted": "{count} work categories deleted",
+          "workCategorySetsDeleted": "{count} work category sets deleted",
+          "workPeriodsDeleted": "{count} work periods deleted"
+        },
+        "clearing": "Clearing...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} absences deleted",
+          "adminPreserved": "Admin accounts will be preserved",
+          "button": "Delete Non-Admin Employees",
+          "dialog": {
+            "confirm": "Delete Non-Admin Employees",
+            "description": "This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.",
+            "title": "Delete Non-Admin Employees?"
+          },
+          "employeesDeleted": "{count} employees deleted",
+          "items": {
+            "demoUsers": "All demo user accounts",
+            "employees": "All non-admin employees",
+            "managerAssignments": "All manager assignments",
+            "timeEntries": "Their time entries and work periods"
+          },
+          "membersDeleted": "{count} members deleted",
+          "successTitle": "Non-admin employees deleted successfully!",
+          "timeEntriesDeleted": "{count} time entries deleted",
+          "title": "Delete Non-Admin Employees",
+          "usersDeleted": "{count} users deleted",
+          "willDelete": "This will permanently delete:"
+        },
+        "deleting": "Deleting...",
+        "description": "Destructive actions that cannot be undone",
+        "title": "Danger Zone",
+        "typeDelete": "Type DELETE to confirm",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Generate sample data for testing or clear existing time-related data",
+      "errors": {
+        "generationFailed": "Generation failed. Please try again.",
+        "noOrganization": "No organization selected"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Vacation, sick leave, and other absences",
+            "title": "Absences"
+          },
+          "changePolicies": {
+            "description": "Time entry change policies",
+            "title": "Change Policies"
+          },
+          "label": "Data Types",
+          "locations": {
+            "countLabel": "Number of locations:",
+            "description": "Work locations and subareas",
+            "title": "Locations"
+          },
+          "projects": {
+            "countLabel": "Number of projects:",
+            "description": "Sample projects for time tracking",
+            "title": "Projects"
+          },
+          "shiftScheduling": {
+            "description": "Shift templates and scheduled shifts",
+            "requiresLocations": "Requires Locations to be enabled",
+            "title": "Shift Scheduling"
+          },
+          "teams": {
+            "countLabel": "Number of teams:",
+            "description": "Create teams and assign employees",
+            "title": "Teams"
+          },
+          "timeEntries": {
+            "description": "Clock-in/out records and work periods",
+            "title": "Time Entries"
+          },
+          "workCategories": {
+            "assignLabel": "Also assign to work periods",
+            "description": "Category sets for work periods",
+            "title": "Work Categories"
+          }
+        },
+        "dateRange": {
+          "hint": "Time range for generated data",
+          "label": "Date Range",
+          "last30": "Last 30 days",
+          "last60": "Last 60 days",
+          "last90": "Last 90 days",
+          "thisYear": "This year"
+        },
+        "employees": {
+          "all": "All employees ({count})",
+          "label": "Employees",
+          "selectSpecific": "Select specific employees"
+        }
+      },
+      "generateData": {
+        "button": "Generate Data",
+        "description": "Create realistic sample data for your organization",
+        "title": "Generate Demo Data"
+      },
+      "generateEmployees": {
+        "button": "Generate {count} Employees",
+        "countHint": "Maximum 50 employees at a time",
+        "countLabel": "Number of Employees",
+        "description": "Create demo employee accounts for testing",
+        "employeesCreated": "{count} employees created",
+        "generating": "Generating...",
+        "includeManagers": "Include Manager Assignments",
+        "managersCreated": "{count} manager assignments",
+        "managersHint": "Randomly assign managers to new employees",
+        "options": "Options",
+        "successTitle": "Employees generated successfully!",
+        "title": "Generate Employees",
+        "usersCreated": "{count} users created"
+      },
+      "results": {
+        "success": "Demo data generated successfully!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Creating absence entries",
+          "label": "Absences"
+        },
+        "assignCategories": {
+          "description": "Assigning work categories to periods",
+          "label": "Assign Categories"
+        },
+        "changePolicies": {
+          "description": "Creating change policies",
+          "label": "Change Policies"
+        },
+        "locations": {
+          "description": "Creating locations and subareas",
+          "label": "Locations"
+        },
+        "managers": {
+          "description": "Assigning managers to employees",
+          "label": "Manager Assignments"
+        },
+        "projects": {
+          "description": "Creating sample projects",
+          "label": "Projects"
+        },
+        "shifts": {
+          "description": "Creating shifts and requests",
+          "label": "Shifts"
+        },
+        "shiftTemplates": {
+          "description": "Creating shift templates",
+          "label": "Shift Templates"
+        },
+        "teams": {
+          "description": "Creating teams and assigning employees",
+          "label": "Teams"
+        },
+        "timeEntries": {
+          "description": "Creating time entries and work periods",
+          "label": "Time Entries"
+        },
+        "workCategories": {
+          "description": "Creating work category sets and categories",
+          "label": "Work Categories"
+        }
+      },
+      "title": "Demo Data",
+      "wizard": {
+        "backToConfig": "Back to Configuration",
+        "complete": "Complete",
+        "configure": "Configure",
+        "generate": "Generate",
+        "generateMore": "Generate More Data"
+      }
+    },
+    "demoData": {
+      "description": "Generate sample data for testing or clear all time-related data",
+      "title": "Demo Data"
+    }
+  }
+}

@@ -11,9 +11,9 @@ import {
 	HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
-import { db, exportStorageConfig, auditExportConfig } from "@/db";
+import { auditExportConfig, db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { getOrgSecret } from "@/lib/vault";
+import { getStorageConfig } from "@/lib/storage/export-s3-client";
 
 const logger = createLogger("WORMStorageAdapter");
 
@@ -79,33 +79,13 @@ interface S3Config {
 	endpoint?: string;
 	accessKeyId: string;
 	secretAccessKey: string;
+	forcePathStyle?: boolean;
 }
 
 async function getS3Config(organizationId: string): Promise<S3Config | null> {
-	const config = await db.query.exportStorageConfig.findFirst({
-		where: eq(exportStorageConfig.organizationId, organizationId),
-	});
+	const config = await getStorageConfig(organizationId);
 
-	if (!config) {
-		return null;
-	}
-
-	const [accessKeyId, secretAccessKey] = await Promise.all([
-		getOrgSecret(organizationId, "storage/access_key_id"),
-		getOrgSecret(organizationId, "storage/secret_access_key"),
-	]);
-
-	if (!accessKeyId || !secretAccessKey) {
-		return null;
-	}
-
-	return {
-		bucket: config.bucket,
-		region: config.region,
-		endpoint: config.endpoint ?? undefined,
-		accessKeyId,
-		secretAccessKey,
-	};
+	return config ? { ...config, endpoint: config.endpoint ?? undefined } : null;
 }
 
 function createS3Client(config: S3Config): S3Client {
@@ -116,7 +96,7 @@ function createS3Client(config: S3Config): S3Client {
 			accessKeyId: config.accessKeyId,
 			secretAccessKey: config.secretAccessKey,
 		},
-		forcePathStyle: !!config.endpoint, // Required for MinIO
+		forcePathStyle: config.forcePathStyle ?? !!config.endpoint,
 	});
 }
 

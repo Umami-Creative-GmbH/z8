@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Assenze (ferie, malattia)",
+        "changePolicies": "Modifica politiche",
+        "description": "Tipi di dati demo che puoi generare",
+        "locations": "Sedi e sottoaree",
+        "shifts": "Modelli di turno e turni",
+        "supported": "Attualmente supportati:",
+        "teamsProjects": "Team e progetti",
+        "timeEntries": "Voci di tempo e periodi di lavoro",
+        "title": "Tipi di dati disponibili",
+        "workCategories": "Set di categorie di lavoro"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} assenze eliminate",
+          "button": "Cancella tutti i dati",
+          "changePoliciesDeleted": "{count} politiche di modifica eliminate",
+          "dialog": {
+            "confirm": "Cancella tutti i dati",
+            "description": "Questa azione non può essere annullata. Tutte le voci di tempo, le assenze, i team, i progetti e i dati correlati verranno eliminati in modo permanente.",
+            "title": "Cancellare tutti i dati temporali?"
+          },
+          "items": {
+            "absences": "Tutte le voci di assenza",
+            "changePolicies": "Tutte le politiche di modifica",
+            "locations": "Tutte le sedi e le sottoaree",
+            "shifts": "Tutti i modelli di turno e i turni",
+            "teamsProjects": "Tutti i team e i progetti",
+            "timeEntries": "Tutte le voci di tempo e i periodi di lavoro",
+            "vacationAllowances": "Tutte le indennità di ferie",
+            "workCategories": "Tutte le categorie di lavoro"
+          },
+          "locationsDeleted": "{count} sedi eliminate",
+          "managerAssignmentsDeleted": "{count} assegnazioni di manager eliminate",
+          "projectsDeleted": "{count} progetti eliminati",
+          "shiftRequestsDeleted": "{count} richieste di turno eliminate",
+          "shiftsDeleted": "{count} turni eliminati",
+          "shiftTemplatesDeleted": "{count} modelli di turno eliminati",
+          "subareasDeleted": "{count} sottoaree eliminate",
+          "successTitle": "Dati cancellati correttamente!",
+          "teamsDeleted": "{count} team eliminati",
+          "timeEntriesDeleted": "{count} voci di tempo eliminate",
+          "title": "Cancella dati temporali",
+          "vacationAllowancesReset": "{count} indennità di ferie ripristinate",
+          "willDelete": "Questo eliminerà in modo permanente:",
+          "workCategoriesDeleted": "{count} categorie di lavoro eliminate",
+          "workCategorySetsDeleted": "{count} set di categorie di lavoro eliminati",
+          "workPeriodsDeleted": "{count} periodi di lavoro eliminati"
+        },
+        "clearing": "Cancellazione in corso...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count, plural, one {{count} assenza eliminata} other {{count} assenze eliminate}}",
+          "adminPreserved": "Gli account amministratore verranno conservati",
+          "button": "Elimina dipendenti non amministratori",
+          "dialog": {
+            "confirm": "Elimina dipendenti non amministratori",
+            "description": "Questa azione non può essere annullata. Tutti i dipendenti non amministratori e i relativi dati associati verranno eliminati definitivamente.",
+            "title": "Eliminare i dipendenti non amministratori?"
+          },
+          "employeesDeleted": "{count, plural, one {{count} dipendente eliminato} other {{count} dipendenti eliminati}}",
+          "items": {
+            "demoUsers": "Tutti gli account utente demo",
+            "employees": "Tutti i dipendenti non amministratori",
+            "managerAssignments": "Tutte le assegnazioni dei manager",
+            "timeEntries": "Le loro registrazioni orarie e i periodi di lavoro"
+          },
+          "membersDeleted": "{count, plural, one {{count} membro eliminato} other {{count} membri eliminati}}",
+          "successTitle": "Dipendenti non amministratori eliminati correttamente!",
+          "timeEntriesDeleted": "{count, plural, one {{count} registrazione oraria eliminata} other {{count} registrazioni orarie eliminate}}",
+          "title": "Elimina dipendenti non amministratori",
+          "usersDeleted": "{count, plural, one {{count} utente eliminato} other {{count} utenti eliminati}}",
+          "willDelete": "Questo eliminerà definitivamente:"
+        },
+        "deleting": "Eliminazione in corso...",
+        "description": "Azioni distruttive che non possono essere annullate",
+        "title": "Zona di pericolo",
+        "typeDelete": "Digita DELETE per confermare",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Genera dati di esempio per i test o cancella i dati esistenti relativi al tempo",
+      "errors": {
+        "generationFailed": "Generazione non riuscita. Riprova.",
+        "noOrganization": "Nessuna organizzazione selezionata"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Ferie, permessi per malattia e altre assenze",
+            "title": "Assenze"
+          },
+          "changePolicies": {
+            "description": "Politiche di modifica delle registrazioni orarie",
+            "title": "Politiche di modifica"
+          },
+          "label": "Tipi di dati",
+          "locations": {
+            "countLabel": "Numero di sedi:",
+            "description": "Sedi di lavoro e sottoaree",
+            "title": "Sedi"
+          },
+          "projects": {
+            "countLabel": "Numero di progetti:",
+            "description": "Progetti di esempio per il monitoraggio del tempo",
+            "title": "Progetti"
+          },
+          "shiftScheduling": {
+            "description": "Modelli di turno e turni pianificati",
+            "requiresLocations": "Richiede che le Sedi siano abilitate",
+            "title": "Pianificazione turni"
+          },
+          "teams": {
+            "countLabel": "Numero di team:",
+            "description": "Crea team e assegna dipendenti",
+            "title": "Team"
+          },
+          "timeEntries": {
+            "description": "Registrazioni di entrata/uscita e periodi di lavoro",
+            "title": "Registrazioni orarie"
+          },
+          "workCategories": {
+            "assignLabel": "Assegna anche ai periodi di lavoro",
+            "description": "Set di categorie per i periodi di lavoro",
+            "title": "Categorie di lavoro"
+          }
+        },
+        "dateRange": {
+          "hint": "Intervallo temporale per i dati generati",
+          "label": "Intervallo date",
+          "last30": "Ultimi 30 giorni",
+          "last60": "Ultimi 60 giorni",
+          "last90": "Ultimi 90 giorni",
+          "thisYear": "Quest'anno"
+        },
+        "employees": {
+          "all": "Tutti i dipendenti ({count})",
+          "label": "Dipendenti",
+          "selectSpecific": "Seleziona dipendenti specifici"
+        }
+      },
+      "generateData": {
+        "button": "Genera dati",
+        "description": "Crea dati di esempio realistici per la tua organizzazione",
+        "title": "Genera dati demo"
+      },
+      "generateEmployees": {
+        "button": "Genera {count} dipendenti",
+        "countHint": "Massimo 50 dipendenti alla volta",
+        "countLabel": "Numero di dipendenti",
+        "description": "Crea account dipendente demo per i test",
+        "employeesCreated": "{count} dipendenti creati",
+        "generating": "Generazione in corso...",
+        "includeManagers": "Includi assegnazioni manager",
+        "managersCreated": "{count} assegnazioni manager",
+        "managersHint": "Assegna casualmente i manager ai nuovi dipendenti",
+        "options": "Opzioni",
+        "successTitle": "Dipendenti generati con successo!",
+        "title": "Genera dipendenti",
+        "usersCreated": "{count} utenti creati"
+      },
+      "results": {
+        "success": "Dati demo generati con successo!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Creazione voci di assenza",
+          "label": "Assenze"
+        },
+        "assignCategories": {
+          "description": "Assegnazione categorie di lavoro ai periodi",
+          "label": "Assegna categorie"
+        },
+        "changePolicies": {
+          "description": "Creazione politiche di modifica",
+          "label": "Politiche di modifica"
+        },
+        "locations": {
+          "description": "Creazione sedi e sottoaree",
+          "label": "Sedi"
+        },
+        "managers": {
+          "description": "Assegnazione manager ai dipendenti",
+          "label": "Assegnazioni manager"
+        },
+        "projects": {
+          "description": "Creazione progetti di esempio",
+          "label": "Progetti"
+        },
+        "shifts": {
+          "description": "Creazione turni e richieste",
+          "label": "Turni"
+        },
+        "shiftTemplates": {
+          "description": "Creazione modelli di turno",
+          "label": "Modelli di turno"
+        },
+        "teams": {
+          "description": "Creazione team e assegnazione dipendenti",
+          "label": "Team"
+        },
+        "timeEntries": {
+          "description": "Creazione voci di tempo e periodi di lavoro",
+          "label": "Voci di tempo"
+        },
+        "workCategories": {
+          "description": "Creazione set di categorie di lavoro e categorie",
+          "label": "Categorie di lavoro"
+        }
+      },
+      "title": "Dati demo",
+      "wizard": {
+        "backToConfig": "Torna alla configurazione",
+        "complete": "Completato",
+        "configure": "Configura",
+        "generate": "Genera",
+        "generateMore": "Genera altri dati"
+      }
+    },
+    "demoData": {
+      "description": "Genera dati di esempio per il test o cancella tutti i dati relativi al tempo",
+      "title": "Dati demo"
+    }
+  }
+}

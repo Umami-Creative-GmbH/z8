@@ -77,14 +77,26 @@ What it does:
 These keys must exist in Phase and be synced into the `app-secrets` Kubernetes Secret.
 
 - `PHASE_HOST` — Phase API base URL, used by your app (if applicable)
-- `DATABASE_URL` — external Postgres VM connection string (private network)
+- `POSTGRES_HOST` — external Postgres host (private network or managed provider endpoint)
+- `POSTGRES_PORT` — Postgres port, usually `5432`
+- `POSTGRES_DB` — Postgres database name
+- `POSTGRES_USER` — Postgres user
+- `POSTGRES_PASSWORD` — Postgres password
+- `POSTGRES_SSL_MODE` — one of `disable`, `prefer`, `require`, `verify-ca`, `verify-full`
+- `POSTGRES_SSL_ROOT_CERT_PATH` — optional path to a mounted CA file for managed Postgres TLS
+- `POSTGRES_SSL_CA_CERT` — optional inline CA certificate when mounting a file is not practical
 - `VALKEY_URL` — use the in-cluster service URL: `redis://valkey.app-prod.svc.cluster.local:6379`
 
 ## Postgres VM (outside the cluster)
 
 - Create a Hetzner Cloud VM in the same private network as the cluster
 - Allow inbound 5432 only from the cluster subnet
-- Set `DATABASE_URL` in Phase to the VM’s private IP
+- Set the individual `POSTGRES_*` variables in Phase. For managed Postgres providers that require TLS, use `POSTGRES_SSL_MODE=verify-full` and either mount the provider CA file with `POSTGRES_SSL_ROOT_CERT_PATH` or store the CA content in `POSTGRES_SSL_CA_CERT`.
+
+For Scaleway-style managed Postgres docs that say `sslmode=verify-full sslrootcert=/path/to/scaleway-ca.pem`, use:
+
+- `POSTGRES_SSL_MODE=verify-full`
+- `POSTGRES_SSL_ROOT_CERT_PATH=/etc/postgres-certs/scaleway-ca.pem`
 
 ## Drizzle migrations with advisory lock
 
@@ -102,7 +114,7 @@ Run it manually only for debugging (normal deploys should use `deploy-rollout.sh
 - `kubectl --kubeconfig ./kubeconfig.yaml -n app-prod logs job/drizzle-migrate`
 
 The job expects:
-- `DATABASE_URL` in `app-secrets`
+- individual `POSTGRES_*` connection variables in `app-secrets`
 - `DRIZZLE_MIGRATE_COMMAND` (defaults to `pnpm dlx drizzle-kit migrate --config ./drizzle.config.ts`)
 
 ## Vault (manual init + unseal)
