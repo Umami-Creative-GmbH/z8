@@ -139,6 +139,7 @@ export async function getPendingApprovals(): Promise<{
 
 	const pendingRequests = (await db.query.approvalRequest.findMany({
 		where: and(
+			eq(approvalRequest.organizationId, currentEmployee.organizationId),
 			eq(approvalRequest.approverId, currentEmployee.id),
 			eq(approvalRequest.status, "pending"),
 		),
@@ -155,13 +156,19 @@ export async function getPendingApprovals(): Promise<{
 	const [absences, periods] = await Promise.all([
 		absenceIds.length > 0
 			? db.query.absenceEntry.findMany({
-					where: inArray(absenceEntry.id, absenceIds),
+					where: and(
+						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+						inArray(absenceEntry.id, absenceIds),
+					),
 					with: { category: true },
 				})
 			: Promise.resolve([]),
 		timeCorrectionIds.length > 0
 			? db.query.workPeriod.findMany({
-					where: inArray(workPeriod.id, timeCorrectionIds),
+					where: and(
+						eq(workPeriod.organizationId, currentEmployee.organizationId),
+						inArray(workPeriod.id, timeCorrectionIds),
+					),
 					with: {
 						clockIn: true,
 						clockOut: true,
@@ -198,6 +205,7 @@ export async function getPendingApprovalCounts() {
 		.from(approvalRequest)
 		.where(
 			and(
+				eq(approvalRequest.organizationId, currentEmployee.organizationId),
 				eq(approvalRequest.approverId, currentEmployee.id),
 				eq(approvalRequest.status, "pending"),
 			),

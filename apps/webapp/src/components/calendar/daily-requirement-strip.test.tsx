@@ -1,10 +1,11 @@
 /** @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
-import type { DailyWorkHoursSummaries } from "@/lib/calendar/types";
-import { DailyRequirementStrip } from "./daily-requirement-strip";
+import type { DailyWorkHoursSummary } from "@/lib/calendar/types";
+import {
+	buildRequirementHeaderContent,
+	getRequirementStatusLabel,
+} from "./daily-requirement-strip";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -18,35 +19,48 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
-describe("DailyRequirementStrip", () => {
-	it("shows the negative delta for required days with no recorded work", () => {
-		const date = DateTime.fromISO("2026-05-22");
-		const summaries: DailyWorkHoursSummaries = new Map([
-			[
-				"2026-05-22",
-				{
-					requiredMinutes: 480,
-					actualMinutes: 0,
-					deltaMinutes: -480,
-					status: "missing",
-					policyId: "policy-1",
-					policyName: "Standard",
-				},
-			],
-		]);
+const baseSummary: DailyWorkHoursSummary = {
+	requiredMinutes: 480,
+	actualMinutes: 573,
+	deltaMinutes: 93,
+	status: "over",
+	policyId: "policy-1",
+	policyName: "Standard",
+};
 
-		render(<DailyRequirementStrip dates={[date]} summaries={summaries} />);
+describe("requirement header helpers", () => {
+	it("builds compact header content for an over-requirement day", () => {
+		const content = buildRequirementHeaderContent(
+			baseSummary,
+			"Friday, May 22",
+			(_key, fallback) => fallback,
+		);
 
-		expect(screen.getByText("8:00h")).toBeTruthy();
-		expect(screen.getByText("-8:00h")).toBeTruthy();
-		expect(
-			screen.getByRole("list", { name: "Daily work policy requirement summary" }),
-		).toBeTruthy();
-		expect(screen.getByRole("listitem")).toBeTruthy();
-		expect(
-			screen.getByText(
-				"Friday, May 22: 8:00h required, 0:00h recorded, -8:00h delta, missing recorded time",
-			),
-		).toHaveProperty("className", "sr-only");
+		expect(content.requiredHours).toBe("8:00h");
+		expect(content.deltaHours).toBe("+1:33h");
+		expect(content.status).toBe("over");
+		expect(content.accessibleLabel).toBe(
+			"Friday, May 22: 8:00h required, 9:33h recorded, +1:33h delta, over requirement",
+		);
+	});
+
+	it("omits the visible delta when the requirement is exactly met", () => {
+		const content = buildRequirementHeaderContent(
+			{ ...baseSummary, actualMinutes: 480, deltaMinutes: 0, status: "met" },
+			"Friday, May 22",
+			(_key, fallback) => fallback,
+		);
+
+		expect(content.deltaHours).toBeNull();
+		expect(content.status).toBe("met");
+	});
+
+	it("labels missing recorded time", () => {
+		const label = getRequirementStatusLabel(
+			{ ...baseSummary, actualMinutes: 0, deltaMinutes: -480, status: "missing" },
+			(_key, fallback) => fallback,
+		);
+
+		expect(label).toBe("missing recorded time");
 	});
 });

@@ -2,6 +2,7 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { user } from "@/db/auth-schema";
 import { employee, employeeRateHistory } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -10,6 +11,7 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { createLogger } from "@/lib/logger";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	type AssignManagers,
 	assignManagersSchema,
@@ -271,6 +273,28 @@ export async function updateEmployeeAction(
 					}
 				}
 
+				const previousStartDate = dateToUtcIsoDate(targetEmployee.startDate);
+				const hasStartDateUpdate =
+					Object.prototype.hasOwnProperty.call(scopedData, "startDate") &&
+					scopedData.startDate !== undefined;
+				const nextStartDate = hasStartDateUpdate
+					? dateToUtcIsoDate(scopedData.startDate)
+					: previousStartDate;
+				if (nextStartDate !== previousStartDate) {
+					const dirtyFromDate = [previousStartDate, nextStartDate]
+						.filter((value): value is string => Boolean(value))
+						.sort()[0];
+					yield* _(
+						Effect.promise(() =>
+							markEmployeeWorkBalanceDirty({
+								employeeId,
+								organizationId: targetEmployee.organizationId,
+								dirtyFromDate,
+							}),
+						),
+					);
+				}
+
 				const effectiveContractType =
 					("contractType" in scopedData ? scopedData.contractType : undefined) ??
 					targetEmployee.contractType;
@@ -322,6 +346,14 @@ export async function updateEmployeeAction(
 				revalidateEmployeesCache(actor.organizationId);
 			}),
 	});
+}
+
+function dateToUtcIsoDate(value: Date | string | null | undefined): string | null {
+	if (!value) return null;
+	return (typeof value === "string"
+		? DateTime.fromISO(value, { zone: "utc" })
+		: DateTime.fromJSDate(value, { zone: "utc" })
+	).toISODate();
 }
 
 export async function updateOwnProfileAction(

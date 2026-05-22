@@ -300,6 +300,7 @@ describe("getApprovalStatusUpdate", () => {
 			dbService,
 			"claim-1",
 			expect.objectContaining({ id: "admin-employee-1" }),
+			expect.objectContaining({ id: "approval-1", organizationId: "org-1" }),
 		);
 		expect(log).toHaveBeenCalledWith(
 			expect.objectContaining({

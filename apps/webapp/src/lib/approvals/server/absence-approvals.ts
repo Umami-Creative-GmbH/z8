@@ -13,8 +13,10 @@ import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
+import { createLogger } from "@/lib/logger";
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
@@ -23,6 +25,8 @@ import {
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
+
+const logger = createLogger("AbsenceApprovals");
 
 interface AbsenceRecord {
 	id: string;
@@ -54,6 +58,18 @@ interface AbsenceRecord {
 type ApprovedAbsenceResult = {
 	absence: AbsenceRecord;
 	vacationOverrideSummary: VacationOverrideSummary;
+	workBalanceDirtyMark?: WorkBalanceDirtyMark;
+};
+
+type WorkBalanceDirtyMark = {
+	employeeId: string;
+	organizationId: string;
+	dirtyFromDate: string;
+};
+
+type AbsenceStatusUpdateResult = {
+	absence: AbsenceRecord;
+	workBalanceDirtyMark?: WorkBalanceDirtyMark;
 };
 
 const emptyVacationOverrideSummary = (): VacationOverrideSummary => ({
@@ -98,6 +114,12 @@ function queueApprovedAbsenceCalendarSync(result: ApprovedAbsenceResult) {
 	});
 }
 
+function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
+	return mark
+		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
+		: Effect.void;
+}
+
 function ensureAbsenceRecord(
 	absence: AbsenceRecord | null,
 ): Effect.Effect<AbsenceRecord, NotFoundError> {
@@ -120,6 +142,16 @@ function updateAbsenceStatus(
 ) {
 	return dbService
 		.query("updateAbsenceStatus", async () => {
+			const previousAbsence = await dbService.db.query.absenceEntry.findFirst({
+				where: eq(absenceEntry.id, entityId),
+				columns: {
+					employeeId: true,
+					organizationId: true,
+					startDate: true,
+					status: true,
+				},
+			});
+
 			await dbService.db
 				.update(absenceEntry)
 				.set({
@@ -130,16 +162,35 @@ function updateAbsenceStatus(
 				})
 				.where(eq(absenceEntry.id, entityId));
 
-			return await dbService.db.query.absenceEntry.findFirst({
+			const updatedAbsence = await dbService.db.query.absenceEntry.findFirst({
 				where: eq(absenceEntry.id, entityId),
 				with: {
 					category: true,
 					employee: { with: { user: true } },
 				},
 			});
+
+			const workBalanceDirtyMark =
+				updatedAbsence?.organizationId &&
+				(status === "approved" || previousAbsence?.status === "approved")
+					? {
+						employeeId: updatedAbsence.employeeId,
+						organizationId: updatedAbsence.organizationId,
+						dirtyFromDate: updatedAbsence.startDate,
+					}
+					: undefined;
+
+			return { absence: updatedAbsence, workBalanceDirtyMark };
 		})
 		.pipe(
-			Effect.flatMap((absence) => ensureAbsenceRecord(absence as unknown as AbsenceRecord | null)),
+			Effect.flatMap((result) =>
+				ensureAbsenceRecord(result.absence as unknown as AbsenceRecord | null).pipe(
+					Effect.map((absence): AbsenceStatusUpdateResult => ({
+						absence,
+						workBalanceDirtyMark: result.workBalanceDirtyMark,
+					})),
+				),
+			),
 		);
 }
 
@@ -226,6 +277,7 @@ export function approveAbsenceWithCurrentApproverEffect(
 		undefined,
 		{ ...options, transactional: true },
 	).pipe(
+		Effect.tap((result) => markWorkBalanceDirtyAfterCommit(result?.workBalanceDirtyMark)),
 		Effect.tap((result) =>
 			result
 				? Effect.sync(() => queueApprovedAbsenceCalendarSync(result))
@@ -252,7 +304,7 @@ export function rejectAbsenceWithCurrentApproverEffect(
 			handleRejectedAbsence(decisionDbService, entityId, approver, reason),
 		undefined,
 		{ ...options, transactional: true },
-	);
+	).pipe(Effect.tap((result) => markWorkBalanceDirtyAfterCommit(result?.workBalanceDirtyMark)));
 }
 
 function buildAbsenceEmailContext(
@@ -321,7 +373,9 @@ function handleApprovedAbsence(
 ) {
 	return Effect.gen(function* (_) {
 		const emailService = yield* _(EmailService);
-		const absence = yield* _(updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"));
+		const { absence, workBalanceDirtyMark } = yield* _(
+			updateAbsenceStatus(dbService, entityId, currentEmployee, "approved"),
+		);
 		const vacationOverrideSummary = yield* _(
 			Effect.promise(() => applySickVacationOverrideOnApproval(dbService, absence, currentEmployee)),
 		);
@@ -353,7 +407,7 @@ function handleApprovedAbsence(
 		);
 
 		notifyApprovedAbsence(absence, entityId, currentEmployee);
-		return { absence, vacationOverrideSummary };
+		return { absence, vacationOverrideSummary, workBalanceDirtyMark };
 	});
 }
 
@@ -365,7 +419,7 @@ function handleRejectedAbsence(
 ) {
 	return Effect.gen(function* (_) {
 		const emailService = yield* _(EmailService);
-		const absence = yield* _(
+		const { absence, workBalanceDirtyMark } = yield* _(
 			updateAbsenceStatus(dbService, entityId, currentEmployee, "rejected", reason),
 		);
 		yield* _(
@@ -403,7 +457,7 @@ function handleRejectedAbsence(
 		);
 
 		notifyRejectedAbsence(absence, entityId, currentEmployee, reason);
-		return absence;
+		return { absence, workBalanceDirtyMark };
 	});
 }
 
@@ -419,6 +473,7 @@ export async function approveAbsenceEffect(absenceId: string): Promise<ServerAct
 	);
 	if (!result) return { success: true, data: undefined };
 	if (result.success && result.data) {
+		await markEmployeeWorkBalanceDirtyIfNeeded(result.data.workBalanceDirtyMark);
 		queueApprovedAbsenceCalendarSync(result.data);
 	}
 	return result.success ? { success: true, data: undefined } : result;
@@ -440,5 +495,17 @@ export async function rejectAbsenceEffect(
 	);
 
 	if (!result) return { success: true, data: undefined };
+	if (result.success && result.data) {
+		await markEmployeeWorkBalanceDirtyIfNeeded(result.data.workBalanceDirtyMark);
+	}
 	return result.success ? { success: true, data: undefined } : result;
+}
+
+async function markEmployeeWorkBalanceDirtyIfNeeded(mark?: WorkBalanceDirtyMark) {
+	if (!mark) return;
+	try {
+		await markEmployeeWorkBalanceDirty(mark);
+	} catch (error) {
+		logger.error({ error, ...mark }, "Failed to mark work balance dirty");
+	}
 }

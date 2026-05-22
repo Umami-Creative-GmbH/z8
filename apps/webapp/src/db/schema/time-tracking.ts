@@ -1,5 +1,6 @@
 import {
 	boolean,
+	date,
 	foreignKey,
 	index,
 	integer,
@@ -202,6 +203,46 @@ export const employeeTimeBalance = pgTable(
 			table.organizationId,
 			table.year,
 		),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+export const employeeWorkBalance = pgTable(
+	"employee_work_balance",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		actualMinutes: integer("actual_minutes").notNull(),
+		requiredMinutes: integer("required_minutes").notNull(),
+		balanceMinutes: integer("balance_minutes").notNull(),
+		computedFromDate: date("computed_from_date").notNull(),
+		computedThroughDate: date("computed_through_date").notNull(),
+		computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
+		isDirty: boolean("is_dirty").default(false).notNull(),
+		dirtyFromDate: date("dirty_from_date"),
+		refreshRequestedAt: timestamp("refresh_requested_at", { withTimezone: true }),
+		lastError: text("last_error"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("employeeWorkBalance_org_employee_idx").on(
+			table.organizationId,
+			table.employeeId,
+		),
+		index("employeeWorkBalance_org_idx").on(table.organizationId),
+		index("employeeWorkBalance_employee_org_idx").on(table.employeeId, table.organizationId),
+		index("employeeWorkBalance_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
 		foreignKey({
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],

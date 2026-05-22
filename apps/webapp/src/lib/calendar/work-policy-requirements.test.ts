@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
-import { buildDailyWorkRequirements } from "./work-policy-requirements";
+import {
+	applyApprovedAbsencesToDailyRequirements,
+	buildDailyWorkRequirements,
+} from "./work-policy-requirements";
+
+const source = readFileSync(fileURLToPath(new URL("./work-policy-requirements.ts", import.meta.url)), "utf8");
 
 function basePolicy(schedule: EffectiveWorkPolicy["schedule"]): EffectiveWorkPolicy {
 	return {
@@ -105,5 +112,73 @@ describe("buildDailyWorkRequirements", () => {
 		});
 
 		expect(requirements).toEqual({});
+	});
+
+	it("applies approved full-day absence reductions to daily requirements", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "simple",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+				homeOfficeDaysPerCycle: 0,
+				days: [],
+			}),
+			startDate: new Date("2026-05-18T00:00:00.000Z"),
+			endDate: new Date("2026-05-18T23:59:59.999Z"),
+		});
+
+		expect(
+			applyApprovedAbsencesToDailyRequirements(requirements, [
+				{
+					startDate: "2026-05-18",
+					startPeriod: "full_day",
+					endDate: "2026-05-18",
+					endPeriod: "full_day",
+				},
+			]),
+		).toEqual({
+			"2026-05-18": {
+				requiredMinutes: 0,
+				policyId: "policy-1",
+				policyName: "Standard Hours",
+			},
+		});
+	});
+
+	it("applies approved half-day absence reductions to daily requirements", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "detailed",
+				workingDaysPreset: "custom",
+				hoursPerCycle: null,
+				homeOfficeDaysPerCycle: 0,
+				days: [{ dayOfWeek: "monday", hoursPerDay: "8", isWorkDay: true }],
+			}),
+			startDate: new Date("2026-05-18T00:00:00.000Z"),
+			endDate: new Date("2026-05-18T23:59:59.999Z"),
+		});
+
+		const adjusted = applyApprovedAbsencesToDailyRequirements(requirements, [
+			{
+				startDate: "2026-05-18",
+				startPeriod: "pm",
+				endDate: "2026-05-18",
+				endPeriod: "pm",
+			},
+		]);
+
+		expect(adjusted["2026-05-18"]?.requiredMinutes).toBe(240);
+	});
+});
+
+describe("getDailyWorkRequirementsForEmployee", () => {
+	it("clamps generated requirements to the employee start date", () => {
+		expect(source).toContain("columns: { id: true, startDate: true }");
+		expect(source).toContain("const effectiveStartDate");
+		expect(source).toContain("scopedEmployee.startDate");
+		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
+		expect(source).toContain("startDate: effectiveStartDate");
 	});
 });

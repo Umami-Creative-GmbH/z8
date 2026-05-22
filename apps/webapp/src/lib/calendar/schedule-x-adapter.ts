@@ -234,6 +234,20 @@ export function calendarEventToScheduleX(
 			};
 		}
 
+		if (event.type === "absence") {
+			const start = toTemporalPlainDate(startDate);
+			const end = toTemporalPlainDate(endDate);
+
+			return {
+				id: event.id,
+				title: event.title,
+				start,
+				end,
+				calendarId: event.type,
+				_eventData: event,
+			};
+		}
+
 		if (isAllDay) {
 			// For all-day events, use Temporal.PlainDate
 			// End date is exclusive in Schedule-X, so add 1 day

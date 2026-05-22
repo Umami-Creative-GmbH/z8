@@ -101,7 +101,7 @@ import {
 	timeRecordBreak,
 	timeRecordWork,
 } from "./time-record";
-import { employeeTimeBalance, timeEntry, workPeriod } from "./time-tracking";
+import { employeeTimeBalance, employeeWorkBalance, timeEntry, workPeriod } from "./time-tracking";
 import {
 	travelExpenseAttachment,
 	travelExpenseClaim,
@@ -199,6 +199,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
 	timeBalances: many(employeeTimeBalance),
+	workBalances: many(employeeWorkBalance),
 	timeRecords: many(timeRecord),
 	timeRecordWorks: many(timeRecordWork),
 	timeRecordAbsences: many(timeRecordAbsence),
@@ -418,14 +419,6 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	primaryManagedTeams: many(team, {
 		relationName: "team_primary_manager",
 	}),
-	manager: one(employee, {
-		fields: [employee.managerId],
-		references: [employee.id],
-		relationName: "manager_employee",
-	}),
-	subordinates: many(employee, {
-		relationName: "manager_employee",
-	}),
 	rateHistory: many(employeeRateHistory),
 	employmentHistory: many(employeeEmploymentHistory),
 	// Multiple managers support
@@ -446,6 +439,7 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	timeEntries: many(timeEntry),
 	workPeriods: many(workPeriod),
 	timeBalances: many(employeeTimeBalance),
+	workBalance: one(employeeWorkBalance),
 	timeRecords: many(timeRecord),
 	timeRecordApprovalDecisionsAsActor: many(timeRecordApprovalDecision),
 	absenceEntries: many(absenceEntry),
@@ -630,6 +624,17 @@ export const employeeTimeBalanceRelations = relations(employeeTimeBalance, ({ on
 	}),
 	organization: one(organization, {
 		fields: [employeeTimeBalance.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const employeeWorkBalanceRelations = relations(employeeWorkBalance, ({ one }) => ({
+	employee: one(employee, {
+		fields: [employeeWorkBalance.employeeId],
+		references: [employee.id],
+	}),
+	organization: one(organization, {
+		fields: [employeeWorkBalance.organizationId],
 		references: [organization.id],
 	}),
 }));

@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { employee, employeeManagers } from "@/db/schema";
 import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 
 export function canApproveAbsenceRecord(input: {
@@ -46,7 +46,7 @@ export function canApproveAbsenceRecord(input: {
  *
  * Rules:
  * - Admins can approve all absences
- * - Managers can approve their subordinates' absences
+ * - Managers can approve their linked employees' absences
  * - Employees cannot approve absences
  *
  * @param employeeId - ID of the employee trying to approve
@@ -70,6 +70,25 @@ export async function canApproveAbsence(
 		return false;
 	}
 
+	if (approver.organizationId !== target.organizationId) {
+		return false;
+	}
+
+	let managedEmployeeIds: string[] = [];
+
+	if (approver.role === "manager") {
+		const managerLink = await db.query.employeeManagers.findFirst({
+			where: and(
+				eq(employeeManagers.employeeId, targetEmployeeId),
+				eq(employeeManagers.managerId, employeeId),
+			),
+		});
+
+		if (managerLink) {
+			managedEmployeeIds = [targetEmployeeId];
+		}
+	}
+
 	return canApproveAbsenceRecord({
 		approver: {
 			id: approver.id,
@@ -80,7 +99,7 @@ export async function canApproveAbsence(
 			employeeId: target.id,
 			organizationId: target.organizationId,
 		},
-		managedEmployeeIds: target.managerId === employeeId ? [targetEmployeeId] : [],
+		managedEmployeeIds,
 	});
 }
 
@@ -89,7 +108,7 @@ export async function canApproveAbsence(
  *
  * Rules:
  * - Admins can edit any employee's allowance
- * - Managers can edit their subordinates' allowances
+ * - Managers can edit their linked employees' allowances
  * - Employees cannot edit allowances
  *
  * @param employeeId - ID of the employee trying to edit
@@ -113,14 +132,25 @@ export async function canEditEmployeeAllowance(
 		return false;
 	}
 
+	if (editor.organizationId !== target.organizationId) {
+		return false;
+	}
+
 	// Admins can edit any employee's allowance
 	if (editor.role === "admin") {
 		return true;
 	}
 
-	// Managers can edit their subordinates' allowances
-	if (editor.role === "manager" && target.managerId === employeeId) {
-		return true;
+	// Managers can edit their linked employees' allowances
+	if (editor.role === "manager") {
+		const managerLink = await db.query.employeeManagers.findFirst({
+			where: and(
+				eq(employeeManagers.employeeId, targetEmployeeId),
+				eq(employeeManagers.managerId, employeeId),
+			),
+		});
+
+		return Boolean(managerLink);
 	}
 
 	return false;

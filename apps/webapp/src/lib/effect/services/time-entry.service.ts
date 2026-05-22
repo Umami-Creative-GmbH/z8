@@ -35,6 +35,7 @@ export interface CreateCorrectionInput {
 	notes: string;
 	ipAddress?: string;
 	deviceInfo?: string;
+	isSuperseded?: boolean;
 }
 
 export interface GetTimeEntriesInput {
@@ -277,7 +278,7 @@ export const TimeEntryServiceLive = Layer.effect(
 						previousHash: previousEntry?.hash ?? null,
 					});
 
-					// Create correction entry and mark original as superseded in a transaction
+					// Create correction entry and optionally keep it inactive while approval is pending.
 					const correctionEntry = yield* _(
 						dbService.query("createCorrectionEntry", async () => {
 							// Insert the correction entry with organizationId
@@ -296,17 +297,21 @@ export const TimeEntryServiceLive = Layer.effect(
 									ipAddress: input.ipAddress,
 									deviceInfo: input.deviceInfo,
 									createdBy: input.createdBy,
+									...(input.isSuperseded === undefined
+										? {}
+										: { isSuperseded: input.isSuperseded }),
 								})
 								.returning();
 
-							// Mark the original entry as superseded
-							await dbService.db
-								.update(timeEntry)
-								.set({
-									isSuperseded: true,
-									supersededById: newEntry.id,
-								})
-								.where(eq(timeEntry.id, input.replacesEntryId));
+							if (!input.isSuperseded) {
+								await dbService.db
+									.update(timeEntry)
+									.set({
+										isSuperseded: true,
+										supersededById: newEntry.id,
+									})
+									.where(eq(timeEntry.id, input.replacesEntryId));
+							}
 
 							return newEntry;
 						}),

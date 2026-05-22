@@ -63,16 +63,18 @@ export async function getTimeClockStatus(): Promise<{
 		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
 	}
 
-	const currentEmployee = await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
-	});
+	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
 		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
 	}
 
 	const activeWorkPeriod = await db.query.workPeriod.findFirst({
-		where: and(eq(workPeriod.employeeId, currentEmployee.id), isNull(workPeriod.endTime)),
+		where: and(
+			eq(workPeriod.employeeId, currentEmployee.id),
+			eq(workPeriod.organizationId, currentEmployee.organizationId),
+			isNull(workPeriod.endTime),
+		),
 	});
 
 	return {

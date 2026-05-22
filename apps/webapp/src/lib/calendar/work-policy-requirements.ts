@@ -1,13 +1,17 @@
+import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
-import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { employee } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
+	type EffectiveWorkPolicy,
 	WorkPolicyService,
 	WorkPolicyServiceLive,
-	type EffectiveWorkPolicy,
 } from "@/lib/effect/services/work-policy.service";
+import {
+	type ApprovedAbsenceRange,
+	applyAbsenceAdjustmentsToRequirements,
+} from "./absence-adjusted-requirements";
 import type { DailyWorkRequirements } from "./types";
 
 type EffectiveWorkPolicyScheduleDayName = NonNullable<
@@ -27,15 +31,7 @@ const WEEKDAY_BY_NUMBER: Record<number, EffectiveWorkPolicyScheduleDayName> = {
 const PRESET_DAYS: Record<string, EffectiveWorkPolicyScheduleDayName[]> = {
 	weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
 	weekends: ["saturday", "sunday"],
-	all_days: [
-		"monday",
-		"tuesday",
-		"wednesday",
-		"thursday",
-		"friday",
-		"saturday",
-		"sunday",
-	],
+	all_days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
 };
 
 interface BuildDailyWorkRequirementsOptions {
@@ -70,9 +66,7 @@ function getRequiredMinutesForDay(
 	if (schedule.scheduleType === "detailed") {
 		if (schedule.scheduleCycle !== "weekly") return 0;
 
-		const configuredDay = schedule.days.find(
-			(day) => day.dayOfWeek === dayName && day.isWorkDay,
-		);
+		const configuredDay = schedule.days.find((day) => day.dayOfWeek === dayName && day.isWorkDay);
 		return hoursToMinutes(configuredDay?.hoursPerDay);
 	}
 
@@ -96,8 +90,8 @@ export function buildDailyWorkRequirements({
 }: BuildDailyWorkRequirementsOptions): DailyWorkRequirements {
 	if (!policy?.schedule) return {};
 
-	const start = DateTime.fromJSDate(startDate).startOf("day");
-	const end = DateTime.fromJSDate(endDate).startOf("day");
+	const start = DateTime.fromJSDate(startDate, { zone: "utc" }).startOf("day");
+	const end = DateTime.fromJSDate(endDate, { zone: "utc" }).startOf("day");
 	if (!start.isValid || !end.isValid || end < start) return {};
 
 	const requirements: DailyWorkRequirements = {};
@@ -117,6 +111,49 @@ export function buildDailyWorkRequirements({
 	return requirements;
 }
 
+export function applyApprovedAbsencesToDailyRequirements(
+	requirements: DailyWorkRequirements,
+	absences: ApprovedAbsenceRange[],
+): DailyWorkRequirements {
+	return applyAbsenceAdjustmentsToRequirements(requirements, absences);
+}
+
+async function getApprovedAbsenceRanges(params: {
+	database: typeof DatabaseService.Service;
+	organizationId: string;
+	employeeId: string;
+	startDate: Date;
+	endDate: Date;
+}): Promise<ApprovedAbsenceRange[]> {
+	const start = DateTime.fromJSDate(params.startDate).toFormat("yyyy-MM-dd");
+	const end = DateTime.fromJSDate(params.endDate).toFormat("yyyy-MM-dd");
+
+	return Effect.runPromise(
+		params.database.query("getApprovedAbsencesForCalendarRequirements", async () => {
+			return params.database.db
+				.select({
+					startDate: absenceEntry.startDate,
+					startPeriod: absenceEntry.startPeriod,
+					endDate: absenceEntry.endDate,
+					endPeriod: absenceEntry.endPeriod,
+				})
+				.from(absenceEntry)
+				.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+				.where(
+					and(
+						eq(absenceEntry.employeeId, params.employeeId),
+						eq(absenceEntry.organizationId, params.organizationId),
+						eq(absenceEntry.status, "approved"),
+						eq(absenceCategory.organizationId, params.organizationId),
+						eq(absenceCategory.requiresWorkTime, false),
+						lte(absenceEntry.startDate, end),
+						gte(absenceEntry.endDate, start),
+					),
+				);
+		}),
+	);
+}
+
 export async function getDailyWorkRequirementsForEmployee(params: {
 	organizationId: string;
 	employeeId: string;
@@ -133,19 +170,39 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 							eq(employee.id, params.employeeId),
 							eq(employee.organizationId, params.organizationId),
 						),
-						columns: { id: true },
+						columns: { id: true, startDate: true },
 					});
 				}),
 			);
 			if (!scopedEmployee) return {};
 
+			const requestedStartDate = DateTime.fromJSDate(params.startDate, { zone: "utc" });
+			const employeeStartDate = scopedEmployee.startDate
+				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
+				: requestedStartDate;
+			const effectiveStartDate = DateTime.max(requestedStartDate, employeeStartDate).toJSDate();
+			if (effectiveStartDate > params.endDate) return {};
+
 			const service = yield* _(WorkPolicyService);
 			const policy = yield* _(service.getEffectivePolicy(params.employeeId));
-			return buildDailyWorkRequirements({
+			const requirements = buildDailyWorkRequirements({
 				policy,
-				startDate: params.startDate,
+				startDate: effectiveStartDate,
 				endDate: params.endDate,
 			});
+			const approvedAbsences = yield* _(
+				Effect.promise(() =>
+					getApprovedAbsenceRanges({
+						database,
+						organizationId: params.organizationId,
+						employeeId: params.employeeId,
+						startDate: effectiveStartDate,
+						endDate: params.endDate,
+					}),
+				),
+			);
+
+			return applyApprovedAbsencesToDailyRequirements(requirements, approvedAbsences);
 		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive)),
 	);
 }

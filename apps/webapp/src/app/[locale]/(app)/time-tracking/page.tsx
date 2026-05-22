@@ -1,11 +1,11 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { getTimeTrackingPageData } from "./page-data";
 
@@ -40,12 +40,12 @@ async function TimeTrackingPageContent({ searchParams }: TimeTrackingPageProps) 
 				<PersonalWorkdayTimeline result={pageData.timelineResult} />
 			</div>
 
-			<WeeklySummaryCards summary={pageData.summary} />
+			<WeeklySummaryCards summary={pageData.summary} workBalance={pageData.workBalance} />
 
 			<div className="px-4 lg:px-6">
 				<TimeEntriesTable
 					workPeriods={pageData.workPeriods}
-					hasManager={!!pageData.currentEmployee.managerId}
+					hasManager={pageData.hasManager}
 					canApproveTimeEntries={pageData.canApproveTimeEntries}
 					employeeTimezone={pageData.timezone}
 					timeFormat={pageData.timeFormat}

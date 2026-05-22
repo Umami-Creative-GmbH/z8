@@ -1,9 +1,11 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -13,8 +15,8 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
-import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { createTimeEntry, markTimeEntrySuperseded } from "./entry-helpers";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
@@ -30,6 +32,40 @@ type CorrectionTimesResult =
 	| {
 			error: string;
 	  };
+
+type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
+
+async function markWorkBalanceDirtyAfterSameDayEditBestEffort(
+	input: WorkBalanceDirtyInput,
+	context: Record<string, unknown>,
+) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error({ error, ...context }, "Failed to mark work balance dirty after same-day edit");
+	}
+}
+
+type ManagerResolverDb = Parameters<typeof getPrimaryEligibleManagerIdForRequester>[0]["db"];
+
+export async function resolveCorrectionApprovalManager(input: {
+	db: ManagerResolverDb;
+	requesterEmployeeId: string;
+	organizationId: string;
+}): Promise<
+	| { ok: true; managerId: string }
+	| { ok: false; message: "No manager assigned to approve corrections"; field: "managerId" }
+> {
+	const managerId = await getPrimaryEligibleManagerIdForRequester(input);
+
+	return managerId
+		? { ok: true, managerId }
+		: {
+				ok: false,
+				message: "No manager assigned to approve corrections",
+				field: "managerId",
+			};
+}
 
 function buildCorrectionTimes(params: {
 	periodStart: Date;
@@ -93,6 +129,23 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Cannot edit an active work period. Please clock out first." };
 	}
 
+	const pendingTimeCorrectionApproval = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.organizationId, currentEmployee.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+			eq(approvalRequest.entityId, selectedWorkPeriod.id),
+			eq(approvalRequest.status, "pending"),
+		),
+	});
+
+	if (pendingTimeCorrectionApproval) {
+		return {
+			success: false,
+			error: "A time correction approval is already pending for this work period",
+			code: "pending_time_correction_approval",
+		};
+	}
+
 	let editCapability;
 	try {
 		editCapability = await getEditCapabilityForPeriod({
@@ -102,14 +155,7 @@ export async function editSameDayTimeEntry(
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to check edit capability");
-		if (!isSameDayInTimezone(selectedWorkPeriod.startTime, timezone)) {
-			return {
-				success: false,
-				error: "Past entries require manager approval. Please use the correction request.",
-			};
-		}
-
-		editCapability = { type: "direct", reason: "within_self_service" };
+		return { success: false, error: "Failed to verify edit policy. Please try again." };
 	}
 
 	if (editCapability.type === "forbidden") {
@@ -150,14 +196,15 @@ export async function editSameDayTimeEntry(
 		return { success: false, error: "Clock out time cannot be in the future" };
 	}
 
-	if (correctedClockOutDate && correctedClockOutDate <= correctedClockInDate) {
+	const effectiveClockOut = correctedClockOutDate ?? selectedWorkPeriod.endTime;
+	if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
 		return { success: false, error: "Clock out time must be after clock in time" };
 	}
 
 	const validation = await validateTimeEntryRange(
 		currentEmployee.organizationId,
 		correctedClockInDate,
-		correctedClockOutDate || correctedClockInDate,
+		effectiveClockOut || correctedClockInDate,
 	);
 
 	if (!validation.isValid) {
@@ -216,6 +263,24 @@ export async function editSameDayTimeEntry(
 			})
 			.where(eq(workPeriod.id, selectedWorkPeriod.id));
 
+		const earliestAffectedDate =
+			selectedWorkPeriod.startTime <= correctedClockInDate
+				? selectedWorkPeriod.startTime
+				: correctedClockInDate;
+		await markWorkBalanceDirtyAfterSameDayEditBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(earliestAffectedDate, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: selectedWorkPeriod.id,
+			},
+		);
+
 		logger.info(
 			{
 				workPeriodId: data.workPeriodId,
@@ -267,8 +332,19 @@ export async function requestTimeCorrectionEffect(
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
 		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
 
-		if (!currentEmployee.managerId) {
-			yield* _(
+		const managerDecision = yield* _(
+			Effect.promise(() =>
+				resolveCorrectionApprovalManager({
+					db: dbService.db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			),
+		);
+
+		const managerId = managerDecision.ok ? managerDecision.managerId : null;
+		if (!managerId) {
+			return yield* _(
 				Effect.fail(
 					new ValidationError({
 						message: "No manager assigned to approve corrections",
@@ -277,8 +353,9 @@ export async function requestTimeCorrectionEffect(
 				),
 			);
 		}
+		const resolvedManagerId = managerId;
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId));
+		yield* _(Effect.annotateCurrentSpan("manager.id", resolvedManagerId));
 
 		const timezone = yield* _(Effect.promise(() => getUserTimezone(session.user.id)));
 
@@ -286,7 +363,7 @@ export async function requestTimeCorrectionEffect(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
-				managerId: currentEmployee.managerId,
+				managerId: resolvedManagerId,
 				timezone,
 			},
 			"Processing time correction request",
@@ -297,7 +374,13 @@ export async function requestTimeCorrectionEffect(
 				const [period] = await dbService.db
 					.select()
 					.from(workPeriod)
-					.where(eq(workPeriod.id, data.workPeriodId))
+					.where(
+						and(
+							eq(workPeriod.id, data.workPeriodId),
+							eq(workPeriod.employeeId, currentEmployee.id),
+							eq(workPeriod.organizationId, currentEmployee.organizationId),
+						),
+					)
 					.limit(1);
 
 				if (!period) {
@@ -378,6 +461,18 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
+		const effectiveClockOut = correctedClockOutDate ?? selectedWorkPeriod.endTime;
+		if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "Clock out time must be after clock in time",
+						field: "newClockOutTime",
+					}),
+				),
+			);
+		}
+
 		yield* _(
 			Effect.annotateCurrentSpan(
 				"correction.corrected_clock_in",
@@ -398,7 +493,7 @@ export async function requestTimeCorrectionEffect(
 				validateTimeEntryRange(
 					currentEmployee.organizationId,
 					correctedClockInDate,
-					correctedClockOutDate || correctedClockInDate,
+					effectiveClockOut || correctedClockInDate,
 				),
 			),
 		);
@@ -415,54 +510,67 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
-		const clockInCorrection = yield* _(
-			Effect.promise(() =>
-				createTimeEntry({
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					type: "correction",
-					timestamp: correctedClockInDate,
-					createdBy: session.user.id,
-					replacesEntryId: selectedWorkPeriod.clockInId,
-					notes: data.reason,
-				}),
-			),
-		);
+		const { approval, clockInCorrection, clockOutCorrectionId } = yield* _(
+			dbService.query("createTimeCorrectionRequest", async () => {
+				return await dbService.db.transaction(async (tx) => {
+					const transactionalDbService = { db: tx, query: dbService.query };
+					const clockInCorrection = await createTimeEntry(
+						{
+							employeeId: currentEmployee.id,
+							organizationId: currentEmployee.organizationId,
+							type: "correction",
+							timestamp: correctedClockInDate,
+							createdBy: session.user.id,
+							replacesEntryId: selectedWorkPeriod.clockInId,
+							notes: data.reason,
+							isSuperseded: true,
+						},
+						tx,
+					);
 
-		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+					let clockOutCorrectionId: string | undefined;
+					if (data.newClockOutTime && selectedWorkPeriod.clockOutId && correctedClockOutDate) {
+						const clockOutCorrection = await createTimeEntry(
+							{
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								type: "correction",
+								timestamp: correctedClockOutDate,
+								createdBy: session.user.id,
+								replacesEntryId: selectedWorkPeriod.clockOutId ?? undefined,
+								notes: data.reason,
+								isSuperseded: true,
+							},
+							tx,
+						);
 
-		yield* _(
-			dbService.query("markClockInSuperseded", async () => {
-				await markTimeEntrySuperseded(selectedWorkPeriod.clockInId, clockInCorrection.id);
+						clockOutCorrectionId = clockOutCorrection.id;
+					}
+
+					const approval = await Effect.runPromise(
+						createTimeCorrectionApprovalWorkflow(transactionalDbService, {
+							organizationId: currentEmployee.organizationId,
+							requesterEmployeeId: currentEmployee.id,
+							teamId: currentEmployee.teamId ?? null,
+							workPeriodId: selectedWorkPeriod.id,
+							defaultApproverId: resolvedManagerId,
+							reason: data.reason,
+							overtimeRisk: "warning",
+							correctionEntryIds: {
+								clockInCorrectionId: clockInCorrection.id,
+								clockOutCorrectionId,
+							},
+						}),
+					);
+
+					return { approval, clockInCorrection, clockOutCorrectionId };
+				});
 			}),
 		);
 
-		let clockOutCorrectionId: string | undefined;
-		if (data.newClockOutTime && selectedWorkPeriod.clockOutId && correctedClockOutDate) {
-			const clockOutCorrection = yield* _(
-				Effect.promise(() =>
-					createTimeEntry({
-						employeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-						type: "correction",
-						timestamp: correctedClockOutDate,
-						createdBy: session.user.id,
-						replacesEntryId: selectedWorkPeriod.clockOutId ?? undefined,
-						notes: data.reason,
-					}),
-				),
-			);
-
-			clockOutCorrectionId = clockOutCorrection.id;
-			yield* _(
-				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrection.id),
-			);
-
-			yield* _(
-				dbService.query("markClockOutSuperseded", async () => {
-					await markTimeEntrySuperseded(selectedWorkPeriod.clockOutId!, clockOutCorrection.id);
-				}),
-			);
+		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+		if (clockOutCorrectionId) {
+			yield* _(Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId));
 		}
 
 		logger.info(
@@ -473,26 +581,13 @@ export async function requestTimeCorrectionEffect(
 			},
 			"Time correction entries created",
 		);
-
-		const approval = yield* _(
-			createTimeCorrectionApprovalWorkflow(dbService, {
-				organizationId: currentEmployee.organizationId,
-				requesterEmployeeId: currentEmployee.id,
-				teamId: currentEmployee.teamId ?? null,
-				workPeriodId: selectedWorkPeriod.id,
-				defaultApproverId: currentEmployee.managerId!,
-				reason: data.reason,
-				overtimeRisk: "warning",
-			}),
-		);
-
 		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.approvalRequestId));
 
 		const [manager, employeeWithUser] = yield* _(
 			Effect.all([
 				dbService.query("getManagerWithUser", async () => {
 					const managerRecord = await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, currentEmployee.managerId!),
+						where: eq(employee.id, resolvedManagerId),
 						with: { user: true },
 					});
 

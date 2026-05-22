@@ -92,6 +92,9 @@ function createChainProgressionDbService(params: {
 	const dbService = {
 		db: {
 			query: {
+				approvalRequest: {
+					findFirst: vi.fn().mockResolvedValue({ metadata: null }),
+				},
 				auditLog: {},
 				approvalChainStageInstance: {
 					findFirst: vi

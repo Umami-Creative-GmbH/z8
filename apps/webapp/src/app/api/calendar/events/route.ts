@@ -1,17 +1,90 @@
-import { type NextRequest, NextResponse, connection } from "next/server";
 import { DateTime } from "luxon";
+import { connection, type NextRequest, NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { employee, employeeManagers } from "@/db/schema";
+import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
-import type { CalendarEvent, DailyWorkActualMinutes, DailyWorkRequirements } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkActualMinutes,
+	DailyWorkRequirements,
+} from "@/lib/calendar/types";
 import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
-import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
+import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { superJsonResponse } from "@/lib/superjson";
+import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
+import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
-function canViewOrganizationWideCalendar(role: string | null): boolean {
-	return role === "admin" || role === "manager";
+type VerifiedCalendarContext = NonNullable<Awaited<ReturnType<typeof getVerifiedOrgContext>>>;
+
+async function resolveAuthorizedCalendarEmployeeId(
+	orgContext: VerifiedCalendarContext,
+	requestedEmployeeId: string | undefined,
+): Promise<string | undefined> {
+	if (!orgContext.employeeId || !orgContext.role) {
+		return undefined;
+	}
+
+	const currentEmployee = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.id, orgContext.employeeId),
+			eq(employee.organizationId, orgContext.organizationId),
+			eq(employee.isActive, true),
+		),
+	});
+	if (!currentEmployee) {
+		return undefined;
+	}
+
+	const targetEmployeeId = requestedEmployeeId ?? currentEmployee.id;
+	const targetEmployee = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.id, targetEmployeeId),
+			eq(employee.organizationId, orgContext.organizationId),
+			eq(employee.isActive, true),
+		),
+	});
+	if (!targetEmployee) {
+		return undefined;
+	}
+
+	const managedRecords = await db.query.employeeManagers.findMany({
+		where: eq(employeeManagers.managerId, currentEmployee.id),
+		columns: { employeeId: true },
+	});
+	const principal: PrincipalContext = {
+		userId: orgContext.user.id,
+		isPlatformAdmin: orgContext.user.role === "admin",
+		activeOrganizationId: orgContext.organizationId,
+		orgMembership: null,
+		employee: {
+			id: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+			role: currentEmployee.role,
+			teamId: currentEmployee.teamId,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: managedRecords.map((record) => record.employeeId),
+		customRoles: [],
+	};
+
+	const ability = defineAbilityFor(principal);
+	return ability.can(
+		"read",
+		asAppSubject("Employee", {
+			id: targetEmployee.id,
+			employeeId: targetEmployee.id,
+			organizationId: targetEmployee.organizationId,
+			teamId: targetEmployee.teamId,
+		}),
+	)
+		? targetEmployee.id
+		: undefined;
 }
 
 /**
@@ -79,6 +152,24 @@ async function fetchDailyRequirements(params: {
 	}
 }
 
+async function fetchWorkBalance(params: {
+	organizationId: string;
+	employeeId: string | undefined;
+}): Promise<EmployeeWorkBalancePayload | null> {
+	if (!params.employeeId) return null;
+	const employeeId = params.employeeId;
+
+	try {
+		return await getEmployeeWorkBalance({
+			organizationId: params.organizationId,
+			employeeId,
+		});
+	} catch (error) {
+		console.error("Error fetching calendar work balance:", error);
+		return null;
+	}
+}
+
 export async function GET(request: NextRequest) {
 	await connection();
 	try {
@@ -105,9 +196,7 @@ export async function GET(request: NextRequest) {
 
 		const organizationId = orgContext.organizationId;
 		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
-		const scopedEmployeeId = canViewOrganizationWideCalendar(orgContext.role)
-			? employeeId
-			: orgContext.employeeId ?? undefined;
+		const scopedEmployeeId = await resolveAuthorizedCalendarEmployeeId(orgContext, employeeId);
 
 		if (showsEmployeeScopedEvents && !scopedEmployeeId) {
 			return NextResponse.json({ error: "Forbidden: Employee profile required" }, { status: 403 });
@@ -128,6 +217,7 @@ export async function GET(request: NextRequest) {
 		let dailyRequirements: DailyWorkRequirements = {};
 		let dailyActualMinutes: DailyWorkActualMinutes = {};
 		let events: CalendarEvent[] = [];
+		let workBalance: EmployeeWorkBalancePayload | null = null;
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
 
 		if (fullYear) {
@@ -169,12 +259,15 @@ export async function GET(request: NextRequest) {
 			dailyActualMinutes = monthResult.dailyActualMinutes;
 		}
 
-		dailyRequirements = await fetchDailyRequirements({
-			organizationId,
-			employeeId: scopedEmployeeId,
-			startDate,
-			endDate,
-		});
+		[dailyRequirements, workBalance] = await Promise.all([
+			fetchDailyRequirements({
+				organizationId,
+				employeeId: scopedEmployeeId,
+				startDate,
+				endDate,
+			}),
+			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
+		]);
 
 		// Use SuperJSON to preserve Date objects in the response
 		return superJsonResponse({
@@ -182,6 +275,7 @@ export async function GET(request: NextRequest) {
 			total: events.length,
 			dailyRequirements,
 			dailyActualMinutes,
+			workBalance,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar events:", error);
