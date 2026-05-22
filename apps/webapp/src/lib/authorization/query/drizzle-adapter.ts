@@ -6,7 +6,9 @@ import type { DrizzleFieldMap } from "./types";
 export type { AccessiblePredicate, DrizzleFieldMap } from "./types";
 
 type ConditionValue = string | number | boolean | { $in: readonly unknown[] };
-type MongoCondition = Record<string, ConditionValue | MongoCondition | MongoCondition[]>;
+interface MongoCondition {
+	[fieldName: string]: ConditionValue | MongoCondition | MongoCondition[];
+}
 type AbilityRule<TAbility extends AnyAbility> = ReturnType<TAbility["rulesFor"]>[number];
 
 export class UnsupportedAuthorizationConditionError extends Error {
