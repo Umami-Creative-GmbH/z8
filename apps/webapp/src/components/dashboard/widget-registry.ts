@@ -56,62 +56,62 @@ export const WIDGET_CONFIGS: WidgetConfig[] = [
 	{
 		id: "manager-today",
 		label: "Manager Today",
-		labelKey: "dashboard.widgets.manager-today",
+		labelKey: "dashboard.manager-today.title",
 	},
 	{
 		id: "managed-employees",
-		label: "Managed Employees",
-		labelKey: "dashboard.widgets.managed-employees",
+		label: "Your Team",
+		labelKey: "dashboard.managed-employees.title",
 	},
 	{
 		id: "pending-approvals",
 		label: "Pending Approvals",
-		labelKey: "dashboard.widgets.pending-approvals",
+		labelKey: "dashboard.pending-approvals.title",
 	},
 	{
 		id: "team-overview",
-		label: "Team Overview",
-		labelKey: "dashboard.widgets.team-overview",
+		label: "Organization",
+		labelKey: "dashboard.team-overview.title",
 	},
 	{
 		id: "quick-stats",
 		label: "Time Tracking",
-		labelKey: "dashboard.widgets.quick-stats",
+		labelKey: "dashboard.quick-stats.title",
 	},
 	{
 		id: "presence-status",
-		label: "Presence Status",
-		labelKey: "dashboard.widgets.presence-status",
+		label: "Work location",
+		labelKey: "dashboard.presence.workLocation",
 	},
 	{
 		id: "whos-out-today",
 		label: "Who's Out Today",
-		labelKey: "dashboard.widgets.whos-out-today",
+		labelKey: "dashboard.whos-out.title",
 	},
 	{
 		id: "upcoming-time-off",
 		label: "Upcoming Time Off",
-		labelKey: "dashboard.widgets.upcoming-time-off",
+		labelKey: "dashboard.upcoming-time-off.title",
 	},
 	{
 		id: "recently-approved",
 		label: "Recently Approved",
-		labelKey: "dashboard.widgets.recently-approved",
+		labelKey: "dashboard.recently-approved.title",
 	},
 	{
 		id: "birthday-reminders",
-		label: "Birthday Reminders",
-		labelKey: "dashboard.widgets.birthday-reminders",
+		label: "Upcoming Birthdays",
+		labelKey: "dashboard.birthday.title",
 	},
 	{
 		id: "hydration",
 		label: "Hydration",
-		labelKey: "dashboard.widgets.hydration",
+		labelKey: "dashboard.hydration.title",
 	},
 	{
 		id: "vacation-balance",
 		label: "Vacation Balance",
-		labelKey: "dashboard.widgets.vacation-balance",
+		labelKey: "dashboard.vacation.title",
 	},
 ];
 

@@ -8,8 +8,16 @@ import { DEFAULT_WIDGET_ORDER, type WidgetId } from "./widget-registry";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, values?: Record<string, string>) =>
-			values?.widget ? fallback.replace("{widget}", values.widget) : fallback,
+		t: (key: string, fallback: string, values?: Record<string, string>) => {
+			const translations: Record<string, string> = {
+				"dashboard.quick-stats.title": "Translated Time Tracking",
+				"dashboard.presence.workLocation": "Translated Work Location",
+				"dashboard.vacation.title": "Translated Vacation Balance",
+			};
+			const label = translations[key] ?? fallback;
+
+			return values?.widget ? label.replace("{widget}", values.widget) : label;
+		},
 	}),
 }));
 
@@ -47,9 +55,22 @@ describe("DashboardCustomizeMenu", () => {
 		renderMenu({ hiddenWidgets: ["quick-stats"], onVisibilityChange });
 
 		openMenu();
-		fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Time Tracking" }));
+		fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Translated Time Tracking" }));
 
 		expect(onVisibilityChange).toHaveBeenCalledWith("quick-stats", true);
+	});
+
+	it("uses translated widget titles in reorder controls", () => {
+		renderMenu();
+
+		openMenu();
+		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
+
+		expect(screen.getByRole("menuitemcheckbox", { name: "Translated Work Location" })).toBeTruthy();
+		expect(within(row).getByRole("menuitem", { name: "Move Translated Work Location up" })).toBeTruthy();
+		expect(
+			within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }),
+		).toBeTruthy();
 	});
 
 	it("calls reset from the reset menu item", () => {
@@ -70,7 +91,7 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
-		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Presence Status up" }));
+		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Translated Work Location up" }));
 
 		expect(onReorder).toHaveBeenCalledWith(["presence-status", "quick-stats", "vacation-balance"]);
 	});
@@ -81,8 +102,10 @@ describe("DashboardCustomizeMenu", () => {
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
 
-		expect(within(row).getByRole("menuitem", { name: "Move Presence Status up" })).toBeTruthy();
-		expect(within(row).getByRole("menuitem", { name: "Move Presence Status down" })).toBeTruthy();
+		expect(within(row).getByRole("menuitem", { name: "Move Translated Work Location up" })).toBeTruthy();
+		expect(
+			within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }),
+		).toBeTruthy();
 	});
 
 	it("moves a visible widget down", () => {
@@ -92,7 +115,7 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-presence-status");
-		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Presence Status down" }));
+		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Translated Work Location down" }));
 
 		expect(onReorder).toHaveBeenCalledWith(["quick-stats", "vacation-balance", "presence-status"]);
 	});
@@ -105,13 +128,16 @@ describe("DashboardCustomizeMenu", () => {
 		const lastRow = screen.getByTestId("dashboard-widget-menu-row-vacation-balance");
 
 		expect(
-			(within(firstRow).getByRole("menuitem", { name: "Move Time Tracking up" }) as HTMLButtonElement)
-				.disabled,
+			(
+				within(firstRow).getByRole("menuitem", {
+					name: "Move Translated Time Tracking up",
+				}) as HTMLButtonElement
+			).disabled,
 		).toBe(true);
 		expect(
 			(
 				within(lastRow).getByRole("menuitem", {
-					name: "Move Vacation Balance down",
+					name: "Move Translated Vacation Balance down",
 				}) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
@@ -123,7 +149,7 @@ describe("DashboardCustomizeMenu", () => {
 		openMenu();
 		const hiddenRow = screen.getByTestId("dashboard-widget-menu-row-quick-stats");
 
-		expect(screen.getByRole("menuitemcheckbox", { name: "Time Tracking" })).toBeTruthy();
+		expect(screen.getByRole("menuitemcheckbox", { name: "Translated Time Tracking" })).toBeTruthy();
 		expect(within(hiddenRow).queryByRole("button", { name: "Move Time Tracking up" })).toBeNull();
 		expect(within(hiddenRow).queryByRole("button", { name: "Move Time Tracking down" })).toBeNull();
 	});
@@ -135,7 +161,7 @@ describe("DashboardCustomizeMenu", () => {
 
 		openMenu();
 		const row = screen.getByTestId("dashboard-widget-menu-row-managed-employees");
-		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Managed Employees up" }));
+		fireEvent.click(within(row).getByRole("menuitem", { name: "Move Your Team up" }));
 
 		expect(onReorder).toHaveBeenCalledWith([
 			"managed-employees",
@@ -164,12 +190,12 @@ describe("DashboardCustomizeMenu", () => {
 		openMenu();
 		fireEvent.click(
 			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
-				name: "Move Vacation Balance up",
+				name: "Move Translated Vacation Balance up",
 			}),
 		);
 		fireEvent.click(
 			within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
-				name: "Move Vacation Balance up",
+				name: "Move Translated Vacation Balance up",
 			}),
 		);
 
@@ -177,7 +203,7 @@ describe("DashboardCustomizeMenu", () => {
 		expect(
 			(
 				within(screen.getByTestId("dashboard-widget-menu-row-vacation-balance")).getByRole("menuitem", {
-					name: "Move Vacation Balance up",
+					name: "Move Translated Vacation Balance up",
 				}) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
