@@ -1,11 +1,11 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { getTimeTrackingPageData } from "./page-data";
 

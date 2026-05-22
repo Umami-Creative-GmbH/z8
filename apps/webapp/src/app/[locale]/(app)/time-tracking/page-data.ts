@@ -58,23 +58,24 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	});
 	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
-	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, workBalance] = await Promise.all([
-		getActiveWorkPeriod(currentEmployee.id),
-		getWorkPeriods(currentEmployee.id, startDate, endDate),
-		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
-		getTranslate(),
-		getWorkdayTimelineData({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			timezone,
-			timeFormat,
-			dateParam: searchParams.date,
-		}),
-		getEmployeeWorkBalance({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-		}),
-	]);
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, workBalance] =
+		await Promise.all([
+			getActiveWorkPeriod(currentEmployee.id),
+			getWorkPeriods(currentEmployee.id, startDate, endDate),
+			getTimeSummary(currentEmployee.id, timezone, weekStartDay),
+			getTranslate(),
+			getWorkdayTimelineData({
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				timezone,
+				timeFormat,
+				dateParam: searchParams.date,
+			}),
+			getEmployeeWorkBalance({
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
+		]);
 
 	return {
 		session,
