@@ -535,7 +535,7 @@ export async function requestTimeCorrectionEffect(
 		);
 
 		if (!managerId) {
-			yield* _(
+			return yield* _(
 				Effect.fail(
 					new ValidationError({
 						message: "No manager assigned to approve corrections",
@@ -544,8 +544,9 @@ export async function requestTimeCorrectionEffect(
 				),
 			);
 		}
+		const resolvedManagerId = managerId;
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", managerId));
+		yield* _(Effect.annotateCurrentSpan("manager.id", resolvedManagerId));
 
 		// Get user's timezone for time conversion from userSettings
 		const settingsData = yield* _(
@@ -562,7 +563,7 @@ export async function requestTimeCorrectionEffect(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
-				managerId,
+				managerId: resolvedManagerId,
 				timezone,
 			},
 			"Processing time correction request",
@@ -798,7 +799,7 @@ export async function requestTimeCorrectionEffect(
 				requesterEmployeeId: currentEmployee.id,
 				teamId: currentEmployee.teamId ?? null,
 				workPeriodId: period.id,
-				defaultApproverId: managerId,
+				defaultApproverId: resolvedManagerId,
 				reason: data.reason,
 				overtimeRisk: "warning",
 			}),
@@ -811,7 +812,7 @@ export async function requestTimeCorrectionEffect(
 			Effect.all([
 				dbService.query("getManagerWithUser", async () => {
 					const mgr = await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, managerId),
+						where: eq(employee.id, resolvedManagerId),
 						with: { user: true },
 					});
 

@@ -181,15 +181,15 @@ export async function clockOut(
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
 	}
 
-	const managerId = needsClockOutApproval
-		? await getPrimaryEligibleManagerIdForRequester({
-				db,
-				requesterEmployeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-			})
-		: null;
-
 	try {
+		const managerId = needsClockOutApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				})
+			: null;
+
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
 				{
