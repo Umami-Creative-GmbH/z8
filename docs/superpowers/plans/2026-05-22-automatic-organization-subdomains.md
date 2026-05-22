@@ -4,7 +4,7 @@
 
 **Goal:** Add automatic organization URLs at `https://<slug>.ui.z8-time.app` with `https://<orgid>.ui.z8-time.app` aliases while preserving verified custom-domain behavior.
 
-**Architecture:** Add a focused platform-domain resolver under `src/lib/domain` that classifies hosts and resolves platform subdomains against Better Auth organizations. Wire it into auth layout, Turnstile verification, URL generation, proxy classification, and Better Auth host/origin validation. Keep automatic platform subdomains derived from `organization.slug` and `organization.id`; do not store them in `organization_domain`.
+**Architecture:** Add a focused platform-domain resolver under `src/lib/domain` that classifies hosts and resolves platform subdomains against Better Auth organizations. Wire it into auth layout, Turnstile verification, URL generation, proxy classification, and Better Auth host/origin validation. Keep automatic platform subdomains derived from `organization.slug` and `organization.id`; do not store them in `organization_domain`. Id aliases are unambiguous and cannot be shadowed by another organization's slug.
 
 **Tech Stack:** Next.js 16 App Router, Better Auth 1.6.11, Drizzle ORM, Vitest, React 19, pnpm.
 
@@ -295,18 +295,18 @@ Add these tests:
 
 ```ts
 describe("platform organization resolution", () => {
-	it("resolves platform labels by slug before id", async () => {
+	it("resolves platform labels by slug when no id collision exists", async () => {
 		mockState.db.query.organization.findFirst
 			.mockResolvedValueOnce({ id: "org_slug", slug: "acme", name: "Acme" })
-			.mockResolvedValueOnce({ id: "org_id", slug: "other", name: "Other" });
+			.mockResolvedValueOnce(null);
 
 		const result = await resolvePlatformOrganization("acme");
 
 		expect(result).toEqual({ id: "org_slug", slug: "acme", name: "Acme" });
-		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(1);
+		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
 	});
 
-	it("falls back to organization id when no slug matches", async () => {
+	it("resolves organization id aliases when no slug matches", async () => {
 		mockState.db.query.organization.findFirst
 			.mockResolvedValueOnce(null)
 			.mockResolvedValueOnce({ id: "org_123", slug: "acme", name: "Acme" });
@@ -315,6 +315,16 @@ describe("platform organization resolution", () => {
 
 		expect(result).toEqual({ id: "org_123", slug: "acme", name: "Acme" });
 		expect(mockState.db.query.organization.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it("prefers id aliases over colliding slugs from another organization", async () => {
+		mockState.db.query.organization.findFirst
+			.mockResolvedValueOnce({ id: "org_shadow", slug: "org_victim", name: "Shadow" })
+			.mockResolvedValueOnce({ id: "org_victim", slug: "victim", name: "Victim" });
+
+		const result = await resolvePlatformOrganization("org_victim");
+
+		expect(result).toEqual({ id: "org_victim", slug: "victim", name: "Victim" });
 	});
 
 	it("returns null when neither slug nor id matches", async () => {
@@ -1263,7 +1273,7 @@ Task 7 should not add code. Do not create an empty commit. When verification rev
 ## Final Review Checklist
 
 - [ ] `slug.ui.z8-time.app` resolves organization context by slug.
-- [ ] `orgid.ui.z8-time.app` resolves organization context by id when no slug matches.
+- [ ] `orgid.ui.z8-time.app` resolves organization context by id, including when another organization has a colliding slug.
 - [ ] Generated organization URLs prefer verified custom domains before platform slug URLs.
 - [ ] Platform subdomains are not treated as customer custom domains.
 - [ ] Better Auth `baseURL.allowedHosts` includes `*.ui.z8-time.app`.

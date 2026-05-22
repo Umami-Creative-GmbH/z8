@@ -1,14 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import { env } from "@/env";
 import { routing } from "@/i18n/routing";
+import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
-
-// Main domain from environment variable
-const MAIN_DOMAIN = env.MAIN_DOMAIN || "localhost:3000";
 
 // Headers used to pass context to pages
 export const DOMAIN_HEADERS = {
@@ -59,6 +56,20 @@ export async function proxy(request: NextRequest) {
 	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
 	const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 	const isSetupPage = pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
+	const domainClassification = classifyDomainHost(request.headers.get("host"));
+	if (domainClassification?.type === "unknownPlatform") {
+		const response = new NextResponse("Not found", { status: 404 });
+		applySecurityHeaders(response);
+		return response;
+	}
+	if (domainClassification?.type === "platformOrganization") {
+		const platformOrganization = await resolvePlatformOrganization(domainClassification.label);
+		if (!platformOrganization) {
+			const response = new NextResponse("Not found", { status: 404 });
+			applySecurityHeaders(response);
+			return response;
+		}
+	}
 
 	// Platform setup check - redirect to /setup if not configured
 	// This runs before all other checks to ensure unconfigured instances are protected
@@ -151,17 +162,10 @@ export async function proxy(request: NextRequest) {
 	// Apply enterprise security headers (HSTS, frame/referrer/content type policies)
 	applySecurityHeaders(response);
 
-	// Custom domain detection
-	const hostname = request.headers.get("host") || "";
-	const normalizedHostname = hostname.toLowerCase().replace(/:\d+$/, "");
-	const isMainDomain =
-		normalizedHostname === MAIN_DOMAIN.toLowerCase().replace(/:\d+$/, "") ||
-		normalizedHostname === "localhost" ||
-		normalizedHostname.endsWith(".localhost");
-
-	// Set custom domain header for server components to read
-	if (!isMainDomain && normalizedHostname) {
-		response.headers.set(DOMAIN_HEADERS.DOMAIN, normalizedHostname);
+	// Custom domain detection. Platform organization subdomains are resolved separately
+	// and must not be tagged as customer-owned custom domains.
+	if (domainClassification?.type === "customDomain") {
+		response.headers.set(DOMAIN_HEADERS.DOMAIN, domainClassification.hostname);
 	}
 
 	return response;

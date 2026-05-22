@@ -106,6 +106,7 @@ const parsedEnv = createEnv({
 
 		// Domain configuration (server-side only for runtime flexibility)
 		MAIN_DOMAIN: z.string().optional(),
+		PLATFORM_DOMAIN: z.string().optional(),
 
 		// Social OAuth - Global/fallback credentials (optional, orgs can configure their own)
 		GOOGLE_CLIENT_ID: z.string().optional(),
@@ -209,6 +210,7 @@ const parsedEnv = createEnv({
 		NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
 		NEXT_PUBLIC_BUILD_HASH: process.env.NEXT_PUBLIC_BUILD_HASH,
 		MAIN_DOMAIN: process.env.MAIN_DOMAIN,
+		PLATFORM_DOMAIN: process.env.PLATFORM_DOMAIN,
 		NEXT_PUBLIC_TOLGEE_API_KEY: process.env.NEXT_PUBLIC_TOLGEE_API_KEY,
 		NEXT_PUBLIC_TOLGEE_API_URL: process.env.NEXT_PUBLIC_TOLGEE_API_URL,
 		GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,

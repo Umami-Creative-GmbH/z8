@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import Script from "next/script";
 import { connection } from "next/server";
 import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
@@ -8,7 +9,12 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
-import { type DomainAuthContext, getDomainConfig } from "@/lib/domain";
+import {
+	classifyDomainHost,
+	type DomainAuthContext,
+	getDomainConfig,
+	getPlatformDomainConfig,
+} from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
@@ -23,15 +29,32 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 
 	// Derive custom domains from the trusted request Host header.
 	const headersList = await headers();
+	const host = headersList.get("host");
+	const domainClassification = classifyDomainHost(host);
+	if (domainClassification?.type === "unknownPlatform") {
+		notFound();
+	}
 	const customDomain = getCustomDomainFromHeaders(headersList);
 
-	// Fetch domain config if on custom domain, otherwise use global config
+	// Fetch domain config if on a platform or custom domain, otherwise use global config
 	let domainContext: DomainAuthContext | null = null;
-	if (customDomain) {
+	const platformDomainContext = await getPlatformDomainConfig(host ?? "");
+	const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
+	if (platformDomainContext) {
+		domainContext = {
+			...platformDomainContext,
+			turnstile: {
+				enabled: !!globalTurnstileSiteKey,
+				siteKey: globalTurnstileSiteKey,
+				isEnterprise: false,
+			},
+		};
+	} else if (domainClassification?.type === "platformOrganization") {
+		notFound();
+	} else if (customDomain) {
 		domainContext = await getDomainConfig(customDomain);
 	} else {
 		// Main domain: use global Turnstile config from env vars
-		const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
 		domainContext = {
 			organizationId: "",
 			domain: "",
@@ -59,7 +82,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	// Fetch cookie consent script for auth pages
 	const platformCookieConsentScript = customDomain ? null : await getCookieConsentScript();
 	const cookieConsentScript = selectAuthCookieConsentScript(
-		domainContext,
+		platformDomainContext ? null : domainContext,
 		platformCookieConsentScript,
 	);
 	const parsedCookieConsentScript = parseCookieConsentScript(cookieConsentScript);

@@ -2,4 +2,5 @@
 
 export { domainCache } from "./domain-cache";
 export * from "./domain-service";
+export * from "./platform-domain";
 export * from "./types";

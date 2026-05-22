@@ -34,7 +34,7 @@ The resolver should classify request hosts into these cases:
 - Customer custom domain: any non-main, non-platform host that should continue through `organization_domain` verification.
 - Unknown or unsupported host.
 
-For platform organization subdomains, resolve the first label against `organization.slug` first, then `organization.id`. Slug wins if a slug and id could match different organizations.
+For platform organization subdomains, resolve the first label against both `organization.slug` and `organization.id` where needed. Slugs are used for canonical generated URLs, but id aliases must not be shadowed by another organization's slug. If both a slug and an id match different organizations, the id match wins.
 
 ## Better Auth Compatibility
 
@@ -58,7 +58,7 @@ Requests to the configured main domain continue using global auth behavior and p
 
 Requests to `slug.ui.z8-time.app` resolve the organization by slug and create a domain context for auth pages. Auth pages should use organization branding from `organization_branding`, organization-specific social OAuth availability, and default platform auth settings for values that are currently stored only on custom-domain records. Custom-domain-only settings, such as per-domain auth config in `organization_domain.auth_config`, remain limited to verified customer custom domains unless a later feature moves those settings to an organization-level table.
 
-Requests to `orgid.ui.z8-time.app` resolve the organization by id. If the organization has a slug, the app should redirect to the canonical slug host for normal page requests so shared links converge on one URL. API and auth callback behavior should avoid unsafe method-changing redirects; where preserving the alias is safer, the resolver may accept the alias without redirecting.
+Requests to `orgid.ui.z8-time.app` resolve the organization by id. The id alias is unambiguous: if another organization has a slug equal to this id, the id owner wins. The app accepts aliases without middleware redirects in this implementation to avoid database work in middleware and unsafe method-changing redirects for API/auth requests.
 
 ### Customer Custom Domain
 
@@ -92,7 +92,7 @@ Automatic platform subdomains are derived from organization records and are not 
 ## Error Handling
 
 - Treat malformed or multi-level platform subdomains as unsupported unless a future requirement needs them.
-- If slug lookup fails, try organization id lookup.
+- Resolve slug and id matches so id aliases cannot be shadowed by another organization's slug.
 - If neither lookup succeeds, return a not-found result.
 - If organization lookup fails due to database errors, log the error and fall back only where the caller already has a safe default, such as URL generation.
 - If an organization slug changes, the old slug URL stops resolving. The organization id alias remains available.
@@ -110,7 +110,7 @@ Customer custom domains remain gated by DNS verification. Platform organization 
 Add focused coverage for:
 
 - Host classification for main domain, platform organization subdomain, organization-id alias, localhost, arbitrary custom domain, and unknown platform subdomain.
-- Platform resolver preference for slug over id.
+- Platform resolver behavior for normal slug matches, id aliases, and id-alias collisions where id wins.
 - `getOrganizationBaseUrl()` returning verified custom domain first, then slug platform URL, then default app URL.
 - Better Auth config including `*.ui.z8-time.app` in allowed hosts and trusted origins.
 - Auth layout resolving organization context for platform organization subdomains.

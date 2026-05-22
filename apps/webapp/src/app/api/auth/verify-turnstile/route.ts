@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { getDomainConfig } from "@/lib/domain";
+import {
+	classifyDomainHost,
+	getDomainConfig,
+	getPlatformOrganizationLabel,
+	resolvePlatformOrganization,
+} from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
@@ -27,18 +32,22 @@ export async function POST(request: Request) {
 
 		// Determine organization context from the trusted Host header.
 		// Don't trust client-supplied organizationId - derive it from the request context
-		const customDomain = getCustomDomainFromHeaders(request.headers);
-
-		let organizationId: string | undefined;
-		let isEnterprise = false;
-
-		if (customDomain) {
-			const domainConfig = await getDomainConfig(customDomain);
-			if (domainConfig) {
-				organizationId = domainConfig.organizationId;
-				isEnterprise = true;
-			}
+		const host = request.headers.get("host");
+		if (classifyDomainHost(host)?.type === "unknownPlatform") {
+			return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
 		}
+
+		const platformOrganizationLabel = getPlatformOrganizationLabel(host);
+		const platformOrganization = platformOrganizationLabel
+			? await resolvePlatformOrganization(platformOrganizationLabel)
+			: null;
+		if (platformOrganizationLabel && !platformOrganization) {
+			return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+		}
+		const customDomain = platformOrganization ? null : getCustomDomainFromHeaders(request.headers);
+		const domainConfig = customDomain ? await getDomainConfig(customDomain) : null;
+		const organizationId = platformOrganization?.id ?? domainConfig?.organizationId;
+		const isEnterprise = !!customDomain;
 
 		const result = await verifyTurnstileToken(token, organizationId, isEnterprise);
 
