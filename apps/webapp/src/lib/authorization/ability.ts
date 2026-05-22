@@ -16,6 +16,7 @@
 import {
 	AbilityBuilder,
 	createMongoAbility,
+	type ForcedSubject,
 	type MongoAbility,
 } from "@casl/ability";
 import type {
@@ -23,6 +24,10 @@ import type {
 	Subject,
 	PrincipalContext,
 	OrgScopedSubject,
+	EmployeeAuthorizationSubject,
+	TimeEntryAuthorizationSubject,
+	AbsenceAuthorizationSubject,
+	ApprovalAuthorizationSubject,
 } from "./types";
 
 // ============================================
@@ -30,9 +35,18 @@ import type {
 // ============================================
 
 /**
- * Application ability type using string subjects
+ * Application ability type using string subjects and CASL object subjects
  */
-export type AppAbility = MongoAbility<[Action, Subject]>;
+type AppObjectSubject =
+	| (EmployeeAuthorizationSubject & ForcedSubject<"Employee">)
+	| (TimeEntryAuthorizationSubject & ForcedSubject<"TimeEntry">)
+	| (AbsenceAuthorizationSubject & ForcedSubject<"Absence">)
+	| (ApprovalAuthorizationSubject & ForcedSubject<"Approval">);
+
+export type AppAbility = MongoAbility<[
+	Action,
+	Subject | AppObjectSubject,
+]>;
 
 // ============================================
 // ABILITY BUILDER
@@ -116,11 +130,19 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 	if (principal.employee && principal.activeOrganizationId) {
 		const empRole = principal.employee.role;
 		const teamId = principal.employee.teamId;
+		const orgCondition = { organizationId: principal.activeOrganizationId };
+		const selfCondition = {
+			organizationId: principal.activeOrganizationId,
+			employeeId: principal.employee.id,
+		};
+		const directReportCondition = {
+			organizationId: principal.activeOrganizationId,
+			employeeId: { $in: principal.managedEmployeeIds },
+		};
 
 		// Employee admin - full workforce access within org
 		if (empRole === "admin") {
 			can("manage", "Team");
-			can("manage", "Employee");
 			can("manage", "TimeEntry");
 			can("manage", "Shift");
 			can("manage", "Project");
@@ -136,16 +158,24 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "Calendar");
 			can("manage", "Surcharge");
 			can("manage", "Holiday");
+			can("manage", "Employee", orgCondition);
+			can("manage", "TimeEntry", orgCondition);
+			can("manage", "Absence", orgCondition);
+			can("manage", "Approval", orgCondition);
 		}
 
 		// Manager - can manage direct reports + approvals
 		if (empRole === "manager") {
 			// Self-service for own data
-			can("read", "Employee");
-			can("update", "Employee");
 			can("manage", "TimeEntry");
 			can("manage", "LeaveRequest");
 			can("manage", "Absence");
+			can(["read", "update"], "Employee", selfCondition);
+			can("read", "Employee", directReportCondition);
+			can("read", "TimeEntry", selfCondition);
+			can("read", "TimeEntry", directReportCondition);
+			can(["read", "create"], "Absence", selfCondition);
+			can(["read", "approve", "reject"], "Absence", directReportCondition);
 
 			// Can view team info
 			if (teamId) {
@@ -161,6 +191,10 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 				can("reject", "Approval");
 				can("approve", "Absence");
 				can("reject", "Absence");
+				can(["read", "approve", "reject"], "Approval", {
+					organizationId: principal.activeOrganizationId,
+					requestedBy: { $in: principal.managedEmployeeIds },
+				});
 			}
 
 			// Reports access (limited)
@@ -170,13 +204,14 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 
 		// Regular employee - self-service only
 		if (empRole === "employee") {
-			can("read", "Employee");
-			can("update", "Employee");
 			can("manage", "TimeEntry");
 			can("create", "LeaveRequest");
 			can("read", "LeaveRequest");
 			can("create", "Absence");
 			can("read", "Absence");
+			can(["read", "update"], "Employee", selfCondition);
+			can("read", "TimeEntry", selfCondition);
+			can(["read", "create"], "Absence", selfCondition);
 
 			// Can view own team info
 			if (teamId) {

@@ -11,6 +11,7 @@ import {
 	createEmptyAbility,
 	type PrincipalContext,
 } from "../index";
+import { asAppSubject } from "../subjects";
 
 // ============================================
 // TEST FIXTURES
@@ -650,5 +651,81 @@ describe("Custom Roles", () => {
 		// No extra permissions
 		expect(ability.can("approve", "Approval")).toBe(false);
 		expect(ability.can("manage", "Report")).toBe(false);
+	});
+});
+
+describe("Object Subject Conditions", () => {
+	const selfEmployee = {
+		id: EMPLOYEE_1,
+		employeeId: EMPLOYEE_1,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const managedEmployee = {
+		id: EMPLOYEE_2,
+		employeeId: EMPLOYEE_2,
+		organizationId: ORG_1,
+		teamId: TEAM_1,
+	};
+
+	const otherOrgEmployee = {
+		id: "emp-other-org",
+		employeeId: "emp-other-org",
+		organizationId: ORG_2,
+		teamId: TEAM_1,
+	};
+
+	it("allows employees to read and update their own employee record only in their organization", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+
+		expect(ability.can("read", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("update", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", managedEmployee))).toBe(false);
+		expect(ability.can("read", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
+	});
+
+	it("allows managers to read managed employees in their organization", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+			}),
+		);
+
+		expect(ability.can("read", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", managedEmployee))).toBe(true);
+		expect(ability.can("read", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
+	});
+
+	it("allows workforce admins to manage workforce records in their organization only", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "admin",
+					teamId: TEAM_1,
+				},
+			}),
+		);
+
+		expect(ability.can("manage", asAppSubject("Employee", selfEmployee))).toBe(true);
+		expect(ability.can("manage", asAppSubject("Employee", managedEmployee))).toBe(true);
+		expect(ability.can("manage", asAppSubject("Employee", otherOrgEmployee))).toBe(false);
 	});
 });

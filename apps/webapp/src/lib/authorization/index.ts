@@ -43,7 +43,15 @@ export type {
 	EmployeeScopedSubject,
 	ApprovalSubject,
 	SubjectTypeMap,
+	DatabaseSubjectName,
+	AppSubjectRecord,
+	EmployeeAuthorizationSubject,
+	TimeEntryAuthorizationSubject,
+	AbsenceAuthorizationSubject,
+	ApprovalAuthorizationSubject,
 } from "./types";
+
+export { asAppSubject } from "./subjects";
 
 // Ability builder
 export {
