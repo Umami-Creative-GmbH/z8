@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
@@ -70,7 +71,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, dailyRequirements, dailyActualMinutes, isLoading, error, refetch } =
+	const { events, dailyRequirements, dailyActualMinutes, workBalance, isLoading, error, refetch } =
 		useCalendarData({
 			organizationId,
 			month: currentMonth.getMonth(),
@@ -153,6 +154,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 				{/* Filters sidebar - hidden for year view */}
 				{viewMode !== "year" && (
 					<div className="space-y-4 order-2 md:order-1">
+						<WorkBalanceCard balance={workBalance} compact />
 						{/* Employee selector - replaces team toggle for better performance */}
 						<CalendarEmployeeSelector
 							currentEmployeeId={currentEmployeeId}

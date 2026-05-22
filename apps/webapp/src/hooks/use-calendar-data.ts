@@ -3,7 +3,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import type { CalendarEvent, DailyWorkActualMinutes, DailyWorkRequirements } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkActualMinutes,
+	DailyWorkRequirements,
+} from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import { queryKeys } from "@/lib/query/keys";
 import { parseSuperJsonResponse } from "@/lib/superjson";
@@ -12,6 +16,18 @@ import {
 	dailyWorkActualMinutesSchema,
 	dailyWorkRequirementsSchema,
 } from "@/lib/validations/calendar";
+import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
+
+const employeeWorkBalanceSchema = z.object({
+	employeeId: z.string(),
+	organizationId: z.string(),
+	actualMinutes: z.number().int(),
+	requiredMinutes: z.number().int(),
+	balanceMinutes: z.number().int(),
+	computedFromDate: z.string(),
+	computedThroughDate: z.string(),
+	computedAt: z.coerce.date(),
+});
 
 export interface CalendarFilters {
 	showHolidays: boolean;
@@ -33,6 +49,7 @@ export interface UseCalendarDataResult {
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
 	dailyActualMinutes: DailyWorkActualMinutes;
+	workBalance: EmployeeWorkBalancePayload | null;
 	eventsByDate: Map<string, CalendarEvent[]>;
 	isLoading: boolean;
 	error: Error | null;
@@ -52,6 +69,7 @@ async function fetchCalendarEvents(
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
 	dailyActualMinutes: DailyWorkActualMinutes;
+	workBalance: EmployeeWorkBalancePayload | null;
 }> {
 	const params = new URLSearchParams({
 		organizationId,
@@ -84,6 +102,7 @@ async function fetchCalendarEvents(
 		total: number;
 		dailyRequirements?: unknown;
 		dailyActualMinutes?: unknown;
+		workBalance?: unknown;
 	}>(response);
 
 	// Validate events with Zod schema
@@ -92,6 +111,7 @@ async function fetchCalendarEvents(
 		events: eventsSchema.parse(data.events),
 		dailyRequirements: dailyWorkRequirementsSchema.parse(data.dailyRequirements ?? {}),
 		dailyActualMinutes: dailyWorkActualMinutesSchema.parse(data.dailyActualMinutes ?? {}),
+		workBalance: employeeWorkBalanceSchema.nullable().parse(data.workBalance ?? null),
 	};
 }
 
@@ -122,7 +142,12 @@ export function useCalendarData({
 	};
 
 	const {
-		data: calendarData = { events: [], dailyRequirements: {}, dailyActualMinutes: {} },
+		data: calendarData = {
+			events: [],
+			dailyRequirements: {},
+			dailyActualMinutes: {},
+			workBalance: null,
+		},
 		isLoading,
 		error,
 	} = useQuery({
@@ -156,6 +181,7 @@ export function useCalendarData({
 		events: calendarData.events,
 		dailyRequirements: calendarData.dailyRequirements,
 		dailyActualMinutes: calendarData.dailyActualMinutes,
+		workBalance: calendarData.workBalance,
 		eventsByDate,
 		isLoading,
 		error: error instanceof Error ? error : null,

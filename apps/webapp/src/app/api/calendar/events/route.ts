@@ -1,14 +1,19 @@
-import { type NextRequest, NextResponse, connection } from "next/server";
 import { DateTime } from "luxon";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
-import type { CalendarEvent, DailyWorkActualMinutes, DailyWorkRequirements } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkActualMinutes,
+	DailyWorkRequirements,
+} from "@/lib/calendar/types";
 import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
-import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
+import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { superJsonResponse } from "@/lib/superjson";
+import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 
 function canViewOrganizationWideCalendar(role: string | null): boolean {
 	return role === "admin" || role === "manager";
@@ -107,7 +112,7 @@ export async function GET(request: NextRequest) {
 		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
 		const scopedEmployeeId = canViewOrganizationWideCalendar(orgContext.role)
 			? employeeId
-			: orgContext.employeeId ?? undefined;
+			: (orgContext.employeeId ?? undefined);
 
 		if (showsEmployeeScopedEvents && !scopedEmployeeId) {
 			return NextResponse.json({ error: "Forbidden: Employee profile required" }, { status: 403 });
@@ -128,6 +133,7 @@ export async function GET(request: NextRequest) {
 		let dailyRequirements: DailyWorkRequirements = {};
 		let dailyActualMinutes: DailyWorkActualMinutes = {};
 		let events: CalendarEvent[] = [];
+		let workBalance: Awaited<ReturnType<typeof getEmployeeWorkBalance>> = null;
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
 
 		if (fullYear) {
@@ -176,12 +182,24 @@ export async function GET(request: NextRequest) {
 			endDate,
 		});
 
+		if (scopedEmployeeId) {
+			try {
+				workBalance = await getEmployeeWorkBalance({
+					organizationId,
+					employeeId: scopedEmployeeId,
+				});
+			} catch (error) {
+				console.error("Error fetching calendar work balance:", error);
+			}
+		}
+
 		// Use SuperJSON to preserve Date objects in the response
 		return superJsonResponse({
 			events,
 			total: events.length,
 			dailyRequirements,
 			dailyActualMinutes,
+			workBalance,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar events:", error);
