@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 import {
+	buildEmptyWorkBalanceValues,
 	buildWorkBalanceValues,
 	getWorkBalanceBatchCutoffDate,
-	shouldClearWorkBalanceResult,
 	shouldIncludeWorkBalanceInBatch,
 } from "./service";
 
@@ -91,22 +91,29 @@ describe("work balance helpers", () => {
 		).toBe(false);
 	});
 
-	it("clears materialized balance rows when compute has no source records", () => {
+	it("builds clean current empty work balance values", () => {
 		const computedAt = new Date("2026-05-22T12:00:00.000Z");
 
-		expect(shouldClearWorkBalanceResult(null)).toBe(true);
 		expect(
-			shouldClearWorkBalanceResult(
-				buildWorkBalanceValues({
-					employeeId: "employee-1",
-					organizationId: "org-1",
-					actualMinutes: 0,
-					requiredMinutes: 0,
-					computedFromDate: "2026-05-22",
-					computedThroughDate: "2026-05-22",
-					computedAt,
-				}),
-			),
-		).toBe(false);
+			buildEmptyWorkBalanceValues({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				computedAt,
+			}),
+		).toEqual({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 0,
+			requiredMinutes: 0,
+			balanceMinutes: 0,
+			computedFromDate: "2026-05-22",
+			computedThroughDate: "2026-05-22",
+			computedAt,
+			updatedAt: computedAt,
+			isDirty: false,
+			dirtyFromDate: null,
+			refreshRequestedAt: null,
+			lastError: null,
+		});
 	});
 });

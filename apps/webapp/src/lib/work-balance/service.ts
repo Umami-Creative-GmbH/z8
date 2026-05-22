@@ -31,6 +31,24 @@ export function buildWorkBalanceValues(input: {
 	};
 }
 
+export function buildEmptyWorkBalanceValues(input: {
+	employeeId: string;
+	organizationId: string;
+	computedAt: Date;
+}) {
+	const todayDate = getWorkBalanceBatchCutoffDate(input.computedAt);
+
+	return buildWorkBalanceValues({
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		actualMinutes: 0,
+		requiredMinutes: 0,
+		computedFromDate: todayDate,
+		computedThroughDate: todayDate,
+		computedAt: input.computedAt,
+	});
+}
+
 export function getWorkBalanceBatchCutoffDate(now = new Date()): string {
 	return DateTime.fromJSDate(now, { zone: "utc" }).toISODate()!;
 }
@@ -40,12 +58,6 @@ export function shouldIncludeWorkBalanceInBatch(
 	todayDate: string,
 ): boolean {
 	return !balance || balance.isDirty || balance.computedThroughDate < todayDate;
-}
-
-export function shouldClearWorkBalanceResult(
-	values: ReturnType<typeof buildWorkBalanceValues> | null,
-): values is null {
-	return values === null;
 }
 
 export async function getEmployeeWorkBalance(input: {
