@@ -14,6 +14,7 @@ import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { superJsonResponse } from "@/lib/superjson";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
+import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
 function canViewOrganizationWideCalendar(role: string | null): boolean {
 	return role === "admin" || role === "manager";
@@ -84,6 +85,24 @@ async function fetchDailyRequirements(params: {
 	}
 }
 
+async function fetchWorkBalance(params: {
+	organizationId: string;
+	employeeId: string | undefined;
+}): Promise<EmployeeWorkBalancePayload | null> {
+	if (!params.employeeId) return null;
+	const employeeId = params.employeeId;
+
+	try {
+		return await getEmployeeWorkBalance({
+			organizationId: params.organizationId,
+			employeeId,
+		});
+	} catch (error) {
+		console.error("Error fetching calendar work balance:", error);
+		return null;
+	}
+}
+
 export async function GET(request: NextRequest) {
 	await connection();
 	try {
@@ -133,7 +152,7 @@ export async function GET(request: NextRequest) {
 		let dailyRequirements: DailyWorkRequirements = {};
 		let dailyActualMinutes: DailyWorkActualMinutes = {};
 		let events: CalendarEvent[] = [];
-		let workBalance: Awaited<ReturnType<typeof getEmployeeWorkBalance>> = null;
+		let workBalance: EmployeeWorkBalancePayload | null = null;
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
 
 		if (fullYear) {
@@ -175,23 +194,15 @@ export async function GET(request: NextRequest) {
 			dailyActualMinutes = monthResult.dailyActualMinutes;
 		}
 
-		dailyRequirements = await fetchDailyRequirements({
-			organizationId,
-			employeeId: scopedEmployeeId,
-			startDate,
-			endDate,
-		});
-
-		if (scopedEmployeeId) {
-			try {
-				workBalance = await getEmployeeWorkBalance({
-					organizationId,
-					employeeId: scopedEmployeeId,
-				});
-			} catch (error) {
-				console.error("Error fetching calendar work balance:", error);
-			}
-		}
+		[dailyRequirements, workBalance] = await Promise.all([
+			fetchDailyRequirements({
+				organizationId,
+				employeeId: scopedEmployeeId,
+				startDate,
+				endDate,
+			}),
+			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
+		]);
 
 		// Use SuperJSON to preserve Date objects in the response
 		return superJsonResponse({

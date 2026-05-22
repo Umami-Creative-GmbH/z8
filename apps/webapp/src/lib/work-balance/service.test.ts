@@ -1,13 +1,31 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
+
+const mockState = vi.hoisted(() => ({
+	db: {
+		query: {
+			employeeWorkBalance: {
+				findFirst: vi.fn(),
+			},
+		},
+	},
+}));
+
+vi.mock("@/db", () => ({ db: mockState.db }));
+
 import {
 	buildEmptyWorkBalanceValues,
 	buildWorkBalanceValues,
+	getEmployeeWorkBalance,
 	getWorkBalanceBatchCutoffDate,
 	shouldIncludeWorkBalanceInBatch,
 } from "./service";
 
 describe("work balance helpers", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("builds all-time work balance values", () => {
 		const computedAt = new Date("2026-05-22T12:00:00.000Z");
 
@@ -114,6 +132,39 @@ describe("work balance helpers", () => {
 			dirtyFromDate: null,
 			refreshRequestedAt: null,
 			lastError: null,
+		});
+	});
+
+	it("returns only public employee work balance payload fields", async () => {
+		const computedAt = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employeeWorkBalance.findFirst.mockResolvedValueOnce({
+			id: "balance-1",
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 2520,
+			requiredMinutes: 2400,
+			balanceMinutes: 120,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt,
+			isDirty: true,
+			dirtyFromDate: "2026-05-20",
+			refreshRequestedAt: computedAt,
+			lastError: "failed",
+			updatedAt: computedAt,
+		});
+
+		await expect(
+			getEmployeeWorkBalance({ employeeId: "employee-1", organizationId: "org-1" }),
+		).resolves.toEqual({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 2520,
+			requiredMinutes: 2400,
+			balanceMinutes: 120,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt,
 		});
 	});
 });

@@ -71,7 +71,18 @@ export async function getEmployeeWorkBalance(input: {
 		),
 	});
 
-	return row ?? null;
+	if (!row) return null;
+
+	return {
+		employeeId: row.employeeId,
+		organizationId: row.organizationId,
+		actualMinutes: row.actualMinutes,
+		requiredMinutes: row.requiredMinutes,
+		balanceMinutes: row.balanceMinutes,
+		computedFromDate: row.computedFromDate,
+		computedThroughDate: row.computedThroughDate,
+		computedAt: row.computedAt,
+	};
 }
 
 async function getFirstRelevantDate(input: {
