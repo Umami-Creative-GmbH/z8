@@ -18,12 +18,6 @@ import {
 } from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import {
-	createClockOutApprovalRequest,
-	createManualEntryApprovalRequest,
-	sendClockOutApprovalNotifications,
-	sendManualEntryApprovalNotifications,
-} from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
 	calculateAndPersistSurcharges,
@@ -58,6 +52,9 @@ type ManualEntryOverlapResult =
 	  };
 
 type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
+
+const UNSUPPORTED_TIME_APPROVAL_ERROR =
+	"Time changes requiring approval are not supported for this action yet";
 
 async function markWorkBalanceDirtyAfterClockOutBestEffort(
 	input: WorkBalanceDirtyInput,
@@ -212,24 +209,12 @@ export async function clockOut(
 	if (needsClockOutApproval && !currentEmployee.managerId) {
 		return { success: false, error: "No manager assigned to approve time changes" };
 	}
+	if (needsClockOutApproval) {
+		return { success: false, error: UNSUPPORTED_TIME_APPROVAL_ERROR };
+	}
 
 	try {
-		const clockOutApprovalParams = needsClockOutApproval && currentEmployee.managerId
-			? {
-					workPeriodId: activeWorkPeriod.id,
-					employeeId: currentEmployee.id,
-					managerId: currentEmployee.managerId,
-					organizationId: currentEmployee.organizationId,
-					startTime: activeWorkPeriod.startTime,
-					endTime: now,
-					durationMinutes: calculateDurationMinutes(activeWorkPeriod.startTime, now),
-				}
-			: null;
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
-			const transactionalDbService = {
-				db: tx,
-				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-			};
 			const clockOutEntry = await createTimeEntry(
 				{
 					employeeId: currentEmployee.id,
@@ -242,17 +227,6 @@ export async function clockOut(
 			);
 
 			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
-			const pendingChangesData = needsClockOutApproval
-				? {
-						originalStartTime: activeWorkPeriod.startTime.toISOString(),
-						originalEndTime: now.toISOString(),
-						originalDurationMinutes: sessionDurationMinutes,
-						requestedAt: now.toISOString(),
-						requestedBy: session.user.id,
-						isNewClockOut: true,
-					}
-				: null;
-
 			const [closedWorkPeriod] = await tx
 				.update(workPeriod)
 				.set({
@@ -262,8 +236,8 @@ export async function clockOut(
 					projectId: projectId || null,
 					workCategoryId: workCategoryId || null,
 					isActive: false,
-					approvalStatus: needsClockOutApproval ? "pending" : "approved",
-					pendingChanges: pendingChangesData,
+					approvalStatus: "approved",
+					pendingChanges: null,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -281,21 +255,8 @@ export async function clockOut(
 				throw new Error("Active work period was not updated");
 			}
 
-			if (clockOutApprovalParams) {
-				await createClockOutApprovalRequest(
-					{ ...clockOutApprovalParams, durationMinutes: sessionDurationMinutes },
-					{ dbService: transactionalDbService, notify: false },
-				);
-			}
-
 			return { entry: clockOutEntry, durationMinutes: sessionDurationMinutes };
 		});
-
-		if (clockOutApprovalParams) {
-			void sendClockOutApprovalNotifications(clockOutApprovalParams).catch((error) => {
-				logger.error({ error, workPeriodId: activeWorkPeriod.id }, "Failed to send clock-out approval notifications");
-			});
-		}
 
 		await markWorkBalanceDirtyAfterClockOutBestEffort(
 			{
@@ -700,6 +661,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	if (requiresApproval && !currentEmployee.managerId) {
 		return { success: false, error: "No manager assigned to approve time changes" };
 	}
+	if (requiresApproval) {
+		return { success: false, error: UNSUPPORTED_TIME_APPROVAL_ERROR };
+	}
 
 	try {
 		const localDate = DateTime.fromISO(data.date, { zone: timezone });
@@ -733,25 +697,8 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
-		const managerId = currentEmployee.managerId;
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
-		const manualApprovalParams = requiresApproval && managerId
-			? {
-					workPeriodId: "",
-					employeeId: currentEmployee.id,
-					managerId,
-					organizationId: currentEmployee.organizationId,
-					startTime: adjustedClockIn,
-					endTime: adjustedClockOut,
-					durationMinutes,
-					reason: data.reason,
-				}
-			: null;
 		const createdWorkPeriod = await db.transaction(async (tx) => {
-			const transactionalDbService = {
-				db: tx,
-				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-			};
 			const clockInEntry = await createTimeEntry(
 				{
 					employeeId: currentEmployee.id,
@@ -788,42 +735,15 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					projectId: data.projectId || null,
 					workCategoryId: data.workCategoryId || null,
 					isActive: false,
-					approvalStatus: requiresApproval ? "pending" : "approved",
-					pendingChanges: requiresApproval
-						? {
-								originalStartTime: adjustedClockIn.toISOString(),
-								originalEndTime: adjustedClockOut.toISOString(),
-								originalDurationMinutes: durationMinutes,
-								requestedAt: now.toISOString(),
-								requestedBy: session.user.id,
-								reason: data.reason,
-							}
-						: null,
+					approvalStatus: "approved",
+					pendingChanges: null,
 				})
 				.returning();
-
-			if (manualApprovalParams) {
-				await createManualEntryApprovalRequest(
-					{ ...manualApprovalParams, workPeriodId: period.id },
-					{ dbService: transactionalDbService, notify: false },
-				);
-			}
 
 			return period;
 		});
 
-		if (manualApprovalParams) {
-			void sendManualEntryApprovalNotifications({
-				...manualApprovalParams,
-				workPeriodId: createdWorkPeriod.id,
-			}).catch((error) => {
-				logger.error({ error, workPeriodId: createdWorkPeriod.id }, "Failed to send manual entry approval notifications");
-			});
-		}
-
-		if (!requiresApproval) {
-			await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
-		}
+		await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
 
 		await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 			{

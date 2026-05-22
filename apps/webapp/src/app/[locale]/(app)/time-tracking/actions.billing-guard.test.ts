@@ -37,6 +37,18 @@ function expectNoManagerApprovalGuardBeforeWrite(name: string, writeMarker: stri
 	expect(guardIndex, `${name} should reject missing managers before database writes`).toBeLessThan(writeIndex);
 }
 
+function expectUnsupportedApprovalGuardBeforeWrite(name: string, writeMarker: string) {
+	const body = functionBody(name);
+	const guardIndex = body.indexOf(
+		'error: "Time changes requiring approval are not supported for this action yet"',
+	);
+	const writeIndex = body.indexOf(writeMarker);
+
+	expect(guardIndex, `${name} should reject unsupported approval-required changes`).toBeGreaterThanOrEqual(0);
+	expect(writeIndex, `${name} should include expected write marker`).toBeGreaterThanOrEqual(0);
+	expect(guardIndex, `${name} should reject unsupported approvals before database writes`).toBeLessThan(writeIndex);
+}
+
 describe("legacy time-tracking action billing guards", () => {
 	it("imports the shared billing mutation guard helpers", () => {
 		expect(source).toContain(
@@ -107,27 +119,20 @@ describe("legacy time-tracking action billing guards", () => {
 		expectNoManagerApprovalGuardBeforeWrite(name, writeMarker);
 	});
 
-	it.each(["createClockOutApprovalRequest", "createManualEntryApprovalRequest"])(
-		"does not swallow %s creation failures",
-		(name) => {
-			const body = functionBody(name);
-			expect(body).toContain("catch (error)");
-			expect(body).toContain("throw error");
-		},
-	);
+	it.each([
+		["clockOut", "createTimeEntry({"],
+		["createManualTimeEntry", "createTimeEntry({"],
+	])("rejects unsupported approval-required %s before writing", (name, writeMarker) => {
+		expectUnsupportedApprovalGuardBeforeWrite(name, writeMarker);
+	});
 
 	it.each([
-		["clockOut", "createClockOutApprovalRequest", "markWorkBalanceDirtyBestEffort"],
-		["createManualTimeEntry", "createManualEntryApprovalRequest", "markWorkBalanceDirtyBestEffort"],
-	])("creates approval requests before dirty marking in approval-capable %s", (name, approvalMarker, dirtyMarker) => {
+		["clockOut", "createClockOutApprovalRequest"],
+		["createManualTimeEntry", "createManualEntryApprovalRequest"],
+	])("does not create approval requests from %s", (name, approvalMarker) => {
 		const body = functionBody(name);
 		const approvalIndex = body.indexOf(approvalMarker);
-		const dirtyIndex = body.indexOf(dirtyMarker);
 
-		expect(approvalIndex, `${name} should create approval requests`).toBeGreaterThanOrEqual(0);
-		expect(dirtyIndex, `${name} should mark work balance dirty`).toBeGreaterThanOrEqual(0);
-		expect(approvalIndex, `${name} should create approvals before dirty marking`).toBeLessThan(
-			dirtyIndex,
-		);
+		expect(approvalIndex, `${name} should not create approval requests`).toBe(-1);
 	});
 });

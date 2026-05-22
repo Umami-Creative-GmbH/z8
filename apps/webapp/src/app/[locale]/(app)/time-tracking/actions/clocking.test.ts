@@ -277,7 +277,7 @@ describe("clockOut", () => {
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
 	});
 
-	it("creates a pending approval when the clock-out policy requires it", async () => {
+	it("rejects approval-required clock-out before mutating", async () => {
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "employee-1",
@@ -288,33 +288,14 @@ describe("clockOut", () => {
 
 		const result = await clockOut();
 
-		expect(result.success).toBe(true);
-		expect(result.success && result.data.pendingApproval).toBe(true);
-		expect(mockState.updateSet).toHaveBeenCalledWith(
-			expect.objectContaining({
-				approvalStatus: "pending",
-				pendingChanges: {
-					originalStartTime: "2026-05-04T09:00:00.000Z",
-					originalEndTime: "2026-05-04T10:00:00.000Z",
-					originalDurationMinutes: 60,
-					requestedAt: "2026-05-04T10:00:00.000Z",
-					requestedBy: "user-1",
-					isNewClockOut: true,
-				},
-			}),
-		);
-		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith(
-			expect.objectContaining({
-				workPeriodId: "period-1",
-				employeeId: "employee-1",
-				managerId: "manager-1",
-				organizationId: "org-1",
-				startTime: new Date("2026-05-04T09:00:00.000Z"),
-				endTime: new Date("2026-05-04T10:00:00.000Z"),
-				durationMinutes: 60,
-			}),
-			expect.objectContaining({ notify: false, dbService: expect.any(Object) }),
-		);
+		expect(result).toEqual({
+			success: false,
+			error: "Time changes requiring approval are not supported for this action yet",
+		});
+		expect(mockState.transaction).not.toHaveBeenCalled();
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.updateSet).not.toHaveBeenCalled();
+		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
 	});
 
 	it("rejects approval-required clock-out when no manager is assigned", async () => {
@@ -393,7 +374,7 @@ describe("clockOut", () => {
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
 	});
 
-	it("fails approval-required clock-out when approval request creation fails", async () => {
+	it("does not mark work balance dirty when rejecting approval-required clock-out", async () => {
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "employee-1",
@@ -401,13 +382,12 @@ describe("clockOut", () => {
 			teamId: null,
 			managerId: "manager-1",
 		});
-		mockState.createClockOutApprovalRequest.mockRejectedValueOnce(new Error("approval failed"));
 
 		const result = await clockOut();
 
 		expect(result).toEqual({
 			success: false,
-			error: "Failed to clock out. Please try again.",
+			error: "Time changes requiring approval are not supported for this action yet",
 		});
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
@@ -465,19 +445,13 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 	});
 
-	it("fails approval-required manual entries when approval request creation fails", async () => {
+	it("rejects approval-required manual entries before mutating", async () => {
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
 			teamId: null,
 			managerId: "manager-1",
 		});
-		mockState.createManualEntryApprovalRequest.mockRejectedValueOnce(new Error("approval failed"));
-		mockState.createTimeEntry
-			.mockResolvedValueOnce({ id: "clock-in-1" })
-			.mockResolvedValueOnce({ id: "clock-out-1" });
-		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
-		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
 
 		const result = await createManualTimeEntry({
 			date: "2026-05-04",
@@ -488,15 +462,14 @@ describe("createManualTimeEntry", () => {
 
 		expect(result).toEqual({
 			success: false,
-			error: "Failed to create time entry. Please try again.",
+			error: "Time changes requiring approval are not supported for this action yet",
 		});
-		expect(mockState.createManualEntryApprovalRequest).toHaveBeenCalledWith(
-			expect.objectContaining({ workPeriodId: "period-1", managerId: "manager-1" }),
-			expect.objectContaining({ notify: false, dbService: expect.any(Object) }),
-		);
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		expect(mockState.transaction).toHaveBeenCalledTimes(1);
+		expect(mockState.transaction).not.toHaveBeenCalled();
 	});
 
 	it("marks the work balance dirty from the manual clock-in date after creating an approved entry", async () => {

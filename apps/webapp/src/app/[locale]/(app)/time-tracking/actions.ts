@@ -9,14 +9,10 @@ import { db } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
-	approvalRequest,
 	employee,
 	project,
 	projectAssignment,
 	surchargeCalculation,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
 	timeEntry,
 	userSettings,
 	workPeriod,
@@ -25,7 +21,6 @@ import {
 } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { auth } from "@/lib/auth";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -61,10 +56,6 @@ import {
 	checkProjectBudgetWarnings,
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
-import {
-	onClockOutPendingApproval,
-	onClockOutPendingApprovalToManager,
-} from "@/lib/notifications/triggers";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import {
 	getMonthRangeInTimezone,
@@ -129,132 +120,12 @@ async function markWorkBalanceDirtyBestEffort(
 	}
 }
 
-async function deleteCanonicalWorkRecordBestEffort(recordId: string | null | undefined) {
-	if (!recordId) {
-		return;
-	}
-
-	try {
-		await db.delete(timeRecordAllocation).where(eq(timeRecordAllocation.recordId, recordId));
-		await db.delete(timeRecordWork).where(eq(timeRecordWork.recordId, recordId));
-		await db.delete(timeRecord).where(eq(timeRecord.id, recordId));
-	} catch (error) {
-		logger.error({ error, recordId }, "Failed to delete canonical work record during rollback");
-	}
-}
-
-async function rollbackPendingClockOutApprovalMutationBestEffort(params: {
-	workPeriodId: string;
-	organizationId: string;
-	clockOutEntryId: string;
-	canonicalRecordId: string | null;
-}) {
-	try {
-		await db
-			.update(workPeriod)
-			.set({
-				clockOutId: null,
-				endTime: null,
-				durationMinutes: null,
-				canonicalRecordId: null,
-				isActive: true,
-				approvalStatus: "approved",
-				pendingChanges: null,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(eq(workPeriod.id, params.workPeriodId), eq(workPeriod.organizationId, params.organizationId)),
-			);
-
-		await db.delete(timeEntry).where(eq(timeEntry.id, params.clockOutEntryId));
-	} catch (error) {
-		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to rollback pending clock-out");
-	}
-
-	await deleteCanonicalWorkRecordBestEffort(params.canonicalRecordId);
-}
-
-async function rollbackPendingManualEntryApprovalMutationBestEffort(params: {
-	workPeriodId: string;
-	clockInEntryId: string;
-	clockOutEntryId: string;
-	canonicalRecordId: string | null;
-}) {
-	try {
-		await db.delete(workPeriod).where(eq(workPeriod.id, params.workPeriodId));
-		await db.delete(timeEntry).where(inArray(timeEntry.id, [params.clockInEntryId, params.clockOutEntryId]));
-	} catch (error) {
-		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to rollback pending manual entry");
-	}
-
-	await deleteCanonicalWorkRecordBestEffort(params.canonicalRecordId);
-}
-
-const approvalDbService = {
-	db,
-	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-} satisfies ApprovalDbService;
-
-type ApprovalRequestOptions = {
-	dbService?: ApprovalDbService;
-	notify?: boolean;
-};
-
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
 		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
 	> | null;
 };
-
-async function createPolicyAwareTimeEntryApprovalRequest(params: {
-	workPeriodId: string;
-	employeeId: string;
-	managerId: string;
-	organizationId: string;
-	reason: string;
-	overtimeRisk: "none" | "warning" | "violation";
-}, options?: ApprovalRequestOptions) {
-	const requestDbService = options?.dbService ?? approvalDbService;
-	const requester = await requestDbService.db.query.employee.findFirst({
-		where: eq(employee.id, params.employeeId),
-		columns: { organizationId: true, teamId: true },
-	});
-
-	try {
-		return await Effect.runPromise(
-			createTimeCorrectionApprovalWorkflow(requestDbService, {
-				organizationId: params.organizationId,
-				requesterEmployeeId: params.employeeId,
-				teamId:
-					requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
-				workPeriodId: params.workPeriodId,
-				defaultApproverId: params.managerId,
-				reason: params.reason,
-				overtimeRisk: params.overtimeRisk,
-			}),
-		);
-	} catch (error) {
-		logger.error(
-			{ error, workPeriodId: params.workPeriodId },
-			"Failed to resolve time-entry approval policy; using manager fallback",
-		);
-		const [approval] = await requestDbService.db
-			.insert(approvalRequest)
-			.values({
-				organizationId: params.organizationId,
-				entityType: "time_entry",
-				entityId: params.workPeriodId,
-				requestedBy: params.employeeId,
-				approverId: params.managerId,
-				status: "pending",
-				reason: params.reason,
-			})
-			.returning({ approvalRequestId: approvalRequest.id });
-
-		return { approvalRequestId: approval?.approvalRequestId ?? params.workPeriodId };
-	}
-}
 
 interface CorrectionRequest {
 	workPeriodId: string;
@@ -1361,6 +1232,12 @@ export async function clockOut(
 	if (needsClockOutApproval && !emp.managerId) {
 		return { success: false, error: "No manager assigned to approve time changes" };
 	}
+	if (needsClockOutApproval) {
+		return {
+			success: false,
+			error: "Time changes requiring approval are not supported for this action yet",
+		};
+	}
 
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
 	if (!isBillingMutationAllowed(billingAccess)) {
@@ -1384,29 +1261,13 @@ export async function clockOut(
 		const durationMs = now.getTime() - activePeriod.startTime.getTime();
 		const durationMinutes = Math.floor(durationMs / 60000);
 
-		// Determine approval status based on policy
-		const approvalStatus = needsClockOutApproval ? "pending" : "approved";
-
-		// Prepare pending changes data if approval is needed
-		// Note: Drizzle will serialize this object to JSON for storage
-		const pendingChangesData = needsClockOutApproval
-			? {
-					originalStartTime: activePeriod.startTime.toISOString(),
-					originalEndTime: now.toISOString(),
-					originalDurationMinutes: durationMinutes,
-					requestedAt: now.toISOString(),
-					requestedBy: session.user.id,
-					isNewClockOut: true,
-				}
-			: null;
-
 		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
 			organizationId: emp.organizationId,
 			employeeId: emp.id,
 			startAt: activePeriod.startTime,
 			endAt: now,
 			durationMinutes,
-			approvalState: approvalStatus,
+			approvalState: "approved",
 			createdBy: session.user.id,
 			workCategoryId: workCategoryId || null,
 			workLocationType: activePeriod.workLocationType ?? null,
@@ -1424,36 +1285,13 @@ export async function clockOut(
 				workCategoryId: workCategoryId || null,
 				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
-				approvalStatus,
-				pendingChanges: pendingChangesData,
+				approvalStatus: "approved",
+				pendingChanges: null,
 				updatedAt: new Date(),
 			})
 			.where(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
-
-		// If clock-out needs approval, create an approval request
-		if (needsClockOutApproval && emp.managerId) {
-			try {
-				await createClockOutApprovalRequest({
-					workPeriodId: activePeriod.id,
-					employeeId: emp.id,
-					managerId: emp.managerId,
-					organizationId: emp.organizationId,
-					startTime: activePeriod.startTime,
-					endTime: now,
-					durationMinutes,
-				});
-			} catch (error) {
-				await rollbackPendingClockOutApprovalMutationBestEffort({
-					workPeriodId: activePeriod.id,
-					organizationId: emp.organizationId,
-					clockOutEntryId: entry.id,
-					canonicalRecordId: canonicalRecord.id,
-				});
-				throw error;
-			}
-		}
 
 		await markWorkBalanceDirtyBestEffort(
 			{
@@ -2574,122 +2412,6 @@ export async function updateWorkPeriodProject(
 }
 
 /**
- * Helper function to create an approval request for clock-out (0-day policy)
- * Creates the approval request and sends notification to manager
- */
-export async function createClockOutApprovalRequest(params: {
-	workPeriodId: string;
-	employeeId: string;
-	managerId: string;
-	organizationId: string;
-	startTime: Date;
-	endTime: Date;
-	durationMinutes: number;
-}, options?: ApprovalRequestOptions): Promise<void> {
-	const {
-		workPeriodId,
-		employeeId,
-		managerId,
-		organizationId,
-		startTime,
-		endTime,
-		durationMinutes,
-	} = params;
-
-	try {
-		// Create approval request
-		await createPolicyAwareTimeEntryApprovalRequest({
-			workPeriodId,
-			employeeId,
-			managerId,
-			organizationId,
-			reason: "Clock-out requires approval (0-day policy)",
-			overtimeRisk: "warning",
-		}, options);
-
-		if (options?.notify !== false) {
-			await sendClockOutApprovalNotifications(params);
-		}
-
-		logger.info(
-			{
-				workPeriodId,
-				employeeId,
-				managerId,
-				durationMinutes,
-			},
-			"Clock-out approval request created",
-		);
-	} catch (error) {
-		logger.error({ error, workPeriodId }, "Failed to create clock-out approval request");
-		throw error;
-	}
-}
-
-export async function sendClockOutApprovalNotifications(params: {
-	workPeriodId: string;
-	employeeId: string;
-	managerId: string;
-	organizationId: string;
-	startTime: Date;
-	endTime: Date;
-	durationMinutes: number;
-}) {
-	const {
-		workPeriodId,
-		employeeId,
-		managerId,
-		organizationId,
-		startTime,
-		endTime,
-		durationMinutes,
-	} = params;
-	const [employeeData, managerData] = await Promise.all([
-		db.query.employee.findFirst({
-			where: eq(employee.id, employeeId),
-			with: { user: { columns: { id: true, name: true } } },
-		}),
-		db.query.employee.findFirst({
-			where: eq(employee.id, managerId),
-			columns: { userId: true },
-		}),
-	]);
-
-	const employeeUserId = employeeData?.userId;
-	const employeeName = employeeData?.user?.name || "Employee";
-	const managerUserId = managerData?.userId;
-
-	if (employeeUserId) {
-		void onClockOutPendingApproval({
-			workPeriodId,
-			employeeUserId,
-			employeeName,
-			organizationId,
-			startTime,
-			endTime,
-			durationMinutes,
-		}).catch((err) => {
-			logger.error({ error: err }, "Failed to send clock-out pending notification to employee");
-		});
-	}
-
-	if (managerUserId) {
-		void onClockOutPendingApprovalToManager({
-			workPeriodId,
-			employeeUserId: employeeUserId || "",
-			employeeName,
-			organizationId,
-			startTime,
-			endTime,
-			durationMinutes,
-			managerUserId,
-		}).catch((err) => {
-			logger.error({ error: err }, "Failed to send clock-out pending notification to manager");
-		});
-	}
-}
-
-/**
  * Helper function to check project budget warnings after clock-out
  * Gets project details and total hours, then triggers budget warning check
  */
@@ -2996,6 +2718,12 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	if (requiresApproval && !emp.managerId) {
 		return { success: false, error: "No manager assigned to approve time changes" };
 	}
+	if (requiresApproval) {
+		return {
+			success: false,
+			error: "Time changes requiring approval are not supported for this action yet",
+		};
+	}
 
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
 	if (!isBillingMutationAllowed(billingAccess)) {
@@ -3106,29 +2834,13 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const durationMs = finalClockOut.getTime() - finalClockIn.getTime();
 		const durationMinutes = Math.floor(durationMs / 60000);
 
-		// Determine approval status based on policy
-		const approvalStatus = requiresApproval ? "pending" : "approved";
-
-		// Prepare pending changes data if approval is needed
-		const pendingChangesData = requiresApproval
-			? {
-					originalStartTime: finalClockIn.toISOString(),
-					originalEndTime: finalClockOut.toISOString(),
-					originalDurationMinutes: durationMinutes,
-					requestedAt: now.toISOString(),
-					requestedBy: session.user.id,
-					isManualEntry: true,
-					reason: data.reason,
-				}
-			: null;
-
 		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
 			organizationId: emp.organizationId,
 			employeeId: emp.id,
 			startAt: finalClockIn,
 			endAt: finalClockOut,
 			durationMinutes,
-			approvalState: approvalStatus,
+			approvalState: "approved",
 			createdBy: session.user.id,
 			workCategoryId: data.workCategoryId || null,
 			projectId: data.projectId || null,
@@ -3150,34 +2862,10 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				workCategoryId: data.workCategoryId || null,
 				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
-				approvalStatus,
-				pendingChanges: pendingChangesData,
+				approvalStatus: "approved",
+				pendingChanges: null,
 			})
 			.returning();
-
-		// If approval required, create approval request and notify manager
-		if (requiresApproval && emp.managerId) {
-			try {
-				await createManualEntryApprovalRequest({
-					workPeriodId: period.id,
-					employeeId: emp.id,
-					managerId: emp.managerId,
-					organizationId: emp.organizationId,
-					startTime: finalClockIn,
-					endTime: finalClockOut,
-					durationMinutes,
-					reason: data.reason,
-				});
-			} catch (error) {
-				await rollbackPendingManualEntryApprovalMutationBestEffort({
-					workPeriodId: period.id,
-					clockInEntryId: clockInEntry.id,
-					clockOutEntryId: clockOutEntry.id,
-					canonicalRecordId: canonicalRecord.id,
-				});
-				throw error;
-			}
-		}
 
 		await markWorkBalanceDirtyBestEffort(
 			{
@@ -3189,9 +2877,7 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		);
 
 		// Calculate and persist surcharge credits if feature is enabled
-		if (!requiresApproval) {
-			await calculateAndPersistSurcharges(period.id, emp.organizationId);
-		}
+		await calculateAndPersistSurcharges(period.id, emp.organizationId);
 
 		logger.info(
 			{
@@ -3229,105 +2915,6 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			success: false,
 			error: "Failed to create time entry. Please try again.",
 		};
-	}
-}
-
-/**
- * Helper function to create an approval request for manual time entry
- */
-async function createManualEntryApprovalRequest(params: {
-	workPeriodId: string;
-	employeeId: string;
-	managerId: string;
-	organizationId: string;
-	startTime: Date;
-	endTime: Date;
-	durationMinutes: number;
-	reason: string;
-}): Promise<void> {
-	const {
-		workPeriodId,
-		employeeId,
-		managerId,
-		organizationId,
-		startTime,
-		endTime,
-		durationMinutes,
-		reason,
-	} = params;
-
-	try {
-		// Create approval request
-		await createPolicyAwareTimeEntryApprovalRequest({
-			workPeriodId,
-			employeeId,
-			managerId,
-			organizationId,
-			reason: `Manual time entry: ${reason}`,
-			overtimeRisk: "none",
-		});
-
-		// Get employee and manager details for notifications
-		const [employeeData, managerData] = await Promise.all([
-			db.query.employee.findFirst({
-				where: eq(employee.id, employeeId),
-				with: { user: { columns: { id: true, name: true } } },
-			}),
-			db.query.employee.findFirst({
-				where: eq(employee.id, managerId),
-				columns: { userId: true },
-			}),
-		]);
-
-		const employeeUserId = employeeData?.userId;
-		const employeeName = employeeData?.user?.name || "Employee";
-		const managerUserId = managerData?.userId;
-
-		// Fire-and-forget: Send notifications
-		if (employeeUserId) {
-			void onClockOutPendingApproval({
-				workPeriodId,
-				employeeUserId,
-				employeeName,
-				organizationId,
-				startTime,
-				endTime,
-				durationMinutes,
-			}).catch((err) => {
-				logger.error(
-					{ error: err },
-					"Failed to send manual entry pending notification to employee",
-				);
-			});
-		}
-
-		if (managerUserId) {
-			void onClockOutPendingApprovalToManager({
-				workPeriodId,
-				employeeUserId: employeeUserId || "",
-				employeeName,
-				organizationId,
-				startTime,
-				endTime,
-				durationMinutes,
-				managerUserId,
-			}).catch((err) => {
-				logger.error({ error: err }, "Failed to send manual entry pending notification to manager");
-			});
-		}
-
-		logger.info(
-			{
-				workPeriodId,
-				employeeId,
-				managerId,
-				durationMinutes,
-			},
-			"Manual entry approval request created",
-		);
-	} catch (error) {
-		logger.error({ error, workPeriodId }, "Failed to create manual entry approval request");
-		throw error;
 	}
 }
 

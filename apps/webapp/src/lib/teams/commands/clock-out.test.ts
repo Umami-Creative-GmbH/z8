@@ -31,34 +31,24 @@ describe("Teams clock-out command work balance invalidation", () => {
 });
 
 describe("Teams clock-out command approvals", () => {
-	it("requires a primary manager before mutating an approval-required clock-out", () => {
+	it("rejects approval-required clock-out before mutating", () => {
 		const source = readClockOutSource();
 		const approvalIndex = source.indexOf("if (needsClockOutApproval)");
-		const managerIndex = source.indexOf("db.query.employeeManagers.findFirst");
-		const noManagerIndex = source.indexOf("bot.cmd.clockout.noApprover");
+		const unsupportedIndex = source.indexOf("Time changes requiring approval are not supported for this action yet");
 		const insertIndex = source.indexOf(".insert(timeEntry)");
 		const updateIndex = source.indexOf(".update(workPeriod)");
 
 		expect(approvalIndex).toBeGreaterThanOrEqual(0);
-		expect(managerIndex).toBeGreaterThan(approvalIndex);
-		expect(noManagerIndex).toBeGreaterThan(managerIndex);
-		expect(insertIndex).toBeGreaterThan(noManagerIndex);
-		expect(updateIndex).toBeGreaterThan(noManagerIndex);
+		expect(unsupportedIndex).toBeGreaterThan(approvalIndex);
+		expect(insertIndex).toBeGreaterThan(unsupportedIndex);
+		expect(updateIndex).toBeGreaterThan(unsupportedIndex);
 	});
 
-	it("creates approval requests in the same transaction as primary mutations", () => {
+	it("does not create approval requests for clock-out", () => {
 		const source = readClockOutSource();
-		const createIndex = source.indexOf("await createClockOutApprovalRequest");
-		const transactionIndex = source.indexOf("const entry = await db.transaction");
-		const transactionEndIndex = source.indexOf("return createdEntry", createIndex);
-		const notifyIndex = source.indexOf("sendClockOutApprovalNotifications(approvalParams");
-		const dirtyIndex = source.indexOf("await markEmployeeWorkBalanceDirty");
 
-		expect(createIndex).toBeGreaterThanOrEqual(0);
-		expect(createIndex).toBeGreaterThan(transactionIndex);
-		expect(createIndex).toBeLessThan(transactionEndIndex);
-		expect(source.slice(createIndex, transactionEndIndex)).toContain("notify: false");
-		expect(notifyIndex).toBeGreaterThan(transactionEndIndex);
-		expect(dirtyIndex).toBeGreaterThan(createIndex);
+		expect(source).not.toContain("createClockOutApprovalRequest");
+		expect(source).not.toContain("sendClockOutApprovalNotifications");
+		expect(source).not.toContain("pendingApproval");
 	});
 });

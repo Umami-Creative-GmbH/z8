@@ -3,14 +3,14 @@
  *
  * Allows employees to clock out directly from a bot (Telegram, Teams, etc.).
  * Creates a time entry, updates the work period, and triggers post-clock-out
- * processing (compliance, surcharges, break enforcement, approval).
+ * processing (compliance, surcharges, break enforcement).
  */
 
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, employeeManagers, timeEntry, userSettings, workPeriod } from "@/db/schema";
+import { employee, timeEntry, userSettings, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import { fmtTime, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
@@ -26,9 +26,7 @@ import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	calculateAndPersistSurcharges,
 	checkComplianceAfterClockOut,
-	createClockOutApprovalRequest,
 	enforceBreaksAfterClockOut,
-	sendClockOutApprovalNotifications,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 
 const logger = createLogger("BotCommand:ClockOut");
@@ -103,28 +101,14 @@ export const clockOutCommand: BotCommand = {
 				logger.warn({ error }, "Failed to check clock-out approval requirement");
 			}
 
-			let primaryManagerId: string | undefined;
 			if (needsClockOutApproval) {
-				const primaryManager =
-					(await db.query.employeeManagers.findFirst({
-						where: and(
-							eq(employeeManagers.employeeId, emp.id),
-							eq(employeeManagers.isPrimary, true),
-						),
-						columns: { managerId: true },
-					})) ?? undefined;
-
-				if (!primaryManager) {
-					return {
-						type: "text",
-						text: t(
-							"bot.cmd.clockout.noApprover",
-							"Clock-out approval is required, but no primary manager is assigned. Ask an admin to assign a manager.",
-						),
-					};
-				}
-
-				primaryManagerId = primaryManager.managerId;
+				return {
+					type: "text",
+					text: t(
+						"bot.cmd.clockout.unsupportedApproval",
+						"Time changes requiring approval are not supported for this action yet",
+					),
+				};
 			}
 
 			// Get previous entry for blockchain linking
@@ -148,37 +132,7 @@ export const clockOutCommand: BotCommand = {
 			// Update work period
 			const durationMs = now.getTime() - activePeriod.startTime.getTime();
 			const durationMinutes = Math.floor(durationMs / 60000);
-			const approvalStatus = needsClockOutApproval ? "pending" : "approved";
-
-			const pendingChangesData = needsClockOutApproval
-				? {
-						originalStartTime: activePeriod.startTime.toISOString(),
-						originalEndTime: now.toISOString(),
-						originalDurationMinutes: durationMinutes,
-						requestedAt: now.toISOString(),
-						requestedBy: ctx.userId,
-						isNewClockOut: true,
-					}
-				: null;
-
-			const approvalParams = needsClockOutApproval && primaryManagerId
-				? {
-						workPeriodId: activePeriod.id,
-						employeeId: emp.id,
-						managerId: primaryManagerId,
-						organizationId: emp.organizationId,
-						startTime: activePeriod.startTime,
-						endTime: now,
-						durationMinutes,
-					}
-				: null;
-
 			const entry = await db.transaction(async (tx) => {
-				const transactionalDbService = {
-					db: tx,
-					query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-				};
-
 				// Create clock-out time entry
 				const [createdEntry] = await tx
 					.insert(timeEntry)
@@ -206,27 +160,14 @@ export const clockOutCommand: BotCommand = {
 						endTime: now,
 						durationMinutes,
 						isActive: false,
-						approvalStatus,
-						pendingChanges: pendingChangesData,
+						approvalStatus: "approved",
+						pendingChanges: null,
 						updatedAt: new Date(),
 					})
 					.where(eq(workPeriod.id, activePeriod.id));
 
-				if (approvalParams) {
-					await createClockOutApprovalRequest(approvalParams, {
-						dbService: transactionalDbService,
-						notify: false,
-					});
-				}
-
 				return createdEntry;
 			});
-
-			if (approvalParams) {
-				void sendClockOutApprovalNotifications(approvalParams).catch((error) => {
-					logger.error({ error, workPeriodId: activePeriod.id, timeEntryId: entry.id }, "Failed to send Teams clock-out approval notifications");
-				});
-			}
 
 			try {
 				await markEmployeeWorkBalanceDirty({
@@ -278,12 +219,14 @@ export const clockOutCommand: BotCommand = {
 			const hours = Math.floor(durationMinutes / 60);
 			const mins = durationMinutes % 60;
 
-			let text = t("bot.cmd.clockout.success", "Clocked out at {time}. Duration: {hours}h {minutes}m.", { time: fmtTime(clockOutTime, ctx.locale), hours, minutes: mins });
-			if (needsClockOutApproval) {
-				text += `\n\n${t("bot.cmd.clockout.pendingApproval", "Your clock-out is pending manager approval.")}`;
-			}
-
-			return { type: "text", text };
+			return {
+				type: "text",
+				text: t(
+					"bot.cmd.clockout.success",
+					"Clocked out at {time}. Duration: {hours}h {minutes}m.",
+					{ time: fmtTime(clockOutTime, ctx.locale), hours, minutes: mins },
+				),
+			};
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to clock out");
 			throw error;
