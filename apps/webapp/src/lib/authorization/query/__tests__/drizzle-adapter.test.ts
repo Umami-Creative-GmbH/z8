@@ -1,6 +1,7 @@
 import { AbilityBuilder, createMongoAbility, type MongoAbility } from "@casl/ability";
 import { PgDialect, pgTable, text, boolean } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
+import { defineAbilityFor } from "../../ability";
 import {
 	accessibleByDrizzle,
 	UnsupportedAuthorizationConditionError,
@@ -12,6 +13,13 @@ const documents = pgTable("documents", {
 	ownerId: text("owner_id"),
 	organizationId: text("organization_id"),
 	private: boolean("private"),
+});
+
+const approvals = pgTable("approval_requests", {
+	approverId: text("approver_id"),
+	organizationId: text("organization_id"),
+	requestedBy: text("requested_by"),
+	status: text("status"),
 });
 
 type TestAbility = MongoAbility<["read" | "update", "Document"]>;
@@ -53,6 +61,55 @@ describe("accessibleByDrizzle", () => {
 		expect(predicate).not.toBeNull();
 		expect(toSql(predicate)).toContain('"documents"."organization_id" = $1');
 		expect(toSql(predicate)).toContain('"documents"."owner_id" in ($2, $3)');
+	});
+
+	it("returns a predicate for $ne conditions", () => {
+		const ability = buildAbility((can) => {
+			can("read", "Document", {
+				organizationId: { $ne: "org-1" },
+			});
+		});
+
+		const predicate = accessibleByDrizzle(ability, "read", "Document", fields);
+
+		expect(predicate).not.toBeNull();
+		expect(toSql(predicate)).toContain('"documents"."organization_id" <> $1');
+	});
+
+	it("translates manager Approval predicates with generated guardrails", () => {
+		const ability = defineAbilityFor({
+			activeOrganizationId: "org-1",
+			customRoles: [],
+			employee: {
+				id: "manager-1",
+				organizationId: "org-1",
+				role: "manager",
+				teamId: null,
+			},
+			isPlatformAdmin: false,
+			managedEmployeeIds: ["employee-1"],
+			orgMembership: {
+				organizationId: "org-1",
+				role: "member",
+				status: "active",
+			},
+			permissions: {
+				byTeamId: new Map(),
+				orgWide: null,
+			},
+			userId: "user-1",
+		});
+
+		const predicate = accessibleByDrizzle(ability, "read", "Approval", {
+			approverId: approvals.approverId,
+			organizationId: approvals.organizationId,
+			requestedBy: approvals.requestedBy,
+			status: approvals.status,
+		});
+
+		expect(predicate).not.toBeNull();
+		expect(toSql(predicate)).toContain('"approval_requests"."organization_id" = $');
+		expect(toSql(predicate)).toContain('"approval_requests"."requested_by" in ($');
 	});
 
 	it("returns a predicate for explicit $and, $or, and $not conditions", () => {

@@ -1,11 +1,11 @@
 import type { AnyAbility } from "@casl/ability";
 import { rulesToCondition } from "@casl/ability/extra";
-import { and, eq, inArray, not, or, type SQL } from "drizzle-orm";
+import { and, eq, inArray, ne, not, or, type SQL } from "drizzle-orm";
 import type { DrizzleFieldMap } from "./types";
 
 export type { AccessiblePredicate, DrizzleFieldMap } from "./types";
 
-type ConditionValue = string | number | boolean | { $in: readonly unknown[] };
+type ConditionValue = string | number | boolean | { $in: readonly unknown[] } | { $ne: unknown };
 interface MongoCondition {
 	[fieldName: string]: ConditionValue | MongoCondition | MongoCondition[];
 }
@@ -89,6 +89,10 @@ function conditionToPredicate(condition: MongoCondition, fields: DrizzleFieldMap
 			return inArray(field, value.$in);
 		}
 
+		if (isNeOperator(value)) {
+			return ne(field, value.$ne);
+		}
+
 		if (isPlainObject(value)) {
 			throw unsupportedOperator(fieldName);
 		}
@@ -137,6 +141,10 @@ function combineOr(predicates: SQL[]): SQL {
 
 function isInOperator(value: unknown): value is { $in: readonly unknown[] } {
 	return isPlainObject(value) && "$in" in value && Array.isArray(value.$in) && Object.keys(value).length === 1;
+}
+
+function isNeOperator(value: unknown): value is { $ne: unknown } {
+	return isPlainObject(value) && "$ne" in value && Object.keys(value).length === 1;
 }
 
 function isConditionObject(value: unknown): value is MongoCondition {

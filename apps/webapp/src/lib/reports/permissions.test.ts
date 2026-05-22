@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	canReadReportEmployee,
 	getManagerReportAccessibleEmployees,
 	getReportAccessibleEmployeeIds,
 } from "./permissions";
@@ -114,5 +115,43 @@ describe("getManagerReportAccessibleEmployees", () => {
 			firstName: "UserFirst",
 			lastName: "UserLast",
 		});
+	});
+});
+
+describe("canReadReportEmployee", () => {
+	it("uses CASL Employee object-subject visibility for report targets", () => {
+		expect(
+			canReadReportEmployee({
+				currentEmployee: employeeSource({ id: "manager-1", role: "manager" }),
+				managedEmployeeIds: ["employee-1"],
+				targetEmployee: employeeSource({ id: "employee-1" }),
+			}),
+		).toBe(true);
+
+		expect(
+			canReadReportEmployee({
+				currentEmployee: employeeSource({ id: "manager-1", role: "manager" }),
+				managedEmployeeIds: ["employee-1"],
+				targetEmployee: employeeSource({ id: "employee-2" }),
+			}),
+		).toBe(false);
+	});
+
+	it("preserves admin all-in-org and employee self report visibility", () => {
+		expect(
+			canReadReportEmployee({
+				currentEmployee: employeeSource({ id: "admin-1", role: "admin" }),
+				managedEmployeeIds: [],
+				targetEmployee: employeeSource({ id: "employee-1" }),
+			}),
+		).toBe(true);
+
+		expect(
+			canReadReportEmployee({
+				currentEmployee: employeeSource({ id: "employee-1" }),
+				managedEmployeeIds: [],
+				targetEmployee: employeeSource({ id: "employee-2" }),
+			}),
+		).toBe(false);
 	});
 });

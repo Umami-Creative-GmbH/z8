@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, type SQL } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, timeEntry } from "@/db/schema";
 import {
@@ -43,6 +43,7 @@ export interface GetTimeEntriesInput {
 	from?: Date;
 	to?: Date;
 	includeSuperseded?: boolean;
+	authorizationPredicate?: SQL<unknown>;
 }
 
 export class TimeEntryService extends Context.Tag("TimeEntryService")<
@@ -333,6 +334,10 @@ export const TimeEntryServiceLive = Layer.effect(
 
 							if (input.to) {
 								conditions.push(lte(timeEntry.timestamp, input.to));
+							}
+
+							if (input.authorizationPredicate) {
+								conditions.push(input.authorizationPredicate);
 							}
 
 							return await dbService.db

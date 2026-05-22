@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { employee, workPeriod } from "@/db/schema";
+import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
 
 		// Determine which employee's entries to fetch
 		const targetEmployeeId = employeeId || currentEmployee.id;
+		let timeEntryAccess: ReturnType<typeof accessibleByDrizzle> | null = null;
 
 		// Only allow viewing own entries unless CASL permits this employee's entries.
 		if (targetEmployeeId !== currentEmployee.id) {
@@ -86,9 +87,9 @@ export async function GET(request: NextRequest) {
 			}
 
 			try {
-				accessibleByDrizzle(ability, "read", "TimeEntry", {
-					organizationId: workPeriod.organizationId,
-					employeeId: workPeriod.employeeId,
+				timeEntryAccess = accessibleByDrizzle(ability, "read", "TimeEntry", {
+					organizationId: timeEntry.organizationId,
+					employeeId: timeEntry.employeeId,
 				});
 			} catch (error) {
 				if (!(error instanceof UnsupportedAuthorizationConditionError)) {
@@ -138,6 +139,7 @@ export async function GET(request: NextRequest) {
 					from: from ? new Date(from) : undefined,
 					to: to ? new Date(to) : undefined,
 					includeSuperseded,
+					authorizationPredicate: timeEntryAccess ?? undefined,
 				}),
 			);
 		});

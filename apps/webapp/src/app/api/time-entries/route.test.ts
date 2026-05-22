@@ -55,11 +55,15 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: {
+		employee: {
 		id: "employee.id",
 		isActive: "employee.isActive",
 		organizationId: "employee.organizationId",
 		userId: "employee.userId",
+	},
+	timeEntry: {
+		employeeId: "timeEntry.employeeId",
+		organizationId: "timeEntry.organizationId",
 	},
 	workPeriod: {
 		employeeId: "workPeriod.employeeId",
@@ -125,8 +129,9 @@ describe("GET /api/time-entries authorization source", () => {
 		expect(source).toContain("accessibleByDrizzle");
 		expect(source).toContain("asAppSubject");
 		expect(source).toContain("TimeEntry");
-		expect(source).toContain("workPeriod.organizationId");
-		expect(source).toContain("workPeriod.employeeId");
+		expect(source).toContain("timeEntry.organizationId");
+		expect(source).toContain("timeEntry.employeeId");
+		expect(source).toContain("authorizationPredicate");
 	});
 });
 
@@ -185,6 +190,30 @@ describe("GET /api/time-entries", () => {
 				organizationId: "org-1",
 			}),
 		);
+		expect(mockState.runPromise).toHaveBeenCalledTimes(1);
+	});
+
+	it("passes translated authorization predicates to the time entry service", async () => {
+		const predicate = { type: "sql", source: "time-entry-access" };
+		mockState.accessibleByDrizzle.mockReturnValue(predicate);
+		mockState.limit
+			.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1" }])
+			.mockResolvedValueOnce([{ id: "employee-2", organizationId: "org-1" }]);
+
+		const source = readFileSync("src/app/api/time-entries/route.ts", "utf8");
+		const response = await GET(createGetRequest("employee-2"));
+
+		expect(response.status).toBe(200);
+		expect(mockState.accessibleByDrizzle).toHaveBeenCalledWith(
+			expect.anything(),
+			"read",
+			"TimeEntry",
+			expect.objectContaining({
+				employeeId: "timeEntry.employeeId",
+				organizationId: "timeEntry.organizationId",
+			}),
+		);
+		expect(source).toContain("authorizationPredicate: timeEntryAccess ?? undefined");
 		expect(mockState.runPromise).toHaveBeenCalledTimes(1);
 	});
 
