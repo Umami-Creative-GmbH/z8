@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
-import { buildDailyWorkRequirements } from "./work-policy-requirements";
+import {
+	applyApprovedAbsencesToDailyRequirements,
+	buildDailyWorkRequirements,
+} from "./work-policy-requirements";
 
 function basePolicy(schedule: EffectiveWorkPolicy["schedule"]): EffectiveWorkPolicy {
 	return {
@@ -105,5 +108,63 @@ describe("buildDailyWorkRequirements", () => {
 		});
 
 		expect(requirements).toEqual({});
+	});
+
+	it("applies approved full-day absence reductions to daily requirements", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "simple",
+				workingDaysPreset: "weekdays",
+				hoursPerCycle: "40",
+				homeOfficeDaysPerCycle: 0,
+				days: [],
+			}),
+			startDate: new Date("2026-05-18T00:00:00.000Z"),
+			endDate: new Date("2026-05-18T23:59:59.999Z"),
+		});
+
+		expect(
+			applyApprovedAbsencesToDailyRequirements(requirements, [
+				{
+					startDate: "2026-05-18",
+					startPeriod: "full_day",
+					endDate: "2026-05-18",
+					endPeriod: "full_day",
+				},
+			]),
+		).toEqual({
+			"2026-05-18": {
+				requiredMinutes: 0,
+				policyId: "policy-1",
+				policyName: "Standard Hours",
+			},
+		});
+	});
+
+	it("applies approved half-day absence reductions to daily requirements", () => {
+		const requirements = buildDailyWorkRequirements({
+			policy: basePolicy({
+				scheduleCycle: "weekly",
+				scheduleType: "detailed",
+				workingDaysPreset: "custom",
+				hoursPerCycle: null,
+				homeOfficeDaysPerCycle: 0,
+				days: [{ dayOfWeek: "monday", hoursPerDay: "8", isWorkDay: true }],
+			}),
+			startDate: new Date("2026-05-18T00:00:00.000Z"),
+			endDate: new Date("2026-05-18T23:59:59.999Z"),
+		});
+
+		const adjusted = applyApprovedAbsencesToDailyRequirements(requirements, [
+			{
+				startDate: "2026-05-18",
+				startPeriod: "pm",
+				endDate: "2026-05-18",
+				endPeriod: "pm",
+			},
+		]);
+
+		expect(adjusted["2026-05-18"]?.requiredMinutes).toBe(240);
 	});
 });
