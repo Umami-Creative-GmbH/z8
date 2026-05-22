@@ -31,8 +31,10 @@ const mockState = vi.hoisted(() => ({
 		role: "employee" as const,
 	},
 	managedEmployeeIds: new Set<string>(["employee-1"]),
+	isOrgAdmin: false,
 	workPolicies: [{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true }],
 	workPolicyQueue: [] as Array<any>,
+	assignmentQueue: [] as Array<any>,
 	employeeQueue: [] as Array<any>,
 	teamQueue: [] as Array<any>,
 	assignmentFindFirstArgs: [] as Array<any>,
@@ -41,6 +43,7 @@ const mockState = vi.hoisted(() => ({
 	selectQueue: [] as Array<any>,
 	selectWhereArgs: [] as Array<any>,
 	updateWhereArgs: [] as Array<any>,
+	markOrganizationWorkBalancesDirty: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -91,7 +94,11 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
-	isOrgAdminCasl: vi.fn(async () => false),
+	isOrgAdminCasl: vi.fn(async () => mockState.isOrgAdmin),
+}));
+
+vi.mock("@/lib/work-balance/service", () => ({
+	markOrganizationWorkBalancesDirty: mockState.markOrganizationWorkBalancesDirty,
 }));
 
 vi.mock("@/lib/datetime/drizzle-adapter", () => ({
@@ -271,7 +278,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 				findMany: vi.fn(async () => []),
 				findFirst: vi.fn(async (input) => {
 					mockState.assignmentFindFirstArgs.push(input);
-					return null;
+					return mockState.assignmentQueue.shift() ?? null;
 				}),
 			},
 			employee: {
@@ -346,9 +353,13 @@ const {
 	acknowledgeWorkPolicyViolation,
 	createWorkPolicy,
 	createWorkPolicyAssignment,
+	deleteWorkPolicy,
+	deleteWorkPolicyAssignment,
 	getEmployeeEffectiveScheduleDetails,
 	getWorkPolicies,
 	getWorkPolicyViolations,
+	setDefaultWorkPolicy,
+	updateWorkPolicy,
 } = await import("./actions");
 
 describe("work policy settings scope actions", () => {
@@ -360,6 +371,7 @@ describe("work policy settings scope actions", () => {
 			role: "manager",
 		};
 		mockState.managedEmployeeIds = new Set(["employee-1"]);
+		mockState.isOrgAdmin = false;
 		mockState.targetEmployee = {
 			id: "employee-1",
 			organizationId: "org-1",
@@ -369,6 +381,7 @@ describe("work policy settings scope actions", () => {
 			{ id: "policy-1", organizationId: "org-1", name: "Standard", isActive: true },
 		];
 		mockState.workPolicyQueue = [];
+		mockState.assignmentQueue = [];
 		mockState.employeeQueue = [];
 		mockState.teamQueue = [];
 		mockState.assignmentFindFirstArgs = [];
@@ -376,6 +389,8 @@ describe("work policy settings scope actions", () => {
 		mockState.selectQueue = [];
 		mockState.selectWhereArgs = [];
 		mockState.updateWhereArgs = [];
+		mockState.markOrganizationWorkBalancesDirty.mockClear();
+		mockState.markOrganizationWorkBalancesDirty.mockResolvedValue(undefined);
 	});
 
 	it("lets managers read work policy definitions", async () => {
@@ -413,6 +428,90 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
+	});
+
+	it("marks organization work balances dirty after creating a work policy assignment", async () => {
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		mockState.insertQueue = [[{ id: "assignment-1" }]];
+
+		const result = await createWorkPolicyAssignment("org-1", {
+			policyId: "policy-1",
+			assignmentType: "employee",
+			employeeId: "employee-1",
+		});
+
+		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
+		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
+	});
+
+	it("marks organization work balances dirty after deleting a work policy assignment", async () => {
+		mockState.assignmentQueue = [
+			{
+				id: "assignment-1",
+				organizationId: "org-1",
+				assignmentType: "employee",
+				employeeId: "employee-1",
+			},
+		];
+
+		const result = await deleteWorkPolicyAssignment("assignment-1");
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
+	});
+
+	it("marks organization work balances dirty after schedule-affecting work policy updates", async () => {
+		mockState.isOrgAdmin = true;
+		mockState.workPolicyQueue = [
+			{
+				id: "policy-1",
+				organizationId: "org-1",
+				name: "Standard",
+				description: null,
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: null,
+				regulation: null,
+				presence: null,
+			},
+			{ id: "policy-1", organizationId: "org-1", name: "Standard", schedule: null },
+		];
+
+		const result = await updateWorkPolicy("policy-1", { scheduleEnabled: false });
+
+		expect(result).toMatchObject({ success: true });
+		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
+	});
+
+	it("marks organization work balances dirty after deleting a work policy", async () => {
+		mockState.isOrgAdmin = true;
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+
+		const result = await deleteWorkPolicy("policy-1");
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
+	});
+
+	it("marks organization work balances dirty after changing the default work policy", async () => {
+		mockState.isOrgAdmin = true;
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+
+		const result = await setDefaultWorkPolicy("policy-1");
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+		});
 	});
 
 	it("rejects manager work policy assignment for unmanaged members", async () => {

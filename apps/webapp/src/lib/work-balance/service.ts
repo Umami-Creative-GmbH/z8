@@ -241,6 +241,18 @@ export async function markEmployeeWorkBalanceDirty(input: {
 		});
 }
 
+export async function markOrganizationWorkBalancesDirty(input: { organizationId: string }) {
+	const requestedAt = new Date();
+	await db
+		.update(employeeWorkBalance)
+		.set({
+			isDirty: true,
+			refreshRequestedAt: requestedAt,
+			updatedAt: requestedAt,
+		})
+		.where(eq(employeeWorkBalance.organizationId, input.organizationId));
+}
+
 export async function markEmployeeWorkBalanceFailed(input: {
 	employeeId: string;
 	organizationId: string;

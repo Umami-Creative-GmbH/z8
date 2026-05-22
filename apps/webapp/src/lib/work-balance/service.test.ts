@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 
 const mockState = vi.hoisted(() => ({
@@ -8,7 +9,28 @@ const mockState = vi.hoisted(() => ({
 				findFirst: vi.fn(),
 			},
 		},
+		update: vi.fn(),
 	},
+	updateSet: vi.fn(),
+	updateWhere: vi.fn(),
+}));
+
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
+	and: vi.fn((...args: unknown[]) => ({ and: args })),
+	asc: vi.fn((value: unknown) => value),
+	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
+	isNotNull: vi.fn((value: unknown) => ({ isNotNull: value })),
+	isNull: vi.fn((value: unknown) => ({ isNull: value })),
+	lt: vi.fn((left: unknown, right: unknown) => ({ lt: [left, right] })),
+	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
+	min: vi.fn((value: unknown) => ({ min: value })),
+	or: vi.fn((...args: unknown[]) => ({ or: args })),
+	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+		sql: Array.from(strings),
+		values,
+	})),
 }));
 
 vi.mock("@/db", () => ({ db: mockState.db }));
@@ -18,12 +40,16 @@ import {
 	buildWorkBalanceValues,
 	getEmployeeWorkBalance,
 	getWorkBalanceBatchCutoffDate,
+	markOrganizationWorkBalancesDirty,
 	shouldIncludeWorkBalanceInBatch,
 } from "./service";
 
 describe("work balance helpers", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.updateWhere.mockResolvedValue(undefined);
+		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
+		mockState.db.update.mockReturnValue({ set: mockState.updateSet });
 	});
 
 	it("builds all-time work balance values", () => {
@@ -166,5 +192,17 @@ describe("work balance helpers", () => {
 			computedThroughDate: "2026-05-22",
 			computedAt,
 		});
+	});
+
+	it("marks existing organization work balances dirty", async () => {
+		await markOrganizationWorkBalancesDirty({ organizationId: "org-1" });
+
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				isDirty: true,
+			}),
+		);
+		expect(mockState.updateWhere).toHaveBeenCalledTimes(1);
+		expect(eq).toHaveBeenCalledWith(expect.anything(), "org-1");
 	});
 });
