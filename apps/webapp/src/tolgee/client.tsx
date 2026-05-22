@@ -69,7 +69,7 @@ export const TolgeeNextProvider = ({ language, staticData, children }: Props) =>
  *
  * @example
  * function MyComponent() {
- *   const { isLoading, isLoaded } = useNamespaces(["settings", "calendar"]);
+ *   const { isLoading, isLoaded } = useNamespaces(["settings/generic", "calendar"]);
  *   if (isLoading) return <Spinner />;
  *   return <div>{t("settings.title")}</div>;
  * }

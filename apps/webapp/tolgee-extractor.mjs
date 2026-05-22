@@ -60,17 +60,62 @@ const NAMESPACE_PREFIXES = {
 	init: "setup",
 	setup: "setup",
 	// settings namespace
-	settings: "settings",
-	organization: "settings",
-	travelExpenses: "settings",
-	vacation: "settings",
-	team: "settings",
-	webhooks: "settings",
+	settings: "settings/generic",
+	organization: "organization",
+	travelExpenses: "travelExpenses",
+	vacation: "settings/generic",
+	team: "team",
+	webhooks: "webhooks",
 	// onboarding namespace
 	onboarding: "onboarding",
 	// bot namespace
 	bot: "bot",
 };
+
+const NESTED_NAMESPACE_PREFIXES = [
+	["settings.enterprise.", "settings/enterprise"],
+	["settings.enterpriseIdentitySetup.", "settings/enterprise"],
+	["settings.branding.", "settings/enterprise"],
+	["settings.apiKeys.", "settings/enterprise"],
+	["settings.payrollExport.", "settings/payrollExport"],
+	["settings.payrollReadiness.", "settings/payrollExport"],
+	["settings.scheduledExports.", "settings/scheduledExports"],
+	["settings.holidays.", "settings/holidays"],
+	["settings.workPolicies.", "settings/workPolicies"],
+	["settings.workSchedules.", "settings/workPolicies"],
+	["settings.timeRegulations.", "settings/workPolicies"],
+	["settings.vacation.", "settings/vacation"],
+	["vacation.", "settings/vacation"],
+	["settings.auditExport.", "settings/auditExport"],
+	["settings.auditLog.", "settings/auditExport"],
+	["settings.demo.", "settings/demo"],
+	["settings.demoData.", "settings/demo"],
+	["settings.surcharges.", "settings/rules"],
+	["settings.workCategories.", "settings/rules"],
+	["settings.changePolicies.", "settings/rules"],
+	["settings.approvalPolicies.", "settings/rules"],
+	["settings.absenceCategories.", "settings/rules"],
+	["settings.coverageRules.", "settings/rules"],
+	["settings.shiftTemplates.", "settings/rules"],
+	["settings.employees.", "settings/people"],
+	["settings.teams.", "settings/people"],
+	["settings.roles.", "settings/people"],
+	["settings.permissions.", "settings/people"],
+	["settings.inviteCodes.", "settings/people"],
+	["settings.pendingMembers.", "settings/people"],
+	["settings.employmentHistory.", "settings/people"],
+	["settings.employeeGroups.", "settings/people"],
+	["settings.managerAssignment.", "settings/people"],
+	["settings.skills.", "settings/people"],
+	["settings.rateHistory.", "settings/people"],
+	["settings.telegram.", "settings/integrations"],
+	["settings.slack.", "settings/integrations"],
+	["settings.discord.", "settings/integrations"],
+	["settings.teamsNotifications.", "settings/integrations"],
+	["settings.calendar.", "settings/integrations"],
+	["settings.clockodoImport.", "settings/integrations"],
+	["settings.clockinImport.", "settings/integrations"],
+];
 
 /**
  * Infer namespace from a translation key
@@ -83,7 +128,13 @@ function inferNamespace(keyName) {
 	}
 
 	if (keyName.startsWith("billing.")) {
-		return "settings";
+		return "billing";
+	}
+
+	for (const [prefix, namespace] of NESTED_NAMESPACE_PREFIXES) {
+		if (keyName.startsWith(prefix)) {
+			return namespace;
+		}
 	}
 
 	// Get the top-level prefix (first segment before the dot)
