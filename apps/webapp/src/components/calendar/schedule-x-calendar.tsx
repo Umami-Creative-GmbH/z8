@@ -31,6 +31,7 @@ import {
 	generateBreakEvents,
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
+import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
@@ -68,6 +69,7 @@ export function ScheduleXCalendarWrapper({
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
+	const scheduleXLocale = toScheduleXLocale(locale);
 	const weekStartDay = useWeekStartDay();
 	const timeZone = useOrganizationTimezone();
 	const isDark = resolvedTheme === "dark";
@@ -222,7 +224,7 @@ export function ScheduleXCalendarWrapper({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		events: scheduleXEvents as any,
 		isDark,
-		locale,
+		locale: scheduleXLocale,
 		calendars: getScheduleXCalendars(),
 		plugins: [createEventModalPlugin(), calendarControls, currentTimePlugin],
 		callbacks: {
