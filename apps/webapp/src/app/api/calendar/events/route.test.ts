@@ -108,6 +108,7 @@ describe("GET /api/calendar/events", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			organizationId: "org-1",
 			employeeId: "employee-1",
 			startDate: new Date("2026-05-01T00:00:00.000Z"),
 			endDate: new Date("2026-05-31T23:59:59.999Z"),

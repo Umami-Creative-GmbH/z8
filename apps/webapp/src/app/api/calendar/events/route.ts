@@ -51,6 +51,7 @@ function getRequestDateRange(year: number, month: number | null, fullYear: boole
 }
 
 async function fetchDailyRequirements(params: {
+	organizationId: string;
 	employeeId: string | undefined;
 	startDate: Date;
 	endDate: Date;
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		dailyRequirements = await fetchDailyRequirements({
+			organizationId,
 			employeeId: scopedEmployeeId,
 			startDate,
 			endDate,

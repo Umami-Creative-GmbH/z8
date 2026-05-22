@@ -1,6 +1,8 @@
 import { Effect } from "effect";
+import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { employee } from "@/db/schema";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
@@ -116,12 +118,27 @@ export function buildDailyWorkRequirements({
 }
 
 export async function getDailyWorkRequirementsForEmployee(params: {
+	organizationId: string;
 	employeeId: string;
 	startDate: Date;
 	endDate: Date;
 }): Promise<DailyWorkRequirements> {
 	return Effect.runPromise(
 		Effect.gen(function* (_) {
+			const database = yield* _(DatabaseService);
+			const scopedEmployee = yield* _(
+				database.query("getEmployeeForCalendarRequirements", async () => {
+					return database.db.query.employee.findFirst({
+						where: and(
+							eq(employee.id, params.employeeId),
+							eq(employee.organizationId, params.organizationId),
+						),
+						columns: { id: true },
+					});
+				}),
+			);
+			if (!scopedEmployee) return {};
+
 			const service = yield* _(WorkPolicyService);
 			const policy = yield* _(service.getEffectivePolicy(params.employeeId));
 			return buildDailyWorkRequirements({
