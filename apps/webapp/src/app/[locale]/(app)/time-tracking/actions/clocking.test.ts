@@ -14,6 +14,7 @@ const mockState = vi.hoisted(() => ({
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
+	markEmployeeWorkBalanceDirty: vi.fn(),
 	isBillingMutationAllowed: vi.fn(),
 	requireBillingForMutation: vi.fn(),
 	insertValues: vi.fn(),
@@ -59,6 +60,10 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: mockState.isBillingMutationAllowed,
 	requireBillingForMutation: mockState.requireBillingForMutation,
+}));
+
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
 }));
 
 vi.mock("./approvals", () => ({
@@ -221,6 +226,7 @@ describe("clockOut", () => {
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
+		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 	});
@@ -252,6 +258,36 @@ describe("clockOut", () => {
 			}),
 		);
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
+	});
+
+	it("marks the work balance dirty from the active period start date after closing the period", async () => {
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-04",
+		});
+		expect(mockState.updateReturning.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("keeps clock-out successful when dirty marking fails", async () => {
+		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				workPeriodId: "period-1",
+			}),
+			"Failed to mark work balance dirty after clock-out",
+		);
 	});
 
 	it("closes the active period in the same transaction as the clock-out entry", async () => {

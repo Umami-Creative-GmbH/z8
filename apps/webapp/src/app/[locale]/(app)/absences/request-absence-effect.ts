@@ -51,6 +51,7 @@ import {
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
 	selectAbsenceDefaultApproverId,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
@@ -702,6 +703,16 @@ function requestAbsenceWithResolverEffect(
 					);
 				} else if (!category.requiresApproval) {
 					yield* _(updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveAbsence"));
+					yield* _(
+						Effect.promise(() =>
+							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								absenceId: newAbsence.id,
+								startDate: requestData.startDate,
+							}),
+						),
+					);
 
 					yield* _(
 						Effect.promise(() =>
@@ -725,6 +736,16 @@ function requestAbsenceWithResolverEffect(
 					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
 				} else {
 					yield* _(updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveNoManager"));
+					yield* _(
+						Effect.promise(() =>
+							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								absenceId: newAbsence.id,
+								startDate: requestData.startDate,
+							}),
+						),
+					);
 
 					yield* _(
 						Effect.promise(() =>

@@ -17,6 +17,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
@@ -50,6 +51,19 @@ type ManualEntryOverlapResult =
 	| {
 			error: string;
 	  };
+
+type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
+
+async function markWorkBalanceDirtyAfterClockOutBestEffort(
+	input: WorkBalanceDirtyInput,
+	context: Record<string, unknown>,
+) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error({ error, ...context }, "Failed to mark work balance dirty after clock-out");
+	}
+}
 
 export async function clockIn(
 	workLocationType?: WorkLocationType,
@@ -218,6 +232,20 @@ export async function clockOut(
 
 			return { entry: clockOutEntry, durationMinutes: sessionDurationMinutes };
 		});
+
+		await markWorkBalanceDirtyAfterClockOutBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(activeWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: activeWorkPeriod.id,
+			},
+		);
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
 

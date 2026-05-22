@@ -1,13 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const markEmployeeWorkBalanceDirtyMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const loggerErrorMock = vi.hoisted(() => vi.fn());
+const addCalendarSyncJobMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty: markEmployeeWorkBalanceDirtyMock,
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: vi.fn(() => ({
+		error: loggerErrorMock,
+	})),
+}));
+
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
 	selectAbsenceDefaultApproverId,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
-
-const addCalendarSyncJobMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -23,6 +37,9 @@ vi.mock("@/lib/queue", () => ({
 
 beforeEach(() => {
 	addCalendarSyncJobMock.mockClear();
+	markEmployeeWorkBalanceDirtyMock.mockClear();
+	markEmployeeWorkBalanceDirtyMock.mockResolvedValue(undefined);
+	loggerErrorMock.mockClear();
 });
 
 describe("validateAbsenceSickDetail", () => {
@@ -127,5 +144,46 @@ describe("shouldApplySickVacationOverrideImmediately", () => {
 				hasManagerApprovalWorkflow: false,
 			}),
 		).toBe(true);
+	});
+});
+
+describe("markAutoApprovedAbsenceWorkBalanceDirtyBestEffort", () => {
+	it("marks the employee work balance dirty from the absence start date", async () => {
+		await markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			absenceId: "absence-1",
+			startDate: "2026-05-11",
+		});
+
+		expect(markEmployeeWorkBalanceDirtyMock).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-11",
+		});
+	});
+
+	it("keeps auto-approval successful when dirty marking fails", async () => {
+		const error = new Error("dirty marker failed");
+		markEmployeeWorkBalanceDirtyMock.mockRejectedValueOnce(error);
+
+		await expect(
+			markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				absenceId: "absence-1",
+				startDate: "2026-05-11",
+			}),
+		).resolves.toBeUndefined();
+
+		expect(loggerErrorMock).toHaveBeenCalledWith(
+			{
+				error,
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				absenceId: "absence-1",
+			},
+			"Failed to mark work balance dirty after auto-approved absence",
+		);
 	});
 });
