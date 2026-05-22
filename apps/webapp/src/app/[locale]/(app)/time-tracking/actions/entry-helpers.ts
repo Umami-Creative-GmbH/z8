@@ -12,6 +12,7 @@ import { getRequestMetadata } from "./auth";
 import { BOOKABLE_PROJECT_STATUSES } from "./shared";
 
 type TimeEntryDbClient = Pick<typeof db, "insert" | "select">;
+type TimeEntryUpdateDbClient = Pick<typeof db, "update">;
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
@@ -70,8 +71,9 @@ export async function createTimeEntry(params: {
 export async function markTimeEntrySuperseded(
 	entryId: string,
 	supersededById: string,
+	client: TimeEntryUpdateDbClient = db,
 ): Promise<void> {
-	await db
+	await client
 		.update(timeEntry)
 		.set({
 			isSuperseded: true,

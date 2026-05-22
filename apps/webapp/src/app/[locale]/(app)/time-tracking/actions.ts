@@ -46,6 +46,10 @@ import {
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
+import {
+	TimeEntryService,
+	TimeEntryServiceLive,
+} from "@/lib/effect/services/time-entry.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
@@ -636,7 +640,13 @@ export async function requestTimeCorrectionEffect(
 				const [p] = await dbService.db
 					.select()
 					.from(workPeriod)
-					.where(eq(workPeriod.id, data.workPeriodId))
+					.where(
+						and(
+							eq(workPeriod.id, data.workPeriodId),
+							eq(workPeriod.employeeId, currentEmployee.id),
+							eq(workPeriod.organizationId, currentEmployee.organizationId),
+						),
+					)
 					.limit(1);
 
 				if (!p) {
@@ -776,72 +786,70 @@ export async function requestTimeCorrectionEffect(
 			);
 		}
 
-		// Step 7: Create corrections in a transaction-like sequence
-		// (Note: Drizzle doesn't expose db.transaction directly, so we use sequential operations)
-		// The createTimeEntry function handles blockchain hash linking
-		const clockInCorrection = yield* _(
-			Effect.promise(() =>
-				createTimeEntry({
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					type: "correction",
-					timestamp: correctedClockInDate,
-					createdBy: session.user.id,
-					replacesEntryId: period.clockInId,
-					notes: data.reason,
-				}),
-			),
-		);
+		// Step 7: Create correction entries, supersede originals, and approval atomically.
+		const { approval, clockInCorrection, clockOutCorrectionId } = yield* _(
+			dbService.query("createTimeCorrectionRequest", async () => {
+				return await dbService.db.transaction(async (tx) => {
+					const transactionalDbService = { db: tx, query: dbService.query };
+					const transactionalEffectDbService =
+						transactionalDbService as unknown as typeof DatabaseService.Service;
+					const createCorrectionEntry = (input: {
+						replacesEntryId: string;
+						timestamp: Date;
+					}) =>
+						Effect.runPromise(
+							Effect.gen(function* (resume) {
+								const timeEntryService = yield* resume(TimeEntryService);
+								return yield* resume(
+									timeEntryService.createCorrectionEntry({
+										employeeId: currentEmployee.id,
+										organizationId: currentEmployee.organizationId,
+										replacesEntryId: input.replacesEntryId,
+										timestamp: input.timestamp,
+										createdBy: session.user.id,
+										notes: data.reason,
+									}),
+								);
+							}).pipe(
+								Effect.provide(TimeEntryServiceLive),
+								Effect.provideService(DatabaseService, transactionalEffectDbService),
+							),
+						);
 
-		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+					const clockInCorrection = await createCorrectionEntry({
+						replacesEntryId: period.clockInId,
+						timestamp: correctedClockInDate,
+					});
 
-		// Step 8: Mark original clock in as superseded
-		yield* _(
-			dbService.query("markClockInSuperseded", async () => {
-				return await dbService.db
-					.update(timeEntry)
-					.set({
-						isSuperseded: true,
-						supersededById: clockInCorrection.id,
-					})
-					.where(eq(timeEntry.id, period.clockInId));
+					let clockOutCorrectionId: string | undefined;
+					if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
+						const clockOutCorrection = await createCorrectionEntry({
+							replacesEntryId: period.clockOutId,
+							timestamp: correctedClockOutDate,
+						});
+						clockOutCorrectionId = clockOutCorrection.id;
+					}
+
+					const approval = await Effect.runPromise(
+						createTimeCorrectionApprovalWorkflow(transactionalDbService, {
+							organizationId: currentEmployee.organizationId,
+							requesterEmployeeId: currentEmployee.id,
+							teamId: currentEmployee.teamId ?? null,
+							workPeriodId: period.id,
+							defaultApproverId: currentEmployee.managerId!,
+							reason: data.reason,
+							overtimeRisk: "warning",
+						}),
+					);
+
+					return { approval, clockInCorrection, clockOutCorrectionId };
+				});
 			}),
 		);
 
-		// Step 9: If clock out time is provided, create correction for that too
-		let clockOutCorrectionId: string | undefined;
-		if (data.newClockOutTime && period.clockOutId && correctedClockOutDate) {
-			const clockOutCorrection = yield* _(
-				Effect.promise(() =>
-					createTimeEntry({
-						employeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-						type: "correction",
-						timestamp: correctedClockOutDate!,
-						createdBy: session.user.id,
-						replacesEntryId: period.clockOutId!,
-						notes: data.reason,
-					}),
-				),
-			);
-
-			clockOutCorrectionId = clockOutCorrection.id;
-			yield* _(
-				Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrection.id),
-			);
-
-			// Mark original clock out as superseded
-			yield* _(
-				dbService.query("markClockOutSuperseded", async () => {
-					return await dbService.db
-						.update(timeEntry)
-						.set({
-							isSuperseded: true,
-							supersededById: clockOutCorrection.id,
-						})
-						.where(eq(timeEntry.id, period.clockOutId!));
-				}),
-			);
+		yield* _(Effect.annotateCurrentSpan("correction.clock_in_correction_id", clockInCorrection.id));
+		if (clockOutCorrectionId) {
+			yield* _(Effect.annotateCurrentSpan("correction.clock_out_correction_id", clockOutCorrectionId));
 		}
 
 		logger.info(
@@ -851,19 +859,6 @@ export async function requestTimeCorrectionEffect(
 				clockOutCorrectionId,
 			},
 			"Time correction entries created",
-		);
-
-		// Step 10: Create approval request
-		const approval = yield* _(
-			createTimeCorrectionApprovalWorkflow(dbService, {
-				organizationId: currentEmployee.organizationId,
-				requesterEmployeeId: currentEmployee.id,
-				teamId: currentEmployee.teamId ?? null,
-				workPeriodId: period.id,
-				defaultApproverId: currentEmployee.managerId!,
-				reason: data.reason,
-				overtimeRisk: "warning",
-			}),
 		);
 
 		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.approvalRequestId));
