@@ -56,5 +56,20 @@ WHERE "e"."manager_id" IS NOT NULL
 		WHERE "existing_assignment"."employee_id" = "e"."id"
 			AND "existing_assignment"."manager_id" = "e"."manager_id"
 	);--> statement-breakpoint
+UPDATE "employee_managers" AS "existing_assignment"
+SET "is_primary" = true
+FROM "employee" AS "e"
+WHERE "e"."manager_id" IS NOT NULL
+	AND "existing_assignment"."employee_id" = "e"."id"
+	AND "existing_assignment"."manager_id" = "e"."manager_id"
+	AND "existing_assignment"."is_primary" = false
+	AND NOT EXISTS (
+		SELECT 1
+		FROM "employee_managers" AS "existing_primary"
+		WHERE "existing_primary"."employee_id" = "e"."id"
+			AND "existing_primary"."is_primary" = true
+	);--> statement-breakpoint
+DROP INDEX IF EXISTS "employeeManagers_unique_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX "employeeManagers_unique_idx" ON "employee_managers" USING btree ("employee_id","manager_id");--> statement-breakpoint
 DROP INDEX IF EXISTS "employee_managerId_idx";--> statement-breakpoint
 ALTER TABLE "employee" DROP COLUMN "manager_id";

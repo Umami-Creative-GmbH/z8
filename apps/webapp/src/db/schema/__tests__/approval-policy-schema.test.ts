@@ -10,6 +10,7 @@ import {
 	approvalPolicyStage,
 	absenceCategory,
 	employee,
+	employeeManagers,
 	employeeGroup,
 	employeeGroupMember,
 	location,
@@ -259,6 +260,12 @@ describe("approval policy schema exports", () => {
 	it("does not expose the deprecated employee manager_id column", () => {
 		expect(employee).not.toHaveProperty("managerId");
 		expect(indexNames(employee)).not.toContain("employee_managerId_idx");
+	});
+
+	it("enforces unique employee manager assignments", () => {
+		expect(uniqueIndexNames(employeeManagers)).toEqual(
+			expect.arrayContaining(["employeeManagers_unique_idx"]),
+		);
 	});
 
 	it("blocks primary manager deletion until the team reference is cleared", () => {

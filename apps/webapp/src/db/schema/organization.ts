@@ -239,7 +239,7 @@ export const employeeManagers = pgTable(
 		index("employeeManagers_employeeId_idx").on(table.employeeId),
 		index("employeeManagers_managerId_idx").on(table.managerId),
 		// Prevent duplicate manager assignments
-		index("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
+		uniqueIndex("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
 		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
 	],
 );

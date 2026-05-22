@@ -17,8 +17,10 @@ const migration0019 = readFileSync(
 	new URL("../../../drizzle/0019_regular_sandman.sql", import.meta.url),
 	"utf8",
 );
+const migration0003SnapshotUrl = new URL("../../../drizzle/meta/0003_snapshot.json", import.meta.url);
 const migration0020Url = new URL("../../../drizzle/0020_drop_organization_fiscal_year.sql", import.meta.url);
 const migration0026Url = new URL("../../../drizzle/0026_remove_employee_manager_id.sql", import.meta.url);
+const migration0026SnapshotUrl = new URL("../../../drizzle/meta/0026_snapshot.json", import.meta.url);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -103,6 +105,13 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0026).toContain('"manager"."organization_id" = "e"."organization_id"');
 		expect(migration0026).toContain('"manager"."id" IS NULL');
 		expect(migration0026).toContain('"assigned_user"."id" IS NULL');
+		expect(migration0026).toContain('UPDATE "employee_managers" AS "existing_assignment"');
+		expect(migration0026).toContain('SET "is_primary" = true');
+		expect(migration0026).toContain('"existing_assignment"."is_primary" = false');
+		expect(migration0026).toContain('DROP INDEX IF EXISTS "employeeManagers_unique_idx";');
+		expect(migration0026).toContain(
+			'CREATE UNIQUE INDEX "employeeManagers_unique_idx" ON "employee_managers" USING btree ("employee_id","manager_id");',
+		);
 		expect(migration0026).toContain('INSERT INTO "employee_managers"');
 		expect(migration0026).toContain('FROM "employee" AS "e"');
 		expect(migration0026).toContain('"e"."manager_id" IS NOT NULL');
@@ -111,5 +120,11 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0026).toContain('"e"."user_id"');
 		expect(migration0026).toContain('DROP INDEX IF EXISTS "employee_managerId_idx";');
 		expect(migration0026).toContain('ALTER TABLE "employee" DROP COLUMN "manager_id";');
+	});
+
+	it("keeps manual follow-up migrations journal-only when no snapshot was generated", () => {
+		// Some existing hand-authored follow-up migrations are journaled without a snapshot.
+		expect(existsSync(migration0003SnapshotUrl)).toBe(false);
+		expect(existsSync(migration0026SnapshotUrl)).toBe(false);
 	});
 });
