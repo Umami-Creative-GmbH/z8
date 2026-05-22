@@ -18,7 +18,7 @@ import {
 } from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { createManualEntryApprovalRequest } from "./approvals";
+import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
 	calculateAndPersistSurcharges,
@@ -31,7 +31,7 @@ import {
 	createTimeEntry,
 	validateProjectAssignment,
 } from "./entry-helpers";
-import { getEditCapabilityForPeriod } from "./policy-helpers";
+import { checkClockOutNeedsApproval, getEditCapabilityForPeriod } from "./policy-helpers";
 import { getActiveWorkPeriod, getTimeSummary } from "./queries";
 import {
 	BREAK_WARNING_THRESHOLD_MINUTES,
@@ -187,6 +187,13 @@ export async function clockOut(
 		};
 	}
 
+	let needsClockOutApproval = false;
+	try {
+		needsClockOutApproval = await checkClockOutNeedsApproval(currentEmployee.id);
+	} catch (error) {
+		logger.warn({ error }, "Failed to check clock-out approval requirement");
+	}
+
 	try {
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
@@ -201,6 +208,16 @@ export async function clockOut(
 			);
 
 			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+			const pendingChangesData = needsClockOutApproval
+				? {
+						originalStartTime: activeWorkPeriod.startTime.toISOString(),
+						originalEndTime: now.toISOString(),
+						originalDurationMinutes: sessionDurationMinutes,
+						requestedAt: now.toISOString(),
+						requestedBy: session.user.id,
+						isNewClockOut: true,
+					}
+				: null;
 
 			const [closedWorkPeriod] = await tx
 				.update(workPeriod)
@@ -211,8 +228,8 @@ export async function clockOut(
 					projectId: projectId || null,
 					workCategoryId: workCategoryId || null,
 					isActive: false,
-					approvalStatus: "approved",
-					pendingChanges: null,
+					approvalStatus: needsClockOutApproval ? "pending" : "approved",
+					pendingChanges: pendingChangesData,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -246,6 +263,18 @@ export async function clockOut(
 				workPeriodId: activeWorkPeriod.id,
 			},
 		);
+
+		if (needsClockOutApproval && currentEmployee.managerId) {
+			await createClockOutApprovalRequest({
+				workPeriodId: activeWorkPeriod.id,
+				employeeId: currentEmployee.id,
+				managerId: currentEmployee.managerId,
+				organizationId: currentEmployee.organizationId,
+				startTime: activeWorkPeriod.startTime,
+				endTime: now,
+				durationMinutes,
+			});
+		}
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
 
@@ -282,6 +311,7 @@ export async function clockOut(
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
 					: undefined,
+				pendingApproval: needsClockOutApproval || undefined,
 			},
 		};
 	} catch (error) {
@@ -390,6 +420,20 @@ export async function addBreakToActiveSession(
 
 			return insertedWorkPeriod;
 		});
+
+		await markWorkBalanceDirtyAfterClockOutBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(activeWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: activeWorkPeriod.id,
+			},
+		);
 
 		return { success: true, data: newWorkPeriod };
 	} catch (error) {

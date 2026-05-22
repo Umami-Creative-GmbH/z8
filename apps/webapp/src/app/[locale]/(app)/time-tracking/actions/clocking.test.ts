@@ -222,7 +222,7 @@ describe("clockOut", () => {
 			type: "clock_out",
 			timestamp: new Date("2026-05-04T10:00:00.000Z"),
 		});
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
@@ -250,6 +250,7 @@ describe("clockOut", () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
+		expect(mockState.checkClockOutNeedsApproval).toHaveBeenCalledWith("employee-1");
 		expect(result.success && result.data.pendingApproval).toBeUndefined();
 		expect(mockState.updateSet).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -258,6 +259,43 @@ describe("clockOut", () => {
 			}),
 		);
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
+	});
+
+	it("creates a pending approval when the clock-out policy requires it", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			teamId: null,
+			managerId: "manager-1",
+		});
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(result.success && result.data.pendingApproval).toBe(true);
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalStatus: "pending",
+				pendingChanges: {
+					originalStartTime: "2026-05-04T09:00:00.000Z",
+					originalEndTime: "2026-05-04T10:00:00.000Z",
+					originalDurationMinutes: 60,
+					requestedAt: "2026-05-04T10:00:00.000Z",
+					requestedBy: "user-1",
+					isNewClockOut: true,
+				},
+			}),
+		);
+		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith({
+			workPeriodId: "period-1",
+			employeeId: "employee-1",
+			managerId: "manager-1",
+			organizationId: "org-1",
+			startTime: new Date("2026-05-04T09:00:00.000Z"),
+			endTime: new Date("2026-05-04T10:00:00.000Z"),
+			durationMinutes: 60,
+		});
 	});
 
 	it("marks the work balance dirty from the active period start date after closing the period", async () => {
@@ -428,6 +466,22 @@ describe("addBreakToActiveSession", () => {
 				startTime: new Date("2026-05-04T10:00:00.000Z"),
 				workLocationType: "remote",
 			}),
+		);
+	});
+
+	it("marks the work balance dirty from the closed period start date after adding a break", async () => {
+		mockState.insertValues.mockReturnValueOnce({ returning: mockState.insertReturning });
+
+		const result = await addBreakToActiveSession(15);
+
+		expect(result.success).toBe(true);
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-04",
+		});
+		expect(mockState.updateReturning.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
 	});
 
