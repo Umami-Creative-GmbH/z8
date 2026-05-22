@@ -34,6 +34,13 @@ export function shouldApplySickVacationOverrideImmediately(input: {
 	);
 }
 
+export function selectAbsenceDefaultApproverId(input: {
+	legacyManagerId: string | null;
+	eligibleManagerIds: string[];
+}): string | null {
+	return input.eligibleManagerIds[0] ?? input.legacyManagerId;
+}
+
 export function enqueueVacationOverrideCalendarSyncJobs(input: {
 	employeeId: string;
 	summary: VacationOverrideSummary;

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	selectAbsenceDefaultApproverId,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -80,6 +81,26 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 			employeeId: "employee-1",
 			action: "delete",
 		});
+	});
+});
+
+describe("selectAbsenceDefaultApproverId", () => {
+	it("uses an eligible team fallback manager when the legacy direct manager field is missing", () => {
+		expect(
+			selectAbsenceDefaultApproverId({
+				legacyManagerId: null,
+				eligibleManagerIds: ["team-manager"],
+			}),
+		).toBe("team-manager");
+	});
+
+	it("falls back to the legacy direct manager when eligibility data is unavailable", () => {
+		expect(
+			selectAbsenceDefaultApproverId({
+				legacyManagerId: "legacy-manager",
+				eligibleManagerIds: [],
+			}),
+		).toBe("legacy-manager");
 	});
 });
 
