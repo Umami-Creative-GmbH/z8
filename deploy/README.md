@@ -271,12 +271,28 @@ See `deploy/.env.template` for the full list. Key variables:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `POSTGRES_HOST` | Yes | Database host |
+| `POSTGRES_PORT` | Yes | Database port, usually `5432` |
+| `POSTGRES_DB` | Yes | Database name |
+| `POSTGRES_USER` | Yes | Database user |
 | `POSTGRES_PASSWORD` | Yes | Database password |
+| `POSTGRES_SSL_MODE` | No | TLS mode: `disable`, `prefer`, `require`, `verify-ca`, or `verify-full` |
+| `POSTGRES_SSL_ROOT_CERT_PATH` | No | Path to a mounted CA certificate file for managed Postgres TLS |
+| `POSTGRES_SSL_CA_CERT` | No | Inline CA certificate content when mounting a file is not practical |
 | `BETTER_AUTH_SECRET` | Yes | Session encryption key |
 | `NEXT_PUBLIC_APP_URL` | Yes | Public URL of the application |
 | `VALKEY_HOST` | No | Cache host (default: localhost) |
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
+
+For managed PostgreSQL providers that document `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, keep the individual Z8 variables and configure:
+
+```env
+POSTGRES_SSL_MODE=verify-full
+POSTGRES_SSL_ROOT_CERT_PATH=/etc/postgres-certs/provider-ca.pem
+```
+
+If a mounted certificate file is not available, set `POSTGRES_SSL_CA_CERT` to the PEM certificate content instead.
 
 ## Vault Setup (Optional)
 

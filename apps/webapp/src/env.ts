@@ -22,6 +22,11 @@ const parsedEnv = createEnv({
 		POSTGRES_DB: z.string().optional(),
 		POSTGRES_USER: z.string().optional(),
 		POSTGRES_PASSWORD: z.string().optional(),
+		POSTGRES_SSL_MODE: z
+			.enum(["disable", "prefer", "require", "verify-ca", "verify-full"])
+			.default("disable"),
+		POSTGRES_SSL_CA_CERT: z.string().optional(),
+		POSTGRES_SSL_ROOT_CERT_PATH: z.string().optional(),
 
 		// Valkey / Redis
 		VALKEY_HOST: z.string().optional(),
@@ -142,6 +147,9 @@ const parsedEnv = createEnv({
 		POSTGRES_DB: process.env.POSTGRES_DB,
 		POSTGRES_USER: process.env.POSTGRES_USER,
 		POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
+		POSTGRES_SSL_MODE: process.env.POSTGRES_SSL_MODE,
+		POSTGRES_SSL_CA_CERT: process.env.POSTGRES_SSL_CA_CERT,
+		POSTGRES_SSL_ROOT_CERT_PATH: process.env.POSTGRES_SSL_ROOT_CERT_PATH,
 
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,

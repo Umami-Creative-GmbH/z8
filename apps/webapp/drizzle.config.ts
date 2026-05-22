@@ -1,4 +1,5 @@
 import { defineConfig } from "drizzle-kit";
+import { getPostgresSslConfig } from "./src/db/postgres-ssl";
 
 export default defineConfig({
 	out: "./drizzle",
@@ -10,6 +11,6 @@ export default defineConfig({
 		database: process.env.POSTGRES_DB!,
 		user: process.env.POSTGRES_USER!,
 		password: process.env.POSTGRES_PASSWORD!,
-		ssl: false,
+		ssl: getPostgresSslConfig(),
 	},
 });
