@@ -1,5 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { getReportAccessibleEmployeeIds } from "./permissions";
+import {
+	getManagerReportAccessibleEmployees,
+	getReportAccessibleEmployeeIds,
+} from "./permissions";
+
+function employeeSource(overrides: {
+	id: string;
+	organizationId?: string;
+	role?: "admin" | "manager" | "employee";
+	user?: Partial<{
+		firstName: string | null;
+		lastName: string | null;
+		name: string | null;
+		email: string;
+		image: string | null;
+	}>;
+}) {
+	return {
+		id: overrides.id,
+		organizationId: overrides.organizationId ?? "org-1",
+		pronouns: null,
+		position: null,
+		role: overrides.role ?? "employee",
+		user: {
+			firstName: null,
+			lastName: null,
+			name: `Name ${overrides.id}`,
+			email: `${overrides.id}@example.com`,
+			image: null,
+			...overrides.user,
+		},
+	};
+}
 
 describe("getReportAccessibleEmployeeIds", () => {
 	it("returns only self for employees", () => {
@@ -30,5 +62,57 @@ describe("getReportAccessibleEmployeeIds", () => {
 				managedEmployeeIds: ["employee-2"],
 			}),
 		).toBeNull();
+	});
+});
+
+describe("getManagerReportAccessibleEmployees", () => {
+	it("deduplicates duplicate direct reports while preserving the first occurrence", () => {
+		const employees = getManagerReportAccessibleEmployees({
+			currentEmployee: employeeSource({ id: "manager-1", role: "manager" }),
+			directReports: [
+				employeeSource({ id: "employee-1", user: { name: "First Employee" } }),
+				employeeSource({ id: "employee-1", user: { name: "Duplicate Employee" } }),
+			],
+		});
+
+		expect(employees.map((emp) => emp.id)).toEqual(["manager-1", "employee-1"]);
+		expect(employees[1]?.name).toBe("First Employee");
+	});
+
+	it("filters direct reports from other organizations", () => {
+		const employees = getManagerReportAccessibleEmployees({
+			currentEmployee: employeeSource({
+				id: "manager-1",
+				role: "manager",
+				organizationId: "org-1",
+			}),
+			directReports: [
+				employeeSource({ id: "employee-1", organizationId: "org-1" }),
+				employeeSource({ id: "employee-2", organizationId: "org-2" }),
+			],
+		});
+
+		expect(employees.map((emp) => emp.id)).toEqual(["manager-1", "employee-1"]);
+	});
+
+	it("maps first and last names from auth user fields", () => {
+		const directReport = {
+			...employeeSource({
+				id: "employee-1",
+				user: { firstName: "UserFirst", lastName: "UserLast" },
+			}),
+			firstName: "EmployeeFirst",
+			lastName: "EmployeeLast",
+		};
+
+		const employees = getManagerReportAccessibleEmployees({
+			currentEmployee: employeeSource({ id: "manager-1", role: "manager" }),
+			directReports: [directReport],
+		});
+
+		expect(employees[1]).toMatchObject({
+			firstName: "UserFirst",
+			lastName: "UserLast",
+		});
 	});
 });

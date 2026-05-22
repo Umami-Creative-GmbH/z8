@@ -10,6 +10,21 @@ import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import type { AccessibleEmployee } from "./types";
 
+type ReportEmployeeSource = {
+	id: string;
+	organizationId: string;
+	user: {
+		firstName: string | null;
+		lastName: string | null;
+		name: string | null;
+		email: string;
+		image: string | null;
+	};
+	pronouns: string | null;
+	position: string | null;
+	role: "admin" | "manager" | "employee";
+};
+
 export function getReportAccessibleEmployeeIds(input: {
 	currentEmployeeId: string;
 	role: "admin" | "manager" | "employee";
@@ -18,6 +33,38 @@ export function getReportAccessibleEmployeeIds(input: {
 	if (input.role === "admin") return null;
 	if (input.role === "manager") return [input.currentEmployeeId, ...input.managedEmployeeIds];
 	return [input.currentEmployeeId];
+}
+
+function toAccessibleEmployee(emp: ReportEmployeeSource): AccessibleEmployee {
+	return {
+		id: emp.id,
+		firstName: emp.user.firstName,
+		lastName: emp.user.lastName,
+		name: emp.user.name || emp.user.email,
+		email: emp.user.email,
+		image: emp.user.image,
+		pronouns: emp.pronouns,
+		position: emp.position,
+		role: emp.role,
+	};
+}
+
+export function getManagerReportAccessibleEmployees(input: {
+	currentEmployee: ReportEmployeeSource;
+	directReports: ReportEmployeeSource[];
+}): AccessibleEmployee[] {
+	const seenEmployeeIds = new Set<string>([input.currentEmployee.id]);
+	const accessibleEmployees = [toAccessibleEmployee(input.currentEmployee)];
+
+	for (const directReport of input.directReports) {
+		if (directReport.organizationId !== input.currentEmployee.organizationId) continue;
+		if (seenEmployeeIds.has(directReport.id)) continue;
+
+		seenEmployeeIds.add(directReport.id);
+		accessibleEmployees.push(toAccessibleEmployee(directReport));
+	}
+
+	return accessibleEmployees;
 }
 
 /**
@@ -157,31 +204,10 @@ export async function getAccessibleEmployees(
 
 	// For managers: get self and direct reports (via employeeManagers junction table)
 	if (currentEmp.role === "manager") {
-		// Include self and direct reports
-		return [
-			{
-				id: currentEmp.id,
-				firstName: currentEmp.user.firstName,
-				lastName: currentEmp.user.lastName,
-				name: currentEmp.user.name || currentEmp.user.email,
-				email: currentEmp.user.email,
-				image: currentEmp.user.image,
-				pronouns: currentEmp.pronouns,
-				position: currentEmp.position,
-				role: currentEmp.role,
-			},
-			...managerRelations.map((rel) => ({
-				id: rel.employee.id,
-				firstName: rel.employee.user.firstName,
-				lastName: rel.employee.user.lastName,
-				name: rel.employee.user.name || rel.employee.user.email,
-				email: rel.employee.user.email,
-				image: rel.employee.user.image,
-				pronouns: rel.employee.pronouns,
-				position: rel.employee.position,
-				role: rel.employee.role,
-			})),
-		];
+		return getManagerReportAccessibleEmployees({
+			currentEmployee: currentEmp,
+			directReports: managerRelations.map((rel) => rel.employee),
+		});
 	}
 
 	// For employees: only self
