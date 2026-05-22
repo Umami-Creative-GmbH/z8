@@ -14,6 +14,9 @@ import {
 	project,
 	projectAssignment,
 	surchargeCalculation,
+	timeRecord,
+	timeRecordAllocation,
+	timeRecordWork,
 	timeEntry,
 	userSettings,
 	workPeriod,
@@ -120,6 +123,67 @@ async function markWorkBalanceDirtyBestEffort(
 	} catch (error) {
 		logger.error({ error, ...context }, "Failed to mark work balance dirty");
 	}
+}
+
+async function deleteCanonicalWorkRecordBestEffort(recordId: string | null | undefined) {
+	if (!recordId) {
+		return;
+	}
+
+	try {
+		await db.delete(timeRecordAllocation).where(eq(timeRecordAllocation.recordId, recordId));
+		await db.delete(timeRecordWork).where(eq(timeRecordWork.recordId, recordId));
+		await db.delete(timeRecord).where(eq(timeRecord.id, recordId));
+	} catch (error) {
+		logger.error({ error, recordId }, "Failed to delete canonical work record during rollback");
+	}
+}
+
+async function rollbackPendingClockOutApprovalMutationBestEffort(params: {
+	workPeriodId: string;
+	organizationId: string;
+	clockOutEntryId: string;
+	canonicalRecordId: string | null;
+}) {
+	try {
+		await db
+			.update(workPeriod)
+			.set({
+				clockOutId: null,
+				endTime: null,
+				durationMinutes: null,
+				canonicalRecordId: null,
+				isActive: true,
+				approvalStatus: "approved",
+				pendingChanges: null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(eq(workPeriod.id, params.workPeriodId), eq(workPeriod.organizationId, params.organizationId)),
+			);
+
+		await db.delete(timeEntry).where(eq(timeEntry.id, params.clockOutEntryId));
+	} catch (error) {
+		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to rollback pending clock-out");
+	}
+
+	await deleteCanonicalWorkRecordBestEffort(params.canonicalRecordId);
+}
+
+async function rollbackPendingManualEntryApprovalMutationBestEffort(params: {
+	workPeriodId: string;
+	clockInEntryId: string;
+	clockOutEntryId: string;
+	canonicalRecordId: string | null;
+}) {
+	try {
+		await db.delete(workPeriod).where(eq(workPeriod.id, params.workPeriodId));
+		await db.delete(timeEntry).where(inArray(timeEntry.id, [params.clockInEntryId, params.clockOutEntryId]));
+	} catch (error) {
+		logger.error({ error, workPeriodId: params.workPeriodId }, "Failed to rollback pending manual entry");
+	}
+
+	await deleteCanonicalWorkRecordBestEffort(params.canonicalRecordId);
 }
 
 const approvalDbService = {
@@ -1367,6 +1431,29 @@ export async function clockOut(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
 
+		// If clock-out needs approval, create an approval request
+		if (needsClockOutApproval && emp.managerId) {
+			try {
+				await createClockOutApprovalRequest({
+					workPeriodId: activePeriod.id,
+					employeeId: emp.id,
+					managerId: emp.managerId,
+					organizationId: emp.organizationId,
+					startTime: activePeriod.startTime,
+					endTime: now,
+					durationMinutes,
+				});
+			} catch (error) {
+				await rollbackPendingClockOutApprovalMutationBestEffort({
+					workPeriodId: activePeriod.id,
+					organizationId: emp.organizationId,
+					clockOutEntryId: entry.id,
+					canonicalRecordId: canonicalRecord.id,
+				});
+				throw error;
+			}
+		}
+
 		await markWorkBalanceDirtyBestEffort(
 			{
 				employeeId: emp.id,
@@ -1376,19 +1463,6 @@ export async function clockOut(
 			},
 			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: activePeriod.id },
 		);
-
-		// If clock-out needs approval, create an approval request
-		if (needsClockOutApproval && emp.managerId) {
-			await createClockOutApprovalRequest({
-				workPeriodId: activePeriod.id,
-				employeeId: emp.id,
-				managerId: emp.managerId,
-				organizationId: emp.organizationId,
-				startTime: activePeriod.startTime,
-				endTime: now,
-				durationMinutes,
-			});
-		}
 
 		// Calculate and persist surcharge credits if feature is enabled
 		await calculateAndPersistSurcharges(activePeriod.id, emp.organizationId);
@@ -3059,6 +3133,30 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			})
 			.returning();
 
+		// If approval required, create approval request and notify manager
+		if (requiresApproval && emp.managerId) {
+			try {
+				await createManualEntryApprovalRequest({
+					workPeriodId: period.id,
+					employeeId: emp.id,
+					managerId: emp.managerId,
+					organizationId: emp.organizationId,
+					startTime: finalClockIn,
+					endTime: finalClockOut,
+					durationMinutes,
+					reason: data.reason,
+				});
+			} catch (error) {
+				await rollbackPendingManualEntryApprovalMutationBestEffort({
+					workPeriodId: period.id,
+					clockInEntryId: clockInEntry.id,
+					clockOutEntryId: clockOutEntry.id,
+					canonicalRecordId: canonicalRecord.id,
+				});
+				throw error;
+			}
+		}
+
 		await markWorkBalanceDirtyBestEffort(
 			{
 				employeeId: emp.id,
@@ -3067,20 +3165,6 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			},
 			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: period.id },
 		);
-
-		// If approval required, create approval request and notify manager
-		if (requiresApproval && emp.managerId) {
-			await createManualEntryApprovalRequest({
-				workPeriodId: period.id,
-				employeeId: emp.id,
-				managerId: emp.managerId,
-				organizationId: emp.organizationId,
-				startTime: finalClockIn,
-				endTime: finalClockOut,
-				durationMinutes,
-				reason: data.reason,
-			});
-		}
 
 		// Calculate and persist surcharge credits if feature is enabled
 		if (!requiresApproval) {

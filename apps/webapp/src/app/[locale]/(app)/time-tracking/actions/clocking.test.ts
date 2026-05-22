@@ -402,12 +402,14 @@ describe("clockOut", () => {
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 });
 
 describe("createManualTimeEntry", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.transaction.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
 
@@ -426,6 +428,13 @@ describe("createManualTimeEntry", () => {
 			reason: "outside_direct_edit_window",
 		});
 		mockState.findManyWorkPeriods.mockResolvedValue([]);
+		mockState.transaction.mockImplementation(async (callback) =>
+			callback({
+				insert: vi.fn(() => ({
+					values: (...args: unknown[]) => mockState.insertValues(...args),
+				})),
+			}),
+		);
 	});
 
 	it("rejects approval-required manual entries when no manager is assigned", async () => {
@@ -474,6 +483,8 @@ describe("createManualTimeEntry", () => {
 			expect.objectContaining({ workPeriodId: "period-1", managerId: "manager-1" }),
 		);
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.transaction).toHaveBeenCalledTimes(1);
 	});
 });
 

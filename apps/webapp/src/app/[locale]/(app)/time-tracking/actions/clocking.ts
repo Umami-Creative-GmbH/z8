@@ -250,6 +250,18 @@ export async function clockOut(
 				throw new Error("Active work period was not updated");
 			}
 
+			if (needsClockOutApproval && currentEmployee.managerId) {
+				await createClockOutApprovalRequest({
+					workPeriodId: activeWorkPeriod.id,
+					employeeId: currentEmployee.id,
+					managerId: currentEmployee.managerId,
+					organizationId: currentEmployee.organizationId,
+					startTime: activeWorkPeriod.startTime,
+					endTime: now,
+					durationMinutes: sessionDurationMinutes,
+				});
+			}
+
 			return { entry: clockOutEntry, durationMinutes: sessionDurationMinutes };
 		});
 
@@ -266,18 +278,6 @@ export async function clockOut(
 				workPeriodId: activeWorkPeriod.id,
 			},
 		);
-
-		if (needsClockOutApproval && currentEmployee.managerId) {
-			await createClockOutApprovalRequest({
-				workPeriodId: activeWorkPeriod.id,
-				employeeId: currentEmployee.id,
-				managerId: currentEmployee.managerId,
-				organizationId: currentEmployee.organizationId,
-				startTime: activeWorkPeriod.startTime,
-				endTime: now,
-				durationMinutes,
-			});
-		}
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
 
@@ -703,62 +703,72 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
 		const managerId = currentEmployee.managerId;
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
-		const clockInEntry = await createTimeEntry({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			type: "clock_in",
-			timestamp: adjustedClockIn,
-			createdBy: session.user.id,
-			notes: `Manual entry: ${data.reason}`,
-		});
-		const clockOutEntry = await createTimeEntry({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			type: "clock_out",
-			timestamp: adjustedClockOut,
-			createdBy: session.user.id,
-			notes: data.reason,
-		});
+		const createdWorkPeriod = await db.transaction(async (tx) => {
+			const clockInEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					type: "clock_in",
+					timestamp: adjustedClockIn,
+					createdBy: session.user.id,
+					notes: `Manual entry: ${data.reason}`,
+				},
+				tx,
+			);
+			const clockOutEntry = await createTimeEntry(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					type: "clock_out",
+					timestamp: adjustedClockOut,
+					createdBy: session.user.id,
+					notes: data.reason,
+				},
+				tx,
+			);
 
-		const [createdWorkPeriod] = await db
-			.insert(workPeriod)
-			.values({
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				clockInId: clockInEntry.id,
-				clockOutId: clockOutEntry.id,
-				startTime: adjustedClockIn,
-				endTime: adjustedClockOut,
-				durationMinutes,
-				projectId: data.projectId || null,
-				workCategoryId: data.workCategoryId || null,
-				isActive: false,
-				approvalStatus: requiresApproval ? "pending" : "approved",
-				pendingChanges: requiresApproval
-					? {
-							originalStartTime: adjustedClockIn.toISOString(),
-							originalEndTime: adjustedClockOut.toISOString(),
-							originalDurationMinutes: durationMinutes,
-							requestedAt: now.toISOString(),
-							requestedBy: session.user.id,
-							reason: data.reason,
-						}
-					: null,
-			})
-			.returning();
+			const [period] = await tx
+				.insert(workPeriod)
+				.values({
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					clockInId: clockInEntry.id,
+					clockOutId: clockOutEntry.id,
+					startTime: adjustedClockIn,
+					endTime: adjustedClockOut,
+					durationMinutes,
+					projectId: data.projectId || null,
+					workCategoryId: data.workCategoryId || null,
+					isActive: false,
+					approvalStatus: requiresApproval ? "pending" : "approved",
+					pendingChanges: requiresApproval
+						? {
+								originalStartTime: adjustedClockIn.toISOString(),
+								originalEndTime: adjustedClockOut.toISOString(),
+								originalDurationMinutes: durationMinutes,
+								requestedAt: now.toISOString(),
+								requestedBy: session.user.id,
+								reason: data.reason,
+							}
+						: null,
+				})
+				.returning();
 
-		if (requiresApproval && managerId) {
-			await createManualEntryApprovalRequest({
-				workPeriodId: createdWorkPeriod.id,
-				employeeId: currentEmployee.id,
-				managerId,
-				organizationId: currentEmployee.organizationId,
-				startTime: adjustedClockIn,
-				endTime: adjustedClockOut,
-				durationMinutes,
-				reason: data.reason,
-			});
-		}
+			if (requiresApproval && managerId) {
+				await createManualEntryApprovalRequest({
+					workPeriodId: period.id,
+					employeeId: currentEmployee.id,
+					managerId,
+					organizationId: currentEmployee.organizationId,
+					startTime: adjustedClockIn,
+					endTime: adjustedClockOut,
+					durationMinutes,
+					reason: data.reason,
+				});
+			}
+
+			return period;
+		});
 
 		if (!requiresApproval) {
 			await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);

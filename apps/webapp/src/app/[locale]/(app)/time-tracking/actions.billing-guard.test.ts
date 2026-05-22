@@ -115,4 +115,19 @@ describe("legacy time-tracking action billing guards", () => {
 			expect(body).toContain("throw error");
 		},
 	);
+
+	it.each([
+		["clockOut", "createClockOutApprovalRequest", "markWorkBalanceDirtyBestEffort"],
+		["createManualTimeEntry", "createManualEntryApprovalRequest", "markWorkBalanceDirtyBestEffort"],
+	])("creates approval requests before dirty marking in approval-capable %s", (name, approvalMarker, dirtyMarker) => {
+		const body = functionBody(name);
+		const approvalIndex = body.indexOf(approvalMarker);
+		const dirtyIndex = body.indexOf(dirtyMarker);
+
+		expect(approvalIndex, `${name} should create approval requests`).toBeGreaterThanOrEqual(0);
+		expect(dirtyIndex, `${name} should mark work balance dirty`).toBeGreaterThanOrEqual(0);
+		expect(approvalIndex, `${name} should create approvals before dirty marking`).toBeLessThan(
+			dirtyIndex,
+		);
+	});
 });
