@@ -107,7 +107,7 @@ function getDailyStatusClassName(status: DailyWorkHoursStatus): string {
 
 function getDayLabel(day: MonthWorkDay, locale: string, t: Translate): string {
 	const dateLabel = day.date.setLocale(locale).toLocaleString(DateTime.DATE_HUGE);
-	const summary = day.workHoursSummary;
+	const summary = day.isActiveMonth ? day.workHoursSummary : null;
 	const eventTitles = day.events.map((event) => event.title).join(", ");
 	const eventText =
 		day.events.length === 0
@@ -220,7 +220,7 @@ function DayCell({
 	t: Translate;
 	onDayClick: (date: Date) => void;
 }) {
-	const summary = day.workHoursSummary;
+	const summary = day.isActiveMonth ? day.workHoursSummary : null;
 	const label = getDayLabel(day, locale, t);
 
 	return (

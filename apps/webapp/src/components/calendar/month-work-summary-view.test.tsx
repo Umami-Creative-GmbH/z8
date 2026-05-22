@@ -117,4 +117,17 @@ describe("MonthWorkSummaryView", () => {
 		expect(screen.queryByText("0:00 / 0:00")).toBeNull();
 		expect(screen.getByText("No policy hours in this month")).toBeTruthy();
 	});
+
+	it("does not expose inactive-month work summaries in accessible day content", () => {
+		renderView({
+			workHoursData: new Map([
+				["2026-04-30", workSummary(480, 300)],
+				["2026-05-04", workSummary(480, 606)],
+			]),
+		});
+
+		expect(screen.getByRole("button", { name: "Thursday, April 30, 2026" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /April 30, 2026:.*5:00 recorded/ })).toBeNull();
+		expect(screen.queryByText("under requirement")).toBeNull();
+	});
 });
