@@ -42,6 +42,12 @@ export function shouldIncludeWorkBalanceInBatch(
 	return !balance || balance.isDirty || balance.computedThroughDate < todayDate;
 }
 
+export function shouldClearWorkBalanceResult(
+	values: ReturnType<typeof buildWorkBalanceValues> | null,
+): values is null {
+	return values === null;
+}
+
 export async function getEmployeeWorkBalance(input: {
 	employeeId: string;
 	organizationId: string;
@@ -220,6 +226,20 @@ export async function markEmployeeWorkBalanceFailed(input: {
 	await db
 		.update(employeeWorkBalance)
 		.set({ lastError: input.error, updatedAt: new Date() })
+		.where(
+			and(
+				eq(employeeWorkBalance.employeeId, input.employeeId),
+				eq(employeeWorkBalance.organizationId, input.organizationId),
+			),
+		);
+}
+
+export async function deleteEmployeeWorkBalance(input: {
+	employeeId: string;
+	organizationId: string;
+}) {
+	await db
+		.delete(employeeWorkBalance)
 		.where(
 			and(
 				eq(employeeWorkBalance.employeeId, input.employeeId),

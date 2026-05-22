@@ -3,6 +3,7 @@ import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 import {
 	buildWorkBalanceValues,
 	getWorkBalanceBatchCutoffDate,
+	shouldClearWorkBalanceResult,
 	shouldIncludeWorkBalanceInBatch,
 } from "./service";
 
@@ -86,6 +87,25 @@ describe("work balance helpers", () => {
 			shouldIncludeWorkBalanceInBatch(
 				{ isDirty: false, computedThroughDate: "2026-05-23" },
 				todayDate,
+			),
+		).toBe(false);
+	});
+
+	it("clears materialized balance rows when compute has no source records", () => {
+		const computedAt = new Date("2026-05-22T12:00:00.000Z");
+
+		expect(shouldClearWorkBalanceResult(null)).toBe(true);
+		expect(
+			shouldClearWorkBalanceResult(
+				buildWorkBalanceValues({
+					employeeId: "employee-1",
+					organizationId: "org-1",
+					actualMinutes: 0,
+					requiredMinutes: 0,
+					computedFromDate: "2026-05-22",
+					computedThroughDate: "2026-05-22",
+					computedAt,
+				}),
 			),
 		).toBe(false);
 	});

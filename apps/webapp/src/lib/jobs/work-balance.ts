@@ -1,8 +1,10 @@
 import { createLogger } from "@/lib/logger";
 import {
 	computeEmployeeWorkBalance,
+	deleteEmployeeWorkBalance,
 	listEmployeesForWorkBalanceBatch,
 	markEmployeeWorkBalanceFailed,
+	shouldClearWorkBalanceResult,
 	upsertEmployeeWorkBalance,
 } from "@/lib/work-balance/service";
 
@@ -36,7 +38,11 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 				employeeId: employee.id,
 				organizationId: employee.organizationId,
 			});
-			if (!values) {
+			if (shouldClearWorkBalanceResult(values)) {
+				await deleteEmployeeWorkBalance({
+					employeeId: employee.id,
+					organizationId: employee.organizationId,
+				});
 				result.skipped += 1;
 				continue;
 			}
