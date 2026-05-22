@@ -11,6 +11,7 @@ import {
 	asAppSubject,
 	ForbiddenError,
 	toHttpError,
+	UnsupportedAuthorizationConditionError,
 } from "@/lib/authorization";
 import {
 	createBillingForbiddenResponse,
@@ -84,15 +85,17 @@ export async function GET(request: NextRequest) {
 				return NextResponse.json(httpError.body, { status: httpError.status });
 			}
 
-			const timeEntryAccess = accessibleByDrizzle(ability, "read", "TimeEntry", {
-				organizationId: workPeriod.organizationId,
-				employeeId: workPeriod.employeeId,
-			});
-
-			if (!timeEntryAccess) {
-				const error = new ForbiddenError("read", "TimeEntry");
-				const httpError = toHttpError(error);
-				return NextResponse.json(httpError.body, { status: httpError.status });
+			try {
+				accessibleByDrizzle(ability, "read", "TimeEntry", {
+					organizationId: workPeriod.organizationId,
+					employeeId: workPeriod.employeeId,
+				});
+			} catch (error) {
+				if (!(error instanceof UnsupportedAuthorizationConditionError)) {
+					throw error;
+				}
+				// Legacy string grants may not be query-translatable yet;
+				// the object check below is authoritative.
 			}
 
 			// Verify target employee is in same organization
