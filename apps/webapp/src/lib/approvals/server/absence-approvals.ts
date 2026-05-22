@@ -13,6 +13,7 @@ import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestApproved, renderAbsenceRequestRejected } from "@/lib/email/render";
+import { createLogger } from "@/lib/logger";
 import { onAbsenceRequestApproved, onAbsenceRequestRejected } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -24,6 +25,8 @@ import {
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
+
+const logger = createLogger("AbsenceApprovals");
 
 interface AbsenceRecord {
 	id: string;
@@ -113,7 +116,7 @@ function queueApprovedAbsenceCalendarSync(result: ApprovedAbsenceResult) {
 
 function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
 	return mark
-		? Effect.promise(() => markEmployeeWorkBalanceDirty(mark))
+		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
 		: Effect.void;
 }
 
@@ -500,5 +503,9 @@ export async function rejectAbsenceEffect(
 
 async function markEmployeeWorkBalanceDirtyIfNeeded(mark?: WorkBalanceDirtyMark) {
 	if (!mark) return;
-	await markEmployeeWorkBalanceDirty(mark);
+	try {
+		await markEmployeeWorkBalanceDirty(mark);
+	} catch (error) {
+		logger.error({ error, ...mark }, "Failed to mark work balance dirty");
+	}
 }

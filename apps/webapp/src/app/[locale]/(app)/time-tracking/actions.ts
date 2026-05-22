@@ -109,6 +109,19 @@ export async function addBreakToActiveSession(breakMinutes: number) {
 
 const logger = createLogger("TimeTrackingActionsEffect");
 
+type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
+
+async function markWorkBalanceDirtyBestEffort(
+	input: WorkBalanceDirtyInput,
+	context: Record<string, unknown>,
+) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error({ error, ...context }, "Failed to mark work balance dirty");
+	}
+}
+
 const approvalDbService = {
 	db,
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
@@ -445,12 +458,15 @@ export async function editSameDayTimeEntry(
 			period.startTime.getTime() <= correctedClockInDate.getTime()
 				? period.startTime
 				: correctedClockInDate;
-		await markEmployeeWorkBalanceDirty({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			dirtyFromDate:
-				DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined,
-		});
+		await markWorkBalanceDirtyBestEffort(
+			{
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(dirtyFromDateSource, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: period.id },
+		);
 
 		logger.info(
 			{
@@ -1348,12 +1364,15 @@ export async function clockOut(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
 
-		await markEmployeeWorkBalanceDirty({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			dirtyFromDate:
-				DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
-		});
+		await markWorkBalanceDirtyBestEffort(
+			{
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: activePeriod.id },
+		);
 
 		// If clock-out needs approval, create an approval request
 		if (needsClockOutApproval && emp.managerId) {
@@ -1991,11 +2010,14 @@ export async function deleteWorkPeriod(
 		// Delete the work period record
 		await db.delete(workPeriod).where(eq(workPeriod.id, workPeriodId));
 
-		await markEmployeeWorkBalanceDirty({
-			employeeId: period.employeeId,
-			organizationId: period.organizationId,
-			dirtyFromDate: DateTime.fromJSDate(period.startTime, { zone: "utc" }).toISODate() ?? undefined,
-		});
+		await markWorkBalanceDirtyBestEffort(
+			{
+				employeeId: period.employeeId,
+				organizationId: period.organizationId,
+				dirtyFromDate: DateTime.fromJSDate(period.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{ employeeId: period.employeeId, organizationId: period.organizationId, workPeriodId },
+		);
 
 		logger.info(
 			{
@@ -3031,11 +3053,14 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			})
 			.returning();
 
-		await markEmployeeWorkBalanceDirty({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			dirtyFromDate: DateTime.fromJSDate(clockInDate, { zone: "utc" }).toISODate() ?? undefined,
-		});
+		await markWorkBalanceDirtyBestEffort(
+			{
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				dirtyFromDate: DateTime.fromJSDate(clockInDate, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: period.id },
+		);
 
 		// If approval required, create approval request and notify manager
 		if (requiresApproval && emp.managerId) {

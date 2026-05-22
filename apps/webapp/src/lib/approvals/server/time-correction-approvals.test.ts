@@ -207,6 +207,22 @@ describe("time correction requester decision notifications", () => {
 		).toBeLessThan(markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0]);
 	});
 
+	it("keeps approval successful when dirty marking fails", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+
+		await expect(
+			runTimeCorrectionDecisionEffect(
+				approveTimeCorrectionWithCurrentApproverEffect(
+					dbService,
+					timeCorrectionCurrentApprover,
+					"period-1",
+				),
+			),
+		).resolves.toBeDefined();
+		expect(onTimeCorrectionApproved).toHaveBeenCalled();
+	});
+
 	it("notifies the requester after approving a time correction request", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 

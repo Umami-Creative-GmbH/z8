@@ -6,6 +6,7 @@ import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema"
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { createLogger } from "@/lib/logger";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -19,6 +20,8 @@ import type {
 } from "../policies/types";
 import { processApproval, processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalDbService, CurrentApprover } from "./types";
+
+const logger = createLogger("TimeCorrectionApprovals");
 
 interface WorkPeriodRecord {
 	id: string;
@@ -331,13 +334,17 @@ function getDirtyFromDateForCorrection(period: WorkPeriodRecord, clockInCorrecti
 
 function markWorkBalanceDirtyAfterCommit(mark?: WorkBalanceDirtyMark) {
 	return mark
-		? Effect.promise(() => markEmployeeWorkBalanceDirty(mark))
+		? Effect.promise(() => markEmployeeWorkBalanceDirtyIfNeeded(mark))
 		: Effect.void;
 }
 
 async function markEmployeeWorkBalanceDirtyIfNeeded(mark?: WorkBalanceDirtyMark) {
 	if (!mark) return;
-	await markEmployeeWorkBalanceDirty(mark);
+	try {
+		await markEmployeeWorkBalanceDirty(mark);
+	} catch (error) {
+		logger.error({ error, ...mark }, "Failed to mark work balance dirty");
+	}
 }
 
 function notifyApprovedCorrection(

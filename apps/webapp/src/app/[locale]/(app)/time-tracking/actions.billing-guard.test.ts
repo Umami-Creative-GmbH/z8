@@ -38,6 +38,12 @@ describe("legacy time-tracking action billing guards", () => {
 		);
 	});
 
+	it("wraps work balance dirty marking as best effort", () => {
+		expect(source).toContain("async function markWorkBalanceDirtyBestEffort(");
+		expect(source).toContain("await markWorkBalanceDirtyBestEffort(");
+		expect(source).toContain('"Failed to mark work balance dirty"');
+	});
+
 	it("guards clock-in before creating time entries", () => {
 		expectBillingGuardBeforeWrite("clockIn", "createTimeEntry({");
 	});
@@ -70,7 +76,7 @@ describe("legacy time-tracking action billing guards", () => {
 		"marks work balances dirty after %s changes payable time",
 		(name) => {
 			const body = functionBody(name);
-			expect(body).toContain("await markEmployeeWorkBalanceDirty({");
+			expect(body).toContain("await markWorkBalanceDirtyBestEffort(");
 			expect(body).toContain("dirtyFromDate:");
 		},
 	);
