@@ -51,7 +51,7 @@ import {
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
-	selectAbsenceDefaultApproverId,
+	getMissingAbsenceApproverMessage,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -325,14 +325,10 @@ function getAbsenceDefaultApproverId(
 	currentEmployee: RequestAbsenceEmployeeContext,
 ) {
 	return dbService.query("getAbsenceDefaultApprover", async () => {
-		const eligibleManagerId = await getPrimaryEligibleManagerIdForRequester({
+		return await getPrimaryEligibleManagerIdForRequester({
 			db: dbService.db,
 			requesterEmployeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
-		});
-
-		return selectAbsenceDefaultApproverId({
-			eligibleManagerId,
 		});
 	});
 }
@@ -580,6 +576,20 @@ function requestAbsenceWithResolverEffect(
 				const defaultApproverId = category.requiresApproval
 					? yield* _(getAbsenceDefaultApproverId(dbService, currentEmployee))
 					: null;
+				const missingApproverMessage = getMissingAbsenceApproverMessage({
+					requiresApproval: category.requiresApproval,
+					approverId: defaultApproverId,
+				});
+				if (missingApproverMessage) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: missingApproverMessage,
+								field: "managerId",
+							}),
+						),
+					);
+				}
 
 				yield* _(
 					checkForOverlappingAbsences(

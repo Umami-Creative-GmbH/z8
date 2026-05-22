@@ -34,10 +34,13 @@ export function shouldApplySickVacationOverrideImmediately(input: {
 	);
 }
 
-export function selectAbsenceDefaultApproverId(input: {
-	eligibleManagerId: string | null;
+export function getMissingAbsenceApproverMessage(input: {
+	requiresApproval: boolean;
+	approverId: string | null;
 }): string | null {
-	return input.eligibleManagerId;
+	return input.requiresApproval && !input.approverId
+		? "No manager assigned to approve absence requests"
+		: null;
 }
 
 export function enqueueVacationOverrideCalendarSyncJobs(input: {

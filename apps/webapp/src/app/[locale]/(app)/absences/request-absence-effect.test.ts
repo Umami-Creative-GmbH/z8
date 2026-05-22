@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
-	selectAbsenceDefaultApproverId,
+	getMissingAbsenceApproverMessage,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -84,19 +84,30 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 	});
 });
 
-describe("selectAbsenceDefaultApproverId", () => {
-	it("returns the resolved eligible manager id", () => {
+describe("getMissingAbsenceApproverMessage", () => {
+	it("returns the missing-manager message for approval-required requests without an approver", () => {
 		expect(
-			selectAbsenceDefaultApproverId({
-				eligibleManagerId: "team-manager",
+			getMissingAbsenceApproverMessage({
+				requiresApproval: true,
+				approverId: null,
 			}),
-		).toBe("team-manager");
+		).toBe("No manager assigned to approve absence requests");
 	});
 
-	it("returns null when no eligible manager is resolved", () => {
+	it("returns null for approval-required requests with an approver", () => {
 		expect(
-			selectAbsenceDefaultApproverId({
-				eligibleManagerId: null,
+			getMissingAbsenceApproverMessage({
+				requiresApproval: true,
+				approverId: "manager-1",
+			}),
+		).toBeNull();
+	});
+
+	it("returns null for requests that do not require approval without an approver", () => {
+		expect(
+			getMissingAbsenceApproverMessage({
+				requiresApproval: false,
+				approverId: null,
 			}),
 		).toBeNull();
 	});
