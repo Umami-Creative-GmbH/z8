@@ -143,16 +143,18 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		const outsideOrgCondition = {
 			organizationId: { $ne: principal.activeOrganizationId },
 		};
-		const timeEntryActions: Action[] = ["create", "read", "update", "delete"];
+		const employeeActions: Action[] = ["create", "read", "update", "delete", "manage"];
+		const timeEntryActions: Action[] = ["create", "read", "update", "delete", "manage"];
 		const absenceActions: Action[] = [
 			"create",
 			"read",
 			"update",
 			"delete",
+			"manage",
 			"approve",
 			"reject",
 		];
-		const approvalActions: Action[] = ["read", "approve", "reject"];
+		const approvalActions: Action[] = ["read", "approve", "reject", "manage"];
 
 		// Employee admin - full workforce access within org
 		if (empRole === "admin") {
@@ -249,6 +251,10 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		}
 
 		if (empRole === "manager") {
+			cannot(employeeActions, "Employee", outsideOrgCondition);
+			cannot(employeeActions, "Employee", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
 			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
 			cannot(timeEntryActions, "TimeEntry", {
 				employeeId: { $nin: visibleEmployeeIds },
@@ -257,7 +263,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			cannot(absenceActions, "Absence", {
 				employeeId: { $nin: visibleEmployeeIds },
 			});
-			cannot(["update", "delete", "approve", "reject"], "Absence", orgCondition);
+			cannot(["update", "delete", "manage", "approve", "reject"], "Absence", orgCondition);
 			cannot(approvalActions, "Approval", outsideOrgCondition);
 			cannot(approvalActions, "Approval", orgCondition);
 			can(["read", "update"], "Employee", selfCondition);
@@ -276,6 +282,10 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		}
 
 		if (empRole === "employee") {
+			cannot(employeeActions, "Employee", outsideOrgCondition);
+			cannot(employeeActions, "Employee", {
+				employeeId: { $ne: principal.employee.id },
+			});
 			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
 			cannot(timeEntryActions, "TimeEntry", {
 				employeeId: { $ne: principal.employee.id },
