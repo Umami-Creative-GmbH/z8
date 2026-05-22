@@ -1,6 +1,45 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
+
+export function canApproveAbsenceRecord(input: {
+	approver: {
+		id: string;
+		role: "admin" | "manager" | "employee";
+		organizationId: string;
+	};
+	absence: {
+		employeeId: string;
+		organizationId: string;
+	};
+	managedEmployeeIds: string[];
+}): boolean {
+	const principal: PrincipalContext = {
+		userId: input.approver.id,
+		isPlatformAdmin: false,
+		activeOrganizationId: input.approver.organizationId,
+		orgMembership: null,
+		employee: {
+			id: input.approver.id,
+			organizationId: input.approver.organizationId,
+			role: input.approver.role,
+			teamId: null,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: input.managedEmployeeIds,
+		customRoles: [],
+	};
+
+	const ability = defineAbilityFor(principal);
+	return ability.can(
+		"approve",
+		asAppSubject("Absence", {
+			employeeId: input.absence.employeeId,
+			organizationId: input.absence.organizationId,
+		}),
+	);
+}
 
 /**
  * Check if an employee can approve an absence request
@@ -31,17 +70,18 @@ export async function canApproveAbsence(
 		return false;
 	}
 
-	// Admins can approve all absences
-	if (approver.role === "admin") {
-		return true;
-	}
-
-	// Managers can approve their subordinates' absences
-	if (approver.role === "manager" && target.managerId === employeeId) {
-		return true;
-	}
-
-	return false;
+	return canApproveAbsenceRecord({
+		approver: {
+			id: approver.id,
+			role: approver.role,
+			organizationId: approver.organizationId,
+		},
+		absence: {
+			employeeId: target.id,
+			organizationId: target.organizationId,
+		},
+		managedEmployeeIds: target.managerId === employeeId ? [targetEmployeeId] : [],
+	});
 }
 
 /**
