@@ -25,7 +25,7 @@ import {
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
-import { getEligibleManagerIdsForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -325,15 +325,14 @@ function getAbsenceDefaultApproverId(
 	currentEmployee: RequestAbsenceEmployeeContext,
 ) {
 	return dbService.query("getAbsenceDefaultApprover", async () => {
-		const eligibleManagerIds = await getEligibleManagerIdsForRequester({
+		const eligibleManagerId = await getPrimaryEligibleManagerIdForRequester({
 			db: dbService.db,
 			requesterEmployeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
 		});
 
 		return selectAbsenceDefaultApproverId({
-			legacyManagerId: currentEmployee.managerId,
-			eligibleManagerIds,
+			eligibleManagerId,
 		});
 	});
 }

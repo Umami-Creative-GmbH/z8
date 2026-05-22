@@ -85,22 +85,20 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 });
 
 describe("selectAbsenceDefaultApproverId", () => {
-	it("uses an eligible team fallback manager when the legacy direct manager field is missing", () => {
+	it("returns the resolved eligible manager id", () => {
 		expect(
 			selectAbsenceDefaultApproverId({
-				legacyManagerId: null,
-				eligibleManagerIds: ["team-manager"],
+				eligibleManagerId: "team-manager",
 			}),
 		).toBe("team-manager");
 	});
 
-	it("falls back to the legacy direct manager when eligibility data is unavailable", () => {
+	it("returns null when no eligible manager is resolved", () => {
 		expect(
 			selectAbsenceDefaultApproverId({
-				legacyManagerId: "legacy-manager",
-				eligibleManagerIds: [],
+				eligibleManagerId: null,
 			}),
-		).toBe("legacy-manager");
+		).toBeNull();
 	});
 });
 
