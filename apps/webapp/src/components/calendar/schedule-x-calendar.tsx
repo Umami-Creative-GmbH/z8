@@ -11,12 +11,13 @@ import {
 } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 
-// Schedule-X CSS customizations (extracted to separate file for performance)
-import "./schedule-x-calendar.css";
 import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
+
+// Schedule-X CSS customizations must load after the default theme.
+import "./schedule-x-calendar.css";
 import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
