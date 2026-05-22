@@ -5,13 +5,27 @@
  * Ensures proper tenant isolation and permission flag grants.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, expectTypeOf } from "vitest";
+import type { ForcedSubject } from "@casl/ability";
 import {
 	defineAbilityFor,
 	createEmptyAbility,
 	type PrincipalContext,
 } from "../index";
 import { asAppSubject } from "../subjects";
+
+describe("asAppSubject types", () => {
+	it("preserves the literal forced subject type for ability checks", () => {
+		const ability = createEmptyAbility();
+		const timeEntrySubject = asAppSubject("TimeEntry", {
+			employeeId: EMPLOYEE_1,
+			organizationId: ORG_1,
+		});
+
+		expectTypeOf(timeEntrySubject).toMatchTypeOf<ForcedSubject<"TimeEntry">>();
+		expect(ability.can("read", timeEntrySubject)).toBe(false);
+	});
+});
 
 // ============================================
 // TEST FIXTURES

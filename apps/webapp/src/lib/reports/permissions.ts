@@ -143,19 +143,19 @@ export async function getAccessibleEmployees(
 		return [];
 	}
 
-	let managerRelations: Awaited<ReturnType<typeof db.query.employeeManagers.findMany>> = [];
-	if (currentEmp.role === "manager") {
-		managerRelations = await db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.managerId, currentEmployeeId),
-			with: {
-				employee: {
+	const managerRelations =
+		currentEmp.role === "manager"
+			? await db.query.employeeManagers.findMany({
+					where: eq(employeeManagers.managerId, currentEmployeeId),
 					with: {
-						user: true,
+						employee: {
+							with: {
+								user: true,
+							},
+						},
 					},
-				},
-			},
-		});
-	}
+				})
+			: [];
 
 	const accessibleEmployeeIds = getReportAccessibleEmployeeIds({
 		currentEmployeeId,
