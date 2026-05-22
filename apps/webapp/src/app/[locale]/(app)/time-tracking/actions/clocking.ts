@@ -189,6 +189,9 @@ export async function clockOut(
 					organizationId: currentEmployee.organizationId,
 				})
 			: null;
+		if (needsClockOutApproval && !managerId) {
+			return { success: false, error: "No manager assigned to approve time changes" };
+		}
 
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
@@ -669,6 +672,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					organizationId: currentEmployee.organizationId,
 				})
 			: null;
+		if (requiresApproval && !managerId) {
+			return { success: false, error: "No manager assigned to approve time changes" };
+		}
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
 		const clockInEntry = await createTimeEntry({
 			employeeId: currentEmployee.id,

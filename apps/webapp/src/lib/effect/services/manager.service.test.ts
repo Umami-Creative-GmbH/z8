@@ -5,10 +5,14 @@ import { DatabaseService } from "./database.service";
 import { ManagerService, ManagerServiceLive } from "./manager.service";
 
 function createManagerServiceTestContext({
+	employeeRecord = { id: "employee-1", organizationId: "org-1" },
 	existingAssignment,
+	managerRecord = { id: "manager-1", organizationId: "org-1" },
 	managerAssignments,
 }: {
+	employeeRecord?: { id: string; organizationId: string } | null;
 	existingAssignment?: { id: string } | null;
+	managerRecord?: { id: string; organizationId: string } | null;
 	managerAssignments?: Array<{ id: string; employeeId: string; managerId: string; isPrimary: boolean }>;
 } = {}) {
 	const updatedTables: unknown[] = [];
@@ -19,7 +23,10 @@ function createManagerServiceTestContext({
 	const db = {
 		query: {
 			employee: {
-				findFirst: vi.fn(async () => ({ id: "employee-record" })),
+				findFirst: vi
+					.fn()
+					.mockResolvedValueOnce(employeeRecord)
+					.mockResolvedValueOnce(managerRecord),
 			},
 			employeeManagers: {
 				findFirst: vi.fn(async () => existingAssignment ?? null),
@@ -77,6 +84,20 @@ describe("ManagerService", () => {
 
 		expect(employeeManagersTableUpdateCount()).toBeGreaterThan(0);
 		expect(employeeTableUpdateCount()).toBe(0);
+	});
+
+	it("rejects manager assignments across organizations", async () => {
+		const { db, runAssignManager, employeeManagersTableUpdateCount } =
+			createManagerServiceTestContext({
+				employeeRecord: { id: "employee-1", organizationId: "org-1" },
+				managerRecord: { id: "manager-1", organizationId: "org-2" },
+			});
+
+		await expect(runAssignManager(true)).rejects.toMatchObject({
+			message: "Manager must belong to the same organization as the employee",
+		});
+		expect(db.insert).not.toHaveBeenCalled();
+		expect(employeeManagersTableUpdateCount()).toBe(0);
 	});
 
 	it("does not sync employee.managerId when removing the primary manager", async () => {

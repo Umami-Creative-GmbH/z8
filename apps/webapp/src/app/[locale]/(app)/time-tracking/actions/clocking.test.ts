@@ -306,18 +306,18 @@ describe("clockOut", () => {
 		});
 	});
 
-	it("keeps approval-required live clock-out pending when no manager link resolves", async () => {
+	it("rejects approval-required live clock-out when no manager link resolves", async () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
 
 		const result = await clockOut();
 
-		expect(result.success).toBe(true);
-		expect(mockState.updateSet).toHaveBeenCalledWith(
-			expect.objectContaining({
-				approvalStatus: "pending",
-				pendingChanges: expect.objectContaining({ isNewClockOut: true }),
-			}),
-		);
+		expect(result).toEqual({
+			success: false,
+			error: "No manager assigned to approve time changes",
+		});
+		expect(mockState.transaction).not.toHaveBeenCalled();
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.updateSet).not.toHaveBeenCalled();
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
 	});
 
@@ -412,11 +412,31 @@ describe("createManualTimeEntry", () => {
 			}),
 		);
 	});
+
+	it("rejects approval-required manual entries when no manager link resolves", async () => {
+		mockState.findManagerLinks.mockResolvedValue([]);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-03",
+			clockInTime: "09:00",
+			clockOutTime: "10:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "No manager assigned to approve time changes",
+		});
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
+	});
 });
 
 describe("addBreakToActiveSession", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.createTimeEntry.mockReset();
 		mockState.updateReturning.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));

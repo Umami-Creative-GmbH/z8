@@ -126,11 +126,15 @@ export async function resolveTimeApprovalManagerId(input: {
 		return null;
 	}
 
-	return getPrimaryEligibleManagerIdForRequester({
+	const managerId = await getPrimaryEligibleManagerIdForRequester({
 		db: input.db,
 		requesterEmployeeId: input.requesterEmployeeId,
 		organizationId: input.organizationId,
 	});
+	if (!managerId) {
+		throw new Error("No manager assigned to approve time changes");
+	}
+	return managerId;
 }
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
@@ -1306,6 +1310,18 @@ export async function clockOut(
 		};
 	}
 
+	let managerId: string | null = null;
+	try {
+		managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval: needsClockOutApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
+	} catch {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
+
 	try {
 		const entry = await createTimeEntry({
 			employeeId: emp.id,
@@ -1367,13 +1383,6 @@ export async function clockOut(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
 
-		// If clock-out needs approval, create an approval request
-		const managerId = await resolveTimeApprovalManagerId({
-			db,
-			requiresApproval: needsClockOutApproval,
-			requesterEmployeeId: emp.id,
-			organizationId: emp.organizationId,
-		});
 		if (needsClockOutApproval && managerId) {
 			await createClockOutApprovalRequest({
 				workPeriodId: activePeriod.id,
@@ -2894,6 +2903,18 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		};
 	}
 
+	let managerId: string | null = null;
+	try {
+		managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
+	} catch {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
+
 	try {
 		// Check for overlapping work periods on the same day
 		const existingPeriods = await db.query.workPeriod.findMany({
@@ -2996,13 +3017,6 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		// Determine approval status based on policy
 		const approvalStatus = requiresApproval ? "pending" : "approved";
-		const managerId = await resolveTimeApprovalManagerId({
-			db,
-			requiresApproval,
-			requesterEmployeeId: emp.id,
-			organizationId: emp.organizationId,
-		});
-
 		// Prepare pending changes data if approval is needed
 		const pendingChangesData = requiresApproval
 			? {

@@ -52,4 +52,18 @@ describe("monolithic time approval manager routing", () => {
 			}),
 		).resolves.toBe("manager-1");
 	});
+
+	it("rejects approval-required time changes when no manager link resolves", async () => {
+		const db = createManagerLinkDb();
+		db.query.employeeManagers.findMany.mockResolvedValue([]);
+
+		await expect(
+			resolveTimeApprovalManagerId({
+				db,
+				requiresApproval: true,
+				requesterEmployeeId: "employee-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("No manager assigned to approve time changes");
+	});
 });

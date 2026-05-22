@@ -111,6 +111,22 @@ export const ManagerServiceLive = Layer.effect(
 						);
 					}
 
+					if (
+						employeeExists &&
+						managerExists &&
+						employeeExists.organizationId !== managerExists.organizationId
+					) {
+						yield* _(
+							Effect.fail(
+								new ValidationError({
+									message: "Manager must belong to the same organization as the employee",
+									field: "managerId",
+									value: managerId,
+								}),
+							),
+						);
+					}
+
 					// Check if assignment already exists
 					const existing = yield* _(
 						dbService.query("checkExistingAssignment", async () => {
