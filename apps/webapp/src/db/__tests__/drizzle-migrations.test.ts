@@ -94,7 +94,15 @@ describe("drizzle follow-up migrations", () => {
 		expect(existsSync(migration0026Url)).toBe(true);
 
 		const migration0026 = readFileSync(migration0026Url, "utf8");
+		const guardPosition = migration0026.indexOf("DO $$");
+		const insertPosition = migration0026.indexOf('INSERT INTO "employee_managers"');
 
+		expect(guardPosition).toBeGreaterThanOrEqual(0);
+		expect(guardPosition).toBeLessThan(insertPosition);
+		expect(migration0026).toContain("RAISE EXCEPTION");
+		expect(migration0026).toContain('"manager"."organization_id" = "e"."organization_id"');
+		expect(migration0026).toContain('"manager"."id" IS NULL');
+		expect(migration0026).toContain('"assigned_user"."id" IS NULL');
 		expect(migration0026).toContain('INSERT INTO "employee_managers"');
 		expect(migration0026).toContain('FROM "employee" AS "e"');
 		expect(migration0026).toContain('"e"."manager_id" IS NOT NULL');

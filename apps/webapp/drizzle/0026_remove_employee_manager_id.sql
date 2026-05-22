@@ -1,3 +1,28 @@
+DO $$
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM "employee" AS "e"
+		LEFT JOIN "employee" AS "manager"
+			ON "manager"."id" = "e"."manager_id"
+			AND "manager"."organization_id" = "e"."organization_id"
+		WHERE "e"."manager_id" IS NOT NULL
+			AND "manager"."id" IS NULL
+	) THEN
+		RAISE EXCEPTION 'Cannot remove employee.manager_id: legacy manager assignment references a missing or cross-organization manager';
+	END IF;
+
+	IF EXISTS (
+		SELECT 1
+		FROM "employee" AS "e"
+		LEFT JOIN "user" AS "assigned_user"
+			ON "assigned_user"."id" = "e"."user_id"
+		WHERE "e"."manager_id" IS NOT NULL
+			AND "assigned_user"."id" IS NULL
+	) THEN
+		RAISE EXCEPTION 'Cannot remove employee.manager_id: legacy manager assignment has no valid assigned_by user';
+	END IF;
+END $$;--> statement-breakpoint
 INSERT INTO "employee_managers" (
 	"employee_id",
 	"manager_id",
