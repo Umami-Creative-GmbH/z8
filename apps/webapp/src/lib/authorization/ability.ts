@@ -139,6 +139,10 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			organizationId: principal.activeOrganizationId,
 			employeeId: { $in: principal.managedEmployeeIds },
 		};
+		const visibleEmployeeIds = [principal.employee.id, ...principal.managedEmployeeIds];
+		const outsideOrgCondition = {
+			organizationId: { $ne: principal.activeOrganizationId },
+		};
 
 		// Employee admin - full workforce access within org
 		if (empRole === "admin") {
@@ -158,6 +162,10 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "Calendar");
 			can("manage", "Surcharge");
 			can("manage", "Holiday");
+			cannot("manage", "Employee", outsideOrgCondition);
+			cannot("manage", "TimeEntry", outsideOrgCondition);
+			cannot("manage", "Absence", outsideOrgCondition);
+			cannot("manage", "Approval", outsideOrgCondition);
 			can("manage", "Employee", orgCondition);
 			can("manage", "TimeEntry", orgCondition);
 			can("manage", "Absence", orgCondition);
@@ -170,6 +178,18 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "TimeEntry");
 			can("manage", "LeaveRequest");
 			can("manage", "Absence");
+			cannot("manage", "TimeEntry", outsideOrgCondition);
+			cannot("manage", "TimeEntry", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot("manage", "Absence", outsideOrgCondition);
+			cannot("manage", "Absence", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot(["update", "delete"], "Absence", orgCondition);
+			cannot(["approve", "reject"], "Absence", orgCondition);
+			cannot(["approve", "reject"], "Approval", outsideOrgCondition);
+			cannot(["approve", "reject"], "Approval", orgCondition);
 			can(["read", "update"], "Employee", selfCondition);
 			can("read", "Employee", directReportCondition);
 			can("read", "TimeEntry", selfCondition);
@@ -187,10 +207,6 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 
 			// Can approve/reject if has direct reports
 			if (principal.managedEmployeeIds.length > 0) {
-				can("approve", "Approval");
-				can("reject", "Approval");
-				can("approve", "Absence");
-				can("reject", "Absence");
 				can(["read", "approve", "reject"], "Approval", {
 					organizationId: principal.activeOrganizationId,
 					requestedBy: { $in: principal.managedEmployeeIds },
@@ -209,6 +225,14 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("read", "LeaveRequest");
 			can("create", "Absence");
 			can("read", "Absence");
+			cannot("manage", "TimeEntry", outsideOrgCondition);
+			cannot("manage", "TimeEntry", {
+				employeeId: { $ne: principal.employee.id },
+			});
+			cannot(["read", "create"], "Absence", outsideOrgCondition);
+			cannot(["read", "create"], "Absence", {
+				employeeId: { $ne: principal.employee.id },
+			});
 			can(["read", "update"], "Employee", selfCondition);
 			can("read", "TimeEntry", selfCondition);
 			can(["read", "create"], "Absence", selfCondition);
