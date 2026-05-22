@@ -14,6 +14,7 @@ const migrationJournal = JSON.parse(
 
 describe("employee work balance schema", () => {
 	it("defines organization-scoped all-time balance columns", () => {
+		expect(employeeWorkBalance.id.name).toBe("id");
 		expect(employeeWorkBalance.organizationId.name).toBe("organization_id");
 		expect(employeeWorkBalance.employeeId.name).toBe("employee_id");
 		expect(employeeWorkBalance.actualMinutes.name).toBe("actual_minutes");
@@ -26,6 +27,8 @@ describe("employee work balance schema", () => {
 		expect(employeeWorkBalance.dirtyFromDate.name).toBe("dirty_from_date");
 		expect(employeeWorkBalance.refreshRequestedAt.name).toBe("refresh_requested_at");
 		expect(employeeWorkBalance.lastError.name).toBe("last_error");
+		expect(employeeWorkBalance.createdAt.name).toBe("created_at");
+		expect(employeeWorkBalance.updatedAt.name).toBe("updated_at");
 	});
 
 	it("enforces employee and organization consistency", () => {
@@ -56,6 +59,12 @@ describe("employee work balance schema", () => {
 		expect(migration).toContain('CREATE TABLE "employee_work_balance"');
 		expect(migration).toContain(
 			'CREATE UNIQUE INDEX "employeeWorkBalance_org_employee_idx"',
+		);
+		expect(migration).toContain(
+			'CREATE INDEX "employeeWorkBalance_org_idx"',
+		);
+		expect(migration).toContain(
+			'CREATE INDEX "employeeWorkBalance_employee_org_idx"',
 		);
 		expect(migration).toContain(
 			'CREATE INDEX "employeeWorkBalance_dirty_idx"',
