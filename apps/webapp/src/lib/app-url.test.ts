@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	domainConfig: vi.fn(),
@@ -29,8 +29,12 @@ describe("getOrganizationBaseUrl", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
-		delete process.env.BETTER_AUTH_URL;
-		delete process.env.NEXT_PUBLIC_APP_URL;
+		vi.stubEnv("BETTER_AUTH_URL", undefined);
+		vi.stubEnv("NEXT_PUBLIC_APP_URL", undefined);
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
 	});
 
 	it("returns verified custom domain before platform subdomain", async () => {
@@ -51,7 +55,7 @@ describe("getOrganizationBaseUrl", () => {
 	});
 
 	it("returns the default app URL when organization lookup fails", async () => {
-		process.env.NEXT_PUBLIC_APP_URL = "https://ui.z8-time.app";
+		vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://ui.z8-time.app");
 		mockState.domainConfig.mockResolvedValueOnce(null);
 		mockState.db.query.organization.findFirst.mockResolvedValueOnce(null);
 
