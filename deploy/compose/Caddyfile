@@ -1,16 +1,14 @@
-{
-  local_certs
+# Caddy terminates HTTP/HTTPS for the self-hosted Compose stack.
+# Configure APP_DOMAIN and DOCS_DOMAIN in the Compose environment.
+
+{$APP_DOMAIN:localhost} {
+	encode zstd gzip
+
+	reverse_proxy webapp:3000
 }
 
-http://*.test {
-  redir https://{host}{uri} permanent
-}
+{$DOCS_DOMAIN:docs.localhost} {
+	encode zstd gzip
 
-https://*.test {
-  log {
-    output stdout
-    format console
-  }
-
-  reverse_proxy host.docker.internal:3000
+	reverse_proxy docs:3001
 }

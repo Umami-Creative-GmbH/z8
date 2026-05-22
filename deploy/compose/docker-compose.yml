@@ -1,98 +1,366 @@
+# =============================================================================
+# Z8 Self-Hosted Docker Compose
+# =============================================================================
+# Full single-host stack for production-like deployments. This file builds and
+# runs the application images, operational jobs, database/cache services, object
+# storage, and Caddy reverse proxy. For local app development, use the root
+# `docker-compose.dev.yml` instead and run Next.js from the host with `pnpm dev`.
+#
+# Usage:
+#   # Build all application images
+#   docker compose -f deploy/compose/docker-compose.yml build
+#
+#   # Start infrastructure only
+#   docker compose -f deploy/compose/docker-compose.yml up -d db pgbouncer valkey rustfs
+#
+#   # Run migrations
+#   docker compose -f deploy/compose/docker-compose.yml up migration
+#
+#   # Start the full stack
+#   docker compose -f deploy/compose/docker-compose.yml up -d
+#
+#   # Scale the web application
+#   docker compose -f deploy/compose/docker-compose.yml up -d --scale webapp=3
+#
+#   # Seed the database, when explicitly needed
+#   docker compose -f deploy/compose/docker-compose.yml --profile seed up db-seed
+#
+#   # Start optional Vault
+#   docker compose -f deploy/compose/docker-compose.yml --profile vault up -d vault
+# =============================================================================
+
 name: z8
+
 services:
   db:
-    image: postgres:17-alpine
-    ports:
-      - 5433:5432 # Direct access on 5433 for admin tasks (migrations, etc.)
+    image: postgres:18-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
     volumes:
-      - default_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-z8}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
   pgbouncer:
     image: edoburu/pgbouncer:latest
-    ports:
-      - 5432:5432 # App connects here (standard postgres port)
+    restart: unless-stopped
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-mysecretpassword}
-      DB_NAME: ${POSTGRES_DB:-postgres}
+      DB_USER: ${POSTGRES_USER:-z8}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      DB_NAME: ${POSTGRES_DB:-z8}
       LISTEN_PORT: 5432
-      POOL_MODE: transaction # Transaction pooling for better connection reuse
-      MAX_CLIENT_CONN: 1000 # Support many app connections
-      DEFAULT_POOL_SIZE: 50 # Connections to actual DB
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 50
       MIN_POOL_SIZE: 10
       RESERVE_POOL_SIZE: 10
       IGNORE_STARTUP_PARAMETERS: extra_float_digits
-      AUTH_TYPE: scram-sha-256
+      AUTH_TYPE: md5
+    ports:
+      - "5432:5432"
     depends_on:
       db:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   valkey:
     image: valkey/valkey:9-alpine
-    ports:
-      - 6379:6379
+    restart: unless-stopped
+    command: >
+      valkey-server
+      --save 60 1000
+      --loglevel warning
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      ${VALKEY_PASSWORD:+--requirepass ${VALKEY_PASSWORD}}
     volumes:
       - valkey_data:/data
-
-  redisinsight:
-    image: redis/redisinsight:latest
     ports:
-      - "5540:5540"
-    volumes:
-      - redisinsight-data:/data
-    depends_on:
-      - valkey
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
-  # Bull Board - BullMQ job queue dashboard
-  # Access at http://localhost:3100
-  # Login with BULL_BOARD_USER/BULL_BOARD_PASSWORD from .env
   bullboard:
     image: deadly0/bull-board:latest
-    ports:
-      - "3100:3000"
+    restart: unless-stopped
     environment:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
       REDIS_USE_TLS: "false"
-      BULL_PREFIX: bull # BullMQ default prefix
-      # Basic auth - set these in .env for security
+      BULL_PREFIX: bull
       USER_LOGIN: ${BULL_BOARD_USER:-admin}
-      USER_PASSWORD: ${BULL_BOARD_PASSWORD:-admin}
+      USER_PASSWORD: ${BULL_BOARD_PASSWORD:?BULL_BOARD_PASSWORD is required}
+    ports:
+      - "3100:3000"
     depends_on:
-      - valkey
+      valkey:
+        condition: service_healthy
 
-  # HashiCorp Vault - Secrets management
-  # Access UI at http://localhost:8200
-  # First run: Initialize with `docker compose exec vault vault operator init`
-  # Save the unseal keys and root token, then unseal with `vault operator unseal`
-  # Production: Use auto-unseal with cloud KMS instead of manual unsealing
   vault:
     image: hashicorp/vault:1.21
-    ports:
-      - "8200:8200"
+    restart: unless-stopped
     environment:
       VAULT_ADDR: "http://127.0.0.1:8200"
-      VAULT_LOCAL_CONFIG: '{"storage": {"file": {"path": "/vault/data"}}, "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}}, "ui": true, "disable_mlock": true}'
+      VAULT_LOCAL_CONFIG: |
+        {
+          "storage": {"file": {"path": "/vault/data"}},
+          "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}},
+          "ui": true,
+          "disable_mlock": true
+        }
     cap_add:
       - IPC_LOCK
     volumes:
-      - ../.vault-data:/vault/data
+      - vault_data:/vault/data
+    ports:
+      - "8200:8200"
     command: server
+    profiles:
+      - vault
 
-  caddy-dev:
+  rustfs:
+    image: rustfs/rustfs:latest
+    restart: unless-stopped
+    environment:
+      RUSTFS_ROOT_USER: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID is required}
+      RUSTFS_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    volumes:
+      - rustfs_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+  migration:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.migration
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  db-seed:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.db-seed
+    environment:
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    restart: "no"
+    profiles:
+      - seed
+
+  webapp:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.webapp
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
+      NODE_ENV: production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CRON_SECRET: ${CRON_SECRET:-}
+      VAULT_ADDR: ${VAULT_ADDR:-}
+      VAULT_TOKEN: ${VAULT_TOKEN:-}
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID is required}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:?S3_PUBLIC_URL is required}
+    expose:
+      - "3000"
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      valkey:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+  docs:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.docs
+    restart: unless-stopped
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: pgbouncer
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      VALKEY_HOST: valkey
+      VALKEY_PORT: 6379
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
+      ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
+      NODE_ENV: production
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID is required}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      S3_ENDPOINT: ${S3_ENDPOINT:?S3_ENDPOINT is required}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:?S3_PUBLIC_URL is required}
+    depends_on:
+      valkey:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      rustfs:
+        condition: service_healthy
+      webapp:
+        condition: service_started
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  caddy:
     image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      DOCS_DOMAIN: ${DOCS_DOMAIN:-docs.localhost}
     ports:
       - "80:80"
       - "443:443"
@@ -100,43 +368,16 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-  # RustFS - S3-compatible object storage
-  # Web Console: http://localhost:9001 (default: rustfsadmin/rustfsadmin)
-  # S3 API: http://localhost:9000
-  # Configure app with:
-  #   S3_ENDPOINT=http://localhost:9000
-  #   S3_ACCESS_KEY_ID=rustfsadmin
-  #   S3_SECRET_ACCESS_KEY=rustfsadmin
-  #   S3_BUCKET=z8-uploads
-  #   S3_FORCE_PATH_STYLE=true
-  #   S3_PUBLIC_URL=http://localhost:9000/z8-uploads
-  rustfs:
-    image: rustfs/rustfs:latest
-    ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Web Console
-    environment:
-      RUSTFS_ROOT_USER: ${S3_ACCESS_KEY_ID:-rustfsadmin}
-      RUSTFS_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-rustfsadmin}
-      RUSTFS_VOLUMES: /data
-      RUSTFS_ADDRESS: "0.0.0.0:9000"
-      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
-      RUSTFS_CONSOLE_ENABLE: "true"
-    volumes:
-      - rustfs_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    depends_on:
+      webapp:
+        condition: service_started
+      docs:
+        condition: service_started
 
 volumes:
-  default_data:
+  db_data:
   valkey_data:
-  redisinsight-data:
+  vault_data:
+  rustfs_data:
   caddy_data:
   caddy_config:
-  rustfs_data:

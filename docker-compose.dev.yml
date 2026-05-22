@@ -1,0 +1,177 @@
+# =============================================================================
+# Z8 Local Development Docker Compose
+# =============================================================================
+# Local infrastructure for running the app from your host with `pnpm dev`.
+# This file intentionally does not build or run the production webapp, worker,
+# docs, or migration images. Use `deploy/compose/docker-compose.yml` for the
+# fuller self-hosted stack.
+#
+# Usage:
+#   # Start the local development infrastructure
+#   docker compose -f docker-compose.dev.yml up -d
+#
+#   # Start only core services
+#   docker compose -f docker-compose.dev.yml up -d db pgbouncer valkey rustfs
+#
+#   # Start optional Vault for local secret-management testing
+#   docker compose -f docker-compose.dev.yml --profile vault up -d vault
+#
+#   # View logs
+#   docker compose -f docker-compose.dev.yml logs -f
+#
+#   # Stop services
+#   docker compose -f docker-compose.dev.yml down
+# =============================================================================
+
+name: z8-dev
+
+services:
+  # PostgreSQL for local development. PgBouncer exposes the app-facing port on
+  # 5432, so direct database access is mapped to 5433.
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-z8}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-z8}
+      POSTGRES_DB: ${POSTGRES_DB:-z8}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-z8}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PgBouncer matches the default app database port for local `.env` files.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-z8}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-z8}
+      DB_NAME: ${POSTGRES_DB:-z8}
+      LISTEN_PORT: 5432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 50
+      MIN_POOL_SIZE: 10
+      RESERVE_POOL_SIZE: 10
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+      AUTH_TYPE: md5
+    ports:
+      - "5432:5432"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Valkey backs local queues, cache, and rate-limiting flows.
+  valkey:
+    image: valkey/valkey:9-alpine
+    restart: unless-stopped
+    command: >
+      valkey-server
+      --save 60 1000
+      --loglevel warning
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      ${VALKEY_PASSWORD:+--requirepass ${VALKEY_PASSWORD}}
+    volumes:
+      - valkey_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # RedisInsight is a local-only UI for inspecting Valkey data.
+  redisinsight:
+    image: redis/redisinsight:latest
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      valkey:
+        condition: service_healthy
+
+  # Bull Board is a local-only BullMQ queue dashboard.
+  # Access: http://localhost:3100
+  bullboard:
+    image: deadly0/bull-board:latest
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_USE_TLS: "false"
+      BULL_PREFIX: bull
+      USER_LOGIN: ${BULL_BOARD_USER:-admin}
+      USER_PASSWORD: ${BULL_BOARD_PASSWORD:-admin}
+    ports:
+      - "3100:3000"
+    depends_on:
+      valkey:
+        condition: service_healthy
+
+  # Optional local Vault. Start it only when testing Vault-backed flows:
+  # `docker compose -f docker-compose.dev.yml --profile vault up -d vault`.
+  vault:
+    image: hashicorp/vault:1.21
+    restart: unless-stopped
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+      VAULT_LOCAL_CONFIG: |
+        {
+          "storage": {"file": {"path": "/vault/data"}},
+          "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}},
+          "ui": true,
+          "disable_mlock": true
+        }
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault_data:/vault/data
+    ports:
+      - "8200:8200"
+    command: server
+    profiles:
+      - vault
+
+  # RustFS provides local S3-compatible object storage for uploads and exports.
+  # Console: http://localhost:9001
+  # S3 API: http://localhost:9000
+  rustfs:
+    image: rustfs/rustfs:latest
+    restart: unless-stopped
+    environment:
+      RUSTFS_ROOT_USER: ${S3_ACCESS_KEY_ID:-rustfsadmin}
+      RUSTFS_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    volumes:
+      - rustfs_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+  valkey_data:
+  redisinsight_data:
+  vault_data:
+  rustfs_data:
