@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
+import { workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 
 const mockState = vi.hoisted(() => ({
@@ -290,5 +291,35 @@ describe("work balance helpers", () => {
 				startDate: new Date("2026-05-01T00:00:00.000Z"),
 			}),
 		);
+	});
+
+	it("includes completed legacy periods even when isActive is stale", async () => {
+		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
+		mockState.selectFrom
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere
+			.mockResolvedValueOnce([{ value: new Date("2026-05-03T09:00:00.000Z") }])
+			.mockResolvedValueOnce([{ value: null }])
+			.mockResolvedValueOnce([{ value: null }])
+			.mockResolvedValueOnce([{ totalMinutes: 450 }]);
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({});
+
+		const result = await computeEmployeeWorkBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				computedFromDate: "2026-05-03",
+				actualMinutes: 450,
+			}),
+		);
+		expect(eq).not.toHaveBeenCalledWith(expect.anything(), false);
+		expect(isNotNull).toHaveBeenCalledWith(workPeriod.endTime);
 	});
 });

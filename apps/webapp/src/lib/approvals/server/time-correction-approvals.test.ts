@@ -923,7 +923,7 @@ describe("time correction approval policy resolution", () => {
 		});
 	});
 
-	it("falls back to manager approval when a matched time policy cannot resolve", async () => {
+	it("fails closed when a matched time policy cannot resolve an approver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([
 			{
 				id: "policy-1",
@@ -944,28 +944,19 @@ describe("time correction approval policy resolution", () => {
 			},
 		]);
 
-		const result = await Effect.runPromise(
-			createTimeCorrectionApprovalWorkflow(dbService, {
-				organizationId: "org-1",
-				requesterEmployeeId: "emp-requester",
-				teamId: "team-1",
-				workPeriodId: "period-1",
-				defaultApproverId: "emp-manager",
-				reason: "Correct missed clock-in",
-				overtimeRisk: "warning",
-			}),
-		);
-
-		expect(result).toEqual({ kind: "default_created", approvalRequestId: "insert-1" });
-		expect(inserts).toHaveLength(1);
-		expect(inserts[0].values).toMatchObject({
-			organizationId: "org-1",
-			entityType: "time_entry",
-			entityId: "period-1",
-			requestedBy: "emp-requester",
-			approverId: "emp-manager",
-			status: "pending",
-			reason: "Correct missed clock-in",
-		});
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Correct missed clock-in",
+					overtimeRisk: "warning",
+				}),
+			),
+		).rejects.toThrow("Specific approver is not active in this organization.");
+		expect(inserts).toHaveLength(0);
 	});
 });

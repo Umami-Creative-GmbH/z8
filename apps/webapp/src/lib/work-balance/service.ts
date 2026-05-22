@@ -96,7 +96,7 @@ async function getFirstRelevantDate(input: {
 			and(
 				eq(workPeriod.employeeId, input.employeeId),
 				eq(workPeriod.organizationId, input.organizationId),
-				eq(workPeriod.isActive, false),
+				isNotNull(workPeriod.endTime),
 				isNotNull(workPeriod.durationMinutes),
 			),
 		);
@@ -150,7 +150,7 @@ async function getActualMinutes(input: {
 			and(
 				eq(workPeriod.employeeId, input.employeeId),
 				eq(workPeriod.organizationId, input.organizationId),
-				eq(workPeriod.isActive, false),
+				isNotNull(workPeriod.endTime),
 				isNotNull(workPeriod.durationMinutes),
 				gte(workPeriod.startTime, input.startDate),
 				lte(workPeriod.startTime, input.endDate),

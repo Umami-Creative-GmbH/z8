@@ -286,25 +286,6 @@ export function createTimeCorrectionApprovalWorkflow(
 				metadata,
 			}),
 		),
-		Effect.catchTag("ValidationError", () =>
-			dbService.query<ResolvePolicyAndCreateApprovalResult>("createDefaultTimeCorrectionApprovalFallback", async () => {
-				const [approval] = await dbService.db
-					.insert(approvalRequest)
-					.values({
-						organizationId: input.organizationId,
-						entityType: "time_entry",
-						entityId: input.workPeriodId,
-						requestedBy: input.requesterEmployeeId,
-						approverId: input.defaultApproverId,
-						status: "pending",
-						reason: input.reason,
-						metadata,
-					})
-					.returning({ id: approvalRequest.id });
-
-				return { kind: "default_created" as const, approvalRequestId: approval?.id ?? input.workPeriodId };
-			}),
-		),
 		Effect.catchAll((error) => {
 			if (error instanceof DatabaseError && isPendingApprovalUniqueConflict(error)) {
 				return Effect.fail(pendingTimeCorrectionConflict(input.workPeriodId));

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 	revalidateEmployeesCache: vi.fn(),
 	runTracedEmployeeAction: vi.fn(),
 	validateInput: vi.fn(),
+	markEmployeeWorkBalanceDirty: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -35,6 +36,10 @@ vi.mock("./employee-action-utils", () => ({
 	revalidateEmployeesCache: mocks.revalidateEmployeesCache,
 	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
 	validateInput: mocks.validateInput,
+}));
+
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 }));
 
 import {
@@ -219,6 +224,59 @@ describe("updateEmployeeAction", () => {
 				firstName: expect.anything(),
 				lastName: expect.anything(),
 			}),
+		);
+	});
+
+	it("marks the employee work balance dirty when the start date changes", async () => {
+		const where = vi.fn().mockResolvedValue(undefined);
+		const set = vi.fn(() => ({ where }));
+		const update = vi.fn(() => ({ set }));
+		const dbService = {
+			db: { update },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
+				dbService,
+			}),
+		);
+		mocks.getTargetEmployee.mockReturnValue(
+			Effect.succeed({
+				id: "employee-1",
+				userId: validUserId,
+				organizationId: "org-1",
+				currentHourlyRate: null,
+				contractType: "fixed",
+				startDate: new Date("2026-05-10T00:00:00.000Z"),
+			}),
+		);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.hasAppAccessChanges.mockReturnValue(false);
+		mocks.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				startDate: new Date("2026-05-01T00:00:00.000Z"),
+			}),
+		);
+
+		await updateEmployeeAction("employee-1", {
+			startDate: new Date("2026-05-01T00:00:00.000Z"),
+		} as Parameters<typeof updateEmployeeAction>[1]);
+
+		expect(mocks.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-01",
+		});
+		expect(where.mock.invocationCallOrder[0]).toBeLessThan(
+			mocks.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
 	});
 });
