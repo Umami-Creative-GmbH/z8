@@ -2,6 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
@@ -15,6 +16,7 @@ import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { createTimeEntry, markTimeEntrySuperseded } from "./entry-helpers";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
@@ -30,6 +32,19 @@ type CorrectionTimesResult =
 	| {
 			error: string;
 	  };
+
+type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
+
+async function markWorkBalanceDirtyAfterSameDayEditBestEffort(
+	input: WorkBalanceDirtyInput,
+	context: Record<string, unknown>,
+) {
+	try {
+		await markEmployeeWorkBalanceDirty(input);
+	} catch (error) {
+		logger.error({ error, ...context }, "Failed to mark work balance dirty after same-day edit");
+	}
+}
 
 function buildCorrectionTimes(params: {
 	periodStart: Date;
@@ -215,6 +230,24 @@ export async function editSameDayTimeEntry(
 				updatedAt: new Date(),
 			})
 			.where(eq(workPeriod.id, selectedWorkPeriod.id));
+
+		const earliestAffectedDate =
+			selectedWorkPeriod.startTime <= correctedClockInDate
+				? selectedWorkPeriod.startTime
+				: correctedClockInDate;
+		await markWorkBalanceDirtyAfterSameDayEditBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(earliestAffectedDate, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: selectedWorkPeriod.id,
+			},
+		);
 
 		logger.info(
 			{
