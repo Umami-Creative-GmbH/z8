@@ -68,3 +68,51 @@
 	opacity: 0.5 !important;
 	text-decoration: line-through !important;
 }
+
+/* Daily work requirement summary injected into Schedule-X day headers. */
+.schedule-x-container .z8-requirement-header-summary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin-top: 0.375rem;
+	border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+	border-radius: 999px;
+	padding: 0.125rem 0.5rem;
+	font-size: 0.6875rem;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.25;
+	white-space: nowrap;
+}
+
+.schedule-x-container .z8-requirement-header-summary__required {
+	font-weight: 650;
+}
+
+.schedule-x-container .z8-requirement-header-summary__delta {
+	color: color-mix(in srgb, currentColor 72%, transparent);
+}
+
+.schedule-x-container .z8-requirement-header-summary--over,
+.schedule-x-container .z8-requirement-header-summary--met {
+	background: color-mix(in srgb, rgb(16 185 129) 12%, transparent);
+	color: rgb(6 95 70);
+}
+
+.dark .schedule-x-container .z8-requirement-header-summary--over,
+.dark .schedule-x-container .z8-requirement-header-summary--met {
+	color: rgb(167 243 208);
+}
+
+.schedule-x-container .z8-requirement-header-summary--under {
+	background: color-mix(in srgb, rgb(239 68 68) 10%, transparent);
+	color: rgb(127 29 29);
+}
+
+.dark .schedule-x-container .z8-requirement-header-summary--under {
+	color: rgb(254 202 202);
+}
+
+.schedule-x-container .z8-requirement-header-summary--missing {
+	background: color-mix(in srgb, currentColor 6%, transparent);
+	color: var(--sx-color-neutral, currentColor);
+}
