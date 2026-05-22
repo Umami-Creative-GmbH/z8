@@ -233,15 +233,15 @@ export function YearCalendarView({
 			<div className="flex flex-wrap items-center justify-center gap-4 mb-4 text-xs">
 				<div className="flex items-center gap-1">
 					<div className="size-2 rounded-full bg-green-500" />
-					<span>{t("calendar.legend.hoursMet", "Hours Met")}</span>
+					<span>{t("calendar.legend.requirementMetOrOver", "Requirement met/over")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="size-2 rounded-full bg-purple-500" />
-					<span>{t("calendar.legend.overtime", "Overtime")}</span>
+					<div className="size-2 rounded-full bg-red-500" />
+					<span>{t("calendar.legend.underRequirement", "Under requirement")}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<div className="size-2 rounded-full bg-orange-500" />
-					<span>{t("calendar.legend.undertime", "Undertime")}</span>
+					<div className="size-2 rounded-full bg-muted-foreground" />
+					<span>{t("calendar.legend.missingRequiredWork", "Missing required work")}</span>
 				</div>
 				<div className="flex items-center gap-1">
 					<div className="size-3 rounded bg-amber-100 dark:bg-amber-900/30 border" />
