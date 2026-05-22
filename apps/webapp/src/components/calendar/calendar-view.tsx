@@ -70,13 +70,14 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Fetch calendar events
 	// When in year view, fetch all 12 months at once
-	const { events, dailyRequirements, dailyActualMinutes, isLoading, error, refetch } = useCalendarData({
-		organizationId,
-		month: currentMonth.getMonth(),
-		year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
-		filters,
-		fullYear: viewMode === "year",
-	});
+	const { events, dailyRequirements, dailyActualMinutes, isLoading, error, refetch } =
+		useCalendarData({
+			organizationId,
+			month: currentMonth.getMonth(),
+			year: viewMode === "year" ? currentYear : currentMonth.getFullYear(),
+			filters,
+			fullYear: viewMode === "year",
+		});
 
 	const workHoursData = useMemo(
 		() => buildDailyWorkHoursSummaries({ events, dailyRequirements, dailyActualMinutes }),

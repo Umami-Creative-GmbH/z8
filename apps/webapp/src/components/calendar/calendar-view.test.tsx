@@ -54,7 +54,13 @@ vi.mock("./year-calendar-view", () => ({
 }));
 
 vi.mock("./schedule-x-wrapper", () => ({
-	ScheduleXWrapper: ({ onViewModeChange, viewMode }: { onViewModeChange: (mode: "month") => void; viewMode: string }) => (
+	ScheduleXWrapper: ({
+		onViewModeChange,
+		viewMode,
+	}: {
+		onViewModeChange: (mode: "month") => void;
+		viewMode: string;
+	}) => (
 		<div data-testid="schedule-x-wrapper" data-view-mode={viewMode}>
 			<button type="button" onClick={() => onViewModeChange("month")}>
 				Month
