@@ -11,12 +11,13 @@ import {
 } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 
-// Schedule-X CSS customizations (extracted to separate file for performance)
-import "./schedule-x-calendar.css";
 import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
+
+// Schedule-X CSS customizations must load after the default theme.
+import "./schedule-x-calendar.css";
 import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
@@ -35,7 +36,7 @@ import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
-import { DailyRequirementStrip } from "./daily-requirement-strip";
+import { buildRequirementHeaderContent } from "./daily-requirement-strip";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -57,6 +58,20 @@ const viewModeToScheduleX: Record<ViewMode, string> = {
 	month: "month-grid",
 	year: "month-grid", // Year view is handled separately, fallback to month-grid
 };
+
+function getHeaderCells(container: HTMLDivElement): HTMLElement[] {
+	return Array.from(
+		container.querySelectorAll<HTMLElement>(
+			".sx__week-header .sx__week-grid__date, .sx__week-header .sx__date-grid__date, .sx__week-header [data-time-grid-date]",
+		),
+	);
+}
+
+function clearRequirementHeaderContent(container: HTMLDivElement) {
+	for (const node of container.querySelectorAll(".z8-requirement-header-summary")) {
+		node.remove();
+	}
+}
 
 export function ScheduleXCalendarWrapper({
 	events,
@@ -308,6 +323,53 @@ export function ScheduleXCalendarWrapper({
 		}
 	}, [viewMode, isLoading]);
 
+	useEffect(() => {
+		const container = calendarContainerRef.current;
+		if (!container || (viewMode !== "day" && viewMode !== "week")) return;
+
+		const frame = window.requestAnimationFrame(() => {
+			clearRequirementHeaderContent(container);
+			const headerCells = getHeaderCells(container);
+
+			for (const [index, date] of visibleRequirementDates.entries()) {
+				const headerCell = headerCells[index];
+				if (!headerCell) continue;
+
+				const summary = workHoursData.get(date.toFormat("yyyy-MM-dd"));
+				if (!summary) continue;
+
+				const content = buildRequirementHeaderContent(summary, date.toFormat("cccc, LLLL d"), t);
+				const wrapper = document.createElement("div");
+				wrapper.className = `z8-requirement-header-summary z8-requirement-header-summary--${content.status}`;
+				wrapper.setAttribute("aria-label", content.accessibleLabel);
+
+				const screenReaderLabel = document.createElement("span");
+				screenReaderLabel.className = "sr-only";
+				screenReaderLabel.textContent = content.accessibleLabel;
+				wrapper.append(screenReaderLabel);
+
+				const required = document.createElement("span");
+				required.className = "z8-requirement-header-summary__required";
+				required.textContent = content.requiredHours;
+				wrapper.append(required);
+
+				if (content.deltaHours !== null) {
+					const delta = document.createElement("span");
+					delta.className = "z8-requirement-header-summary__delta";
+					delta.textContent = content.deltaHours;
+					wrapper.append(delta);
+				}
+
+				headerCell.append(wrapper);
+			}
+		});
+
+		return () => {
+			window.cancelAnimationFrame(frame);
+			clearRequirementHeaderContent(container);
+		};
+	}, [t, viewMode, visibleRequirementDates, workHoursData]);
+
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center h-full min-h-[400px]">
@@ -364,8 +426,6 @@ export function ScheduleXCalendarWrapper({
 					</TabsList>
 				</Tabs>
 			</div>
-
-			<DailyRequirementStrip dates={visibleRequirementDates} summaries={workHoursData} />
 
 			{/* Calendar with internal scroll - styles applied via style tag above */}
 			<div

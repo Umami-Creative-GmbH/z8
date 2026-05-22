@@ -6,6 +6,7 @@ import {
 	type EligibleTeam,
 	type EligibleTeamMembership,
 	resolveEligibleManagers,
+	resolvePrimaryEligibleManager,
 } from "./manager-eligibility";
 
 interface ApprovalEligibilityDb {
@@ -115,6 +116,35 @@ export async function getEligibleManagerIdsForRequester(input: {
 		teamMemberships: memberships,
 		teams,
 	});
+}
+
+export async function getPrimaryEligibleManagerIdForRequester(input: {
+	db: ApprovalEligibilityDb;
+	requesterEmployeeId: string;
+	organizationId: string;
+}): Promise<string | null> {
+	const [employees, managerLinks] = await Promise.all([
+		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
+		input.db.query.employeeManagers.findMany({
+			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
+		}),
+	]);
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+		requesterEmployeeIds: [input.requesterEmployeeId],
+	});
+
+	const result = resolvePrimaryEligibleManager({
+		organizationId: input.organizationId,
+		requesterEmployeeId: input.requesterEmployeeId,
+		employees: employees as EligibleManagerEmployee[],
+		managerLinks: managerLinks as EligibleManagerLink[],
+		teamMemberships: memberships,
+		teams,
+	});
+
+	return result.ok ? result.managerId : null;
 }
 
 export async function isEligibleManagerForApprovalRequest(input: {

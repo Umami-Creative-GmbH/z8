@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
@@ -18,6 +19,7 @@ import {
 } from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
 	calculateAndPersistSurcharges,
@@ -53,8 +55,6 @@ type ManualEntryOverlapResult =
 
 type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
-const UNSUPPORTED_TIME_APPROVAL_ERROR =
-	"Time changes requiring approval are not supported for this action yet";
 const APPROVAL_POLICY_CHECK_ERROR = "Could not verify time approval policy. Please try again.";
 
 async function markWorkBalanceDirtyAfterClockOutBestEffort(
@@ -208,14 +208,19 @@ export async function clockOut(
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
 		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 	}
-	if (needsClockOutApproval && !currentEmployee.managerId) {
-		return { success: false, error: "No manager assigned to approve time changes" };
-	}
-	if (needsClockOutApproval) {
-		return { success: false, error: UNSUPPORTED_TIME_APPROVAL_ERROR };
-	}
 
 	try {
+		const managerId = needsClockOutApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				})
+			: null;
+		if (needsClockOutApproval && !managerId) {
+			return { success: false, error: "No manager assigned to approve time changes" };
+		}
+
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
 				{
@@ -229,6 +234,18 @@ export async function clockOut(
 			);
 
 			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+			const approvalStatus = needsClockOutApproval ? "pending" : "approved";
+			const pendingChanges = needsClockOutApproval
+				? {
+						originalStartTime: activeWorkPeriod.startTime.toISOString(),
+						originalEndTime: now.toISOString(),
+						originalDurationMinutes: sessionDurationMinutes,
+						requestedAt: now.toISOString(),
+						requestedBy: session.user.id,
+						isNewClockOut: true,
+					}
+				: null;
+
 			const [closedWorkPeriod] = await tx
 				.update(workPeriod)
 				.set({
@@ -238,8 +255,8 @@ export async function clockOut(
 					projectId: projectId || null,
 					workCategoryId: workCategoryId || null,
 					isActive: false,
-					approvalStatus: "approved",
-					pendingChanges: null,
+					approvalStatus,
+					pendingChanges,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -261,6 +278,17 @@ export async function clockOut(
 		});
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
+		if (needsClockOutApproval && managerId) {
+			await createClockOutApprovalRequest({
+				workPeriodId: activeWorkPeriod.id,
+				employeeId: currentEmployee.id,
+				managerId,
+				organizationId: currentEmployee.organizationId,
+				startTime: activeWorkPeriod.startTime,
+				endTime: now,
+				durationMinutes,
+			});
+		}
 
 		const complianceWarnings = await checkComplianceAfterClockOut(
 			currentEmployee.id,
@@ -305,11 +333,11 @@ export async function clockOut(
 			success: true,
 			data: {
 				...entry,
+				pendingApproval: needsClockOutApproval || undefined,
 				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
 					: undefined,
-				pendingApproval: needsClockOutApproval || undefined,
 			},
 		};
 	} catch (error) {
@@ -660,12 +688,6 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	const requiresApproval = editCapability.type === "approval_required";
-	if (requiresApproval && !currentEmployee.managerId) {
-		return { success: false, error: "No manager assigned to approve time changes" };
-	}
-	if (requiresApproval) {
-		return { success: false, error: UNSUPPORTED_TIME_APPROVAL_ERROR };
-	}
 
 	try {
 		const localDate = DateTime.fromISO(data.date, { zone: timezone });
@@ -699,6 +721,16 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		}
 
 		const { adjustedClockIn, adjustedClockOut, wasAdjusted } = overlapResult;
+		const managerId = requiresApproval
+			? await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				})
+			: null;
+		if (requiresApproval && !managerId) {
+			return { success: false, error: "No manager assigned to approve time changes" };
+		}
 		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
 		const createdWorkPeriod = await db.transaction(async (tx) => {
 			const clockInEntry = await createTimeEntry(
@@ -737,15 +769,39 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 					projectId: data.projectId || null,
 					workCategoryId: data.workCategoryId || null,
 					isActive: false,
-					approvalStatus: "approved",
-					pendingChanges: null,
+					approvalStatus: requiresApproval ? "pending" : "approved",
+					pendingChanges: requiresApproval
+						? {
+								originalStartTime: adjustedClockIn.toISOString(),
+								originalEndTime: adjustedClockOut.toISOString(),
+								originalDurationMinutes: durationMinutes,
+								requestedAt: now.toISOString(),
+								requestedBy: session.user.id,
+								reason: data.reason,
+							}
+						: null,
 				})
 				.returning();
 
 			return period;
 		});
 
-		await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
+		if (requiresApproval && managerId) {
+			await createManualEntryApprovalRequest({
+				workPeriodId: createdWorkPeriod.id,
+				employeeId: currentEmployee.id,
+				managerId,
+				organizationId: currentEmployee.organizationId,
+				startTime: adjustedClockIn,
+				endTime: adjustedClockOut,
+				durationMinutes,
+				reason: data.reason,
+			});
+		}
+
+		if (!requiresApproval) {
+			await calculateAndPersistSurcharges(createdWorkPeriod.id, currentEmployee.organizationId);
+		}
 
 		await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 			{

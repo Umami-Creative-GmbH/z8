@@ -45,7 +45,7 @@ async function TimeTrackingPageContent({ searchParams }: TimeTrackingPageProps) 
 			<div className="px-4 lg:px-6">
 				<TimeEntriesTable
 					workPeriods={pageData.workPeriods}
-					hasManager={!!pageData.currentEmployee.managerId}
+					hasManager={pageData.hasManager}
 					canApproveTimeEntries={pageData.canApproveTimeEntries}
 					employeeTimezone={pageData.timezone}
 					timeFormat={pageData.timeFormat}

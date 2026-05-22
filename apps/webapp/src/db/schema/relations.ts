@@ -419,14 +419,6 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	primaryManagedTeams: many(team, {
 		relationName: "team_primary_manager",
 	}),
-	manager: one(employee, {
-		fields: [employee.managerId],
-		references: [employee.id],
-		relationName: "manager_employee",
-	}),
-	subordinates: many(employee, {
-		relationName: "manager_employee",
-	}),
 	rateHistory: many(employeeRateHistory),
 	employmentHistory: many(employeeEmploymentHistory),
 	// Multiple managers support

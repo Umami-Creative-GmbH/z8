@@ -10,6 +10,7 @@ import {
 	approvalPolicyStage,
 	absenceCategory,
 	employee,
+	employeeManagers,
 	employeeGroup,
 	employeeGroupMember,
 	location,
@@ -25,6 +26,10 @@ function uniqueIndexNames(table: Parameters<typeof getTableConfig>[0]): string[]
 		...config.indexes.filter((index) => index.config.unique).map((index) => index.config.name),
 		...config.uniqueConstraints.map((constraint) => constraint.getName()),
 	];
+}
+
+function indexNames(table: Parameters<typeof getTableConfig>[0]): string[] {
+	return getTableConfig(table).indexes.map((index) => index.config.name);
 }
 
 function hasCompositeForeignKey(
@@ -250,6 +255,17 @@ describe("approval policy schema exports", () => {
 				"organization_id",
 			]),
 		).toBe(true);
+	});
+
+	it("does not expose the deprecated employee manager_id column", () => {
+		expect(employee).not.toHaveProperty("managerId");
+		expect(indexNames(employee)).not.toContain("employee_managerId_idx");
+	});
+
+	it("enforces unique employee manager assignments", () => {
+		expect(uniqueIndexNames(employeeManagers)).toEqual(
+			expect.arrayContaining(["employeeManagers_unique_idx"]),
+		);
 	});
 
 	it("blocks primary manager deletion until the team reference is cleared", () => {

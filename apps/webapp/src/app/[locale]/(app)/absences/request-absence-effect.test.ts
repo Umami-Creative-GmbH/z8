@@ -17,8 +17,8 @@ vi.mock("@/lib/logger", () => ({
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
+	getMissingAbsenceApproverMessage,
 	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
-	selectAbsenceDefaultApproverId,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -101,23 +101,32 @@ describe("enqueueVacationOverrideCalendarSyncJobs", () => {
 	});
 });
 
-describe("selectAbsenceDefaultApproverId", () => {
-	it("uses an eligible team fallback manager when the legacy direct manager field is missing", () => {
+describe("getMissingAbsenceApproverMessage", () => {
+	it("returns the missing-manager message for approval-required requests without an approver", () => {
 		expect(
-			selectAbsenceDefaultApproverId({
-				legacyManagerId: null,
-				eligibleManagerIds: ["team-manager"],
+			getMissingAbsenceApproverMessage({
+				requiresApproval: true,
+				approverId: null,
 			}),
-		).toBe("team-manager");
+		).toBe("No manager assigned to approve absence requests");
 	});
 
-	it("falls back to the legacy direct manager when eligibility data is unavailable", () => {
+	it("returns null for approval-required requests with an approver", () => {
 		expect(
-			selectAbsenceDefaultApproverId({
-				legacyManagerId: "legacy-manager",
-				eligibleManagerIds: [],
+			getMissingAbsenceApproverMessage({
+				requiresApproval: true,
+				approverId: "manager-1",
 			}),
-		).toBe("legacy-manager");
+		).toBeNull();
+	});
+
+	it("returns null for requests that do not require approval without an approver", () => {
+		expect(
+			getMissingAbsenceApproverMessage({
+				requiresApproval: false,
+				approverId: null,
+			}),
+		).toBeNull();
 	});
 });
 

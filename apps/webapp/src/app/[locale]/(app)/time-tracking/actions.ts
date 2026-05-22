@@ -20,6 +20,7 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { auth } from "@/lib/auth";
@@ -68,6 +69,7 @@ import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/w
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./actions/approvals";
 import { addBreakToActiveSession as addBreakToActiveSessionAction } from "./actions/clocking";
 import {
 	calculatePresenceStatusSummary,
@@ -118,6 +120,29 @@ async function markWorkBalanceDirtyBestEffort(
 	} catch (error) {
 		logger.error({ error, ...context }, "Failed to mark work balance dirty");
 	}
+}
+
+type ManagerResolverDb = Parameters<typeof getPrimaryEligibleManagerIdForRequester>[0]["db"];
+
+export async function resolveTimeApprovalManagerId(input: {
+	db: ManagerResolverDb;
+	requiresApproval: boolean;
+	requesterEmployeeId: string;
+	organizationId: string;
+}): Promise<string | null> {
+	if (!input.requiresApproval) {
+		return null;
+	}
+
+	const managerId = await getPrimaryEligibleManagerIdForRequester({
+		db: input.db,
+		requesterEmployeeId: input.requesterEmployeeId,
+		organizationId: input.organizationId,
+	});
+	if (!managerId) {
+		throw new Error("No manager assigned to approve time changes");
+	}
+	return managerId;
 }
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
@@ -487,9 +512,19 @@ export async function requestTimeCorrectionEffect(
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
 		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
 
-		// Step 3: Check if employee has a manager
-		if (!currentEmployee.managerId) {
-			yield* _(
+		// Step 3: Resolve the employee's active approver from manager links
+		const managerId = yield* _(
+			Effect.promise(() =>
+				getPrimaryEligibleManagerIdForRequester({
+					db: dbService.db,
+					requesterEmployeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+				}),
+			),
+		);
+
+		if (!managerId) {
+			return yield* _(
 				Effect.fail(
 					new ValidationError({
 						message: "No manager assigned to approve corrections",
@@ -498,8 +533,9 @@ export async function requestTimeCorrectionEffect(
 				),
 			);
 		}
+		const resolvedManagerId = managerId;
 
-		yield* _(Effect.annotateCurrentSpan("manager.id", currentEmployee.managerId!));
+		yield* _(Effect.annotateCurrentSpan("manager.id", resolvedManagerId));
 
 		// Get user's timezone for time conversion from userSettings
 		const settingsData = yield* _(
@@ -516,7 +552,7 @@ export async function requestTimeCorrectionEffect(
 			{
 				employeeId: currentEmployee.id,
 				workPeriodId: data.workPeriodId,
-				managerId: currentEmployee.managerId,
+				managerId: resolvedManagerId,
 				timezone,
 			},
 			"Processing time correction request",
@@ -737,7 +773,7 @@ export async function requestTimeCorrectionEffect(
 							requesterEmployeeId: currentEmployee.id,
 							teamId: currentEmployee.teamId ?? null,
 							workPeriodId: period.id,
-							defaultApproverId: currentEmployee.managerId!,
+							defaultApproverId: resolvedManagerId,
 							reason: data.reason,
 							overtimeRisk: "warning",
 							correctionEntryIds: {
@@ -765,7 +801,6 @@ export async function requestTimeCorrectionEffect(
 			},
 			"Time correction entries created",
 		);
-
 		yield* _(Effect.annotateCurrentSpan("correction.approval_id", approval.approvalRequestId));
 
 		// Step 11: Fetch manager and employee details for email
@@ -773,7 +808,7 @@ export async function requestTimeCorrectionEffect(
 			Effect.all([
 				dbService.query("getManagerWithUser", async () => {
 					const mgr = await dbService.db.query.employee.findFirst({
-						where: eq(employee.id, currentEmployee.managerId!),
+						where: eq(employee.id, resolvedManagerId),
 						with: { user: true },
 					});
 
@@ -1257,16 +1292,6 @@ export async function clockOut(
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
 		return { success: false, error: "Could not verify time approval policy. Please try again." };
 	}
-	if (needsClockOutApproval && !emp.managerId) {
-		return { success: false, error: "No manager assigned to approve time changes" };
-	}
-	if (needsClockOutApproval) {
-		return {
-			success: false,
-			error: "Time changes requiring approval are not supported for this action yet",
-		};
-	}
-
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
 	if (!isBillingMutationAllowed(billingAccess)) {
 		return {
@@ -1274,6 +1299,18 @@ export async function clockOut(
 			error: "billing_required",
 			code: billingAccess.reason ?? "subscription_required",
 		};
+	}
+
+	let managerId: string | null = null;
+	try {
+		managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval: needsClockOutApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
+	} catch {
+		return { success: false, error: "No manager assigned to approve time changes" };
 	}
 
 	try {
@@ -1295,7 +1332,7 @@ export async function clockOut(
 			startAt: activePeriod.startTime,
 			endAt: now,
 			durationMinutes,
-			approvalState: "approved",
+			approvalState: needsClockOutApproval ? "pending" : "approved",
 			createdBy: session.user.id,
 			workCategoryId: workCategoryId || null,
 			workLocationType: activePeriod.workLocationType ?? null,
@@ -1313,13 +1350,34 @@ export async function clockOut(
 				workCategoryId: workCategoryId || null,
 				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
-				approvalStatus: "approved",
-				pendingChanges: null,
+				approvalStatus: needsClockOutApproval ? "pending" : "approved",
+				pendingChanges: needsClockOutApproval
+					? {
+							originalStartTime: activePeriod.startTime.toISOString(),
+							originalEndTime: now.toISOString(),
+							originalDurationMinutes: durationMinutes,
+							requestedAt: now.toISOString(),
+							requestedBy: session.user.id,
+							isNewClockOut: true,
+						}
+					: null,
 				updatedAt: new Date(),
 			})
 			.where(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
+
+		if (needsClockOutApproval && managerId) {
+			await createClockOutApprovalRequest({
+				workPeriodId: activePeriod.id,
+				employeeId: emp.id,
+				managerId,
+				organizationId: emp.organizationId,
+				startTime: activePeriod.startTime,
+				endTime: now,
+				durationMinutes,
+			});
+		}
 
 		// Calculate and persist surcharge credits if feature is enabled
 		await calculateAndPersistSurcharges(activePeriod.id, emp.organizationId);
@@ -2742,16 +2800,6 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	const requiresApproval = editCapability.type === "approval_required";
-	if (requiresApproval && !emp.managerId) {
-		return { success: false, error: "No manager assigned to approve time changes" };
-	}
-	if (requiresApproval) {
-		return {
-			success: false,
-			error: "Time changes requiring approval are not supported for this action yet",
-		};
-	}
-
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
 	if (!isBillingMutationAllowed(billingAccess)) {
 		return {
@@ -2759,6 +2807,18 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 			error: "billing_required",
 			code: billingAccess.reason ?? "subscription_required",
 		};
+	}
+
+	let managerId: string | null = null;
+	try {
+		managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
+	} catch {
+		return { success: false, error: "No manager assigned to approve time changes" };
 	}
 
 	try {
@@ -2861,13 +2921,28 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		const durationMs = finalClockOut.getTime() - finalClockIn.getTime();
 		const durationMinutes = Math.floor(durationMs / 60000);
 
+		// Determine approval status based on policy
+		const approvalStatus = requiresApproval ? "pending" : "approved";
+		// Prepare pending changes data if approval is needed
+		const pendingChangesData = requiresApproval
+			? {
+					originalStartTime: finalClockIn.toISOString(),
+					originalEndTime: finalClockOut.toISOString(),
+					originalDurationMinutes: durationMinutes,
+					requestedAt: now.toISOString(),
+					requestedBy: session.user.id,
+					isManualEntry: true,
+					reason: data.reason,
+				}
+			: null;
+
 		const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod({
 			organizationId: emp.organizationId,
 			employeeId: emp.id,
 			startAt: finalClockIn,
 			endAt: finalClockOut,
 			durationMinutes,
-			approvalState: "approved",
+			approvalState: approvalStatus,
 			createdBy: session.user.id,
 			workCategoryId: data.workCategoryId || null,
 			projectId: data.projectId || null,
@@ -2889,10 +2964,24 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 				workCategoryId: data.workCategoryId || null,
 				canonicalRecordId: canonicalRecord.id,
 				isActive: false,
-				approvalStatus: "approved",
-				pendingChanges: null,
+				approvalStatus,
+				pendingChanges: pendingChangesData,
 			})
 			.returning();
+
+		// If approval required, create approval request and notify manager
+		if (requiresApproval && managerId) {
+			await createManualEntryApprovalRequest({
+				workPeriodId: period.id,
+				employeeId: emp.id,
+				managerId,
+				organizationId: emp.organizationId,
+				startTime: finalClockIn,
+				endTime: finalClockOut,
+				durationMinutes,
+				reason: data.reason,
+			});
+		}
 
 		await markWorkBalanceDirtyBestEffort(
 			{
@@ -2904,7 +2993,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 		);
 
 		// Calculate and persist surcharge credits if feature is enabled
-		await calculateAndPersistSurcharges(period.id, emp.organizationId);
+		if (!requiresApproval) {
+			await calculateAndPersistSurcharges(period.id, emp.organizationId);
+		}
 
 		logger.info(
 			{

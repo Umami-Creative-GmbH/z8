@@ -25,7 +25,7 @@ import {
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
-import { getEligibleManagerIdsForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -52,7 +52,7 @@ import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
 	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
-	selectAbsenceDefaultApproverId,
+	getMissingAbsenceApproverMessage,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
@@ -62,7 +62,6 @@ const logger = createLogger("AbsenceActionsEffect");
 export interface RequestAbsenceEmployeeContext {
 	id: string;
 	organizationId: string;
-	managerId: string | null;
 	teamId?: string | null;
 }
 
@@ -326,15 +325,10 @@ function getAbsenceDefaultApproverId(
 	currentEmployee: RequestAbsenceEmployeeContext,
 ) {
 	return dbService.query("getAbsenceDefaultApprover", async () => {
-		const eligibleManagerIds = await getEligibleManagerIdsForRequester({
+		return await getPrimaryEligibleManagerIdForRequester({
 			db: dbService.db,
 			requesterEmployeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
-		});
-
-		return selectAbsenceDefaultApproverId({
-			legacyManagerId: currentEmployee.managerId,
-			eligibleManagerIds,
 		});
 	});
 }
@@ -582,6 +576,20 @@ function requestAbsenceWithResolverEffect(
 				const defaultApproverId = category.requiresApproval
 					? yield* _(getAbsenceDefaultApproverId(dbService, currentEmployee))
 					: null;
+				const missingApproverMessage = getMissingAbsenceApproverMessage({
+					requiresApproval: category.requiresApproval,
+					approverId: defaultApproverId,
+				});
+				if (missingApproverMessage) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: missingApproverMessage,
+								field: "managerId",
+							}),
+						),
+					);
+				}
 
 				yield* _(
 					checkForOverlappingAbsences(

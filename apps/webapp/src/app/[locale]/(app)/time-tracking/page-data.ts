@@ -7,6 +7,7 @@ import type {
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -58,7 +59,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 	});
 	const canApproveTimeEntries = memberRecord?.role === "admin" || memberRecord?.role === "owner";
 
-	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, workBalance] =
+	const [activeWorkPeriod, workPeriods, summary, t, timelineResult, workBalance, managerId] =
 		await Promise.all([
 			getActiveWorkPeriod(currentEmployee.id),
 			getWorkPeriods(currentEmployee.id, startDate, endDate),
@@ -75,6 +76,11 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 				employeeId: currentEmployee.id,
 				organizationId: currentEmployee.organizationId,
 			}),
+			getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			}),
 		]);
 
 	return {
@@ -84,6 +90,7 @@ export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSear
 		timeFormat,
 		activeWorkPeriod,
 		workPeriods,
+		hasManager: Boolean(managerId),
 		canApproveTimeEntries,
 		summary,
 		workBalance,
