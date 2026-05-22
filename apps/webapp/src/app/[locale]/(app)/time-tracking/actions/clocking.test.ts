@@ -233,8 +233,16 @@ describe("clockOut", () => {
 			id: "employee-1",
 			organizationId: "org-1",
 			teamId: null,
-			managerId: null,
 		});
+		mockState.findEmployees.mockResolvedValue([
+			{ id: "employee-1", organizationId: "org-1", isActive: true, role: "employee" },
+			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+		]);
+		mockState.findManagerLinks.mockResolvedValue([
+			{ employeeId: "employee-1", managerId: "manager-1", isPrimary: true },
+		]);
+		mockState.findTeamMemberships.mockResolvedValue([]);
+		mockState.findTeams.mockResolvedValue([]);
 		mockState.getUserTimezone.mockResolvedValue("UTC");
 		mockState.getActiveWorkPeriod.mockResolvedValue({
 			id: "period-1",
@@ -252,6 +260,7 @@ describe("clockOut", () => {
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
+		mockState.createClockOutApprovalRequest.mockResolvedValue(undefined);
 	});
 
 	it("rejects suspended organizations before creating a clock-out entry", async () => {
@@ -269,15 +278,44 @@ describe("clockOut", () => {
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
-	it("approves live clock-out instead of creating a pending approval", async () => {
+	it("routes approval-required live clock-out through the primary manager link", async () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
-		expect(result.success && result.data.pendingApproval).toBeUndefined();
+		expect(result.success && result.data.pendingApproval).toBe(true);
 		expect(mockState.updateSet).toHaveBeenCalledWith(
 			expect.objectContaining({
-				approvalStatus: "approved",
-				pendingChanges: null,
+				approvalStatus: "pending",
+				pendingChanges: expect.objectContaining({
+					originalStartTime: "2026-05-04T09:00:00.000Z",
+					originalEndTime: "2026-05-04T10:00:00.000Z",
+					originalDurationMinutes: 60,
+					requestedBy: "user-1",
+					isNewClockOut: true,
+				}),
+			}),
+		);
+		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledWith({
+			workPeriodId: "period-1",
+			employeeId: "employee-1",
+			managerId: "manager-1",
+			organizationId: "org-1",
+			startTime: new Date("2026-05-04T09:00:00.000Z"),
+			endTime: new Date("2026-05-04T10:00:00.000Z"),
+			durationMinutes: 60,
+		});
+	});
+
+	it("keeps approval-required live clock-out pending when no manager link resolves", async () => {
+		mockState.findManagerLinks.mockResolvedValue([]);
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalStatus: "pending",
+				pendingChanges: expect.objectContaining({ isNewClockOut: true }),
 			}),
 		);
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();

@@ -18,7 +18,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { validateTimeEntry, validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { createManualEntryApprovalRequest } from "./approvals";
+import { createClockOutApprovalRequest, createManualEntryApprovalRequest } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
 	calculateAndPersistSurcharges,
@@ -31,7 +31,7 @@ import {
 	createTimeEntry,
 	validateProjectAssignment,
 } from "./entry-helpers";
-import { getEditCapabilityForPeriod } from "./policy-helpers";
+import { checkClockOutNeedsApproval, getEditCapabilityForPeriod } from "./policy-helpers";
 import { getActiveWorkPeriod, getTimeSummary } from "./queries";
 import {
 	BREAK_WARNING_THRESHOLD_MINUTES,
@@ -174,6 +174,21 @@ export async function clockOut(
 		};
 	}
 
+	let needsClockOutApproval = false;
+	try {
+		needsClockOutApproval = await checkClockOutNeedsApproval(currentEmployee.id);
+	} catch (error) {
+		logger.warn({ error }, "Failed to check clock-out approval requirement");
+	}
+
+	const managerId = needsClockOutApproval
+		? await getPrimaryEligibleManagerIdForRequester({
+				db,
+				requesterEmployeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+			})
+		: null;
+
 	try {
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
 			const clockOutEntry = await createTimeEntry(
@@ -188,6 +203,17 @@ export async function clockOut(
 			);
 
 			const sessionDurationMinutes = calculateDurationMinutes(activeWorkPeriod.startTime, now);
+			const approvalStatus = needsClockOutApproval ? "pending" : "approved";
+			const pendingChanges = needsClockOutApproval
+				? {
+						originalStartTime: activeWorkPeriod.startTime.toISOString(),
+						originalEndTime: now.toISOString(),
+						originalDurationMinutes: sessionDurationMinutes,
+						requestedAt: now.toISOString(),
+						requestedBy: session.user.id,
+						isNewClockOut: true,
+					}
+				: null;
 
 			const [closedWorkPeriod] = await tx
 				.update(workPeriod)
@@ -198,8 +224,8 @@ export async function clockOut(
 					projectId: projectId || null,
 					workCategoryId: workCategoryId || null,
 					isActive: false,
-					approvalStatus: "approved",
-					pendingChanges: null,
+					approvalStatus,
+					pendingChanges,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -221,6 +247,17 @@ export async function clockOut(
 		});
 
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
+		if (needsClockOutApproval && managerId) {
+			await createClockOutApprovalRequest({
+				workPeriodId: activeWorkPeriod.id,
+				employeeId: currentEmployee.id,
+				managerId,
+				organizationId: currentEmployee.organizationId,
+				startTime: activeWorkPeriod.startTime,
+				endTime: now,
+				durationMinutes,
+			});
+		}
 
 		const complianceWarnings = await checkComplianceAfterClockOut(
 			currentEmployee.id,
@@ -251,6 +288,7 @@ export async function clockOut(
 			success: true,
 			data: {
 				...entry,
+				pendingApproval: needsClockOutApproval || undefined,
 				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcementResult.wasAdjusted
 					? breakEnforcementResult.adjustment
