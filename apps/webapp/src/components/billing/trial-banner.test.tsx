@@ -23,8 +23,14 @@ vi.mock("@/navigation", () => ({
 }));
 
 describe("TrialBanner", () => {
-	it("renders trial messaging and upgrade link", () => {
-		render(<TrialBanner daysRemaining={9} billingHref="/en/settings/billing" />);
+	it("renders trial messaging and upgrade link when billing management is allowed", () => {
+		render(
+			<TrialBanner
+				daysRemaining={9}
+				billingHref="/en/settings/billing"
+				showUpgradeButton={true}
+			/>,
+		);
 
 		expect(screen.getByText("14-day trial active")).toBeTruthy();
 		expect(
@@ -35,6 +41,19 @@ describe("TrialBanner", () => {
 
 		const link = screen.getByRole("link", { name: "Upgrade" });
 		expect(link.getAttribute("href")).toBe("/en/settings/billing");
+	});
+
+	it("hides the upgrade link when billing management is not allowed", () => {
+		render(
+			<TrialBanner
+				daysRemaining={9}
+				billingHref="/en/settings/billing"
+				showUpgradeButton={false}
+			/>,
+		);
+
+		expect(screen.getByText("14-day trial active")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Upgrade" })).toBeNull();
 	});
 
 	it("uses the localized app navigation link", () => {
@@ -108,5 +127,16 @@ describe("TrialBanner", () => {
 		expect(layoutSource).toContain("checkBillingAccess(activeOrganizationId)");
 		expect(layoutSource).toContain("<TrialBanner");
 		expect(layoutSource).toContain('billingAccess.state === "trialing"');
+		expect(layoutSource).toContain('import { and, eq } from "drizzle-orm"');
+		expect(layoutSource).toContain('import { db } from "@/db"');
+		expect(layoutSource).toContain('import { member } from "@/db/auth-schema"');
+		expect(layoutSource).toContain('import { subscription } from "@/db/schema"');
+		expect(layoutSource).toContain("member.userId");
+		expect(layoutSource).toContain("member.organizationId");
+		expect(layoutSource).toContain('membershipRole === "owner" || membershipRole === "admin"');
+		expect(layoutSource).toContain('subscriptionRow?.status === "trialing"');
+		expect(layoutSource).toContain("Boolean(subscriptionRow?.stripeSubscriptionId)");
+		expect(layoutSource).toContain("!hasPreparedTrialSubscription");
+		expect(layoutSource).toContain("showUpgradeButton={canManageBilling}");
 	});
 });
