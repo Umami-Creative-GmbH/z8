@@ -110,7 +110,7 @@ Customer custom domains remain gated by DNS verification. Platform organization 
 Add focused coverage for:
 
 - Host classification for main domain, platform organization subdomain, organization-id alias, localhost, arbitrary custom domain, and unknown platform subdomain.
-- Platform resolver preference for slug over id.
+- Platform resolver behavior for normal slug matches, id aliases, and id-alias collisions where id wins.
 - `getOrganizationBaseUrl()` returning verified custom domain first, then slug platform URL, then default app URL.
 - Better Auth config including `*.ui.z8-time.app` in allowed hosts and trusted origins.
 - Auth layout resolving organization context for platform organization subdomains.
