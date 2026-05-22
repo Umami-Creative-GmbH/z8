@@ -193,6 +193,9 @@ export async function clockOut(
 	} catch (error) {
 		logger.warn({ error }, "Failed to check clock-out approval requirement");
 	}
+	if (needsClockOutApproval && !currentEmployee.managerId) {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
 
 	try {
 		const { entry, durationMinutes } = await db.transaction(async (tx) => {
@@ -662,6 +665,9 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 	}
 
 	const requiresApproval = editCapability.type === "approval_required";
+	if (requiresApproval && !currentEmployee.managerId) {
+		return { success: false, error: "No manager assigned to approve time changes" };
+	}
 
 	try {
 		const localDate = DateTime.fromISO(data.date, { zone: timezone });

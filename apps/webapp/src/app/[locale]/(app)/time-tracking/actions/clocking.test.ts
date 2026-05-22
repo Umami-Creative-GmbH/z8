@@ -6,10 +6,13 @@ const mockState = vi.hoisted(() => ({
 	getUserTimezone: vi.fn(),
 	getActiveWorkPeriod: vi.fn(),
 	validateTimeEntry: vi.fn(),
+	validateTimeEntryRange: vi.fn(),
 	validateProjectAssignment: vi.fn(),
 	createTimeEntry: vi.fn(),
 	checkClockOutNeedsApproval: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
+	createManualEntryApprovalRequest: vi.fn(),
+	getEditCapabilityForPeriod: vi.fn(),
 	calculateAndPersistSurcharges: vi.fn(),
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
@@ -19,6 +22,7 @@ const mockState = vi.hoisted(() => ({
 	requireBillingForMutation: vi.fn(),
 	insertValues: vi.fn(),
 	insertReturning: vi.fn(),
+	findManyWorkPeriods: vi.fn(),
 	transaction: vi.fn(),
 	updateReturning: vi.fn(),
 	updateSet: vi.fn(),
@@ -31,6 +35,11 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		query: {
+			workPeriod: {
+				findMany: mockState.findManyWorkPeriods,
+			},
+		},
 		insert: vi.fn(() => ({
 			values: (...args: unknown[]) => mockState.insertValues(...args),
 		})),
@@ -54,7 +63,7 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntry: mockState.validateTimeEntry,
-	validateTimeEntryRange: vi.fn(),
+	validateTimeEntryRange: mockState.validateTimeEntryRange,
 }));
 
 vi.mock("@/lib/billing/guard", () => ({
@@ -68,7 +77,7 @@ vi.mock("@/lib/work-balance/service", () => ({
 
 vi.mock("./approvals", () => ({
 	createClockOutApprovalRequest: mockState.createClockOutApprovalRequest,
-	createManualEntryApprovalRequest: vi.fn(),
+	createManualEntryApprovalRequest: mockState.createManualEntryApprovalRequest,
 }));
 
 vi.mock("./auth", () => ({
@@ -92,7 +101,7 @@ vi.mock("./entry-helpers", () => ({
 
 vi.mock("./policy-helpers", () => ({
 	checkClockOutNeedsApproval: mockState.checkClockOutNeedsApproval,
-	getEditCapabilityForPeriod: vi.fn(),
+	getEditCapabilityForPeriod: mockState.getEditCapabilityForPeriod,
 }));
 
 vi.mock("./queries", () => ({
@@ -113,7 +122,7 @@ vi.mock("./shared", () => ({
 	ONE_MINUTE_MS: 60_000,
 }));
 
-const { addBreakToActiveSession, clockIn, clockOut } = await import("./clocking");
+const { addBreakToActiveSession, clockIn, clockOut, createManualTimeEntry } = await import("./clocking");
 
 describe("clockIn", () => {
 	beforeEach(() => {
@@ -298,6 +307,21 @@ describe("clockOut", () => {
 		});
 	});
 
+	it("rejects approval-required clock-out when no manager is assigned", async () => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+
+		const result = await clockOut();
+
+		expect(result).toEqual({
+			success: false,
+			error: "No manager assigned to approve time changes",
+		});
+		expect(mockState.transaction).not.toHaveBeenCalled();
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.updateSet).not.toHaveBeenCalled();
+		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
+	});
+
 	it("marks the work balance dirty from the active period start date after closing the period", async () => {
 		const result = await clockOut();
 
@@ -357,6 +381,47 @@ describe("clockOut", () => {
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+	});
+});
+
+describe("createManualTimeEntry", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
+
+		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			teamId: null,
+			managerId: null,
+		});
+		mockState.getUserTimezone.mockResolvedValue("UTC");
+		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
+		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "approval_required",
+			reason: "outside_direct_edit_window",
+		});
+		mockState.findManyWorkPeriods.mockResolvedValue([]);
+	});
+
+	it("rejects approval-required manual entries when no manager is assigned", async () => {
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "No manager assigned to approve time changes",
+		});
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.createManualEntryApprovalRequest).not.toHaveBeenCalled();
 	});
 });
 
