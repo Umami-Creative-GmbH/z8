@@ -14,6 +14,10 @@ const mockState = vi.hoisted(() => {
 		logAudit: vi.fn().mockResolvedValue(undefined),
 		findClaim: vi.fn(),
 		findEmployee: vi.fn(),
+		findEmployees: vi.fn(),
+		findEmployeeManagers: vi.fn(),
+		findTeamMemberships: vi.fn(),
+		findTeams: vi.fn(),
 		dbUpdate: vi.fn(() => ({ set: updateSet })),
 		dbInsert: vi.fn(() => ({ values: insertValues })),
 		dbTransaction,
@@ -32,6 +36,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		...actual,
 		and: vi.fn((...args: unknown[]) => ({ and: args })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
 		asc: vi.fn((value: unknown) => ({ asc: value })),
 		desc: vi.fn((value: unknown) => ({ desc: value })),
 	};
@@ -94,7 +99,9 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "organizationId",
 		isActive: "isActive",
 	},
-	employeeManagers: {},
+	employeeManagers: {
+		employeeId: "employeeManagers.employeeId",
+	},
 	teamMembership: {
 		organizationId: "organizationId",
 		employeeId: "employeeId",
@@ -131,6 +138,16 @@ vi.mock("@/db", () => ({
 			},
 			employee: {
 				findFirst: mockState.findEmployee,
+				findMany: mockState.findEmployees,
+			},
+			employeeManagers: {
+				findMany: mockState.findEmployeeManagers,
+			},
+			teamMembership: {
+				findMany: mockState.findTeamMemberships,
+			},
+			team: {
+				findMany: mockState.findTeams,
 			},
 		},
 		update: mockState.dbUpdate,
@@ -223,9 +240,24 @@ describe("submitTravelExpenseClaim", () => {
 				teamId: null,
 			},
 		});
+		mockState.findEmployees.mockResolvedValue([
+			{
+				id: "emp-1",
+				userId: "user-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+		]);
+		mockState.findEmployeeManagers.mockResolvedValue([
+			{ employeeId: "emp-1", managerId: "manager-1", isPrimary: true },
+		]);
+		mockState.findTeamMemberships.mockResolvedValue([]);
+		mockState.findTeams.mockResolvedValue([]);
 	});
 
-	it("succeeds and returns submitted status when manager exists", async () => {
+	it("succeeds and returns submitted status using the primary manager link", async () => {
 		mockState.findClaim.mockResolvedValue({
 			id: "claim-1",
 			employeeId: "emp-1",
@@ -235,7 +267,7 @@ describe("submitTravelExpenseClaim", () => {
 			calculatedAmount: "42.00",
 			attachments: [{ id: "att-1" }],
 		});
-		mockState.findEmployee.mockResolvedValueOnce({ managerId: "manager-1" });
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
 
 		const result = await submitTravelExpenseClaim({ claimId: "claim-1" });
@@ -256,6 +288,28 @@ describe("submitTravelExpenseClaim", () => {
 		expect(mockState.committedInserts).toHaveLength(1);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
 		expect(mockState.logAudit).toHaveBeenCalledTimes(1);
+	});
+
+	it("fails without committing when no primary manager can be resolved", async () => {
+		mockState.findClaim.mockResolvedValue({
+			id: "claim-no-manager",
+			employeeId: "emp-1",
+			organizationId: "org-1",
+			status: "draft",
+			type: "receipt",
+			calculatedAmount: "42.00",
+			attachments: [{ id: "att-1" }],
+		});
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
+		mockState.findEmployeeManagers.mockResolvedValueOnce([]);
+
+		const result = await submitTravelExpenseClaim({ claimId: "claim-no-manager" });
+
+		expect(result).toEqual({ success: false, error: "No approver available" });
+		expect(mockState.dbTransaction).not.toHaveBeenCalled();
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+		expect(mockState.logAudit).not.toHaveBeenCalled();
 	});
 
 	it("fails for receipt claim without attachment", async () => {
@@ -287,7 +341,7 @@ describe("submitTravelExpenseClaim", () => {
 			type: "receipt",
 			attachments: [{ id: "att-1" }],
 		});
-		mockState.findEmployee.mockResolvedValueOnce({ managerId: "manager-1" });
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.updateReturning.mockResolvedValue([{ id: "claim-3" }]);
 		mockState.insertValues.mockRejectedValue(new Error("approval request insert failed"));
 

@@ -1,10 +1,11 @@
 "use server";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { employee, travelExpenseClaim } from "@/db/schema";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
 	createTravelExpenseApprovalWorkflow,
@@ -144,7 +145,6 @@ export async function submitTravelExpenseClaim(input: {
 					eq(employee.isActive, true),
 				),
 				columns: {
-					managerId: true,
 					teamId: true,
 				},
 			}),
@@ -173,22 +173,11 @@ export async function submitTravelExpenseClaim(input: {
 			return { success: false, error: "Employee not found" };
 		}
 
-		let approverId = currentEmployeeRecord.managerId;
-		if (!approverId) {
-			const adminApprover = await db.query.employee.findFirst({
-				where: and(
-					eq(employee.organizationId, currentEmployee.organizationId),
-					eq(employee.role, "admin"),
-					eq(employee.isActive, true),
-				),
-				columns: {
-					id: true,
-				},
-				orderBy: [asc(employee.createdAt)],
-			});
-
-			approverId = adminApprover?.id ?? null;
-		}
+		const approverId = await getPrimaryEligibleManagerIdForRequester({
+			db,
+			requesterEmployeeId: currentEmployee.id,
+			organizationId: currentEmployee.organizationId,
+		});
 
 		if (!approverId) {
 			return { success: false, error: "No approver available" };
