@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconDotsVertical } from "@tabler/icons-react";
+import { IconCalendarEvent, IconCheck, IconDotsVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { startTransition, useCallback, useMemo, useState } from "react";
@@ -20,7 +20,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
-import { useRouter } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 
 const TimeCorrectionDialog = dynamic(
 	() => import("./time-correction-dialog").then((mod) => mod.TimeCorrectionDialog),
@@ -109,9 +109,15 @@ export function TimeEntriesTable({
 
 	return (
 		<Card>
-			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+			<CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-4">
 				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
-				<div>
+				<div className="flex items-center gap-2">
+					<Button asChild variant="outline" size="sm">
+						<Link href="/calendar">
+							<IconCalendarEvent className="size-4" aria-hidden="true" />
+							{t("timeTracking.table.viewCalendar", "View Calendar")}
+						</Link>
+					</Button>
 					<ManualTimeEntryDialog
 						employeeId={employeeId}
 						employeeTimezone={employeeTimezone}

@@ -140,6 +140,16 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
+	it("orders Calendar after Time Tracking and before My Requests", () => {
+		render(<AppSidebar />);
+
+		expect(navMainSpy.mock.lastCall?.[0].map((item) => item.url).slice(1, 4)).toEqual([
+			"/time-tracking",
+			"/calendar",
+			"/my-requests",
+		]);
+	});
+
 	it("renders Org Explorer as a primary personal navigation item", () => {
 		render(<AppSidebar />);
 

@@ -87,14 +87,14 @@ export function AppSidebar({
 			icon: IconClock,
 		},
 		{
-			title: t("nav.my-requests", "My Requests"),
-			url: "/my-requests",
-			icon: IconFileDescription,
-		},
-		{
 			title: t("nav.calendar", "Calendar"),
 			url: "/calendar",
 			icon: IconCalendarEvent,
+		},
+		{
+			title: t("nav.my-requests", "My Requests"),
+			url: "/my-requests",
+			icon: IconFileDescription,
 		},
 		{
 			title: t("nav.org-explorer", "Org Explorer"),
