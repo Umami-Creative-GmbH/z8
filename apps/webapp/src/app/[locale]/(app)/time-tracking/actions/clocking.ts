@@ -260,20 +260,6 @@ export async function clockOut(
 			return { entry: clockOutEntry, durationMinutes: sessionDurationMinutes };
 		});
 
-		await markWorkBalanceDirtyAfterClockOutBestEffort(
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(activeWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
-			},
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				workPeriodId: activeWorkPeriod.id,
-			},
-		);
-
 		await calculateAndPersistSurcharges(activeWorkPeriod.id, currentEmployee.organizationId);
 
 		const complianceWarnings = await checkComplianceAfterClockOut(
@@ -292,6 +278,20 @@ export async function clockOut(
 			timezone,
 			createdBy: session.user.id,
 		});
+
+		await markWorkBalanceDirtyAfterClockOutBestEffort(
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(activeWorkPeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: activeWorkPeriod.id,
+			},
+		);
 
 		if (projectId) {
 			void checkProjectBudgetAfterClockOut(projectId, currentEmployee.organizationId).catch(

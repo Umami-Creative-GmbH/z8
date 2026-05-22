@@ -28,6 +28,17 @@ describe("Teams clock-out command work balance invalidation", () => {
 		expect(source).toContain("catch (error) {");
 		expect(source).toContain("Failed to mark work balance dirty after Teams clock-out");
 	});
+
+	it("marks work balance dirty inside the break enforcement path when auto-adjusted", () => {
+		const source = readClockOutSource();
+		const enforcementIndex = source.indexOf("enforceBreaksAfterClockOut({");
+		const adjustedIndex = source.indexOf("breakEnforcementResult.wasAdjusted", enforcementIndex);
+		const dirtyAfterAdjustmentIndex = source.indexOf("await markEmployeeWorkBalanceDirty", adjustedIndex);
+
+		expect(enforcementIndex).toBeGreaterThanOrEqual(0);
+		expect(adjustedIndex).toBeGreaterThan(enforcementIndex);
+		expect(dirtyAfterAdjustmentIndex).toBeGreaterThan(adjustedIndex);
+	});
 });
 
 describe("Teams clock-out command approvals", () => {

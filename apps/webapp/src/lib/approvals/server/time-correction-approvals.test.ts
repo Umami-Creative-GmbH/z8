@@ -54,6 +54,7 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 	const dbService = {
 		db: {
 			query: {
+				approvalRequest: { findFirst: vi.fn().mockResolvedValue(null) },
 				approvalPolicy: { findMany: vi.fn().mockResolvedValue(policies) },
 				employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
 				employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
@@ -128,12 +129,21 @@ const correction = {
 	id: "entry-correction",
 	timestamp: new Date("2026-05-11T08:15:00.000Z"),
 	replacesEntryId: "entry-original",
+	isSuperseded: false,
+};
+
+const rejectedCorrection = {
+	id: "entry-rejected-correction",
+	timestamp: new Date("2026-05-11T07:45:00.000Z"),
+	replacesEntryId: "entry-original",
+	isSuperseded: true,
 };
 
 const clockOutCorrection = {
 	id: "entry-clock-out-correction",
 	timestamp: new Date("2026-05-11T16:15:00.000Z"),
 	replacesEntryId: "entry-clock-out-original",
+	isSuperseded: false,
 };
 
 function createTimeCorrectionDecisionDbService() {
@@ -259,6 +269,33 @@ describe("time correction requester decision notifications", () => {
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
 
+	it("approves the active correction instead of an older rejected correction for the same period", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
+		} as never);
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					clockInId: "entry-correction",
+					startTime: correction.timestamp,
+				}),
+			]),
+		);
+		expect(onTimeCorrectionApproved).toHaveBeenCalledWith(
+			expect.objectContaining({ correctedTime: correction.timestamp }),
+		);
+	});
+
 	it("notifies the requester after rejecting a time correction request", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 
@@ -308,6 +345,29 @@ describe("time correction requester decision notifications", () => {
 				{ isSuperseded: false, supersededById: null },
 				{ isSuperseded: true, supersededById: null },
 			]),
+		);
+	});
+
+	it("does not roll back older superseded correction entries when rejecting a pending time correction", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([rejectedCorrection, correction]) }),
+		} as never);
+
+		await runTimeCorrectionDecisionEffect(
+			rejectTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+				"Incorrect correction",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
+		);
+		expect(dbService.updateSets).not.toEqual(
+			expect.arrayContaining([expect.objectContaining({ id: "entry-rejected-correction" })]),
 		);
 	});
 });
@@ -462,6 +522,27 @@ describe("time correction approval policy resolution", () => {
 			status: "pending",
 			reason: "Correct missed clock-in",
 		});
+	});
+
+	it("rejects a new time correction approval when the work period already has one pending", async () => {
+		const { dbService } = createPolicyResolutionDbService([]);
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-existing",
+		});
+
+		await expect(
+			Effect.runPromise(
+				createTimeCorrectionApprovalWorkflow(dbService, {
+					organizationId: "org-1",
+					requesterEmployeeId: "emp-requester",
+					teamId: "team-1",
+					workPeriodId: "period-1",
+					defaultApproverId: "emp-manager",
+					reason: "Correct missed clock-in",
+					overtimeRisk: "warning",
+				}),
+			),
+		).rejects.toThrow("A time correction approval is already pending for this work period");
 	});
 
 	it("uses existing default approval behavior when no approval policy matches", async () => {

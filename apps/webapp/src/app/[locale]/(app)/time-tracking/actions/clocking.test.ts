@@ -341,6 +341,21 @@ describe("clockOut", () => {
 		);
 	});
 
+	it("marks the work balance dirty after break enforcement can adjust the closed period", async () => {
+		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
+			wasAdjusted: true,
+			adjustment: { breakMinutes: 30 },
+		});
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalled();
+		expect(mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
+	});
+
 	it("keeps clock-out successful when dirty marking fails", async () => {
 		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
 

@@ -4,7 +4,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, timeEntry, timeRecord, workPeriod } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, ConflictError, NotFoundError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { onTimeCorrectionApproved, onTimeCorrectionRejected } from "@/lib/notifications/triggers";
@@ -48,6 +48,7 @@ interface CorrectionEntry {
 	id: string;
 	timestamp: Date;
 	replacesEntryId: string | null;
+	isSuperseded: boolean;
 }
 
 type WorkBalanceDirtyMark = {
@@ -106,10 +107,11 @@ function loadClockInCorrectionEntries(dbService: ApprovalDbService, period: Work
 						eq(timeEntry.employeeId, period.employeeId),
 						eq(timeEntry.organizationId, period.organizationId),
 						eq(timeEntry.replacesEntryId, period.clockInId),
+						eq(timeEntry.isSuperseded, false),
 					),
 				);
 		})
-		.pipe(Effect.map((entries) => entries as CorrectionEntry[]));
+		.pipe(Effect.map((entries) => (entries as CorrectionEntry[]).filter((entry) => !entry.isSuperseded)));
 }
 
 function loadClockOutCorrection(dbService: ApprovalDbService, period: WorkPeriodRecord) {
@@ -125,10 +127,16 @@ function loadClockOutCorrection(dbService: ApprovalDbService, period: WorkPeriod
 					eq(timeEntry.employeeId, period.employeeId),
 					eq(timeEntry.organizationId, period.organizationId),
 					eq(timeEntry.replacesEntryId, period.clockOutId),
+					eq(timeEntry.isSuperseded, false),
 				),
 			});
 		})
-		.pipe(Effect.map((entry) => entry as CorrectionEntry | null));
+		.pipe(
+			Effect.map((entry) => {
+				const correction = entry as CorrectionEntry | null;
+				return correction?.isSuperseded ? null : correction;
+			}),
+		);
 }
 
 function ensureClockInCorrection(
@@ -182,11 +190,14 @@ export function createTimeCorrectionApprovalWorkflow(
 		overtimeRisk: ApprovalPolicyOvertimeRisk;
 	},
 ): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
-	return resolvePolicyAndCreateApproval(dbService, {
-		context: buildTimeCorrectionApprovalPolicyContext(input),
-		defaultApproverId: input.defaultApproverId,
-		reason: input.reason,
-	}).pipe(
+	return ensureNoPendingTimeCorrectionApproval(dbService, input.workPeriodId).pipe(
+		Effect.flatMap(() =>
+			resolvePolicyAndCreateApproval(dbService, {
+				context: buildTimeCorrectionApprovalPolicyContext(input),
+				defaultApproverId: input.defaultApproverId,
+				reason: input.reason,
+			}),
+		),
 		Effect.catchTag("ValidationError", () =>
 			dbService.query("createDefaultTimeCorrectionApprovalFallback", async () => {
 				const [approval] = await dbService.db
@@ -206,6 +217,32 @@ export function createTimeCorrectionApprovalWorkflow(
 			}),
 		),
 	);
+}
+
+function ensureNoPendingTimeCorrectionApproval(dbService: ApprovalDbService, workPeriodId: string) {
+	return dbService
+		.query("getPendingTimeCorrectionApproval", async () => {
+			return await dbService.db.query.approvalRequest.findFirst({
+				where: and(
+					eq(approvalRequest.entityType, "time_entry"),
+					eq(approvalRequest.entityId, workPeriodId),
+					eq(approvalRequest.status, "pending"),
+				),
+			});
+		})
+		.pipe(
+			Effect.flatMap((pendingApproval) =>
+				pendingApproval
+					? Effect.fail(
+							new ConflictError({
+								message: "A time correction approval is already pending for this work period",
+								conflictType: "pending_time_correction_approval",
+								details: { workPeriodId },
+							}),
+						)
+					: Effect.void,
+			),
+		);
 }
 
 export async function syncCanonicalWorkCorrection(input: {

@@ -217,9 +217,35 @@ export const clockOutCommand: BotCommand = {
 				sessionDurationMinutes: durationMinutes,
 				timezone,
 				createdBy: ctx.userId,
-			}).catch((err) => {
-				logger.error({ error: err }, "Failed to enforce breaks after clock-out");
-			});
+			})
+				.then(async (breakEnforcementResult) => {
+					if (!breakEnforcementResult.wasAdjusted) {
+						return;
+					}
+
+					try {
+						await markEmployeeWorkBalanceDirty({
+							employeeId: emp.id,
+							organizationId: emp.organizationId,
+							dirtyFromDate:
+								DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ??
+								undefined,
+						});
+					} catch (error) {
+						logger.error(
+							{
+								error,
+								employeeId: emp.id,
+								organizationId: emp.organizationId,
+								workPeriodId: activePeriod.id,
+							},
+							"Failed to mark work balance dirty after Teams break enforcement adjustment",
+						);
+					}
+				})
+				.catch((err) => {
+					logger.error({ error: err }, "Failed to enforce breaks after clock-out");
+				});
 
 			// Format response
 			const clockOutTime = DateTime.fromJSDate(now).setZone(timezone);

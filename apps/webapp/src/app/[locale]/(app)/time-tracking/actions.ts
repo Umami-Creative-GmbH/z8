@@ -1293,16 +1293,6 @@ export async function clockOut(
 				and(eq(workPeriod.id, activePeriod.id), eq(workPeriod.organizationId, emp.organizationId)),
 			);
 
-		await markWorkBalanceDirtyBestEffort(
-			{
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				dirtyFromDate:
-					DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
-			},
-			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: activePeriod.id },
-		);
-
 		// Calculate and persist surcharge credits if feature is enabled
 		await calculateAndPersistSurcharges(activePeriod.id, emp.organizationId);
 
@@ -1324,6 +1314,16 @@ export async function clockOut(
 			timezone,
 			createdBy: session.user.id,
 		});
+
+		await markWorkBalanceDirtyBestEffort(
+			{
+				employeeId: emp.id,
+				organizationId: emp.organizationId,
+				dirtyFromDate:
+					DateTime.fromJSDate(activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+			},
+			{ employeeId: emp.id, organizationId: emp.organizationId, workPeriodId: activePeriod.id },
+		);
 
 		// Fire-and-forget: Check project budget warnings if project was assigned
 		if (projectId) {
