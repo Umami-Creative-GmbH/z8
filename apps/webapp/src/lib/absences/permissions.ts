@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { employee, employeeManagers } from "@/db/schema";
 
 /**
  * Check if an employee can approve an absence request
@@ -36,9 +36,16 @@ export async function canApproveAbsence(
 		return true;
 	}
 
-	// Managers can approve their subordinates' absences
-	if (approver.role === "manager" && target.managerId === employeeId) {
-		return true;
+	// Managers can approve their linked employees' absences
+	if (approver.role === "manager") {
+		const managerLink = await db.query.employeeManagers.findFirst({
+			where: and(
+				eq(employeeManagers.employeeId, targetEmployeeId),
+				eq(employeeManagers.managerId, employeeId),
+			),
+		});
+
+		return Boolean(managerLink);
 	}
 
 	return false;
@@ -78,9 +85,16 @@ export async function canEditEmployeeAllowance(
 		return true;
 	}
 
-	// Managers can edit their subordinates' allowances
-	if (editor.role === "manager" && target.managerId === employeeId) {
-		return true;
+	// Managers can edit their linked employees' allowances
+	if (editor.role === "manager") {
+		const managerLink = await db.query.employeeManagers.findFirst({
+			where: and(
+				eq(employeeManagers.employeeId, targetEmployeeId),
+				eq(employeeManagers.managerId, employeeId),
+			),
+		});
+
+		return Boolean(managerLink);
 	}
 
 	return false;
