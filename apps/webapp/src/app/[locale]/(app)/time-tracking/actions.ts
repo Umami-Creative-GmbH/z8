@@ -114,6 +114,25 @@ const approvalDbService = {
 	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 } satisfies ApprovalDbService;
 
+type ManagerResolverDb = Parameters<typeof getPrimaryEligibleManagerIdForRequester>[0]["db"];
+
+export async function resolveTimeApprovalManagerId(input: {
+	db: ManagerResolverDb;
+	requiresApproval: boolean;
+	requesterEmployeeId: string;
+	organizationId: string;
+}): Promise<string | null> {
+	if (!input.requiresApproval) {
+		return null;
+	}
+
+	return getPrimaryEligibleManagerIdForRequester({
+		db: input.db,
+		requesterEmployeeId: input.requesterEmployeeId,
+		organizationId: input.organizationId,
+	});
+}
+
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
@@ -1348,13 +1367,12 @@ export async function clockOut(
 			);
 
 		// If clock-out needs approval, create an approval request
-		const managerId = needsClockOutApproval
-			? await getPrimaryEligibleManagerIdForRequester({
-					db,
-					requesterEmployeeId: emp.id,
-					organizationId: emp.organizationId,
-				})
-			: null;
+		const managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval: needsClockOutApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
 		if (needsClockOutApproval && managerId) {
 			await createClockOutApprovalRequest({
 				workPeriodId: activePeriod.id,
@@ -2977,13 +2995,12 @@ export async function createManualTimeEntry(data: ManualTimeEntryInput): Promise
 
 		// Determine approval status based on policy
 		const approvalStatus = requiresApproval ? "pending" : "approved";
-		const managerId = requiresApproval
-			? await getPrimaryEligibleManagerIdForRequester({
-					db,
-					requesterEmployeeId: emp.id,
-					organizationId: emp.organizationId,
-				})
-			: null;
+		const managerId = await resolveTimeApprovalManagerId({
+			db,
+			requiresApproval,
+			requesterEmployeeId: emp.id,
+			organizationId: emp.organizationId,
+		});
 
 		// Prepare pending changes data if approval is needed
 		const pendingChangesData = requiresApproval

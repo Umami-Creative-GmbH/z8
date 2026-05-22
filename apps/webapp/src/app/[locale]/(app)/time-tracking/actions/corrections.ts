@@ -32,6 +32,27 @@ type CorrectionTimesResult =
 			error: string;
 	  };
 
+type ManagerResolverDb = Parameters<typeof getPrimaryEligibleManagerIdForRequester>[0]["db"];
+
+export async function resolveCorrectionApprovalManager(input: {
+	db: ManagerResolverDb;
+	requesterEmployeeId: string;
+	organizationId: string;
+}): Promise<
+	| { ok: true; managerId: string }
+	| { ok: false; message: "No manager assigned to approve corrections"; field: "managerId" }
+> {
+	const managerId = await getPrimaryEligibleManagerIdForRequester(input);
+
+	return managerId
+		? { ok: true, managerId }
+		: {
+				ok: false,
+				message: "No manager assigned to approve corrections",
+				field: "managerId",
+			};
+}
+
 function buildCorrectionTimes(params: {
 	periodStart: Date;
 	periodEnd?: Date | null;
@@ -268,9 +289,9 @@ export async function requestTimeCorrectionEffect(
 		yield* _(Effect.annotateCurrentSpan("employee.id", currentEmployee.id));
 		yield* _(Effect.annotateCurrentSpan("organization.id", currentEmployee.organizationId));
 
-		const managerId = yield* _(
+		const managerDecision = yield* _(
 			Effect.promise(() =>
-				getPrimaryEligibleManagerIdForRequester({
+				resolveCorrectionApprovalManager({
 					db: dbService.db,
 					requesterEmployeeId: currentEmployee.id,
 					organizationId: currentEmployee.organizationId,
@@ -278,6 +299,7 @@ export async function requestTimeCorrectionEffect(
 			),
 		);
 
+		const managerId = managerDecision.ok ? managerDecision.managerId : null;
 		if (!managerId) {
 			yield* _(
 				Effect.fail(
