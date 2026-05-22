@@ -176,6 +176,8 @@ export {
 	notificationTypeEnum,
 	organizationBranding,
 	organizationBrandingRelations,
+	organizationSecret,
+	organizationSecretKey,
 	// Enterprise tables
 	organizationDomain,
 	organizationDomainRelations,
@@ -267,4 +269,5 @@ export {
 	scheduledExportRelations,
 	scheduledExportExecution,
 	scheduledExportExecutionRelations,
+	secretStoreProviderEnum,
 } from "./schema";
