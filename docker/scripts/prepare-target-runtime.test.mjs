@@ -74,6 +74,20 @@ test("non-root runtime Dockerfiles can run pnpm without writing root-owned Corep
 	}
 });
 
+test("Next.js runtime Dockerfiles start without pnpm dependency status checks", async () => {
+	const dockerfiles = ["Dockerfile.docs", "Dockerfile.webapp"];
+
+	for (const dockerfile of dockerfiles) {
+		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
+
+		assert.doesNotMatch(
+			contents,
+			/CMD \["pnpm", "start"\]/,
+			`${dockerfile} must not invoke pnpm at runtime because pnpm may try to repair node_modules without a TTY`,
+		);
+	}
+});
+
 test("collectTarget lists traced worker runtime files and packages", async () => {
 	const result = await collectTarget("worker");
 
