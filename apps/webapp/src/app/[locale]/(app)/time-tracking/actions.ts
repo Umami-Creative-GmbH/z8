@@ -9,6 +9,7 @@ import { db } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
+	approvalRequest,
 	employee,
 	project,
 	projectAssignment,
@@ -188,6 +189,23 @@ export async function editSameDayTimeEntry(
 		return {
 			success: false,
 			error: "Cannot edit an active work period. Please clock out first.",
+		};
+	}
+
+	const pendingTimeCorrectionApproval = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.organizationId, emp.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+			eq(approvalRequest.entityId, period.id),
+			eq(approvalRequest.status, "pending"),
+		),
+	});
+
+	if (pendingTimeCorrectionApproval) {
+		return {
+			success: false,
+			error: "A time correction approval is already pending for this work period",
+			code: "pending_time_correction_approval",
 		};
 	}
 
@@ -716,6 +734,10 @@ export async function requestTimeCorrectionEffect(
 							defaultApproverId: currentEmployee.managerId!,
 							reason: data.reason,
 							overtimeRisk: "warning",
+							correctionEntryIds: {
+								clockInCorrectionId: clockInCorrection.id,
+								clockOutCorrectionId,
+							},
 						}),
 					);
 

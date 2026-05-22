@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
 import { createTimeCorrectionApprovalWorkflow } from "@/lib/approvals/server/time-correction-approvals";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -106,6 +106,23 @@ export async function editSameDayTimeEntry(
 
 	if (!selectedWorkPeriod.endTime) {
 		return { success: false, error: "Cannot edit an active work period. Please clock out first." };
+	}
+
+	const pendingTimeCorrectionApproval = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.organizationId, currentEmployee.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+			eq(approvalRequest.entityId, selectedWorkPeriod.id),
+			eq(approvalRequest.status, "pending"),
+		),
+	});
+
+	if (pendingTimeCorrectionApproval) {
+		return {
+			success: false,
+			error: "A time correction approval is already pending for this work period",
+			code: "pending_time_correction_approval",
+		};
 	}
 
 	let editCapability;
@@ -501,6 +518,10 @@ export async function requestTimeCorrectionEffect(
 							defaultApproverId: currentEmployee.managerId!,
 							reason: data.reason,
 							overtimeRisk: "warning",
+							correctionEntryIds: {
+								clockInCorrectionId: clockInCorrection.id,
+								clockOutCorrectionId,
+							},
 						}),
 					);
 

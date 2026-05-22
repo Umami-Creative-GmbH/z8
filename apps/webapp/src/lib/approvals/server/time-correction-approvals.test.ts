@@ -159,11 +159,12 @@ function createTimeCorrectionDecisionDbService() {
 					requestedBy: "emp-requester",
 					approverId: "emp-manager",
 					status: "pending",
+					metadata: { timeCorrection: { clockInCorrectionId: "entry-correction" } },
 				}),
 			},
 			approvalChainStageInstance: { findFirst: vi.fn().mockResolvedValue(null) },
 			workPeriod: { findFirst: vi.fn().mockResolvedValue(period) },
-			timeEntry: { findFirst: vi.fn().mockResolvedValue(null) },
+			timeEntry: { findFirst: vi.fn().mockResolvedValue(correction) },
 		},
 		select: vi.fn().mockReturnValue({
 			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
@@ -296,6 +297,48 @@ describe("time correction requester decision notifications", () => {
 		);
 	});
 
+	it("approves the correction entry linked to the approval request instead of unrelated rows", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const linkedCorrection = {
+			id: "entry-linked-correction",
+			timestamp: new Date("2026-05-11T08:30:00.000Z"),
+			replacesEntryId: "entry-original",
+			isSuperseded: false,
+		};
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: { timeCorrection: { clockInCorrectionId: linkedCorrection.id } },
+		});
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
+		} as never);
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce(linkedCorrection);
+
+		await runTimeCorrectionDecisionEffect(
+			approveTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+			),
+		);
+
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					clockInId: linkedCorrection.id,
+					startTime: linkedCorrection.timestamp,
+				}),
+			]),
+		);
+		expect(dbService.db.query.timeEntry.findFirst).toHaveBeenCalled();
+	});
+
 	it("notifies the requester after rejecting a time correction request", async () => {
 		const dbService = createTimeCorrectionDecisionDbService();
 
@@ -368,6 +411,44 @@ describe("time correction requester decision notifications", () => {
 		);
 		expect(dbService.updateSets).not.toEqual(
 			expect.arrayContaining([expect.objectContaining({ id: "entry-rejected-correction" })]),
+		);
+	});
+
+	it("rejects only the correction entries linked to the approval request", async () => {
+		const dbService = createTimeCorrectionDecisionDbService();
+		const linkedCorrection = {
+			id: "entry-linked-correction",
+			timestamp: new Date("2026-05-11T08:30:00.000Z"),
+			replacesEntryId: "entry-original",
+			isSuperseded: false,
+		};
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "emp-requester",
+			approverId: "emp-manager",
+			status: "pending",
+			metadata: { timeCorrection: { clockInCorrectionId: linkedCorrection.id } },
+		});
+		vi.mocked(dbService.db.select).mockReturnValueOnce({
+			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([correction]) }),
+		} as never);
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValueOnce(linkedCorrection);
+
+		await runTimeCorrectionDecisionEffect(
+			rejectTimeCorrectionWithCurrentApproverEffect(
+				dbService,
+				timeCorrectionCurrentApprover,
+				"period-1",
+				"Incorrect correction",
+			),
+		);
+
+		expect(dbService.db.query.timeEntry.findFirst).toHaveBeenCalled();
+		expect(dbService.updateSets).toEqual(
+			expect.arrayContaining([{ isSuperseded: true, supersededById: null }]),
 		);
 	});
 });
@@ -508,6 +589,10 @@ describe("time correction approval policy resolution", () => {
 				defaultApproverId: "emp-manager",
 				reason: "Correct missed clock-in",
 				overtimeRisk: "warning",
+				correctionEntryIds: {
+					clockInCorrectionId: "entry-correction",
+					clockOutCorrectionId: "entry-clock-out-correction",
+				},
 			}),
 		);
 
@@ -521,6 +606,12 @@ describe("time correction approval policy resolution", () => {
 			approverId: "emp-manager",
 			status: "pending",
 			reason: "Correct missed clock-in",
+			metadata: {
+				timeCorrection: {
+					clockInCorrectionId: "entry-correction",
+					clockOutCorrectionId: "entry-clock-out-correction",
+				},
+			},
 		});
 	});
 

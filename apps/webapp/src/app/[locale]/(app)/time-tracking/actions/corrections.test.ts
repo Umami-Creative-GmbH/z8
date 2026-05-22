@@ -54,4 +54,26 @@ describe("time correction request safety", () => {
 			expect(emailIndex).toBeGreaterThan(approvalIndex);
 		},
 	);
+
+	it.each([
+		["modular", modularSource],
+		["legacy", legacySource],
+	])("passes %s created correction entry IDs into the approval workflow", (_name, source) => {
+		const body = functionBody(source, "requestTimeCorrectionEffect");
+
+		expect(body).toContain("correctionEntryIds");
+		expect(body).toContain("clockInCorrectionId: clockInCorrection.id");
+		expect(body).toContain("clockOutCorrectionId");
+	});
+
+	it.each([
+		["modular", modularSource],
+		["legacy", legacySource],
+	])("blocks %s direct same-day edits when a correction approval is pending", (_name, source) => {
+		const body = functionBody(source, "editSameDayTimeEntry");
+
+		expect(body).toContain("approvalRequest");
+		expect(body).toContain("pending_time_correction_approval");
+		expect(body).toContain("A time correction approval is already pending for this work period");
+	});
 });

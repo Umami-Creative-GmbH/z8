@@ -179,6 +179,7 @@ function executeApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		approval: PendingApprovalRequest,
 	) => Effect.Effect<T, AnyAppError, unknown>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
@@ -237,7 +238,7 @@ function executeApprovalWithCurrentEmployee<T>(
 
 		let domainResult: T | undefined;
 		if (updateEntity && shouldRunDomainSideEffect) {
-			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee));
+			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee, approval));
 		}
 
 		yield* _(
@@ -279,6 +280,7 @@ export function processApprovalWithCurrentEmployee<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		approval: PendingApprovalRequest,
 	) => Effect.Effect<T, AnyAppError, unknown>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
@@ -360,6 +362,7 @@ export async function processApproval<T>(
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		approval: PendingApprovalRequest,
 	) => Effect.Effect<T, AnyAppError, unknown>,
 	preflightEntity?: (
 		dbService: ApprovalDbService,
