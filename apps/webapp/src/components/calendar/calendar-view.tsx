@@ -11,6 +11,7 @@ import { CalendarFiltersComponent } from "./calendar-filters";
 import { CalendarLegend } from "./calendar-legend";
 import { DeleteWorkPeriodDialog } from "./delete-work-period-dialog";
 import { EventDetailsPanel } from "./event-details-panel";
+import { MonthWorkSummaryView } from "./month-work-summary-view";
 import type { ViewMode } from "./schedule-x-calendar";
 import { ScheduleXWrapper } from "./schedule-x-wrapper";
 import { SplitWorkPeriodDialog } from "./split-work-period-dialog";
@@ -184,6 +185,17 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 							onViewModeChange={setViewMode}
 							onDayClick={handleDayClick}
 							workHoursData={workHoursData}
+						/>
+					) : viewMode === "month" ? (
+						<MonthWorkSummaryView
+							monthDate={currentMonth}
+							events={events}
+							workHoursData={workHoursData}
+							viewMode={viewMode}
+							onViewModeChange={setViewMode}
+							onMonthChange={setCurrentMonth}
+							onDayClick={handleDayClick}
+							onRefresh={refetch}
 						/>
 					) : (
 						<ScheduleXWrapper
