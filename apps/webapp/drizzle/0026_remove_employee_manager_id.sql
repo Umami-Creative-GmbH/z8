@@ -2,6 +2,18 @@ DO $$
 BEGIN
 	IF EXISTS (
 		SELECT 1
+		FROM "employee_managers" AS "em"
+		INNER JOIN "employee" AS "managed"
+			ON "managed"."id" = "em"."employee_id"
+		INNER JOIN "employee" AS "manager"
+			ON "manager"."id" = "em"."manager_id"
+		WHERE "managed"."organization_id" <> "manager"."organization_id"
+	) THEN
+		RAISE EXCEPTION 'Cross-organization employee manager assignments must be resolved before removing employee.manager_id';
+	END IF;
+
+	IF EXISTS (
+		SELECT 1
 		FROM "employee_managers"
 		GROUP BY "employee_id", "manager_id"
 		HAVING count(*) > 1

@@ -101,6 +101,9 @@ describe("drizzle follow-up migrations", () => {
 		const duplicateGuardPosition = migration0026.indexOf(
 			"Duplicate employee manager assignments must be resolved before removing employee.manager_id",
 		);
+		const existingCrossOrganizationGuardPosition = migration0026.indexOf(
+			"Cross-organization employee manager assignments must be resolved before removing employee.manager_id",
+		);
 		const primaryUpdatePosition = migration0026.indexOf(
 			'UPDATE "employee_managers" AS "existing_assignment"',
 		);
@@ -113,9 +116,17 @@ describe("drizzle follow-up migrations", () => {
 		expect(duplicateGuardPosition).toBeGreaterThanOrEqual(0);
 		expect(duplicateGuardPosition).toBeLessThan(primaryUpdatePosition);
 		expect(duplicateGuardPosition).toBeLessThan(uniqueIndexPosition);
+		expect(existingCrossOrganizationGuardPosition).toBeGreaterThanOrEqual(0);
+		expect(existingCrossOrganizationGuardPosition).toBeLessThan(insertPosition);
+		expect(existingCrossOrganizationGuardPosition).toBeLessThan(primaryUpdatePosition);
+		expect(existingCrossOrganizationGuardPosition).toBeLessThan(uniqueIndexPosition);
 		expect(migration0026).toContain("RAISE EXCEPTION");
 		expect(migration0026).toContain('GROUP BY "employee_id", "manager_id"');
 		expect(migration0026).toContain("HAVING count(*) > 1");
+		expect(migration0026).toContain('FROM "employee_managers" AS "em"');
+		expect(migration0026).toContain('INNER JOIN "employee" AS "managed"');
+		expect(migration0026).toContain('INNER JOIN "employee" AS "manager"');
+		expect(migration0026).toContain('"managed"."organization_id" <> "manager"."organization_id"');
 		expect(migration0026).toContain('"manager"."organization_id" = "e"."organization_id"');
 		expect(migration0026).toContain('"manager"."id" IS NULL');
 		expect(migration0026).toContain('"assigned_user"."id" IS NULL');
