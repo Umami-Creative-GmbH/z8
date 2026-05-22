@@ -1,11 +1,19 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-export const env = createEnv({
+const skipEnvValidation =
+	process.env.SKIP_ENV_VALIDATION === "1" ||
+	process.env.SKIP_ENV_VALIDATION === "true" ||
+	process.env.CI === "true";
+
+const parsedEnv = createEnv({
 	server: {
 		APP_URL: z.url().optional(),
 		BETTER_AUTH_SECRET: z.string().min(32),
 		BETTER_AUTH_SECRETS: z.string().optional(),
+
+		// Secret store provider
+		SECRET_STORE_PROVIDER: z.enum(["vault", "scaleway"]).default("vault"),
 
 		// DATABASE_URL: z.string().url(), // Not used, using individual vars
 		// Postgres connection details
@@ -51,6 +59,15 @@ export const env = createEnv({
 		// Vault
 		VAULT_ADDR: z.string().optional(),
 		VAULT_TOKEN: z.string().optional(),
+
+		// Scaleway Key Manager
+		SCALEWAY_ACCESS_KEY: z.string().optional(),
+		SCALEWAY_SECRET_KEY: z.string().optional(),
+		SCALEWAY_PROJECT_ID: z.string().optional(),
+		SCALEWAY_REGION: z.enum(["fr-par", "nl-ams", "pl-waw"]).default("fr-par"),
+		SCALEWAY_KEY_MANAGER_API_URL: z
+			.url()
+			.default("https://api.scaleway.com"),
 
 		// Tolgee (Server side)
 		TOLGEE_PROJECT_ID: z.string().optional(),
@@ -128,6 +145,7 @@ export const env = createEnv({
 
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,
+		SECRET_STORE_PROVIDER: process.env.SECRET_STORE_PROVIDER ?? "vault",
 		VALKEY_HOST: process.env.VALKEY_HOST,
 		VALKEY_PORT: process.env.VALKEY_PORT,
 		VALKEY_PASSWORD: process.env.VALKEY_PASSWORD,
@@ -155,6 +173,12 @@ export const env = createEnv({
 		CRON_SECRET: process.env.CRON_SECRET,
 		VAULT_ADDR: process.env.VAULT_ADDR,
 		VAULT_TOKEN: process.env.VAULT_TOKEN,
+		SCALEWAY_ACCESS_KEY: process.env.SCALEWAY_ACCESS_KEY,
+		SCALEWAY_SECRET_KEY: process.env.SCALEWAY_SECRET_KEY,
+		SCALEWAY_PROJECT_ID: process.env.SCALEWAY_PROJECT_ID,
+		SCALEWAY_REGION: process.env.SCALEWAY_REGION ?? "fr-par",
+		SCALEWAY_KEY_MANAGER_API_URL:
+			process.env.SCALEWAY_KEY_MANAGER_API_URL ?? "https://api.scaleway.com",
 		TOLGEE_PROJECT_ID: process.env.TOLGEE_PROJECT_ID,
 		TOLGEE_API_KEY: process.env.TOLGEE_API_KEY,
 		TOLGEE_API_URL: process.env.TOLGEE_API_URL,
@@ -197,10 +221,7 @@ export const env = createEnv({
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
 		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
 	},
-	skipValidation:
-		process.env.SKIP_ENV_VALIDATION === "1" ||
-		process.env.SKIP_ENV_VALIDATION === "true" ||
-		process.env.CI === "true",
+	skipValidation: skipEnvValidation,
 	emptyStringAsUndefined: true,
 	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
@@ -210,3 +231,23 @@ export const env = createEnv({
 		process.exit(1);
 	},
 });
+
+if (!skipEnvValidation && parsedEnv.SECRET_STORE_PROVIDER === "scaleway") {
+	const missingScalewayEnvVars = [
+		"SCALEWAY_ACCESS_KEY",
+		"SCALEWAY_SECRET_KEY",
+		"SCALEWAY_PROJECT_ID",
+	].filter((key) => !parsedEnv[key as keyof typeof parsedEnv]);
+
+	if (missingScalewayEnvVars.length > 0) {
+		console.error("❌ Invalid environment variables:");
+		for (const key of missingScalewayEnvVars) {
+			console.error(
+				`   - ${key}: Required when SECRET_STORE_PROVIDER=scaleway`
+			);
+		}
+		process.exit(1);
+	}
+}
+
+export const env = parsedEnv;

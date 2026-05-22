@@ -176,6 +176,13 @@
       "when": 1779443910353,
       "tag": "0024_employee_time_balance",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1779454874208,
+      "tag": "0025_scaleway_secret_store",
+      "breakpoints": true
     }
   ]
 }

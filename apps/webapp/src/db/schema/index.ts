@@ -58,6 +58,7 @@ export * from "./project";
 export * from "./relations";
 // Scheduled exports
 export * from "./scheduled-export";
+export * from "./secret-store";
 // SCIM provisioning
 export * from "./scim";
 export * from "./shift";
