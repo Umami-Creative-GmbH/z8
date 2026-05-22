@@ -143,33 +143,32 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		const outsideOrgCondition = {
 			organizationId: { $ne: principal.activeOrganizationId },
 		};
+		const timeEntryActions: Action[] = ["create", "read", "update", "delete"];
+		const absenceActions: Action[] = [
+			"create",
+			"read",
+			"update",
+			"delete",
+			"approve",
+			"reject",
+		];
+		const approvalActions: Action[] = ["read", "approve", "reject"];
 
 		// Employee admin - full workforce access within org
 		if (empRole === "admin") {
 			can("manage", "Team");
-			can("manage", "TimeEntry");
 			can("manage", "Shift");
 			can("manage", "Project");
 			can("manage", "LeaveRequest");
-			can("manage", "Approval");
 			can("manage", "Report");
 			can("generate", "Report");
 			can("manage", "Location");
 			// Additional workforce subjects
-			can("manage", "Absence");
 			can("manage", "AbsenceAllowance");
 			can("manage", "Schedule");
 			can("manage", "Calendar");
 			can("manage", "Surcharge");
 			can("manage", "Holiday");
-			cannot("manage", "Employee", outsideOrgCondition);
-			cannot("manage", "TimeEntry", outsideOrgCondition);
-			cannot("manage", "Absence", outsideOrgCondition);
-			cannot("manage", "Approval", outsideOrgCondition);
-			can("manage", "Employee", orgCondition);
-			can("manage", "TimeEntry", orgCondition);
-			can("manage", "Absence", orgCondition);
-			can("manage", "Approval", orgCondition);
 		}
 
 		// Manager - can manage direct reports + approvals
@@ -178,24 +177,6 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "TimeEntry");
 			can("manage", "LeaveRequest");
 			can("manage", "Absence");
-			cannot("manage", "TimeEntry", outsideOrgCondition);
-			cannot("manage", "TimeEntry", {
-				employeeId: { $nin: visibleEmployeeIds },
-			});
-			cannot("manage", "Absence", outsideOrgCondition);
-			cannot("manage", "Absence", {
-				employeeId: { $nin: visibleEmployeeIds },
-			});
-			cannot(["update", "delete"], "Absence", orgCondition);
-			cannot(["approve", "reject"], "Absence", orgCondition);
-			cannot(["approve", "reject"], "Approval", outsideOrgCondition);
-			cannot(["approve", "reject"], "Approval", orgCondition);
-			can(["read", "update"], "Employee", selfCondition);
-			can("read", "Employee", directReportCondition);
-			can("read", "TimeEntry", selfCondition);
-			can("read", "TimeEntry", directReportCondition);
-			can(["read", "create"], "Absence", selfCondition);
-			can(["read", "approve", "reject"], "Absence", directReportCondition);
 
 			// Can view team info
 			if (teamId) {
@@ -206,12 +187,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			}
 
 			// Can approve/reject if has direct reports
-			if (principal.managedEmployeeIds.length > 0) {
-				can(["read", "approve", "reject"], "Approval", {
-					organizationId: principal.activeOrganizationId,
-					requestedBy: { $in: principal.managedEmployeeIds },
-				});
-			}
+			// Object-subject approval grants are applied after additive rules below.
 
 			// Reports access (limited)
 			can("read", "Report");
@@ -225,17 +201,6 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("read", "LeaveRequest");
 			can("create", "Absence");
 			can("read", "Absence");
-			cannot("manage", "TimeEntry", outsideOrgCondition);
-			cannot("manage", "TimeEntry", {
-				employeeId: { $ne: principal.employee.id },
-			});
-			cannot(["read", "create"], "Absence", outsideOrgCondition);
-			cannot(["read", "create"], "Absence", {
-				employeeId: { $ne: principal.employee.id },
-			});
-			can(["read", "update"], "Employee", selfCondition);
-			can("read", "TimeEntry", selfCondition);
-			can(["read", "create"], "Absence", selfCondition);
 
 			// Can view own team info
 			if (teamId) {
@@ -268,6 +233,62 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			for (const perm of customRole.permissions) {
 				can(perm.action, perm.subject);
 			}
+		}
+
+		// Object-subject guardrails must run after additive grants because CASL
+		// string-subject grants also match `subject(name, object)` checks.
+		if (empRole === "admin") {
+			cannot("manage", "Employee", outsideOrgCondition);
+			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
+			cannot(absenceActions, "Absence", outsideOrgCondition);
+			cannot(approvalActions, "Approval", outsideOrgCondition);
+			can("manage", "Employee", orgCondition);
+			can("manage", "TimeEntry", orgCondition);
+			can("manage", "Absence", orgCondition);
+			can("manage", "Approval", orgCondition);
+		}
+
+		if (empRole === "manager") {
+			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
+			cannot(timeEntryActions, "TimeEntry", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot(absenceActions, "Absence", outsideOrgCondition);
+			cannot(absenceActions, "Absence", {
+				employeeId: { $nin: visibleEmployeeIds },
+			});
+			cannot(["update", "delete", "approve", "reject"], "Absence", orgCondition);
+			cannot(approvalActions, "Approval", outsideOrgCondition);
+			cannot(approvalActions, "Approval", orgCondition);
+			can(["read", "update"], "Employee", selfCondition);
+			can("read", "Employee", directReportCondition);
+			can("read", "TimeEntry", selfCondition);
+			can("read", "TimeEntry", directReportCondition);
+			can(["read", "create"], "Absence", selfCondition);
+			can(["read", "approve", "reject"], "Absence", directReportCondition);
+
+			if (principal.managedEmployeeIds.length > 0) {
+				can(["read", "approve", "reject"], "Approval", {
+					organizationId: principal.activeOrganizationId,
+					requestedBy: { $in: principal.managedEmployeeIds },
+				});
+			}
+		}
+
+		if (empRole === "employee") {
+			cannot(timeEntryActions, "TimeEntry", outsideOrgCondition);
+			cannot(timeEntryActions, "TimeEntry", {
+				employeeId: { $ne: principal.employee.id },
+			});
+			cannot(absenceActions, "Absence", outsideOrgCondition);
+			cannot(absenceActions, "Absence", {
+				employeeId: { $ne: principal.employee.id },
+			});
+			cannot(approvalActions, "Approval", outsideOrgCondition);
+			cannot(approvalActions, "Approval", orgCondition);
+			can(["read", "update"], "Employee", selfCondition);
+			can("read", "TimeEntry", selfCondition);
+			can(["read", "create"], "Absence", selfCondition);
 		}
 	}
 

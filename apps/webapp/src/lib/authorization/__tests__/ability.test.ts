@@ -866,6 +866,60 @@ describe("Object Subject Conditions", () => {
 		expect(ability.can("approve", asAppSubject("Approval", otherOrgApproval))).toBe(false);
 	});
 
+	it("keeps permission-flag approval grants scoped for approval object subjects", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "manager",
+					teamId: TEAM_1,
+				},
+				managedEmployeeIds: [EMPLOYEE_2],
+				permissions: {
+					orgWide: { canApproveTeamRequests: true },
+					byTeamId: new Map(),
+				},
+			}),
+		);
+
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("approve", asAppSubject("Approval", managedApproval))).toBe(true);
+		expect(ability.can("approve", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+	});
+
+	it("keeps custom-role approval grants scoped for approval object subjects", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				employee: {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role: "employee",
+					teamId: TEAM_1,
+				},
+				customRoles: [
+					{
+						roleId: "role-approval-reader",
+						roleName: "Approval Reader",
+						baseTier: "employee",
+						permissions: [
+							{ action: "read", subject: "Approval" },
+							{ action: "approve", subject: "Approval" },
+						],
+					},
+				],
+			}),
+		);
+
+		expect(ability.can("read", "Approval")).toBe(true);
+		expect(ability.can("approve", "Approval")).toBe(true);
+		expect(ability.can("read", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", unmanagedApproval))).toBe(false);
+		expect(ability.can("read", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+		expect(ability.can("approve", asAppSubject("Approval", otherOrgApproval))).toBe(false);
+	});
+
 	it("allows workforce admins to manage time entries, absences, and approvals in their organization only", () => {
 		const ability = defineAbilityFor(
 			createPrincipal({
