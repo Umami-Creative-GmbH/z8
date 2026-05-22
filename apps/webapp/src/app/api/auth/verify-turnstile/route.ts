@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { getDomainConfig, getPlatformOrganizationLabel, resolvePlatformOrganization } from "@/lib/domain";
+import {
+	classifyDomainHost,
+	getDomainConfig,
+	getPlatformOrganizationLabel,
+	resolvePlatformOrganization,
+} from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
@@ -28,6 +33,10 @@ export async function POST(request: Request) {
 		// Determine organization context from the trusted Host header.
 		// Don't trust client-supplied organizationId - derive it from the request context
 		const host = request.headers.get("host");
+		if (classifyDomainHost(host)?.type === "unknownPlatform") {
+			return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+		}
+
 		const platformOrganizationLabel = getPlatformOrganizationLabel(host);
 		const platformOrganization = platformOrganizationLabel
 			? await resolvePlatformOrganization(platformOrganizationLabel)

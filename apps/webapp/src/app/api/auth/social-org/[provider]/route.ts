@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { getBaseUrlFromHost } from "@/lib/app-url";
-import { getDomainConfig, getPlatformOrganizationLabel, resolvePlatformOrganization } from "@/lib/domain";
+import {
+	classifyDomainHost,
+	getDomainConfig,
+	getPlatformOrganizationLabel,
+	resolvePlatformOrganization,
+} from "@/lib/domain";
 import { createLogger } from "@/lib/logger";
 import {
 	buildAuthorizationUrl,
@@ -57,6 +62,11 @@ async function handleSocialOrgOAuthInitiation(
 
 	if (host) {
 		const normalizedHost = host.toLowerCase().replace(/:\d+$/, "");
+		const domainClassification = classifyDomainHost(normalizedHost);
+		if (domainClassification?.type === "unknownPlatform") {
+			return NextResponse.json({ error: "Not found" }, { status: 404 });
+		}
+
 		try {
 			const platformOrganizationLabel = getPlatformOrganizationLabel(normalizedHost);
 			const platformOrganization = platformOrganizationLabel

@@ -6,6 +6,10 @@ import AuthLayout from "./layout";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers()),
+	notFound: vi.fn(() => {
+		throw new Error("NEXT_NOT_FOUND");
+	}),
+	classifyDomainHost: vi.fn(),
 	getCookieConsentScript: vi.fn(async () => null),
 	getDomainConfig: vi.fn(),
 	getPlatformDomainConfig: vi.fn(),
@@ -21,6 +25,10 @@ vi.mock("next/image", () => ({
 	default: ({ alt, className }: { alt: string; className?: string }) => (
 		<img alt={alt} className={className} data-testid="auth-side-image" />
 	),
+}));
+
+vi.mock("next/navigation", () => ({
+	notFound: mockState.notFound,
 }));
 
 vi.mock("next/script", () => ({
@@ -61,6 +69,7 @@ vi.mock("@/lib/auth/domain-auth-context", () => ({
 }));
 
 vi.mock("@/lib/domain", () => ({
+	classifyDomainHost: mockState.classifyDomainHost,
 	getDomainConfig: mockState.getDomainConfig,
 	getPlatformDomainConfig: mockState.getPlatformDomainConfig,
 }));
@@ -77,6 +86,7 @@ describe("AuthLayout", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.headers.mockResolvedValue(new Headers());
+		mockState.classifyDomainHost.mockReturnValue({ type: "main", hostname: "app.z8.test" });
 		mockState.getCookieConsentScript.mockResolvedValue(null);
 		mockState.getDomainConfig.mockResolvedValue(null);
 		mockState.getPlatformDomainConfig.mockResolvedValue(null);
@@ -106,6 +116,10 @@ describe("AuthLayout", () => {
 
 	it("does not fall back to the platform cookie script on custom domains", async () => {
 		mockState.headers.mockResolvedValue(new Headers({ host: "login.acme.test" }));
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "customDomain",
+			hostname: "login.acme.test",
+		});
 		mockState.getCookieConsentScript.mockResolvedValue("platform()");
 		mockState.getDomainConfig.mockResolvedValue({
 			organizationId: "org_123",
@@ -139,6 +153,12 @@ describe("AuthLayout", () => {
 
 	it("uses platform organization context on platform subdomains", async () => {
 		mockState.headers.mockResolvedValue(new Headers({ host: "acme.ui.z8-time.app" }));
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "platformOrganization",
+			hostname: "acme.ui.z8-time.app",
+			label: "acme",
+			rootDomain: "ui.z8-time.app",
+		});
 		mockState.env.TURNSTILE_SITE_KEY = "site_key";
 		mockState.getCookieConsentScript.mockResolvedValue("<script>platform()</script>");
 		mockState.getPlatformDomainConfig.mockResolvedValue({
@@ -182,8 +202,24 @@ describe("AuthLayout", () => {
 		expect(screen.getByTestId("cookie-consent")).toBeTruthy();
 	});
 
+	it("rejects unsupported platform subdomains instead of using global auth context", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ host: "deep.acme.ui.z8-time.app" }));
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "unknownPlatform",
+			hostname: "deep.acme.ui.z8-time.app",
+			rootDomain: "ui.z8-time.app",
+		});
+
+		await expect(AuthLayout({ children: <div>Auth content</div> })).rejects.toThrow("NEXT_NOT_FOUND");
+
+		expect(mockState.notFound).toHaveBeenCalled();
+		expect(mockState.getPlatformDomainConfig).not.toHaveBeenCalled();
+		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
+	});
+
 	it("renders external cookie consent snippets as src scripts", async () => {
 		mockState.headers.mockResolvedValue(new Headers({ host: "app.z8.test" }));
+		mockState.classifyDomainHost.mockReturnValue({ type: "main", hostname: "app.z8.test" });
 		mockState.getCookieConsentScript.mockResolvedValue(
 			'<script id="Cookiebot" src="https://consent.example/uc.js" data-cbid="abc" async></script>',
 		);

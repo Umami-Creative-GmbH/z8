@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import Script from "next/script";
 import { connection } from "next/server";
 import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
@@ -8,7 +9,12 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
-import { type DomainAuthContext, getDomainConfig, getPlatformDomainConfig } from "@/lib/domain";
+import {
+	classifyDomainHost,
+	type DomainAuthContext,
+	getDomainConfig,
+	getPlatformDomainConfig,
+} from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
@@ -24,6 +30,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	// Derive custom domains from the trusted request Host header.
 	const headersList = await headers();
 	const host = headersList.get("host");
+	if (classifyDomainHost(host)?.type === "unknownPlatform") {
+		notFound();
+	}
 	const customDomain = getCustomDomainFromHeaders(headersList);
 
 	// Fetch domain config if on a platform or custom domain, otherwise use global config

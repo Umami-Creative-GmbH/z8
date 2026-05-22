@@ -56,6 +56,12 @@ export async function proxy(request: NextRequest) {
 	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
 	const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 	const isSetupPage = pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
+	const domainClassification = classifyDomainHost(request.headers.get("host"));
+	if (domainClassification?.type === "unknownPlatform") {
+		const response = new NextResponse("Not found", { status: 404 });
+		applySecurityHeaders(response);
+		return response;
+	}
 
 	// Platform setup check - redirect to /setup if not configured
 	// This runs before all other checks to ensure unconfigured instances are protected
@@ -150,7 +156,6 @@ export async function proxy(request: NextRequest) {
 
 	// Custom domain detection. Platform organization subdomains are resolved separately
 	// and must not be tagged as customer-owned custom domains.
-	const domainClassification = classifyDomainHost(request.headers.get("host"));
 	if (domainClassification?.type === "customDomain") {
 		response.headers.set(DOMAIN_HEADERS.DOMAIN, domainClassification.hostname);
 	}
