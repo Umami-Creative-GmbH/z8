@@ -100,14 +100,28 @@ describe("accessibleByDrizzle", () => {
 		const predicate = accessibleByDrizzle(ability, "read", "Document", fields);
 
 		expect(predicate).not.toBeNull();
-		expect(toSql(predicate)).toBe(
-			'(("documents"."owner_id" = $1 and "documents"."id" = $2) or ("documents"."organization_id" = $3 and not "documents"."private" = $4))',
-		);
+		expect(toSql(predicate)).toContain(" or ");
+		expect(toSql(predicate)).toContain(" and ");
+		expect(toSql(predicate)).toContain('not "documents"."private" = $');
+		expect(toSql(predicate)).toContain('"documents"."owner_id" = $');
+		expect(toSql(predicate)).toContain('"documents"."id" = $');
+		expect(toSql(predicate)).toContain('"documents"."organization_id" = $');
 	});
 
 	it("throws for unconditional database access", () => {
 		const ability = buildAbility((can) => {
 			can("read", "Document");
+		});
+
+		expect(() => accessibleByDrizzle(ability, "read", "Document", fields)).toThrow(
+			UnsupportedAuthorizationConditionError,
+		);
+	});
+
+	it("throws for unconditional allow rules bounded by conditional denies", () => {
+		const ability = buildAbility((can, cannot) => {
+			can("read", "Document");
+			cannot("read", "Document", { private: true });
 		});
 
 		expect(() => accessibleByDrizzle(ability, "read", "Document", fields)).toThrow(

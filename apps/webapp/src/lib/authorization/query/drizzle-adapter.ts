@@ -25,6 +25,11 @@ export function accessibleByDrizzle<TAbility extends AnyAbility>(
 	fields: DrizzleFieldMap,
 ): SQL | null {
 	const rules = ability.rulesFor(action, subjectType);
+	if (rules.some((rule) => !rule.inverted && !rule.conditions)) {
+		throw new UnsupportedAuthorizationConditionError(
+			"Unconditional database authorization is not supported",
+		);
+	}
 
 	return rulesToCondition(
 		rules,
