@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	getCookieConsentScript: vi.fn(async () => null),
 	getDomainConfig: vi.fn(),
 	getPlatformDomainConfig: vi.fn(),
+	domainAuthProviderContext: null as unknown,
 	env: {},
 }));
 
@@ -47,7 +48,16 @@ vi.mock("@/env", () => ({
 }));
 
 vi.mock("@/lib/auth/domain-auth-context", () => ({
-	DomainAuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	DomainAuthProvider: ({
+		children,
+		domainContext,
+	}: {
+		children: React.ReactNode;
+		domainContext: unknown;
+	}) => {
+		mockState.domainAuthProviderContext = domainContext;
+		return <>{children}</>;
+	},
 }));
 
 vi.mock("@/lib/domain", () => ({
@@ -70,8 +80,10 @@ describe("AuthLayout", () => {
 		mockState.getCookieConsentScript.mockResolvedValue(null);
 		mockState.getDomainConfig.mockResolvedValue(null);
 		mockState.getPlatformDomainConfig.mockResolvedValue(null);
+		mockState.domainAuthProviderContext = null;
 		mockState.env.MAIN_DOMAIN = "app.z8.test";
 		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
+		mockState.env.TURNSTILE_SITE_KEY = undefined;
 	});
 
 	it("keeps the image panel fixed while the left side scrolls", async () => {
@@ -127,7 +139,8 @@ describe("AuthLayout", () => {
 
 	it("uses platform organization context on platform subdomains", async () => {
 		mockState.headers.mockResolvedValue(new Headers({ host: "acme.ui.z8-time.app" }));
-		mockState.getCookieConsentScript.mockResolvedValue("platform()");
+		mockState.env.TURNSTILE_SITE_KEY = "site_key";
+		mockState.getCookieConsentScript.mockResolvedValue("<script>platform()</script>");
 		mockState.getPlatformDomainConfig.mockResolvedValue({
 			organizationId: "org_123",
 			organizationSlug: "acme",
@@ -159,6 +172,14 @@ describe("AuthLayout", () => {
 		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("acme.ui.z8-time.app");
 		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
 		expect(mockState.getCookieConsentScript).toHaveBeenCalled();
+		expect(mockState.domainAuthProviderContext).toMatchObject({
+			turnstile: {
+				enabled: true,
+				siteKey: "site_key",
+				isEnterprise: false,
+			},
+		});
+		expect(screen.getByTestId("cookie-consent")).toBeTruthy();
 	});
 
 	it("renders external cookie consent snippets as src scripts", async () => {

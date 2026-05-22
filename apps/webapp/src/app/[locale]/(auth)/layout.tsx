@@ -29,13 +29,20 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	// Fetch domain config if on a platform or custom domain, otherwise use global config
 	let domainContext: DomainAuthContext | null = null;
 	const platformDomainContext = await getPlatformDomainConfig(host ?? "");
+	const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
 	if (platformDomainContext) {
-		domainContext = platformDomainContext;
+		domainContext = {
+			...platformDomainContext,
+			turnstile: {
+				enabled: !!globalTurnstileSiteKey,
+				siteKey: globalTurnstileSiteKey,
+				isEnterprise: false,
+			},
+		};
 	} else if (customDomain) {
 		domainContext = await getDomainConfig(customDomain);
 	} else {
 		// Main domain: use global Turnstile config from env vars
-		const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
 		domainContext = {
 			organizationId: "",
 			domain: "",
@@ -63,7 +70,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	// Fetch cookie consent script for auth pages
 	const platformCookieConsentScript = customDomain ? null : await getCookieConsentScript();
 	const cookieConsentScript = selectAuthCookieConsentScript(
-		domainContext,
+		platformDomainContext ? null : domainContext,
 		platformCookieConsentScript,
 	);
 	const parsedCookieConsentScript = parseCookieConsentScript(cookieConsentScript);
