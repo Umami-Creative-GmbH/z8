@@ -2,9 +2,25 @@ import React from "react";
 import { DateTime } from "luxon";
 // @ts-expect-error react-dom server types are not installed in the mobile package.
 import { renderToStaticMarkup } from "react-dom/server";
+import { Alert } from "react-native";
 
 import { AbsencesScreen } from "./absences-screen";
 import type { MobileAbsenceRecord } from "./use-absences-query";
+
+const expoUiButtons = vi.hoisted(() => [] as Array<{ label?: string; onPress?: () => void }>);
+
+vi.mock("@expo/ui", async () => {
+  const expoUiMock = await vi.importActual<typeof import("../../../test/expo-ui-mock")>("../../../test/expo-ui-mock");
+
+  return {
+    ...expoUiMock,
+    Button(props: { label?: string; onPress?: () => void; disabled?: boolean; children?: React.ReactNode }) {
+      expoUiButtons.push(props);
+
+      return expoUiMock.Button(props);
+    },
+  };
+});
 
 vi.mock("react-native", () => ({
   Alert: {
@@ -49,6 +65,8 @@ describe("AbsencesScreen", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-15T12:00:00.000Z"));
+    expoUiButtons.length = 0;
+    vi.mocked(Alert.alert).mockClear();
   });
 
   afterEach(() => {
@@ -108,5 +126,53 @@ describe("AbsencesScreen", () => {
     );
 
     expect(html).toContain("No upcoming absences");
+  });
+
+  it("calls the request absence action from the Expo UI button", () => {
+    const onRequestAbsence = vi.fn();
+    renderToStaticMarkup(
+      React.createElement(AbsencesScreen, {
+        absences: [],
+        isCancellingAbsence: false,
+        isLoading: false,
+        onCancelAbsence: vi.fn(),
+        onRequestAbsence,
+      }),
+    );
+    const requestButton = expoUiButtons.find((button) => button.label === "Request Absence");
+
+    requestButton?.onPress?.();
+
+    expect(onRequestAbsence).toHaveBeenCalledOnce();
+  });
+
+  it("confirms and calls the cancel absence action for pending rows", () => {
+    const onCancelAbsence = vi.fn();
+    renderToStaticMarkup(
+      React.createElement(AbsencesScreen, {
+        absences: [createAbsence({ id: "pending-1", status: "pending" })],
+        isCancellingAbsence: false,
+        isLoading: false,
+        onCancelAbsence,
+        onRequestAbsence: vi.fn(),
+      }),
+    );
+    const cancelButton = expoUiButtons.find((button) => button.label === "Cancel Request");
+
+    cancelButton?.onPress?.();
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      "Cancel request?",
+      "Cancel your Vacation absence request?",
+      expect.arrayContaining([
+        expect.objectContaining({ text: "Keep request", style: "cancel" }),
+        expect.objectContaining({ text: "Cancel request", style: "destructive" }),
+      ]),
+    );
+
+    const destructiveAction = vi.mocked(Alert.alert).mock.calls[0]?.[2]?.[1];
+    destructiveAction?.onPress?.();
+
+    expect(onCancelAbsence).toHaveBeenCalledWith("pending-1");
   });
 });
