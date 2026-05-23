@@ -31,7 +31,6 @@ test("pnpm settings live in workspace config", async () => {
 test("Dockerfiles with global pnpm installs put pnpm global bin on PATH", async () => {
 	const dockerfiles = [
 		"Dockerfile.db-seed",
-		"Dockerfile.deploy-webhook",
 		"Dockerfile.docs",
 		"Dockerfile.marketing",
 		"Dockerfile.migration",
