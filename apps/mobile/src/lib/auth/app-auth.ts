@@ -13,11 +13,13 @@ export interface AppCallbackResult {
 export function buildAppLoginUrl(
   webappUrl = getWebappUrl(),
   redirectUri: string,
+  challenge: string,
 ) {
   const loginUrl = new URL("/api/auth/app-login", `${webappUrl}/`);
 
   loginUrl.searchParams.set("app", "mobile");
   loginUrl.searchParams.set("redirect", redirectUri);
+  loginUrl.searchParams.set("challenge", challenge);
 
   return loginUrl.toString();
 }
@@ -29,6 +31,7 @@ export function extractSessionTokenFromCallback(callbackUrl: string) {
 export async function exchangeAppCallbackCode(
   code: string,
   app: "mobile" | "desktop",
+  verifier: string,
 ) {
   const response = await fetch(`${getWebappUrl()}/api/auth/app-exchange`, {
     method: "POST",
@@ -36,7 +39,7 @@ export async function exchangeAppCallbackCode(
       "Content-Type": "application/json",
       "X-Z8-App-Type": app,
     },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, verifier }),
   });
 
   if (!response.ok) {

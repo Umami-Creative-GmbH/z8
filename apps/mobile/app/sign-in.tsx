@@ -11,6 +11,7 @@ import {
   useMobileSessionController,
 } from "@/src/features/session/use-mobile-session";
 import { buildAppLoginUrl } from "@/src/lib/auth/app-auth";
+import { createAppAuthPkcePair } from "@/src/lib/auth/pkce";
 import { getWebappUrl } from "@/src/lib/config";
 
 export default function SignInScreen() {
@@ -35,13 +36,14 @@ export default function SignInScreen() {
     setIsStartingSignIn(true);
 
     try {
+      const pkce = await createAppAuthPkcePair();
       const result = await WebBrowser.openAuthSessionAsync(
-        buildAppLoginUrl(getWebappUrl(), redirectUri),
+        buildAppLoginUrl(getWebappUrl(), redirectUri, pkce.challenge),
         redirectUri,
       );
 
       if (result.type === "success" && result.url) {
-        const callbackState = await controller.handleCallbackUrl(result.url);
+        const callbackState = await controller.handleCallbackUrl(result.url, pkce.verifier);
 
         if (callbackState.status === "error") {
           setSignInError(
