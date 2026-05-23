@@ -23,18 +23,25 @@ export interface AssignedHolidayRange {
 }
 
 type HolidayAssignmentWithHoliday = {
-	holiday: Pick<
-		typeof holiday.$inferSelect,
-		| "id"
-		| "name"
-		| "organizationId"
-		| "startDate"
-		| "endDate"
-		| "categoryId"
-		| "description"
-		| "isActive"
-	> | null;
+	holiday: CustomAssignedHoliday | null;
 };
+
+export type CustomAssignedHoliday = Pick<
+	typeof holiday.$inferSelect,
+	| "id"
+	| "name"
+	| "organizationId"
+	| "startDate"
+	| "endDate"
+	| "categoryId"
+	| "description"
+	| "isActive"
+	| "recurrenceType"
+	| "recurrenceRule"
+	| "recurrenceEndDate"
+>;
+
+export type RequestedDateRange = { startDate: Date; endDate: Date };
 
 type HolidayPresetAssignmentWithPreset = {
 	effectiveFrom: Date | null;
@@ -180,6 +187,98 @@ function overlapsRange(holiday: AssignedHolidayRange, startDate: Date, endDate: 
 	return holiday.startDate <= endDate && holiday.endDate >= startDate;
 }
 
+function toAssignedHolidayRange(
+	holiday: CustomAssignedHoliday,
+	dateRange: { startDate: Date; endDate: Date },
+): AssignedHolidayRange {
+	return {
+		id:
+			dateRange.startDate.getTime() === holiday.startDate.getTime()
+				? holiday.id
+				: `${holiday.id}-${toUtcDay(dateRange.startDate).year}`,
+		name: holiday.name,
+		startDate: dateRange.startDate,
+		endDate: dateRange.endDate,
+		categoryId: holiday.categoryId,
+		description: holiday.description,
+		metadata: {
+			isRecurring: holiday.recurrenceType !== "none",
+		},
+	};
+}
+
+function parseYearlyRecurrenceRule(rule: string | null): { month: number; day: number } | null {
+	if (!rule) return null;
+
+	try {
+		const parsed = JSON.parse(rule) as { month?: unknown; day?: unknown };
+		if (!Number.isInteger(parsed.month) || !Number.isInteger(parsed.day)) return null;
+		return { month: parsed.month, day: parsed.day };
+	} catch {
+		return null;
+	}
+}
+
+export function expandCustomAssignedHoliday(
+	holiday: CustomAssignedHoliday,
+	requestedRange: RequestedDateRange,
+): AssignedHolidayRange[] {
+	if (!holiday.isActive) return [];
+
+	const requestedStart = toUtcDay(requestedRange.startDate);
+	const requestedEnd = toUtcDay(requestedRange.endDate).endOf("day");
+	const originalStart = toUtcDay(holiday.startDate);
+	const originalEnd = toUtcDay(holiday.endDate);
+	if (
+		!requestedStart.isValid ||
+		!requestedEnd.isValid ||
+		requestedEnd < requestedStart ||
+		!originalStart.isValid ||
+		!originalEnd.isValid ||
+		originalEnd < originalStart
+	) {
+		return [];
+	}
+
+	if (holiday.recurrenceType === "none") {
+		const assignedHoliday = toAssignedHolidayRange(holiday, {
+			startDate: holiday.startDate,
+			endDate: holiday.endDate,
+		});
+		return overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)
+			? [assignedHoliday]
+			: [];
+	}
+
+	if (holiday.recurrenceType !== "yearly") return [];
+
+	const rule = parseYearlyRecurrenceRule(holiday.recurrenceRule);
+	if (!rule) return [];
+
+	const durationDays = Math.floor(originalEnd.diff(originalStart, "days").days) + 1;
+	const recurrenceEnd = holiday.recurrenceEndDate
+		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
+		: null;
+	const expanded: AssignedHolidayRange[] = [];
+
+	for (let year = requestedStart.year - 1; year <= requestedEnd.year; year++) {
+		const start = DateTime.utc(year, rule.month, rule.day).startOf("day");
+		if (!start.isValid) continue;
+		if (recurrenceEnd && start > recurrenceEnd) continue;
+
+		const end = start.plus({ days: durationDays - 1 }).endOf("day");
+		const assignedHoliday = toAssignedHolidayRange(holiday, {
+			startDate: start.toJSDate(),
+			endDate: end.toJSDate(),
+		});
+		if (overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)) {
+			expanded.push(assignedHoliday);
+		}
+	}
+
+	return expanded;
+}
+
 export function overlapsEffectiveWindow(
 	holiday: AssignedHolidayRange,
 	window: { effectiveFrom: Date | null; effectiveUntil: Date | null },
@@ -223,6 +322,9 @@ export async function getAssignedHolidaysForEmployee(params: {
 					categoryId: true,
 					description: true,
 					isActive: true,
+					recurrenceType: true,
+					recurrenceRule: true,
+					recurrenceEndDate: true,
 				},
 			},
 		},
@@ -268,23 +370,13 @@ export async function getAssignedHolidaysForEmployee(params: {
 
 	for (const assignment of customAssignments) {
 		const assignedHoliday = assignment.holiday;
-		if (
-			!assignedHoliday?.isActive ||
-			assignedHoliday.organizationId !== params.organizationId ||
-			assignedHoliday.startDate > params.endDate ||
-			assignedHoliday.endDate < params.startDate
-		) {
+		if (!assignedHoliday || assignedHoliday.organizationId !== params.organizationId) {
 			continue;
 		}
 
-		holidaysById.set(`custom-${assignedHoliday.id}`, {
-			id: assignedHoliday.id,
-			name: assignedHoliday.name,
-			startDate: assignedHoliday.startDate,
-			endDate: assignedHoliday.endDate,
-			categoryId: assignedHoliday.categoryId,
-			description: assignedHoliday.description,
-		});
+		for (const expandedHoliday of expandCustomAssignedHoliday(assignedHoliday, params)) {
+			holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
+		}
 	}
 
 	const expansionYears = getPresetHolidayExpansionYears(params.startDate, params.endDate);

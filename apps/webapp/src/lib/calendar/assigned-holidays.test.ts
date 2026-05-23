@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	type AssignedHolidayRange,
 	applyAssignedHolidayAdjustmentsToRequirements,
+	expandCustomAssignedHoliday,
 	getAssignedHolidayDateKeys,
 	getPresetHolidayExpansionYears,
 	overlapsEffectiveWindow,
@@ -73,6 +74,50 @@ describe("assigned holiday requirement adjustments", () => {
 				},
 			]),
 		).toEqual(new Set(["2026-12-24", "2026-12-25"]));
+	});
+
+	it("expands yearly custom assigned holidays into the requested year", () => {
+		const expanded = expandCustomAssignedHoliday(
+			{
+				id: "holiday-6",
+				name: "Labor Day",
+				organizationId: "org-1",
+				startDate: new Date("2024-05-01T00:00:00.000Z"),
+				endDate: new Date("2024-05-01T23:59:59.999Z"),
+				categoryId: "category-1",
+				description: "Recurring labor day",
+				isActive: true,
+				recurrenceType: "yearly",
+				recurrenceRule: JSON.stringify({ month: 5, day: 1 }),
+				recurrenceEndDate: null,
+			},
+			{
+				startDate: new Date("2026-05-01T00:00:00.000Z"),
+				endDate: new Date("2026-05-31T23:59:59.999Z"),
+			},
+		);
+
+		expect(expanded).toHaveLength(1);
+		expect(expanded[0]).toMatchObject({
+			id: "holiday-6-2026",
+			name: "Labor Day",
+			categoryId: "category-1",
+			description: "Recurring labor day",
+		});
+		expect(expanded[0]?.startDate.toISOString()).toBe("2026-05-01T00:00:00.000Z");
+		expect(expanded[0]?.endDate.toISOString()).toBe("2026-05-01T23:59:59.999Z");
+		expect(
+			applyAssignedHolidayAdjustmentsToRequirements(
+				{
+					"2026-05-01": {
+						requiredMinutes: 480,
+						policyId: "policy-1",
+						policyName: "Standard Hours",
+					},
+				},
+				expanded,
+			)["2026-05-01"]?.requiredMinutes,
+		).toBe(0);
 	});
 
 	it("includes the previous UTC year when selecting preset holiday expansion years", () => {
