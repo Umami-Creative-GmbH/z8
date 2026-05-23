@@ -5,6 +5,8 @@ const mockState = vi.hoisted(() => ({
 	connection: vi.fn(),
 	getVerifiedOrgContext: vi.fn(),
 	getAbsencesForMonth: vi.fn(async () => []),
+	getAssignedHolidaysForEmployee: vi.fn(async () => []),
+	assignedHolidayToCalendarEvent: vi.fn(),
 	getHolidaysForMonth: vi.fn(async () => []),
 	getTimeEntriesForMonth: vi.fn(async () => []),
 	getWorkPeriodsForMonth: vi.fn(async () => []),
@@ -45,6 +47,11 @@ vi.mock("@/lib/calendar/absence-service", () => ({
 
 vi.mock("@/lib/calendar/holiday-service", () => ({
 	getHolidaysForMonth: mockState.getHolidaysForMonth,
+}));
+
+vi.mock("@/lib/calendar/assigned-holidays", () => ({
+	getAssignedHolidaysForEmployee: mockState.getAssignedHolidaysForEmployee,
+	assignedHolidayToCalendarEvent: mockState.assignedHolidayToCalendarEvent,
 }));
 
 vi.mock("@/lib/calendar/time-entry-service", () => ({
@@ -198,6 +205,45 @@ describe("GET /api/calendar/events", () => {
 		});
 	});
 
+	it("returns employee-assigned holidays for a scoped employee calendar", async () => {
+		const holiday = {
+			id: "holiday-1",
+			name: "Labor Day",
+			startDate: new Date("2026-05-01T00:00:00.000Z"),
+			endDate: new Date("2026-05-01T23:59:59.999Z"),
+		};
+		const mappedHolidayEvent = {
+			id: "holiday-1",
+			type: "holiday",
+			date: new Date("2026-05-01T00:00:00.000Z"),
+			title: "Labor Day",
+			color: "#0ea5e9",
+			metadata: { source: "assigned" },
+		};
+		mockState.getAssignedHolidaysForEmployee.mockResolvedValueOnce([holiday]);
+		mockState.assignedHolidayToCalendarEvent.mockReturnValueOnce(mappedHolidayEvent);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showHolidays=true&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getAssignedHolidaysForEmployee).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startDate: new Date("2026-05-01T00:00:00.000Z"),
+			endDate: new Date("2026-05-31T23:59:59.999Z"),
+		});
+		expect(mockState.getHolidaysForMonth).not.toHaveBeenCalled();
+		expect(body.events).toContainEqual({
+			...mappedHolidayEvent,
+			date: "2026-05-01T00:00:00.000Z",
+		});
+	});
+
 	it("rejects employee-scoped calendar data for an unauthorized requested employee", async () => {
 		mockState.findEmployee
 			.mockResolvedValueOnce({
@@ -223,6 +269,7 @@ describe("GET /api/calendar/events", () => {
 
 		expect(response.status).toBe(403);
 		expect(mockState.getAbsencesForMonth).not.toHaveBeenCalled();
+		expect(mockState.getAssignedHolidaysForEmployee).not.toHaveBeenCalled();
 	});
 
 	it("omits hidden work period events but still returns daily actual minutes", async () => {

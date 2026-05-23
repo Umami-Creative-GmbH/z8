@@ -6,6 +6,10 @@ import { employee, employeeManagers } from "@/db/schema";
 import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
+import {
+	assignedHolidayToCalendarEvent,
+	getAssignedHolidaysForEmployee,
+} from "@/lib/calendar/assigned-holidays";
 import { getHolidaysForMonth } from "@/lib/calendar/holiday-service";
 import { getTimeEntriesForMonth } from "@/lib/calendar/time-entry-service";
 import type {
@@ -87,6 +91,35 @@ async function resolveAuthorizedCalendarEmployeeId(
 		: undefined;
 }
 
+async function fetchHolidayEvents(params: {
+	organizationId: string;
+	employeeId: string | undefined;
+	month: number;
+	year: number;
+	showHolidays: boolean;
+}): Promise<CalendarEvent[]> {
+	if (!params.showHolidays) return [];
+	if (!params.employeeId) {
+		return getHolidaysForMonth(params.organizationId, params.month, params.year);
+	}
+
+	const monthStart = DateTime.utc(params.year, params.month + 1, 1).startOf("day");
+	const monthEnd = monthStart.endOf("month");
+
+	try {
+		const holidays = await getAssignedHolidaysForEmployee({
+			organizationId: params.organizationId,
+			employeeId: params.employeeId,
+			startDate: monthStart.toJSDate(),
+			endDate: monthEnd.toJSDate(),
+		});
+		return holidays.map(assignedHolidayToCalendarEvent);
+	} catch (error) {
+		console.error("Error fetching assigned calendar holidays:", error);
+		return [];
+	}
+}
+
 /**
  * Fetch events for a single month
  * Uses Promise.all for parallel fetching to eliminate waterfalls
@@ -104,7 +137,7 @@ async function fetchMonthEvents(
 ): Promise<{ events: CalendarEvent[]; dailyActualMinutes: DailyWorkActualMinutes }> {
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
-		showHolidays ? getHolidaysForMonth(organizationId, month, year) : [],
+		fetchHolidayEvents({ organizationId, employeeId, month, year, showHolidays }),
 		showAbsences ? getAbsencesForMonth(month, year, { organizationId, employeeId }) : [],
 		showTimeEntries ? getTimeEntriesForMonth(month, year, { organizationId, employeeId }) : [],
 		showWorkPeriods || includeWorkPeriodActuals
