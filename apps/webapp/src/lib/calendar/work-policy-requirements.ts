@@ -12,6 +12,10 @@ import {
 	type ApprovedAbsenceRange,
 	applyAbsenceAdjustmentsToRequirements,
 } from "./absence-adjusted-requirements";
+import {
+	applyAssignedHolidayAdjustmentsToRequirements,
+	getAssignedHolidaysForEmployee,
+} from "./assigned-holidays";
 import type { DailyWorkRequirements } from "./types";
 
 type EffectiveWorkPolicyScheduleDayName = NonNullable<
@@ -204,7 +208,9 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 			if (!scopedEmployee) return {};
 
 			const requestedStartDate = DateTime.fromJSDate(params.startDate, { zone: "utc" });
-			const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, { zone: "utc" });
+			const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
+				zone: "utc",
+			});
 			const firstCompletedWorkPeriodBeforeAccount = yield* _(
 				Effect.promise(() =>
 					getFirstCompletedWorkPeriodBeforeAccount({
@@ -247,7 +253,23 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 				),
 			);
 
-			return applyApprovedAbsencesToDailyRequirements(requirements, approvedAbsences);
+			const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
+				requirements,
+				approvedAbsences,
+			);
+			const assignedHolidays = yield* _(
+				Effect.promise(() =>
+					getAssignedHolidaysForEmployee({
+						organizationId: params.organizationId,
+						employeeId: params.employeeId,
+						startDate: effectiveStartDate,
+						endDate: params.endDate,
+					}),
+				),
+			);
+
+			// biome-ignore format: source-level regression test asserts this call order.
+			return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays);
 		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive)),
 	);
 }
