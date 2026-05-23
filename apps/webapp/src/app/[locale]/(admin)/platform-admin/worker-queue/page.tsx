@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { getTranslate } from "@/tolgee/server";
 import { getWorkerQueueStats } from "./actions";
+import { RecentExecutions } from "./recent-executions";
 import type { ReliabilityHealth } from "./reliability";
 import { WorkerReliabilityCharts } from "./reliability-charts";
 
@@ -61,41 +62,6 @@ function StatCard({ title, value, locale, description, icon, variant = "default"
 			</CardContent>
 		</Card>
 	);
-}
-
-function StatusBadge({ status, labels }: { status: string; labels: Record<string, string> }) {
-	switch (status) {
-		case "completed":
-			return (
-				<Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
-					<IconCheck className="size-3 mr-1" aria-hidden="true" />
-					{labels.completed}
-				</Badge>
-			);
-		case "failed":
-			return (
-				<Badge variant="outline" className="border-red-500 text-red-700 dark:text-red-400">
-					<IconX className="size-3 mr-1" aria-hidden="true" />
-					{labels.failed}
-				</Badge>
-			);
-		case "running":
-			return (
-				<Badge variant="outline" className="border-blue-500 text-blue-700 dark:text-blue-400">
-					<IconLoader className="size-3 mr-1 animate-spin" aria-hidden="true" />
-					{labels.running}
-				</Badge>
-			);
-		case "pending":
-			return (
-				<Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400">
-					<IconClock className="size-3 mr-1" aria-hidden="true" />
-					{labels.pending}
-				</Badge>
-			);
-		default:
-			return <Badge variant="outline">{status}</Badge>;
-	}
 }
 
 function formatPercent(value: number | null, unknownLabel: string, locale: string): string {
@@ -221,6 +187,26 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 		failed: t("settings.workerQueue.status.failed", "Failed"),
 		running: t("settings.workerQueue.status.running", "Running"),
 		pending: t("settings.workerQueue.status.pending", "Pending"),
+	};
+	const recentExecutionsLabels = {
+		description: t(
+			"settings.workerQueue.recentExecutionsDescription",
+			"Last 50 job executions tracked in the database.",
+		),
+		filterLabel: t("settings.workerQueue.recentExecutions.filterLabel", "Filter by job"),
+		allJobs: t("settings.workerQueue.recentExecutions.allJobs", "All jobs"),
+		loading: t("settings.workerQueue.recentExecutions.loading", "Loading executions…"),
+		error: t("settings.workerQueue.recentExecutions.error", "Failed to load executions"),
+		noExecutions: t("settings.workerQueue.noExecutions", "No recent executions found"),
+		unknown: unknownLabel,
+		status: statusLabels,
+		table: {
+			jobName: t("settings.workerQueue.table.jobName", "Job Name"),
+			status: t("settings.workerQueue.table.status", "Status"),
+			startedAt: t("settings.workerQueue.table.startedAt", "Started At"),
+			duration: t("settings.workerQueue.table.duration", "Duration"),
+			error: t("settings.workerQueue.table.error", "Error"),
+		},
 	};
 	const healthLabels = {
 		healthy: t("settings.workerQueue.reliability.healthy", "Healthy"),
@@ -569,59 +555,12 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 					<IconClock className="size-5" aria-hidden="true" />
 					{t("settings.workerQueue.sections.recentExecutions", "Recent Executions")}
 				</h2>
-				<Card>
-					<CardHeader>
-						<CardDescription>
-							{t(
-								"settings.workerQueue.recentExecutionsDescription",
-								"Last 50 job executions tracked in the database.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{stats.recentExecutions.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								{t("settings.workerQueue.noExecutions", "No recent executions found")}
-							</p>
-						) : (
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.status", "Status")}</TableHead>
-											<TableHead>
-												{t("settings.workerQueue.table.startedAt", "Started At")}
-											</TableHead>
-											<TableHead>{t("settings.workerQueue.table.duration", "Duration")}</TableHead>
-											<TableHead>{t("settings.workerQueue.table.error", "Error")}</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{stats.recentExecutions.map((exec) => (
-											<TableRow key={exec.id}>
-												<TableCell className="font-mono text-sm">{exec.jobName}</TableCell>
-												<TableCell>
-													<StatusBadge status={exec.status} labels={statusLabels} />
-												</TableCell>
-												<TableCell>{formatDateTime(exec.startedAt, locale)}</TableCell>
-												<TableCell>
-													{formatDuration(exec.durationMs, unknownLabel, locale)}
-												</TableCell>
-												<TableCell
-													className="max-w-xs truncate text-red-600"
-													title={exec.error ?? undefined}
-												>
-													{exec.error ?? "-"}
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						)}
-					</CardContent>
-				</Card>
+				<RecentExecutions
+					availableJobNames={stats.availableJobNames}
+					initialExecutions={stats.recentExecutions}
+					labels={recentExecutionsLabels}
+					locale={locale}
+				/>
 			</section>
 		</div>
 	);

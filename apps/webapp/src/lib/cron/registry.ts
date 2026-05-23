@@ -99,6 +99,13 @@ export interface OrganizationCleanupResult {
 	errors: string[];
 }
 
+/** Result from cron execution cleanup job */
+export interface ExecutionCleanupResult {
+	success: true;
+	deletedCount: number;
+	daysToKeep: 90;
+}
+
 /** Result from break enforcement job */
 export interface BreakEnforcementResult {
 	processedCount: number;
@@ -242,6 +249,16 @@ export const CRON_JOBS = {
 			return runOrganizationCleanup();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
+	"cron:execution-cleanup": {
+		schedule: "30 2 * * *", // Daily at 2:30 AM
+		description: "Delete cron execution records older than 90 days",
+		processor: async (): Promise<ExecutionCleanupResult> => {
+			const { runExecutionCleanup } = await import("@/lib/jobs/execution-cleanup");
+			return runExecutionCleanup();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
 	"cron:break-enforcement": {
@@ -391,7 +408,6 @@ export const CRON_JOBS = {
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
 	},
-
 } as const satisfies Record<string, CronJobDefinition>;
 
 // ============================================

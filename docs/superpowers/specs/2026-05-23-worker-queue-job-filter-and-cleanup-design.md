@@ -35,9 +35,9 @@ Add a new cron registry entry named `cron:execution-cleanup` scheduled once dail
 
 ```ts
 {
-  success: true,
-  deletedCount: number,
-  daysToKeep: 90,
+	success: true,
+	deletedCount: number,
+	daysToKeep: 90,
 }
 ```
 
