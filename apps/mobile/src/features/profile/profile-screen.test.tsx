@@ -23,6 +23,12 @@ function findNode(
 
   const element = node as React.ReactElement<any>;
 
+  if (typeof element.type === "function") {
+    const Component = element.type as (props: any) => React.ReactNode;
+
+    return findNode(Component(element.props), predicate);
+  }
+
   if (predicate(element)) {
     return element;
   }
@@ -49,6 +55,12 @@ function getTextContent(node: React.ReactNode): string {
   }
 
   const element = node as React.ReactElement<any>;
+
+  if (typeof element.type === "function") {
+    const Component = element.type as (props: any) => React.ReactNode;
+
+    return getTextContent(Component(element.props));
+  }
 
   return React.Children.toArray(element.props.children)
     .map(getTextContent)
@@ -95,12 +107,12 @@ describe("ProfileScreen", () => {
     });
 
     expect(findNode(tree, (node) => getTextContent(node) === "Active organization")).toBeTruthy();
-    expect(findNode(tree, (node) => getTextContent(node) === "Alpha Org")).toBeTruthy();
+    expect(findNode(tree, (node) => getTextContent(node).includes("Alpha Org"))).toBeTruthy();
 
     const otherOrganizationButton = findNode(
       tree,
       (node) =>
-        node.type === "Pressable" &&
+        node.type === "ListItem" &&
         getTextContent(node).includes("Beta Org"),
     );
 
@@ -137,9 +149,9 @@ describe("ProfileScreen", () => {
     const unavailableOrganizationButton = findNode(
       tree,
       (node) =>
-        node.type === "Pressable" &&
+        node.type === "ListItem" &&
         getTextContent(node).includes("Beta Org") &&
-        node.props.disabled === true,
+        node.props.onPress === undefined,
     );
 
     expect(unavailableOrganizationButton).toBeTruthy();
@@ -147,5 +159,44 @@ describe("ProfileScreen", () => {
     unavailableOrganizationButton?.props.onPress?.();
 
     expect(onSwitchOrganization).not.toHaveBeenCalled();
+  });
+
+  it("signs out from the Expo UI button and disables it while signing out", () => {
+    const onSignOut = vi.fn();
+
+    const tree = ProfileScreen({
+      activeOrganizationId: null,
+      isSigningOut: false,
+      isSwitchingOrganization: false,
+      onSignOut,
+      onSwitchOrganization: vi.fn(),
+      organizations: [],
+    });
+
+    const signOutButton = findNode(
+      tree,
+      (node) => node.type === "Button" && getTextContent(node) === "Sign out",
+    );
+
+    expect(signOutButton).toBeTruthy();
+    signOutButton?.props.onPress?.();
+
+    expect(onSignOut).toHaveBeenCalledOnce();
+
+    const disabledTree = ProfileScreen({
+      activeOrganizationId: null,
+      isSigningOut: true,
+      isSwitchingOrganization: false,
+      onSignOut,
+      onSwitchOrganization: vi.fn(),
+      organizations: [],
+    });
+    const disabledSignOutButton = findNode(
+      disabledTree,
+      (node) => node.type === "Button" && getTextContent(node) === "Sign out",
+    );
+
+    expect(disabledSignOutButton?.props.disabled).toBe(true);
+    expect(disabledSignOutButton?.props.onPress).toBeUndefined();
   });
 });

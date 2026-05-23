@@ -1,8 +1,9 @@
 import { Redirect } from "expo-router";
 import * as Linking from "expo-linking";
+import { Button, Column, Host, Text } from "@expo/ui";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { MobileSessionErrorState } from "@/src/features/session/mobile-session-error-state";
 import { getMobileSessionRouteState } from "@/src/features/session/mobile-session-route-state";
@@ -59,25 +60,18 @@ export default function SignInScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign In</Text>
-      <Text style={styles.subtitle}>Continue in the browser to connect your Z8 account.</Text>
-      {signInError ? (
-        <Text accessibilityLiveRegion="polite" style={styles.errorText}>
-          {signInError}
-        </Text>
-      ) : null}
-      <Pressable
-        accessibilityRole="button"
-        disabled={isStartingSignIn || routeState === "loading"}
-        onPress={handleSignIn}
-        style={[styles.button, isStartingSignIn && styles.buttonDisabled]}
-      >
-        <Text style={styles.buttonLabel}>
-          {isStartingSignIn ? "Opening Browser…" : "Continue in Browser"}
-        </Text>
-      </Pressable>
-    </View>
+    <Host style={styles.container}>
+      <Column spacing={12} alignment="center">
+        <Text textStyle={styles.titleText}>Sign In</Text>
+        <Text textStyle={styles.subtitleText}>Continue in the browser to connect your Z8 account.</Text>
+        {signInError ? <Text textStyle={styles.errorText}>{signInError}</Text> : null}
+        <Button
+          label={isStartingSignIn ? "Opening Browser…" : "Continue in Browser"}
+          disabled={isStartingSignIn || routeState === "loading"}
+          onPress={handleSignIn}
+        />
+      </Column>
+    </Host>
   );
 }
 
@@ -89,34 +83,17 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: "#f8fafc",
   },
-  title: {
+  titleText: {
     fontSize: 24,
     fontWeight: "600",
     color: "#0f172a",
   },
-  subtitle: {
-    marginTop: 8,
+  subtitleText: {
     color: "#475569",
     textAlign: "center",
   },
   errorText: {
-    marginTop: 12,
     color: "#b91c1c",
     textAlign: "center",
-  },
-  button: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#2563eb",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonLabel: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

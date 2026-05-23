@@ -88,7 +88,7 @@ describe("HomeScreen", () => {
 
     const clockInButton = findNode(
       tree,
-      (node) => node.type === "Pressable" && getTextContent(node).includes("Clock In"),
+      (node) => node.type === "Button" && getTextContent(node).includes("Clock In"),
     );
 
     expect(clockInButton).toBeTruthy();
@@ -116,14 +116,11 @@ describe("HomeScreen", () => {
 
     const officeOption = findNode(
       tree,
-      (node) =>
-        node.type === "Pressable" &&
-        node.props.accessibilityState?.selected === true &&
-        getTextContent(node).includes("Office"),
+      (node) => node.type === "Button" && getTextContent(node).includes("Office selected"),
     );
     const homeOption = findNode(
       tree,
-      (node) => node.type === "Pressable" && getTextContent(node).includes("Home"),
+      (node) => node.type === "Button" && getTextContent(node).includes("Home"),
     );
 
     expect(officeOption).toBeTruthy();
