@@ -16,8 +16,9 @@ data:
   postgres-db: "z8"
 
   # Cache
-  valkey-host: "z8-valkey"
-  valkey-port: "6379"
+  redis-host: "z8-valkey"
+  redis-port: "6379"
+  redis-tls: "false"
 
   # Worker configuration
   worker-concurrency: "5"

@@ -12,9 +12,10 @@
  * - Health checks via Valkey connection
  *
  * Environment variables:
- * - VALKEY_HOST: Redis/Valkey host (default: localhost)
- * - VALKEY_PORT: Redis/Valkey port (default: 6379)
- * - VALKEY_PASSWORD: Redis/Valkey password (optional)
+ * - REDIS_HOST: Redis-compatible host (default: localhost)
+ * - REDIS_PORT: Redis-compatible port (default: 6379)
+ * - REDIS_PASSWORD: Redis-compatible password (optional)
+ * - REDIS_TLS: Enable TLS for managed Redis providers (default: false)
  * - WORKER_CONCURRENCY: Number of concurrent jobs (default: 5)
  * - ENABLE_CRON_JOBS: Enable repeatable cron jobs (default: true)
  */
@@ -299,8 +300,9 @@ async function main(): Promise<void> {
 	logger.info(
 		{
 			concurrency,
-			valkeyHost: env.VALKEY_HOST || "localhost",
-			valkeyPort: env.VALKEY_PORT || 6379,
+			redisHost: env.REDIS_HOST || "localhost",
+			redisPort: env.REDIS_PORT || 6379,
+			redisTls: env.REDIS_TLS === "true",
 			nodeEnv: env.NODE_ENV,
 		},
 		"Starting worker process",

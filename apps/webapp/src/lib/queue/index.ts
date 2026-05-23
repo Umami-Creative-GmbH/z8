@@ -21,9 +21,10 @@ const logger = createLogger("JobQueue");
 
 // Connection configuration for Valkey/Redis
 const connection: ConnectionOptions = {
-	host: env.VALKEY_HOST || env.REDIS_HOST || "localhost",
-	port: Number(env.VALKEY_PORT || env.REDIS_PORT || 6379),
-	password: env.VALKEY_PASSWORD || env.REDIS_PASSWORD || undefined,
+	host: env.REDIS_HOST || "localhost",
+	port: Number(env.REDIS_PORT || 6379),
+	password: env.REDIS_PASSWORD || undefined,
+	tls: env.REDIS_TLS === "true" ? {} : undefined,
 	maxRetriesPerRequest: null, // Required for BullMQ
 };
 

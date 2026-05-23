@@ -28,10 +28,12 @@ spec:
           image: ghcr.io/umami-creative-gmbh/z8-webapp:latest
           imagePullPolicy: Always
           env:
-            - name: VALKEY_HOST
+            - name: REDIS_HOST
               value: valkey
-            - name: VALKEY_PORT
+            - name: REDIS_PORT
               value: "6379"
+            - name: REDIS_TLS
+              value: "false"
           ports:
             - containerPort: 3000
               name: http

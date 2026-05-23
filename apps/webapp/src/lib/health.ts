@@ -174,7 +174,7 @@ export async function runStartupChecks(): Promise<boolean> {
 			buildHash: env.NEXT_PUBLIC_BUILD_HASH ?? "unknown",
 			appUrlConfigured: Boolean(env.APP_URL || env.NEXT_PUBLIC_APP_URL),
 			mainDomainConfigured: Boolean(env.MAIN_DOMAIN),
-			valkeyConfigured: Boolean(env.VALKEY_HOST || env.REDIS_HOST),
+			redisConfigured: Boolean(env.REDIS_HOST),
 			turnstileConfigured: Boolean(env.TURNSTILE_SITE_KEY),
 			billingEnabled: env.BILLING_ENABLED === "true",
 		},

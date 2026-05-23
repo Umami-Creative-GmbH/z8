@@ -70,21 +70,27 @@ spec:
                   name: z8-secrets
                   key: postgres-password
             # Cache
-            - name: VALKEY_HOST
+            - name: REDIS_HOST
               valueFrom:
                 configMapKeyRef:
                   name: z8-config
-                  key: valkey-host
-            - name: VALKEY_PORT
+                  key: redis-host
+            - name: REDIS_PORT
               valueFrom:
                 configMapKeyRef:
                   name: z8-config
-                  key: valkey-port
-            - name: VALKEY_PASSWORD
+                  key: redis-port
+            - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: z8-secrets
-                  key: valkey-password
+                  key: redis-password
+                  optional: true
+            - name: REDIS_TLS
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: redis-tls
                   optional: true
             # Auth
             - name: BETTER_AUTH_SECRET
