@@ -11,7 +11,7 @@ import type {
 type PlatformAnalyticsRows = Record<PlatformAnalyticsMetricKey, PlatformAnalyticsAggregateRow[]>;
 type CurrentPlatformAnalyticsTotals = Pick<
 	PlatformAnalyticsKpis,
-	"organizations" | "seats" | "mrr" | "estimatedBilling"
+	"activeUsers" | "organizations" | "seats" | "mrr" | "estimatedBilling"
 >;
 
 export function buildPlatformAnalyticsSeries(
@@ -44,7 +44,7 @@ export function getLatestPointKpis(
 	const latestPoint = series.at(-1);
 
 	return {
-		activeUsers: latestPoint?.activeUsers ?? 0,
+		activeUsers: currentTotals.activeUsers,
 		signups: latestPoint?.signups ?? 0,
 		organizations: currentTotals.organizations,
 		seats: currentTotals.seats,

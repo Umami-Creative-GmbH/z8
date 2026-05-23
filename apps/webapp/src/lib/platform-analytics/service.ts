@@ -1,4 +1,4 @@
-import { and, count, countDistinct, gte, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
+import { and, count, countDistinct, eq, gte, inArray, isNull, lt, or, sql, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 
@@ -33,7 +33,7 @@ export async function getPlatformAnalyticsData(
 	const effectiveBillingEnabled = billingEnabled && includeBilling;
 	const parsedParams = parsePlatformAnalyticsParams(params);
 	const buckets = buildPlatformAnalyticsBuckets(parsedParams);
-	const [signups, organizations, activeUsers, sessions, timeRecords, currentOrganizations, billing] =
+	const [signups, organizations, activeUsers, sessions, timeRecords, currentOrganizations, currentActiveUsers, billing] =
 		await Promise.all([
 			getSignupsByBucket(parsedParams),
 			getOrganizationsByBucket(parsedParams),
@@ -41,6 +41,7 @@ export async function getPlatformAnalyticsData(
 			getSessionsByBucket(parsedParams),
 			includeTimeRecords ? getTimeRecordsByBucket(parsedParams) : Promise.resolve([]),
 			getCurrentOrganizations(),
+			getCurrentActiveUsers(),
 			effectiveBillingEnabled ? getBillingAnalytics(parsedParams) : Promise.resolve(null),
 		]);
 
@@ -63,6 +64,7 @@ export async function getPlatformAnalyticsData(
 		billingEnabled: effectiveBillingEnabled,
 		series,
 		kpis: getLatestPointKpis(series, {
+			activeUsers: currentActiveUsers,
 			organizations: currentOrganizations,
 			seats: billing?.currentSeats ?? null,
 			mrr: billing?.currentMrr ?? null,
@@ -112,6 +114,15 @@ async function getCurrentOrganizations() {
 		.select({ value: count() })
 		.from(organization)
 		.where(isNull(organization.deletedAt));
+
+	return Number(row?.value ?? 0);
+}
+
+async function getCurrentActiveUsers() {
+	const [row] = await db
+		.select({ value: count() })
+		.from(user)
+		.where(or(eq(user.banned, false), isNull(user.banned)));
 
 	return Number(row?.value ?? 0);
 }

@@ -153,13 +153,14 @@ describe("getLatestPointKpis", () => {
 
 		expect(
 			getLatestPointKpis(series, {
+				activeUsers: 3,
 				organizations: 7,
 				seats: null,
 				mrr: null,
 				estimatedBilling: false,
 			}),
 		).toEqual({
-			activeUsers: 9,
+			activeUsers: 3,
 			signups: 4,
 			organizations: 7,
 			seats: null,
