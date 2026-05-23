@@ -2,20 +2,26 @@ import React from "react";
 
 vi.mock("@expo/ui", async () => await import("./expo-ui-mock"));
 
-vi.mock("@expo/ui/community/datetime-picker", () => ({
-	default: ({ value, onValueChange, onDismiss, testID }: {
+vi.mock("@expo/ui/community/datetime-picker", () => {
+	function DateTimePicker({ value, onValueChange, onDismiss, testID }: {
 		value: Date;
 		onValueChange?: (event: unknown, selectedDate: Date) => void;
 		onDismiss?: () => void;
 		testID?: string;
-	}) =>
-		React.createElement("DateTimePicker", {
+	}) {
+		return React.createElement("DateTimePicker", {
 			onDismiss,
 			onValueChange,
 			testID,
 			value,
-		}),
-}));
+		});
+	}
+
+	return {
+		DateTimePicker,
+		default: DateTimePicker,
+	};
+});
 
 vi.mock("expo-crypto", () => ({
 	CryptoDigestAlgorithm: {

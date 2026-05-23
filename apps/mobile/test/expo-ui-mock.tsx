@@ -14,6 +14,9 @@ export const Row = createPrimitive("Row");
 export const Spacer = createPrimitive("Spacer");
 export const ScrollView = createPrimitive("ScrollView");
 export const Text = createPrimitive("Text");
+export const Picker = createPrimitive("Picker");
+export const BottomSheet = createPrimitive("BottomSheet");
+export const Collapsible = createPrimitive("Collapsible");
 
 export function Button({ label, children, onPress, disabled, ...props }: PrimitiveProps & {
 	label?: string;
@@ -68,6 +71,53 @@ export function TextInput({ value, defaultValue, onChangeText, ...props }: Primi
 		value: resolvedValue,
 	});
 }
+
+export function Switch({ value, onValueChange, disabled, ...props }: PrimitiveProps & {
+	value?: boolean;
+	onValueChange?: (value: boolean) => void;
+	disabled?: boolean;
+}) {
+	return React.createElement("Switch", {
+		...props,
+		disabled,
+		onValueChange: disabled ? undefined : onValueChange,
+		value,
+	});
+}
+
+export function Checkbox({ value, onValueChange, disabled, ...props }: PrimitiveProps & {
+	value?: boolean;
+	onValueChange?: (value: boolean) => void;
+	disabled?: boolean;
+}) {
+	return React.createElement("Checkbox", {
+		...props,
+		disabled,
+		onValueChange: disabled ? undefined : onValueChange,
+		value,
+	});
+}
+
+export function Slider({ value, onValueChange, disabled, ...props }: PrimitiveProps & {
+	value?: number;
+	onValueChange?: (value: number) => void;
+	disabled?: boolean;
+}) {
+	return React.createElement("Slider", {
+		...props,
+		disabled,
+		onValueChange: disabled ? undefined : onValueChange,
+		value,
+	});
+}
+
+export function Icon({ children, name, ...props }: PrimitiveProps & { name?: React.ReactNode }) {
+	return React.createElement("Icon", props, children ?? name);
+}
+
+Icon.select = function selectIcon<T>(values: { ios?: T; android?: T; default?: T } & Record<string, T | undefined>) {
+	return values.ios ?? values.android ?? values.default ?? Object.values(values).find((value) => value !== undefined);
+};
 
 export function useNativeState<T>(initialValue: T) {
 	return { value: initialValue };
