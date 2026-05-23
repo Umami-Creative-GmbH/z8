@@ -17,7 +17,6 @@ import {
   createRequestAbsenceFormValidator,
   createRequestAbsenceFormValues,
   type RequestAbsenceFormErrors,
-  type RequestAbsenceFormValues,
 } from "./request-absence-form";
 import type {
   CreateMobileAbsenceRequestInput,
@@ -44,8 +43,10 @@ const PERIOD_OPTIONS: Array<{ value: MobileAbsenceDayPeriod; label: string }> = 
 type DateFieldName = "startDate" | "endDate";
 
 export function isoDateToPickerDate(value: string) {
-	const parsed = DateTime.fromISO(value, { zone: "utc" });
-	return (parsed.isValid ? parsed : DateTime.now().setZone("utc")).startOf("day").toJSDate();
+	const parsed = DateTime.fromISO(value);
+	const date = parsed.isValid ? parsed : DateTime.now();
+
+	return new Date(date.year, date.month - 1, date.day);
 }
 
 export function pickerDateToIsoDate(value: Date) {
@@ -56,15 +57,11 @@ export function pickerDateToIsoDate(value: Date) {
 	return `${year}-${month}-${day}`;
 }
 
-export function createRequestAbsencePayloadWithPickerDate(
-	values: RequestAbsenceFormValues,
-	fieldName: DateFieldName,
-	selectedDate: Date,
-) {
-	return createRequestAbsencePayload({
-		...values,
-		[fieldName]: pickerDateToIsoDate(selectedDate),
-	});
+export function formatDatePickerButtonLabel(fieldName: DateFieldName, value: string) {
+	const label = fieldName === "startDate" ? "start date" : "end date";
+	const selectedDate = value.trim() || "no date selected";
+
+	return `Pick ${label}: ${selectedDate}`;
 }
 
 export function RequestAbsenceScreen({
@@ -175,7 +172,7 @@ export function RequestAbsenceScreen({
             <View style={styles.section}>
               <Text style={styles.label}>Start date</Text>
               <Pressable
-                accessibilityLabel="Start date"
+                accessibilityLabel={formatDatePickerButtonLabel("startDate", field.state.value)}
                 accessibilityRole="button"
                 onPress={() => setActiveDatePicker("startDate")}
               >
@@ -243,7 +240,7 @@ export function RequestAbsenceScreen({
             <View style={styles.section}>
               <Text style={styles.label}>End date</Text>
               <Pressable
-                accessibilityLabel="End date"
+                accessibilityLabel={formatDatePickerButtonLabel("endDate", field.state.value)}
                 accessibilityRole="button"
                 onPress={() => setActiveDatePicker("endDate")}
               >

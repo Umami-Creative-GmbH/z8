@@ -1,11 +1,12 @@
 import React from "react";
 
 import {
+  createRequestAbsencePayload,
   createRequestAbsenceFormValidator,
   type RequestAbsenceFormValues,
 } from "./request-absence-form";
 import {
-	createRequestAbsencePayloadWithPickerDate,
+	formatDatePickerButtonLabel,
 	isoDateToPickerDate,
 	pickerDateToIsoDate,
 } from "./request-absence-screen";
@@ -56,9 +57,13 @@ describe("request absence form", () => {
 	});
 
 	it("converts ISO dates to native picker dates and back", () => {
+		process.env.TZ = "America/Los_Angeles";
+
 		const pickerDate = isoDateToPickerDate("2026-05-10");
 
-		expect(pickerDate.toISOString()).toBe("2026-05-10T00:00:00.000Z");
+		expect(pickerDate.getFullYear()).toBe(2026);
+		expect(pickerDate.getMonth()).toBe(4);
+		expect(pickerDate.getDate()).toBe(10);
 		expect(pickerDateToIsoDate(pickerDate)).toBe("2026-05-10");
 	});
 
@@ -72,15 +77,20 @@ describe("request absence form", () => {
 		process.env.TZ = "Europe/Berlin";
 
 		expect(
-			createRequestAbsencePayloadWithPickerDate(
-				createValues({ endDate: "2026-05-11" }),
-				"startDate",
-				new Date(2026, 4, 10),
-			),
+			createRequestAbsencePayload({
+				...createValues({ endDate: "2026-05-11" }),
+				startDate: pickerDateToIsoDate(new Date(2026, 4, 10)),
+			}),
 		).toMatchObject({
 			startDate: "2026-05-10",
 			endDate: "2026-05-11",
 		});
+	});
+
+	it("includes the selected date in date picker button labels", () => {
+		expect(formatDatePickerButtonLabel("startDate", "2026-05-10")).toBe("Pick start date: 2026-05-10");
+		expect(formatDatePickerButtonLabel("endDate", "2026-05-11")).toBe("Pick end date: 2026-05-11");
+		expect(formatDatePickerButtonLabel("startDate", "")).toBe("Pick start date: no date selected");
 	});
 
 	it("rejects impossible real dates", () => {
