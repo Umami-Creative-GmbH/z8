@@ -10,6 +10,7 @@ use crate::settings::Settings;
 pub struct AppState {
     pub app_handle: AppHandle,
     pub session_token: RwLock<Option<String>>,
+    pub pending_app_auth_verifier: RwLock<Option<String>>,
     pub settings: RwLock<Settings>,
     pub offline_queue: Mutex<OfflineQueue>, // Mutex for SQLite thread safety
     pub is_clocked_in: RwLock<bool>,
@@ -46,6 +47,7 @@ impl AppState {
         Ok(Self {
             app_handle,
             session_token: RwLock::new(session_token),
+            pending_app_auth_verifier: RwLock::new(None),
             settings: RwLock::new(settings),
             offline_queue: Mutex::new(queue),
             is_clocked_in: RwLock::new(false),
@@ -67,6 +69,14 @@ impl AppState {
 
     pub fn get_session_token(&self) -> Option<String> {
         self.session_token.read().clone()
+    }
+
+    pub fn set_pending_app_auth_verifier(&self, verifier: Option<String>) {
+        *self.pending_app_auth_verifier.write() = verifier;
+    }
+
+    pub fn take_pending_app_auth_verifier(&self) -> Option<String> {
+        self.pending_app_auth_verifier.write().take()
     }
 
     pub fn get_webapp_url(&self) -> String {

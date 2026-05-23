@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+pub const DEFAULT_WEBAPP_URL: &str = "https://ui.z8-time.app";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub webapp_url: String,
@@ -13,7 +15,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            webapp_url: String::new(),
+            webapp_url: DEFAULT_WEBAPP_URL.to_string(),
             always_on_top: true,
             auto_startup: false,
         }
