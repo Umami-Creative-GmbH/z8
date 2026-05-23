@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
+import { Button, Column, FieldGroup, Host, Row, Text as UiText, TextInput as UiTextInput } from "@expo/ui";
+import { DateTimePicker } from "@expo/ui/community/datetime-picker";
 import { useForm } from "@tanstack/react-form";
+import { DateTime } from "luxon";
 import {
   Pressable,
   ScrollView,
@@ -37,6 +40,17 @@ const PERIOD_OPTIONS: Array<{ value: MobileAbsenceDayPeriod; label: string }> = 
   { value: "pm", label: "PM" },
 ];
 
+type DateFieldName = "startDate" | "endDate";
+
+export function isoDateToPickerDate(value: string) {
+	const parsed = DateTime.fromISO(value, { zone: "utc" });
+	return (parsed.isValid ? parsed : DateTime.now().setZone("utc")).startOf("day").toJSDate();
+}
+
+export function pickerDateToIsoDate(value: Date) {
+	return DateTime.fromJSDate(value, { zone: "utc" }).toISODate() ?? "";
+}
+
 export function RequestAbsenceScreen({
   categories,
   vacationBalance,
@@ -45,6 +59,7 @@ export function RequestAbsenceScreen({
   onBack,
   onSubmit,
 }: RequestAbsenceScreenProps) {
+  const [activeDatePicker, setActiveDatePicker] = useState<DateFieldName | null>(null);
   const [validationErrors, setValidationErrors] = useState<RequestAbsenceFormErrors>({});
   const validate = createRequestAbsenceFormValidator();
   const form = useForm({
@@ -78,7 +93,9 @@ export function RequestAbsenceScreen({
   }, [submitErrorMessage, validationErrors]);
 
   return (
+    <Host style={styles.container}>
     <ScrollView contentContainerStyle={styles.content} style={styles.container}>
+      <Column spacing={16}>
       <View style={styles.headerSurface}>
         <Text style={styles.eyebrow}>Request absence</Text>
         <Text style={styles.title}>Submit a time-off request</Text>
@@ -92,7 +109,8 @@ export function RequestAbsenceScreen({
         </View>
       </View>
 
-      <View style={styles.formSurface}>
+      <FieldGroup style={styles.fieldGroupSurface}>
+        <Column spacing={16}>
         {errorSummary ? (
           <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.fieldError}>
             {errorSummary}
@@ -140,18 +158,35 @@ export function RequestAbsenceScreen({
           {(field) => (
             <View style={styles.section}>
               <Text style={styles.label}>Start date</Text>
-              <TextInput
-                autoCapitalize="none"
+              <Pressable
                 accessibilityLabel="Start date"
-                keyboardType="numbers-and-punctuation"
-                onChangeText={(value) => {
-                  field.handleChange(value);
-                  setValidationErrors((current) => ({ ...current, startDate: undefined }));
-                }}
-                placeholder="YYYY-MM-DD…"
-                style={styles.input}
-                value={field.state.value}
-              />
+                accessibilityRole="button"
+                onPress={() => setActiveDatePicker("startDate")}
+              >
+                <UiTextInput
+                  key={`start-${field.state.value}`}
+                  defaultValue={field.state.value}
+                  editable={false}
+                  style={styles.dateInput}
+                  testID="start-date-input"
+                  textStyle={styles.dateInputText}
+                />
+              </Pressable>
+              {activeDatePicker === "startDate" ? (
+                <DateTimePicker
+                  mode="date"
+                  onDismiss={() => setActiveDatePicker(null)}
+                  onValueChange={(_event, selectedDate) => {
+                    field.handleChange(pickerDateToIsoDate(selectedDate));
+                    setValidationErrors((current) => ({ ...current, startDate: undefined }));
+                    setActiveDatePicker(null);
+                  }}
+                  presentation="dialog"
+                  testID="start-date-picker"
+                  value={isoDateToPickerDate(field.state.value)}
+                />
+              ) : null}
+              <UiText textStyle={styles.dateHelperText}>Tap to choose a date</UiText>
               {validationErrors.startDate ? (
                 <Text style={styles.fieldError}>{validationErrors.startDate}</Text>
               ) : null}
@@ -191,18 +226,35 @@ export function RequestAbsenceScreen({
           {(field) => (
             <View style={styles.section}>
               <Text style={styles.label}>End date</Text>
-              <TextInput
-                autoCapitalize="none"
+              <Pressable
                 accessibilityLabel="End date"
-                keyboardType="numbers-and-punctuation"
-                onChangeText={(value) => {
-                  field.handleChange(value);
-                  setValidationErrors((current) => ({ ...current, endDate: undefined, endPeriod: undefined }));
-                }}
-                placeholder="YYYY-MM-DD…"
-                style={styles.input}
-                value={field.state.value}
-              />
+                accessibilityRole="button"
+                onPress={() => setActiveDatePicker("endDate")}
+              >
+                <UiTextInput
+                  key={`end-${field.state.value}`}
+                  defaultValue={field.state.value}
+                  editable={false}
+                  style={styles.dateInput}
+                  testID="end-date-input"
+                  textStyle={styles.dateInputText}
+                />
+              </Pressable>
+              {activeDatePicker === "endDate" ? (
+                <DateTimePicker
+                  mode="date"
+                  onDismiss={() => setActiveDatePicker(null)}
+                  onValueChange={(_event, selectedDate) => {
+                    field.handleChange(pickerDateToIsoDate(selectedDate));
+                    setValidationErrors((current) => ({ ...current, endDate: undefined, endPeriod: undefined }));
+                    setActiveDatePicker(null);
+                  }}
+                  presentation="dialog"
+                  testID="end-date-picker"
+                  value={isoDateToPickerDate(field.state.value)}
+                />
+              ) : null}
+              <UiText textStyle={styles.dateHelperText}>Tap to choose a date</UiText>
               {validationErrors.endDate ? (
                 <Text style={styles.fieldError}>{validationErrors.endDate}</Text>
               ) : null}
@@ -261,24 +313,20 @@ export function RequestAbsenceScreen({
           )}
         </form.Field>
 
-        <View style={styles.actions}>
-          <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={onBack} style={styles.secondaryAction}>
-            <Text style={styles.secondaryActionLabel}>Back</Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel="Submit Request"
-            accessibilityRole="button"
+        <Row spacing={10}>
+          <Button label="Back" onPress={onBack} style={styles.actionButton} variant="outlined" />
+          <Button
             disabled={isSubmitting}
+            label={isSubmitting ? "Submitting…" : "Submit Request"}
             onPress={() => void form.handleSubmit()}
-            style={[styles.primaryAction, isSubmitting && styles.actionDisabled]}
-          >
-            <Text style={styles.primaryActionLabel}>
-              {isSubmitting ? "Submitting…" : "Submit Request"}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+            style={isSubmitting ? styles.actionButtonDisabled : styles.actionButton}
+          />
+        </Row>
+        </Column>
+      </FieldGroup>
+      </Column>
     </ScrollView>
+    </Host>
   );
 }
 
@@ -337,8 +385,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#0f172a",
   },
-  formSurface: {
-    gap: 16,
+  fieldGroupSurface: {
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#dbe2f0",
@@ -393,6 +440,23 @@ const styles = StyleSheet.create({
     color: "#0f172a",
     backgroundColor: "#f8fafc",
   },
+  dateInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#f8fafc",
+  },
+  dateInputText: {
+    fontSize: 15,
+    color: "#0f172a",
+  },
+  dateHelperText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: "#64748b",
+  },
   notesInput: {
     minHeight: 96,
   },
@@ -426,37 +490,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: "#b91c1c",
   },
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  secondaryAction: {
-    flex: 1,
-    alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    paddingVertical: 14,
-    backgroundColor: "#f8fafc",
-  },
-  secondaryActionLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#334155",
-  },
-  primaryAction: {
-    flex: 1,
-    alignItems: "center",
+  actionButton: {
+    width: "48%",
     borderRadius: 12,
     paddingVertical: 14,
-    backgroundColor: "#3730a3",
   },
-  primaryActionLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-  actionDisabled: {
+  actionButtonDisabled: {
+    width: "48%",
+    borderRadius: 12,
+    paddingVertical: 14,
     opacity: 0.55,
   },
 });
