@@ -29,73 +29,54 @@ export function PricingSection({ copy }: PricingSectionProps) {
 					</p>
 				</div>
 
-				<div className="grid gap-6 md:grid-cols-3">
-					{copy.plans.map((plan) => (
-						<div
-							key={plan.id}
-							className="relative rounded-2xl p-8 transition-all hover:-translate-y-1"
-							style={{
-								border: plan.highlighted
-									? `2px solid ${v("surface")}`
-									: `1px solid ${v("borderMedium")}`,
-								backgroundColor: v("cardBg"),
-								boxShadow: plan.highlighted ? `0 20px 60px ${v("shadowLight")}` : "none",
-								transition: "background-color 0.4s ease, border-color 0.4s ease",
-							}}
+				<div className="mx-auto max-w-2xl">
+					<div
+						className="relative overflow-hidden rounded-3xl p-8 text-center sm:p-10"
+						style={{
+							border: `1px solid ${v("borderMedium")}`,
+							backgroundColor: v("cardBg"),
+							boxShadow: `0 20px 60px ${v("shadowLight")}`,
+							transition: "background-color 0.4s ease, border-color 0.4s ease",
+						}}
+					>
+						<p
+							className="mb-8 rounded-full px-4 py-2 text-[13px] font-bold uppercase tracking-[0.08em]"
+							style={{ backgroundColor: v("badgeBg"), color: v("badgeText") }}
 						>
-							{plan.highlighted && (
-								<div
-									className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-[0.1em]"
-									style={{ backgroundColor: v("surface"), color: v("surfaceText") }}
-								>
-									{copy.highlightBadge}
-								</div>
-							)}
-							<div className="mb-6">
-								<h3 className="mb-1 text-[18px] font-bold">{plan.name}</h3>
-								<p className="text-[13px]" style={{ color: v("textTertiary") }}>
-									{plan.desc}
-								</p>
-							</div>
-							<div className="mb-6">
-								<span className="text-[clamp(2rem,4vw,3rem)] font-extrabold tracking-[-0.03em]">
-									{plan.priceKind === "numeric" ? copy.currencyPrefix : ""}
-									{plan.price}
-								</span>
-								<span className="ml-1 text-[13px]" style={{ color: v("textTertiary") }}>
-									{plan.period}
-								</span>
-							</div>
-							<ul className="mb-8 space-y-3">
-								{plan.features.map((f) => (
-									<li
-										key={f}
-										className="flex items-start gap-2.5 text-[14px]"
-										style={{ color: v("textFaint") }}
-									>
-										<span
-											className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
-											style={{ backgroundColor: v("badgeBg"), color: v("badgeText") }}
-										>
-											&#10003;
-										</span>
-										{f}
-									</li>
-								))}
-							</ul>
-							<a
-								href="#contact"
-								className="block rounded-xl py-3.5 text-center text-[14px] font-bold transition-all"
-								style={{
-									backgroundColor: plan.highlighted ? v("surface") : "transparent",
-									color: plan.highlighted ? v("surfaceText") : v("text"),
-									border: plan.highlighted ? "none" : `1px solid ${v("borderStrong")}`,
-								}}
+							{copy.offer.trial}
+						</p>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div
+								className="rounded-2xl p-6"
+								style={{ border: `1px solid ${v("borderMedium")}` }}
 							>
-								{plan.cta}
-							</a>
+								<div className="text-[clamp(2rem,4vw,3rem)] font-extrabold tracking-[-0.03em]">
+									{copy.offer.monthly}
+								</div>
+							</div>
+							<div
+								className="rounded-2xl p-6"
+								style={{ border: `1px solid ${v("borderMedium")}` }}
+							>
+								<div className="text-[clamp(2rem,4vw,3rem)] font-extrabold tracking-[-0.03em]">
+									{copy.offer.yearly}
+								</div>
+							</div>
 						</div>
-					))}
+
+						<p className="mt-6 text-[13px]" style={{ color: v("textTertiary") }}>
+							{copy.offer.taxNote}
+						</p>
+
+						<a
+							href="#contact"
+							className="mx-auto mt-8 block max-w-xs rounded-xl py-3.5 text-center text-[14px] font-bold transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+							style={{ backgroundColor: v("surface"), color: v("surfaceText") }}
+						>
+							{copy.offer.cta}
+						</a>
+					</div>
 				</div>
 			</div>
 		</section>
