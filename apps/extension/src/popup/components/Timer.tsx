@@ -1,4 +1,4 @@
-import { IconClock } from "@tabler/icons-react";
+import IconClock from "@tabler/icons-react/dist/esm/icons/IconClock.mjs";
 import { useTimer, formatTime } from "../hooks/useTimer";
 
 interface TimerProps {

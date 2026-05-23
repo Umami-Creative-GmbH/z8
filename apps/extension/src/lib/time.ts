@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "2-digit",
   minute: "2-digit",
@@ -21,21 +23,22 @@ export function formatElapsedTime(totalSeconds: number): string {
 }
 
 export function formatClockTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
+  const dateTime = DateTime.fromISO(timestamp);
+  if (!dateTime.isValid) {
     return "Unknown time";
   }
 
-  return timeFormatter.format(date);
+  return timeFormatter.format(dateTime.toJSDate());
 }
 
 export function formatActionTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
+  const dateTime = DateTime.fromISO(timestamp);
+  if (!dateTime.isValid) {
     return "Unknown time";
   }
 
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
+  const localDateTime = dateTime.toLocal();
+  const isToday = localDateTime.hasSame(DateTime.local(), "day");
+  const date = localDateTime.toJSDate();
   return isToday ? timeFormatter.format(date) : dateTimeFormatter.format(date);
 }

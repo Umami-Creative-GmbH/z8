@@ -1,4 +1,6 @@
-import { IconLogin2, IconLogout2, IconLoader2 } from "@tabler/icons-react";
+import IconLoader2 from "@tabler/icons-react/dist/esm/icons/IconLoader2.mjs";
+import IconLogin2 from "@tabler/icons-react/dist/esm/icons/IconLogin2.mjs";
+import IconLogout2 from "@tabler/icons-react/dist/esm/icons/IconLogout2.mjs";
 import { cn } from "@/lib/cn";
 
 interface ClockButtonProps {

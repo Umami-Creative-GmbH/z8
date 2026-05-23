@@ -160,12 +160,6 @@ async function processQueue(): Promise<void> {
   }
 }
 
-// Handle online/offline events
-self.addEventListener("online", () => {
-  console.log("Back online, processing queue...");
-  processQueue();
-});
-
 // Periodic status check and queue processing
 chrome.alarms.create("status-check", { periodInMinutes: 1 });
 

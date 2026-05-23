@@ -1,4 +1,6 @@
-import { IconAlertCircle, IconRefresh, IconSettings } from "@tabler/icons-react";
+import IconAlertCircle from "@tabler/icons-react/dist/esm/icons/IconAlertCircle.mjs";
+import IconRefresh from "@tabler/icons-react/dist/esm/icons/IconRefresh.mjs";
+import IconSettings from "@tabler/icons-react/dist/esm/icons/IconSettings.mjs";
 
 interface ErrorStateProps {
   error: Error | null;

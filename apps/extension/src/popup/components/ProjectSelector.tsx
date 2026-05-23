@@ -1,4 +1,4 @@
-import { IconFolder } from "@tabler/icons-react";
+import IconFolder from "@tabler/icons-react/dist/esm/icons/IconFolder.mjs";
 import type { Project } from "@/types";
 
 interface ProjectSelectorProps {

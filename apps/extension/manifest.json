@@ -4,7 +4,8 @@
   "version": "1.0.1",
   "description": "One-click clock in/out for Z8 time tracking",
   "permissions": ["storage", "alarms", "notifications"],
-  "host_permissions": ["http://localhost:3000/*", "https://*/*"],
+  "host_permissions": ["http://localhost:3000/*", "https://app.z8-time.app/*", "https://z8-time.app/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

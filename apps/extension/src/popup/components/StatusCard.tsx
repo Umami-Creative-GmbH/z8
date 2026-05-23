@@ -1,4 +1,5 @@
-import { IconCloud, IconCloudOff } from "@tabler/icons-react";
+import IconCloud from "@tabler/icons-react/dist/esm/icons/IconCloud.mjs";
+import IconCloudOff from "@tabler/icons-react/dist/esm/icons/IconCloudOff.mjs";
 import { formatActionTime, formatClockTime } from "@/lib/time";
 import type { LastAction } from "@/types";
 

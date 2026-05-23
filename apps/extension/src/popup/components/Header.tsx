@@ -1,4 +1,4 @@
-import { IconSettings } from "@tabler/icons-react";
+import IconSettings from "@tabler/icons-react/dist/esm/icons/IconSettings.mjs";
 
 export function Header() {
   const handleOpenOptions = () => {
