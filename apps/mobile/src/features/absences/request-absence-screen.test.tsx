@@ -4,7 +4,11 @@ import {
   createRequestAbsenceFormValidator,
   type RequestAbsenceFormValues,
 } from "./request-absence-form";
-import { isoDateToPickerDate, pickerDateToIsoDate } from "./request-absence-screen";
+import {
+	createRequestAbsencePayloadWithPickerDate,
+	isoDateToPickerDate,
+	pickerDateToIsoDate,
+} from "./request-absence-screen";
 
 vi.mock("react-native", () => ({
 	Pressable: ({ accessibilityLabel, accessibilityRole, accessibilityState, children, disabled, onPress, ...props }: any) =>
@@ -45,11 +49,38 @@ function createValues(overrides: Partial<RequestAbsenceFormValues> = {}): Reques
 }
 
 describe("request absence form", () => {
+	const originalTimeZone = process.env.TZ;
+
+	afterEach(() => {
+		process.env.TZ = originalTimeZone;
+	});
+
 	it("converts ISO dates to native picker dates and back", () => {
 		const pickerDate = isoDateToPickerDate("2026-05-10");
 
 		expect(pickerDate.toISOString()).toBe("2026-05-10T00:00:00.000Z");
 		expect(pickerDateToIsoDate(pickerDate)).toBe("2026-05-10");
+	});
+
+	it("preserves positive-timezone local midnight picker dates", () => {
+		process.env.TZ = "Europe/Berlin";
+
+		expect(pickerDateToIsoDate(new Date(2026, 4, 10))).toBe("2026-05-10");
+	});
+
+	it("submits picker-selected dates as ISO date strings", () => {
+		process.env.TZ = "Europe/Berlin";
+
+		expect(
+			createRequestAbsencePayloadWithPickerDate(
+				createValues({ endDate: "2026-05-11" }),
+				"startDate",
+				new Date(2026, 4, 10),
+			),
+		).toMatchObject({
+			startDate: "2026-05-10",
+			endDate: "2026-05-11",
+		});
 	});
 
 	it("rejects impossible real dates", () => {

@@ -17,6 +17,7 @@ import {
   createRequestAbsenceFormValidator,
   createRequestAbsenceFormValues,
   type RequestAbsenceFormErrors,
+  type RequestAbsenceFormValues,
 } from "./request-absence-form";
 import type {
   CreateMobileAbsenceRequestInput,
@@ -48,7 +49,22 @@ export function isoDateToPickerDate(value: string) {
 }
 
 export function pickerDateToIsoDate(value: Date) {
-	return DateTime.fromJSDate(value, { zone: "utc" }).toISODate() ?? "";
+	const year = value.getFullYear();
+	const month = String(value.getMonth() + 1).padStart(2, "0");
+	const day = String(value.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
+}
+
+export function createRequestAbsencePayloadWithPickerDate(
+	values: RequestAbsenceFormValues,
+	fieldName: DateFieldName,
+	selectedDate: Date,
+) {
+	return createRequestAbsencePayload({
+		...values,
+		[fieldName]: pickerDateToIsoDate(selectedDate),
+	});
 }
 
 export function RequestAbsenceScreen({
