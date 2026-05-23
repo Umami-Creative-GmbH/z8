@@ -6,6 +6,8 @@ const skipEnvValidation =
 	process.env.SKIP_ENV_VALIDATION === "true" ||
 	process.env.CI === "true";
 
+const optionalEnv = (value: string | undefined) => (value === "" ? undefined : value);
+
 const parsedEnv = createEnv({
 	server: {
 		APP_URL: z.url().optional(),
@@ -80,6 +82,8 @@ const parsedEnv = createEnv({
 		// Email / SMTP (System-level fallback - used if org has no email config)
 		// If configured, SMTP becomes fallback after Resend
 		// Organization-specific email configs always take precedence over these system defaults
+		// Email provider for system-level fallback. Organization configs take precedence.
+		EMAIL_PROVIDER: z.enum(["smtp", "resend"]).optional(),
 		SMTP_HOST: z.string().optional(),
 		SMTP_PORT: z.string().optional(),
 		SMTP_USERNAME: z.string().optional(),
@@ -187,13 +191,14 @@ const parsedEnv = createEnv({
 		TOLGEE_PROJECT_ID: process.env.TOLGEE_PROJECT_ID,
 		TOLGEE_API_KEY: process.env.TOLGEE_API_KEY,
 		TOLGEE_API_URL: process.env.TOLGEE_API_URL,
+		EMAIL_PROVIDER: optionalEnv(process.env.EMAIL_PROVIDER),
 		SMTP_HOST: process.env.SMTP_HOST,
 		SMTP_PORT: process.env.SMTP_PORT,
 		SMTP_USERNAME: process.env.SMTP_USERNAME,
 		SMTP_PASSWORD: process.env.SMTP_PASSWORD,
-		SMTP_SECURE: process.env.SMTP_SECURE,
-		SMTP_REQUIRE_TLS: process.env.SMTP_REQUIRE_TLS,
-		SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
+		SMTP_SECURE: optionalEnv(process.env.SMTP_SECURE),
+		SMTP_REQUIRE_TLS: optionalEnv(process.env.SMTP_REQUIRE_TLS),
+		SMTP_FROM_EMAIL: optionalEnv(process.env.SMTP_FROM_EMAIL),
 		SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
 		NODE_ENV: process.env.NODE_ENV,
 		SECURITY_HSTS_PRELOAD: process.env.SECURITY_HSTS_PRELOAD,

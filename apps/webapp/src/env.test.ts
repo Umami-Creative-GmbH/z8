@@ -63,6 +63,38 @@ describe("env", () => {
 		expect(env.SCALEWAY_KEY_MANAGER_API_URL).toBe("https://api.scaleway.com");
 	});
 
+	test.each(["smtp", "resend"])("accepts strict system email provider %s", async (provider) => {
+		const { env } = await importEnv({ EMAIL_PROVIDER: provider });
+
+		expect(env.EMAIL_PROVIDER).toBe(provider);
+	});
+
+	test("treats empty system email provider as unset", async () => {
+		const { env } = await importEnv({ EMAIL_PROVIDER: "" });
+
+		expect(env.EMAIL_PROVIDER).toBeUndefined();
+	});
+
+	test("treats empty optional SMTP validated values as unset", async () => {
+		const { env } = await importEnv({
+			SMTP_SECURE: "",
+			SMTP_REQUIRE_TLS: "",
+			SMTP_FROM_EMAIL: "",
+		});
+
+		expect(env.SMTP_SECURE).toBeUndefined();
+		expect(env.SMTP_REQUIRE_TLS).toBeUndefined();
+		expect(env.SMTP_FROM_EMAIL).toBeUndefined();
+	});
+
+	test("rejects invalid system email providers", async () => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			throw new Error(`process.exit:${code}`);
+		});
+
+		await expect(importEnv({ EMAIL_PROVIDER: "mailgun" })).rejects.toThrow("process.exit:1");
+	});
+
 	test("accepts managed Redis TLS configuration", async () => {
 		const { env } = await importEnv({
 			REDIS_HOST: "managed-redis.example.com",

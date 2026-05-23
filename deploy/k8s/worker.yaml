@@ -102,11 +102,71 @@ spec:
                   name: z8-config
                   key: enable-cron-jobs
             # Email (optional - for email jobs)
+            - name: EMAIL_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: email-provider
+                  optional: true
             - name: RESEND_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: z8-secrets
                   key: resend-api-key
+                  optional: true
+            - name: EMAIL_FROM
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: email-from
+                  optional: true
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: smtp-host
+                  optional: true
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: smtp-port
+                  optional: true
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: smtp-username
+                  optional: true
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: smtp-password
+                  optional: true
+            - name: SMTP_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: smtp-secure
+                  optional: true
+            - name: SMTP_REQUIRE_TLS
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: smtp-require-tls
+                  optional: true
+            - name: SMTP_FROM_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: smtp-from-email
+                  optional: true
+            - name: SMTP_FROM_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: smtp-from-name
                   optional: true
             # Logging
             - name: LOG_LEVEL

@@ -24,5 +24,17 @@ data:
   worker-concurrency: "5"
   enable-cron-jobs: "true"
 
+  # Email
+  email-from: "noreply@yourdomain.com"
+  smtp-host: ""
+  smtp-port: "587"
+  smtp-from-email: "noreply@yourdomain.com"
+  smtp-from-name: "Z8"
+  # Optional strict provider. Uncomment to force one provider.
+  # email-provider: "resend"
+  # Optional SMTP transport flags.
+  # smtp-secure: "false"
+  # smtp-require-tls: "true"
+
   # Logging
   log-level: "info"

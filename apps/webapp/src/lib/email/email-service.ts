@@ -31,19 +31,31 @@ let systemTransport: EmailTransport | null = null;
 
 /**
  * Get the system default transport
- * Priority: Resend → SMTP → Console (development fallback)
+ * Priority depends on EMAIL_PROVIDER:
  *
- * Resend is preferred if configured, but falls back to SMTP if:
- * - RESEND_API_KEY is not set, or
- * - Resend initialization fails
+ * - EMAIL_PROVIDER=resend: only Resend is attempted before console fallback.
+ * - EMAIL_PROVIDER=smtp: only SMTP is attempted before console fallback.
+ * - EMAIL_PROVIDER unset: legacy Resend → SMTP → Console fallback is preserved.
  *
  * SMTP is used if all required env vars are configured:
  * SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM_EMAIL
  *
- * Console fallback is used if neither Resend nor SMTP is available.
+ * Console fallback is used when the selected or legacy fallback providers are unavailable.
  */
 function getSystemTransport(): EmailTransport {
 	if (!systemTransport) {
+		if (process.env.EMAIL_PROVIDER === "resend") {
+			systemTransport = createSystemResendTransport() ?? new ConsoleTransport();
+			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			return systemTransport;
+		}
+
+		if (process.env.EMAIL_PROVIDER === "smtp") {
+			systemTransport = createSystemSmtpTransport() ?? new ConsoleTransport();
+			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
+			return systemTransport;
+		}
+
 		// Try Resend first
 		const resendTransport = createSystemResendTransport();
 		if (resendTransport) {
