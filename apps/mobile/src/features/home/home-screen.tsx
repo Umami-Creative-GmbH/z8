@@ -1,5 +1,5 @@
 import { Button, Column, Host, Row, Text } from "@expo/ui";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text as NativeText } from "react-native";
 
 import type { MobileHomeData, WorkLocationType } from "./use-home-query";
 import { WorkLocationPicker } from "./work-location-picker";
@@ -55,7 +55,15 @@ export function HomeScreen({
             />
           ) : null}
 
-          {errorMessage ? <Text textStyle={styles.errorMessageText}>{errorMessage}</Text> : null}
+          {errorMessage ? (
+            <NativeText
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+              style={styles.errorMessageText}
+            >
+              {errorMessage}
+            </NativeText>
+          ) : null}
 
           <Button
             label={actionLabel}

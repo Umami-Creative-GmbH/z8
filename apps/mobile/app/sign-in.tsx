@@ -3,7 +3,7 @@ import * as Linking from "expo-linking";
 import { Button, Column, Host, Text } from "@expo/ui";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text as NativeText } from "react-native";
 
 import { MobileSessionErrorState } from "@/src/features/session/mobile-session-error-state";
 import { getMobileSessionRouteState } from "@/src/features/session/mobile-session-route-state";
@@ -64,7 +64,15 @@ export default function SignInScreen() {
       <Column spacing={12} alignment="center">
         <Text textStyle={styles.titleText}>Sign In</Text>
         <Text textStyle={styles.subtitleText}>Continue in the browser to connect your Z8 account.</Text>
-        {signInError ? <Text textStyle={styles.errorText}>{signInError}</Text> : null}
+        {signInError ? (
+          <NativeText
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.errorText}
+          >
+            {signInError}
+          </NativeText>
+        ) : null}
         <Button
           label={isStartingSignIn ? "Opening Browser…" : "Continue in Browser"}
           disabled={isStartingSignIn || routeState === "loading"}

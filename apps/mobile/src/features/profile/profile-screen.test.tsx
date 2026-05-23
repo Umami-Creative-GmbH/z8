@@ -13,6 +13,12 @@ vi.mock("react-native", () => {
 
 import { ProfileScreen } from "./profile-screen";
 
+const KNOWN_MOCK_COMPONENT_NAMES = new Set(["Button", "List", "ListItem", "Primitive"]);
+
+function shouldRenderKnownMockComponent(element: React.ReactElement<any>) {
+  return typeof element.type === "function" && KNOWN_MOCK_COMPONENT_NAMES.has(element.type.name);
+}
+
 function findNode(
   node: React.ReactNode,
   predicate: (element: React.ReactElement<any>) => boolean,
@@ -23,7 +29,7 @@ function findNode(
 
   const element = node as React.ReactElement<any>;
 
-  if (typeof element.type === "function") {
+  if (shouldRenderKnownMockComponent(element)) {
     const Component = element.type as (props: any) => React.ReactNode;
 
     return findNode(Component(element.props), predicate);
@@ -56,7 +62,7 @@ function getTextContent(node: React.ReactNode): string {
 
   const element = node as React.ReactElement<any>;
 
-  if (typeof element.type === "function") {
+  if (shouldRenderKnownMockComponent(element)) {
     const Component = element.type as (props: any) => React.ReactNode;
 
     return getTextContent(Component(element.props));
@@ -159,6 +165,35 @@ describe("ProfileScreen", () => {
     unavailableOrganizationButton?.props.onPress?.();
 
     expect(onSwitchOrganization).not.toHaveBeenCalled();
+  });
+
+  it("shows switching state while organization rows are disabled", () => {
+    const tree = ProfileScreen({
+      activeOrganizationId: "org-1",
+      isSigningOut: false,
+      isSwitchingOrganization: true,
+      onSignOut: vi.fn(),
+      onSwitchOrganization: vi.fn(),
+      organizations: [
+        {
+          id: "org-2",
+          name: "Beta Org",
+          slug: "beta",
+          hasEmployeeRecord: true,
+        },
+      ],
+    });
+
+    const switchingOrganizationItem = findNode(
+      tree,
+      (node) =>
+        node.type === "ListItem" &&
+        getTextContent(node).includes("Beta Org") &&
+        getTextContent(node).includes("Switching organization…"),
+    );
+
+    expect(switchingOrganizationItem).toBeTruthy();
+    expect(switchingOrganizationItem?.props.onPress).toBeUndefined();
   });
 
   it("signs out from the Expo UI button and disables it while signing out", () => {

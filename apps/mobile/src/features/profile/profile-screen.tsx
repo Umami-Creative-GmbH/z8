@@ -39,9 +39,12 @@ export function ProfileScreen({
               const isDisabled = isActive || isUnavailable || isSwitchingOrganization;
               const supportingText = isActive
                 ? "Current organization"
-                : !isUnavailable
-                  ? "Available for mobile time tracking"
-                  : "No employee record";
+                : isUnavailable
+                  ? "No employee record"
+                  : isSwitchingOrganization
+                    ? "Switching organization…"
+                    : "Available for mobile time tracking";
+              const organizationTitle = isActive ? `${organization.name} (current)` : organization.name;
 
               return (
                 <ListItem
@@ -49,7 +52,7 @@ export function ProfileScreen({
                   onPress={isDisabled ? undefined : () => onSwitchOrganization(organization.id)}
                   supportingText={supportingText}
                 >
-                  {organization.name}
+                  {organizationTitle}
                 </ListItem>
               );
             })

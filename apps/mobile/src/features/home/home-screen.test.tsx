@@ -154,5 +154,15 @@ describe("HomeScreen", () => {
     expect(
       findNode(tree, (node) => getTextContent(node).includes("Clock action failed")),
     ).toBeTruthy();
+
+    const errorMessage = findNode(
+      tree,
+      (node) =>
+        node.type === "Text" &&
+        getTextContent(node).includes("Clock action failed"),
+    );
+
+    expect(errorMessage?.props.accessibilityLiveRegion).toBe("polite");
+    expect(errorMessage?.props.accessibilityRole).toBe("alert");
   });
 });
