@@ -89,6 +89,13 @@ async function getFirstRelevantDate(input: {
 	employeeId: string;
 	organizationId: string;
 }): Promise<string | null> {
+	const scopedEmployee = await db.query.employee.findFirst({
+		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		columns: { id: true, startDate: true },
+		with: { user: { columns: { createdAt: true } } },
+	});
+	if (!scopedEmployee) return null;
+
 	const [firstWorkPeriod] = await db
 		.select({ value: min(workPeriod.startTime) })
 		.from(workPeriod)
@@ -112,29 +119,23 @@ async function getFirstRelevantDate(input: {
 			),
 		);
 
-	const [employeeStart] = await db
-		.select({ value: min(employee.startDate) })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.id, input.employeeId),
-				eq(employee.organizationId, input.organizationId),
-				isNotNull(employee.startDate),
-			),
-		);
-
 	const workDate = firstWorkPeriod?.value
 		? DateTime.fromJSDate(firstWorkPeriod.value, { zone: "utc" }).toISODate()
 		: null;
-	const absenceDate = firstAbsence?.value ?? null;
-	const employeeStartDate = employeeStart?.value
-		? DateTime.fromJSDate(employeeStart.value, { zone: "utc" }).toISODate()
-		: null;
-	const dates = [workDate, absenceDate, employeeStartDate].filter((value): value is string =>
-		Boolean(value),
-	);
-	if (dates.length === 0) return null;
-	return dates.sort()[0]!;
+	const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
+		zone: "utc",
+	}).toISODate();
+	if (!accountCreatedDate) return null;
+
+	if (workDate && workDate < accountCreatedDate) {
+		const absenceDate = firstAbsence?.value ?? null;
+		const dates = [workDate, absenceDate, accountCreatedDate].filter(
+			(value): value is string => Boolean(value),
+		);
+		return dates.sort()[0]!;
+	}
+
+	return accountCreatedDate;
 }
 
 async function getActualMinutes(input: {

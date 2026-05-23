@@ -174,10 +174,12 @@ describe("buildDailyWorkRequirements", () => {
 });
 
 describe("getDailyWorkRequirementsForEmployee", () => {
-	it("clamps generated requirements to the employee start date", () => {
+	it("clamps generated requirements to account creation unless imported work predates it", () => {
 		expect(source).toContain("columns: { id: true, startDate: true }");
+		expect(source).toContain("user: { columns: { createdAt: true } }");
+		expect(source).toContain("getFirstCompletedWorkPeriodBeforeAccount");
+		expect(source).toContain("scopedEmployee.user.createdAt");
 		expect(source).toContain("const effectiveStartDate");
-		expect(source).toContain("scopedEmployee.startDate");
 		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
 		expect(source).toContain("startDate: effectiveStartDate");
 	});

@@ -1,7 +1,7 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lt, lte, min } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { absenceCategory, absenceEntry, employee } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee, workPeriod } from "@/db/schema";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	type EffectiveWorkPolicy,
@@ -154,6 +154,32 @@ async function getApprovedAbsenceRanges(params: {
 	);
 }
 
+async function getFirstCompletedWorkPeriodBeforeAccount(params: {
+	database: typeof DatabaseService.Service;
+	organizationId: string;
+	employeeId: string;
+	accountCreatedAt: Date;
+}): Promise<Date | null> {
+	const [row] = await Effect.runPromise(
+		params.database.query("getFirstCompletedWorkPeriodBeforeAccount", async () => {
+			return params.database.db
+				.select({ value: min(workPeriod.startTime) })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, params.employeeId),
+						eq(workPeriod.organizationId, params.organizationId),
+						isNotNull(workPeriod.endTime),
+						isNotNull(workPeriod.durationMinutes),
+						lt(workPeriod.startTime, params.accountCreatedAt),
+					),
+				);
+		}),
+	);
+
+	return row?.value ?? null;
+}
+
 export async function getDailyWorkRequirementsForEmployee(params: {
 	organizationId: string;
 	employeeId: string;
@@ -171,16 +197,35 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 							eq(employee.organizationId, params.organizationId),
 						),
 						columns: { id: true, startDate: true },
+						with: { user: { columns: { createdAt: true } } },
 					});
 				}),
 			);
 			if (!scopedEmployee) return {};
 
 			const requestedStartDate = DateTime.fromJSDate(params.startDate, { zone: "utc" });
+			const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, { zone: "utc" });
+			const firstCompletedWorkPeriodBeforeAccount = yield* _(
+				Effect.promise(() =>
+					getFirstCompletedWorkPeriodBeforeAccount({
+						database,
+						organizationId: params.organizationId,
+						employeeId: params.employeeId,
+						accountCreatedAt: scopedEmployee.user.createdAt,
+					}),
+				),
+			);
 			const employeeStartDate = scopedEmployee.startDate
 				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
-				: requestedStartDate;
-			const effectiveStartDate = DateTime.max(requestedStartDate, employeeStartDate).toJSDate();
+				: accountCreatedDate;
+			const normalStartDate = DateTime.max(accountCreatedDate, employeeStartDate);
+			const lowerBoundDate = firstCompletedWorkPeriodBeforeAccount
+				? DateTime.min(
+						DateTime.fromJSDate(firstCompletedWorkPeriodBeforeAccount, { zone: "utc" }),
+						normalStartDate,
+					)
+				: normalStartDate;
+			const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
 			if (effectiveStartDate > params.endDate) return {};
 
 			const service = yield* _(WorkPolicyService);
