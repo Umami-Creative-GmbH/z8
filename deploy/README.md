@@ -281,7 +281,10 @@ See `deploy/.env.template` for the full list. Key variables:
 | `POSTGRES_SSL_CA_CERT` | No | Inline CA certificate content when mounting a file is not practical |
 | `BETTER_AUTH_SECRET` | Yes | Session encryption key |
 | `NEXT_PUBLIC_APP_URL` | Yes | Public URL of the application |
-| `VALKEY_HOST` | No | Cache host (default: localhost) |
+| `REDIS_HOST` | No | Redis-compatible cache host (default: localhost) |
+| `REDIS_PORT` | No | Redis-compatible cache port (default: 6379) |
+| `REDIS_PASSWORD` | No | Redis-compatible cache password |
+| `REDIS_TLS` | No | Enable TLS for managed Redis providers (`true` or `false`, default: `false`) |
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
 

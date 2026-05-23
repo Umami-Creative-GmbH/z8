@@ -3,7 +3,7 @@ import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
 
 const logger = createLogger("Valkey");
-const hasValkeyConfig = Boolean(env.VALKEY_HOST || env.REDIS_HOST);
+const hasValkeyConfig = Boolean(env.REDIS_HOST);
 const shouldDisableValkeyDuringBuild =
 	(!hasValkeyConfig && env.NODE_ENV === "production") ||
 	process.env.NEXT_PHASE === "phase-production-build" ||
@@ -41,14 +41,15 @@ function isAlreadyConnectingError(error: unknown): boolean {
 }
 
 function createValkeyClient(): Redis {
-	const host = env.VALKEY_HOST || env.REDIS_HOST || "localhost";
-	const port = Number(env.VALKEY_PORT || env.REDIS_PORT || 6379);
-	const password = env.VALKEY_PASSWORD || env.REDIS_PASSWORD;
+	const host = env.REDIS_HOST || "localhost";
+	const port = Number(env.REDIS_PORT || 6379);
+	const password = env.REDIS_PASSWORD;
 
 	const client = new Redis({
 		host,
 		port,
 		password: password || undefined,
+		tls: env.REDIS_TLS === "true" ? {} : undefined,
 		maxRetriesPerRequest: 20,
 		retryStrategy(times) {
 			// Exponential backoff: 50ms, 100ms, 200ms... capped at 2s

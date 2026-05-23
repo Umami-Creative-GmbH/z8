@@ -23,10 +23,12 @@ spec:
           workingDir: /app
           command: ["tsx", "src/worker.ts"]
           env:
-            - name: VALKEY_HOST
+            - name: REDIS_HOST
               value: valkey
-            - name: VALKEY_PORT
+            - name: REDIS_PORT
               value: "6379"
+            - name: REDIS_TLS
+              value: "false"
           envFrom:
             - secretRef:
                 name: app-secrets

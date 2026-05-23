@@ -185,7 +185,7 @@ WORKDIR /app/apps/webapp
 USER app
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["tsx", "src/worker.ts"]
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "const Redis=require('ioredis');const r=new Redis({host:process.env.VALKEY_HOST||'localhost',port:process.env.VALKEY_PORT||6379,password:process.env.VALKEY_PASSWORD,lazyConnect:false});r.ping().then(()=>process.exit(0)).catch(()=>process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "const Redis=require('ioredis');const r=new Redis({host:process.env.REDIS_HOST||'localhost',port:process.env.REDIS_PORT||6379,password:process.env.REDIS_PASSWORD,lazyConnect:false});r.ping().then(()=>process.exit(0)).catch(()=>process.exit(1))"
 ```
 
 - [ ] **Step 4: Create `Dockerfile.migration` by extracting only the migration path**

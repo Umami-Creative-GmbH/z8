@@ -28,13 +28,11 @@ const parsedEnv = createEnv({
 		POSTGRES_SSL_CA_CERT: z.string().optional(),
 		POSTGRES_SSL_ROOT_CERT_PATH: z.string().optional(),
 
-		// Valkey / Redis
-		VALKEY_HOST: z.string().optional(),
-		VALKEY_PORT: z.string().optional(),
-		VALKEY_PASSWORD: z.string().optional(),
+		// Redis-compatible cache and queue backend
 		REDIS_HOST: z.string().optional(),
 		REDIS_PORT: z.string().optional(),
 		REDIS_PASSWORD: z.string().optional(),
+		REDIS_TLS: z.enum(["true", "false"]).default("false"),
 
 		// Public AWS S3 / Object Storage (REQUIRED)
 		// S3-compatible storage is required for public file uploads
@@ -155,12 +153,10 @@ const parsedEnv = createEnv({
 		BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 		BETTER_AUTH_SECRETS: process.env.BETTER_AUTH_SECRETS,
 		SECRET_STORE_PROVIDER: process.env.SECRET_STORE_PROVIDER ?? "vault",
-		VALKEY_HOST: process.env.VALKEY_HOST,
-		VALKEY_PORT: process.env.VALKEY_PORT,
-		VALKEY_PASSWORD: process.env.VALKEY_PASSWORD,
 		REDIS_HOST: process.env.REDIS_HOST,
 		REDIS_PORT: process.env.REDIS_PORT,
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+		REDIS_TLS: process.env.REDIS_TLS ?? "false",
 
 		S3_PUBLIC_BUCKET: process.env.S3_PUBLIC_BUCKET,
 		S3_PUBLIC_ACCESS_KEY_ID: process.env.S3_PUBLIC_ACCESS_KEY_ID,

@@ -97,7 +97,7 @@ services:
       --loglevel warning
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
-      ${VALKEY_PASSWORD:+--requirepass ${VALKEY_PASSWORD}}
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     volumes:
       - valkey_data:/data
     ports:
@@ -122,8 +122,8 @@ services:
     environment:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
-      REDIS_USE_TLS: "false"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_USE_TLS: ${REDIS_TLS:-false}
       BULL_PREFIX: bull
       USER_LOGIN: ${BULL_BOARD_USER:-admin}
       USER_PASSWORD: ${BULL_BOARD_PASSWORD:?BULL_BOARD_PASSWORD is required}
@@ -233,9 +233,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-z8}
       POSTGRES_USER: ${POSTGRES_USER:-z8}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      VALKEY_HOST: valkey
-      VALKEY_PORT: 6379
-      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_HOST: ${REDIS_HOST:-valkey}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_TLS: ${REDIS_TLS:-false}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL is required}
@@ -325,9 +326,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-z8}
       POSTGRES_USER: ${POSTGRES_USER:-z8}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      VALKEY_HOST: valkey
-      VALKEY_PORT: 6379
-      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_HOST: ${REDIS_HOST:-valkey}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_TLS: ${REDIS_TLS:-false}
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
       ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
       NODE_ENV: production

@@ -85,7 +85,10 @@ These keys must exist in Phase and be synced into the `app-secrets` Kubernetes S
 - `POSTGRES_SSL_MODE` — one of `disable`, `prefer`, `require`, `verify-ca`, `verify-full`
 - `POSTGRES_SSL_ROOT_CERT_PATH` — optional path to a mounted CA file for managed Postgres TLS
 - `POSTGRES_SSL_CA_CERT` — optional inline CA certificate when mounting a file is not practical
-- `VALKEY_URL` — use the in-cluster service URL: `redis://valkey.app-prod.svc.cluster.local:6379`
+- `REDIS_HOST` — Redis-compatible cache host, use `valkey` for the in-cluster service
+- `REDIS_PORT` — Redis-compatible cache port, usually `6379`
+- `REDIS_PASSWORD` — optional Redis-compatible cache password
+- `REDIS_TLS` — set to `true` for managed Redis providers that require TLS
 
 ## Postgres VM (outside the cluster)
 
