@@ -1,7 +1,7 @@
 {
   "name": "@z8-target/migration",
   "private": true,
-  "packageManager": "pnpm@11.1.3",
+  "packageManager": "pnpm@11.2.2",
   "dependencies": {
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
