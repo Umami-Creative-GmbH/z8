@@ -14,9 +14,15 @@ export const Row = createPrimitive("Row");
 export const Spacer = createPrimitive("Spacer");
 export const ScrollView = createPrimitive("ScrollView");
 export const Text = createPrimitive("Text");
-export const Picker = createPrimitive("Picker");
+export const RNHostView = createPrimitive("RNHostView");
 export const BottomSheet = createPrimitive("BottomSheet");
 export const Collapsible = createPrimitive("Collapsible");
+
+export function Picker({ children, ...props }: PrimitiveProps) {
+	return React.createElement("Picker", props, children);
+}
+
+Picker.Item = createPrimitive("PickerItem");
 
 export function Button({ label, children, onPress, disabled, ...props }: PrimitiveProps & {
 	label?: string;
