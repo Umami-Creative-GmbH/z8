@@ -13,6 +13,12 @@ vi.mock("react-native", () => {
 
 import { ProfileScreen } from "./profile-screen";
 
+const KNOWN_MOCK_COMPONENT_NAMES = new Set(["Button", "List", "ListItem", "Primitive"]);
+
+function shouldRenderKnownMockComponent(element: React.ReactElement<any>) {
+  return typeof element.type === "function" && KNOWN_MOCK_COMPONENT_NAMES.has(element.type.name);
+}
+
 function findNode(
   node: React.ReactNode,
   predicate: (element: React.ReactElement<any>) => boolean,
@@ -22,6 +28,12 @@ function findNode(
   }
 
   const element = node as React.ReactElement<any>;
+
+  if (shouldRenderKnownMockComponent(element)) {
+    const Component = element.type as (props: any) => React.ReactNode;
+
+    return findNode(Component(element.props), predicate);
+  }
 
   if (predicate(element)) {
     return element;
@@ -49,6 +61,12 @@ function getTextContent(node: React.ReactNode): string {
   }
 
   const element = node as React.ReactElement<any>;
+
+  if (shouldRenderKnownMockComponent(element)) {
+    const Component = element.type as (props: any) => React.ReactNode;
+
+    return getTextContent(Component(element.props));
+  }
 
   return React.Children.toArray(element.props.children)
     .map(getTextContent)
@@ -95,12 +113,12 @@ describe("ProfileScreen", () => {
     });
 
     expect(findNode(tree, (node) => getTextContent(node) === "Active organization")).toBeTruthy();
-    expect(findNode(tree, (node) => getTextContent(node) === "Alpha Org")).toBeTruthy();
+    expect(findNode(tree, (node) => getTextContent(node).includes("Alpha Org"))).toBeTruthy();
 
     const otherOrganizationButton = findNode(
       tree,
       (node) =>
-        node.type === "Pressable" &&
+        node.type === "ListItem" &&
         getTextContent(node).includes("Beta Org"),
     );
 
@@ -137,9 +155,9 @@ describe("ProfileScreen", () => {
     const unavailableOrganizationButton = findNode(
       tree,
       (node) =>
-        node.type === "Pressable" &&
+        node.type === "ListItem" &&
         getTextContent(node).includes("Beta Org") &&
-        node.props.disabled === true,
+        node.props.onPress === undefined,
     );
 
     expect(unavailableOrganizationButton).toBeTruthy();
@@ -147,5 +165,73 @@ describe("ProfileScreen", () => {
     unavailableOrganizationButton?.props.onPress?.();
 
     expect(onSwitchOrganization).not.toHaveBeenCalled();
+  });
+
+  it("shows switching state while organization rows are disabled", () => {
+    const tree = ProfileScreen({
+      activeOrganizationId: "org-1",
+      isSigningOut: false,
+      isSwitchingOrganization: true,
+      onSignOut: vi.fn(),
+      onSwitchOrganization: vi.fn(),
+      organizations: [
+        {
+          id: "org-2",
+          name: "Beta Org",
+          slug: "beta",
+          hasEmployeeRecord: true,
+        },
+      ],
+    });
+
+    const switchingOrganizationItem = findNode(
+      tree,
+      (node) =>
+        node.type === "ListItem" &&
+        getTextContent(node).includes("Beta Org") &&
+        getTextContent(node).includes("Switching organization…"),
+    );
+
+    expect(switchingOrganizationItem).toBeTruthy();
+    expect(switchingOrganizationItem?.props.onPress).toBeUndefined();
+  });
+
+  it("signs out from the Expo UI button and disables it while signing out", () => {
+    const onSignOut = vi.fn();
+
+    const tree = ProfileScreen({
+      activeOrganizationId: null,
+      isSigningOut: false,
+      isSwitchingOrganization: false,
+      onSignOut,
+      onSwitchOrganization: vi.fn(),
+      organizations: [],
+    });
+
+    const signOutButton = findNode(
+      tree,
+      (node) => node.type === "Button" && getTextContent(node) === "Sign out",
+    );
+
+    expect(signOutButton).toBeTruthy();
+    signOutButton?.props.onPress?.();
+
+    expect(onSignOut).toHaveBeenCalledOnce();
+
+    const disabledTree = ProfileScreen({
+      activeOrganizationId: null,
+      isSigningOut: true,
+      isSwitchingOrganization: false,
+      onSignOut,
+      onSwitchOrganization: vi.fn(),
+      organizations: [],
+    });
+    const disabledSignOutButton = findNode(
+      disabledTree,
+      (node) => node.type === "Button" && getTextContent(node) === "Sign out",
+    );
+
+    expect(disabledSignOutButton?.props.disabled).toBe(true);
+    expect(disabledSignOutButton?.props.onPress).toBeUndefined();
   });
 });

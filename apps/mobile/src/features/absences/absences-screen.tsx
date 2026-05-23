@@ -1,6 +1,7 @@
+import { Button, Column, Host, List, ListItem, Row, ScrollView, Text } from "@expo/ui";
 import { useMemo, useState } from "react";
 import { DateTime } from "luxon";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text as NativeText } from "react-native";
 
 import type { MobileAbsenceRecord } from "./use-absences-query";
 
@@ -49,95 +50,77 @@ export function AbsencesScreen({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerSurface}>
-        <Text style={styles.eyebrow}>Absences</Text>
-        <Text style={styles.title}>Track your requests and upcoming time off</Text>
-        <Text style={styles.description}>
-          Keep upcoming absences visible and cancel pending requests when plans change.
-        </Text>
+    <Host style={styles.container}>
+      <ScrollView>
+        <Column spacing={16} style={styles.content}>
+          <Column spacing={12} style={styles.headerSurface}>
+            <Text textStyle={styles.eyebrowText}>Absences</Text>
+            <Text textStyle={styles.titleText}>Track your requests and upcoming time off</Text>
+            <Text textStyle={styles.descriptionText}>
+              Keep upcoming absences visible and cancel pending requests when plans change.
+            </Text>
 
-        <Pressable
-          accessibilityLabel="Request Absence"
-          accessibilityRole="button"
-          onPress={onRequestAbsence}
-          style={styles.primaryAction}
-        >
-          <Text style={styles.primaryActionLabel}>Request Absence</Text>
-        </Pressable>
-      </View>
+            <Button label="Request Absence" onPress={onRequestAbsence} />
+          </Column>
 
-      <View style={styles.listSurface}>
-        <View style={styles.filterRow}>
-          {FILTER_OPTIONS.map((option) => {
-            const isActive = option.value === activeFilter;
+          <Column spacing={14} style={styles.listSurface}>
+            <Row spacing={8}>
+              {FILTER_OPTIONS.map((option) => {
+                const isActive = option.value === activeFilter;
 
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive }}
-                key={option.value}
-                onPress={() => setActiveFilter(option.value)}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}
-              >
-                <Text style={[styles.filterChipLabel, isActive && styles.filterChipLabelActive]}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                return (
+                  <Button
+                    key={option.value}
+                    label={isActive ? `${option.label} selected` : option.label}
+                    onPress={() => setActiveFilter(option.value)}
+                    variant={isActive ? "filled" : "outlined"}
+                  />
+                );
+              })}
+            </Row>
 
-        {errorMessage ? (
-          <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.errorMessage}>
-            {errorMessage}
-          </Text>
-        ) : null}
+            {errorMessage ? (
+              <NativeText accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.errorMessageText}>
+                {errorMessage}
+              </NativeText>
+            ) : null}
 
-        {isLoading ? (
-          <Text style={styles.emptyState}>Loading absences…</Text>
-        ) : filteredAbsences.length === 0 ? (
-          <Text style={styles.emptyState}>{getEmptyStateLabel(activeFilter)}</Text>
-        ) : (
-          <View style={styles.list}>
-            {filteredAbsences.map((absence) => {
-              const isPending = absence.status === "pending";
-              const isCancellingCurrent = cancellingAbsenceId === absence.id && isCancellingAbsence;
+            {isLoading ? (
+              <Text textStyle={styles.emptyStateText}>Loading absences…</Text>
+            ) : filteredAbsences.length === 0 ? (
+              <Text textStyle={styles.emptyStateText}>{getEmptyStateLabel(activeFilter)}</Text>
+            ) : (
+              <List>
+                {filteredAbsences.map((absence) => {
+                  const isPending = absence.status === "pending";
+                  const isCancellingCurrent = cancellingAbsenceId === absence.id && isCancellingAbsence;
 
-              return (
-                <View key={absence.id} style={styles.row}>
-                  <View style={styles.rowHeader}>
-                    <Text style={styles.rowTitle}>{absence.category.name}</Text>
-                    <View style={[styles.statusBadge, getStatusBadgeStyle(absence.status)]}>
-                      <Text style={styles.statusLabel}>{formatStatus(absence.status)}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.rowMeta}>{formatDateRange(absence)}</Text>
-                  {absence.notes ? <Text style={styles.notes}>{absence.notes}</Text> : null}
-                  {isPending ? (
-                    <Pressable
-                      accessibilityLabel={`Cancel ${absence.category.name} request`}
-                      accessibilityRole="button"
-                      disabled={isCancellingAbsence}
-                      onPress={
-                        isCancellingAbsence
-                          ? undefined
-                          : () => handleCancelAbsence(absence.id, absence.category.name)
-                      }
-                      style={[styles.secondaryAction, isCancellingAbsence && styles.actionDisabled]}
-                    >
-                      <Text style={styles.secondaryActionLabel}>
-                        {isCancellingCurrent ? "Cancelling…" : "Cancel Request"}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </View>
-    </View>
+                  return (
+                    <Column key={absence.id} spacing={6} style={styles.rowSurface}>
+                      <ListItem
+                        supportingText={formatDateRange(absence)}
+                        trailing={<Text>{formatStatus(absence.status)}</Text>}
+                      >
+                        {absence.category.name}
+                      </ListItem>
+                      {absence.notes ? <Text textStyle={styles.notesText}>{absence.notes}</Text> : null}
+                      {isPending ? (
+                        <Button
+                          disabled={isCancellingAbsence}
+                          label={isCancellingCurrent ? "Cancelling…" : "Cancel Request"}
+                          onPress={() => handleCancelAbsence(absence.id, absence.category.name)}
+                          variant="outlined"
+                        />
+                      ) : null}
+                    </Column>
+                  );
+                })}
+              </List>
+            )}
+          </Column>
+        </Column>
+      </ScrollView>
+    </Host>
   );
 }
 
@@ -214,186 +197,63 @@ function getEmptyStateLabel(filter: AbsenceFilter) {
   return "No upcoming absences";
 }
 
-function getStatusBadgeStyle(status: MobileAbsenceRecord["status"]) {
-  if (status === "approved") {
-    return styles.statusApproved;
-  }
-
-  if (status === "pending") {
-    return styles.statusPending;
-  }
-
-  if (status === "rejected") {
-    return styles.statusRejected;
-  }
-
-  return styles.statusCancelled;
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  content: {
     padding: 20,
-    gap: 16,
     backgroundColor: "#f8fafc",
   },
   headerSurface: {
     padding: 18,
-    gap: 12,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#dbe2f0",
     backgroundColor: "#ffffff",
   },
-  eyebrow: {
+  eyebrowText: {
     fontSize: 13,
     fontWeight: "600",
     letterSpacing: 0.3,
     color: "#3730a3",
     textTransform: "uppercase",
   },
-  title: {
+  titleText: {
     fontSize: 26,
     lineHeight: 31,
     fontWeight: "700",
     color: "#0f172a",
   },
-  description: {
+  descriptionText: {
     fontSize: 14,
     lineHeight: 21,
     color: "#475569",
   },
-  primaryAction: {
-    marginTop: 4,
-    alignItems: "center",
-    borderRadius: 12,
-    paddingVertical: 14,
-    backgroundColor: "#3730a3",
-  },
-  primaryActionLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
   listSurface: {
-    flex: 1,
     padding: 18,
-    gap: 14,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#dbe2f0",
     backgroundColor: "#ffffff",
   },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  filterChip: {
-    flex: 1,
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#dbe2f0",
-    paddingVertical: 10,
-    backgroundColor: "#f8fafc",
-  },
-  filterChipActive: {
-    borderColor: "#c7d2fe",
-    backgroundColor: "#eef2ff",
-  },
-  filterChipLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  filterChipLabelActive: {
-    color: "#3730a3",
-  },
-  errorMessage: {
+  errorMessageText: {
     fontSize: 13,
     lineHeight: 18,
     color: "#b91c1c",
   },
-  emptyState: {
+  emptyStateText: {
     fontSize: 14,
     lineHeight: 20,
     color: "#64748b",
   },
-  list: {
-    gap: 12,
+  rowSurface: {
+    paddingVertical: 8,
   },
-  row: {
-    gap: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 14,
-    backgroundColor: "#f8fafc",
-  },
-  rowHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  rowTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  rowMeta: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#475569",
-  },
-  notes: {
+  notesText: {
     fontSize: 13,
     lineHeight: 18,
     color: "#64748b",
-  },
-  statusBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-  },
-  statusLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  statusApproved: {
-    borderColor: "#99f6e4",
-    backgroundColor: "#f0fdfa",
-  },
-  statusPending: {
-    borderColor: "#fde68a",
-    backgroundColor: "#fffbeb",
-  },
-  statusRejected: {
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2",
-  },
-  statusCancelled: {
-    borderColor: "#cbd5e1",
-    backgroundColor: "#f8fafc",
-  },
-  secondaryAction: {
-    alignSelf: "flex-start",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#fecaca",
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: "#fff1f2",
-  },
-  secondaryActionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#be123c",
-  },
-  actionDisabled: {
-    opacity: 0.55,
   },
 });

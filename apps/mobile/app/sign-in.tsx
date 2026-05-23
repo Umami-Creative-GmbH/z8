@@ -1,8 +1,9 @@
 import { Redirect } from "expo-router";
 import * as Linking from "expo-linking";
+import { Button, Column, Host, Text } from "@expo/ui";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text as NativeText } from "react-native";
 
 import { MobileSessionErrorState } from "@/src/features/session/mobile-session-error-state";
 import { getMobileSessionRouteState } from "@/src/features/session/mobile-session-route-state";
@@ -11,6 +12,7 @@ import {
   useMobileSessionController,
 } from "@/src/features/session/use-mobile-session";
 import { buildAppLoginUrl } from "@/src/lib/auth/app-auth";
+import { createAppAuthPkcePair } from "@/src/lib/auth/pkce";
 import { getWebappUrl } from "@/src/lib/config";
 
 export default function SignInScreen() {
@@ -35,13 +37,14 @@ export default function SignInScreen() {
     setIsStartingSignIn(true);
 
     try {
+      const pkce = await createAppAuthPkcePair();
       const result = await WebBrowser.openAuthSessionAsync(
-        buildAppLoginUrl(getWebappUrl(), redirectUri),
+        buildAppLoginUrl(getWebappUrl(), redirectUri, pkce.challenge),
         redirectUri,
       );
 
       if (result.type === "success" && result.url) {
-        const callbackState = await controller.handleCallbackUrl(result.url);
+        const callbackState = await controller.handleCallbackUrl(result.url, pkce.verifier);
 
         if (callbackState.status === "error") {
           setSignInError(
@@ -57,25 +60,26 @@ export default function SignInScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign In</Text>
-      <Text style={styles.subtitle}>Continue in the browser to connect your Z8 account.</Text>
-      {signInError ? (
-        <Text accessibilityLiveRegion="polite" style={styles.errorText}>
-          {signInError}
-        </Text>
-      ) : null}
-      <Pressable
-        accessibilityRole="button"
-        disabled={isStartingSignIn || routeState === "loading"}
-        onPress={handleSignIn}
-        style={[styles.button, isStartingSignIn && styles.buttonDisabled]}
-      >
-        <Text style={styles.buttonLabel}>
-          {isStartingSignIn ? "Opening Browser…" : "Continue in Browser"}
-        </Text>
-      </Pressable>
-    </View>
+    <Host style={styles.container}>
+      <Column spacing={12} alignment="center">
+        <Text textStyle={styles.titleText}>Sign In</Text>
+        <Text textStyle={styles.subtitleText}>Continue in the browser to connect your Z8 account.</Text>
+        {signInError ? (
+          <NativeText
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.errorText}
+          >
+            {signInError}
+          </NativeText>
+        ) : null}
+        <Button
+          label={isStartingSignIn ? "Opening Browser…" : "Continue in Browser"}
+          disabled={isStartingSignIn || routeState === "loading"}
+          onPress={handleSignIn}
+        />
+      </Column>
+    </Host>
   );
 }
 
@@ -87,34 +91,17 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: "#f8fafc",
   },
-  title: {
+  titleText: {
     fontSize: 24,
     fontWeight: "600",
     color: "#0f172a",
   },
-  subtitle: {
-    marginTop: 8,
+  subtitleText: {
     color: "#475569",
     textAlign: "center",
   },
   errorText: {
-    marginTop: 12,
     color: "#b91c1c",
     textAlign: "center",
-  },
-  button: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: "#2563eb",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonLabel: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Button, Column, Row, Text } from "@expo/ui";
+import { StyleSheet } from "react-native";
 
 import type { WorkLocationType } from "./use-home-query";
 
@@ -21,67 +22,31 @@ export function WorkLocationPicker({
   onChange,
 }: WorkLocationPickerProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Work location</Text>
-      <View style={styles.options}>
+    <Column spacing={10}>
+      <Text textStyle={styles.labelText}>Work location</Text>
+      <Row spacing={8}>
         {WORK_LOCATION_OPTIONS.map((option) => {
           const isSelected = option.value === selectedValue;
 
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled, selected: isSelected }}
+            <Button
               disabled={disabled}
               key={option.value}
-              onPress={disabled ? undefined : () => onChange(option.value)}
-              style={[styles.option, isSelected && styles.optionSelected, disabled && styles.optionDisabled]}
-            >
-              <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>{option.label}</Text>
-            </Pressable>
+              label={isSelected ? `${option.label} selected` : option.label}
+              onPress={() => onChange(option.value)}
+              variant={isSelected ? "filled" : "outlined"}
+            />
           );
         })}
-      </View>
-    </View>
+      </Row>
+    </Column>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 10,
-  },
-  label: {
+  labelText: {
     fontSize: 14,
     fontWeight: "600",
     color: "#334155",
-  },
-  options: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  option: {
-    minWidth: 72,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-  },
-  optionSelected: {
-    borderColor: "#2563eb",
-    backgroundColor: "#eff6ff",
-  },
-  optionDisabled: {
-    opacity: 0.6,
-  },
-  optionLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#0f172a",
-  },
-  optionLabelSelected: {
-    color: "#1d4ed8",
   },
 });
