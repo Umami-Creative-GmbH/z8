@@ -212,8 +212,10 @@ function parseYearlyRecurrenceRule(rule: string | null): { month: number; day: n
 
 	try {
 		const parsed = JSON.parse(rule) as { month?: unknown; day?: unknown };
-		if (!Number.isInteger(parsed.month) || !Number.isInteger(parsed.day)) return null;
-		return { month: parsed.month, day: parsed.day };
+		const { month, day } = parsed;
+		if (typeof month !== "number" || typeof day !== "number") return null;
+		if (!Number.isInteger(month) || !Number.isInteger(day)) return null;
+		return { month, day };
 	} catch {
 		return null;
 	}
