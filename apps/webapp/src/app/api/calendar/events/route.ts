@@ -129,6 +129,7 @@ async function fetchMonthEvents(
 	month: number,
 	year: number,
 	employeeId: string | undefined,
+	holidayEmployeeId: string | undefined,
 	showHolidays: boolean,
 	showAbsences: boolean,
 	showTimeEntries: boolean,
@@ -137,7 +138,7 @@ async function fetchMonthEvents(
 ): Promise<{ events: CalendarEvent[]; dailyActualMinutes: DailyWorkActualMinutes }> {
 	// Fetch all event types in parallel - conditional fetches return empty arrays
 	const [holidays, absences, timeEntries, workPeriods] = await Promise.all([
-		fetchHolidayEvents({ organizationId, employeeId, month, year, showHolidays }),
+		fetchHolidayEvents({ organizationId, employeeId: holidayEmployeeId, month, year, showHolidays }),
 		showAbsences ? getAbsencesForMonth(month, year, { organizationId, employeeId }) : [],
 		showTimeEntries ? getTimeEntriesForMonth(month, year, { organizationId, employeeId }) : [],
 		showWorkPeriods || includeWorkPeriodActuals
@@ -229,9 +230,10 @@ export async function GET(request: NextRequest) {
 
 		const organizationId = orgContext.organizationId;
 		const showsEmployeeScopedEvents = showAbsences || showTimeEntries || showWorkPeriods;
+		const holidaysRequestedForEmployee = showHolidays && Boolean(employeeId || showsEmployeeScopedEvents);
 		const scopedEmployeeId = await resolveAuthorizedCalendarEmployeeId(orgContext, employeeId);
 
-		if (showsEmployeeScopedEvents && !scopedEmployeeId) {
+		if ((showsEmployeeScopedEvents || holidaysRequestedForEmployee) && !scopedEmployeeId) {
 			return NextResponse.json({ error: "Forbidden: Employee profile required" }, { status: 403 });
 		}
 
@@ -252,6 +254,7 @@ export async function GET(request: NextRequest) {
 		let events: CalendarEvent[] = [];
 		let workBalance: EmployeeWorkBalancePayload | null = null;
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
+		const holidayEmployeeId = holidaysRequestedForEmployee ? scopedEmployeeId : undefined;
 
 		if (fullYear) {
 			// Fetch all 12 months in parallel
@@ -261,6 +264,7 @@ export async function GET(request: NextRequest) {
 					monthIndex,
 					yearNum,
 					scopedEmployeeId,
+					holidayEmployeeId,
 					showHolidays,
 					showAbsences,
 					showTimeEntries,
@@ -282,6 +286,7 @@ export async function GET(request: NextRequest) {
 				monthNum!,
 				yearNum,
 				scopedEmployeeId,
+				holidayEmployeeId,
 				showHolidays,
 				showAbsences,
 				showTimeEntries,

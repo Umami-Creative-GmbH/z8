@@ -244,6 +244,33 @@ describe("GET /api/calendar/events", () => {
 		});
 	});
 
+	it("returns organization-wide holidays for a holiday-only calendar request", async () => {
+		const orgWideHolidayEvent = {
+			id: "holiday-org-1",
+			type: "holiday",
+			date: new Date("2026-05-01T00:00:00.000Z"),
+			title: "May Day",
+			color: "#f59e0b",
+			metadata: { source: "organization" },
+		};
+		mockState.getHolidaysForMonth.mockResolvedValueOnce([orgWideHolidayEvent]);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showHolidays=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getHolidaysForMonth).toHaveBeenCalledWith("org-1", 4, 2026);
+		expect(mockState.getAssignedHolidaysForEmployee).not.toHaveBeenCalled();
+		expect(body.events).toContainEqual({
+			...orgWideHolidayEvent,
+			date: "2026-05-01T00:00:00.000Z",
+		});
+	});
+
 	it("rejects employee-scoped calendar data for an unauthorized requested employee", async () => {
 		mockState.findEmployee
 			.mockResolvedValueOnce({
