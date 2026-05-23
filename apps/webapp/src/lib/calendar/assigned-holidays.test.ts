@@ -3,6 +3,8 @@ import {
 	type AssignedHolidayRange,
 	applyAssignedHolidayAdjustmentsToRequirements,
 	getAssignedHolidayDateKeys,
+	getPresetHolidayExpansionYears,
+	overlapsEffectiveWindow,
 } from "./assigned-holidays";
 
 const singleDayHoliday: AssignedHolidayRange = {
@@ -71,5 +73,48 @@ describe("assigned holiday requirement adjustments", () => {
 				},
 			]),
 		).toEqual(new Set(["2026-12-24", "2026-12-25"]));
+	});
+
+	it("includes the previous UTC year when selecting preset holiday expansion years", () => {
+		expect(
+			getPresetHolidayExpansionYears(
+				new Date("2027-01-01T00:00:00.000Z"),
+				new Date("2027-01-31T23:59:59.999Z"),
+			),
+		).toEqual([2026, 2027]);
+	});
+
+	it("keeps an occurrence that overlaps an assignment effective window", () => {
+		expect(
+			overlapsEffectiveWindow(
+				{
+					id: "holiday-4",
+					name: "New Year Shutdown",
+					startDate: new Date("2026-12-31T00:00:00.000Z"),
+					endDate: new Date("2027-01-01T23:59:59.999Z"),
+				},
+				{
+					effectiveFrom: new Date("2027-01-01T00:00:00.000Z"),
+					effectiveUntil: null,
+				},
+			),
+		).toBe(true);
+	});
+
+	it("skips an occurrence outside an assignment effective window", () => {
+		expect(
+			overlapsEffectiveWindow(
+				{
+					id: "holiday-5",
+					name: "Expired Assignment Holiday",
+					startDate: new Date("2027-01-01T00:00:00.000Z"),
+					endDate: new Date("2027-01-01T23:59:59.999Z"),
+				},
+				{
+					effectiveFrom: null,
+					effectiveUntil: new Date("2026-12-31T23:59:59.999Z"),
+				},
+			),
+		).toBe(false);
 	});
 });

@@ -37,6 +37,8 @@ type HolidayAssignmentWithHoliday = {
 };
 
 type HolidayPresetAssignmentWithPreset = {
+	effectiveFrom: Date | null;
+	effectiveUntil: Date | null;
 	preset:
 		| (Pick<
 				typeof holidayPreset.$inferSelect,
@@ -121,9 +123,21 @@ function getAssignmentScope(
 	teamId: string | null,
 ) {
 	const scope = [eq(table.assignmentType, "organization")];
-	if (teamId) scope.push(eq(table.teamId, teamId));
-	scope.push(eq(table.employeeId, employeeId));
+	if (teamId) scope.push(and(eq(table.assignmentType, "team"), eq(table.teamId, teamId))!);
+	scope.push(and(eq(table.assignmentType, "employee"), eq(table.employeeId, employeeId))!);
 	return scope;
+}
+
+export function getPresetHolidayExpansionYears(startDate: Date, endDate: Date): number[] {
+	const startYear = toUtcDay(startDate).year;
+	const endYear = toUtcDay(endDate).year;
+	if (!Number.isFinite(startYear) || !Number.isFinite(endYear) || endYear < startYear) return [];
+
+	const years: number[] = [];
+	for (let year = startYear - 1; year <= endYear; year++) {
+		years.push(year);
+	}
+	return years;
 }
 
 function expandPresetHolidayForYear(params: {
@@ -166,6 +180,16 @@ function overlapsRange(holiday: AssignedHolidayRange, startDate: Date, endDate: 
 	return holiday.startDate <= endDate && holiday.endDate >= startDate;
 }
 
+export function overlapsEffectiveWindow(
+	holiday: AssignedHolidayRange,
+	window: { effectiveFrom: Date | null; effectiveUntil: Date | null },
+): boolean {
+	return (
+		(!window.effectiveFrom || holiday.endDate >= window.effectiveFrom) &&
+		(!window.effectiveUntil || holiday.startDate <= window.effectiveUntil)
+	);
+}
+
 export async function getAssignedHolidaysForEmployee(params: {
 	organizationId: string;
 	employeeId: string;
@@ -205,6 +229,7 @@ export async function getAssignedHolidaysForEmployee(params: {
 	})) as unknown as HolidayAssignmentWithHoliday[];
 
 	const presetAssignments = (await db.query.holidayPresetAssignment.findMany({
+		columns: { effectiveFrom: true, effectiveUntil: true },
 		where: and(
 			eq(holidayPresetAssignment.organizationId, params.organizationId),
 			eq(holidayPresetAssignment.isActive, true),
@@ -262,13 +287,12 @@ export async function getAssignedHolidaysForEmployee(params: {
 		});
 	}
 
-	const startYear = toUtcDay(params.startDate).year;
-	const endYear = toUtcDay(params.endDate).year;
+	const expansionYears = getPresetHolidayExpansionYears(params.startDate, params.endDate);
 	for (const assignment of presetAssignments) {
 		const preset = assignment.preset;
 		if (!preset?.isActive || preset.organizationId !== params.organizationId) continue;
 
-		for (let year = startYear; year <= endYear; year++) {
+		for (const year of expansionYears) {
 			for (const presetHoliday of preset.holidays) {
 				if (!presetHoliday.isActive) continue;
 
@@ -279,7 +303,11 @@ export async function getAssignedHolidaysForEmployee(params: {
 					presetHoliday,
 					year,
 				});
-				if (!expandedHoliday || !overlapsRange(expandedHoliday, params.startDate, params.endDate))
+				if (
+					!expandedHoliday ||
+					!overlapsRange(expandedHoliday, params.startDate, params.endDate) ||
+					!overlapsEffectiveWindow(expandedHoliday, assignment)
+				)
 					continue;
 
 				holidaysById.set(expandedHoliday.id, expandedHoliday);
