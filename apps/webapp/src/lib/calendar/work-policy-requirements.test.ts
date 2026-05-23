@@ -7,7 +7,10 @@ import {
 	buildDailyWorkRequirements,
 } from "./work-policy-requirements";
 
-const source = readFileSync(fileURLToPath(new URL("./work-policy-requirements.ts", import.meta.url)), "utf8");
+const source = readFileSync(
+	fileURLToPath(new URL("./work-policy-requirements.ts", import.meta.url)),
+	"utf8",
+);
 
 function basePolicy(schedule: EffectiveWorkPolicy["schedule"]): EffectiveWorkPolicy {
 	return {
@@ -174,10 +177,23 @@ describe("buildDailyWorkRequirements", () => {
 });
 
 describe("getDailyWorkRequirementsForEmployee", () => {
-	it("clamps generated requirements to the employee start date", () => {
+	it("applies assigned holiday adjustments after absence adjustments", () => {
+		expect(source).toContain("getAssignedHolidaysForEmployee");
+		expect(source).toContain("applyAssignedHolidayAdjustmentsToRequirements");
+		expect(source).toContain(
+			"const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements",
+		);
+		expect(source).toContain(
+			"return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays)",
+		);
+	});
+
+	it("clamps generated requirements to account creation unless imported work predates it", () => {
 		expect(source).toContain("columns: { id: true, startDate: true }");
+		expect(source).toContain("user: { columns: { createdAt: true } }");
+		expect(source).toContain("getFirstCompletedWorkPeriodBeforeAccount");
+		expect(source).toContain("scopedEmployee.user.createdAt");
 		expect(source).toContain("const effectiveStartDate");
-		expect(source).toContain("scopedEmployee.startDate");
 		expect(source).toContain("if (effectiveStartDate > params.endDate) return {};");
 		expect(source).toContain("startDate: effectiveStartDate");
 	});
