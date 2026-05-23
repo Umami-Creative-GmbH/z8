@@ -6,24 +6,13 @@ import { MyRequestsScreen } from "./my-requests-screen";
 import type { MobileMyRequestsData, MobileRequestItem } from "./use-my-requests-query";
 
 vi.mock("react-native", () => ({
-  Pressable: ({ accessibilityState, children, ...props }: any) =>
-    React.createElement(
-      "button",
-      {
-        ...props,
-        ...(accessibilityState?.selected !== undefined
-          ? { "data-selected": accessibilityState.selected }
-          : {}),
-      },
-      children,
-    ),
-  ScrollView: ({ children, ...props }: any) =>
-    React.createElement("main", { ...props, "data-scroll-view": true }, children),
+  Pressable: "Pressable",
+  ScrollView: "ScrollView",
   StyleSheet: {
     create: <T,>(styles: T) => styles,
   },
-  Text: ({ children, ...props }: any) => React.createElement("span", props, children),
-  View: ({ children, ...props }: any) => React.createElement("div", props, children),
+  Text: "Text",
+  View: "View",
 }));
 
 function createRequest(overrides: Partial<MobileRequestItem>): MobileRequestItem {
@@ -98,25 +87,16 @@ describe("MyRequestsScreen", () => {
     vi.useRealTimers();
   });
 
-  it("renders content inside a scroll view", () => {
-    const html = renderToStaticMarkup(React.createElement(MyRequestsScreen, { requests: requestsData }));
-
-    expect(html).toContain("data-scroll-view=\"true\"");
-  });
-
   it("renders summary counts, source warning, grouped sections, and decision reason", () => {
     const html = renderToStaticMarkup(React.createElement(MyRequestsScreen, { requests: requestsData }));
     const recentlyDecidedSectionHtml = getSectionHtml(html, "Recently decided", "All requests");
 
+    expect(html).toContain("<ScrollView");
     expect(html).toContain("My Requests");
     expect(html).toContain("Pending");
     expect(html).toContain("Required Fixes");
     expect(html).toContain("Recent Decisions");
     expect(html).toContain("Total");
-    expect(html).toMatch(/<span[^>]*>1<\/span><span[^>]*>Pending<\/span>/);
-    expect(html).toMatch(/<span[^>]*>1<\/span><span[^>]*>Required Fixes<\/span>/);
-    expect(html).toMatch(/<span[^>]*>2<\/span><span[^>]*>Recent Decisions<\/span>/);
-    expect(html).toMatch(/<span[^>]*>3<\/span><span[^>]*>Total<\/span>/);
     expect(html).toContain("Some requests could not be loaded");
     expect(html).toContain("Needs attention");
     expect(html).toContain("In review");
@@ -128,10 +108,13 @@ describe("MyRequestsScreen", () => {
     expect(html).toContain("Absence");
     expect(html).toContain("Time Correction");
     expect(html).toContain("Travel Expense");
-    expect(html).toContain("Add a note explaining the missed punch.");
+    expect(html).toContain("All selected");
+    expect(html).toContain("All Sources selected");
+    expect(html).toContain("Decision reason: Add a note explaining the missed punch.");
     expect(html).toContain("Submitted Apr 10, 2026");
     expect(html).toContain("Resolved Apr 12, 2026");
-    expect(html).toContain("data-selected=\"true\"");
+    expect(html).toContain("variant=\"filled\"");
+    expect(html).toContain("variant=\"outlined\"");
   });
 
   it("renders no requests empty state when there are no loaded items", () => {

@@ -1,11 +1,13 @@
 "use client";
 
+import { IconClock } from "@tabler/icons-react";
 import type * as React from "react";
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { TimepickerUI } from "timepicker-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import { Button } from "@/components/ui/button";
 import {
-	formatTimeStringForPreference,
 	normalizeTimeFormat,
 	type TimeFormat,
 	timeFormatToPickerType,
@@ -21,6 +23,94 @@ type PickerConfirmData = {
 	minutes?: string | null;
 	type?: string | null;
 };
+
+type Period = "AM" | "PM";
+
+function createChangeEvent(value: string): React.ChangeEvent<HTMLInputElement> {
+	const changeTarget = { value } as HTMLInputElement;
+	return {
+		currentTarget: changeTarget,
+		target: changeTarget,
+		type: "change",
+	} as React.ChangeEvent<HTMLInputElement>;
+}
+
+function getPeriodFromTime(value: string | number | readonly string[] | undefined): Period {
+	if (typeof value !== "string") {
+		return "AM";
+	}
+
+	const match = /^(\d{2}):(\d{2})$/.exec(value);
+	if (!match) {
+		return "AM";
+	}
+
+	return Number(match[1]) >= 12 ? "PM" : "AM";
+}
+
+function formatTimeForMaskedInput(
+	value: string | number | readonly string[] | undefined,
+	timeFormat: TimeFormat,
+): string | number | readonly string[] | undefined {
+	if (typeof value !== "string") {
+		return value;
+	}
+
+	const match = /^(\d{2}):(\d{2})$/.exec(value);
+	if (!match) {
+		return value;
+	}
+
+	const hour = Number(match[1]);
+	const minute = Number(match[2]);
+	if (hour > 23 || minute > 59) {
+		return value;
+	}
+
+	if (timeFormat === "24h") {
+		return value;
+	}
+
+	const displayHour = hour % 12 || 12;
+	return `${displayHour.toString().padStart(2, "0")}:${match[2]}`;
+}
+
+function formatTypedTimeInput(value: string): string {
+	const digits = value.replace(/\D/g, "").slice(0, 4);
+
+	if (digits.length <= 2) {
+		return value.endsWith(":") && digits.length === 2 ? `${digits}:` : digits;
+	}
+
+	return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function parseMaskedTime(value: string, timeFormat: TimeFormat, period: Period): string | null {
+	const match = /^(\d{2}):(\d{2})$/.exec(value);
+	if (!match) {
+		return null;
+	}
+
+	const hour = Number(match[1]);
+	const minutes = Number(match[2]);
+	const validHour = timeFormat === "12h" ? hour >= 1 && hour <= 12 : hour >= 0 && hour <= 23;
+	if (!validHour || minutes < 0 || minutes > 59) {
+		return null;
+	}
+
+	const storedHour =
+		timeFormat === "12h"
+			? period === "PM"
+				? hour === 12
+					? 12
+					: hour + 12
+				: hour === 12
+					? 0
+					: hour
+			: hour;
+
+	return `${storedHour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
 
 function normalizePickerConfirmTime(
 	data: PickerConfirmData,
@@ -63,25 +153,50 @@ function TimeInput({
 	...props
 }: TimeInputProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
+	const pickerAnchorRef = useRef<HTMLInputElement>(null);
 	const onChangeRef = useRef(onChange);
+	const lastEmittedValueRef = useRef<string | null>(null);
 	const modalRootId = `time-input-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 	const contextTimeFormat = useTimeFormat();
 	const pickerFormat = normalizeTimeFormat(timeFormat ?? contextTimeFormat);
-	const displayValue =
-		typeof value === "string" ? formatTimeStringForPreference(value, pickerFormat) : value;
-	const displayDefaultValue =
-		typeof defaultValue === "string"
-			? formatTimeStringForPreference(defaultValue, pickerFormat)
-			: defaultValue;
+	const [displayValue, setDisplayValue] = useState(() =>
+		formatTimeForMaskedInput(value ?? defaultValue, pickerFormat),
+	);
+	const [period, setPeriod] = useState<Period>(() => getPeriodFromTime(value ?? defaultValue));
+	const pickerAnchorValue =
+		typeof displayValue === "string" && displayValue !== "" && pickerFormat === "12h"
+			? `${displayValue} ${period}`
+			: typeof displayValue === "string"
+				? displayValue
+				: "";
 
 	onChangeRef.current = onChange;
 
-	useEffect(() => {
-		if (!inputRef.current) {
+	const emitChange = useCallback((value: string) => {
+		if (lastEmittedValueRef.current === value) {
 			return;
 		}
 
-		const picker = new TimepickerUI(inputRef.current, {
+		lastEmittedValueRef.current = value;
+		onChangeRef.current?.(createChangeEvent(value));
+	}, []);
+
+	useEffect(() => {
+		if (value === undefined) {
+			return;
+		}
+
+		setDisplayValue(formatTimeForMaskedInput(value, pickerFormat));
+		setPeriod(getPeriodFromTime(value));
+		lastEmittedValueRef.current = null;
+	}, [pickerFormat, value]);
+
+	useEffect(() => {
+		if (!pickerAnchorRef.current) {
+			return;
+		}
+
+		const picker = new TimepickerUI(pickerAnchorRef.current, {
 			clock: {
 				type: timeFormatToPickerType(pickerFormat),
 			},
@@ -92,18 +207,15 @@ function TimeInput({
 			callbacks: {
 				onConfirm: (data) => {
 					const nextValue = normalizePickerConfirmTime(data, pickerFormat);
-					if (!inputRef.current || !nextValue) {
+					if (!nextValue) {
 						return;
 					}
 
-					const input = inputRef.current;
-					input.value = formatTimeStringForPreference(nextValue, pickerFormat);
-					const changeTarget = { value: nextValue } as HTMLInputElement;
-					onChangeRef.current?.({
-						currentTarget: changeTarget,
-						target: changeTarget,
-						type: "change",
-					} as React.ChangeEvent<HTMLInputElement>);
+					flushSync(() => {
+						setDisplayValue(formatTimeForMaskedInput(nextValue, pickerFormat));
+						setPeriod(getPeriodFromTime(nextValue));
+					});
+					emitChange(nextValue);
 				},
 			},
 		});
@@ -111,24 +223,90 @@ function TimeInput({
 		picker.create();
 
 		return () => picker.destroy({ keepInputValue: true });
-	}, [modalRootId, pickerFormat]);
+	}, [emitChange, modalRootId, pickerFormat]);
+
+	function handleMaskedValueChange(nextRawDisplayValue: string) {
+		const nextDisplayValue = formatTypedTimeInput(nextRawDisplayValue);
+		setDisplayValue(nextDisplayValue);
+		if (nextDisplayValue === "") {
+			emitChange("");
+			return;
+		}
+
+		const nextValue = parseMaskedTime(nextDisplayValue, pickerFormat, period);
+		if (nextValue) {
+			emitChange(nextValue);
+		}
+	}
+
+	function handlePeriodToggle() {
+		setPeriod((currentPeriod) => {
+			const nextPeriod = currentPeriod === "AM" ? "PM" : "AM";
+			if (typeof displayValue === "string") {
+				const nextValue = parseMaskedTime(displayValue, pickerFormat, nextPeriod);
+				if (nextValue) {
+					emitChange(nextValue);
+				}
+			}
+
+			return nextPeriod;
+		});
+	}
 
 	return (
 		<div className="contents" id={modalRootId}>
-			<input
+			<div
 				className={cn(
-					"flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
-					"focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-					"aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+					"flex h-9 w-full min-w-0 overflow-hidden rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
+					"has-[[aria-invalid=true]]:border-destructive has-[[aria-invalid=true]]:ring-destructive/20 dark:has-[[aria-invalid=true]]:ring-destructive/40",
+					props.disabled && "cursor-not-allowed opacity-50",
 					className,
 				)}
-				{...props}
 				data-slot="time-input"
-				defaultValue={displayDefaultValue}
+			>
+				<input
+					{...props}
+					aria-invalid={props["aria-invalid"]}
+					autoComplete={props.autoComplete ?? "off"}
+					className="min-w-0 flex-1 border-0 bg-transparent px-3 py-1 text-base outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed md:text-sm"
+					data-slot="time-input-field"
+					inputMode={props.inputMode ?? "numeric"}
+					onChange={(event) => handleMaskedValueChange(event.currentTarget.value)}
+					ref={inputRef}
+					type="text"
+					value={typeof displayValue === "string" ? displayValue : ""}
+				/>
+				{pickerFormat === "12h" ? (
+					<Button
+						aria-label={`Switch to ${period === "AM" ? "PM" : "AM"}`}
+						className="h-full rounded-none border-y-0 border-l border-r-0 px-2.5 shadow-none"
+						disabled={props.disabled}
+						onClick={handlePeriodToggle}
+						type="button"
+						variant="ghost"
+					>
+						{period}
+					</Button>
+				) : null}
+				<Button
+					aria-label="Open time picker"
+					className="h-full rounded-none border-y-0 border-l border-r-0 px-2.5 shadow-none"
+					disabled={props.disabled}
+					onClick={() => pickerAnchorRef.current?.click()}
+					type="button"
+					variant="ghost"
+				>
+					<IconClock aria-hidden="true" />
+				</Button>
+			</div>
+			<input
+				aria-hidden="true"
+				className="hidden"
 				readOnly
-				ref={inputRef}
+				ref={pickerAnchorRef}
+				tabIndex={-1}
 				type="text"
-				value={displayValue}
+				value={pickerAnchorValue}
 			/>
 		</div>
 	);

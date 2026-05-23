@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { DateTime } from "luxon";
 import { api, NetworkError, AuthError } from "@/lib/api";
-import { storage, type LastAction } from "@/lib/storage";
+import { storage, type LastAction, type QueuedAction } from "@/lib/storage";
 import type { ClockStatus } from "@/types";
 
 type OptimisticState = { isClockedIn: boolean; startTime: string | null };
@@ -65,19 +66,35 @@ export function useClock() {
     };
   }, []);
 
-  // Check queue length periodically - only update if changed
+  // Track queue length from Chrome storage changes instead of polling.
   useEffect(() => {
-    let currentLength = 0;
-    const checkQueue = async () => {
+    let isMounted = true;
+
+    const updateQueueLength = async () => {
       const queue = await storage.getQueuedActions();
-      if (queue.length !== currentLength) {
-        currentLength = queue.length;
+      if (isMounted) {
         setQueueLength(queue.length);
       }
     };
-    checkQueue();
-    const interval = setInterval(checkQueue, 5000);
-    return () => clearInterval(interval);
+
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== "local" || !("actionQueue" in changes)) {
+        return;
+      }
+
+      setQueueLength(((changes.actionQueue.newValue as QueuedAction[] | undefined) ?? []).length);
+    };
+
+    updateQueueLength();
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      isMounted = false;
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   const notifyBackgroundScript = (type: string = "CLOCK_STATUS_CHANGED") => {
@@ -153,7 +170,7 @@ export function useClock() {
 
   const clockInMutation = useMutation({
     mutationFn: async () => {
-      const timestamp = new Date().toISOString();
+      const timestamp = DateTime.utc().toISO();
 
       if (!navigator.onLine) {
         return queueClockIn(timestamp);
@@ -180,7 +197,7 @@ export function useClock() {
 
   const clockOutMutation = useMutation({
     mutationFn: async (projectId?: string) => {
-      const timestamp = new Date().toISOString();
+      const timestamp = DateTime.utc().toISO();
 
       if (!navigator.onLine) {
         return queueClockOut(projectId, timestamp);

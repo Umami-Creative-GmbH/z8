@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { storage } from "./storage";
 
 export async function showNotification(
@@ -36,7 +37,7 @@ export async function showNotification(
   }
 
   try {
-    await chrome.notifications.create(`z8-${type}-${Date.now()}`, {
+    await chrome.notifications.create(`z8-${type}-${DateTime.utc().toMillis()}`, {
       type: "basic",
       iconUrl: chrome.runtime.getURL("icons/icon128.svg"),
       title: "Z8 Time Tracker",

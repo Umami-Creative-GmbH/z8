@@ -2,18 +2,6 @@ import type { Locale } from "./locales";
 
 type StableId = string;
 
-type NumericPrice = {
-	priceKind: "numeric";
-	price: string;
-};
-
-type CustomPrice = {
-	priceKind: "custom";
-	price: string;
-};
-
-type PricingPlanPrice = NumericPrice | CustomPrice;
-
 const detailedFeatureImages = {
 	"time-clock":
 		"https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80&auto=format&fit=crop",
@@ -38,12 +26,6 @@ const navConfig = {
 	pricing: { id: "pricing", href: "#pricing" },
 	integrations: { id: "integrations", href: "#integrations" },
 	faq: { id: "faq", href: "#faq" },
-} as const;
-
-const pricingPlanConfig = {
-	starter: { id: "starter", highlighted: false },
-	business: { id: "business", highlighted: true },
-	enterprise: { id: "enterprise", highlighted: false },
 } as const;
 
 const comparisonAvailability = {
@@ -123,19 +105,13 @@ export type LandingCopy = {
 		eyebrow: string;
 		title: string;
 		description: string;
-		highlightBadge: string;
-		currencyPrefix: string;
-		plans: Array<
-			PricingPlanPrice & {
-				id: StableId;
-				name: string;
-				period: string;
-				desc: string;
-				features: string[];
-				cta: string;
-				highlighted: boolean;
-			}
-		>;
+		offer: {
+			trial: string;
+			monthly: string;
+			yearly: string;
+			taxNote: string;
+			cta: string;
+		};
 	};
 	comparisons: {
 		eyebrow: string;
@@ -363,60 +339,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			title: "Einfach. Transparent. Fair.",
 			description:
 				"Keine versteckten Kosten. Keine langen Verträge. Starten Sie kostenlos und wachsen Sie mit Z8.",
-			highlightBadge: "Beliebteste Wahl",
-			currencyPrefix: "€",
-			plans: [
-				{
-					...pricingPlanConfig.starter,
-					name: "Starter",
-					priceKind: "numeric",
-					price: "0",
-					period: "für immer",
-					desc: "Für kleine Teams, die einfach starten wollen.",
-					features: [
-						"Bis 10 Mitarbeiter",
-						"Stempeluhr & Dashboard",
-						"Basis-Berichte",
-						"E-Mail-Support",
-						"1 Standort",
-					],
-					cta: "Kostenlos starten",
-				},
-				{
-					...pricingPlanConfig.business,
-					name: "Business",
-					priceKind: "numeric",
-					price: "4,90",
-					period: "pro Mitarbeiter / Monat",
-					desc: "Für wachsende Unternehmen mit Struktur.",
-					features: [
-						"Unbegrenzte Mitarbeiter",
-						"DATEV & Lexware Export",
-						"GoBD-konform",
-						"Multi-Standort",
-						"Schichtplanung",
-						"Priorisierter Support",
-					],
-					cta: "14 Tage testen",
-				},
-				{
-					...pricingPlanConfig.enterprise,
-					name: "Enterprise",
-					priceKind: "custom",
-					price: "Individuell",
-					period: "ab 200 Mitarbeiter",
-					desc: "Für Konzerne mit höchsten Anforderungen.",
-					features: [
-						"Alles aus Business",
-						"Enterprise-SSO (SAML)",
-						"SCIM-Provisioning",
-						"Eigener Account Manager",
-						"SLA 99,99%",
-						"On-Premise möglich",
-					],
-					cta: "Kontakt aufnehmen",
-				},
-			],
+			offer: {
+				trial: "14 Tage kostenlos - keine Kreditkarte erforderlich",
+				monthly: "4 € pro Nutzer / Monat",
+				yearly: "36 € pro Nutzer / Jahr",
+				taxNote: "Preise zzgl. MwSt.",
+				cta: "14 Tage testen",
+			},
 		},
 		comparisons: {
 			eyebrow: "Vergleich",
@@ -756,60 +685,13 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			eyebrow: "Pricing",
 			title: "Simple. Transparent. Fair.",
 			description: "No hidden costs. No long contracts. Start for free and grow with Z8.",
-			highlightBadge: "Most popular",
-			currencyPrefix: "€",
-			plans: [
-				{
-					...pricingPlanConfig.starter,
-					name: "Starter",
-					priceKind: "numeric",
-					price: "0",
-					period: "forever",
-					desc: "For small teams that want to get started simply.",
-					features: [
-						"Up to 10 employees",
-						"Time clock & dashboard",
-						"Basic reports",
-						"Email support",
-						"1 location",
-					],
-					cta: "Start for free",
-				},
-				{
-					...pricingPlanConfig.business,
-					name: "Business",
-					priceKind: "numeric",
-					price: "4.90",
-					period: "per employee / month",
-					desc: "For growing companies with structure.",
-					features: [
-						"Unlimited employees",
-						"DATEV & Lexware export",
-						"GoBD-compliant",
-						"Multiple locations",
-						"Shift planning",
-						"Priority support",
-					],
-					cta: "Try 14 days",
-				},
-				{
-					...pricingPlanConfig.enterprise,
-					name: "Enterprise",
-					priceKind: "custom",
-					price: "Custom",
-					period: "from 200 employees",
-					desc: "For enterprises with the highest requirements.",
-					features: [
-						"Everything in Business",
-						"Enterprise SSO (SAML)",
-						"SCIM provisioning",
-						"Dedicated account manager",
-						"99.99% SLA",
-						"On-premise available",
-					],
-					cta: "Contact us",
-				},
-			],
+			offer: {
+				trial: "14 days free - no credit card required",
+				monthly: "4€ per user per month",
+				yearly: "36€ per user per year",
+				taxNote: "Prices excluding tax",
+				cta: "Try 14 days",
+			},
 		},
 		comparisons: {
 			eyebrow: "Comparison",

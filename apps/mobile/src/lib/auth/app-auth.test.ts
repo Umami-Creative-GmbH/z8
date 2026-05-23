@@ -13,6 +13,7 @@ import {
   extractSessionTokenFromCallback,
   MOBILE_APP_TYPE_HEADER,
 } from "./app-auth";
+import { createAppAuthPkcePair } from "./pkce";
 
 describe("app auth utilities", () => {
   beforeEach(() => {
@@ -21,10 +22,21 @@ describe("app auth utilities", () => {
 
   it("builds the mobile app login URL", () => {
     expect(
-      buildAppLoginUrl("https://ui.z8-time.app", "z8mobile://auth/callback"),
+      buildAppLoginUrl(
+        "https://ui.z8-time.app",
+        "z8mobile://auth/callback",
+        "pkce-challenge",
+      ),
     ).toBe(
-      "https://ui.z8-time.app/api/auth/app-login?app=mobile&redirect=z8mobile%3A%2F%2Fauth%2Fcallback",
+      "https://ui.z8-time.app/api/auth/app-login?app=mobile&redirect=z8mobile%3A%2F%2Fauth%2Fcallback&challenge=pkce-challenge",
     );
+  });
+
+  it("creates a PKCE verifier and challenge for app auth", async () => {
+    await expect(createAppAuthPkcePair()).resolves.toEqual({
+      verifier: "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA",
+      challenge: "digest:AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA",
+    });
   });
 
   it("extracts the session token from a callback URL", () => {
@@ -41,7 +53,7 @@ describe("app auth utilities", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      exchangeAppCallbackCode("one-time-code", "mobile"),
+      exchangeAppCallbackCode("one-time-code", "mobile", "pkce-verifier"),
     ).resolves.toBe("session-token");
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -52,7 +64,7 @@ describe("app auth utilities", () => {
           "Content-Type": "application/json",
           "X-Z8-App-Type": "mobile",
         },
-        body: JSON.stringify({ code: "one-time-code" }),
+        body: JSON.stringify({ code: "one-time-code", verifier: "pkce-verifier" }),
       }),
     );
   });

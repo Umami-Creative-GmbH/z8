@@ -1,4 +1,5 @@
-import { IconLogin2, IconExternalLink } from "@tabler/icons-react";
+import IconExternalLink from "@tabler/icons-react/dist/esm/icons/IconExternalLink.mjs";
+import IconLogin2 from "@tabler/icons-react/dist/esm/icons/IconLogin2.mjs";
 import { useSettings } from "../hooks/useSettings";
 
 export function LoginRequired() {

@@ -131,6 +131,7 @@ export function Settings({
           {/* Webapp URL */}
           <div>
             <label
+              htmlFor="webapp-url"
               style={{
                 display: "block",
                 fontSize: "14px",
@@ -142,10 +143,13 @@ export function Settings({
               Webapp URL
             </label>
             <input
+              id="webapp-url"
+              name="webappUrl"
               type="url"
+              autoComplete="off"
               value={webappUrl}
               onChange={(e) => setWebappUrl(e.target.value)}
-              placeholder="https://your-z8-instance.com"
+              placeholder="Example: https://ui.z8-time.app…"
               style={{
                 width: "100%",
                 padding: "12px 14px",

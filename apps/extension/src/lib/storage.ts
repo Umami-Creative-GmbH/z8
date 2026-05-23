@@ -1,3 +1,6 @@
+import { DateTime } from "luxon";
+import { normalizeWebappUrl } from "./settings";
+
 const DEFAULT_WEBAPP_URL = "http://localhost:3000";
 
 export interface QueuedAction {
@@ -52,7 +55,7 @@ export const storage = {
   async saveSettings(settings: Partial<ExtensionSettings>): Promise<void> {
     const toSave: Record<string, unknown> = {};
     if (settings.webappUrl !== undefined) {
-      toSave.webappUrl = settings.webappUrl.replace(/\/$/, "");
+      toSave.webappUrl = normalizeWebappUrl(settings.webappUrl);
     }
     if (settings.notificationsEnabled !== undefined) {
       toSave.notificationsEnabled = settings.notificationsEnabled;
@@ -92,7 +95,7 @@ export const storage = {
     const newAction: QueuedAction = {
       ...action,
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
+      createdAt: DateTime.utc().toISO(),
     };
     queue.push(newAction);
     await chrome.storage.local.set({ actionQueue: queue });

@@ -1,6 +1,7 @@
 allowBuilds:
   "@parcel/watcher": true
   "@swc/core": true
+  "core-js-pure": false
   "esbuild": true
   "msgpackr-extract": true
   "msw": true

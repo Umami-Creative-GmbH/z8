@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DateTime } from "luxon";
 import { formatElapsedTime } from "@/lib/time";
 
 export function useTimer(startTime: string | null) {
@@ -10,11 +11,14 @@ export function useTimer(startTime: string | null) {
       return;
     }
 
-    const startDate = new Date(startTime).getTime();
+    const startDate = DateTime.fromISO(startTime);
+    if (!startDate.isValid) {
+      setElapsedSeconds(0);
+      return;
+    }
 
     const updateElapsed = () => {
-      const now = Date.now();
-      setElapsedSeconds(Math.floor((now - startDate) / 1000));
+      setElapsedSeconds(Math.floor(DateTime.now().diff(startDate, "seconds").seconds));
     };
 
     updateElapsed();

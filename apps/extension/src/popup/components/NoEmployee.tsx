@@ -1,4 +1,5 @@
-import { IconUserX, IconExternalLink } from "@tabler/icons-react";
+import IconExternalLink from "@tabler/icons-react/dist/esm/icons/IconExternalLink.mjs";
+import IconUserX from "@tabler/icons-react/dist/esm/icons/IconUserX.mjs";
 import { useSettings } from "../hooks/useSettings";
 
 export function NoEmployee() {

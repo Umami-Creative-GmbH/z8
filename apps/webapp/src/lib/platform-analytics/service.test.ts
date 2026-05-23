@@ -57,6 +57,7 @@ describe("getPlatformAnalyticsData", () => {
 		queueSelectResult([{ bucket: "2026-05-10T00:00:00.000Z", value: 5 }]);
 		queueSelectResult([{ bucket: "2026-05-10T00:00:00.000Z", value: 6 }]);
 		queueCurrentTotal([{ value: 7 }]);
+		queueCurrentTotal([{ value: 4 }]);
 
 		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, false);
 
@@ -93,6 +94,7 @@ describe("getPlatformAnalyticsData", () => {
 		queueSelectResult([]);
 		queueSelectResult([]);
 		queueCurrentTotal([{ value: 2 }]);
+		queueCurrentTotal([{ value: 0 }]);
 		queueCurrentTotal([{ seats: 9, mrr: 32 }]);
 		executeMock.mockResolvedValueOnce([
 			{ bucket: "2026-05-10T00:00:00.000Z", seats: 8, mrr: 28 },
@@ -112,6 +114,7 @@ describe("getPlatformAnalyticsData", () => {
 		queueSelectResult([{ bucket: "2026-05-10T00:00:00.000Z", value: 4 }]);
 		queueSelectResult([{ bucket: "2026-05-10T00:00:00.000Z", value: 5 }]);
 		queueCurrentTotal([{ value: 7 }]);
+		queueCurrentTotal([{ value: 4 }]);
 
 		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, true, {
 			includeBilling: false,
@@ -136,8 +139,23 @@ describe("getPlatformAnalyticsData", () => {
 			mrr: null,
 			estimatedBilling: false,
 		});
-		expect(selectMock).toHaveBeenCalledTimes(5);
+		expect(selectMock).toHaveBeenCalledTimes(6);
 		expect(executeMock).not.toHaveBeenCalled();
+	});
+
+	it("uses current non-banned users for the active users KPI", async () => {
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueCurrentTotal([{ value: 7 }]);
+		queueCurrentTotal([{ value: 3 }]);
+
+		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, false);
+
+		expect(data.series.at(-1)).toMatchObject({ activeUsers: 0 });
+		expect(data.kpis.activeUsers).toBe(3);
 	});
 
 	it("generates billing estimates through the final partial bucket in UTC", async () => {
@@ -147,6 +165,7 @@ describe("getPlatformAnalyticsData", () => {
 		queueSelectResult([]);
 		queueSelectResult([]);
 		queueCurrentTotal([{ value: 2 }]);
+		queueCurrentTotal([{ value: 0 }]);
 		queueCurrentTotal([{ seats: 9, mrr: 32 }]);
 		executeMock.mockResolvedValueOnce([]);
 
@@ -163,6 +182,7 @@ describe("getPlatformAnalyticsData", () => {
 		queueSelectResult([]);
 		queueSelectResult([]);
 		queueSelectResult([]);
+		queueCurrentTotal([{ value: 0 }]);
 		queueCurrentTotal([{ value: 0 }]);
 
 		await getPlatformAnalyticsData({ range: "30d", bucket: "week" }, false, {

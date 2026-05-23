@@ -1,4 +1,5 @@
-import { IconWifiOff, IconCloudOff } from "@tabler/icons-react";
+import IconCloudOff from "@tabler/icons-react/dist/esm/icons/IconCloudOff.mjs";
+import IconWifiOff from "@tabler/icons-react/dist/esm/icons/IconWifiOff.mjs";
 
 interface OfflineBannerProps {
   queueLength: number;

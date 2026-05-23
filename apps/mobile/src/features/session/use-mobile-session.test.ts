@@ -29,7 +29,7 @@ describe("useMobileSessionController", () => {
     vi.clearAllMocks();
   });
 
-	it("stores the callback token and invalidates the mobile session query", async () => {
+	it("ignores direct callback tokens instead of signing in", async () => {
 		extractAppCallbackResult.mockReturnValue({
 			code: null,
 			error: null,
@@ -47,18 +47,15 @@ describe("useMobileSessionController", () => {
       ),
     ).resolves.toEqual({
       error: null,
-      status: "signed-in",
+      status: "ignored",
     });
 
 		expect(extractAppCallbackResult).toHaveBeenCalledWith(
 			"z8mobile://auth/callback?token=token-from-callback",
 		);
 		expect(exchangeAppCallbackCode).not.toHaveBeenCalled();
-		expect(setStoredSessionToken).toHaveBeenCalledWith("token-from-callback");
-
-    expect(invalidateQueries).toHaveBeenCalledWith({
-      queryKey: MOBILE_SESSION_QUERY_KEY,
-    });
+		expect(setStoredSessionToken).not.toHaveBeenCalled();
+		expect(invalidateQueries).not.toHaveBeenCalled();
   });
 
 	it("exchanges the callback code before storing the session token", async () => {
@@ -74,17 +71,47 @@ describe("useMobileSessionController", () => {
 		const controller = createMobileSessionController(queryClient);
 
 		await expect(
-			controller.handleCallbackUrl("z8mobile://auth/callback?code=ONE-TIME-CODE"),
+			controller.handleCallbackUrl(
+				"z8mobile://auth/callback?code=ONE-TIME-CODE",
+				"pkce-verifier",
+			),
 		).resolves.toEqual({
 			error: null,
 			status: "signed-in",
 		});
 
-		expect(exchangeAppCallbackCode).toHaveBeenCalledWith("ONE-TIME-CODE", "mobile");
+		expect(exchangeAppCallbackCode).toHaveBeenCalledWith(
+			"ONE-TIME-CODE",
+			"mobile",
+			"pkce-verifier",
+		);
 		expect(setStoredSessionToken).toHaveBeenCalledWith("session-token");
 		expect(invalidateQueries).toHaveBeenCalledWith({
 			queryKey: MOBILE_SESSION_QUERY_KEY,
 		});
+	});
+
+	it("returns a recoverable auth error when a callback code has no verifier", async () => {
+		extractAppCallbackResult.mockReturnValue({
+			code: "ONE-TIME-CODE",
+			error: null,
+			token: null,
+		});
+
+		const queryClient = new QueryClient();
+		const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+		const controller = createMobileSessionController(queryClient);
+
+		await expect(
+			controller.handleCallbackUrl("z8mobile://auth/callback?code=ONE-TIME-CODE"),
+		).resolves.toEqual({
+			error: "code_exchange_failed",
+			status: "error",
+		});
+
+		expect(exchangeAppCallbackCode).not.toHaveBeenCalled();
+		expect(setStoredSessionToken).not.toHaveBeenCalled();
+		expect(invalidateQueries).not.toHaveBeenCalled();
 	});
 
 	it("returns a recoverable auth error when code exchange fails", async () => {
@@ -100,13 +127,20 @@ describe("useMobileSessionController", () => {
 		const controller = createMobileSessionController(queryClient);
 
 		await expect(
-			controller.handleCallbackUrl("z8mobile://auth/callback?code=ONE-TIME-CODE"),
+			controller.handleCallbackUrl(
+				"z8mobile://auth/callback?code=ONE-TIME-CODE",
+				"pkce-verifier",
+			),
 		).resolves.toEqual({
 			error: "code_exchange_failed",
 			status: "error",
 		});
 
-		expect(exchangeAppCallbackCode).toHaveBeenCalledWith("ONE-TIME-CODE", "mobile");
+		expect(exchangeAppCallbackCode).toHaveBeenCalledWith(
+			"ONE-TIME-CODE",
+			"mobile",
+			"pkce-verifier",
+		);
 		expect(setStoredSessionToken).not.toHaveBeenCalled();
 		expect(invalidateQueries).not.toHaveBeenCalled();
 	});
