@@ -1,6 +1,7 @@
+import { Button, Column, Host, List, ListItem, Row, Text } from "@expo/ui";
 import { useState } from "react";
 import { DateTime } from "luxon";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text as NativeText } from "react-native";
 
 import type { MobileMyRequestsData, MobileRequestItem, MobileRequestSourceType, MobileRequestStatus } from "./use-my-requests-query";
 
@@ -58,133 +59,130 @@ export function MyRequestsScreen({ requests }: MyRequestsScreenProps) {
   const recentlyDecidedRequests = filteredRequests.filter(isRecentlyDecided);
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <View style={styles.headerSurface}>
-        <Text style={styles.eyebrow}>Requests</Text>
-        <Text style={styles.title}>My Requests</Text>
-        <Text style={styles.description}>
-          Track absences, time corrections, and travel expenses from one mobile view.
-        </Text>
-      </View>
+    <Host style={styles.container}>
+      <Column spacing={16}>
+        <Column spacing={12} style={styles.headerSurface}>
+          <Text textStyle={styles.eyebrowText}>Requests</Text>
+          <Text textStyle={styles.titleText}>My Requests</Text>
+          <Text textStyle={styles.descriptionText}>
+            Track absences, time corrections, and travel expenses from one mobile view.
+          </Text>
+        </Column>
 
-      <View style={styles.summaryGrid}>
-        <SummaryTile label="Pending" value={requests.counts.pending} />
-        <SummaryTile label="Required Fixes" value={requests.counts.requiredFixes} />
-        <SummaryTile label="Recent Decisions" value={requests.counts.recentDecisions} />
-        <SummaryTile label="Total" value={requests.counts.total} />
-      </View>
+        <Row spacing={10}>
+          <SummaryTile label="Pending" value={requests.counts.pending} />
+          <SummaryTile label="Required Fixes" value={requests.counts.requiredFixes} />
+          <SummaryTile label="Recent Decisions" value={requests.counts.recentDecisions} />
+          <SummaryTile label="Total" value={requests.counts.total} />
+        </Row>
 
-      {requests.sourceErrors.length > 0 ? (
-        <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.warningMessage}>
-          Some requests could not be loaded
-        </Text>
-      ) : null}
+        {requests.sourceErrors.length > 0 ? (
+          <NativeText accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.warningMessageText}>
+            Some requests could not be loaded
+          </NativeText>
+        ) : null}
 
-      <View style={styles.filterSurface}>
-        <Text style={styles.filterLabel}>Status</Text>
-        <View style={styles.filterRow}>
-          {STATUS_FILTER_OPTIONS.map((option) => (
-            <FilterChip
-              isActive={option.value === statusFilter}
-              key={option.value}
-              onSelect={setStatusFilter}
-              option={option}
+        <Column spacing={10} style={styles.filterSurface}>
+          <Text textStyle={styles.filterLabelText}>Status</Text>
+          <Row spacing={8}>
+            {STATUS_FILTER_OPTIONS.map((option) => (
+              <FilterChip
+                isActive={option.value === statusFilter}
+                key={option.value}
+                onSelect={setStatusFilter}
+                option={option}
+              />
+            ))}
+          </Row>
+          <Text textStyle={styles.filterLabelText}>Source</Text>
+          <Row spacing={8}>
+            {SOURCE_FILTER_OPTIONS.map((option) => (
+              <FilterChip
+                isActive={option.value === sourceFilter}
+                key={option.value}
+                onSelect={setSourceFilter}
+                option={option}
+              />
+            ))}
+          </Row>
+        </Column>
+
+        {!hasLoadedItems ? (
+          <Text textStyle={styles.emptyStateText}>No requests yet</Text>
+        ) : filteredRequests.length === 0 ? (
+          <Text textStyle={styles.emptyStateText}>No requests match these filters</Text>
+        ) : (
+          <Column spacing={14}>
+            <RequestSection
+              emptyLabel="No rejected requests need attention"
+              requests={needsAttentionRequests}
+              title="Needs attention"
             />
-          ))}
-        </View>
-        <Text style={styles.filterLabel}>Source</Text>
-        <View style={styles.filterRow}>
-          {SOURCE_FILTER_OPTIONS.map((option) => (
-            <FilterChip
-              isActive={option.value === sourceFilter}
-              key={option.value}
-              onSelect={setSourceFilter}
-              option={option}
+            <RequestSection emptyLabel="No pending requests" requests={inReviewRequests} title="In review" />
+            <RequestSection
+              emptyLabel="No recent decisions"
+              requests={recentlyDecidedRequests}
+              title="Recently decided"
             />
-          ))}
-        </View>
-      </View>
-
-      {!hasLoadedItems ? (
-        <Text style={styles.emptyState}>No requests yet</Text>
-      ) : filteredRequests.length === 0 ? (
-        <Text style={styles.emptyState}>No requests match these filters</Text>
-      ) : (
-        <View style={styles.list}>
-          <RequestSection
-            emptyLabel="No rejected requests need attention"
-            requests={needsAttentionRequests}
-            title="Needs attention"
-          />
-          <RequestSection emptyLabel="No pending requests" requests={inReviewRequests} title="In review" />
-          <RequestSection
-            emptyLabel="No recent decisions"
-            requests={recentlyDecidedRequests}
-            title="Recently decided"
-          />
-          <RequestSection emptyLabel="No requests match these filters" requests={filteredRequests} title="All requests" />
-        </View>
-      )}
-    </ScrollView>
+            <RequestSection emptyLabel="No requests match these filters" requests={filteredRequests} title="All requests" />
+          </Column>
+        )}
+      </Column>
+    </Host>
   );
 }
 
 function SummaryTile({ label, value }: SummaryTileProps) {
   return (
-    <View style={styles.summaryTile}>
-      <Text style={styles.summaryValue}>{value}</Text>
-      <Text style={styles.summaryLabel}>{label}</Text>
-    </View>
+    <Column spacing={2} style={styles.summaryTile}>
+      <Text textStyle={styles.summaryValueText}>{String(value)}</Text>
+      <Text textStyle={styles.summaryLabelText}>{label}</Text>
+    </Column>
   );
 }
 
 function FilterChip<TValue extends string>({ option, isActive, onSelect }: FilterChipProps<TValue>) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: isActive }}
+    <Button
+      label={option.label}
       onPress={() => onSelect(option.value)}
-      style={[styles.filterChip, isActive && styles.filterChipActive]}
-    >
-      <Text style={[styles.filterChipLabel, isActive && styles.filterChipLabelActive]}>{option.label}</Text>
-    </Pressable>
+      variant={isActive ? "filled" : "outlined"}
+    />
   );
 }
 
 function RequestSection({ title, requests, emptyLabel }: RequestSectionProps) {
   return (
-    <View style={styles.sectionSurface}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <Column spacing={12} style={styles.sectionSurface}>
+      <Text textStyle={styles.sectionTitleText}>{title}</Text>
       {requests.length === 0 ? (
-        <Text style={styles.sectionEmptyState}>{emptyLabel}</Text>
+        <Text textStyle={styles.sectionEmptyStateText}>{emptyLabel}</Text>
       ) : (
-        <View style={styles.sectionList}>
+        <List>
           {requests.map((request) => (
             <RequestCard key={request.id} request={request} />
           ))}
-        </View>
+        </List>
       )}
-    </View>
+    </Column>
   );
 }
 
 function RequestCard({ request }: { request: MobileRequestItem }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.sourceLabel}>{formatSourceType(request.sourceType)}</Text>
-        <View style={[styles.statusBadge, getStatusBadgeStyle(request.status)]}>
-          <Text style={styles.statusLabel}>{formatStatus(request.status)}</Text>
-        </View>
-      </View>
-      <Text style={styles.cardTitle}>{request.title}</Text>
-      {request.subtitle ? <Text style={styles.cardMeta}>{request.subtitle}</Text> : null}
-      <Text style={styles.cardMeta}>Submitted {formatDate(request.submittedAt)}</Text>
-      {request.resolvedAt ? <Text style={styles.cardMeta}>Resolved {formatDate(request.resolvedAt)}</Text> : null}
+    <Column spacing={6} style={styles.cardSurface}>
+      <ListItem
+        supportingText={`${formatSourceType(request.sourceType)} · Submitted ${formatDate(request.submittedAt)}`}
+        trailing={<Text>{formatStatus(request.status)}</Text>}
+      >
+        {request.title}
+      </ListItem>
+      {request.subtitle ? <Text textStyle={styles.cardMetaText}>{request.subtitle}</Text> : null}
+      {request.resolvedAt ? <Text textStyle={styles.cardMetaText}>{`Resolved ${formatDate(request.resolvedAt)}`}</Text> : null}
       {request.decisionReason ? (
-        <Text style={styles.decisionReason}>Decision reason: {request.decisionReason}</Text>
+        <Text textStyle={styles.decisionReasonText}>{`Decision reason: ${request.decisionReason}`}</Text>
       ) : null}
-    </View>
+    </Column>
   );
 }
 
@@ -244,61 +242,36 @@ function formatSourceType(sourceType: MobileRequestSourceType) {
   return "Travel Expense";
 }
 
-function getStatusBadgeStyle(status: MobileRequestStatus) {
-  if (status === "approved") {
-    return styles.statusApproved;
-  }
-
-  if (status === "pending") {
-    return styles.statusPending;
-  }
-
-  if (status === "rejected") {
-    return styles.statusRejected;
-  }
-
-  return styles.statusCancelled;
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
-  },
-  content: {
     padding: 20,
-    gap: 16,
+    backgroundColor: "#f8fafc",
   },
   headerSurface: {
     padding: 18,
-    gap: 12,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#dbeafe",
     backgroundColor: "#ffffff",
   },
-  eyebrow: {
+  eyebrowText: {
     fontSize: 13,
     fontWeight: "600",
     letterSpacing: 0.3,
     color: "#2563eb",
     textTransform: "uppercase",
   },
-  title: {
+  titleText: {
     fontSize: 28,
     lineHeight: 32,
     fontWeight: "700",
     color: "#0f172a",
   },
-  description: {
+  descriptionText: {
     fontSize: 14,
     lineHeight: 21,
     color: "#475569",
-  },
-  summaryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
   },
   summaryTile: {
     minWidth: 132,
@@ -309,19 +282,18 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: "#ffffff",
   },
-  summaryValue: {
+  summaryValueText: {
     fontSize: 22,
     lineHeight: 27,
     fontWeight: "700",
     color: "#0f172a",
   },
-  summaryLabel: {
-    marginTop: 2,
+  summaryLabelText: {
     fontSize: 13,
     lineHeight: 18,
     color: "#475569",
   },
-  warningMessage: {
+  warningMessageText: {
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#fed7aa",
@@ -332,137 +304,43 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff7ed",
   },
   filterSurface: {
-    gap: 10,
+    padding: 14,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#dbeafe",
-    padding: 14,
     backgroundColor: "#ffffff",
   },
-  filterLabel: {
+  filterLabelText: {
     fontSize: 13,
     fontWeight: "700",
     color: "#0f172a",
-  },
-  filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  filterChip: {
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#dbe2f0",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#f8fafc",
-  },
-  filterChipActive: {
-    borderColor: "#bfdbfe",
-    backgroundColor: "#eff6ff",
-  },
-  filterChipLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  filterChipLabelActive: {
-    color: "#1d4ed8",
-  },
-  emptyState: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 18,
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#64748b",
-    backgroundColor: "#ffffff",
-  },
-  list: {
-    gap: 14,
   },
   sectionSurface: {
-    gap: 12,
+    padding: 18,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    padding: 18,
     backgroundColor: "#ffffff",
   },
-  sectionTitle: {
+  sectionTitleText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#0f172a",
   },
-  sectionEmptyState: {
+  sectionEmptyStateText: {
     fontSize: 14,
     lineHeight: 20,
     color: "#64748b",
   },
-  sectionList: {
-    gap: 12,
+  cardSurface: {
+    paddingVertical: 8,
   },
-  card: {
-    gap: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 14,
-    backgroundColor: "#f8fafc",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  sourceLabel: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2563eb",
-  },
-  statusBadge: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  statusLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  statusApproved: {
-    borderColor: "#99f6e4",
-    backgroundColor: "#f0fdfa",
-  },
-  statusPending: {
-    borderColor: "#fde68a",
-    backgroundColor: "#fffbeb",
-  },
-  statusRejected: {
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2",
-  },
-  statusCancelled: {
-    borderColor: "#cbd5e1",
-    backgroundColor: "#f8fafc",
-  },
-  cardTitle: {
-    fontSize: 16,
-    lineHeight: 21,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  cardMeta: {
+  cardMetaText: {
     fontSize: 14,
     lineHeight: 20,
     color: "#475569",
   },
-  decisionReason: {
+  decisionReasonText: {
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#fecaca",
@@ -471,5 +349,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: "#991b1b",
     backgroundColor: "#fef2f2",
+  },
+  emptyStateText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#64748b",
   },
 });
