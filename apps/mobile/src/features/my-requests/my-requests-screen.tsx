@@ -1,4 +1,4 @@
-import { Button, Column, Host, List, ListItem, Row, Text } from "@expo/ui";
+import { Button, Column, Host, List, ListItem, Row, ScrollView, Text } from "@expo/ui";
 import { useState } from "react";
 import { DateTime } from "luxon";
 import { StyleSheet, Text as NativeText } from "react-native";
@@ -60,74 +60,100 @@ export function MyRequestsScreen({ requests }: MyRequestsScreenProps) {
 
   return (
     <Host style={styles.container}>
-      <Column spacing={16}>
-        <Column spacing={12} style={styles.headerSurface}>
-          <Text textStyle={styles.eyebrowText}>Requests</Text>
-          <Text textStyle={styles.titleText}>My Requests</Text>
-          <Text textStyle={styles.descriptionText}>
-            Track absences, time corrections, and travel expenses from one mobile view.
-          </Text>
-        </Column>
-
-        <Row spacing={10}>
-          <SummaryTile label="Pending" value={requests.counts.pending} />
-          <SummaryTile label="Required Fixes" value={requests.counts.requiredFixes} />
-          <SummaryTile label="Recent Decisions" value={requests.counts.recentDecisions} />
-          <SummaryTile label="Total" value={requests.counts.total} />
-        </Row>
-
-        {requests.sourceErrors.length > 0 ? (
-          <NativeText accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.warningMessageText}>
-            Some requests could not be loaded
-          </NativeText>
-        ) : null}
-
-        <Column spacing={10} style={styles.filterSurface}>
-          <Text textStyle={styles.filterLabelText}>Status</Text>
-          <Row spacing={8}>
-            {STATUS_FILTER_OPTIONS.map((option) => (
-              <FilterChip
-                isActive={option.value === statusFilter}
-                key={option.value}
-                onSelect={setStatusFilter}
-                option={option}
-              />
-            ))}
-          </Row>
-          <Text textStyle={styles.filterLabelText}>Source</Text>
-          <Row spacing={8}>
-            {SOURCE_FILTER_OPTIONS.map((option) => (
-              <FilterChip
-                isActive={option.value === sourceFilter}
-                key={option.value}
-                onSelect={setSourceFilter}
-                option={option}
-              />
-            ))}
-          </Row>
-        </Column>
-
-        {!hasLoadedItems ? (
-          <Text textStyle={styles.emptyStateText}>No requests yet</Text>
-        ) : filteredRequests.length === 0 ? (
-          <Text textStyle={styles.emptyStateText}>No requests match these filters</Text>
-        ) : (
-          <Column spacing={14}>
-            <RequestSection
-              emptyLabel="No rejected requests need attention"
-              requests={needsAttentionRequests}
-              title="Needs attention"
-            />
-            <RequestSection emptyLabel="No pending requests" requests={inReviewRequests} title="In review" />
-            <RequestSection
-              emptyLabel="No recent decisions"
-              requests={recentlyDecidedRequests}
-              title="Recently decided"
-            />
-            <RequestSection emptyLabel="No requests match these filters" requests={filteredRequests} title="All requests" />
+      <ScrollView>
+        <Column spacing={16} style={styles.content}>
+          <Column spacing={12} style={styles.headerSurface}>
+            <Text textStyle={styles.eyebrowText}>Requests</Text>
+            <Text textStyle={styles.titleText}>My Requests</Text>
+            <Text textStyle={styles.descriptionText}>
+              Track absences, time corrections, and travel expenses from one mobile view.
+            </Text>
           </Column>
-        )}
-      </Column>
+
+          <Column spacing={10}>
+            <Row spacing={10}>
+              <SummaryTile label="Pending" value={requests.counts.pending} />
+              <SummaryTile label="Required Fixes" value={requests.counts.requiredFixes} />
+            </Row>
+            <Row spacing={10}>
+              <SummaryTile label="Recent Decisions" value={requests.counts.recentDecisions} />
+              <SummaryTile label="Total" value={requests.counts.total} />
+            </Row>
+          </Column>
+
+          {requests.sourceErrors.length > 0 ? (
+            <NativeText accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.warningMessageText}>
+              Some requests could not be loaded
+            </NativeText>
+          ) : null}
+
+          <Column spacing={10} style={styles.filterSurface}>
+            <Text textStyle={styles.filterLabelText}>Status</Text>
+            <Row spacing={8}>
+              {STATUS_FILTER_OPTIONS.slice(0, 3).map((option) => (
+                <FilterChip
+                  isActive={option.value === statusFilter}
+                  key={option.value}
+                  onSelect={setStatusFilter}
+                  option={option}
+                />
+              ))}
+            </Row>
+            <Row spacing={8}>
+              {STATUS_FILTER_OPTIONS.slice(3).map((option) => (
+                <FilterChip
+                  isActive={option.value === statusFilter}
+                  key={option.value}
+                  onSelect={setStatusFilter}
+                  option={option}
+                />
+              ))}
+            </Row>
+            <Text textStyle={styles.filterLabelText}>Source</Text>
+            <Row spacing={8}>
+              {SOURCE_FILTER_OPTIONS.slice(0, 2).map((option) => (
+                <FilterChip
+                  isActive={option.value === sourceFilter}
+                  key={option.value}
+                  onSelect={setSourceFilter}
+                  option={option}
+                />
+              ))}
+            </Row>
+            <Row spacing={8}>
+              {SOURCE_FILTER_OPTIONS.slice(2).map((option) => (
+                <FilterChip
+                  isActive={option.value === sourceFilter}
+                  key={option.value}
+                  onSelect={setSourceFilter}
+                  option={option}
+                />
+              ))}
+            </Row>
+          </Column>
+
+          {!hasLoadedItems ? (
+            <Text textStyle={styles.emptyStateText}>No requests yet</Text>
+          ) : filteredRequests.length === 0 ? (
+            <Text textStyle={styles.emptyStateText}>No requests match these filters</Text>
+          ) : (
+            <Column spacing={14}>
+              <RequestSection
+                emptyLabel="No rejected requests need attention"
+                requests={needsAttentionRequests}
+                title="Needs attention"
+              />
+              <RequestSection emptyLabel="No pending requests" requests={inReviewRequests} title="In review" />
+              <RequestSection
+                emptyLabel="No recent decisions"
+                requests={recentlyDecidedRequests}
+                title="Recently decided"
+              />
+              <RequestSection emptyLabel="No requests match these filters" requests={filteredRequests} title="All requests" />
+            </Column>
+          )}
+        </Column>
+      </ScrollView>
     </Host>
   );
 }
@@ -144,7 +170,7 @@ function SummaryTile({ label, value }: SummaryTileProps) {
 function FilterChip<TValue extends string>({ option, isActive, onSelect }: FilterChipProps<TValue>) {
   return (
     <Button
-      label={option.label}
+      label={isActive ? `${option.label} selected` : option.label}
       onPress={() => onSelect(option.value)}
       variant={isActive ? "filled" : "outlined"}
     />
@@ -245,6 +271,9 @@ function formatSourceType(sourceType: MobileRequestSourceType) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  content: {
     padding: 20,
     backgroundColor: "#f8fafc",
   },

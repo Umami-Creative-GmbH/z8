@@ -91,7 +91,7 @@ describe("MyRequestsScreen", () => {
     const html = renderToStaticMarkup(React.createElement(MyRequestsScreen, { requests: requestsData }));
     const recentlyDecidedSectionHtml = getSectionHtml(html, "Recently decided", "All requests");
 
-    expect(html).toContain("<Host");
+    expect(html).toContain("<ScrollView");
     expect(html).toContain("My Requests");
     expect(html).toContain("Pending");
     expect(html).toContain("Required Fixes");
@@ -108,6 +108,8 @@ describe("MyRequestsScreen", () => {
     expect(html).toContain("Absence");
     expect(html).toContain("Time Correction");
     expect(html).toContain("Travel Expense");
+    expect(html).toContain("All selected");
+    expect(html).toContain("All Sources selected");
     expect(html).toContain("Decision reason: Add a note explaining the missed punch.");
     expect(html).toContain("Submitted Apr 10, 2026");
     expect(html).toContain("Resolved Apr 12, 2026");

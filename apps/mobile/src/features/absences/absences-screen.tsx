@@ -1,4 +1,4 @@
-import { Button, Column, Host, List, ListItem, Row, Text } from "@expo/ui";
+import { Button, Column, Host, List, ListItem, Row, ScrollView, Text } from "@expo/ui";
 import { useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { Alert, StyleSheet, Text as NativeText } from "react-native";
@@ -51,73 +51,75 @@ export function AbsencesScreen({
 
   return (
     <Host style={styles.container}>
-      <Column spacing={16}>
-        <Column spacing={12} style={styles.headerSurface}>
-          <Text textStyle={styles.eyebrowText}>Absences</Text>
-          <Text textStyle={styles.titleText}>Track your requests and upcoming time off</Text>
-          <Text textStyle={styles.descriptionText}>
-            Keep upcoming absences visible and cancel pending requests when plans change.
-          </Text>
+      <ScrollView>
+        <Column spacing={16} style={styles.content}>
+          <Column spacing={12} style={styles.headerSurface}>
+            <Text textStyle={styles.eyebrowText}>Absences</Text>
+            <Text textStyle={styles.titleText}>Track your requests and upcoming time off</Text>
+            <Text textStyle={styles.descriptionText}>
+              Keep upcoming absences visible and cancel pending requests when plans change.
+            </Text>
 
-          <Button label="Request Absence" onPress={onRequestAbsence} />
-        </Column>
+            <Button label="Request Absence" onPress={onRequestAbsence} />
+          </Column>
 
-        <Column spacing={14} style={styles.listSurface}>
-          <Row spacing={8}>
-            {FILTER_OPTIONS.map((option) => {
-              const isActive = option.value === activeFilter;
-
-              return (
-                <Button
-                  key={option.value}
-                  label={option.label}
-                  onPress={() => setActiveFilter(option.value)}
-                  variant={isActive ? "filled" : "outlined"}
-                />
-              );
-            })}
-          </Row>
-
-          {errorMessage ? (
-            <NativeText accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.errorMessageText}>
-              {errorMessage}
-            </NativeText>
-          ) : null}
-
-          {isLoading ? (
-            <Text textStyle={styles.emptyStateText}>Loading absences…</Text>
-          ) : filteredAbsences.length === 0 ? (
-            <Text textStyle={styles.emptyStateText}>{getEmptyStateLabel(activeFilter)}</Text>
-          ) : (
-            <List>
-              {filteredAbsences.map((absence) => {
-                const isPending = absence.status === "pending";
-                const isCancellingCurrent = cancellingAbsenceId === absence.id && isCancellingAbsence;
+          <Column spacing={14} style={styles.listSurface}>
+            <Row spacing={8}>
+              {FILTER_OPTIONS.map((option) => {
+                const isActive = option.value === activeFilter;
 
                 return (
-                  <Column key={absence.id} spacing={6} style={styles.rowSurface}>
-                    <ListItem
-                      supportingText={formatDateRange(absence)}
-                      trailing={<Text>{formatStatus(absence.status)}</Text>}
-                    >
-                      {absence.category.name}
-                    </ListItem>
-                    {absence.notes ? <Text textStyle={styles.notesText}>{absence.notes}</Text> : null}
-                    {isPending ? (
-                      <Button
-                        disabled={isCancellingAbsence}
-                        label={isCancellingCurrent ? "Cancelling…" : "Cancel Request"}
-                        onPress={() => handleCancelAbsence(absence.id, absence.category.name)}
-                        variant="outlined"
-                      />
-                    ) : null}
-                  </Column>
+                  <Button
+                    key={option.value}
+                    label={isActive ? `${option.label} selected` : option.label}
+                    onPress={() => setActiveFilter(option.value)}
+                    variant={isActive ? "filled" : "outlined"}
+                  />
                 );
               })}
-            </List>
-          )}
+            </Row>
+
+            {errorMessage ? (
+              <NativeText accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.errorMessageText}>
+                {errorMessage}
+              </NativeText>
+            ) : null}
+
+            {isLoading ? (
+              <Text textStyle={styles.emptyStateText}>Loading absences…</Text>
+            ) : filteredAbsences.length === 0 ? (
+              <Text textStyle={styles.emptyStateText}>{getEmptyStateLabel(activeFilter)}</Text>
+            ) : (
+              <List>
+                {filteredAbsences.map((absence) => {
+                  const isPending = absence.status === "pending";
+                  const isCancellingCurrent = cancellingAbsenceId === absence.id && isCancellingAbsence;
+
+                  return (
+                    <Column key={absence.id} spacing={6} style={styles.rowSurface}>
+                      <ListItem
+                        supportingText={formatDateRange(absence)}
+                        trailing={<Text>{formatStatus(absence.status)}</Text>}
+                      >
+                        {absence.category.name}
+                      </ListItem>
+                      {absence.notes ? <Text textStyle={styles.notesText}>{absence.notes}</Text> : null}
+                      {isPending ? (
+                        <Button
+                          disabled={isCancellingAbsence}
+                          label={isCancellingCurrent ? "Cancelling…" : "Cancel Request"}
+                          onPress={() => handleCancelAbsence(absence.id, absence.category.name)}
+                          variant="outlined"
+                        />
+                      ) : null}
+                    </Column>
+                  );
+                })}
+              </List>
+            )}
+          </Column>
         </Column>
-      </Column>
+      </ScrollView>
     </Host>
   );
 }
@@ -198,6 +200,9 @@ function getEmptyStateLabel(filter: AbsenceFilter) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  content: {
     padding: 20,
     backgroundColor: "#f8fafc",
   },

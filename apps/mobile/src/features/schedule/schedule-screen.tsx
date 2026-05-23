@@ -1,4 +1,4 @@
-import { Button, Column, Host, List, ListItem, Row, Text } from "@expo/ui";
+import { Button, Column, Host, List, ListItem, Row, ScrollView, Text } from "@expo/ui";
 import { DateTime } from "luxon";
 import { StyleSheet } from "react-native";
 
@@ -15,57 +15,59 @@ export function ScheduleScreen({ schedule, onRequestAbsence, onViewRequests }: S
 
   return (
     <Host style={styles.container}>
-      <Column spacing={16}>
-        <Column spacing={12} style={styles.headerSurface}>
-          <Text textStyle={styles.eyebrowText}>Schedule</Text>
-          <Text textStyle={styles.titleText}>
-            {nextShift ? `Next shift: ${formatShiftRange(nextShift)}` : "No upcoming shifts"}
-          </Text>
-          <Text textStyle={styles.descriptionText}>
-            Review your published shifts and usual working pattern before requesting time off.
-          </Text>
-          <Row spacing={8}>
-            <Button label="Request Absence" onPress={onRequestAbsence} />
-            <Button label="View Requests" onPress={onViewRequests} variant="outlined" />
-          </Row>
-        </Column>
+      <ScrollView>
+        <Column spacing={16} style={styles.content}>
+          <Column spacing={12} style={styles.headerSurface}>
+            <Text textStyle={styles.eyebrowText}>Schedule</Text>
+            <Text textStyle={styles.titleText}>
+              {nextShift ? `Next shift: ${formatShiftRange(nextShift)}` : "No upcoming shifts"}
+            </Text>
+            <Text textStyle={styles.descriptionText}>
+              Review your published shifts and usual working pattern before requesting time off.
+            </Text>
+            <Row spacing={8}>
+              <Button label="Request Absence" onPress={onRequestAbsence} />
+              <Button label="View Requests" onPress={onViewRequests} variant="outlined" />
+            </Row>
+          </Column>
 
-        <Column spacing={12} style={styles.sectionSurface}>
-          <Text textStyle={styles.sectionTitleText}>Upcoming shifts</Text>
-          {schedule.shifts.length === 0 ? (
-            <Text textStyle={styles.emptyStateText}>No upcoming shifts</Text>
-          ) : (
-            <List>
-              {schedule.shifts.map((shift) => (
-                <ShiftRow key={shift.id} shift={shift} />
-              ))}
-            </List>
-          )}
-        </Column>
+          <Column spacing={12} style={styles.sectionSurface}>
+            <Text textStyle={styles.sectionTitleText}>Upcoming shifts</Text>
+            {schedule.shifts.length === 0 ? (
+              <Text textStyle={styles.emptyStateText}>No upcoming shifts</Text>
+            ) : (
+              <List>
+                {schedule.shifts.map((shift) => (
+                  <ShiftRow key={shift.id} shift={shift} />
+                ))}
+              </List>
+            )}
+          </Column>
 
-        <Column spacing={12} style={styles.sectionSurface}>
-          <Text textStyle={styles.sectionTitleText}>Usual schedule</Text>
-          {schedule.effectiveSchedule ? (
-            <List>
-              <Column spacing={4} style={styles.policySummary}>
-                <Text textStyle={styles.rowTitleText}>{schedule.effectiveSchedule.policyName}</Text>
-                <Text textStyle={styles.rowMetaText}>{`Assigned via ${schedule.effectiveSchedule.assignedVia}`}</Text>
-                {schedule.effectiveSchedule.hoursPerCycle ? (
-                  <Text textStyle={styles.rowMetaText}>{`${schedule.effectiveSchedule.hoursPerCycle} hours per cycle`}</Text>
-                ) : null}
-                <Text textStyle={styles.rowMetaText}>
-                  {formatHomeOfficeDays(schedule.effectiveSchedule.homeOfficeDaysPerCycle)}
-                </Text>
-              </Column>
-              {schedule.effectiveSchedule.days.map((day) => (
-                <ScheduleDayRow day={day} key={`${day.cycleWeek ?? "week"}-${day.dayOfWeek}`} />
-              ))}
-            </List>
-          ) : (
-            <Text textStyle={styles.emptyStateText}>No usual schedule configured</Text>
-          )}
+          <Column spacing={12} style={styles.sectionSurface}>
+            <Text textStyle={styles.sectionTitleText}>Usual schedule</Text>
+            {schedule.effectiveSchedule ? (
+              <List>
+                <Column spacing={4} style={styles.policySummary}>
+                  <Text textStyle={styles.rowTitleText}>{schedule.effectiveSchedule.policyName}</Text>
+                  <Text textStyle={styles.rowMetaText}>{`Assigned via ${schedule.effectiveSchedule.assignedVia}`}</Text>
+                  {schedule.effectiveSchedule.hoursPerCycle ? (
+                    <Text textStyle={styles.rowMetaText}>{`${schedule.effectiveSchedule.hoursPerCycle} hours per cycle`}</Text>
+                  ) : null}
+                  <Text textStyle={styles.rowMetaText}>
+                    {formatHomeOfficeDays(schedule.effectiveSchedule.homeOfficeDaysPerCycle)}
+                  </Text>
+                </Column>
+                {schedule.effectiveSchedule.days.map((day) => (
+                  <ScheduleDayRow day={day} key={`${day.cycleWeek ?? "week"}-${day.dayOfWeek}`} />
+                ))}
+              </List>
+            ) : (
+              <Text textStyle={styles.emptyStateText}>No usual schedule configured</Text>
+            )}
+          </Column>
         </Column>
-      </Column>
+      </ScrollView>
     </Host>
   );
 }
@@ -127,6 +129,9 @@ function formatHomeOfficeDays(days: number | null) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  content: {
     padding: 20,
     backgroundColor: "#f8fafc",
   },

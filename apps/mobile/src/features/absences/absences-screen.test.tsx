@@ -85,7 +85,7 @@ describe("AbsencesScreen", () => {
       }),
     );
 
-    expect(html).toContain("<Host");
+    expect(html).toContain("<ScrollView");
     expect(html).toContain("Could not load absences");
     expect(html).toContain("Loading absences…");
     expect(html).toContain("Request Absence");
@@ -104,6 +104,7 @@ describe("AbsencesScreen", () => {
     );
 
     expect(html).toContain("Upcoming");
+    expect(html).toContain("Upcoming selected");
     expect(html).toContain("Pending");
     expect(html).toContain("Past");
     expect(html).toContain("Vacation");

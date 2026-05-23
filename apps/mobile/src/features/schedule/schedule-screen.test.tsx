@@ -120,7 +120,7 @@ describe("ScheduleScreen", () => {
       }),
     );
 
-    expect(html).toContain("<Host");
+    expect(html).toContain("<ScrollView");
     expect(html).toContain("Schedule");
     expect(html).toContain("Next shift: Apr 12, 2026, 9:00 AM to 5:00 PM");
     expect(html).toContain("Front desk");
