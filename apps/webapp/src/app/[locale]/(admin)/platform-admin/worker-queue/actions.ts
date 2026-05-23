@@ -1,12 +1,23 @@
 "use server";
 
 import { Effect } from "effect";
-import { getAllJobMetrics, getExecutionsSince, getRecentExecutions } from "@/lib/cron/tracking";
-import { DatabaseError } from "@/lib/effect/errors";
+import {
+	getAllJobMetrics,
+	getExecutionsSince,
+	getJobExecutionHistory,
+	getRecentExecutions,
+} from "@/lib/cron/tracking";
+import { DatabaseError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
+import {
+	buildAvailableJobNames,
+	isVisibleCronJobName,
+	mapCronExecution,
+	RECENT_EXECUTION_LIMIT,
+} from "./actions-helpers";
 import { buildReliabilityData, type WorkerReliabilityData } from "./reliability";
 
 export interface QueueCounts {
@@ -47,6 +58,7 @@ export interface WorkerQueueStats {
 	isConnected: boolean;
 	counts: QueueCounts;
 	repeatableJobs: RepeatableJob[];
+	availableJobNames: string[];
 	recentExecutions: RecentExecution[];
 	jobMetrics: JobMetric[];
 	reliability: WorkerReliabilityData;
@@ -54,10 +66,6 @@ export interface WorkerQueueStats {
 }
 
 const RELIABILITY_WINDOW_DAYS = 30;
-
-function isHiddenWorkerName(name: string) {
-	return name === "cron:telemetry";
-}
 
 export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQueueStats>> {
 	const effect = Effect.gen(function* () {
@@ -105,7 +113,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			);
 
 			repeatableJobs = repeatables
-				.filter((job) => !isHiddenWorkerName(job.name))
+				.filter((job) => isVisibleCronJobName(job.name))
 				.map((job) => ({
 					name: job.name,
 					pattern: job.pattern || "",
@@ -114,7 +122,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		}
 
 		const executions = yield* Effect.tryPromise({
-			try: () => getRecentExecutions(50),
+			try: () => getRecentExecutions(RECENT_EXECUTION_LIMIT),
 			catch: () =>
 				new DatabaseError({
 					message: "Failed to fetch recent executions",
@@ -124,16 +132,8 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		});
 
 		const recentExecutions: RecentExecution[] = executions
-			.filter((exec) => !isHiddenWorkerName(exec.jobName))
-			.map((exec) => ({
-				id: exec.id,
-				jobName: exec.jobName,
-				status: exec.status,
-				startedAt: exec.startedAt.toISOString(),
-				completedAt: exec.completedAt?.toISOString() ?? null,
-				durationMs: exec.durationMs,
-				error: exec.error,
-			}));
+			.filter((exec) => isVisibleCronJobName(exec.jobName))
+			.map(mapCronExecution);
 
 		const metrics = yield* Effect.tryPromise({
 			try: () => getAllJobMetrics(30),
@@ -146,7 +146,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 		});
 
 		const jobMetrics: JobMetric[] = metrics
-			.filter((m) => !isHiddenWorkerName(m.jobName))
+			.filter((m) => isVisibleCronJobName(m.jobName))
 			.map((m) => ({
 				jobName: m.jobName,
 				totalRuns: m.totalRuns,
@@ -173,7 +173,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			now: new Date(),
 			windowDays: RELIABILITY_WINDOW_DAYS,
 			executions: reliabilityExecutions
-				.filter((exec) => !isHiddenWorkerName(exec.jobName))
+				.filter((exec) => isVisibleCronJobName(exec.jobName))
 				.map((exec) => ({
 					id: exec.id,
 					jobName: exec.jobName,
@@ -185,15 +185,56 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			repeatableJobs,
 		});
 
+		const availableJobNames = buildAvailableJobNames({
+			repeatableJobs,
+			recentExecutions,
+			jobMetrics,
+			reliabilityJobs: reliability.jobs,
+		});
+
 		return {
 			isConnected,
 			counts,
 			repeatableJobs,
+			availableJobNames,
 			recentExecutions,
 			jobMetrics,
 			reliability,
 			fetchedAt: new Date().toISOString(),
 		};
+	});
+
+	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
+}
+
+export async function getWorkerQueueJobExecutions(
+	jobName: string,
+): Promise<ServerActionResult<RecentExecution[]>> {
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
+		yield* adminService.requirePlatformAdmin();
+
+		if (!isVisibleCronJobName(jobName)) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Invalid cron job name",
+					field: "jobName",
+					value: jobName,
+				}),
+			);
+		}
+
+		const executions = yield* Effect.tryPromise({
+			try: () => getJobExecutionHistory(jobName, RECENT_EXECUTION_LIMIT),
+			catch: () =>
+				new DatabaseError({
+					message: "Failed to fetch job execution history",
+					operation: "query",
+					table: "cron_job_execution",
+				}),
+		});
+
+		return executions.map(mapCronExecution);
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
