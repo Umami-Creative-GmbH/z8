@@ -4,7 +4,6 @@ import { IconClock } from "@tabler/icons-react";
 import type * as React from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { IMask, IMaskInput } from "react-imask";
 import { TimepickerUI } from "timepicker-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -74,6 +73,16 @@ function formatTimeForMaskedInput(
 
 	const displayHour = hour % 12 || 12;
 	return `${displayHour.toString().padStart(2, "0")}:${match[2]}`;
+}
+
+function formatTypedTimeInput(value: string): string {
+	const digits = value.replace(/\D/g, "").slice(0, 4);
+
+	if (digits.length <= 2) {
+		return value.endsWith(":") && digits.length === 2 ? `${digits}:` : digits;
+	}
+
+	return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
 function parseMaskedTime(value: string, timeFormat: TimeFormat, period: Period): string | null {
@@ -160,20 +169,6 @@ function TimeInput({
 			: typeof displayValue === "string"
 				? displayValue
 				: "";
-	const maskBlocks = {
-		HH: {
-			mask: IMask.MaskedRange,
-			from: pickerFormat === "12h" ? 1 : 0,
-			to: pickerFormat === "12h" ? 12 : 23,
-			maxLength: 2,
-		},
-		mm: {
-			mask: IMask.MaskedRange,
-			from: 0,
-			to: 59,
-			maxLength: 2,
-		},
-	};
 
 	onChangeRef.current = onChange;
 
@@ -230,7 +225,8 @@ function TimeInput({
 		return () => picker.destroy({ keepInputValue: true });
 	}, [emitChange, modalRootId, pickerFormat]);
 
-	function handleMaskedValueChange(nextDisplayValue: string) {
+	function handleMaskedValueChange(nextRawDisplayValue: string) {
+		const nextDisplayValue = formatTypedTimeInput(nextRawDisplayValue);
 		setDisplayValue(nextDisplayValue);
 		if (nextDisplayValue === "") {
 			emitChange("");
@@ -268,23 +264,15 @@ function TimeInput({
 				)}
 				data-slot="time-input"
 			>
-				<IMaskInput
+				<input
 					{...props}
 					aria-invalid={props["aria-invalid"]}
 					autoComplete={props.autoComplete ?? "off"}
-					blocks={maskBlocks}
 					className="min-w-0 flex-1 border-0 bg-transparent px-3 py-1 text-base outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed md:text-sm"
 					data-slot="time-input-field"
 					inputMode={props.inputMode ?? "numeric"}
-					inputRef={inputRef}
-					mask="HH:mm"
-					onAccept={(nextValue, _mask, event) => {
-						if (event) {
-							handleMaskedValueChange(String(nextValue));
-						}
-					}}
 					onChange={(event) => handleMaskedValueChange(event.currentTarget.value)}
-					overwrite
+					ref={inputRef}
 					type="text"
 					value={typeof displayValue === "string" ? displayValue : ""}
 				/>

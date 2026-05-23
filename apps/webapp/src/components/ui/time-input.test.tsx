@@ -217,6 +217,30 @@ describe("TimeInput", () => {
 		expect(handleChange.mock.calls[0]?.[0].currentTarget.value).toBe("14:30");
 	});
 
+	it("formats typed digits into an HH:mm display value", () => {
+		const handleChange = vi.fn();
+		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
+
+		const input = screen.getByLabelText<HTMLInputElement>("Start time");
+		fireEvent.change(input, { target: { value: "1430" } });
+
+		expect(input.value).toBe("14:30");
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:30");
+	});
+
+	it("ignores non-digits and limits typed time input to four digits", () => {
+		const handleChange = vi.fn();
+		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
+
+		const input = screen.getByLabelText<HTMLInputElement>("Start time");
+		fireEvent.change(input, { target: { value: "ab12345cd" } });
+
+		expect(input.value).toBe("12:34");
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("12:34");
+	});
+
 	it("does not emit changes for incomplete typed values", () => {
 		const handleChange = vi.fn();
 		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
