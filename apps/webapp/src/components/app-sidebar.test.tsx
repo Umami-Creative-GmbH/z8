@@ -62,8 +62,14 @@ vi.mock("@/components/nav-main", () => ({
 }));
 
 vi.mock("@/components/app-search", () => ({
-	AppSearch: ({ staticResults }: { staticResults: Array<{ href: string; title: string }> }) => {
-		appSearchSpy(staticResults);
+	AppSearch: ({
+		staticCommands,
+		staticResults,
+	}: {
+		staticCommands?: Array<{ href: string; id: string; title: string; type: string }>;
+		staticResults: Array<{ href: string; title: string }>;
+	}) => {
+		appSearchSpy({ staticCommands, staticResults });
 		return <button type="button">Search</button>;
 	},
 }));
@@ -166,7 +172,7 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
-	it("renders search with member-safe static results for employees", () => {
+	it("renders search with member-safe static results and employee-safe command actions for employees", () => {
 		render(
 			<AppSidebar
 				employeeRole="employee"
@@ -182,16 +188,51 @@ describe("app sidebar compliance navigation", () => {
 
 		expect(screen.getByRole("button", { name: "Search" })).toBeTruthy();
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ title: "Dashboard", href: "/" }),
-				expect.objectContaining({ title: "Profile", href: "/settings/profile" }),
-			]),
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({ title: "Dashboard", href: "/" }),
+					expect.objectContaining({ title: "Profile", href: "/settings/profile" }),
+				]),
+			}),
 		);
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
-			expect.not.arrayContaining([
-				expect.objectContaining({ href: "/settings/employees" }),
-				expect.objectContaining({ href: "/settings/organizations" }),
-			]),
+			expect.objectContaining({
+				staticResults: expect.not.arrayContaining([
+					expect.objectContaining({ href: "/settings/employees" }),
+					expect.objectContaining({ href: "/settings/organizations" }),
+				]),
+				staticCommands: expect.arrayContaining([
+					expect.objectContaining({ id: "action:add-manual-time-entry", title: "Add manual time entry" }),
+					expect.objectContaining({ id: "action:request-absence", title: "Request absence" }),
+					expect.objectContaining({ id: "action:submit-travel-expense", title: "Submit travel expense" }),
+					expect.objectContaining({ id: "action:open-my-requests", title: "Open my requests" }),
+					expect.objectContaining({ id: "action:open-settings", title: "Open settings" }),
+				]),
+			}),
+		);
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticCommands: expect.not.arrayContaining([
+					expect.objectContaining({ id: "action:open-approvals-inbox" }),
+					expect.objectContaining({ id: "action:invite-teammate" }),
+				]),
+			}),
+		);
+	});
+
+	it("passes the approvals command action for managers", () => {
+		render(<AppSidebar employeeRole="manager" settingsAccessTier="member" />);
+
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticCommands: expect.arrayContaining([
+					expect.objectContaining({
+						id: "action:open-approvals-inbox",
+						title: "Open approvals inbox",
+						href: "/approvals/inbox",
+					}),
+				]),
+			}),
 		);
 	});
 

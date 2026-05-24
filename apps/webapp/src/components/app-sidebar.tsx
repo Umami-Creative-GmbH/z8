@@ -28,7 +28,9 @@ import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import type { FeatureFlagState } from "@/components/settings/settings-config";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
+import { buildStaticAppCommands } from "@/lib/app-search/static-commands";
 import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
+import type { StaticAppSearchInput } from "@/lib/app-search/types";
 import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -67,14 +69,16 @@ export function AppSidebar({
 }: AppSidebarProps) {
 	const { t } = useTranslate();
 	const { data: session, isPending } = useSession();
-	const staticSearchResults = buildStaticAppSearchResults({
+	const staticSearchInput: StaticAppSearchInput = {
 		t: (key, defaultValue) => t(key, defaultValue),
 		employeeRole,
 		settingsAccessTier,
 		billingEnabled,
 		showComplianceNav,
 		featureFlags,
-	});
+	};
+	const staticCommands = buildStaticAppCommands(staticSearchInput);
+	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
 
 	// Personal section - visible to ALL users
 	const navPersonal = [
@@ -197,7 +201,7 @@ export function AppSidebar({
 				/>
 			</SidebarHeader>
 			<SidebarContent>
-				<AppSearch staticResults={staticSearchResults} />
+				<AppSearch staticCommands={staticCommands} staticResults={staticSearchResults} />
 				<NavMain items={navPersonal} label="z8 app" />
 				{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
 				<NavSecondary className="mt-auto" items={navSecondary} />
