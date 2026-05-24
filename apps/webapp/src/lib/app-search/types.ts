@@ -1,7 +1,7 @@
 import type { FeatureFlagState } from "@/components/settings/settings-config";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
-export type AppSearchResultType = "page" | "setting" | "employee" | "team";
+export type AppSearchResultType = "page" | "setting" | "employee" | "team" | "action";
 
 export interface AppSearchResult {
 	type: AppSearchResultType;
