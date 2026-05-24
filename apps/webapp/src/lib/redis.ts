@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
-import { createRedisTlsOptions } from "@/lib/redis-config";
+import { createRedisConnectionOptions } from "@/lib/redis-config";
 
 const logger = createLogger("Redis");
 const hasRedisConfig = Boolean(env.REDIS_HOST);
@@ -42,15 +42,10 @@ function isAlreadyConnectingError(error: unknown): boolean {
 }
 
 function createRedisClient(): Redis {
-	const host = env.REDIS_HOST || "localhost";
-	const port = Number(env.REDIS_PORT || 6379);
-	const password = env.REDIS_PASSWORD;
+	const redisConnectionOptions = createRedisConnectionOptions(env);
 
 	const client = new Redis({
-		host,
-		port,
-		password: password || undefined,
-		tls: createRedisTlsOptions(env.REDIS_TLS === "true", env.REDIS_CA_CERT),
+		...redisConnectionOptions,
 		maxRetriesPerRequest: 20,
 		retryStrategy(times) {
 			// Exponential backoff: 50ms, 100ms, 200ms... capped at 2s
@@ -71,7 +66,10 @@ function createRedisClient(): Redis {
 	});
 
 	client.on("connect", () => {
-		logger.info({ host, port }, "Connected to Redis");
+		logger.info(
+			{ host: redisConnectionOptions.host, port: redisConnectionOptions.port },
+			"Connected to Redis",
+		);
 	});
 
 	client.on("reconnecting", (delay: number) => {

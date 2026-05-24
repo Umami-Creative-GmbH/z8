@@ -33,6 +33,7 @@ const parsedEnv = createEnv({
 		// Redis-compatible cache and queue backend
 		REDIS_HOST: z.string().optional(),
 		REDIS_PORT: z.string().optional(),
+		REDIS_USERNAME: z.string().optional(),
 		REDIS_PASSWORD: z.string().optional(),
 		REDIS_TLS: z.enum(["true", "false"]).default("false"),
 		REDIS_CA_CERT: z.string().optional(),
@@ -160,6 +161,7 @@ const parsedEnv = createEnv({
 		SECRET_STORE_PROVIDER: process.env.SECRET_STORE_PROVIDER ?? "vault",
 		REDIS_HOST: process.env.REDIS_HOST,
 		REDIS_PORT: process.env.REDIS_PORT,
+		REDIS_USERNAME: process.env.REDIS_USERNAME,
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 		REDIS_TLS: process.env.REDIS_TLS ?? "false",
 		REDIS_CA_CERT: process.env.REDIS_CA_CERT,
