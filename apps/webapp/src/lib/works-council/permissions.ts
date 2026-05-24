@@ -1,13 +1,41 @@
 import type { AppAbility } from "@/lib/authorization/ability";
 
-export function canViewWorksCouncilPortal(ability: AppAbility, organizationId: string): boolean {
-	return ability.can("read", "WorksCouncil") && organizationId.length > 0;
+function hasActiveOrganizationScope(
+	organizationId: string,
+	activeOrganizationId: string | null,
+): boolean {
+	return organizationId.length > 0 && organizationId === activeOrganizationId;
 }
 
-export function canExportWorksCouncilReview(ability: AppAbility, organizationId: string): boolean {
-	return ability.can("export", "WorksCouncil") && organizationId.length > 0;
+export function canViewWorksCouncilPortal(
+	ability: AppAbility,
+	organizationId: string,
+	activeOrganizationId: string | null,
+): boolean {
+	return (
+		hasActiveOrganizationScope(organizationId, activeOrganizationId) &&
+		ability.can("read", "WorksCouncil")
+	);
 }
 
-export function canConfigureWorksCouncilMode(ability: AppAbility, organizationId: string): boolean {
-	return ability.can("configure", "WorksCouncil") && organizationId.length > 0;
+export function canExportWorksCouncilReview(
+	ability: AppAbility,
+	organizationId: string,
+	activeOrganizationId: string | null,
+): boolean {
+	return (
+		hasActiveOrganizationScope(organizationId, activeOrganizationId) &&
+		ability.can("export", "WorksCouncil")
+	);
+}
+
+export function canConfigureWorksCouncilMode(
+	ability: AppAbility,
+	organizationId: string,
+	activeOrganizationId: string | null,
+): boolean {
+	return (
+		hasActiveOrganizationScope(organizationId, activeOrganizationId) &&
+		ability.can("configure", "WorksCouncil")
+	);
 }
