@@ -95,7 +95,7 @@ describe("employee work balance schema", () => {
 		expect(recoveryEntry).toEqual(expect.objectContaining({ idx: 29 }));
 		const latestPriorMigration = Math.max(
 			...migrationJournal.entries
-				.filter((entry) => entry.tag !== "0029_employee_work_balance_recovery")
+				.filter((entry) => entry.idx < 29)
 				.map((entry) => entry.when)
 				.filter(Boolean),
 		);
