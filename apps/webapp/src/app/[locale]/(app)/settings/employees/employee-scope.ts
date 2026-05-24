@@ -1,15 +1,8 @@
 export type EmployeeSettingsActorRole = "admin" | "manager" | "employee";
 
-const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = [
-	"firstName",
-	"lastName",
-	"gender",
-	"pronouns",
-	"position",
-] as const;
+const SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS = ["gender", "pronouns", "position"] as const;
 
-type ScopedManagerEditableEmployeeField =
-	(typeof SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS)[number];
+type ScopedManagerEditableEmployeeField = (typeof SCOPED_MANAGER_EDITABLE_EMPLOYEE_FIELDS)[number];
 
 export function canAccessManagedEmployeeSettingsTarget(input: {
 	actorRole: EmployeeSettingsActorRole;

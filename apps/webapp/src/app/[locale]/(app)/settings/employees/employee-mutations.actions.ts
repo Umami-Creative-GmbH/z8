@@ -11,7 +11,6 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { createLogger } from "@/lib/logger";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	type AssignManagers,
 	assignManagersSchema,
@@ -22,6 +21,7 @@ import {
 	type UpdateEmployee,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext,
@@ -177,7 +177,11 @@ export async function updateEmployeeAction(
 				const actor = yield* _(getEmployeeSettingsActorContext());
 				const { session, dbService } = actor;
 
-				const validatedData = yield* _(validateInput(updateEmployeeSchema, data));
+				const inputData: UpdateEmployee =
+					actor.accessTier === "manager"
+						? (filterEmployeeUpdateForScopedManager(data) as UpdateEmployee)
+						: data;
+				const validatedData = yield* _(validateInput(updateEmployeeSchema, inputData));
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
@@ -188,10 +192,7 @@ export async function updateEmployeeAction(
 					}),
 				);
 
-				const scopedData: UpdateEmployee =
-					actor.accessTier === "manager"
-						? (filterEmployeeUpdateForScopedManager(validatedData) as UpdateEmployee)
-						: validatedData;
+				const scopedData: UpdateEmployee = validatedData;
 
 				const newHourlyRate = parseHourlyRate(
 					"hourlyRate" in scopedData
@@ -211,12 +212,12 @@ export async function updateEmployeeAction(
 					canUseWebapp,
 					canUseDesktop,
 					canUseMobile,
-					firstName: _firstName,
-					lastName: _lastName,
+					firstName,
+					lastName,
 					...employeeUpdateData
 				} = updatePayload as typeof updatePayload & {
-					firstName?: unknown;
-					lastName?: unknown;
+					firstName?: string;
+					lastName?: string;
 				};
 
 				yield* _(
@@ -227,6 +228,39 @@ export async function updateEmployeeAction(
 							.where(eq(employee.id, employeeId));
 					}),
 				);
+
+				if (
+					actor.accessTier === "orgAdmin" &&
+					(firstName !== undefined || lastName !== undefined)
+				) {
+					const targetUser = yield* _(
+						dbService.query("getTargetUserForNameUpdate", async () => {
+							return await dbService.db.query.user.findFirst({
+								where: eq(user.id, targetEmployee.userId),
+								columns: {
+									firstName: true,
+									lastName: true,
+								},
+							});
+						}),
+					);
+					const nextFirstName = firstName ?? targetUser?.firstName ?? "";
+					const nextLastName = lastName ?? targetUser?.lastName ?? "";
+
+					yield* _(
+						dbService.query("updateEmployeeAuthUserName", async () => {
+							await dbService.db
+								.update(user)
+								.set({
+									firstName: nextFirstName,
+									lastName: nextLastName,
+									name: [nextFirstName, nextLastName].filter(Boolean).join(" "),
+									updatedAt: new Date(),
+								})
+								.where(eq(user.id, targetEmployee.userId));
+						}),
+					);
+				}
 
 				if (hasAppAccessChanges(scopedData)) {
 					const targetUser = yield* _(
@@ -275,8 +309,7 @@ export async function updateEmployeeAction(
 
 				const previousStartDate = dateToUtcIsoDate(targetEmployee.startDate);
 				const hasStartDateUpdate =
-					Object.prototype.hasOwnProperty.call(scopedData, "startDate") &&
-					scopedData.startDate !== undefined;
+					Object.hasOwn(scopedData, "startDate") && scopedData.startDate !== undefined;
 				const nextStartDate = hasStartDateUpdate
 					? dateToUtcIsoDate(scopedData.startDate)
 					: previousStartDate;
@@ -350,9 +383,10 @@ export async function updateEmployeeAction(
 
 function dateToUtcIsoDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
-	return (typeof value === "string"
-		? DateTime.fromISO(value, { zone: "utc" })
-		: DateTime.fromJSDate(value, { zone: "utc" })
+	return (
+		typeof value === "string"
+			? DateTime.fromISO(value, { zone: "utc" })
+			: DateTime.fromJSDate(value, { zone: "utc" })
 	).toISODate();
 }
 

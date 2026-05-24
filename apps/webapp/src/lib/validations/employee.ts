@@ -113,6 +113,20 @@ export const updateEmployeeSchema = z
 		canUseWebapp: z.boolean().optional(),
 		canUseDesktop: z.boolean().optional(),
 		canUseMobile: z.boolean().optional(),
+
+		// Auth user identity fields (admin-only)
+		firstName: z
+			.string()
+			.trim()
+			.min(1, "First name is required")
+			.max(100, "First name is too long")
+			.optional(),
+		lastName: z
+			.string()
+			.trim()
+			.min(1, "Last name is required")
+			.max(100, "Last name is too long")
+			.optional(),
 	})
 	.refine(
 		(data) => {

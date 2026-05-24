@@ -42,6 +42,7 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 }));
 
+import { user } from "@/db/auth-schema";
 import {
 	createEmployeeSchema,
 	personalInformationSchema,
@@ -73,17 +74,17 @@ describe("employee mutation schemas", () => {
 		expect(result.data).not.toHaveProperty("lastName");
 	});
 
-	it("strips employee-owned names from update employee input", () => {
+	it("accepts admin-managed auth names in update employee input", () => {
 		const result = updateEmployeeSchema.safeParse({
 			position: "Engineer",
-			firstName: "Ada",
-			lastName: "Lovelace",
+			firstName: " Ada ",
+			lastName: " Lovelace ",
 		});
 
 		expect(result.success).toBe(true);
 		if (!result.success) return;
-		expect(result.data).not.toHaveProperty("firstName");
-		expect(result.data).not.toHaveProperty("lastName");
+		expect(result.data.firstName).toBe("Ada");
+		expect(result.data.lastName).toBe("Lovelace");
 	});
 
 	it("keeps structured names in self-service profile validation", () => {
@@ -176,10 +177,18 @@ describe("updateEmployeeAction", () => {
 	});
 
 	it("does not write employee-owned names into the employee update payload", async () => {
-		const set = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
-		const update = vi.fn(() => ({ set }));
+		const employeeSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
+		const userSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
+		const update = vi.fn((table) => ({ set: table === user ? userSet : employeeSet }));
 		const dbService = {
-			db: { update },
+			db: {
+				update,
+				query: {
+					user: {
+						findFirst: vi.fn().mockResolvedValue({ firstName: "Grace", lastName: "Hopper" }),
+					},
+				},
+			},
 			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
 		};
 
@@ -219,12 +228,72 @@ describe("updateEmployeeAction", () => {
 			lastName: "Lovelace",
 		} as Parameters<typeof updateEmployeeAction>[1]);
 
-		expect(set).toHaveBeenCalledWith(
+		expect(employeeSet).toHaveBeenCalledWith(
 			expect.not.objectContaining({
 				firstName: expect.anything(),
 				lastName: expect.anything(),
 			}),
 		);
+		expect(userSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				firstName: "Ada",
+				lastName: "Lovelace",
+				name: "Ada Lovelace",
+			}),
+		);
+	});
+
+	it("does not allow manager-scoped updates to change auth names", async () => {
+		const employeeSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
+		const userSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
+		const update = vi.fn((table) => ({ set: table === user ? userSet : employeeSet }));
+		const dbService = {
+			db: { update },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "manager",
+				organizationId: "org-1",
+				session: { user: { id: "user-manager-1", email: "manager@example.com" } },
+				dbService,
+			}),
+		);
+		mocks.getTargetEmployee.mockReturnValue(
+			Effect.succeed({
+				id: "employee-1",
+				userId: validUserId,
+				organizationId: "org-1",
+				currentHourlyRate: null,
+				contractType: "fixed",
+			}),
+		);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.hasAppAccessChanges.mockReturnValue(false);
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				position: "Engineer",
+				firstName: "Ada",
+				lastName: "Lovelace",
+			}),
+		);
+
+		await updateEmployeeAction("employee-1", {
+			position: "Engineer",
+			firstName: "Ada",
+			lastName: "Lovelace",
+		} as Parameters<typeof updateEmployeeAction>[1]);
+
+		expect(employeeSet).toHaveBeenCalledWith({
+			position: "Engineer",
+			currentHourlyRate: null,
+			updatedAt: expect.anything(),
+		});
+		expect(userSet).not.toHaveBeenCalled();
 	});
 
 	it("marks the employee work balance dirty when the start date changes", async () => {
