@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { worksCouncilAccessAudit, worksCouncilReviewExport } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
+import { canExportWorksCouncilReview } from "@/lib/works-council/permissions";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
@@ -115,7 +116,8 @@ async function auditExportFailed(context: ExportContext, error: unknown) {
 		dateRangeStart: context.dateRangeStart,
 		dateRangeEnd: context.dateRangeEnd,
 		metadata: {
-			error: error instanceof Error ? error.message : "Unknown export error",
+			errorCode: "export_generation_failed",
+			errorType: error instanceof Error ? error.name : "UnknownError",
 		},
 	});
 }
@@ -126,10 +128,11 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
 
-	const organizationId = session.session?.activeOrganizationId;
-	if (!organizationId) {
+	const activeOrganizationId = session.session?.activeOrganizationId;
+	if (!activeOrganizationId) {
 		return NextResponse.json({ error: "No active organization" }, { status: 400 });
 	}
+	const organizationId = activeOrganizationId;
 
 	const dateRange = parseDateRange(request);
 	if (!dateRange) {
@@ -145,7 +148,7 @@ export async function GET(request: NextRequest) {
 
 	try {
 		const ability = await getAbility();
-		if (!ability?.can("export", "WorksCouncil")) {
+		if (!ability || !canExportWorksCouncilReview(ability, organizationId, activeOrganizationId)) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 

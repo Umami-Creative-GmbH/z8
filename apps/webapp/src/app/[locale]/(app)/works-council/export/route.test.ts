@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 
 const mockState = vi.hoisted(() => ({
 	resolvedHeaders: new Headers(),
@@ -59,6 +60,23 @@ const enabledSettings = {
 	visibleLocationIds: ["location-1"],
 };
 
+function createPrincipal(role: "owner" | "admin" | "member"): PrincipalContext {
+	return {
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: {
+			organizationId: "org-1",
+			role,
+			status: "active",
+		},
+		employee: null,
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	};
+}
+
 function createRequest(): NextRequest {
 	return new Request(
 		"https://app.example.com/de/works-council/export?from=2026-05-01&to=2026-05-24",
@@ -70,7 +88,7 @@ function setupAuthenticatedRequest() {
 		user: { id: "user-1" },
 		session: { activeOrganizationId: "org-1" },
 	});
-	mockState.getAbility.mockResolvedValue({ can: vi.fn(() => true) });
+	mockState.getAbility.mockResolvedValue(defineAbilityFor(createPrincipal("admin")));
 }
 
 describe("GET /works-council/export", () => {
@@ -137,6 +155,40 @@ describe("GET /works-council/export", () => {
 		expect(body).toContain('"Visible location IDs","location-1"');
 	});
 
+	it("allows an organization owner to export with the real Works Council ability", async () => {
+		setupAuthenticatedRequest();
+		mockState.getAbility.mockResolvedValue(defineAbilityFor(createPrincipal("owner")));
+		mockState.loadWorksCouncilSettings.mockResolvedValue(enabledSettings);
+		mockState.buildWorksCouncilPortalModel.mockResolvedValue({
+			state: "ready",
+			dashboard: {
+				overtimeMinutes: 0,
+				breakRestRiskCount: 0,
+				schedulePublicationCount: 0,
+				scheduleChangeCount: 0,
+				complianceFindingCount: 0,
+				absenceCoveragePressureCount: 0,
+				policyChangeCount: 0,
+			},
+			changeLog: [],
+			scheduleReview: [],
+		});
+
+		const response = await GET(createRequest());
+
+		expect(response.status).toBe(200);
+	});
+
+	it("denies an organization member export with the real Works Council ability", async () => {
+		setupAuthenticatedRequest();
+		mockState.getAbility.mockResolvedValue(defineAbilityFor(createPrincipal("member")));
+
+		const response = await GET(createRequest());
+
+		expect(response.status).toBe(403);
+		expect(mockState.loadWorksCouncilSettings).not.toHaveBeenCalled();
+	});
+
 	it("audits successful exports with the export record and access audit", async () => {
 		setupAuthenticatedRequest();
 		mockState.loadWorksCouncilSettings.mockResolvedValue(enabledSettings);
@@ -197,6 +249,15 @@ describe("GET /works-council/export", () => {
 				organizationId: "org-1",
 				actorUserId: "user-1",
 				eventType: "export_failed",
+				metadata: {
+					errorCode: "export_generation_failed",
+					errorType: "Error",
+				},
+			}),
+		);
+		expect(mockState.insertValues).not.toHaveBeenCalledWith(
+			expect.objectContaining({
+				metadata: expect.objectContaining({ error: "export failed" }),
 			}),
 		);
 	});
