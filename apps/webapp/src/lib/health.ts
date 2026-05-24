@@ -4,8 +4,8 @@ import { db } from "@/db";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { isQueueHealthy } from "@/lib/queue";
+import { redis } from "@/lib/redis";
 import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
-import { valkey } from "@/lib/valkey";
 
 const logger = createLogger("Health");
 
@@ -53,12 +53,12 @@ export async function checkDatabase(): Promise<ServiceHealth> {
 }
 
 /**
- * Check Valkey/Redis connectivity (optional service)
+ * Check Redis connectivity (optional service)
  */
 export async function checkCache(): Promise<ServiceHealth> {
 	const start = performance.now();
 	try {
-		await valkey.ping();
+		await redis.ping();
 		return {
 			status: "healthy",
 			latencyMs: Math.round(performance.now() - start),

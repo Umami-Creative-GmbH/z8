@@ -9,7 +9,7 @@
  * - Runs repeatable cron jobs on schedule (vacation, telemetry, etc.)
  * - Full job execution tracking in database
  * - Graceful shutdown with signal handling
- * - Health checks via Valkey connection
+ * - Health checks via Redis connection
  *
  * Environment variables:
  * - REDIS_HOST: Redis-compatible host (default: localhost)

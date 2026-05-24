@@ -2,7 +2,7 @@
  * Rate Limiting with @upstash/ratelimit
  *
  * Battle-tested rate limiting using sliding window algorithm.
- * Works with our existing Valkey/Redis connection.
+ * Works with our existing Redis connection.
  *
  * Environment Variables:
  * - RATE_LIMIT_DISABLED: Set to "true" to disable rate limiting entirely (auto-disabled in development)
@@ -15,7 +15,7 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { createLogger } from "@/lib/logger";
-import { ensureValkeyReady, valkey } from "@/lib/valkey";
+import { ensureRedisReady, redis as redisClient } from "@/lib/redis";
 import { env } from "@/env";
 
 /**
@@ -112,13 +112,13 @@ const SLIDING_WINDOW_LIMIT_SCRIPT = `
 let slidingWindowScriptLoaded = false;
 let slidingWindowScriptLoadPromise: Promise<void> | null = null;
 
-valkey.on("connect", () => {
+redisClient.on("connect", () => {
 	slidingWindowScriptLoaded = false;
 	slidingWindowScriptLoadPromise = null;
 });
 
 export async function ensureRateLimitRedisReady(): Promise<boolean> {
-	if (!(await ensureValkeyReady())) {
+	if (!(await ensureRedisReady())) {
 		return false;
 	}
 
@@ -127,7 +127,7 @@ export async function ensureRateLimitRedisReady(): Promise<boolean> {
 	}
 
 	if (!slidingWindowScriptLoadPromise) {
-		slidingWindowScriptLoadPromise = valkey
+		slidingWindowScriptLoadPromise = redisClient
 			.script("LOAD", SLIDING_WINDOW_LIMIT_SCRIPT)
 			.then(() => {
 				slidingWindowScriptLoaded = true;
@@ -236,7 +236,7 @@ const redisAdapter: RatelimitRedis = {
 		args: TArgs,
 	): Promise<TData> => {
 		try {
-			return (await valkey.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
+			return (await redisClient.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
 		} catch (error) {
 			// Re-throw NOSCRIPT errors with proper format for @upstash/ratelimit detection
 			if (error instanceof Error && error.message.includes("NOSCRIPT")) {
@@ -250,16 +250,16 @@ const redisAdapter: RatelimitRedis = {
 		keys: string[],
 		args: TArgs,
 	): Promise<TData> => {
-		return valkey.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
+		return redisClient.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
 	},
 	get: async <TData = string>(key: string): Promise<TData | null> => {
-		return valkey.get(key) as Promise<TData | null>;
+		return redisClient.get(key) as Promise<TData | null>;
 	},
 	set: async (key: string, value: string, opts?: { ex?: number }): Promise<string | null> => {
 		if (opts?.ex) {
-			return valkey.set(key, value, "EX", opts.ex);
+			return redisClient.set(key, value, "EX", opts.ex);
 		}
-		return valkey.set(key, value);
+		return redisClient.set(key, value);
 	},
 };
 
@@ -362,9 +362,9 @@ export async function checkRateLimit(
 			};
 		}
 
-		// Check if Valkey is available
+		// Check if Redis is available
 		if (!(await ensureRateLimitRedisReady())) {
-			logger.warn({ identifier, endpoint }, "Rate limiting unavailable - Valkey not connected");
+			logger.warn({ identifier, endpoint }, "Rate limiting unavailable - Redis not connected");
 			return {
 				allowed: true,
 				remaining: RATE_LIMIT_CONFIGS[endpoint]?.maxRequests ?? 100,

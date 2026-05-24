@@ -35,6 +35,7 @@ const parsedEnv = createEnv({
 		REDIS_PORT: z.string().optional(),
 		REDIS_PASSWORD: z.string().optional(),
 		REDIS_TLS: z.enum(["true", "false"]).default("false"),
+		REDIS_CA_CERT: z.string().optional(),
 
 		// Public AWS S3 / Object Storage (REQUIRED)
 		// S3-compatible storage is required for public file uploads
@@ -161,6 +162,7 @@ const parsedEnv = createEnv({
 		REDIS_PORT: process.env.REDIS_PORT,
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 		REDIS_TLS: process.env.REDIS_TLS ?? "false",
+		REDIS_CA_CERT: process.env.REDIS_CA_CERT,
 
 		S3_PUBLIC_BUCKET: process.env.S3_PUBLIC_BUCKET,
 		S3_PUBLIC_ACCESS_KEY_ID: process.env.S3_PUBLIC_ACCESS_KEY_ID,

@@ -1,16 +1,17 @@
 import Redis from "ioredis";
-import { createLogger } from "@/lib/logger";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
+import { createRedisTlsOptions } from "@/lib/redis-config";
 
-const logger = createLogger("Valkey");
-const hasValkeyConfig = Boolean(env.REDIS_HOST);
-const shouldDisableValkeyDuringBuild =
-	(!hasValkeyConfig && env.NODE_ENV === "production") ||
+const logger = createLogger("Redis");
+const hasRedisConfig = Boolean(env.REDIS_HOST);
+const shouldDisableRedisDuringBuild =
+	(!hasRedisConfig && env.NODE_ENV === "production") ||
 	process.env.NEXT_PHASE === "phase-production-build" ||
 	process.env.npm_lifecycle_event === "build" ||
-	(process.env.CI === "true" && !hasValkeyConfig);
+	(process.env.CI === "true" && !hasRedisConfig);
 
-const noopValkeyClient = {
+const noopRedisClient = {
 	status: "end",
 	get: async () => null,
 	set: async () => "OK",
@@ -19,18 +20,18 @@ const noopValkeyClient = {
 	ping: async () => "PONG",
 	eval: async () => null,
 	evalsha: async () => null,
-	on: () => noopValkeyClient,
+	on: () => noopRedisClient,
 } as unknown as Redis;
 
-// Singleton pattern for Valkey connection
-const globalForValkey = globalThis as unknown as {
-	valkey: Redis | undefined;
-	valkeyPub: Redis | undefined;
+// Singleton pattern for Redis connection
+const globalForRedis = globalThis as unknown as {
+	redis: Redis | undefined;
+	redisPub: Redis | undefined;
 };
 
-type ValkeyStatus = Redis["status"];
+type RedisStatus = Redis["status"];
 
-const activeStatuses = new Set<ValkeyStatus>(["ready", "connect", "connecting"]);
+const activeStatuses = new Set<RedisStatus>(["ready", "connect", "connecting"]);
 
 function isAlreadyConnectingError(error: unknown): boolean {
 	return (
@@ -40,7 +41,7 @@ function isAlreadyConnectingError(error: unknown): boolean {
 	);
 }
 
-function createValkeyClient(): Redis {
+function createRedisClient(): Redis {
 	const host = env.REDIS_HOST || "localhost";
 	const port = Number(env.REDIS_PORT || 6379);
 	const password = env.REDIS_PASSWORD;
@@ -49,7 +50,7 @@ function createValkeyClient(): Redis {
 		host,
 		port,
 		password: password || undefined,
-		tls: env.REDIS_TLS === "true" ? {} : undefined,
+		tls: createRedisTlsOptions(env.REDIS_TLS === "true", env.REDIS_CA_CERT),
 		maxRetriesPerRequest: 20,
 		retryStrategy(times) {
 			// Exponential backoff: 50ms, 100ms, 200ms... capped at 2s
@@ -66,65 +67,65 @@ function createValkeyClient(): Redis {
 	});
 
 	client.on("error", (err) => {
-		logger.error({ error: err }, "Valkey connection error");
+		logger.error({ error: err }, "Redis connection error");
 	});
 
 	client.on("connect", () => {
-		logger.info({ host, port }, "Connected to Valkey");
+		logger.info({ host, port }, "Connected to Redis");
 	});
 
 	client.on("reconnecting", (delay: number) => {
-		logger.warn({ delay }, "Reconnecting to Valkey");
+		logger.warn({ delay }, "Reconnecting to Redis");
 	});
 
 	return client;
 }
 
-export const valkey = shouldDisableValkeyDuringBuild
-	? noopValkeyClient
+export const redis = shouldDisableRedisDuringBuild
+	? noopRedisClient
 	: (() => {
-		if (!globalForValkey.valkey) {
-			globalForValkey.valkey = createValkeyClient();
-		}
+			if (!globalForRedis.redis) {
+				globalForRedis.redis = createRedisClient();
+			}
 
-		return globalForValkey.valkey;
-	})();
+			return globalForRedis.redis;
+		})();
 
 // Dedicated publisher client for pub/sub (pub/sub clients can't be used for regular commands)
-export const valkeyPub = shouldDisableValkeyDuringBuild
-	? noopValkeyClient
+export const redisPub = shouldDisableRedisDuringBuild
+	? noopRedisClient
 	: (() => {
-		if (!globalForValkey.valkeyPub) {
-			globalForValkey.valkeyPub = createValkeyClient();
-		}
+			if (!globalForRedis.redisPub) {
+				globalForRedis.redisPub = createRedisClient();
+			}
 
-		return globalForValkey.valkeyPub;
-	})();
+			return globalForRedis.redisPub;
+		})();
 
-export async function ensureValkeyReady(): Promise<boolean> {
-	if (shouldDisableValkeyDuringBuild) {
+export async function ensureRedisReady(): Promise<boolean> {
+	if (shouldDisableRedisDuringBuild) {
 		return false;
 	}
 
-	if (activeStatuses.has(valkey.status)) {
+	if (activeStatuses.has(redis.status)) {
 		return true;
 	}
 
-	if (valkey.status === "wait" || valkey.status === "end") {
+	if (redis.status === "wait" || redis.status === "end") {
 		try {
-			await valkey.connect();
+			await redis.connect();
 		} catch (error) {
 			if (!isAlreadyConnectingError(error)) {
-				logger.warn({ error, status: valkey.status }, "Failed to start Valkey connection");
+				logger.warn({ error, status: redis.status }, "Failed to start Redis connection");
 			}
 		}
 	}
 
 	try {
-		await valkey.ping();
+		await redis.ping();
 		return true;
 	} catch (error) {
-		logger.warn({ error, status: valkey.status }, "Valkey readiness check failed");
+		logger.warn({ error, status: redis.status }, "Redis readiness check failed");
 		return false;
 	}
 }
@@ -133,12 +134,12 @@ export async function ensureValkeyReady(): Promise<boolean> {
  * Create a new subscriber client for pub/sub
  * Each SSE connection needs its own subscriber client
  */
-export function createValkeySubscriber(): Redis {
-	if (shouldDisableValkeyDuringBuild) {
-		return noopValkeyClient;
+export function createRedisSubscriber(): Redis {
+	if (shouldDisableRedisDuringBuild) {
+		return noopRedisClient;
 	}
 
-	return createValkeyClient();
+	return createRedisClient();
 }
 
 /**
@@ -155,7 +156,7 @@ export async function publishNotificationEvent(
 	try {
 		const channel = `notifications:${userId}`;
 		const message = JSON.stringify({ event, data });
-		await valkeyPub.publish(channel, message);
+		await redisPub.publish(channel, message);
 	} catch (error) {
 		logger.error({ error, userId, event }, "Failed to publish notification event");
 	}
@@ -163,45 +164,45 @@ export async function publishNotificationEvent(
 
 /**
  * Secondary storage adapter for Better Auth
- * Uses Valkey/Redis for session caching and rate limiting
+ * Uses Redis for session caching and rate limiting
  */
 export const secondaryStorage = {
 	get: async (key: string): Promise<string | null> => {
-		if (shouldDisableValkeyDuringBuild) {
+		if (shouldDisableRedisDuringBuild) {
 			return null;
 		}
 
 		try {
-			return await valkey.get(key);
+			return await redis.get(key);
 		} catch (error) {
-			logger.error({ error, key }, "Failed to get from Valkey");
+			logger.error({ error, key }, "Failed to get from Redis");
 			return null;
 		}
 	},
 	set: async (key: string, value: string, ttl?: number): Promise<void> => {
-		if (shouldDisableValkeyDuringBuild) {
+		if (shouldDisableRedisDuringBuild) {
 			return;
 		}
 
 		try {
 			if (ttl) {
-				await valkey.set(key, value, "EX", ttl);
+				await redis.set(key, value, "EX", ttl);
 			} else {
-				await valkey.set(key, value);
+				await redis.set(key, value);
 			}
 		} catch (error) {
-			logger.error({ error, key }, "Failed to set in Valkey");
+			logger.error({ error, key }, "Failed to set in Redis");
 		}
 	},
 	delete: async (key: string): Promise<void> => {
-		if (shouldDisableValkeyDuringBuild) {
+		if (shouldDisableRedisDuringBuild) {
 			return;
 		}
 
 		try {
-			await valkey.del(key);
+			await redis.del(key);
 		} catch (error) {
-			logger.error({ error, key }, "Failed to delete from Valkey");
+			logger.error({ error, key }, "Failed to delete from Redis");
 		}
 	},
 };

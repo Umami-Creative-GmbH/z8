@@ -224,7 +224,7 @@ Expected host:
 | webapp | 3000 | Next.js production server |
 | PostgreSQL | 5433 | Primary database (direct access) |
 | PgBouncer | 5432 | Connection pooler (app connects here) |
-| Valkey | 6379 | Redis-compatible cache/sessions |
+| Redis-compatible cache | 6379 | Cache/sessions |
 | Bull Board | 3100 | Job queue dashboard |
 | Vault | 8200 | Secrets management (optional) |
 
@@ -262,7 +262,7 @@ curl http://localhost:3000/api/health
 
 ### Worker
 
-- **Method**: Valkey ping test
+- **Method**: Redis ping test
 - **Checks**: Can connect to job queue backend
 
 ## Environment Variables
@@ -285,6 +285,7 @@ See `deploy/.env.template` for the full list. Key variables:
 | `REDIS_PORT` | No | Redis-compatible cache port (default: 6379) |
 | `REDIS_PASSWORD` | No | Redis-compatible cache password |
 | `REDIS_TLS` | No | Enable TLS for managed Redis providers (`true` or `false`, default: `false`) |
+| `REDIS_CA_CERT` | No | Inline PEM CA certificate for managed Redis TLS |
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
 
@@ -389,7 +390,7 @@ docker compose -f docker-compose.prod.yml logs -f worker
 # Check Bull Board for job status
 open http://localhost:3100
 
-# Verify Valkey connection
+# Verify Redis connection
 docker compose -f docker-compose.prod.yml exec worker node -e "
   const Redis = require('ioredis');
   const r = new Redis({host: 'valkey'});

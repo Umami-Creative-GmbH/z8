@@ -104,10 +104,10 @@ describe("DiagnosticsClient", () => {
 			data: snapshot({
 				fetchedAt: "2026-05-10T12:05:00.000Z",
 				overallStatus: "warning",
-				recommendedActions: ["Check Valkey/Redis connectivity and worker queue configuration."],
+				recommendedActions: ["Check Redis connectivity and worker queue configuration."],
 				health: [
 					{
-						title: "Queue / Valkey",
+						title: "Queue / Redis",
 						status: "warning",
 						value: "Unavailable",
 						description: "BullMQ queue connectivity check.",
@@ -123,9 +123,9 @@ describe("DiagnosticsClient", () => {
 		expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
 		expect(screen.getByRole("status").textContent).toContain("Warning");
 		expect(screen.getByRole("status").textContent).toContain("2026-05-10T12:05:00.000Z");
-		expect(screen.getByText("Queue / Valkey")).toBeTruthy();
+		expect(screen.getByText("Queue / Redis")).toBeTruthy();
 		expect(screen.getByText("Unavailable")).toBeTruthy();
-		expect(screen.getByText("Check Valkey/Redis connectivity and worker queue configuration.")).toBeTruthy();
+		expect(screen.getByText("Check Redis connectivity and worker queue configuration.")).toBeTruthy();
 	});
 
 	it("keeps the previous snapshot visible when refresh fails", async () => {

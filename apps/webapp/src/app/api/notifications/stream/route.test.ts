@@ -16,7 +16,7 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		connection: vi.fn(),
-		createValkeySubscriber: vi.fn(() => subscriber),
+		createRedisSubscriber: vi.fn(() => subscriber),
 		getSession: vi.fn(),
 		getUnreadCount: vi.fn(),
 		headers: vi.fn(),
@@ -24,7 +24,7 @@ const mockState = vi.hoisted(() => {
 		select,
 		subscriber,
 		subscriberListeners: new Map<string, (...args: unknown[]) => void>(),
-		valkey: { status: "ready" },
+		redis: { status: "ready" },
 	};
 });
 
@@ -71,9 +71,9 @@ vi.mock("@/lib/notifications/notification-service", () => ({
 	getUnreadCount: mockState.getUnreadCount,
 }));
 
-vi.mock("@/lib/valkey", () => ({
-	createValkeySubscriber: mockState.createValkeySubscriber,
-	valkey: mockState.valkey,
+vi.mock("@/lib/redis", () => ({
+	createRedisSubscriber: mockState.createRedisSubscriber,
+	redis: mockState.redis,
 }));
 
 const { GET } = await import("./route");
@@ -95,7 +95,7 @@ describe("GET /api/notifications/stream", () => {
 		});
 		mockState.getUnreadCount.mockResolvedValue(3);
 		mockState.limit.mockResolvedValue([{ organizationId: "org-active" }]);
-		mockState.valkey.status = "ready";
+		mockState.redis.status = "ready";
 	});
 
 	it("scopes the initial count update to the active organization", async () => {
@@ -109,7 +109,7 @@ describe("GET /api/notifications/stream", () => {
 		await reader?.cancel();
 	});
 
-	it("forwards only organization-scoped Valkey notification events", async () => {
+	it("forwards only organization-scoped Redis notification events", async () => {
 		const response = await GET();
 		const reader = response.body?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
 		await readEvent(reader);
@@ -152,7 +152,7 @@ describe("GET /api/notifications/stream", () => {
 
 	it("scopes polling fallback count updates to the active organization", async () => {
 		vi.useFakeTimers();
-		mockState.valkey.status = "end";
+		mockState.redis.status = "end";
 		mockState.getUnreadCount.mockResolvedValueOnce(3).mockResolvedValueOnce(5);
 
 		const response = await GET();

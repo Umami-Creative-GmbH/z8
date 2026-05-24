@@ -55,7 +55,7 @@ describe("collectPlatformDiagnostics", () => {
 		expect(snapshot.health).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Database", status: "healthy", value: "Connected" }),
-				expect.objectContaining({ title: "Queue / Valkey", status: "healthy", value: "Connected" }),
+				expect.objectContaining({ title: "Queue / Redis", status: "healthy", value: "Connected" }),
 				expect.objectContaining({ title: "Worker queue", status: "healthy", value: "1 waiting, 2 active, 0 failed, 3 delayed" }),
 				expect.objectContaining({ title: "Billing readiness", status: "disabled", value: "Billing disabled" }),
 			]),
@@ -157,11 +157,11 @@ describe("collectPlatformDiagnostics", () => {
 		expect(snapshot.health).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Database", status: "healthy", value: "Connected" }),
-				expect.objectContaining({ title: "Queue / Valkey", status: "warning", value: "Unavailable" }),
+				expect.objectContaining({ title: "Queue / Redis", status: "warning", value: "Unavailable" }),
 				expect.objectContaining({ title: "Worker queue", status: "warning", value: "Unavailable" }),
 			]),
 		);
-		expect(snapshot.recommendedActions).toContain("Check Valkey/Redis connectivity and worker queue configuration.");
+		expect(snapshot.recommendedActions).toContain("Check Redis connectivity and worker queue configuration.");
 	});
 
 	it("recommends checking queue configuration when worker queue has failed jobs", async () => {
@@ -179,11 +179,11 @@ describe("collectPlatformDiagnostics", () => {
 
 		expect(snapshot.health).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ title: "Queue / Valkey", status: "healthy", value: "Connected" }),
+				expect.objectContaining({ title: "Queue / Redis", status: "healthy", value: "Connected" }),
 				expect.objectContaining({ title: "Worker queue", status: "warning", value: "0 waiting, 0 active, 1 failed, 0 delayed" }),
 			]),
 		);
-		expect(snapshot.recommendedActions).toContain("Check Valkey/Redis connectivity and worker queue configuration.");
+		expect(snapshot.recommendedActions).toContain("Check Redis connectivity and worker queue configuration.");
 	});
 
 	it("queries cookie consent configuration directly in default dependencies", () => {
