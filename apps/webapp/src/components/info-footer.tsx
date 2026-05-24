@@ -1,12 +1,10 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { env } from "@/env";
 import { Link } from "@/navigation";
 
-export function InfoFooter() {
+export function InfoFooter({ buildHash }: { buildHash?: string }) {
 	const { t } = useTranslate();
-	const buildHash = env.NEXT_PUBLIC_BUILD_HASH;
 
 	return (
 		<div className="space-y-1 text-balance text-center text-muted-foreground text-xs">
