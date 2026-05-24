@@ -38,10 +38,10 @@ export function getEmployeeContext(options?: { organizationId?: string; queryNam
 
 		const where = options?.organizationId
 			? and(
-				eq(employee.userId, session.user.id),
-				eq(employee.organizationId, options.organizationId),
-				eq(employee.isActive, true),
-			)
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, options.organizationId),
+					eq(employee.isActive, true),
+				)
 			: and(eq(employee.userId, session.user.id), eq(employee.isActive, true));
 
 		const currentEmployee = yield* _(
@@ -82,21 +82,30 @@ export function getEmployeeSettingsActorContext(options?: {
 
 		const [membershipRecord, employeeRecord] = yield* _(
 			Effect.all([
-				dbService.query(`${options?.queryName ?? "getEmployeeSettingsActor"}:membership`, async () => {
-					return await dbService.db.query.member.findFirst({
-						where: and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)),
-						columns: { role: true },
-					});
-				}),
-				dbService.query(`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`, async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-					});
-				}),
+				dbService.query(
+					`${options?.queryName ?? "getEmployeeSettingsActor"}:membership`,
+					async () => {
+						return await dbService.db.query.member.findFirst({
+							where: and(
+								eq(member.userId, session.user.id),
+								eq(member.organizationId, organizationId),
+							),
+							columns: { role: true },
+						});
+					},
+				),
+				dbService.query(
+					`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`,
+					async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.userId, session.user.id),
+								eq(employee.organizationId, organizationId),
+								eq(employee.isActive, true),
+							),
+						});
+					},
+				),
 			]),
 		);
 
@@ -126,9 +135,7 @@ export function getEmployeeSettingsActorContext(options?: {
 			dbService,
 			organizationId,
 			accessTier,
-			currentEmployee: employeeRecord
-				? (employeeRecord as typeof employee.$inferSelect)
-				: null,
+			currentEmployee: employeeRecord ? (employeeRecord as typeof employee.$inferSelect) : null,
 		};
 	});
 }
@@ -398,7 +405,7 @@ export function validateAssignmentTargetFields(
 				field: "teamId",
 			}),
 		);
-		}
+	}
 
 	return Effect.void;
 }
@@ -486,6 +493,15 @@ export function getTargetEmployee(employeeId: string, queryName = "getTargetEmpl
 			dbService.query(queryName, async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.id, employeeId),
+					with: {
+						user: {
+							columns: {
+								firstName: true,
+								lastName: true,
+								name: true,
+							},
+						},
+					},
 				});
 			}),
 			Effect.flatMap((value) =>

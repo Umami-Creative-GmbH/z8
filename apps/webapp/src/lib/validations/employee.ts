@@ -33,6 +33,11 @@ export const hourlyRateSchema = z
 	.optional()
 	.nullable();
 
+const authUserNamePartSchema = z.preprocess(
+	(value) => (typeof value === "string" ? value.trim() : value),
+	z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
+);
+
 // Rate history entry schema
 export const createRateHistorySchema = z.object({
 	hourlyRate: z.string().refine(
@@ -90,6 +95,8 @@ export const createEmployeeSchema = z.object({
 // Employee update schema (more permissive, all fields optional)
 export const updateEmployeeSchema = z
 	.object({
+		firstName: authUserNamePartSchema,
+		lastName: authUserNamePartSchema,
 		teamId: z.string().uuid("Invalid team ID").optional().nullable(),
 		role: employeeRoleSchema.optional(),
 		position: z.string().max(100, "Position is too long").optional().nullable(),

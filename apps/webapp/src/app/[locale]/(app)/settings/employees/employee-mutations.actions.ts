@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { user } from "@/db/auth-schema";
 import { employee, employeeRateHistory } from "@/db/schema";
+import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -211,13 +212,10 @@ export async function updateEmployeeAction(
 					canUseWebapp,
 					canUseDesktop,
 					canUseMobile,
-					firstName: _firstName,
-					lastName: _lastName,
+					firstName,
+					lastName,
 					...employeeUpdateData
-				} = updatePayload as typeof updatePayload & {
-					firstName?: unknown;
-					lastName?: unknown;
-				};
+				} = updatePayload;
 
 				yield* _(
 					dbService.query("updateEmployee", async () => {
@@ -227,6 +225,25 @@ export async function updateEmployeeAction(
 							.where(eq(employee.id, employeeId));
 					}),
 				);
+
+				if (firstName !== undefined || lastName !== undefined) {
+					const nextFirstName = firstName ?? targetEmployee.user?.firstName ?? "";
+					const nextLastName = lastName ?? targetEmployee.user?.lastName ?? "";
+					const authName = toAuthStructuredName({
+						firstName: nextFirstName,
+						lastName: nextLastName,
+						fallbackName: targetEmployee.user?.name ?? undefined,
+					});
+
+					yield* _(
+						dbService.query("updateEmployeeAuthUserName", async () => {
+							await dbService.db
+								.update(user)
+								.set(authName)
+								.where(eq(user.id, targetEmployee.userId));
+						}),
+					);
+				}
 
 				if (hasAppAccessChanges(scopedData)) {
 					const targetUser = yield* _(
@@ -350,9 +367,10 @@ export async function updateEmployeeAction(
 
 function dateToUtcIsoDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
-	return (typeof value === "string"
-		? DateTime.fromISO(value, { zone: "utc" })
-		: DateTime.fromJSDate(value, { zone: "utc" })
+	return (
+		typeof value === "string"
+			? DateTime.fromISO(value, { zone: "utc" })
+			: DateTime.fromJSDate(value, { zone: "utc" })
 	).toISODate();
 }
 
