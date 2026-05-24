@@ -24,6 +24,12 @@ function buildExportHref(range: { start: string; end: string }) {
 	return `/works-council/export?${params.toString()}`;
 }
 
+function formatIdentityLabel(entry: { employeeName: string | null; identityState: string }) {
+	if (entry.employeeName) return entry.employeeName;
+	if (entry.identityState === "insufficient_data") return "Insufficient data";
+	return "Identity hidden";
+}
+
 function MetricCard({ label, value }: { label: string; value: SuppressedValue<number> }) {
 	return (
 		<section
@@ -167,7 +173,7 @@ export function WorksCouncilDashboard({ model }: { model: WorksCouncilPortalMode
 							<li key={entry.id} className="px-4 py-3">
 								<p className="break-words font-medium">{entry.teamName ?? "Unassigned team"}</p>
 								<p className="text-sm text-muted-foreground">
-									{entry.employeeName ?? "Identity hidden"} - {formatTimestamp(entry.startsAt)} to{" "}
+									{formatIdentityLabel(entry)} - {formatTimestamp(entry.startsAt)} to{" "}
 									{formatTimestamp(entry.endsAt)}
 								</p>
 							</li>

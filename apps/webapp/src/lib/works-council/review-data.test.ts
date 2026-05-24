@@ -1,9 +1,46 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { buildWorksCouncilPortalModel } from "./review-data";
+import { buildWorksCouncilPortalModel, type WorksCouncilSettingsSnapshot } from "./review-data";
 
 const dateRangeStart = DateTime.fromISO("2026-05-01T00:00:00.000Z").toJSDate();
 const dateRangeEnd = DateTime.fromISO("2026-05-31T23:59:59.999Z").toJSDate();
+
+function settings(
+	overrides: Partial<WorksCouncilSettingsSnapshot> = {},
+): WorksCouncilSettingsSnapshot {
+	return {
+		enabled: true,
+		identityVisibility: "aggregated",
+		absenceVisibility: "hidden",
+		exportEnabled: false,
+		minimumAggregationThreshold: 1,
+		visibleTeamIds: [],
+		visibleLocationIds: [],
+		...overrides,
+	};
+}
+
+function publishedShift(overrides: {
+	id: string;
+	employeeId?: string | null;
+	employeeName?: string | null;
+	teamId?: string | null;
+	teamName?: string | null;
+	locationId?: string | null;
+	status?: "draft" | "published";
+}) {
+	return {
+		id: overrides.id,
+		startsAt: DateTime.fromISO("2026-05-12T08:00:00.000Z").toJSDate(),
+		endsAt: DateTime.fromISO("2026-05-12T16:00:00.000Z").toJSDate(),
+		employeeId: overrides.employeeId ?? "emp-1",
+		employeeName: overrides.employeeName ?? "Ada Lovelace",
+		teamId: overrides.teamId ?? "team-1",
+		teamName: overrides.teamName ?? "Operations",
+		locationId: overrides.locationId ?? "loc-1",
+		status: overrides.status ?? "published",
+	};
+}
 
 describe("works council review data", () => {
 	it("returns disabled state without domain data when mode is disabled", async () => {
@@ -52,6 +89,7 @@ describe("works council review data", () => {
 			},
 			collectQueryContract: (request) => requests.push(request),
 			queryAuditChanges: async () => [],
+			queryScheduleReview: async () => [],
 		});
 
 		expect(requests.length).toBeGreaterThan(0);
@@ -101,6 +139,7 @@ describe("works council review data", () => {
 					organizationId,
 				},
 			],
+			queryScheduleReview: async () => [],
 		});
 
 		expect(model.state).toBe("ready");
@@ -151,6 +190,7 @@ describe("works council review data", () => {
 					organizationId,
 				},
 			],
+			queryScheduleReview: async () => [],
 		});
 
 		expect(model.state).toBe("ready");
@@ -186,6 +226,7 @@ describe("works council review data", () => {
 					organizationId,
 				},
 			],
+			queryScheduleReview: async () => [],
 		});
 
 		expect(model.state).toBe("ready");
@@ -199,5 +240,137 @@ describe("works council review data", () => {
 			count: 1,
 			value: null,
 		});
+	});
+
+	it("returns named published schedule review rows when the aggregation threshold is met", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: settings({ identityVisibility: "named", minimumAggregationThreshold: 2 }),
+			queryAuditChanges: async () => [],
+			queryScheduleReview: async () => [
+				publishedShift({ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace" }),
+				publishedShift({ id: "shift-2", employeeId: "emp-2", employeeName: "Grace Hopper" }),
+				publishedShift({ id: "draft-1", status: "draft", employeeName: "Draft User" }),
+			],
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.scheduleReview).toEqual([
+			expect.objectContaining({ id: "shift-1", employeeName: "Ada Lovelace" }),
+			expect.objectContaining({ id: "shift-2", employeeName: "Grace Hopper" }),
+		]);
+	});
+
+	it("returns stable pseudonymized employee labels for published schedule review rows", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: settings({ identityVisibility: "pseudonymized", minimumAggregationThreshold: 2 }),
+			queryAuditChanges: async () => [],
+			queryScheduleReview: async () => [
+				publishedShift({ id: "shift-1", employeeId: "emp-1", employeeName: "Ada Lovelace" }),
+				publishedShift({ id: "shift-2", employeeId: "emp-2", employeeName: "Grace Hopper" }),
+				publishedShift({ id: "shift-3", employeeId: "emp-1", employeeName: "Ada Lovelace" }),
+			],
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.scheduleReview.map((row) => row.employeeName)).toEqual([
+			"Employee A",
+			"Employee B",
+			"Employee A",
+		]);
+	});
+
+	it("removes employee identity for aggregated schedule review rows", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: settings({ identityVisibility: "aggregated" }),
+			queryAuditChanges: async () => [],
+			queryScheduleReview: async () => [publishedShift({ id: "shift-1" })],
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.scheduleReview).toEqual([
+			expect.objectContaining({ id: "shift-1", employeeName: null }),
+		]);
+	});
+
+	it("suppresses identity-bearing schedule review below the aggregation threshold", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: settings({ identityVisibility: "named", minimumAggregationThreshold: 3 }),
+			queryAuditChanges: async () => [],
+			queryScheduleReview: async () => [
+				publishedShift({ id: "shift-1", employeeName: "Ada Lovelace" }),
+				publishedShift({ id: "shift-2", employeeName: "Grace Hopper" }),
+			],
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.scheduleReview).toEqual([
+			expect.objectContaining({
+				id: "shift-1",
+				employeeName: null,
+				identityState: "insufficient_data",
+			}),
+			expect.objectContaining({
+				id: "shift-2",
+				employeeName: null,
+				identityState: "insufficient_data",
+			}),
+		]);
+	});
+
+	it("filters schedule review to published rows in configured team and location scope", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: settings({
+				identityVisibility: "named",
+				visibleTeamIds: ["team-allowed"],
+				visibleLocationIds: ["loc-allowed"],
+			}),
+			queryAuditChanges: async () => [],
+			queryScheduleReview: async ({ organizationId }) =>
+				[
+					publishedShift({
+						id: "shift-allowed",
+						teamId: "team-allowed",
+						locationId: "loc-allowed",
+					}),
+					publishedShift({
+						id: "shift-other-team",
+						teamId: "team-other",
+						locationId: "loc-allowed",
+					}),
+					publishedShift({
+						id: "shift-other-location",
+						teamId: "team-allowed",
+						locationId: "loc-other",
+					}),
+					publishedShift({
+						id: "shift-other-org",
+						teamId: "team-allowed",
+						locationId: "loc-allowed",
+					}),
+				].filter((row) => organizationId === "org-1" && row.id !== "shift-other-org"),
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.scheduleReview.map((row) => row.id)).toEqual(["shift-allowed"]);
 	});
 });

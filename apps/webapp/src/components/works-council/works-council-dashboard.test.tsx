@@ -56,6 +56,7 @@ describe("WorksCouncilDashboard", () => {
 					endsAt: "2026-05-12T16:00:00.000Z",
 					teamName: "Operations",
 					employeeName: null,
+					identityState: "hidden",
 				},
 			],
 		};
@@ -79,6 +80,41 @@ describe("WorksCouncilDashboard", () => {
 		expect(screen.getByText("work_policy update")).toBeTruthy();
 		expect(screen.getByText("Schedule review")).toBeTruthy();
 		expect(screen.getByText("Operations")).toBeTruthy();
+	});
+
+	it("renders insufficient data state for suppressed schedule identities", () => {
+		const model: WorksCouncilPortalModel = {
+			state: "ready",
+			dateRange: {
+				start: "2026-05-01T00:00:00.000Z",
+				end: "2026-05-31T23:59:59.999Z",
+			},
+			exportEnabled: false,
+			dashboard: {
+				overtimeMinutes: { state: "insufficient_data", count: 0, value: null },
+				breakRestRiskCount: { state: "insufficient_data", count: 0, value: null },
+				schedulePublicationCount: { state: "insufficient_data", count: 0, value: null },
+				scheduleChangeCount: { state: "insufficient_data", count: 0, value: null },
+				complianceFindingCount: { state: "insufficient_data", count: 0, value: null },
+				absenceCoveragePressureCount: { state: "insufficient_data", count: 0, value: null },
+				policyChangeCount: { state: "insufficient_data", count: 0, value: null },
+			},
+			changeLog: [],
+			scheduleReview: [
+				{
+					id: "schedule-1",
+					startsAt: "2026-05-12T08:00:00.000Z",
+					endsAt: "2026-05-12T16:00:00.000Z",
+					teamName: "Operations",
+					employeeName: null,
+					identityState: "insufficient_data",
+				},
+			],
+		};
+
+		render(<WorksCouncilDashboard model={model} />);
+
+		expect(screen.getByText(/Insufficient data -/)).toBeTruthy();
 	});
 
 	it("renders schedule review empty state and hides export when disabled", () => {
