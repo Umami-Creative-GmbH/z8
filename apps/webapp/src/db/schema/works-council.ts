@@ -9,9 +9,8 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-
-import { organization, user } from "../auth-schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
 export type WorksCouncilIdentityVisibility = "aggregated" | "pseudonymized" | "named";
@@ -65,7 +64,9 @@ export const worksCouncilAccessAudit = pgTable(
 		actorUserId: text("actor_user_id")
 			.notNull()
 			.references(() => user.id),
-		actorEmployeeId: uuid("actor_employee_id").references(() => employee.id, { onDelete: "set null" }),
+		actorEmployeeId: uuid("actor_employee_id").references(() => employee.id, {
+			onDelete: "set null",
+		}),
 		eventType: text("event_type").$type<WorksCouncilAccessEventType>().notNull(),
 		dateRangeStart: timestamp("date_range_start", { withTimezone: true }),
 		dateRangeEnd: timestamp("date_range_end", { withTimezone: true }),
