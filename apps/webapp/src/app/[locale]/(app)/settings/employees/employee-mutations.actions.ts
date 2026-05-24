@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { user } from "@/db/auth-schema";
 import { employee, employeeRateHistory } from "@/db/schema";
+import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -233,28 +234,20 @@ export async function updateEmployeeAction(
 					actor.accessTier === "orgAdmin" &&
 					(firstName !== undefined || lastName !== undefined)
 				) {
-					const targetUser = yield* _(
-						dbService.query("getTargetUserForNameUpdate", async () => {
-							return await dbService.db.query.user.findFirst({
-								where: eq(user.id, targetEmployee.userId),
-								columns: {
-									firstName: true,
-									lastName: true,
-								},
-							});
-						}),
-					);
-					const nextFirstName = firstName ?? targetUser?.firstName ?? "";
-					const nextLastName = lastName ?? targetUser?.lastName ?? "";
+					const nextFirstName = firstName ?? targetEmployee.user?.firstName ?? "";
+					const nextLastName = lastName ?? targetEmployee.user?.lastName ?? "";
+					const authName = toAuthStructuredName({
+						firstName: nextFirstName,
+						lastName: nextLastName,
+						fallbackName: targetEmployee.user?.name ?? undefined,
+					});
 
 					yield* _(
 						dbService.query("updateEmployeeAuthUserName", async () => {
 							await dbService.db
 								.update(user)
 								.set({
-									firstName: nextFirstName,
-									lastName: nextLastName,
-									name: [nextFirstName, nextLastName].filter(Boolean).join(" "),
+									...authName,
 									updatedAt: new Date(),
 								})
 								.where(eq(user.id, targetEmployee.userId));

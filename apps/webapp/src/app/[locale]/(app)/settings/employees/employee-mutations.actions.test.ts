@@ -1,5 +1,7 @@
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { user } from "@/db/auth-schema";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 
 const mocks = vi.hoisted(() => ({
@@ -42,7 +44,6 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 }));
 
-import { user } from "@/db/auth-schema";
 import {
 	createEmployeeSchema,
 	personalInformationSchema,
@@ -74,7 +75,7 @@ describe("employee mutation schemas", () => {
 		expect(result.data).not.toHaveProperty("lastName");
 	});
 
-	it("accepts admin-managed auth names in update employee input", () => {
+	it("accepts and trims auth user names in update employee input", () => {
 		const result = updateEmployeeSchema.safeParse({
 			position: "Engineer",
 			firstName: " Ada ",
@@ -85,6 +86,17 @@ describe("employee mutation schemas", () => {
 		if (!result.success) return;
 		expect(result.data.firstName).toBe("Ada");
 		expect(result.data.lastName).toBe("Lovelace");
+	});
+
+	it("rejects blank auth user names when provided in update employee input", () => {
+		const result = updateEmployeeSchema.safeParse({
+			firstName: " ",
+			lastName: "Lovelace",
+		});
+
+		expect(result.success).toBe(false);
+		if (result.success) return;
+		expect(result.error.issues[0]?.path).toEqual(["firstName"]);
 	});
 
 	it("keeps structured names in self-service profile validation", () => {
@@ -176,18 +188,18 @@ describe("updateEmployeeAction", () => {
 		vi.clearAllMocks();
 	});
 
-	it("does not write employee-owned names into the employee update payload", async () => {
-		const employeeSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
-		const userSet = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
-		const update = vi.fn((table) => ({ set: table === user ? userSet : employeeSet }));
+	it("writes auth names to the linked user and not the employee update payload", async () => {
+		const employeeWhere = vi.fn().mockResolvedValue(undefined);
+		const employeeSet = vi.fn(() => ({ where: employeeWhere }));
+		const userWhere = vi.fn().mockResolvedValue(undefined);
+		const userSet = vi.fn(() => ({ where: userWhere }));
+		const update = vi
+			.fn()
+			.mockReturnValueOnce({ set: employeeSet })
+			.mockReturnValueOnce({ set: userSet });
 		const dbService = {
 			db: {
 				update,
-				query: {
-					user: {
-						findFirst: vi.fn().mockResolvedValue({ firstName: "Grace", lastName: "Hopper" }),
-					},
-				},
 			},
 			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
 		};
@@ -210,6 +222,11 @@ describe("updateEmployeeAction", () => {
 				organizationId: "org-1",
 				currentHourlyRate: null,
 				contractType: "fixed",
+				user: {
+					firstName: "Old",
+					lastName: "Name",
+					name: "Old Name",
+				},
 			}),
 		);
 		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
@@ -241,6 +258,78 @@ describe("updateEmployeeAction", () => {
 				name: "Ada Lovelace",
 			}),
 		);
+		expect(update).toHaveBeenNthCalledWith(2, user);
+		expect(userWhere).toHaveBeenCalledWith(eq(user.id, validUserId));
+	});
+
+	it("preserves existing auth name parts when only one name is provided", async () => {
+		const employeeWhere = vi.fn().mockResolvedValue(undefined);
+		const employeeSet = vi.fn(() => ({ where: employeeWhere }));
+		const userWhere = vi.fn().mockResolvedValue(undefined);
+		const userSet = vi.fn(() => ({ where: userWhere }));
+		const update = vi
+			.fn()
+			.mockReturnValueOnce({ set: employeeSet })
+			.mockReturnValueOnce({ set: userSet });
+		const dbService = {
+			db: { update },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromise(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
+				dbService,
+			}),
+		);
+		mocks.getTargetEmployee.mockReturnValue(
+			Effect.succeed({
+				id: "employee-1",
+				userId: validUserId,
+				organizationId: "org-1",
+				currentHourlyRate: null,
+				contractType: "fixed",
+				user: {
+					firstName: "ExistingFirst",
+					lastName: "ExistingLast",
+					name: "ExistingFirst ExistingLast",
+				},
+			}),
+		);
+		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(Effect.void);
+		mocks.hasAppAccessChanges.mockReturnValue(false);
+		mocks.validateInput.mockReturnValue(
+			Effect.succeed({
+				position: "Engineer",
+				firstName: "Ada",
+			}),
+		);
+
+		await updateEmployeeAction("employee-1", {
+			position: "Engineer",
+			firstName: "Ada",
+		} as Parameters<typeof updateEmployeeAction>[1]);
+
+		expect(employeeSet).toHaveBeenCalledWith(
+			expect.not.objectContaining({
+				firstName: expect.anything(),
+				lastName: expect.anything(),
+			}),
+		);
+		expect(userSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				firstName: "Ada",
+				lastName: "ExistingLast",
+				name: "Ada ExistingLast",
+			}),
+		);
+		expect(update).toHaveBeenNthCalledWith(2, user);
+		expect(userWhere).toHaveBeenCalledWith(eq(user.id, validUserId));
 	});
 
 	it("does not allow manager-scoped updates to change auth names", async () => {
@@ -277,8 +366,6 @@ describe("updateEmployeeAction", () => {
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
 				position: "Engineer",
-				firstName: "Ada",
-				lastName: "Lovelace",
 			}),
 		);
 
