@@ -40,6 +40,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	let domainContext: DomainAuthContext | null = null;
 	const platformDomainContext = await getPlatformDomainConfig(host ?? "");
 	const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
+	const buildHash = env.NEXT_PUBLIC_BUILD_HASH;
 	if (platformDomainContext) {
 		domainContext = {
 			...platformDomainContext,
@@ -119,7 +120,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 					</main>
 
 					<div className="pt-2">
-						<InfoFooter />
+						<InfoFooter buildHash={buildHash} />
 					</div>
 				</section>
 
