@@ -15,17 +15,14 @@ import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } fro
 import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
 import type { ImportCommitJobData, ImportScanJobData } from "@/lib/import-review/types";
 import { createLogger } from "@/lib/logger";
-import { createRedisTlsOptions } from "@/lib/redis-config";
+import { createRedisConnectionOptions } from "@/lib/redis-config";
 import { env } from "@/env";
 
 const logger = createLogger("JobQueue");
 
 // Connection configuration for Redis-compatible backend
 const connection: ConnectionOptions = {
-	host: env.REDIS_HOST || "localhost",
-	port: Number(env.REDIS_PORT || 6379),
-	password: env.REDIS_PASSWORD || undefined,
-	tls: createRedisTlsOptions(env.REDIS_TLS === "true", env.REDIS_CA_CERT),
+	...createRedisConnectionOptions(env),
 	maxRetriesPerRequest: null, // Required for BullMQ
 };
 

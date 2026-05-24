@@ -100,6 +100,7 @@ describe("env", () => {
 		const { env } = await importEnv({
 			REDIS_HOST: "managed-redis.example.com",
 			REDIS_PORT: "6380",
+			REDIS_USERNAME: "default",
 			REDIS_PASSWORD: "redis-password",
 			REDIS_TLS: "true",
 			REDIS_CA_CERT: redisCaCert,
@@ -107,6 +108,7 @@ describe("env", () => {
 
 		expect(env.REDIS_HOST).toBe("managed-redis.example.com");
 		expect(env.REDIS_PORT).toBe("6380");
+		expect(env.REDIS_USERNAME).toBe("default");
 		expect(env.REDIS_PASSWORD).toBe("redis-password");
 		expect(env.REDIS_TLS).toBe("true");
 		expect(env.REDIS_CA_CERT).toBe(redisCaCert);
