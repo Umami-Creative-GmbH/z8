@@ -17,7 +17,7 @@ describe("works council review data", () => {
 				identityVisibility: "aggregated",
 				absenceVisibility: "hidden",
 				exportEnabled: false,
-				minimumAggregationThreshold: 5,
+				minimumAggregationThreshold: 1,
 				visibleTeamIds: [],
 				visibleLocationIds: [],
 			},
@@ -46,7 +46,7 @@ describe("works council review data", () => {
 				identityVisibility: "aggregated",
 				absenceVisibility: "hidden",
 				exportEnabled: false,
-				minimumAggregationThreshold: 5,
+				minimumAggregationThreshold: 1,
 				visibleTeamIds: [],
 				visibleLocationIds: [],
 			},
@@ -81,7 +81,7 @@ describe("works council review data", () => {
 				identityVisibility: "aggregated",
 				absenceVisibility: "hidden",
 				exportEnabled: false,
-				minimumAggregationThreshold: 5,
+				minimumAggregationThreshold: 1,
 				visibleTeamIds: [],
 				visibleLocationIds: [],
 			},
@@ -104,8 +104,12 @@ describe("works council review data", () => {
 		});
 
 		expect(model.state).toBe("ready");
-		expect(model.dashboard.policyChangeCount).toBe(1);
-		expect(model.dashboard.schedulePublicationCount).toBe(1);
+		expect(model.dashboard.policyChangeCount).toEqual({ state: "available", count: 1, value: 1 });
+		expect(model.dashboard.schedulePublicationCount).toEqual({
+			state: "available",
+			count: 1,
+			value: 1,
+		});
 		expect(model.changeLog).toEqual([
 			expect.objectContaining({
 				id: "audit-1",
@@ -114,5 +118,86 @@ describe("works council review data", () => {
 			}),
 			expect.objectContaining({ id: "audit-2", eventType: "publish" }),
 		]);
+	});
+
+	it("filters change log to workforce-impacting allowed audit events", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: {
+				enabled: true,
+				identityVisibility: "aggregated",
+				absenceVisibility: "hidden",
+				exportEnabled: false,
+				minimumAggregationThreshold: 5,
+				visibleTeamIds: [],
+				visibleLocationIds: [],
+			},
+			queryAuditChanges: async ({ organizationId }) => [
+				{
+					id: "audit-schedule",
+					timestamp: DateTime.fromISO("2026-05-10T12:00:00.000Z").toJSDate(),
+					action: "publish",
+					entityType: "schedule",
+					organizationId,
+				},
+				{
+					id: "audit-login",
+					timestamp: DateTime.fromISO("2026-05-10T13:00:00.000Z").toJSDate(),
+					action: "login",
+					entityType: "session",
+					organizationId,
+				},
+			],
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.changeLog.map((entry) => entry.id)).toEqual(["audit-schedule"]);
+		expect(model.dashboard.scheduleChangeCount).toEqual({
+			state: "insufficient_data",
+			count: 1,
+			value: null,
+		});
+	});
+
+	it("suppresses dashboard counts below the minimum aggregation threshold", async () => {
+		const model = await buildWorksCouncilPortalModel({
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			dateRangeStart,
+			dateRangeEnd,
+			settings: {
+				enabled: true,
+				identityVisibility: "aggregated",
+				absenceVisibility: "hidden",
+				exportEnabled: true,
+				minimumAggregationThreshold: 5,
+				visibleTeamIds: [],
+				visibleLocationIds: [],
+			},
+			queryAuditChanges: async ({ organizationId }) => [
+				{
+					id: "audit-1",
+					timestamp: DateTime.fromISO("2026-05-10T12:00:00.000Z").toJSDate(),
+					action: "update",
+					entityType: "work_policy",
+					organizationId,
+				},
+			],
+		});
+
+		expect(model.state).toBe("ready");
+		expect(model.dateRange).toEqual({
+			start: dateRangeStart.toISOString(),
+			end: dateRangeEnd.toISOString(),
+		});
+		expect(model.exportEnabled).toBe(true);
+		expect(model.dashboard.policyChangeCount).toEqual({
+			state: "insufficient_data",
+			count: 1,
+			value: null,
+		});
 	});
 });

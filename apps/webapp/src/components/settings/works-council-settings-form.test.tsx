@@ -47,6 +47,8 @@ describe("WorksCouncilSettingsForm", () => {
 		expect((screen.getByLabelText("Minimum aggregation threshold") as HTMLInputElement).value).toBe(
 			"5",
 		);
+		expect(screen.getByLabelText("Visible team IDs") as HTMLInputElement).toBeTruthy();
+		expect(screen.getByLabelText("Visible location IDs") as HTMLInputElement).toBeTruthy();
 	});
 
 	it("saves the current settings payload", async () => {
@@ -71,6 +73,12 @@ describe("WorksCouncilSettingsForm", () => {
 		fireEvent.change(screen.getByLabelText("Minimum aggregation threshold"), {
 			target: { value: "8" },
 		});
+		fireEvent.change(screen.getByLabelText("Visible team IDs"), {
+			target: { value: "team_1, team_2" },
+		});
+		fireEvent.change(screen.getByLabelText("Visible location IDs"), {
+			target: { value: "location_1" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
 
 		await waitFor(() => {
@@ -80,8 +88,8 @@ describe("WorksCouncilSettingsForm", () => {
 				absenceVisibility: "grouped",
 				exportEnabled: true,
 				minimumAggregationThreshold: 8,
-				visibleTeamIds: [],
-				visibleLocationIds: [],
+				visibleTeamIds: ["team_1", "team_2"],
+				visibleLocationIds: ["location_1"],
 			});
 		});
 	});

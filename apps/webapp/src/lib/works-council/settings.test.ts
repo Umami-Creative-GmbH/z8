@@ -12,8 +12,22 @@ const mocks = vi.hoisted(() => {
 	const onConflictDoUpdateMock = vi.fn(() => ({ returning: returningMock }));
 	const valuesMock = vi.fn(() => ({ onConflictDoUpdate: onConflictDoUpdateMock }));
 	const insertMock = vi.fn(() => ({ values: valuesMock }));
+	const auditValuesMock = vi.fn();
+	const txInsertMock = vi.fn((table) =>
+		table === "worksCouncilAccessAudit" ? { values: auditValuesMock } : { values: valuesMock },
+	);
+	const transactionMock = vi.fn((callback) => callback({ insert: txInsertMock }));
 
-	return { findFirstMock, insertMock, onConflictDoUpdateMock, returningMock, valuesMock };
+	return {
+		auditValuesMock,
+		findFirstMock,
+		insertMock,
+		onConflictDoUpdateMock,
+		returningMock,
+		transactionMock,
+		txInsertMock,
+		valuesMock,
+	};
 });
 
 vi.mock("@/db", () => ({
@@ -24,7 +38,13 @@ vi.mock("@/db", () => ({
 			},
 		},
 		insert: mocks.insertMock,
+		transaction: mocks.transactionMock,
 	},
+}));
+
+vi.mock("@/db/schema", () => ({
+	worksCouncilAccessAudit: "worksCouncilAccessAudit",
+	worksCouncilSettings: "worksCouncilSettings",
 }));
 
 describe("works council settings", () => {
@@ -75,11 +95,25 @@ describe("works council settings", () => {
 		).toEqual(expect.objectContaining({ enabled: false, exportEnabled: false }));
 	});
 
-	it("filters visible team and location ids to non-empty strings", () => {
+	it("filters visible team and location ids to non-empty trimmed strings", () => {
 		expect(
 			normalizeWorksCouncilSettingsInput({
-				visibleTeamIds: ["team_1", "", 42, "team_2"] as never,
-				visibleLocationIds: [null, "location_1", "   ", "location_2"] as never,
+				visibleTeamIds: ["team_1", "", 42, " team_2 "] as never,
+				visibleLocationIds: [null, "location_1", "   ", " location_2 "] as never,
+			}),
+		).toEqual(
+			expect.objectContaining({
+				visibleTeamIds: ["team_1", "team_2"],
+				visibleLocationIds: ["location_1", "location_2"],
+			}),
+		);
+	});
+
+	it("accepts comma-separated team and location ids from simple text controls", () => {
+		expect(
+			normalizeWorksCouncilSettingsInput({
+				visibleTeamIds: "team_1, , team_2" as never,
+				visibleLocationIds: "location_1,location_2," as never,
 			}),
 		).toEqual(
 			expect.objectContaining({
@@ -149,5 +183,42 @@ describe("works council settings", () => {
 				}),
 			}),
 		);
+	});
+
+	it("saves settings and sanitized audit snapshot in one transaction", async () => {
+		const savedRow = { id: "settings_1", organizationId: "org_1" };
+		mocks.returningMock.mockResolvedValue([savedRow]);
+
+		await expect(
+			saveWorksCouncilSettings({
+				organizationId: "org_1",
+				actorUserId: "user_1",
+				enabled: true,
+				identityVisibility: "named",
+				absenceVisibility: "category",
+				exportEnabled: true,
+				minimumAggregationThreshold: 8,
+				visibleTeamIds: "team_1, team_2" as never,
+				visibleLocationIds: "location_1" as never,
+			}),
+		).resolves.toBe(savedRow);
+
+		expect(mocks.transactionMock).toHaveBeenCalledTimes(1);
+		expect(mocks.auditValuesMock).toHaveBeenCalledWith({
+			organizationId: "org_1",
+			actorUserId: "user_1",
+			eventType: "settings_updated",
+			metadata: {
+				settings: {
+					enabled: true,
+					identityVisibility: "named",
+					absenceVisibility: "category",
+					exportEnabled: true,
+					minimumAggregationThreshold: 8,
+					visibleTeamIds: ["team_1", "team_2"],
+					visibleLocationIds: ["location_1"],
+				},
+			},
+		});
 	});
 });

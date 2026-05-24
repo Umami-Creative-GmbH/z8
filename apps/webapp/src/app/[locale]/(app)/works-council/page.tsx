@@ -3,19 +3,38 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { WorksCouncilDashboard } from "@/components/works-council/works-council-dashboard";
 import { requireAbility, requireUser } from "@/lib/auth-helpers";
+import { auditWorksCouncilPortalViewed } from "@/lib/works-council/access-audit";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
 
-function getDefaultRange() {
+function getRange(searchParams?: { from?: string; to?: string }) {
 	const now = DateTime.utc();
+	const from = searchParams?.from
+		? DateTime.fromISO(searchParams.from, { zone: "utc" }).startOf("day")
+		: now.startOf("month");
+	const to = searchParams?.to
+		? DateTime.fromISO(searchParams.to, { zone: "utc" }).endOf("day")
+		: now.endOf("month");
+
+	if (!from.isValid || !to.isValid || from > to) {
+		return {
+			dateRangeStart: now.startOf("month").toJSDate(),
+			dateRangeEnd: now.endOf("month").toJSDate(),
+		};
+	}
+
 	return {
-		dateRangeStart: now.startOf("month").toJSDate(),
-		dateRangeEnd: now.endOf("month").toJSDate(),
+		dateRangeStart: from.toJSDate(),
+		dateRangeEnd: to.toJSDate(),
 	};
 }
 
-export default async function WorksCouncilPage() {
+export default async function WorksCouncilPage({
+	searchParams,
+}: {
+	searchParams?: Promise<{ from?: string; to?: string }>;
+}) {
 	await connection();
 
 	const authContext = await requireUser();
@@ -33,7 +52,13 @@ export default async function WorksCouncilPage() {
 	}
 
 	const settings = await loadWorksCouncilSettings(organizationId);
-	const range = getDefaultRange();
+	const range = getRange(await searchParams);
+	await auditWorksCouncilPortalViewed({
+		organizationId,
+		actorUserId: authContext.user.id,
+		settings,
+		...range,
+	});
 	const model = await buildWorksCouncilPortalModel({
 		organizationId,
 		actorUserId: authContext.user.id,

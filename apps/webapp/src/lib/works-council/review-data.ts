@@ -5,6 +5,7 @@ import {
 	type WorksCouncilAbsenceVisibility,
 	type WorksCouncilIdentityVisibility,
 } from "@/db/schema";
+import { type SuppressedValue, suppressSmallGroups } from "./privacy";
 
 export interface WorksCouncilSettingsSnapshot {
 	enabled: boolean;
@@ -28,6 +29,8 @@ export interface WorksCouncilAuditChangeRow {
 	action: string;
 	entityType: string;
 	organizationId: string;
+	teamId?: string | null;
+	locationId?: string | null;
 }
 
 export interface BuildWorksCouncilPortalModelInput {
@@ -46,14 +49,16 @@ export type WorksCouncilPortalModel =
 	| { state: "disabled"; dashboard: null; changeLog: []; scheduleReview: [] }
 	| {
 			state: "ready";
+			dateRange: { start: string; end: string };
+			exportEnabled: boolean;
 			dashboard: {
-				overtimeMinutes: number;
-				breakRestRiskCount: number;
-				schedulePublicationCount: number;
-				scheduleChangeCount: number;
-				complianceFindingCount: number;
-				absenceCoveragePressureCount: number;
-				policyChangeCount: number;
+				overtimeMinutes: SuppressedValue<number>;
+				breakRestRiskCount: SuppressedValue<number>;
+				schedulePublicationCount: SuppressedValue<number>;
+				scheduleChangeCount: SuppressedValue<number>;
+				complianceFindingCount: SuppressedValue<number>;
+				absenceCoveragePressureCount: SuppressedValue<number>;
+				policyChangeCount: SuppressedValue<number>;
 			};
 			changeLog: Array<{
 				id: string;
@@ -119,6 +124,46 @@ function isScheduleChange(row: WorksCouncilAuditChangeRow) {
 	return row.entityType.toLowerCase().includes("schedule");
 }
 
+function isComplianceFinding(row: WorksCouncilAuditChangeRow) {
+	return row.entityType.toLowerCase().includes("compliance");
+}
+
+function isAllowedWorkforceImpactingChange(row: WorksCouncilAuditChangeRow) {
+	const entityType = row.entityType.toLowerCase();
+	return (
+		entityType.includes("schedule") ||
+		entityType.includes("policy") ||
+		entityType.includes("compliance") ||
+		entityType.includes("absence") ||
+		entityType.includes("time") ||
+		entityType.includes("shift")
+	);
+}
+
+function matchesConfiguredScope(
+	row: WorksCouncilAuditChangeRow,
+	settings: WorksCouncilSettingsSnapshot,
+) {
+	const teamAllowed =
+		settings.visibleTeamIds.length === 0 ||
+		!row.teamId ||
+		settings.visibleTeamIds.includes(row.teamId);
+	const locationAllowed =
+		settings.visibleLocationIds.length === 0 ||
+		!row.locationId ||
+		settings.visibleLocationIds.includes(row.locationId);
+
+	return teamAllowed && locationAllowed;
+}
+
+function suppressedCount(count: number, settings: WorksCouncilSettingsSnapshot) {
+	return suppressSmallGroups({
+		count,
+		threshold: settings.minimumAggregationThreshold,
+		value: count,
+	});
+}
+
 export async function buildWorksCouncilPortalModel(
 	input: BuildWorksCouncilPortalModelInput,
 ): Promise<WorksCouncilPortalModel> {
@@ -128,20 +173,34 @@ export async function buildWorksCouncilPortalModel(
 
 	const queryRequest = buildQueryRequest(input);
 	input.collectQueryContract?.(queryRequest);
-	const changeRows = await (input.queryAuditChanges ?? queryAuditChanges)(queryRequest);
+	const changeRows = (await (input.queryAuditChanges ?? queryAuditChanges)(queryRequest)).filter(
+		(row) => isAllowedWorkforceImpactingChange(row) && matchesConfiguredScope(row, input.settings),
+	);
 
 	return {
 		state: "ready",
+		dateRange: {
+			start: input.dateRangeStart.toISOString(),
+			end: input.dateRangeEnd.toISOString(),
+		},
+		exportEnabled: input.settings.exportEnabled,
 		dashboard: {
-			overtimeMinutes: 0,
-			breakRestRiskCount: 0,
-			schedulePublicationCount: changeRows.filter(isSchedulePublication).length,
-			scheduleChangeCount: changeRows.filter(isScheduleChange).length,
-			complianceFindingCount: changeRows.filter((row) =>
-				row.entityType.toLowerCase().includes("compliance"),
-			).length,
-			absenceCoveragePressureCount: 0,
-			policyChangeCount: changeRows.filter(isPolicyChange).length,
+			overtimeMinutes: suppressedCount(0, input.settings),
+			breakRestRiskCount: suppressedCount(0, input.settings),
+			schedulePublicationCount: suppressedCount(
+				changeRows.filter(isSchedulePublication).length,
+				input.settings,
+			),
+			scheduleChangeCount: suppressedCount(
+				changeRows.filter(isScheduleChange).length,
+				input.settings,
+			),
+			complianceFindingCount: suppressedCount(
+				changeRows.filter(isComplianceFinding).length,
+				input.settings,
+			),
+			absenceCoveragePressureCount: suppressedCount(0, input.settings),
+			policyChangeCount: suppressedCount(changeRows.filter(isPolicyChange).length, input.settings),
 		},
 		changeLog: changeRows.map((row) => ({
 			id: row.id,

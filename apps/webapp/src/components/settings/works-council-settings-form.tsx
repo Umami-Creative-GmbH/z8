@@ -13,6 +13,13 @@ import { Switch } from "@/components/ui/switch";
 import type { WorksCouncilAbsenceVisibility, WorksCouncilIdentityVisibility } from "@/db/schema";
 import type { WorksCouncilSettingsFormValues } from "@/lib/works-council/settings";
 
+function parseCommaSeparatedIds(value: string) {
+	return value
+		.split(",")
+		.map((item) => item.trim())
+		.filter(Boolean);
+}
+
 interface WorksCouncilSettingsFormProps {
 	initialSettings: WorksCouncilSettingsFormValues & { organizationId?: string };
 	onSave?: (
@@ -206,6 +213,60 @@ export function WorksCouncilSettingsForm({
 							</div>
 						)}
 					</form.Field>
+
+					<div className="grid gap-4 md:grid-cols-2">
+						<form.Field name="visibleTeamIds">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="works-council-visible-team-ids">
+										{t("settings.worksCouncil.visibleTeamIds", "Visible team IDs")}
+									</Label>
+									<Input
+										id="works-council-visible-team-ids"
+										name="visibleTeamIds"
+										autoComplete="off"
+										value={field.state.value.join(", ")}
+										onChange={(event) =>
+											field.handleChange(parseCommaSeparatedIds(event.target.value))
+										}
+										disabled={controlsDisabled}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.worksCouncil.visibleTeamIdsDescription",
+											"Optional comma-separated team IDs. Leave empty to include all teams.",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="visibleLocationIds">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="works-council-visible-location-ids">
+										{t("settings.worksCouncil.visibleLocationIds", "Visible location IDs")}
+									</Label>
+									<Input
+										id="works-council-visible-location-ids"
+										name="visibleLocationIds"
+										autoComplete="off"
+										value={field.state.value.join(", ")}
+										onChange={(event) =>
+											field.handleChange(parseCommaSeparatedIds(event.target.value))
+										}
+										disabled={controlsDisabled}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.worksCouncil.visibleLocationIdsDescription",
+											"Optional comma-separated location IDs. Leave empty to include all locations.",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+					</div>
 
 					<Button type="submit" disabled={loading}>
 						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}

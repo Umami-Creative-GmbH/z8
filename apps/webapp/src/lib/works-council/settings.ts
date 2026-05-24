@@ -3,6 +3,7 @@ import { db } from "@/db";
 import {
 	type WorksCouncilAbsenceVisibility,
 	type WorksCouncilIdentityVisibility,
+	worksCouncilAccessAudit,
 	worksCouncilSettings,
 } from "@/db/schema";
 
@@ -52,9 +53,13 @@ function sanitizeBoolean(value: unknown, fallback: boolean) {
 }
 
 function sanitizeStringIds(value: unknown) {
-	return Array.isArray(value)
-		? value.filter((item): item is string => typeof item === "string" && item.trim() !== "")
-		: [];
+	const values = typeof value === "string" ? value.split(",") : Array.isArray(value) ? value : [];
+
+	return values.flatMap((item) => {
+		if (typeof item !== "string") return [];
+		const trimmed = item.trim();
+		return trimmed === "" ? [] : [trimmed];
+	});
 }
 
 export function normalizeWorksCouncilSettingsInput(
@@ -99,19 +104,30 @@ export async function saveWorksCouncilSettings(
 	input: WorksCouncilSettingsInput & { organizationId: string; actorUserId: string },
 ) {
 	const normalized = normalizeWorksCouncilSettingsInput(input);
-	const [row] = await db
-		.insert(worksCouncilSettings)
-		.values({
-			...normalized,
+	const [row] = await db.transaction(async (tx) => {
+		const savedRows = await tx
+			.insert(worksCouncilSettings)
+			.values({
+				...normalized,
+				organizationId: input.organizationId,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+			})
+			.onConflictDoUpdate({
+				target: worksCouncilSettings.organizationId,
+				set: { ...normalized, updatedBy: input.actorUserId },
+			})
+			.returning();
+
+		await tx.insert(worksCouncilAccessAudit).values({
 			organizationId: input.organizationId,
-			createdBy: input.actorUserId,
-			updatedBy: input.actorUserId,
-		})
-		.onConflictDoUpdate({
-			target: worksCouncilSettings.organizationId,
-			set: { ...normalized, updatedBy: input.actorUserId },
-		})
-		.returning();
+			actorUserId: input.actorUserId,
+			eventType: "settings_updated",
+			metadata: { settings: normalized },
+		});
+
+		return savedRows;
+	});
 
 	return row;
 }

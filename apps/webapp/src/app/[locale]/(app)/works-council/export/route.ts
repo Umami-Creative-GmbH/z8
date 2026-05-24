@@ -62,6 +62,16 @@ function csvScopeList(values: string[]) {
 	return values.length > 0 ? values.toSorted().join(";") : "all";
 }
 
+function csvMetricValue(
+	value: WorksCouncilPortalModel["dashboard"] extends infer Dashboard
+		? Dashboard extends null
+			? never
+			: Dashboard[keyof Dashboard]
+		: never,
+) {
+	return value.state === "available" ? value.value : "insufficient_data";
+}
+
 function buildCsv(
 	model: WorksCouncilPortalModel,
 	snapshot: VisibilitySnapshot,
@@ -83,13 +93,16 @@ function buildCsv(
 		csvRow(["Visible location IDs", csvScopeList(snapshot.visibleLocationIds)]),
 		csvRow([]),
 		csvRow(["Metric", "Value"]),
-		csvRow(["Overtime minutes", model.dashboard.overtimeMinutes]),
-		csvRow(["Break/rest risk count", model.dashboard.breakRestRiskCount]),
-		csvRow(["Schedule publications", model.dashboard.schedulePublicationCount]),
-		csvRow(["Schedule changes", model.dashboard.scheduleChangeCount]),
-		csvRow(["Compliance findings", model.dashboard.complianceFindingCount]),
-		csvRow(["Absence coverage pressure", model.dashboard.absenceCoveragePressureCount]),
-		csvRow(["Policy changes", model.dashboard.policyChangeCount]),
+		csvRow(["Overtime minutes", csvMetricValue(model.dashboard.overtimeMinutes)]),
+		csvRow(["Break/rest risk count", csvMetricValue(model.dashboard.breakRestRiskCount)]),
+		csvRow(["Schedule publications", csvMetricValue(model.dashboard.schedulePublicationCount)]),
+		csvRow(["Schedule changes", csvMetricValue(model.dashboard.scheduleChangeCount)]),
+		csvRow(["Compliance findings", csvMetricValue(model.dashboard.complianceFindingCount)]),
+		csvRow([
+			"Absence coverage pressure",
+			csvMetricValue(model.dashboard.absenceCoveragePressureCount),
+		]),
+		csvRow(["Policy changes", csvMetricValue(model.dashboard.policyChangeCount)]),
 		csvRow([]),
 		csvRow(["Change ID", "Timestamp", "Event type", "Actor", "Summary"]),
 		...model.changeLog.map((entry) =>
