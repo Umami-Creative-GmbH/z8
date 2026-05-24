@@ -125,6 +125,12 @@ export enum AuditAction {
 	AUDIT_PACK_CREATED = "audit_pack.created",
 	AUDIT_PACK_DOWNLOADED = "audit_pack.downloaded",
 	AUDIT_PACK_RETRY_REQUESTED = "audit_pack.retry_requested",
+
+	// Works Council Operations
+	WORKS_COUNCIL_PORTAL_VIEWED = "works_council.portal_viewed",
+	WORKS_COUNCIL_SETTINGS_UPDATED = "works_council.settings_updated",
+	WORKS_COUNCIL_EXPORT_REQUESTED = "works_council.export_requested",
+	WORKS_COUNCIL_EXPORT_FAILED = "works_council.export_failed",
 }
 
 export type ApprovalAuditDecision = TimeRecordApprovalDecision;
@@ -175,7 +181,9 @@ export interface AuditLogEntry {
 		| "location_employee"
 		| "subarea_employee"
 		| "user"
-		| "audit_pack_request";
+		| "audit_pack_request"
+		| "works_council_settings"
+		| "works_council_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

@@ -472,6 +472,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "enterprise",
 	},
 	{
+		id: "works-council",
+		titleKey: "settings.worksCouncil.title",
+		titleDefault: "Works Council Mode",
+		descriptionKey: "settings.worksCouncil.description",
+		descriptionDefault: "Configure privacy-safe Betriebsrat access and review exports",
+		href: "/settings/compliance/works-council",
+		icon: "gavel",
+		minimumTier: "orgAdmin",
+		group: "enterprise",
+	},
+	{
 		id: "webhooks",
 		titleKey: "settings.webhooks.title",
 		titleDefault: "Webhooks",

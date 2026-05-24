@@ -62,6 +62,7 @@ export type OrganizationSubject =
 	| "Export" // Data exports
 	| "PayrollExport" // Payroll exports
 	| "ScheduledExport" // Scheduled exports
+	| "WorksCouncil" // Works council review portal
 	| "DemoData"; // Demo data management
 
 /**
@@ -214,6 +215,7 @@ export type SubjectTypeMap = {
 	Export: OrgScopedSubject;
 	PayrollExport: OrgScopedSubject;
 	ScheduledExport: OrgScopedSubject;
+	WorksCouncil: OrgScopedSubject;
 	DemoData: OrgScopedSubject;
 
 	// Workforce subjects
