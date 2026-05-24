@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	buildMonthWorkSummary,
 	groupCalendarEventsByDate,
@@ -114,6 +114,42 @@ describe("buildMonthWorkSummary", () => {
 			deltaMinutes: -180,
 			status: "under",
 		});
+	});
+
+	it("excludes future current-month days from week and month totals", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-24T12:00:00.000Z"));
+
+		try {
+			const workHoursData: DailyWorkHoursSummaries = new Map([
+				["2026-05-22", summary(480, 480)],
+				["2026-05-24", summary(480, 120)],
+				["2026-05-25", summary(480, 0)],
+			]);
+
+			const month = buildMonthWorkSummary({
+				year: 2026,
+				monthIndex: 4,
+				weekStartDay: "monday",
+				workHoursData,
+			});
+
+			expect(month.monthTotal).toMatchObject({
+				requiredMinutes: 960,
+				actualMinutes: 600,
+				deltaMinutes: -360,
+				status: "under",
+			});
+			expect(month.weeks[3]?.total).toMatchObject({
+				requiredMinutes: 960,
+				actualMinutes: 600,
+				deltaMinutes: -360,
+				status: "under",
+			});
+			expect(month.weeks[4]?.total).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("respects Sunday-start week layout", () => {
