@@ -5,7 +5,9 @@
  */
 
 import { cleanupExpiredExports } from "@/lib/export/export-service";
+import { deleteOldAuditLogs } from "@/lib/audit/cleanup";
 import { createLogger } from "@/lib/logger";
+import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import type { CleanupJobData } from "@/lib/queue";
 
 const logger = createLogger("Cleanup");
@@ -27,13 +29,13 @@ export async function runCleanup(data: CleanupJobData): Promise<{
 			break;
 
 		case "old_notifications":
-			// TODO: Implement notification cleanup when needed
-			logger.debug("Notification cleanup not yet implemented");
+			deletedCount = await deleteOldNotifications(90);
+			logger.info({ count: deletedCount }, "Cleaned up old notifications");
 			break;
 
 		case "old_audit_logs":
-			// TODO: Implement audit log cleanup when needed
-			logger.debug("Audit log cleanup not yet implemented");
+			deletedCount = await deleteOldAuditLogs(365);
+			logger.info({ count: deletedCount }, "Cleaned up old audit logs");
 			break;
 
 		default:

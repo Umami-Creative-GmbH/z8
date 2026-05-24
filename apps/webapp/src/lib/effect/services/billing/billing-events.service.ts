@@ -1,8 +1,10 @@
 import { Context, Effect, Layer } from "effect";
 import type Stripe from "stripe";
+import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { stripeEvent, subscription } from "@/db/schema";
+import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 import { SeatSyncService } from "./seat-sync.service";
@@ -10,6 +12,35 @@ import { DatabaseError, StripeError } from "../../errors";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingEventsService");
+const DEFAULT_APP_URL = "https://app.z8-time.app";
+
+const getBillingUrl = () => {
+	const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || DEFAULT_APP_URL;
+	return `${appUrl}/settings/billing`;
+};
+
+const formatStripeTimestamp = (timestamp?: number | null) =>
+	timestamp ? DateTime.fromSeconds(timestamp, { zone: "utc" }).toFormat("LLLL d, yyyy") : undefined;
+
+const formatStripeAmount = (amount?: number | null, currency?: string | null) => {
+	if (amount == null) return undefined;
+
+	try {
+		return new Intl.NumberFormat("en", {
+			style: "currency",
+			currency: (currency ?? "eur").toUpperCase(),
+		}).format(amount / 100);
+	} catch {
+		return `${(currency ?? "eur").toUpperCase()} ${(amount / 100).toFixed(2)}`;
+	}
+};
+
+const getCustomerId = (customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined) =>
+	typeof customer === "string" ? customer : customer?.id;
+
+const getCustomerEmailFromObject = (
+	customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
+) => (typeof customer === "object" && customer && "email" in customer ? customer.email : undefined);
 
 /**
  * BillingEventsService - Processes Stripe webhook events
@@ -45,6 +76,54 @@ export const BillingEventsServiceLive = Layer.effect(
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
 		const seatSyncService = yield* SeatSyncService;
+
+		const resolveCustomerEmail = (
+			customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
+			fallbackEmail?: string | null,
+		): Effect.Effect<string | undefined, never> => {
+			const customerEmail = getCustomerEmailFromObject(customer) ?? fallbackEmail ?? undefined;
+			if (customerEmail) return Effect.succeed(customerEmail);
+
+			const customerId = getCustomerId(customer);
+			if (!customerId) return Effect.succeed(undefined);
+
+			return stripeService.getCustomer(customerId).pipe(
+				Effect.match({
+					onFailure: (error) => {
+						logger.warn({ customerId, error }, "Failed to resolve Stripe customer email");
+						return undefined;
+					},
+					onSuccess: (stripeCustomer) => stripeCustomer.email ?? undefined,
+				}),
+			);
+		};
+
+		const sendBillingEmail = (params: Parameters<typeof sendBillingSystemEmail>[0]) =>
+			Effect.tryPromise({
+				try: () => sendBillingSystemEmail(params),
+				catch: (error) => error,
+			}).pipe(
+				Effect.match({
+					onFailure: (error) => {
+						logger.warn(
+							{ templateKey: params.templateKey, error: error instanceof Error ? error.name : typeof error },
+							"Billing system email failed outside sender guard",
+						);
+					},
+					onSuccess: () => undefined,
+				}),
+			);
+
+		const baseBillingEmailData = (customerEmail?: string) => {
+			const billingUrl = getBillingUrl();
+			return {
+				organizationName: "your organization",
+				customerEmail,
+				billingUrl,
+				billingPortalUrl: billingUrl,
+				planName: "Z8",
+			};
+		};
 
 		const handleCheckoutSessionCompleted = (
 			session: Stripe.Checkout.Session,
@@ -230,6 +309,12 @@ export const BillingEventsServiceLive = Layer.effect(
 			stripeSub: Stripe.Subscription,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
+				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
+				const trialEndsAt = formatStripeTimestamp(stripeSub.trial_end);
+				const daysRemaining = stripeSub.trial_end
+					? Math.max(0, Math.ceil((stripeSub.trial_end - DateTime.utc().toSeconds()) / 86_400))
+					: undefined;
+
 				// This is for sending notifications - could trigger email here
 				logger.info(
 					{
@@ -240,13 +325,24 @@ export const BillingEventsServiceLive = Layer.effect(
 					},
 					"Trial will end soon",
 				);
-				// TODO: Send trial ending email notification
+				yield* sendBillingEmail({
+					templateKey: "billing-trial-ending",
+					to: customerEmail,
+					data: {
+						...baseBillingEmailData(customerEmail),
+						daysRemaining,
+						trialEnd: trialEndsAt,
+						trialEndsAt,
+					},
+				});
 			});
 
 		const handleCustomerSubscriptionPaused = (
 			stripeSub: Stripe.Subscription,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
+				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
+
 				yield* Effect.tryPromise({
 					try: async () => {
 						await db
@@ -279,7 +375,14 @@ export const BillingEventsServiceLive = Layer.effect(
 					},
 					"Subscription paused",
 				);
-				// TODO: Send subscription paused email notification
+				yield* sendBillingEmail({
+					templateKey: "billing-subscription-paused",
+					to: customerEmail,
+					data: {
+						...baseBillingEmailData(customerEmail),
+						subscriptionStatus: "paused",
+					},
+				});
 			});
 
 		const handleCustomerSubscriptionResumed = (
@@ -287,6 +390,7 @@ export const BillingEventsServiceLive = Layer.effect(
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
 				const item = stripeSub.items.data[0];
+				const customerEmail = yield* resolveCustomerEmail(stripeSub.customer);
 
 				yield* Effect.tryPromise({
 					try: async () => {
@@ -319,13 +423,22 @@ export const BillingEventsServiceLive = Layer.effect(
 					{ subscriptionId: stripeSub.id, status: stripeSub.status },
 					"Subscription resumed",
 				);
-				// TODO: Send subscription resumed email notification
+				yield* sendBillingEmail({
+					templateKey: "billing-subscription-resumed",
+					to: customerEmail,
+					data: {
+						...baseBillingEmailData(customerEmail),
+						resumeDate: DateTime.utc().toFormat("LLLL d, yyyy"),
+					},
+				});
 			});
 
 		const handleInvoiceFinalized = (
 			invoice: Stripe.Invoice,
 		): Effect.Effect<void, DatabaseError> =>
 			Effect.gen(function* () {
+				const customerEmail = yield* resolveCustomerEmail(invoice.customer, invoice.customer_email);
+
 				// Get subscription ID from invoice
 				const invoiceWithSub = invoice as unknown as {
 					subscription?: string | { id: string } | null;
@@ -387,7 +500,19 @@ export const BillingEventsServiceLive = Layer.effect(
 					},
 					"Invoice finalized",
 				);
-				// TODO: Send invoice ready email notification with PDF link
+				yield* sendBillingEmail({
+					templateKey: "billing-invoice-ready",
+					to: customerEmail,
+					data: {
+						...baseBillingEmailData(customerEmail),
+						invoiceNumber: invoice.number ?? invoice.id,
+						invoiceAmount: formatStripeAmount(invoice.amount_due, invoice.currency),
+						amountDue: formatStripeAmount(invoice.amount_due, invoice.currency),
+						dueDate: formatStripeTimestamp(invoice.due_date) ?? "not set",
+						invoiceUrl: invoice.hosted_invoice_url,
+						invoicePdfUrl: invoice.invoice_pdf,
+					},
+				});
 			});
 
 		const handlePaymentIntentFailed = (
@@ -410,6 +535,10 @@ export const BillingEventsServiceLive = Layer.effect(
 					typeof paymentIntentWithInvoice.invoice === "string"
 						? paymentIntentWithInvoice.invoice
 						: paymentIntentWithInvoice.invoice?.id;
+				const customerEmail = yield* resolveCustomerEmail(
+					paymentIntent.customer,
+					paymentIntent.receipt_email,
+				);
 
 				// Log detailed failure info for debugging and customer support
 				logger.warn(
@@ -468,8 +597,18 @@ export const BillingEventsServiceLive = Layer.effect(
 					});
 				}
 
-				// TODO: Send payment failed email with actionable next steps
-				// Include: reason for failure, link to update payment method, support contact
+				yield* sendBillingEmail({
+					templateKey: "billing-payment-failed",
+					to: customerEmail,
+					data: {
+						...baseBillingEmailData(customerEmail),
+						invoiceAmount: formatStripeAmount(paymentIntent.amount, paymentIntent.currency),
+						amountDue: formatStripeAmount(paymentIntent.amount, paymentIntent.currency),
+						failureReason: failureMessage,
+						paymentRetryDate: "soon",
+						invoiceUrl: invoiceId ? getBillingUrl() : undefined,
+					},
+				});
 			});
 
 		return BillingEventsService.of({

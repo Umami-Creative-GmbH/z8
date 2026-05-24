@@ -7,8 +7,17 @@ import { forwardRef, useImperativeHandle, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { EmailTemplateDefinition, EmailTemplateVariableDefinition } from "@/lib/email/template-registry";
+import type { EmailTemplateVariableDefinition } from "@/lib/email/template-registry";
 import { VariablePalette } from "./variable-palette";
+
+type EmailTemplateEditorDefinition = {
+	key: string;
+	category: string;
+	label: string;
+	description: string;
+	defaultSubject: string;
+	variables: EmailTemplateVariableDefinition[];
+};
 
 const ReactEmailEditor = dynamic(
 	() => import("@react-email/editor").then((module) => module.EmailEditor),
@@ -16,14 +25,14 @@ const ReactEmailEditor = dynamic(
 		ssr: false,
 		loading: () => (
 			<div className="flex min-h-56 items-center justify-center rounded-lg border bg-muted/30 text-muted-foreground text-sm">
-				Loading email editor...
+				Loading email editor…
 			</div>
 		),
 	},
 );
 
 interface EmailTemplateEditorProps {
-	definition: Omit<EmailTemplateDefinition, "renderDefault">;
+	definition: EmailTemplateEditorDefinition;
 	subject: string;
 	html: string;
 	plainText: string;

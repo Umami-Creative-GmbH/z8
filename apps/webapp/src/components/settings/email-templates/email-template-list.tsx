@@ -1,12 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
 import { cn } from "@/lib/utils";
 import type { EmailTemplateOverride } from "./email-template-settings-client";
 
+type EmailTemplateListDefinition = {
+	key: string;
+	category: string;
+	label: string;
+	description: string;
+};
+
 interface EmailTemplateListProps {
 	templates: Array<{
-		definition: Omit<EmailTemplateDefinition, "renderDefault">;
+		definition: EmailTemplateListDefinition;
 		override: EmailTemplateOverride | null;
 	}>;
 	selectedKey: string;
@@ -16,6 +22,7 @@ interface EmailTemplateListProps {
 const categoryLabels: Record<string, string> = {
 	auth: "Account access",
 	absences: "Absences",
+	billing: "Billing",
 	"time-corrections": "Time corrections",
 	teams: "Teams",
 	security: "Security",

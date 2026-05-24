@@ -6,6 +6,7 @@ import {
 	IconChevronRight,
 	IconCreditCard,
 	IconCurrencyEuro,
+	IconMailCog,
 	IconUserBolt,
 	IconUsers,
 	IconUserX,
@@ -371,6 +372,18 @@ async function AdminDashboardContent() {
 						)}
 						href="/platform-admin/diagnostics"
 						icon={<IconActivityHeartbeat className="size-5" aria-hidden="true" />}
+					/>
+					<QuickActionCard
+						title={t(
+							"admin:admin.overview.quickActions.systemEmailTemplates.title",
+							"System Email Templates",
+						)}
+						description={t(
+							"admin:admin.overview.quickActions.systemEmailTemplates.description",
+							"Edit platform-owned billing and system email copy",
+						)}
+						href="/platform-admin/system-email-templates"
+						icon={<IconMailCog className="size-5" aria-hidden="true" />}
 					/>
 					{process.env.BILLING_ENABLED === "true" && (
 						<QuickActionCard

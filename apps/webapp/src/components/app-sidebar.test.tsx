@@ -195,6 +195,49 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
+	it("renders surcharge settings search navigation when the organization feature flag is enabled", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: true,
+				demoDataEnabled: true,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: {
+				role: "user",
+			},
+			employee: {
+				organizationId: "org_1",
+				role: "manager",
+			},
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("manager");
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Surcharges", href: "/settings/surcharges" }),
+			]),
+		);
+	});
+
 	it("renders Team Absences after Team for managers only", () => {
 		const { rerender } = render(<AppSidebar employeeRole="manager" />);
 

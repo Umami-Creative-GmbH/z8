@@ -14,12 +14,9 @@ import { microsoft365CalendarProvider } from "./microsoft365";
 // PROVIDER REGISTRY
 // ============================================
 
-const providers: Record<CalendarProvider, ICalendarProvider> = {
+const providers: Partial<Record<CalendarProvider, ICalendarProvider>> = {
 	google: googleCalendarProvider,
 	microsoft365: microsoft365CalendarProvider,
-	// Future providers
-	icloud: undefined as unknown as ICalendarProvider, // Placeholder
-	caldav: undefined as unknown as ICalendarProvider, // Placeholder
 };
 
 /**
