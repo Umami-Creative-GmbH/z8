@@ -134,6 +134,11 @@ import {
 	workPolicyScheduleDay,
 	workPolicyViolation,
 } from "./work-policy";
+import {
+	worksCouncilAccessAudit,
+	worksCouncilReviewExport,
+	worksCouncilSettings,
+} from "./works-council";
 
 // ============================================
 // RELATIONS
@@ -237,6 +242,54 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	travelExpenseAttachments: many(travelExpenseAttachment),
 	travelExpensePolicies: many(travelExpensePolicy),
 	travelExpenseDecisionLogs: many(travelExpenseDecisionLog),
+	worksCouncilSettings: many(worksCouncilSettings),
+	worksCouncilAccessAudits: many(worksCouncilAccessAudit),
+	worksCouncilReviewExports: many(worksCouncilReviewExport),
+}));
+
+export const worksCouncilSettingsRelations = relations(worksCouncilSettings, ({ one }) => ({
+	organization: one(organization, {
+		fields: [worksCouncilSettings.organizationId],
+		references: [organization.id],
+	}),
+	createdByUser: one(user, {
+		fields: [worksCouncilSettings.createdBy],
+		references: [user.id],
+	}),
+	updatedByUser: one(user, {
+		fields: [worksCouncilSettings.updatedBy],
+		references: [user.id],
+	}),
+}));
+
+export const worksCouncilAccessAuditRelations = relations(worksCouncilAccessAudit, ({ one }) => ({
+	organization: one(organization, {
+		fields: [worksCouncilAccessAudit.organizationId],
+		references: [organization.id],
+	}),
+	actorUser: one(user, {
+		fields: [worksCouncilAccessAudit.actorUserId],
+		references: [user.id],
+	}),
+	actorEmployee: one(employee, {
+		fields: [worksCouncilAccessAudit.actorEmployeeId],
+		references: [employee.id],
+	}),
+}));
+
+export const worksCouncilReviewExportRelations = relations(worksCouncilReviewExport, ({ one }) => ({
+	organization: one(organization, {
+		fields: [worksCouncilReviewExport.organizationId],
+		references: [organization.id],
+	}),
+	requestedByUser: one(user, {
+		fields: [worksCouncilReviewExport.requestedByUserId],
+		references: [user.id],
+	}),
+	requestedByEmployee: one(employee, {
+		fields: [worksCouncilReviewExport.requestedByEmployeeId],
+		references: [employee.id],
+	}),
 }));
 
 export const approvalPolicyRelations = relations(approvalPolicy, ({ one, many }) => ({
