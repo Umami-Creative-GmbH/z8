@@ -16,6 +16,10 @@ import {
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
+import {
+	isOrganizationCreationDisabled,
+	normalizeOrganizationCreationFlag,
+} from "@/lib/organization/creation-policy";
 import { isTimeFormat } from "@/lib/user-preferences/time-format";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
@@ -219,6 +223,18 @@ export const OnboardingServiceLive = Layer.effect(
 			createOrganization: (data: OrganizationFormValues) =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					if (
+						isOrganizationCreationDisabled(
+							normalizeOrganizationCreationFlag(process.env.DISABLE_ORGANIZATION_CREATION),
+						)
+					) {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Organization creation is disabled for this deployment.",
+								field: "organization",
+							}),
+						);
+					}
 
 					// First, temporarily enable organization creation for this user
 					yield* dbService.query("enableOrgCreation", async () => {

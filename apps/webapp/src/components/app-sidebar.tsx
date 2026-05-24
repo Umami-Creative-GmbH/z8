@@ -43,6 +43,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	settingsAccessTier?: SettingsAccessTier;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
+	canCreateOrganizations?: boolean;
 }
 
 const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefined): boolean => {
@@ -61,6 +62,7 @@ export function AppSidebar({
 	settingsAccessTier = "member",
 	billingEnabled = false,
 	featureFlags,
+	canCreateOrganizations = false,
 	...props
 }: AppSidebarProps) {
 	const { t } = useTranslate();
@@ -191,9 +193,7 @@ export function AppSidebar({
 				<OrganizationSwitcher
 					organizations={organizations}
 					currentOrganization={currentOrganization}
-					canCreateOrganizations={
-						session?.user?.canCreateOrganizations || session?.user?.role === "admin"
-					}
+					canCreateOrganizations={canCreateOrganizations}
 				/>
 			</SidebarHeader>
 			<SidebarContent>

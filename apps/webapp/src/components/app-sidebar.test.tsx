@@ -20,6 +20,7 @@ const {
 	getUserOrganizationsMock,
 	getAuthContextMock,
 	getCurrentSettingsAccessTierMock,
+	canCreateOrganizationsForDeploymentMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -29,6 +30,7 @@ const {
 	getUserOrganizationsMock: vi.fn(),
 	getAuthContextMock: vi.fn(),
 	getCurrentSettingsAccessTierMock: vi.fn(),
+	canCreateOrganizationsForDeploymentMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -120,6 +122,7 @@ describe("app sidebar compliance navigation", () => {
 		getUserOrganizationsMock.mockReset();
 		getAuthContextMock.mockReset();
 		getCurrentSettingsAccessTierMock.mockReset();
+		canCreateOrganizationsForDeploymentMock.mockReset();
 		vi.resetModules();
 	});
 
@@ -306,6 +309,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: true }]);
 		getAuthContextMock.mockResolvedValue({
 			user: {
@@ -322,6 +326,9 @@ describe("app sidebar compliance navigation", () => {
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
 			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		vi.doMock("./app-sidebar", () => ({
@@ -344,6 +351,7 @@ describe("app sidebar compliance navigation", () => {
 				shiftsEnabled: true,
 				settingsAccessTier: "orgAdmin",
 				billingEnabled: false,
+				canCreateOrganizations: false,
 				featureFlags: {
 					shiftsEnabled: true,
 					projectsEnabled: false,
@@ -364,6 +372,7 @@ describe("app sidebar compliance navigation", () => {
 				showPlatformAdminNav: false,
 				settingsAccessTier: "member",
 				billingEnabled: false,
+				canCreateOrganizations: false,
 				featureFlags: {
 					shiftsEnabled: true,
 					projectsEnabled: false,
@@ -376,6 +385,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("passes platform admin navigation from the authenticated platform role", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: false }]);
 		getAuthContextMock.mockResolvedValue({
 			user: {
@@ -392,6 +402,9 @@ describe("app sidebar compliance navigation", () => {
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
 			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		vi.doMock("./app-sidebar", () => ({
@@ -411,6 +424,7 @@ describe("app sidebar compliance navigation", () => {
 				showPlatformAdminNav: true,
 				employeeRole: "employee",
 				settingsAccessTier: "member",
+				canCreateOrganizations: true,
 			}),
 		);
 	});

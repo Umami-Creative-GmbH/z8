@@ -1,19 +1,91 @@
 import { Effect, Layer } from "effect";
 import { headers } from "next/headers";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/lib/auth";
 import { ValidationError } from "../errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
 import { OnboardingService, OnboardingServiceLive } from "./onboarding.service";
 
+const creationPolicyState = vi.hoisted(() => ({
+	disabled: false,
+}));
+
 vi.mock("next/headers", () => ({
 	headers: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
-	auth: { api: { getSession: vi.fn(), updateUser: vi.fn() } },
+	auth: {
+		api: { createOrganization: vi.fn(), getSession: vi.fn(), updateUser: vi.fn() },
+	},
 }));
+
+vi.mock("@/lib/organization/creation-policy", () => ({
+	isOrganizationCreationDisabled: () => creationPolicyState.disabled,
+	normalizeOrganizationCreationFlag: (flag: string | undefined) =>
+		flag === "true" ? "true" : "false",
+}));
+
+beforeEach(() => {
+	creationPolicyState.disabled = false;
+	vi.clearAllMocks();
+});
+
+describe("OnboardingService.createOrganization", () => {
+	it("rejects organization creation before enabling temporary creation permission when disabled", async () => {
+		creationPolicyState.disabled = true;
+		const mockDb = {
+			update: vi.fn(),
+			insert: vi.fn(),
+		};
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: mockDb as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+
+					return yield* service.createOrganization({
+						name: "Acme Inc.",
+						slug: "acme",
+					});
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(ValidationError),
+		});
+		expect(result).toMatchObject({
+			left: {
+				message: "Organization creation is disabled for this deployment.",
+				field: "organization",
+			},
+		});
+		expect(mockDb.update).not.toHaveBeenCalled();
+		expect(mockDb.insert).not.toHaveBeenCalled();
+		expect(auth.api.createOrganization).not.toHaveBeenCalled();
+	});
+});
 
 describe("OnboardingService.updateProfile", () => {
 	it("updates Better Auth structured names and keeps employee updates to employee-owned fields", async () => {

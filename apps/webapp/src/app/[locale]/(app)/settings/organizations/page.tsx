@@ -12,6 +12,7 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
@@ -100,9 +101,9 @@ async function OrganizationsPageContent() {
 			invitations={typedInvitations}
 			currentMemberRole={currentMember.role as "owner" | "admin" | "member"}
 			currentUserId={authContext.user.id}
-			canCreateOrganizations={
-				authContext.user.canCreateOrganizations || authContext.user.role === "admin"
-			}
+			canCreateOrganizations={canCreateOrganizationsForDeployment(
+				authContext.user.canCreateOrganizations || authContext.user.role === "admin",
+			)}
 		/>
 	);
 }

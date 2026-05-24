@@ -100,6 +100,9 @@ const parsedEnv = createEnv({
 		// Security headers
 		SECURITY_HSTS_PRELOAD: z.enum(["true", "false"]).optional(),
 
+		// Dedicated/private deployment controls
+		DISABLE_ORGANIZATION_CREATION: z.enum(["true", "false"]).default("false"),
+
 		// Rate limiting
 		RATE_LIMIT_DISABLED: z.enum(["true", "false"]).optional(),
 		RATE_LIMIT_AUTH: z.string().optional(), // format: "requests/seconds" e.g. "10/60"
@@ -206,6 +209,7 @@ const parsedEnv = createEnv({
 		SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
 		NODE_ENV: process.env.NODE_ENV,
 		SECURITY_HSTS_PRELOAD: process.env.SECURITY_HSTS_PRELOAD,
+		DISABLE_ORGANIZATION_CREATION: process.env.DISABLE_ORGANIZATION_CREATION,
 		RATE_LIMIT_DISABLED: process.env.RATE_LIMIT_DISABLED,
 		RATE_LIMIT_AUTH: process.env.RATE_LIMIT_AUTH,
 		RATE_LIMIT_SIGNUP: process.env.RATE_LIMIT_SIGNUP,
