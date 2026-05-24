@@ -279,9 +279,11 @@ describe("app sidebar compliance navigation", () => {
 		render(await ServerAppSidebar({}));
 
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ title: "Surcharges", href: "/settings/surcharges" }),
-			]),
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({ title: "Surcharges", href: "/settings/surcharges" }),
+				]),
+			}),
 		);
 	});
 
