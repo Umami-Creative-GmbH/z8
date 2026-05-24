@@ -55,6 +55,13 @@ describe("works council settings", () => {
 		).toBe(12);
 	});
 
+	it("defaults invalid minimum aggregation thresholds to five", () => {
+		expect(
+			normalizeWorksCouncilSettingsInput({ minimumAggregationThreshold: Number.NaN })
+				.minimumAggregationThreshold,
+		).toBe(5);
+	});
+
 	it("falls back to conservative visibility values for invalid runtime input", () => {
 		expect(
 			normalizeWorksCouncilSettingsInput({

@@ -50,6 +50,10 @@ function isAbsenceVisibility(value: unknown): value is WorksCouncilAbsenceVisibi
 export function normalizeWorksCouncilSettingsInput(
 	input: WorksCouncilSettingsInput,
 ): WorksCouncilSettingsFormValues {
+	const threshold = Number.isFinite(input.minimumAggregationThreshold)
+		? input.minimumAggregationThreshold
+		: DEFAULT_WORKS_COUNCIL_SETTINGS.minimumAggregationThreshold;
+
 	return {
 		enabled: input.enabled ?? DEFAULT_WORKS_COUNCIL_SETTINGS.enabled,
 		identityVisibility: isIdentityVisibility(input.identityVisibility)
@@ -61,8 +65,7 @@ export function normalizeWorksCouncilSettingsInput(
 		exportEnabled: input.exportEnabled ?? DEFAULT_WORKS_COUNCIL_SETTINGS.exportEnabled,
 		minimumAggregationThreshold: Math.max(
 			DEFAULT_WORKS_COUNCIL_SETTINGS.minimumAggregationThreshold,
-			input.minimumAggregationThreshold ??
-				DEFAULT_WORKS_COUNCIL_SETTINGS.minimumAggregationThreshold,
+			threshold,
 		),
 		visibleTeamIds: input.visibleTeamIds ?? [...DEFAULT_WORKS_COUNCIL_SETTINGS.visibleTeamIds],
 		visibleLocationIds: input.visibleLocationIds ?? [
