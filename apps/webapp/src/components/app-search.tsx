@@ -1,7 +1,7 @@
 "use client";
 
+import { IconSearch } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
-import { IconSearch } from '@tabler/icons-react';
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
