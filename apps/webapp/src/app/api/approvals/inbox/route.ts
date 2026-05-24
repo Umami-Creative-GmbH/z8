@@ -116,6 +116,10 @@ export async function GET(request: NextRequest) {
 					managerEmployeeId: currentEmployee.id,
 					organizationId: currentEmployee.organizationId,
 				});
+		const authorizationPredicate =
+			!canManageApprovals && eligibleApprovalScopes.length > 0
+				? undefined
+				: (approvalAccess ?? undefined);
 
 		// Parse query parameters
 		const { searchParams } = new URL(request.url);
@@ -146,7 +150,7 @@ export async function GET(request: NextRequest) {
 		// Build query params
 		const params: ApprovalQueryParams = {
 			approverId: currentEmployee.id,
-			authorizationPredicate: approvalAccess ?? undefined,
+			authorizationPredicate,
 			includeAllApprovers: canManageApprovals || undefined,
 			organizationId: currentEmployee.organizationId,
 			status,

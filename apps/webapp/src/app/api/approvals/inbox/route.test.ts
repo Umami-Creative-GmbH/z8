@@ -250,4 +250,22 @@ describe("GET /api/approvals/inbox", () => {
 			expect.objectContaining({ includeAllApprovers: true }),
 		);
 	});
+
+	it("uses eligible approval scopes without also applying the manager direct-report predicate", async () => {
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([
+			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
+		]);
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(200);
+		expect(mockState.getApprovals).toHaveBeenCalledWith(
+			expect.objectContaining({
+				authorizationPredicate: undefined,
+				eligibleApprovalScopes: [
+					{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
+				],
+			}),
+		);
+	});
 });

@@ -390,21 +390,6 @@ function ApprovalInboxContent() {
 							</div>
 						)}
 
-						{/* Empty state */}
-						{items.length === 0 && !isFetching && (
-							<div className="flex flex-col items-center justify-center py-12 text-center">
-								<IconInbox className="size-12 text-muted-foreground/50" aria-hidden="true" />
-								<h3 className="mt-4 text-lg font-medium">
-									{t("approvals:approvals.noRequests", "No pending requests")}
-								</h3>
-								<p className="mt-1 text-sm text-muted-foreground">
-									{t(
-										"approvals:approvals.noRequestsDescription",
-										"When team members submit requests, they will appear here",
-									)}
-								</p>
-							</div>
-						)}
 					</CardContent>
 				</Card>
 			</div>
