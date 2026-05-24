@@ -128,7 +128,13 @@ describe("GET /works-council/export", () => {
 		expect(response.status).toBe(200);
 		expect(response.headers.get("content-type")).toContain("text/csv");
 		expect(response.headers.get("content-disposition")).toContain("works-council-review");
-		expect(await response.text()).toContain("Works Council Review Export");
+		const body = await response.text();
+		expect(body).toContain("Works Council Review Export");
+		expect(body).toContain('"Identity visibility","pseudonymized"');
+		expect(body).toContain('"Absence visibility","grouped"');
+		expect(body).toContain('"Minimum aggregation threshold","5"');
+		expect(body).toContain('"Visible team IDs","team-1"');
+		expect(body).toContain('"Visible location IDs","location-1"');
 	});
 
 	it("audits successful exports with the export record and access audit", async () => {

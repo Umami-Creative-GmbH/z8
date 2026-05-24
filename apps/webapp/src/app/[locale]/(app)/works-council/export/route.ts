@@ -57,6 +57,10 @@ function csvRow(values: unknown[]) {
 	return values.map(csvCell).join(",");
 }
 
+function csvScopeList(values: string[]) {
+	return values.length > 0 ? values.toSorted().join(";") : "all";
+}
+
 function buildCsv(
 	model: WorksCouncilPortalModel,
 	snapshot: VisibilitySnapshot,
@@ -74,6 +78,8 @@ function buildCsv(
 		csvRow(["Identity visibility", snapshot.identityVisibility]),
 		csvRow(["Absence visibility", snapshot.absenceVisibility]),
 		csvRow(["Minimum aggregation threshold", snapshot.minimumAggregationThreshold]),
+		csvRow(["Visible team IDs", csvScopeList(snapshot.visibleTeamIds)]),
+		csvRow(["Visible location IDs", csvScopeList(snapshot.visibleLocationIds)]),
 		csvRow([]),
 		csvRow(["Metric", "Value"]),
 		csvRow(["Overtime minutes", model.dashboard.overtimeMinutes]),
