@@ -2,6 +2,7 @@
 
 import {
 	IconBeach,
+	IconGavel,
 	IconHelp,
 	IconMessageCircle,
 	IconServerCog,
@@ -62,8 +63,14 @@ vi.mock("@/components/nav-main", () => ({
 }));
 
 vi.mock("@/components/app-search", () => ({
-	AppSearch: ({ staticResults }: { staticResults: Array<{ href: string; title: string }> }) => {
-		appSearchSpy(staticResults);
+	AppSearch: ({
+		staticCommands,
+		staticResults,
+	}: {
+		staticCommands?: Array<{ href: string; id: string; title: string; type: string }>;
+		staticResults: Array<{ href: string; title: string }>;
+	}) => {
+		appSearchSpy({ staticCommands, staticResults });
 		return <button type="button">Search</button>;
 	},
 }));
@@ -166,7 +173,7 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
-	it("renders search with member-safe static results for employees", () => {
+	it("renders search with member-safe static results and employee-safe command actions for employees", () => {
 		render(
 			<AppSidebar
 				employeeRole="employee"
@@ -182,16 +189,102 @@ describe("app sidebar compliance navigation", () => {
 
 		expect(screen.getByRole("button", { name: "Search" })).toBeTruthy();
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
-			expect.arrayContaining([
-				expect.objectContaining({ title: "Dashboard", href: "/" }),
-				expect.objectContaining({ title: "Profile", href: "/settings/profile" }),
-			]),
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({ title: "Dashboard", href: "/" }),
+					expect.objectContaining({ title: "Profile", href: "/settings/profile" }),
+				]),
+			}),
 		);
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
-			expect.not.arrayContaining([
-				expect.objectContaining({ href: "/settings/employees" }),
-				expect.objectContaining({ href: "/settings/organizations" }),
-			]),
+			expect.objectContaining({
+				staticResults: expect.not.arrayContaining([
+					expect.objectContaining({ href: "/settings/employees" }),
+					expect.objectContaining({ href: "/settings/organizations" }),
+				]),
+				staticCommands: expect.arrayContaining([
+					expect.objectContaining({
+						id: "action:add-manual-time-entry",
+						title: "Add manual time entry",
+					}),
+					expect.objectContaining({ id: "action:request-absence", title: "Request absence" }),
+					expect.objectContaining({
+						id: "action:submit-travel-expense",
+						title: "Submit travel expense",
+					}),
+					expect.objectContaining({ id: "action:open-my-requests", title: "Open my requests" }),
+					expect.objectContaining({ id: "action:open-settings", title: "Open settings" }),
+				]),
+			}),
+		);
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticCommands: expect.not.arrayContaining([
+					expect.objectContaining({ id: "action:open-approvals-inbox" }),
+					expect.objectContaining({ id: "action:invite-teammate" }),
+				]),
+			}),
+		);
+	});
+
+	it("passes the approvals command action for managers", () => {
+		render(<AppSidebar employeeRole="manager" settingsAccessTier="member" />);
+
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticCommands: expect.arrayContaining([
+					expect.objectContaining({
+						id: "action:open-approvals-inbox",
+						title: "Open approvals inbox",
+						href: "/approvals/inbox",
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("renders surcharge settings search navigation when the organization feature flag is enabled", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: true,
+				demoDataEnabled: true,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: {
+				role: "user",
+			},
+			employee: {
+				organizationId: "org_1",
+				role: "manager",
+			},
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("manager");
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({}));
+
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({ title: "Surcharges", href: "/settings/surcharges" }),
+				]),
+			}),
 		);
 	});
 
@@ -305,6 +398,41 @@ describe("app sidebar compliance navigation", () => {
 				}),
 			]),
 		);
+	});
+
+	it("renders works council navigation before settings only when enabled", () => {
+		const { rerender } = render(<AppSidebar />);
+
+		expect(screen.queryByRole("link", { name: "Works Council" })).toBeNull();
+		expect(navSecondarySpy).toHaveBeenLastCalledWith(
+			expect.not.arrayContaining([
+				expect.objectContaining({
+					title: "Works Council",
+					url: "/works-council",
+				}),
+			]),
+		);
+
+		rerender(<AppSidebar showWorksCouncilNav />);
+
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
+		);
+		expect(navSecondarySpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Works Council",
+					url: "/works-council",
+					icon: IconGavel,
+				}),
+			]),
+		);
+
+		const secondaryItems = navSecondarySpy.mock.lastCall?.[0] ?? [];
+		expect(secondaryItems.map((item) => item.title).slice(0, 2)).toEqual([
+			"Works Council",
+			"Settings",
+		]);
 	});
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {

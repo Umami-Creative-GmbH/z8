@@ -30,12 +30,12 @@ describe("calendarEventToScheduleX", () => {
 		);
 	});
 
-	it("keeps holidays on a single day when the stored end date is next-day midnight", () => {
+	it("uses an exclusive next-day end for single-day holidays", () => {
 		const holiday: HolidayEvent = {
 			id: "holiday-1",
 			type: "holiday",
 			date: new Date("2026-05-01T00:00:00.000Z"),
-			endDate: new Date("2026-05-02T00:00:00.000Z"),
+			endDate: new Date("2026-05-01T23:59:59.999Z"),
 			title: "Labor Day",
 			color: "#f59e0b",
 			metadata: {

@@ -317,26 +317,19 @@ describe("ProfileForm", () => {
 		});
 	});
 
-	it("keeps profile picture actions inside the mobile viewport", async () => {
+	it("uses compact icon-only profile picture actions beside the name fields", async () => {
 		renderProfileForm();
 
 		await screen.findByRole("button", { name: "Remove Picture" });
-		const changePictureButton = screen
-			.getAllByRole("button", { name: "Change Picture" })
-			.find((button) => button.className.includes("w-full"));
-		if (!changePictureButton) {
-			throw new Error("Expected a full-width Change Picture action button");
-		}
-		const removePictureButton = screen.getByRole("button", {
-			name: "Remove Picture",
-		});
-		const actionRow = changePictureButton.parentElement;
 
-		expect(actionRow?.className).toContain("flex-col");
-		expect(actionRow?.className).toContain("sm:flex-row");
-		expect(changePictureButton.className).toContain("w-full");
-		expect(changePictureButton.className).toContain("sm:w-auto");
-		expect(removePictureButton.className).toContain("w-full");
-		expect(removePictureButton.className).toContain("sm:w-auto");
+		expect(screen.queryByText("Profile Picture")).toBeNull();
+		expect(screen.queryByText("JPG, PNG or WebP. Max 5MB. Recommended 400x400px")).toBeNull();
+		expect(screen.getAllByRole("button", { name: "Change Picture" })).toHaveLength(1);
+
+		const removePictureButton = screen.getByRole("button", { name: "Remove Picture" });
+		expect(removePictureButton.className).toContain("absolute");
+		expect(removePictureButton.className).toContain("top-0");
+		expect(removePictureButton.className).toContain("right-0");
+		expect(removePictureButton.textContent).toBe("");
 	});
 });

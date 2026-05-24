@@ -33,6 +33,11 @@ export const hourlyRateSchema = z
 	.optional()
 	.nullable();
 
+const authUserNamePartSchema = z.preprocess(
+	(value) => (typeof value === "string" ? value.trim() : value),
+	z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
+);
+
 // Rate history entry schema
 export const createRateHistorySchema = z.object({
 	hourlyRate: z.string().refine(
@@ -113,6 +118,10 @@ export const updateEmployeeSchema = z
 		canUseWebapp: z.boolean().optional(),
 		canUseDesktop: z.boolean().optional(),
 		canUseMobile: z.boolean().optional(),
+
+		// Auth user identity fields (admin-only)
+		firstName: authUserNamePartSchema,
+		lastName: authUserNamePartSchema,
 	})
 	.refine(
 		(data) => {

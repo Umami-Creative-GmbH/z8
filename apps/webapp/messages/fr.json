@@ -1,308 +1,394 @@
 {
-  "analytics": {
-    "access": {
-      "noEmployeeFeature": "voir les analyses",
-      "restrictedDescription": "Les analyses ne sont accessibles qu'aux administrateurs et aux gestionnaires.",
-      "restrictedTitle": "Accès restreint"
-    },
-    "common": {
-      "days": "Jours",
-      "employee": "Employé",
-      "employees": "Employés",
-      "hours": "Heures",
-      "loadingOrganizationSettings": "Chargement des paramètres de l'organisation avant d'activer les préréglages.",
-      "noDataAvailable": "Aucune donnée disponible",
-      "noDataForPeriod": "Aucune donnée disponible pour la période sélectionnée",
-      "overtime": "Heures supplémentaires",
-      "overtimeHours": "Heures supplémentaires",
-      "team": "Équipe",
-      "totalHours": "Heures totales",
-      "unavailable": "Indisponible",
-      "undertime": "Heures manquantes",
-      "undertimeHours": "Heures manquantes"
-    },
-    "layout": {
-      "description": "Aperçu complet des performances de l'équipe, des heures de travail et des modèles d'absence",
-      "tabs": {
-        "overtimeBurnDown": "Réduction des heures supplémentaires",
-        "overview": "Vue d'ensemble",
-        "teamPerformance": "Performance de l'équipe",
-        "vacationTrends": "Tendances des congés",
-        "workHours": "Heures de travail"
-      },
-      "title": "Analyses"
-    },
-    "overtimeBurnDown": {
-      "breakdown": "Répartition",
-      "breakdownDescription": "Détails de la réduction des heures supplémentaires au niveau {label}",
-      "breakdownEmpty": "Aucune donnée de répartition disponible pour le moment",
-      "byCostCenter": "Par centre de coûts",
-      "byManager": "Par responsable",
-      "byTeam": "Par équipe",
-      "costCenter": "Centre de coûts",
-      "currentOvertime": "Heures supplémentaires actuelles",
-      "description": "Suivez la réduction hebdomadaire des heures supplémentaires par équipe.",
-      "errors": {
-        "loadData": "Échec du chargement des données de réduction des heures supplémentaires"
-      },
-      "filters": {
-        "allCostCenters": "Tous les centres de coûts",
-        "allManagers": "Tous les responsables",
-        "allTeams": "Toutes les équipes",
-        "breakdownLabel": "Dimension de répartition",
-        "costCenterLabel": "Filtre par centre de coûts",
-        "managerLabel": "Filtre par responsable",
-        "teamLabel": "Filtre par équipe"
-      },
-      "improvingGroups": "Groupes en amélioration",
-      "improvingGroupsDescription": "Groupes avec une diminution des heures supplémentaires",
-      "manager": "Responsable",
-      "previousOvertime": "Heures supplémentaires précédentes",
-      "previousPeriodDescription": "Comparé à la période précédente",
-      "selectedRangeDescription": "Pour la plage de dates et les filtres sélectionnés",
-      "title": "Réduction des heures supplémentaires",
-      "trendDirection": "Direction de la tendance",
-      "trendDirectionDescription": "Trajectoire globale des heures supplémentaires",
-      "trend": {
-        "down": "En baisse",
-        "flat": "Stable",
-        "up": "Hausse"
-      },
-      "weeklyTrend": {
-        "description": "Tendance de réduction des heures supplémentaires hebdomadaires",
-        "empty": "Aucune donnée de tendance disponible pour le moment",
-        "title": "Tendance de réduction hebdomadaire"
-      },
-      "weekOverWeek": "Semaine sur semaine"
-    },
-    "overview": {
-      "absencePatterns": {
-        "description": "Répartition des absences par catégorie",
-        "title": "Modèles d'absence"
-      },
-      "approvalBottlenecks": {
-        "approvedRate": "{rate}% approuvé",
-        "avgDecision": "{hours}h de décision en moyenne",
-        "byManager": "Par manager",
-        "byTeam": "Par équipe",
-        "byType": "Par type",
-        "description": "Équipes et types de demandes avec travail en attente ou avertissements SLA",
-        "empty": "Aucun goulot d'étranglement d'approbation trouvé",
-        "pendingSummary": "{pendingCount} en attente - {slaWarnings} avertissements SLA",
-        "title": "Goulots d'étranglement d'approbation",
-        "unavailable": "Les goulots d'étranglement d'approbation n'ont pas pu être chargés"
-      },
-      "kpis": {
-        "approvalRate": {
-          "description": "Des demandes traitées approuvées",
-          "title": "Taux d'approbation",
-          "unavailableDescription": "Les analyses d'approbation n'ont pas pu être chargées"
-        },
-        "avgWorkHours": {
-          "description": "Par employé sur la période sélectionnée",
-          "title": "Heures de travail moyennes"
-        },
-        "totalAbsenceDays": {
-          "description": "Nombre total de jours sur la période sélectionnée",
-          "title": "Nombre total de jours d'absence"
-        },
-        "totalEmployees": {
-          "description": "Employés actifs dans l'organisation",
-          "title": "Nombre total d'employés"
-        }
-      },
-      "loadingLabel": "Chargement des données analytiques",
-      "workHoursByTeam": {
-        "description": "Total des heures de travail enregistrées par équipe",
-        "title": "Heures de travail par équipe"
-      }
-    },
-    "teamPerformance": {
-      "avgPerEmployee": "Moyenne par employé",
-      "comparison": {
-        "description": "Total des heures de travail par équipe pour la période sélectionnée",
-        "title": "Comparaison des équipes"
-      },
-      "details": {
-        "description": "Répartition des heures de travail par équipe et par employé",
-        "title": "Détails de la performance de l'équipe"
-      },
-      "employeeCount": "Nombre d'employés",
-      "errors": {
-        "loadData": "Échec du chargement des données de performance de l'équipe"
-      },
-      "onTrack": "En bonne voie",
-      "variance": {
-        "description": "Écart d'heures par rapport aux heures de travail prévues",
-        "empty": "Aucune donnée d'écart disponible",
-        "title": "Heures supplémentaires et heures manquantes"
-      }
-    },
-    "vacationTrends": {
-      "allocated": "Alloué",
-      "balance": {
-        "description": "Jours alloués, pris et restants par employé",
-        "title": "Solde de congés"
-      },
-      "daysRemaining": "{count} jours restants",
-      "daysTaken": "{count} jours pris",
-      "errors": {
-        "loadData": "Échec du chargement des données sur les tendances des congés"
-      },
-      "monthlyUsage": {
-        "description": "Jours de congés pris par mois",
-        "empty": "Aucune donnée d'utilisation mensuelle disponible",
-        "title": "Utilisation mensuelle des congés"
-      },
-      "peakMonths": {
-        "description": "Mois avec la plus forte activité de congés",
-        "empty": "Aucune donnée de mois de pointe disponible",
-        "title": "Mois de pointe des congés"
-      },
-      "remaining": "Restants",
-      "taken": "Pris",
-      "utilization": {
-        "description": "Utilisation globale des jours de congés dans l'organisation",
-        "overall": "Utilisation globale",
-        "title": "Utilisation des congés"
-      },
-      "utilizationLabel": "Utilisation",
-      "utilizationPercent": "% d'utilisation",
-      "vacationDays": "Jours de congés"
-    },
-    "workHours": {
-      "actualHours": "Heures réelles",
-      "avgHoursPerWeek": "Moyenne d'heures/semaine",
-      "daily": {
-        "description": "Heures de travail réelles par rapport aux heures prévues par jour",
-        "empty": "Aucune donnée d'heures quotidiennes disponible",
-        "title": "Heures de travail quotidiennes"
-      },
-      "distribution": {
-        "description": "Comparaison des heures de travail des employés (barre horizontale)",
-        "empty": "Aucune donnée de répartition disponible",
-        "title": "Répartition des heures de travail"
-      },
-      "employeeComparison": {
-        "description": "Total des heures et écart par rapport aux prévisions par employé",
-        "title": "Heures de travail des employés"
-      },
-      "errors": {
-        "loadData": "Échec du chargement des données analytiques des heures de travail"
-      },
-      "expectedHours": "Heures prévues",
-      "variance": "Écart",
-      "varianceTrend": {
-        "description": "Écart d'heures par rapport aux heures de travail prévues au fil du temps",
-        "empty": "Aucune donnée de tendance disponible",
-        "title": "Tendance des heures supplémentaires et des heures non effectuées"
-      }
-    }
-  },
-  "appSearch": {
-    "description": "Rechercher des pages, des paramètres, des personnes et des équipes",
-    "empty": "Aucun résultat trouvé.",
-    "groups": {
-      "pages": "Pages",
-      "people": "Personnes",
-      "settings": "Paramètres",
-      "teams": "Équipes"
-    },
-    "placeholder": "Rechercher des pages, des paramètres, des personnes et des équipes…",
-    "search": "Rechercher",
-    "teamAbsences": {
-      "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
-    }
-  },
-  "surcharges": {
-    "reports": {
-      "details": {
-        "appliedRules": "Règles appliquées",
-        "calculatedAt": "Calculé le",
-        "noAppliedRules": "Aucune règle appliquée enregistrée.",
-        "overlapPolicy": "Politique de chevauchement",
-        "percentage": "Pourcentage",
-        "qualifying": "Éligible",
-        "surcharge": "Supplément",
-        "workPeriod": "Période de travail"
-      },
-      "empty": {
-        "description": "Aucun calcul de supplément ne correspond aux filtres sélectionnés.",
-        "title": "Aucun calcul de supplément trouvé"
-      },
-      "errors": {
-        "loadTitle": "Impossible de charger les calculs"
-      },
-      "filters": {
-        "apply": "Appliquer les filtres",
-        "employeeId": "ID employé",
-        "endDate": "Date de fin",
-        "startDate": "Date de début"
-      },
-      "loading": "Chargement des calculs…",
-      "previousResults": {
-        "description": "La dernière requête a échoué, les résultats précédents restent donc visibles.",
-        "title": "Affichage des résultats précédents."
-      },
-      "rowLimitNotice": "Affichage des 500 premiers calculs correspondants. Réduisez les filtres de date ou d'employé pour affiner les totaux.",
-      "summary": {
-        "baseHours": "Heures de base",
-        "calculations": "Calculs",
-        "creditedHours": "Heures de supplément créditées",
-        "qualifyingHours": "Heures de supplément éligibles"
-      },
-      "table": {
-        "base": "Base",
-        "created": "Créé",
-        "credit": "Crédit",
-        "date": "Date",
-        "details": "Détails",
-        "employee": "Employé",
-        "percentage": "Pourcentage",
-        "qualifying": "Qualifiant"
-      },
-      "title": "Rapports de surcharge"
-    }
-  },
-  "today": {
-    "approvals": {
-      "approve": "Approuver",
-      "approveLabel": "Approuver {title}",
-      "description": "Demandes en attente d'une décision du responsable.",
-      "empty": "Aucune approbation en attente.",
-      "openInbox": "Ouvrir la boîte de réception",
-      "pendingAriaLabel": "Approbations en attente",
-      "reject": "Rejeter",
-      "rejectLabel": "Rejeter {title}",
-      "title": "Approbations",
-      "toast": {
-        "approved": "Demande approuvée",
-        "approveError": "Impossible d'approuver la demande",
-        "rejected": "Demande rejetée",
-        "rejectError": "Impossible de rejeter la demande"
-      }
-    },
-    "briefing": {
-      "badge": "Aujourd'hui",
-      "description": "Passez en revue les éléments nécessitant une action aujourd'hui, puis accédez directement au flux de travail approprié.",
-      "needsAction": {
-        "description": "Commencez ici pour le suivi opérationnel le plus urgent.",
-        "empty": "Tout est en ordre. Aucune action de la part du responsable n'est requise pour le moment.",
-        "title": "Action requise"
-      },
-      "sections": {
-        "empty": "Aucun problème détecté."
-      },
-      "severity": {
-        "critical": "Critique",
-        "high": "Élevé",
-        "info": "Info",
-        "warning": "Avertissement"
-      },
-      "summaryAriaLabel": "Résumé du jour",
-      "supportingSectionsAriaLabel": "Sections de support",
-      "title": "Briefing quotidien du responsable",
-      "updatedAt": "{date} - Mis à jour à {time}"
-    }
-  }
+	"analytics": {
+		"access": {
+			"noEmployeeFeature": "voir les analyses",
+			"restrictedDescription": "Les analyses ne sont accessibles qu'aux administrateurs et aux gestionnaires.",
+			"restrictedTitle": "Accès restreint"
+		},
+		"common": {
+			"days": "Jours",
+			"employee": "Employé",
+			"employees": "Employés",
+			"hours": "Heures",
+			"loadingOrganizationSettings": "Chargement des paramètres de l'organisation avant d'activer les préréglages.",
+			"noDataAvailable": "Aucune donnée disponible",
+			"noDataForPeriod": "Aucune donnée disponible pour la période sélectionnée",
+			"overtime": "Heures supplémentaires",
+			"overtimeHours": "Heures supplémentaires",
+			"team": "Équipe",
+			"totalHours": "Heures totales",
+			"unavailable": "Indisponible",
+			"undertime": "Heures manquantes",
+			"undertimeHours": "Heures manquantes"
+		},
+		"layout": {
+			"description": "Aperçu complet des performances de l'équipe, des heures de travail et des modèles d'absence",
+			"tabs": {
+				"overtimeBurnDown": "Réduction des heures supplémentaires",
+				"overview": "Vue d'ensemble",
+				"teamPerformance": "Performance de l'équipe",
+				"vacationTrends": "Tendances des congés",
+				"workHours": "Heures de travail"
+			},
+			"title": "Analyses"
+		},
+		"overtimeBurnDown": {
+			"breakdown": "Répartition",
+			"breakdownDescription": "Détails de la réduction des heures supplémentaires au niveau {label}",
+			"breakdownEmpty": "Aucune donnée de répartition disponible pour le moment",
+			"byCostCenter": "Par centre de coûts",
+			"byManager": "Par responsable",
+			"byTeam": "Par équipe",
+			"costCenter": "Centre de coûts",
+			"currentOvertime": "Heures supplémentaires actuelles",
+			"description": "Suivez la réduction hebdomadaire des heures supplémentaires par équipe.",
+			"errors": {
+				"loadData": "Échec du chargement des données de réduction des heures supplémentaires"
+			},
+			"filters": {
+				"allCostCenters": "Tous les centres de coûts",
+				"allManagers": "Tous les responsables",
+				"allTeams": "Toutes les équipes",
+				"breakdownLabel": "Dimension de répartition",
+				"costCenterLabel": "Filtre par centre de coûts",
+				"managerLabel": "Filtre par responsable",
+				"teamLabel": "Filtre par équipe"
+			},
+			"improvingGroups": "Groupes en amélioration",
+			"improvingGroupsDescription": "Groupes avec une diminution des heures supplémentaires",
+			"manager": "Responsable",
+			"previousOvertime": "Heures supplémentaires précédentes",
+			"previousPeriodDescription": "Comparé à la période précédente",
+			"selectedRangeDescription": "Pour la plage de dates et les filtres sélectionnés",
+			"title": "Réduction des heures supplémentaires",
+			"trendDirection": "Direction de la tendance",
+			"trendDirectionDescription": "Trajectoire globale des heures supplémentaires",
+			"trend": {
+				"down": "En baisse",
+				"flat": "Stable",
+				"up": "Hausse"
+			},
+			"weeklyTrend": {
+				"description": "Tendance de réduction des heures supplémentaires hebdomadaires",
+				"empty": "Aucune donnée de tendance disponible pour le moment",
+				"title": "Tendance de réduction hebdomadaire"
+			},
+			"weekOverWeek": "Semaine sur semaine"
+		},
+		"overview": {
+			"absencePatterns": {
+				"description": "Répartition des absences par catégorie",
+				"title": "Modèles d'absence"
+			},
+			"approvalBottlenecks": {
+				"approvedRate": "{rate}% approuvé",
+				"avgDecision": "{hours}h de décision en moyenne",
+				"byManager": "Par manager",
+				"byTeam": "Par équipe",
+				"byType": "Par type",
+				"description": "Équipes et types de demandes avec travail en attente ou avertissements SLA",
+				"empty": "Aucun goulot d'étranglement d'approbation trouvé",
+				"pendingSummary": "{pendingCount} en attente - {slaWarnings} avertissements SLA",
+				"title": "Goulots d'étranglement d'approbation",
+				"unavailable": "Les goulots d'étranglement d'approbation n'ont pas pu être chargés"
+			},
+			"kpis": {
+				"approvalRate": {
+					"description": "Des demandes traitées approuvées",
+					"title": "Taux d'approbation",
+					"unavailableDescription": "Les analyses d'approbation n'ont pas pu être chargées"
+				},
+				"avgWorkHours": {
+					"description": "Par employé sur la période sélectionnée",
+					"title": "Heures de travail moyennes"
+				},
+				"totalAbsenceDays": {
+					"description": "Nombre total de jours sur la période sélectionnée",
+					"title": "Nombre total de jours d'absence"
+				},
+				"totalEmployees": {
+					"description": "Employés actifs dans l'organisation",
+					"title": "Nombre total d'employés"
+				}
+			},
+			"loadingLabel": "Chargement des données analytiques",
+			"workHoursByTeam": {
+				"description": "Total des heures de travail enregistrées par équipe",
+				"title": "Heures de travail par équipe"
+			}
+		},
+		"teamPerformance": {
+			"avgPerEmployee": "Moyenne par employé",
+			"comparison": {
+				"description": "Total des heures de travail par équipe pour la période sélectionnée",
+				"title": "Comparaison des équipes"
+			},
+			"details": {
+				"description": "Répartition des heures de travail par équipe et par employé",
+				"title": "Détails de la performance de l'équipe"
+			},
+			"employeeCount": "Nombre d'employés",
+			"errors": {
+				"loadData": "Échec du chargement des données de performance de l'équipe"
+			},
+			"onTrack": "En bonne voie",
+			"variance": {
+				"description": "Écart d'heures par rapport aux heures de travail prévues",
+				"empty": "Aucune donnée d'écart disponible",
+				"title": "Heures supplémentaires et heures manquantes"
+			}
+		},
+		"vacationTrends": {
+			"allocated": "Alloué",
+			"balance": {
+				"description": "Jours alloués, pris et restants par employé",
+				"title": "Solde de congés"
+			},
+			"daysRemaining": "{count} jours restants",
+			"daysTaken": "{count} jours pris",
+			"errors": {
+				"loadData": "Échec du chargement des données sur les tendances des congés"
+			},
+			"monthlyUsage": {
+				"description": "Jours de congés pris par mois",
+				"empty": "Aucune donnée d'utilisation mensuelle disponible",
+				"title": "Utilisation mensuelle des congés"
+			},
+			"peakMonths": {
+				"description": "Mois avec la plus forte activité de congés",
+				"empty": "Aucune donnée de mois de pointe disponible",
+				"title": "Mois de pointe des congés"
+			},
+			"remaining": "Restants",
+			"taken": "Pris",
+			"utilization": {
+				"description": "Utilisation globale des jours de congés dans l'organisation",
+				"overall": "Utilisation globale",
+				"title": "Utilisation des congés"
+			},
+			"utilizationLabel": "Utilisation",
+			"utilizationPercent": "% d'utilisation",
+			"vacationDays": "Jours de congés"
+		},
+		"workHours": {
+			"actualHours": "Heures réelles",
+			"avgHoursPerWeek": "Moyenne d'heures/semaine",
+			"daily": {
+				"description": "Heures de travail réelles par rapport aux heures prévues par jour",
+				"empty": "Aucune donnée d'heures quotidiennes disponible",
+				"title": "Heures de travail quotidiennes"
+			},
+			"distribution": {
+				"description": "Comparaison des heures de travail des employés (barre horizontale)",
+				"empty": "Aucune donnée de répartition disponible",
+				"title": "Répartition des heures de travail"
+			},
+			"employeeComparison": {
+				"description": "Total des heures et écart par rapport aux prévisions par employé",
+				"title": "Heures de travail des employés"
+			},
+			"errors": {
+				"loadData": "Échec du chargement des données analytiques des heures de travail"
+			},
+			"expectedHours": "Heures prévues",
+			"variance": "Écart",
+			"varianceTrend": {
+				"description": "Écart d'heures par rapport aux heures de travail prévues au fil du temps",
+				"empty": "Aucune donnée de tendance disponible",
+				"title": "Tendance des heures supplémentaires et des heures non effectuées"
+			}
+		}
+	},
+	"appSearch": {
+		"commandDescription": "Recherchez des pages et lancez des actions courantes depuis un seul endroit.",
+		"commandPlaceholder": "Rechercher ou lancer une commande…",
+		"commands": {
+			"addManualTimeEntry": {
+				"keywords": {
+					"entry": "entrée",
+					"hours": "heures",
+					"manual": "manuel",
+					"time": "temps"
+				},
+				"subtitle": "Enregistrer des heures pour un poste passé ou une correction",
+				"title": "Ajouter une entrée de temps manuelle"
+			},
+			"createProject": {
+				"keywords": {
+					"create": "créer",
+					"project": "projet",
+					"settings": "paramètres"
+				},
+				"subtitle": "Ouvrir les paramètres de projet pour définir un nouveau projet",
+				"title": "Créer un projet"
+			},
+			"inviteTeammate": {
+				"keywords": {
+					"invite": "inviter",
+					"member": "membre",
+					"teammate": "coéquipier"
+				},
+				"subtitle": "Ouvrir la gestion de l'organisation pour ajouter un collègue",
+				"title": "Inviter un coéquipier"
+			},
+			"openApprovalsInbox": {
+				"keywords": {
+					"approvals": "approbations",
+					"inbox": "boîte de réception",
+					"review": "examiner"
+				},
+				"subtitle": "Examiner les demandes d'employés en attente",
+				"title": "Ouvrir la boîte des approbations"
+			},
+			"openMyRequests": {
+				"keywords": {
+					"mine": "mes",
+					"requests": "demandes"
+				},
+				"subtitle": "Examiner vos absences et dépenses envoyées",
+				"title": "Ouvrir mes demandes"
+			},
+			"openPayrollReadiness": {
+				"keywords": {
+					"export": "export",
+					"payroll": "paie",
+					"readiness": "préparation"
+				},
+				"subtitle": "Vérifier si les données de temps sont prêtes pour la paie",
+				"title": "Ouvrir la préparation de la paie"
+			},
+			"openSettings": {
+				"keywords": {
+					"preferences": "préférences",
+					"settings": "paramètres"
+				},
+				"subtitle": "Gérer votre profil, votre sécurité et les paramètres de l'organisation",
+				"title": "Ouvrir les paramètres"
+			},
+			"requestAbsence": {
+				"keywords": {
+					"absence": "absence",
+					"timeOff": "congé",
+					"vacation": "vacances"
+				},
+				"subtitle": "Démarrer une demande de vacances, d'arrêt maladie ou de congé",
+				"title": "Demander une absence"
+			},
+			"submitTravelExpense": {
+				"keywords": {
+					"expense": "dépense",
+					"reimbursement": "remboursement",
+					"travel": "voyage"
+				},
+				"subtitle": "Créer une demande de remboursement pour frais de déplacement",
+				"title": "Envoyer une dépense de voyage"
+			}
+		},
+		"description": "Rechercher des pages, des paramètres, des personnes et des équipes",
+		"empty": "Aucun résultat trouvé.",
+		"groups": {
+			"actions": "Actions",
+			"pages": "Pages",
+			"people": "Personnes",
+			"settings": "Paramètres",
+			"teams": "Équipes"
+		},
+		"placeholder": "Rechercher des pages, des paramètres, des personnes et des équipes…",
+		"search": "Rechercher",
+		"searchOrRunCommand": "Rechercher ou lancer une commande",
+		"teamAbsences": {
+			"description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
+		}
+	},
+	"surcharges": {
+		"reports": {
+			"details": {
+				"appliedRules": "Règles appliquées",
+				"calculatedAt": "Calculé le",
+				"noAppliedRules": "Aucune règle appliquée enregistrée.",
+				"overlapPolicy": "Politique de chevauchement",
+				"percentage": "Pourcentage",
+				"qualifying": "Éligible",
+				"surcharge": "Supplément",
+				"workPeriod": "Période de travail"
+			},
+			"empty": {
+				"description": "Aucun calcul de supplément ne correspond aux filtres sélectionnés.",
+				"title": "Aucun calcul de supplément trouvé"
+			},
+			"errors": {
+				"loadTitle": "Impossible de charger les calculs"
+			},
+			"filters": {
+				"apply": "Appliquer les filtres",
+				"employeeId": "ID employé",
+				"endDate": "Date de fin",
+				"startDate": "Date de début"
+			},
+			"loading": "Chargement des calculs…",
+			"previousResults": {
+				"description": "La dernière requête a échoué, les résultats précédents restent donc visibles.",
+				"title": "Affichage des résultats précédents."
+			},
+			"rowLimitNotice": "Affichage des 500 premiers calculs correspondants. Réduisez les filtres de date ou d'employé pour affiner les totaux.",
+			"summary": {
+				"baseHours": "Heures de base",
+				"calculations": "Calculs",
+				"creditedHours": "Heures de supplément créditées",
+				"qualifyingHours": "Heures de supplément éligibles"
+			},
+			"table": {
+				"base": "Base",
+				"created": "Créé",
+				"credit": "Crédit",
+				"date": "Date",
+				"details": "Détails",
+				"employee": "Employé",
+				"percentage": "Pourcentage",
+				"qualifying": "Qualifiant"
+			},
+			"title": "Rapports de surcharge"
+		}
+	},
+	"today": {
+		"approvals": {
+			"approve": "Approuver",
+			"approveLabel": "Approuver {title}",
+			"description": "Demandes en attente d'une décision du responsable.",
+			"empty": "Aucune approbation en attente.",
+			"openInbox": "Ouvrir la boîte de réception",
+			"pendingAriaLabel": "Approbations en attente",
+			"reject": "Rejeter",
+			"rejectLabel": "Rejeter {title}",
+			"title": "Approbations",
+			"toast": {
+				"approved": "Demande approuvée",
+				"approveError": "Impossible d'approuver la demande",
+				"rejected": "Demande rejetée",
+				"rejectError": "Impossible de rejeter la demande"
+			}
+		},
+		"briefing": {
+			"badge": "Aujourd'hui",
+			"description": "Passez en revue les éléments nécessitant une action aujourd'hui, puis accédez directement au flux de travail approprié.",
+			"needsAction": {
+				"description": "Commencez ici pour le suivi opérationnel le plus urgent.",
+				"empty": "Tout est en ordre. Aucune action de la part du responsable n'est requise pour le moment.",
+				"title": "Action requise"
+			},
+			"sections": {
+				"empty": "Aucun problème détecté."
+			},
+			"severity": {
+				"critical": "Critique",
+				"high": "Élevé",
+				"info": "Info",
+				"warning": "Avertissement"
+			},
+			"summaryAriaLabel": "Résumé du jour",
+			"supportingSectionsAriaLabel": "Sections de support",
+			"title": "Briefing quotidien du responsable",
+			"updatedAt": "{date} - Mis à jour à {time}"
+		}
+	}
 }

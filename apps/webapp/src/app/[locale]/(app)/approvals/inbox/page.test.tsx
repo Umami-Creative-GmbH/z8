@@ -42,7 +42,9 @@ vi.mock("./components/approval-inbox-toolbar", () => ({
 }));
 
 vi.mock("./components/approval-inbox-table", () => ({
-	ApprovalInboxTable: () => <div>table</div>,
+	ApprovalInboxTable: ({ items }: { items: UnifiedApprovalItem[] }) => (
+		<div>{items.length === 0 ? "No pending requests" : "table"}</div>
+	),
 }));
 
 vi.mock("./components/approval-detail-panel", () => ({
@@ -196,5 +198,30 @@ describe("ApprovalInboxPage", () => {
 			expect(toastErrorMock).toHaveBeenCalledWith("1 request(s) failed\nAlready handled");
 		});
 		expect(refetchMock).toHaveBeenCalled();
+	});
+
+	it("does not render a second empty state below the table", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					{
+						items: [],
+						total: 0,
+					},
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getAllByText("No pending requests")).toHaveLength(1);
 	});
 });

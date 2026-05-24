@@ -8,6 +8,7 @@ import {
 	IconChartLine,
 	IconCreditCard,
 	IconLogout,
+	IconMailCog,
 	IconServer,
 	IconSettings,
 	IconUsers,
@@ -29,6 +30,7 @@ const platformAdminIcons = {
 	organizations: IconBuilding,
 	overview: IconChartBar,
 	settings: IconSettings,
+	systemEmailTemplates: IconMailCog,
 	users: IconUsers,
 	workerQueue: IconServer,
 } satisfies Record<string, ComponentType<{ className?: string; "aria-hidden"?: "true" }>>;

@@ -33,6 +33,17 @@ export const EMAIL_TEMPLATE_KEYS = [
 export type EmailTemplateKey = (typeof EMAIL_TEMPLATE_KEYS)[number];
 export type EmailTemplateEditorDocument = Record<string, unknown>;
 
+export const PLATFORM_SYSTEM_EMAIL_TEMPLATE_KEYS = [
+	"billing-trial-ending",
+	"billing-subscription-paused",
+	"billing-subscription-resumed",
+	"billing-invoice-ready",
+	"billing-payment-failed",
+] as const;
+
+export type PlatformSystemEmailTemplateKey =
+	(typeof PLATFORM_SYSTEM_EMAIL_TEMPLATE_KEYS)[number];
+
 export const organizationEmailTemplate = pgTable(
 	"organization_email_template",
 	{
@@ -64,5 +75,32 @@ export const organizationEmailTemplate = pgTable(
 			table.templateKey,
 		),
 		index("organizationEmailTemplate_organizationId_idx").on(table.organizationId),
+	],
+);
+
+export const platformSystemEmailTemplate = pgTable(
+	"platform_system_email_template",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		templateKey: text("template_key").$type<PlatformSystemEmailTemplateKey>().notNull(),
+		subject: text("subject").notNull(),
+		editorDocument: jsonb("editor_document").$type<EmailTemplateEditorDocument>().notNull(),
+		html: text("html").notNull(),
+		plainText: text("plain_text"),
+		isEnabled: boolean("is_enabled").default(true).notNull(),
+		createdByUserId: text("created_by_user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		updatedByUserId: text("updated_by_user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("platformSystemEmailTemplate_templateKey_idx").on(table.templateKey),
 	],
 );

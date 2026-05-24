@@ -3,7 +3,7 @@ import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { syncEmployeeForm } from "./page-utils";
 
 describe("syncEmployeeForm", () => {
-	it("does not sync stale employee root name fields into the detail form", () => {
+	it("syncs auth user name fields into the detail form", () => {
 		const form = {
 			reset: vi.fn(),
 			setFieldValue: vi.fn(),
@@ -18,6 +18,8 @@ describe("syncEmployeeForm", () => {
 			contractType: "fixed",
 			currentHourlyRate: null,
 			user: {
+				firstName: "Ada",
+				lastName: "Lovelace",
 				canUseWebapp: true,
 				canUseDesktop: false,
 				canUseMobile: true,
@@ -27,7 +29,7 @@ describe("syncEmployeeForm", () => {
 		syncEmployeeForm(form as never, employee);
 
 		expect(form.reset).toHaveBeenCalledOnce();
-		expect(form.setFieldValue).not.toHaveBeenCalledWith("firstName", expect.anything());
-		expect(form.setFieldValue).not.toHaveBeenCalledWith("lastName", expect.anything());
+		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
+		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
 	});
 });

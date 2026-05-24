@@ -322,6 +322,36 @@ export function EmployeeEditFormCard({
 					}}
 					className="space-y-6"
 				>
+					<div className="grid gap-4 md:grid-cols-2">
+						<TextField
+							form={form}
+							name="firstName"
+							label={t("settings.employees.detailView.firstName", "First name")}
+							placeholder={t("settings.employees.detailView.firstNamePlaceholder", "e.g., Ada…")}
+							autoComplete="given-name"
+							description={t(
+								"settings.employees.detailView.firstNameDescription",
+								"Shown across the employee account",
+							)}
+							disabled={!canEditOrgAdminFields || isUpdating}
+						/>
+						<TextField
+							form={form}
+							name="lastName"
+							label={t("settings.employees.detailView.lastName", "Last name")}
+							placeholder={t(
+								"settings.employees.detailView.lastNamePlaceholder",
+								"e.g., Lovelace…",
+							)}
+							autoComplete="family-name"
+							description={t(
+								"settings.employees.detailView.lastNameDescription",
+								"Shown across the employee account",
+							)}
+							disabled={!canEditOrgAdminFields || isUpdating}
+						/>
+					</div>
+
 					<form.Field name="gender">
 						{(field) => (
 							<TFormItem>
@@ -731,13 +761,15 @@ function TextField({
 	name,
 	label,
 	placeholder,
+	autoComplete = "off",
 	description,
 	disabled,
 }: {
 	form: EmployeeDetailFormApi;
-	name: "position" | "employeeNumber";
+	name: "firstName" | "lastName" | "position" | "employeeNumber";
 	label: string;
 	placeholder: string;
+	autoComplete?: string;
 	description?: string;
 	disabled: boolean;
 }) {
@@ -749,6 +781,7 @@ function TextField({
 					<TFormControl hasError={fieldHasError(field)}>
 						<Input
 							name={name}
+							autoComplete={autoComplete}
 							placeholder={placeholder}
 							value={field.state.value || ""}
 							onChange={(event) => field.handleChange(event.target.value)}

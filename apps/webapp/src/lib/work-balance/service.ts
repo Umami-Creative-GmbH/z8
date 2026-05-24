@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, isNotNull, isNull, lt, lte, min, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { absenceEntry, employee, employeeWorkBalance, workPeriod } from "@/db/schema";
+import { employee, employeeWorkBalance, workPeriod } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import type { EmployeeWorkBalancePayload } from "./types";
 
@@ -91,8 +91,7 @@ async function getFirstRelevantDate(input: {
 }): Promise<string | null> {
 	const scopedEmployee = await db.query.employee.findFirst({
 		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
-		columns: { id: true, startDate: true },
-		with: { user: { columns: { createdAt: true } } },
+		columns: { id: true },
 	});
 	if (!scopedEmployee) return null;
 
@@ -108,34 +107,11 @@ async function getFirstRelevantDate(input: {
 			),
 		);
 
-	const [firstAbsence] = await db
-		.select({ value: min(absenceEntry.startDate) })
-		.from(absenceEntry)
-		.where(
-			and(
-				eq(absenceEntry.employeeId, input.employeeId),
-				eq(absenceEntry.organizationId, input.organizationId),
-				eq(absenceEntry.status, "approved"),
-			),
-		);
-
 	const workDate = firstWorkPeriod?.value
 		? DateTime.fromJSDate(firstWorkPeriod.value, { zone: "utc" }).toISODate()
 		: null;
-	const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
-		zone: "utc",
-	}).toISODate();
-	if (!accountCreatedDate) return null;
 
-	if (workDate && workDate < accountCreatedDate) {
-		const absenceDate = firstAbsence?.value ?? null;
-		const dates = [workDate, absenceDate, accountCreatedDate].filter(
-			(value): value is string => Boolean(value),
-		);
-		return dates.sort()[0]!;
-	}
-
-	return accountCreatedDate;
+	return workDate;
 }
 
 async function getActualMinutes(input: {

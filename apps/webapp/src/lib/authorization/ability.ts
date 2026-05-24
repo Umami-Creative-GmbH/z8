@@ -20,14 +20,13 @@ import {
 	type MongoAbility,
 } from "@casl/ability";
 import type {
-	Action,
-	Subject,
-	PrincipalContext,
-	OrgScopedSubject,
-	EmployeeAuthorizationSubject,
-	TimeEntryAuthorizationSubject,
 	AbsenceAuthorizationSubject,
+	Action,
 	ApprovalAuthorizationSubject,
+	EmployeeAuthorizationSubject,
+	PrincipalContext,
+	Subject,
+	TimeEntryAuthorizationSubject,
 } from "./types";
 
 // ============================================
@@ -43,10 +42,7 @@ type AppObjectSubject =
 	| (AbsenceAuthorizationSubject & ForcedSubject<"Absence">)
 	| (ApprovalAuthorizationSubject & ForcedSubject<"Approval">);
 
-export type AppAbility = MongoAbility<[
-	Action,
-	Subject | AppObjectSubject,
-]>;
+export type AppAbility = MongoAbility<[Action, Subject | AppObjectSubject]>;
 
 // ============================================
 // ABILITY BUILDER
@@ -94,6 +90,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "Export");
 			can("manage", "PayrollExport");
 			can("manage", "ScheduledExport");
+			can(["read", "export", "configure"], "WorksCouncil");
 			can("manage", "DemoData");
 		}
 
@@ -115,6 +112,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "Export");
 			can("manage", "PayrollExport");
 			can("manage", "ScheduledExport");
+			can(["read", "export", "configure"], "WorksCouncil");
 			can("manage", "DemoData");
 		}
 
@@ -350,21 +348,13 @@ export function createEmptyAbility(): AppAbility {
 /**
  * Check if ability allows an action on a subject
  */
-export function can(
-	ability: AppAbility,
-	action: Action,
-	subject: Subject,
-): boolean {
+export function can(ability: AppAbility, action: Action, subject: Subject): boolean {
 	return ability.can(action, subject);
 }
 
 /**
  * Check if ability denies an action on a subject
  */
-export function cannot(
-	ability: AppAbility,
-	action: Action,
-	subject: Subject,
-): boolean {
+export function cannot(ability: AppAbility, action: Action, subject: Subject): boolean {
 	return ability.cannot(action, subject);
 }

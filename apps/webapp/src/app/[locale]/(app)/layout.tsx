@@ -1,7 +1,7 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
@@ -15,6 +15,7 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { requireAbility } from "@/lib/auth-helpers";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
 import {
 	type BillingAccessResult,
@@ -24,6 +25,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { setLanguage } from "@/tolgee/language";
 
@@ -72,32 +74,46 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
 	const billingEnabled = process.env.BILLING_ENABLED === "true";
 	const activeOrganizationId = session.session?.activeOrganizationId;
-	const billingAccess = activeOrganizationId && billingEnabled
-		? await Effect.runPromise(
-				Effect.gen(function* () {
-					const enforcementService = yield* BillingEnforcementService;
+	let showWorksCouncilNav = false;
+	if (activeOrganizationId) {
+		const ability = await requireAbility();
+		showWorksCouncilNav = canViewWorksCouncilPortal(
+			ability,
+			activeOrganizationId,
+			activeOrganizationId,
+		);
+	}
+	const billingAccess =
+		activeOrganizationId && billingEnabled
+			? await Effect.runPromise(
+					Effect.gen(function* () {
+						const enforcementService = yield* BillingEnforcementService;
 
-					return yield* enforcementService.checkBillingAccess(activeOrganizationId);
-				}).pipe(Effect.provide(BillingEnforcementServiceLive)),
-			).catch((error) => {
-				logger.error({ error, organizationId: activeOrganizationId }, "Billing access check failed");
+						return yield* enforcementService.checkBillingAccess(activeOrganizationId);
+					}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+				).catch((error) => {
+					logger.error(
+						{ error, organizationId: activeOrganizationId },
+						"Billing access check failed",
+					);
 
-				return billingCheckFailedAccess;
-			})
-		: billingDisabledAccess;
-	const [membershipRecord, subscriptionRow] = activeOrganizationId && billingEnabled
-		? await Promise.all([
-				db.query.member.findFirst({
-					where: and(
-						eq(member.userId, session.user.id),
-						eq(member.organizationId, activeOrganizationId),
-					),
-				}),
-				db.query.subscription.findFirst({
-					where: eq(subscription.organizationId, activeOrganizationId),
-				}),
-			])
-		: [null, null];
+					return billingCheckFailedAccess;
+				})
+			: billingDisabledAccess;
+	const [membershipRecord, subscriptionRow] =
+		activeOrganizationId && billingEnabled
+			? await Promise.all([
+					db.query.member.findFirst({
+						where: and(
+							eq(member.userId, session.user.id),
+							eq(member.organizationId, activeOrganizationId),
+						),
+					}),
+					db.query.subscription.findFirst({
+						where: eq(subscription.organizationId, activeOrganizationId),
+					}),
+				])
+			: [null, null];
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
@@ -134,7 +150,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 							} as React.CSSProperties
 						}
 					>
-						<ServerAppSidebar variant="inset" />
+						<ServerAppSidebar variant="inset" showWorksCouncilNav={showWorksCouncilNav} />
 						<SidebarInset>
 							<SiteHeader />
 							{showTrialBanner ? (

@@ -21,6 +21,7 @@ const migration0003SnapshotUrl = new URL("../../../drizzle/meta/0003_snapshot.js
 const migration0020Url = new URL("../../../drizzle/0020_drop_organization_fiscal_year.sql", import.meta.url);
 const migration0026Url = new URL("../../../drizzle/0026_remove_employee_manager_id.sql", import.meta.url);
 const migration0026SnapshotUrl = new URL("../../../drizzle/meta/0026_snapshot.json", import.meta.url);
+const migration0030SnapshotUrl = new URL("../../../drizzle/meta/0030_snapshot.json", import.meta.url);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
 ) as { entries: Array<{ tag: string }> };
@@ -151,5 +152,23 @@ describe("drizzle follow-up migrations", () => {
 		// Some existing hand-authored follow-up migrations are journaled without a snapshot.
 		expect(existsSync(migration0003SnapshotUrl)).toBe(false);
 		expect(existsSync(migration0026SnapshotUrl)).toBe(false);
+	});
+
+	it("includes snapshot metadata for the platform system email template migration", () => {
+		expect(migrationJournal.entries.some((entry) => entry.tag === "0030_platform_system_email_template")).toBe(
+			true,
+		);
+		expect(existsSync(migration0030SnapshotUrl)).toBe(true);
+
+		const snapshot = JSON.parse(readFileSync(migration0030SnapshotUrl, "utf8")) as {
+			tables: Record<string, { columns: Record<string, unknown> }>;
+		};
+
+		expect(snapshot.tables["public.platform_system_email_template"]?.columns).toEqual(
+			expect.objectContaining({
+				template_key: expect.objectContaining({ type: "text", notNull: true }),
+				editor_document: expect.objectContaining({ type: "jsonb", notNull: true }),
+			}),
+		);
 	});
 });

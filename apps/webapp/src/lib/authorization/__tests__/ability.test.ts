@@ -5,13 +5,9 @@
  * Ensures proper tenant isolation and permission flag grants.
  */
 
-import { describe, it, expect, expectTypeOf } from "vitest";
 import type { ForcedSubject } from "@casl/ability";
-import {
-	defineAbilityFor,
-	createEmptyAbility,
-	type PrincipalContext,
-} from "../index";
+import { describe, expect, expectTypeOf, it } from "vitest";
+import { createEmptyAbility, defineAbilityFor, type PrincipalContext } from "../index";
 import { asAppSubject } from "../subjects";
 
 describe("asAppSubject types", () => {
@@ -120,6 +116,14 @@ describe("Organization Owner", () => {
 		expect(ability.can("invite", "OrgMembers")).toBe(true);
 	});
 
+	it("can read, export, and configure Works Council mode", () => {
+		const ability = defineAbilityFor(ownerPrincipal);
+
+		expect(ability.can("read", "WorksCouncil")).toBe(true);
+		expect(ability.can("export", "WorksCouncil")).toBe(true);
+		expect(ability.can("configure", "WorksCouncil")).toBe(true);
+	});
+
 	it("cannot access different organization", () => {
 		// Owner with different active org cannot manage ORG_2
 		const principalWithDifferentOrg = createPrincipal({
@@ -170,6 +174,14 @@ describe("Organization Admin", () => {
 		expect(ability.can("manage", "OrgBilling")).toBe(true);
 		expect(ability.can("read", "OrgBilling")).toBe(true);
 	});
+
+	it("can read, export, and configure Works Council mode", () => {
+		const ability = defineAbilityFor(adminPrincipal);
+
+		expect(ability.can("read", "WorksCouncil")).toBe(true);
+		expect(ability.can("export", "WorksCouncil")).toBe(true);
+		expect(ability.can("configure", "WorksCouncil")).toBe(true);
+	});
 });
 
 // ============================================
@@ -200,6 +212,14 @@ describe("Organization Member", () => {
 		expect(ability.can("manage", "OrgSettings")).toBe(false);
 		expect(ability.can("manage", "OrgBilling")).toBe(false);
 		expect(ability.can("manage", "OrgMembers")).toBe(false);
+	});
+
+	it("cannot read, export, or configure Works Council mode", () => {
+		const ability = defineAbilityFor(memberPrincipal);
+
+		expect(ability.can("read", "WorksCouncil")).toBe(false);
+		expect(ability.can("export", "WorksCouncil")).toBe(false);
+		expect(ability.can("configure", "WorksCouncil")).toBe(false);
 	});
 });
 
@@ -628,9 +648,7 @@ describe("Custom Roles", () => {
 					roleId: "role-1",
 					roleName: "Export Manager",
 					baseTier: "manager",
-					permissions: [
-						{ action: "manage", subject: "Export" },
-					],
+					permissions: [{ action: "manage", subject: "Export" }],
 				},
 			],
 		});
@@ -968,9 +986,7 @@ describe("Object Subject Conditions", () => {
 						roleId: "role-employee-reader",
 						roleName: "Employee Reader",
 						baseTier: "employee",
-						permissions: [
-							{ action: "read", subject: "Employee" },
-						],
+						permissions: [{ action: "read", subject: "Employee" }],
 					},
 				],
 			}),
@@ -1007,7 +1023,9 @@ describe("Object Subject Conditions", () => {
 
 		expect(employeeAbility.can("manage", "TimeEntry")).toBe(true);
 		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", selfTimeEntry))).toBe(true);
-		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", unmanagedTimeEntry))).toBe(false);
+		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", unmanagedTimeEntry))).toBe(
+			false,
+		);
 		expect(employeeAbility.can("manage", asAppSubject("TimeEntry", otherOrgTimeEntry))).toBe(false);
 		expect(managerAbility.can("manage", "TimeEntry")).toBe(true);
 		expect(managerAbility.can("manage", asAppSubject("TimeEntry", managedTimeEntry))).toBe(true);

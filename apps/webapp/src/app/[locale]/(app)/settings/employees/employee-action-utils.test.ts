@@ -56,8 +56,6 @@ describe("employee settings scope helpers", () => {
 				canUseWebapp: false,
 			}),
 		).toEqual({
-			firstName: "Alex",
-			lastName: "Stone",
 			position: "Supervisor",
 		});
 	});

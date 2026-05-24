@@ -8,7 +8,6 @@ import {
 	IconGenderMale,
 	IconLoader2,
 	IconTrash,
-	IconUpload,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -361,11 +360,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 							}}
 							className="space-y-6"
 						>
-							{/* Profile Picture Upload */}
-							<div className="space-y-4">
-								<Label className="text-sm font-medium">
-									{t("settings.profile.profilePicture", "Profile Picture")}
-								</Label>
+							<div className="flex flex-col gap-6 sm:flex-row sm:items-start">
 								{/* Hidden file input */}
 								<input
 									ref={inputRef}
@@ -375,114 +370,49 @@ export function ProfileForm({ user }: ProfileFormProps) {
 									aria-label={t("settings.profile.uploadProfilePicture", "Upload profile picture")}
 									onChange={handleFileInputChange}
 								/>
-								<div className="flex items-center gap-6">
-									<div className="relative">
-										<UserAvatar
-											seed={user.id}
-											image={previewUrl || avatarImage || undefined}
-											name={displayName}
-											gender={selectedGender || null}
-											size="xl"
-											clockStatus={
-												currentEmployeeId ? presence.getStatus(currentEmployeeId) : "unknown"
-											}
-										/>
-										{isUploadingAvatar && (
-											<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-												<IconLoader2
-													className="size-8 animate-spin text-white"
-													aria-hidden="true"
-												/>
-											</div>
-										)}
+								<div className="relative mx-auto shrink-0 sm:mx-0 sm:mt-7">
+									<UserAvatar
+										seed={user.id}
+										image={previewUrl || avatarImage || undefined}
+										name={displayName}
+										gender={selectedGender || null}
+										size="xl"
+										clockStatus={
+											currentEmployeeId ? presence.getStatus(currentEmployeeId) : "unknown"
+										}
+									/>
+									{isUploadingAvatar && (
+										<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+											<IconLoader2 className="size-8 animate-spin text-white" aria-hidden="true" />
+										</div>
+									)}
+									{avatarImage && (
 										<button
 											type="button"
-											onClick={() => inputRef.current?.click()}
-											disabled={isUploadingAvatar}
-											aria-label={t("settings.profile.changePicture", "Change Picture")}
-											className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-transform hover:scale-110 focus-visible:scale-110 disabled:opacity-50"
+											onClick={() => removeAvatarMutation.mutate()}
+											disabled={isUploadingAvatar || isSubmitting || removeAvatarMutation.isPending}
+											aria-label={t("settings.profile.removePicture", "Remove Picture")}
+											className="absolute right-0 top-0 rounded-full bg-destructive p-1.5 text-destructive-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
 										>
-											<IconCamera className="size-4" aria-hidden="true" />
+											{removeAvatarMutation.isPending ? (
+												<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
+											) : (
+												<IconTrash className="size-3.5" aria-hidden="true" />
+											)}
 										</button>
-									</div>
-									<div className="w-full flex-1 space-y-2 sm:w-auto">
-										<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												className="w-full sm:w-auto"
-												onClick={() => inputRef.current?.click()}
-												disabled={
-													isUploadingAvatar || isSubmitting || removeAvatarMutation.isPending
-												}
-											>
-												<IconUpload className="mr-2 size-4" aria-hidden="true" />
-												{t("settings.profile.changePicture", "Change Picture")}
-											</Button>
-											{avatarImage && (
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													className="w-full sm:w-auto"
-													onClick={() => removeAvatarMutation.mutate()}
-													disabled={
-														isUploadingAvatar || isSubmitting || removeAvatarMutation.isPending
-													}
-												>
-													{removeAvatarMutation.isPending ? (
-														<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-													) : (
-														<IconTrash className="mr-2 size-4" aria-hidden="true" />
-													)}
-													{t("settings.profile.removePicture", "Remove Picture")}
-												</Button>
-											)}
-										</div>
-										<p className="text-muted-foreground text-sm">
-											{t(
-												"settings.profile.pictureHint",
-												"JPG, PNG or WebP. Max 5MB. Recommended 400x400px",
-											)}
-										</p>
-										{isUploadingAvatar && (
-											<div className="space-y-1">
-												<Progress value={uploadProgress} className="h-2" />
-												<p className="text-xs text-muted-foreground">
-													{t("settings.profile.uploading", "Uploading")} {uploadProgress}%
-												</p>
-											</div>
-										)}
-									</div>
+									)}
+									<button
+										type="button"
+										onClick={() => inputRef.current?.click()}
+										disabled={isUploadingAvatar}
+										aria-label={t("settings.profile.changePicture", "Change Picture")}
+										className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
+									>
+										<IconCamera className="size-4" aria-hidden="true" />
+									</button>
 								</div>
-							</div>
 
-							{/* Email Field (Read-only) */}
-							<div className="space-y-2">
-								<Label htmlFor="email">{t("settings.profile.email", "Email")}</Label>
-								<Input
-									id="email"
-									name="email"
-									type="email"
-									autoComplete="email"
-									spellCheck={false}
-									value={user.email}
-									disabled
-									className="bg-muted"
-								/>
-								<p className="text-muted-foreground text-sm">
-									{t("settings.profile.emailReadonly", "Email cannot be changed")}
-								</p>
-							</div>
-
-							{/* Personal Information Section */}
-							<div className="border-t pt-6 space-y-6">
-								<h3 className="text-lg font-medium">
-									{t("settings.profile.personalInformation", "Personal Information")}
-								</h3>
-
-								<div className="grid gap-4 md:grid-cols-2">
+								<div className="min-w-0 flex-1 space-y-4">
 									<form.Field
 										name="firstName"
 										validators={{
@@ -549,6 +479,40 @@ export function ProfileForm({ user }: ProfileFormProps) {
 										}}
 									</form.Field>
 								</div>
+							</div>
+
+							{isUploadingAvatar && (
+								<div className="space-y-1">
+									<Progress value={uploadProgress} className="h-2" />
+									<p className="text-xs text-muted-foreground">
+										{t("settings.profile.uploading", "Uploading")} {uploadProgress}%
+									</p>
+								</div>
+							)}
+
+							{/* Email Field (Read-only) */}
+							<div className="space-y-2">
+								<Label htmlFor="email">{t("settings.profile.email", "Email")}</Label>
+								<Input
+									id="email"
+									name="email"
+									type="email"
+									autoComplete="email"
+									spellCheck={false}
+									value={user.email}
+									disabled
+									className="bg-muted"
+								/>
+								<p className="text-muted-foreground text-sm">
+									{t("settings.profile.emailReadonly", "Email cannot be changed")}
+								</p>
+							</div>
+
+							{/* Personal Information Section */}
+							<div className="border-t pt-6 space-y-6">
+								<h3 className="text-lg font-medium">
+									{t("settings.profile.personalInformation", "Personal Information")}
+								</h3>
 
 								{/* Gender */}
 								<div className="space-y-2">

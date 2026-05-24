@@ -115,6 +115,7 @@ export function buildMonthWorkSummary({
 	events = [],
 }: BuildMonthWorkSummaryOptions): MonthWorkSummary {
 	const monthStart = DateTime.local(year, monthIndex + 1, 1).startOf("day");
+	const today = DateTime.local().startOf("day");
 	const gridStart = getGridStart(monthStart, weekStartDay);
 	const gridEnd = getGridEnd(monthStart, weekStartDay);
 	const eventsByDate = groupCalendarEventsByDate(events);
@@ -129,9 +130,11 @@ export function buildMonthWorkSummary({
 		for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
 			const dateKey = current.toISODate()!;
 			const isActiveMonth = current.month === monthStart.month;
+			const isFutureCurrentMonthDay =
+				monthStart.hasSame(today, "month") && monthStart.hasSame(today, "year") && current > today;
 			const workHoursSummary = workHoursData.get(dateKey) ?? null;
 
-			if (isActiveMonth && workHoursSummary) {
+			if (isActiveMonth && !isFutureCurrentMonthDay && workHoursSummary) {
 				weekSummaries.push(workHoursSummary);
 				monthSummaries.push(workHoursSummary);
 			}

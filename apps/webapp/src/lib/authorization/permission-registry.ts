@@ -19,7 +19,8 @@ export type PermissionCategory =
 	| "reporting"
 	| "organization"
 	| "projects"
-	| "scheduling";
+	| "scheduling"
+	| "works_council";
 
 export interface PermissionDefinition {
 	action: Action;
@@ -230,6 +231,29 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 		description: "Create and manage payroll exports",
 	},
 
+	// ---- Works Council ----
+	"read:WorksCouncil": {
+		action: "read",
+		subject: "WorksCouncil",
+		category: "works_council",
+		label: "View Works Council Portal",
+		description: "Read privacy-filtered works council dashboards and review logs",
+	},
+	"export:WorksCouncil": {
+		action: "export",
+		subject: "WorksCouncil",
+		category: "works_council",
+		label: "Export Works Council Review Packs",
+		description: "Generate privacy-filtered works council review exports",
+	},
+	"configure:WorksCouncil": {
+		action: "configure",
+		subject: "WorksCouncil",
+		category: "works_council",
+		label: "Configure Works Council Mode",
+		description: "Enable Works Council Mode and configure privacy settings",
+	},
+
 	// ---- Organization ----
 	"read:Organization": {
 		action: "read",
@@ -362,6 +386,7 @@ const CATEGORY_LABELS: Record<PermissionCategory, string> = {
 	organization: "Organization",
 	projects: "Projects",
 	scheduling: "Scheduling",
+	works_council: "Works Council",
 };
 
 const CATEGORY_LABEL_KEYS: Record<PermissionCategory, string> = {
@@ -372,6 +397,7 @@ const CATEGORY_LABEL_KEYS: Record<PermissionCategory, string> = {
 	organization: "settings.roles.permissionCategories.organization",
 	projects: "settings.roles.permissionCategories.projects",
 	scheduling: "settings.roles.permissionCategories.scheduling",
+	works_council: "settings.roles.permissionCategories.works_council",
 };
 
 /**

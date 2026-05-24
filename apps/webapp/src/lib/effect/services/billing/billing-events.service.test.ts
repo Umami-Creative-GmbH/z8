@@ -3,18 +3,21 @@ import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
+import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService, type UpdateSubscriptionFromStripeParams } from "./subscription.service";
 
 const {
 	stripeEventFindFirst,
+	subscriptionFindFirst,
 	insertValues,
 	onConflictDoNothing,
 	setValues,
 	updateWhere,
 } = vi.hoisted(() => ({
 	stripeEventFindFirst: vi.fn(),
+	subscriptionFindFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
 	setValues: vi.fn(),
@@ -26,6 +29,9 @@ vi.mock("@/db", () => ({
 		query: {
 			stripeEvent: {
 				findFirst: stripeEventFindFirst,
+			},
+			subscription: {
+				findFirst: subscriptionFindFirst,
 			},
 		},
 		insert: vi.fn(() => ({
@@ -42,7 +48,14 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 	eq: vi.fn((column, value) => ({ column, value })),
 }));
 
+vi.mock("@/lib/billing/billing-system-email", () => ({
+	sendBillingSystemEmail: vi.fn(),
+}));
+
+const sendBillingSystemEmailMock = vi.mocked(sendBillingSystemEmail);
+
 describe("BillingEventsService", () => {
+	const getCustomer = vi.fn();
 	const updateFromStripe = vi.fn((_: UpdateSubscriptionFromStripeParams) => Effect.void);
 	const appLayer = Layer.mergeAll(
 		Layer.succeed(
@@ -57,7 +70,7 @@ describe("BillingEventsService", () => {
 					enabled: false,
 				},
 				createCustomer: vi.fn(),
-				getCustomer: vi.fn(),
+				getCustomer,
 				createCheckoutSession: vi.fn(),
 				createPortalSession: vi.fn(),
 				getSubscription: vi.fn(),
@@ -95,11 +108,22 @@ describe("BillingEventsService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		stripeEventFindFirst.mockResolvedValue(null);
+		subscriptionFindFirst.mockResolvedValue({
+			metadata: {},
+		});
 		insertValues.mockReturnValue({ onConflictDoNothing });
 		onConflictDoNothing.mockResolvedValue(undefined);
 		setValues.mockReturnValue({ where: updateWhere });
 		updateWhere.mockResolvedValue(undefined);
 		updateFromStripe.mockReturnValue(Effect.void);
+		getCustomer.mockReturnValue(
+			Effect.succeed({
+				id: "cus_test_123",
+				object: "customer",
+				email: "billing@example.com",
+			} as Stripe.Customer),
+		);
+		sendBillingSystemEmailMock.mockResolvedValue({ sent: true });
 	});
 
 	it("preserves active status when an updated subscription is scheduled to cancel", async () => {
@@ -144,12 +168,96 @@ describe("BillingEventsService", () => {
 		);
 	});
 
+	it("sends trial ending billing mail through the system sender", async () => {
+		const stripeSub = createStripeSubscription({
+			trial_end: 1_779_840_000,
+			customer: "cus_test_123",
+		});
+
+		await processEvent({
+			type: "customer.subscription.trial_will_end",
+			stripeSub,
+		});
+
+		expect(getCustomer).toHaveBeenCalledWith("cus_test_123");
+		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith({
+			templateKey: "billing-trial-ending",
+			to: "billing@example.com",
+			data: expect.objectContaining({
+				organizationName: "your organization",
+				customerEmail: "billing@example.com",
+				billingUrl: "https://app.z8-time.app/settings/billing",
+				billingPortalUrl: "https://app.z8-time.app/settings/billing",
+			}),
+		});
+		expect(updateWhere).toHaveBeenCalled();
+	});
+
+	it.each([
+		{
+			type: "customer.subscription.paused" as const,
+			object: createStripeSubscription({
+				customer: { id: "cus_test_123", object: "customer", email: "paused@example.com" } as Stripe.Customer,
+				pause_collection: { behavior: "void" },
+			}),
+			templateKey: "billing-subscription-paused",
+		},
+		{
+			type: "customer.subscription.resumed" as const,
+			object: createStripeSubscription({
+				customer: { id: "cus_test_123", object: "customer", email: "resumed@example.com" } as Stripe.Customer,
+			}),
+			templateKey: "billing-subscription-resumed",
+		},
+		{
+			type: "invoice.finalized" as const,
+			object: createStripeInvoice({ customer_email: "invoice@example.com" }),
+			templateKey: "billing-invoice-ready",
+		},
+		{
+			type: "payment_intent.payment_failed" as const,
+			object: createStripePaymentIntent({ receipt_email: "payment@example.com" }),
+			templateKey: "billing-payment-failed",
+		},
+	])("selects $templateKey for $type", async ({ type, object, templateKey }) => {
+		await processEvent({ type, object });
+
+		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+			expect.objectContaining({ templateKey }),
+		);
+	});
+
+	it("continues processing when billing email sending fails", async () => {
+		sendBillingSystemEmailMock.mockRejectedValueOnce(new Error("email unavailable"));
+
+		await expect(
+			processEvent({
+				type: "customer.subscription.paused",
+				object: createStripeSubscription({ customer: "cus_test_123" }),
+			}),
+		).resolves.toBeUndefined();
+
+		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+			expect.objectContaining({ templateKey: "billing-subscription-paused" }),
+		);
+		expect(setValues).toHaveBeenCalledWith(expect.objectContaining({ processed: true }));
+	});
+
 	async function processEvent({
 		type,
 		stripeSub,
+		object = stripeSub,
 	}: {
-		type: "customer.subscription.updated" | "customer.subscription.deleted";
-		stripeSub: Stripe.Subscription;
+		type:
+			| "customer.subscription.updated"
+			| "customer.subscription.deleted"
+			| "customer.subscription.trial_will_end"
+			| "customer.subscription.paused"
+			| "customer.subscription.resumed"
+			| "invoice.finalized"
+			| "payment_intent.payment_failed";
+		stripeSub?: Stripe.Subscription;
+		object?: Stripe.Subscription | Stripe.Invoice | Stripe.PaymentIntent;
 	}) {
 		await Effect.runPromise(
 			Effect.gen(function* () {
@@ -158,7 +266,7 @@ describe("BillingEventsService", () => {
 				yield* billingEventsService.processEvent({
 					id: `evt_${type}`,
 					type,
-					data: { object: stripeSub },
+					data: { object },
 				} as Stripe.Event);
 			}).pipe(Effect.provide(BillingEventsServiceLive), Effect.provide(appLayer)),
 		);
@@ -196,4 +304,46 @@ function createStripeSubscription(
 		},
 		...overrides,
 	} as Stripe.Subscription;
+}
+
+function createStripeInvoice(overrides: Partial<Stripe.Invoice> = {}): Stripe.Invoice {
+	return {
+		id: "in_test_123",
+		object: "invoice",
+		amount_due: 12_300,
+		amount_paid: 0,
+		currency: "eur",
+		customer: "cus_test_123",
+		customer_email: "billing@example.com",
+		due_date: 1_779_840_000,
+		hosted_invoice_url: "https://invoice.stripe.test/in_test_123",
+		invoice_pdf: "https://invoice.stripe.test/in_test_123.pdf",
+		number: "INV-123",
+		status: "open",
+		subscription: "sub_test_123",
+		...overrides,
+	} as Stripe.Invoice;
+}
+
+function createStripePaymentIntent(
+	overrides: Partial<Stripe.PaymentIntent> = {},
+): Stripe.PaymentIntent {
+	return {
+		id: "pi_test_123",
+		object: "payment_intent",
+		amount: 12_300,
+		currency: "eur",
+		customer: "cus_test_123",
+		invoice: "in_test_123",
+		last_payment_error: {
+			code: "card_declined",
+			decline_code: "generic_decline",
+			message: "Your card was declined.",
+			type: "card_error",
+		} as Stripe.PaymentIntent.LastPaymentError,
+		metadata: { subscriptionId: "sub_test_123" },
+		receipt_email: "billing@example.com",
+		status: "requires_payment_method",
+		...overrides,
+	} as Stripe.PaymentIntent;
 }

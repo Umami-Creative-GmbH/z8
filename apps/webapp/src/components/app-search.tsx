@@ -1,7 +1,7 @@
 "use client";
 
+import { IconSearch } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
-import { IconSearch } from '@tabler/icons-react';
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
@@ -33,6 +33,8 @@ const SEARCH_HOTKEY = "Mod+K";
 
 function getGroupLabel(type: AppSearchResult["type"], t: ReturnType<typeof useTranslate>["t"]) {
 	switch (type) {
+		case "action":
+			return t("appSearch.groups.actions", "Actions");
 		case "page":
 			return t("appSearch.groups.pages", "Pages");
 		case "setting":
@@ -87,7 +89,13 @@ function ResultGroup({
 	);
 }
 
-export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] }) {
+export function AppSearch({
+	staticCommands = [],
+	staticResults,
+}: {
+	staticCommands?: AppSearchResult[];
+	staticResults: AppSearchResult[];
+}) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
@@ -132,6 +140,7 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 		};
 	}, [open, query]);
 
+	const actionResults = staticCommands.filter((result) => result.type === "action");
 	const pageResults = staticResults.filter((result) => result.type === "page");
 	const settingResults = staticResults.filter((result) => result.type === "setting");
 
@@ -149,11 +158,11 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								onClick={() => setOpen(true)}
-								tooltip={t("appSearch.search", "Search")}
+								tooltip={t("appSearch.searchOrRunCommand", "Search or run command")}
 								type="button"
 							>
 								<IconSearch />
-								<span>{t("appSearch.search", "Search")}</span>
+								<span>{t("appSearch.searchOrRunCommand", "Search or run command")}</span>
 								<Kbd className="ml-auto hidden bg-sidebar-accent text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden sm:inline-flex">
 									{searchShortcutLabel}
 								</Kbd>
@@ -164,27 +173,32 @@ export function AppSearch({ staticResults }: { staticResults: AppSearchResult[] 
 			</SidebarGroup>
 			<CommandDialog
 				description={t(
-					"appSearch.description",
-					"Search pages, settings, people, and teams",
+					"appSearch.commandDescription",
+					"Search pages, people, teams, settings, or actions",
 				)}
 				onOpenChange={setOpen}
 				open={open}
-				title={t("appSearch.search", "Search")}
+				title={t("appSearch.searchOrRunCommand", "Search or run command")}
 			>
 				<CommandInput
 					aria-label={t(
-						"appSearch.description",
-						"Search pages, settings, people, and teams",
+						"appSearch.commandDescription",
+						"Search pages, people, teams, settings, or actions",
 					)}
 					onValueChange={setQuery}
 					placeholder={t(
-						"appSearch.placeholder",
-						"Search pages, settings, people, and teams…",
+						"appSearch.commandPlaceholder",
+						"Search pages, people, teams, settings, or actions…",
 					)}
 					value={query}
 				/>
 				<CommandList>
 					<CommandEmpty>{t("appSearch.empty", "No results found.")}</CommandEmpty>
+					<ResultGroup
+						label={getGroupLabel("action", t)}
+						onSelect={handleSelect}
+						results={actionResults}
+					/>
 					<ResultGroup
 						label={getGroupLabel("employee", t)}
 						onSelect={handleSelect}
