@@ -42,6 +42,7 @@ Agents must validate their work against these skills before completing tasks:
 - **Forms**: Use `@tanstack/react-form`. Migrate legacy `react-hook-form` when modifying existing forms.
 - **Dates**: Use Luxon (`DateTime`), not native `Date`.
 - **Auth schema**: Never edit `src/db/auth-schema.ts` directly - it's auto-generated.
+- **Drizzle migrations**: Drizzle decides which migrations to run by comparing the latest row in `drizzle.__drizzle_migrations.created_at` with each entry's `when` value in `apps/webapp/drizzle/meta/_journal.json`. New migrations must have a `when` greater than every prior migration. If a migration was committed with an older `when` and production may have already advanced past it, do not only edit the old journal entry; add a new idempotent recovery migration with a later `when` so production databases that skipped the old migration are fixed safely.
 - **RBAC**: Uses [CASL](https://casl.js.org/) for role-based access control.
 - **Icons**: Use `@tabler/icons-react` exclusively. All icon components are prefixed with `Icon` (e.g. `IconCheck`, `IconLoader2`). Do **not** use `lucide-react`.
 
