@@ -223,13 +223,12 @@ export function calendarEventToScheduleX(
 
 		if (event.type === "holiday") {
 			const start = toTemporalPlainDate(startDate);
-			const end = toTemporalPlainDate(endDate);
 
 			return {
 				id: event.id,
 				title: event.title,
 				start,
-				end,
+				end: start.add({ days: 1 }),
 				calendarId: event.type,
 				_eventData: event,
 			};
