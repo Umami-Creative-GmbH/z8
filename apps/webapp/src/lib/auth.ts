@@ -22,7 +22,7 @@ import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
 import { renderOrganizationEmailTemplate } from "./email/template-renderer";
 import { createLogger } from "./logger";
-import { secondaryStorage } from "./valkey";
+import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
 
@@ -220,7 +220,7 @@ export const auth = betterAuth({
 		},
 	},
 
-	// Secondary storage for session caching (Valkey/Redis)
+	// Secondary storage for session caching (Redis)
 	// This dramatically improves session retrieval performance
 	secondaryStorage,
 
@@ -346,7 +346,7 @@ export const auth = betterAuth({
 		updateAge: 60 * 60 * 24, // Extend session expiry on daily activity (sliding window)
 		cookieCache: {
 			enabled: true,
-			maxAge: 15 * 60, // 15 min cache before re-validating from Valkey/DB
+			maxAge: 15 * 60, // 15 min cache before re-validating from Redis/DB
 			strategy: "compact",
 		},
 		storeSessionInDatabase: true, // Keep DB as source of truth for revocation

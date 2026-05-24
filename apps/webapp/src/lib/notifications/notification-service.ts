@@ -9,7 +9,7 @@ import { db } from "@/db";
 import { notification, notificationPreference } from "@/db/schema";
 import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
-import { publishNotificationEvent } from "@/lib/valkey";
+import { publishNotificationEvent } from "@/lib/redis";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
 import { isPushAvailable, type PushPayload, sendPushToUser } from "./push-service";
@@ -131,7 +131,7 @@ export async function createNotification(
 				"Notification created",
 			);
 
-			// Publish to Valkey for real-time SSE updates
+			// Publish to Redis for real-time SSE updates
 			const notifWithMeta = {
 				...created,
 				timeAgo: getTimeAgo(created.createdAt),
@@ -417,7 +417,7 @@ export async function markAsRead(
 		if (updated) {
 			logger.debug({ notificationId }, "Notification marked as read");
 
-			// Publish count update to Valkey for real-time SSE updates
+		// Publish count update to Redis for real-time SSE updates
 			// Get organizationId from the updated notification
 			const newCount = await getUnreadCount(userId, organizationId);
 			void publishNotificationEvent(userId, "count_update", {
@@ -458,7 +458,7 @@ export async function markAllAsRead(userId: string, organizationId: string): Pro
 		const updatedCount = result.length;
 		logger.info({ userId, updatedCount }, "All notifications marked as read");
 
-		// Publish count update to Valkey for real-time SSE updates (count is now 0)
+		// Publish count update to Redis for real-time SSE updates (count is now 0)
 		if (updatedCount > 0) {
 			void publishNotificationEvent(userId, "count_update", { count: 0, organizationId }).catch(
 				(error) => {

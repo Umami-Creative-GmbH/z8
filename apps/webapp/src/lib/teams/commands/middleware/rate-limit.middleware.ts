@@ -2,12 +2,12 @@
  * Rate Limit Middleware for Teams Bot Commands
  *
  * Per-command rate limiting using Upstash Ratelimit with sliding window.
- * Integrates with existing Valkey/Redis infrastructure.
+ * Integrates with existing Redis infrastructure.
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { createLogger } from "@/lib/logger";
-import { valkey } from "@/lib/valkey";
+import { redis } from "@/lib/redis";
 import { ensureRateLimitRedisReady, isRateLimitDisabled } from "@/lib/rate-limit";
 import type { BotCommandContext, BotCommandResponse } from "../../types";
 
@@ -87,7 +87,7 @@ const redisAdapter: RatelimitRedis = {
 		args: TArgs,
 	): Promise<TData> => {
 		try {
-			return (await valkey.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
+			return (await redis.evalsha(sha, keys.length, ...keys, ...args.map(String))) as TData;
 		} catch (error) {
 			if (error instanceof Error && error.message.includes("NOSCRIPT")) {
 				throw new NoscriptError(error.message);
@@ -100,16 +100,16 @@ const redisAdapter: RatelimitRedis = {
 		keys: string[],
 		args: TArgs,
 	): Promise<TData> => {
-		return valkey.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
+		return redis.eval(script, keys.length, ...keys, ...args.map(String)) as Promise<TData>;
 	},
 	get: async <TData = string>(key: string): Promise<TData | null> => {
-		return valkey.get(key) as Promise<TData | null>;
+		return redis.get(key) as Promise<TData | null>;
 	},
 	set: async (key: string, value: string, opts?: { ex?: number }): Promise<string | null> => {
 		if (opts?.ex) {
-			return valkey.set(key, value, "EX", opts.ex);
+			return redis.set(key, value, "EX", opts.ex);
 		}
-		return valkey.set(key, value);
+		return redis.set(key, value);
 	},
 };
 
@@ -165,9 +165,9 @@ export async function checkCommandRateLimit(
 			};
 		}
 
-		// Check Valkey connection
+		// Check Redis connection
 		if (!(await ensureRateLimitRedisReady())) {
-			logger.warn({ commandName }, "Rate limiting unavailable - Valkey not connected");
+			logger.warn({ commandName }, "Rate limiting unavailable - Redis not connected");
 			return {
 				allowed: true,
 				remaining: 100,

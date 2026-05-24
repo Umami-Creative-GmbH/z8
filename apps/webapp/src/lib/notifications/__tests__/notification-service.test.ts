@@ -193,7 +193,7 @@ vi.mock("@/lib/events", () => ({
 	publishEventAsync: mockPublishEventAsync,
 }));
 
-vi.mock("@/lib/valkey", () => ({
+vi.mock("@/lib/redis", () => ({
 	publishNotificationEvent: mockPublishNotificationEvent,
 }));
 

@@ -90,6 +90,12 @@ spec:
                   name: z8-config
                   key: redis-tls
                   optional: true
+            - name: REDIS_CA_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: redis-ca-cert
+                  optional: true
             # Worker config
             - name: WORKER_CONCURRENCY
               valueFrom:
@@ -192,7 +198,9 @@ spec:
                     host: process.env.REDIS_HOST,
                     port: process.env.REDIS_PORT,
                     password: process.env.REDIS_PASSWORD,
-                    tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
+                    tls: process.env.REDIS_TLS === 'true'
+                      ? (process.env.REDIS_CA_CERT ? { ca: process.env.REDIS_CA_CERT } : {})
+                      : undefined,
                     lazyConnect: false
                   });
                   r.ping().then(() => process.exit(0)).catch(() => process.exit(1));

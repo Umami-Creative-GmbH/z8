@@ -116,7 +116,7 @@ function getRecommendedActions(items: DiagnosticsItem[]): string[] {
 	}
 
 	if (items.some((item) => item.title.toLowerCase().includes("queue") && item.status === "warning")) {
-		actions.add("Check Valkey/Redis connectivity and worker queue configuration.");
+		actions.add("Check Redis connectivity and worker queue configuration.");
 	}
 
 	if (items.some((item) => item.title === "Billing readiness" && item.status === "warning")) {
@@ -248,7 +248,7 @@ export async function collectPlatformDiagnostics(
 			description: "Lightweight read against system configuration storage.",
 		},
 		{
-			title: "Queue / Valkey",
+			title: "Queue / Redis",
 			status: queueHealthy ? "healthy" : "warning",
 			value: queueHealthy ? "Connected" : "Unavailable",
 			description: "BullMQ queue connectivity check.",

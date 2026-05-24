@@ -5,13 +5,13 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getUnreadCount } from "@/lib/notifications/notification-service";
-import { createValkeySubscriber, valkey } from "@/lib/valkey";
+import { createRedisSubscriber, redis } from "@/lib/redis";
 
 /**
  * GET /api/notifications/stream
  * Server-Sent Events endpoint for real-time notification updates
  *
- * Uses Valkey Pub/Sub for event-driven updates instead of database polling.
+ * Uses Redis Pub/Sub for event-driven updates instead of database polling.
  * This scales to thousands of concurrent connections without database overhead.
  *
  * Sends:
@@ -75,14 +75,14 @@ export async function GET() {
 			);
 		};
 
-		// Check if Valkey is available
-		const valkeyAvailable = valkey.status === "ready" || valkey.status === "connecting";
+		// Check if Redis is available
+		const redisAvailable = redis.status === "ready" || redis.status === "connecting";
 
 		// Create a readable stream for SSE
 		const stream = new ReadableStream({
 			async start(controller) {
 				const encoder = new TextEncoder();
-				let subscriber: ReturnType<typeof createValkeySubscriber> | null = null;
+				let subscriber: ReturnType<typeof createRedisSubscriber> | null = null;
 				let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 				let pollInterval: ReturnType<typeof setInterval> | null = null;
 				let isCleanedUp = false;
@@ -120,13 +120,13 @@ export async function GET() {
 					const initialCount = await getUnreadCount(userId, organizationId);
 					sendEvent("count_update", { count: initialCount, organizationId });
 
-					if (valkeyAvailable) {
-						// Use Valkey Pub/Sub for real-time updates (preferred)
-						subscriber = createValkeySubscriber();
+					if (redisAvailable) {
+						// Use Redis Pub/Sub for real-time updates (preferred)
+						subscriber = createRedisSubscriber();
 
 						// Handle connection errors
 						subscriber.on("error", (err) => {
-							console.error("Valkey subscriber error:", err);
+							console.error("Redis subscriber error:", err);
 							// Don't cleanup here - let the subscription try to reconnect
 						});
 
@@ -145,9 +145,9 @@ export async function GET() {
 							}
 						});
 					} else {
-						// Fallback to polling if Valkey is not available
+						// Fallback to polling if Redis is not available
 						// This ensures the feature still works, just with higher database load
-						console.warn("Valkey not available, falling back to database polling");
+						console.warn("Redis not available, falling back to database polling");
 
 						let lastCount = initialCount;
 

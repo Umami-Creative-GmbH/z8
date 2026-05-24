@@ -89,6 +89,7 @@ These keys must exist in Phase and be synced into the `app-secrets` Kubernetes S
 - `REDIS_PORT` — Redis-compatible cache port, usually `6379`
 - `REDIS_PASSWORD` — optional Redis-compatible cache password
 - `REDIS_TLS` — set to `true` for managed Redis providers that require TLS
+- `REDIS_CA_CERT` — optional inline PEM CA certificate for managed Redis TLS
 
 ## Postgres VM (outside the cluster)
 

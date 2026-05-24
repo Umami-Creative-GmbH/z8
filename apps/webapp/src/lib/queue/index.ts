@@ -1,7 +1,7 @@
 /**
  * Job Queue Module
  *
- * Uses BullMQ for background job processing with Valkey/Redis backend.
+ * Uses BullMQ for background job processing with Redis-compatible backend.
  * This enables offloading heavy operations from API routes to background workers.
  *
  * Key benefits:
@@ -15,16 +15,17 @@ import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } fro
 import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
 import type { ImportCommitJobData, ImportScanJobData } from "@/lib/import-review/types";
 import { createLogger } from "@/lib/logger";
+import { createRedisTlsOptions } from "@/lib/redis-config";
 import { env } from "@/env";
 
 const logger = createLogger("JobQueue");
 
-// Connection configuration for Valkey/Redis
+// Connection configuration for Redis-compatible backend
 const connection: ConnectionOptions = {
 	host: env.REDIS_HOST || "localhost",
 	port: Number(env.REDIS_PORT || 6379),
 	password: env.REDIS_PASSWORD || undefined,
-	tls: env.REDIS_TLS === "true" ? {} : undefined,
+	tls: createRedisTlsOptions(env.REDIS_TLS === "true", env.REDIS_CA_CERT),
 	maxRetriesPerRequest: null, // Required for BullMQ
 };
 
@@ -319,7 +320,7 @@ export function createWorker(
 }
 
 /**
- * Check if the queue is healthy (Valkey connection is working)
+ * Check if the queue is healthy (Redis connection is working)
  */
 export async function isQueueHealthy(): Promise<boolean> {
 	try {

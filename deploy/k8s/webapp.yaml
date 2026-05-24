@@ -92,6 +92,12 @@ spec:
                   name: z8-config
                   key: redis-tls
                   optional: true
+            - name: REDIS_CA_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: redis-ca-cert
+                  optional: true
             # Auth
             - name: BETTER_AUTH_SECRET
               valueFrom:
