@@ -65,12 +65,28 @@ const staticResults: AppSearchResult[] = [
 	},
 ];
 
-const searchPlaceholder = "Search pages, settings, people, and teams…";
+const staticCommands: AppSearchResult[] = [
+	{
+		type: "action",
+		id: "add-manual-time-entry",
+		title: "Add manual time entry",
+		subtitle: "Record time for a completed shift",
+		href: "/time-tracking",
+	},
+];
 
-function renderAppSearch(results = staticResults) {
+const searchPlaceholder = "Search pages, people, teams, settings, or actions…";
+
+function renderAppSearch({
+	commands = staticCommands,
+	results = staticResults,
+}: {
+	commands?: AppSearchResult[];
+	results?: AppSearchResult[];
+} = {}) {
 	return render(
 		<SidebarProvider>
-			<AppSearch staticResults={results} />
+			<AppSearch staticCommands={commands} staticResults={results} />
 		</SidebarProvider>,
 	);
 }
@@ -113,7 +129,7 @@ describe("AppSearch", () => {
 	it("opens from the trigger button and navigates to a static result", async () => {
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
 		fireEvent.click(screen.getByText("Dashboard"));
 
 		expect(pushMock).toHaveBeenCalledWith("/dashboard");
@@ -153,7 +169,7 @@ describe("AppSearch", () => {
 	it("shows the empty state when the current query filters out all results", () => {
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "zzzz" },
 		});
@@ -162,18 +178,20 @@ describe("AppSearch", () => {
 	});
 
 	it("matches static results by keywords", () => {
-		renderAppSearch([
-			{
-				type: "page",
-				id: "team-absences",
-				title: "Team Absences",
-				subtitle: "Review employee absence metrics and record absences",
-				href: "/team/absences",
-				keywords: ["team", "absence", "sick", "vacation", "manager"],
-			},
-		]);
+		renderAppSearch({
+			results: [
+				{
+					type: "page",
+					id: "team-absences",
+					title: "Team Absences",
+					subtitle: "Review employee absence metrics and record absences",
+					href: "/team/absences",
+					keywords: ["team", "absence", "sick", "vacation", "manager"],
+				},
+			],
+		});
 
-		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "vacation" },
 		});
@@ -199,7 +217,7 @@ describe("AppSearch", () => {
 		});
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "al" },
 		});
@@ -214,7 +232,7 @@ describe("AppSearch", () => {
 		expect(pushMock).toHaveBeenCalledWith("/settings/employees/employee-1");
 	});
 
-	it("orders live people and team results before pages and settings", async () => {
+	it("orders actions before live people, teams, pages, and settings", async () => {
 		searchAppRecordsActionMock.mockResolvedValue({
 			success: true,
 			data: {
@@ -238,7 +256,7 @@ describe("AppSearch", () => {
 		});
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "op" },
 		});
@@ -247,10 +265,20 @@ describe("AppSearch", () => {
 		});
 
 		const groupHeadings = screen
-			.getAllByText(/^(People|Teams|Pages|Settings)$/)
+			.getAllByText(/^(Actions|People|Teams|Pages|Settings)$/)
 			.map((heading) => heading.textContent);
 
-		expect(groupHeadings).toEqual(["People", "Teams", "Pages", "Settings"]);
+		expect(groupHeadings).toEqual(["Actions", "People", "Teams", "Pages", "Settings"]);
+	});
+
+	it("navigates to a selected action and closes the palette", () => {
+		renderAppSearch();
+
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByText("Add manual time entry"));
+
+		expect(pushMock).toHaveBeenCalledWith("/time-tracking");
+		expect(screen.queryByPlaceholderText(searchPlaceholder)).toBeNull();
 	});
 
 	it("keeps static results available and shows the live search error when loading fails", async () => {
@@ -260,7 +288,7 @@ describe("AppSearch", () => {
 		});
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search/i }));
+		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "em" },
 		});
