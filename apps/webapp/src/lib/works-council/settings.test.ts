@@ -60,6 +60,33 @@ describe("works council settings", () => {
 			normalizeWorksCouncilSettingsInput({ minimumAggregationThreshold: Number.NaN })
 				.minimumAggregationThreshold,
 		).toBe(5);
+		expect(
+			normalizeWorksCouncilSettingsInput({ minimumAggregationThreshold: "12" as never })
+				.minimumAggregationThreshold,
+		).toBe(5);
+	});
+
+	it("falls back to conservative boolean values for tampered runtime input", () => {
+		expect(
+			normalizeWorksCouncilSettingsInput({
+				enabled: "true" as never,
+				exportEnabled: 1 as never,
+			}),
+		).toEqual(expect.objectContaining({ enabled: false, exportEnabled: false }));
+	});
+
+	it("filters visible team and location ids to non-empty strings", () => {
+		expect(
+			normalizeWorksCouncilSettingsInput({
+				visibleTeamIds: ["team_1", "", 42, "team_2"] as never,
+				visibleLocationIds: [null, "location_1", "   ", "location_2"] as never,
+			}),
+		).toEqual(
+			expect.objectContaining({
+				visibleTeamIds: ["team_1", "team_2"],
+				visibleLocationIds: ["location_1", "location_2"],
+			}),
+		);
 	});
 
 	it("falls back to conservative visibility values for invalid runtime input", () => {

@@ -7,13 +7,13 @@ import {
 } from "@/db/schema";
 
 export interface WorksCouncilSettingsInput {
-	enabled?: boolean;
-	identityVisibility?: WorksCouncilIdentityVisibility;
-	absenceVisibility?: WorksCouncilAbsenceVisibility;
-	exportEnabled?: boolean;
-	minimumAggregationThreshold?: number;
-	visibleTeamIds?: string[];
-	visibleLocationIds?: string[];
+	enabled?: unknown;
+	identityVisibility?: unknown;
+	absenceVisibility?: unknown;
+	exportEnabled?: unknown;
+	minimumAggregationThreshold?: unknown;
+	visibleTeamIds?: unknown;
+	visibleLocationIds?: unknown;
 }
 
 export interface WorksCouncilSettingsFormValues {
@@ -47,30 +47,43 @@ function isAbsenceVisibility(value: unknown): value is WorksCouncilAbsenceVisibi
 	return ABSENCE_VISIBILITY_VALUES.includes(value as never);
 }
 
+function sanitizeBoolean(value: unknown, fallback: boolean) {
+	return typeof value === "boolean" ? value : fallback;
+}
+
+function sanitizeStringIds(value: unknown) {
+	return Array.isArray(value)
+		? value.filter((item): item is string => typeof item === "string" && item.trim() !== "")
+		: [];
+}
+
 export function normalizeWorksCouncilSettingsInput(
 	input: WorksCouncilSettingsInput,
 ): WorksCouncilSettingsFormValues {
-	const threshold = Number.isFinite(input.minimumAggregationThreshold)
-		? input.minimumAggregationThreshold
-		: DEFAULT_WORKS_COUNCIL_SETTINGS.minimumAggregationThreshold;
+	const threshold =
+		typeof input.minimumAggregationThreshold === "number" &&
+		Number.isFinite(input.minimumAggregationThreshold)
+			? input.minimumAggregationThreshold
+			: DEFAULT_WORKS_COUNCIL_SETTINGS.minimumAggregationThreshold;
 
 	return {
-		enabled: input.enabled ?? DEFAULT_WORKS_COUNCIL_SETTINGS.enabled,
+		enabled: sanitizeBoolean(input.enabled, DEFAULT_WORKS_COUNCIL_SETTINGS.enabled),
 		identityVisibility: isIdentityVisibility(input.identityVisibility)
 			? input.identityVisibility
 			: DEFAULT_WORKS_COUNCIL_SETTINGS.identityVisibility,
 		absenceVisibility: isAbsenceVisibility(input.absenceVisibility)
 			? input.absenceVisibility
 			: DEFAULT_WORKS_COUNCIL_SETTINGS.absenceVisibility,
-		exportEnabled: input.exportEnabled ?? DEFAULT_WORKS_COUNCIL_SETTINGS.exportEnabled,
+		exportEnabled: sanitizeBoolean(
+			input.exportEnabled,
+			DEFAULT_WORKS_COUNCIL_SETTINGS.exportEnabled,
+		),
 		minimumAggregationThreshold: Math.max(
 			DEFAULT_WORKS_COUNCIL_SETTINGS.minimumAggregationThreshold,
 			threshold,
 		),
-		visibleTeamIds: input.visibleTeamIds ?? [...DEFAULT_WORKS_COUNCIL_SETTINGS.visibleTeamIds],
-		visibleLocationIds: input.visibleLocationIds ?? [
-			...DEFAULT_WORKS_COUNCIL_SETTINGS.visibleLocationIds,
-		],
+		visibleTeamIds: sanitizeStringIds(input.visibleTeamIds),
+		visibleLocationIds: sanitizeStringIds(input.visibleLocationIds),
 	};
 }
 
