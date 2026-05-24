@@ -262,19 +262,16 @@ describe("work balance helpers", () => {
 		);
 	});
 
-	it("uses the account creation date as the all-time balance start when it predates work and absences", async () => {
+	it("uses the first completed work period as the all-time balance start", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
 		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
 			.mockReturnValueOnce({ where: mockState.selectWhere })
 			.mockReturnValueOnce({ where: mockState.selectWhere });
 		mockState.selectWhere
 			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ value: "2026-05-08" }])
 			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
 		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
-			"2026-05-01": { requiredMinutes: 480 },
-			"2026-05-04": { requiredMinutes: 480 },
+			"2026-05-10": { requiredMinutes: 480 },
 		});
 
 		const result = await computeEmployeeWorkBalance({
@@ -285,49 +282,7 @@ describe("work balance helpers", () => {
 
 		expect(result).toEqual(
 			expect.objectContaining({
-				computedFromDate: "2026-05-01",
-				actualMinutes: 480,
-				requiredMinutes: 960,
-				balanceMinutes: -480,
-			}),
-		);
-		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				employeeId: "employee-1",
-				startDate: new Date("2026-05-01T00:00:00.000Z"),
-			}),
-		);
-	});
-
-	it("uses the account creation date when no completed work predates the account", async () => {
-		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere
-			.mockResolvedValueOnce([{ value: new Date("2026-05-20T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ value: "2026-05-08" }])
-			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
-		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
-			id: "employee-1",
-			startDate: new Date("2026-05-01T00:00:00.000Z"),
-			user: { createdAt: new Date("2026-05-15T10:30:00.000Z") },
-		});
-		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
-			"2026-05-15": { requiredMinutes: 480 },
-		});
-
-		const result = await computeEmployeeWorkBalance({
-			employeeId: "employee-1",
-			organizationId: "org-1",
-			now: new Date("2026-05-22T12:00:00.000Z"),
-		});
-
-		expect(result).toEqual(
-			expect.objectContaining({
-				computedFromDate: "2026-05-15",
+				computedFromDate: "2026-05-10",
 				actualMinutes: 480,
 				requiredMinutes: 480,
 				balanceMinutes: 0,
@@ -335,20 +290,73 @@ describe("work balance helpers", () => {
 		);
 		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith(
 			expect.objectContaining({
-				startDate: new Date("2026-05-15T00:00:00.000Z"),
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),
 		);
+	});
+
+	it("uses the first completed work period when it follows the account", async () => {
+		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
+		mockState.selectFrom
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere
+			.mockResolvedValueOnce([{ value: new Date("2026-05-20T09:00:00.000Z") }])
+			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
+			id: "employee-1",
+			startDate: new Date("2026-05-01T00:00:00.000Z"),
+			user: { createdAt: new Date("2026-05-15T10:30:00.000Z") },
+		});
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
+			"2026-05-20": { requiredMinutes: 480 },
+		});
+
+		const result = await computeEmployeeWorkBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(result).toEqual(
+			expect.objectContaining({
+				computedFromDate: "2026-05-20",
+				actualMinutes: 480,
+				requiredMinutes: 480,
+				balanceMinutes: 0,
+			}),
+		);
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith(
+			expect.objectContaining({
+				startDate: new Date("2026-05-20T00:00:00.000Z"),
+			}),
+		);
+	});
+
+	it("does not compute a work balance before the first completed work period exists", async () => {
+		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([{ value: null }]);
+
+		const result = await computeEmployeeWorkBalance({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(result).toBeNull();
+		expect(mockState.getDailyWorkRequirementsForEmployee).not.toHaveBeenCalled();
 	});
 
 	it("uses the first completed work period when imported work predates the account", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
 		mockState.selectFrom
 			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere })
 			.mockReturnValueOnce({ where: mockState.selectWhere });
 		mockState.selectWhere
 			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ value: null }])
 			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
 		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
 			id: "employee-1",
@@ -379,11 +387,9 @@ describe("work balance helpers", () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
 		mockState.selectFrom
 			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere })
 			.mockReturnValueOnce({ where: mockState.selectWhere });
 		mockState.selectWhere
 			.mockResolvedValueOnce([{ value: new Date("2026-05-03T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ value: null }])
 			.mockResolvedValueOnce([{ totalMinutes: 450 }]);
 		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
 			id: "employee-1",
