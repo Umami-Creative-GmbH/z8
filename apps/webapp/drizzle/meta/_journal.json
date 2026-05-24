@@ -204,6 +204,13 @@
 			"when": 1779485528823,
 			"tag": "0028_time_correction_approval_links",
 			"breakpoints": true
+		},
+		{
+			"idx": 29,
+			"version": "7",
+			"when": 1779490000000,
+			"tag": "0029_employee_work_balance_recovery",
+			"breakpoints": true
 		}
 	]
 }

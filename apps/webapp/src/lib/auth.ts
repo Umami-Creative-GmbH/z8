@@ -17,6 +17,7 @@ import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
 import { getAuthAllowedHosts, getStaticTrustedOrigins } from "@/lib/auth-domain-config";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
 import { sendEmail } from "./email/email-service";
@@ -393,11 +394,10 @@ export const auth = betterAuth({
 				const userRecord = await db.query.user.findFirst({
 					where: eq(schema.user.id, user.id),
 				});
-				// System admins can always create organizations
-				if (userRecord?.role === "admin") {
-					return true;
-				}
-				return userRecord?.canCreateOrganizations ?? false;
+				const userCanCreateOrganizations =
+					userRecord?.role === "admin" || (userRecord?.canCreateOrganizations ?? false);
+
+				return canCreateOrganizationsForDeployment(userCanCreateOrganizations);
 			},
 			organizationLimit: 5,
 			membershipLimit: 100,

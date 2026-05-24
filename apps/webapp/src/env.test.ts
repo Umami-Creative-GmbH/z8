@@ -35,6 +35,18 @@ describe("env", () => {
 		expect(env.SECRET_STORE_PROVIDER).toBe("vault");
 	});
 
+	test("defaults organization creation disabling to false", async () => {
+		const { env } = await importEnv({ DISABLE_ORGANIZATION_CREATION: undefined });
+
+		expect(env.DISABLE_ORGANIZATION_CREATION).toBe("false");
+	});
+
+	test("accepts disabling organization creation", async () => {
+		const { env } = await importEnv({ DISABLE_ORGANIZATION_CREATION: "true" });
+
+		expect(env.DISABLE_ORGANIZATION_CREATION).toBe("true");
+	});
+
 	test("fails validation when the Scaleway provider is missing credentials", async () => {
 		vi.spyOn(process, "exit").mockImplementation((code) => {
 			throw new Error(`process.exit:${code}`);

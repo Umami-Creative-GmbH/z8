@@ -8,9 +8,13 @@ const employeeWorkBalanceMigrationUrl = new URL(
 	"../../../../drizzle/0027_employee_work_balance.sql",
 	import.meta.url,
 );
+const employeeWorkBalanceRecoveryMigrationUrl = new URL(
+	"../../../../drizzle/0029_employee_work_balance_recovery.sql",
+	import.meta.url,
+);
 const migrationJournal = JSON.parse(
 	readFileSync(new URL("../../../../drizzle/meta/_journal.json", import.meta.url), "utf8"),
-) as { entries: Array<{ idx: number; tag: string }> };
+) as { entries: Array<{ idx: number; tag: string; when: number }> };
 
 describe("employee work balance schema", () => {
 	it("defines organization-scoped all-time balance columns", () => {
@@ -75,5 +79,30 @@ describe("employee work balance schema", () => {
 		expect(migrationJournal.entries).toContainEqual(
 			expect.objectContaining({ idx: 27, tag: "0027_employee_work_balance" }),
 		);
+	});
+
+	it("includes a later idempotent recovery migration for skipped production migrations", () => {
+		expect(existsSync(employeeWorkBalanceRecoveryMigrationUrl)).toBe(true);
+
+		const originalEntry = migrationJournal.entries.find(
+			(entry) => entry.tag === "0027_employee_work_balance",
+		);
+		const recoveryEntry = migrationJournal.entries.find(
+			(entry) => entry.tag === "0029_employee_work_balance_recovery",
+		);
+
+		expect(originalEntry).toEqual(expect.objectContaining({ idx: 27 }));
+		expect(recoveryEntry).toEqual(expect.objectContaining({ idx: 29 }));
+		const latestPriorMigration = Math.max(
+			...migrationJournal.entries
+				.filter((entry) => entry.tag !== "0029_employee_work_balance_recovery")
+				.map((entry) => entry.when)
+				.filter(Boolean),
+		);
+		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorMigration);
+
+		const migration = readFileSync(employeeWorkBalanceRecoveryMigrationUrl, "utf8");
+		expect(migration).toContain('CREATE TABLE IF NOT EXISTS "employee_work_balance"');
+		expect(migration).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "employeeWorkBalance_org_employee_idx"');
 	});
 });

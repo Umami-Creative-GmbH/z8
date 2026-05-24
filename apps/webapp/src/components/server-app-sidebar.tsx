@@ -3,6 +3,7 @@ import {
 	getCurrentSettingsAccessTier,
 	getUserOrganizations,
 } from "@/lib/auth-helpers";
+import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { AppSidebar } from "./app-sidebar";
 
 export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
@@ -16,6 +17,9 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 	const currentOrganization = authContext?.employee?.organizationId
 		? organizations.find((org) => org.id === authContext.employee?.organizationId) || null
 		: null;
+	const canCreateOrganizations = canCreateOrganizationsForDeployment(
+		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
+	);
 	const featureFlags = {
 		shiftsEnabled: currentOrganization?.shiftsEnabled ?? false,
 		projectsEnabled: currentOrganization?.projectsEnabled ?? false,
@@ -35,6 +39,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={process.env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
+			canCreateOrganizations={canCreateOrganizations}
 		/>
 	);
 }
