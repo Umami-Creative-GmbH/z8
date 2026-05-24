@@ -12,6 +12,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { deleteOwnedAvatarObject } from "@/lib/storage/avatar-storage";
 import {
 	isTimeFormat,
 	normalizeTimeFormat,
@@ -276,6 +277,7 @@ export async function updateProfileImage(data: {
 			);
 		}
 
+		const previousImage = session.user.image;
 		const updateData = buildSessionAuthProfile({
 			user: {
 				firstName: session.user.firstName,
@@ -296,6 +298,12 @@ export async function updateProfileImage(data: {
 				},
 			}),
 		);
+
+		if (result.data.image !== previousImage) {
+			yield* _(
+				Effect.promise(() => deleteOwnedAvatarObject(previousImage, session.user.id)),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

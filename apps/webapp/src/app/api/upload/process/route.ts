@@ -3,6 +3,7 @@ import { fileTypeFromBuffer } from "file-type";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse, connection } from "next/server";
 import { auth } from "@/lib/auth";
+import { createAvatarStorageKey } from "@/lib/storage/avatar-storage";
 import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
@@ -127,17 +128,15 @@ export async function POST(request: NextRequest) {
 			.toBuffer();
 
 		// Generate final key/filename
-		const timestamp = Date.now();
 		const folderMap: Record<string, string> = {
-			avatar: "avatars",
 			"org-logo": "org-logos",
 			"branding-logo": "branding/logos",
 			"branding-background": "branding/backgrounds",
 		};
-		const folder = folderMap[uploadType] || "uploads";
-		const id = uploadType === "avatar" ? session.user.id : organizationId;
-		const filename = `${id}-${timestamp}.webp`;
-		const finalKey = `${folder}/${filename}`;
+		const finalKey =
+			uploadType === "avatar"
+				? createAvatarStorageKey(session.user.id)
+				: `${folderMap[uploadType] || "uploads"}/${organizationId}-${Date.now()}.webp`;
 
 		// Upload optimized image to S3
 		await s3Client.send(

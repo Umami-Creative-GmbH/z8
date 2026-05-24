@@ -4,6 +4,7 @@ import Uppy from "@uppy/core";
 import Tus from "@uppy/tus";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
+import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 import {
 	type ProcessTravelExpenseFileResponse,
 	useTravelExpenseFileProcessMutation,
@@ -72,7 +73,7 @@ export function useTravelExpenseFileUpload({
 			if (result.successful && result.successful.length > 0) {
 				const uploadedFile = result.successful[0];
 				const uploadUrl = uploadedFile?.uploadURL;
-				const tusFileKey = uploadUrl?.split("/").pop();
+				const tusFileKey = getTusFileKeyFromUploadUrl(uploadUrl);
 
 				if (tusFileKey) {
 					setProgress(90);

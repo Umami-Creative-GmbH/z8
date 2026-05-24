@@ -7,6 +7,7 @@ import Tus from "@uppy/tus";
 import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
+import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
 interface UseImageUploadOptions {
 	uploadType: "avatar" | "org-logo" | "branding-logo" | "branding-background";
@@ -94,7 +95,7 @@ export function useImageUpload({
 				const uploadedFile = result.successful[0];
 				// Extract the file key from the upload URL
 				const uploadUrl = uploadedFile?.uploadURL;
-				const tusFileKey = uploadUrl?.split("/").pop();
+				const tusFileKey = getTusFileKeyFromUploadUrl(uploadUrl);
 
 				if (tusFileKey) {
 					setProgress(90); // Processing stage
