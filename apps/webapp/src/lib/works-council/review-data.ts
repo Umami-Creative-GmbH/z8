@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import {
 	auditLog,
 	employee,
@@ -115,10 +116,6 @@ function buildShiftDateRange(date: Date, startTime: string, endTime: string) {
 	return { startsAt: startsAt.toJSDate(), endsAt: endsAt.toJSDate() };
 }
 
-function employeeDisplayName(row: { firstName: string | null; lastName: string | null }) {
-	return [row.firstName, row.lastName].filter(Boolean).join(" ") || null;
-}
-
 async function queryScheduleReview({
 	organizationId,
 	dateRangeStart,
@@ -131,8 +128,7 @@ async function queryScheduleReview({
 			startTime: shift.startTime,
 			endTime: shift.endTime,
 			employeeId: shift.employeeId,
-			employeeFirstName: employee.firstName,
-			employeeLastName: employee.lastName,
+			employeeName: user.name,
 			teamId: employee.teamId,
 			teamName: team.name,
 			locationId: location.id,
@@ -145,6 +141,7 @@ async function queryScheduleReview({
 			employee,
 			and(eq(shift.employeeId, employee.id), eq(employee.organizationId, shift.organizationId)),
 		)
+		.leftJoin(user, eq(employee.userId, user.id))
 		.leftJoin(
 			team,
 			and(eq(employee.teamId, team.id), eq(team.organizationId, shift.organizationId)),
@@ -168,10 +165,7 @@ async function queryScheduleReview({
 			startsAt,
 			endsAt,
 			employeeId: row.employeeId,
-			employeeName: employeeDisplayName({
-				firstName: row.employeeFirstName,
-				lastName: row.employeeLastName,
-			}),
+			employeeName: row.employeeName,
 			teamId: row.teamId,
 			teamName: row.teamName,
 			locationId: row.locationId,
