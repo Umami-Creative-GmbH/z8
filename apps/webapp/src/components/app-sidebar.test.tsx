@@ -202,9 +202,15 @@ describe("app sidebar compliance navigation", () => {
 					expect.objectContaining({ href: "/settings/organizations" }),
 				]),
 				staticCommands: expect.arrayContaining([
-					expect.objectContaining({ id: "action:add-manual-time-entry", title: "Add manual time entry" }),
+					expect.objectContaining({
+						id: "action:add-manual-time-entry",
+						title: "Add manual time entry",
+					}),
 					expect.objectContaining({ id: "action:request-absence", title: "Request absence" }),
-					expect.objectContaining({ id: "action:submit-travel-expense", title: "Submit travel expense" }),
+					expect.objectContaining({
+						id: "action:submit-travel-expense",
+						title: "Submit travel expense",
+					}),
 					expect.objectContaining({ id: "action:open-my-requests", title: "Open my requests" }),
 					expect.objectContaining({ id: "action:open-settings", title: "Open settings" }),
 				]),

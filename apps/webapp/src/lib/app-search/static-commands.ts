@@ -54,7 +54,10 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 		keywords: [
 			{ key: "appSearch.commands.submitTravelExpense.keywords.travel", defaultValue: "travel" },
 			{ key: "appSearch.commands.submitTravelExpense.keywords.expense", defaultValue: "expense" },
-			{ key: "appSearch.commands.submitTravelExpense.keywords.reimbursement", defaultValue: "reimbursement" },
+			{
+				key: "appSearch.commands.submitTravelExpense.keywords.reimbursement",
+				defaultValue: "reimbursement",
+			},
 		],
 		href: "/travel-expenses",
 		visibleFor: "employee",
@@ -79,7 +82,10 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 		subtitleKey: "appSearch.commands.openApprovalsInbox.subtitle",
 		subtitleDefault: "Review pending employee requests",
 		keywords: [
-			{ key: "appSearch.commands.openApprovalsInbox.keywords.approvals", defaultValue: "approvals" },
+			{
+				key: "appSearch.commands.openApprovalsInbox.keywords.approvals",
+				defaultValue: "approvals",
+			},
 			{ key: "appSearch.commands.openApprovalsInbox.keywords.inbox", defaultValue: "inbox" },
 			{ key: "appSearch.commands.openApprovalsInbox.keywords.review", defaultValue: "review" },
 		],
@@ -123,7 +129,10 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 		subtitleDefault: "Check whether time data is ready for payroll",
 		keywords: [
 			{ key: "appSearch.commands.openPayrollReadiness.keywords.payroll", defaultValue: "payroll" },
-			{ key: "appSearch.commands.openPayrollReadiness.keywords.readiness", defaultValue: "readiness" },
+			{
+				key: "appSearch.commands.openPayrollReadiness.keywords.readiness",
+				defaultValue: "readiness",
+			},
 			{ key: "appSearch.commands.openPayrollReadiness.keywords.export", defaultValue: "export" },
 		],
 		href: "/settings/payroll-readiness",
@@ -170,12 +179,14 @@ function isVisibleCommand(
 export function buildStaticAppCommands(input: StaticAppCommandInput): AppSearchResult[] {
 	const { t } = input;
 
-	return STATIC_APP_COMMANDS.filter((command) => isVisibleCommand(command, input)).map((command) => ({
-		type: "action",
-		id: `action:${command.id}`,
-		title: t(command.titleKey, command.titleDefault),
-		subtitle: t(command.subtitleKey, command.subtitleDefault),
-		keywords: command.keywords.map((keyword) => t(keyword.key, keyword.defaultValue)),
-		href: command.href,
-	}));
+	return STATIC_APP_COMMANDS.filter((command) => isVisibleCommand(command, input)).map(
+		(command) => ({
+			type: "action",
+			id: `action:${command.id}`,
+			title: t(command.titleKey, command.titleDefault),
+			subtitle: t(command.subtitleKey, command.subtitleDefault),
+			keywords: command.keywords.map((keyword) => t(keyword.key, keyword.defaultValue)),
+			href: command.href,
+		}),
+	);
 }

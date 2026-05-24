@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildStaticAppCommands } from "./static-commands";
 import type { StaticAppCommandInput } from "./static-commands";
+import { buildStaticAppCommands } from "./static-commands";
 
 const translatedT = (key: string, defaultValue: string) => `${key}:${defaultValue}`;
 
@@ -81,13 +81,17 @@ describe("buildStaticAppCommands", () => {
 		);
 
 		expect(
-			buildCommands({ employeeRole: "manager", settingsAccessTier: "manager" }).map((result) => result.id),
+			buildCommands({ employeeRole: "manager", settingsAccessTier: "manager" }).map(
+				(result) => result.id,
+			),
 		).toEqual(expect.arrayContaining(["action:open-approvals-inbox"]));
 	});
 
 	it("shows org-admin-only commands only when the required tier and flags allow them", () => {
 		expect(
-			buildCommands({ employeeRole: "manager", settingsAccessTier: "manager" }).map((result) => result.id),
+			buildCommands({ employeeRole: "manager", settingsAccessTier: "manager" }).map(
+				(result) => result.id,
+			),
 		).not.toEqual(
 			expect.arrayContaining([
 				"action:create-project",
@@ -96,7 +100,10 @@ describe("buildStaticAppCommands", () => {
 			]),
 		);
 
-		const orgAdminCommands = buildCommands({ employeeRole: "admin", settingsAccessTier: "orgAdmin" });
+		const orgAdminCommands = buildCommands({
+			employeeRole: "admin",
+			settingsAccessTier: "orgAdmin",
+		});
 
 		expect(orgAdminCommands.map((result) => result.id)).toEqual(
 			expect.arrayContaining([
@@ -105,9 +112,11 @@ describe("buildStaticAppCommands", () => {
 				"action:open-payroll-readiness",
 			]),
 		);
-		expect(orgAdminCommands.find((result) => result.id === "action:invite-teammate")).toMatchObject({
-			href: "/settings/organizations",
-		});
+		expect(orgAdminCommands.find((result) => result.id === "action:invite-teammate")).toMatchObject(
+			{
+				href: "/settings/organizations",
+			},
+		);
 
 		expect(
 			buildCommands({
