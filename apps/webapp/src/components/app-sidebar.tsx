@@ -8,6 +8,7 @@ import {
 	IconClock,
 	IconDashboard,
 	IconFileDescription,
+	IconGavel,
 	IconHelp,
 	IconHierarchy,
 	IconMessageCircle,
@@ -39,6 +40,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	shiftsEnabled?: boolean;
 	showComplianceNav?: boolean;
+	showWorksCouncilNav?: boolean;
 	showPlatformAdminNav?: boolean;
 	settingsAccessTier?: SettingsAccessTier;
 	billingEnabled?: boolean;
@@ -58,6 +60,7 @@ export function AppSidebar({
 	employeeRole = null,
 	shiftsEnabled = false,
 	showComplianceNav = false,
+	showWorksCouncilNav = false,
 	showPlatformAdminNav = false,
 	settingsAccessTier = "member",
 	billingEnabled = false,
@@ -156,6 +159,15 @@ export function AppSidebar({
 						title: t("nav.compliance", "Compliance"),
 						url: "/compliance",
 						icon: IconShieldCheck,
+					},
+			]
+			: []),
+		...(showWorksCouncilNav
+			? [
+					{
+						title: t("nav.worksCouncil", "Works Council"),
+						url: "/works-council",
+						icon: IconGavel,
 					},
 				]
 			: []),

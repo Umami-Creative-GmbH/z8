@@ -2,6 +2,7 @@
 
 import {
 	IconBeach,
+	IconGavel,
 	IconHelp,
 	IconMessageCircle,
 	IconServerCog,
@@ -305,6 +306,41 @@ describe("app sidebar compliance navigation", () => {
 				}),
 			]),
 		);
+	});
+
+	it("renders works council navigation before settings only when enabled", () => {
+		const { rerender } = render(<AppSidebar />);
+
+		expect(screen.queryByRole("link", { name: "Works Council" })).toBeNull();
+		expect(navSecondarySpy).toHaveBeenLastCalledWith(
+			expect.not.arrayContaining([
+				expect.objectContaining({
+					title: "Works Council",
+					url: "/works-council",
+				}),
+			]),
+		);
+
+		rerender(<AppSidebar showWorksCouncilNav />);
+
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
+		);
+		expect(navSecondarySpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Works Council",
+					url: "/works-council",
+					icon: IconGavel,
+				}),
+			]),
+		);
+
+		const secondaryItems = navSecondarySpy.mock.lastCall?.[0] ?? [];
+		expect(secondaryItems.map((item) => item.title).slice(0, 2)).toEqual([
+			"Works Council",
+			"Settings",
+		]);
 	});
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
