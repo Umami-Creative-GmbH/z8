@@ -63,6 +63,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 			label: t("admin:admin.layout.nav.settings", "Settings"),
 		},
 		{
+			href: "/platform-admin/system-email-templates",
+			icon: "systemEmailTemplates",
+			label: t("admin:admin.layout.nav.systemEmailTemplates", "System Email Templates"),
+		},
+		{
 			href: "/platform-admin/worker-queue",
 			icon: "workerQueue",
 			label: t("admin:admin.layout.nav.workerQueue", "Worker Queue"),

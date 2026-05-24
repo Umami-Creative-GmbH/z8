@@ -45,6 +45,16 @@ describe("platform admin layout", () => {
 		expect(overviewSource).toContain('"Deployment Diagnostics"');
 	});
 
+	it("links to system email templates from platform-admin navigation and overview", () => {
+		const layoutSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
+		const overviewSource = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "page.tsx"), "utf8"));
+
+		expect(layoutSource).toContain('href: "/platform-admin/system-email-templates"');
+		expect(layoutSource).toContain('"System Email Templates"');
+		expect(overviewSource).toContain('href="/platform-admin/system-email-templates"');
+		expect(overviewSource).toContain('"System Email Templates"');
+	});
+
 	it("localizes deployment diagnostics page copy and hides decorative overview icon", () => {
 		const diagnosticsSource = stripComments(
 			readFileSync(join(PLATFORM_ADMIN_ROOT, "diagnostics/page.tsx"), "utf8"),
