@@ -160,7 +160,7 @@ export function AppSidebar({
 						url: "/compliance",
 						icon: IconShieldCheck,
 					},
-			]
+				]
 			: []),
 		...(showWorksCouncilNav
 			? [
