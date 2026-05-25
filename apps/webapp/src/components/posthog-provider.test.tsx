@@ -68,5 +68,8 @@ describe("PostHogProvider", () => {
 			expect.objectContaining({ api_host: "/ingest" }),
 		);
 		expect(optInMock).toHaveBeenCalled();
+		expect(initMock.mock.invocationCallOrder[0]).toBeLessThan(
+			optInMock.mock.invocationCallOrder[0],
+		);
 	});
 });

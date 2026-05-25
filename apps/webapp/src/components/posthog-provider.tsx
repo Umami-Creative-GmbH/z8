@@ -24,7 +24,6 @@ export function PostHogProvider({ children, helpImproveProduct }: PostHogProvide
 			return;
 		}
 
-		posthog.opt_in_capturing();
 		posthog.init(projectToken, {
 			api_host: "/ingest",
 			ui_host: env.NEXT_PUBLIC_POSTHOG_HOST,
@@ -32,6 +31,7 @@ export function PostHogProvider({ children, helpImproveProduct }: PostHogProvide
 			capture_pageview: "history_change",
 			capture_pageleave: true,
 		});
+		posthog.opt_in_capturing();
 	}, [helpImproveProduct, projectToken]);
 
 	if (!(projectToken && helpImproveProduct)) {
