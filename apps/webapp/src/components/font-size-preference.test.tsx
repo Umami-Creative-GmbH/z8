@@ -114,4 +114,36 @@ describe("FontSizeProvider", () => {
 		expect(localStorage.getItem(FONT_SIZE_STORAGE_KEY)).toBe("large");
 		expect(document.documentElement.dataset.fontSize).toBe("large");
 	});
+
+	it("keeps working when localStorage access throws", async () => {
+		const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+
+		Object.defineProperty(window, "localStorage", {
+			configurable: true,
+			get() {
+				throw new DOMException("blocked", "SecurityError");
+			},
+		});
+
+		try {
+			render(
+				<FontSizeProvider>
+					<Consumer />
+				</FontSizeProvider>,
+			);
+
+			expect(await screen.findByText("Current: default")).toBeTruthy();
+
+			act(() => {
+				screen.getByRole("button", { name: "Set large" }).click();
+			});
+
+			expect(screen.getByText("Current: large")).toBeTruthy();
+			expect(document.documentElement.dataset.fontSize).toBe("large");
+		} finally {
+			if (localStorageDescriptor) {
+				Object.defineProperty(window, "localStorage", localStorageDescriptor);
+			}
+		}
+	});
 });

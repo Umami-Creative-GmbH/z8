@@ -40,6 +40,14 @@ export function writeStoredFontSize(storage: Storage | undefined, value: FontSiz
 	}
 }
 
+function getLocalStorage(): Storage | undefined {
+	try {
+		return typeof window === "undefined" ? undefined : window.localStorage;
+	} catch {
+		return undefined;
+	}
+}
+
 export function applyFontSizePreference(value: FontSizePreference) {
 	if (typeof document === "undefined") {
 		return;
@@ -57,14 +65,14 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
 	const [fontSize, setFontSizeState] = useState<FontSizePreference>("default");
 
 	useEffect(() => {
-		const storedFontSize = readStoredFontSize(window.localStorage);
+		const storedFontSize = readStoredFontSize(getLocalStorage());
 		setFontSizeState(storedFontSize);
 		applyFontSizePreference(storedFontSize);
 	}, []);
 
 	const setFontSize = useCallback((value: FontSizePreference) => {
 		setFontSizeState(value);
-		writeStoredFontSize(typeof window === "undefined" ? undefined : window.localStorage, value);
+		writeStoredFontSize(getLocalStorage(), value);
 		applyFontSizePreference(value);
 	}, []);
 
