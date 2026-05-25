@@ -4,14 +4,9 @@
  * Handles bulk approval operations with transaction support.
  */
 
+import { inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { getApprovalHandler } from "../domain/registry";
-import type {
-	ApprovalDecisionAction,
-	ApprovalType,
-	BulkDecisionFailure,
-	BulkDecisionResult,
-} from "../domain/types";
+import { approvalRequest } from "@/db/schema";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -20,8 +15,13 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { approvalRequest } from "@/db/schema";
-import { inArray } from "drizzle-orm";
+import { getApprovalHandler } from "../domain/registry";
+import type {
+	ApprovalDecisionAction,
+	ApprovalType,
+	BulkDecisionFailure,
+	BulkDecisionResult,
+} from "../domain/types";
 import { ApprovalAuditLoggerLive } from "../infrastructure/audit-logger";
 
 const BULK_DECISION_NOT_FOUND_MESSAGE = "Approval request not found";
@@ -98,7 +98,7 @@ export const BulkApprovalServiceLive = Layer.effect(
 		const dbService = yield* _(DatabaseService);
 
 		return BulkApprovalService.of({
-			bulkDecide: (approvalIds, approverId, organizationId, action, reason, actorUserId) =>
+			bulkDecide: (approvalIds, approverId, organizationId, action, reason, _actorUserId) =>
 				Effect.gen(function* (_) {
 					const result: BulkDecisionResult = {
 						succeeded: [],
