@@ -403,7 +403,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											{removeAvatarMutation.isPending ? (
 												<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
 											) : (
-												<IconTrash className="size-3.5" aria-hidden="true" />
+												<IconTrash className="size-3.5 text-white" aria-hidden="true" />
 											)}
 										</button>
 									)}
