@@ -39,7 +39,7 @@ const defaultValues = {
 	lastName: "",
 	gender: undefined as "male" | "female" | "other" | undefined,
 	birthday: undefined as Date | undefined,
-	weekStartDay: "sunday" as WeekStartDay,
+	weekStartDay: "monday" as WeekStartDay,
 	timeFormat: "24h" as TimeFormat,
 };
 

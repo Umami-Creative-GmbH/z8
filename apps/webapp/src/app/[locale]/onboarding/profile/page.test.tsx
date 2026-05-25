@@ -59,7 +59,7 @@ describe("ProfilePage", () => {
 				expect.objectContaining({
 					firstName: "Ada",
 					lastName: "Lovelace",
-					weekStartDay: "sunday",
+					weekStartDay: "monday",
 					timeFormat: "24h",
 				}),
 			);
