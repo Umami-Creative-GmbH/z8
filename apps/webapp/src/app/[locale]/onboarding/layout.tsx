@@ -1,10 +1,7 @@
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { env } from "@/env";
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
-	const buildHash = env.NEXT_PUBLIC_BUILD_HASH;
-
 	return (
 		<div className="flex min-h-svh flex-col bg-background">
 			<div className="container mx-auto px-6 py-8">
@@ -18,7 +15,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
 				{/* Footer */}
 				<div className="mt-12">
-					<InfoFooter buildHash={buildHash} />
+					<InfoFooter />
 				</div>
 			</div>
 		</div>

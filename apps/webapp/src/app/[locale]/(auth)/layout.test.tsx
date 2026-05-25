@@ -96,7 +96,7 @@ describe("AuthLayout", () => {
 		mockState.env.TURNSTILE_SITE_KEY = undefined;
 	});
 
-	it("keeps the image panel fixed while the left side scrolls", async () => {
+	it("uses a full-page background image behind the auth content", async () => {
 		render(
 			await AuthLayout({
 				children: <div>Auth content</div>,
@@ -104,14 +104,15 @@ describe("AuthLayout", () => {
 		);
 
 		const content = screen.getByText("Auth content");
-		const leftPanel = content.closest("section");
-		const imagePanel = screen.getByTestId("auth-side-image").closest("aside");
+		const authSection = content.closest("section");
+		const backgroundImage = screen.getByTestId("auth-side-image");
 
-		expect(leftPanel?.className).toContain("h-svh");
-		expect(leftPanel?.className).toContain("overflow-y-auto");
-		expect(imagePanel?.className).toContain("fixed");
-		expect(imagePanel?.className).toContain("right-0");
-		expect(imagePanel?.className).toContain("h-svh");
+		expect(authSection?.className).toContain("relative");
+		expect(authSection?.className).toContain("z-10");
+		expect(backgroundImage.className).toContain("absolute");
+		expect(backgroundImage.className).toContain("inset-0");
+		expect(backgroundImage.className).toContain("object-cover");
+		expect(backgroundImage.closest("aside")).toBeNull();
 	});
 
 	it("does not fall back to the platform cookie script on custom domains", async () => {

@@ -36,6 +36,30 @@ const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posth
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
+	async redirects() {
+		return [
+			{
+				source: "/terms",
+				destination: "https://www.z8-time.app/terms-app",
+				permanent: true,
+			},
+			{
+				source: "/:locale/terms",
+				destination: "https://www.z8-time.app/terms-app",
+				permanent: true,
+			},
+			{
+				source: "/privacy",
+				destination: "https://www.z8-time.app/privacy-app",
+				permanent: true,
+			},
+			{
+				source: "/:locale/privacy",
+				destination: "https://www.z8-time.app/privacy-app",
+				permanent: true,
+			},
+		];
+	},
 	async rewrites() {
 		return [
 			{

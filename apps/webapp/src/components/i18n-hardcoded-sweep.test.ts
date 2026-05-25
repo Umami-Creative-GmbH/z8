@@ -36,7 +36,7 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 	},
 	{
 		file: "src/components/licenses/license-table.tsx",
-		patterns: [/placeholder="IconSearch packages or licenses\.\.\."/, />No packages found\.</],
+		patterns: [/placeholder="IconSearch packages or licenses…"/, />No packages found\.</],
 	},
 	{
 		file: "src/components/theme-toggle.tsx",

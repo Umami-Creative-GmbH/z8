@@ -10,6 +10,7 @@ interface AuthFormWrapperProps extends React.ComponentPropsWithoutRef<"div"> {
 	children: React.ReactNode;
 	formProps?: React.ComponentPropsWithoutRef<"form">;
 	branding?: OrganizationBranding | null;
+	buildHash?: string;
 }
 
 export function AuthFormWrapper({
@@ -18,9 +19,11 @@ export function AuthFormWrapper({
 	className,
 	formProps,
 	branding,
+	buildHash,
 	...props
 }: AuthFormWrapperProps) {
 	const appName = branding?.appName || "z8";
+	const visibleBuildHash = buildHash ?? process.env.NEXT_PUBLIC_BUILD_HASH;
 
 	const customStyles = branding?.primaryColor
 		? ({
@@ -31,7 +34,7 @@ export function AuthFormWrapper({
 
 	return (
 		<div className={cn("mx-auto w-full max-w-md", className)} style={customStyles} {...props}>
-			<Card className="w-full border-border/70 bg-card/95 shadow-none shadow-black/5 sm:shadow-xl dark:shadow-black/30">
+			<Card className="relative w-full border-white/30 bg-white/20 shadow-xl shadow-black/5 backdrop-blur-md sm:shadow-xl dark:border-white/10 dark:bg-slate-950/45 dark:shadow-black/30">
 				<CardContent className="p-5 sm:p-8">
 					<form className="w-full" method="post" {...formProps}>
 						<div className="flex flex-col gap-6">
@@ -55,6 +58,11 @@ export function AuthFormWrapper({
 						</div>
 					</form>
 				</CardContent>
+				{visibleBuildHash ? (
+					<div className="absolute right-3 bottom-1.5 text-[10px] text-muted-foreground/60">
+						Version {visibleBuildHash}
+					</div>
+				) : null}
 			</Card>
 		</div>
 	);

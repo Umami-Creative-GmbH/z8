@@ -1,8 +1,7 @@
 "use client";
 
-import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
+import { IconFingerprint, IconKey, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { IconKey } from '@tabler/icons-react';
 import { useSearchParams } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
