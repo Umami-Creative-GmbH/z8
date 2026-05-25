@@ -6,7 +6,7 @@ import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
-import { createAvatarStorageKey } from "@/lib/storage/avatar-storage";
+import { createAvatarStorageKey, createOrganizationLogoStorageKey } from "@/lib/storage/avatar-storage";
 import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
@@ -136,7 +136,9 @@ export async function POST(request: NextRequest) {
 		const finalKey =
 			uploadType === "avatar"
 				? createAvatarStorageKey(session.user.id)
-				: `${folderMap[uploadType] || "uploads"}/${organizationId}-${Date.now()}.webp`;
+				: uploadType === "org-logo" && organizationId
+					? createOrganizationLogoStorageKey(organizationId)
+					: `${folderMap[uploadType] || "uploads"}/${organizationId}-${Date.now()}.webp`;
 
 		// Upload optimized image to S3
 		await s3Client.send(

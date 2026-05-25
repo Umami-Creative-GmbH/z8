@@ -1,15 +1,16 @@
 "use client";
 
-import { IconBuilding, IconCamera, IconEdit, IconLoader2, IconUsers } from "@tabler/icons-react";
+import { IconCamera, IconEdit, IconLoader2, IconTrash, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { removeOrganizationLogo } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type * as authSchema from "@/db/auth-schema";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { EditOrganizationDialog } from "./edit-organization-dialog";
+import { OrganizationLogo } from "./organization-logo";
 
 interface OrganizationDetailsCardProps {
 	organization: typeof authSchema.organization.$inferSelect;
@@ -25,6 +26,7 @@ export function OrganizationDetailsCard({
 	const { t } = useTranslate();
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [logoUrl, setLogoUrl] = useState(organization.logo);
+	const [isRemovingLogo, setIsRemovingLogo] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const canEdit = currentMemberRole === "owner";
@@ -67,6 +69,20 @@ export function OrganizationDetailsCard({
 		[addFile],
 	);
 
+	const handleRemoveLogo = useCallback(async () => {
+		setIsRemovingLogo(true);
+		const result = await removeOrganizationLogo(organization.id);
+		setIsRemovingLogo(false);
+
+		if (!result.success) {
+			toast.error(result.error || t("organization.logo-remove-failed", "Failed to remove logo"));
+			return;
+		}
+
+		setLogoUrl(null);
+		toast.success(t("organization.logo-removed", "Organization logo removed"));
+	}, [organization.id, t]);
+
 	return (
 		<>
 			<Card>
@@ -83,12 +99,7 @@ export function OrganizationDetailsCard({
 								onChange={handleFileInputChange}
 							/>
 							<div className="relative size-16 shrink-0">
-								<Avatar className="size-16">
-									<AvatarImage src={previewUrl || logoUrl || undefined} alt={organization.name} />
-									<AvatarFallback className="bg-primary/10">
-										<IconBuilding className="size-8 text-primary" />
-									</AvatarFallback>
-								</Avatar>
+								<OrganizationLogo logo={previewUrl || logoUrl} name={organization.name} />
 								{/* Upload progress overlay */}
 								{isUploading && (
 									<div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-full bg-black/70">
@@ -98,13 +109,29 @@ export function OrganizationDetailsCard({
 										</span>
 									</div>
 								)}
+								{canEdit && logoUrl && !isUploading && (
+									<button
+										type="button"
+										onClick={handleRemoveLogo}
+										disabled={isRemovingLogo}
+										aria-label={t("organization.logo.removeLabel", "Remove organization logo")}
+										className="absolute top-0 right-0 rounded-full bg-destructive p-1.5 text-destructive-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
+									>
+										{isRemovingLogo ? (
+											<IconLoader2 className="size-3 animate-spin text-white" aria-hidden="true" />
+										) : (
+											<IconTrash className="size-3 text-white" aria-hidden="true" />
+										)}
+									</button>
+								)}
 								{canEdit && !isUploading && (
 									<button
 										type="button"
 										onClick={() => inputRef.current?.click()}
-										className="absolute bottom-0 right-0 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg transition-transform hover:scale-110"
+										aria-label={t("organization.logo.changeLabel", "Change organization logo")}
+										className="absolute right-0 bottom-0 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									>
-										<IconCamera className="size-3" />
+										<IconCamera className="size-3" aria-hidden="true" />
 									</button>
 								)}
 							</div>

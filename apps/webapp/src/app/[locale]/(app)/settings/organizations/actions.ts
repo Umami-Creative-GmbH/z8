@@ -797,6 +797,105 @@ export async function updateOrganizationDetails(
 	return runServerActionSafe(effect);
 }
 
+/**
+ * Clear organization logo
+ * Requires owner role. Does not delete the underlying storage object.
+ */
+export async function removeOrganizationLogo(
+	organizationId: string,
+): Promise<ServerActionResult<void>> {
+	const tracer = trace.getTracer("organizations");
+
+	const effect = tracer.startActiveSpan(
+		"removeOrganizationLogo",
+		{
+			attributes: {
+				"organization.id": organizationId,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* (_) {
+				const authService = yield* _(AuthService);
+				const session = yield* _(authService.getSession());
+				const dbService = yield* _(DatabaseService);
+
+				const memberRecord = yield* _(
+					dbService.query("getCurrentMemberForLogoRemoval", async () => {
+						return await db.query.member.findFirst({
+							where: and(
+								eq(authSchema.member.userId, session.user.id),
+								eq(authSchema.member.organizationId, organizationId),
+							),
+						});
+					}),
+					Effect.flatMap((member) =>
+						member
+							? Effect.succeed(member)
+							: Effect.fail(
+									new NotFoundError({
+										message: "You are not a member of this organization",
+										entityType: "member",
+									}),
+								),
+					),
+				);
+
+				if (memberRecord.role !== "owner") {
+					yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only owners can update organization details",
+								userId: session.user.id,
+								resource: "organization",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				yield* _(
+					Effect.tryPromise({
+						try: async () => {
+							await auth.api.updateOrganization({
+								body: {
+									organizationId,
+									data: { logo: null },
+								},
+								headers: await headers(),
+							});
+						},
+						catch: (error) => {
+							return new ValidationError({
+								message: error instanceof Error ? error.message : "Failed to remove organization logo",
+								field: "logo",
+							});
+						},
+					}),
+				);
+
+				logger.info({ organizationId }, "Organization logo removed successfully");
+				span.setStatus({ code: SpanStatusCode.OK });
+			}).pipe(
+				Effect.catchAll((error) =>
+					Effect.gen(function* (_) {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error, organizationId }, "Failed to remove organization logo");
+						return yield* _(Effect.fail(error as AnyAppError));
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+				Effect.provide(AppLayer),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
 // =============================================================================
 // Organization Features Actions
 // =============================================================================

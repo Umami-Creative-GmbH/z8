@@ -102,6 +102,7 @@ vi.mock("@/lib/upload/tus-ownership", () => ({
 
 vi.mock("@/lib/storage/avatar-storage", () => ({
 	createAvatarStorageKey: vi.fn(() => "avatars/user_1/avatar.webp"),
+	createOrganizationLogoStorageKey: vi.fn(() => "org-logos/org_1/logo-id.webp"),
 }));
 
 vi.mock("file-type", () => ({
@@ -153,7 +154,9 @@ describe("image upload processing", () => {
 			body: {
 				organizationId: "org_1",
 				data: {
-					logo: expect.stringMatching(/^https:\/\/cdn\.example\.com\/org-logos\/org_1-\d+\.webp$/),
+					logo: expect.stringMatching(
+						/^https:\/\/cdn\.example\.com\/org-logos\/org_1\/[A-Za-z0-9_-]+\.webp$/,
+					),
 				},
 			},
 		});
