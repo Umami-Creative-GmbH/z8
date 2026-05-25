@@ -24,6 +24,7 @@ export function PostHogProvider({ children, helpImproveProduct }: PostHogProvide
 			return;
 		}
 
+		posthog.opt_in_capturing();
 		posthog.init(projectToken, {
 			api_host: "/ingest",
 			ui_host: env.NEXT_PUBLIC_POSTHOG_HOST,

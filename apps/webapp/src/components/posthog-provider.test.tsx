@@ -4,8 +4,9 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { initMock, optOutMock, resetMock } = vi.hoisted(() => ({
+const { initMock, optInMock, optOutMock, resetMock } = vi.hoisted(() => ({
 	initMock: vi.fn(),
+	optInMock: vi.fn(),
 	optOutMock: vi.fn(),
 	resetMock: vi.fn(),
 }));
@@ -20,6 +21,7 @@ vi.mock("@/env", () => ({
 vi.mock("posthog-js", () => ({
 	default: {
 		init: initMock,
+		opt_in_capturing: optInMock,
 		opt_out_capturing: optOutMock,
 		reset: resetMock,
 	},
@@ -48,6 +50,7 @@ describe("PostHogProvider", () => {
 		expect(screen.getByText("App")).toBeTruthy();
 		expect(screen.queryByTestId("posthog-provider")).toBeNull();
 		expect(initMock).not.toHaveBeenCalled();
+		expect(optInMock).not.toHaveBeenCalled();
 		expect(optOutMock).toHaveBeenCalled();
 		expect(resetMock).toHaveBeenCalled();
 	});
@@ -64,5 +67,6 @@ describe("PostHogProvider", () => {
 			"phc_test",
 			expect.objectContaining({ api_host: "/ingest" }),
 		);
+		expect(optInMock).toHaveBeenCalled();
 	});
 });
