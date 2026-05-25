@@ -8,11 +8,11 @@ import {
 	IconPlus,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import Image from "next/image";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { CreateOrganizationDialog } from "@/components/organization/create-organization-dialog";
+import { OrganizationLogo } from "@/components/organization/organization-logo";
 import { saveLastOrganization } from "@/lib/org-persistence";
 import {
 	DropdownMenu,
@@ -135,17 +135,12 @@ export function OrganizationSwitcher({
 								disabled={switching}
 							>
 								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-									{activeOrg.logo ? (
-										<Image
-											src={activeOrg.logo}
-											alt={activeOrg.name}
-											width={32}
-											height={32}
-											className="size-8 rounded-lg object-cover"
-										/>
-									) : (
-										<IconBuilding className="size-4" />
-									)}
+									<OrganizationLogo
+										logo={activeOrg.logo}
+										name={activeOrg.name}
+										size="sm"
+										fallbackClassName="bg-transparent text-sidebar-primary-foreground"
+									/>
 								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-semibold">{activeOrg.name}</span>
@@ -181,17 +176,13 @@ export function OrganizationSwitcher({
 									disabled={switching}
 								>
 									<div className="flex size-6 items-center justify-center rounded-sm border">
-										{org.logo ? (
-											<Image
-												src={org.logo}
-												alt={org.name}
-												width={24}
-												height={24}
-												className="size-6 rounded-sm object-cover"
-											/>
-										) : (
-											<IconBuilding className="size-4" />
-										)}
+										<OrganizationLogo
+											logo={org.logo}
+											name={org.name}
+											size="xs"
+											className="rounded-sm"
+											fallbackClassName="rounded-sm bg-transparent"
+										/>
 									</div>
 									<div className="flex-1">
 										<div className="font-medium">{org.name}</div>
