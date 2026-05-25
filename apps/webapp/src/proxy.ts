@@ -169,6 +169,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-	// Match all routes except API, static files, and Next.js internals
-	matcher: ["/((?!api|_next|.*\\..*).*)"],
+	// Match all routes except API, PostHog ingest proxy, static files, and Next.js internals
+	matcher: ["/((?!api|ingest|_next|.*\\..*).*)"],
 };
