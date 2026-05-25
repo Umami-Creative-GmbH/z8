@@ -92,7 +92,7 @@ export function ApprovalSprintCard({
 						type="button"
 						onClick={onApprove}
 						disabled={isBusy}
-						aria-label="Approve current approval"
+						aria-label={t("approvals:sprint.approveCurrentApproval", "Approve current approval")}
 					>
 						<IconCheck aria-hidden="true" />
 						{t("approvals:sprint.approve", "Approve")}
@@ -102,7 +102,7 @@ export function ApprovalSprintCard({
 						variant="outline"
 						onClick={onReject}
 						disabled={isBusy}
-						aria-label="Reject current approval"
+						aria-label={t("approvals:sprint.rejectCurrentApproval", "Reject current approval")}
 					>
 						<IconX aria-hidden="true" />
 						{t("approvals:sprint.reject", "Reject")}
@@ -112,7 +112,7 @@ export function ApprovalSprintCard({
 						variant="secondary"
 						onClick={onSkip}
 						disabled={isBusy}
-						aria-label="Skip current approval"
+						aria-label={t("approvals:sprint.skipCurrentApproval", "Skip current approval")}
 					>
 						<IconPlayerSkipForward aria-hidden="true" />
 						{t("approvals:sprint.skip", "Skip")}

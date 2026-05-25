@@ -62,6 +62,11 @@ const approvals = [
 	createApproval("approval-2", "Grace Hopper", "Time correction"),
 ];
 
+const threeApprovals = [
+	...approvals,
+	createApproval("approval-3", "Katherine Johnson", "Expense review"),
+];
+
 describe("ApprovalSprintPanel", () => {
 	beforeEach(() => {
 		approveMutation.mockReset();
@@ -168,5 +173,65 @@ describe("ApprovalSprintPanel", () => {
 		expect(screen.getByText("Vacation request")).toBeTruthy();
 		expect(approveMutation).not.toHaveBeenCalled();
 		expect(rejectMutation).not.toHaveBeenCalled();
+	});
+
+	it("does not reset to the first approval when open dialog items update", () => {
+		const { rerender } = render(
+			<ApprovalSprintPanel
+				open={true}
+				items={threeApprovals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Skip current approval" }));
+		fireEvent.click(screen.getByRole("button", { name: "Skip current approval" }));
+		expect(screen.getByText("Expense review")).toBeTruthy();
+
+		rerender(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("Time correction")).toBeTruthy();
+		expect(screen.queryByText("Vacation request")).toBeNull();
+	});
+
+	it("ignores duplicate rapid approve submissions for the current approval", async () => {
+		let resolveApproval: (value: { success: true }) => void = () => undefined;
+		let triggeredDuplicate = false;
+		approveMutation.mockImplementation(() => {
+			if (!triggeredDuplicate) {
+				triggeredDuplicate = true;
+				fireEvent.keyDown(window, { key: "a" });
+			}
+
+			return new Promise((resolve) => {
+				resolveApproval = resolve;
+			});
+		});
+
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		const approveButton = screen.getByRole("button", { name: "Approve current approval" });
+		fireEvent.click(approveButton);
+
+		expect(approveMutation).toHaveBeenCalledTimes(1);
+
+		resolveApproval({ success: true });
+
+		await waitFor(() => expect(screen.getByText("Time correction")).toBeTruthy());
 	});
 });

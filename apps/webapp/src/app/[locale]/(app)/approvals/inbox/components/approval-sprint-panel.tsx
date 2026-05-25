@@ -2,7 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,18 +39,31 @@ export function ApprovalSprintPanel({
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectReason, setRejectReason] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const wasOpenRef = useRef(false);
+	const submittingApprovalRef = useRef<string | null>(null);
 	const currentItem = items[currentIndex];
 	const isBusy = isSubmitting || approveMutation.isPending || rejectMutation.isPending;
 	const trimmedRejectReason = rejectReason.trim();
 	const itemCount = items.length;
 
 	useEffect(() => {
-		if (!open) return;
-		void itemCount;
+		if (open && !wasOpenRef.current) {
+			setCurrentIndex(0);
+			setIsRejecting(false);
+			setRejectReason("");
+		}
 
-		setCurrentIndex(0);
-		setIsRejecting(false);
-		setRejectReason("");
+		wasOpenRef.current = open;
+	}, [open]);
+
+	useEffect(() => {
+		if (!open) return;
+
+		setCurrentIndex((index) => {
+			if (itemCount === 0) return 0;
+
+			return Math.min(index, itemCount - 1);
+		});
 	}, [open, itemCount]);
 
 	const advance = useCallback(() => {
@@ -61,7 +74,9 @@ export function ApprovalSprintPanel({
 
 	const handleApprove = useCallback(async () => {
 		if (!currentItem || isBusy) return;
+		if (submittingApprovalRef.current === currentItem.id) return;
 
+		submittingApprovalRef.current = currentItem.id;
 		setIsSubmitting(true);
 		try {
 			const result = await approveMutation.mutateAsync(currentItem.id);
@@ -75,13 +90,16 @@ export function ApprovalSprintPanel({
 		} catch (_error) {
 			toast.error(t("approvals:approvals.approveFailed", "Failed to approve"));
 		} finally {
+			submittingApprovalRef.current = null;
 			setIsSubmitting(false);
 		}
 	}, [advance, approveMutation, currentItem, isBusy, onActioned, t]);
 
 	const handleReject = async () => {
 		if (!currentItem || isBusy || !trimmedRejectReason) return;
+		if (submittingApprovalRef.current === currentItem.id) return;
 
+		submittingApprovalRef.current = currentItem.id;
 		setIsSubmitting(true);
 		try {
 			const result = await rejectMutation.mutateAsync({
@@ -98,6 +116,7 @@ export function ApprovalSprintPanel({
 		} catch (_error) {
 			toast.error(t("approvals:approvals.rejectFailed", "Failed to reject"));
 		} finally {
+			submittingApprovalRef.current = null;
 			setIsSubmitting(false);
 		}
 	};
