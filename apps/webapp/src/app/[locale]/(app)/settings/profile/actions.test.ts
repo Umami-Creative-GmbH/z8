@@ -226,6 +226,22 @@ describe("profile actions", () => {
 		);
 	});
 
+	it("preserves the product improvement preference when omitted", async () => {
+		const result = await updateProfileDetails({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			gender: "female",
+			pronouns: "she/her",
+			birthday: new Date("1815-12-10T00:00:00.000Z"),
+			image: "/avatars/ada.png",
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
+		expect(mockState.userSettingsValues).not.toHaveBeenCalled();
+		expect(mockState.userSettingsOnConflictDoUpdate).not.toHaveBeenCalled();
+	});
+
 	it("uses stored structured names when only the profile image changes", async () => {
 		const result = await updateProfileImage({
 			image: null,

@@ -55,7 +55,7 @@ export const profileDetailsUpdateSchema = z
 		pronouns: pronounsSchema,
 		birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
 		image: profileImageSchema,
-		helpImproveProduct: z.boolean().default(true),
+		helpImproveProduct: z.boolean().optional(),
 	})
 	.superRefine((data, ctx) => {
 		if (hasStructuredProfileName(data.firstName, data.lastName)) {

@@ -225,16 +225,23 @@ export async function updateProfileDetails(data: {
 			}),
 		);
 
-		yield* _(
-			Effect.all([
-				syncActiveEmployeeProfile(
-					dbService,
-					session.user.id,
-					session.session.activeOrganizationId ?? undefined,
-					result.data,
-				),
+		const profileUpdates = [
+			syncActiveEmployeeProfile(
+				dbService,
+				session.user.id,
+				session.session.activeOrganizationId ?? undefined,
+				result.data,
+			),
+		];
+
+		if (typeof result.data.helpImproveProduct === "boolean") {
+			profileUpdates.push(
 				updateProfilePreferences(dbService, session.user.id, result.data.helpImproveProduct),
-			]).pipe(
+			);
+		}
+
+		yield* _(
+			Effect.all(profileUpdates).pipe(
 				Effect.catchAll(() =>
 					Effect.gen(function* (_) {
 						yield* _(
