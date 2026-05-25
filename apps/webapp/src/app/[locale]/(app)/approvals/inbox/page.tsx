@@ -491,6 +491,7 @@ function ApprovalInboxContent() {
 				onOpenChange={setSprintOpen}
 				onActioned={handleApprovalActioned}
 				onOpenDetails={handleOpenDetail}
+				shortcutsEnabled={detailApproval === null}
 			/>
 
 			<ActionPanel

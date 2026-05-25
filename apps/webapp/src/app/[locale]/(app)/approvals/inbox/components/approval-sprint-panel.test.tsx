@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TriagedApprovalItem } from "@/lib/approvals/triage";
@@ -176,6 +176,51 @@ describe("ApprovalSprintPanel", () => {
 		expect(rejectMutation).not.toHaveBeenCalled();
 	});
 
+	it("disables keyboard shortcuts when parent disables shortcuts", () => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+				shortcutsEnabled={false}
+			/>,
+		);
+
+		fireEvent.keyDown(window, { key: "a" });
+		fireEvent.keyDown(window, { key: "r" });
+		fireEvent.keyDown(window, { key: "s" });
+		fireEvent.keyDown(window, { key: "n" });
+
+		expect(screen.getByText("Vacation request")).toBeTruthy();
+		expect(screen.queryByLabelText("Sprint reject reason")).toBeNull();
+		expect(approveMutation).not.toHaveBeenCalled();
+		expect(rejectMutation).not.toHaveBeenCalled();
+	});
+
+	it("ignores keyboard shortcuts from editable targets", () => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+		const input = document.createElement("input");
+		document.body.appendChild(input);
+
+		fireEvent.keyDown(input, { key: "a" });
+		fireEvent.keyDown(input, { key: "r" });
+		fireEvent.keyDown(input, { key: "s" });
+
+		expect(screen.getByText("Vacation request")).toBeTruthy();
+		expect(screen.queryByLabelText("Sprint reject reason")).toBeNull();
+		expect(approveMutation).not.toHaveBeenCalled();
+
+		input.remove();
+	});
+
 	it("does not reset to the first approval when open dialog items update", () => {
 		const { rerender } = render(
 			<ApprovalSprintPanel
@@ -232,6 +277,44 @@ describe("ApprovalSprintPanel", () => {
 		expect(approveMutation).toHaveBeenCalledTimes(1);
 
 		resolveApproval({ success: true });
+
+		await waitFor(() => expect(screen.getByText("Time correction")).toBeTruthy());
+	});
+
+	it("ignores skip keyboard shortcuts while approval is submitting", async () => {
+		let resolveApproval: (value: { success: true }) => void = () => undefined;
+		approveMutation.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveApproval = resolve;
+				}),
+		);
+
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Approve current approval" }));
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Skip current approval" }).hasAttribute("disabled"),
+			).toBe(true),
+		);
+
+		fireEvent.keyDown(window, { key: "s" });
+		fireEvent.keyDown(window, { key: "n" });
+
+		expect(screen.getByText("Vacation request")).toBeTruthy();
+		expect(screen.queryByText("Time correction")).toBeNull();
+
+		await act(async () => {
+			resolveApproval({ success: true });
+		});
 
 		await waitFor(() => expect(screen.getByText("Time correction")).toBeTruthy());
 	});

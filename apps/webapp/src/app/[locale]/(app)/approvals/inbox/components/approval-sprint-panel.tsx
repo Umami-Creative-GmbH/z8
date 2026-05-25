@@ -23,6 +23,7 @@ interface ApprovalSprintPanelProps {
 	onOpenChange: (open: boolean) => void;
 	onActioned: () => void;
 	onOpenDetails?: (item: TriagedApprovalItem) => void;
+	shortcutsEnabled?: boolean;
 }
 
 export function ApprovalSprintPanel({
@@ -31,6 +32,7 @@ export function ApprovalSprintPanel({
 	onOpenChange,
 	onActioned,
 	onOpenDetails,
+	shortcutsEnabled = true,
 }: ApprovalSprintPanelProps) {
 	const { t } = useTranslate();
 	const approveMutation = useApproveApproval();
@@ -137,10 +139,12 @@ export function ApprovalSprintPanel({
 	};
 
 	useEffect(() => {
-		if (!open || isRejecting) return;
+		if (!open || isRejecting || !shortcutsEnabled) return;
 
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+			if (isBusy || isEditableShortcutTarget(event.target)) return;
+
 			if (event.key === "a") {
 				event.preventDefault();
 				void handleApprove();
@@ -155,7 +159,7 @@ export function ApprovalSprintPanel({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [open, isRejecting, handleApprove, advance]);
+	}, [open, isRejecting, shortcutsEnabled, isBusy, handleApprove, advance]);
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -232,5 +236,17 @@ export function ApprovalSprintPanel({
 				)}
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function isEditableShortcutTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) {
+		return false;
+	}
+
+	return (
+		target.matches("input, textarea, select") ||
+		target.isContentEditable ||
+		target.closest("[contenteditable='true']") !== null
 	);
 }
