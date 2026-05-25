@@ -81,10 +81,33 @@ async function getHelpImproveProduct(): Promise<boolean> {
 	return settings?.helpImproveProduct ?? true;
 }
 
+function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
+	return (
+		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+			<TranslationProvider locale={locale}>
+				<QueryProvider>
+					<BProgressBar />
+					<TooltipProvider delayDuration={0}>
+						<OfflineBanner />
+						<SWUpdatePrompt />
+						{children}
+						<Toaster position="bottom-right" richColors />
+					</TooltipProvider>
+				</QueryProvider>
+			</TranslationProvider>
+		</ThemeProvider>
+	);
+}
+
+async function PostHogConsentProvider({ children }: { children: ReactNode }) {
+	const helpImproveProduct = await getHelpImproveProduct();
+
+	return <PostHogProvider helpImproveProduct={helpImproveProduct}>{children}</PostHogProvider>;
+}
+
 export default async function LocaleLayout({ children, params }: Props) {
 	const { locale } = await params;
 	setRequestLocale(locale);
-	const helpImproveProduct = await getHelpImproveProduct();
 
 	return (
 		<html lang={locale} suppressHydrationWarning>
@@ -108,41 +131,24 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<TranslatedMeta />
 			</head>
 			<body>
-				<PostHogProvider helpImproveProduct={helpImproveProduct}>
-					<Suspense
-						fallback={
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "center",
-									alignItems: "center",
-									minHeight: "100vh",
-								}}
-							>
-								<div>Loading…</div>
-							</div>
-						}
-					>
-						<ThemeProvider
-							attribute="class"
-							defaultTheme="system"
-							enableSystem
-							disableTransitionOnChange
+				<Suspense
+					fallback={
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "center",
+								alignItems: "center",
+								minHeight: "100vh",
+							}}
 						>
-							<TranslationProvider locale={locale}>
-								<QueryProvider>
-									<BProgressBar />
-									<TooltipProvider delayDuration={0}>
-										<OfflineBanner />
-										<SWUpdatePrompt />
-										{children}
-										<Toaster position="bottom-right" richColors />
-									</TooltipProvider>
-								</QueryProvider>
-							</TranslationProvider>
-						</ThemeProvider>
-					</Suspense>
-				</PostHogProvider>
+							<div>Loading…</div>
+						</div>
+					}
+				>
+					<PostHogConsentProvider>
+						<AppProviders locale={locale}>{children}</AppProviders>
+					</PostHogConsentProvider>
+				</Suspense>
 			</body>
 		</html>
 	);
