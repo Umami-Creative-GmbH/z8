@@ -14,6 +14,31 @@ import type { AnyAppError } from "@/lib/effect/errors";
 // APPROVAL ITEM (Unified Format)
 // ============================================
 
+export type ApprovalRiskLevel = "low" | "medium" | "high";
+
+export type ApprovalRiskReason =
+	| "no_conflicts_detected"
+	| "small_time_delta"
+	| "stale_pending"
+	| "payroll_relevant"
+	| "policy_exception"
+	| "needs_review";
+
+export type ApprovalFastLaneGroupKey =
+	| "low_risk_absence"
+	| "small_time_correction"
+	| "stale_pending"
+	| "payroll_blocker";
+
+export interface ApprovalTriageMetadata {
+	riskLevel?: ApprovalRiskLevel;
+	riskReasons?: ApprovalRiskReason[];
+	fastLaneGroup?: ApprovalFastLaneGroupKey | null;
+	isPayrollRelevant?: boolean;
+	ageDays?: number;
+	timeDeltaMinutes?: number;
+}
+
 /**
  * Unified approval item that normalizes different approval types
  * into a consistent format for the inbox UI.
@@ -68,6 +93,9 @@ export interface UnifiedApprovalItem {
 
 	/** Display metadata for rendering */
 	display: ApprovalDisplayMetadata;
+
+	/** Advisory metadata for fast triage. Authorization never depends on this client-visible data. */
+	triage?: ApprovalTriageMetadata;
 }
 
 /**
