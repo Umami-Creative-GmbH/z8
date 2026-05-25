@@ -6,6 +6,10 @@ export function createAvatarStorageKey(userId: string, id = nanoid()): string {
 	return `avatars/${userId}/${id}.webp`;
 }
 
+export function createOrganizationLogoStorageKey(organizationId: string, id = nanoid()): string {
+	return `org-logos/${organizationId}/${id}.webp`;
+}
+
 export function getOwnedAvatarKeyFromPublicUrl(
 	url: string | null | undefined,
 	userId: string,

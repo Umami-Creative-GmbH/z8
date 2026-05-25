@@ -28,8 +28,12 @@ vi.mock("@aws-sdk/client-s3", () => ({
 	}),
 }));
 
-const { createAvatarStorageKey, deleteOwnedAvatarObject, getOwnedAvatarKeyFromPublicUrl } =
-	await import("./avatar-storage");
+const {
+	createAvatarStorageKey,
+	createOrganizationLogoStorageKey,
+	deleteOwnedAvatarObject,
+	getOwnedAvatarKeyFromPublicUrl,
+} = await import("./avatar-storage");
 
 describe("avatar storage", () => {
 	beforeEach(() => {
@@ -39,6 +43,12 @@ describe("avatar storage", () => {
 
 	it("creates per-user immutable avatar keys", () => {
 		expect(createAvatarStorageKey("user-1", "avatar-id")).toBe("avatars/user-1/avatar-id.webp");
+	});
+
+	it("creates per-organization immutable logo keys", () => {
+		expect(createOrganizationLogoStorageKey("org-1", "logo-id")).toBe(
+			"org-logos/org-1/logo-id.webp",
+		);
 	});
 
 	it("extracts owned avatar keys from the public S3 URL", () => {
