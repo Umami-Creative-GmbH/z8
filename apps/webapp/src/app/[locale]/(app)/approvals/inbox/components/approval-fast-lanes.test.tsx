@@ -112,7 +112,7 @@ describe("ApprovalFastLanes", () => {
 
 		expect(screen.queryByText("Ada Lovelace")).toBeNull();
 
-		fireEvent.click(screen.getByRole("button", { name: /show low-risk absences/i }));
+		fireEvent.click(screen.getByRole("button", { name: /expand low-risk absences/i }));
 
 		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
 		expect(screen.getByText("Vacation, May 18")).toBeTruthy();
@@ -135,7 +135,7 @@ describe("ApprovalFastLanes", () => {
 		const groupCard = screen.getByText("Low-risk absences").closest("article");
 		expect(groupCard).not.toBeNull();
 
-		fireEvent.click(within(groupCard!).getByRole("button", { name: "Approve" }));
+		fireEvent.click(within(groupCard!).getByRole("button", { name: "Approve Low-risk absences" }));
 
 		expect(onBulkApprove).toHaveBeenCalledWith(["approval-1", "approval-2"]);
 	});
@@ -156,9 +156,9 @@ describe("ApprovalFastLanes", () => {
 		expect(groupCard).not.toBeNull();
 		const card = within(groupCard!);
 
-		fireEvent.click(card.getByRole("button", { name: "Reject" }));
+		fireEvent.click(card.getByRole("button", { name: "Reject Low-risk absences" }));
 
-		const confirmButton = card.getByRole("button", { name: "Confirm reject" });
+		const confirmButton = card.getByRole("button", { name: "Confirm reject Low-risk absences" });
 		expect(card.getByLabelText("Bulk reject reason")).toBeTruthy();
 		expect(confirmButton).toHaveProperty("disabled", true);
 

@@ -90,7 +90,14 @@ export function ApprovalFastLanes({
 
 								<CardContent className="space-y-4">
 									<div className="flex flex-wrap gap-2">
-										<Button size="sm" onClick={() => onBulkApprove(ids)} disabled={isBusy}>
+										<Button
+											size="sm"
+											onClick={() => onBulkApprove(ids)}
+											disabled={isBusy}
+											aria-label={t("approvals:fastLanes.approveGroup", `Approve ${label}`, {
+												label,
+											})}
+										>
 											<IconCheck aria-hidden="true" />
 											{t("approvals:fastLanes.approve", "Approve")}
 										</Button>
@@ -102,6 +109,9 @@ export function ApprovalFastLanes({
 												setRejectReason("");
 											}}
 											disabled={isBusy}
+											aria-label={t("approvals:fastLanes.rejectGroup", `Reject ${label}`, {
+												label,
+											})}
 										>
 											<IconX aria-hidden="true" />
 											{t("approvals:fastLanes.reject", "Reject")}
@@ -126,6 +136,13 @@ export function ApprovalFastLanes({
 												variant="destructive"
 												onClick={() => onBulkReject(ids, trimmedReason)}
 												disabled={isBusy || trimmedReason.length === 0}
+												aria-label={t(
+													"approvals:fastLanes.confirmRejectGroup",
+													`Confirm reject ${label}`,
+													{
+														label,
+													},
+												)}
 											>
 												{t("approvals:fastLanes.confirmReject", "Confirm reject")}
 											</Button>
@@ -134,7 +151,14 @@ export function ApprovalFastLanes({
 
 									<Collapsible>
 										<CollapsibleTrigger asChild>
-											<Button variant="ghost" size="sm" className="px-0 text-muted-foreground">
+											<Button
+												variant="ghost"
+												size="sm"
+												className="px-0 text-muted-foreground"
+												aria-label={t("approvals:fastLanes.expandGroup", `Expand ${label}`, {
+													label,
+												})}
+											>
 												<IconChevronDown aria-hidden="true" />
 												{t("approvals:fastLanes.showGroup", `Show ${label}`, { label })}
 											</Button>

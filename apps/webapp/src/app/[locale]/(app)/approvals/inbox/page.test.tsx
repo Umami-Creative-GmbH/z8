@@ -259,7 +259,7 @@ describe("ApprovalInboxPage", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
 		expect(screen.getByRole("button", { name: /Approve Selected/ })).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: /^Approve$/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Approve Low-risk absences" }));
 
 		await waitFor(() => {
 			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith(["approval-1"]);

@@ -129,20 +129,14 @@ export function groupApprovalFastLanes(
 			continue;
 		}
 
-		groups.set(fastLaneGroup, [
-			...(groups.get(fastLaneGroup) ?? []),
-			triagedApproval,
-		]);
+		groups.set(fastLaneGroup, [...(groups.get(fastLaneGroup) ?? []), triagedApproval]);
 	}
 
 	return Array.from(groups, ([key, items]) => ({ key, items }));
 }
 
 function getAgeDays(createdAt: Date, now: Date): number {
-	const days = DateTime.fromJSDate(now).diff(
-		DateTime.fromJSDate(createdAt),
-		"days",
-	).days;
+	const days = DateTime.fromJSDate(now).diff(DateTime.fromJSDate(createdAt), "days").days;
 
 	return Math.max(0, Math.floor(days));
 }
@@ -151,10 +145,7 @@ function isSmallTimeCorrection(
 	timeDeltaMinutes: number | undefined,
 	thresholdMinutes: number,
 ): boolean {
-	return (
-		typeof timeDeltaMinutes === "number" &&
-		Math.abs(timeDeltaMinutes) <= thresholdMinutes
-	);
+	return typeof timeDeltaMinutes === "number" && Math.abs(timeDeltaMinutes) <= thresholdMinutes;
 }
 
 function getRiskRank(riskLevel: ApprovalRiskLevel): number {
