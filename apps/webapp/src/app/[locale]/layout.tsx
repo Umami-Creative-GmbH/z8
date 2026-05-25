@@ -5,12 +5,16 @@ import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { db } from "@/db";
+import { userSettings } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
-import { PostHogProvider } from "@/components/posthog-provider";
+import { eq } from "drizzle-orm";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
 
@@ -25,24 +29,14 @@ export async function generateStaticParams() {
 }
 
 // Separate component for loading translations to wrap in Suspense
-async function TranslationProvider({
-	locale,
-	children,
-}: {
-	locale: string;
-	children: ReactNode;
-}) {
+async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
 	// Get the current pathname to determine which namespaces to load
 	const headersList = await headers();
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
 	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
-	const pathnameWithoutLocale =
-		pathname.replace(new RegExp(`^/${locale}`), "") || "/";
+	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
 
-	const records = await loadRouteTranslations(
-		locale,
-		pathnameWithoutLocale,
-	).catch((error) => {
+	const records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
 		return {};
 	});
@@ -73,9 +67,24 @@ function TranslatedMeta() {
 	);
 }
 
+async function getHelpImproveProduct(): Promise<boolean> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return false;
+	}
+
+	const settings = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
+		columns: { helpImproveProduct: true },
+	});
+
+	return settings?.helpImproveProduct ?? true;
+}
+
 export default async function LocaleLayout({ children, params }: Props) {
 	const { locale } = await params;
 	setRequestLocale(locale);
+	const helpImproveProduct = await getHelpImproveProduct();
 
 	return (
 		<html lang={locale} suppressHydrationWarning>
@@ -85,23 +94,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="#000000" name="theme-color" />
 				<meta content="light dark" name="color-scheme" />
 				<link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
-				<link
-					href="/apple-touch-icon.png"
-					rel="apple-touch-icon"
-					sizes="180x180"
-				/>
-				<link
-					href="/favicon-32x32.png"
-					rel="icon"
-					sizes="32x32"
-					type="image/png"
-				/>
-				<link
-					href="/favicon-16x16.png"
-					rel="icon"
-					sizes="16x16"
-					type="image/png"
-				/>
+				<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
+				<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+				<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
 				<link href="/site.webmanifest" rel="manifest" />
 				<link color="#000000" href="/safari-pinned-tab.svg" rel="mask-icon" />
 				<meta content="#000000" name="msapplication-TileColor" />
@@ -113,7 +108,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<TranslatedMeta />
 			</head>
 			<body>
-				<PostHogProvider>
+				<PostHogProvider helpImproveProduct={helpImproveProduct}>
 					<Suspense
 						fallback={
 							<div

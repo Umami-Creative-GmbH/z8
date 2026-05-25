@@ -5,10 +5,21 @@ import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { useEffect } from "react";
 import { env } from "@/env";
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+type PostHogProviderProps = {
+	children: React.ReactNode;
+	helpImproveProduct: boolean;
+};
+
+export function PostHogProvider({ children, helpImproveProduct }: PostHogProviderProps) {
 	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
 
 	useEffect(() => {
+		if (!helpImproveProduct) {
+			posthog.opt_out_capturing();
+			posthog.reset();
+			return;
+		}
+
 		if (!projectToken) {
 			return;
 		}
@@ -20,9 +31,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 			capture_pageview: "history_change",
 			capture_pageleave: true,
 		});
-	}, [projectToken]);
+	}, [helpImproveProduct, projectToken]);
 
-	if (!projectToken) {
+	if (!(projectToken && helpImproveProduct)) {
 		return <>{children}</>;
 	}
 
