@@ -1,5 +1,6 @@
 import Image from "next/image";
 import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
+import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -20,6 +21,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 			<section className="relative z-10 flex min-h-svh flex-col px-4 py-4 sm:px-8 sm:py-6 lg:px-10">
 				<div className="flex items-center justify-end gap-2 drop-shadow-sm">
 					<ThemeToggle />
+					<FontSizeToggle />
 					<LanguageSwitcher />
 				</div>
 

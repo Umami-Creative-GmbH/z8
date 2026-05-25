@@ -11,6 +11,7 @@ import {
 	IconMoon,
 	IconPalette,
 	IconSun,
+	IconTextSize,
 	IconUserCircle,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -18,6 +19,11 @@ import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import {
+	FONT_SIZE_OPTIONS,
+	isFontSizePreference,
+	useFontSizePreference,
+} from "@/components/font-size-preference";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
@@ -64,10 +70,13 @@ export function NavUser({
 	const locale = useLocale();
 	const pathname = usePathname();
 	const { theme, setTheme } = useTheme();
+	const { fontSize, setFontSize } = useFontSizePreference();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isPending, startTransition] = useTransition();
 	const [dropdownOpen, setDropdownOpen] = useState(false);
-	const [mobileOpenSection, setMobileOpenSection] = useState<"language" | "theme" | null>(null);
+	const [mobileOpenSection, setMobileOpenSection] = useState<
+		"language" | "fontSize" | "theme" | null
+	>(null);
 	const mobileRadioItemClassName =
 		"pl-2 data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground [&>span:first-child]:hidden";
 
@@ -101,7 +110,13 @@ export function NavUser({
 		});
 	};
 
-	const setMobileSectionOpen = (section: "language" | "theme", open: boolean) => {
+	const handleFontSizeChange = (value: string) => {
+		if (isFontSizePreference(value)) {
+			setFontSize(value);
+		}
+	};
+
+	const setMobileSectionOpen = (section: "language" | "fontSize" | "theme", open: boolean) => {
 		setMobileOpenSection(open ? section : null);
 	};
 
@@ -223,6 +238,35 @@ export function NavUser({
 									</Collapsible>
 									<DropdownMenuSeparator />
 									<Collapsible
+										open={mobileOpenSection === "fontSize"}
+										onOpenChange={(open) => setMobileSectionOpen("fontSize", open)}
+									>
+										<CollapsibleTrigger asChild>
+											<DropdownMenuItem
+												className="w-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&[data-state=open]>svg:last-child]:rotate-180"
+												onSelect={(event) => event.preventDefault()}
+											>
+												<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
+												{t("user.font-size", "Font size")}
+												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
+											</DropdownMenuItem>
+										</CollapsibleTrigger>
+										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
+											<DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+												{FONT_SIZE_OPTIONS.map((option) => (
+													<DropdownMenuRadioItem
+														key={option.value}
+														className={mobileRadioItemClassName}
+														value={option.value}
+													>
+														{t(option.labelKey, option.label)}
+													</DropdownMenuRadioItem>
+												))}
+											</DropdownMenuRadioGroup>
+										</CollapsibleContent>
+									</Collapsible>
+									<DropdownMenuSeparator />
+									<Collapsible
 										open={mobileOpenSection === "theme"}
 										onOpenChange={(open) => setMobileSectionOpen("theme", open)}
 									>
@@ -276,6 +320,21 @@ export function NavUser({
 														</DropdownMenuRadioItem>
 													);
 												})}
+											</DropdownMenuRadioGroup>
+										</DropdownMenuSubContent>
+									</DropdownMenuSub>
+									<DropdownMenuSub>
+										<DropdownMenuSubTrigger>
+											<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
+											{t("user.font-size", "Font size")}
+										</DropdownMenuSubTrigger>
+										<DropdownMenuSubContent>
+											<DropdownMenuRadioGroup value={fontSize} onValueChange={handleFontSizeChange}>
+												{FONT_SIZE_OPTIONS.map((option) => (
+													<DropdownMenuRadioItem key={option.value} value={option.value}>
+														{t(option.labelKey, option.label)}
+													</DropdownMenuRadioItem>
+												))}
 											</DropdownMenuRadioGroup>
 										</DropdownMenuSubContent>
 									</DropdownMenuSub>

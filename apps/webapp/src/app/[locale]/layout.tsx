@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
+import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -57,6 +58,8 @@ const DEFAULT_META = {
 	keywords: "z8, time, app, productivity",
 };
 
+const FONT_SIZE_INIT_SCRIPT = `try{var fontSize=localStorage.getItem("z8-font-size");if(fontSize==="comfortable"||fontSize==="large"){document.documentElement.dataset.fontSize=fontSize;}else{document.documentElement.removeAttribute("data-font-size");}}catch{}`;
+
 function TranslatedMeta() {
 	return (
 		<>
@@ -84,17 +87,19 @@ async function getHelpImproveProduct(): Promise<boolean> {
 function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-			<TranslationProvider locale={locale}>
-				<QueryProvider>
-					<BProgressBar />
-					<TooltipProvider delayDuration={0}>
-						<OfflineBanner />
-						<SWUpdatePrompt />
-						{children}
-						<Toaster position="bottom-right" richColors />
-					</TooltipProvider>
-				</QueryProvider>
-			</TranslationProvider>
+			<FontSizeProvider>
+				<TranslationProvider locale={locale}>
+					<QueryProvider>
+						<BProgressBar />
+						<TooltipProvider delayDuration={0}>
+							<OfflineBanner />
+							<SWUpdatePrompt />
+							{children}
+							<Toaster position="bottom-right" richColors />
+						</TooltipProvider>
+					</QueryProvider>
+				</TranslationProvider>
+			</FontSizeProvider>
 		</ThemeProvider>
 	);
 }
@@ -128,6 +133,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="yes" name="mobile-web-app-capable" />
 				<meta content="yes" name="apple-mobile-web-app-capable" />
 				<meta content="default" name="apple-mobile-web-app-status-bar-style" />
+				<script dangerouslySetInnerHTML={{ __html: FONT_SIZE_INIT_SCRIPT }} />
 				<TranslatedMeta />
 			</head>
 			<body>

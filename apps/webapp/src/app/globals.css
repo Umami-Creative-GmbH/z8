@@ -143,6 +143,14 @@
 }
 
 @layer base {
+	html[data-font-size="comfortable"] {
+		font-size: 17px;
+	}
+
+	html[data-font-size="large"] {
+		font-size: 18px;
+	}
+
 	* {
 		@apply border-border outline-ring/50;
 	}

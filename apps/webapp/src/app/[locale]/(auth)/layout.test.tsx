@@ -47,6 +47,10 @@ vi.mock("@/components/language-switcher", () => ({
 	LanguageSwitcher: () => <button type="button">Language</button>,
 }));
 
+vi.mock("@/components/font-size-toggle", () => ({
+	FontSizeToggle: () => <button type="button">Font size</button>,
+}));
+
 vi.mock("@/components/theme-toggle", () => ({
 	ThemeToggle: () => <button type="button">Theme</button>,
 }));
@@ -113,6 +117,7 @@ describe("AuthLayout", () => {
 		expect(backgroundImage.className).toContain("inset-0");
 		expect(backgroundImage.className).toContain("object-cover");
 		expect(backgroundImage.closest("aside")).toBeNull();
+		expect(screen.getByRole("button", { name: "Font size" })).toBeTruthy();
 	});
 
 	it("does not fall back to the platform cookie script on custom domains", async () => {
