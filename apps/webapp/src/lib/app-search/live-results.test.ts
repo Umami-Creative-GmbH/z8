@@ -32,6 +32,8 @@ describe("mapEmployeeSearchRow", () => {
 				lastName: "Muster",
 				name: "Maria M.",
 				email: "maria@example.com",
+				image: "https://example.com/maria.png",
+				gender: "female",
 				position: "Shift Lead",
 				teamName: "Retail",
 			}),
@@ -41,6 +43,9 @@ describe("mapEmployeeSearchRow", () => {
 			title: "Maria Muster",
 			subtitle: "Shift Lead · Retail · maria@example.com",
 			href: "/settings/employees/emp-1",
+			image: "https://example.com/maria.png",
+			avatarSeed: "emp-1",
+			gender: "female",
 		});
 	});
 
@@ -52,6 +57,8 @@ describe("mapEmployeeSearchRow", () => {
 				lastName: null,
 				name: "Account Name",
 				email: "account@example.com",
+				image: null,
+				gender: null,
 				position: null,
 				teamName: null,
 			}).title,
@@ -64,6 +71,8 @@ describe("mapEmployeeSearchRow", () => {
 				lastName: null,
 				name: null,
 				email: "fallback@example.com",
+				image: null,
+				gender: null,
 				position: null,
 				teamName: null,
 			}).title,

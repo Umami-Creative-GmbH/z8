@@ -1,6 +1,20 @@
 "use client";
 
-import { IconSearch } from "@tabler/icons-react";
+import {
+	IconBeach,
+	IconCalendar,
+	IconClipboardCheck,
+	IconClock,
+	IconDashboard,
+	IconFileDescription,
+	IconHierarchy,
+	IconReceipt,
+	IconReport,
+	IconSearch,
+	IconSettings,
+	IconShieldCheck,
+	IconUsers,
+} from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
@@ -21,6 +35,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { UserAvatar } from "@/components/user-avatar";
 import type { AppSearchResult, LiveAppSearchResults } from "@/lib/app-search/types";
 import { useRouter } from "@/navigation";
 
@@ -30,6 +45,34 @@ const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
 };
 
 const SEARCH_HOTKEY = "Mod+K";
+
+type SearchIcon = typeof IconSearch;
+
+const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
+	"/": IconDashboard,
+	"/absences": IconBeach,
+	"/approvals/inbox": IconClipboardCheck,
+	"/calendar": IconCalendar,
+	"/compliance": IconShieldCheck,
+	"/my-requests": IconFileDescription,
+	"/organization": IconHierarchy,
+	"/reports": IconReport,
+	"/settings": IconSettings,
+	"/settings/employees": IconUsers,
+	"/settings/organizations": IconHierarchy,
+	"/settings/payroll-readiness": IconReceipt,
+	"/settings/projects": IconFileDescription,
+	"/settings/security": IconShieldCheck,
+	"/settings/teams": IconUsers,
+	"/team": IconUsers,
+	"/team/absences": IconBeach,
+	"/time-tracking": IconClock,
+	"/travel-expenses": IconReceipt,
+};
+
+function getResultIcon(result: AppSearchResult): SearchIcon {
+	return RESULT_ICON_BY_HREF[result.href] ?? (result.type === "setting" ? IconSettings : IconFileDescription);
+}
 
 function getGroupLabel(type: AppSearchResult["type"], t: ReturnType<typeof useTranslate>["t"]) {
 	switch (type) {
@@ -71,20 +114,39 @@ function ResultGroup({
 
 	return (
 		<CommandGroup heading={label}>
-			{results.map((result) => (
-				<CommandItem
-					key={`${result.type}:${result.id}`}
-					onSelect={() => onSelect(result)}
-					value={getResultSearchValue(result)}
-				>
-					<div className="flex min-w-0 flex-col gap-0.5">
-						<span className="truncate font-medium">{result.title}</span>
-						{result.subtitle ? (
-							<span className="truncate text-muted-foreground text-xs">{result.subtitle}</span>
-						) : null}
-					</div>
-				</CommandItem>
-			))}
+			{results.map((result) => {
+				const ResultIcon = getResultIcon(result);
+
+				return (
+					<CommandItem
+						className="gap-3"
+						key={`${result.type}:${result.id}`}
+						onSelect={() => onSelect(result)}
+						value={getResultSearchValue(result)}
+					>
+						{result.type === "employee" ? (
+							<UserAvatar
+								image={result.image}
+								seed={result.avatarSeed ?? result.id}
+								name={result.title}
+								gender={result.gender}
+								size="sm"
+								showClockStatus={false}
+							/>
+						) : (
+							<span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/50 text-muted-foreground">
+								<ResultIcon aria-hidden="true" data-testid={`app-search-icon-${result.id}`} className="size-4" />
+							</span>
+						)}
+						<div className="flex min-w-0 flex-col gap-0.5">
+							<span className="truncate font-medium">{result.title}</span>
+							{result.subtitle ? (
+								<span className="truncate text-muted-foreground text-xs">{result.subtitle}</span>
+							) : null}
+						</div>
+					</CommandItem>
+				);
+			})}
 		</CommandGroup>
 	);
 }
@@ -143,6 +205,8 @@ export function AppSearch({
 	const actionResults = staticCommands.filter((result) => result.type === "action");
 	const pageResults = staticResults.filter((result) => result.type === "page");
 	const settingResults = staticResults.filter((result) => result.type === "setting");
+	const searchLabel = t("appSearch.search", "Search");
+	const searchOrRunCommandLabel = t("appSearch.searchOrRunCommand", "Search or run command");
 
 	function handleSelect(result: AppSearchResult) {
 		setOpen(false);
@@ -157,13 +221,17 @@ export function AppSearch({
 					<SidebarMenu>
 						<SidebarMenuItem>
 							<SidebarMenuButton
+								className="h-9 justify-start rounded-lg border border-input bg-background px-3 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
 								onClick={() => setOpen(true)}
-								tooltip={t("appSearch.searchOrRunCommand", "Search or run command")}
+								tooltip={searchOrRunCommandLabel}
 								type="button"
 							>
-								<IconSearch />
-								<span>{t("appSearch.searchOrRunCommand", "Search or run command")}</span>
-								<Kbd className="ml-auto hidden bg-sidebar-accent text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden sm:inline-flex">
+								<IconSearch aria-hidden="true" className="text-muted-foreground" />
+								<span className="font-normal text-sm">{searchLabel}</span>
+								<Kbd
+									aria-hidden="true"
+									className="ml-auto hidden bg-muted text-muted-foreground group-data-[collapsible=icon]:hidden sm:inline-flex"
+								>
 									{searchShortcutLabel}
 								</Kbd>
 							</SidebarMenuButton>
@@ -178,7 +246,7 @@ export function AppSearch({
 				)}
 				onOpenChange={setOpen}
 				open={open}
-				title={t("appSearch.searchOrRunCommand", "Search or run command")}
+				title={searchOrRunCommandLabel}
 			>
 				<CommandInput
 					aria-label={t(
