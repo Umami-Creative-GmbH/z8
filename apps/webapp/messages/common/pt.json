@@ -428,5 +428,60 @@
     "invalid-password": "Senha inválida",
     "last-name-required": "O sobrenome é obrigatório",
     "password-required": "A senha é obrigatória"
+  },
+  "appSearch": {
+    "commandDescription": "Pesquisar páginas, pessoas, equipes, configurações ou ações",
+    "commandPlaceholder": "Pesquisar páginas, pessoas, equipes, configurações ou ações…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Registrar horas de um turno anterior ou correção",
+        "title": "Adicionar registro de horas manual"
+      },
+      "createProject": {
+        "subtitle": "Abrir configurações de projeto para definir um novo projeto",
+        "title": "Criar projeto"
+      },
+      "inviteTeammate": {
+        "subtitle": "Abrir gerenciamento da organização para adicionar um colega",
+        "title": "Convidar colega de equipe"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Analisar solicitações pendentes de funcionários",
+        "title": "Abrir caixa de entrada de aprovações"
+      },
+      "openMyRequests": {
+        "subtitle": "Analisar suas ausências e despesas enviadas",
+        "title": "Abrir minhas solicitações"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Verificar se os dados de horas estão prontos para a folha de pagamento",
+        "title": "Abrir prontidão da folha de pagamento"
+      },
+      "openSettings": {
+        "subtitle": "Gerenciar seu perfil, segurança e configurações da organização",
+        "title": "Abrir configurações"
+      },
+      "requestAbsence": {
+        "subtitle": "Iniciar uma solicitação de férias, licença médica ou folga",
+        "title": "Solicitar ausência"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Criar uma solicitação de reembolso para custos de viagem",
+        "title": "Enviar despesa de viagem"
+      }
+    },
+    "empty": "Nenhum resultado encontrado.",
+    "groups": {
+      "actions": "Ações",
+      "pages": "Páginas",
+      "people": "Pessoas",
+      "settings": "Configurações",
+      "teams": "Equipes"
+    },
+    "search": "Pesquisar",
+    "searchOrRunCommand": "Pesquisar ou executar comando",
+    "teamAbsences": {
+      "description": "Revisar métricas de ausência de funcionários e registrar ausências"
+    }
   }
 }
