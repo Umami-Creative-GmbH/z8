@@ -1,17 +1,59 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { hydrationStats, userSettings, waterIntakeLog } from "@/db/schema";
+import { employee, hydrationStats, userSettings, waterIntakeLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { calculateStreakOnIntake } from "@/lib/wellness/streak-calculator";
+import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import {
+	calculateStreakOnIntake,
+	type WorkdayRequirementByDate,
+} from "@/lib/wellness/streak-calculator";
 
 const waterActionSchema = z.object({
 	action: z.enum(["log", "snooze"]),
 	amount: z.number().int().min(1).max(10).optional().default(1),
 });
+
+async function getRouteWorkdayRequirements(params: {
+	userId: string;
+	organizationId: string | null;
+	lastGoalMetDate: Date | null;
+}): Promise<WorkdayRequirementByDate | undefined> {
+	if (!params.organizationId || !params.lastGoalMetDate) return undefined;
+
+	const activeEmployee = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.userId, params.userId),
+			eq(employee.organizationId, params.organizationId),
+			eq(employee.isActive, true),
+		),
+		columns: { id: true },
+	});
+	if (!activeEmployee) return undefined;
+
+	const start = DateTime.fromJSDate(params.lastGoalMetDate, { zone: "utc" })
+		.startOf("day")
+		.plus({ days: 1 });
+	const end = DateTime.utc().startOf("day");
+	if (!start.isValid || !end.isValid || start >= end) return {};
+
+	const requirements = await getDailyWorkRequirementsForEmployee({
+		organizationId: params.organizationId,
+		employeeId: activeEmployee.id,
+		startDate: start.toJSDate(),
+		endDate: end.minus({ days: 1 }).endOf("day").toJSDate(),
+	});
+
+	return Object.fromEntries(
+		Object.entries(requirements).map(([dateKey, requirement]) => [
+			dateKey,
+			requirement.requiredMinutes,
+		]),
+	);
+}
 
 /**
  * POST /api/wellness/water-action
@@ -94,13 +136,21 @@ export async function POST(request: NextRequest) {
 			});
 
 			// Calculate new streak
+			const lastGoalMetDate = stats?.lastGoalMetDate ? new Date(stats.lastGoalMetDate) : null;
+			const workdayRequirements = await getRouteWorkdayRequirements({
+				userId: session.user.id,
+				organizationId: session.session?.activeOrganizationId ?? null,
+				lastGoalMetDate,
+			});
+
 			const streakResult = calculateStreakOnIntake(
 				{
 					currentStreak: stats?.currentStreak ?? 0,
 					longestStreak: stats?.longestStreak ?? 0,
-					lastGoalMetDate: stats?.lastGoalMetDate ? new Date(stats.lastGoalMetDate) : null,
+					lastGoalMetDate,
 					todayIntake: currentTodayIntake,
 					dailyGoal,
+					workdayRequirements,
 				},
 				amount,
 			);
