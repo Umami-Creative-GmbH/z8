@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
+import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -84,17 +85,19 @@ async function getHelpImproveProduct(): Promise<boolean> {
 function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-			<TranslationProvider locale={locale}>
-				<QueryProvider>
-					<BProgressBar />
-					<TooltipProvider delayDuration={0}>
-						<OfflineBanner />
-						<SWUpdatePrompt />
-						{children}
-						<Toaster position="bottom-right" richColors />
-					</TooltipProvider>
-				</QueryProvider>
-			</TranslationProvider>
+			<FontSizeProvider>
+				<TranslationProvider locale={locale}>
+					<QueryProvider>
+						<BProgressBar />
+						<TooltipProvider delayDuration={0}>
+							<OfflineBanner />
+							<SWUpdatePrompt />
+							{children}
+							<Toaster position="bottom-right" richColors />
+						</TooltipProvider>
+					</QueryProvider>
+				</TranslationProvider>
+			</FontSizeProvider>
 		</ThemeProvider>
 	);
 }

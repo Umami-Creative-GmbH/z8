@@ -18,6 +18,10 @@ vi.mock("@/components/language-switcher", () => ({
 	LanguageSwitcher: () => <button type="button">Language</button>,
 }));
 
+vi.mock("@/components/font-size-toggle", () => ({
+	FontSizeToggle: () => <button type="button">Font size</button>,
+}));
+
 vi.mock("@/components/theme-toggle", () => ({
 	ThemeToggle: () => <button type="button">Theme</button>,
 }));
@@ -41,6 +45,7 @@ describe("OnboardingLayout", () => {
 		expect(main?.className).toContain("onboarding-glass-scope");
 		expect(main?.className).toContain("flex-1");
 		expect(screen.getByRole("button", { name: "Theme" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Font size" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Language" })).toBeTruthy();
 		expect(footer.closest("div")?.className).toContain("drop-shadow-sm");
 	});
