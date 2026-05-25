@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { UnifiedApprovalItem } from "./domain/types";
-import {
-	buildApprovalTriage,
-	groupApprovalFastLanes,
-	sortSprintApprovals,
-} from "./triage";
+import { buildApprovalTriage, groupApprovalFastLanes, sortSprintApprovals } from "./triage";
 
 function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
 	return {
@@ -36,14 +32,17 @@ function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
 	};
 }
 
+function serializedCreatedAtItem(
+	overrides: Partial<UnifiedApprovalItem> & { createdAt: string },
+): UnifiedApprovalItem {
+	return item(overrides as Partial<UnifiedApprovalItem>);
+}
+
 describe("approval triage", () => {
 	it("defaults uncertain approvals to medium risk without a fast lane", () => {
-		const triage = buildApprovalTriage(
-			item({ approvalType: "shift_request", typeName: "Shift" }),
-			{
-				now: new Date("2026-05-21T08:00:00.000Z"),
-			},
-		);
+		const triage = buildApprovalTriage(item({ approvalType: "shift_request", typeName: "Shift" }), {
+			now: new Date("2026-05-21T08:00:00.000Z"),
+		});
 
 		expect(triage.riskLevel).toBe("medium");
 		expect(triage.riskReasons).toEqual(["needs_review"]);
@@ -120,13 +119,21 @@ describe("approval triage", () => {
 		expect(triage.fastLaneGroup).toBe("stale_pending");
 	});
 
-	it("keeps payroll-relevant approvals in the payroll blocker group", () => {
+	it("computes age days from API-serialized createdAt values", () => {
 		const triage = buildApprovalTriage(
-			item({ triage: { isPayrollRelevant: true } }),
-			{
-				now: new Date("2026-05-21T08:00:00.000Z"),
-			},
+			serializedCreatedAtItem({
+				createdAt: "2026-05-20T08:00:00.000Z",
+			}),
+			{ now: new Date("2026-05-23T09:00:00.000Z") },
 		);
+
+		expect(triage.ageDays).toBe(3);
+	});
+
+	it("keeps payroll-relevant approvals in the payroll blocker group", () => {
+		const triage = buildApprovalTriage(item({ triage: { isPayrollRelevant: true } }), {
+			now: new Date("2026-05-21T08:00:00.000Z"),
+		});
 
 		expect(triage.riskLevel).toBe("high");
 		expect(triage.fastLaneGroup).toBe("payroll_blocker");
@@ -161,10 +168,24 @@ describe("approval triage", () => {
 			{ now: new Date("2026-05-25T08:00:00.000Z"), staleAfterDays: 99 },
 		);
 
-		expect(sorted.map((approval) => approval.id)).toEqual([
-			"payroll",
-			"old-low",
-			"new-low",
-		]);
+		expect(sorted.map((approval) => approval.id)).toEqual(["payroll", "old-low", "new-low"]);
+	});
+
+	it("sorts API-serialized createdAt values oldest first without throwing", () => {
+		const sorted = sortSprintApprovals(
+			[
+				serializedCreatedAtItem({
+					id: "new-low",
+					createdAt: "2026-05-24T08:00:00.000Z",
+				}),
+				serializedCreatedAtItem({
+					id: "old-low",
+					createdAt: "2026-05-20T08:00:00.000Z",
+				}),
+			],
+			{ now: new Date("2026-05-25T08:00:00.000Z"), staleAfterDays: 99 },
+		);
+
+		expect(sorted.map((approval) => approval.id)).toEqual(["old-low", "new-low"]);
 	});
 });

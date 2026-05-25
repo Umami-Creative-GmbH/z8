@@ -37,6 +37,7 @@ export function buildApprovalTriage(
 	approval: UnifiedApprovalItem,
 	options: ApprovalTriageOptions = {},
 ): ComputedApprovalTriageMetadata {
+	const hasValidCreatedAt = getCreatedAtDateTime(approval.createdAt).isValid;
 	const ageDays = getAgeDays(approval.createdAt, options.now ?? new Date());
 	const staleAfterDays = options.staleAfterDays ?? DEFAULT_STALE_AFTER_DAYS;
 	const smallTimeCorrectionMinutes =
@@ -65,13 +66,14 @@ export function buildApprovalTriage(
 		riskLevel = approval.triage?.riskLevel ?? "medium";
 		riskReasons = approval.triage?.riskReasons ?? ["needs_review"];
 	} else if (
+		hasValidCreatedAt &&
 		approval.approvalType === "time_entry" &&
 		isSmallTimeCorrection(timeDeltaMinutes, smallTimeCorrectionMinutes)
 	) {
 		riskLevel = "low";
 		riskReasons = ["small_time_delta"];
 		fastLaneGroup = "small_time_correction";
-	} else if (approval.approvalType === "absence_entry") {
+	} else if (hasValidCreatedAt && approval.approvalType === "absence_entry") {
 		riskLevel = "low";
 		riskReasons = ["no_conflicts_detected"];
 		fastLaneGroup = "low_risk_absence";
@@ -111,7 +113,7 @@ export function sortSprintApprovals(
 				return riskDifference;
 			}
 
-			return first.createdAt.getTime() - second.createdAt.getTime();
+			return getSortTimestamp(first.createdAt) - getSortTimestamp(second.createdAt);
 		});
 }
 
@@ -135,10 +137,32 @@ export function groupApprovalFastLanes(
 	return Array.from(groups, ([key, items]) => ({ key, items }));
 }
 
-function getAgeDays(createdAt: Date, now: Date): number {
-	const days = DateTime.fromJSDate(now).diff(DateTime.fromJSDate(createdAt), "days").days;
+function getAgeDays(createdAt: Date | string, now: Date): number {
+	const createdAtDateTime = getCreatedAtDateTime(createdAt);
+
+	if (!createdAtDateTime.isValid) {
+		return 0;
+	}
+
+	const days = DateTime.fromJSDate(now).diff(createdAtDateTime, "days").days;
 
 	return Math.max(0, Math.floor(days));
+}
+
+function getSortTimestamp(createdAt: Date | string): number {
+	const createdAtDateTime = getCreatedAtDateTime(createdAt);
+
+	if (!createdAtDateTime.isValid) {
+		return Number.MAX_SAFE_INTEGER;
+	}
+
+	return createdAtDateTime.toMillis();
+}
+
+function getCreatedAtDateTime(createdAt: Date | string): DateTime {
+	return typeof createdAt === "string"
+		? DateTime.fromISO(createdAt)
+		: DateTime.fromJSDate(createdAt);
 }
 
 function isSmallTimeCorrection(
