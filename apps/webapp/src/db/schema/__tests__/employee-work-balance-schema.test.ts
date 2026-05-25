@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { employee } from "../organization";
-import { employeeWorkBalance } from "../time-tracking";
+import { employeeWorkBalance, employeeWorkBalancePeriod } from "../time-tracking";
 
 const employeeWorkBalanceMigrationUrl = new URL(
 	"../../../../drizzle/0027_employee_work_balance.sql",
@@ -10,6 +10,10 @@ const employeeWorkBalanceMigrationUrl = new URL(
 );
 const employeeWorkBalanceRecoveryMigrationUrl = new URL(
 	"../../../../drizzle/0029_employee_work_balance_recovery.sql",
+	import.meta.url,
+);
+const employeeWorkBalancePeriodMigrationUrl = new URL(
+	"../../../../drizzle/0034_employee_work_balance_period.sql",
 	import.meta.url,
 );
 const migrationJournal = JSON.parse(
@@ -54,6 +58,26 @@ describe("employee work balance schema", () => {
 				);
 			}),
 		).toBe(true);
+	});
+
+	it("defines organization-scoped period balance columns", () => {
+		expect(employeeWorkBalancePeriod.id.name).toBe("id");
+		expect(employeeWorkBalancePeriod.organizationId.name).toBe("organization_id");
+		expect(employeeWorkBalancePeriod.employeeId.name).toBe("employee_id");
+		expect(employeeWorkBalancePeriod.periodType.name).toBe("period_type");
+		expect(employeeWorkBalancePeriod.periodStart.name).toBe("period_start");
+		expect(employeeWorkBalancePeriod.periodEnd.name).toBe("period_end");
+		expect(employeeWorkBalancePeriod.actualMinutes.name).toBe("actual_minutes");
+		expect(employeeWorkBalancePeriod.requiredMinutes.name).toBe("required_minutes");
+		expect(employeeWorkBalancePeriod.balanceMinutes.name).toBe("balance_minutes");
+		expect(employeeWorkBalancePeriod.computedAt.name).toBe("computed_at");
+		expect(employeeWorkBalancePeriod.isClosed.name).toBe("is_closed");
+		expect(employeeWorkBalancePeriod.isDirty.name).toBe("is_dirty");
+		expect(employeeWorkBalancePeriod.dirtyFromDate.name).toBe("dirty_from_date");
+		expect(employeeWorkBalancePeriod.refreshRequestedAt.name).toBe("refresh_requested_at");
+		expect(employeeWorkBalancePeriod.lastError.name).toBe("last_error");
+		expect(employeeWorkBalancePeriod.createdAt.name).toBe("created_at");
+		expect(employeeWorkBalancePeriod.updatedAt.name).toBe("updated_at");
 	});
 
 	it("includes a migration for the all-time balance table", () => {
@@ -104,5 +128,38 @@ describe("employee work balance schema", () => {
 		const migration = readFileSync(employeeWorkBalanceRecoveryMigrationUrl, "utf8");
 		expect(migration).toContain('CREATE TABLE IF NOT EXISTS "employee_work_balance"');
 		expect(migration).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "employeeWorkBalance_org_employee_idx"');
+	});
+
+	it("includes a migration for the period balance table", () => {
+		expect(existsSync(employeeWorkBalancePeriodMigrationUrl)).toBe(true);
+
+		const migration = readFileSync(employeeWorkBalancePeriodMigrationUrl, "utf8");
+		expect(migration).toContain('CREATE TYPE "employee_work_balance_period_type"');
+		expect(migration).toContain('CREATE TABLE "employee_work_balance_period"');
+		expect(migration).toContain(
+			'CREATE UNIQUE INDEX "employeeWorkBalancePeriod_org_employee_type_start_idx"',
+		);
+		expect(migration).toContain(
+			'CREATE INDEX "employeeWorkBalancePeriod_org_type_start_idx"',
+		);
+		expect(migration).toContain(
+			'CREATE INDEX "employeeWorkBalancePeriod_employee_org_idx"',
+		);
+		expect(migration).toContain(
+			'CREATE INDEX "employeeWorkBalancePeriod_dirty_idx"',
+		);
+		expect(migration).toContain(
+			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
+		);
+		expect(migration).toContain('UPDATE "employee_work_balance"');
+		expect(migration).toContain('"dirty_from_date" = "computed_from_date"');
+		expect(migration).toContain('WHERE "computed_from_date" IS NOT NULL');
+		expect(migrationJournal.entries).toContainEqual(
+			expect.objectContaining({
+				idx: 34,
+				when: 1779654701736,
+				tag: "0034_employee_work_balance_period",
+			}),
+		);
 	});
 });

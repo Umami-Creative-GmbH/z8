@@ -16,6 +16,7 @@ const {
 	getRateHistoryMock,
 	listEmployeesForSelectMock,
 	listEmploymentHistoryMock,
+	requestWorkBalanceRecalculationMock,
 	updateEmployeeMock,
 	updateRateMock,
 	getScheduleMock,
@@ -28,6 +29,7 @@ const {
 	getRateHistoryMock: vi.fn(),
 	listEmployeesForSelectMock: vi.fn(),
 	listEmploymentHistoryMock: vi.fn(),
+	requestWorkBalanceRecalculationMock: vi.fn(),
 	updateEmployeeMock: vi.fn(),
 	updateRateMock: vi.fn(),
 	getScheduleMock: vi.fn(),
@@ -40,6 +42,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	getEmployee: getEmployeeMock,
 	listEmployeesForSelect: listEmployeesForSelectMock,
+	requestEmployeeWorkBalanceRecalculation: requestWorkBalanceRecalculationMock,
 	updateEmployee: updateEmployeeMock,
 }));
 
@@ -101,6 +104,7 @@ beforeEach(() => {
 	listEmployeesForSelectMock.mockResolvedValue({ success: true, data: { employees: [] } });
 	getRateHistoryMock.mockResolvedValue({ success: true, data: [] });
 	listEmploymentHistoryMock.mockResolvedValue({ success: true, data: [] });
+	requestWorkBalanceRecalculationMock.mockResolvedValue({ success: true, data: null });
 	updateEmployeeMock.mockResolvedValue({ success: true, data: null });
 	updateRateMock.mockResolvedValue({ success: true, data: null });
 });
@@ -126,6 +130,8 @@ describe("useEmployee contracts", () => {
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("isConfirmingEmploymentHistory");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("cancelEmploymentHistory");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("isCancelingEmploymentHistory");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("requestWorkBalanceRecalculation");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("isRequestingWorkBalanceRecalculation");
 	});
 
 	it("invalidates employment history and employee detail after successful create", async () => {
@@ -175,6 +181,22 @@ describe("useEmployee contracts", () => {
 
 		expect(cancelEmploymentHistoryMock).toHaveBeenCalledWith(employeeId, "history-1");
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
+	});
+
+	it("invalidates employee detail after successful work balance recalculation request", async () => {
+		requestWorkBalanceRecalculationMock.mockResolvedValue({ success: true });
+		const queryClient = createTestQueryClient();
+		const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
+		const { result } = renderUseEmployee(queryClient);
+
+		await act(async () => {
+			await result.current.requestWorkBalanceRecalculation();
+		});
+
+		expect(requestWorkBalanceRecalculationMock).toHaveBeenCalledWith(employeeId);
+		expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+			queryKey: queryKeys.employees.detail(employeeId),
+		});
 	});
 
 	it("does not invalidate employment history when create returns a failed result", async () => {

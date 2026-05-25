@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, isNotNull } from "drizzle-orm";
-import { workPeriod } from "@/db/schema";
+import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "./format";
 
 const mockState = vi.hoisted(() => ({
@@ -23,7 +23,14 @@ const mockState = vi.hoisted(() => ({
 	onConflictDoUpdate: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
+	selectLeftJoin: vi.fn(),
+	selectOrderBy: vi.fn(),
+	selectLimit: vi.fn(),
 	getDailyWorkRequirementsForEmployee: vi.fn(),
+	markEmployeeWorkBalanceFullRebuildRequested: vi.fn(),
+	computeEmployeePeriodBalance: vi.fn(),
+	upsertEmployeeWorkBalancePeriod: vi.fn(),
+	rebuildEmployeeYearBalanceFromMonths: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
@@ -50,13 +57,25 @@ vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
 }));
 
+vi.mock("./period-aggregation", () => ({
+	computeEmployeePeriodBalance: mockState.computeEmployeePeriodBalance,
+	markEmployeeWorkBalanceFullRebuildRequested:
+		mockState.markEmployeeWorkBalanceFullRebuildRequested,
+	rebuildEmployeeYearBalanceFromMonths: mockState.rebuildEmployeeYearBalanceFromMonths,
+	upsertEmployeeWorkBalancePeriod: mockState.upsertEmployeeWorkBalancePeriod,
+}));
+
 import {
 	buildEmptyWorkBalanceValues,
 	buildWorkBalanceValues,
 	computeEmployeeWorkBalance,
 	getEmployeeWorkBalance,
 	getWorkBalanceBatchCutoffDate,
+	listEmployeesForWorkBalanceBatch,
+	markEmployeeWorkBalanceDirty,
 	markOrganizationWorkBalancesDirty,
+	refreshEmployeeWorkBalanceFromPeriods,
+	requestEmployeeWorkBalanceFullRebuild,
 	shouldIncludeWorkBalanceInBatch,
 	upsertEmployeeWorkBalance,
 } from "./service";
@@ -70,11 +89,19 @@ describe("work balance helpers", () => {
 		mockState.selectWhere.mockReset();
 		mockState.selectFrom.mockReset();
 		mockState.db.select.mockReset();
+		mockState.selectLeftJoin.mockReset();
+		mockState.selectOrderBy.mockReset();
+		mockState.selectLimit.mockReset();
 		mockState.insertValues.mockReset();
 		mockState.onConflictDoUpdate.mockReset();
 		mockState.db.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockReturnValue({ onConflictDoUpdate: mockState.onConflictDoUpdate });
 		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({});
+		mockState.computeEmployeePeriodBalance.mockReset();
+		mockState.upsertEmployeeWorkBalancePeriod.mockReset();
+		mockState.rebuildEmployeeYearBalanceFromMonths.mockReset();
+		mockState.upsertEmployeeWorkBalancePeriod.mockResolvedValue(undefined);
+		mockState.rebuildEmployeeYearBalanceFromMonths.mockResolvedValue(undefined);
 		mockState.db.query.employee.findFirst.mockReset();
 		mockState.db.query.employee.findFirst.mockResolvedValue({
 			id: "employee-1",
@@ -237,6 +264,21 @@ describe("work balance helpers", () => {
 		expect(eq).toHaveBeenCalledWith(expect.anything(), "org-1");
 	});
 
+	it("delegates full rebuild requests to period aggregation with the employee scope", async () => {
+		mockState.markEmployeeWorkBalanceFullRebuildRequested.mockResolvedValueOnce(undefined);
+
+		await requestEmployeeWorkBalanceFullRebuild({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+
+		expect(mockState.markEmployeeWorkBalanceFullRebuildRequested).toHaveBeenCalledTimes(1);
+		expect(mockState.markEmployeeWorkBalanceFullRebuildRequested).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+	});
+
 	it("preserves dirty state when a newer refresh request arrives during computation", async () => {
 		const values = buildWorkBalanceValues({
 			employeeId: "employee-1",
@@ -257,6 +299,29 @@ describe("work balance helpers", () => {
 					isDirty: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
 					dirtyFromDate: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
 					refreshRequestedAt: expect.objectContaining({ values: expect.arrayContaining([refreshStartedAt]) }),
+				}),
+			}),
+		);
+	});
+
+	it("preserves a pending full rebuild when a later date-scoped dirty mark arrives", async () => {
+		await markEmployeeWorkBalanceDirty({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: "2026-05-10",
+		});
+
+		expect(mockState.onConflictDoUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				set: expect.objectContaining({
+					dirtyFromDate: expect.objectContaining({
+						sql: expect.arrayContaining([expect.stringContaining("then null")]),
+						values: expect.arrayContaining([
+							employeeWorkBalance.isDirty,
+							employeeWorkBalance.dirtyFromDate,
+							"2026-05-10",
+						]),
+					}),
 				}),
 			}),
 		);
@@ -412,5 +477,265 @@ describe("work balance helpers", () => {
 		);
 		expect(eq).not.toHaveBeenCalledWith(expect.anything(), false);
 		expect(isNotNull).toHaveBeenCalledWith(workPeriod.endTime);
+	});
+
+	it("includes dirty metadata in employees selected for work balance refresh", async () => {
+		const rows = [
+			{
+				id: "employee-1",
+				organizationId: "org-1",
+				isDirty: true,
+				dirtyFromDate: "2026-02-10",
+				refreshRequestedAt: new Date("2026-05-22T11:59:00.000Z"),
+			},
+		];
+		mockState.db.select.mockReturnValueOnce({ from: mockState.selectFrom });
+		mockState.selectFrom.mockReturnValueOnce({ leftJoin: mockState.selectLeftJoin });
+		mockState.selectLeftJoin.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockReturnValueOnce({ orderBy: mockState.selectOrderBy });
+		mockState.selectOrderBy.mockReturnValueOnce({ limit: mockState.selectLimit });
+		mockState.selectLimit.mockResolvedValueOnce(rows);
+
+		await expect(
+			listEmployeesForWorkBalanceBatch(10, new Date("2026-05-22T12:00:00.000Z")),
+		).resolves.toBe(rows);
+
+			expect(mockState.db.select).toHaveBeenCalledWith({
+			id: employee.id,
+			organizationId: employee.organizationId,
+			isDirty: employeeWorkBalance.isDirty,
+			dirtyFromDate: employeeWorkBalance.dirtyFromDate,
+			refreshRequestedAt: employeeWorkBalance.refreshRequestedAt,
+		});
+	});
+
+	it("refreshes old dirty months rebuilds years and upserts read model from closed plus hot totals", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.computeEmployeePeriodBalance
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-02-01",
+				periodEnd: "2026-02-28",
+				actualMinutes: 100,
+				requiredMinutes: 80,
+				balanceMinutes: 20,
+				computedAt: now,
+				isClosed: true,
+			})
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-03-01",
+				periodEnd: "2026-05-22",
+				actualMinutes: 300,
+				requiredMinutes: 240,
+				balanceMinutes: 60,
+				computedAt: now,
+				isClosed: false,
+			});
+		mockState.db.select.mockReturnValueOnce({ from: mockState.selectFrom });
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([
+			{ actualMinutes: 300, requiredMinutes: 240, firstPeriodStart: "2026-02-01" },
+		]);
+
+		await expect(
+			refreshEmployeeWorkBalanceFromPeriods({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: "2026-02-10",
+				now,
+			}),
+		).resolves.toEqual({ updated: true });
+
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(1, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-02-01",
+			periodEnd: "2026-02-28",
+			isClosed: true,
+			now,
+		});
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(2, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-03-01",
+			periodEnd: "2026-05-22",
+			isClosed: false,
+			now,
+		});
+		expect(mockState.upsertEmployeeWorkBalancePeriod).toHaveBeenCalledTimes(1);
+		expect(mockState.upsertEmployeeWorkBalancePeriod).toHaveBeenCalledWith(
+			expect.objectContaining({ periodStart: "2026-02-01" }),
+			{ refreshStartedAt: now },
+		);
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dateInYear: "2026-01-01",
+			now,
+		});
+		expect(mockState.db.select).toHaveBeenCalledWith({
+			actualMinutes: expect.anything(),
+			requiredMinutes: expect.anything(),
+			firstPeriodStart: expect.anything(),
+		});
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 600,
+				requiredMinutes: 480,
+				balanceMinutes: 120,
+				computedFromDate: "2026-02-01",
+				computedThroughDate: "2026-05-22",
+			}),
+		);
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.organizationId, "org-1");
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.employeeId, "employee-1");
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.periodType, "month");
+		expect(eq).toHaveBeenCalledWith(employeeWorkBalancePeriod.isClosed, true);
+	});
+
+	it("uses the first relevant date for force full rebuilds with null dirty date", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({ id: "employee-1" });
+		mockState.computeEmployeePeriodBalance
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-01-01",
+				periodEnd: "2026-01-31",
+				actualMinutes: 100,
+				requiredMinutes: 80,
+				balanceMinutes: 20,
+				computedAt: now,
+				isClosed: true,
+			})
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-02-01",
+				periodEnd: "2026-02-28",
+				actualMinutes: 200,
+				requiredMinutes: 160,
+				balanceMinutes: 40,
+				computedAt: now,
+				isClosed: true,
+			})
+			.mockResolvedValueOnce({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				periodType: "month",
+				periodStart: "2026-03-01",
+				periodEnd: "2026-05-22",
+				actualMinutes: 300,
+				requiredMinutes: 240,
+				balanceMinutes: 60,
+				computedAt: now,
+				isClosed: false,
+			});
+		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
+		mockState.selectFrom
+			.mockReturnValueOnce({ where: mockState.selectWhere })
+			.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere
+			.mockResolvedValueOnce([{ value: new Date("2026-01-15T09:00:00.000Z") }])
+			.mockResolvedValueOnce([
+				{ actualMinutes: 300, requiredMinutes: 240, firstPeriodStart: "2026-01-01" },
+			]);
+
+		await expect(
+			refreshEmployeeWorkBalanceFromPeriods({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: null,
+				forceFullRebuild: true,
+				now,
+			}),
+		).resolves.toEqual({ updated: true });
+
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(1, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-01-01",
+			periodEnd: "2026-01-31",
+			isClosed: true,
+			now,
+		});
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(2, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-02-01",
+			periodEnd: "2026-02-28",
+			isClosed: true,
+			now,
+		});
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenNthCalledWith(3, {
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-03-01",
+			periodEnd: "2026-05-22",
+			isClosed: false,
+			now,
+		});
+		expect(mockState.upsertEmployeeWorkBalancePeriod).toHaveBeenCalledTimes(2);
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dateInYear: "2026-01-01",
+			now,
+		});
+	});
+
+	it("keeps null dirty date stale refreshes scoped to the hot window", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		mockState.computeEmployeePeriodBalance.mockResolvedValueOnce({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-03-01",
+			periodEnd: "2026-05-22",
+			actualMinutes: 300,
+			requiredMinutes: 240,
+			balanceMinutes: 60,
+			computedAt: now,
+			isClosed: false,
+		});
+		mockState.db.select.mockReturnValueOnce({ from: mockState.selectFrom });
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([
+			{ actualMinutes: 0, requiredMinutes: 0, firstPeriodStart: null },
+		]);
+
+		await refreshEmployeeWorkBalanceFromPeriods({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			dirtyFromDate: null,
+			now,
+		});
+
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenCalledTimes(1);
+		expect(mockState.computeEmployeePeriodBalance).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			periodType: "month",
+			periodStart: "2026-03-01",
+			periodEnd: "2026-05-22",
+			isClosed: false,
+			now,
+		});
+		expect(mockState.upsertEmployeeWorkBalancePeriod).not.toHaveBeenCalled();
+		expect(mockState.rebuildEmployeeYearBalanceFromMonths).not.toHaveBeenCalled();
 	});
 });

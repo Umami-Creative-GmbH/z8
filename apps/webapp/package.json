@@ -12,7 +12,7 @@
     "test:coverage": "vitest run --coverage",
     "auth:generate": "NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@latest generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
     "auth:migrate": "pnpm run auth:generate && pnpm drizzle-kit push",
-    "generate-licenses": "pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
+    "generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
     "db:seed": "tsx src/db/seed/do-seed.ts"
   },
   "dependencies": {
@@ -166,6 +166,7 @@
     "@biomejs/biome": "2.4.15",
     "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25.9.1",

@@ -4,6 +4,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	pgEnum,
 	pgTable,
 	text,
 	timestamp,
@@ -20,6 +21,11 @@ import { project } from "./project";
 import { timeRecord } from "./time-record";
 import type { WorkPeriodAutoAdjustmentReason, WorkPeriodPendingChanges } from "./types";
 import { workCategory } from "./work-category";
+
+export const employeeWorkBalancePeriodTypeEnum = pgEnum("employee_work_balance_period_type", [
+	"month",
+	"year",
+]);
 
 // ============================================
 // TIME TRACKING
@@ -243,6 +249,57 @@ export const employeeWorkBalance = pgTable(
 		index("employeeWorkBalance_org_idx").on(table.organizationId),
 		index("employeeWorkBalance_employee_org_idx").on(table.employeeId, table.organizationId),
 		index("employeeWorkBalance_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+	],
+);
+
+export const employeeWorkBalancePeriod = pgTable(
+	"employee_work_balance_period",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		periodType: employeeWorkBalancePeriodTypeEnum("period_type").notNull(),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		actualMinutes: integer("actual_minutes").default(0).notNull(),
+		requiredMinutes: integer("required_minutes").default(0).notNull(),
+		balanceMinutes: integer("balance_minutes").default(0).notNull(),
+		computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
+		isClosed: boolean("is_closed").default(false).notNull(),
+		isDirty: boolean("is_dirty").default(false).notNull(),
+		dirtyFromDate: date("dirty_from_date"),
+		refreshRequestedAt: timestamp("refresh_requested_at", { withTimezone: true }),
+		lastError: text("last_error"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("employeeWorkBalancePeriod_org_employee_type_start_idx").on(
+			table.organizationId,
+			table.employeeId,
+			table.periodType,
+			table.periodStart,
+		),
+		index("employeeWorkBalancePeriod_org_type_start_idx").on(
+			table.organizationId,
+			table.periodType,
+			table.periodStart,
+		),
+		index("employeeWorkBalancePeriod_employee_org_idx").on(
+			table.employeeId,
+			table.organizationId,
+		),
+		index("employeeWorkBalancePeriod_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
 		foreignKey({
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],

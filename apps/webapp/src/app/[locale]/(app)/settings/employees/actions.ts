@@ -19,6 +19,7 @@ import type {
 import {
 	assignManagersAction,
 	createEmployeeAction,
+	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
 	updateOwnProfileAction,
 } from "./employee-mutations.actions";
@@ -74,6 +75,12 @@ export async function assignManagers(
 	data: AssignManagers,
 ): Promise<ServerActionResult<void>> {
 	return assignManagersAction(employeeId, data);
+}
+
+export async function requestEmployeeWorkBalanceRecalculation(
+	employeeId: string,
+): Promise<ServerActionResult<void>> {
+	return requestEmployeeWorkBalanceRecalculationAction(employeeId);
 }
 
 export async function listEmployeesForSelect(
