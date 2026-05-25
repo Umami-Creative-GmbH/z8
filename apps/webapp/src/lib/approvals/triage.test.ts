@@ -80,6 +80,21 @@ describe("approval triage", () => {
 		expect(triage.riskReasons).toContain("small_time_delta");
 	});
 
+	it("does not mark non-time-entry approvals as small time corrections", () => {
+		const triage = buildApprovalTriage(
+			item({
+				approvalType: "shift_request",
+				typeName: "Shift",
+				triage: { timeDeltaMinutes: 12 },
+			}),
+			{ now: new Date("2026-05-21T08:00:00.000Z") },
+		);
+
+		expect(triage.riskLevel).toBe("medium");
+		expect(triage.fastLaneGroup).toBeNull();
+		expect(triage.riskReasons).toEqual(["needs_review"]);
+	});
+
 	it("marks stale pending approvals as high-risk stale fast-lane items", () => {
 		const triage = buildApprovalTriage(item({}), {
 			now: new Date("2026-05-25T08:00:00.000Z"),

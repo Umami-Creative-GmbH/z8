@@ -56,7 +56,10 @@ export function buildApprovalTriage(
 		riskLevel = "high";
 		riskReasons = ["stale_pending"];
 		fastLaneGroup = "stale_pending";
-	} else if (isSmallTimeCorrection(timeDeltaMinutes, smallTimeCorrectionMinutes)) {
+	} else if (
+		approval.approvalType === "time_entry" &&
+		isSmallTimeCorrection(timeDeltaMinutes, smallTimeCorrectionMinutes)
+	) {
 		riskLevel = "low";
 		riskReasons = ["small_time_delta"];
 		fastLaneGroup = "small_time_correction";
