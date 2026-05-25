@@ -41,6 +41,7 @@ type StructuredProfileDetailsInput = {
 	pronouns?: string | null;
 	birthday?: Date | null;
 	image?: string | null;
+	helpImproveProduct?: boolean;
 };
 
 type LegacyProfileUpdateInput = {
@@ -159,6 +160,27 @@ function syncActiveEmployeeProfile(
 	});
 }
 
+function updateProfilePreferences(
+	dbService: InstanceType<typeof DatabaseService>["Type"],
+	userId: string,
+	helpImproveProduct: boolean,
+): Effect.Effect<void, unknown, unknown> {
+	return dbService.query("updateProfilePreferences", async () => {
+		await dbService.db
+			.insert(userSettings)
+			.values({
+				userId,
+				helpImproveProduct,
+			})
+			.onConflictDoUpdate({
+				target: userSettings.userId,
+				set: {
+					helpImproveProduct,
+				},
+			});
+	});
+}
+
 /**
  * Update user profile details using structured names.
  */
@@ -169,6 +191,7 @@ export async function updateProfileDetails(data: {
 	pronouns?: string | null;
 	birthday?: Date | null;
 	image?: string | null;
+	helpImproveProduct?: boolean;
 }): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
@@ -203,12 +226,15 @@ export async function updateProfileDetails(data: {
 		);
 
 		yield* _(
-			syncActiveEmployeeProfile(
-				dbService,
-				session.user.id,
-				session.session.activeOrganizationId ?? undefined,
-				result.data,
-			).pipe(
+			Effect.all([
+				syncActiveEmployeeProfile(
+					dbService,
+					session.user.id,
+					session.session.activeOrganizationId ?? undefined,
+					result.data,
+				),
+				updateProfilePreferences(dbService, session.user.id, result.data.helpImproveProduct),
+			]).pipe(
 				Effect.catchAll(() =>
 					Effect.gen(function* (_) {
 						yield* _(
@@ -300,9 +326,7 @@ export async function updateProfileImage(data: {
 		);
 
 		if (result.data.image !== previousImage) {
-			yield* _(
-				Effect.promise(() => deleteOwnedAvatarObject(previousImage, session.user.id)),
-			);
+			yield* _(Effect.promise(() => deleteOwnedAvatarObject(previousImage, session.user.id)));
 		}
 	}).pipe(Effect.provide(AppLayer));
 

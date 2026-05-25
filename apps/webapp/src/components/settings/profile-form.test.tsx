@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
 	getCurrentEmployeeMock,
@@ -80,6 +80,14 @@ vi.mock("@/components/ui/calendar", () => ({
 
 import { ProfileForm } from "./profile-form";
 
+beforeAll(() => {
+	global.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 function createQueryClient() {
 	return new QueryClient({
 		defaultOptions: {
@@ -96,6 +104,7 @@ function renderProfileForm(user?: {
 	image?: string | null;
 	firstName?: string | null;
 	lastName?: string | null;
+	helpImproveProduct?: boolean;
 }) {
 	const queryClient = createQueryClient();
 
@@ -109,6 +118,7 @@ function renderProfileForm(user?: {
 					image: user?.image ?? "/avatar.png",
 					firstName: user?.firstName ?? "Auth",
 					lastName: user?.lastName ?? "Fallback",
+					helpImproveProduct: user?.helpImproveProduct ?? true,
 				}}
 			/>
 		</QueryClientProvider>,
@@ -177,6 +187,7 @@ describe("ProfileForm", () => {
 				pronouns: "she/her",
 				birthday: new Date("2020-01-02T00:00:00.000Z"),
 				image: "/avatar.png",
+				helpImproveProduct: true,
 			});
 		});
 		expect(updateProfileImageMock).not.toHaveBeenCalled();
@@ -188,6 +199,35 @@ describe("ProfileForm", () => {
 		expect((await screen.findByText("Auth Fallback")).getAttribute("data-avatar-gender")).toBe(
 			"female",
 		);
+	});
+
+	it("loads a disabled product improvement preference", async () => {
+		renderProfileForm({ helpImproveProduct: false });
+
+		const helpImproveProduct = await screen.findByRole("switch", {
+			name: "Help us improve this app",
+		});
+
+		expect(helpImproveProduct.getAttribute("aria-checked")).toBe("false");
+		expect(
+			screen.getByText("Share usage insights so we can make Z8 more reliable and useful."),
+		).toBeTruthy();
+	});
+
+	it("submits the enabled product improvement preference", async () => {
+		renderProfileForm({ helpImproveProduct: false });
+
+		const helpImproveProduct = await screen.findByRole("switch", {
+			name: "Help us improve this app",
+		});
+		fireEvent.click(helpImproveProduct);
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+
+		await waitFor(() => {
+			expect(updateProfileDetailsMock).toHaveBeenCalledWith(
+				expect.objectContaining({ helpImproveProduct: true }),
+			);
+		});
 	});
 
 	it("falls back to auth-level first and last names when no employee record exists", async () => {
@@ -215,6 +255,7 @@ describe("ProfileForm", () => {
 				pronouns: null,
 				birthday: null,
 				image: "/avatar.png",
+				helpImproveProduct: true,
 			});
 		});
 	});

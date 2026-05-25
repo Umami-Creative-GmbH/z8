@@ -35,6 +35,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
 	fieldHasError,
 	TFormControl,
@@ -62,6 +63,7 @@ interface ProfileFormProps {
 		firstName?: string | null;
 		lastName?: string | null;
 		image?: string | null;
+		helpImproveProduct?: boolean | null;
 	};
 }
 
@@ -72,6 +74,7 @@ type ProfileFormValues = {
 	gender: "" | "male" | "female" | "other";
 	pronouns: string;
 	birthday: Date | null;
+	helpImproveProduct: boolean;
 };
 
 export function ProfileForm({ user }: ProfileFormProps) {
@@ -90,6 +93,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		gender: "",
 		pronouns: "",
 		birthday: null,
+		helpImproveProduct: user.helpImproveProduct ?? true,
 	};
 
 	const form = useForm({
@@ -111,6 +115,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 					pronouns: value.pronouns || null,
 					birthday: value.birthday,
 					image: value.image || null,
+					helpImproveProduct: value.helpImproveProduct,
 				});
 
 				if (profileResult.success) {
@@ -220,6 +225,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			form.setFieldValue("gender", (emp?.gender as ProfileFormValues["gender"] | null) || "");
 			form.setFieldValue("pronouns", emp?.pronouns || "");
 			form.setFieldValue("birthday", emp?.birthday ? new Date(emp.birthday) : null);
+			form.setFieldValue("helpImproveProduct", user.helpImproveProduct ?? true);
 			setCurrentEmployeeId(emp?.id ?? null);
 			setIsInitialLoading(false);
 		}
@@ -229,7 +235,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		return () => {
 			isMounted = false;
 		};
-	}, [form, user.firstName, user.image, user.lastName]);
+	}, [form, user.firstName, user.helpImproveProduct, user.image, user.lastName]);
 
 	// Create ref for file input
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -703,6 +709,36 @@ export function ProfileForm({ user }: ProfileFormProps) {
 									</p>
 								</div>
 							</div>
+
+							<form.Field name="helpImproveProduct">
+								{(field) => (
+									<div className="rounded-lg border bg-muted/30 p-4">
+										<div className="flex items-start justify-between gap-4">
+											<div className="space-y-1">
+												<Label htmlFor="profile-help-improve-product">
+													{t("settings.profile.helpImproveProduct", "Help us improve this app")}
+												</Label>
+												<p className="text-sm text-muted-foreground">
+													{t(
+														"settings.profile.helpImproveProductDescription",
+														"Share usage insights so we can make Z8 more reliable and useful.",
+													)}
+												</p>
+											</div>
+											<Switch
+												id="profile-help-improve-product"
+												checked={field.state.value}
+												onCheckedChange={field.handleChange}
+												disabled={isSubmitting}
+												aria-label={t(
+													"settings.profile.helpImproveProduct",
+													"Help us improve this app",
+												)}
+											/>
+										</div>
+									</div>
+								)}
+							</form.Field>
 
 							{/* Submit Button */}
 							<Button type="submit" disabled={isSubmitting}>
