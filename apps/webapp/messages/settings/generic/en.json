@@ -519,13 +519,13 @@
         "male": "Male",
         "other": "Other"
       },
+      "helpImproveProduct": "Help us improve this app",
+      "helpImproveProductDescription": "Share usage insights so we can make Z8 more reliable and useful.",
       "information": "Profile Information",
       "informationDescription": "Update your personal information and profile picture",
       "lastName": "Last Name",
       "lastNamePlaceholder": "Lovelace…",
       "personalInformation": "Personal Information",
-      "pictureHint": "JPG, PNG or WebP. Max 5MB. Recommended 400x400px",
-      "profilePicture": "Profile Picture",
       "pronouns": "Pronouns",
       "pronouns.custom": "Custom pronouns",
       "pronouns.customPlaceholder": "e.g., xe/xem…",
@@ -661,6 +661,7 @@
       "connect": "Connect",
       "connected": "Connected",
       "connectedAs": "Connected as {accountId}",
+      "connectFailed": "Failed to connect account",
       "connecting": "Connecting…",
       "connectProvider": "Connect your {provider} account",
       "description": "Link your social accounts for easier sign-in",
@@ -831,6 +832,10 @@
       "saveError": "Failed to save wellness settings",
       "title": "Wellness Settings"
     },
+    "workBalanceRecalculation": {
+      "requestError": "Failed to queue work balance recalculation",
+      "requestSuccess": "Work balance recalculation queued"
+    },
     "workerQueue": {
       "cards": {
         "active": "Active",
@@ -856,6 +861,12 @@
       "loadError": "Failed to load queue status",
       "noExecutions": "No recent executions found",
       "noScheduledJobs": "No scheduled jobs found",
+      "recentExecutions": {
+        "allJobs": "All jobs",
+        "error": "Failed to load executions",
+        "filterLabel": "Filter by job",
+        "loading": "Loading executions…"
+      },
       "recentExecutionsDescription": "Last 50 job executions tracked in the database.",
       "reliability": {
         "averageDuration": "Average duration",
@@ -915,6 +926,34 @@
         "totalRuns": "Total Runs"
       },
       "title": "Worker Queue"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Category names",
+        "grouped": "Grouped",
+        "hidden": "Hidden"
+      },
+      "absenceVisibility": "Absence visibility",
+      "description": "Configure privacy-safe works council access and review exports",
+      "exportEnabled": "Enable review exports",
+      "exportEnabledDescription": "Allow authorized works council users to generate privacy-filtered review packs.",
+      "formDescription": "Configure privacy-safe works council access and review exports for this organization.",
+      "identity": {
+        "aggregated": "Aggregated",
+        "named": "Named",
+        "pseudonymized": "Pseudonymized"
+      },
+      "identityVisibility": "Identity visibility",
+      "minimumThreshold": "Minimum aggregation threshold",
+      "minimumThresholdDescription": "Groups below this size are suppressed to reduce re-identification risk.",
+      "save": "Save settings",
+      "saved": "Works Council settings saved",
+      "saveError": "Failed to save Works Council settings",
+      "title": "Works Council Mode",
+      "visibleLocationIds": "Visible location IDs",
+      "visibleLocationIdsDescription": "Optional comma-separated location IDs. Leave empty to include all locations.",
+      "visibleTeamIds": "Visible team IDs",
+      "visibleTeamIdsDescription": "Optional comma-separated team IDs. Leave empty to include all teams."
     }
   }
 }

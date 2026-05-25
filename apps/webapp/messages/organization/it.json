@@ -74,8 +74,13 @@
       "toggle-demo-data": "Attiva/disattiva dati demo",
       "toggle-projects": "Attiva/disattiva progetti",
       "toggle-surcharges": "Attiva/disattiva supplementi",
+      "toggle-works-council": "Attiva/disattiva Consiglio di fabbrica",
       "toggle-work-shifts": "Attiva/disattiva turni di lavoro",
       "update-failed": "Impossibile aggiornare la funzionalità",
+      "works-council": "Consiglio di fabbrica",
+      "works-council-description": "Abilita il portale del Consiglio di fabbrica per proprietari autorizzati, amministratori e revisori assegnati.",
+      "works-council-disabled": "Consiglio di fabbrica disabilitato",
+      "works-council-enabled": "Consiglio di fabbrica abilitato",
       "work-shifts": "Turni di lavoro",
       "work-shifts-description": "Abilita i turni di lavoro con pianificazione drag-and-drop, turni aperti e richieste di scambio."
     },

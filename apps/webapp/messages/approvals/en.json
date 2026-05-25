@@ -36,7 +36,6 @@
     "loadError": "Failed to load approvals",
     "noAbsenceApprovals": "No pending absence requests to review.",
     "noRequests": "No pending requests",
-    "noRequestsDescription": "When team members submit requests, they will appear here",
     "noSearchResults": "No approvals match your search.",
     "note": "Note",
     "notes": "Notes",
@@ -81,5 +80,69 @@
     "type": "Type",
     "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
     "unifiedInboxBannerTitle": "Try the new Unified Inbox"
+  },
+  "fastLanes": {
+    "approve": "Approve",
+    "approveGroup": "Approve ${label}",
+    "confirmReject": "Confirm reject",
+    "confirmRejectGroup": "Confirm reject ${label}",
+    "description": "Review similar low-friction requests in batches.",
+    "expandGroup": "Expand ${label}",
+    "groups": {
+      "lowRiskAbsence": {
+        "description": "Absences with no detected conflicts.",
+        "label": "Low-risk absences"
+      },
+      "payrollBlocker": {
+        "description": "Payroll-relevant requests that need priority review.",
+        "label": "Payroll blockers"
+      },
+      "smallTimeCorrection": {
+        "description": "Small time-entry corrections within policy tolerance.",
+        "label": "Small time corrections"
+      },
+      "stalePending": {
+        "description": "Pending requests waiting longer than the review target.",
+        "label": "Stale requests"
+      }
+    },
+    "reject": "Reject",
+    "rejectGroup": "Reject ${label}",
+    "rejectReason": "Bulk reject reason",
+    "risk": {
+      "high": "High risk",
+      "low": "Low risk",
+      "medium": "Medium risk"
+    },
+    "showGroup": "Show ${label}",
+    "title": "Fast lanes"
+  },
+  "sprint": {
+    "approve": "Approve",
+    "approveCurrentApproval": "Approve current approval",
+    "complete": "Sprint complete",
+    "confirmReject": "Confirm reject",
+    "description": "Review pending approvals one at a time with keyboard shortcuts.",
+    "openDetails": "Open details",
+    "progress": "${currentIndex + 1} of ${visibleItems.length}",
+    "reject": "Reject",
+    "rejectCurrentApproval": "Reject current approval",
+    "rejectReason": "Sprint reject reason",
+    "risk": {
+      "high": "High risk",
+      "low": "Low risk",
+      "medium": "Medium risk"
+    },
+    "riskReasons": {
+      "needsReview": "Needs review",
+      "noConflictsDetected": "No conflicts detected",
+      "payrollRelevant": "Payroll relevant",
+      "smallTimeDelta": "Small time delta",
+      "stalePending": "Stale pending"
+    },
+    "skip": "Skip",
+    "skipCurrentApproval": "Skip current approval",
+    "start": "Start approval sprint",
+    "title": "Approval sprint"
   }
 }

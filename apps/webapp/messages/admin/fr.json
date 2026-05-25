@@ -161,6 +161,7 @@
         "organizations": "Organisations",
         "overview": "Vue d'ensemble",
         "settings": "Paramètres",
+        "systemEmailTemplates": "Modèles d'e-mails système",
         "users": "Utilisateurs",
         "workerQueue": "File d'attente des travailleurs"
       },
@@ -252,6 +253,10 @@
           "description": "Suspendre, supprimer ou examiner les organisations",
           "title": "Gestion des organisations"
         },
+        "systemEmailTemplates": {
+          "description": "Modifier le contenu des e-mails de facturation et système de la plateforme",
+          "title": "Modèles d'e-mails système"
+        },
         "title": "Actions rapides",
         "users": {
           "description": "Bannir/débannir des utilisateurs, gérer les sessions, voir l'activité",
@@ -285,6 +290,37 @@
         "siteKey": "Clé du site",
         "title": "Cloudflare Turnstile"
       }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Réinitialiser au modèle système",
+        "save": "Enregistrer",
+        "sendTest": "Envoyer un test"
+      },
+      "defaultFallback": "Valeur par défaut",
+      "defaultFallbackDescription": "Si ce modèle utilise la valeur par défaut du système, Z8 envoie le contenu et l'objet de la plateforme :",
+      "description": "Gérer les e-mails de facturation et système de la plateforme. Ces modèles sont envoyés uniquement avec le transport d'e-mails système et ne sont pas limités à une organisation.",
+      "editBodyBeforeSaving": "Modifier le corps de l'e-mail avant d'enregistrer un premier modèle personnalisé.",
+      "empty": "Aucun modèle d'e-mail système de plateforme n'est disponible.",
+      "eyebrow": "Transport système",
+      "reset": "Modèle d'e-mail système réinitialisé par défaut",
+      "resetDialog": {
+        "confirm": "Réinitialiser le modèle système de la plateforme",
+        "description": "Ceci supprime la substitution globale de la plateforme pour ce modèle d'e-mail système et restaure l'objet et le corps intégrés. Les e-mails de facturation et système en direct utiliseront le contenu par défaut de la plateforme après la réinitialisation.",
+        "title": "Réinitialiser le modèle système de la plateforme ?"
+      },
+      "resetFailed": "Échec de la réinitialisation du modèle d'e-mail système",
+      "saved": "Modèle d'e-mail système enregistré",
+      "saveFailed": "Échec de l'enregistrement du modèle d'e-mail système",
+      "status": {
+        "customized": "Personnalisé",
+        "default": "Par défaut"
+      },
+      "systemTemplates": "Modèles système",
+      "testFailed": "Échec de l'envoi de l'e-mail de test",
+      "testSent": "E-mail de test envoyé à votre compte",
+      "title": "Modèles d'e-mails système",
+      "transportNotice": "Utilisez cette zone pour la facturation globale et le contenu des e-mails système. Les paramètres de transport des e-mails de l'organisation sont ignorés pour ces messages ; les tests et les envois réels utilisent le transport système de la plateforme."
     },
     "users": {
       "badges": {

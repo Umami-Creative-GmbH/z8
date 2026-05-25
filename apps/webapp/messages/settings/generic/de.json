@@ -519,13 +519,13 @@
         "male": "Männlich",
         "other": "Sonstiges"
       },
+      "helpImproveProduct": "Helfen Sie uns, diese App zu verbessern",
+      "helpImproveProductDescription": "Teilen Sie Nutzungsdaten, damit wir Z8 zuverlässiger und nützlicher machen können.",
       "information": "Profilinformationen",
       "informationDescription": "Aktualisieren Sie Ihre persönlichen Daten und Ihr Profilbild",
       "lastName": "Nachname",
       "lastNamePlaceholder": "Lovelace…",
       "personalInformation": "Persönliche Informationen",
-      "pictureHint": "JPG, PNG oder WebP. Max. 5 MB. Empfohlen 400x400px",
-      "profilePicture": "Profilbild",
       "pronouns": "Pronomen",
       "pronouns.custom": "Benutzerdefinierte Pronomen",
       "pronouns.customPlaceholder": "z. B. sie/ihr…",
@@ -661,6 +661,7 @@
       "connect": "Verbinden",
       "connected": "Verbunden",
       "connectedAs": "Verbunden als {accountId}",
+      "connectFailed": "Verbindung zum Konto fehlgeschlagen",
       "connecting": "Wird verbunden…",
       "connectProvider": "Verbinden Sie Ihr {provider}-Konto",
       "description": "Verknüpfen Sie Ihre sozialen Konten für eine einfachere Anmeldung",
@@ -831,6 +832,10 @@
       "saveError": "Speichern der Wellness-Einstellungen fehlgeschlagen",
       "title": "Wellness-Einstellungen"
     },
+    "workBalanceRecalculation": {
+      "requestError": "Neuberechnung des Arbeitszeitkontos konnte nicht in die Warteschlange gestellt werden",
+      "requestSuccess": "Neuberechnung des Arbeitszeitkontos in die Warteschlange gestellt"
+    },
     "workerQueue": {
       "cards": {
         "active": "Aktiv",
@@ -856,6 +861,12 @@
       "loadError": "Laden des Warteschlangenstatus fehlgeschlagen",
       "noExecutions": "Keine kürzlichen Ausführungen gefunden",
       "noScheduledJobs": "Keine geplanten Jobs gefunden",
+      "recentExecutions": {
+        "allJobs": "Alle Jobs",
+        "error": "Ausführungen konnten nicht geladen werden",
+        "filterLabel": "Nach Job filtern",
+        "loading": "Ausführungen werden geladen…"
+      },
       "recentExecutionsDescription": "Die letzten 50 Job-Ausführungen wurden in der Datenbank erfasst.",
       "reliability": {
         "averageDuration": "Durchschnittliche Dauer",
@@ -915,6 +926,34 @@
         "totalRuns": "Ausführungen gesamt"
       },
       "title": "Worker-Warteschlange"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Kategorienamen",
+        "grouped": "Gruppiert",
+        "hidden": "Ausgeblendet"
+      },
+      "absenceVisibility": "Sichtbarkeit von Abwesenheiten",
+      "description": "Configure privacy-safe Betriebsrat access and review exports",
+      "exportEnabled": "Überprüfungsexporte aktivieren",
+      "exportEnabledDescription": "Autorisierten Betriebsratsmitgliedern das Erstellen datenschutzgefilterter Überprüfungspakete erlauben.",
+      "formDescription": "Configure privacy-safe Betriebsrat access and review exports for this organization.",
+      "identity": {
+        "aggregated": "Aggregiert",
+        "named": "Benannt",
+        "pseudonymized": "Pseudonymisiert"
+      },
+      "identityVisibility": "Identitätssichtbarkeit",
+      "minimumThreshold": "Mindestaggregationsschwelle",
+      "minimumThresholdDescription": "Gruppen unter dieser Größe werden unterdrückt, um das Risiko einer Re-Identifizierung zu verringern.",
+      "save": "Einstellungen speichern",
+      "saved": "Betriebsrats-Einstellungen gespeichert",
+      "saveError": "Speichern der Betriebsrats-Einstellungen fehlgeschlagen",
+      "title": "Betriebsratsmodus",
+      "visibleLocationIds": "Sichtbare Standort-IDs",
+      "visibleLocationIdsDescription": "Optionale, durch Kommas getrennte Standort-IDs. Leer lassen, um alle Standorte einzubeziehen.",
+      "visibleTeamIds": "Sichtbare Team-IDs",
+      "visibleTeamIdsDescription": "Optionale, durch Kommas getrennte Team-IDs. Leer lassen, um alle Teams einzubeziehen."
     }
   }
 }

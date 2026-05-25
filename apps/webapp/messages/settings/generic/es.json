@@ -519,13 +519,13 @@
         "male": "Hombre",
         "other": "Otro"
       },
+      "helpImproveProduct": "Ayúdanos a mejorar esta aplicación",
+      "helpImproveProductDescription": "Comparte información de uso para que podamos hacer que Z8 sea más fiable y útil.",
       "information": "Información del perfil",
       "informationDescription": "Actualiza tu información personal y tu foto de perfil",
       "lastName": "Apellidos",
       "lastNamePlaceholder": "Lovelace…",
       "personalInformation": "Información personal",
-      "pictureHint": "JPG, PNG o WebP. Máx. 5MB. Se recomienda 400x400px",
-      "profilePicture": "Foto de perfil",
       "pronouns": "Pronombres",
       "pronouns.custom": "Pronombres personalizados",
       "pronouns.customPlaceholder": "p. ej., xe/xem…",
@@ -661,6 +661,7 @@
       "connect": "Conectar",
       "connected": "Conectado",
       "connectedAs": "Conectado como {accountId}",
+      "connectFailed": "Error al conectar la cuenta",
       "connecting": "Conectando…",
       "connectProvider": "Conecta tu cuenta de {provider}",
       "description": "Vincula tus cuentas sociales para iniciar sesión más fácilmente",
@@ -831,6 +832,10 @@
       "saveError": "Error al guardar la configuración de bienestar",
       "title": "Configuración de bienestar"
     },
+    "workBalanceRecalculation": {
+      "requestError": "Error al poner en cola el recálculo del saldo de trabajo",
+      "requestSuccess": "Recálculo del saldo de trabajo en cola"
+    },
     "workerQueue": {
       "cards": {
         "active": "Activo",
@@ -856,6 +861,12 @@
       "loadError": "Error al cargar el estado de la cola",
       "noExecutions": "No se encontraron ejecuciones recientes",
       "noScheduledJobs": "No se encontraron trabajos programados",
+      "recentExecutions": {
+        "allJobs": "Todos los trabajos",
+        "error": "Error al cargar las ejecuciones",
+        "filterLabel": "Filtrar por trabajo",
+        "loading": "Cargando ejecuciones…"
+      },
       "recentExecutionsDescription": "Últimas 50 ejecuciones de trabajos rastreadas en la base de datos.",
       "reliability": {
         "averageDuration": "Duración promedio",
@@ -915,6 +926,34 @@
         "totalRuns": "Ejecuciones totales"
       },
       "title": "Cola del trabajador"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Nombres de categoría",
+        "grouped": "Agrupado",
+        "hidden": "Oculto"
+      },
+      "absenceVisibility": "Visibilidad de ausencias",
+      "description": "Configure el acceso seguro a la privacidad del comité de empresa (Betriebsrat) y revise las exportaciones",
+      "exportEnabled": "Habilitar exportaciones de revisión",
+      "exportEnabledDescription": "Permitir que los usuarios autorizados del comité de empresa generen paquetes de revisión filtrados por privacidad.",
+      "formDescription": "Configure el acceso seguro a la privacidad del comité de empresa (Betriebsrat) y revise las exportaciones para esta organización.",
+      "identity": {
+        "aggregated": "Agregado",
+        "named": "Nombrado",
+        "pseudonymized": "Seudonimizado"
+      },
+      "identityVisibility": "Visibilidad de identidad",
+      "minimumThreshold": "Umbral mínimo de agregación",
+      "minimumThresholdDescription": "Los grupos por debajo de este tamaño se suprimen para reducir el riesgo de reidentificación.",
+      "save": "Guardar ajustes",
+      "saved": "Ajustes del comité de empresa guardados",
+      "saveError": "Error al guardar los ajustes del comité de empresa",
+      "title": "Modo de comité de empresa",
+      "visibleLocationIds": "IDs de ubicación visibles",
+      "visibleLocationIdsDescription": "IDs de ubicación opcionales separados por comas. Dejar vacío para incluir todas las ubicaciones.",
+      "visibleTeamIds": "IDs de equipo visibles",
+      "visibleTeamIdsDescription": "IDs de equipo opcionales separados por comas. Déjelo vacío para incluir todos los equipos."
     }
   }
 }

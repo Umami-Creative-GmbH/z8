@@ -519,13 +519,13 @@
         "male": "Homme",
         "other": "Autre"
       },
+      "helpImproveProduct": "Aidez-nous à améliorer cette application",
+      "helpImproveProductDescription": "Partagez des statistiques d'utilisation afin que nous puissions rendre Z8 plus fiable et utile.",
       "information": "Informations du profil",
       "informationDescription": "Mettez à jour vos informations personnelles et votre photo de profil",
       "lastName": "Nom",
       "lastNamePlaceholder": "Lovelace…",
       "personalInformation": "Informations personnelles",
-      "pictureHint": "JPG, PNG ou WebP. Max 5 Mo. Recommandé 400x400px",
-      "profilePicture": "Photo de profil",
       "pronouns": "Pronoms",
       "pronouns.custom": "Pronoms personnalisés",
       "pronouns.customPlaceholder": "ex. : iel/lui…",
@@ -661,6 +661,7 @@
       "connect": "Connecter",
       "connected": "Connecté",
       "connectedAs": "Connecté en tant que {accountId}",
+      "connectFailed": "Échec de la connexion au compte",
       "connecting": "Connexion en cours…",
       "connectProvider": "Connectez votre compte {provider}",
       "description": "Associez vos comptes sociaux pour une connexion plus facile",
@@ -831,6 +832,10 @@
       "saveError": "Échec de l'enregistrement des paramètres de bien-être",
       "title": "Paramètres de bien-être"
     },
+    "workBalanceRecalculation": {
+      "requestError": "Échec de la mise en file d'attente du recalcul du solde de travail",
+      "requestSuccess": "Recalcul du solde de travail mis en file d'attente"
+    },
     "workerQueue": {
       "cards": {
         "active": "Actif",
@@ -856,6 +861,12 @@
       "loadError": "Échec du chargement de l'état de la file d'attente",
       "noExecutions": "Aucune exécution récente trouvée",
       "noScheduledJobs": "Aucune tâche programmée trouvée",
+      "recentExecutions": {
+        "allJobs": "Tous les jobs",
+        "error": "Échec du chargement des exécutions",
+        "filterLabel": "Filtrer par job",
+        "loading": "Chargement des exécutions…"
+      },
       "recentExecutionsDescription": "50 dernières exécutions de tâches suivies dans la base de données.",
       "reliability": {
         "averageDuration": "Durée moyenne",
@@ -915,6 +926,34 @@
         "totalRuns": "Total des exécutions"
       },
       "title": "File d'attente du worker"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Noms des catégories",
+        "grouped": "Groupé",
+        "hidden": "Masqué"
+      },
+      "absenceVisibility": "Visibilité des absences",
+      "description": "Configurer l'accès sécurisé du comité d'entreprise et les exports de revue",
+      "exportEnabled": "Activer les exports de revue",
+      "exportEnabledDescription": "Autoriser les utilisateurs autorisés du comité d'entreprise à générer des packs de revue filtrés pour la confidentialité.",
+      "formDescription": "Configurer l'accès sécurisé du comité d'entreprise et les exports de revue pour cette organisation.",
+      "identity": {
+        "aggregated": "Agrégé",
+        "named": "Nommé",
+        "pseudonymized": "Pseudonymisé"
+      },
+      "identityVisibility": "Visibilité de l'identité",
+      "minimumThreshold": "Seuil d'agrégation minimum",
+      "minimumThresholdDescription": "Les groupes en dessous de cette taille sont supprimés pour réduire le risque de ré-identification.",
+      "save": "Enregistrer les paramètres",
+      "saved": "Paramètres du comité d'entreprise enregistrés",
+      "saveError": "Échec de l'enregistrement des paramètres du comité d'entreprise",
+      "title": "Mode Comité d'entreprise",
+      "visibleLocationIds": "IDs de localisation visibles",
+      "visibleLocationIdsDescription": "IDs de localisation optionnels séparés par des virgules. Laisser vide pour inclure toutes les localisations.",
+      "visibleTeamIds": "IDs d'équipe visibles",
+      "visibleTeamIdsDescription": "IDs d'équipe facultatifs séparés par des virgules. Laissez vide pour inclure toutes les équipes."
     }
   }
 }

@@ -1,6 +1,11 @@
 import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
 import type { AppSearchResult, StaticAppSearchInput } from "./types";
 
+type SearchKeywordDefinition = {
+	key: string;
+	defaultValue: string;
+};
+
 const PERSONAL_PAGE_DESTINATIONS = [
 	{
 		id: "dashboard",
@@ -66,7 +71,13 @@ const TEAM_PAGE_DESTINATIONS = [
 		href: "/team/absences",
 		descriptionKey: "appSearch.teamAbsences.description",
 		descriptionDefault: "Review employee absence metrics and record absences",
-		keywords: ["team", "absence", "sick", "vacation", "manager"],
+		keywords: [
+			{ key: "appSearch.teamAbsences.keywords.team", defaultValue: "team" },
+			{ key: "appSearch.teamAbsences.keywords.absence", defaultValue: "absence" },
+			{ key: "appSearch.teamAbsences.keywords.sick", defaultValue: "sick" },
+			{ key: "appSearch.teamAbsences.keywords.vacation", defaultValue: "vacation" },
+			{ key: "appSearch.teamAbsences.keywords.manager", defaultValue: "manager" },
+		] satisfies SearchKeywordDefinition[],
 	},
 	{
 		id: "approvals",
@@ -101,6 +112,13 @@ function dedupeResults(results: AppSearchResult[]): AppSearchResult[] {
 	});
 }
 
+function translateKeywords(
+	keywords: readonly SearchKeywordDefinition[],
+	t: StaticAppSearchInput["t"],
+): string[] {
+	return keywords.map((keyword) => t(keyword.key, keyword.defaultValue));
+}
+
 export function buildStaticAppSearchResults({
 	t,
 	employeeRole,
@@ -133,7 +151,7 @@ export function buildStaticAppSearchResults({
 				return {
 					...result,
 					subtitle: t(destination.descriptionKey, destination.descriptionDefault),
-					keywords: [...destination.keywords],
+					keywords: translateKeywords(destination.keywords, t),
 				};
 			}),
 		);

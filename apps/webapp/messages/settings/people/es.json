@@ -59,6 +59,7 @@
           "actions": "Acciones",
           "contract": "Contrato",
           "employee": "Empleado",
+          "employeeNumber": "Número de empleado",
           "position": "Cargo",
           "role": "Rol",
           "status": "Estado",

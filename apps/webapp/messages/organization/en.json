@@ -74,8 +74,13 @@
       "toggle-demo-data": "Toggle demo data",
       "toggle-projects": "Toggle projects",
       "toggle-surcharges": "Toggle surcharges",
+      "toggle-works-council": "Toggle Works Council",
       "toggle-work-shifts": "Toggle work shifts",
       "update-failed": "Failed to update feature",
+      "works-council": "Works Council",
+      "works-council-description": "Enable the Works Council portal for authorized owners, admins, and assigned reviewers.",
+      "works-council-disabled": "Works Council disabled",
+      "works-council-enabled": "Works Council enabled",
       "work-shifts": "Work Shifts",
       "work-shifts-description": "Enable work shifts with drag-and-drop planning, open shifts, and swap requests."
     },

@@ -36,7 +36,6 @@
     "loadError": "Échec du chargement des approbations",
     "noAbsenceApprovals": "Aucune demande d'absence en attente à examiner.",
     "noRequests": "Aucune demande en attente",
-    "noRequestsDescription": "Lorsque les membres de l'équipe soumettent des demandes, elles apparaîtront ici",
     "noSearchResults": "Aucune approbation ne correspond à votre recherche.",
     "note": "Note",
     "notes": "Notes",
@@ -81,5 +80,69 @@
     "type": "Type",
     "unifiedInboxBannerDescription": "Visualisez tous les types d'approbation au même endroit avec filtrage, actions groupées et suivi des SLA.",
     "unifiedInboxBannerTitle": "Essayez la nouvelle boîte de réception unifiée"
+  },
+  "fastLanes": {
+    "approve": "Approuver",
+    "approveGroup": "Approuver ${label}",
+    "confirmReject": "Confirmer le rejet",
+    "confirmRejectGroup": "Confirmer le rejet de ${label}",
+    "description": "Examiner les demandes similaires à faible friction par lots.",
+    "expandGroup": "Développer ${label}",
+    "groups": {
+      "lowRiskAbsence": {
+        "description": "Absences sans conflit détecté.",
+        "label": "Absences à faible risque"
+      },
+      "payrollBlocker": {
+        "description": "Demandes liées à la paie nécessitant un examen prioritaire.",
+        "label": "Bloquants de paie"
+      },
+      "smallTimeCorrection": {
+        "description": "Petites corrections de saisie de temps dans la limite de la politique.",
+        "label": "Petites corrections de temps"
+      },
+      "stalePending": {
+        "description": "Demandes en attente depuis plus longtemps que l'objectif d'examen.",
+        "label": "Demandes obsolètes"
+      }
+    },
+    "reject": "Rejeter",
+    "rejectGroup": "Rejeter ${label}",
+    "rejectReason": "Motif de rejet en masse",
+    "risk": {
+      "high": "Risque élevé",
+      "low": "Risque faible",
+      "medium": "Risque moyen"
+    },
+    "showGroup": "Afficher ${label}",
+    "title": "Voies rapides"
+  },
+  "sprint": {
+    "approve": "Approuver",
+    "approveCurrentApproval": "Approuver l'approbation actuelle",
+    "complete": "Sprint terminé",
+    "confirmReject": "Confirmer le rejet",
+    "description": "Examiner les approbations en attente une par une avec des raccourcis clavier.",
+    "openDetails": "Ouvrir les détails",
+    "progress": "${currentIndex + 1} sur ${visibleItems.length}",
+    "reject": "Rejeter",
+    "rejectCurrentApproval": "Rejeter l'approbation actuelle",
+    "rejectReason": "Motif de rejet du sprint",
+    "risk": {
+      "high": "Risque élevé",
+      "low": "Risque faible",
+      "medium": "Risque moyen"
+    },
+    "riskReasons": {
+      "needsReview": "Nécessite un examen",
+      "noConflictsDetected": "Aucun conflit détecté",
+      "payrollRelevant": "Lié à la paie",
+      "smallTimeDelta": "Faible écart de temps",
+      "stalePending": "En attente depuis longtemps"
+    },
+    "skip": "Ignorer",
+    "skipCurrentApproval": "Ignorer l'approbation actuelle",
+    "start": "Démarrer le sprint d'approbation",
+    "title": "Sprint d'approbation"
   }
 }

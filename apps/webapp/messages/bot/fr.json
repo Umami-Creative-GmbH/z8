@@ -20,8 +20,9 @@
         "cannotNow": "Impossible de pointer à la sortie pour le moment.",
         "noProfile": "Profil de l'employé introuvable.",
         "notClockedIn": "Vous n'êtes pas actuellement pointé.",
-        "pendingApproval": "Votre pointage de sortie est en attente de l'approbation du manager.",
-        "success": "Pointage à la sortie effectué à {time}. Durée : {hours}h {minutes}m."
+        "policyCheckFailed": "Impossible de vérifier la politique d'approbation du temps. Veuillez réessayer.",
+        "success": "Pointage à la sortie effectué à {time}. Durée : {hours}h {minutes}m.",
+        "unsupportedApproval": "Les changements de temps nécessitant une approbation ne sont pas encore pris en charge pour cette action"
       },
       "compliance": {
         "error": "Échec de la récupération des données de conformité. Veuillez réessayer plus tard.",

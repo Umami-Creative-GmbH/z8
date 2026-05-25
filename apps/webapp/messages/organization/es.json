@@ -74,8 +74,13 @@
       "toggle-demo-data": "Alternar datos de demostración",
       "toggle-projects": "Alternar proyectos",
       "toggle-surcharges": "Alternar recargos",
+      "toggle-works-council": "Alternar Comité de Empresa",
       "toggle-work-shifts": "Alternar turnos de trabajo",
       "update-failed": "Error al actualizar la función",
+      "works-council": "Comité de Empresa",
+      "works-council-description": "Habilita el portal del Comité de Empresa para propietarios autorizados, administradores y revisores asignados.",
+      "works-council-disabled": "Comité de Empresa desactivado",
+      "works-council-enabled": "Comité de Empresa activado",
       "work-shifts": "Turnos de trabajo",
       "work-shifts-description": "Habilite turnos de trabajo con planificación de arrastrar y soltar, turnos abiertos y solicitudes de cambio."
     },

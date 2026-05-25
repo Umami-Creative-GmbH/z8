@@ -3,7 +3,7 @@
 import { IconCheck, IconInbox, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	ActionPanel,
@@ -24,6 +24,7 @@ import type {
 	BulkDecisionResult,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
+import { groupApprovalFastLanes, sortSprintApprovals } from "@/lib/approvals/triage";
 import {
 	type ApprovalInboxFilters,
 	useApprovalInbox,
@@ -31,8 +32,10 @@ import {
 	useBulkReject,
 } from "@/lib/query/use-approval-inbox";
 import { ApprovalDetailPanel } from "./components/approval-detail-panel";
+import { ApprovalFastLanes } from "./components/approval-fast-lanes";
 import { ApprovalInboxTable } from "./components/approval-inbox-table";
 import { ApprovalInboxToolbar } from "./components/approval-inbox-toolbar";
+import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
 
 function getBulkFailureMessage(
 	t: ReturnType<typeof useTranslate>["t"],
@@ -94,6 +97,7 @@ function ApprovalInboxContent() {
 	const [detailApproval, setDetailApproval] = useState<UnifiedApprovalItem | null>(null);
 	const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
 	const [bulkRejectReason, setBulkRejectReason] = useState("");
+	const [sprintOpen, setSprintOpen] = useState(false);
 
 	const {
 		data,
@@ -111,8 +115,11 @@ function ApprovalInboxContent() {
 	const bulkRejectMutation = useBulkReject();
 
 	// Flatten pages into single array
-	const items = data?.pages.flatMap((page) => page.items) ?? [];
+	const items = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data?.pages]);
 	const totalCount = data?.pages[0]?.total ?? 0;
+	const pendingItems = useMemo(() => items.filter((item) => item.status === "pending"), [items]);
+	const fastLaneGroups = useMemo(() => groupApprovalFastLanes(pendingItems), [pendingItems]);
+	const sprintItems = useMemo(() => sortSprintApprovals(pendingItems), [pendingItems]);
 
 	// Selection handlers - use functional setState for stable callbacks
 	const handleSelectAll = useCallback(
@@ -194,6 +201,66 @@ function ApprovalInboxContent() {
 			);
 		}
 	}, [bulkRejectReason, bulkRejectMutation, refetch, selectedIds, t]);
+
+	const handleFastLaneApprove = useCallback(
+		async (approvalIds: string[]) => {
+			if (approvalIds.length === 0) return;
+
+			try {
+				const result = await bulkApproveMutation.mutateAsync(approvalIds);
+				handleBulkDecisionToasts(
+					t,
+					result,
+					"approvals:approvals.bulkApproveSuccess",
+					"approved",
+					"approvals:approvals.bulkApproveFailed",
+				);
+
+				setSelectedIds(new Set());
+				refetch();
+			} catch (error) {
+				toast.error(
+					getErrorMessage(
+						error,
+						t("approvals:approvals.bulkApproveRequestFailed", "Bulk approve failed"),
+					),
+				);
+			}
+		},
+		[bulkApproveMutation, refetch, t],
+	);
+
+	const handleFastLaneReject = useCallback(
+		async (approvalIds: string[], reason: string) => {
+			const trimmedReason = reason.trim();
+			if (approvalIds.length === 0 || !trimmedReason) return;
+
+			try {
+				const result = await bulkRejectMutation.mutateAsync({
+					approvalIds,
+					reason: trimmedReason,
+				});
+				handleBulkDecisionToasts(
+					t,
+					result,
+					"approvals:approvals.bulkRejectSuccess",
+					"rejected",
+					"approvals:approvals.bulkRejectFailed",
+				);
+
+				setSelectedIds(new Set());
+				refetch();
+			} catch (error) {
+				toast.error(
+					getErrorMessage(
+						error,
+						t("approvals:approvals.bulkRejectRequestFailed", "Bulk reject failed"),
+					),
+				);
+			}
+		},
+		[bulkRejectMutation, refetch, t],
+	);
 
 	const handleOpenDetail = useCallback((approval: UnifiedApprovalItem) => {
 		setDetailApproval(approval);
@@ -323,6 +390,14 @@ function ApprovalInboxContent() {
 							</Button>
 						</>
 					)}
+					<Button
+						variant="outline"
+						onClick={() => setSprintOpen(true)}
+						disabled={sprintItems.length === 0}
+					>
+						<IconInbox className="mr-2 size-4" aria-hidden="true" />
+						{t("approvals:sprint.start", "Start approval sprint")}
+					</Button>
 					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
 						{isFetching ? (
 							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -353,15 +428,24 @@ function ApprovalInboxContent() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="pt-4">
-						{/* Toolbar with filters */}
-						<ApprovalInboxToolbar
-							filters={filters}
-							onFiltersChange={setFilters}
-							selectedCount={selectedIds.size}
-							totalCount={items.length}
-							allSelected={items.length > 0 && selectedIds.size === items.length}
-							onSelectAll={handleSelectAll}
+						<ApprovalFastLanes
+							groups={fastLaneGroups}
+							isBusy={isBulkActionPending}
+							onBulkApprove={handleFastLaneApprove}
+							onBulkReject={handleFastLaneReject}
 						/>
+
+						{/* Toolbar with filters */}
+						<div className="mt-4">
+							<ApprovalInboxToolbar
+								filters={filters}
+								onFiltersChange={setFilters}
+								selectedCount={selectedIds.size}
+								totalCount={items.length}
+								allSelected={items.length > 0 && selectedIds.size === items.length}
+								onSelectAll={handleSelectAll}
+							/>
+						</div>
 
 						{/* Table */}
 						<div className="mt-4">
@@ -389,7 +473,6 @@ function ApprovalInboxContent() {
 								</Button>
 							</div>
 						)}
-
 					</CardContent>
 				</Card>
 			</div>
@@ -400,6 +483,15 @@ function ApprovalInboxContent() {
 				open={!!detailApproval}
 				onOpenChange={(open) => !open && handleCloseDetail()}
 				onActioned={handleApprovalActioned}
+			/>
+
+			<ApprovalSprintPanel
+				open={sprintOpen}
+				items={sprintItems}
+				onOpenChange={setSprintOpen}
+				onActioned={handleApprovalActioned}
+				onOpenDetails={handleOpenDetail}
+				shortcutsEnabled={detailApproval === null}
 			/>
 
 			<ActionPanel

@@ -18,6 +18,8 @@ export interface EmployeeSearchRow {
 	lastName: string | null;
 	name: string | null;
 	email: string;
+	image: string | null;
+	gender: "male" | "female" | "other" | null;
 	position: string | null;
 	teamName: string | null;
 }
@@ -73,6 +75,9 @@ export function mapEmployeeSearchRow(row: EmployeeSearchRow): AppSearchResult {
 		title,
 		subtitle: compactParts([row.position, row.teamName, row.email]),
 		href: `/settings/employees/${row.employeeId}`,
+		image: row.image,
+		avatarSeed: row.employeeId,
+		gender: row.gender,
 	};
 }
 
@@ -173,6 +178,8 @@ export async function searchLiveAppResults(
 						lastName: user.lastName,
 						name: user.name,
 						email: user.email,
+						image: user.image,
+						gender: employee.gender,
 						position: employee.position,
 						teamName: team.name,
 					})

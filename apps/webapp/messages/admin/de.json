@@ -161,6 +161,7 @@
         "organizations": "Organisationen",
         "overview": "Übersicht",
         "settings": "Einstellungen",
+        "systemEmailTemplates": "System-E-Mail-Vorlagen",
         "users": "Benutzer",
         "workerQueue": "Worker-Warteschlange"
       },
@@ -252,6 +253,10 @@
           "description": "Organisationen sperren, löschen oder überprüfen",
           "title": "Organisationsverwaltung"
         },
+        "systemEmailTemplates": {
+          "description": "Plattform-eigene Abrechnungs- und System-E-Mail-Texte bearbeiten",
+          "title": "System-E-Mail-Vorlagen"
+        },
         "title": "Schnellaktionen",
         "users": {
           "description": "Benutzer sperren/entsperren, Sitzungen verwalten, Aktivitäten einsehen",
@@ -285,6 +290,37 @@
         "siteKey": "Seitenschlüssel",
         "title": "Cloudflare Turnstile"
       }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Auf Systemvorlage zurücksetzen",
+        "save": "Speichern",
+        "sendTest": "Test senden"
+      },
+      "defaultFallback": "Standard-Fallback",
+      "defaultFallbackDescription": "Wenn diese Vorlage den Systemstandard verwendet, sendet Z8 den Plattform-Text und -Betreff:",
+      "description": "Plattform-eigene Abrechnungs- und System-E-Mails verwalten. Diese Vorlagen werden ausschließlich über den System-E-Mail-Transport versendet und sind nicht organisationsgebunden.",
+      "editBodyBeforeSaving": "Bearbeiten Sie den E-Mail-Text, bevor Sie eine erste benutzerdefinierte Vorlage speichern.",
+      "empty": "Es sind keine Plattform-System-E-Mail-Vorlagen verfügbar.",
+      "eyebrow": "Systemtransport",
+      "reset": "System-E-Mail-Vorlage auf Standard zurückgesetzt",
+      "resetDialog": {
+        "confirm": "Plattform-Systemvorlage zurücksetzen",
+        "description": "Dies löscht die globale Plattform-Überschreibung für diese System-E-Mail-Vorlage und stellt den integrierten Betreff und Text wieder her. Aktive Abrechnungs- und System-E-Mails verwenden nach dem Zurücksetzen den Standard-Plattform-Text.",
+        "title": "Plattform-Systemvorlage zurücksetzen?"
+      },
+      "resetFailed": "Zurücksetzen der System-E-Mail-Vorlage fehlgeschlagen",
+      "saved": "System-E-Mail-Vorlage gespeichert",
+      "saveFailed": "Speichern der System-E-Mail-Vorlage fehlgeschlagen",
+      "status": {
+        "customized": "Angepasst",
+        "default": "Standard"
+      },
+      "systemTemplates": "Systemvorlagen",
+      "testFailed": "Test-E-Mail konnte nicht gesendet werden",
+      "testSent": "Test-E-Mail an Ihr Konto gesendet",
+      "title": "System-E-Mail-Vorlagen",
+      "transportNotice": "Verwenden Sie diesen Bereich für globale Abrechnungs- und System-E-Mail-Texte. Die E-Mail-Transporteinstellungen der Organisation werden für diese Nachrichten ignoriert; Tests und Live-Sendungen nutzen den System-Transport der Plattform."
     },
     "users": {
       "badges": {

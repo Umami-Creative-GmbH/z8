@@ -5,7 +5,8 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSearchResult } from "@/lib/app-search/types";
 
-const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock } = vi.hoisted(() => ({
+const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock, translateMock } = vi.hoisted(
+	() => ({
 	hotkeyRegistrations: [] as Array<{
 		keys: string;
 		callback: () => void;
@@ -13,7 +14,9 @@ const { hotkeyRegistrations, pushMock, searchAppRecordsActionMock } = vi.hoisted
 	}>,
 	pushMock: vi.fn(),
 	searchAppRecordsActionMock: vi.fn(),
-}));
+	translateMock: vi.fn((_key: string, defaultValue?: string) => defaultValue ?? _key),
+}),
+);
 
 vi.mock("@tanstack/react-hotkeys", () => ({
 	formatForDisplay: vi.fn(() => "⌘ K"),
@@ -24,8 +27,14 @@ vi.mock("@tanstack/react-hotkeys", () => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: translateMock,
 	}),
+}));
+
+vi.mock("@/components/user-avatar", () => ({
+	UserAvatar: ({ image, name, seed }: { image?: string | null; name?: string | null; seed: string }) => (
+		<span aria-label={name ?? undefined} data-image={image ?? ""} data-seed={seed} data-testid="employee-avatar" />
+	),
 }));
 
 vi.mock("@/navigation", () => ({
@@ -114,6 +123,8 @@ describe("AppSearch", () => {
 		HTMLElement.prototype.scrollIntoView = vi.fn();
 		hotkeyRegistrations.length = 0;
 		pushMock.mockReset();
+		translateMock.mockReset();
+		translateMock.mockImplementation((_key, defaultValue) => defaultValue ?? _key);
 		searchAppRecordsActionMock.mockReset();
 		searchAppRecordsActionMock.mockResolvedValue({
 			success: true,
@@ -129,11 +140,30 @@ describe("AppSearch", () => {
 	it("opens from the trigger button and navigates to a static result", async () => {
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.click(screen.getByText("Dashboard"));
 
 		expect(pushMock).toHaveBeenCalledWith("/dashboard");
 		expect(screen.queryByPlaceholderText(searchPlaceholder)).toBeNull();
+	});
+
+	it("uses the translated trigger label", () => {
+		translateMock.mockImplementation((key, defaultValue) =>
+			key === "appSearch.search" ? "Suche" : (defaultValue ?? key),
+		);
+
+		renderAppSearch();
+
+		expect(screen.getByRole("button", { name: /^suche$/i })).not.toBeNull();
+	});
+
+	it("renders the sidebar trigger like a compact search input", () => {
+		renderAppSearch();
+
+		const trigger = screen.getByRole("button", { name: /^search$/i });
+
+		expect(trigger.className).toContain("border");
+		expect(trigger.className).toContain("bg-background");
 	});
 
 	it("registers Mod+K with preventDefault", () => {
@@ -169,7 +199,7 @@ describe("AppSearch", () => {
 	it("shows the empty state when the current query filters out all results", () => {
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "zzzz" },
 		});
@@ -191,7 +221,7 @@ describe("AppSearch", () => {
 			],
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "vacation" },
 		});
@@ -217,7 +247,7 @@ describe("AppSearch", () => {
 		});
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "al" },
 		});
@@ -230,6 +260,47 @@ describe("AppSearch", () => {
 		fireEvent.click(screen.getByText("Alex Morgan"));
 
 		expect(pushMock).toHaveBeenCalledWith("/settings/employees/employee-1");
+	});
+
+	it("renders employee live results with the shared avatar component", async () => {
+		searchAppRecordsActionMock.mockResolvedValue({
+			success: true,
+			data: {
+				employees: [
+					{
+						type: "employee",
+						id: "employee-1",
+						title: "Alex Morgan",
+						subtitle: "Operations",
+						href: "/settings/employees/employee-1",
+						image: "https://example.com/alex.png",
+						avatarSeed: "employee-1",
+					},
+				],
+				teams: [],
+			},
+		});
+		renderAppSearch();
+
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
+			target: { value: "al" },
+		});
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(250);
+		});
+
+		const avatar = screen.getByTestId("employee-avatar");
+		expect(avatar.getAttribute("data-image")).toBe("https://example.com/alex.png");
+		expect(avatar.getAttribute("data-seed")).toBe("employee-1");
+	});
+
+	it("renders a leading icon for settings entries", () => {
+		renderAppSearch();
+
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+
+		expect(screen.getByTestId("app-search-icon-employees")).not.toBeNull();
 	});
 
 	it("orders actions before live people, teams, pages, and settings", async () => {
@@ -256,7 +327,7 @@ describe("AppSearch", () => {
 		});
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "op" },
 		});
@@ -274,7 +345,7 @@ describe("AppSearch", () => {
 	it("navigates to a selected action and closes the palette", () => {
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.click(screen.getByText("Add manual time entry"));
 
 		expect(pushMock).toHaveBeenCalledWith("/time-tracking");
@@ -288,7 +359,7 @@ describe("AppSearch", () => {
 		});
 		renderAppSearch();
 
-		fireEvent.click(screen.getByRole("button", { name: /search or run command/i }));
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 		fireEvent.change(screen.getByPlaceholderText(searchPlaceholder), {
 			target: { value: "em" },
 		});

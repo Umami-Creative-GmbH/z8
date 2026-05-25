@@ -20,8 +20,9 @@
         "cannotNow": "Ausstempeln zu diesem Zeitpunkt nicht möglich.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
         "notClockedIn": "Sie sind derzeit nicht eingestempelt.",
-        "pendingApproval": "Ihr Ausstempeln wartet auf die Genehmigung durch den Manager.",
-        "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m."
+        "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht verifiziert werden. Bitte versuchen Sie es erneut.",
+        "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m.",
+        "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
       },
       "compliance": {
         "error": "Compliance-Daten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",

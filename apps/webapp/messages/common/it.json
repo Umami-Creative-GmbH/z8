@@ -221,7 +221,10 @@
     "clock-out": "Timbra uscita"
   },
   "info": {
-    "back-to-login": "Torna al login"
+    "agb": "Termini e condizioni",
+    "back-to-login": "Torna al login",
+    "imprint": "Note legali",
+    "trust-center": "Centro di fiducia"
   },
   "nav": {
     "absences": "Assenze",
@@ -241,7 +244,8 @@
     "teamAbsences": "Assenze del team",
     "team-label": "Team",
     "time-tracking": "Rilevazione Tempo",
-    "travel-expenses": "Spese di viaggio"
+    "travel-expenses": "Spese di viaggio",
+    "worksCouncil": "Consiglio di fabbrica"
   },
   "notifications": {
     "actions": {
@@ -406,6 +410,7 @@
     "alt": "Avatar utente"
   },
   "user": {
+    "font-size": "Dimensione carattere",
     "language": "Lingua",
     "logging-out": "Disconnessione...",
     "log-out": "Disconnetti",
@@ -423,5 +428,60 @@
     "invalid-password": "Password non valida",
     "last-name-required": "Il cognome è obbligatorio",
     "password-required": "La password è obbligatoria"
+  },
+  "appSearch": {
+    "commandDescription": "Cerca pagine, persone, team, impostazioni o azioni",
+    "commandPlaceholder": "Cerca pagine, persone, team, impostazioni o azioni…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Registra le ore per un turno passato o una correzione",
+        "title": "Aggiungi inserimento manuale del tempo"
+      },
+      "createProject": {
+        "subtitle": "Apri le impostazioni del progetto per definire un nuovo progetto",
+        "title": "Crea progetto"
+      },
+      "inviteTeammate": {
+        "subtitle": "Apri la gestione dell'organizzazione per aggiungere un collega",
+        "title": "Invita un membro del team"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Esamina le richieste in sospeso dei dipendenti",
+        "title": "Apri la posta in arrivo delle approvazioni"
+      },
+      "openMyRequests": {
+        "subtitle": "Esamina le tue assenze e spese inviate",
+        "title": "Apri le mie richieste"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Verifica se i dati temporali sono pronti per le buste paga",
+        "title": "Apri preparazione buste paga"
+      },
+      "openSettings": {
+        "subtitle": "Gestisci il tuo profilo, la sicurezza e le impostazioni dell'organizzazione",
+        "title": "Apri impostazioni"
+      },
+      "requestAbsence": {
+        "subtitle": "Avvia una richiesta di ferie, malattia o permesso",
+        "title": "Richiedi assenza"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Crea una richiesta di rimborso per spese di viaggio",
+        "title": "Invia spesa di viaggio"
+      }
+    },
+    "empty": "Nessun risultato trovato.",
+    "groups": {
+      "actions": "Azioni",
+      "pages": "Pagine",
+      "people": "Persone",
+      "settings": "Impostazioni",
+      "teams": "Team"
+    },
+    "search": "Cerca",
+    "searchOrRunCommand": "Cerca o esegui comando",
+    "teamAbsences": {
+      "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
+    }
   }
 }

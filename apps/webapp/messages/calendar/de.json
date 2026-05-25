@@ -202,13 +202,23 @@
     "legend": {
       "absence": "Abwesenheit",
       "holiday": "Feiertag",
-      "hoursMet": "Stunden erreicht",
-      "overtime": "Überstunden",
+      "missingRequiredWork": "Erforderliche Arbeit fehlt",
+      "requirementMetOrOver": "Anforderung erfüllt/überschritten",
       "timeEntry": "Zeiteintrag",
       "title": "Legende",
-      "undertime": "Minusstunden",
+      "underRequirement": "Unter der Anforderung",
       "workPeriod": "Arbeitszeitraum",
       "workPeriodPending": "Ausstehende Genehmigung"
+    },
+    "monthSummary": {
+      "calendarWeek": "KW",
+      "description": "Tägliche, wöchentliche und monatliche Richtlinienstunden",
+      "emptyMonth": "Keine Richtlinienstunden in diesem Monat",
+      "monthTotal": "Monatssumme",
+      "nextMonth": "Nächster Monat",
+      "previousMonth": "Vorheriger Monat",
+      "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
+      "weekSum": "Summe"
     },
     "split": {
       "confirm": "Arbeitszeitraum teilen",
@@ -240,6 +250,15 @@
       "today": "Heute",
       "week": "Woche",
       "year": "Jahr"
+    },
+    "workStatus": {
+      "overRequirement": "über der Anforderung",
+      "requiredHoursMissing": "erforderliche Stunden fehlen",
+      "requirementMet": "Anforderung erfüllt",
+      "underRequirement": "unter der Anforderung"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
     }
   }
 }

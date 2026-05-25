@@ -20,8 +20,9 @@
         "cannotNow": "Cannot clock out at this time.",
         "noProfile": "Employee profile not found.",
         "notClockedIn": "You are not currently clocked in.",
-        "pendingApproval": "Your clock-out is pending manager approval.",
-        "success": "Clocked out at {time}. Duration: {hours}h {minutes}m."
+        "policyCheckFailed": "Could not verify time approval policy. Please try again.",
+        "success": "Clocked out at {time}. Duration: {hours}h {minutes}m.",
+        "unsupportedApproval": "Time changes requiring approval are not supported for this action yet"
       },
       "compliance": {
         "error": "Failed to retrieve compliance data. Please try again later.",

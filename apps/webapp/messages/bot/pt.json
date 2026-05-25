@@ -20,8 +20,9 @@
         "cannotNow": "Não é possível registrar saída neste momento.",
         "noProfile": "Perfil do funcionário não encontrado.",
         "notClockedIn": "Você não está registrado no momento.",
-        "pendingApproval": "Seu registro de saída está pendente de aprovação do gerente.",
-        "success": "Saída registrada às {time}. Duração: {hours}h {minutes}m."
+        "policyCheckFailed": "Não foi possível verificar a política de aprovação de tempo. Por favor, tente novamente.",
+        "success": "Saída registrada às {time}. Duração: {hours}h {minutes}m.",
+        "unsupportedApproval": "Alterações de tempo que exigem aprovação ainda não são suportadas para esta ação"
       },
       "compliance": {
         "error": "Falha ao recuperar dados de conformidade. Tente novamente mais tarde.",

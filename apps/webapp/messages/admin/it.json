@@ -161,6 +161,7 @@
         "organizations": "Organizzazioni",
         "overview": "Panoramica",
         "settings": "Impostazioni",
+        "systemEmailTemplates": "Modelli email di sistema",
         "users": "Utenti",
         "workerQueue": "Coda di lavoro"
       },
@@ -252,6 +253,10 @@
           "description": "Sospendi, elimina o revisiona le organizzazioni",
           "title": "Gestione organizzazioni"
         },
+        "systemEmailTemplates": {
+          "description": "Modifica il testo delle email di sistema e di fatturazione della piattaforma",
+          "title": "Modelli email di sistema"
+        },
         "title": "Azioni rapide",
         "users": {
           "description": "Banna/sbanna utenti, gestisci sessioni, visualizza attività",
@@ -285,6 +290,37 @@
         "siteKey": "Chiave del sito",
         "title": "Cloudflare Turnstile"
       }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Ripristina al modello di sistema",
+        "save": "Salva",
+        "sendTest": "Invia test"
+      },
+      "defaultFallback": "Fallback predefinito",
+      "defaultFallbackDescription": "Se questo modello utilizza l'impostazione predefinita di sistema, Z8 invia il testo e l'oggetto della piattaforma:",
+      "description": "Gestisci le email di sistema e di fatturazione della piattaforma. Questi modelli vengono inviati solo con il trasporto email di sistema e non sono limitati a un'organizzazione.",
+      "editBodyBeforeSaving": "Modifica il corpo dell'email prima di salvare un primo modello personalizzato.",
+      "empty": "Nessun modello email di sistema della piattaforma disponibile.",
+      "eyebrow": "Trasporto di sistema",
+      "reset": "Modello email di sistema ripristinato al valore predefinito",
+      "resetDialog": {
+        "confirm": "Ripristina modello di sistema della piattaforma",
+        "description": "Questo elimina l'override globale della piattaforma per questo modello email di sistema e ripristina l'oggetto e il corpo integrati. Le email di fatturazione e di sistema live utilizzeranno il testo predefinito della piattaforma dopo il ripristino.",
+        "title": "Ripristinare il modello di sistema della piattaforma?"
+      },
+      "resetFailed": "Impossibile ripristinare il modello email di sistema",
+      "saved": "Modello email di sistema salvato",
+      "saveFailed": "Impossibile salvare il modello email di sistema",
+      "status": {
+        "customized": "Personalizzato",
+        "default": "Predefinito"
+      },
+      "systemTemplates": "Modelli di sistema",
+      "testFailed": "Impossibile inviare l'email di test",
+      "testSent": "Email di test inviata al tuo account",
+      "title": "Modelli email di sistema",
+      "transportNotice": "Utilizza quest'area per la fatturazione globale e il testo delle email di sistema. Le impostazioni di trasporto email dell'organizzazione vengono ignorate per questi messaggi; i test e gli invii reali utilizzano il trasporto di sistema della piattaforma."
     },
     "users": {
       "badges": {

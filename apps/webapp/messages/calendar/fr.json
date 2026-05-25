@@ -202,13 +202,23 @@
     "legend": {
       "absence": "Absence",
       "holiday": "Jour férié",
-      "hoursMet": "Heures atteintes",
-      "overtime": "Heures supplémentaires",
+      "missingRequiredWork": "Travail requis manquant",
+      "requirementMetOrOver": "Exigence atteinte/dépassée",
       "timeEntry": "Saisie de temps",
       "title": "Légende",
-      "undertime": "Heures manquantes",
+      "underRequirement": "Sous l'exigence",
       "workPeriod": "Période de travail",
       "workPeriodPending": "En attente d'approbation"
+    },
+    "monthSummary": {
+      "calendarWeek": "Semaine",
+      "description": "Heures de politique journalières, hebdomadaires et mensuelles",
+      "emptyMonth": "Aucune heure de politique ce mois-ci",
+      "monthTotal": "Total du mois",
+      "nextMonth": "Mois suivant",
+      "previousMonth": "Mois précédent",
+      "totalDescription": "Temps enregistré comparé aux heures de politique",
+      "weekSum": "Somme"
     },
     "split": {
       "confirm": "Diviser la période de travail",
@@ -240,6 +250,15 @@
       "today": "Aujourd'hui",
       "week": "Semaine",
       "year": "Année"
+    },
+    "workStatus": {
+      "overRequirement": "au-dessus de l'exigence",
+      "requiredHoursMissing": "heures requises manquantes",
+      "requirementMet": "exigence atteinte",
+      "underRequirement": "en dessous de l'exigence"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
     }
   }
 }

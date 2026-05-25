@@ -74,8 +74,13 @@
       "toggle-demo-data": "Demodaten umschalten",
       "toggle-projects": "Projekte umschalten",
       "toggle-surcharges": "Zuschläge umschalten",
+      "toggle-works-council": "Betriebsrat umschalten",
       "toggle-work-shifts": "Arbeitsschichten umschalten",
       "update-failed": "Aktualisieren der Funktion fehlgeschlagen",
+      "works-council": "Betriebsrat",
+      "works-council-description": "Aktivieren Sie das Betriebsrat-Portal für autorisierte Inhaber, Administratoren und zugewiesene Prüfer.",
+      "works-council-disabled": "Betriebsrat deaktiviert",
+      "works-council-enabled": "Betriebsrat aktiviert",
       "work-shifts": "Arbeitsschichten",
       "work-shifts-description": "Aktivieren Sie Arbeitsschichten mit Drag-and-Drop-Planung, offenen Schichten und Tauschanfragen."
     },

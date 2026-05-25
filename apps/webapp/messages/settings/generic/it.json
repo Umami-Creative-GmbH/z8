@@ -519,13 +519,13 @@
         "male": "Maschio",
         "other": "Altro"
       },
+      "helpImproveProduct": "Aiutaci a migliorare questa app",
+      "helpImproveProductDescription": "Condividi le informazioni sull'utilizzo in modo che possiamo rendere Z8 più affidabile e utile.",
       "information": "Informazioni profilo",
       "informationDescription": "Aggiorna le tue informazioni personali e l'immagine del profilo",
       "lastName": "Cognome",
       "lastNamePlaceholder": "Lovelace…",
       "personalInformation": "Informazioni personali",
-      "pictureHint": "JPG, PNG o WebP. Max 5MB. Consigliato 400x400px",
-      "profilePicture": "Immagine del profilo",
       "pronouns": "Pronomi",
       "pronouns.custom": "Pronomi personalizzati",
       "pronouns.customPlaceholder": "es. xe/xem…",
@@ -661,6 +661,7 @@
       "connect": "Connetti",
       "connected": "Connesso",
       "connectedAs": "Connesso come {accountId}",
+      "connectFailed": "Connessione all'account non riuscita",
       "connecting": "Connessione in corso…",
       "connectProvider": "Connetti il tuo account {provider}",
       "description": "Collega i tuoi account social per un accesso più semplice",
@@ -831,6 +832,10 @@
       "saveError": "Impossibile salvare le impostazioni di benessere",
       "title": "Impostazioni di benessere"
     },
+    "workBalanceRecalculation": {
+      "requestError": "Impossibile accodare il ricalcolo del saldo lavoro",
+      "requestSuccess": "Ricalcolo del saldo lavoro accodato"
+    },
     "workerQueue": {
       "cards": {
         "active": "Attivo",
@@ -856,6 +861,12 @@
       "loadError": "Impossibile caricare lo stato della coda",
       "noExecutions": "Nessuna esecuzione recente trovata",
       "noScheduledJobs": "Nessun lavoro pianificato trovato",
+      "recentExecutions": {
+        "allJobs": "Tutti i lavori",
+        "error": "Caricamento esecuzioni non riuscito",
+        "filterLabel": "Filtra per lavoro",
+        "loading": "Caricamento esecuzioni in corso…"
+      },
       "recentExecutionsDescription": "Ultime 50 esecuzioni di lavori tracciate nel database.",
       "reliability": {
         "averageDuration": "Durata media",
@@ -915,6 +926,34 @@
         "totalRuns": "Esecuzioni totali"
       },
       "title": "Coda worker"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Nomi delle categorie",
+        "grouped": "Raggruppato",
+        "hidden": "Nascosto"
+      },
+      "absenceVisibility": "Visibilità assenze",
+      "description": "Configura l'accesso sicuro alla privacy per il Betriebsrat e rivedi le esportazioni",
+      "exportEnabled": "Abilita esportazioni di revisione",
+      "exportEnabledDescription": "Consenti agli utenti autorizzati del consiglio di fabbrica di generare pacchetti di revisione filtrati per la privacy.",
+      "formDescription": "Configura l'accesso sicuro alla privacy per il Betriebsrat e le esportazioni di revisione per questa organizzazione.",
+      "identity": {
+        "aggregated": "Aggregato",
+        "named": "Nominativo",
+        "pseudonymized": "Pseudonimizzato"
+      },
+      "identityVisibility": "Visibilità identità",
+      "minimumThreshold": "Soglia minima di aggregazione",
+      "minimumThresholdDescription": "I gruppi al di sotto di questa dimensione vengono soppressi per ridurre il rischio di re-identificazione.",
+      "save": "Salva impostazioni",
+      "saved": "Impostazioni del Consiglio di fabbrica salvate",
+      "saveError": "Salvataggio delle impostazioni del Consiglio di fabbrica non riuscito",
+      "title": "Modalità Consiglio di fabbrica",
+      "visibleLocationIds": "ID posizione visibili",
+      "visibleLocationIdsDescription": "ID posizione opzionali separati da virgola. Lascia vuoto per includere tutte le posizioni.",
+      "visibleTeamIds": "ID team visibili",
+      "visibleTeamIdsDescription": "ID dei team separati da virgola (opzionale). Lasciare vuoto per includere tutti i team."
     }
   }
 }

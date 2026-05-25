@@ -37,6 +37,8 @@ describe("buildStaticAppSearchResults", () => {
 			t: (key, defaultValue) =>
 				key === "appSearch.teamAbsences.description"
 					? "Translated team absence search description"
+					: key === "appSearch.teamAbsences.keywords.absence"
+						? "abwesenheit"
 					: t(key, defaultValue),
 			employeeRole: "manager",
 			settingsAccessTier: "manager",
@@ -51,7 +53,7 @@ describe("buildStaticAppSearchResults", () => {
 			id: "page:team-absences",
 			title: "Team Absences",
 			subtitle: "Translated team absence search description",
-			keywords: ["team", "absence", "sick", "vacation", "manager"],
+			keywords: ["team", "abwesenheit", "sick", "vacation", "manager"],
 		});
 		expect(results.some((result) => result.href === "/approvals/inbox")).toBe(true);
 		expect(results.some((result) => result.href === "/settings/employees")).toBe(true);

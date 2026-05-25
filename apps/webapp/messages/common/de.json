@@ -221,7 +221,10 @@
     "clock-out": "Ausstempeln"
   },
   "info": {
-    "back-to-login": "Zurück zur Anmeldung"
+    "agb": "AGB",
+    "back-to-login": "Zurück zur Anmeldung",
+    "imprint": "Impressum",
+    "trust-center": "Trust Center"
   },
   "nav": {
     "absences": "Abwesenheiten",
@@ -241,7 +244,8 @@
     "teamAbsences": "Team-Abwesenheiten",
     "team-label": "Team",
     "time-tracking": "Zeiterfassung",
-    "travel-expenses": "Reisekosten"
+    "travel-expenses": "Reisekosten",
+    "worksCouncil": "Betriebsrat"
   },
   "notifications": {
     "actions": {
@@ -406,6 +410,7 @@
     "alt": "Benutzer-Avatar"
   },
   "user": {
+    "font-size": "Schriftgröße",
     "language": "Sprache",
     "logging-out": "Logge aus...",
     "log-out": "Abmelden",
@@ -423,5 +428,60 @@
     "invalid-password": "Ungültiges Passwort",
     "last-name-required": "Nachname ist erforderlich",
     "password-required": "Passwort ist erforderlich"
+  },
+  "appSearch": {
+    "commandDescription": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen",
+    "commandPlaceholder": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Stunden für eine vergangene Schicht oder Korrektur erfassen",
+        "title": "Manuelle Zeiterfassung hinzufügen"
+      },
+      "createProject": {
+        "subtitle": "Projekteinstellungen öffnen, um ein neues Projekt zu definieren",
+        "title": "Projekt erstellen"
+      },
+      "inviteTeammate": {
+        "subtitle": "Organisationsverwaltung öffnen, um einen Kollegen hinzuzufügen",
+        "title": "Teammitglied einladen"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Ausstehende Mitarbeiteranfragen prüfen",
+        "title": "Genehmigungsposteingang öffnen"
+      },
+      "openMyRequests": {
+        "subtitle": "Eingereichte Abwesenheiten und Ausgaben überprüfen",
+        "title": "Meine Anfragen öffnen"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
+        "title": "Lohnabrechnungsstatus öffnen"
+      },
+      "openSettings": {
+        "subtitle": "Profil-, Sicherheits- und Organisationseinstellungen verwalten",
+        "title": "Einstellungen öffnen"
+      },
+      "requestAbsence": {
+        "subtitle": "Urlaubs-, Krankheits- oder Freistellungsantrag starten",
+        "title": "Abwesenheit beantragen"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Erstattungsantrag für Reisekosten erstellen",
+        "title": "Reisekosten einreichen"
+      }
+    },
+    "empty": "Keine Ergebnisse gefunden.",
+    "groups": {
+      "actions": "Aktionen",
+      "pages": "Seiten",
+      "people": "Personen",
+      "settings": "Einstellungen",
+      "teams": "Teams"
+    },
+    "search": "Suchen",
+    "searchOrRunCommand": "Suchen oder Befehl ausführen",
+    "teamAbsences": {
+      "description": "Mitarbeiterabwesenheitskennzahlen überprüfen und Abwesenheiten erfassen"
+    }
   }
 }

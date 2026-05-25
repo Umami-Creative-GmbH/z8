@@ -202,13 +202,23 @@
     "legend": {
       "absence": "Absence",
       "holiday": "Holiday",
-      "hoursMet": "Hours Met",
-      "overtime": "Overtime",
+      "missingRequiredWork": "Missing required work",
+      "requirementMetOrOver": "Requirement met/over",
       "timeEntry": "Time Entry",
       "title": "Legend",
-      "undertime": "Undertime",
+      "underRequirement": "Under requirement",
       "workPeriod": "Work Period",
       "workPeriodPending": "Pending Approval"
+    },
+    "monthSummary": {
+      "calendarWeek": "CW",
+      "description": "Daily, weekly, and monthly policy hours",
+      "emptyMonth": "No policy hours in this month",
+      "monthTotal": "Month total",
+      "nextMonth": "Next month",
+      "previousMonth": "Previous month",
+      "totalDescription": "Recorded time compared with policy hours",
+      "weekSum": "Sum"
     },
     "split": {
       "confirm": "Split Work Period",
@@ -240,6 +250,15 @@
       "today": "Today",
       "week": "Week",
       "year": "Year"
+    },
+    "workStatus": {
+      "overRequirement": "over requirement",
+      "requiredHoursMissing": "required hours missing",
+      "requirementMet": "requirement met",
+      "underRequirement": "under requirement"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
     }
   }
 }

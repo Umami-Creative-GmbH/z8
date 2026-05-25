@@ -10,6 +10,9 @@ export interface AppSearchResult {
 	subtitle?: string;
 	keywords?: string[];
 	href: string;
+	image?: string | null;
+	avatarSeed?: string;
+	gender?: "male" | "female" | "other" | null;
 }
 
 export type AppSearchTranslate = (key: string, defaultValue: string) => string;

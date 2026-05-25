@@ -20,8 +20,9 @@
         "cannotNow": "Impossibile timbrare l'uscita in questo momento.",
         "noProfile": "Profilo dipendente non trovato.",
         "notClockedIn": "Al momento non sei in servizio.",
-        "pendingApproval": "La tua timbratura in uscita è in attesa di approvazione da parte del manager.",
-        "success": "Uscita registrata alle {time}. Durata: {hours}h {minutes}m."
+        "policyCheckFailed": "Impossibile verificare la politica di approvazione dell'orario. Riprova.",
+        "success": "Uscita registrata alle {time}. Durata: {hours}h {minutes}m.",
+        "unsupportedApproval": "Le modifiche all'orario che richiedono approvazione non sono ancora supportate per questa azione"
       },
       "compliance": {
         "error": "Impossibile recuperare i dati di conformità. Riprova più tardi.",
