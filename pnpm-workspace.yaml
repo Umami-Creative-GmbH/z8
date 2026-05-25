@@ -5,7 +5,7 @@ packages:
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
-  core-js-pure: false
+  core-js: set this to true or false
   esbuild: true
   msgpackr-extract: true
   msw: true

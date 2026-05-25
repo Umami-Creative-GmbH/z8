@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
-import { setRequestLocale } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
+import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
@@ -10,6 +10,7 @@ import { DOMAIN_HEADERS } from "@/proxy";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
 
@@ -24,14 +25,24 @@ export async function generateStaticParams() {
 }
 
 // Separate component for loading translations to wrap in Suspense
-async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
+async function TranslationProvider({
+	locale,
+	children,
+}: {
+	locale: string;
+	children: ReactNode;
+}) {
 	// Get the current pathname to determine which namespaces to load
 	const headersList = await headers();
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
 	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
-	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
+	const pathnameWithoutLocale =
+		pathname.replace(new RegExp(`^/${locale}`), "") || "/";
 
-	const records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
+	const records = await loadRouteTranslations(
+		locale,
+		pathnameWithoutLocale,
+	).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
 		return {};
 	});
@@ -74,9 +85,23 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="#000000" name="theme-color" />
 				<meta content="light dark" name="color-scheme" />
 				<link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
-				<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
-				<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
-				<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+				<link
+					href="/apple-touch-icon.png"
+					rel="apple-touch-icon"
+					sizes="180x180"
+				/>
+				<link
+					href="/favicon-32x32.png"
+					rel="icon"
+					sizes="32x32"
+					type="image/png"
+				/>
+				<link
+					href="/favicon-16x16.png"
+					rel="icon"
+					sizes="16x16"
+					type="image/png"
+				/>
 				<link href="/site.webmanifest" rel="manifest" />
 				<link color="#000000" href="/safari-pinned-tab.svg" rel="mask-icon" />
 				<meta content="#000000" name="msapplication-TileColor" />
@@ -88,39 +113,41 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<TranslatedMeta />
 			</head>
 			<body>
-				<Suspense
-					fallback={
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-								minHeight: "100vh",
-							}}
-						>
-							<div>Loading…</div>
-						</div>
-					}
-				>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="system"
-						enableSystem
-						disableTransitionOnChange
+				<PostHogProvider>
+					<Suspense
+						fallback={
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+									minHeight: "100vh",
+								}}
+							>
+								<div>Loading…</div>
+							</div>
+						}
 					>
-						<TranslationProvider locale={locale}>
-							<QueryProvider>
-								<BProgressBar />
-								<TooltipProvider delayDuration={0}>
-									<OfflineBanner />
-									<SWUpdatePrompt />
-									{children}
-									<Toaster position="bottom-right" richColors />
-								</TooltipProvider>
-							</QueryProvider>
-						</TranslationProvider>
-					</ThemeProvider>
-				</Suspense>
+						<ThemeProvider
+							attribute="class"
+							defaultTheme="system"
+							enableSystem
+							disableTransitionOnChange
+						>
+							<TranslationProvider locale={locale}>
+								<QueryProvider>
+									<BProgressBar />
+									<TooltipProvider delayDuration={0}>
+										<OfflineBanner />
+										<SWUpdatePrompt />
+										{children}
+										<Toaster position="bottom-right" richColors />
+									</TooltipProvider>
+								</QueryProvider>
+							</TranslationProvider>
+						</ThemeProvider>
+					</Suspense>
+				</PostHogProvider>
 			</body>
 		</html>
 	);
