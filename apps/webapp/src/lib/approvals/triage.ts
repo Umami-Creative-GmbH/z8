@@ -42,6 +42,11 @@ export function buildApprovalTriage(
 	const smallTimeCorrectionMinutes =
 		options.smallTimeCorrectionMinutes ?? DEFAULT_SMALL_TIME_CORRECTION_MINUTES;
 	const isPayrollRelevant = approval.triage?.isPayrollRelevant === true;
+	const hasWarningMetadata =
+		approval.triage?.riskLevel === "high" ||
+		approval.triage?.riskReasons?.some(
+			(reason) => reason !== "no_conflicts_detected" && reason !== "small_time_delta",
+		) === true;
 	const timeDeltaMinutes = approval.triage?.timeDeltaMinutes;
 
 	let riskLevel: ApprovalRiskLevel = "medium";
@@ -56,6 +61,9 @@ export function buildApprovalTriage(
 		riskLevel = "high";
 		riskReasons = ["stale_pending"];
 		fastLaneGroup = "stale_pending";
+	} else if (hasWarningMetadata) {
+		riskLevel = approval.triage?.riskLevel ?? "medium";
+		riskReasons = approval.triage?.riskReasons ?? ["needs_review"];
 	} else if (
 		approval.approvalType === "time_entry" &&
 		isSmallTimeCorrection(timeDeltaMinutes, smallTimeCorrectionMinutes)

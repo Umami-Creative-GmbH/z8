@@ -61,6 +61,20 @@ describe("approval triage", () => {
 		expect(triage.fastLaneGroup).toBe("low_risk_absence");
 	});
 
+	it("does not mark high-risk absence policy exceptions as low-risk fast-lane items", () => {
+		const triage = buildApprovalTriage(
+			item({
+				approvalType: "absence_entry",
+				triage: { riskReasons: ["policy_exception"], riskLevel: "high" },
+			}),
+			{ now: new Date("2026-05-21T08:00:00.000Z") },
+		);
+
+		expect(triage.riskLevel).toBe("high");
+		expect(triage.riskReasons).toEqual(["policy_exception"]);
+		expect(triage.fastLaneGroup).toBeNull();
+	});
+
 	it("marks small time corrections as a fast lane when metadata includes a minute delta", () => {
 		const triage = buildApprovalTriage(
 			item({
