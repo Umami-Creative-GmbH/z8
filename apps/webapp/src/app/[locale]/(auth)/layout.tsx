@@ -122,7 +122,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 						<div className="w-full max-w-3xl">{children}</div>
 					</main>
 
-					<div className="pt-2 drop-shadow-sm">
+					<div className="pt-2 pb-2 drop-shadow-sm">
 						<InfoFooter />
 					</div>
 				</section>

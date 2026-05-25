@@ -24,7 +24,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
 					<div className="w-full max-w-5xl">{children}</div>
 				</main>
 
-				<div className="pt-2 drop-shadow-sm">
+				<div className="pt-2 pb-2 drop-shadow-sm">
 					<InfoFooter />
 				</div>
 			</section>
