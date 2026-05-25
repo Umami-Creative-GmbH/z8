@@ -1,10 +1,8 @@
 import { createLogger } from "@/lib/logger";
 import {
-	buildEmptyWorkBalanceValues,
-	computeEmployeeWorkBalance,
 	listEmployeesForWorkBalanceBatch,
 	markEmployeeWorkBalanceFailed,
-	upsertEmployeeWorkBalance,
+	refreshEmployeeWorkBalanceFromPeriods,
 } from "@/lib/work-balance/service";
 
 const logger = createLogger("WorkBalanceJob");
@@ -34,25 +32,22 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 		result.employeesProcessed += 1;
 		try {
 			const refreshStartedAt = new Date();
-			const values = await computeEmployeeWorkBalance({
+			const forceFullRebuild =
+				employee.isDirty === true &&
+				employee.dirtyFromDate === null &&
+				employee.refreshRequestedAt !== null;
+			const refreshResult = await refreshEmployeeWorkBalanceFromPeriods({
 				employeeId: employee.id,
 				organizationId: employee.organizationId,
+				dirtyFromDate: employee.dirtyFromDate,
+				forceFullRebuild,
 				now: refreshStartedAt,
 			});
-			if (!values) {
-				await upsertEmployeeWorkBalance(
-					buildEmptyWorkBalanceValues({
-						employeeId: employee.id,
-						organizationId: employee.organizationId,
-						computedAt: refreshStartedAt,
-					}),
-					{ refreshStartedAt },
-				);
+			if (!refreshResult.updated) {
 				result.skipped += 1;
 				continue;
 			}
 
-			await upsertEmployeeWorkBalance(values, { refreshStartedAt });
 			result.balancesUpdated += 1;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);

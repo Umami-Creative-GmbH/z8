@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOrganizationFeature } from "./actions";
+import { isOrganizationFeature } from "./organization-features";
 
 describe("organization feature allowlist", () => {
 	it("allows only supported organization feature flags", () => {

@@ -2,6 +2,8 @@ import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "@/db/auth-schema";
+import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
+import { toServerActionResult } from "@/lib/effect/result";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 
 const mocks = vi.hoisted(() => ({
@@ -16,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 	runTracedEmployeeAction: vi.fn(),
 	validateInput: vi.fn(),
 	markEmployeeWorkBalanceDirty: vi.fn(),
+	requestEmployeeWorkBalanceFullRebuild: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -42,6 +45,7 @@ vi.mock("./employee-action-utils", () => ({
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
+	requestEmployeeWorkBalanceFullRebuild: mocks.requestEmployeeWorkBalanceFullRebuild,
 }));
 
 import {
@@ -52,11 +56,14 @@ import {
 import {
 	assignManagersAction,
 	createEmployeeAction,
+	requestEmployeeWorkBalanceRecalculationAction,
 	updateEmployeeAction,
 } from "./employee-mutations.actions";
 
 const validUserId = "11111111-1111-4111-8111-111111111111";
 const validTeamId = "22222222-2222-4222-8222-222222222222";
+const validEmployeeId = "33333333-3333-4333-8333-333333333333";
+const validAdminEmployeeId = "44444444-4444-4444-8444-444444444444";
 
 describe("employee mutation schemas", () => {
 	it("strips employee-owned names from create employee input", () => {
@@ -482,5 +489,171 @@ describe("assignManagersAction", () => {
 		});
 
 		expect(assignManager).toHaveBeenCalledWith("employee-1", "manager-1", true, "user-admin-1");
+	});
+});
+
+describe("requestEmployeeWorkBalanceRecalculationAction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.validateInput.mockImplementation((schema, data, fallbackField = "data") => {
+			const result = schema.safeParse(data);
+			if (result.success) {
+				return Effect.succeed(result.data);
+			}
+
+			const issue = result.error.issues[0];
+			return Effect.fail(
+				new ValidationError({
+					message: issue?.message ?? "Invalid input",
+					field: issue?.path?.join(".") || fallbackField,
+				}),
+			);
+		});
+	});
+
+	it("requires org admin access and requests a full work balance rebuild", async () => {
+		const setAttribute = vi.fn();
+		const findFirst = vi.fn().mockResolvedValue({ id: validEmployeeId, organizationId: "org-1" });
+		const dbService = {
+			db: { query: { employee: { findFirst } } },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			expect(options.attributes).toBeUndefined();
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute }));
+			return toServerActionResult(exit);
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
+
+		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.requireOrgAdminEmployeeSettingsAccess).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-1", accessTier: "orgAdmin" }),
+			{
+				message: "Only organization admins can recalculate employee work balances",
+				resource: "employee_work_balance",
+				action: "recalculate_work_balance",
+			},
+		);
+		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(dbService.query).toHaveBeenCalledWith(
+			"getEmployeeForWorkBalanceRecalculation",
+			expect.any(Function),
+		);
+		expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.anything() }));
+		expect(setAttribute).toHaveBeenCalledWith("employee.id", validEmployeeId);
+		expect(setAttribute).toHaveBeenCalledWith("employee.organizationId", "org-1");
+		expect(setAttribute).toHaveBeenCalledWith("requestedBy.userId", "user-admin-1");
+		expect(mocks.requestEmployeeWorkBalanceFullRebuild).toHaveBeenCalledWith({
+			employeeId: validEmployeeId,
+			organizationId: "org-1",
+		});
+	});
+
+	it("does not request recalculation when the employee is not in the active organization", async () => {
+		const findFirst = vi.fn().mockResolvedValue(null);
+		const dbService = {
+			db: { query: { employee: { findFirst } } },
+			query: vi.fn((_name: string, run: () => Promise<unknown>) => Effect.promise(run)),
+		};
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			return toServerActionResult(exit);
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1" } },
+				currentEmployee: { id: validAdminEmployeeId, role: "admin" },
+				dbService,
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(Effect.void);
+
+		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Employee not found",
+			code: "NotFoundError",
+		});
+		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.anything() }));
+		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid employee IDs before target lookup or rebuild", async () => {
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			expect(options.attributes).toBeUndefined();
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			return toServerActionResult(exit);
+		});
+
+		const result = await requestEmployeeWorkBalanceRecalculationAction("not-a-uuid");
+
+		expect(result).toEqual({
+			success: false,
+			error: "Invalid employee ID",
+			code: "ValidationError",
+		});
+		expect(mocks.getEmployeeSettingsActorContext).not.toHaveBeenCalled();
+		expect(mocks.requireOrgAdminEmployeeSettingsAccess).not.toHaveBeenCalled();
+		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
+	});
+
+	it("does not lookup or rebuild when org admin access is denied", async () => {
+		mocks.runTracedEmployeeAction.mockImplementation(async (options) => {
+			const exit = await Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() }));
+			return toServerActionResult(exit);
+		});
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "manager",
+				organizationId: "org-1",
+				session: { user: { id: "user-manager-1" } },
+				currentEmployee: { id: "55555555-5555-4555-8555-555555555555", role: "manager" },
+			}),
+		);
+		mocks.requireOrgAdminEmployeeSettingsAccess.mockReturnValue(
+			Effect.fail(
+				new AuthorizationError({
+					message: "Only organization admins can recalculate employee work balances",
+					userId: "user-manager-1",
+					resource: "employee_work_balance",
+					action: "recalculate_work_balance",
+				}),
+			),
+		);
+
+		const result = await requestEmployeeWorkBalanceRecalculationAction(validEmployeeId);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Only organization admins can recalculate employee work balances",
+			code: "AuthorizationError",
+		});
+		expect(mocks.requireOrgAdminEmployeeSettingsAccess).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-1", accessTier: "manager" }),
+			{
+				message: "Only organization admins can recalculate employee work balances",
+				resource: "employee_work_balance",
+				action: "recalculate_work_balance",
+			},
+		);
+		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(mocks.requestEmployeeWorkBalanceFullRebuild).not.toHaveBeenCalled();
 	});
 });

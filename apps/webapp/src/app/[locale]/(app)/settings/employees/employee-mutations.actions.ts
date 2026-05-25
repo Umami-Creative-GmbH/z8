@@ -3,11 +3,12 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { z } from "zod";
 import { user } from "@/db/auth-schema";
 import { employee, employeeRateHistory } from "@/db/schema";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { ValidationError } from "@/lib/effect/errors";
+import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -22,7 +23,10 @@ import {
 	type UpdateEmployee,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import {
+	markEmployeeWorkBalanceDirty,
+	requestEmployeeWorkBalanceFullRebuild,
+} from "@/lib/work-balance/service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext,
@@ -39,6 +43,7 @@ import {
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
 
 const logger = createLogger("EmployeeActions");
+const employeeIdSchema = z.string().uuid("Invalid employee ID");
 
 export async function createEmployeeAction(
 	data: CreateEmployee,
@@ -370,6 +375,80 @@ export async function updateEmployeeAction(
 
 				logger.info({ employeeId }, "Employee updated successfully");
 				revalidateEmployeesCache(actor.organizationId);
+			}),
+	});
+}
+
+export async function requestEmployeeWorkBalanceRecalculationAction(
+	employeeId: string,
+): Promise<ServerActionResult<void>> {
+	return runTracedEmployeeAction({
+		name: "requestEmployeeWorkBalanceRecalculation",
+		logError: (error) => {
+			logger.error({ error }, "Failed to request employee work balance recalculation");
+		},
+		execute: (span) =>
+			Effect.gen(function* (_) {
+				const validatedEmployeeId = yield* _(validateInput(employeeIdSchema, employeeId, "employeeId"));
+				const actor = yield* _(getEmployeeSettingsActorContext());
+				const { dbService } = actor;
+
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actor, {
+						message: "Only organization admins can recalculate employee work balances",
+						resource: "employee_work_balance",
+						action: "recalculate_work_balance",
+					}),
+				);
+
+				const targetEmployee = yield* _(
+					dbService.query("getEmployeeForWorkBalanceRecalculation", async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(
+								eq(employee.id, validatedEmployeeId),
+								eq(employee.organizationId, actor.organizationId),
+							),
+							columns: {
+								id: true,
+								organizationId: true,
+							},
+						});
+					}),
+				);
+
+				if (!targetEmployee) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+								entityId: validatedEmployeeId,
+							}),
+						),
+					);
+				}
+
+				span.setAttribute("employee.id", targetEmployee.id);
+				span.setAttribute("employee.organizationId", targetEmployee.organizationId);
+				span.setAttribute("requestedBy.userId", actor.session.user.id);
+
+				yield* _(
+					Effect.promise(() =>
+						requestEmployeeWorkBalanceFullRebuild({
+							employeeId: targetEmployee.id,
+							organizationId: targetEmployee.organizationId,
+						}),
+					),
+				);
+
+				logger.info(
+					{
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+						requestedBy: actor.session.user.id,
+					},
+					"Employee work balance recalculation requested",
+				);
 			}),
 	});
 }
