@@ -216,13 +216,7 @@ function ApprovalInboxContent() {
 					"approvals:approvals.bulkApproveFailed",
 				);
 
-				setSelectedIds((currentIds) => {
-					const nextIds = new Set(currentIds);
-					for (const approvalId of approvalIds) {
-						nextIds.delete(approvalId);
-					}
-					return nextIds;
-				});
+				setSelectedIds(new Set());
 				refetch();
 			} catch (error) {
 				toast.error(
@@ -254,13 +248,7 @@ function ApprovalInboxContent() {
 					"approvals:approvals.bulkRejectFailed",
 				);
 
-				setSelectedIds((currentIds) => {
-					const nextIds = new Set(currentIds);
-					for (const approvalId of approvalIds) {
-						nextIds.delete(approvalId);
-					}
-					return nextIds;
-				});
+				setSelectedIds(new Set());
 				refetch();
 			} catch (error) {
 				toast.error(

@@ -8,6 +8,8 @@ const {
 	approvalInboxMock,
 	bulkApproveMutateAsyncMock,
 	bulkRejectMutateAsyncMock,
+	approveMutateAsyncMock,
+	rejectMutateAsyncMock,
 	refetchMock,
 	toastErrorMock,
 	toastSuccessMock,
@@ -15,6 +17,8 @@ const {
 	approvalInboxMock: vi.fn(),
 	bulkApproveMutateAsyncMock: vi.fn(),
 	bulkRejectMutateAsyncMock: vi.fn(),
+	approveMutateAsyncMock: vi.fn(),
+	rejectMutateAsyncMock: vi.fn(),
 	refetchMock: vi.fn(),
 	toastErrorMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
@@ -93,6 +97,14 @@ vi.mock("@/lib/query/use-approval-inbox", () => ({
 		isPending: false,
 		mutateAsync: bulkRejectMutateAsyncMock,
 	})),
+	useApproveApproval: vi.fn(() => ({
+		isPending: false,
+		mutateAsync: approveMutateAsyncMock,
+	})),
+	useRejectApproval: vi.fn(() => ({
+		isPending: false,
+		mutateAsync: rejectMutateAsyncMock,
+	})),
 }));
 
 import ApprovalInboxPage from "./page";
@@ -128,6 +140,8 @@ describe("ApprovalInboxPage", () => {
 			succeeded: [],
 			failed: [],
 		});
+		approveMutateAsyncMock.mockResolvedValue({ success: true });
+		rejectMutateAsyncMock.mockResolvedValue({ success: true });
 	});
 
 	it("renders an explicit inbox error state when the inbox query fails", () => {
@@ -198,6 +212,59 @@ describe("ApprovalInboxPage", () => {
 			expect(toastErrorMock).toHaveBeenCalledWith("1 request(s) failed\nAlready handled");
 		});
 		expect(refetchMock).toHaveBeenCalled();
+	});
+
+	it("clears the full selection after a fast-lane approval succeeds", async () => {
+		bulkApproveMutateAsyncMock.mockResolvedValue({
+			succeeded: [{ id: "approval-1", approvalType: "absence_entry", status: "approved" }],
+			failed: [],
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					{
+						items: [
+							{
+								id: "approval-1",
+								approvalType: "absence_entry",
+								status: "pending",
+								createdAt: new Date("2026-05-25T00:00:00.000Z"),
+								requester: { name: "Avery Employee" },
+								display: { summary: "Vacation request" },
+							} satisfies Partial<UnifiedApprovalItem>,
+							{
+								id: "approval-2",
+								approvalType: "travel_expense_claim",
+								status: "pending",
+								createdAt: new Date("2026-05-25T00:00:00.000Z"),
+								requester: { name: "Morgan Manager" },
+								display: { summary: "Travel expense" },
+							} satisfies Partial<UnifiedApprovalItem>,
+						] as UnifiedApprovalItem[],
+						total: 2,
+					},
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		expect(screen.getByRole("button", { name: /Approve Selected/ })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: /^Approve$/ }));
+
+		await waitFor(() => {
+			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith(["approval-1"]);
+			expect(screen.queryByRole("button", { name: /Approve Selected/ })).toBeNull();
+		});
 	});
 
 	it("does not render a second empty state below the table", () => {
