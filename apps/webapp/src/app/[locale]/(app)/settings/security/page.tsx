@@ -7,10 +7,34 @@ import { TwoFactorSetup } from "@/components/settings/two-factor-setup";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { requireUser } from "@/lib/auth-helpers";
+import type { SocialProviderId } from "@/lib/social-providers";
 import { getTranslate } from "@/tolgee/server";
+
+function getEnabledSocialProviderIds(): SocialProviderId[] {
+	const providers: SocialProviderId[] = [];
+
+	if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+		providers.push("google");
+	}
+
+	if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+		providers.push("github");
+	}
+
+	if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
+		providers.push("linkedin");
+	}
+
+	if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+		providers.push("apple");
+	}
+
+	return providers;
+}
 
 export default async function SecuritySettingsPage() {
 	const [authContext, t] = await Promise.all([requireUser(), getTranslate()]);
+	const enabledSocialProviderIds = getEnabledSocialProviderIds();
 
 	// Fetch user's 2FA status
 	const userRecord = await db.query.user.findFirst({
@@ -38,7 +62,7 @@ export default async function SecuritySettingsPage() {
 						userEmail={authContext.user.email}
 					/>
 					<PasskeyManagement />
-					<SocialAccounts />
+					<SocialAccounts enabledProviderIds={enabledSocialProviderIds} />
 					<SessionManagement />
 				</div>
 			</div>

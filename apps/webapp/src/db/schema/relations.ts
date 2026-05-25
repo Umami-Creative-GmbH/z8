@@ -101,7 +101,13 @@ import {
 	timeRecordBreak,
 	timeRecordWork,
 } from "./time-record";
-import { employeeTimeBalance, employeeWorkBalance, timeEntry, workPeriod } from "./time-tracking";
+import {
+	employeeTimeBalance,
+	employeeWorkBalance,
+	employeeWorkBalancePeriod,
+	timeEntry,
+	workPeriod,
+} from "./time-tracking";
 import {
 	travelExpenseAttachment,
 	travelExpenseClaim,
@@ -205,6 +211,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	workPeriods: many(workPeriod),
 	timeBalances: many(employeeTimeBalance),
 	workBalances: many(employeeWorkBalance),
+	workBalancePeriods: many(employeeWorkBalancePeriod),
 	timeRecords: many(timeRecord),
 	timeRecordWorks: many(timeRecordWork),
 	timeRecordAbsences: many(timeRecordAbsence),
@@ -493,6 +500,7 @@ export const employeeRelations = relations(employee, ({ one, many }) => ({
 	workPeriods: many(workPeriod),
 	timeBalances: many(employeeTimeBalance),
 	workBalance: one(employeeWorkBalance),
+	workBalancePeriods: many(employeeWorkBalancePeriod),
 	timeRecords: many(timeRecord),
 	timeRecordApprovalDecisionsAsActor: many(timeRecordApprovalDecision),
 	absenceEntries: many(absenceEntry),
@@ -691,6 +699,20 @@ export const employeeWorkBalanceRelations = relations(employeeWorkBalance, ({ on
 		references: [organization.id],
 	}),
 }));
+
+export const employeeWorkBalancePeriodRelations = relations(
+	employeeWorkBalancePeriod,
+	({ one }) => ({
+		employee: one(employee, {
+			fields: [employeeWorkBalancePeriod.employeeId],
+			references: [employee.id],
+		}),
+		organization: one(organization, {
+			fields: [employeeWorkBalancePeriod.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
 
 export const timeRecordRelations = relations(timeRecord, ({ one, many }) => ({
 	employee: one(employee, {

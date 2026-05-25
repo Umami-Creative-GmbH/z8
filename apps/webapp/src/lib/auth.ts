@@ -441,6 +441,12 @@ export const auth = betterAuth({
 							defaultValue: true,
 							input: false,
 						},
+						worksCouncilEnabled: {
+							type: "boolean",
+							required: false,
+							defaultValue: false,
+							input: false,
+						},
 						timezone: {
 							type: "string",
 							required: false,

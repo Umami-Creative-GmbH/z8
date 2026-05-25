@@ -101,50 +101,38 @@ describe("SignupForm", () => {
 		useTurnstileMock.mockReturnValue(null);
 	});
 
-	it("shows live password progress while the user builds a valid password", () => {
+	it("uses the setup password strength UI and validation rules", () => {
 		render(<SignupForm />);
 
 		fireEvent.change(screen.getByLabelText("Password"), {
-			target: { value: "Password1" },
+			target: { value: "Password123" },
 		});
 
-		expect(screen.getByText("4 of 5 requirements met")).toBeTruthy();
-		expect(screen.getByText("Add one special character to finish.")).toBeTruthy();
-		expect(screen.getByLabelText("Password").getAttribute("aria-describedby")).toContain(
-			"password-guidance",
-		);
-		expect(
-			screen.getByText("4 of 5 requirements met").closest('[aria-live="polite"]'),
-		).toBeTruthy();
+		expect(screen.getByText("12+ characters")).toBeTruthy();
+		expect(screen.getByText("Uppercase letter")).toBeTruthy();
+		expect(screen.getByText("Lowercase letter")).toBeTruthy();
+		expect(screen.getByText("Number")).toBeTruthy();
+		expect(screen.queryByText("Add one special character to finish.")).toBeNull();
+		expect(screen.getByText("Password must be at least 12 characters")).toBeTruthy();
 	});
 
-	it("shows live confirmation feedback before submit", () => {
+	it("uses setup-style inline confirmation validation", () => {
 		render(<SignupForm />);
 
 		fireEvent.change(screen.getByLabelText("Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 		fireEvent.change(screen.getByLabelText("Confirm Password"), {
 			target: { value: "Password1" },
 		});
 
-		expect(screen.getByText("Keep typing to match your password exactly.")).toBeTruthy();
+		expect(screen.getByText("Passwords do not match")).toBeTruthy();
 
 		fireEvent.change(screen.getByLabelText("Confirm Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 
-		expect(
-			screen.getByText("Confirmation matches and your password is ready to use."),
-		).toBeTruthy();
-		expect(
-			screen
-				.getByText("Confirmation matches and your password is ready to use.")
-				.getAttribute("aria-live"),
-		).toBe("polite");
-		expect(screen.getByLabelText("Confirm Password").getAttribute("aria-describedby")).toContain(
-			"confirm-password-status",
-		);
+		expect(screen.queryByText("Passwords do not match")).toBeNull();
 	});
 
 	it("focuses the first invalid field and associates its error on submit", async () => {
@@ -186,7 +174,7 @@ describe("SignupForm", () => {
 		render(<SignupForm />);
 
 		fireEvent.change(screen.getByLabelText("Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 		fireEvent.blur(screen.getByLabelText("Confirm Password"), {
 			target: { value: "" },
@@ -215,10 +203,10 @@ describe("SignupForm", () => {
 			target: { value: "jamie@example.com" },
 		});
 		fireEvent.change(screen.getByLabelText("Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 		fireEvent.change(screen.getByLabelText("Confirm Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 
 		fireEvent.click(submitButton);
@@ -244,10 +232,10 @@ describe("SignupForm", () => {
 			target: { value: "jamie@example.com" },
 		});
 		fireEvent.change(screen.getByLabelText("Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 		fireEvent.change(screen.getByLabelText("Confirm Password"), {
-			target: { value: "Password1!" },
+			target: { value: "Password1234" },
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
@@ -255,7 +243,7 @@ describe("SignupForm", () => {
 		await waitFor(() => {
 			expect(signUpEmailMock).toHaveBeenCalledWith({
 				email: "jamie@example.com",
-				password: "Password1!",
+				password: "Password1234",
 				firstName: "Jamie",
 				lastName: "Admin",
 				name: "Jamie Admin",

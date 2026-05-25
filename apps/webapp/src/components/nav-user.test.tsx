@@ -3,9 +3,24 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+const mockFontSizeState = vi.hoisted(() => ({
+	fontSize: "default",
+	setFontSize: vi.fn(),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, defaultValue?: string) => defaultValue ?? _key }),
 }));
+
+vi.mock("@/components/font-size-preference", async () => {
+	const actual = await vi.importActual<typeof import("@/components/font-size-preference")>(
+		"@/components/font-size-preference",
+	);
+	return {
+		...actual,
+		useFontSizePreference: () => mockFontSizeState,
+	};
+});
 
 vi.mock("next-intl", () => ({
 	useLocale: () => "en",
@@ -81,16 +96,24 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
 import { NavUser } from "./nav-user";
 
 describe("NavUser", () => {
-	it("collapses mobile language and theme options until their sections are opened", () => {
+	it("collapses mobile language, font size, and theme options until their sections are opened", () => {
 		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
 
 		expect(screen.getByRole("button", { name: /language/i })).toBeTruthy();
+		expect(screen.getByRole("button", { name: /font size/i })).toBeTruthy();
 		expect(screen.getByRole("button", { name: /theme/i })).toBeTruthy();
 		expect(screen.queryByText("Deutsch")).toBeNull();
+		expect(screen.queryByText("Comfortable")).toBeNull();
 		expect(screen.queryByText("Light")).toBeNull();
 
 		fireEvent.click(screen.getByRole("button", { name: /language/i }));
 		expect(screen.getByText("Deutsch")).toBeTruthy();
+		expect(screen.queryByText("Comfortable")).toBeNull();
+		expect(screen.queryByText("Light")).toBeNull();
+
+		fireEvent.click(screen.getByRole("button", { name: /font size/i }));
+		expect(screen.getByText("Comfortable")).toBeTruthy();
+		expect(screen.queryByText("Deutsch")).toBeNull();
 		expect(screen.queryByText("Light")).toBeNull();
 
 		fireEvent.click(screen.getByRole("button", { name: /theme/i }));
@@ -106,5 +129,16 @@ describe("NavUser", () => {
 		expect(selectedLanguage?.className).toContain("data-[state=checked]:bg-accent");
 		expect(selectedLanguage?.className).toContain("pl-2");
 		expect(selectedLanguage?.className).not.toContain("pl-8");
+	});
+
+	it("uses selected row styling for mobile font size options", () => {
+		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /font size/i }));
+		const selectedFontSize = screen.getByText("Default").closest("div");
+
+		expect(selectedFontSize?.className).toContain("data-[state=checked]:bg-accent");
+		expect(selectedFontSize?.className).toContain("pl-2");
+		expect(selectedFontSize?.className).not.toContain("pl-8");
 	});
 });

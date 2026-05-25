@@ -43,25 +43,19 @@ function publishedShift(overrides: {
 }
 
 describe("works council review data", () => {
-	it("returns disabled state without domain data when mode is disabled", async () => {
+	it("builds portal data even when legacy settings enabled flag is false", async () => {
 		const model = await buildWorksCouncilPortalModel({
 			organizationId: "org-1",
 			actorUserId: "user-1",
 			dateRangeStart,
 			dateRangeEnd,
-			settings: {
-				enabled: false,
-				identityVisibility: "aggregated",
-				absenceVisibility: "hidden",
-				exportEnabled: false,
-				minimumAggregationThreshold: 1,
-				visibleTeamIds: [],
-				visibleLocationIds: [],
-			},
+			settings: settings({ enabled: false }),
+			queryAuditChanges: async () => [],
+			queryScheduleReview: async () => [],
 		});
 
-		expect(model.state).toBe("disabled");
-		expect(model.dashboard).toBeNull();
+		expect(model.state).toBe("ready");
+		expect(model.dashboard).not.toBeNull();
 		expect(model.changeLog).toEqual([]);
 		expect(model.scheduleReview).toEqual([]);
 	});

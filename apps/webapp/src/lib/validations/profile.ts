@@ -34,7 +34,7 @@ function hasStructuredProfileName(firstName: string, lastName: string): boolean 
 }
 
 export function validateStructuredProfileNameField(
-	fieldName: "firstName" | "lastName",
+	_fieldName: "firstName" | "lastName",
 	data: {
 		firstName: string;
 		lastName: string;
@@ -47,29 +47,32 @@ export function validateStructuredProfileNameField(
 	return profileStructuredNameRequiredMessage;
 }
 
-export const profileDetailsUpdateSchema = z.object({
-	firstName: structuredNamePartSchema,
-	lastName: structuredNamePartSchema,
-	gender: genderSchema.optional().nullable(),
-	pronouns: pronounsSchema,
-	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
-	image: profileImageSchema,
-}).superRefine((data, ctx) => {
-	if (hasStructuredProfileName(data.firstName, data.lastName)) {
-		return;
-	}
+export const profileDetailsUpdateSchema = z
+	.object({
+		firstName: structuredNamePartSchema,
+		lastName: structuredNamePartSchema,
+		gender: genderSchema.optional().nullable(),
+		pronouns: pronounsSchema,
+		birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
+		image: profileImageSchema,
+		helpImproveProduct: z.boolean().optional(),
+	})
+	.superRefine((data, ctx) => {
+		if (hasStructuredProfileName(data.firstName, data.lastName)) {
+			return;
+		}
 
-	ctx.addIssue({
-		code: z.ZodIssueCode.custom,
-		message: profileStructuredNameRequiredMessage,
-		path: ["firstName"],
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: profileStructuredNameRequiredMessage,
+			path: ["firstName"],
+		});
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: profileStructuredNameRequiredMessage,
+			path: ["lastName"],
+		});
 	});
-	ctx.addIssue({
-		code: z.ZodIssueCode.custom,
-		message: profileStructuredNameRequiredMessage,
-		path: ["lastName"],
-	});
-});
 
 export const profileImageUpdateSchema = z.object({
 	image: profileImageSchema,

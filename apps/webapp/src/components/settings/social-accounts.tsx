@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AppleIcon, GitHubIcon, GoogleIcon, LinkedInIcon } from "@/components/icons/provider-icons";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,6 +20,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
+import { SOCIAL_PROVIDERS, type SocialProviderId } from "@/lib/social-providers";
 
 interface ConnectedAccount {
 	id: string;
@@ -29,36 +29,11 @@ interface ConnectedAccount {
 	createdAt: Date;
 }
 
-interface Provider {
-	id: string;
-	name: string;
-	icon: React.ComponentType<{ className?: string }>;
+interface SocialAccountsProps {
+	enabledProviderIds: SocialProviderId[];
 }
 
-const providers: Provider[] = [
-	{
-		id: "google",
-		name: "Google",
-		icon: GoogleIcon,
-	},
-	{
-		id: "github",
-		name: "GitHub",
-		icon: GitHubIcon,
-	},
-	{
-		id: "linkedin",
-		name: "LinkedIn",
-		icon: LinkedInIcon,
-	},
-	{
-		id: "apple",
-		name: "Apple",
-		icon: AppleIcon,
-	},
-];
-
-export function SocialAccounts() {
+export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
@@ -118,11 +93,32 @@ export function SocialAccounts() {
 		},
 	});
 
-	const handleConnect = (providerId: string) => {
+	const handleConnect = async (providerId: SocialProviderId) => {
 		setConnectingProvider(providerId);
-		// Redirect to OAuth flow
-		const callbackUrl = encodeURIComponent("/settings/security");
-		window.location.assign(`/api/auth/signin/${providerId}?callbackUrl=${callbackUrl}`);
+
+		try {
+			const result = await authClient.linkSocial({
+				provider: providerId,
+				callbackURL: "/settings/security",
+			});
+
+			if (result.error) {
+				throw new Error(
+					getAuthErrorMessage(
+						result.error,
+						t("settings.socialAccounts.connectFailed", "Failed to connect account"),
+					),
+				);
+			}
+		} catch (error) {
+			setConnectingProvider(null);
+			toast.error(t("settings.socialAccounts.connectFailed", "Failed to connect account"), {
+				description:
+					error instanceof Error
+						? error.message
+						: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
+			});
+		}
 	};
 
 	const handleUnlink = () => {
@@ -137,6 +133,11 @@ export function SocialAccounts() {
 
 	const accounts = accountsQuery.data || [];
 	const isPending = accountsQuery.isLoading || unlinkMutation.isPending;
+	const visibleProviderIds = new Set([
+		...enabledProviderIds,
+		...accounts.map((account) => account.providerId as SocialProviderId),
+	]);
+	const visibleProviders = SOCIAL_PROVIDERS.filter((provider) => visibleProviderIds.has(provider.id));
 
 	const getConnectedAccount = (providerId: string) => {
 		return accounts.find((account) => account.providerId === providerId);
@@ -154,7 +155,7 @@ export function SocialAccounts() {
 			</div>
 
 			<div className="space-y-2">
-				{providers.map((provider) => {
+				{visibleProviders.map((provider) => {
 					const connectedAccount = getConnectedAccount(provider.id);
 					const isConnected = Boolean(connectedAccount);
 					const Icon = provider.icon;
@@ -163,13 +164,13 @@ export function SocialAccounts() {
 						<Card key={provider.id}>
 							<CardHeader className="pb-3">
 								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-3">
+									<div className="flex min-w-0 items-center gap-3">
 										<div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-											<Icon className="size-5" />
+											<Icon aria-hidden="true" className="size-5" />
 										</div>
-										<div>
-											<CardTitle className="text-base">{provider.name}</CardTitle>
-											<CardDescription>
+										<div className="min-w-0">
+											<CardTitle className="truncate text-base">{provider.name}</CardTitle>
+											<CardDescription className="truncate">
 												{isConnected && connectedAccount
 													? t("settings.socialAccounts.connectedAs", "Connected as {accountId}", {
 															accountId: connectedAccount.accountId,

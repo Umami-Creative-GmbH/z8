@@ -7,6 +7,7 @@ export const onboardingProfileSchema = z.object({
 	birthday: z.date().optional(),
 	weekStartDay: z.enum(["sunday", "monday"]).default("sunday"),
 	timeFormat: z.enum(["24h", "12h"]).default("24h"),
+	helpImproveProduct: z.boolean().default(true),
 });
 
 export const onboardingWorkScheduleSchema = z.object({
@@ -166,7 +167,9 @@ export function getVisibleSteps(isAdmin: boolean): OnboardingStep[] {
 			(typeof ONBOARDING_STEPS)[OnboardingStep],
 		][]
 	)
-		.filter(([step, config]) => (!config.adminOnly || isAdmin) && (isAdmin || step !== "work_schedule"))
+		.filter(
+			([step, config]) => (!config.adminOnly || isAdmin) && (isAdmin || step !== "work_schedule"),
+		)
 		.sort(([, a], [, b]) => a.order - b.order)
 		.map(([step]) => step);
 }

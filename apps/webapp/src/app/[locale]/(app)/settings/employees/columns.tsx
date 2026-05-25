@@ -1,7 +1,7 @@
 "use client";
 
-import { IconArrowsSort } from "@tabler/icons-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { IconArrowDown, IconArrowUp, IconArrowsSort } from "@tabler/icons-react";
+import type { ColumnDef, SortDirection } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,18 +15,33 @@ type EmployeeDirectoryRow = EmployeeWithRelations & {
 	clockStatus?: EmployeeClockStatus;
 };
 
-// Hoisted static JSX elements (rendering-hoist-jsx)
-const SortIcon = <IconArrowsSort className="ml-2 size-4" aria-hidden="true" />;
+function SortIcon({ sort }: { sort: false | SortDirection }) {
+	if (sort === "asc") {
+		return <IconArrowUp className="ml-2 size-4" aria-hidden="true" />;
+	}
 
-function EmployeeHeader({ onClick }: { onClick: () => void }) {
+	if (sort === "desc") {
+		return <IconArrowDown className="ml-2 size-4" aria-hidden="true" />;
+	}
+
+	return <IconArrowsSort className="ml-2 size-4" aria-hidden="true" />;
+}
+
+function EmployeeHeader({ onClick, sort }: { onClick: () => void; sort: false | SortDirection }) {
 	const { t } = useTranslate();
 
 	return (
 		<Button variant="ghost" onClick={onClick}>
 			{t("settings.employees.directory.table.employee", "Employee")}
-			{SortIcon}
+			<SortIcon sort={sort} />
 		</Button>
 	);
+}
+
+function EmployeeNumberHeader() {
+	const { t } = useTranslate();
+
+	return <span>{t("settings.employees.directory.table.employeeNumber", "Employee Number")}</span>;
 }
 
 function PositionHeader() {
@@ -121,7 +136,10 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 		id: "employeeName",
 		accessorFn: (row) => buildAuthUserDisplayName(row.user),
 		header: ({ column }) => (
-			<EmployeeHeader onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} />
+			<EmployeeHeader
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+				sort={column.getIsSorted()}
+			/>
 		),
 		cell: ({ row }) => {
 			const employee = row.original as EmployeeDirectoryRow;
@@ -146,6 +164,11 @@ export const columns: ColumnDef<EmployeeWithRelations>[] = [
 				</div>
 			);
 		},
+	},
+	{
+		accessorKey: "employeeNumber",
+		header: () => <EmployeeNumberHeader />,
+		cell: ({ row }) => row.original.employeeNumber || "—",
 	},
 	{
 		accessorKey: "position",

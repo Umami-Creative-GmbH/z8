@@ -1,7 +1,10 @@
 import { DateTime } from "luxon";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { WorksCouncilDashboard } from "@/components/works-council/works-council-dashboard";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { requireAbility, requireUser } from "@/lib/auth-helpers";
 import { auditWorksCouncilPortalViewed } from "@/lib/works-council/access-audit";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
@@ -48,6 +51,14 @@ export default async function WorksCouncilPage({
 	if (
 		!canViewWorksCouncilPortal(ability, organizationId, authContext.session.activeOrganizationId)
 	) {
+		redirect("/");
+	}
+
+	const currentOrganization = await db.query.organization.findFirst({
+		columns: { worksCouncilEnabled: true },
+		where: eq(organization.id, organizationId),
+	});
+	if (!currentOrganization?.worksCouncilEnabled) {
 		redirect("/");
 	}
 

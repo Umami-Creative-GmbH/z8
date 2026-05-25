@@ -145,6 +145,7 @@ describe("OnboardingService.updateProfile", () => {
 					birthday: "1815-12-10",
 					weekStartDay: "monday",
 					timeFormat: "12h",
+					helpImproveProduct: true,
 				});
 			}).pipe(Effect.provide(layer)),
 		);
@@ -230,6 +231,7 @@ describe("OnboardingService.updateProfile", () => {
 					birthday: "1815-12-10",
 					weekStartDay: "monday",
 					timeFormat: "12h",
+					helpImproveProduct: true,
 				});
 			}).pipe(Effect.provide(layer)),
 		);
@@ -299,16 +301,25 @@ describe("OnboardingService.updateProfile", () => {
 					lastName: "Lovelace",
 					weekStartDay: "monday",
 					timeFormat: "12h",
+					helpImproveProduct: false,
 				});
 			}).pipe(Effect.provide(layer)),
 		);
 
 		expect(insertedValues).toHaveBeenCalledWith(
-			expect.objectContaining({ weekStartDay: "monday", timeFormat: "12h" }),
+			expect.objectContaining({
+				weekStartDay: "monday",
+				timeFormat: "12h",
+				helpImproveProduct: false,
+			}),
 		);
 		expect(conflictUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({
-				set: expect.objectContaining({ weekStartDay: "monday", timeFormat: "12h" }),
+				set: expect.objectContaining({
+					weekStartDay: "monday",
+					timeFormat: "12h",
+					helpImproveProduct: false,
+				}),
 			}),
 		);
 	});

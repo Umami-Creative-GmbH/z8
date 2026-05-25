@@ -1,7 +1,9 @@
 import { DateTime } from "luxon";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { worksCouncilAccessAudit, worksCouncilReviewExport } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
@@ -165,8 +167,16 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
+		const currentOrganization = await db.query.organization.findFirst({
+			columns: { worksCouncilEnabled: true },
+			where: eq(organization.id, organizationId),
+		});
+		if (!currentOrganization?.worksCouncilEnabled) {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
+
 		const settings = await loadWorksCouncilSettings(organizationId);
-		if (!settings.enabled || !settings.exportEnabled) {
+		if (!settings.exportEnabled) {
 			return NextResponse.json({ error: "Works Council exports are disabled" }, { status: 403 });
 		}
 

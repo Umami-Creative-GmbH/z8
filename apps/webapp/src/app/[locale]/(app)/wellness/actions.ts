@@ -22,7 +22,9 @@ import {
 } from "./actions/mutations";
 import {
 	ensureHydrationStatsRecord,
+	getActiveEmployeeForHydration,
 	getHydrationStatsRecord,
+	getHydrationStreakWorkdayRequirements,
 	getLastWaterIntakeToday,
 	getTodayWaterIntake,
 	getUserWaterReminderSettings,
@@ -31,13 +33,21 @@ import { toHydrationStatsValue, toWaterReminderSettings } from "./actions/shared
 import { validateLogWaterIntake, validateWaterReminderSettings } from "./actions/validation";
 
 function buildWellnessActionEffect<T, E>(
-	operation: (userId: string) => Effect.Effect<T, E, DatabaseService>,
+	operation: (context: {
+		userId: string;
+		activeOrganizationId: string | null;
+	}) => Effect.Effect<T, E, DatabaseService>,
 ) {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
 
-		return yield* _(operation(session.user.id));
+		return yield* _(
+			operation({
+				userId: session.user.id,
+				activeOrganizationId: session.session?.activeOrganizationId ?? null,
+			}),
+		);
 	}).pipe(Effect.provide(AppLayer));
 }
 
@@ -53,7 +63,7 @@ export async function getWaterReminderStatus(): Promise<
 		lastIntakeTime: Date | null;
 	}>
 > {
-	const effect = buildWellnessActionEffect((userId) =>
+	const effect = buildWellnessActionEffect(({ userId }) =>
 		Effect.gen(function* (_) {
 			const [settings, stats, lastIntake] = yield* _(
 				Effect.all([
@@ -82,20 +92,32 @@ export async function getWaterReminderStatus(): Promise<
  * Get hydration stats for the current user
  */
 export async function getHydrationStats(): Promise<ServerActionResult<HydrationStats>> {
-	const effect = buildWellnessActionEffect((userId) =>
+	const effect = buildWellnessActionEffect(({ userId, activeOrganizationId }) =>
 		Effect.gen(function* (_) {
-			const [settings, statsRecord, todayIntake] = yield* _(
+			const [settings, statsRecord, todayIntake, activeEmployee] = yield* _(
 				Effect.all([
 					getUserWaterReminderSettings(userId),
 					ensureHydrationStatsRecord(userId),
 					getTodayWaterIntake(userId),
+					getActiveEmployeeForHydration(userId, activeOrganizationId),
 				]),
+			);
+
+			const lastGoalMetDate = statsRecord.lastGoalMetDate
+				? new Date(statsRecord.lastGoalMetDate)
+				: null;
+			const workdayRequirements = yield* _(
+				getHydrationStreakWorkdayRequirements({
+					organizationId: activeOrganizationId,
+					employeeId: activeEmployee?.id ?? null,
+					lastGoalMetDate,
+				}),
 			);
 
 			let currentStreak = statsRecord.currentStreak;
 			if (
-				statsRecord.lastGoalMetDate &&
-				shouldResetStreak(new Date(statsRecord.lastGoalMetDate), currentStreak)
+				lastGoalMetDate &&
+				shouldResetStreak(lastGoalMetDate, currentStreak, { workdayRequirements })
 			) {
 				yield* _(resetHydrationStreak(userId));
 				currentStreak = 0;
@@ -125,15 +147,27 @@ export async function logWaterIntake(data: LogWaterIntakeFormValues): Promise<
 		goalJustMet: boolean;
 	}>
 > {
-	const effect = buildWellnessActionEffect((userId) =>
+	const effect = buildWellnessActionEffect(({ userId, activeOrganizationId }) =>
 		Effect.gen(function* (_) {
 			const { amount, source } = yield* _(validateLogWaterIntake(data));
-			const [settings, statsRecord, currentTodayIntake] = yield* _(
+			const [settings, statsRecord, currentTodayIntake, activeEmployee] = yield* _(
 				Effect.all([
 					getUserWaterReminderSettings(userId),
 					ensureHydrationStatsRecord(userId),
 					getTodayWaterIntake(userId),
+					getActiveEmployeeForHydration(userId, activeOrganizationId),
 				]),
+			);
+
+			const lastGoalMetDate = statsRecord.lastGoalMetDate
+				? new Date(statsRecord.lastGoalMetDate)
+				: null;
+			const workdayRequirements = yield* _(
+				getHydrationStreakWorkdayRequirements({
+					organizationId: activeOrganizationId,
+					employeeId: activeEmployee?.id ?? null,
+					lastGoalMetDate,
+				}),
 			);
 
 			const dailyGoal = toWaterReminderSettings(settings).dailyGoal;
@@ -143,9 +177,8 @@ export async function logWaterIntake(data: LogWaterIntakeFormValues): Promise<
 				{
 					currentStreak: statsRecord.currentStreak,
 					longestStreak: statsRecord.longestStreak,
-					lastGoalMetDate: statsRecord.lastGoalMetDate
-						? new Date(statsRecord.lastGoalMetDate)
-						: null,
+					lastGoalMetDate,
+					workdayRequirements,
 					todayIntake: currentTodayIntake,
 					dailyGoal,
 				},
@@ -190,7 +223,7 @@ export async function snoozeWaterReminder(): Promise<
 		snoozedUntil: Date;
 	}>
 > {
-	const effect = buildWellnessActionEffect((userId) =>
+	const effect = buildWellnessActionEffect(({ userId }) =>
 		Effect.gen(function* (_) {
 			const snoozedUntil = yield* _(snoozeWaterReminderForToday(userId));
 			return { snoozedUntil };
@@ -206,7 +239,7 @@ export async function snoozeWaterReminder(): Promise<
 export async function updateWaterReminderSettings(
 	data: WaterReminderSettingsFormValues,
 ): Promise<ServerActionResult<void>> {
-	const effect = buildWellnessActionEffect((userId) =>
+	const effect = buildWellnessActionEffect(({ userId }) =>
 		Effect.gen(function* (_) {
 			const { enabled, preset, intervalMinutes, dailyGoal } = yield* _(
 				validateWaterReminderSettings(data),
@@ -236,7 +269,7 @@ export async function updateWaterReminderSettings(
 export async function getWaterReminderSettings(): Promise<
 	ServerActionResult<WaterReminderSettings>
 > {
-	const effect = buildWellnessActionEffect((userId) =>
+	const effect = buildWellnessActionEffect(({ userId }) =>
 		Effect.gen(function* (_) {
 			const settings = yield* _(getUserWaterReminderSettings(userId));
 			return toWaterReminderSettings(settings);

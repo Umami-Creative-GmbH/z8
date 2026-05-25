@@ -17,6 +17,7 @@ import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,8 +40,9 @@ const defaultValues = {
 	lastName: "",
 	gender: undefined as "male" | "female" | "other" | undefined,
 	birthday: undefined as Date | undefined,
-	weekStartDay: "sunday" as WeekStartDay,
+	weekStartDay: "monday" as WeekStartDay,
 	timeFormat: "24h" as TimeFormat,
+	helpImproveProduct: true,
 };
 
 export default function ProfilePage() {
@@ -74,7 +76,9 @@ export default function ProfilePage() {
 			router.push(result.data.nextStep);
 		} else {
 			setLoading(false);
-			toast.error(result.error || t("onboarding.profile.skipError", "Failed to skip profile setup"));
+			toast.error(
+				result.error || t("onboarding.profile.skipError", "Failed to skip profile setup"),
+			);
 		}
 	}
 
@@ -324,6 +328,36 @@ export default function ProfilePage() {
 												"This controls how clock times are displayed.",
 											)}
 										</p>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field name="helpImproveProduct">
+								{(field) => (
+									<div className="rounded-lg border bg-muted/30 p-4">
+										<div className="flex items-start justify-between gap-4">
+											<div className="space-y-1">
+												<Label htmlFor="help-improve-product">
+													{t("onboarding.profile.helpImproveProduct", "Help us improve this app")}
+												</Label>
+												<p className="text-sm text-muted-foreground">
+													{t(
+														"onboarding.profile.helpImproveProductDesc",
+														"Share usage insights so we can make Z8 more reliable and useful. You can change this later in your profile settings.",
+													)}
+												</p>
+											</div>
+											<Checkbox
+												id="help-improve-product"
+												checked={field.state.value}
+												onCheckedChange={(checked) => field.handleChange(checked === true)}
+												disabled={loading}
+												aria-label={t(
+													"onboarding.profile.helpImproveProduct",
+													"Help us improve this app",
+												)}
+											/>
+										</div>
 									</div>
 								)}
 							</form.Field>

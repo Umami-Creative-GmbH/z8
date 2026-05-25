@@ -1,15 +1,21 @@
 import { headers } from "next/headers";
-import { setRequestLocale } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
+import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
+import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { db } from "@/db";
+import { userSettings } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
 import "../globals.css";
+import { eq } from "drizzle-orm";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
 
@@ -52,6 +58,8 @@ const DEFAULT_META = {
 	keywords: "z8, time, app, productivity",
 };
 
+const FONT_SIZE_INIT_SCRIPT = `try{var fontSize=localStorage.getItem("z8-font-size");if(fontSize==="comfortable"||fontSize==="large"){document.documentElement.dataset.fontSize=fontSize;}else{document.documentElement.removeAttribute("data-font-size");}}catch{}`;
+
 function TranslatedMeta() {
 	return (
 		<>
@@ -60,6 +68,46 @@ function TranslatedMeta() {
 			<meta content={DEFAULT_META.keywords} name="keywords" />
 		</>
 	);
+}
+
+async function getHelpImproveProduct(): Promise<boolean> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return false;
+	}
+
+	const settings = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, session.user.id),
+		columns: { helpImproveProduct: true },
+	});
+
+	return settings?.helpImproveProduct ?? true;
+}
+
+function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
+	return (
+		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+			<FontSizeProvider>
+				<TranslationProvider locale={locale}>
+					<QueryProvider>
+						<BProgressBar />
+						<TooltipProvider delayDuration={0}>
+							<OfflineBanner />
+							<SWUpdatePrompt />
+							{children}
+							<Toaster position="bottom-right" richColors />
+						</TooltipProvider>
+					</QueryProvider>
+				</TranslationProvider>
+			</FontSizeProvider>
+		</ThemeProvider>
+	);
+}
+
+async function PostHogConsentProvider({ children }: { children: ReactNode }) {
+	const helpImproveProduct = await getHelpImproveProduct();
+
+	return <PostHogProvider helpImproveProduct={helpImproveProduct}>{children}</PostHogProvider>;
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
@@ -85,6 +133,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="yes" name="mobile-web-app-capable" />
 				<meta content="yes" name="apple-mobile-web-app-capable" />
 				<meta content="default" name="apple-mobile-web-app-status-bar-style" />
+				<script dangerouslySetInnerHTML={{ __html: FONT_SIZE_INIT_SCRIPT }} />
 				<TranslatedMeta />
 			</head>
 			<body>
@@ -102,24 +151,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 						</div>
 					}
 				>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="system"
-						enableSystem
-						disableTransitionOnChange
-					>
-						<TranslationProvider locale={locale}>
-							<QueryProvider>
-								<BProgressBar />
-								<TooltipProvider delayDuration={0}>
-									<OfflineBanner />
-									<SWUpdatePrompt />
-									{children}
-									<Toaster position="bottom-right" richColors />
-								</TooltipProvider>
-							</QueryProvider>
-						</TranslationProvider>
-					</ThemeProvider>
+					<PostHogConsentProvider>
+						<AppProviders locale={locale}>{children}</AppProviders>
+					</PostHogConsentProvider>
 				</Suspense>
 			</body>
 		</html>

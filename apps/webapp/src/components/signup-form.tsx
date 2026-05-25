@@ -11,6 +11,12 @@ import {
 	storePendingInviteCode,
 	validateInviteCode,
 } from "@/app/[locale]/(auth)/invite-code-actions";
+import {
+	PasswordStrengthIndicator,
+	PasswordVisibilityInput,
+	validatePasswordConfirmation,
+	validateStrongPassword,
+} from "@/components/auth/password-fields";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,19 +29,9 @@ import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProvider, SocialProviderId } from "@/lib/social-providers";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
-import { cn } from "@/lib/utils";
-import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
 import { Link, useRouter } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 import { type TurnstileRef, TurnstileWidget } from "./turnstile-widget";
-
-const PASSWORD_REQUIREMENT_HINTS = [
-	"Use at least 8 characters.",
-	"Add a lowercase letter.",
-	"Add an uppercase letter.",
-	"Add a number.",
-	"Add one special character to finish.",
-] as const;
 
 interface SignupFormProps extends React.ComponentProps<"div"> {
 	callbackUrl?: string;
@@ -53,89 +49,6 @@ const SOCIAL_SKELETON_KEYS = [
 	"social-5",
 	"social-6",
 ];
-
-type PasswordRequirementsListProps = {
-	guidanceId: string;
-	passwordRequirements: ReturnType<typeof checkPasswordRequirements>;
-	progressLabel: string;
-	progressMessage: string;
-	progressTitle: string;
-};
-
-const PasswordRequirementsList = memo(function PasswordRequirementsList({
-	guidanceId,
-	passwordRequirements,
-	progressLabel,
-	progressMessage,
-	progressTitle,
-}: PasswordRequirementsListProps) {
-	const metCount = passwordRequirements.filter((requirement) => requirement.met).length;
-	const totalCount = passwordRequirements.length;
-
-	return (
-		<div
-			aria-live="polite"
-			className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-4"
-			id={guidanceId}
-		>
-			<div className="flex items-start justify-between gap-3">
-				<div className="space-y-1">
-					<p className="font-medium text-sm">{progressTitle}</p>
-					<p className="text-muted-foreground text-sm">{progressLabel}</p>
-				</div>
-				<span className="rounded-full border border-border/80 px-2.5 py-1 font-medium text-xs text-foreground">
-					{metCount}/{totalCount}
-				</span>
-			</div>
-			<p className="text-muted-foreground text-sm">{progressMessage}</p>
-			<div className="grid gap-2 sm:grid-cols-2">
-				{passwordRequirements.map((requirement) => (
-					<div
-						className={cn(
-							"flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-							requirement.met
-								? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-emerald-300"
-								: "border-border/80 bg-background/70 text-muted-foreground",
-						)}
-						key={requirement.label}
-					>
-						<span className="font-medium">{requirement.met ? "✓" : "○"}</span>
-						<span>{requirement.label}</span>
-					</div>
-				))}
-			</div>
-		</div>
-	);
-});
-
-type PasswordConfirmationStatusProps = {
-	statusId: string;
-	message: string;
-	status: "idle" | "match" | "mismatch";
-};
-
-const PasswordConfirmationStatus = memo(function PasswordConfirmationStatus({
-	statusId,
-	message,
-	status,
-}: PasswordConfirmationStatusProps) {
-	return (
-		<p
-			aria-live="polite"
-			className={cn(
-				"rounded-lg border px-3 py-2 text-sm",
-				status === "match"
-					? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-emerald-300"
-					: status === "mismatch"
-						? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/80 dark:bg-amber-950/30 dark:text-amber-300"
-						: "border-border/80 bg-muted/20 text-muted-foreground",
-			)}
-			id={statusId}
-		>
-			{message}
-		</p>
-	);
-});
 
 type SignupSocialAuthProps = {
 	showEmailPassword: boolean;
@@ -388,77 +301,6 @@ export function SignupForm({
 
 		return enabledProviders.filter((provider) => allowedSocialProviders.includes(provider.id));
 	}, [enabledProviders, allowedSocialProviders]);
-	const passwordRequirements = useMemo(
-		() => checkPasswordRequirements(formData.password, t),
-		[formData.password, t],
-	);
-	const metPasswordRequirementsCount = useMemo(
-		() => passwordRequirements.filter((requirement) => requirement.met).length,
-		[passwordRequirements],
-	);
-	const nextPasswordRequirementIndex = useMemo(
-		() => passwordRequirements.findIndex((requirement) => !requirement.met),
-		[passwordRequirements],
-	);
-	const passwordProgressLabel = useMemo(
-		() =>
-			t("auth.password-progress-label", "{met} of {total} requirements met", {
-				met: metPasswordRequirementsCount,
-				total: passwordRequirements.length,
-			}),
-		[metPasswordRequirementsCount, passwordRequirements.length, t],
-	);
-	const passwordRequirementsTitle = useMemo(
-		() => t("auth.password-requirements-heading", "Password requirements"),
-		[t],
-	);
-	const passwordProgressMessage = useMemo(() => {
-		if (!formData.password) {
-			return t(
-				"auth.password-progress-start",
-				"Use 8+ characters with upper and lowercase letters, a number, and a symbol.",
-			);
-		}
-
-		if (nextPasswordRequirementIndex === -1) {
-			return t(
-				"auth.password-progress-ready",
-				"All password rules are satisfied. Confirm it once more to continue.",
-			);
-		}
-
-		return t(
-			`auth.password-progress-hint-${nextPasswordRequirementIndex}`,
-			PASSWORD_REQUIREMENT_HINTS[nextPasswordRequirementIndex],
-		);
-	}, [formData.password, nextPasswordRequirementIndex, t]);
-	const passwordsMatch =
-		formData.confirmPassword && formData.password && formData.confirmPassword === formData.password;
-	const passwordConfirmationStatus = useMemo<"idle" | "match" | "mismatch">(() => {
-		if (!formData.confirmPassword) {
-			return "idle";
-		}
-
-		return passwordsMatch ? "match" : "mismatch";
-	}, [formData.confirmPassword, passwordsMatch]);
-	const passwordConfirmationMessage = useMemo(() => {
-		if (!formData.confirmPassword) {
-			return t(
-				"auth.password-confirmation-idle",
-				"Re-enter the password once so we can confirm it before you continue.",
-			);
-		}
-
-		if (passwordsMatch) {
-			return t(
-				"auth.password-confirmation-match",
-				"Confirmation matches and your password is ready to use.",
-			);
-		}
-
-		return t("auth.password-confirmation-mismatch", "Keep typing to match your password exactly.");
-	}, [formData.confirmPassword, passwordsMatch, t]);
-
 	const getFieldErrorId = (field: string) => `${field}-error`;
 
 	const getDescribedBy = (...ids: Array<string | false | null | undefined>) => {
@@ -471,26 +313,9 @@ export function SignupForm({
 		return typeof error === "string" ? error : undefined;
 	};
 
-	const validatePassword = (value: string) => {
-		const result = passwordSchema.safeParse(value);
-		if (result.success) {
-			return undefined;
-		} else {
-			return result.error?.issues?.[0]?.message || t("validation.invalid-password", "Invalid password");
-		}
-	};
+	const validatePassword = (value: string) => validateStrongPassword(value, t);
 
-	const validateConfirmPassword = (value: string) => {
-		if (!value.trim()) {
-			return t("auth.confirm-password-required", "Please confirm your password");
-		}
-
-		if (value !== formData.password) {
-			return t("auth.passwords-no-match", "Passwords do not match");
-		}
-
-		return undefined;
-	};
+	const validateConfirmPassword = (value: string) => validatePasswordConfirmation(value, formData.password, t);
 
 	const validateEmail = (value: string) => {
 		const result = z.string().email().safeParse(value);
@@ -561,6 +386,7 @@ export function SignupForm({
 
 	return (
 		<AuthFormWrapper
+			backHref="/sign-in"
 			className={className}
 			formProps={{ noValidate: true, onSubmit: handleSubmit }}
 			title={t("auth.create-account", "Create your account")}
@@ -745,7 +571,7 @@ export function SignupForm({
 								return (
 									<>
 										<Label htmlFor="password">{t("auth.password", "Password")}</Label>
-										<Input
+										<PasswordVisibilityInput
 											aria-describedby={getDescribedBy(
 												"password-guidance",
 												errorMessage && getFieldErrorId("password"),
@@ -756,19 +582,11 @@ export function SignupForm({
 											autoComplete="new-password"
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder={t("setup:setup.field.password_placeholder", "Create a strong password")}
 											required
-											type="password"
 											value={field.state.value}
 										/>
-										{formData.password ? (
-											<PasswordRequirementsList
-												guidanceId="password-guidance"
-												passwordRequirements={passwordRequirements}
-												progressLabel={passwordProgressLabel}
-												progressMessage={passwordProgressMessage}
-												progressTitle={passwordRequirementsTitle}
-											/>
-										) : null}
+										<PasswordStrengthIndicator id="password-guidance" password={formData.password} />
 										{errorMessage ? (
 											<p className="text-destructive text-sm" id={getFieldErrorId("password")}>
 												{errorMessage}
@@ -794,9 +612,8 @@ export function SignupForm({
 										<Label htmlFor="confirmPassword">
 											{t("auth.confirm-password", "Confirm Password")}
 										</Label>
-										<Input
+										<PasswordVisibilityInput
 											aria-describedby={getDescribedBy(
-												"confirm-password-status",
 												errorMessage && getFieldErrorId("confirmPassword"),
 											)}
 											aria-invalid={errorMessage ? "true" : "false"}
@@ -805,8 +622,8 @@ export function SignupForm({
 											autoComplete="new-password"
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder={t("setup:setup.field.confirm_password_placeholder", "Confirm your password")}
 											required
-											type="password"
 											value={field.state.value}
 										/>
 										{errorMessage ? (
@@ -818,11 +635,6 @@ export function SignupForm({
 								);
 							}}
 						</form.Field>
-						<PasswordConfirmationStatus
-							statusId="confirm-password-status"
-							message={passwordConfirmationMessage}
-							status={passwordConfirmationStatus}
-						/>
 					</div>
 
 					{/* Turnstile widget */}

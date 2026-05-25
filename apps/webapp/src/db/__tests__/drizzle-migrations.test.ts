@@ -28,6 +28,13 @@ const migrationJournal = JSON.parse(
 const migration0008Snapshot = JSON.parse(
 	readFileSync(new URL("../../../drizzle/meta/0008_snapshot.json", import.meta.url), "utf8"),
 ) as { tables: { "public.organization": { columns: Record<string, { default?: boolean }> } } };
+const migration0032 = readFileSync(
+	new URL("../../../drizzle/0032_works_council_feature_flag.sql", import.meta.url),
+	"utf8",
+);
+const migration0032Snapshot = JSON.parse(
+	readFileSync(new URL("../../../drizzle/meta/0032_snapshot.json", import.meta.url), "utf8"),
+) as { tables: { "public.organization": { columns: Record<string, { default?: boolean }> } } };
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -48,6 +55,16 @@ describe("drizzle follow-up migrations", () => {
 		expect(
 			migration0008Snapshot.tables["public.organization"].columns.demo_data_enabled?.default,
 		).toBe(true);
+	});
+
+	it("registers the works council feature flag migration", () => {
+		expect(
+			migrationJournal.entries.some((entry) => entry.tag === "0032_works_council_feature_flag"),
+		).toBe(true);
+		expect(migration0032).toContain('ADD COLUMN "works_council_enabled" boolean DEFAULT false');
+		expect(
+			migration0032Snapshot.tables["public.organization"].columns.works_council_enabled?.default,
+		).toBe(false);
 	});
 
 	it("creates composite uniqueness before migration 0014 composite foreign keys", () => {

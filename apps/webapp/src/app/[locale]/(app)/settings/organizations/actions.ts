@@ -29,6 +29,7 @@ import {
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
+import { isOrganizationFeature } from "./organization-features";
 
 const logger = createLogger("OrganizationActions");
 
@@ -806,7 +807,7 @@ export async function updateOrganizationDetails(
  */
 export async function toggleOrganizationFeature(
 	organizationId: string,
-	feature: "shiftsEnabled" | "projectsEnabled" | "surchargesEnabled" | "demoDataEnabled",
+	feature: string,
 	enabled: boolean,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");
@@ -822,6 +823,18 @@ export async function toggleOrganizationFeature(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
+				if (!isOrganizationFeature(feature)) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Invalid organization feature",
+								field: "feature",
+								value: feature,
+							}),
+						),
+					);
+				}
+
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);

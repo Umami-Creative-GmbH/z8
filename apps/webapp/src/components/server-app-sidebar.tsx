@@ -2,8 +2,10 @@ import {
 	getAuthContext,
 	getCurrentSettingsAccessTier,
 	getUserOrganizations,
+	requireAbility,
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
 export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
@@ -13,9 +15,9 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 		getCurrentSettingsAccessTier(),
 	]);
 
-	// Find current organization from the list
-	const currentOrganization = authContext?.employee?.organizationId
-		? organizations.find((org) => org.id === authContext.employee?.organizationId) || null
+	const activeOrganizationId = authContext?.session.activeOrganizationId ?? null;
+	const currentOrganization = activeOrganizationId
+		? organizations.find((org) => org.id === activeOrganizationId) || null
 		: null;
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
 		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
@@ -25,7 +27,17 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 		projectsEnabled: currentOrganization?.projectsEnabled ?? false,
 		surchargesEnabled: currentOrganization?.surchargesEnabled ?? false,
 		demoDataEnabled: currentOrganization?.demoDataEnabled ?? true,
+		worksCouncilEnabled: currentOrganization?.worksCouncilEnabled ?? false,
 	};
+	let showWorksCouncilNav = false;
+	if (props.showWorksCouncilNav && currentOrganization?.worksCouncilEnabled && activeOrganizationId) {
+		const ability = await requireAbility();
+		showWorksCouncilNav = canViewWorksCouncilPortal(
+			ability,
+			activeOrganizationId,
+			activeOrganizationId,
+		);
+	}
 
 	return (
 		<AppSidebar
@@ -40,6 +52,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			billingEnabled={process.env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
 			canCreateOrganizations={canCreateOrganizations}
+			showWorksCouncilNav={showWorksCouncilNav}
 		/>
 	);
 }

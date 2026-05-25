@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	getAbility: vi.fn(),
 	loadWorksCouncilSettings: vi.fn(),
 	buildWorksCouncilPortalModel: vi.fn(),
+	findOrganization: vi.fn(),
 	insert: vi.fn(),
 	insertValues: vi.fn(async () => undefined),
 }));
@@ -39,7 +40,18 @@ vi.mock("@/lib/works-council/review-data", () => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		query: {
+			organization: {
+				findFirst: mockState.findOrganization,
+			},
+		},
 		insert: mockState.insert,
+	},
+}));
+
+vi.mock("@/db/auth-schema", () => ({
+	organization: {
+		id: "organization.id",
 	},
 }));
 
@@ -95,8 +107,48 @@ describe("GET /works-council/export", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.resolvedHeaders = new Headers();
+		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: true });
 		mockState.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockResolvedValue(undefined);
+	});
+
+	it("returns 403 before loading settings when the organization Works Council feature is disabled", async () => {
+		setupAuthenticatedRequest();
+		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: false });
+
+		const response = await GET(createRequest());
+
+		expect(response.status).toBe(403);
+		expect(await response.json()).toEqual({ error: "Forbidden" });
+		expect(mockState.loadWorksCouncilSettings).not.toHaveBeenCalled();
+		expect(mockState.buildWorksCouncilPortalModel).not.toHaveBeenCalled();
+	});
+
+	it("allows export when org feature and exports are enabled even if settings enabled is false", async () => {
+		setupAuthenticatedRequest();
+		mockState.loadWorksCouncilSettings.mockResolvedValue({
+			...enabledSettings,
+			enabled: false,
+			exportEnabled: true,
+		});
+		mockState.buildWorksCouncilPortalModel.mockResolvedValue({
+			state: "ready",
+			dashboard: {
+				overtimeMinutes: 0,
+				breakRestRiskCount: 0,
+				schedulePublicationCount: 0,
+				scheduleChangeCount: 0,
+				complianceFindingCount: 0,
+				absenceCoveragePressureCount: 0,
+				policyChangeCount: 0,
+			},
+			changeLog: [],
+			scheduleReview: [],
+		});
+
+		const response = await GET(createRequest());
+
+		expect(response.status).toBe(200);
 	});
 
 	it("returns 403 when Works Council exports are disabled", async () => {

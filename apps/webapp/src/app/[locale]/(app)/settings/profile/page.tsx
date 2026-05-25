@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
 import { WeekStartSettings } from "@/components/settings/week-start-settings";
+import { db } from "@/db";
+import { userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -23,6 +26,14 @@ export default async function ProfilePage() {
 			getTimeFormat(),
 			getTranslate(),
 		]);
+	const settings = await db.query.userSettings.findFirst({
+		where: eq(userSettings.userId, authContext.user.id),
+		columns: { helpImproveProduct: true },
+	});
+	const user = {
+		...authContext.user,
+		helpImproveProduct: settings?.helpImproveProduct ?? true,
+	};
 
 	return (
 		<div className="p-6">
@@ -36,7 +47,7 @@ export default async function ProfilePage() {
 					</p>
 				</div>
 
-				<ProfileForm user={authContext.user} />
+				<ProfileForm user={user} />
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

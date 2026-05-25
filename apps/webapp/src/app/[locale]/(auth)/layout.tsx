@@ -1,9 +1,10 @@
 import { headers } from "next/headers";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import { connection } from "next/server";
-import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
+import { AuthBackgroundImage } from "@/components/auth-background-image";
+import { selectRandomAuthBackgroundImage } from "@/components/auth-background-images";
+import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -40,7 +41,6 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	let domainContext: DomainAuthContext | null = null;
 	const platformDomainContext = await getPlatformDomainConfig(host ?? "");
 	const globalTurnstileSiteKey = env.TURNSTILE_SITE_KEY ?? null;
-	const buildHash = env.NEXT_PUBLIC_BUILD_HASH;
 	if (platformDomainContext) {
 		domainContext = {
 			...platformDomainContext,
@@ -89,6 +89,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	const parsedCookieConsentScript = parseCookieConsentScript(cookieConsentScript);
 	const { content: cookieConsentScriptContent, ...cookieConsentScriptProps } =
 		parsedCookieConsentScript ?? {};
+	const backgroundImage = selectRandomAuthBackgroundImage();
 
 	return (
 		<DomainAuthProvider domainContext={domainContext}>
@@ -108,10 +109,12 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 					{cookieConsentScriptContent}
 				</Script>
 			) : null}
-			<div className="min-h-svh bg-background lg:grid lg:grid-cols-2">
-				<section className="flex min-h-svh flex-col px-4 py-4 sm:px-8 sm:py-6 lg:h-svh lg:overflow-y-auto lg:px-10">
-					<div className="flex items-center justify-end gap-2">
+			<div className="relative min-h-svh overflow-x-hidden bg-background">
+				<AuthBackgroundImage initialImage={backgroundImage} />
+				<section className="relative z-10 flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 sm:pb-0 lg:px-10">
+					<div className="flex items-center justify-end gap-2 drop-shadow-sm">
 						<ThemeToggle />
+						<FontSizeToggle />
 						<LanguageSwitcher />
 					</div>
 
@@ -119,21 +122,10 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 						<div className="w-full max-w-3xl">{children}</div>
 					</main>
 
-					<div className="pt-2">
-						<InfoFooter buildHash={buildHash} />
+					<div className="pt-2 drop-shadow-sm">
+						<InfoFooter />
 					</div>
 				</section>
-
-				<aside className="fixed top-0 right-0 hidden h-svh w-1/2 overflow-hidden bg-muted lg:block">
-					<Image
-						alt=""
-						className="absolute inset-0 size-full object-cover"
-						fill
-						priority
-						sizes="50vw"
-						src={authImage}
-					/>
-				</aside>
 			</div>
 		</DomainAuthProvider>
 	);

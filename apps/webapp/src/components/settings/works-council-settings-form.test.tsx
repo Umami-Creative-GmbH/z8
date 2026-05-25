@@ -32,11 +32,7 @@ describe("WorksCouncilSettingsForm", () => {
 			/>,
 		);
 
-		expect(
-			screen
-				.getByRole("switch", { name: "Enable Works Council Mode" })
-				.getAttribute("aria-checked"),
-		).toBe("false");
+		expect(screen.queryByRole("switch", { name: "Enable Works Council Mode" })).toBeNull();
 		expect(
 			screen.getByRole("switch", { name: "Enable review exports" }).getAttribute("aria-checked"),
 		).toBe("false");
@@ -62,7 +58,6 @@ describe("WorksCouncilSettingsForm", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("switch", { name: "Enable Works Council Mode" }));
 		fireEvent.change(screen.getByLabelText("Identity visibility"), {
 			target: { value: "pseudonymized" },
 		});
@@ -83,7 +78,7 @@ describe("WorksCouncilSettingsForm", () => {
 
 		await waitFor(() => {
 			expect(onSave).toHaveBeenCalledWith({
-				enabled: true,
+				enabled: false,
 				identityVisibility: "pseudonymized",
 				absenceVisibility: "grouped",
 				exportEnabled: true,

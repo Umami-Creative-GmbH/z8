@@ -8,7 +8,6 @@ export const PASSWORD_PATTERNS = {
 	HAS_LOWERCASE: /[a-z]/,
 	HAS_UPPERCASE: /[A-Z]/,
 	HAS_DIGIT: /\d/,
-	HAS_SPECIAL: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
 } as const;
 
 /**
@@ -33,24 +32,20 @@ export function checkPasswordRequirements(
 ): PasswordRequirement[] {
 	return [
 		{
-			label: t("auth.password-requirements.length", "At least 8 characters"),
-			met: password.length >= 8,
+			label: t("setup:setup.password.min_length", "12+ characters"),
+			met: password.length >= 12,
 		},
 		{
-			label: t("auth.password-requirements.lowercase", "At least 1 lowercase letter"),
-			met: PASSWORD_PATTERNS.HAS_LOWERCASE.test(password),
-		},
-		{
-			label: t("auth.password-requirements.uppercase", "At least 1 uppercase letter"),
+			label: t("setup:setup.password.uppercase", "Uppercase letter"),
 			met: PASSWORD_PATTERNS.HAS_UPPERCASE.test(password),
 		},
 		{
-			label: t("auth.password-requirements.digit", "At least 1 digit"),
-			met: PASSWORD_PATTERNS.HAS_DIGIT.test(password),
+			label: t("setup:setup.password.lowercase", "Lowercase letter"),
+			met: PASSWORD_PATTERNS.HAS_LOWERCASE.test(password),
 		},
 		{
-			label: t("auth.password-requirements.special", "At least 1 special character"),
-			met: PASSWORD_PATTERNS.HAS_SPECIAL.test(password),
+			label: t("setup:setup.password.number", "Number"),
+			met: PASSWORD_PATTERNS.HAS_DIGIT.test(password),
 		},
 	];
 }
@@ -58,15 +53,15 @@ export function checkPasswordRequirements(
 /**
  * Zod schema for password validation
  * Enforces all password requirements:
- * - Minimum 8 characters
+ * - Minimum 12 characters
  * - At least 1 lowercase letter
  * - At least 1 uppercase letter
  * - At least 1 digit
- * - At least 1 special character
  */
 export const passwordSchema = z
 	.string()
-	.min(8, "Password must be at least 8 characters")
+	.min(12, "Password must be at least 12 characters")
+	.max(128, "Password must be at most 128 characters")
 	.refine(
 		(password) => PASSWORD_PATTERNS.HAS_LOWERCASE.test(password),
 		"Password must contain at least one lowercase letter",
@@ -78,10 +73,6 @@ export const passwordSchema = z
 	.refine(
 		(password) => PASSWORD_PATTERNS.HAS_DIGIT.test(password),
 		"Password must contain at least one digit",
-	)
-	.refine(
-		(password) => PASSWORD_PATTERNS.HAS_SPECIAL.test(password),
-		"Password must contain at least one special character",
 	);
 
 /**

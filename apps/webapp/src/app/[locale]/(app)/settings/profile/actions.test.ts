@@ -4,6 +4,9 @@ const mockState = vi.hoisted(() => {
 	const employeeFindFirst = vi.fn();
 	const employeeUpdateWhere = vi.fn();
 	const employeeUpdateSet = vi.fn(() => ({ where: employeeUpdateWhere }));
+	const userSettingsOnConflictDoUpdate = vi.fn();
+	const userSettingsValues = vi.fn(() => ({ onConflictDoUpdate: userSettingsOnConflictDoUpdate }));
+	const dbInsert = vi.fn(() => ({ values: userSettingsValues }));
 
 	return {
 		headers: new Headers(),
@@ -27,8 +30,11 @@ const mockState = vi.hoisted(() => {
 		updateUser: vi.fn(),
 		employeeFindFirst,
 		dbUpdate: vi.fn(() => ({ set: employeeUpdateSet })),
+		dbInsert,
 		employeeUpdateSet,
 		employeeUpdateWhere,
+		userSettingsValues,
+		userSettingsOnConflictDoUpdate,
 	};
 });
 
@@ -80,7 +86,7 @@ vi.mock("@/db", async () => {
 				},
 			},
 			update: mockState.dbUpdate,
-			insert: vi.fn(),
+			insert: mockState.dbInsert,
 		},
 	};
 });
@@ -103,6 +109,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 						},
 					},
 					update: mockState.dbUpdate,
+					insert: mockState.dbInsert,
 				} as unknown as InstanceType<typeof DatabaseService>["Type"]["db"],
 				query: (_name: string, fn: () => Promise<unknown>) =>
 					Effect.tryPromise({
@@ -171,6 +178,7 @@ describe("profile actions", () => {
 		mockState.session.session.activeOrganizationId = "org-1";
 		mockState.employeeFindFirst.mockResolvedValue(null);
 		mockState.employeeUpdateWhere.mockResolvedValue(undefined);
+		mockState.userSettingsOnConflictDoUpdate.mockResolvedValue(undefined);
 	});
 
 	it("derives the Better Auth name from structured profile details", async () => {
@@ -193,6 +201,45 @@ describe("profile actions", () => {
 			},
 			headers: mockState.headers,
 		});
+	});
+
+	it("persists the product improvement preference with profile details", async () => {
+		const result = await updateProfileDetails({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			gender: "female",
+			pronouns: "she/her",
+			birthday: new Date("1815-12-10T00:00:00.000Z"),
+			image: "/avatars/ada.png",
+			helpImproveProduct: false,
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.userSettingsValues).toHaveBeenCalledWith({
+			userId: "user-1",
+			helpImproveProduct: false,
+		});
+		expect(mockState.userSettingsOnConflictDoUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				set: { helpImproveProduct: false },
+			}),
+		);
+	});
+
+	it("preserves the product improvement preference when omitted", async () => {
+		const result = await updateProfileDetails({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			gender: "female",
+			pronouns: "she/her",
+			birthday: new Date("1815-12-10T00:00:00.000Z"),
+			image: "/avatars/ada.png",
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
+		expect(mockState.userSettingsValues).not.toHaveBeenCalled();
+		expect(mockState.userSettingsOnConflictDoUpdate).not.toHaveBeenCalled();
 	});
 
 	it("uses stored structured names when only the profile image changes", async () => {

@@ -5,13 +5,16 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { changePassword } from "@/app/[locale]/(app)/settings/profile/actions";
+import {
+	PasswordStrengthIndicator,
+	PasswordVisibilityInput,
+	validatePasswordConfirmation,
+	validateStrongPassword,
+} from "@/components/auth/password-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-import { checkPasswordRequirements } from "@/lib/validations/password";
 
 export function PasswordChangeForm() {
 	const { t } = useTranslate();
@@ -26,23 +29,27 @@ export function PasswordChangeForm() {
 	const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 	const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
-	const passwordRequirements = checkPasswordRequirements(passwordData.newPassword, t);
-	const passwordsMatch =
-		passwordData.confirmPassword &&
-		passwordData.newPassword &&
-		passwordData.confirmPassword === passwordData.newPassword;
-
 	// Handle password change
 	const handlePasswordSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsPasswordLoading(true);
 		setPasswordErrors({});
+		const nextErrors: Record<string, string> = {};
+		const newPasswordError = validateStrongPassword(passwordData.newPassword, t);
+		if (newPasswordError) {
+			nextErrors.newPassword = newPasswordError;
+		}
+		const confirmPasswordError = validatePasswordConfirmation(
+			passwordData.confirmPassword,
+			passwordData.newPassword,
+			t,
+		);
+		if (confirmPasswordError) {
+			nextErrors.confirmPassword = confirmPasswordError;
+		}
 
-		// Validate passwords match
-		if (passwordData.newPassword !== passwordData.confirmPassword) {
-			setPasswordErrors({
-				confirmPassword: t("auth.passwords-no-match", "Passwords do not match"),
-			});
+		if (Object.keys(nextErrors).length > 0) {
+			setPasswordErrors(nextErrors);
 			setIsPasswordLoading(false);
 			return;
 		}
@@ -105,9 +112,8 @@ export function PasswordChangeForm() {
 						<Label htmlFor="currentPassword">
 							{t("profile.current-password", "Current Password")}
 						</Label>
-						<Input
+						<PasswordVisibilityInput
 							id="currentPassword"
-							type="password"
 							autoComplete="current-password"
 							value={passwordData.currentPassword}
 							onChange={(e) => handlePasswordChange("currentPassword", e.target.value)}
@@ -122,32 +128,17 @@ export function PasswordChangeForm() {
 					{/* New Password */}
 					<div className="space-y-2">
 						<Label htmlFor="newPassword">{t("profile.new-password", "New Password")}</Label>
-						<Input
+						<PasswordVisibilityInput
 							id="newPassword"
-							type="password"
 							autoComplete="new-password"
 							value={passwordData.newPassword}
 							onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
 							placeholder={t("profile.new-password-placeholder", "Enter new password")}
 							required
 						/>
-						{passwordData.newPassword ? (
-							<div className="space-y-1.5 text-sm">
-								{passwordRequirements.map((req) => (
-									<div
-										className={cn(
-											"flex items-center gap-2",
-											req.met ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
-										)}
-										key={req.label}
-									>
-										<span className={cn(req.met ? "text-green-600" : "text-muted-foreground")}>
-											{req.met ? "✓" : "○"}
-										</span>
-										<span>{req.label}</span>
-									</div>
-								))}
-							</div>
+						<PasswordStrengthIndicator password={passwordData.newPassword} />
+						{passwordErrors.newPassword ? (
+							<p className="text-destructive text-sm">{passwordErrors.newPassword}</p>
 						) : null}
 					</div>
 
@@ -156,9 +147,8 @@ export function PasswordChangeForm() {
 						<Label htmlFor="confirmPassword">
 							{t("profile.confirm-password", "Confirm New Password")}
 						</Label>
-						<Input
+						<PasswordVisibilityInput
 							id="confirmPassword"
-							type="password"
 							autoComplete="new-password"
 							value={passwordData.confirmPassword}
 							onChange={(e) => handlePasswordChange("confirmPassword", e.target.value)}
@@ -167,11 +157,6 @@ export function PasswordChangeForm() {
 						/>
 						{passwordErrors.confirmPassword ? (
 							<p className="text-destructive text-sm">{passwordErrors.confirmPassword}</p>
-						) : null}
-						{passwordsMatch ? (
-							<p className="text-green-600 text-sm dark:text-green-400">
-								{t("auth.passwords-match", "Passwords match")}
-							</p>
 						) : null}
 					</div>
 

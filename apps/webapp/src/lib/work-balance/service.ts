@@ -1,8 +1,15 @@
 import { and, asc, eq, gte, isNotNull, isNull, lt, lte, min, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, employeeWorkBalance, workPeriod } from "@/db/schema";
+import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import {
+	computeEmployeePeriodBalance,
+	markEmployeeWorkBalanceFullRebuildRequested,
+	rebuildEmployeeYearBalanceFromMonths,
+	upsertEmployeeWorkBalancePeriod,
+} from "./period-aggregation";
+import { getHotWindowRange, getMonthPeriodsBetween } from "./periods";
 import type { EmployeeWorkBalancePayload } from "./types";
 
 export function buildWorkBalanceValues(input: {
@@ -176,6 +183,108 @@ export async function computeEmployeeWorkBalance(input: {
 	});
 }
 
+async function sumClosedMonthlyPeriodTotalsBefore(input: {
+	employeeId: string;
+	organizationId: string;
+	beforeDate: string;
+}) {
+	const [row] = await db
+		.select({
+			actualMinutes: sql<number>`coalesce(sum(${employeeWorkBalancePeriod.actualMinutes}), 0)`,
+			requiredMinutes: sql<number>`coalesce(sum(${employeeWorkBalancePeriod.requiredMinutes}), 0)`,
+			firstPeriodStart: min(employeeWorkBalancePeriod.periodStart),
+		})
+		.from(employeeWorkBalancePeriod)
+		.where(
+			and(
+				eq(employeeWorkBalancePeriod.employeeId, input.employeeId),
+				eq(employeeWorkBalancePeriod.organizationId, input.organizationId),
+				eq(employeeWorkBalancePeriod.periodType, "month"),
+				eq(employeeWorkBalancePeriod.isClosed, true),
+				lt(employeeWorkBalancePeriod.periodStart, input.beforeDate),
+			),
+		);
+
+	return {
+		actualMinutes: Number(row?.actualMinutes ?? 0),
+		requiredMinutes: Number(row?.requiredMinutes ?? 0),
+		firstPeriodStart: row?.firstPeriodStart ?? null,
+	};
+}
+
+export async function refreshEmployeeWorkBalanceFromPeriods(input: {
+	employeeId: string;
+	organizationId: string;
+	dirtyFromDate?: string | null;
+	forceFullRebuild?: boolean;
+	now?: Date;
+}) {
+	const now = input.now ?? new Date();
+	const hotWindow = getHotWindowRange(now);
+	const fullRebuildStartDate = input.forceFullRebuild ? await getFirstRelevantDate(input) : null;
+	const affectedStartDate = fullRebuildStartDate ?? input.dirtyFromDate ?? hotWindow.startDate;
+	const closedMonthEnd = DateTime.fromISO(hotWindow.startDate, { zone: "utc" })
+		.minus({ days: 1 })
+		.toISODate()!;
+
+	if (affectedStartDate < hotWindow.startDate) {
+		const touchedYears = new Set<string>();
+		const months = getMonthPeriodsBetween(affectedStartDate, closedMonthEnd);
+		for (const month of months) {
+			const values = await computeEmployeePeriodBalance({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				periodType: "month",
+				periodStart: month.periodStart,
+				periodEnd: month.periodEnd,
+				isClosed: true,
+				now,
+			});
+			await upsertEmployeeWorkBalancePeriod(values, { refreshStartedAt: now });
+			touchedYears.add(month.periodStart.slice(0, 4));
+		}
+
+		for (const year of touchedYears) {
+			await rebuildEmployeeYearBalanceFromMonths({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				dateInYear: `${year}-01-01`,
+				now,
+			});
+		}
+	}
+
+	const hotWindowValues = await computeEmployeePeriodBalance({
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		periodType: "month",
+		periodStart: hotWindow.startDate,
+		periodEnd: hotWindow.endDate,
+		isClosed: false,
+		now,
+	});
+	const closedTotals = await sumClosedMonthlyPeriodTotalsBefore({
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		beforeDate: hotWindow.startDate,
+	});
+
+	await upsertEmployeeWorkBalance(
+		buildWorkBalanceValues({
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			actualMinutes: closedTotals.actualMinutes + hotWindowValues.actualMinutes,
+			requiredMinutes: closedTotals.requiredMinutes + hotWindowValues.requiredMinutes,
+			computedFromDate: closedTotals.firstPeriodStart ?? hotWindow.startDate,
+			computedThroughDate: hotWindow.endDate,
+			computedAt: now,
+		}),
+		{ refreshStartedAt: now },
+	);
+
+	return { updated: true };
+}
+
 export async function upsertEmployeeWorkBalance(
 	values: ReturnType<typeof buildWorkBalanceValues>,
 	options?: { refreshStartedAt?: Date },
@@ -230,7 +339,7 @@ export async function markEmployeeWorkBalanceDirty(input: {
 			set: {
 				isDirty: true,
 				dirtyFromDate: dirtyFromDate
-					? sql`case when ${employeeWorkBalance.dirtyFromDate} is null or ${employeeWorkBalance.dirtyFromDate} > ${dirtyFromDate} then ${dirtyFromDate} else ${employeeWorkBalance.dirtyFromDate} end`
+					? sql`case when ${employeeWorkBalance.isDirty} = true and ${employeeWorkBalance.dirtyFromDate} is null then null when ${employeeWorkBalance.dirtyFromDate} is null or ${employeeWorkBalance.dirtyFromDate} > ${dirtyFromDate} then ${dirtyFromDate} else ${employeeWorkBalance.dirtyFromDate} end`
 					: sql`${employeeWorkBalance.dirtyFromDate}`,
 				refreshRequestedAt: requestedAt,
 				updatedAt: requestedAt,
@@ -266,6 +375,13 @@ export async function markEmployeeWorkBalanceFailed(input: {
 		);
 }
 
+export async function requestEmployeeWorkBalanceFullRebuild(input: {
+	employeeId: string;
+	organizationId: string;
+}) {
+	await markEmployeeWorkBalanceFullRebuildRequested(input);
+}
+
 export async function deleteEmployeeWorkBalance(input: {
 	employeeId: string;
 	organizationId: string;
@@ -284,7 +400,13 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 	const todayDate = getWorkBalanceBatchCutoffDate(now);
 
 	return db
-		.select({ id: employee.id, organizationId: employee.organizationId })
+		.select({
+			id: employee.id,
+			organizationId: employee.organizationId,
+			isDirty: employeeWorkBalance.isDirty,
+			dirtyFromDate: employeeWorkBalance.dirtyFromDate,
+			refreshRequestedAt: employeeWorkBalance.refreshRequestedAt,
+		})
 		.from(employee)
 		.leftJoin(
 			employeeWorkBalance,

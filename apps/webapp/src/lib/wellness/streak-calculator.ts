@@ -7,26 +7,54 @@ import { DateTime } from "luxon";
  * The streak resets if the user misses a day.
  */
 
-// Luxon helper functions (replacing date-fns)
-function isToday(date: Date): boolean {
-	return DateTime.fromJSDate(date).hasSame(DateTime.now(), "day");
-}
-
-function isYesterday(date: Date): boolean {
-	return DateTime.fromJSDate(date).hasSame(DateTime.now().minus({ days: 1 }), "day");
-}
-
 function differenceInCalendarDays(laterDate: Date, earlierDate: Date): number {
-	const later = DateTime.fromJSDate(laterDate).startOf("day");
-	const earlier = DateTime.fromJSDate(earlierDate).startOf("day");
+	const later = DateTime.fromJSDate(laterDate, { zone: "utc" }).startOf("day");
+	const earlier = DateTime.fromJSDate(earlierDate, { zone: "utc" }).startOf("day");
 	return Math.floor(later.diff(earlier, "days").days);
 }
 
 function startOfDay(date: Date): Date {
-	return DateTime.fromJSDate(date).startOf("day").toJSDate();
+	return DateTime.fromJSDate(date, { zone: "utc" }).startOf("day").toJSDate();
 }
 
-export interface StreakCalculationInput {
+function toUtcDateKey(date: DateTime): string {
+	return date.toFormat("yyyy-MM-dd");
+}
+
+function hasMissedRequiredGapDate(
+	lastGoalMetDate: Date,
+	today: Date,
+	workdayRequirements?: WorkdayRequirementByDate,
+): boolean {
+	const daysSinceLastGoal = differenceInCalendarDays(today, lastGoalMetDate);
+
+	if (workdayRequirements === undefined) {
+		return daysSinceLastGoal > 1;
+	}
+
+	let gapDate = DateTime.fromJSDate(lastGoalMetDate, { zone: "utc" })
+		.startOf("day")
+		.plus({ days: 1 });
+	const todayDate = DateTime.fromJSDate(today, { zone: "utc" }).startOf("day");
+
+	while (gapDate < todayDate) {
+		if ((workdayRequirements[toUtcDateKey(gapDate)] ?? 0) > 0) {
+			return true;
+		}
+		gapDate = gapDate.plus({ days: 1 });
+	}
+
+	return false;
+}
+
+export type WorkdayRequirementByDate = Record<string, number>;
+
+export interface WorkdayAwareStreakOptions {
+	today?: Date;
+	workdayRequirements?: WorkdayRequirementByDate;
+}
+
+export interface StreakCalculationInput extends WorkdayAwareStreakOptions {
 	currentStreak: number;
 	longestStreak: number;
 	lastGoalMetDate: Date | null;
@@ -54,14 +82,12 @@ export function calculateStreakOnIntake(
 	newAmount: number,
 ): StreakCalculationResult {
 	const { currentStreak, longestStreak, lastGoalMetDate, todayIntake, dailyGoal } = input;
-	const now = DateTime.now();
-	const today = now.startOf("day").toJSDate();
+	const today = startOfDay(input.today ?? new Date());
 
 	// Check if goal was already met today
 	const goalAlreadyMet = todayIntake >= dailyGoal;
 	const newTotalToday = todayIntake + newAmount;
 	const goalNowMet = newTotalToday >= dailyGoal;
-	const goalJustMet = !goalAlreadyMet && goalNowMet;
 
 	// If goal isn't met (yet), no streak update
 	if (!goalNowMet) {
@@ -92,22 +118,16 @@ export function calculateStreakOnIntake(
 	if (!lastGoalMetDate) {
 		// First time meeting goal
 		newStreak = 1;
-	} else if (isToday(lastGoalMetDate)) {
+	} else if (differenceInCalendarDays(today, lastGoalMetDate) === 0) {
 		// Already counted today (shouldn't happen but handle gracefully)
 		newStreak = currentStreak;
-	} else if (isYesterday(lastGoalMetDate)) {
+	} else if (!hasMissedRequiredGapDate(lastGoalMetDate, today, input.workdayRequirements)) {
 		// Consecutive day - increment streak
 		newStreak = currentStreak + 1;
 	} else {
-		// Gap in days - streak resets
-		const daysSinceLastGoal = differenceInCalendarDays(today, lastGoalMetDate);
-		if (daysSinceLastGoal === 1) {
-			newStreak = currentStreak + 1;
-		} else {
-			// Streak broken - start fresh
-			newStreak = 1;
-			streakBroken = currentStreak > 0;
-		}
+		// Streak broken - start fresh
+		newStreak = 1;
+		streakBroken = currentStreak > 0;
 	}
 
 	return {
@@ -127,16 +147,18 @@ export function calculateStreakOnIntake(
  * @param currentStreak Current streak count
  * @returns Whether streak should be reset
  */
-export function shouldResetStreak(lastGoalMetDate: Date | null, currentStreak: number): boolean {
+export function shouldResetStreak(
+	lastGoalMetDate: Date | null,
+	currentStreak: number,
+	options: WorkdayAwareStreakOptions = {},
+): boolean {
 	if (!lastGoalMetDate || currentStreak === 0) {
 		return false;
 	}
 
-	const today = startOfDay(new Date());
-	const daysSince = differenceInCalendarDays(today, lastGoalMetDate);
+	const today = startOfDay(options.today ?? new Date());
 
-	// If more than 1 day has passed without meeting goal, streak should reset
-	return daysSince > 1;
+	return hasMissedRequiredGapDate(lastGoalMetDate, today, options.workdayRequirements);
 }
 
 /**

@@ -11,6 +11,8 @@ import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-em
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
+import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { useEmployee } from "@/lib/query/use-employee";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
@@ -51,6 +53,8 @@ export function EmployeeDetailPageClient({
 		isConfirmingEmploymentHistory,
 		cancelEmploymentHistory,
 		isCancelingEmploymentHistory,
+		requestWorkBalanceRecalculation,
+		isRequestingWorkBalanceRecalculation,
 		refetch,
 	} = useEmployee({ employeeId, accessTier });
 	const canManageEmployeeDetails = accessTier === "orgAdmin" || accessTier === "manager";
@@ -93,6 +97,28 @@ export function EmployeeDetailPageClient({
 			syncEmployeeForm(form, employee);
 		}
 	}, [employee, form]);
+
+	const handleWorkBalanceRecalculation = async () => {
+		const result = await requestWorkBalanceRecalculation().catch(() => null);
+
+		if (result?.success) {
+			toast.success(
+				t(
+					"settings.workBalanceRecalculation.requestSuccess",
+					"Work balance recalculation queued",
+				),
+			);
+			return;
+		}
+
+		toast.error(
+			result?.error ||
+				t(
+					"settings.workBalanceRecalculation.requestError",
+					"Failed to queue work balance recalculation",
+				),
+		);
+	};
 
 	if (!hasEmployee && !isLoading) {
 		return (
@@ -167,6 +193,15 @@ export function EmployeeDetailPageClient({
 				isCreating={isCreatingEmploymentHistory}
 				isMutating={isMutatingEmploymentHistory}
 			/>
+
+			{accessTier === "orgAdmin" && (
+				<WorkBalanceRecalculationCard
+					employeeName={buildAuthUserDisplayName(employee.user) || employee.id}
+					isPending={isRequestingWorkBalanceRecalculation}
+					onRecalculate={handleWorkBalanceRecalculation}
+					t={t}
+				/>
+			)}
 
 			{employee.contractType === "hourly" && (
 				<RateHistoryCard

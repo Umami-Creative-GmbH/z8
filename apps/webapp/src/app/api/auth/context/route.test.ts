@@ -59,6 +59,7 @@ describe("GET /api/auth/context", () => {
 			shiftsEnabled: false,
 			surchargesEnabled: false,
 			timezone: "UTC",
+			worksCouncilEnabled: true,
 		});
 
 		const response = await GET();
@@ -72,6 +73,7 @@ describe("GET /api/auth/context", () => {
 			shiftsEnabled: false,
 			surchargesEnabled: false,
 			timezone: "UTC",
+			worksCouncilEnabled: true,
 		});
 	});
 });

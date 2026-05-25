@@ -7,6 +7,7 @@ import {
 	type EmployeeWithRelations,
 	getEmployee,
 	listEmployeesForSelect,
+	requestEmployeeWorkBalanceRecalculation,
 	updateEmployee,
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import {
@@ -189,6 +190,17 @@ export function useEmployee(options: UseEmployeeOptions) {
 		},
 	});
 
+	const requestWorkBalanceRecalculationMutation = useMutation({
+		mutationFn: () => requestEmployeeWorkBalanceRecalculation(employeeId),
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.detail(employeeId),
+				});
+			}
+		},
+	});
+
 	// Update rate mutation
 	const updateRateMutation = useMutation({
 		mutationFn: (data: CreateRateHistory) => createRateHistoryEntry(employeeId, data),
@@ -259,6 +271,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 		isConfirmingEmploymentHistory: confirmEmploymentHistoryMutation.isPending,
 		cancelEmploymentHistory: cancelEmploymentHistoryMutation.mutateAsync,
 		isCancelingEmploymentHistory: cancelEmploymentHistoryMutation.isPending,
+		requestWorkBalanceRecalculation: requestWorkBalanceRecalculationMutation.mutateAsync,
+		isRequestingWorkBalanceRecalculation: requestWorkBalanceRecalculationMutation.isPending,
 
 		// Utilities
 		refetch,

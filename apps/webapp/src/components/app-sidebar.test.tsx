@@ -21,7 +21,9 @@ const {
 	getUserOrganizationsMock,
 	getAuthContextMock,
 	getCurrentSettingsAccessTierMock,
+	requireAbilityMock,
 	canCreateOrganizationsForDeploymentMock,
+	canViewWorksCouncilPortalMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -31,7 +33,9 @@ const {
 	getUserOrganizationsMock: vi.fn(),
 	getAuthContextMock: vi.fn(),
 	getCurrentSettingsAccessTierMock: vi.fn(),
+	requireAbilityMock: vi.fn(),
 	canCreateOrganizationsForDeploymentMock: vi.fn(),
+	canViewWorksCouncilPortalMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -45,6 +49,10 @@ vi.mock("@/lib/auth-client", () => ({
 		data: null,
 		isPending: false,
 	}),
+}));
+
+vi.mock("@/lib/works-council/permissions", () => ({
+	canViewWorksCouncilPortal: canViewWorksCouncilPortalMock,
 }));
 
 vi.mock("@/components/nav-main", () => ({
@@ -129,7 +137,9 @@ describe("app sidebar compliance navigation", () => {
 		getUserOrganizationsMock.mockReset();
 		getAuthContextMock.mockReset();
 		getCurrentSettingsAccessTierMock.mockReset();
+		requireAbilityMock.mockReset();
 		canCreateOrganizationsForDeploymentMock.mockReset();
+		canViewWorksCouncilPortalMock.mockReset();
 		vi.resetModules();
 	});
 
@@ -182,6 +192,7 @@ describe("app sidebar compliance navigation", () => {
 					projectsEnabled: false,
 					surchargesEnabled: false,
 					demoDataEnabled: false,
+					worksCouncilEnabled: false,
 				}}
 				settingsAccessTier="member"
 			/>,
@@ -253,12 +264,14 @@ describe("app sidebar compliance navigation", () => {
 				projectsEnabled: false,
 				surchargesEnabled: true,
 				demoDataEnabled: true,
+				worksCouncilEnabled: false,
 			},
 		]);
 		getAuthContextMock.mockResolvedValue({
 			user: {
 				role: "user",
 			},
+			session: { activeOrganizationId: "org_1" },
 			employee: {
 				organizationId: "org_1",
 				role: "manager",
@@ -270,6 +283,7 @@ describe("app sidebar compliance navigation", () => {
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
 			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
 			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
@@ -286,6 +300,137 @@ describe("app sidebar compliance navigation", () => {
 				]),
 			}),
 		);
+	});
+
+	it("passes works council feature state from the active organization", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: true,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: { organizationId: "org_1", role: "admin" },
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		requireAbilityMock.mockResolvedValue({});
+		canViewWorksCouncilPortalMock.mockReturnValue(true);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({ showWorksCouncilNav: true }));
+
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
+		);
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticCommands: expect.any(Array),
+			}),
+		);
+		expect(requireAbilityMock).toHaveBeenCalledTimes(1);
+		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith({}, "org_1", "org_1");
+	});
+
+	it("uses the active organization for works council navigation when no employee exists", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: true,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: null,
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		requireAbilityMock.mockResolvedValue({});
+		canViewWorksCouncilPortalMock.mockReturnValue(true);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({ showWorksCouncilNav: true }));
+
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
+		);
+		expect(requireAbilityMock).toHaveBeenCalledTimes(1);
+		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith({}, "org_1", "org_1");
+	});
+
+	it("hides works council navigation when the organization feature flag is disabled", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: { organizationId: "org_1", role: "admin" },
+		});
+		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		canViewWorksCouncilPortalMock.mockReturnValue(true);
+
+		vi.doMock("@/lib/auth-helpers", () => ({
+			getUserOrganizations: getUserOrganizationsMock,
+			getAuthContext: getAuthContextMock,
+			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
+		}));
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+		render(await ServerAppSidebar({ showWorksCouncilNav: true }));
+
+		expect(screen.queryByRole("link", { name: "Works Council" })).toBeNull();
+		expect(requireAbilityMock).not.toHaveBeenCalled();
+		expect(canViewWorksCouncilPortalMock).not.toHaveBeenCalled();
 	});
 
 	it("renders Team Absences after Team for managers only", () => {
@@ -438,11 +583,21 @@ describe("app sidebar compliance navigation", () => {
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
 		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
-		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: true }]);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: true,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
 		getAuthContextMock.mockResolvedValue({
 			user: {
 				role: "user",
 			},
+			session: { activeOrganizationId: "org_1" },
 			employee: {
 				organizationId: "org_1",
 				role: "admin",
@@ -454,6 +609,7 @@ describe("app sidebar compliance navigation", () => {
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
 			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
 			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
@@ -485,6 +641,7 @@ describe("app sidebar compliance navigation", () => {
 					projectsEnabled: false,
 					surchargesEnabled: false,
 					demoDataEnabled: true,
+					worksCouncilEnabled: false,
 				},
 			}),
 		);
@@ -506,6 +663,7 @@ describe("app sidebar compliance navigation", () => {
 					projectsEnabled: false,
 					surchargesEnabled: false,
 					demoDataEnabled: true,
+					worksCouncilEnabled: false,
 				},
 			}),
 		);
@@ -514,11 +672,21 @@ describe("app sidebar compliance navigation", () => {
 	it("passes platform admin navigation from the authenticated platform role", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
 		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
-		getUserOrganizationsMock.mockResolvedValue([{ id: "org_1", shiftsEnabled: false }]);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
 		getAuthContextMock.mockResolvedValue({
 			user: {
 				role: "admin",
 			},
+			session: { activeOrganizationId: "org_1" },
 			employee: {
 				organizationId: "org_1",
 				role: "employee",
@@ -530,6 +698,7 @@ describe("app sidebar compliance navigation", () => {
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
 			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
 			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,

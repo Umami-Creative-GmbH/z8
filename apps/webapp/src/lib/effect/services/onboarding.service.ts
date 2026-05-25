@@ -413,6 +413,7 @@ export const OnboardingServiceLive = Layer.effect(
 								onboardingStep: nextStep,
 								weekStartDay: data.weekStartDay,
 								timeFormat: data.timeFormat,
+								helpImproveProduct: data.helpImproveProduct,
 							})
 							.onConflictDoUpdate({
 								target: userSettings.userId,
@@ -420,6 +421,7 @@ export const OnboardingServiceLive = Layer.effect(
 									onboardingStep: nextStep,
 									weekStartDay: data.weekStartDay,
 									timeFormat: data.timeFormat,
+									helpImproveProduct: data.helpImproveProduct,
 								},
 							});
 

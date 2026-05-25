@@ -64,7 +64,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						variant="ghost"
 					>
 						{t("settings.licenses.package", "Package")}
-						<IconArrowsUpDown className="ml-2 size-4" />
+						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
 					</Button>
 				),
 				cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
@@ -78,7 +78,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						variant="ghost"
 					>
 						{t("settings.licenses.license", "License")}
-						<IconArrowsUpDown className="ml-2 size-4" />
+						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
 					</Button>
 				),
 				cell: ({ row }) => {
@@ -102,7 +102,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 									rel="noopener noreferrer"
 									target="_blank"
 								>
-									<IconExternalLink className="size-4" />
+									<IconExternalLink aria-hidden="true" className="size-4" />
 									<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
 								</a>
 							)}
@@ -113,7 +113,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 									rel="noopener noreferrer"
 									target="_blank"
 								>
-									<IconExternalLink className="size-4" />
+									<IconExternalLink aria-hidden="true" className="size-4" />
 									<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
 								</a>
 							)}
@@ -157,16 +157,15 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 	}, [licenses]);
 
 	return (
-		<div className="flex h-full flex-col gap-4">
-			{/* Fixed header section */}
+		<div className="flex h-full min-h-0 flex-col gap-4">
 			<div className="shrink-0">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="relative max-w-sm flex-1">
-						<IconSearch className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+						<IconSearch aria-hidden="true" className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
 						<Input
 							className="pl-9"
 							onChange={(e) => setGlobalFilter(e.target.value)}
-							placeholder={t("settings.licenses.searchPlaceholder", "Search packages or licenses...")}
+							placeholder={t("settings.licenses.searchPlaceholder", "Search packages or licenses…")}
 							value={globalFilter}
 						/>
 					</div>
@@ -177,14 +176,13 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 				</div>
 			</div>
 
-			{/* Scrollable table section */}
-			<div className="min-h-0 flex-1 overflow-hidden rounded-lg border [&_[data-slot=table-container]]:h-full [&_[data-slot=table-container]]:overflow-y-auto">
+			<div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-background/60 dark:bg-background/35 [&_[data-slot=table-container]]:min-w-full">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
-									<TableHead key={header.id} className="sticky top-0 z-10 bg-muted py-2">
+									<TableHead key={header.id} className="sticky top-0 z-10 bg-muted/95 py-2 backdrop-blur-sm">
 										{header.isPlaceholder
 											? null
 											: flexRender(header.column.columnDef.header, header.getContext())}
@@ -215,7 +213,6 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 				</Table>
 			</div>
 
-			{/* Fixed footer section */}
 			<p className="shrink-0 text-muted-foreground text-xs">
 				{t(
 					"settings.licenses.footer",

@@ -2,8 +2,6 @@
 
 import {
 	IconCheck,
-	IconEye,
-	IconEyeOff,
 	IconLoader2,
 	IconLock,
 	IconMail,
@@ -14,11 +12,16 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { createPlatformAdminAction } from "@/app/[locale]/(setup)/setup/actions";
+import {
+	PasswordStrengthIndicator,
+	PasswordVisibilityInput,
+	validatePasswordConfirmation,
+	validateStrongPassword,
+} from "@/components/auth/password-fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
-import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
 interface SetupWizardFormProps {
@@ -48,35 +51,11 @@ function validateEmail(value: string): string | undefined {
 	return undefined;
 }
 
-function validatePassword(value: string): string | undefined {
-	if (!value) {
-		return "Password is required";
-	}
-	if (value.length < 12) {
-		return "Password must be at least 12 characters";
-	}
-	if (value.length > 128) {
-		return "Password must be at most 128 characters";
-	}
-	if (!/[A-Z]/.test(value)) {
-		return "Password must contain at least one uppercase letter";
-	}
-	if (!/[a-z]/.test(value)) {
-		return "Password must contain at least one lowercase letter";
-	}
-	if (!/[0-9]/.test(value)) {
-		return "Password must contain at least one number";
-	}
-	return undefined;
-}
-
 export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [wizardStep, setWizardStep] = useState<WizardStep>("form");
-	const [showPassword, setShowPassword] = useState(false);
-	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [createdEmail, setCreatedEmail] = useState<string>("");
 
@@ -101,14 +80,15 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 				return;
 			}
 
-			const passwordError = validatePassword(value.password);
+			const passwordError = validateStrongPassword(value.password, t);
 			if (passwordError) {
 				setError(passwordError);
 				return;
 			}
 
-			if (value.password !== value.confirmPassword) {
-				setError(t("setup:setup.error.passwords_mismatch", "Passwords do not match"));
+			const confirmPasswordError = validatePasswordConfirmation(value.confirmPassword, value.password, t);
+			if (confirmPasswordError) {
+				setError(confirmPasswordError);
 				return;
 			}
 
@@ -271,7 +251,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 					<form.Field
 						name="password"
 						validators={{
-							onChange: ({ value }) => validatePassword(value),
+							onChange: ({ value }) => validateStrongPassword(value, t),
 						}}
 					>
 						{(field) => (
@@ -283,36 +263,13 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 									</span>
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
-									<div className="relative">
-										<Input
-											type={showPassword ? "text" : "password"}
-											placeholder={t(
-												"setup:setup.field.password_placeholder",
-												"Create a strong password",
-											)}
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											autoComplete="new-password"
-											className="pr-10"
-										/>
-										<button
-											type="button"
-											onClick={() => setShowPassword(!showPassword)}
-											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-											aria-label={
-												showPassword
-													? t("setup:setup.hide_password", "Hide password")
-													: t("setup:setup.show_password", "Show password")
-											}
-										>
-											{showPassword ? (
-												<IconEyeOff className="size-4" />
-											) : (
-												<IconEye className="size-4" />
-											)}
-										</button>
-									</div>
+									<PasswordVisibilityInput
+										placeholder={t("setup:setup.field.password_placeholder", "Create a strong password")}
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										autoComplete="new-password"
+									/>
 								</TFormControl>
 								<TFormMessage field={field} />
 								<PasswordStrengthIndicator password={field.state.value} />
@@ -324,12 +281,8 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 						name="confirmPassword"
 						validators={{
 							onChangeListenTo: ["password"],
-							onChange: ({ value, fieldApi }) => {
-								if (value !== fieldApi.form.getFieldValue("password")) {
-									return t("setup:setup.error.passwords_mismatch", "Passwords do not match");
-								}
-								return undefined;
-							},
+							onChange: ({ value, fieldApi }) =>
+								validatePasswordConfirmation(value, fieldApi.form.getFieldValue("password"), t),
 						}}
 					>
 						{(field) => (
@@ -341,36 +294,13 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 									</span>
 								</TFormLabel>
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
-									<div className="relative">
-										<Input
-											type={showConfirmPassword ? "text" : "password"}
-											placeholder={t(
-												"setup:setup.field.confirm_password_placeholder",
-												"Confirm your password",
-											)}
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											autoComplete="new-password"
-											className="pr-10"
-										/>
-										<button
-											type="button"
-											onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-											className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-											aria-label={
-												showConfirmPassword
-													? t("setup:setup.hide_password", "Hide password")
-													: t("setup:setup.show_password", "Show password")
-											}
-										>
-											{showConfirmPassword ? (
-												<IconEyeOff className="size-4" />
-											) : (
-												<IconEye className="size-4" />
-											)}
-										</button>
-									</div>
+									<PasswordVisibilityInput
+										placeholder={t("setup:setup.field.confirm_password_placeholder", "Confirm your password")}
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										autoComplete="new-password"
+									/>
 								</TFormControl>
 								<TFormMessage field={field} />
 							</TFormItem>
@@ -401,73 +331,5 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 				</form>
 			</CardContent>
 		</Card>
-	);
-}
-
-// Hoisted regex for password validation (avoids recreation on every render)
-const UPPERCASE_REGEX = /[A-Z]/;
-const LOWERCASE_REGEX = /[a-z]/;
-const NUMBER_REGEX = /[0-9]/;
-
-function PasswordStrengthIndicator({ password }: { password: string }) {
-	const { t } = useTranslate();
-
-	const checks = [
-		{ label: t("setup:setup.password.min_length", "12+ characters"), valid: password.length >= 12 },
-		{
-			label: t("setup:setup.password.uppercase", "Uppercase letter"),
-			valid: UPPERCASE_REGEX.test(password),
-		},
-		{
-			label: t("setup:setup.password.lowercase", "Lowercase letter"),
-			valid: LOWERCASE_REGEX.test(password),
-		},
-		{ label: t("setup:setup.password.number", "Number"), valid: NUMBER_REGEX.test(password) },
-	];
-
-	const validCount = checks.filter((c) => c.valid).length;
-
-	if (password.length === 0) {
-		return null;
-	}
-
-	return (
-		<div className="mt-2 space-y-2">
-			<div className="flex gap-1">
-				{[1, 2, 3, 4].map((level) => (
-					<div
-						key={level}
-						className={cn(
-							"h-1 flex-1 rounded-full transition-colors",
-							validCount >= level
-								? validCount === 4
-									? "bg-green-500"
-									: validCount >= 3
-										? "bg-yellow-500"
-										: "bg-orange-500"
-								: "bg-muted",
-						)}
-					/>
-				))}
-			</div>
-			<div className="grid grid-cols-2 gap-1 text-xs">
-				{checks.map((check) => (
-					<div
-						key={check.label}
-						className={cn(
-							"flex items-center gap-1",
-							check.valid ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
-						)}
-					>
-						{check.valid ? (
-							<IconCheck className="size-3" />
-						) : (
-							<div className="size-3 rounded-full border border-current" />
-						)}
-						{check.label}
-					</div>
-				))}
-			</div>
-		</div>
 	);
 }

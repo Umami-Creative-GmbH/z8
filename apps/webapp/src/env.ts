@@ -72,9 +72,7 @@ const parsedEnv = createEnv({
 		SCALEWAY_SECRET_KEY: z.string().optional(),
 		SCALEWAY_PROJECT_ID: z.string().optional(),
 		SCALEWAY_REGION: z.enum(["fr-par", "nl-ams", "pl-waw"]).default("fr-par"),
-		SCALEWAY_KEY_MANAGER_API_URL: z
-			.url()
-			.default("https://api.scaleway.com"),
+		SCALEWAY_KEY_MANAGER_API_URL: z.url().default("https://api.scaleway.com"),
 
 		// Tolgee (Server side)
 		TOLGEE_PROJECT_ID: z.string().optional(),
@@ -145,6 +143,8 @@ const parsedEnv = createEnv({
 		NEXT_PUBLIC_BUILD_HASH: z.string().optional(),
 		NEXT_PUBLIC_TOLGEE_API_KEY: z.string().optional(),
 		NEXT_PUBLIC_TOLGEE_API_URL: z.url().optional(),
+		NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().optional(),
+		NEXT_PUBLIC_POSTHOG_HOST: z.url().optional().default("https://eu.i.posthog.com"),
 	},
 	runtimeEnv: {
 		APP_URL: process.env.APP_URL,
@@ -222,6 +222,8 @@ const parsedEnv = createEnv({
 		PLATFORM_DOMAIN: process.env.PLATFORM_DOMAIN,
 		NEXT_PUBLIC_TOLGEE_API_KEY: process.env.NEXT_PUBLIC_TOLGEE_API_KEY,
 		NEXT_PUBLIC_TOLGEE_API_URL: process.env.NEXT_PUBLIC_TOLGEE_API_URL,
+		NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+		NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 		GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 		GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
 		GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
@@ -240,6 +242,26 @@ const parsedEnv = createEnv({
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
 		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
 	},
+	createFinalSchema: (shape) =>
+		z.object(shape).superRefine((env, ctx) => {
+			if (env.SECRET_STORE_PROVIDER !== "scaleway") return;
+
+			const missingScalewayEnvVars = [
+				"SCALEWAY_ACCESS_KEY",
+				"SCALEWAY_SECRET_KEY",
+				"SCALEWAY_PROJECT_ID",
+			] as const;
+
+			for (const key of missingScalewayEnvVars) {
+				if (!env[key]) {
+					ctx.addIssue({
+						code: "custom",
+						path: [key],
+						message: `${key} is required when SECRET_STORE_PROVIDER=scaleway`,
+					});
+				}
+			}
+		}),
 	skipValidation: skipEnvValidation,
 	emptyStringAsUndefined: true,
 	onValidationError: (issues) => {
@@ -250,23 +272,5 @@ const parsedEnv = createEnv({
 		process.exit(1);
 	},
 });
-
-if (!skipEnvValidation && parsedEnv.SECRET_STORE_PROVIDER === "scaleway") {
-	const missingScalewayEnvVars = [
-		"SCALEWAY_ACCESS_KEY",
-		"SCALEWAY_SECRET_KEY",
-		"SCALEWAY_PROJECT_ID",
-	].filter((key) => !parsedEnv[key as keyof typeof parsedEnv]);
-
-	if (missingScalewayEnvVars.length > 0) {
-		console.error("❌ Invalid environment variables:");
-		for (const key of missingScalewayEnvVars) {
-			console.error(
-				`   - ${key}: Required when SECRET_STORE_PROVIDER=scaleway`
-			);
-		}
-		process.exit(1);
-	}
-}
 
 export const env = parsedEnv;
