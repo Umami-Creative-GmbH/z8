@@ -246,7 +246,7 @@ export function NavUser({
 												className="w-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&[data-state=open]>svg:last-child]:rotate-180"
 												onSelect={(event) => event.preventDefault()}
 											>
-												<IconTextSize className="mr-2 size-4" stroke={1.5} />
+												<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
 												{t("user.font-size", "Font size")}
 												<IconChevronDown className="ml-auto size-4 transition-transform duration-200" />
 											</DropdownMenuItem>
@@ -325,7 +325,7 @@ export function NavUser({
 									</DropdownMenuSub>
 									<DropdownMenuSub>
 										<DropdownMenuSubTrigger>
-											<IconTextSize className="mr-2 size-4" stroke={1.5} />
+											<IconTextSize aria-hidden="true" className="mr-2 size-4" stroke={1.5} />
 											{t("user.font-size", "Font size")}
 										</DropdownMenuSubTrigger>
 										<DropdownMenuSubContent>
