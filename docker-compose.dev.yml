@@ -62,7 +62,7 @@ services:
       MIN_POOL_SIZE: 10
       RESERVE_POOL_SIZE: 10
       IGNORE_STARTUP_PARAMETERS: extra_float_digits
-      AUTH_TYPE: md5
+      AUTH_TYPE: scram-sha-256
     ports:
       - "5432:5432"
     depends_on:
