@@ -36,7 +36,6 @@
     "loadError": "Laden der Genehmigungen fehlgeschlagen",
     "noAbsenceApprovals": "Keine ausstehenden Abwesenheitsanträge zur Überprüfung.",
     "noRequests": "Keine ausstehenden Anträge",
-    "noRequestsDescription": "Wenn Teammitglieder Anfragen einreichen, erscheinen diese hier",
     "noSearchResults": "Keine Genehmigungen entsprechen Ihrer Suche.",
     "note": "Notiz",
     "notes": "Notizen",
@@ -81,5 +80,69 @@
     "type": "Typ",
     "unifiedInboxBannerDescription": "Sehen Sie alle Genehmigungsarten an einem Ort mit Filtern, Massenaktionen und SLA-Nachverfolgung.",
     "unifiedInboxBannerTitle": "Probieren Sie den neuen einheitlichen Posteingang aus"
+  },
+  "fastLanes": {
+    "approve": "Genehmigen",
+    "approveGroup": "${label} genehmigen",
+    "confirmReject": "Ablehnung bestätigen",
+    "confirmRejectGroup": "Ablehnung von ${label} bestätigen",
+    "description": "Ähnliche unkomplizierte Anfragen stapelweise prüfen.",
+    "expandGroup": "${label} aufklappen",
+    "groups": {
+      "lowRiskAbsence": {
+        "description": "Abwesenheiten ohne erkannte Konflikte.",
+        "label": "Abwesenheiten mit geringem Risiko"
+      },
+      "payrollBlocker": {
+        "description": "Lohnabrechnungsrelevante Anfragen, die vorrangig geprüft werden müssen.",
+        "label": "Lohnabrechnungsblocker"
+      },
+      "smallTimeCorrection": {
+        "description": "Geringfügige Zeitkorrekturen innerhalb der Richtlinientoleranz.",
+        "label": "Geringfügige Zeitkorrekturen"
+      },
+      "stalePending": {
+        "description": "Ausstehende Anfragen, die länger als das Prüfungsziel warten.",
+        "label": "Veraltete Anfragen"
+      }
+    },
+    "reject": "Ablehnen",
+    "rejectGroup": "${label} ablehnen",
+    "rejectReason": "Grund für Massenablehnung",
+    "risk": {
+      "high": "Hohes Risiko",
+      "low": "Geringes Risiko",
+      "medium": "Mittleres Risiko"
+    },
+    "showGroup": "${label} anzeigen",
+    "title": "Schnellverfahren"
+  },
+  "sprint": {
+    "approve": "Genehmigen",
+    "approveCurrentApproval": "Aktuelle Genehmigung bestätigen",
+    "complete": "Sprint abgeschlossen",
+    "confirmReject": "Ablehnung bestätigen",
+    "description": "Ausstehende Genehmigungen einzeln mit Tastaturkürzeln prüfen.",
+    "openDetails": "Details öffnen",
+    "progress": "${currentIndex + 1} von ${visibleItems.length}",
+    "reject": "Ablehnen",
+    "rejectCurrentApproval": "Aktuelle Genehmigung ablehnen",
+    "rejectReason": "Grund für Sprint-Ablehnung",
+    "risk": {
+      "high": "Hohes Risiko",
+      "low": "Geringes Risiko",
+      "medium": "Mittleres Risiko"
+    },
+    "riskReasons": {
+      "needsReview": "Prüfung erforderlich",
+      "noConflictsDetected": "Keine Konflikte erkannt",
+      "payrollRelevant": "Lohnabrechnungsrelevant",
+      "smallTimeDelta": "Geringe Zeitdifferenz",
+      "stalePending": "Veraltet ausstehend"
+    },
+    "skip": "Überspringen",
+    "skipCurrentApproval": "Aktuelle Genehmigung überspringen",
+    "start": "Genehmigungs-Sprint starten",
+    "title": "Genehmigungs-Sprint"
   }
 }

@@ -161,6 +161,7 @@
         "organizations": "Organizations",
         "overview": "Overview",
         "settings": "Settings",
+        "systemEmailTemplates": "System Email Templates",
         "users": "Users",
         "workerQueue": "Worker Queue"
       },
@@ -252,6 +253,10 @@
           "description": "Suspend, delete, or review organizations",
           "title": "Organization Management"
         },
+        "systemEmailTemplates": {
+          "description": "Edit platform-owned billing and system email copy",
+          "title": "System Email Templates"
+        },
         "title": "Quick Actions",
         "users": {
           "description": "Ban/unban users, manage sessions, view activity",
@@ -285,6 +290,37 @@
         "siteKey": "Site Key",
         "title": "Cloudflare Turnstile"
       }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Reset to system template",
+        "save": "Save",
+        "sendTest": "Send test"
+      },
+      "defaultFallback": "Default fallback",
+      "defaultFallbackDescription": "If this template uses the system default, Z8 sends the platform copy and subject:",
+      "description": "Manage platform-owned billing and system emails. These templates are sent with the system email transport only and are not scoped to an organization.",
+      "editBodyBeforeSaving": "Edit the email body before saving a first custom template.",
+      "empty": "No platform system email templates are available.",
+      "eyebrow": "System transport",
+      "reset": "System email template reset to default",
+      "resetDialog": {
+        "confirm": "Reset platform system template",
+        "description": "This deletes the global platform override for this system email template and restores the built-in subject and body. Live billing and system emails will use the default platform copy after reset.",
+        "title": "Reset Platform System Template?"
+      },
+      "resetFailed": "Failed to reset system email template",
+      "saved": "System email template saved",
+      "saveFailed": "Failed to save system email template",
+      "status": {
+        "customized": "Customized",
+        "default": "Default"
+      },
+      "systemTemplates": "System templates",
+      "testFailed": "Failed to send test email",
+      "testSent": "Test email sent to your account",
+      "title": "System Email Templates",
+      "transportNotice": "Use this area for global billing and system email copy. Organization email transport settings are ignored for these messages; tests and live sends use the platform system transport."
     },
     "users": {
       "badges": {

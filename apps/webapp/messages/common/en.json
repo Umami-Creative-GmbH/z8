@@ -221,7 +221,10 @@
     "clock-out": "Clock Out"
   },
   "info": {
-    "back-to-login": "Back to login"
+    "agb": "T&Cs",
+    "back-to-login": "Back to login",
+    "imprint": "Imprint",
+    "trust-center": "Trust Center"
   },
   "nav": {
     "absences": "Absences",
@@ -241,7 +244,8 @@
     "teamAbsences": "Team Absences",
     "team-label": "Team",
     "time-tracking": "Time Tracking",
-    "travel-expenses": "Travel Expenses"
+    "travel-expenses": "Travel Expenses",
+    "worksCouncil": "Works Council"
   },
   "notifications": {
     "actions": {
@@ -406,6 +410,7 @@
     "alt": "User avatar"
   },
   "user": {
+    "font-size": "Font size",
     "language": "Language",
     "logging-out": "Logging out...",
     "log-out": "Log out",

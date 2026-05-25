@@ -161,6 +161,7 @@
         "organizations": "Organizaciones",
         "overview": "Resumen",
         "settings": "Configuración",
+        "systemEmailTemplates": "Plantillas de correo electrónico del sistema",
         "users": "Usuarios",
         "workerQueue": "Cola de trabajo"
       },
@@ -252,6 +253,10 @@
           "description": "Suspender, eliminar o revisar organizaciones",
           "title": "Gestión de organizaciones"
         },
+        "systemEmailTemplates": {
+          "description": "Editar el contenido de los correos electrónicos de facturación y del sistema propiedad de la plataforma",
+          "title": "Plantillas de correo electrónico del sistema"
+        },
         "title": "Acciones rápidas",
         "users": {
           "description": "Banear/desbanear usuarios, gestionar sesiones, ver actividad",
@@ -285,6 +290,37 @@
         "siteKey": "Clave del sitio",
         "title": "Cloudflare Turnstile"
       }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Restablecer a la plantilla del sistema",
+        "save": "Guardar",
+        "sendTest": "Enviar prueba"
+      },
+      "defaultFallback": "Alternativa predeterminada",
+      "defaultFallbackDescription": "Si esta plantilla utiliza el valor predeterminado del sistema, Z8 envía la copia y el asunto de la plataforma:",
+      "description": "Gestionar correos electrónicos de facturación y del sistema propiedad de la plataforma. Estas plantillas se envían únicamente con el transporte de correo electrónico del sistema y no están limitadas a una organización.",
+      "editBodyBeforeSaving": "Edite el cuerpo del correo electrónico antes de guardar una primera plantilla personalizada.",
+      "empty": "No hay plantillas de correo electrónico del sistema de la plataforma disponibles.",
+      "eyebrow": "Transporte del sistema",
+      "reset": "Plantilla de correo electrónico del sistema restablecida al valor predeterminado",
+      "resetDialog": {
+        "confirm": "Restablecer plantilla del sistema de la plataforma",
+        "description": "Esto elimina la anulación global de la plataforma para esta plantilla de correo electrónico del sistema y restaura el asunto y el cuerpo integrados. Los correos electrónicos de facturación y del sistema en vivo utilizarán la copia predeterminada de la plataforma después del restablecimiento.",
+        "title": "¿Restablecer plantilla del sistema de la plataforma?"
+      },
+      "resetFailed": "Error al restablecer la plantilla de correo electrónico del sistema",
+      "saved": "Plantilla de correo electrónico del sistema guardada",
+      "saveFailed": "Error al guardar la plantilla de correo electrónico del sistema",
+      "status": {
+        "customized": "Personalizado",
+        "default": "Predeterminado"
+      },
+      "systemTemplates": "Plantillas del sistema",
+      "testFailed": "Error al enviar el correo electrónico de prueba",
+      "testSent": "Correo electrónico de prueba enviado a su cuenta",
+      "title": "Plantillas de correo electrónico del sistema",
+      "transportNotice": "Utilice esta área para la facturación global y el texto de los correos electrónicos del sistema. Los ajustes de transporte de correo electrónico de la organización se ignoran para estos mensajes; las pruebas y los envíos reales utilizan el transporte del sistema de la plataforma."
     },
     "users": {
       "badges": {

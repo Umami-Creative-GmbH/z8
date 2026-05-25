@@ -161,6 +161,7 @@
         "organizations": "Organizações",
         "overview": "Visão geral",
         "settings": "Configurações",
+        "systemEmailTemplates": "Modelos de E-mail do Sistema",
         "users": "Usuários",
         "workerQueue": "Fila de trabalho"
       },
@@ -252,6 +253,10 @@
           "description": "Suspender, excluir ou revisar organizações",
           "title": "Gerenciamento de Organizações"
         },
+        "systemEmailTemplates": {
+          "description": "Editar cópia de faturamento e e-mail do sistema da plataforma",
+          "title": "Modelos de E-mail do Sistema"
+        },
         "title": "Ações Rápidas",
         "users": {
           "description": "Banir/desbanir usuários, gerenciar sessões, ver atividades",
@@ -285,6 +290,37 @@
         "siteKey": "Chave do site",
         "title": "Cloudflare Turnstile"
       }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Redefinir para o modelo do sistema",
+        "save": "Salvar",
+        "sendTest": "Enviar teste"
+      },
+      "defaultFallback": "Fallback padrão",
+      "defaultFallbackDescription": "Se este modelo usar o padrão do sistema, o Z8 enviará a cópia e o assunto da plataforma:",
+      "description": "Gerenciar e-mails de faturamento e do sistema da plataforma. Esses modelos são enviados apenas com o transporte de e-mail do sistema e não estão vinculados a uma organização.",
+      "editBodyBeforeSaving": "Edite o corpo do e-mail antes de salvar um primeiro modelo personalizado.",
+      "empty": "Nenhum modelo de e-mail do sistema da plataforma está disponível.",
+      "eyebrow": "Transporte do sistema",
+      "reset": "Modelo de e-mail do sistema redefinido para o padrão",
+      "resetDialog": {
+        "confirm": "Redefinir modelo do sistema da plataforma",
+        "description": "Isso exclui a substituição global da plataforma para este modelo de e-mail do sistema e restaura o assunto e o corpo integrados. Os e-mails de faturamento e do sistema em tempo real usarão a cópia padrão da plataforma após a redefinição.",
+        "title": "Redefinir Modelo do Sistema da Plataforma?"
+      },
+      "resetFailed": "Falha ao redefinir o modelo de e-mail do sistema",
+      "saved": "Modelo de e-mail do sistema salvo",
+      "saveFailed": "Falha ao salvar o modelo de e-mail do sistema",
+      "status": {
+        "customized": "Personalizado",
+        "default": "Padrão"
+      },
+      "systemTemplates": "Modelos do sistema",
+      "testFailed": "Falha ao enviar e-mail de teste",
+      "testSent": "E-mail de teste enviado para sua conta",
+      "title": "Modelos de E-mail do Sistema",
+      "transportNotice": "Use esta área para faturamento global e cópia de e-mail do sistema. As configurações de transporte de e-mail da organização são ignoradas para essas mensagens; testes e envios reais usam o transporte do sistema da plataforma."
     },
     "users": {
       "badges": {

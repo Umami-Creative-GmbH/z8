@@ -18,7 +18,13 @@
     "creating_account": "Creazione del tuo account amministratore in corso...",
     "description": "Configura il primo account amministratore per la tua piattaforma. Questo account avrà accesso completo al sistema ed è separato dagli account dell'organizzazione.",
     "error": {
-      "passwords_mismatch": "Le password non corrispondono"
+      "password_lowercase": "La password deve contenere almeno una lettera minuscola",
+      "password_max_length": "La password deve contenere al massimo 128 caratteri",
+      "password_min_length": "La password deve contenere almeno 12 caratteri",
+      "password_number": "La password deve contenere almeno un numero",
+      "password_required": "La password è obbligatoria",
+      "passwords_mismatch": "Le password non corrispondono",
+      "password_uppercase": "La password deve contenere almeno una lettera maiuscola"
     },
     "field": {
       "confirm_password": "Conferma password",

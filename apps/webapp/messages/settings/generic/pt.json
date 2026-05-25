@@ -519,13 +519,13 @@
         "male": "Masculino",
         "other": "Outro"
       },
+      "helpImproveProduct": "Ajude-nos a melhorar este aplicativo",
+      "helpImproveProductDescription": "Compartilhe insights de uso para que possamos tornar o Z8 mais confiável e útil.",
       "information": "Informações do Perfil",
       "informationDescription": "Atualize suas informações pessoais e foto de perfil",
       "lastName": "Sobrenome",
       "lastNamePlaceholder": "Lovelace…",
       "personalInformation": "Informações Pessoais",
-      "pictureHint": "JPG, PNG ou WebP. Máx. 5MB. Recomendado 400x400px",
-      "profilePicture": "Foto de Perfil",
       "pronouns": "Pronomes",
       "pronouns.custom": "Pronomes personalizados",
       "pronouns.customPlaceholder": "ex: xe/xem…",
@@ -661,6 +661,7 @@
       "connect": "Conectar",
       "connected": "Conectado",
       "connectedAs": "Conectado como {accountId}",
+      "connectFailed": "Falha ao conectar conta",
       "connecting": "Conectando…",
       "connectProvider": "Conecte sua conta {provider}",
       "description": "Vincule suas contas sociais para um login mais fácil",
@@ -831,6 +832,10 @@
       "saveError": "Falha ao salvar as configurações de bem-estar",
       "title": "Configurações de Bem-estar"
     },
+    "workBalanceRecalculation": {
+      "requestError": "Falha ao colocar o recálculo do saldo de trabalho na fila",
+      "requestSuccess": "Recálculo do saldo de trabalho colocado na fila"
+    },
     "workerQueue": {
       "cards": {
         "active": "Ativo",
@@ -856,6 +861,12 @@
       "loadError": "Falha ao carregar o status da fila",
       "noExecutions": "Nenhuma execução recente encontrada",
       "noScheduledJobs": "Nenhuma tarefa agendada encontrada",
+      "recentExecutions": {
+        "allJobs": "Todos os trabalhos",
+        "error": "Falha ao carregar execuções",
+        "filterLabel": "Filtrar por trabalho",
+        "loading": "Carregando execuções…"
+      },
       "recentExecutionsDescription": "Últimas 50 execuções de tarefas rastreadas no banco de dados.",
       "reliability": {
         "averageDuration": "Duração média",
@@ -915,6 +926,34 @@
         "totalRuns": "Total de Execuções"
       },
       "title": "Fila do Worker"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Nomes das categorias",
+        "grouped": "Agrupado",
+        "hidden": "Oculto"
+      },
+      "absenceVisibility": "Visibilidade de ausência",
+      "description": "Configurar acesso seguro do Conselho de Empresa (Betriebsrat) e revisar exportações",
+      "exportEnabled": "Ativar exportações de revisão",
+      "exportEnabledDescription": "Permitir que usuários autorizados do conselho de empresa gerem pacotes de revisão com filtragem de privacidade.",
+      "formDescription": "Configurar acesso seguro do Conselho de Empresa (Betriebsrat) e revisar exportações para esta organização.",
+      "identity": {
+        "aggregated": "Agregado",
+        "named": "Nomeado",
+        "pseudonymized": "Pseudonimizado"
+      },
+      "identityVisibility": "Visibilidade de identidade",
+      "minimumThreshold": "Limite mínimo de agregação",
+      "minimumThresholdDescription": "Grupos abaixo deste tamanho são suprimidos para reduzir o risco de reidentificação.",
+      "save": "Salvar configurações",
+      "saved": "Configurações do Conselho de Empresa salvas",
+      "saveError": "Falha ao salvar as configurações do Conselho de Empresa",
+      "title": "Modo do Conselho de Empresa",
+      "visibleLocationIds": "IDs de local visíveis",
+      "visibleLocationIdsDescription": "IDs de local opcionais separados por vírgula. Deixe vazio para incluir todos os locais.",
+      "visibleTeamIds": "IDs de equipe visíveis",
+      "visibleTeamIdsDescription": "IDs de equipe opcionais separados por vírgula. Deixe vazio para incluir todas as equipes."
     }
   }
 }

@@ -1,394 +1,354 @@
 {
-	"analytics": {
-		"access": {
-			"noEmployeeFeature": "view analytics",
-			"restrictedDescription": "Analytics is only available to administrators and managers.",
-			"restrictedTitle": "Access Restricted"
-		},
-		"common": {
-			"days": "Days",
-			"employee": "Employee",
-			"employees": "Employees",
-			"hours": "Hours",
-			"loadingOrganizationSettings": "Loading organization settings before enabling presets.",
-			"noDataAvailable": "No data available",
-			"noDataForPeriod": "No data available for the selected period",
-			"overtime": "Overtime",
-			"overtimeHours": "Overtime Hours",
-			"team": "Team",
-			"totalHours": "Total Hours",
-			"unavailable": "Unavailable",
-			"undertime": "Undertime",
-			"undertimeHours": "Undertime Hours"
-		},
-		"layout": {
-			"description": "Comprehensive insights into team performance, work hours, and absence patterns",
-			"tabs": {
-				"overtimeBurnDown": "Overtime Burn-Down",
-				"overview": "Overview",
-				"teamPerformance": "Team Performance",
-				"vacationTrends": "Vacation Trends",
-				"workHours": "Work Hours"
-			},
-			"title": "Analytics"
-		},
-		"overtimeBurnDown": {
-			"breakdown": "Breakdown",
-			"breakdownDescription": "{label} level overtime burn-down details",
-			"breakdownEmpty": "No breakdown data available yet",
-			"byCostCenter": "By Cost Center",
-			"byManager": "By Manager",
-			"byTeam": "By Team",
-			"costCenter": "Cost Center",
-			"currentOvertime": "Current Overtime",
-			"description": "Track weekly overtime reduction across teams.",
-			"errors": {
-				"loadData": "Failed to load overtime burn-down data"
-			},
-			"filters": {
-				"allCostCenters": "All cost centers",
-				"allManagers": "All managers",
-				"allTeams": "All teams",
-				"breakdownLabel": "Breakdown dimension",
-				"costCenterLabel": "Cost center filter",
-				"managerLabel": "Manager filter",
-				"teamLabel": "Team filter"
-			},
-			"improvingGroups": "Improving Groups",
-			"improvingGroupsDescription": "Groups with decreasing overtime",
-			"manager": "Manager",
-			"previousOvertime": "Previous Overtime",
-			"previousPeriodDescription": "Compared with previous period",
-			"selectedRangeDescription": "For selected date range and filters",
-			"title": "Overtime Burn-Down",
-			"trendDirection": "Trend Direction",
-			"trendDirectionDescription": "Overall overtime trajectory",
-			"trend": {
-				"down": "Down",
-				"flat": "Flat",
-				"up": "Up"
-			},
-			"weeklyTrend": {
-				"description": "Weekly overtime reduction trend",
-				"empty": "No trend data available yet",
-				"title": "Weekly Burn-Down Trend"
-			},
-			"weekOverWeek": "Week-over-Week"
-		},
-		"overview": {
-			"absencePatterns": {
-				"description": "Absence distribution by category",
-				"title": "Absence Patterns"
-			},
-			"approvalBottlenecks": {
-				"approvedRate": "{rate}% approved",
-				"avgDecision": "{hours}h avg decision",
-				"byManager": "By Manager",
-				"byTeam": "By Team",
-				"byType": "By Type",
-				"description": "Teams and request types with pending work or SLA warnings",
-				"empty": "No approval bottlenecks found",
-				"pendingSummary": "{pendingCount} pending - {slaWarnings} SLA warnings",
-				"title": "Approval Bottlenecks",
-				"unavailable": "Approval bottlenecks could not be loaded"
-			},
-			"kpis": {
-				"approvalRate": {
-					"description": "Of decided requests approved",
-					"title": "Approval Rate",
-					"unavailableDescription": "Approval analytics could not be loaded"
-				},
-				"avgWorkHours": {
-					"description": "Per employee in selected period",
-					"title": "Avg Work Hours"
-				},
-				"totalAbsenceDays": {
-					"description": "Total days in selected period",
-					"title": "Total Absence Days"
-				},
-				"totalEmployees": {
-					"description": "Active employees in organization",
-					"title": "Total Employees"
-				}
-			},
-			"loadingLabel": "Loading analytics data",
-			"workHoursByTeam": {
-				"description": "Total work hours logged per team",
-				"title": "Work Hours by Team"
-			}
-		},
-		"teamPerformance": {
-			"avgPerEmployee": "Avg per Employee",
-			"comparison": {
-				"description": "Total work hours by team for the selected period",
-				"title": "Team Comparison"
-			},
-			"details": {
-				"description": "Breakdown of work hours by team and employee",
-				"title": "Team Performance Details"
-			},
-			"employeeCount": "Employee Count",
-			"errors": {
-				"loadData": "Failed to load team performance data"
-			},
-			"onTrack": "On Track",
-			"variance": {
-				"description": "Hours variance from expected work hours",
-				"empty": "No variance data available",
-				"title": "Overtime & Undertime"
-			}
-		},
-		"vacationTrends": {
-			"allocated": "Allocated",
-			"balance": {
-				"description": "Days allocated, taken, and remaining by employee",
-				"title": "Vacation Balance"
-			},
-			"daysRemaining": "{count} days remaining",
-			"daysTaken": "{count} days taken",
-			"errors": {
-				"loadData": "Failed to load vacation trends data"
-			},
-			"monthlyUsage": {
-				"description": "Vacation days taken per month",
-				"empty": "No monthly usage data available",
-				"title": "Monthly Vacation Usage"
-			},
-			"peakMonths": {
-				"description": "Months with highest vacation activity",
-				"empty": "No peak month data available",
-				"title": "Peak Vacation Months"
-			},
-			"remaining": "Remaining",
-			"taken": "Taken",
-			"utilization": {
-				"description": "Overall vacation days usage across organization",
-				"overall": "Overall Utilization",
-				"title": "Vacation Utilization"
-			},
-			"utilizationLabel": "Utilization",
-			"utilizationPercent": "Utilization %",
-			"vacationDays": "Vacation Days"
-		},
-		"workHours": {
-			"actualHours": "Actual Hours",
-			"avgHoursPerWeek": "Avg Hours/Week",
-			"daily": {
-				"description": "Actual vs expected work hours per day",
-				"empty": "No daily hours data available",
-				"title": "Daily Work Hours"
-			},
-			"distribution": {
-				"description": "Employee work hours comparison (horizontal bar)",
-				"empty": "No distribution data available",
-				"title": "Work Hours Distribution"
-			},
-			"employeeComparison": {
-				"description": "Total hours and variance from expected by employee",
-				"title": "Employee Work Hours"
-			},
-			"errors": {
-				"loadData": "Failed to load work hours analytics data"
-			},
-			"expectedHours": "Expected Hours",
-			"variance": "Variance",
-			"varianceTrend": {
-				"description": "Hours variance from expected work hours over time",
-				"empty": "No trend data available",
-				"title": "Overtime & Undertime Trend"
-			}
-		}
-	},
-	"appSearch": {
-		"commandDescription": "Search pages and run common actions from one place.",
-		"commandPlaceholder": "Search or run a command…",
-		"commands": {
-			"addManualTimeEntry": {
-				"keywords": {
-					"entry": "entry",
-					"hours": "hours",
-					"manual": "manual",
-					"time": "time"
-				},
-				"subtitle": "Record hours for a past shift or correction",
-				"title": "Add manual time entry"
-			},
-			"createProject": {
-				"keywords": {
-					"create": "create",
-					"project": "project",
-					"settings": "settings"
-				},
-				"subtitle": "Open project settings to define a new project",
-				"title": "Create project"
-			},
-			"inviteTeammate": {
-				"keywords": {
-					"invite": "invite",
-					"member": "member",
-					"teammate": "teammate"
-				},
-				"subtitle": "Open organization management to add a colleague",
-				"title": "Invite teammate"
-			},
-			"openApprovalsInbox": {
-				"keywords": {
-					"approvals": "approvals",
-					"inbox": "inbox",
-					"review": "review"
-				},
-				"subtitle": "Review pending employee requests",
-				"title": "Open approvals inbox"
-			},
-			"openMyRequests": {
-				"keywords": {
-					"mine": "mine",
-					"requests": "requests"
-				},
-				"subtitle": "Review your submitted absences and expenses",
-				"title": "Open my requests"
-			},
-			"openPayrollReadiness": {
-				"keywords": {
-					"export": "export",
-					"payroll": "payroll",
-					"readiness": "readiness"
-				},
-				"subtitle": "Check whether time data is ready for payroll",
-				"title": "Open payroll readiness"
-			},
-			"openSettings": {
-				"keywords": {
-					"preferences": "preferences",
-					"settings": "settings"
-				},
-				"subtitle": "Manage your profile, security, and organization settings",
-				"title": "Open settings"
-			},
-			"requestAbsence": {
-				"keywords": {
-					"absence": "absence",
-					"timeOff": "time off",
-					"vacation": "vacation"
-				},
-				"subtitle": "Start a vacation, sick leave, or time off request",
-				"title": "Request absence"
-			},
-			"submitTravelExpense": {
-				"keywords": {
-					"expense": "expense",
-					"reimbursement": "reimbursement",
-					"travel": "travel"
-				},
-				"subtitle": "Create a reimbursement request for travel costs",
-				"title": "Submit travel expense"
-			}
-		},
-		"description": "Search pages, settings, people, and teams",
-		"empty": "No results found.",
-		"groups": {
-			"actions": "Actions",
-			"pages": "Pages",
-			"people": "People",
-			"settings": "Settings",
-			"teams": "Teams"
-		},
-		"placeholder": "Search pages, settings, people, and teams…",
-		"search": "Search",
-		"searchOrRunCommand": "Search or run command",
-		"teamAbsences": {
-			"description": "Review employee absence metrics and record absences"
-		}
-	},
-	"surcharges": {
-		"reports": {
-			"details": {
-				"appliedRules": "Applied rules",
-				"calculatedAt": "Calculated at",
-				"noAppliedRules": "No applied rules recorded.",
-				"overlapPolicy": "Overlap policy",
-				"percentage": "Percentage",
-				"qualifying": "Qualifying",
-				"surcharge": "Surcharge",
-				"workPeriod": "Work period"
-			},
-			"empty": {
-				"description": "No surcharge calculations matched the selected filters.",
-				"title": "No surcharge calculations found"
-			},
-			"errors": {
-				"loadTitle": "Unable to load calculations"
-			},
-			"filters": {
-				"apply": "Apply filters",
-				"employeeId": "Employee ID",
-				"endDate": "End date",
-				"startDate": "Start date"
-			},
-			"loading": "Loading calculations…",
-			"previousResults": {
-				"description": "The latest request failed, so the previous successful results remain visible.",
-				"title": "Showing previous results."
-			},
-			"rowLimitNotice": "Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
-			"summary": {
-				"baseHours": "Base hours",
-				"calculations": "Calculations",
-				"creditedHours": "Credited surcharge hours",
-				"qualifyingHours": "Qualifying surcharge hours"
-			},
-			"table": {
-				"base": "Base",
-				"created": "Created",
-				"credit": "Credit",
-				"date": "Date",
-				"details": "Details",
-				"employee": "Employee",
-				"percentage": "Percentage",
-				"qualifying": "Qualifying"
-			},
-			"title": "Surcharge reports"
-		}
-	},
-	"today": {
-		"approvals": {
-			"approve": "Approve",
-			"approveLabel": "Approve {title}",
-			"description": "Requests waiting for a manager decision.",
-			"empty": "No approvals are waiting.",
-			"openInbox": "Open inbox",
-			"pendingAriaLabel": "Pending approvals",
-			"reject": "Reject",
-			"rejectLabel": "Reject {title}",
-			"title": "Approvals",
-			"toast": {
-				"approved": "Request approved",
-				"approveError": "Unable to approve request",
-				"rejected": "Request rejected",
-				"rejectError": "Unable to reject request"
-			}
-		},
-		"briefing": {
-			"badge": "Today",
-			"description": "Review the items that need action today, then move directly into the right workflow.",
-			"needsAction": {
-				"description": "Start here for the most urgent operational follow-up.",
-				"empty": "All clear. No manager action is needed right now.",
-				"title": "Needs Action"
-			},
-			"sections": {
-				"empty": "No issues detected."
-			},
-			"severity": {
-				"critical": "Critical",
-				"high": "High",
-				"info": "Info",
-				"warning": "Warning"
-			},
-			"summaryAriaLabel": "Today summary",
-			"supportingSectionsAriaLabel": "Supporting sections",
-			"title": "Manager Daily Briefing",
-			"updatedAt": "{date} - Updated {time}"
-		}
-	}
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "view analytics",
+      "restrictedDescription": "Analytics is only available to administrators and managers.",
+      "restrictedTitle": "Access Restricted"
+    },
+    "common": {
+      "days": "Days",
+      "employee": "Employee",
+      "employees": "Employees",
+      "hours": "Hours",
+      "loadingOrganizationSettings": "Loading organization settings before enabling presets.",
+      "noDataAvailable": "No data available",
+      "noDataForPeriod": "No data available for the selected period",
+      "overtime": "Overtime",
+      "overtimeHours": "Overtime Hours",
+      "team": "Team",
+      "totalHours": "Total Hours",
+      "unavailable": "Unavailable",
+      "undertime": "Undertime",
+      "undertimeHours": "Undertime Hours"
+    },
+    "layout": {
+      "description": "Comprehensive insights into team performance, work hours, and absence patterns",
+      "tabs": {
+        "overtimeBurnDown": "Overtime Burn-Down",
+        "overview": "Overview",
+        "teamPerformance": "Team Performance",
+        "vacationTrends": "Vacation Trends",
+        "workHours": "Work Hours"
+      },
+      "title": "Analytics"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Breakdown",
+      "breakdownDescription": "{label} level overtime burn-down details",
+      "breakdownEmpty": "No breakdown data available yet",
+      "byCostCenter": "By Cost Center",
+      "byManager": "By Manager",
+      "byTeam": "By Team",
+      "costCenter": "Cost Center",
+      "currentOvertime": "Current Overtime",
+      "description": "Track weekly overtime reduction across teams.",
+      "errors": {
+        "loadData": "Failed to load overtime burn-down data"
+      },
+      "filters": {
+        "allCostCenters": "All cost centers",
+        "allManagers": "All managers",
+        "allTeams": "All teams",
+        "breakdownLabel": "Breakdown dimension",
+        "costCenterLabel": "Cost center filter",
+        "managerLabel": "Manager filter",
+        "teamLabel": "Team filter"
+      },
+      "improvingGroups": "Improving Groups",
+      "improvingGroupsDescription": "Groups with decreasing overtime",
+      "manager": "Manager",
+      "previousOvertime": "Previous Overtime",
+      "previousPeriodDescription": "Compared with previous period",
+      "selectedRangeDescription": "For selected date range and filters",
+      "title": "Overtime Burn-Down",
+      "trendDirection": "Trend Direction",
+      "trendDirectionDescription": "Overall overtime trajectory",
+      "trend": {
+        "down": "Down",
+        "flat": "Flat",
+        "up": "Up"
+      },
+      "weeklyTrend": {
+        "description": "Weekly overtime reduction trend",
+        "empty": "No trend data available yet",
+        "title": "Weekly Burn-Down Trend"
+      },
+      "weekOverWeek": "Week-over-Week"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Absence distribution by category",
+        "title": "Absence Patterns"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% approved",
+        "avgDecision": "{hours}h avg decision",
+        "byManager": "By Manager",
+        "byTeam": "By Team",
+        "byType": "By Type",
+        "description": "Teams and request types with pending work or SLA warnings",
+        "empty": "No approval bottlenecks found",
+        "pendingSummary": "{pendingCount} pending - {slaWarnings} SLA warnings",
+        "title": "Approval Bottlenecks",
+        "unavailable": "Approval bottlenecks could not be loaded"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Of decided requests approved",
+          "title": "Approval Rate",
+          "unavailableDescription": "Approval analytics could not be loaded"
+        },
+        "avgWorkHours": {
+          "description": "Per employee in selected period",
+          "title": "Avg Work Hours"
+        },
+        "totalAbsenceDays": {
+          "description": "Total days in selected period",
+          "title": "Total Absence Days"
+        },
+        "totalEmployees": {
+          "description": "Active employees in organization",
+          "title": "Total Employees"
+        }
+      },
+      "loadingLabel": "Loading analytics data",
+      "workHoursByTeam": {
+        "description": "Total work hours logged per team",
+        "title": "Work Hours by Team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Avg per Employee",
+      "comparison": {
+        "description": "Total work hours by team for the selected period",
+        "title": "Team Comparison"
+      },
+      "details": {
+        "description": "Breakdown of work hours by team and employee",
+        "title": "Team Performance Details"
+      },
+      "employeeCount": "Employee Count",
+      "errors": {
+        "loadData": "Failed to load team performance data"
+      },
+      "onTrack": "On Track",
+      "variance": {
+        "description": "Hours variance from expected work hours",
+        "empty": "No variance data available",
+        "title": "Overtime & Undertime"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Allocated",
+      "balance": {
+        "description": "Days allocated, taken, and remaining by employee",
+        "title": "Vacation Balance"
+      },
+      "daysRemaining": "{count} days remaining",
+      "daysTaken": "{count} days taken",
+      "errors": {
+        "loadData": "Failed to load vacation trends data"
+      },
+      "monthlyUsage": {
+        "description": "Vacation days taken per month",
+        "empty": "No monthly usage data available",
+        "title": "Monthly Vacation Usage"
+      },
+      "peakMonths": {
+        "description": "Months with highest vacation activity",
+        "empty": "No peak month data available",
+        "title": "Peak Vacation Months"
+      },
+      "remaining": "Remaining",
+      "taken": "Taken",
+      "utilization": {
+        "description": "Overall vacation days usage across organization",
+        "overall": "Overall Utilization",
+        "title": "Vacation Utilization"
+      },
+      "utilizationLabel": "Utilization",
+      "utilizationPercent": "Utilization %",
+      "vacationDays": "Vacation Days"
+    },
+    "workHours": {
+      "actualHours": "Actual Hours",
+      "avgHoursPerWeek": "Avg Hours/Week",
+      "daily": {
+        "description": "Actual vs expected work hours per day",
+        "empty": "No daily hours data available",
+        "title": "Daily Work Hours"
+      },
+      "distribution": {
+        "description": "Employee work hours comparison (horizontal bar)",
+        "empty": "No distribution data available",
+        "title": "Work Hours Distribution"
+      },
+      "employeeComparison": {
+        "description": "Total hours and variance from expected by employee",
+        "title": "Employee Work Hours"
+      },
+      "errors": {
+        "loadData": "Failed to load work hours analytics data"
+      },
+      "expectedHours": "Expected Hours",
+      "variance": "Variance",
+      "varianceTrend": {
+        "description": "Hours variance from expected work hours over time",
+        "empty": "No trend data available",
+        "title": "Overtime & Undertime Trend"
+      }
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Search pages, people, teams, settings, or actions",
+    "commandPlaceholder": "Search pages, people, teams, settings, or actions…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Record hours for a past shift or correction",
+        "title": "Add manual time entry"
+      },
+      "createProject": {
+        "subtitle": "Open project settings to define a new project",
+        "title": "Create project"
+      },
+      "inviteTeammate": {
+        "subtitle": "Open organization management to add a colleague",
+        "title": "Invite teammate"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Review pending employee requests",
+        "title": "Open approvals inbox"
+      },
+      "openMyRequests": {
+        "subtitle": "Review your submitted absences and expenses",
+        "title": "Open my requests"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Check whether time data is ready for payroll",
+        "title": "Open payroll readiness"
+      },
+      "openSettings": {
+        "subtitle": "Manage your profile, security, and organization settings",
+        "title": "Open settings"
+      },
+      "requestAbsence": {
+        "subtitle": "Start a vacation, sick leave, or time off request",
+        "title": "Request absence"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Create a reimbursement request for travel costs",
+        "title": "Submit travel expense"
+      }
+    },
+    "empty": "No results found.",
+    "groups": {
+      "actions": "Actions",
+      "pages": "Pages",
+      "people": "People",
+      "settings": "Settings",
+      "teams": "Teams"
+    },
+    "search": "Search",
+    "searchOrRunCommand": "Search or run command",
+    "teamAbsences": {
+      "description": "Review employee absence metrics and record absences"
+    }
+  },
+  "surcharges": {
+    "reports": {
+      "details": {
+        "appliedRules": "Applied rules",
+        "calculatedAt": "Calculated at",
+        "noAppliedRules": "No applied rules recorded.",
+        "overlapPolicy": "Overlap policy",
+        "percentage": "Percentage",
+        "qualifying": "Qualifying",
+        "surcharge": "Surcharge",
+        "workPeriod": "Work period"
+      },
+      "empty": {
+        "description": "No surcharge calculations matched the selected filters.",
+        "title": "No surcharge calculations found"
+      },
+      "errors": {
+        "loadTitle": "Unable to load calculations"
+      },
+      "filters": {
+        "apply": "Apply filters",
+        "employeeId": "Employee ID",
+        "endDate": "End date",
+        "startDate": "Start date"
+      },
+      "loading": "Loading calculations…",
+      "previousResults": {
+        "description": "The latest request failed, so the previous successful results remain visible.",
+        "title": "Showing previous results."
+      },
+      "rowLimitNotice": "Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
+      "summary": {
+        "baseHours": "Base hours",
+        "calculations": "Calculations",
+        "creditedHours": "Credited surcharge hours",
+        "qualifyingHours": "Qualifying surcharge hours"
+      },
+      "table": {
+        "base": "Base",
+        "created": "Created",
+        "credit": "Credit",
+        "date": "Date",
+        "details": "Details",
+        "employee": "Employee",
+        "percentage": "Percentage",
+        "qualifying": "Qualifying"
+      },
+      "title": "Surcharge reports"
+    }
+  },
+  "today": {
+    "approvals": {
+      "approve": "Approve",
+      "approveLabel": "Approve {title}",
+      "description": "Requests waiting for a manager decision.",
+      "empty": "No approvals are waiting.",
+      "openInbox": "Open inbox",
+      "pendingAriaLabel": "Pending approvals",
+      "reject": "Reject",
+      "rejectLabel": "Reject {title}",
+      "title": "Approvals",
+      "toast": {
+        "approved": "Request approved",
+        "approveError": "Unable to approve request",
+        "rejected": "Request rejected",
+        "rejectError": "Unable to reject request"
+      }
+    },
+    "briefing": {
+      "badge": "Today",
+      "description": "Review the items that need action today, then move directly into the right workflow.",
+      "needsAction": {
+        "description": "Start here for the most urgent operational follow-up.",
+        "empty": "All clear. No manager action is needed right now.",
+        "title": "Needs Action"
+      },
+      "sections": {
+        "empty": "No issues detected."
+      },
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "info": "Info",
+        "warning": "Warning"
+      },
+      "summaryAriaLabel": "Today summary",
+      "supportingSectionsAriaLabel": "Supporting sections",
+      "title": "Manager Daily Briefing",
+      "updatedAt": "{date} - Updated {time}"
+    }
+  },
+  "workBalance": {
+    "label": "All-time balance",
+    "notCalculated": "Not calculated yet",
+    "pendingDescription": "The worker will calculate this balance soon.",
+    "updatedEveryThreeHours": "Updated every 3 hours"
+  }
 }

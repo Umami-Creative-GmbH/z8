@@ -74,8 +74,13 @@
       "toggle-demo-data": "Activer/désactiver les données de démonstration",
       "toggle-projects": "Basculer les projets",
       "toggle-surcharges": "Basculer les suppléments",
+      "toggle-works-council": "Activer/Désactiver le comité d'entreprise",
       "toggle-work-shifts": "Basculer les quarts de travail",
       "update-failed": "Échec de la mise à jour de la fonctionnalité",
+      "works-council": "Comité d'entreprise",
+      "works-council-description": "Activer le portail du comité d'entreprise pour les propriétaires, administrateurs et réviseurs autorisés.",
+      "works-council-disabled": "Comité d'entreprise désactivé",
+      "works-council-enabled": "Comité d'entreprise activé",
       "work-shifts": "Quarts de travail",
       "work-shifts-description": "Activez les quarts de travail avec planification par glisser-déposer, quarts ouverts et demandes d'échange."
     },

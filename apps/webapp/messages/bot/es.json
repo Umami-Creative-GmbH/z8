@@ -20,8 +20,9 @@
         "cannotNow": "No se puede finalizar el turno en este momento.",
         "noProfile": "No se encontró el perfil del empleado.",
         "notClockedIn": "No tienes un turno iniciado actualmente.",
-        "pendingApproval": "La finalización de tu turno está pendiente de la aprobación del gerente.",
-        "success": "Turno finalizado a las {time}. Duración: {hours}h {minutes}m."
+        "policyCheckFailed": "No se pudo verificar la política de aprobación de tiempo. Por favor, inténtelo de nuevo.",
+        "success": "Turno finalizado a las {time}. Duración: {hours}h {minutes}m.",
+        "unsupportedApproval": "Los cambios de tiempo que requieren aprobación aún no son compatibles con esta acción"
       },
       "compliance": {
         "error": "Error al recuperar los datos de cumplimiento. Por favor, inténtalo de nuevo más tarde.",

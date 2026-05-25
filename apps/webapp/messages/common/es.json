@@ -221,7 +221,10 @@
     "clock-out": "Fichar salida"
   },
   "info": {
-    "back-to-login": "Volver al inicio de sesión"
+    "agb": "Términos y condiciones",
+    "back-to-login": "Volver al inicio de sesión",
+    "imprint": "Aviso legal",
+    "trust-center": "Centro de confianza"
   },
   "nav": {
     "absences": "Ausencias",
@@ -241,7 +244,8 @@
     "teamAbsences": "Ausencias del equipo",
     "team-label": "Equipo",
     "time-tracking": "Seguimiento de Tiempo",
-    "travel-expenses": "Gastos de viaje"
+    "travel-expenses": "Gastos de viaje",
+    "worksCouncil": "Comité de empresa"
   },
   "notifications": {
     "actions": {
@@ -406,6 +410,7 @@
     "alt": "Avatar de usuario"
   },
   "user": {
+    "font-size": "Tamaño de fuente",
     "language": "Idioma",
     "logging-out": "Cerrando sesión...",
     "log-out": "Cerrar Sesión",

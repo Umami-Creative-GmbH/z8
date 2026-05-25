@@ -74,8 +74,13 @@
       "toggle-demo-data": "Alternar dados de demonstração",
       "toggle-projects": "Alternar projetos",
       "toggle-surcharges": "Alternar sobretaxas",
+      "toggle-works-council": "Alternar Conselho de Empresa",
       "toggle-work-shifts": "Alternar turnos de trabalho",
       "update-failed": "Falha ao atualizar a funcionalidade",
+      "works-council": "Conselho de Empresa",
+      "works-council-description": "Habilite o portal do Conselho de Empresa para proprietários autorizados, administradores e revisores designados.",
+      "works-council-disabled": "Conselho de Empresa desativado",
+      "works-council-enabled": "Conselho de Empresa ativado",
       "work-shifts": "Turnos de trabalho",
       "work-shifts-description": "Ative turnos de trabalho com planeamento arrastar e largar, turnos abertos e pedidos de troca."
     },

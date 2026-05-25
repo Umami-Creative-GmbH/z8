@@ -2,6 +2,16 @@ import { describe, expect, it } from "vitest";
 import { mergeTreeTranslations, loadRouteTranslations } from "./shared";
 
 describe("Tolgee route translations", () => {
+	it("loads app search strings from the common namespace", async () => {
+		const translations = await loadRouteTranslations("de", "/");
+
+		expect(translations.de).toMatchObject({
+			appSearch: {
+				searchOrRunCommand: "Suchen oder Befehl ausführen",
+			},
+		});
+	});
+
 	it("keeps German translations available after navigating from settings to dashboard", async () => {
 		const translations = await loadRouteTranslations("de", "/settings");
 

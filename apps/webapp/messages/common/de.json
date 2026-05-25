@@ -221,7 +221,10 @@
     "clock-out": "Ausstempeln"
   },
   "info": {
-    "back-to-login": "Zurück zur Anmeldung"
+    "agb": "AGB",
+    "back-to-login": "Zurück zur Anmeldung",
+    "imprint": "Impressum",
+    "trust-center": "Trust Center"
   },
   "nav": {
     "absences": "Abwesenheiten",
@@ -241,7 +244,8 @@
     "teamAbsences": "Team-Abwesenheiten",
     "team-label": "Team",
     "time-tracking": "Zeiterfassung",
-    "travel-expenses": "Reisekosten"
+    "travel-expenses": "Reisekosten",
+    "worksCouncil": "Betriebsrat"
   },
   "notifications": {
     "actions": {
@@ -406,6 +410,7 @@
     "alt": "Benutzer-Avatar"
   },
   "user": {
+    "font-size": "Schriftgröße",
     "language": "Sprache",
     "logging-out": "Logge aus...",
     "log-out": "Abmelden",

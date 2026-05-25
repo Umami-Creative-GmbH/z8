@@ -36,7 +36,6 @@
     "loadError": "Falha ao carregar aprovações",
     "noAbsenceApprovals": "Nenhuma solicitação de ausência pendente para revisar.",
     "noRequests": "Nenhuma solicitação pendente",
-    "noRequestsDescription": "Quando os membros da equipe enviarem solicitações, elas aparecerão aqui",
     "noSearchResults": "Nenhuma aprovação corresponde à sua pesquisa.",
     "note": "Nota",
     "notes": "Notas",
@@ -81,5 +80,69 @@
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Visualize todos os tipos de aprovação em um só lugar com filtragem, ações em massa e rastreamento de SLA.",
     "unifiedInboxBannerTitle": "Experimente a nova Caixa de Entrada Unificada"
+  },
+  "fastLanes": {
+    "approve": "Aprovar",
+    "approveGroup": "Aprovar ${label}",
+    "confirmReject": "Confirmar rejeição",
+    "confirmRejectGroup": "Confirmar rejeição de ${label}",
+    "description": "Analise solicitações semelhantes de baixo atrito em lote.",
+    "expandGroup": "Expandir ${label}",
+    "groups": {
+      "lowRiskAbsence": {
+        "description": "Ausências sem conflitos detectados.",
+        "label": "Ausências de baixo risco"
+      },
+      "payrollBlocker": {
+        "description": "Solicitações relevantes para a folha de pagamento que precisam de revisão prioritária.",
+        "label": "Bloqueios de folha de pagamento"
+      },
+      "smallTimeCorrection": {
+        "description": "Pequenas correções de registro de horas dentro da tolerância da política.",
+        "label": "Pequenas correções de horas"
+      },
+      "stalePending": {
+        "description": "Solicitações pendentes aguardando há mais tempo que o prazo de revisão.",
+        "label": "Solicitações obsoletas"
+      }
+    },
+    "reject": "Rejeitar",
+    "rejectGroup": "Rejeitar ${label}",
+    "rejectReason": "Motivo da rejeição em massa",
+    "risk": {
+      "high": "Alto risco",
+      "low": "Baixo risco",
+      "medium": "Médio risco"
+    },
+    "showGroup": "Mostrar ${label}",
+    "title": "Vias rápidas"
+  },
+  "sprint": {
+    "approve": "Aprovar",
+    "approveCurrentApproval": "Aprovar aprovação atual",
+    "complete": "Sprint concluída",
+    "confirmReject": "Confirmar rejeição",
+    "description": "Analise as aprovações pendentes uma a uma com atalhos de teclado.",
+    "openDetails": "Abrir detalhes",
+    "progress": "${currentIndex + 1} de ${visibleItems.length}",
+    "reject": "Rejeitar",
+    "rejectCurrentApproval": "Rejeitar aprovação atual",
+    "rejectReason": "Motivo da rejeição da sprint",
+    "risk": {
+      "high": "Alto risco",
+      "low": "Baixo risco",
+      "medium": "Médio risco"
+    },
+    "riskReasons": {
+      "needsReview": "Requer revisão",
+      "noConflictsDetected": "Nenhum conflito detectado",
+      "payrollRelevant": "Relevante para folha de pagamento",
+      "smallTimeDelta": "Pequena variação de horas",
+      "stalePending": "Pendente obsoleta"
+    },
+    "skip": "Ignorar",
+    "skipCurrentApproval": "Ignorar aprovação atual",
+    "start": "Iniciar sprint de aprovação",
+    "title": "Sprint de aprovação"
   }
 }

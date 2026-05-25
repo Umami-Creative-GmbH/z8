@@ -221,7 +221,10 @@
     "clock-out": "Timbra uscita"
   },
   "info": {
-    "back-to-login": "Torna al login"
+    "agb": "Termini e condizioni",
+    "back-to-login": "Torna al login",
+    "imprint": "Note legali",
+    "trust-center": "Centro di fiducia"
   },
   "nav": {
     "absences": "Assenze",
@@ -241,7 +244,8 @@
     "teamAbsences": "Assenze del team",
     "team-label": "Team",
     "time-tracking": "Rilevazione Tempo",
-    "travel-expenses": "Spese di viaggio"
+    "travel-expenses": "Spese di viaggio",
+    "worksCouncil": "Consiglio di fabbrica"
   },
   "notifications": {
     "actions": {
@@ -406,6 +410,7 @@
     "alt": "Avatar utente"
   },
   "user": {
+    "font-size": "Dimensione carattere",
     "language": "Lingua",
     "logging-out": "Disconnessione...",
     "log-out": "Disconnetti",

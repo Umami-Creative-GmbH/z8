@@ -36,7 +36,6 @@
     "loadError": "Impossibile caricare le approvazioni",
     "noAbsenceApprovals": "Nessuna richiesta di assenza in sospeso da esaminare.",
     "noRequests": "Nessuna richiesta in sospeso",
-    "noRequestsDescription": "Quando i membri del team invieranno delle richieste, appariranno qui",
     "noSearchResults": "Nessuna approvazione corrisponde alla tua ricerca.",
     "note": "Nota",
     "notes": "Note",
@@ -81,5 +80,69 @@
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Visualizza tutti i tipi di approvazione in un unico posto con filtri, azioni collettive e monitoraggio SLA.",
     "unifiedInboxBannerTitle": "Prova la nuova Posta in arrivo unificata"
+  },
+  "fastLanes": {
+    "approve": "Approva",
+    "approveGroup": "Approva ${label}",
+    "confirmReject": "Conferma rifiuto",
+    "confirmRejectGroup": "Conferma rifiuto ${label}",
+    "description": "Revisiona in blocco richieste simili a basso attrito.",
+    "expandGroup": "Espandi ${label}",
+    "groups": {
+      "lowRiskAbsence": {
+        "description": "Assenze senza conflitti rilevati.",
+        "label": "Assenze a basso rischio"
+      },
+      "payrollBlocker": {
+        "description": "Richieste rilevanti per le buste paga che richiedono una revisione prioritaria.",
+        "label": "Blocchi buste paga"
+      },
+      "smallTimeCorrection": {
+        "description": "Piccole correzioni di inserimento orario entro la tolleranza prevista.",
+        "label": "Piccole correzioni orarie"
+      },
+      "stalePending": {
+        "description": "Richieste in sospeso in attesa da più tempo dell'obiettivo di revisione.",
+        "label": "Richieste datate"
+      }
+    },
+    "reject": "Rifiuta",
+    "rejectGroup": "Rifiuta ${label}",
+    "rejectReason": "Motivazione rifiuto in blocco",
+    "risk": {
+      "high": "Alto rischio",
+      "low": "Basso rischio",
+      "medium": "Rischio medio"
+    },
+    "showGroup": "Mostra ${label}",
+    "title": "Corsie preferenziali"
+  },
+  "sprint": {
+    "approve": "Approva",
+    "approveCurrentApproval": "Approva approvazione corrente",
+    "complete": "Sprint completato",
+    "confirmReject": "Conferma rifiuto",
+    "description": "Revisiona le approvazioni in sospeso una alla volta con le scorciatoie da tastiera.",
+    "openDetails": "Apri dettagli",
+    "progress": "${currentIndex + 1} di ${visibleItems.length}",
+    "reject": "Rifiuta",
+    "rejectCurrentApproval": "Rifiuta approvazione corrente",
+    "rejectReason": "Motivazione rifiuto sprint",
+    "risk": {
+      "high": "Alto rischio",
+      "low": "Basso rischio",
+      "medium": "Rischio medio"
+    },
+    "riskReasons": {
+      "needsReview": "Da revisionare",
+      "noConflictsDetected": "Nessun conflitto rilevato",
+      "payrollRelevant": "Rilevante per buste paga",
+      "smallTimeDelta": "Piccola variazione oraria",
+      "stalePending": "In sospeso da tempo"
+    },
+    "skip": "Salta",
+    "skipCurrentApproval": "Salta approvazione corrente",
+    "start": "Avvia sprint di approvazione",
+    "title": "Sprint di approvazione"
   }
 }
