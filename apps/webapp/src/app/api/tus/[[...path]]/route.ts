@@ -32,6 +32,9 @@ const tusServer = new Server({
 	path: "/api/tus",
 	datastore: store,
 	respectForwardedHeaders: true,
+	generateUrl: (_request, { proto, host, path, id }) =>
+		`${proto}://${host}${path}/${encodeURIComponent(id)}`,
+	getFileIdFromRequest: (request) => getTusFileKeyFromRequest(request) ?? undefined,
 	namingFunction: () => createOwnedTusFileKey(tusUploadOwnerContext.getStore() ?? "anonymous"),
 });
 
