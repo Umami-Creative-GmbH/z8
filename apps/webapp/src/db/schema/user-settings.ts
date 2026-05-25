@@ -37,6 +37,9 @@ export const userSettings = pgTable(
 		onboardingStartedAt: timestamp("onboarding_started_at"),
 		onboardingCompletedAt: timestamp("onboarding_completed_at"),
 
+		// Product improvement consent
+		helpImproveProduct: boolean("help_improve_product").default(true).notNull(),
+
 		// Water reminder / hydration tracking settings
 		waterReminderEnabled: boolean("water_reminder_enabled").default(false).notNull(),
 		waterReminderPreset: text("water_reminder_preset").default("moderate").notNull(), // light|moderate|active|custom

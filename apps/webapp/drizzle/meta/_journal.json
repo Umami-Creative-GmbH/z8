@@ -232,6 +232,13 @@
       "when": 1779654701734,
       "tag": "0032_works_council_feature_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1779654701735,
+      "tag": "0033_product_improvement_consent",
+      "breakpoints": true
     }
   ]
 }
