@@ -39,7 +39,7 @@ export function AuthFormWrapper({
 
 	return (
 		<div className={cn("mx-auto w-full max-w-md", className)} style={customStyles} {...props}>
-			<Card className="relative w-full border-white/30 bg-white/20 shadow-xl shadow-black/5 backdrop-blur-md sm:shadow-xl dark:border-white/10 dark:bg-slate-950/45 dark:shadow-black/30">
+			<Card className="relative w-full border-white/30 bg-white/20 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:shadow-xl dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75 [&_[data-slot=input]]:bg-background/85 dark:[&_[data-slot=input]]:bg-background/80">
 				<CardContent className="p-5 sm:p-8">
 					<form className="w-full" method="post" {...formProps}>
 						<div className="flex flex-col gap-6">
@@ -75,7 +75,7 @@ export function AuthFormWrapper({
 					</form>
 				</CardContent>
 				{visibleBuildHash ? (
-					<div className="absolute right-3 bottom-1.5 text-[10px] text-muted-foreground/60">
+					<div className="absolute right-3 bottom-1.5 text-[10px] text-foreground/55">
 						Version {visibleBuildHash}
 					</div>
 				) : null}

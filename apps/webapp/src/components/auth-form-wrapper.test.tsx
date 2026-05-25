@@ -69,13 +69,17 @@ describe("AuthFormWrapper", () => {
 
 		expect(wrapper?.className).toContain("max-w-md");
 		expect(card?.className).toContain("bg-white/20");
-		expect(card?.className).toContain("dark:bg-slate-950/45");
-		expect(card?.className).toContain("backdrop-blur-md");
+		expect(card?.className).toContain("dark:bg-slate-950/20");
+		expect(card?.className).toContain("backdrop-blur-[40px]");
+		expect(card?.className).toContain("[&_.text-muted-foreground]:text-foreground/75");
+		expect(card?.className).toContain("[&_[data-slot=input]]:bg-background/85");
+		expect(card?.className).toContain("dark:[&_[data-slot=input]]:bg-background/80");
 		expect(card?.className).toContain("relative");
 		expect(card?.className).toContain("sm:shadow-xl");
 		expect(cardContent?.className).toContain("p-5");
 		expect(cardContent?.className).toContain("sm:p-8");
 		expect(screen.getByText("Version build-123").className).toContain("right-3");
+		expect(screen.getByText("Version build-123").className).toContain("text-foreground/55");
 		expect(screen.getByText("Version build-123").className).toContain("bottom-1.5");
 	});
 });

@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import { connection } from "next/server";
-import authImage from "@/../public/ally-griffin-3hsrEvJi_gw-unsplash.jpg";
+import { AuthBackgroundImage } from "@/components/auth-background-image";
+import { selectRandomAuthBackgroundImage } from "@/components/auth-background-images";
 import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -89,6 +89,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 	const parsedCookieConsentScript = parseCookieConsentScript(cookieConsentScript);
 	const { content: cookieConsentScriptContent, ...cookieConsentScriptProps } =
 		parsedCookieConsentScript ?? {};
+	const backgroundImage = selectRandomAuthBackgroundImage();
 
 	return (
 		<DomainAuthProvider domainContext={domainContext}>
@@ -109,17 +110,8 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 				</Script>
 			) : null}
 			<div className="relative min-h-svh overflow-x-hidden bg-background">
-				<Image
-					alt=""
-					className="absolute inset-0 size-full object-cover"
-					fill
-					priority
-					sizes="100vw"
-					src={authImage}
-				/>
-				<div className="absolute inset-0 bg-background/35 dark:bg-background/55" />
-
-				<section className="relative z-10 flex min-h-svh flex-col px-4 py-4 sm:px-8 sm:py-6 lg:px-10">
+				<AuthBackgroundImage initialImage={backgroundImage} />
+				<section className="relative z-10 flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 sm:pb-0 lg:px-10">
 					<div className="flex items-center justify-end gap-2 drop-shadow-sm">
 						<ThemeToggle />
 						<FontSizeToggle />

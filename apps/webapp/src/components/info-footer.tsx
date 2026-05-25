@@ -16,7 +16,7 @@ export function InfoFooter() {
 
 	return (
 		<div className="text-balance text-center text-muted-foreground text-xs">
-			<div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary">
+			<div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 *:[a]:hover:text-primary">
 				<a href={EXTERNAL_INFO_LINKS.terms} rel="noopener noreferrer">
 					{t("auth.terms.service", "Terms of Service")}
 				</a>

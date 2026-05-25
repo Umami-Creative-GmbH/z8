@@ -10,6 +10,10 @@ vi.mock("next/image", () => ({
 	),
 }));
 
+vi.mock("next/server", () => ({
+	connection: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/components/info-footer", () => ({
 	InfoFooter: () => <footer>Info footer</footer>,
 }));
@@ -27,11 +31,13 @@ vi.mock("@/components/theme-toggle", () => ({
 }));
 
 describe("OnboardingLayout", () => {
-	it("uses the auth-style full-screen glass shell", () => {
+	it("uses the auth-style full-screen glass shell", async () => {
 		render(
-			<OnboardingLayout>
-				<div data-slot="card">Onboarding content</div>
-			</OnboardingLayout>,
+			await OnboardingLayout({
+				children: (
+					<div data-slot="card">Onboarding content</div>
+				),
+			}),
 		);
 
 		const content = screen.getByText("Onboarding content");
