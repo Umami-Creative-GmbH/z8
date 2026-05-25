@@ -13,6 +13,12 @@ vi.mock("next/image", () => ({
 	default: ({ alt, src }: { alt: string; src: string }) => <img alt={alt} src={src} />,
 }));
 
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
+}));
+
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
 describe("AuthFormWrapper", () => {

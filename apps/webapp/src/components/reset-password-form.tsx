@@ -3,15 +3,17 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
+import {
+	PasswordStrengthIndicator,
+	PasswordVisibilityInput,
+} from "@/components/auth/password-fields";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { checkPasswordRequirements, passwordSchema } from "@/lib/validations/password";
+import { passwordSchema } from "@/lib/validations/password";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
 
@@ -40,13 +42,6 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 		confirmPassword: "",
 	});
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-	const passwordRequirements = useMemo(
-		() => checkPasswordRequirements(formData.password, t),
-		[formData.password, t],
-	);
-	const passwordsMatch =
-		formData.confirmPassword && formData.password && formData.confirmPassword === formData.password;
 
 	const handleChange = (field: string, value: string) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -251,34 +246,16 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 			) : null}
 			<div className="grid gap-3">
 				<Label htmlFor="password">{t("auth.new-password", "New Password")}</Label>
-				<Input
+				<PasswordVisibilityInput
 					id="password"
 					name="password"
 					autoComplete="new-password"
 					onBlur={(e) => validateField("password", e.target.value)}
 					onChange={(e) => handleChange("password", e.target.value)}
 					required
-					type="password"
 					value={formData.password}
 				/>
-				{formData.password ? (
-					<div className="space-y-1.5 text-sm">
-						{passwordRequirements.map((req) => (
-							<div
-								className={cn(
-									"flex items-center gap-2",
-									req.met ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
-								)}
-								key={req.label}
-							>
-								<span className={cn(req.met ? "text-green-600" : "text-muted-foreground")}>
-									{req.met ? "✓" : "○"}
-								</span>
-								<span>{req.label}</span>
-							</div>
-						))}
-					</div>
-				) : null}
+				<PasswordStrengthIndicator password={formData.password} />
 				{fieldErrors.password ? (
 					<p className="text-destructive text-sm">{fieldErrors.password}</p>
 				) : null}
@@ -287,30 +264,24 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 				<Label htmlFor="confirmPassword">
 					{t("auth.confirm-new-password", "Confirm New Password")}
 				</Label>
-				<Input
+				<PasswordVisibilityInput
 					id="confirmPassword"
 					name="confirmPassword"
 					autoComplete="new-password"
 					onBlur={(e) => validateField("confirmPassword", e.target.value)}
 					onChange={(e) => handleChange("confirmPassword", e.target.value)}
 					required
-					type="password"
 					value={formData.confirmPassword}
 				/>
 				{fieldErrors.confirmPassword ? (
 					<p className="text-destructive text-sm">{fieldErrors.confirmPassword}</p>
-				) : null}
-				{passwordsMatch ? (
-					<p className="text-green-600 text-sm dark:text-green-400">
-						{t("auth.passwords-match", "Passwords match")}
-					</p>
 				) : null}
 			</div>
 			<Button className="w-full" disabled={isLoading} type="submit">
 				{isLoading ? (
 					<>
 						<IconLoader2 className="mr-2 size-4 animate-spin" />
-						{t("common.loading", "Loading...")}
+					{t("common.loading", "Loading…")}
 					</>
 				) : (
 					t("auth.reset-password-button", "Reset Password")
