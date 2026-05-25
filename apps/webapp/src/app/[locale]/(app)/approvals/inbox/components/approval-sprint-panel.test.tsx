@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TriagedApprovalItem } from "@/lib/approvals/triage";
 import { ApprovalSprintPanel } from "./approval-sprint-panel";
@@ -233,5 +234,29 @@ describe("ApprovalSprintPanel", () => {
 		resolveApproval({ success: true });
 
 		await waitFor(() => expect(screen.getByText("Time correction")).toBeTruthy());
+	});
+
+	it("shows the next logical approval when parent removes the approved item", async () => {
+		approveMutation.mockResolvedValue({ success: true });
+
+		function ParentControlledSprint() {
+			const [items, setItems] = useState(threeApprovals);
+
+			return (
+				<ApprovalSprintPanel
+					open={true}
+					items={items}
+					onOpenChange={vi.fn()}
+					onActioned={() => setItems((currentItems) => currentItems.slice(1))}
+				/>
+			);
+		}
+
+		render(<ParentControlledSprint />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Approve current approval" }));
+
+		await waitFor(() => expect(screen.getByText("Time correction")).toBeTruthy());
+		expect(screen.queryByText("Expense review")).toBeNull();
 	});
 });

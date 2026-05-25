@@ -39,18 +39,21 @@ export function ApprovalSprintPanel({
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectReason, setRejectReason] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [dismissedApprovalIds, setDismissedApprovalIds] = useState<string[]>([]);
 	const wasOpenRef = useRef(false);
 	const submittingApprovalRef = useRef<string | null>(null);
-	const currentItem = items[currentIndex];
+	const visibleItems = items.filter((item) => !dismissedApprovalIds.includes(item.id));
+	const currentItem = visibleItems[currentIndex];
 	const isBusy = isSubmitting || approveMutation.isPending || rejectMutation.isPending;
 	const trimmedRejectReason = rejectReason.trim();
-	const itemCount = items.length;
+	const visibleItemCount = visibleItems.length;
 
 	useEffect(() => {
 		if (open && !wasOpenRef.current) {
 			setCurrentIndex(0);
 			setIsRejecting(false);
 			setRejectReason("");
+			setDismissedApprovalIds([]);
 		}
 
 		wasOpenRef.current = open;
@@ -60,11 +63,11 @@ export function ApprovalSprintPanel({
 		if (!open) return;
 
 		setCurrentIndex((index) => {
-			if (itemCount === 0) return 0;
+			if (visibleItemCount === 0) return 0;
 
-			return Math.min(index, itemCount - 1);
+			return Math.min(index, visibleItemCount - 1);
 		});
-	}, [open, itemCount]);
+	}, [open, visibleItemCount]);
 
 	const advance = useCallback(() => {
 		setIsRejecting(false);
@@ -82,8 +85,10 @@ export function ApprovalSprintPanel({
 			const result = await approveMutation.mutateAsync(currentItem.id);
 			if (result.success) {
 				toast.success(t("approvals:approvals.approved", "Request approved"));
+				setIsRejecting(false);
+				setRejectReason("");
+				setDismissedApprovalIds((approvalIds) => [...approvalIds, currentItem.id]);
 				onActioned();
-				advance();
 			} else {
 				toast.error(result.error || t("approvals:approvals.approveFailed", "Failed to approve"));
 			}
@@ -93,7 +98,7 @@ export function ApprovalSprintPanel({
 			submittingApprovalRef.current = null;
 			setIsSubmitting(false);
 		}
-	}, [advance, approveMutation, currentItem, isBusy, onActioned, t]);
+	}, [approveMutation, currentItem, isBusy, onActioned, t]);
 
 	const handleReject = async () => {
 		if (!currentItem || isBusy || !trimmedRejectReason) return;
@@ -108,8 +113,10 @@ export function ApprovalSprintPanel({
 			});
 			if (result.success) {
 				toast.success(t("approvals:approvals.rejected", "Request rejected"));
+				setIsRejecting(false);
+				setRejectReason("");
+				setDismissedApprovalIds((approvalIds) => [...approvalIds, currentItem.id]);
 				onActioned();
-				advance();
 			} else {
 				toast.error(result.error || t("approvals:approvals.rejectFailed", "Failed to reject"));
 			}
@@ -166,9 +173,9 @@ export function ApprovalSprintPanel({
 				{currentItem ? (
 					<div className="space-y-4">
 						<div className="text-muted-foreground text-sm">
-							{t("approvals:sprint.progress", `${currentIndex + 1} of ${items.length}`, {
+							{t("approvals:sprint.progress", `${currentIndex + 1} of ${visibleItems.length}`, {
 								current: currentIndex + 1,
-								total: items.length,
+								total: visibleItems.length,
 							})}
 						</div>
 						<ApprovalSprintCard
