@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const { pushMock, updateProfileOnboardingMock } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -34,6 +34,14 @@ vi.mock("./actions", () => ({
 
 import ProfilePage from "./page";
 
+beforeAll(() => {
+	global.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 describe("ProfilePage", () => {
 	it("renders the profile preferences and submits the default values", async () => {
 		updateProfileOnboardingMock.mockResolvedValue({
@@ -49,9 +57,14 @@ describe("ProfilePage", () => {
 		).toBeTruthy();
 		expect(screen.getByText("Time format")).toBeTruthy();
 		expect(screen.getByText("This controls how clock times are displayed.")).toBeTruthy();
+		const helpImproveProduct = screen.getByRole("checkbox", {
+			name: "Help us improve this app",
+		});
+		expect(helpImproveProduct.getAttribute("aria-checked")).toBe("true");
 
 		fireEvent.change(screen.getByPlaceholderText("John"), { target: { value: "Ada" } });
 		fireEvent.change(screen.getByPlaceholderText("Doe"), { target: { value: "Lovelace" } });
+		fireEvent.click(helpImproveProduct);
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
 		await waitFor(() => {
@@ -61,6 +74,7 @@ describe("ProfilePage", () => {
 					lastName: "Lovelace",
 					weekStartDay: "monday",
 					timeFormat: "24h",
+					helpImproveProduct: false,
 				}),
 			);
 		});
