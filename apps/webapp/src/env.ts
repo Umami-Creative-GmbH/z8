@@ -242,6 +242,26 @@ const parsedEnv = createEnv({
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
 		STRIPE_PRICE_YEARLY_ID: process.env.STRIPE_PRICE_YEARLY_ID,
 	},
+	createFinalSchema: (shape) =>
+		z.object(shape).superRefine((env, ctx) => {
+			if (env.SECRET_STORE_PROVIDER !== "scaleway") return;
+
+			const missingScalewayEnvVars = [
+				"SCALEWAY_ACCESS_KEY",
+				"SCALEWAY_SECRET_KEY",
+				"SCALEWAY_PROJECT_ID",
+			] as const;
+
+			for (const key of missingScalewayEnvVars) {
+				if (!env[key]) {
+					ctx.addIssue({
+						code: "custom",
+						path: [key],
+						message: `${key} is required when SECRET_STORE_PROVIDER=scaleway`,
+					});
+				}
+			}
+		}),
 	skipValidation: skipEnvValidation,
 	emptyStringAsUndefined: true,
 	onValidationError: (issues) => {
@@ -252,21 +272,5 @@ const parsedEnv = createEnv({
 		process.exit(1);
 	},
 });
-
-if (!skipEnvValidation && parsedEnv.SECRET_STORE_PROVIDER === "scaleway") {
-	const missingScalewayEnvVars = [
-		"SCALEWAY_ACCESS_KEY",
-		"SCALEWAY_SECRET_KEY",
-		"SCALEWAY_PROJECT_ID",
-	].filter((key) => !parsedEnv[key as keyof typeof parsedEnv]);
-
-	if (missingScalewayEnvVars.length > 0) {
-		console.error("❌ Invalid environment variables:");
-		for (const key of missingScalewayEnvVars) {
-			console.error(`   - ${key}: Required when SECRET_STORE_PROVIDER=scaleway`);
-		}
-		process.exit(1);
-	}
-}
 
 export const env = parsedEnv;

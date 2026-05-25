@@ -26,6 +26,7 @@ async function importEnv(env: Record<string, string | undefined>) {
 describe("env", () => {
 	afterEach(() => {
 		process.env = originalEnv;
+		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
 
@@ -58,7 +59,7 @@ describe("env", () => {
 				SCALEWAY_ACCESS_KEY: undefined,
 				SCALEWAY_SECRET_KEY: undefined,
 				SCALEWAY_PROJECT_ID: undefined,
-			})
+			}),
 		).rejects.toThrow("process.exit:1");
 	});
 
@@ -73,6 +74,16 @@ describe("env", () => {
 		expect(env.SECRET_STORE_PROVIDER).toBe("scaleway");
 		expect(env.SCALEWAY_REGION).toBe("fr-par");
 		expect(env.SCALEWAY_KEY_MANAGER_API_URL).toBe("https://api.scaleway.com");
+	});
+
+	test("allows browser imports to read public environment variables", async () => {
+		vi.stubGlobal("window", {});
+
+		const { env } = await importEnv({
+			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
+		});
+
+		expect(env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN).toBe("phc_test");
 	});
 
 	test.each(["smtp", "resend"])("accepts strict system email provider %s", async (provider) => {
