@@ -1,7 +1,10 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { and, eq } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
 import { headers } from "next/headers";
-import { type NextRequest, NextResponse, connection } from "next/server";
+import { connection, type NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import * as authSchema from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
 import { createAvatarStorageKey } from "@/lib/storage/avatar-storage";
 import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
@@ -45,18 +48,15 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// For org-logo and branding images, verify user is owner of the organization
+		// For org-logo and branding images, verify user is owner of the organization.
 		if (requiresOrgId && organizationId) {
-			const member = await auth.api.getFullOrganization({
-				headers: await headers(),
-				query: { organizationId },
+			const currentMember = await db.query.member.findFirst({
+				where: and(
+					eq(authSchema.member.userId, session.user.id),
+					eq(authSchema.member.organizationId, organizationId),
+				),
 			});
 
-			if (!member) {
-				return NextResponse.json({ error: "Organization not found" }, { status: 404 });
-			}
-
-			const currentMember = member.members.find((m) => m.userId === session.user.id);
 			if (!currentMember || currentMember.role !== "owner") {
 				return NextResponse.json(
 					{ error: "Only organization owners can update branding images" },

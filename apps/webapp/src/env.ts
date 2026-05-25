@@ -6,8 +6,7 @@ const skipEnvValidation =
 	process.env.SKIP_ENV_VALIDATION === "true" ||
 	process.env.CI === "true";
 
-const optionalEnv = (value: string | undefined) =>
-	value === "" ? undefined : value;
+const optionalEnv = (value: string | undefined) => (value === "" ? undefined : value);
 
 const parsedEnv = createEnv({
 	server: {
@@ -43,15 +42,9 @@ const parsedEnv = createEnv({
 		// S3-compatible storage is required for public file uploads
 		// Use RustFS (included in docker-compose) or external provider (AWS S3, Cloudflare R2, MinIO)
 		S3_PUBLIC_BUCKET: z.string().min(1, "S3_PUBLIC_BUCKET is required"),
-		S3_PUBLIC_ACCESS_KEY_ID: z
-			.string()
-			.min(1, "S3_PUBLIC_ACCESS_KEY_ID is required"),
-		S3_PUBLIC_SECRET_ACCESS_KEY: z
-			.string()
-			.min(1, "S3_PUBLIC_SECRET_ACCESS_KEY is required"),
-		S3_PUBLIC_ENDPOINT: z
-			.string()
-			.url("S3_PUBLIC_ENDPOINT must be a valid URL"),
+		S3_PUBLIC_ACCESS_KEY_ID: z.string().min(1, "S3_PUBLIC_ACCESS_KEY_ID is required"),
+		S3_PUBLIC_SECRET_ACCESS_KEY: z.string().min(1, "S3_PUBLIC_SECRET_ACCESS_KEY is required"),
+		S3_PUBLIC_ENDPOINT: z.string().url("S3_PUBLIC_ENDPOINT must be a valid URL"),
 		S3_PUBLIC_REGION: z.string().default("us-east-1"),
 		S3_PUBLIC_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
 		S3_PUBLIC_URL: z.string().url("S3_PUBLIC_URL must be a valid URL"),
@@ -60,10 +53,7 @@ const parsedEnv = createEnv({
 		S3_PRIVATE_BUCKET: z.string().optional(),
 		S3_PRIVATE_ACCESS_KEY_ID: z.string().optional(),
 		S3_PRIVATE_SECRET_ACCESS_KEY: z.string().optional(),
-		S3_PRIVATE_ENDPOINT: z
-			.string()
-			.url("S3_PRIVATE_ENDPOINT must be a valid URL")
-			.optional(),
+		S3_PRIVATE_ENDPOINT: z.string().url("S3_PRIVATE_ENDPOINT must be a valid URL").optional(),
 		S3_PRIVATE_REGION: z.string().default("us-east-1"),
 		S3_PRIVATE_FORCE_PATH_STYLE: z.enum(["true", "false"]).default("true"),
 		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: z.string().default("900"),
@@ -103,9 +93,7 @@ const parsedEnv = createEnv({
 		SMTP_FROM_EMAIL: z.email().optional(),
 		SMTP_FROM_NAME: z.string().optional(),
 
-		NODE_ENV: z
-			.enum(["development", "test", "production"])
-			.default("development"),
+		NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
 		// Security headers
 		SECURITY_HSTS_PRELOAD: z.enum(["true", "false"]).optional(),
@@ -156,10 +144,7 @@ const parsedEnv = createEnv({
 		NEXT_PUBLIC_TOLGEE_API_KEY: z.string().optional(),
 		NEXT_PUBLIC_TOLGEE_API_URL: z.url().optional(),
 		NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().optional(),
-		NEXT_PUBLIC_POSTHOG_HOST: z
-			.url()
-			.optional()
-			.default("https://eu.i.posthog.com"),
+		NEXT_PUBLIC_POSTHOG_HOST: z.url().optional().default("https://eu.i.posthog.com"),
 	},
 	runtimeEnv: {
 		APP_URL: process.env.APP_URL,
@@ -197,8 +182,7 @@ const parsedEnv = createEnv({
 		S3_PRIVATE_ENDPOINT: process.env.S3_PRIVATE_ENDPOINT,
 		S3_PRIVATE_REGION: process.env.S3_PRIVATE_REGION,
 		S3_PRIVATE_FORCE_PATH_STYLE: process.env.S3_PRIVATE_FORCE_PATH_STYLE,
-		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS:
-			process.env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS,
+		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: process.env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS,
 
 		ENABLE_CRON_JOBS: process.env.ENABLE_CRON_JOBS,
 		WORKER_CONCURRENCY: process.env.WORKER_CONCURRENCY,
@@ -238,7 +222,7 @@ const parsedEnv = createEnv({
 		PLATFORM_DOMAIN: process.env.PLATFORM_DOMAIN,
 		NEXT_PUBLIC_TOLGEE_API_KEY: process.env.NEXT_PUBLIC_TOLGEE_API_KEY,
 		NEXT_PUBLIC_TOLGEE_API_URL: process.env.NEXT_PUBLIC_TOLGEE_API_URL,
-		NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+		NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
 		NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 		GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 		GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
@@ -249,8 +233,7 @@ const parsedEnv = createEnv({
 		CALENDAR_GOOGLE_CLIENT_ID: process.env.CALENDAR_GOOGLE_CLIENT_ID,
 		CALENDAR_GOOGLE_CLIENT_SECRET: process.env.CALENDAR_GOOGLE_CLIENT_SECRET,
 		CALENDAR_MICROSOFT_CLIENT_ID: process.env.CALENDAR_MICROSOFT_CLIENT_ID,
-		CALENDAR_MICROSOFT_CLIENT_SECRET:
-			process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
+		CALENDAR_MICROSOFT_CLIENT_SECRET: process.env.CALENDAR_MICROSOFT_CLIENT_SECRET,
 		TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
 		TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
 		BILLING_ENABLED: process.env.BILLING_ENABLED,
@@ -264,9 +247,7 @@ const parsedEnv = createEnv({
 	onValidationError: (issues) => {
 		console.error("❌ Invalid environment variables:");
 		for (const issue of issues) {
-			console.error(
-				`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`,
-			);
+			console.error(`   - ${issue.path?.join(".") ?? "unknown"}: ${issue.message}`);
 		}
 		process.exit(1);
 	},
@@ -282,9 +263,7 @@ if (!skipEnvValidation && parsedEnv.SECRET_STORE_PROVIDER === "scaleway") {
 	if (missingScalewayEnvVars.length > 0) {
 		console.error("❌ Invalid environment variables:");
 		for (const key of missingScalewayEnvVars) {
-			console.error(
-				`   - ${key}: Required when SECRET_STORE_PROVIDER=scaleway`,
-			);
+			console.error(`   - ${key}: Required when SECRET_STORE_PROVIDER=scaleway`);
 		}
 		process.exit(1);
 	}
