@@ -26,11 +26,15 @@ import {
 import type { AppType } from "@/lib/audit-logger";
 import {
 	defineAbilityFor,
+	type Action,
 	type AppAbility,
+	type CustomRoleInfo,
 	type PrincipalContext,
+	type Subject,
 	type TeamPermissions,
 } from "@/lib/authorization";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
+import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
 
 export interface AuthContext {
 	user: AuthContextUser;
@@ -55,6 +59,7 @@ export interface UserOrganization {
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
+	worksCouncilEnabled: boolean;
 }
 
 /**
@@ -245,6 +250,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 		projectsEnabled: org.projectsEnabled ?? false,
 		surchargesEnabled: org.surchargesEnabled ?? false,
 		demoDataEnabled: org.demoDataEnabled ?? true,
+		worksCouncilEnabled: org.worksCouncilEnabled ?? false,
 	}));
 }
 
@@ -747,6 +753,45 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		}
 	}
 
+	let customRoles: CustomRoleInfo[] = [];
+	if (employeeRecord) {
+		const customRoleRows = await db
+			.select({
+				roleId: customRole.id,
+				roleName: customRole.name,
+				baseTier: customRole.baseTier,
+				action: customRolePermission.action,
+				subject: customRolePermission.subject,
+			})
+			.from(employeeCustomRole)
+			.innerJoin(customRole, eq(employeeCustomRole.customRoleId, customRole.id))
+			.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
+			.where(
+				and(
+					eq(employeeCustomRole.employeeId, employeeRecord.id),
+					eq(customRole.organizationId, activeOrganizationId),
+					eq(customRole.isActive, true),
+				),
+			);
+
+		const roles = new Map<string, CustomRoleInfo>();
+		for (const row of customRoleRows) {
+			const role = roles.get(row.roleId) ?? {
+				roleId: row.roleId,
+				roleName: row.roleName,
+				baseTier: row.baseTier,
+				permissions: [],
+			};
+
+			role.permissions.push({
+				action: row.action as Action,
+				subject: row.subject as Subject,
+			});
+			roles.set(row.roleId, role);
+		}
+		customRoles = Array.from(roles.values());
+	}
+
 	// Load managed employee IDs
 	let managedEmployeeIds: string[] = [];
 
@@ -783,7 +828,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 			: null,
 		permissions,
 		managedEmployeeIds,
-		customRoles: [],
+		customRoles,
 	};
 }
 

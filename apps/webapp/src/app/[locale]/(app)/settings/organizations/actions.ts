@@ -800,13 +800,27 @@ export async function updateOrganizationDetails(
 // Organization Features Actions
 // =============================================================================
 
+const ORGANIZATION_FEATURES = [
+	"shiftsEnabled",
+	"projectsEnabled",
+	"surchargesEnabled",
+	"demoDataEnabled",
+	"worksCouncilEnabled",
+] as const;
+
+type OrganizationFeature = (typeof ORGANIZATION_FEATURES)[number];
+
+export function isOrganizationFeature(feature: string): feature is OrganizationFeature {
+	return ORGANIZATION_FEATURES.includes(feature as OrganizationFeature);
+}
+
 /**
  * Toggle organization features (e.g., shift scheduling)
  * Requires owner role
  */
 export async function toggleOrganizationFeature(
 	organizationId: string,
-	feature: "shiftsEnabled" | "projectsEnabled" | "surchargesEnabled" | "demoDataEnabled",
+	feature: string,
 	enabled: boolean,
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("organizations");
@@ -822,6 +836,18 @@ export async function toggleOrganizationFeature(
 		},
 		(span) => {
 			return Effect.gen(function* (_) {
+				if (!isOrganizationFeature(feature)) {
+					yield* _(
+						Effect.fail(
+							new ValidationError({
+								message: "Invalid organization feature",
+								field: "feature",
+								value: feature,
+							}),
+						),
+					);
+				}
+
 				const authService = yield* _(AuthService);
 				const session = yield* _(authService.getSession());
 				const dbService = yield* _(DatabaseService);

@@ -265,6 +265,30 @@ describe("settings visibility tiers", () => {
 		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
 	});
 
+	it("hides works council settings when the works council feature is disabled", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+			demoDataEnabled: true,
+			worksCouncilEnabled: false,
+		});
+
+		expect(entries.some((entry) => entry.id === "works-council")).toBe(false);
+	});
+
+	it("shows works council settings when the works council feature is enabled", () => {
+		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
+			shiftsEnabled: true,
+			projectsEnabled: true,
+			surchargesEnabled: true,
+			demoDataEnabled: true,
+			worksCouncilEnabled: true,
+		});
+
+		expect(entries.some((entry) => entry.id === "works-council")).toBe(true);
+	});
+
 	it("keeps demo data visible when partial feature flags omit the new flag", () => {
 		const entries = filterSettingsByFeatureFlags(SETTINGS_ENTRIES, {
 			shiftsEnabled: true,

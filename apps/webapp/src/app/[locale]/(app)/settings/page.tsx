@@ -26,6 +26,7 @@ export default async function SettingsPage() {
 					projectsEnabled: true,
 					surchargesEnabled: true,
 					demoDataEnabled: true,
+					worksCouncilEnabled: true,
 				},
 				where: eq(authSchema.organization.id, activeOrganizationId),
 			})
@@ -36,6 +37,7 @@ export default async function SettingsPage() {
 				projectsEnabled: currentOrganization.projectsEnabled ?? false,
 				surchargesEnabled: currentOrganization.surchargesEnabled ?? false,
 				demoDataEnabled: currentOrganization.demoDataEnabled ?? true,
+				worksCouncilEnabled: currentOrganization.worksCouncilEnabled ?? false,
 			}
 		: undefined;
 

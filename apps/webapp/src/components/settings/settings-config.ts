@@ -12,7 +12,8 @@ export type FeatureFlag =
 	| "shiftsEnabled"
 	| "projectsEnabled"
 	| "surchargesEnabled"
-	| "demoDataEnabled";
+	| "demoDataEnabled"
+	| "worksCouncilEnabled";
 
 export type FeatureFlagState = Partial<Record<FeatureFlag, boolean>>;
 
@@ -481,6 +482,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "gavel",
 		minimumTier: "orgAdmin",
 		group: "enterprise",
+		requiredFeature: "worksCouncilEnabled",
 	},
 	{
 		id: "webhooks",

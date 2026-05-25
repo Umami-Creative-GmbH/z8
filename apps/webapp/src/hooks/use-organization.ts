@@ -30,6 +30,7 @@ interface OrganizationSettingsResponse {
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
+	worksCouncilEnabled: boolean;
 	timezone: string;
 	deletedAt: string | null;
 }

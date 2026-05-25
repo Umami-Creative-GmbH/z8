@@ -87,25 +87,6 @@ export function WorksCouncilSettingsForm({
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-5">
-					<SwitchField
-						label={t("settings.worksCouncil.enabled", "Enable Works Council Mode")}
-						description={t(
-							"settings.worksCouncil.enabledDescription",
-							"Allow authorized works council users to access the read-only portal.",
-						)}
-					>
-						<form.Field name="enabled">
-							{(field) => (
-								<Switch
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-									disabled={controlsDisabled}
-									aria-label={t("settings.worksCouncil.enabled", "Enable Works Council Mode")}
-								/>
-							)}
-						</form.Field>
-					</SwitchField>
-
 					<div className="grid gap-4 md:grid-cols-2">
 						<form.Field name="identityVisibility">
 							{(field) => (

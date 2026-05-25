@@ -303,10 +303,6 @@ function applyScheduleIdentityVisibility(
 export async function buildWorksCouncilPortalModel(
 	input: BuildWorksCouncilPortalModelInput,
 ): Promise<WorksCouncilPortalModel> {
-	if (!input.settings.enabled) {
-		return { state: "disabled", dashboard: null, changeLog: [], scheduleReview: [] };
-	}
-
 	const queryRequest = buildQueryRequest(input);
 	input.collectQueryContract?.(queryRequest);
 	const changeRows = (await (input.queryAuditChanges ?? queryAuditChanges)(queryRequest)).filter(

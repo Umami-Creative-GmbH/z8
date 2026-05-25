@@ -77,6 +77,7 @@ export function OrganizationTab({
 				projectsEnabled={organization.projectsEnabled ?? false}
 				surchargesEnabled={organization.surchargesEnabled ?? false}
 				demoDataEnabled={organization.demoDataEnabled ?? true}
+				worksCouncilEnabled={organization.worksCouncilEnabled ?? false}
 				currentMemberRole={currentMemberRole}
 			/>
 

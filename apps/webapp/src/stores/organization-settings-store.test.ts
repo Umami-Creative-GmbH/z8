@@ -5,6 +5,7 @@ describe("organization settings store", () => {
 	it("defaults organization settings", () => {
 		useOrganizationSettings.getState().reset();
 
+		expect(useOrganizationSettings.getState().worksCouncilEnabled).toBe(false);
 		expect(useOrganizationSettings.getState().timezone).toBe("UTC");
 		expect(useOrganizationSettings.getState().isHydrated).toBe(false);
 	});
@@ -16,10 +17,12 @@ describe("organization settings store", () => {
 			projectsEnabled: false,
 			surchargesEnabled: false,
 			demoDataEnabled: true,
+			worksCouncilEnabled: true,
 			timezone: "UTC",
 			deletedAt: null,
 		});
 
+		expect(useOrganizationSettings.getState().worksCouncilEnabled).toBe(true);
 		expect(useOrganizationSettings.getState().timezone).toBe("UTC");
 		expect(useOrganizationSettings.getState().isHydrated).toBe(true);
 	});

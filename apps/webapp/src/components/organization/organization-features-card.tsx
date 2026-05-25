@@ -4,6 +4,7 @@ import {
 	IconBriefcase,
 	IconCalendarTime,
 	IconDatabase,
+	IconGavel,
 	IconLoader2,
 	IconPercentage,
 } from "@tabler/icons-react";
@@ -23,6 +24,7 @@ interface OrganizationFeaturesCardProps {
 	projectsEnabled: boolean;
 	surchargesEnabled: boolean;
 	demoDataEnabled: boolean;
+	worksCouncilEnabled: boolean;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
@@ -32,6 +34,7 @@ export function OrganizationFeaturesCard({
 	projectsEnabled,
 	surchargesEnabled,
 	demoDataEnabled,
+	worksCouncilEnabled,
 	currentMemberRole,
 }: OrganizationFeaturesCardProps) {
 	const { t } = useTranslate();
@@ -41,6 +44,7 @@ export function OrganizationFeaturesCard({
 	const [isProjectsEnabled, setIsProjectsEnabled] = useState(projectsEnabled);
 	const [isSurchargesEnabled, setIsSurchargesEnabled] = useState(surchargesEnabled);
 	const [isDemoDataEnabled, setIsDemoDataEnabled] = useState(demoDataEnabled);
+	const [isWorksCouncilEnabled, setIsWorksCouncilEnabled] = useState(worksCouncilEnabled);
 	const setOrgSettings = useOrganizationSettings((state) => state.setSettings);
 
 	const canEdit = currentMemberRole === "owner";
@@ -123,6 +127,32 @@ export function OrganizationFeaturesCard({
 			// Revert optimistic update
 			setIsSurchargesEnabled(!enabled);
 			setOrgSettings({ surchargesEnabled: !enabled });
+			toast.error(
+				result.error || t("organization.features.update-failed", "Failed to update feature"),
+			);
+		}
+	};
+
+	const handleToggleWorksCouncil = async (enabled: boolean) => {
+		if (!canEdit) return;
+
+		setIsWorksCouncilEnabled(enabled);
+		setOrgSettings({ worksCouncilEnabled: enabled });
+
+		const result = await toggleOrganizationFeature(organizationId, "worksCouncilEnabled", enabled);
+
+		if (result.success) {
+			toast.success(
+				enabled
+					? t("organization.features.works-council-enabled", "Works Council enabled")
+					: t("organization.features.works-council-disabled", "Works Council disabled"),
+			);
+			startTransition(() => {
+				router.refresh();
+			});
+		} else {
+			setIsWorksCouncilEnabled(!enabled);
+			setOrgSettings({ worksCouncilEnabled: !enabled });
 			toast.error(
 				result.error || t("organization.features.update-failed", "Failed to update feature"),
 			);
@@ -262,6 +292,39 @@ export function OrganizationFeaturesCard({
 							onCheckedChange={handleToggleSurcharges}
 							disabled={!canEdit || isPending}
 							aria-label={t("organization.features.toggle-surcharges", "Toggle surcharges")}
+						/>
+					</div>
+				</div>
+
+				{/* Works Council Feature */}
+				<div className="flex items-center justify-between">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
+							<IconGavel aria-hidden="true" className="size-5 text-primary" />
+						</div>
+						<div className="space-y-1">
+							<Label
+								htmlFor="works-council-toggle"
+								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+							>
+								{t("organization.features.works-council", "Works Council")}
+							</Label>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"organization.features.works-council-description",
+									"Enable the Works Council portal for authorized owners, admins, and assigned reviewers.",
+								)}
+							</p>
+						</div>
+					</div>
+					<div className="flex items-center gap-2">
+						{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+						<Switch
+							id="works-council-toggle"
+							checked={isWorksCouncilEnabled}
+							onCheckedChange={handleToggleWorksCouncil}
+							disabled={!canEdit || isPending}
+							aria-label={t("organization.features.toggle-works-council", "Toggle Works Council")}
 						/>
 					</div>
 				</div>

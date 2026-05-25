@@ -15,7 +15,6 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { requireAbility } from "@/lib/auth-helpers";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
 import {
 	type BillingAccessResult,
@@ -25,7 +24,6 @@ import {
 import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
-import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { DOMAIN_HEADERS } from "@/proxy";
 import { setLanguage } from "@/tolgee/language";
 
@@ -74,15 +72,6 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
 	const billingEnabled = process.env.BILLING_ENABLED === "true";
 	const activeOrganizationId = session.session?.activeOrganizationId;
-	let showWorksCouncilNav = false;
-	if (activeOrganizationId) {
-		const ability = await requireAbility();
-		showWorksCouncilNav = canViewWorksCouncilPortal(
-			ability,
-			activeOrganizationId,
-			activeOrganizationId,
-		);
-	}
 	const billingAccess =
 		activeOrganizationId && billingEnabled
 			? await Effect.runPromise(
@@ -150,7 +139,10 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 							} as React.CSSProperties
 						}
 					>
-						<ServerAppSidebar variant="inset" showWorksCouncilNav={showWorksCouncilNav} />
+						<ServerAppSidebar
+							variant="inset"
+							showWorksCouncilNav={Boolean(activeOrganizationId)}
+						/>
 						<SidebarInset>
 							<SiteHeader />
 							{showTrialBanner ? (

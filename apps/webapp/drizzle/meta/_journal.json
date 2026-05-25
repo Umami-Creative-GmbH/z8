@@ -225,6 +225,13 @@
       "when": 1779654701733,
       "tag": "0031_lean_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1779654701734,
+      "tag": "0032_works_council_feature_flag",
+      "breakpoints": true
     }
   ]
 }
