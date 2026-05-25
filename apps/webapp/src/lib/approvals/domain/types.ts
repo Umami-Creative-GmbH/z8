@@ -5,8 +5,8 @@
  * for approval type handlers and the unified approval item format.
  */
 
-import type { Effect } from "effect";
 import type { SQL } from "drizzle-orm";
+import type { Effect } from "effect";
 import type { ComponentType } from "react";
 import type { AnyAppError } from "@/lib/effect/errors";
 
@@ -173,7 +173,6 @@ export interface ApprovalQueryParams {
 
 	/** Filter by requester employee IDs before pagination */
 	requesterEmployeeIds?: string[];
-
 
 	/** Manager-routed requester/approver pairs this manager can see through current eligibility. */
 	eligibleApprovalScopes?: Array<{
