@@ -3,6 +3,33 @@
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
 
+function findFontSizeInitScript(node: React.ReactNode): string | null {
+	if (Array.isArray(node)) {
+		for (const child of node) {
+			const script = findFontSizeInitScript(child);
+			if (script) {
+				return script;
+			}
+		}
+		return null;
+	}
+
+	if (!node || typeof node !== "object" || !("props" in node)) {
+		return null;
+	}
+
+	const element = node as React.ReactElement<{
+		children?: React.ReactNode;
+		dangerouslySetInnerHTML?: { __html?: string };
+	}>;
+	const html = element.props.dangerouslySetInnerHTML?.__html;
+	if (element.type === "script" && html?.includes("z8-font-size")) {
+		return html;
+	}
+
+	return findFontSizeInitScript(element.props.children);
+}
+
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers({ "x-pathname": "/en/sign-in" })),
 	getSession: vi.fn(async () => null),
@@ -95,6 +122,22 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 describe("LocaleLayout", () => {
+	it("inlines font size preference initialization before paint", async () => {
+		const layout = await LocaleLayout({
+			children: <div>Auth content</div>,
+			params: Promise.resolve({ locale: "en" }),
+		});
+
+		const script = findFontSizeInitScript(layout);
+
+		expect(script).not.toBeNull();
+		expect(script).toContain("localStorage.getItem(\"z8-font-size\")");
+		expect(script).toContain("document.documentElement.dataset.fontSize");
+		expect(script).toContain("comfortable");
+		expect(script).toContain("large");
+		expect(script).toContain("catch");
+	});
+
 	it("does not block the shell on the PostHog consent session lookup", async () => {
 		await LocaleLayout({
 			children: <div>Auth content</div>,

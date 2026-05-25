@@ -58,6 +58,8 @@ const DEFAULT_META = {
 	keywords: "z8, time, app, productivity",
 };
 
+const FONT_SIZE_INIT_SCRIPT = `try{var fontSize=localStorage.getItem("z8-font-size");if(fontSize==="comfortable"||fontSize==="large"){document.documentElement.dataset.fontSize=fontSize;}else{document.documentElement.removeAttribute("data-font-size");}}catch{}`;
+
 function TranslatedMeta() {
 	return (
 		<>
@@ -131,6 +133,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="yes" name="mobile-web-app-capable" />
 				<meta content="yes" name="apple-mobile-web-app-capable" />
 				<meta content="default" name="apple-mobile-web-app-status-bar-style" />
+				<script dangerouslySetInnerHTML={{ __html: FONT_SIZE_INIT_SCRIPT }} />
 				<TranslatedMeta />
 			</head>
 			<body>
