@@ -2,9 +2,7 @@ import { FormatIcu } from "@tolgee/format-icu";
 import type { TolgeeStaticData } from "@tolgee/react";
 import { DevTools, Tolgee } from "@tolgee/web";
 
-import { env } from "@/env";
-
-const isDevelopment = env.NODE_ENV === "development";
+const isDevelopment = process.env.NODE_ENV === "development";
 
 export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt"];
 
