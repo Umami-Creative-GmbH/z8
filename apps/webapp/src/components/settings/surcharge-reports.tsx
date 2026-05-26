@@ -108,11 +108,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const [dateError, setDateError] = useState<string | null>(null);
 	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<string | null>(null);
 	const appliedFilters = useRef(defaultFilters);
-	const loadedRowsOrganizationId = useRef<string | null>(null);
+	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
-	const tRef = useRef(t);
-	tRef.current = t;
 
 	const loadCalculations = useCallback(
 		async (filters: FilterValues) => {
@@ -124,14 +123,12 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
 				setRows([]);
 				setExpandedId(null);
-				loadedRowsOrganizationId.current = null;
+				loadedRowsOrganizationIdRef.current = null;
+				setLoadedRowsOrganizationId(null);
 				setError(null);
 				setIsShowingPreviousResults(false);
 				setDateError(
-					tRef.current(
-						"surcharges.reports.errors.invalidDateRange",
-						"Start date must be on or before end date.",
-					),
+					t("surcharges.reports.errors.invalidDateRange", "Start date must be on or before end date."),
 				);
 				setIsLoading(false);
 				return;
@@ -140,7 +137,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 			setDateError(null);
 			setError(null);
 			setIsShowingPreviousResults(false);
-			if (loadedRowsOrganizationId.current !== organizationId) {
+			if (loadedRowsOrganizationIdRef.current !== organizationId) {
 				setRows([]);
 				setExpandedId(null);
 			}
@@ -160,29 +157,26 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 			if (result.success) {
 				setRows(result.data);
-				loadedRowsOrganizationId.current = organizationId;
+				loadedRowsOrganizationIdRef.current = organizationId;
+				setLoadedRowsOrganizationId(organizationId);
 				setExpandedId((current) =>
 					result.data.some((row) => row.id === current) ? current : null,
 				);
 			} else {
-				if (loadedRowsOrganizationId.current === organizationId) {
+				if (loadedRowsOrganizationIdRef.current === organizationId) {
 					setIsShowingPreviousResults(true);
 				} else {
 					setRows([]);
 					setExpandedId(null);
 				}
 				setError(
-					result.error ||
-						tRef.current(
-							"surcharges.reports.errors.loadFailed",
-							"Failed to load surcharge calculations.",
-						),
+					result.error || t("surcharges.reports.errors.loadFailed", "Failed to load surcharge calculations."),
 				);
 			}
 
 			setIsLoading(false);
 		},
-		[organizationId],
+		[organizationId, t],
 	);
 
 	const form = useForm({
@@ -197,7 +191,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		loadCalculations(appliedFilters.current);
 	}, [loadCalculations]);
 
-	const displayRows = loadedRowsOrganizationId.current === organizationId ? rows : [];
+	const displayRows = loadedRowsOrganizationId === organizationId ? rows : [];
 	const totals = displayRows.reduce(
 		(accumulator, row) => ({
 			baseMinutes: accumulator.baseMinutes + row.baseMinutes,

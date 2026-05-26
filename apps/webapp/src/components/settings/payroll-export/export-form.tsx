@@ -3,7 +3,14 @@
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+	startTransition as startReactTransition,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -160,7 +167,7 @@ export function ExportForm({
 			return;
 		}
 
-		setSelectedFormatId(firstConfiguredFormatId);
+		startReactTransition(() => setSelectedFormatId(firstConfiguredFormatId));
 	}, [exportAvailability, firstConfiguredFormatId, selectedFormatId]);
 
 	const getDateRange = () => {

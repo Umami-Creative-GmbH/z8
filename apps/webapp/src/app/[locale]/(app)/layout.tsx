@@ -51,8 +51,12 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		// Session cookie exists but is invalid - redirect to session-expired handler
 		// which properly clears cookies before redirecting to sign-in.
 		// This prevents redirect loops when proxy sees cookie but session is invalid.
-		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
-		const sessionExpiredUrl = `/api/auth/session-expired?locale=${locale}&callbackUrl=${encodeURIComponent(pathname)}`;
+		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
+		const sessionExpiredUrl =
+			"/api/auth/session-expired?locale=" +
+			locale +
+			"&callbackUrl=" +
+			encodeURIComponent(pathname);
 		redirect(sessionExpiredUrl);
 	}
 
@@ -64,8 +68,8 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
-		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
-		const newPath = pathname.replace(`/${locale}`, `/${dbLocale}`);
+		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
+		const newPath = pathname.replace("/" + locale, "/" + dbLocale);
 		redirect(newPath);
 	}
 
@@ -74,11 +78,9 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	const billingAccess =
 		activeOrganizationId && billingEnabled
 			? await Effect.runPromise(
-					Effect.gen(function* () {
-						const enforcementService = yield* BillingEnforcementService;
-
-						return yield* enforcementService.checkBillingAccess(activeOrganizationId);
-					}).pipe(Effect.provide(BillingEnforcementServiceLive)),
+					Effect.flatMap(BillingEnforcementService, (enforcementService) =>
+						enforcementService.checkBillingAccess(activeOrganizationId),
+					).pipe(Effect.provide(BillingEnforcementServiceLive)),
 				).catch((error) => {
 					logger.error(
 						{ error, organizationId: activeOrganizationId },
@@ -102,15 +104,15 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 					}),
 				])
 			: [null, null];
-	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/" + locale;
 	const isBillingRecoveryPath =
-		pathname === `/${locale}/settings/billing` ||
-		pathname.startsWith(`/${locale}/settings/billing/`) ||
-		pathname === `/${locale}/billing/suspended` ||
-		pathname.startsWith(`/${locale}/billing/suspended/`);
+		pathname === "/" + locale + "/settings/billing" ||
+		pathname.startsWith("/" + locale + "/settings/billing/") ||
+		pathname === "/" + locale + "/billing/suspended" ||
+		pathname.startsWith("/" + locale + "/billing/suspended/");
 
 	if (billingAccess.canAccess === false && !isBillingRecoveryPath) {
-		redirect(`/${locale}/billing/suspended`);
+		redirect("/" + locale + "/billing/suspended");
 	}
 
 	const trialDaysRemaining =

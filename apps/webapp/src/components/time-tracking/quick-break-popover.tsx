@@ -70,6 +70,8 @@ export function QuickBreakPopover({
 			if (result.success) {
 				setOpen(false);
 				setMinutes("30");
+				submittingRef.current = false;
+				setLocalSubmitting(false);
 				return;
 			}
 
@@ -81,10 +83,10 @@ export function QuickBreakPopover({
 			setError(
 				t("timeTracking.quickBreak.errors.addFailed", "Failed to add break. Please try again."),
 			);
-		} finally {
-			submittingRef.current = false;
-			setLocalSubmitting(false);
 		}
+
+		submittingRef.current = false;
+		setLocalSubmitting(false);
 	};
 
 	return (

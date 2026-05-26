@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
 
@@ -56,8 +56,9 @@ export function usePushNotifications(
 	options: UsePushNotificationsOptions = {},
 ): UsePushNotificationsResult {
 	const { onSubscribe, onUnsubscribe, onError } = options;
-	const onErrorRef = useRef(onError);
-	onErrorRef.current = onError;
+	const handleError = useEffectEvent((error: Error) => {
+		onError?.(error);
+	});
 
 	const [isSupported, setIsSupported] = useState(false);
 	const [permission, setPermission] = useState<PushPermission>("default");
@@ -78,6 +79,7 @@ export function usePushNotifications(
 				) {
 					setIsSupported(false);
 					setPermission("unsupported");
+					setIsLoading(false);
 					return;
 				}
 
@@ -85,6 +87,7 @@ export function usePushNotifications(
 				if (!vapidResponse.ok) {
 					setIsSupported(false);
 					setPermission("unsupported");
+					setIsLoading(false);
 					return;
 				}
 
@@ -92,6 +95,7 @@ export function usePushNotifications(
 				if (!publicKey) {
 					setIsSupported(false);
 					setPermission("unsupported");
+					setIsLoading(false);
 					return;
 				}
 
@@ -111,12 +115,12 @@ export function usePushNotifications(
 				// Check if already subscribed
 				const subscription = await reg.pushManager.getSubscription();
 				setIsSubscribed(!!subscription);
+				setIsLoading(false);
 			} catch (error) {
 				console.error("Failed to initialize push notifications:", error);
 				setIsSupported(false);
 				setPermission("unsupported");
-				onErrorRef.current?.(error as Error);
-			} finally {
+				handleError(error as Error);
 				setIsLoading(false);
 			}
 		};
@@ -179,18 +183,20 @@ export function usePushNotifications(
 				});
 
 				if (!subscribeResponse.ok) {
-					throw new Error("Failed to save subscription on server");
+					onError?.(new Error("Failed to save subscription on server"));
+					setIsLoading(false);
+					return false;
 				}
 
 				setIsSubscribed(true);
 				onSubscribe?.();
+				setIsLoading(false);
 				return true;
 			} catch (error) {
 				console.error("Failed to subscribe to push notifications:", error);
 				onError?.(error as Error);
-				return false;
-			} finally {
 				setIsLoading(false);
+				return false;
 			}
 		},
 		[isSupported, registration, requestPermission, vapidPublicKey, onSubscribe, onError],
@@ -223,13 +229,13 @@ export function usePushNotifications(
 
 			setIsSubscribed(false);
 			onUnsubscribe?.();
+			setIsLoading(false);
 			return true;
 		} catch (error) {
 			console.error("Failed to unsubscribe from push notifications:", error);
 			onError?.(error as Error);
-			return false;
-		} finally {
 			setIsLoading(false);
+			return false;
 		}
 	}, [registration, onUnsubscribe, onError]);
 

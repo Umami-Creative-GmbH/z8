@@ -42,34 +42,30 @@ export function ApprovalSprintPanel({
 	const [rejectReason, setRejectReason] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [dismissedApprovalIds, setDismissedApprovalIds] = useState<string[]>([]);
-	const wasOpenRef = useRef(false);
+	const [previousOpen, setPreviousOpen] = useState(open);
 	const submittingApprovalRef = useRef<string | null>(null);
+	const shortcutStateRef = useRef({
+		isBusy: false,
+		handleApprove: async () => {},
+		advance: () => {},
+	});
 	const visibleItems = items.filter((item) => !dismissedApprovalIds.includes(item.id));
-	const currentItem = visibleItems[currentIndex];
+	const visibleItemCount = visibleItems.length;
+	const boundedCurrentIndex = visibleItemCount === 0 ? 0 : Math.min(currentIndex, visibleItemCount - 1);
+	const currentItem = visibleItems[boundedCurrentIndex];
+	const currentItemId = currentItem?.id;
 	const isBusy = isSubmitting || approveMutation.isPending || rejectMutation.isPending;
 	const trimmedRejectReason = rejectReason.trim();
-	const visibleItemCount = visibleItems.length;
 
-	useEffect(() => {
-		if (open && !wasOpenRef.current) {
+	if (previousOpen !== open) {
+		setPreviousOpen(open);
+		if (open) {
 			setCurrentIndex(0);
 			setIsRejecting(false);
 			setRejectReason("");
 			setDismissedApprovalIds([]);
 		}
-
-		wasOpenRef.current = open;
-	}, [open]);
-
-	useEffect(() => {
-		if (!open) return;
-
-		setCurrentIndex((index) => {
-			if (visibleItemCount === 0) return 0;
-
-			return Math.min(index, visibleItemCount - 1);
-		});
-	}, [open, visibleItemCount]);
+	}
 
 	const advance = useCallback(() => {
 		setIsRejecting(false);
@@ -77,30 +73,33 @@ export function ApprovalSprintPanel({
 		setCurrentIndex((index) => index + 1);
 	}, []);
 
-	const handleApprove = useCallback(async () => {
-		if (!currentItem || isBusy) return;
-		if (submittingApprovalRef.current === currentItem.id) return;
+	const handleApprove = async () => {
+		if (!currentItemId || isBusy) return;
+		if (submittingApprovalRef.current === currentItemId) return;
 
-		submittingApprovalRef.current = currentItem.id;
+		submittingApprovalRef.current = currentItemId;
 		setIsSubmitting(true);
 		try {
-			const result = await approveMutation.mutateAsync(currentItem.id);
+			const result = await approveMutation.mutateAsync(currentItemId);
 			if (result.success) {
 				toast.success(t("approvals:approvals.approved", "Request approved"));
 				setIsRejecting(false);
 				setRejectReason("");
-				setDismissedApprovalIds((approvalIds) => [...approvalIds, currentItem.id]);
+				submittingApprovalRef.current = null;
+				setIsSubmitting(false);
+				setDismissedApprovalIds((approvalIds) => [...approvalIds, currentItemId]);
 				onActioned();
+				return;
 			} else {
 				toast.error(result.error || t("approvals:approvals.approveFailed", "Failed to approve"));
 			}
 		} catch (_error) {
 			toast.error(t("approvals:approvals.approveFailed", "Failed to approve"));
-		} finally {
-			submittingApprovalRef.current = null;
-			setIsSubmitting(false);
 		}
-	}, [approveMutation, currentItem, isBusy, onActioned, t]);
+
+		submittingApprovalRef.current = null;
+		setIsSubmitting(false);
+	};
 
 	const handleReject = async () => {
 		if (!currentItem || isBusy || !trimmedRejectReason) return;
@@ -124,10 +123,10 @@ export function ApprovalSprintPanel({
 			}
 		} catch (_error) {
 			toast.error(t("approvals:approvals.rejectFailed", "Failed to reject"));
-		} finally {
-			submittingApprovalRef.current = null;
-			setIsSubmitting(false);
 		}
+
+		submittingApprovalRef.current = null;
+		setIsSubmitting(false);
 	};
 
 	const handleOpenChange = (nextOpen: boolean) => {
@@ -139,27 +138,34 @@ export function ApprovalSprintPanel({
 	};
 
 	useEffect(() => {
+		shortcutStateRef.current = { isBusy, handleApprove, advance };
+	});
+
+	useEffect(() => {
 		if (!open || isRejecting || !shortcutsEnabled) return;
 
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-			if (isBusy || isEditableShortcutTarget(event.target)) return;
+			if (isEditableShortcutTarget(event.target)) return;
+
+			const shortcutState = shortcutStateRef.current;
+			if (shortcutState.isBusy) return;
 
 			if (event.key === "a") {
 				event.preventDefault();
-				void handleApprove();
+				void shortcutState.handleApprove();
 			} else if (event.key === "r") {
 				event.preventDefault();
 				setIsRejecting(true);
 			} else if (event.key === "s" || event.key === "n") {
 				event.preventDefault();
-				advance();
+				shortcutState.advance();
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [open, isRejecting, shortcutsEnabled, isBusy, handleApprove, advance]);
+	}, [open, isRejecting, shortcutsEnabled]);
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -177,8 +183,8 @@ export function ApprovalSprintPanel({
 				{currentItem ? (
 					<div className="space-y-4">
 						<div className="text-muted-foreground text-sm">
-							{t("approvals:sprint.progress", `${currentIndex + 1} of ${visibleItems.length}`, {
-								current: currentIndex + 1,
+							{t("approvals:sprint.progress", boundedCurrentIndex + 1 + " of " + visibleItems.length, {
+								current: boundedCurrentIndex + 1,
 								total: visibleItems.length,
 							})}
 						</div>

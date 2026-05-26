@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -61,20 +61,16 @@ export function DomainAuthConfigDialog({
 	const [config, setConfig] = useState<AuthConfig>(() => getInitialConfig(domain));
 	const [turnstileSecretKey, setTurnstileSecretKey] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-	const lastResetKeyRef = useRef<string | null>(null);
+	const resetKey = open && domain ? domain.id : null;
+	const [lastResetKey, setLastResetKey] = useState<string | null>(resetKey);
 
-	useEffect(() => {
-		const resetKey = open && domain ? domain.id : null;
-
-		if (lastResetKeyRef.current === resetKey) return;
-
-		lastResetKeyRef.current = resetKey;
-
-		if (!resetKey || !domain) return;
-
-		setConfig(getInitialConfig(domain));
-		setTurnstileSecretKey("");
-	}, [open, domain]);
+	if (lastResetKey !== resetKey) {
+		setLastResetKey(resetKey);
+		if (resetKey && domain) {
+			setConfig(getInitialConfig(domain));
+			setTurnstileSecretKey("");
+		}
+	}
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (nextOpen && domain) {

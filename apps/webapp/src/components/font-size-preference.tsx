@@ -24,13 +24,13 @@ function getLocalStorage(): Storage | undefined {
 }
 
 export function FontSizeProvider({ children }: { children: React.ReactNode }) {
-	const [fontSize, setFontSizeState] = useState<FontSizePreference>("default");
+	const [fontSize, setFontSizeState] = useState<FontSizePreference>(() =>
+		readStoredFontSize(getLocalStorage()),
+	);
 
 	useEffect(() => {
-		const storedFontSize = readStoredFontSize(getLocalStorage());
-		setFontSizeState(storedFontSize);
-		applyFontSizePreference(storedFontSize);
-	}, []);
+		applyFontSizePreference(fontSize);
+	}, [fontSize]);
 
 	const setFontSize = useCallback((value: FontSizePreference) => {
 		setFontSizeState(value);

@@ -11,7 +11,7 @@ import {
 	IconUsers,
 	IconUserX,
 } from "@tabler/icons-react";
-import { count, eq, isNull, sql } from "drizzle-orm";
+import { count, eq, inArray, isNull } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PlatformAnalyticsPreviewCharts } from "@/components/platform-admin/platform-analytics-charts";
@@ -115,7 +115,7 @@ async function DashboardStats() {
 							status: subscription.status,
 						})
 						.from(subscription)
-						.where(sql`${subscription.status} IN ('active', 'trialing', 'past_due')`)
+						.where(inArray(subscription.status, ["active", "trialing", "past_due"]))
 				: Promise.resolve([]),
 		]);
 

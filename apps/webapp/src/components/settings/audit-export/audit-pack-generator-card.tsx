@@ -33,12 +33,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useJobStatus } from "@/lib/queue/use-job-status";
 
@@ -86,29 +81,36 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 	const [activeJobId, setActiveJobId] = useState<string | null>(null);
 	const [downloadingRequestId, setDownloadingRequestId] = useState<string | null>(null);
 
-	const loadRequests = useCallback(async () => {
-		setIsLoadingRequests(true);
-		try {
-			const result = await getAuditPackRequestsAction(organizationId, 10);
-			if (result.success) {
-				setRequests(result.data);
-				return;
+	const loadRequests = useCallback(
+		async (showLoading = true) => {
+			if (showLoading) {
+				setIsLoadingRequests(true);
+			}
+			try {
+				const result = await getAuditPackRequestsAction(organizationId, 10);
+				if (result.success) {
+					setRequests(result.data);
+				} else {
+					toast.error(
+						result.error ||
+							t(
+								"settings.auditExport.auditPack.requestsError",
+								"Failed to load audit pack requests",
+							),
+					);
+				}
+			} catch (error) {
+				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
+				console.error("Load audit pack requests error:", error);
 			}
 
-			toast.error(
-				result.error ||
-					t("settings.auditExport.auditPack.requestsError", "Failed to load audit pack requests"),
-			);
-		} catch (error) {
-			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
-			console.error("Load audit pack requests error:", error);
-		} finally {
 			setIsLoadingRequests(false);
-		}
-	}, [organizationId, t]);
+		},
+		[organizationId, t],
+	);
 
 	useEffect(() => {
-		void loadRequests();
+		void Promise.resolve().then(() => loadRequests(false));
 	}, [loadRequests]);
 
 	const form = useForm({
@@ -140,20 +142,19 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 						result.error ||
 							t("settings.auditExport.auditPack.createError", "Failed to create audit pack"),
 					);
-					return;
+				} else {
+					setActiveJobId(result.data.jobId);
+					toast.success(
+						t("settings.auditExport.auditPack.createSuccess", "Audit pack request created"),
+					);
+					await loadRequests();
 				}
-
-				setActiveJobId(result.data.jobId);
-				toast.success(
-					t("settings.auditExport.auditPack.createSuccess", "Audit pack request created"),
-				);
-				await loadRequests();
 			} catch (error) {
 				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 				console.error("Create audit pack error:", error);
-			} finally {
-				setIsSubmitting(false);
 			}
+
+			setIsSubmitting(false);
 		},
 	});
 
@@ -184,21 +185,20 @@ export function AuditPackGeneratorCard({ organizationId }: AuditPackGeneratorCar
 					result.error ||
 						t("settings.auditExport.auditPack.downloadError", "Failed to start download"),
 				);
-				return;
-			}
+			} else {
+				const newWindow = window.open(result.data.url, "_blank");
+				if (newWindow) {
+					newWindow.opener = null;
+				}
 
-			const newWindow = window.open(result.data.url, "_blank");
-			if (newWindow) {
-				newWindow.opener = null;
+				toast.success(t("settings.auditExport.auditPack.downloadStarted", "Download started"));
 			}
-
-			toast.success(t("settings.auditExport.auditPack.downloadStarted", "Download started"));
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Download audit pack error:", error);
-		} finally {
-			setDownloadingRequestId(null);
 		}
+
+		setDownloadingRequestId(null);
 	};
 
 	return (

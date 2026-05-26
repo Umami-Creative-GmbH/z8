@@ -3,7 +3,11 @@
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
 
-function findFontSizeInitScript(node: React.ReactNode): string | null {
+function findFontSizeInitScript(node: React.ReactNode): {
+	children: React.ReactNode;
+	id?: string;
+	strategy?: string;
+} | null {
 	if (Array.isArray(node)) {
 		for (const child of node) {
 			const script = findFontSizeInitScript(child);
@@ -20,11 +24,15 @@ function findFontSizeInitScript(node: React.ReactNode): string | null {
 
 	const element = node as React.ReactElement<{
 		children?: React.ReactNode;
-		dangerouslySetInnerHTML?: { __html?: string };
+		id?: string;
+		strategy?: string;
 	}>;
-	const html = element.props.dangerouslySetInnerHTML?.__html;
-	if (element.type === "script" && html?.includes("z8-font-size")) {
-		return html;
+	if (element.props.id === "font-size-init") {
+		return {
+			children: element.props.children,
+			id: element.props.id,
+			strategy: element.props.strategy,
+		};
 	}
 
 	return findFontSizeInitScript(element.props.children);
@@ -131,11 +139,13 @@ describe("LocaleLayout", () => {
 		const script = findFontSizeInitScript(layout);
 
 		expect(script).not.toBeNull();
-		expect(script).toContain("localStorage.getItem(\"z8-font-size\")");
-		expect(script).toContain("document.documentElement.dataset.fontSize");
-		expect(script).toContain("comfortable");
-		expect(script).toContain("large");
-		expect(script).toContain("catch");
+		expect(script?.id).toBe("font-size-init");
+		expect(script?.strategy).toBe("beforeInteractive");
+		expect(script?.children).toContain("localStorage.getItem(\"z8-font-size\")");
+		expect(script?.children).toContain("document.documentElement.dataset.fontSize");
+		expect(script?.children).toContain("comfortable");
+		expect(script?.children).toContain("large");
+		expect(script?.children).toContain("catch");
 	});
 
 	it("does not block the shell on the PostHog consent session lookup", async () => {

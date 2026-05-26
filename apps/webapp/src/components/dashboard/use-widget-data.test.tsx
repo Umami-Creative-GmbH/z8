@@ -47,9 +47,13 @@ describe("useWidgetData", () => {
 	it("does not show a load failure toast when navigation aborts the widget load", async () => {
 		const fetcher = vi.fn().mockRejectedValue(new DOMException("Route changed", "AbortError"));
 
-		renderHook(() => useWidgetData(fetcher, { errorMessage: "Failed to load quick stats" }));
+		const { result } = renderHook(() =>
+			useWidgetData(fetcher, { errorMessage: "Failed to load quick stats" }),
+		);
 
 		await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		expect(result.current.refreshing).toBe(false);
 		expect(toastErrorMock).not.toHaveBeenCalled();
 	});
 

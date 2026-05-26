@@ -352,16 +352,17 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 		},
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
-				try {
-					if (!providerId || !setup.domain?.domain) {
-						throw new Error(
-							t(
-								"settings.enterprise.identity.sso.error.saveProviderFirst",
-								"Save provider and domain before registering SSO",
-							),
-						);
-					}
+				if (!providerId || !setup.domain?.domain) {
+					toast.error(
+						t(
+							"settings.enterprise.identity.sso.error.saveProviderFirst",
+							"Save provider and domain before registering SSO",
+						),
+					);
+					return;
+				}
 
+				try {
 					const next = await registerEnterpriseIdentitySSOProviderAction(
 						protocol === "oidc"
 							? {
@@ -401,15 +402,17 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 
 	const recordSsoTest = (status: "passed" | "failed") => {
 		startTransition(async () => {
+			if (!providerId) {
+				toast.error(
+					t(
+						"settings.enterprise.identity.ssoTest.error.saveProviderFirst",
+						"Save provider before recording a test",
+					),
+				);
+				return;
+			}
+
 			try {
-				if (!providerId) {
-					throw new Error(
-						t(
-							"settings.enterprise.identity.ssoTest.error.saveProviderFirst",
-							"Save provider before recording a test",
-						),
-					);
-				}
 				const next = await recordEnterpriseIdentitySsoTestAction({
 					providerId,
 					testEmail,
@@ -441,15 +444,17 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 
 	const generateScimToken = () => {
 		startTransition(async () => {
+			if (!providerId) {
+				toast.error(
+					t(
+						"settings.enterprise.identity.scim.error.saveProviderFirst",
+						"Save provider before generating a SCIM token",
+					),
+				);
+				return;
+			}
+
 			try {
-				if (!providerId) {
-					throw new Error(
-						t(
-							"settings.enterprise.identity.scim.error.saveProviderFirst",
-							"Save provider before generating a SCIM token",
-						),
-					);
-				}
 				const result = await generateEnterpriseIdentityScimTokenAction({
 					providerId,
 					defaultRoleTemplateId: defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconBuilding } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -40,13 +40,9 @@ export function OrganizationLogo({
 	className,
 	fallbackClassName,
 }: OrganizationLogoProps) {
-	const [imageFailed, setImageFailed] = useState(false);
+	const [failedLogo, setFailedLogo] = useState<string | null>(null);
 
-	useEffect(() => {
-		setImageFailed(false);
-	}, [logo]);
-
-	const showLogo = Boolean(logo) && !imageFailed;
+	const showLogo = Boolean(logo) && failedLogo !== logo;
 
 	return (
 		<Avatar className={cn(sizeClass[size], "rounded-lg", className)}>
@@ -57,7 +53,7 @@ export function OrganizationLogo({
 					width={sizePixels[size]}
 					height={sizePixels[size]}
 					className="aspect-square size-full object-cover"
-					onError={() => setImageFailed(true)}
+					onError={() => setFailedLogo(logo ?? null)}
 				/>
 			) : (
 				<AvatarFallback

@@ -13,7 +13,12 @@
  * - Supports row selection and memoization
  */
 
-import { useVirtualizer } from "@tanstack/react-virtual";
+import {
+	elementScroll,
+	observeElementOffset,
+	observeElementRect,
+	Virtualizer,
+} from "@tanstack/react-virtual";
 import * as React from "react";
 import {
 	Table,
@@ -119,16 +124,44 @@ export function VirtualizedTable<T>({
 	className,
 	emptyMessage = "No data available",
 }: VirtualizedTableProps<T>) {
-	const parentRef = React.useRef<HTMLDivElement>(null);
+	const [scrollElement, setScrollElement] = React.useState<HTMLDivElement | null>(null);
 	// Store onRowClick in ref to avoid recreating callbacks (rerender-functional-setstate)
 	const onRowClickRef = React.useRef(onRowClick);
-	onRowClickRef.current = onRowClick;
+	React.useEffect(() => {
+		onRowClickRef.current = onRowClick;
+	}, [onRowClick]);
 
-	const virtualizer = useVirtualizer({
+	const [, forceUpdate] = React.useReducer((version: number) => version + 1, 0);
+	const [virtualizer] = React.useState(
+		() =>
+			new Virtualizer<HTMLDivElement, Element>({
+				count: data.length,
+				getScrollElement: () => null,
+				estimateSize: () => rowHeight,
+				overscan,
+				observeElementRect,
+				observeElementOffset,
+				scrollToFn: elementScroll,
+			}),
+	);
+
+	virtualizer.setOptions({
 		count: data.length,
-		getScrollElement: () => parentRef.current,
+		getScrollElement: () => scrollElement,
 		estimateSize: () => rowHeight,
 		overscan,
+		observeElementRect,
+		observeElementOffset,
+		scrollToFn: elementScroll,
+		onChange: () => React.startTransition(forceUpdate),
+	});
+
+	React.useLayoutEffect(() => {
+		return virtualizer._didMount();
+	}, [virtualizer]);
+
+	React.useLayoutEffect(() => {
+		return virtualizer._willUpdate();
 	});
 
 	const virtualRows = virtualizer.getVirtualItems();
@@ -173,7 +206,7 @@ export function VirtualizedTable<T>({
 				</TableHeader>
 			</Table>
 
-			<div ref={parentRef} className="overflow-auto" style={{ maxHeight }}>
+			<div ref={setScrollElement} className="overflow-auto" style={{ maxHeight }}>
 				<div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
 					<Table>
 						<TableBody>
@@ -214,9 +247,8 @@ export function useRowMemoization<T>(
 	getRowId: (row: T) => string,
 	getRowVersion: (row: T) => string | number,
 ) {
-	const rowVersions = React.useRef<Map<string, string | number>>(new Map());
-
-	return React.useMemo(() => {
+	const [rowVersions, setRowVersions] = React.useState<Map<string, string | number>>(() => new Map());
+	const memoizedRows = React.useMemo(() => {
 		const newVersions = new Map<string, string | number>();
 
 		data.forEach((row) => {
@@ -228,13 +260,38 @@ export function useRowMemoization<T>(
 		// Check which rows actually changed
 		const changedRows = new Set<string>();
 		newVersions.forEach((version, id) => {
-			if (rowVersions.current.get(id) !== version) {
+			if (rowVersions.get(id) !== version) {
 				changedRows.add(id);
 			}
 		});
 
-		rowVersions.current = newVersions;
+		return { data, changedRows, newVersions };
+	}, [data, getRowId, getRowVersion, rowVersions]);
 
-		return { data, changedRows };
-	}, [data, getRowId, getRowVersion]);
+	React.useEffect(() => {
+		if (areRowVersionsEqual(rowVersions, memoizedRows.newVersions)) {
+			return;
+		}
+
+		React.startTransition(() => setRowVersions(memoizedRows.newVersions));
+	}, [memoizedRows.newVersions, rowVersions]);
+
+	return { data: memoizedRows.data, changedRows: memoizedRows.changedRows };
+}
+
+function areRowVersionsEqual(
+	previous: Map<string, string | number>,
+	next: Map<string, string | number>,
+) {
+	if (previous.size !== next.size) {
+		return false;
+	}
+
+	for (const [id, version] of next) {
+		if (previous.get(id) !== version) {
+			return false;
+		}
+	}
+
+	return true;
 }

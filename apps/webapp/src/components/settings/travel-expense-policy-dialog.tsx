@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
 	type TravelExpensePolicyData,
 	type UpsertTravelExpensePolicyInput,
+	upsertTravelExpensePolicy,
 } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -72,12 +73,7 @@ export function TravelExpensePolicyDialog({
 	}, [open, editingPolicy, form]);
 
 	const mutation = useMutation({
-		mutationFn: async (input: UpsertTravelExpensePolicyInput) => {
-			const { upsertTravelExpensePolicy } = await import(
-				"@/app/[locale]/(app)/settings/travel-expenses/actions"
-			);
-			return upsertTravelExpensePolicy(input);
-		},
+		mutationFn: upsertTravelExpensePolicy,
 		onSuccess: async (result) => {
 			if (!result.success) {
 				toast.error(

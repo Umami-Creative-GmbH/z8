@@ -1,8 +1,8 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
+import "temporal-polyfill/global";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useTranslate } from "@tolgee/react";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import type { ViewMode } from "./schedule-x-calendar";
 
@@ -42,24 +42,5 @@ interface ScheduleXWrapperProps {
  * Wrapper component that ensures Temporal polyfill is loaded before Schedule-X
  */
 export function ScheduleXWrapper(props: ScheduleXWrapperProps) {
-	const [isPolyfillReady, setIsPolyfillReady] = useState(false);
-
-	useEffect(() => {
-		// Check if Temporal is already available
-		if (typeof globalThis !== "undefined" && "Temporal" in globalThis) {
-			setIsPolyfillReady(true);
-			return;
-		}
-
-		// Dynamically load the polyfill
-		import("temporal-polyfill/global").then(() => {
-			setIsPolyfillReady(true);
-		});
-	}, []);
-
-	if (!isPolyfillReady) {
-		return <CalendarLoading />;
-	}
-
 	return <ScheduleXCalendarWrapper {...props} />;
 }

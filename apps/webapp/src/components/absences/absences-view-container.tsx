@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { IconCalendar, IconPlus, IconTable } from '@tabler/icons-react';
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { getAbsenceCalendarYearData } from "@/app/[locale]/(app)/absences/actions";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,14 +44,25 @@ export function AbsencesViewContainer({
 	const [activeView, setActiveView] = useState<ViewType>("calendar");
 	const [requestDialogOpen, setRequestDialogOpen] = useState(false);
 	const [prefilledDate, setPrefilledDate] = useState<string | undefined>(undefined);
-	const [calendarAbsences, setCalendarAbsences] = useState(absences);
-	const [calendarHolidays, setCalendarHolidays] = useState(holidays);
+	const [calendarData, setCalendarData] = useState(() => ({
+		sourceAbsences: absences,
+		sourceHolidays: holidays,
+		absences,
+		holidays,
+	}));
 	const latestRequestedYearRef = useRef(currentYear);
 
-	useEffect(() => {
-		setCalendarAbsences(absences);
-		setCalendarHolidays(holidays);
-	}, [absences, holidays]);
+	if (calendarData.sourceAbsences !== absences || calendarData.sourceHolidays !== holidays) {
+		setCalendarData({
+			sourceAbsences: absences,
+			sourceHolidays: holidays,
+			absences,
+			holidays,
+		});
+	}
+
+	const calendarAbsences = calendarData.absences;
+	const calendarHolidays = calendarData.holidays;
 
 	// Handle day click in year calendar - open request dialog with date prefilled
 	const handleDayClick = useCallback((date: Date) => {
@@ -81,8 +92,11 @@ export function AbsencesViewContainer({
 			if (latestRequestedYearRef.current !== year) {
 				return;
 			}
-			setCalendarAbsences(data.absences);
-			setCalendarHolidays(data.holidays);
+			setCalendarData((current) => ({
+				...current,
+				absences: data.absences,
+				holidays: data.holidays,
+			}));
 		} catch (error) {
 			console.error("Failed to load absence calendar year data", error);
 		}

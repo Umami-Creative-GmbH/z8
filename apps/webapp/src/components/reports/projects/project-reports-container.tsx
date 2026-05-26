@@ -51,6 +51,7 @@ export function ProjectReportsContainer() {
 				toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
 					description: result.error,
 				});
+				setIsLoading(false);
 				return;
 			}
 			setPortfolioData(result.data);
@@ -64,9 +65,9 @@ export function ProjectReportsContainer() {
 					: t("reports.projects.toast.unexpectedError", "An unexpected error occurred");
 			setError(errorMessage);
 			toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
-		} finally {
-			setIsLoading(false);
 		}
+
+		setIsLoading(false);
 	};
 
 	const handleSelectProject = async (projectId: string) => {
@@ -92,6 +93,7 @@ export function ProjectReportsContainer() {
 						description: result.error,
 					},
 				);
+				setIsLoading(false);
 				return;
 			}
 			setDetailedReport(result.data);
@@ -110,9 +112,9 @@ export function ProjectReportsContainer() {
 			toast.error(
 				t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
 			);
-		} finally {
-			setIsLoading(false);
 		}
+
+		setIsLoading(false);
 	};
 
 	return (

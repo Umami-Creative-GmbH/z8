@@ -35,7 +35,9 @@ export default async function PlatformAnalyticsPage({
 					</p>
 				</div>
 
-				<PlatformAnalyticsControls range={parsedParams.range} bucket={parsedParams.bucket} />
+				<Suspense fallback={<PlatformAnalyticsControlsLoading />}>
+					<PlatformAnalyticsControls range={parsedParams.range} bucket={parsedParams.bucket} />
+				</Suspense>
 			</div>
 
 			<section className="space-y-4" aria-labelledby="platform-analytics-heading">
@@ -106,6 +108,21 @@ function PlatformAnalyticsLoading() {
 						</CardContent>
 					</Card>
 				))}
+			</div>
+		</div>
+	);
+}
+
+function PlatformAnalyticsControlsLoading() {
+	return (
+		<div className="flex flex-col gap-3 sm:flex-row sm:items-center" aria-hidden="true">
+			<div className="grid gap-1.5">
+				<Skeleton className="h-3 w-16" />
+				<Skeleton className="h-10 w-full sm:w-[180px]" />
+			</div>
+			<div className="grid gap-1.5">
+				<Skeleton className="h-3 w-16" />
+				<Skeleton className="h-10 w-full sm:w-[160px]" />
 			</div>
 		</div>
 	);

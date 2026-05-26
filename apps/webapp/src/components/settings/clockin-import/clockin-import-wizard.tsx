@@ -74,14 +74,18 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 			const result = await validateClockinCredentials(token, organizationId);
 			if (!result.success) {
 				toast.error(result.error);
+				setBusyAction(null);
 				return;
 			}
 
 			setPreview(result.data);
 			setStep("preview");
-		} finally {
+		} catch (error) {
 			setBusyAction(null);
+			throw error;
 		}
+
+		setBusyAction(null);
 	};
 
 	const handleLoadMappings = async () => {
@@ -94,11 +98,13 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 
 			if (!clockinResult.success) {
 				toast.error(clockinResult.error);
+				setBusyAction(null);
 				return;
 			}
 
 			if (!z8Result.success) {
 				toast.error(z8Result.error);
+				setBusyAction(null);
 				return;
 			}
 
@@ -123,9 +129,12 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 				}),
 			);
 			setStep("mapping");
-		} finally {
+		} catch (error) {
 			setBusyAction(null);
+			throw error;
 		}
+
+		setBusyAction(null);
 	};
 
 	const handleImport = async () => {
@@ -157,15 +166,19 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 			if (!scanResult.success) {
 				toast.error(scanResult.error);
 				setStep("selection");
+				setBusyAction(null);
 				return;
 			}
 
 			setReviewBatchId(scanResult.data.batchId);
 			toast.success(t("settings.clockinImport.review.startSuccess", "Import review scan started. Review is required before records are committed."));
 			setStep("review");
-		} finally {
+		} catch (error) {
 			setBusyAction(null);
+			throw error;
 		}
+
+		setBusyAction(null);
 	};
 
 	const updateMapping = (clockinEmployeeId: number, employeeId: string) => {

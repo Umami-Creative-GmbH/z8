@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const THEMES = { light: "", dark: ".dark" } as const;
 const SAFE_CSS_IDENTIFIER_REPLACEMENT = "-";
 const SAFE_CSS_IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const SAFE_CSS_COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\((?:[0-9%.,\s/+-]+|var\(--[a-zA-Z0-9_-]+\)(?:\s*[/,]\s*[0-9.]+%?)?)\)|(?:var\(--[a-zA-Z0-9_-]+\))|[a-zA-Z]+)$/;
 
 function toSafeCssIdentifier(value: string, fallbackSuffix: number): string {
 	if (SAFE_CSS_IDENTIFIER_PATTERN.test(value)) {
@@ -23,6 +24,11 @@ function toSafeCssIdentifier(value: string, fallbackSuffix: number): string {
 		.replace(/^-+|-+$/g, "");
 
 	return `${sanitized || "item"}-${fallbackSuffix}`;
+}
+
+function toSafeCssColor(value: string): string | null {
+	const trimmed = value.trim();
+	return SAFE_CSS_COLOR_PATTERN.test(trimmed) ? trimmed : null;
 }
 
 export type ChartConfig = {
@@ -62,7 +68,7 @@ function ChartContainer({
 	children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>["children"];
 }) {
 	const uniqueId = React.useId();
-	const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+	const chartId = `chart-${toSafeCssIdentifier(id || uniqueId.replace(/:/g, ""), 0)}`;
 
 	return (
 		<ChartContext.Provider value={{ config }}>
@@ -99,7 +105,8 @@ ${prefix} [data-chart=${id}] {
 ${colorConfig
 	.map(([key, itemConfig], index) => {
 		const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-		return color ? `  --color-${toSafeCssIdentifier(key, index)}: ${color};` : null;
+		const safeColor = color ? toSafeCssColor(color) : null;
+		return safeColor ? `  --color-${toSafeCssIdentifier(key, index)}: ${safeColor};` : null;
 	})
 	.join("\n")}
 }

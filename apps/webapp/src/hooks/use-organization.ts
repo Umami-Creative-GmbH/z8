@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { ApiError, fetchApi } from "@/lib/fetch";
 import { useRouter } from "@/navigation";
@@ -47,11 +47,8 @@ export function useOrganization(): OrganizationContext {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	// Get store actions via ref to avoid dependency issues
-	const storeRef = useRef(useOrganizationSettings.getState());
-	useEffect(() => {
-		storeRef.current = useOrganizationSettings.getState();
-	});
+	const hydrateSettings = useOrganizationSettings((state) => state.hydrate);
+	const resetSettings = useOrganizationSettings((state) => state.reset);
 
 	// Track active organization to detect changes
 	const activeOrganizationId = session?.session?.activeOrganizationId;
@@ -62,6 +59,7 @@ export function useOrganization(): OrganizationContext {
 			return;
 		}
 
+		let shouldFinish = true;
 		try {
 			setIsLoading(true);
 			setError(null);
@@ -74,29 +72,32 @@ export function useOrganization(): OrganizationContext {
 
 			// Hydrate organization settings store
 			if (data.organizationSettings) {
-				storeRef.current.hydrate(data.organizationSettings);
+				hydrateSettings(data.organizationSettings);
 			} else {
 				// Reset if no org settings (e.g., no active organization)
-				storeRef.current.reset();
+				resetSettings();
 			}
 		} catch (err) {
 			// Redirect to sign-in on 401 unauthorized
 			if (err instanceof ApiError && err.isUnauthorized()) {
 				router.replace("/sign-in");
+				shouldFinish = false;
 				return;
 			}
 			setError(err instanceof Error ? err.message : "Unknown error");
 			setEmployeeContext(null);
-			storeRef.current.reset();
-		} finally {
+			resetSettings();
+		}
+		if (shouldFinish) {
 			setIsLoading(false);
 		}
-	}, [session?.user?.id, router]);
+	}, [session?.user?.id, router, hydrateSettings, resetSettings]);
 
 	// Re-fetch when session loads or active organization changes
 	useEffect(() => {
 		if (!sessionLoading) {
-			fetchEmployeeContext();
+			const timeout = setTimeout(() => void fetchEmployeeContext(), 0);
+			return () => clearTimeout(timeout);
 		}
 	}, [sessionLoading, activeOrganizationId, fetchEmployeeContext]);
 

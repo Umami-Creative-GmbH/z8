@@ -4,7 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { createTravelExpenseDraft } from "@/app/[locale]/(app)/travel-expenses/actions";
 import {
@@ -178,15 +178,16 @@ export function TravelExpenseClaimDialog({
 		},
 	});
 
-	useEffect(() => {
-		if (!open) {
+	function handleOpenChange(nextOpen: boolean) {
+		if (!nextOpen) {
 			form.reset();
 			setSubmitErrors({});
 		}
-	}, [open, form]);
+		onOpenChange(nextOpen);
+	}
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>

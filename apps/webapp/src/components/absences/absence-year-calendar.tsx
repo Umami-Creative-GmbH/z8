@@ -162,13 +162,13 @@ const MiniMonth = memo(function MiniMonth({
 export function AbsenceYearCalendar({
 	absences,
 	holidays,
-	initialYear = new Date().getFullYear(),
+	initialYear,
 	onDayClick,
 	onYearChange,
 }: AbsenceYearCalendarProps) {
 	const { t } = useTranslate();
 	const weekStartDay = useWeekStartDay();
-	const [year, setYear] = useState(initialYear);
+	const [year, setYear] = useState(() => initialYear ?? new Date().getFullYear());
 
 	// Memoize translated month names to avoid recreating on every render
 	const MONTHS = useMemo(

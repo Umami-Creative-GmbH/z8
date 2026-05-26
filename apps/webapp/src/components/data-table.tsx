@@ -45,7 +45,6 @@ import {
 	getSortedRowModel,
 	type Row,
 	type SortingState,
-	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
@@ -108,6 +107,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const schema = z.object({
@@ -355,7 +355,7 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 
 	const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ id }) => id) || [], [data]);
 
-	const table = useReactTable({
+	const table = useCompilerSafeReactTable({
 		data,
 		columns,
 		state: {

@@ -116,8 +116,15 @@ function DashboardWidgetLayout({
 }) {
 	const renderedWidgets = useVisibleWidgets();
 	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
-	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(false);
 	const visibleWidgetKey = visibleWidgetOrder.join("|");
+	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(!visibleWidgetKey);
+	const [checkedWidgetKey, setCheckedWidgetKey] = useState(visibleWidgetKey);
+
+	if (checkedWidgetKey !== visibleWidgetKey) {
+		setCheckedWidgetKey(visibleWidgetKey);
+		setHasCheckedRenderedWidgets(!visibleWidgetKey);
+	}
+
 	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
 	const shouldShowEmptyState =
 		!hasConfiguredWidgets ||
@@ -125,11 +132,9 @@ function DashboardWidgetLayout({
 
 	useEffect(() => {
 		if (!visibleWidgetKey) {
-			setHasCheckedRenderedWidgets(true);
 			return;
 		}
 
-		setHasCheckedRenderedWidgets(false);
 		const frame = requestAnimationFrame(() => {
 			setHasCheckedRenderedWidgets(true);
 		});

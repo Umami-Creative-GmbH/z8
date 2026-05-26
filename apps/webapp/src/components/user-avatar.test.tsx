@@ -33,14 +33,14 @@ describe("UserAvatar", () => {
 	it("renders a green status badge for clocked-in users", () => {
 		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-in" />);
 
-		const badge = screen.getByRole("img", { name: "Clocked in" });
+		const badge = screen.getByRole("status", { name: "Clocked in" });
 		expect(badge.className).toContain("bg-emerald-500");
 	});
 
 	it("renders a red status badge for clocked-out users", () => {
 		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-out" />);
 
-		const badge = screen.getByRole("img", { name: "Clocked out" });
+		const badge = screen.getByRole("status", { name: "Clocked out" });
 		expect(badge.className).toContain("bg-red-500");
 	});
 
@@ -48,7 +48,7 @@ describe("UserAvatar", () => {
 		render(<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="clocked-in" />);
 
 		const avatar = document.querySelector('[data-slot="avatar"]');
-		const badge = screen.getByRole("img", { name: "Clocked in" });
+		const badge = screen.getByRole("status", { name: "Clocked in" });
 
 		expect(avatar).not.toBeNull();
 		expect(avatar?.contains(badge)).toBe(false);
@@ -60,13 +60,13 @@ describe("UserAvatar", () => {
 			<UserAvatar seed="user-1" name="Ada Lovelace" clockStatus="unknown" />,
 		);
 
-		expect(screen.queryByRole("img", { name: "Clocked in" })).toBeNull();
-		expect(screen.queryByRole("img", { name: "Clocked out" })).toBeNull();
+		expect(screen.queryByRole("status", { name: "Clocked in" })).toBeNull();
+		expect(screen.queryByRole("status", { name: "Clocked out" })).toBeNull();
 
 		rerender(<UserAvatar seed="user-1" name="Ada Lovelace" />);
 
-		expect(screen.queryByRole("img", { name: "Clocked in" })).toBeNull();
-		expect(screen.queryByRole("img", { name: "Clocked out" })).toBeNull();
+		expect(screen.queryByRole("status", { name: "Clocked in" })).toBeNull();
+		expect(screen.queryByRole("status", { name: "Clocked out" })).toBeNull();
 	});
 
 	it("keeps using uploaded images before generated fallbacks", () => {

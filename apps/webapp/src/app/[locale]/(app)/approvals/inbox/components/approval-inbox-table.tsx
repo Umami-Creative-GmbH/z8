@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { DataTable } from "@/components/data-table-server";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,19 +67,19 @@ function getSLAStatusColor(status: SLAStatus): string {
 // Selection cell component that reads from refs to avoid column recreation
 function SelectionCell({
 	row,
-	selectedIdsRef,
-	onSelectItemRef,
+	selectedIds,
+	onSelectItem,
 	ariaLabel,
 }: {
 	row: CellContext<UnifiedApprovalItem, unknown>["row"];
-	selectedIdsRef: React.RefObject<Set<string>>;
-	onSelectItemRef: React.RefObject<(id: string, checked: boolean) => void>;
+	selectedIds: Set<string>;
+	onSelectItem: (id: string, checked: boolean) => void;
 	ariaLabel: string;
 }) {
 	return (
 		<Checkbox
-			checked={selectedIdsRef.current?.has(row.original.id) ?? false}
-			onCheckedChange={(checked) => onSelectItemRef.current?.(row.original.id, !!checked)}
+			checked={selectedIds.has(row.original.id)}
+			onCheckedChange={(checked) => onSelectItem(row.original.id, !!checked)}
 			onClick={(e) => e.stopPropagation()}
 			aria-label={ariaLabel}
 		/>
@@ -94,12 +94,6 @@ export function ApprovalInboxTable({
 	isFetching,
 }: ApprovalInboxTableProps) {
 	const { t } = useTranslate();
-
-	// Use refs to avoid column recreation when these values change
-	const selectedIdsRef = useRef(selectedIds);
-	selectedIdsRef.current = selectedIds;
-	const onSelectItemRef = useRef(onSelectItem);
-	onSelectItemRef.current = onSelectItem;
 
 	const ariaLabel = t("approvals:approvals.selectRow", "Select row");
 	const presence = useEmployeeClockStatuses(
@@ -116,8 +110,8 @@ export function ApprovalInboxTable({
 				cell: ({ row }) => (
 					<SelectionCell
 						row={row}
-						selectedIdsRef={selectedIdsRef}
-						onSelectItemRef={onSelectItemRef}
+						selectedIds={selectedIds}
+						onSelectItem={onSelectItem}
 						ariaLabel={ariaLabel}
 					/>
 				),
@@ -227,17 +221,16 @@ export function ApprovalInboxTable({
 				size: 120,
 			},
 		],
-		[t, ariaLabel, presence],
+		[t, ariaLabel, presence, selectedIds, onSelectItem],
 	);
 
-	// Stable callback for row className that reads from ref
 	const getRowClassName = useCallback(
 		(row: UnifiedApprovalItem) =>
 			cn(
 				"cursor-pointer hover:bg-muted/50 transition-colors",
-				selectedIdsRef.current?.has(row.id) && "bg-muted/30",
+				selectedIds.has(row.id) && "bg-muted/30",
 			),
-		[],
+		[selectedIds],
 	);
 
 	return (

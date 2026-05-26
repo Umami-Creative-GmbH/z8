@@ -147,9 +147,8 @@ export default function EmployeeAllowanceEditPage({
 				toast.error(
 					t("settings.vacation.employees.detail.errors.unexpected", "An unexpected error occurred"),
 				);
-			} finally {
-				setLoading(false);
 			}
+			setLoading(false);
 		},
 	});
 
