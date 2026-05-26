@@ -3,7 +3,7 @@
 import { IconBriefcase } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { IconAlertCircle, IconChartBar } from "@tabler/icons-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	getProjectDetailedReport,
@@ -32,14 +32,13 @@ export function ProjectReportsContainer() {
 	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [dateRange, setDateRange] = useState<DateRange | null>(null);
-	const [_selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+	const dateRangeRef = useRef<DateRange | null>(null);
 	const [activeTab, setActiveTab] = useState<"portfolio" | "project">("portfolio");
 
 	const handleGeneratePortfolio = async (range: DateRange, statusFilter?: string[]) => {
 		setIsLoading(true);
 		setError(null);
-		setDateRange(range);
+		dateRangeRef.current = range;
 
 		try {
 			const result = await getProjectsOverview(range.start, range.end, statusFilter);
@@ -56,7 +55,6 @@ export function ProjectReportsContainer() {
 			}
 			setPortfolioData(result.data);
 			setDetailedReport(null);
-			setSelectedProjectId(null);
 			setActiveTab("portfolio");
 			toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
 		} catch (err) {
@@ -72,13 +70,13 @@ export function ProjectReportsContainer() {
 	};
 
 	const handleSelectProject = async (projectId: string) => {
+		const dateRange = dateRangeRef.current;
 		if (!dateRange) {
 			return;
 		}
 
 		setIsLoading(true);
 		setError(null);
-		setSelectedProjectId(projectId);
 
 		try {
 			const result = await getProjectDetailedReport(projectId, dateRange.start, dateRange.end);
