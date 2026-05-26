@@ -54,6 +54,7 @@ const nextConfig: NextConfig = {
 		];
 	},
 	skipTrailingSlashRedirect: true,
+	deploymentId: buildHash,
 	reactCompiler: true,
 	env: {
 		NEXT_PUBLIC_BUILD_HASH: buildHash,
