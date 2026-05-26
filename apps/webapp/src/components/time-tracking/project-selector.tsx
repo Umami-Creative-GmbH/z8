@@ -54,10 +54,9 @@ export function ProjectSelector({
 	const { t } = useTranslate();
 	const { projects, isLoading, isError } = useAssignedProjects();
 	const hasAutoSelectedRef = useRef(false);
-	const lastProjectIdRef = useRef<string | null>(null);
-	if (lastProjectIdRef.current === null && typeof window !== "undefined") {
-		lastProjectIdRef.current = localStorage.getItem(LAST_PROJECT_KEY);
-	}
+	const lastProjectIdRef = useRef<string | null>(
+		typeof window === "undefined" ? null : localStorage.getItem(LAST_PROJECT_KEY),
+	);
 
 	// Build a Map for O(1) project lookups (js-index-maps)
 	const projectsMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);

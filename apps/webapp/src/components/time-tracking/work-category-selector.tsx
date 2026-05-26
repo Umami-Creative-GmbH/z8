@@ -67,10 +67,9 @@ export function WorkCategorySelector({
 }: WorkCategorySelectorProps) {
 	const { t } = useTranslate();
 	const hasAutoSelectedRef = useRef(false);
-	const lastCategoryIdRef = useRef<string | null>(null);
-	if (lastCategoryIdRef.current === null && typeof window !== "undefined") {
-		lastCategoryIdRef.current = localStorage.getItem(LAST_CATEGORY_KEY);
-	}
+	const lastCategoryIdRef = useRef<string | null>(
+		typeof window === "undefined" ? null : localStorage.getItem(LAST_CATEGORY_KEY),
+	);
 
 	// Fetch available categories for this employee
 	const {
