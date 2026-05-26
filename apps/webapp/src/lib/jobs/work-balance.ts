@@ -33,9 +33,10 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 		try {
 			const refreshStartedAt = new Date();
 			const forceFullRebuild =
-				employee.isDirty === true &&
-				employee.dirtyFromDate === null &&
-				employee.refreshRequestedAt !== null;
+				employee.balanceId === null ||
+				(employee.isDirty === true &&
+					employee.dirtyFromDate === null &&
+					employee.refreshRequestedAt !== null);
 			const refreshResult = await refreshEmployeeWorkBalanceFromPeriods({
 				employeeId: employee.id,
 				organizationId: employee.organizationId,
