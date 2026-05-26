@@ -29,6 +29,7 @@
     },
     "trialBanner": {
       "description": "{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
+      "dismiss": "Dismiss trial banner",
       "title": "14-day trial active",
       "upgrade": "Upgrade"
     }
