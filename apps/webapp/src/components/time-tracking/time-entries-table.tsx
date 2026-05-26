@@ -50,7 +50,7 @@ export function TimeEntriesTable({
 	employeeId,
 }: Props) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<string | null>(null);
 
 	const handleApproveWorkPeriod = useCallback(
@@ -67,9 +67,9 @@ export function TimeEntriesTable({
 			}
 
 			toast.success(t("timeTracking.table.approved", "Time entry approved"));
-			startTransition(() => router.refresh());
+			startTransition(() => refresh());
 		},
-		[router, t],
+		[refresh, t],
 	);
 
 	const columns = useMemo(
@@ -122,7 +122,7 @@ export function TimeEntriesTable({
 						employeeId={employeeId}
 						employeeTimezone={employeeTimezone}
 						hasManager={hasManager}
-						onSuccess={() => router.refresh()}
+						onSuccess={() => refresh()}
 					/>
 				</div>
 			</CardHeader>

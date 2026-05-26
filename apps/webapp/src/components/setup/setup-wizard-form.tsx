@@ -15,9 +15,11 @@ import { createPlatformAdminAction } from "@/app/[locale]/(setup)/setup/actions"
 import {
 	PasswordStrengthIndicator,
 	PasswordVisibilityInput,
+} from "@/components/auth/password-fields";
+import {
 	validatePasswordConfirmation,
 	validateStrongPassword,
-} from "@/components/auth/password-fields";
+} from "@/components/auth/password-validation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,7 +55,7 @@ function validateEmail(value: string): string | undefined {
 
 export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [wizardStep, setWizardStep] = useState<WizardStep>("form");
 	const [error, setError] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 	});
 
 	const handleContinueToSignIn = () => {
-		router.push(`/${locale}/sign-in`);
+		push(`/${locale}/sign-in`);
 	};
 
 	if (wizardStep === "creating" || isPending) {

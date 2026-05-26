@@ -1,6 +1,7 @@
 import { trace } from "@opentelemetry/api";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import * as authSchema from "./auth-schema";
 import { getPostgresSslConfig } from "./postgres-ssl";
@@ -22,16 +23,16 @@ const globalForDb = globalThis as unknown as {
 
 function createPool(): Pool {
 	return new Pool({
-		host: process.env.POSTGRES_HOST!,
-		port: Number(process.env.POSTGRES_PORT!),
-		database: process.env.POSTGRES_DB!,
-		user: process.env.POSTGRES_USER!,
-		password: process.env.POSTGRES_PASSWORD!,
+		host: env.POSTGRES_HOST!,
+		port: Number(env.POSTGRES_PORT!),
+		database: env.POSTGRES_DB!,
+		user: env.POSTGRES_USER!,
+		password: env.POSTGRES_PASSWORD!,
 		ssl: getPostgresSslConfig(),
 		// With PgBouncer handling connection pooling, we can use smaller app-side pools
 		// PgBouncer manages the actual connections to PostgreSQL
-		max: parseInt(process.env.POSTGRES_POOL_MAX || "10", 10),
-		min: parseInt(process.env.POSTGRES_POOL_MIN || "2", 10),
+		max: parseInt(env.POSTGRES_POOL_MAX || "10", 10),
+		min: parseInt(env.POSTGRES_POOL_MIN || "2", 10),
 		idleTimeoutMillis: 30000, // 30 seconds - connections return to pool faster
 		connectionTimeoutMillis: 10000, // 10 seconds - more generous timeout for high load
 	});
@@ -55,7 +56,7 @@ function createInstrumentedPool(basePool: Pool): Pool {
 							attributes: {
 								"db.system": "postgresql",
 								"db.operation": "query",
-								"db.name": process.env.POSTGRES_DB || "unknown",
+								"db.name": env.POSTGRES_DB || "unknown",
 							},
 						},
 						async (span) => {
@@ -96,7 +97,7 @@ const pool = globalForDb.pool ?? createInstrumentedPool(createPool());
 const db: DbInstance = globalForDb.db ?? createDb();
 
 // Store in global for reuse during hot reloading (development only)
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
 	globalForDb.pool = pool;
 	globalForDb.db = db;
 }

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { ConnectionOptions } from "node:tls";
+import { env as appEnv } from "@/env";
 
 type PostgresSslMode = "disable" | "prefer" | "require" | "verify-ca" | "verify-full";
 
@@ -22,7 +23,7 @@ const SSL_MODES = new Set<PostgresSslMode>([
 ]);
 
 export function getPostgresSslConfig(
-	env: PostgresSslEnv = process.env as PostgresSslEnv,
+	env: PostgresSslEnv = appEnv,
 	readCertificateFile: ReadCertificateFile = (path) => readFileSync(path, "utf8")
 ): PostgresSslConfig {
 	const mode = (env.POSTGRES_SSL_MODE ?? "disable") as PostgresSslMode;

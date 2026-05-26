@@ -88,8 +88,8 @@ importers:
         specifier: ^4.23.3
         version: 4.23.3
       bullmq:
-        specifier: ^5.77.1
-        version: 5.77.1
+        specifier: ^5.77.3
+        version: 5.77.3
       cron-parser:
         specifier: ^5.5.0
         version: 5.5.0
@@ -121,8 +121,8 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0
       nodemailer:
-        specifier: ^8.0.7
-        version: 8.0.7
+        specifier: ^8.0.8
+        version: 8.0.8
       papaparse:
         specifier: ^5.5.3
         version: 5.5.3
@@ -136,14 +136,17 @@ importers:
         specifier: 19.2.6
         version: 19.2.6
       react-email:
-        specifier: ^6.3.2
-        version: 6.3.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: ^6.3.3
+        version: 6.3.3(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       resend:
         specifier: ^6.12.3
         version: 6.12.3(@react-email/render@2.0.8(react-dom@19.2.6(react@19.2.6))(react@19.2.6))
       sanitize-html:
         specifier: ^2.17.4
         version: 2.17.4
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
       stripe:
         specifier: ^22.1.1
         version: 22.1.1(@types/node@25.9.0)
@@ -1377,8 +1380,8 @@ packages:
     resolution: {integrity: sha512-9q/rDEGSb/Qsvv2qvzIzdluL5k7AaJOTrw23z9reQthrbF7is4CtlT0DXyO1oei2DCp4uojjzQ7igaSHp1kAEQ==}
     engines: {node: '>=0.2.0'}
 
-  bullmq@5.77.1:
-    resolution: {integrity: sha512-n25H1jW3PI0vfVQ0ge6f8mP9hHPwDM2Ivqm0rAOfFFy4t6d3mE7JtX1gyWNuZKIVmlS41w7DDzv3giGgM6qo+w==}
+  bullmq@5.77.3:
+    resolution: {integrity: sha512-ccGjnRF5Bbu21CfzDG7toIewoAj5W9DUHjqhFnppt8YBtoQplynzBGuSzn7yYQobpyYeHEqrYhiJ1NZInrKbyA==}
     engines: {node: '>=12.22.0'}
     peerDependencies:
       redis: '>=5.0.0'
@@ -2162,8 +2165,8 @@ packages:
     resolution: {integrity: sha512-+SL3DSREptI+UJMM8UUwlI3jR5agPuAgCxSdUfeybGKszXiILXTCUHxErDdpgNgug8oj4v2rOmyrXhRJ4LZsyQ==}
     engines: {node: '>= 18.0.0'}
 
-  nodemailer@8.0.7:
-    resolution: {integrity: sha512-pkjE4mkBzQjdJT4/UmlKl3pX0rC9fZmjh7c6C9o7lv66Ac6w9WCnzPzhbPNxwZAzlF4mdq4CSWB5+FbK6FWCow==}
+  nodemailer@8.0.8:
+    resolution: {integrity: sha512-p+XsnzXGdtIHXUu2ugxdfG+eX2nehsGhMjW9h0CWj1BhE30hrFz0kh0yIM0/VjUgVsRrDj+80ZO+I1nSkGE4tA==}
     engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
@@ -2354,8 +2357,8 @@ packages:
     peerDependencies:
       react: ^19.2.6
 
-  react-email@6.3.2:
-    resolution: {integrity: sha512-ZzmrwM+QLzfs/EZBnFZRMZwT3Kfvp46zIMCLsGn/rtRBh9ocRJDKHcnV0JWJyc0AVJTdPDHeFNBWap6N/3Dnhg==}
+  react-email@6.3.3:
+    resolution: {integrity: sha512-mkHgVfuoDLM1To/u0ZcdJy/3q1Z3SdOe1A5/GtsUqApP68RQOztBe+AOk3BIJC1POexnqwDZZwV+Pw+srVlH7Q==}
     engines: {node: '>=20.0.0'}
     hasBin: true
     peerDependencies:
@@ -2463,6 +2466,9 @@ packages:
     resolution: {integrity: sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA==}
     engines: {node: '>=10'}
     hasBin: true
+
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
 
   set-cookie-parser@3.1.0:
     resolution: {integrity: sha512-kjnC1DXBHcxaOaOXBHBeRtltsDG2nUiUni+jP92M9gYdW12rsmx92UsfpH7o5tDRs7I1ZZPSQJQGv3UaRfCiuw==}
@@ -4088,7 +4094,7 @@ snapshots:
 
   buffers@0.1.1: {}
 
-  bullmq@5.77.1:
+  bullmq@5.77.3:
     dependencies:
       cron-parser: 4.9.0
       ioredis: 5.10.1
@@ -4812,7 +4818,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  nodemailer@8.0.7: {}
+  nodemailer@8.0.8: {}
 
   normalize-path@3.0.0: {}
 
@@ -4986,7 +4992,7 @@ snapshots:
       react: 19.2.6
       scheduler: 0.27.0
 
-  react-email@6.3.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  react-email@6.3.3(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
       '@babel/parser': 7.27.0
       '@babel/traverse': 7.27.0
@@ -5117,6 +5123,8 @@ snapshots:
       parseley: 0.12.1
 
   semver@7.8.0: {}
+
+  server-only@0.0.1: {}
 
   set-cookie-parser@3.1.0: {}
 

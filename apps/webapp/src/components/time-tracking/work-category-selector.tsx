@@ -3,7 +3,7 @@
 import { IconLoader2, IconTag } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { getAvailableCategoriesForEmployee } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -67,12 +67,9 @@ export function WorkCategorySelector({
 }: WorkCategorySelectorProps) {
 	const { t } = useTranslate();
 	const hasAutoSelectedRef = useRef(false);
-	const [lastCategoryId, setLastCategoryId] = useState<string | null>(() => {
-		if (typeof window === "undefined") {
-			return null;
-		}
-		return localStorage.getItem(LAST_CATEGORY_KEY);
-	});
+	const lastCategoryIdRef = useRef<string | null>(
+		typeof window === "undefined" ? null : localStorage.getItem(LAST_CATEGORY_KEY),
+	);
 
 	// Fetch available categories for this employee
 	const {
@@ -99,6 +96,7 @@ export function WorkCategorySelector({
 	// Auto-select last used category on initial load
 	useEffect(() => {
 		if (autoSelectLast && !hasAutoSelectedRef.current && categories.length > 0 && value === undefined) {
+			const lastCategoryId = lastCategoryIdRef.current;
 			if (lastCategoryId && categoriesMap.has(lastCategoryId)) {
 				onValueChange(lastCategoryId);
 			}
@@ -110,18 +108,17 @@ export function WorkCategorySelector({
 		categoriesMap,
 		value,
 		onValueChange,
-		lastCategoryId,
 	]);
 
 	// Save selected category to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
 			localStorage.removeItem(LAST_CATEGORY_KEY);
-			setLastCategoryId(null);
+			lastCategoryIdRef.current = null;
 			onValueChange(undefined);
 		} else {
 			localStorage.setItem(LAST_CATEGORY_KEY, newValue);
-			setLastCategoryId(newValue);
+			lastCategoryIdRef.current = newValue;
 			onValueChange(newValue);
 		}
 	};

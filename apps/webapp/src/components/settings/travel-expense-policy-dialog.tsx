@@ -4,12 +4,12 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
 	type TravelExpensePolicyData,
 	type UpsertTravelExpensePolicyInput,
+	upsertTravelExpensePolicy,
 } from "@/app/[locale]/(app)/settings/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -26,86 +26,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	getTravelExpensePolicyFormValues,
+	normalizePolicyFormValues,
+	type TravelExpensePolicyFormValues,
+} from "./travel-expense-policy-dialog-utils";
 
 interface TravelExpensePolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	editingPolicy: TravelExpensePolicyData | null;
 	onSuccess: () => void | Promise<void>;
-}
-
-export interface TravelExpensePolicyFormValues {
-	effectiveFrom: string;
-	effectiveTo: string;
-	currency: string;
-	mileageRatePerKm: string;
-	perDiemRatePerDay: string;
-	isActive: boolean;
-}
-
-function toDateInputValue(value: Date | string | null): string {
-	if (!value) {
-		return "";
-	}
-
-	if (value instanceof Date) {
-		const dt = DateTime.fromJSDate(value);
-		return dt.isValid ? dt.toFormat("yyyy-LL-dd") : "";
-	}
-
-	const dt = DateTime.fromISO(value);
-	return dt.isValid ? dt.toFormat("yyyy-LL-dd") : "";
-}
-
-function toNumberInputValue(value: string | null): string {
-	if (value === null) {
-		return "";
-	}
-
-	const amount = Number(value);
-	return Number.isFinite(amount) ? String(amount) : "";
-}
-
-function defaultValues(policy: TravelExpensePolicyData | null): TravelExpensePolicyFormValues {
-	if (!policy) {
-		return {
-			effectiveFrom: "",
-			effectiveTo: "",
-			currency: "EUR",
-			mileageRatePerKm: "",
-			perDiemRatePerDay: "",
-			isActive: true,
-		};
-	}
-
-	return {
-		effectiveFrom: toDateInputValue(policy.effectiveFrom),
-		effectiveTo: toDateInputValue(policy.effectiveTo),
-		currency: policy.currency,
-		mileageRatePerKm: toNumberInputValue(policy.mileageRatePerKm),
-		perDiemRatePerDay: toNumberInputValue(policy.perDiemRatePerDay),
-		isActive: policy.isActive,
-	};
-}
-
-export function normalizePolicyFormValues(
-	values: TravelExpensePolicyFormValues,
-): Omit<UpsertTravelExpensePolicyInput, "id"> {
-	const effectiveFrom = DateTime.fromISO(values.effectiveFrom).startOf("day").toJSDate();
-	const effectiveToValue = values.effectiveTo.trim();
-	const mileageValue = values.mileageRatePerKm.trim();
-	const perDiemValue = values.perDiemRatePerDay.trim();
-
-	return {
-		effectiveFrom,
-		effectiveTo: effectiveToValue
-			? DateTime.fromISO(effectiveToValue).startOf("day").toJSDate()
-			: null,
-		currency: values.currency.trim().toUpperCase(),
-		mileageRatePerKm: mileageValue === "" ? undefined : Number(mileageValue),
-		perDiemRatePerDay: perDiemValue === "" ? undefined : Number(perDiemValue),
-		isActive: values.isActive,
-	};
 }
 
 export function TravelExpensePolicyDialog({
@@ -118,7 +49,7 @@ export function TravelExpensePolicyDialog({
 	const isEditing = !!editingPolicy;
 
 	const form = useForm({
-		defaultValues: defaultValues(editingPolicy),
+		defaultValues: getTravelExpensePolicyFormValues(editingPolicy),
 		onSubmit: async ({ value }) => {
 			if (!value.effectiveFrom) {
 				toast.error(
@@ -137,17 +68,12 @@ export function TravelExpensePolicyDialog({
 
 	useEffect(() => {
 		if (open) {
-			form.reset(defaultValues(editingPolicy));
+			form.reset(getTravelExpensePolicyFormValues(editingPolicy));
 		}
 	}, [open, editingPolicy, form]);
 
 	const mutation = useMutation({
-		mutationFn: async (input: UpsertTravelExpensePolicyInput) => {
-			const { upsertTravelExpensePolicy } = await import(
-				"@/app/[locale]/(app)/settings/travel-expenses/actions"
-			);
-			return upsertTravelExpensePolicy(input);
-		},
+		mutationFn: upsertTravelExpensePolicy,
 		onSuccess: async (result) => {
 			if (!result.success) {
 				toast.error(

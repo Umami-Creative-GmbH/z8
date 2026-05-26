@@ -36,25 +36,16 @@ import {
 	useRejectApproval,
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
+import {
+	normalizeTravelExpenseDetailEntity,
+	type TravelExpenseDetailEntity,
+} from "./approval-detail-utils";
 
 interface ApprovalDetailPanelProps {
 	approval: UnifiedApprovalItem | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onActioned: () => void;
-}
-
-interface TravelExpenseDetailEntity {
-	tripStart: Date | string;
-	tripEnd: Date | string;
-	destinationCity: string | null;
-	calculatedCurrency: string;
-	calculatedAmount: string;
-	notes: string | null;
-}
-
-function toDate(value: Date | string): Date {
-	return value instanceof Date ? value : new Date(value);
 }
 
 function getAbsenceSickDetail(entity: unknown): SickDetail | null {
@@ -67,14 +58,6 @@ function getAbsenceSickDetail(entity: unknown): SickDetail | null {
 
 	const sickDetail = entity.sickDetail;
 	return typeof sickDetail === "string" ? (sickDetail as SickDetail) : null;
-}
-
-export function normalizeTravelExpenseDetailEntity(entity: TravelExpenseDetailEntity) {
-	return {
-		...entity,
-		tripStart: toDate(entity.tripStart),
-		tripEnd: toDate(entity.tripEnd),
-	};
 }
 
 // Icon mapping for approval types

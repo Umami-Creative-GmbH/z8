@@ -4,11 +4,13 @@ import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	FONT_SIZE_STORAGE_KEY,
-	FontSizeProvider,
 	applyFontSizePreference,
 	readStoredFontSize,
-	useFontSizePreference,
 	writeStoredFontSize,
+} from "./font-size-preference-utils";
+import {
+	FontSizeProvider,
+	useFontSizePreference,
 } from "./font-size-preference";
 
 function Consumer() {

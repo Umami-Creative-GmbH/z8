@@ -5,49 +5,49 @@
       "source": "connorads/dotfiles",
       "sourceType": "github",
       "skillPath": ".agents/skills/hetzner-server/SKILL.md",
-      "computedHash": "c09b8a469c98344ecf02a0dc21b37881b50e53ec43358b05ff83d66c069a7aad"
+      "computedHash": "c38ef74de145db124135f1a0290896e344c7b041819c9641ab7ff7aaea303830"
     },
     "migrate-to-temporal-api": {
       "source": "Umami-Creative-GmbH/Agent-Skills",
       "sourceType": "github",
       "skillPath": "skills/migrate-to-temporal-api/SKILL.md",
-      "computedHash": "6737d96abddd8669f7a02a829fd941623e52de1e13b110f99a1823c1a89392fa"
+      "computedHash": "98cc6dc9720e3e46b11e5d8c31815692dcbb47edbaaa096022620b2b903e77ee"
     },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
       "sourceType": "github",
       "skillPath": "skills/next-best-practices/SKILL.md",
-      "computedHash": "f4678aef4ffc10a5ea64a91e57abe5a5081af813b06d58d565caf3e8ef56e26c"
+      "computedHash": "c78f952d4e98bf3694856dbf70c03a6037d4e258ff3701f2642bfdf108549a25"
     },
     "next-cache-components": {
       "source": "vercel-labs/next-skills",
       "sourceType": "github",
       "skillPath": "skills/next-cache-components/SKILL.md",
-      "computedHash": "f835d8226c28abf012cc013928e2627c8a7a046de61127ef229be1711bd1f255"
+      "computedHash": "92fc6ac94c5cabdcd13c7dc7aabd6a4d04921e6295dfc00dd9888e375fd1ff4c"
     },
     "next-upgrade": {
       "source": "vercel-labs/next-skills",
       "sourceType": "github",
       "skillPath": "skills/next-upgrade/SKILL.md",
-      "computedHash": "e3aeb1f9e8a68d24df0c1c2e3c8ab97ede09a7251a2c76988318d02254346979"
+      "computedHash": "562f9834d7c55c37498e0787fe431061f4bb766cd1dd6bb52441790593c7e1a8"
     },
     "stripe-best-practices": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "ebb2e9db3019ae01a8e5f77f7e71c05d3ecdfd9f72dc714542453ae31741aade"
+      "computedHash": "091258db2c3ce6aafdfd0601ccba8853e0e25f24751ddee5a4ea537af068b5c9"
     },
     "stripe-projects": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-projects/SKILL.md",
-      "computedHash": "5f82f044d22f5d23b5ddd8cf0370d173e05d9d82345176e388eb49deeac3af0e"
+      "computedHash": "b98d1745e5518c4cb39271b6b66cd772b7b5defce6842b6424868d6cb68c7015"
     },
     "upgrade-stripe": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/upgrade-stripe/SKILL.md",
-      "computedHash": "df1c52c17aff54490e81e98979f302564988fbddaaf59e74c2d1bd4b103a7d2e"
+      "computedHash": "150c420efffb9eea65c7950848d5172d77e8f96b2b7bbec20ee76006bae56a32"
     }
   }
 }

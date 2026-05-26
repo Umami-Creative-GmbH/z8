@@ -15,7 +15,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	cancelInvitation,
@@ -79,25 +79,59 @@ export function MembersTable({
 }: MembersTableProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [members, setMembers] = useState(initialMembers);
-	const [invitations, setInvitations] = useState(initialInvitations);
+	const [membersState, setMembersState] = useState(() => ({
+		source: initialMembers,
+		value: initialMembers,
+	}));
+	const [invitationsState, setInvitationsState] = useState(() => ({
+		source: initialInvitations,
+		value: initialInvitations,
+	}));
 	const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 	const [memberToRemove, setMemberToRemove] = useState<MemberWithUserAndEmployee | null>(null);
 	const [memberSearch, setMemberSearch] = useState("");
 	const [invitationSearch, setInvitationSearch] = useState("");
+
+	if (membersState.source !== initialMembers) {
+		setMembersState({ source: initialMembers, value: initialMembers });
+	}
+
+	if (invitationsState.source !== initialInvitations) {
+		setInvitationsState({ source: initialInvitations, value: initialInvitations });
+	}
+
+	const members = membersState.value;
+	const invitations = invitationsState.value;
+	const setMembers = useCallback(
+		(
+			updater:
+				| MemberWithUserAndEmployee[]
+				| ((members: MemberWithUserAndEmployee[]) => MemberWithUserAndEmployee[]),
+		) => {
+			setMembersState((current) => ({
+				...current,
+				value: typeof updater === "function" ? updater(current.value) : updater,
+			}));
+		},
+		[],
+	);
+	const setInvitations = useCallback(
+		(
+			updater:
+				| InvitationWithInviter[]
+				| ((invitations: InvitationWithInviter[]) => InvitationWithInviter[]),
+		) => {
+			setInvitationsState((current) => ({
+				...current,
+				value: typeof updater === "function" ? updater(current.value) : updater,
+			}));
+		},
+		[],
+	);
 	const presence = useEmployeeClockStatuses(
 		members.map((member) => member.employee?.id ?? ""),
 		{ polling: false },
 	);
-
-	// Sync local state when server-provided props change
-	useEffect(() => {
-		setMembers(initialMembers);
-	}, [initialMembers]);
-
-	useEffect(() => {
-		setInvitations(initialInvitations);
-	}, [initialInvitations]);
 
 	const isOwner = currentMemberRole === "owner";
 	const isAdmin = currentMemberRole === "admin";

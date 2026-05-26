@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect";
 import Stripe from "stripe";
 import { StripeError } from "../../errors";
+import { env } from "@/env";
 
 export interface StripeConfig {
 	secretKey: string;
@@ -69,11 +70,11 @@ export const StripeServiceLive = Layer.effect(
 	StripeService,
 	Effect.sync(() => {
 		const config: StripeConfig = {
-			secretKey: process.env.STRIPE_SECRET_KEY || "",
-			webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
-			priceMonthlyId: process.env.STRIPE_PRICE_MONTHLY_ID || "",
-			priceYearlyId: process.env.STRIPE_PRICE_YEARLY_ID || "",
-			enabled: process.env.BILLING_ENABLED === "true",
+			secretKey: env.STRIPE_SECRET_KEY || "",
+			webhookSecret: env.STRIPE_WEBHOOK_SECRET || "",
+			priceMonthlyId: env.STRIPE_PRICE_MONTHLY_ID || "",
+			priceYearlyId: env.STRIPE_PRICE_YEARLY_ID || "",
+			enabled: env.BILLING_ENABLED === "true",
 		};
 
 		const stripe = config.enabled && config.secretKey

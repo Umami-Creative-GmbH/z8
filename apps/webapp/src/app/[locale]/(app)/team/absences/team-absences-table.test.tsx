@@ -6,7 +6,7 @@ import {
 	buildRecordAbsenceForEmployeeInput,
 	getDefaultRecordAbsenceFormValues,
 	validateRecordAbsenceFormDateRange,
-} from "./record-absence-dialog";
+} from "./record-absence-form-utils";
 import { TeamAbsencesTable } from "./team-absences-table";
 
 const routerPush = vi.fn();

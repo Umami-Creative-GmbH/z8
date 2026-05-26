@@ -129,6 +129,27 @@
       },
       "clientDescription": "Configuração segura da plataforma e integridade do serviço em nível de aplicativo. Última atualização em {date}.",
       "description": "Configuração segura da plataforma e verificações de integridade de implantação apenas de aplicativos.",
+      "keyManager": {
+        "actions": {
+          "test": "Testar criptografia"
+        },
+        "ciphertextPreview": "Pré-visualização do texto cifrado",
+        "description": "Executar um teste de criptografia/descriptografia de chave de plataforma de ponta a ponta.",
+        "input": "Entrada",
+        "keyStatus": "Status da chave",
+        "keyStatus.created": "Nova chave de plataforma criada",
+        "keyStatus.reused": "Chave de plataforma existente reutilizada",
+        "output": "Saída",
+        "platformKeyId": "ID da chave de plataforma",
+        "result": {
+          "match": "Entrada e saída correspondem",
+          "mismatch": "Entrada e saída diferem"
+        },
+        "status": {
+          "pending": "O teste de criptografia está em execução."
+        },
+        "title": "Criptografia do Scaleway Key Manager"
+      },
       "recommendedActions": {
         "description": "Resolva estes itens para retornar os diagnósticos a um estado saudável.",
         "title": "Ações recomendadas"

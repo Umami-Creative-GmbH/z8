@@ -13,11 +13,11 @@ import {
 	getCoreRowModel,
 	getSortedRowModel,
 	type SortingState,
-	useReactTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,7 +82,7 @@ export function EmployeesPageClient(props: {
 		return () => clearTimeout(timer);
 	}, [searchInput, setSearch]);
 
-	const table = useReactTable({
+	const table = useCompilerSafeReactTable({
 		data: employeesWithPresence,
 		columns,
 		state: { sorting, pagination },

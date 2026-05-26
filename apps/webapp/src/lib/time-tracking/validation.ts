@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { isHolidayBlockingTimeEntry } from "@/lib/calendar/holiday-service";
 

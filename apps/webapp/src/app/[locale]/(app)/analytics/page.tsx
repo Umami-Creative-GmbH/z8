@@ -243,13 +243,12 @@ export default function AnalyticsOverviewPage() {
 
 			{/* Loading State */}
 			{loading && (
-				<div
+				<output
 					className="flex items-center justify-center py-12"
-					role="status"
 					aria-label={t("analytics.overview.loadingLabel", "Loading analytics data")}
 				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
-				</div>
+				</output>
 			)}
 
 			{/* KPI Cards */}

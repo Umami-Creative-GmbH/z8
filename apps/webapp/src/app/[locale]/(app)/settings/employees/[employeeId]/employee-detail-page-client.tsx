@@ -133,16 +133,15 @@ export function EmployeeDetailPageClient({
 	if (isLoading || !employee) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div
+				<output
 					className="flex items-center justify-center p-8"
-					role="status"
 					aria-label={t(
 						"settings.employees.detailView.loadingEmployeeData",
 						"Loading employee data",
 					)}
 				>
 					<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
-				</div>
+				</output>
 			</div>
 		);
 	}

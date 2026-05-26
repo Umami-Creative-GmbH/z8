@@ -8,6 +8,7 @@ import {
 	IconTrophy,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import confetti from "canvas-confetti";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logWaterIntake } from "@/app/[locale]/(app)/wellness/actions";
@@ -153,8 +154,6 @@ export function HydrationWidget() {
 	const fireConfetti = useCallback(async () => {
 		if (!widgetRef.current) return;
 
-		const { default: confetti } = await import("canvas-confetti");
-
 		const rect = widgetRef.current.getBoundingClientRect();
 		const x = (rect.left + rect.width / 2) / window.innerWidth;
 		const y = (rect.top + rect.height / 2) / window.innerHeight;
@@ -188,9 +187,8 @@ export function HydrationWidget() {
 				}
 			} catch {
 				toast.error(t("dashboard.hydration.log-error", "Failed to log water intake"));
-			} finally {
-				setIsLogging(false);
 			}
+			setIsLogging(false);
 		},
 		[refetch, fireConfetti, t],
 	);

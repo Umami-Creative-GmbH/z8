@@ -1,15 +1,30 @@
 "use client";
 
-import { IconAlertTriangle, IconCheck, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCheck,
+	IconKey,
+	IconLoader2,
+	IconRefresh,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DiagnosticsItem, DiagnosticsStatus, PlatformDiagnosticsSnapshot } from "@/lib/platform-diagnostics";
+import type {
+	DiagnosticsItem,
+	DiagnosticsStatus,
+	PlatformDiagnosticsSnapshot,
+} from "@/lib/platform-diagnostics";
 import { cn } from "@/lib/utils";
+import type { PlatformKeyManagerEncryptionResult } from "@/lib/vault/platform-key-manager";
 import { Link } from "@/navigation";
-import { refreshPlatformDiagnosticsAction } from "./actions";
+import {
+	refreshPlatformDiagnosticsAction,
+	testPlatformKeyManagerEncryptionAction,
+} from "./actions";
 
 const statusStyles: Record<DiagnosticsStatus, string> = {
 	healthy: "border-emerald-500/40 text-emerald-700 dark:text-emerald-400",
@@ -30,7 +45,15 @@ function StatusIcon({ status }: { status: DiagnosticsStatus }) {
 	return <IconAlertTriangle className="size-3" aria-hidden="true" />;
 }
 
-function StatusBadge({ status, label, showLabel = true }: { status: DiagnosticsStatus; label: string; showLabel?: boolean }) {
+function StatusBadge({
+	status,
+	label,
+	showLabel = true,
+}: {
+	status: DiagnosticsStatus;
+	label: string;
+	showLabel?: boolean;
+}) {
 	return (
 		<Badge variant="outline" className={cn("capitalize", statusStyles[status])}>
 			<StatusIcon status={status} />
@@ -47,14 +70,18 @@ function DiagnosticsItemRow({ item, statusLabel }: { item: DiagnosticsItem; stat
 					<h3 className="text-sm font-medium">{item.title}</h3>
 					<StatusBadge status={item.status} label={statusLabel} showLabel={false} />
 				</div>
-				{item.description ? <p className="break-words text-sm text-muted-foreground">{item.description}</p> : null}
+				{item.description ? (
+					<p className="break-words text-sm text-muted-foreground">{item.description}</p>
+				) : null}
 				{item.actionHref && item.actionLabel ? (
 					<Link href={item.actionHref} className="text-sm font-medium text-primary hover:underline">
 						{item.actionLabel}
 					</Link>
 				) : null}
 			</div>
-			<div className="break-words font-mono text-sm text-muted-foreground sm:text-right">{item.value}</div>
+			<div className="break-words font-mono text-sm text-muted-foreground sm:text-right">
+				{item.value}
+			</div>
 		</div>
 	);
 }
@@ -78,28 +105,48 @@ function DiagnosticsSection({
 			</CardHeader>
 			<CardContent>
 				{items.map((item) => (
-					<DiagnosticsItemRow key={item.title} item={item} statusLabel={statusLabels[item.status]} />
+					<DiagnosticsItemRow
+						key={item.title}
+						item={item}
+						statusLabel={statusLabels[item.status]}
+					/>
 				))}
 			</CardContent>
 		</Card>
 	);
 }
 
-export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: PlatformDiagnosticsSnapshot }) {
+export function DiagnosticsClient({
+	initialSnapshot,
+}: {
+	initialSnapshot: PlatformDiagnosticsSnapshot;
+}) {
 	const { t } = useTranslate();
 	const [snapshot, setSnapshot] = useState<PlatformDiagnosticsSnapshot>(() => initialSnapshot);
 	const [error, setError] = useState<string | null>(null);
-	const [isPending, startTransition] = useTransition();
+	const [encryptionResult, setEncryptionResult] =
+		useState<PlatformKeyManagerEncryptionResult | null>(null);
+	const [encryptionError, setEncryptionError] = useState<string | null>(null);
+	const [isRefreshPending, startRefreshTransition] = useTransition();
+	const [isEncryptionPending, startEncryptionTransition] = useTransition();
 	const statusLabels: Record<DiagnosticsStatus, string> = {
 		healthy: t("admin:admin.diagnostics.status.healthy", "Healthy"),
 		warning: t("admin:admin.diagnostics.status.warning", "Warning"),
 		error: t("admin:admin.diagnostics.status.error", "Error"),
 		disabled: t("admin:admin.diagnostics.status.disabled", "Disabled"),
 	};
+	const encryptionStatusLabel = encryptionResult?.matches
+		? t("admin:admin.diagnostics.keyManager.result.match", "Input and output match")
+		: t("admin:admin.diagnostics.keyManager.result.mismatch", "Input and output differ");
+	const encryptionLiveStatus = isEncryptionPending
+		? t("admin:admin.diagnostics.keyManager.status.pending", "Encryption test is running.")
+		: encryptionResult
+			? encryptionStatusLabel
+			: "";
 
 	function refreshDiagnostics() {
 		setError(null);
-		startTransition(async () => {
+		startRefreshTransition(async () => {
 			const result = await refreshPlatformDiagnosticsAction();
 
 			if (result.success) {
@@ -111,6 +158,21 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 		});
 	}
 
+	function testEncryption() {
+		setEncryptionError(null);
+		setEncryptionResult(null);
+		startEncryptionTransition(async () => {
+			const result = await testPlatformKeyManagerEncryptionAction();
+
+			if (result.success) {
+				setEncryptionResult(result.data);
+				return;
+			}
+
+			setEncryptionError(result.error);
+		});
+	}
+
 	return (
 		<div className="space-y-6">
 			<Card>
@@ -118,7 +180,10 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 					<div className="space-y-2">
 						<div className="flex flex-wrap items-center gap-3">
 							<CardTitle>{t("admin:admin.diagnostics.title", "Deployment Diagnostics")}</CardTitle>
-							<StatusBadge status={snapshot.overallStatus} label={statusLabels[snapshot.overallStatus]} />
+							<StatusBadge
+								status={snapshot.overallStatus}
+								label={statusLabels[snapshot.overallStatus]}
+							/>
 						</div>
 						<CardDescription>
 							{t(
@@ -137,10 +202,10 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 					</div>
 					<Button
 						onClick={refreshDiagnostics}
-						disabled={isPending}
+						disabled={isRefreshPending}
 						aria-label={t("admin:admin.diagnostics.actions.refresh", "Refresh diagnostics")}
 					>
-						{isPending ? (
+						{isRefreshPending ? (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : (
 							<IconRefresh className="mr-2 size-4" aria-hidden="true" />
@@ -163,7 +228,10 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 
 			<div className="grid gap-6 xl:grid-cols-2">
 				<DiagnosticsSection
-					title={t("admin:admin.diagnostics.sections.configuration.title", "Platform Configuration")}
+					title={t(
+						"admin:admin.diagnostics.sections.configuration.title",
+						"Platform Configuration",
+					)}
 					description={t(
 						"admin:admin.diagnostics.sections.configuration.description",
 						"Safe deployment configuration states. Secret values are never shown.",
@@ -181,6 +249,110 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 					statusLabels={statusLabels}
 				/>
 			</div>
+
+			{snapshot.secretStoreProvider === "scaleway" ? (
+				<Card>
+					<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+						<div className="space-y-2">
+							<CardTitle className="flex items-center gap-2">
+								<IconKey className="size-5 text-primary" aria-hidden="true" />
+								{t("admin:admin.diagnostics.keyManager.title", "Scaleway Key Manager Encryption")}
+							</CardTitle>
+							<CardDescription>
+								{t(
+									"admin:admin.diagnostics.keyManager.description",
+									"Run an end-to-end platform key encrypt/decrypt test.",
+								)}
+							</CardDescription>
+							<p className="sr-only" role="status" aria-live="polite">
+								{encryptionLiveStatus}
+							</p>
+						</div>
+						<Button
+							onClick={testEncryption}
+							disabled={isEncryptionPending}
+							aria-label={t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
+						>
+							{isEncryptionPending ? (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							) : (
+								<IconKey className="mr-2 size-4" aria-hidden="true" />
+							)}
+							{t("admin:admin.diagnostics.keyManager.actions.test", "Test encryption")}
+						</Button>
+					</CardHeader>
+					{encryptionError ? (
+						<CardContent>
+							<div
+								className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-400"
+								role="alert"
+								aria-live="polite"
+							>
+								{encryptionError}
+							</div>
+						</CardContent>
+					) : null}
+					{encryptionResult ? (
+						<CardContent className="space-y-4">
+							<Badge
+								variant="outline"
+								className={cn(
+									encryptionResult.matches
+										? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+										: "border-amber-500/40 text-amber-700 dark:text-amber-400",
+								)}
+							>
+								{encryptionStatusLabel}
+							</Badge>
+							<dl className="grid gap-3 text-sm sm:grid-cols-2">
+								<div className="space-y-1 rounded-lg border p-3">
+									<dt className="text-muted-foreground">
+										{t("admin:admin.diagnostics.keyManager.input", "Input")}
+									</dt>
+									<dd className="break-words font-mono">{encryptionResult.input}</dd>
+								</div>
+								<div className="space-y-1 rounded-lg border p-3">
+									<dt className="text-muted-foreground">
+										{t("admin:admin.diagnostics.keyManager.output", "Output")}
+									</dt>
+									<dd className="break-words font-mono">{encryptionResult.output}</dd>
+								</div>
+								<div className="space-y-1 rounded-lg border p-3">
+									<dt className="text-muted-foreground">
+										{t("admin:admin.diagnostics.keyManager.platformKeyId", "Platform key ID")}
+									</dt>
+									<dd className="break-words font-mono">{encryptionResult.platformKeyId}</dd>
+								</div>
+								<div className="space-y-1 rounded-lg border p-3">
+									<dt className="text-muted-foreground">
+										{t("admin:admin.diagnostics.keyManager.keyStatus", "Key status")}
+									</dt>
+									<dd>
+										{encryptionResult.keyStatus === "created"
+											? t(
+													"admin:admin.diagnostics.keyManager.keyStatus.created",
+													"Created new platform key",
+												)
+											: t(
+													"admin:admin.diagnostics.keyManager.keyStatus.reused",
+													"Reused existing platform key",
+												)}
+									</dd>
+								</div>
+								<div className="space-y-1 rounded-lg border p-3 sm:col-span-2">
+									<dt className="text-muted-foreground">
+										{t(
+											"admin:admin.diagnostics.keyManager.ciphertextPreview",
+											"Ciphertext preview",
+										)}
+									</dt>
+									<dd className="break-words font-mono">{encryptionResult.ciphertextPreview}</dd>
+								</div>
+							</dl>
+						</CardContent>
+					) : null}
+				</Card>
+			) : null}
 
 			{snapshot.recommendedActions.length > 0 ? (
 				<Card className="border-amber-500/30 bg-amber-500/5">

@@ -42,9 +42,9 @@ export function PresenceStatusWidget() {
 				if (mounted && emp) setEmployeeId(emp.id);
 			} catch {
 				// Treat lookup failures like unavailable presence and resolve the loading state.
-			} finally {
-				if (mounted) setEmployeeResolved(true);
 			}
+
+			if (mounted) setEmployeeResolved(true);
 		}
 
 		void loadEmployee();

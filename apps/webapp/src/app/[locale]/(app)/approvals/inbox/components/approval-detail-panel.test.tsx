@@ -3,7 +3,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
-import { ApprovalDetailPanel, normalizeTravelExpenseDetailEntity } from "./approval-detail-panel";
+import { ApprovalDetailPanel } from "./approval-detail-panel";
+import { normalizeTravelExpenseDetailEntity } from "./approval-detail-utils";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),

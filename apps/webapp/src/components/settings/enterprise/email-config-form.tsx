@@ -39,28 +39,83 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import type { SecretStoreStatus } from "@/lib/vault";
 import { toast } from "sonner";
 
 interface EmailConfigFormProps {
 	organizationId: string;
 	initialConfig: EmailConfigOutput | null;
-	vaultStatus: VaultStatus;
+	secretStoreStatus: SecretStoreStatus;
 }
 
-interface VaultStatus {
-	available: boolean;
-	initialized: boolean;
-	sealed: boolean;
-	address: string;
-}
-
-function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
+function SecretStoreStatusAlert({
+	secretStoreStatus,
+}: {
+	secretStoreStatus: SecretStoreStatus;
+}) {
 	const { t } = useTranslate();
 
-	if (!vaultStatus.available) {
+	if (secretStoreStatus.provider === "scaleway") {
+		if (secretStoreStatus.available) {
+			return (
+				<Alert className="mb-4">
+					<IconShield className="size-4" aria-hidden="true" />
+					<AlertTitle>
+						{t("settings.enterprise.email.scalewayConnected", "Scaleway Secret Store Ready")}
+					</AlertTitle>
+					<AlertDescription>
+						{t(
+							"settings.enterprise.email.scalewayConnectedDesc",
+							"This organization has a verified Scaleway Key Manager key for encrypted secret storage.",
+						)}
+					</AlertDescription>
+				</Alert>
+			);
+		}
+
+		if (secretStoreStatus.reason === "missing-key") {
+			return (
+				<Alert className="mb-4">
+					<IconShield className="size-4" aria-hidden="true" />
+					<AlertTitle>
+						{t(
+							"settings.enterprise.email.scalewayKeyPending",
+							"Scaleway Key Not Generated Yet",
+						)}
+					</AlertTitle>
+					<AlertDescription>
+						{t(
+							"settings.enterprise.email.scalewayKeyPendingDesc",
+							"A Scaleway organization key will be generated when you save a secret such as a Resend API key or SMTP password.",
+						)}
+					</AlertDescription>
+				</Alert>
+			);
+		}
+
 		return (
 			<Alert variant="destructive" className="mb-4">
-				<IconAlertTriangle className="size-4" />
+				<IconAlertTriangle className="size-4" aria-hidden="true" />
+				<AlertTitle>
+					{t(
+						"settings.enterprise.email.scalewayUnavailable",
+						"Scaleway Secret Store Unavailable",
+					)}
+				</AlertTitle>
+				<AlertDescription>
+					{t(
+						"settings.enterprise.email.scalewayUnavailableDesc",
+						"The configured Scaleway organization key could not be verified. Secrets cannot be stored securely until this is fixed.",
+					)}
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
+	if (!secretStoreStatus.available) {
+		return (
+			<Alert variant="destructive" className="mb-4">
+				<IconAlertTriangle className="size-4" aria-hidden="true" />
 				<AlertTitle>{t("settings.enterprise.email.vaultUnavailable", "Vault Unavailable")}</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -72,10 +127,10 @@ function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
 		);
 	}
 
-	if (vaultStatus.sealed) {
+	if (secretStoreStatus.sealed) {
 		return (
 			<Alert variant="destructive" className="mb-4">
-				<IconAlertTriangle className="size-4" />
+				<IconAlertTriangle className="size-4" aria-hidden="true" />
 				<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -89,7 +144,7 @@ function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
 
 	return (
 		<Alert className="mb-4">
-			<IconShield className="size-4" />
+			<IconShield className="size-4" aria-hidden="true" />
 			<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
 			<AlertDescription>
 				{t(
@@ -104,7 +159,7 @@ function VaultStatusAlert({ vaultStatus }: { vaultStatus: VaultStatus }) {
 export function EmailConfigForm({
 	organizationId,
 	initialConfig,
-	vaultStatus,
+	secretStoreStatus,
 }: EmailConfigFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -213,7 +268,7 @@ export function EmailConfigForm({
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					<VaultStatusAlert vaultStatus={vaultStatus} />
+					<SecretStoreStatusAlert secretStoreStatus={secretStoreStatus} />
 
 					{/* Transport Type Selection */}
 					<div className="space-y-3">

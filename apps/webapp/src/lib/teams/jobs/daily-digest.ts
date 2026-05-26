@@ -34,6 +34,7 @@ import { buildDailyDigestCard } from "../cards";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
 import { getAllActiveTenants } from "../tenant-resolver";
 import type { DailyDigestData } from "../types";
+import { env } from "@/env";
 
 const logger = createLogger("TeamsDailyDigest");
 
@@ -137,7 +138,7 @@ async function processTenantDigest(tenant: {
 		return 0;
 	}
 
-	const appUrl = process.env.APP_URL || "https://z8-time.app";
+	const appUrl = env.APP_URL || "https://z8-time.app";
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {

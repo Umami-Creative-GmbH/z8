@@ -15,7 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { generateSlug } from "@/lib/validations/organization";
 import { useRouter } from "@/navigation";
-import { createOrganizationOnboarding, getOnboardingSummary, skipOrganizationSetup } from "./actions";
+import {
+	createOrganizationOnboarding,
+	getOnboardingSummary,
+	skipOrganizationSetup,
+} from "./actions";
 
 const defaultValues = {
 	name: "",
@@ -26,19 +30,21 @@ type OrganizationPageClientProps = {
 	canCreateOrganizations: boolean;
 };
 
-export default function OrganizationPageClient({ canCreateOrganizations }: OrganizationPageClientProps) {
+export default function OrganizationPageClient({
+	canCreateOrganizations,
+}: OrganizationPageClientProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push, replace } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [checkingSlug, setCheckingSlug] = useState(false);
-	const [slugError, setSlugError] = useState<string | null>(null);
+	const [slugError, setSlugError] = useState<{ slug: string; message: string } | null>(null);
 	const [checkingMembership, setCheckingMembership] = useState(true);
 	const slugManuallyEdited = useRef(false);
 
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
-			if (slugError) {
+			if (slugError?.slug === value.slug) {
 				return;
 			}
 
@@ -48,7 +54,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 
 			if (result.success) {
 				toast.success(t("organization.createSuccess", "Organization created successfully!"));
-				router.push("/onboarding/profile");
+				push("/onboarding/profile");
 			} else {
 				setLoading(false);
 				toast.error(result.error || t("organization.createError", "Failed to create organization"));
@@ -59,6 +65,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 	const formValues = useStore(form.store, (state) => state.values);
 	const name = formValues.name;
 	const slug = formValues.slug;
+	const slugErrorMessage = slugError?.slug === slug ? slugError.message : null;
 
 	useEffect(() => {
 		const checkMembership = async () => {
@@ -66,7 +73,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 
 			if (summary.success && summary.data?.hasOrganization) {
 				await skipOrganizationSetup();
-				router.replace("/onboarding/profile");
+				replace("/onboarding/profile");
 				return;
 			}
 
@@ -74,7 +81,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 		};
 
 		void checkMembership();
-	}, [router]);
+	}, [replace]);
 
 	useEffect(() => {
 		if (name && !slugManuallyEdited.current) {
@@ -85,7 +92,6 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 
 	useEffect(() => {
 		if (!canCreateOrganizations || !slug || slug.length < 2) {
-			setSlugError(null);
 			return;
 		}
 
@@ -94,20 +100,21 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 			try {
 				const isAvailable = await checkSlugAvailability(slug);
 				if (!isAvailable) {
-					setSlugError(
-						t(
+					setSlugError({
+						slug,
+						message: t(
 							"organization.slugTaken",
 							"This slug is already taken. Please choose a different one.",
 						),
-					);
+					});
 				} else {
 					setSlugError(null);
 				}
 			} catch (error) {
 				console.error("Error checking slug availability:", error);
-			} finally {
-				setCheckingSlug(false);
 			}
+
+			setCheckingSlug(false);
 		}, 500);
 
 		return () => clearTimeout(timeoutId);
@@ -119,10 +126,12 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 		const result = await skipOrganizationSetup();
 
 		if (result.success) {
-			router.push("/onboarding/profile");
+			push("/onboarding/profile");
 		} else {
 			setLoading(false);
-			toast.error(result.error || t("onboarding.organization.skipError", "Failed to skip organization setup"));
+			toast.error(
+				result.error || t("onboarding.organization.skipError", "Failed to skip organization setup"),
+			);
 		}
 	}
 
@@ -149,13 +158,13 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 					<p className="text-muted-foreground">
 						{canCreateOrganizations
 							? t(
-								"onboarding.organization.subtitle",
-								"Create your organization to unlock all features, or skip if you're waiting for an invitation.",
-							)
+									"onboarding.organization.subtitle",
+									"Create your organization to unlock all features, or skip if you're waiting for an invitation.",
+								)
 							: t(
-								"onboarding.organization.disabledSubtitle",
-								"Organization creation is disabled for this deployment.",
-							)}
+									"onboarding.organization.disabledSubtitle",
+									"Organization creation is disabled for this deployment.",
+								)}
 					</p>
 				</div>
 
@@ -224,14 +233,26 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 										validators={{
 											onChange: z
 												.string()
-												.min(2, t("organization.slugErrors.min", "Slug must be at least 2 characters"))
-												.max(50, t("organization.slugErrors.max", "Slug must be less than 50 characters"))
+												.min(
+													2,
+													t("organization.slugErrors.min", "Slug must be at least 2 characters"),
+												)
+												.max(
+													50,
+													t("organization.slugErrors.max", "Slug must be less than 50 characters"),
+												)
 												.regex(
 													/^[a-z0-9-]+$/,
-													t("organization.slugErrors.format", "Slug must contain only lowercase letters, numbers, and hyphens"),
+													t(
+														"organization.slugErrors.format",
+														"Slug must contain only lowercase letters, numbers, and hyphens",
+													),
 												)
 												.refine((slug) => !slug.startsWith("-") && !slug.endsWith("-"), {
-													message: t("organization.slugErrors.hyphen", "Slug cannot start or end with a hyphen"),
+													message: t(
+														"organization.slugErrors.hyphen",
+														"Slug cannot start or end with a hyphen",
+													),
 												}),
 										}}
 									>
@@ -243,6 +264,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 														value={field.state.value}
 														onChange={(e) => {
 															slugManuallyEdited.current = true;
+															setSlugError(null);
 															field.handleChange(e.target.value);
 														}}
 														onBlur={field.handleBlur}
@@ -261,8 +283,8 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 														"Used in URLs. Auto-generated from name.",
 													)}
 												</p>
-												{slugError && (
-													<p className="text-sm font-medium text-destructive">{slugError}</p>
+												{slugErrorMessage && (
+													<p className="text-sm font-medium text-destructive">{slugErrorMessage}</p>
 												)}
 												{field.state.meta.errors.length > 0 && (
 													<p className="text-sm font-medium text-destructive">
@@ -278,7 +300,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 									<div className="flex gap-3 pt-2">
 										<Button
 											type="submit"
-											disabled={loading || checkingSlug || !!slugError}
+											disabled={loading || checkingSlug || !!slugErrorMessage}
 											className="flex-1"
 										>
 											{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
@@ -292,17 +314,19 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 
 					<Card>
 						<CardHeader>
-							<CardTitle>{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}</CardTitle>
+							<CardTitle>
+								{t("onboarding.organization.skipTitle", "Waiting for an Invitation?")}
+							</CardTitle>
 							<CardDescription>
 								{canCreateOrganizations
 									? t(
-										"onboarding.organization.skipDescription",
-										"If your administrator will invite you to an organization, you can skip this step for now.",
-									)
+											"onboarding.organization.skipDescription",
+											"If your administrator will invite you to an organization, you can skip this step for now.",
+										)
 									: t(
-										"onboarding.organization.disabledSkipDescription",
-										"You can continue by skipping this step while you wait for an invitation to an existing organization.",
-									)}
+											"onboarding.organization.disabledSkipDescription",
+											"You can continue by skipping this step while you wait for an invitation to an existing organization.",
+										)}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>

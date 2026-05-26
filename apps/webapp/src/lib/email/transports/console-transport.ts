@@ -7,6 +7,7 @@
 
 import { createLogger } from "@/lib/logger";
 import type { EmailMessage, EmailTransport, EmailTransportResult } from "./base";
+import { env } from "@/env";
 
 const logger = createLogger("ConsoleTransport");
 
@@ -15,7 +16,7 @@ export class ConsoleTransport implements EmailTransport {
 	private fromName?: string;
 
 	constructor(fromEmail?: string, fromName?: string) {
-		this.fromEmail = fromEmail || process.env.EMAIL_FROM || "noreply@yourdomain.com";
+		this.fromEmail = fromEmail || env.EMAIL_FROM || "noreply@yourdomain.com";
 		this.fromName = fromName;
 	}
 

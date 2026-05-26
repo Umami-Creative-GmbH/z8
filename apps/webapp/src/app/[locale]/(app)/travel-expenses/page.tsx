@@ -11,8 +11,7 @@ import { getTranslate } from "@/tolgee/server";
 export default async function TravelExpensesPage() {
 	await connection();
 
-	const t = await getTranslate();
-	const authContext = await getAuthContext();
+	const [t, authContext] = await Promise.all([getTranslate(), getAuthContext()]);
 
 	if (!authContext?.employee) {
 		return (

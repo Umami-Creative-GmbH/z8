@@ -1,11 +1,22 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
 const mockFontSizeState = vi.hoisted(() => ({
 	fontSize: "default",
 	setFontSize: vi.fn(),
+}));
+
+const mockNavigation = vi.hoisted(() => ({
+	push: vi.fn(),
+	replace: vi.fn(),
+}));
+
+const mockLanguageActions = vi.hoisted(() => ({
+	setLanguage: vi.fn(async () => undefined),
+	persistLocaleToDb: vi.fn(async () => undefined),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -32,8 +43,10 @@ vi.mock("next-themes", () => ({
 
 vi.mock("@/navigation", () => ({
 	usePathname: () => "/settings/profile",
-	useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+	useRouter: () => mockNavigation,
 }));
+
+vi.mock("@/tolgee/language", () => mockLanguageActions);
 
 vi.mock("@/lib/auth-client", () => ({
 	authClient: { signOut: vi.fn() },
@@ -78,14 +91,36 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
 		</button>
 	),
 	DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	DropdownMenuRadioGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	DropdownMenuRadioGroup: ({
+		children,
+		onValueChange,
+	}: {
+		children: React.ReactNode;
+		onValueChange?: (value: string) => void;
+	}) => (
+		<div>
+			{React.Children.map(children, (child) => {
+				if (!React.isValidElement<{ value?: string }>(child)) return child;
+
+				return React.cloneElement(child, {
+					onClick: () => child.props.value && onValueChange?.(child.props.value),
+				} as Partial<React.ComponentProps<"div">>);
+			})}
+		</div>
+	),
 	DropdownMenuRadioItem: ({
 		children,
 		className,
+		onClick,
 	}: {
 		children: React.ReactNode;
 		className?: string;
-	}) => <div className={className}>{children}</div>,
+		onClick?: () => void;
+	}) => (
+		<div className={className} onClick={onClick}>
+			{children}
+		</div>
+	),
 	DropdownMenuSeparator: () => <hr />,
 	DropdownMenuSub: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -96,6 +131,19 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
 import { NavUser } from "./nav-user";
 
 describe("NavUser", () => {
+	it("persists language changes before navigating to the localized route", async () => {
+		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /language/i }));
+		fireEvent.click(screen.getByText("Deutsch"));
+
+		await waitFor(() => {
+			expect(mockLanguageActions.setLanguage).toHaveBeenCalledWith("de");
+			expect(mockLanguageActions.persistLocaleToDb).toHaveBeenCalledWith("de");
+			expect(mockNavigation.replace).toHaveBeenCalledWith("/settings/profile", { locale: "de" });
+		});
+	});
+
 	it("collapses mobile language, font size, and theme options until their sections are opened", () => {
 		render(<NavUser user={{ id: "user-1", name: "Kai", email: "kai@example.com" }} />);
 

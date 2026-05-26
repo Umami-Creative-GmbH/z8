@@ -74,9 +74,8 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Verify error:", error);
-		} finally {
-			setVerifying(null);
 		}
+		setVerifying(null);
 	};
 
 	if (packages.length === 0) {

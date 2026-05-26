@@ -16,6 +16,7 @@ import {
 } from "botbuilder";
 import { createLogger } from "@/lib/logger";
 import { TeamsError } from "./types";
+import { env } from "@/env";
 
 const logger = createLogger("TeamsBotAdapter");
 
@@ -35,9 +36,9 @@ export function getBotAdapter(): CloudAdapter {
 		return adapterInstance;
 	}
 
-	const appId = process.env.MICROSOFT_APP_ID;
-	const appPassword = process.env.MICROSOFT_APP_PASSWORD;
-	const appType = (process.env.MICROSOFT_APP_TYPE as "MultiTenant" | "SingleTenant") || "MultiTenant";
+	const appId = env.MICROSOFT_APP_ID;
+	const appPassword = env.MICROSOFT_APP_PASSWORD;
+	const appType = (env.MICROSOFT_APP_TYPE as "MultiTenant" | "SingleTenant") || "MultiTenant";
 
 	if (!appId || !appPassword) {
 		throw new TeamsError(
@@ -94,7 +95,7 @@ export async function sendProactiveMessage(
 	activity: Partial<Activity>,
 ): Promise<string | undefined> {
 	const adapter = getBotAdapter();
-	const appId = process.env.MICROSOFT_APP_ID;
+	const appId = env.MICROSOFT_APP_ID;
 
 	if (!appId) {
 		throw new TeamsError("MICROSOFT_APP_ID not configured", "BOT_ERROR");
@@ -174,7 +175,7 @@ export async function updateMessage(
 	updatedActivity: Partial<Activity>,
 ): Promise<void> {
 	const adapter = getBotAdapter();
-	const appId = process.env.MICROSOFT_APP_ID;
+	const appId = env.MICROSOFT_APP_ID;
 
 	if (!appId) {
 		throw new TeamsError("MICROSOFT_APP_ID not configured", "BOT_ERROR");
@@ -218,5 +219,5 @@ export async function updateMessage(
  * Check if the bot adapter is properly configured
  */
 export function isBotConfigured(): boolean {
-	return !!(process.env.MICROSOFT_APP_ID && process.env.MICROSOFT_APP_PASSWORD);
+	return !!(env.MICROSOFT_APP_ID && env.MICROSOFT_APP_PASSWORD);
 }

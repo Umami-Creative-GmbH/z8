@@ -19,7 +19,6 @@ import {
 	getPaginationRowModel,
 	getSortedRowModel,
 	type SortingState,
-	useReactTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -36,6 +35,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
@@ -258,7 +258,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		},
 	];
 
-	const table = useReactTable({
+	const table = useCompilerSafeReactTable({
 		data: filteredEmployees,
 		columns,
 		getCoreRowModel: getCoreRowModel(),

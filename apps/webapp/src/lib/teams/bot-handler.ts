@@ -24,6 +24,7 @@ import { handleShiftPickupAction } from "./shift-pickup-handler";
 import { resolveTenant, updateTenantServiceUrl } from "./tenant-resolver";
 import { TeamsError } from "./types";
 import { resolveTeamsUser } from "./user-resolver";
+import { env } from "@/env";
 
 const logger = createLogger("TeamsBotHandler");
 
@@ -414,7 +415,7 @@ async function sendSetupInstructions(
 	context: TurnContext,
 	tenantId: string,
 ): Promise<void> {
-	const appUrl = process.env.APP_URL || "https://z8-time.app";
+	const appUrl = env.APP_URL || "https://z8-time.app";
 	const setupUrl = `${appUrl}/api/teams/setup?tenantId=${encodeURIComponent(tenantId)}`;
 	const t = await getBotTranslate(DEFAULT_LANGUAGE);
 

@@ -129,6 +129,27 @@
       },
       "clientDescription": "Safe platform configuration and app-level service health. Last refreshed {date}.",
       "description": "Safe platform configuration and app-only deployment health checks.",
+      "keyManager": {
+        "actions": {
+          "test": "Test encryption"
+        },
+        "ciphertextPreview": "Ciphertext preview",
+        "description": "Run an end-to-end platform key encrypt/decrypt test.",
+        "input": "Input",
+        "keyStatus": "Key status",
+        "keyStatus.created": "Created new platform key",
+        "keyStatus.reused": "Reused existing platform key",
+        "output": "Output",
+        "platformKeyId": "Platform key ID",
+        "result": {
+          "match": "Input and output match",
+          "mismatch": "Input and output differ"
+        },
+        "status": {
+          "pending": "Encryption test is running."
+        },
+        "title": "Scaleway Key Manager Encryption"
+      },
       "recommendedActions": {
         "description": "Resolve these items to return diagnostics to a healthy state.",
         "title": "Recommended Actions"

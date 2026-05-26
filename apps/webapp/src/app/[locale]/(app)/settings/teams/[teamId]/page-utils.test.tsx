@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { extractTeamMemberIds } from "./page-utils";
+import { extractTeamMemberIds } from "./page-state";
 
 vi.mock("./page-sections", () => ({
 	AddMemberDialog: () => null,
@@ -10,10 +10,15 @@ vi.mock("./page-sections", () => ({
 	TeamPageHeader: () => null,
 }));
 
-vi.mock("./page-state", () => ({
-	invalidateTeamQueries: vi.fn(),
-	useTeamPageUiState: vi.fn(),
-}));
+vi.mock("./page-state", async () => {
+	const actual = await vi.importActual<typeof import("./page-state")>("./page-state");
+
+	return {
+		...actual,
+		invalidateTeamQueries: vi.fn(),
+		useTeamPageUiState: vi.fn(),
+	};
+});
 
 describe("extractTeamMemberIds", () => {
 	it("extracts employee IDs from direct team employees", () => {

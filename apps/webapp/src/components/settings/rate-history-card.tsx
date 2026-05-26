@@ -28,17 +28,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { CreateRateHistory } from "@/lib/validations/employee";
 import { HourlyRateInput } from "./hourly-rate-input";
+
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
+function getCurrencyFormatter(currency: string) {
+	const cachedFormatter = currencyFormatters.get(currency);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency });
+	currencyFormatters.set(currency, formatter);
+	return formatter;
+}
 
 interface RateHistoryCardProps {
 	rateHistory: RateHistoryEntry[];
@@ -102,10 +115,7 @@ export function RateHistoryCard({
 	};
 
 	const formatCurrency = (amount: string, currency: string) => {
-		return new Intl.NumberFormat(undefined, {
-			style: "currency",
-			currency: currency,
-		}).format(parseFloat(amount));
+		return getCurrencyFormatter(currency).format(parseFloat(amount));
 	};
 
 	const currentRate = rateHistory.find((r) => !r.effectiveTo);

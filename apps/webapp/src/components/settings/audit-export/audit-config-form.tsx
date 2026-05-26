@@ -56,9 +56,8 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Initialize error:", error);
-		} finally {
-			setLoading(false);
 		}
+		setLoading(false);
 	};
 
 	const handleUpdate = async (updates: Partial<UpdateAuditConfigInput>) => {
@@ -77,9 +76,8 @@ export function AuditConfigForm({ organizationId, initialConfig }: AuditConfigFo
 		} catch (error) {
 			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			console.error("Update error:", error);
-		} finally {
-			setLoading(false);
 		}
+		setLoading(false);
 	};
 
 	if (!config) {

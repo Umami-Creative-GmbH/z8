@@ -7,6 +7,7 @@ import { BillingPageClient } from "@/components/billing/billing-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import {
 	type BillingAccessResult,
@@ -30,7 +31,7 @@ async function BillingSettingsContent() {
 	await connection();
 
 	// Check if billing is enabled
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		redirect("/settings");
 	}
 
@@ -45,15 +46,14 @@ async function BillingSettingsContent() {
 	});
 
 	// Fetch subscription info
-	const program = Effect.gen(function* () {
-		const subscriptionService = yield* SubscriptionService;
-		const enforcementService = yield* BillingEnforcementService;
-
-		const subscription = yield* subscriptionService.getByOrganization(organizationId);
-		const accessResult = yield* enforcementService.checkBillingAccess(organizationId);
-
-		return { subscription, accessResult };
-	});
+	const program = Effect.flatMap(SubscriptionService, (subscriptionService) =>
+		Effect.flatMap(BillingEnforcementService, (enforcementService) =>
+			Effect.all({
+				subscription: subscriptionService.getByOrganization(organizationId),
+				accessResult: enforcementService.checkBillingAccess(organizationId),
+			}),
+		),
+	);
 
 	let subscription: SubscriptionInfo | null = null;
 	let accessResult: BillingAccessResult = billingCheckFailedAccess;

@@ -7,8 +7,10 @@ import { getTranslate } from "@/tolgee/server";
 export default async function SurchargeSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	await getTranslate();
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const [, settingsRouteContext] = await Promise.all([
+		getTranslate(),
+		getCurrentSettingsRouteContext(),
+	]);
 
 	if (!settingsRouteContext) {
 		redirect("/settings");

@@ -130,6 +130,25 @@ describe("ApprovalSprintPanel", () => {
 		expect(rejectMutation).not.toHaveBeenCalled();
 	});
 
+	it("keeps the final approval visible when skipping the last item", () => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={approvals}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Skip current approval" }));
+		fireEvent.click(screen.getByRole("button", { name: "Skip current approval" }));
+
+		expect(screen.getByText("Time correction")).toBeTruthy();
+		expect(screen.queryByText("Sprint complete")).toBeNull();
+		expect(approveMutation).not.toHaveBeenCalled();
+		expect(rejectMutation).not.toHaveBeenCalled();
+	});
+
 	it("handles approve and skip keyboard shortcuts", async () => {
 		approveMutation.mockResolvedValue({ success: true });
 
@@ -149,7 +168,8 @@ describe("ApprovalSprintPanel", () => {
 
 		fireEvent.keyDown(window, { key: "s" });
 
-		expect(screen.getByText("Sprint complete")).toBeTruthy();
+		expect(screen.getByText("Time correction")).toBeTruthy();
+		expect(screen.queryByText("Sprint complete")).toBeNull();
 		expect(approveMutation).toHaveBeenCalledTimes(1);
 		expect(rejectMutation).not.toHaveBeenCalled();
 	});

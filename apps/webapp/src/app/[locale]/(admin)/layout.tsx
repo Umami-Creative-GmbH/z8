@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
 import type { PlatformAdminNavItem } from "./platform-admin-header-actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -23,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 	}
 
 	const t = await getTranslate();
-	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const billingEnabled = env.BILLING_ENABLED === "true";
 
 	const billingNavItems: PlatformAdminNavItem[] = billingEnabled
 		? [

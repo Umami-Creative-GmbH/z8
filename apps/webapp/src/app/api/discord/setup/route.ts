@@ -18,6 +18,7 @@ import { discordBotConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { env } from "@/env";
 
 const logger = createLogger("DiscordSetup");
 
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Build the interactions endpoint URL
-		const appUrl = process.env.APP_URL || "https://z8-time.app";
+		const appUrl = env.APP_URL || "https://z8-time.app";
 		const interactionUrl = `${appUrl}/api/discord/interactions/${webhookSecret}`;
 
 		logger.info(

@@ -10,6 +10,8 @@ import {
 	useTravelExpenseFileProcessMutation,
 } from "@/lib/query/use-travel-expense-file-process";
 
+const DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE = 10 * 1024 * 1024;
+
 interface UseTravelExpenseFileUploadOptions {
 	claimId: string;
 	maxFileSize?: number;
@@ -27,7 +29,7 @@ interface UseTravelExpenseFileUploadReturn {
 
 export function useTravelExpenseFileUpload({
 	claimId,
-	maxFileSize = 10 * 1024 * 1024,
+	maxFileSize = DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE,
 	onSuccess,
 	onError,
 }: UseTravelExpenseFileUploadOptions): UseTravelExpenseFileUploadReturn {

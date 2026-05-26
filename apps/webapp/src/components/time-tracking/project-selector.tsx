@@ -3,7 +3,7 @@
 import { IconBriefcase, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -54,12 +54,9 @@ export function ProjectSelector({
 	const { t } = useTranslate();
 	const { projects, isLoading, isError } = useAssignedProjects();
 	const hasAutoSelectedRef = useRef(false);
-	const [lastProjectId, setLastProjectId] = useState<string | null>(() => {
-		if (typeof window === "undefined") {
-			return null;
-		}
-		return localStorage.getItem(LAST_PROJECT_KEY);
-	});
+	const lastProjectIdRef = useRef<string | null>(
+		typeof window === "undefined" ? null : localStorage.getItem(LAST_PROJECT_KEY),
+	);
 
 	// Build a Map for O(1) project lookups (js-index-maps)
 	const projectsMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
@@ -67,6 +64,7 @@ export function ProjectSelector({
 	// Auto-select last used project on initial load
 	useEffect(() => {
 		if (autoSelectLast && !hasAutoSelectedRef.current && projects.length > 0 && value === undefined) {
+			const lastProjectId = lastProjectIdRef.current;
 			if (lastProjectId && projectsMap.has(lastProjectId)) {
 				onValueChange(lastProjectId);
 			}
@@ -78,18 +76,17 @@ export function ProjectSelector({
 		projectsMap,
 		value,
 		onValueChange,
-		lastProjectId,
 	]);
 
 	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
 			localStorage.removeItem(LAST_PROJECT_KEY);
-			setLastProjectId(null);
+			lastProjectIdRef.current = null;
 			onValueChange(undefined);
 		} else {
 			localStorage.setItem(LAST_PROJECT_KEY, newValue);
-			setLastProjectId(newValue);
+			lastProjectIdRef.current = newValue;
 			onValueChange(newValue);
 		}
 	};

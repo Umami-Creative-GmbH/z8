@@ -8,8 +8,10 @@ export default async function EmployeeDetailPage({
 }: {
 	params: Promise<{ employeeId: string }>;
 }) {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
-	const { employeeId } = await params;
+	const [settingsRouteContext, { employeeId }] = await Promise.all([
+		getCurrentSettingsRouteContext(),
+		params,
+	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");

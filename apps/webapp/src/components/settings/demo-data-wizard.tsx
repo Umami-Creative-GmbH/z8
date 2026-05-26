@@ -132,6 +132,18 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 	);
 	const [deleteNonAdminConfirmText, setDeleteNonAdminConfirmText] = useState("");
 
+	const handleSelectableCardKeyDown = (
+		event: React.KeyboardEvent<HTMLDivElement>,
+		toggle: () => void,
+	) => {
+		if (event.key !== "Enter" && event.key !== " ") {
+			return;
+		}
+
+		event.preventDefault();
+		toggle();
+	};
+
 	const updateStepStatus = (
 		stepId: string,
 		status: StepStatus,
@@ -759,13 +771,20 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 							<div className="space-y-4">
 								<Label>{t("settings.demo.form.dataTypes.label", "Data Types")}</Label>
 								<div className="grid gap-4 md:grid-cols-2">
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeTimeEntries}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeTimeEntries ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeTimeEntries(!includeTimeEntries)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () =>
+												setIncludeTimeEntries(!includeTimeEntries),
+											)
+										}
 									>
 										<Checkbox
 											checked={includeTimeEntries}
@@ -785,13 +804,18 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										</div>
 									</div>
 
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeAbsences}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeAbsences ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeAbsences(!includeAbsences)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () => setIncludeAbsences(!includeAbsences))
+										}
 									>
 										<Checkbox
 											checked={includeAbsences}
@@ -811,13 +835,18 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										</div>
 									</div>
 
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeTeams}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeTeams ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeTeams(!includeTeams)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () => setIncludeTeams(!includeTeams))
+										}
 									>
 										<Checkbox
 											checked={includeTeams}
@@ -846,21 +875,27 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={10}
 														value={teamCount}
 														onChange={(e) => setTeamCount(parseInt(e.target.value, 10) || 4)}
-														className="h-7 w-16 text-xs"
-														onClick={(e) => e.stopPropagation()}
-													/>
+																className="h-7 w-16 text-xs"
+																onClick={(e) => e.stopPropagation()}
+																onKeyDown={(e) => e.stopPropagation()}
+															/>
 												</div>
 											)}
 										</div>
 									</div>
 
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeProjects}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeProjects ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeProjects(!includeProjects)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () => setIncludeProjects(!includeProjects))
+										}
 									>
 										<Checkbox
 											checked={includeProjects}
@@ -892,22 +927,28 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={15}
 														value={projectCount}
 														onChange={(e) => setProjectCount(parseInt(e.target.value, 10) || 6)}
-														className="h-7 w-16 text-xs"
-														onClick={(e) => e.stopPropagation()}
-													/>
+																className="h-7 w-16 text-xs"
+																onClick={(e) => e.stopPropagation()}
+																onKeyDown={(e) => e.stopPropagation()}
+															/>
 												</div>
 											)}
 										</div>
 									</div>
 
 									{/* NEW: Locations checkbox */}
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeLocations}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeLocations ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeLocations(!includeLocations)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () => setIncludeLocations(!includeLocations))
+										}
 									>
 										<Checkbox
 											checked={includeLocations}
@@ -939,22 +980,30 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 														max={10}
 														value={locationCount}
 														onChange={(e) => setLocationCount(parseInt(e.target.value, 10) || 3)}
-														className="h-7 w-16 text-xs"
-														onClick={(e) => e.stopPropagation()}
-													/>
+																className="h-7 w-16 text-xs"
+																onClick={(e) => e.stopPropagation()}
+																onKeyDown={(e) => e.stopPropagation()}
+															/>
 												</div>
 											)}
 										</div>
 									</div>
 
 									{/* NEW: Work Categories checkbox */}
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeWorkCategories}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeWorkCategories ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeWorkCategories(!includeWorkCategories)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () =>
+												setIncludeWorkCategories(!includeWorkCategories),
+											)
+										}
 									>
 										<Checkbox
 											checked={includeWorkCategories}
@@ -972,10 +1021,11 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 												)}
 											</p>
 											{includeWorkCategories && includeTimeEntries && (
-												<div
-													className="mt-2 flex items-center gap-2"
-													onClick={(e) => e.stopPropagation()}
-												>
+															<div
+																className="mt-2 flex items-center gap-2"
+																onClick={(e) => e.stopPropagation()}
+																onKeyDown={(e) => e.stopPropagation()}
+															>
 													<Checkbox
 														id="assignCategories"
 														checked={assignWorkCategoriesToPeriods}
@@ -993,13 +1043,20 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 									</div>
 
 									{/* NEW: Change Policies checkbox */}
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeChangePolicies}
+										tabIndex={0}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeChangePolicies ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 										)}
 										onClick={() => setIncludeChangePolicies(!includeChangePolicies)}
+										onKeyDown={(event) =>
+											handleSelectableCardKeyDown(event, () =>
+												setIncludeChangePolicies(!includeChangePolicies),
+											)
+										}
 									>
 										<Checkbox
 											checked={includeChangePolicies}
@@ -1020,14 +1077,21 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 									</div>
 
 									{/* NEW: Shift Scheduling checkbox */}
-									{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: Checkbox handles keyboard interaction */}
 									<div
+										role="checkbox"
+										aria-checked={includeShifts}
+										aria-disabled={!includeLocations}
+										tabIndex={includeLocations ? 0 : -1}
 										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 											includeShifts ? "border-primary bg-primary/5" : "hover:bg-muted/50",
 											!includeLocations && "opacity-50",
 										)}
 										onClick={() => includeLocations && setIncludeShifts(!includeShifts)}
+										onKeyDown={(event) => {
+											if (!includeLocations) return;
+											handleSelectableCardKeyDown(event, () => setIncludeShifts(!includeShifts));
+										}}
 									>
 										<Checkbox
 											checked={includeShifts}

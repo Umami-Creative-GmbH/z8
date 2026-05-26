@@ -20,6 +20,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
 import { withRateLimit } from "./middleware";
+import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:OpenShifts");
 
@@ -140,7 +141,7 @@ async function openShiftsHandler(
 		}
 
 		// Build Adaptive Card with pickup buttons
-		const appUrl = process.env.APP_URL || "https://z8-time.app";
+		const appUrl = env.APP_URL || "https://z8-time.app";
 		const card = buildOpenShiftsCard({
 			shifts,
 			timezone: ctx.config.digestTimezone,

@@ -7,8 +7,10 @@ import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 export default async function ChangePoliciesSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	await getTranslate();
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const [, settingsRouteContext] = await Promise.all([
+		getTranslate(),
+		getCurrentSettingsRouteContext(),
+	]);
 
 	if (!settingsRouteContext) {
 		redirect("/settings");

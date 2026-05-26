@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 
 import { db } from "@/db";
 import { systemConfig } from "@/db/schema";
+import { env } from "@/env";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
 import { getOrCreateDeploymentId } from "@/lib/telemetry";
 
@@ -44,6 +45,19 @@ function createConfigItem(
 		status: configured ? "healthy" : "warning",
 		value: configured ? "Configured" : "Missing",
 		description,
+	};
+}
+
+function buildTurnstileConfigItem(env: DiagnosticsEnv): DiagnosticsItem {
+	const configured = isConfigured(env.TURNSTILE_SITE_KEY) && isConfigured(env.TURNSTILE_SECRET_KEY);
+
+	return {
+		title: "Turnstile",
+		status: configured ? "healthy" : "disabled",
+		value: configured ? "Configured" : "Disabled",
+		description: configured
+			? "Cloudflare Turnstile site and secret keys are configured."
+			: "Cloudflare Turnstile checks are disabled unless both keys are configured.",
 	};
 }
 
@@ -108,14 +122,20 @@ function getRecommendedActions(items: DiagnosticsItem[]): string[] {
 	}
 
 	if (items.some((item) => item.title.includes("Turnstile") && item.status === "warning")) {
-		actions.add("Configure both Turnstile variables to enable bot protection on authentication forms.");
+		actions.add(
+			"Configure both Turnstile variables to enable bot protection on authentication forms.",
+		);
 	}
 
 	if (items.some((item) => item.title === "Deployment ID" && item.status !== "healthy")) {
-		actions.add("Verify system_config persistence so telemetry can identify this deployment consistently.");
+		actions.add(
+			"Verify system_config persistence so telemetry can identify this deployment consistently.",
+		);
 	}
 
-	if (items.some((item) => item.title.toLowerCase().includes("queue") && item.status === "warning")) {
+	if (
+		items.some((item) => item.title.toLowerCase().includes("queue") && item.status === "warning")
+	) {
 		actions.add("Check Redis connectivity and worker queue configuration.");
 	}
 
@@ -128,9 +148,9 @@ function getRecommendedActions(items: DiagnosticsItem[]): string[] {
 
 export const defaultPlatformDiagnosticsDependencies: PlatformDiagnosticsDependencies = {
 	now: () => DateTime.utc().toISO() ?? DateTime.utc().toString(),
-	env: process.env,
+	env,
 	getDeploymentId: async () => getOrCreateDeploymentId(),
-	getBuildHash: () => process.env.NEXT_PUBLIC_BUILD_HASH,
+	getBuildHash: () => env.NEXT_PUBLIC_BUILD_HASH,
 	getCookieConsentConfigured: async () => {
 		const [row] = await db
 			.select({ value: systemConfig.value })
@@ -160,24 +180,31 @@ export const defaultPlatformDiagnosticsDependencies: PlatformDiagnosticsDependen
 export async function collectPlatformDiagnostics(
 	deps: PlatformDiagnosticsDependencies = defaultPlatformDiagnosticsDependencies,
 ): Promise<PlatformDiagnosticsSnapshot> {
-	const [databaseHealthy, deploymentIdResult, cookieConsentResult, queueHealthy] = await Promise.all([
-		deps.checkDatabase().catch(() => false),
-		deps.getDeploymentId().then(
-			(value) => ({ ok: true as const, value }),
-			() => ({ ok: false as const, value: null }),
-		),
-		deps.getCookieConsentConfigured().then(
-			(value) => ({ ok: true as const, value }),
-			() => ({ ok: false as const, value: false }),
-		),
-		deps.checkQueue().catch(() => false),
-	]);
+	const [databaseHealthy, deploymentIdResult, cookieConsentResult, queueHealthy] =
+		await Promise.all([
+			deps.checkDatabase().catch(() => false),
+			deps.getDeploymentId().then(
+				(value) => ({ ok: true as const, value }),
+				() => ({ ok: false as const, value: null }),
+			),
+			deps.getCookieConsentConfigured().then(
+				(value) => ({ ok: true as const, value }),
+				() => ({ ok: false as const, value: false }),
+			),
+			deps.checkQueue().catch(() => false),
+		]);
 
 	const queueSummary = queueHealthy ? await deps.getQueueSummary().catch(() => null) : null;
 
 	const billingEnabled = deps.env.BILLING_ENABLED === "true";
-	const runtimeParts = [deps.env.NODE_ENV ?? "unknown", deps.env.NEXT_RUNTIME ?? "nodejs"].filter(Boolean);
+	const runtimeParts = [deps.env.NODE_ENV ?? "unknown", deps.env.NEXT_RUNTIME ?? "nodejs"].filter(
+		Boolean,
+	);
 	const buildHash = deps.env.NEXT_PUBLIC_BUILD_HASH ?? deps.getBuildHash();
+	const secretStoreProvider =
+		deps.env.SECRET_STORE_PROVIDER === "vault" || deps.env.SECRET_STORE_PROVIDER === "scaleway"
+			? deps.env.SECRET_STORE_PROVIDER
+			: env.SECRET_STORE_PROVIDER;
 
 	const configuration: DiagnosticsItem[] = [
 		{
@@ -186,22 +213,15 @@ export async function collectPlatformDiagnostics(
 			value: billingEnabled ? "Enabled" : "Disabled",
 			description: "Runtime value of BILLING_ENABLED.",
 		},
-		createConfigItem(
-			"Turnstile site key",
-			isConfigured(deps.env.TURNSTILE_SITE_KEY),
-			"Reports presence only. The key value is not exposed.",
-		),
-		createConfigItem(
-			"Turnstile secret key",
-			isConfigured(deps.env.TURNSTILE_SECRET_KEY),
-			"Reports presence only. The secret value is never exposed.",
-		),
+		buildTurnstileConfigItem(deps.env),
 		cookieConsentResult.ok
 			? {
 					title: "Cookie consent script",
-					status: cookieConsentResult.value ? "healthy" : "warning",
+					status: cookieConsentResult.value ? "healthy" : "disabled",
 					value: cookieConsentResult.value ? "Configured" : "Not configured",
-					description: "Global auth-page cookie consent script.",
+					description: cookieConsentResult.value
+						? "Global auth-page cookie consent script."
+						: "Optional global auth-page cookie consent script is not configured.",
 					actionHref: "/platform-admin/settings",
 					actionLabel: "Open platform settings",
 				}
@@ -278,6 +298,7 @@ export async function collectPlatformDiagnostics(
 	return {
 		fetchedAt: deps.now(),
 		overallStatus: getOverallStatus(allItems),
+		secretStoreProvider,
 		configuration,
 		health,
 		recommendedActions: getRecommendedActions(allItems),

@@ -1,6 +1,7 @@
 import { Cause, type Effect, Exit, Option } from "effect";
 import type { AnyAppError } from "./errors";
 import { runtime } from "./runtime";
+import { env } from "@/env";
 
 export type ServerActionResult<T> =
 	| { success: true; data: T }
@@ -20,8 +21,8 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 				error && typeof error === "object" && "_tag" in error
 					? (error as AnyAppError)
 					: null;
-			const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
-			const isCi = process.env.CI === "true";
+			const isBuildPhase = env.NEXT_PHASE === "phase-production-build";
+			const isCi = env.CI === "true";
 			const suppressExpectedAuthErrorLog =
 				taggedError?._tag === "AuthenticationError" && (isBuildPhase || isCi);
 

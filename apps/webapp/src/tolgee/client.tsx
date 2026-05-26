@@ -2,7 +2,7 @@
 
 import { TolgeeProvider, type TolgeeStaticData, useTolgee } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type Namespace, TolgeeBase } from "./shared";
 
 type Props = {
@@ -44,17 +44,17 @@ function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
 }
 
 export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
-	const router = useRouter();
+	const { refresh } = useRouter();
 
 	const tolgee = useMemo(() => getOrCreateTolgee(language, staticData), [language, staticData]);
 
 	useEffect(() => {
 		// this ensures server components refresh, after translation change
 		const { unsubscribe } = tolgee.on("permanentChange", () => {
-			router.refresh();
+			refresh();
 		});
 		return () => unsubscribe();
-	}, [router, tolgee]);
+	}, [refresh, tolgee]);
 
 	return (
 		<TolgeeProvider ssr={{ language, staticData }} tolgee={tolgee}>
@@ -79,34 +79,51 @@ export function useNamespaces(namespaces: Namespace[]): {
 	isLoaded: boolean;
 } {
 	const tolgeeInstance = useTolgee();
-	const [isLoading, setIsLoading] = useState(false);
-	const [isLoaded, setIsLoaded] = useState(false);
+	const namespaceKey = namespaces.join("|");
+	const hasNamespaces = namespaceKey.length > 0;
+	const [loadState, setLoadState] = useState(() => ({
+		key: namespaceKey,
+		isLoading: hasNamespaces,
+		isLoaded: !hasNamespaces,
+	}));
 
-	const loadNamespaces = useCallback(async () => {
-		if (namespaces.length === 0) {
-			setIsLoaded(true);
-			return;
-		}
-
-		setIsLoading(true);
-		try {
-			// Tolgee will automatically load the namespaces via staticData
-			// when a key from that namespace is accessed
-			// We trigger loading by calling addActiveNs
-			await tolgeeInstance.addActiveNs(namespaces);
-			setIsLoaded(true);
-		} catch (error) {
-			console.warn("Failed to load namespaces:", namespaces, error);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [tolgeeInstance, namespaces]);
+	if (loadState.key !== namespaceKey) {
+		setLoadState({
+			key: namespaceKey,
+			isLoading: hasNamespaces,
+			isLoaded: !hasNamespaces,
+		});
+	}
 
 	useEffect(() => {
-		loadNamespaces();
-	}, [loadNamespaces]);
+		let cancelled = false;
 
-	return { isLoading, isLoaded };
+		void Promise.resolve().then(async () => {
+			if (!hasNamespaces) return;
+
+			const namespacesToLoad = namespaceKey.split("|") as Namespace[];
+
+			try {
+				// Tolgee will automatically load the namespaces via staticData
+				// when a key from that namespace is accessed.
+				await tolgeeInstance.addActiveNs(namespacesToLoad);
+				if (!cancelled) {
+					setLoadState({ key: namespaceKey, isLoading: false, isLoaded: true });
+				}
+			} catch (error) {
+				console.warn("Failed to load namespaces:", namespacesToLoad, error);
+				if (!cancelled) {
+					setLoadState({ key: namespaceKey, isLoading: false, isLoaded: false });
+				}
+			}
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [hasNamespaces, namespaceKey, tolgeeInstance]);
+
+	return { isLoading: loadState.isLoading, isLoaded: loadState.isLoaded };
 }
 
 /**

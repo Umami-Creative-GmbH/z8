@@ -5,6 +5,7 @@ import { count, eq, sql, and, gte } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { subscription, stripeEvent } from "@/db/schema";
+import { env } from "@/env";
 
 // Prices in EUR (net)
 const MONTHLY_PRICE = 4;
@@ -21,7 +22,7 @@ export async function GET() {
 	await connection();
 
 	// Check if billing is enabled
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({
 			enabled: false,
 			metrics: null,

@@ -45,7 +45,7 @@ function canShowCancelAction(absence: AbsenceWithCategory, today: string): boole
 
 export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 
@@ -83,7 +83,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 		if (result.success) {
 			toast.success(t("absences.toast.requestCancelled", "Absence cancelled"));
 			// Revalidate the page data to reflect the cancelled absence
-			router.refresh();
+			refresh();
 			onUpdate?.();
 		} else {
 			toast.error(

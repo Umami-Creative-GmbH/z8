@@ -17,15 +17,6 @@
     "continue_to_sign_in": "Weiter zur Anmeldung",
     "creating_account": "Ihr Administratorkonto wird erstellt...",
     "description": "Richten Sie das erste Administratorkonto für Ihre Plattform ein. Dieses Konto verfügt über vollen Systemzugriff und ist von Organisationskonten getrennt.",
-    "error": {
-      "password_lowercase": "Das Passwort muss mindestens einen Kleinbuchstaben enthalten",
-      "password_max_length": "Das Passwort darf maximal 128 Zeichen lang sein",
-      "password_min_length": "Das Passwort muss mindestens 12 Zeichen lang sein",
-      "password_number": "Das Passwort muss mindestens eine Zahl enthalten",
-      "password_required": "Passwort ist erforderlich",
-      "passwords_mismatch": "Passwörter stimmen nicht überein",
-      "password_uppercase": "Das Passwort muss mindestens einen Großbuchstaben enthalten"
-    },
     "field": {
       "confirm_password": "Passwort bestätigen",
       "confirm_password_placeholder": "Bestätigen Sie Ihr Passwort",

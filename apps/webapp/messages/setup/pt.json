@@ -17,15 +17,6 @@
     "continue_to_sign_in": "Continuar para entrar",
     "creating_account": "Criando sua conta de administrador...",
     "description": "Configure a primeira conta de administrador para sua plataforma. Esta conta terá acesso total ao sistema e é separada das contas da organização.",
-    "error": {
-      "password_lowercase": "A senha deve conter pelo menos uma letra minúscula",
-      "password_max_length": "A senha deve ter no máximo 128 caracteres",
-      "password_min_length": "A senha deve ter pelo menos 12 caracteres",
-      "password_number": "A senha deve conter pelo menos um número",
-      "password_required": "A senha é obrigatória",
-      "passwords_mismatch": "As senhas não coincidem",
-      "password_uppercase": "A senha deve conter pelo menos uma letra maiúscula"
-    },
     "field": {
       "confirm_password": "Confirmar senha",
       "confirm_password_placeholder": "Confirme sua senha",

@@ -3,8 +3,8 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { ExportButton } from "@/components/analytics/export-button";
@@ -33,6 +33,13 @@ import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getOvertimeBurnDownData } from "../actions";
 
 const ALL_FILTER_VALUE = "all";
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+	ssr: false,
+});
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 
 function formatTrendDirection(trendDirection: TrendDirection, t: ReturnType<typeof useTranslate>["t"]): string {
 	if (trendDirection === "up") return t("analytics.overtimeBurnDown.trend.up", "Up");
@@ -132,6 +139,7 @@ export default function OvertimeBurnDownPage() {
 
 				if (result.success && result.data) {
 					setData(result.data);
+					setLoading(false);
 					return;
 				}
 
@@ -143,10 +151,10 @@ export default function OvertimeBurnDownPage() {
 					setData(null);
 					toast.error(t("analytics.overtimeBurnDown.errors.loadData", "Failed to load overtime burn-down data"));
 				}
-			} finally {
-				if (isMounted) {
-					setLoading(false);
-				}
+			}
+
+			if (isMounted) {
+				setLoading(false);
 			}
 		}
 
@@ -205,7 +213,11 @@ export default function OvertimeBurnDownPage() {
 				{ key: "weekOverWeek" as const, label: t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week") },
 				{ key: "trendDirection" as const, label: t("analytics.overtimeBurnDown.trendDirection", "Trend Direction") },
 			],
-			filename: `overtime-burndown-${breakdownDimension}-${dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"}`,
+			filename:
+				"overtime-burndown-" +
+				breakdownDimension +
+				"-" +
+				(dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"),
 		};
 	}, [selectedBreakdownRows, breakdownLabel, breakdownDimension, dateRange, t]);
 

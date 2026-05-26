@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { env } from "@/env";
 import { StripeService, StripeServiceLive } from "./stripe.service";
 
 const checkoutSessionsCreate = vi.fn(async (params: Record<string, unknown>) => ({
@@ -27,11 +28,11 @@ vi.mock("stripe", () => ({
 describe("StripeService", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.stubEnv("BILLING_ENABLED", "true");
-		vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_123");
-		vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test_123");
-		vi.stubEnv("STRIPE_PRICE_MONTHLY_ID", "price_monthly_123");
-		vi.stubEnv("STRIPE_PRICE_YEARLY_ID", "price_yearly_123");
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
+		(env as { STRIPE_SECRET_KEY: string }).STRIPE_SECRET_KEY = "rk_test_123";
+		(env as { STRIPE_WEBHOOK_SECRET: string }).STRIPE_WEBHOOK_SECRET = "whsec_test_123";
+		(env as { STRIPE_PRICE_MONTHLY_ID: string }).STRIPE_PRICE_MONTHLY_ID = "price_monthly_123";
+		(env as { STRIPE_PRICE_YEARLY_ID: string }).STRIPE_PRICE_YEARLY_ID = "price_yearly_123";
 	});
 
 	it("pins the Stripe SDK to the latest Dahlia API version", async () => {

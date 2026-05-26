@@ -151,7 +151,7 @@ export async function checkHealth(): Promise<HealthCheckResult> {
 	return {
 		status,
 		timestamp: new Date().toISOString(),
-		version: process.env.npm_package_version || "unknown",
+		version: env.npm_package_version || "unknown",
 		uptime: process.uptime(),
 		services: {
 			database,

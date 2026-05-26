@@ -6,6 +6,7 @@ import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { BillingError, DatabaseError } from "../../errors";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
+import { env } from "@/env";
 
 export type { BillingAccessResult } from "./billing-access";
 
@@ -19,7 +20,7 @@ function checkBillingAccess(
 	{ now = new Date(), createTrialIfMissing = true }: CheckBillingAccessOptions = {},
 ) {
 	return Effect.gen(function* () {
-		const billingEnabled = process.env.BILLING_ENABLED === "true";
+		const billingEnabled = env.BILLING_ENABLED === "true";
 
 		if (!billingEnabled) {
 			return evaluateBillingAccess({ billingEnabled, subscription: null, now });
@@ -110,7 +111,7 @@ export class BillingEnforcementService extends Context.Tag("BillingEnforcementSe
 export const BillingEnforcementServiceLive = Layer.succeed(
 	BillingEnforcementService,
 	BillingEnforcementService.of({
-		isBillingEnabled: () => process.env.BILLING_ENABLED === "true",
+		isBillingEnabled: () => env.BILLING_ENABLED === "true",
 
 		checkBillingAccess,
 

@@ -5,7 +5,7 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/actions", () => ({
 	createTravelExpenseDraft: vi.fn(),
 }));
 
-const { getClaimValidationError } = await import("./travel-expense-claim-dialog");
+const { getClaimValidationError } = await import("./travel-expense-claim-utils");
 
 describe("getClaimValidationError", () => {
 	it("returns receipt-required message for receipt with 0 attachments", () => {

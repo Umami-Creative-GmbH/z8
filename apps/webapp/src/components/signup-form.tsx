@@ -14,9 +14,11 @@ import {
 import {
 	PasswordStrengthIndicator,
 	PasswordVisibilityInput,
+} from "@/components/auth/password-fields";
+import {
 	validatePasswordConfirmation,
 	validateStrongPassword,
-} from "@/components/auth/password-fields";
+} from "@/components/auth/password-validation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,7 +126,7 @@ export function SignupForm({
 	...props
 }: SignupFormProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const sanitizedCallbackUrl = sanitizeCallbackUrl(callbackUrl, "");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -230,7 +232,7 @@ export function SignupForm({
 						}
 					}
 
-					router.push(
+					push(
 						withCallbackUrl(
 							`/verify-email-pending?email=${encodeURIComponent(value.email)}`,
 							sanitizedCallbackUrl,
@@ -252,6 +254,7 @@ export function SignupForm({
 	});
 	const formData = useStore(form.store, (state) => state.values);
 	const { enabledProviders, isLoading: providersLoading } = useEnabledProviders();
+	const displayedOrganizationName = initialOrganizationName ?? organizationName;
 
 	// Validate invite code on mount
 	useEffect(() => {
@@ -280,14 +283,6 @@ export function SignupForm({
 			form.setFieldValue("email", initialEmail);
 		}
 	}, [form, formData.email, initialEmail]);
-
-	useEffect(() => {
-		if (!initialOrganizationName) {
-			return;
-		}
-
-		setOrganizationName(initialOrganizationName);
-	}, [initialOrganizationName]);
 
 	// Determine which auth methods are enabled
 	const showEmailPassword = authConfig?.emailPasswordEnabled ?? true;
@@ -400,12 +395,12 @@ export function SignupForm({
 			) : null}
 
 			{/* Show organization info when signing up via invite */}
-			{organizationName && (isInvitationSignup || (inviteCode && inviteCodeValid)) && (
+			{displayedOrganizationName && (isInvitationSignup || (inviteCode && inviteCodeValid)) && (
 				<Alert className="border-primary/20 bg-primary/5">
 					<IconBuilding className="size-4" />
 					<AlertDescription>
 						{t("auth.signing-up-to-join", "You're signing up to join {organization}", {
-							organization: organizationName,
+							organization: displayedOrganizationName,
 						})}
 					</AlertDescription>
 				</Alert>

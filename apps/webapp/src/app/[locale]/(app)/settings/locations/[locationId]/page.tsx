@@ -12,8 +12,10 @@ interface LocationDetailPageProps {
 async function LocationDetailPageContent({ params }: LocationDetailPageProps) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	const { locationId } = await params;
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const [{ locationId }, settingsRouteContext] = await Promise.all([
+		params,
+		getCurrentSettingsRouteContext(),
+	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");

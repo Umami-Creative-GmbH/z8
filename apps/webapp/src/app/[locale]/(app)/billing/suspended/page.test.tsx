@@ -35,7 +35,7 @@ describe("suspended billing recovery route", () => {
 		expect(layoutSource).toContain('/settings/billing');
 		expect(layoutSource).toContain('billingAccess.canAccess === false');
 		expect(layoutSource).toContain('!isBillingRecoveryPath');
-		expect(layoutSource).toContain('redirect(`/${locale}/billing/suspended`)');
+		expect(layoutSource).toContain('redirect("/" + locale + "/billing/suspended")');
 	});
 
 	it("fails closed when the app layout billing check fails", () => {

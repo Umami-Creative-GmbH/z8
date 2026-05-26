@@ -5,13 +5,14 @@ import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { env } from "@/env";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 export default async function AvvPage() {
 	await connection();
 
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		redirect("/settings");
 	}
 

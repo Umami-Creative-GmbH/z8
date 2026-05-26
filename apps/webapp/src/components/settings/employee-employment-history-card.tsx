@@ -24,13 +24,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
@@ -119,6 +119,19 @@ function dateInputToDate(value: string) {
 	return DateTime.fromISO(value, { zone: "utc" }).toJSDate();
 }
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
+function getCurrencyFormatter(currency: string) {
+	const cachedFormatter = currencyFormatters.get(currency);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency });
+	currencyFormatters.set(currency, formatter);
+	return formatter;
+}
+
 function formatDate(value: Date | string | null | undefined) {
 	const date = toDateTime(value);
 	return date?.isValid ? date.toLocaleString(DateTime.DATE_MED) : null;
@@ -126,7 +139,7 @@ function formatDate(value: Date | string | null | undefined) {
 
 function formatCurrency(amount: string | null, currency: string) {
 	if (!amount) return null;
-	return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(amount));
+	return getCurrencyFormatter(currency).format(Number(amount));
 }
 
 function formatWeeklyHours(minutes: number) {

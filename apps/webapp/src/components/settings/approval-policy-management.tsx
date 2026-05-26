@@ -20,11 +20,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { ApprovalPolicyDialog, type buildApprovalPolicyPayload } from "./approval-policy-dialog";
+import { ApprovalPolicyDialog } from "./approval-policy-dialog";
+import type { buildApprovalPolicyPayload } from "./approval-policy-dialog-utils";
 import { ApprovalPolicyPreview } from "./approval-policy-preview";
 import { EmployeeGroupManagement } from "./employee-group-management";
 
-export const approvalPolicyQueryKey = (organizationId: string) =>
+const approvalPolicyQueryKey = (organizationId: string) =>
 	["approval-policies", organizationId] as const;
 
 type ApprovalPolicyData = Awaited<ReturnType<typeof getApprovalPolicies>>[number];

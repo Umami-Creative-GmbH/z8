@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 import {
 	normalizePolicyFormValues,
 	type TravelExpensePolicyFormValues,
-} from "./travel-expense-policy-dialog";
+} from "./travel-expense-policy-dialog-utils";
 
 describe("normalizePolicyFormValues", () => {
 	it("converts empty optional fields to null/undefined", () => {

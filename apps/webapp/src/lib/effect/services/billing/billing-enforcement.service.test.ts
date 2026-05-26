@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { subscription } from "@/db/schema";
 import { member } from "@/db/auth-schema";
+import { env } from "@/env";
 import {
 	type BillingAccessResult,
 	BillingEnforcementService,
@@ -70,7 +71,7 @@ describe("BillingEnforcementService", () => {
 	beforeEach(() => {
 		vi.useRealTimers();
 		vi.resetAllMocks();
-		process.env.BILLING_ENABLED = "true";
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 		findFirst.mockResolvedValue(subscriptionRow);
 		insertValues.mockReturnValue({ onConflictDoNothing });
 		onConflictDoNothing.mockReturnValue({ returning });
@@ -113,7 +114,7 @@ describe("BillingEnforcementService", () => {
 	});
 
 	it("does not create a trial when billing is disabled", async () => {
-		process.env.BILLING_ENABLED = "false";
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "false";
 		findFirst.mockResolvedValueOnce(null);
 
 		const result = await Effect.runPromise(

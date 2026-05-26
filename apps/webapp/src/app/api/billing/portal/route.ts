@@ -11,6 +11,7 @@ import {
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("BillingPortal");
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
 	await connection();
 
 	// Check if billing is enabled
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({ error: "Billing not enabled" }, { status: 404 });
 	}
 

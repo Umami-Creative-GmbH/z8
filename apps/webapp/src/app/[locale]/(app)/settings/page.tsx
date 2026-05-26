@@ -5,6 +5,7 @@ import {
 import { SettingsGrid } from "@/components/settings/settings-grid";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { env } from "@/env";
 import { getCurrentSettingsRouteContext, requireUser } from "@/lib/auth-helpers";
 
 export default async function SettingsPage() {
@@ -15,7 +16,7 @@ export default async function SettingsPage() {
 	}
 
 	const { authContext, accessTier } = settingsRouteContext!;
-	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const billingEnabled = env.BILLING_ENABLED === "true";
 	const activeOrganizationId =
 		authContext.session.activeOrganizationId ?? authContext.employee?.organizationId ?? null;
 

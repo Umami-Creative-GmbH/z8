@@ -297,7 +297,7 @@ export function createWorker(
 ): Worker<JobData, JobResult> {
 	const worker = new Worker<JobData, JobResult>("z8-jobs", processor, {
 		connection,
-		concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10),
+		concurrency: parseInt(env.WORKER_CONCURRENCY || "5", 10),
 	});
 
 	worker.on("completed", (job) => {

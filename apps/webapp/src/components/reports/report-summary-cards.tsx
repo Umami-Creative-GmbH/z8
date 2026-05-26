@@ -9,11 +9,21 @@ interface ReportSummaryCardsProps {
 	reportData: ReportData;
 }
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
+function getCurrencyFormatter(currency: string) {
+	const cachedFormatter = currencyFormatters.get(currency);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency });
+	currencyFormatters.set(currency, formatter);
+	return formatter;
+}
+
 function formatCurrency(amount: number, currency: string): string {
-	return new Intl.NumberFormat(undefined, {
-		style: "currency",
-		currency: currency,
-	}).format(amount);
+	return getCurrencyFormatter(currency).format(amount);
 }
 
 export function ReportSummaryCards({ reportData }: ReportSummaryCardsProps) {

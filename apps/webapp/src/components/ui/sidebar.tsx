@@ -25,6 +25,33 @@ const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
+function readStoredSidebarOpen(defaultOpen: boolean) {
+	try {
+		const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+		return stored === null ? defaultOpen : stored === "true";
+	} catch {
+		return defaultOpen;
+	}
+}
+
+function subscribeToSidebarStorage(onStoreChange: () => void) {
+	window.addEventListener("storage", onStoreChange);
+	window.addEventListener("z8-sidebar-storage", onStoreChange);
+	return () => {
+		window.removeEventListener("storage", onStoreChange);
+		window.removeEventListener("z8-sidebar-storage", onStoreChange);
+	};
+}
+
+function writeStoredSidebarOpen(open: boolean) {
+	try {
+		localStorage.setItem(SIDEBAR_STORAGE_KEY, String(open));
+		window.dispatchEvent(new Event("z8-sidebar-storage"));
+	} catch {
+		// Ignore storage failures; the in-memory controlled state still updates.
+	}
+}
+
 type SidebarContextProps = {
 	state: "expanded" | "collapsed";
 	open: boolean;
@@ -61,36 +88,25 @@ function SidebarProvider({
 }) {
 	const isMobile = useIsMobile();
 	const [openMobile, setOpenMobile] = React.useState(false);
+	const storedOpen = React.useSyncExternalStore(
+		subscribeToSidebarStorage,
+		() => readStoredSidebarOpen(defaultOpen),
+		() => defaultOpen,
+	);
 
 	// This is the internal state of the sidebar.
 	// We use openProp and setOpenProp for control from outside the component.
-	const [_open, _setOpen] = React.useState(defaultOpen);
-	const open = openProp ?? _open;
-
-	// Hydrate from localStorage on mount
-	React.useEffect(() => {
-		const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-		if (stored !== null) {
-			const storedOpen = stored === "true";
-			if (setOpenProp) {
-				setOpenProp(storedOpen);
-			} else {
-				_setOpen(storedOpen);
-			}
-		}
-	}, [setOpenProp]);
+	const open = openProp ?? storedOpen;
 
 	const setOpen = React.useCallback(
 		(value: boolean | ((value: boolean) => boolean)) => {
 			const openState = typeof value === "function" ? value(open) : value;
 			if (setOpenProp) {
 				setOpenProp(openState);
-			} else {
-				_setOpen(openState);
 			}
 
 			// Persist to localStorage
-			localStorage.setItem(SIDEBAR_STORAGE_KEY, String(openState));
+			writeStoredSidebarOpen(openState);
 		},
 		[setOpenProp, open],
 	);
@@ -285,6 +301,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 
 	return (
 		<button
+			type="button"
 			aria-label="Toggle Sidebar"
 			className={cn(
 				"-translate-x-1/2 group-data-[side=left]:-right-4 absolute inset-y-0 z-20 hidden w-4 transition-[background-color] ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=right]:left-0 sm:flex",

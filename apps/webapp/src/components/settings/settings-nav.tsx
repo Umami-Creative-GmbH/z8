@@ -20,14 +20,11 @@ import {
 	getEntriesByGroup,
 } from "./settings-config";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
+import { isSettingsNavItemActive } from "./settings-nav-utils";
 
 interface SettingsNavProps {
 	accessTier: SettingsAccessTier;
 	billingEnabled: boolean;
-}
-
-export function isSettingsNavItemActive(pathname: string | null | undefined, href: string) {
-	return pathname === href || pathname?.startsWith(`${href}/`) === true;
 }
 
 export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {

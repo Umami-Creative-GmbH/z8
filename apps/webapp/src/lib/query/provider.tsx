@@ -3,7 +3,7 @@
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { isUnauthorizedError } from "@/lib/fetch";
 
 interface QueryProviderProps {
@@ -12,12 +12,6 @@ interface QueryProviderProps {
 
 export function QueryProvider({ children }: QueryProviderProps) {
 	const router = useRouter();
-	// Use ref to avoid stale closures in QueryClient callbacks
-	const routerRef = useRef(router);
-
-	useEffect(() => {
-		routerRef.current = router;
-	}, [router]);
 
 	const [queryClient] = useState(
 		() =>
@@ -25,7 +19,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
 				queryCache: new QueryCache({
 					onError: (error) => {
 						if (isUnauthorizedError(error)) {
-							routerRef.current.replace("/sign-in");
+							router.replace("/sign-in");
 						}
 					},
 				}),
@@ -53,7 +47,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
 						},
 						onError: (error) => {
 							if (isUnauthorizedError(error)) {
-								routerRef.current.replace("/sign-in");
+								router.replace("/sign-in");
 							}
 						},
 					},

@@ -15,7 +15,7 @@ export const teamFormSchema = z.object({
 export type TeamFormValues = z.infer<typeof teamFormSchema>;
 
 type TeamDetailRecord = ScopedTeam & {
-	employees?: Array<{ id: string }>;
+	employees?: Array<{ id?: string; employee?: { id?: string | null } | null }>;
 };
 
 export interface TeamPageUiState {
@@ -74,7 +74,17 @@ export function useTeamPageUiState() {
 }
 
 export function extractTeamMemberIds(team: TeamDetailRecord | null | undefined): string[] {
-	return ((team?.employees as Array<{ id: string }> | undefined) ?? []).map((member) => member.id);
+	return (
+		team?.employees?.reduce((employeeIds: string[], entry) => {
+			const employeeId = entry.employee?.id ?? entry.id;
+
+			if (employeeId) {
+				employeeIds.push(employeeId);
+			}
+
+			return employeeIds;
+		}, []) ?? []
+	);
 }
 
 export function invalidateTeamQueries(queryClient: QueryClient, teamId: string) {

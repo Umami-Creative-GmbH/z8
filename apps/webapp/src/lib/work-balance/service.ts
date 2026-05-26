@@ -5,12 +5,43 @@ import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } 
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import {
 	computeEmployeePeriodBalance,
-	markEmployeeWorkBalanceFullRebuildRequested,
 	rebuildEmployeeYearBalanceFromMonths,
 	upsertEmployeeWorkBalancePeriod,
 } from "./period-aggregation";
 import { getHotWindowRange, getMonthPeriodsBetween } from "./periods";
 import type { EmployeeWorkBalancePayload } from "./types";
+
+const WORK_BALANCE_RESET_MARKER_DATE = "0001-01-01";
+
+type WorkBalanceDbClient = Pick<typeof db, "delete" | "execute" | "insert" | "query" | "select">;
+
+function isEmployeeWorkBalanceResetMarker(row: {
+	computedFromDate: string;
+	computedThroughDate: string;
+	isDirty: boolean;
+	dirtyFromDate: string | null;
+	refreshRequestedAt: Date | null;
+}) {
+	return (
+		row.computedFromDate === WORK_BALANCE_RESET_MARKER_DATE &&
+		row.computedThroughDate === WORK_BALANCE_RESET_MARKER_DATE &&
+		row.isDirty === true &&
+		row.dirtyFromDate === null &&
+		row.refreshRequestedAt !== null
+	);
+}
+
+async function withEmployeeWorkBalanceLock<T>(
+	input: { employeeId: string; organizationId: string },
+	callback: (dbClient: WorkBalanceDbClient) => Promise<T>,
+) {
+	const lockKey = `work-balance:${input.organizationId}:${input.employeeId}`;
+	return db.transaction(async (tx) => {
+		const dbClient = tx as WorkBalanceDbClient;
+		await dbClient.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+		return callback(dbClient);
+	});
+}
 
 export function buildWorkBalanceValues(input: {
 	employeeId: string;
@@ -79,6 +110,17 @@ export async function getEmployeeWorkBalance(input: {
 	});
 
 	if (!row) return null;
+	if (
+		isEmployeeWorkBalanceResetMarker({
+			computedFromDate: row.computedFromDate,
+			computedThroughDate: row.computedThroughDate,
+			isDirty: row.isDirty,
+			dirtyFromDate: row.dirtyFromDate,
+			refreshRequestedAt: row.refreshRequestedAt,
+		})
+	) {
+		return null;
+	}
 
 	return {
 		employeeId: row.employeeId,
@@ -92,17 +134,20 @@ export async function getEmployeeWorkBalance(input: {
 	};
 }
 
-async function getFirstRelevantDate(input: {
-	employeeId: string;
-	organizationId: string;
-}): Promise<string | null> {
-	const scopedEmployee = await db.query.employee.findFirst({
+async function getFirstRelevantDate(
+	input: {
+		employeeId: string;
+		organizationId: string;
+	},
+	dbClient: WorkBalanceDbClient = db,
+): Promise<string | null> {
+	const scopedEmployee = await dbClient.query.employee.findFirst({
 		where: and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
 		columns: { id: true },
 	});
 	if (!scopedEmployee) return null;
 
-	const [firstWorkPeriod] = await db
+	const [firstWorkPeriod] = await dbClient
 		.select({ value: min(workPeriod.startTime) })
 		.from(workPeriod)
 		.where(
@@ -183,12 +228,15 @@ export async function computeEmployeeWorkBalance(input: {
 	});
 }
 
-async function sumClosedMonthlyPeriodTotalsBefore(input: {
-	employeeId: string;
-	organizationId: string;
-	beforeDate: string;
-}) {
-	const [row] = await db
+async function sumClosedMonthlyPeriodTotalsBefore(
+	input: {
+		employeeId: string;
+		organizationId: string;
+		beforeDate: string;
+	},
+	dbClient: WorkBalanceDbClient = db,
+) {
+	const [row] = await dbClient
 		.select({
 			actualMinutes: sql<number>`coalesce(sum(${employeeWorkBalancePeriod.actualMinutes}), 0)`,
 			requiredMinutes: sql<number>`coalesce(sum(${employeeWorkBalancePeriod.requiredMinutes}), 0)`,
@@ -219,9 +267,40 @@ export async function refreshEmployeeWorkBalanceFromPeriods(input: {
 	forceFullRebuild?: boolean;
 	now?: Date;
 }) {
+	return withEmployeeWorkBalanceLock(input, (dbClient) =>
+		refreshEmployeeWorkBalanceFromPeriodsLocked(input, dbClient),
+	);
+}
+
+async function refreshEmployeeWorkBalanceFromPeriodsLocked(
+	input: {
+		employeeId: string;
+		organizationId: string;
+		dirtyFromDate?: string | null;
+		forceFullRebuild?: boolean;
+		now?: Date;
+	},
+	dbClient: WorkBalanceDbClient,
+) {
 	const now = input.now ?? new Date();
+	const currentBalance = await dbClient.query.employeeWorkBalance.findFirst({
+		where: and(
+			eq(employeeWorkBalance.employeeId, input.employeeId),
+			eq(employeeWorkBalance.organizationId, input.organizationId),
+		),
+	});
+	const forceFullRebuild =
+		input.forceFullRebuild === true ||
+		!currentBalance ||
+		isEmployeeWorkBalanceResetMarker({
+			computedFromDate: currentBalance.computedFromDate,
+			computedThroughDate: currentBalance.computedThroughDate,
+			isDirty: currentBalance.isDirty,
+			dirtyFromDate: currentBalance.dirtyFromDate,
+			refreshRequestedAt: currentBalance.refreshRequestedAt,
+		});
 	const hotWindow = getHotWindowRange(now);
-	const fullRebuildStartDate = input.forceFullRebuild ? await getFirstRelevantDate(input) : null;
+	const fullRebuildStartDate = forceFullRebuild ? await getFirstRelevantDate(input, dbClient) : null;
 	const affectedStartDate = fullRebuildStartDate ?? input.dirtyFromDate ?? hotWindow.startDate;
 	const closedMonthEnd = DateTime.fromISO(hotWindow.startDate, { zone: "utc" })
 		.minus({ days: 1 })
@@ -234,13 +313,14 @@ export async function refreshEmployeeWorkBalanceFromPeriods(input: {
 			const values = await computeEmployeePeriodBalance({
 				employeeId: input.employeeId,
 				organizationId: input.organizationId,
+				dbClient,
 				periodType: "month",
 				periodStart: month.periodStart,
 				periodEnd: month.periodEnd,
 				isClosed: true,
 				now,
 			});
-			await upsertEmployeeWorkBalancePeriod(values, { refreshStartedAt: now });
+			await upsertEmployeeWorkBalancePeriod(values, { dbClient, refreshStartedAt: now });
 			touchedYears.add(month.periodStart.slice(0, 4));
 		}
 
@@ -248,6 +328,7 @@ export async function refreshEmployeeWorkBalanceFromPeriods(input: {
 			await rebuildEmployeeYearBalanceFromMonths({
 				employeeId: input.employeeId,
 				organizationId: input.organizationId,
+				dbClient,
 				dateInYear: `${year}-01-01`,
 				now,
 			});
@@ -257,17 +338,21 @@ export async function refreshEmployeeWorkBalanceFromPeriods(input: {
 	const hotWindowValues = await computeEmployeePeriodBalance({
 		employeeId: input.employeeId,
 		organizationId: input.organizationId,
+		dbClient,
 		periodType: "month",
 		periodStart: hotWindow.startDate,
 		periodEnd: hotWindow.endDate,
 		isClosed: false,
 		now,
 	});
-	const closedTotals = await sumClosedMonthlyPeriodTotalsBefore({
-		employeeId: input.employeeId,
-		organizationId: input.organizationId,
-		beforeDate: hotWindow.startDate,
-	});
+	const closedTotals = await sumClosedMonthlyPeriodTotalsBefore(
+		{
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			beforeDate: hotWindow.startDate,
+		},
+		dbClient,
+	);
 
 	await upsertEmployeeWorkBalance(
 		buildWorkBalanceValues({
@@ -279,7 +364,7 @@ export async function refreshEmployeeWorkBalanceFromPeriods(input: {
 			computedThroughDate: hotWindow.endDate,
 			computedAt: now,
 		}),
-		{ refreshStartedAt: now },
+		{ dbClient, refreshStartedAt: now },
 	);
 
 	return { updated: true };
@@ -287,21 +372,22 @@ export async function refreshEmployeeWorkBalanceFromPeriods(input: {
 
 export async function upsertEmployeeWorkBalance(
 	values: ReturnType<typeof buildWorkBalanceValues>,
-	options?: { refreshStartedAt?: Date },
+	options?: { dbClient?: WorkBalanceDbClient; refreshStartedAt?: Date },
 ) {
+	const dbClient = options?.dbClient ?? db;
 	const refreshStartedAt = options?.refreshStartedAt ?? values.computedAt;
-	await db
+	await dbClient
 		.insert(employeeWorkBalance)
 		.values(values)
 		.onConflictDoUpdate({
 			target: [employeeWorkBalance.organizationId, employeeWorkBalance.employeeId],
 			set: {
-				actualMinutes: values.actualMinutes,
-				requiredMinutes: values.requiredMinutes,
-				balanceMinutes: values.balanceMinutes,
-				computedFromDate: values.computedFromDate,
-				computedThroughDate: values.computedThroughDate,
-				computedAt: values.computedAt,
+				actualMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.actualMinutes} else ${values.actualMinutes} end`,
+				requiredMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.requiredMinutes} else ${values.requiredMinutes} end`,
+				balanceMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.balanceMinutes} else ${values.balanceMinutes} end`,
+				computedFromDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedFromDate} else ${values.computedFromDate} end`,
+				computedThroughDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedThroughDate} else ${values.computedThroughDate} end`,
+				computedAt: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedAt} else ${values.computedAt} end`,
 				isDirty: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then true else false end`,
 				dirtyFromDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.dirtyFromDate} else null end`,
 				refreshRequestedAt: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.refreshRequestedAt} else null end`,
@@ -379,7 +465,53 @@ export async function requestEmployeeWorkBalanceFullRebuild(input: {
 	employeeId: string;
 	organizationId: string;
 }) {
-	await markEmployeeWorkBalanceFullRebuildRequested(input);
+	await withEmployeeWorkBalanceLock(input, async (tx) => {
+		const requestedAt = new Date();
+		const markerValues = {
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			actualMinutes: 0,
+			requiredMinutes: 0,
+			balanceMinutes: 0,
+			computedFromDate: WORK_BALANCE_RESET_MARKER_DATE,
+			computedThroughDate: WORK_BALANCE_RESET_MARKER_DATE,
+			computedAt: requestedAt,
+			isDirty: true,
+			dirtyFromDate: null,
+			refreshRequestedAt: requestedAt,
+			lastError: null,
+			updatedAt: requestedAt,
+		};
+
+		await tx
+			.delete(employeeWorkBalancePeriod)
+			.where(
+				and(
+					eq(employeeWorkBalancePeriod.employeeId, input.employeeId),
+					eq(employeeWorkBalancePeriod.organizationId, input.organizationId),
+				),
+			);
+
+		await tx
+			.insert(employeeWorkBalance)
+			.values(markerValues)
+			.onConflictDoUpdate({
+				target: [employeeWorkBalance.organizationId, employeeWorkBalance.employeeId],
+				set: {
+					actualMinutes: markerValues.actualMinutes,
+					requiredMinutes: markerValues.requiredMinutes,
+					balanceMinutes: markerValues.balanceMinutes,
+					computedFromDate: markerValues.computedFromDate,
+					computedThroughDate: markerValues.computedThroughDate,
+					computedAt: markerValues.computedAt,
+					isDirty: markerValues.isDirty,
+					dirtyFromDate: markerValues.dirtyFromDate,
+					refreshRequestedAt: markerValues.refreshRequestedAt,
+					lastError: markerValues.lastError,
+					updatedAt: markerValues.updatedAt,
+				},
+			});
+	});
 }
 
 export async function deleteEmployeeWorkBalance(input: {
@@ -403,6 +535,7 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 		.select({
 			id: employee.id,
 			organizationId: employee.organizationId,
+			balanceId: employeeWorkBalance.id,
 			isDirty: employeeWorkBalance.isDirty,
 			dirtyFromDate: employeeWorkBalance.dirtyFromDate,
 			refreshRequestedAt: employeeWorkBalance.refreshRequestedAt,

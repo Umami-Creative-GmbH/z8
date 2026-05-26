@@ -4,6 +4,7 @@ import Image from "next/image";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { env } from "@/env";
 import type { OrganizationBranding } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -28,7 +29,7 @@ export function AuthFormWrapper({
 	...props
 }: AuthFormWrapperProps) {
 	const appName = branding?.appName || "z8";
-	const visibleBuildHash = buildHash ?? process.env.NEXT_PUBLIC_BUILD_HASH;
+	const visibleBuildHash = buildHash ?? env.NEXT_PUBLIC_BUILD_HASH;
 
 	const customStyles = branding?.primaryColor
 		? ({

@@ -29,12 +29,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 
 interface SurchargeAssignmentDialogProps {
 	open: boolean;

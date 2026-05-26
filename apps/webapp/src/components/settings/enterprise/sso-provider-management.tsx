@@ -59,11 +59,12 @@ export function SSOProviderManagement({ initialProviders }: SSOProviderManagemen
 	const [providers, setProviders] = useState<SSOProvider[]>(initialProviders);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [tokenByProviderId, setTokenByProviderId] = useState<Record<string, string>>(() =>
-		Object.fromEntries(
-			initialProviders
-				.filter((provider) => provider.domainVerificationToken)
-				.map((provider) => [provider.providerId, provider.domainVerificationToken as string]),
-		),
+		initialProviders.reduce<Record<string, string>>((tokens, provider) => {
+			if (provider.domainVerificationToken) {
+				tokens[provider.providerId] = provider.domainVerificationToken;
+			}
+			return tokens;
+		}, {}),
 	);
 	const [busyProviderId, setBusyProviderId] = useState<string | null>(null);
 	const [deleteDialog, setDeleteDialog] = useState<{

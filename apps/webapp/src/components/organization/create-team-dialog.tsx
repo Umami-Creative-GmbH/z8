@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { team } from "@/db/schema";
+import { queryKeys } from "@/lib/query";
 
 const NO_MANAGER_VALUE = "none";
 const CREATE_TEAM_FAILED_FALLBACK = ["Failed", "to create team"].join(" ");
@@ -54,6 +55,7 @@ export function CreateTeamDialog({
 	onSuccess,
 }: CreateTeamDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
@@ -78,6 +80,7 @@ export function CreateTeamDialog({
 			toast.success(
 				t("settings.organization.teams.createDialog.createSuccess", "Team created successfully"),
 			);
+			void queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
 			setFormData({ name: "", description: "", primaryManagerId: NO_MANAGER_VALUE });
 			onOpenChange(false);
 			onSuccess?.(result.data);

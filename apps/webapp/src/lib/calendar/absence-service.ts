@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { and, eq, gte, lte } from "drizzle-orm";
 import { DateTime } from "luxon";

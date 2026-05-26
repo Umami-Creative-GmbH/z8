@@ -3,7 +3,7 @@ import {
 	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
-} from "./approval-policy-dialog";
+} from "./approval-policy-dialog-utils";
 
 describe("approval policy dialog helpers", () => {
 	it("builds a valid payload for one sequential stage", () => {

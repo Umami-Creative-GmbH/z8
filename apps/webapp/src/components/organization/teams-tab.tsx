@@ -59,7 +59,7 @@ export function TeamsTab({
 }: TeamsTabProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [isRefreshing, startRefreshTransition] = useTransition();
 	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() => emptyTeamPatches(initialTeams));
 
@@ -76,14 +76,16 @@ export function TeamsTab({
 		teamPatches.baseTeams === initialTeams ? teamPatches : emptyTeamPatches(initialTeams);
 	const initialTeamIds = new Set(initialTeams.map((team) => team.id));
 	const teams = [
-		...initialTeams
-			.filter((team) => !activeTeamPatches.deletedTeamIds.has(team.id))
-			.map((team) => activeTeamPatches.updatedTeamsById[team.id] ?? team),
-		...activeTeamPatches.createdTeams
-			.filter(
-				(team) => !initialTeamIds.has(team.id) && !activeTeamPatches.deletedTeamIds.has(team.id),
-			)
-			.map((team) => activeTeamPatches.updatedTeamsById[team.id] ?? team),
+		...initialTeams.flatMap((team) =>
+			activeTeamPatches.deletedTeamIds.has(team.id)
+				? []
+				: [activeTeamPatches.updatedTeamsById[team.id] ?? team],
+		),
+		...activeTeamPatches.createdTeams.flatMap((team) =>
+			initialTeamIds.has(team.id) || activeTeamPatches.deletedTeamIds.has(team.id)
+				? []
+				: [activeTeamPatches.updatedTeamsById[team.id] ?? team],
+		),
 	];
 
 	// Get employees for a specific team
@@ -96,18 +98,26 @@ export function TeamsTab({
 	};
 
 	const managerOptions: TeamManagerOption[] = members
-		.filter(
-			(member) =>
-				member.employee?.organizationId === organizationId &&
-				member.employee.isActive &&
-				(member.employee.role === "manager" || member.employee.role === "admin"),
-		)
-		.map((member) => ({
-			employeeId: member.employee!.id,
-			name: member.user.name,
-			email: member.user.email,
-			position: member.employee!.position,
-		}))
+		.flatMap((member) => {
+			const employee = member.employee;
+			if (
+				!employee ||
+				employee.organizationId !== organizationId ||
+				!employee.isActive ||
+				(employee.role !== "manager" && employee.role !== "admin")
+			) {
+				return [];
+			}
+
+			return [
+				{
+					employeeId: employee.id,
+					name: member.user.name,
+					email: member.user.email,
+					position: employee.position,
+				},
+			];
+		})
 		.toSorted((a, b) => a.name.localeCompare(b.name));
 
 	const getPrimaryManager = (primaryManagerId: string | null) => {
@@ -121,7 +131,7 @@ export function TeamsTab({
 	const refreshTeams = () => {
 		startRefreshTransition(() => {
 			void queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
-			router.refresh();
+			refresh();
 		});
 	};
 
@@ -146,6 +156,7 @@ export function TeamsTab({
 		onSuccess: (result, _teamId, context) => {
 			if (result.success) {
 				toast.success(t("organization.teams.deleteSuccess", "Team deleted successfully"));
+				void queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 				refreshTeams();
 				return;
 			}

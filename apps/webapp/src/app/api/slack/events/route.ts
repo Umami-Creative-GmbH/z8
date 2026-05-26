@@ -14,10 +14,11 @@ import { createLogger } from "@/lib/logger";
 import { getBotConfigByTeamId } from "@/lib/slack/bot-config";
 import { handleEvent } from "@/lib/slack/bot-handler";
 import { verifySlackSignature } from "@/lib/slack/signature";
+import { env } from "@/env";
 
 const logger = createLogger("SlackEvents");
 
-const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET;
+const SLACK_SIGNING_SECRET = env.SLACK_SIGNING_SECRET;
 
 export async function POST(request: NextRequest) {
 	await connection();

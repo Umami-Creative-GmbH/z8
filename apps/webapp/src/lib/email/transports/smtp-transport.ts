@@ -14,6 +14,7 @@ import type {
 	EmailTransportResult,
 	SmtpTransportConfig,
 } from "./base";
+import { env } from "@/env";
 
 const logger = createLogger("SmtpTransport");
 
@@ -140,20 +141,20 @@ export class SmtpTransport implements EmailTransport {
  * @returns SmtpTransport instance if all required vars are set, null otherwise
  */
 export function createSystemSmtpTransport(): SmtpTransport | null {
-	const host = process.env.SMTP_HOST;
-	const port = process.env.SMTP_PORT;
-	const username = process.env.SMTP_USERNAME;
-	const password = process.env.SMTP_PASSWORD;
-	const fromEmail = process.env.SMTP_FROM_EMAIL;
+	const host = env.SMTP_HOST;
+	const port = env.SMTP_PORT;
+	const username = env.SMTP_USERNAME;
+	const password = env.SMTP_PASSWORD;
+	const fromEmail = env.SMTP_FROM_EMAIL;
 
 	// All required vars must be present
 	if (!host || !port || !username || !password || !fromEmail) {
 		return null;
 	}
 
-	const secure = process.env.SMTP_SECURE === "true";
-	const requireTls = process.env.SMTP_REQUIRE_TLS !== "false"; // Default to true
-	const fromName = process.env.SMTP_FROM_NAME;
+	const secure = env.SMTP_SECURE === "true";
+	const requireTls = env.SMTP_REQUIRE_TLS !== "false"; // Default to true
+	const fromName = env.SMTP_FROM_NAME;
 
 	try {
 		return new SmtpTransport({

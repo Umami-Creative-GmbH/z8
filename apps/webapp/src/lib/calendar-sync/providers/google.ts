@@ -32,6 +32,7 @@ import {
 	type ICalendarProvider,
 	isTokenExpired,
 } from "./base";
+import { env } from "@/env";
 
 // ============================================
 // CONSTANTS
@@ -94,7 +95,7 @@ interface GoogleUserInfo {
 
 function getClientId(): string {
 	// Use calendar-specific credentials if available, fall back to social login credentials
-	const clientId = process.env.CALENDAR_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+	const clientId = env.CALENDAR_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID;
 	if (!clientId) {
 		throw new Error("CALENDAR_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID environment variable must be set");
 	}
@@ -103,7 +104,7 @@ function getClientId(): string {
 
 function getClientSecret(): string {
 	// Use calendar-specific credentials if available, fall back to social login credentials
-	const clientSecret = process.env.CALENDAR_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+	const clientSecret = env.CALENDAR_GOOGLE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET;
 	if (!clientSecret) {
 		throw new Error("CALENDAR_GOOGLE_CLIENT_SECRET or GOOGLE_CLIENT_SECRET environment variable must be set");
 	}

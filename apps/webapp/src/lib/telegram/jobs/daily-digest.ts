@@ -16,6 +16,7 @@ import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
 import { buildDailyDigestMessage } from "../formatters";
+import { env } from "@/env";
 
 const logger = createLogger("TelegramDailyDigest");
 
@@ -99,7 +100,7 @@ async function processBotDigest(bot: {
 	);
 	if (conversations.length === 0) return 0;
 
-	const appUrl = process.env.APP_URL || "https://z8-time.app";
+	const appUrl = env.APP_URL || "https://z8-time.app";
 	const { buildDigestDataForManager } = await import(
 		"@/lib/teams/jobs/daily-digest"
 	);

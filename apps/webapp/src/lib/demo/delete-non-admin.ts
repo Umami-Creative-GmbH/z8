@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";

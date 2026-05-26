@@ -6,8 +6,10 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 export default async function TravelExpenseSettingsPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
-	await getTranslate();
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	const [, { organizationId }] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+	]);
 
 	return <TravelExpensePolicyManagement organizationId={organizationId} />;
 }

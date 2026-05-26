@@ -19,9 +19,7 @@ export default async function AbsencesPage() {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Auth is checked in layout - session is guaranteed to exist
-	const t = await getTranslate();
-
-	const employee = await getCurrentEmployee();
+	const [t, employee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
 	if (!employee) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">

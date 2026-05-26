@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	bulkAddHolidaysToPreset,
@@ -187,14 +187,19 @@ export function HolidayImportDialog({
 
 	useEffect(() => {
 		if (!open) {
-			resetDialogState();
+			startTransition(resetDialogState);
 			return;
 		}
 
 		if (countries.length === 0) {
-			void loadCountries();
+			const timeout = setTimeout(() => void loadCountries(), 0);
+			return () => clearTimeout(timeout);
 		}
 	}, [open, countries.length, loadCountries, resetDialogState]);
+
+	function handleDialogOpenChange(nextOpen: boolean) {
+		onOpenChange(nextOpen);
+	}
 
 	async function loadStates(country: string) {
 		setStatesLoading(true);
@@ -421,10 +426,6 @@ export function HolidayImportDialog({
 		onSuccess();
 		handleDialogOpenChange(false);
 		setImportLoading(false);
-	}
-
-	function handleDialogOpenChange(nextOpen: boolean) {
-		onOpenChange(nextOpen);
 	}
 
 	function handleCountryChange(countryCode: string) {

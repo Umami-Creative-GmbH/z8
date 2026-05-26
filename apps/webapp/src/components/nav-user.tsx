@@ -19,11 +19,11 @@ import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useFontSizePreference } from "@/components/font-size-preference";
 import {
 	FONT_SIZE_OPTIONS,
 	isFontSizePreference,
-	useFontSizePreference,
-} from "@/components/font-size-preference";
+} from "@/components/font-size-preference-utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
@@ -50,6 +50,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { authClient } from "@/lib/auth-client";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { usePathname, useRouter } from "@/navigation";
+import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
 export function NavUser({
@@ -66,7 +67,7 @@ export function NavUser({
 }) {
 	const { isMobile } = useSidebar();
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push, replace } = useRouter();
 	const locale = useLocale();
 	const pathname = usePathname();
 	const { theme, setTheme } = useTheme();
@@ -89,7 +90,7 @@ export function NavUser({
 					onSuccess: () => {
 						// Keep the overlay visible during navigation
 						setTimeout(() => {
-							router.push("/sign-in");
+						push("/sign-in");
 						}, 100);
 					},
 					onError: (error) => {
@@ -105,8 +106,10 @@ export function NavUser({
 	};
 
 	const handleLanguageChange = (newLocale: string) => {
-		startTransition(() => {
-			router.replace(pathname, { locale: newLocale });
+		startTransition(async () => {
+			await setLanguage(newLocale);
+			await persistLocaleToDb(newLocale).catch(() => {});
+			replace(pathname, { locale: newLocale });
 		});
 	};
 
@@ -186,7 +189,7 @@ export function NavUser({
 							</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 							<DropdownMenuGroup>
-								<DropdownMenuItem onClick={() => router.push("/settings/profile")}>
+								<DropdownMenuItem onClick={() => push("/settings/profile")}>
 									<IconUserCircle />
 									{t("user.profile", "Profile")}
 								</DropdownMenuItem>

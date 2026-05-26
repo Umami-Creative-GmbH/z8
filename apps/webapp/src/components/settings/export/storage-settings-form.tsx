@@ -65,7 +65,6 @@ export function StorageSettingsForm({
 	const [isTesting, setIsTesting] = useState(false);
 	const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 	const [config, setConfig] = useState<StorageConfigResult | null>(initialConfig ?? null);
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
 	const form = useForm({
 		defaultValues: {
@@ -93,7 +92,6 @@ export function StorageSettingsForm({
 
 				if (result.success) {
 					setConfig(result.data);
-					setHasUnsavedChanges(false);
 					setTestResult(null);
 					form.reset();
 					form.setFieldValue("bucket", result.data.bucket);
@@ -322,7 +320,6 @@ export function StorageSettingsForm({
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
-											setHasUnsavedChanges(true);
 										}}
 										onBlur={field.handleBlur}
 									/>
@@ -360,7 +357,6 @@ export function StorageSettingsForm({
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
-											setHasUnsavedChanges(true);
 										}}
 										onBlur={field.handleBlur}
 									/>
@@ -395,10 +391,9 @@ export function StorageSettingsForm({
 										"https://s3.example.com",
 									)}
 									value={field.state.value}
-									onChange={(e) => {
-										field.handleChange(e.target.value);
-										setHasUnsavedChanges(true);
-									}}
+								onChange={(e) => {
+									field.handleChange(e.target.value);
+								}}
 									onBlur={field.handleBlur}
 								/>
 								<p className="text-sm text-muted-foreground">
@@ -425,7 +420,6 @@ export function StorageSettingsForm({
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
-											setHasUnsavedChanges(true);
 										}}
 										onBlur={field.handleBlur}
 									/>
@@ -459,7 +453,6 @@ export function StorageSettingsForm({
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
-											setHasUnsavedChanges(true);
 										}}
 										onBlur={field.handleBlur}
 									/>

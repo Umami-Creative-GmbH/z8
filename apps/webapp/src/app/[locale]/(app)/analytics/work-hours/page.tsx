@@ -2,18 +2,8 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import {
-	Area,
-	AreaChart,
-	Bar,
-	BarChart,
-	CartesianGrid,
-	Line,
-	LineChart,
-	XAxis,
-	YAxis,
-} from "recharts";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { ExportButton } from "@/components/analytics/export-button";
@@ -34,6 +24,18 @@ import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { DateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getWorkHoursAnalyticsData } from "../actions";
+
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+	ssr: false,
+});
+const Line = dynamic(() => import("recharts").then((mod) => mod.Line), { ssr: false });
+const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
@@ -108,10 +110,10 @@ export default function WorkHoursPage() {
 
 				console.error("Failed to load work hours analytics data:", error);
 				toast.error(t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"));
-			} finally {
-				if (isCurrent) {
-					setLoading(false);
-				}
+			}
+
+			if (isCurrent) {
+				setLoading(false);
 			}
 		}
 
@@ -156,7 +158,7 @@ export default function WorkHoursPage() {
 							{ key: "undertimeHours", label: t("analytics.common.undertimeHours", "Undertime Hours") },
 							{ key: "avgHoursPerWeek", label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week") },
 						],
-						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
+						filename: "work-hours-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
 					}}
 					disabled={!workHoursData || !dateRange}
 				/>

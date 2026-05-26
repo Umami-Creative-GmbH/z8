@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { faker } from "@faker-js/faker";
 import { db } from "@/db";

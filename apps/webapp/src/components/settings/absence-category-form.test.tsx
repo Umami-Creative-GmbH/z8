@@ -3,13 +3,13 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { AbsenceCategoryForm } from "./absence-category-form";
 import {
-	AbsenceCategoryForm,
 	type AbsenceCategoryForSettings,
 	buildAbsenceCategoryPayload,
 	defaultAbsenceCategoryFormValues,
 	getAbsenceCategoryFormValues,
-} from "./absence-category-form";
+} from "./absence-category-form-utils";
 
 type ComponentWithChildren = { children?: React.ReactNode };
 

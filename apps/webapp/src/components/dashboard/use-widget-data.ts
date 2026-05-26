@@ -36,9 +36,11 @@ export function useWidgetData<T>(
 			if (isRefresh) {
 				setRefreshing(true);
 			}
+			let shouldFinish = true;
 			try {
 				const result = await fetcher();
 				if (!mountedRef.current) {
+					shouldFinish = false;
 					return;
 				}
 				if (result.success && result.data) {
@@ -46,17 +48,16 @@ export function useWidgetData<T>(
 				}
 			} catch (error) {
 				if (!mountedRef.current) {
+					shouldFinish = false;
 					return;
 				}
-				if (isAbortError(error)) {
-					return;
+				if (!isAbortError(error)) {
+					toast.error(options?.errorMessage ?? "Failed to load data");
 				}
-				toast.error(options?.errorMessage ?? "Failed to load data");
-			} finally {
-				if (mountedRef.current) {
-					setLoading(false);
-					setRefreshing(false);
-				}
+			}
+			if (shouldFinish && mountedRef.current) {
+				setLoading(false);
+				setRefreshing(false);
 			}
 		},
 		[fetcher, options?.errorMessage],
@@ -72,7 +73,8 @@ export function useWidgetData<T>(
 
 	// Initial load
 	useEffect(() => {
-		loadData(false);
+		const timeout = setTimeout(() => loadData(false), 0);
+		return () => clearTimeout(timeout);
 	}, [loadData]);
 
 	// Re-fetch when organization changes

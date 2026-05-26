@@ -18,6 +18,7 @@ import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
 import { storeCalendarTokens } from "@/lib/calendar-sync/token-store";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
+import { env } from "@/env";
 
 // ============================================
 // TYPES
@@ -83,7 +84,7 @@ async function handleCalendarOAuthCallback(
 			const signedState = JSON.parse(Buffer.from(state, "base64url").toString()) as SignedState;
 
 			// Verify HMAC signature
-			const secret = process.env.BETTER_AUTH_SECRET;
+			const secret = env.BETTER_AUTH_SECRET;
 			if (!secret) {
 				throw new Error("BETTER_AUTH_SECRET is required for OAuth state verification");
 			}

@@ -7,6 +7,8 @@ import { getYearPeriodForDate } from "./periods";
 
 export type EmployeeWorkBalancePeriodType = "month" | "year";
 
+type PeriodAggregationDbClient = Pick<typeof db, "insert" | "select">;
+
 export function buildPeriodBalanceValues(input: {
 	employeeId: string;
 	organizationId: string;
@@ -40,19 +42,21 @@ export function buildPeriodBalanceValues(input: {
 export async function computeEmployeePeriodBalance(input: {
 	employeeId: string;
 	organizationId: string;
+	dbClient?: PeriodAggregationDbClient;
 	periodType: EmployeeWorkBalancePeriodType;
 	periodStart: string;
 	periodEnd: string;
 	isClosed: boolean;
 	now?: Date;
 }) {
+	const dbClient = input.dbClient ?? db;
 	const startDate = DateTime.fromISO(input.periodStart, { zone: "utc" })
 		.startOf("day")
 		.toJSDate();
 	const endDate = DateTime.fromISO(input.periodEnd, { zone: "utc" }).endOf("day").toJSDate();
 
 	const [actualRow, requirements] = await Promise.all([
-		db
+		dbClient
 			.select({ totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)` })
 			.from(workPeriod)
 			.where(
@@ -93,11 +97,12 @@ export async function computeEmployeePeriodBalance(input: {
 
 export async function upsertEmployeeWorkBalancePeriod(
 	values: ReturnType<typeof buildPeriodBalanceValues>,
-	options?: { refreshStartedAt?: Date },
+	options?: { dbClient?: PeriodAggregationDbClient; refreshStartedAt?: Date },
 ) {
+	const dbClient = options?.dbClient ?? db;
 	const refreshStartedAt = options?.refreshStartedAt ?? values.computedAt;
 
-	await db
+	await dbClient
 		.insert(employeeWorkBalancePeriod)
 		.values(values)
 		.onConflictDoUpdate({
@@ -126,11 +131,13 @@ export async function upsertEmployeeWorkBalancePeriod(
 export async function rebuildEmployeeYearBalanceFromMonths(input: {
 	employeeId: string;
 	organizationId: string;
+	dbClient?: PeriodAggregationDbClient;
 	dateInYear: string;
 	now?: Date;
 }) {
+	const dbClient = input.dbClient ?? db;
 	const yearPeriod = getYearPeriodForDate(input.dateInYear);
-	const [row] = await db
+	const [row] = await dbClient
 		.select({
 			actualMinutes: sql<number>`coalesce(sum(${employeeWorkBalancePeriod.actualMinutes}), 0)`,
 			requiredMinutes: sql<number>`coalesce(sum(${employeeWorkBalancePeriod.requiredMinutes}), 0)`,
@@ -159,7 +166,7 @@ export async function rebuildEmployeeYearBalanceFromMonths(input: {
 		isClosed: true,
 	});
 
-	await upsertEmployeeWorkBalancePeriod(values);
+	await upsertEmployeeWorkBalancePeriod(values, { dbClient });
 	return values;
 }
 

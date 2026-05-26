@@ -60,7 +60,7 @@ vi.mock("@/db/schema", () => ({
 	worksCouncilReviewExport: "worksCouncilReviewExport",
 }));
 
-const { GET } = await import("./route");
+const { POST } = await import("./route");
 
 const enabledSettings = {
 	enabled: true,
@@ -92,6 +92,7 @@ function createPrincipal(role: "owner" | "admin" | "member"): PrincipalContext {
 function createRequest(): NextRequest {
 	return new Request(
 		"https://app.example.com/de/works-council/export?from=2026-05-01&to=2026-05-24",
+		{ method: "POST" },
 	) as NextRequest;
 }
 
@@ -103,7 +104,7 @@ function setupAuthenticatedRequest() {
 	mockState.getAbility.mockResolvedValue(defineAbilityFor(createPrincipal("admin")));
 }
 
-describe("GET /works-council/export", () => {
+describe("POST /works-council/export", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.resolvedHeaders = new Headers();
@@ -116,7 +117,7 @@ describe("GET /works-council/export", () => {
 		setupAuthenticatedRequest();
 		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: false });
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(403);
 		expect(await response.json()).toEqual({ error: "Forbidden" });
@@ -146,7 +147,7 @@ describe("GET /works-council/export", () => {
 			scheduleReview: [],
 		});
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(200);
 	});
@@ -158,7 +159,7 @@ describe("GET /works-council/export", () => {
 			exportEnabled: false,
 		});
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(403);
 		expect(await response.json()).toEqual({
@@ -193,7 +194,7 @@ describe("GET /works-council/export", () => {
 			scheduleReview: [],
 		});
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(200);
 		expect(response.headers.get("content-type")).toContain("text/csv");
@@ -226,7 +227,7 @@ describe("GET /works-council/export", () => {
 			scheduleReview: [],
 		});
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(200);
 	});
@@ -235,7 +236,7 @@ describe("GET /works-council/export", () => {
 		setupAuthenticatedRequest();
 		mockState.getAbility.mockResolvedValue(defineAbilityFor(createPrincipal("member")));
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(403);
 		expect(mockState.loadWorksCouncilSettings).not.toHaveBeenCalled();
@@ -259,7 +260,7 @@ describe("GET /works-council/export", () => {
 			scheduleReview: [],
 		});
 
-		await GET(createRequest());
+		await POST(createRequest());
 
 		expect(mockState.insert).toHaveBeenCalledWith("worksCouncilReviewExport");
 		expect(mockState.insert).toHaveBeenCalledWith("worksCouncilAccessAudit");
@@ -291,7 +292,7 @@ describe("GET /works-council/export", () => {
 		mockState.loadWorksCouncilSettings.mockResolvedValue(enabledSettings);
 		mockState.buildWorksCouncilPortalModel.mockRejectedValue(new Error("export failed"));
 
-		const response = await GET(createRequest());
+		const response = await POST(createRequest());
 
 		expect(response.status).toBe(500);
 		expect(await response.json()).toEqual({ error: "Failed to generate Works Council export" });

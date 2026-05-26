@@ -3,15 +3,16 @@
  */
 
 import type { SecurityHeadersConfig } from "./types";
+import { env } from "@/env";
 
 /**
  * Get security headers configuration from environment
  */
 export function getSecurityConfig(): SecurityHeadersConfig {
-	const isDevelopment = process.env.NODE_ENV === "development";
+	const isDevelopment = env.NODE_ENV === "development";
 
 	return {
-		hstsPreload: process.env.SECURITY_HSTS_PRELOAD === "true",
+		hstsPreload: env.SECURITY_HSTS_PRELOAD === "true",
 		isDevelopment,
 	};
 }

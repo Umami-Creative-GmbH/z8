@@ -9,7 +9,7 @@ import {
 	IconAlertTriangle,
 	IconTrendingUp,
 } from "@tabler/icons-react";
-import { sql } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -27,12 +27,13 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
+import { env } from "@/env";
 
 export default async function AdminBillingPage() {
 	await connection();
 
 	// Check if billing is enabled
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		redirect("/platform-admin");
 	}
 
@@ -125,17 +126,19 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 
 async function BillingStats() {
 	await connection();
-	const t = await getTranslate();
 
 	// Get all subscriptions
-	const allSubscriptions = await db
-		.select({
-			status: subscription.status,
-			currentSeats: subscription.currentSeats,
-			billingInterval: subscription.billingInterval,
-			trialEnd: subscription.trialEnd,
-		})
-		.from(subscription);
+	const [t, allSubscriptions] = await Promise.all([
+		getTranslate(),
+		db
+			.select({
+				status: subscription.status,
+				currentSeats: subscription.currentSeats,
+				billingInterval: subscription.billingInterval,
+				trialEnd: subscription.trialEnd,
+			})
+			.from(subscription),
+	]);
 
 	// Calculate metrics
 	const activeSubscriptions = allSubscriptions.filter(
@@ -239,13 +242,13 @@ function BillingStatsLoading() {
 
 async function SubscriptionsTable() {
 	await connection();
-	const t = await getTranslate();
 
 	// Fetch subscriptions and organizations in parallel (async-parallel)
 	// Note: We fetch all orgs since we don't know IDs upfront, but this is
 	// still better than sequential fetches. For large datasets, consider
 	// using a JOIN or subquery instead.
-	const [subscriptions, allOrgs] = await Promise.all([
+	const [t, subscriptions, allOrgs] = await Promise.all([
+		getTranslate(),
 		db
 			.select({
 				id: subscription.id,
@@ -258,7 +261,7 @@ async function SubscriptionsTable() {
 				createdAt: subscription.createdAt,
 			})
 			.from(subscription)
-			.orderBy(sql`${subscription.createdAt} DESC`)
+			.orderBy(desc(subscription.createdAt))
 			.limit(50),
 		db.select({ id: organization.id, name: organization.name }).from(organization),
 	]);

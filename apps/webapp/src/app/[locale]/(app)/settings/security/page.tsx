@@ -6,6 +6,7 @@ import { SocialAccounts } from "@/components/settings/social-accounts";
 import { TwoFactorSetup } from "@/components/settings/two-factor-setup";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
+import { env } from "@/env";
 import { requireUser } from "@/lib/auth-helpers";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { getTranslate } from "@/tolgee/server";
@@ -13,19 +14,19 @@ import { getTranslate } from "@/tolgee/server";
 function getEnabledSocialProviderIds(): SocialProviderId[] {
 	const providers: SocialProviderId[] = [];
 
-	if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+	if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
 		providers.push("google");
 	}
 
-	if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+	if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
 		providers.push("github");
 	}
 
-	if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
+	if (env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) {
 		providers.push("linkedin");
 	}
 
-	if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+	if (env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET) {
 		providers.push("apple");
 	}
 

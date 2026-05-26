@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SocialProviderId } from "@/lib/social-providers";
+import { env } from "@/env";
 
 /**
  * GET /api/auth/providers
@@ -15,22 +16,22 @@ export async function GET() {
 	const providers: SocialProviderId[] = [];
 
 	// Check Google OAuth credentials
-	if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+	if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
 		providers.push("google");
 	}
 
 	// Check GitHub OAuth credentials
-	if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+	if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
 		providers.push("github");
 	}
 
 	// Check LinkedIn OAuth credentials
-	if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
+	if (env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET) {
 		providers.push("linkedin");
 	}
 
 	// Check Apple OAuth credentials
-	if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+	if (env.APPLE_CLIENT_ID && env.APPLE_CLIENT_SECRET) {
 		providers.push("apple");
 	}
 

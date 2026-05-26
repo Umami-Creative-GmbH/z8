@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import type { FormEvent } from "react";
+import { Suspense, type FormEvent } from "react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,9 +52,9 @@ type TeamAbsencesTableProps = {
 	search: string;
 };
 
-export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTableProps) {
+function TeamAbsencesTableContent({ data, categories, search }: TeamAbsencesTableProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const searchParams = useSearchParams();
 	const [selectedEmployee, setSelectedEmployee] = useState<ManagerAbsenceEmployeeRow | null>(null);
 	const [isPending, startTransition] = useTransition();
@@ -86,7 +86,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 
 		const query = params.toString();
 		startTransition(() => {
-			router.push(query ? `/team/absences?${query}` : "/team/absences");
+			push(query ? `/team/absences?${query}` : "/team/absences");
 		});
 	}
 
@@ -310,8 +310,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 					</div>
 				</div>
 			) : (
-				<div
-					role="status"
+				<output
 					aria-label={t("team.absences.empty.label", "No employees found")}
 					className="rounded-lg border bg-card p-6 text-center"
 				>
@@ -322,7 +321,7 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 							"Try adjusting filters or search to find team members.",
 						)}
 					</p>
-				</div>
+				</output>
 			)}
 
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -376,5 +375,13 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 				categories={categories}
 			/>
 		</div>
+	);
+}
+
+export function TeamAbsencesTable(props: TeamAbsencesTableProps) {
+	return (
+		<Suspense fallback={null}>
+			<TeamAbsencesTableContent {...props} />
+		</Suspense>
 	);
 }

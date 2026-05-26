@@ -46,6 +46,8 @@ const EMPTY_LIVE_RESULTS: LiveAppSearchResults = {
 
 const SEARCH_HOTKEY = "Mod+K";
 
+const EMPTY_STATIC_COMMANDS: AppSearchResult[] = [];
+
 type SearchIcon = typeof IconSearch;
 
 const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
@@ -71,7 +73,10 @@ const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
 };
 
 function getResultIcon(result: AppSearchResult): SearchIcon {
-	return RESULT_ICON_BY_HREF[result.href] ?? (result.type === "setting" ? IconSettings : IconFileDescription);
+	return (
+		RESULT_ICON_BY_HREF[result.href] ??
+		(result.type === "setting" ? IconSettings : IconFileDescription)
+	);
 }
 
 function getGroupLabel(type: AppSearchResult["type"], t: ReturnType<typeof useTranslate>["t"]) {
@@ -135,7 +140,11 @@ function ResultGroup({
 							/>
 						) : (
 							<span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/50 text-muted-foreground">
-								<ResultIcon aria-hidden="true" data-testid={`app-search-icon-${result.id}`} className="size-4" />
+								<ResultIcon
+									aria-hidden="true"
+									data-testid={`app-search-icon-${result.id}`}
+									className="size-4"
+								/>
 							</span>
 						)}
 						<div className="flex min-w-0 flex-col gap-0.5">
@@ -152,18 +161,22 @@ function ResultGroup({
 }
 
 export function AppSearch({
-	staticCommands = [],
+	staticCommands = EMPTY_STATIC_COMMANDS,
 	staticResults,
 }: {
 	staticCommands?: AppSearchResult[];
 	staticResults: AppSearchResult[];
 }) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [liveResults, setLiveResults] = useState<LiveAppSearchResults>(EMPTY_LIVE_RESULTS);
 	const [liveError, setLiveError] = useState<string | null>(null);
+	const trimmedQuery = query.trim();
+	const shouldSearchLiveRecords = open && trimmedQuery.length >= 2;
+	const visibleLiveResults = shouldSearchLiveRecords ? liveResults : EMPTY_LIVE_RESULTS;
+	const visibleLiveError = shouldSearchLiveRecords ? liveError : null;
 
 	const searchShortcutLabel = formatForDisplay(SEARCH_HOTKEY);
 
@@ -172,15 +185,13 @@ export function AppSearch({
 	});
 
 	useEffect(() => {
-		if (!(open && query.trim().length >= 2)) {
-			setLiveResults(EMPTY_LIVE_RESULTS);
-			setLiveError(null);
+		if (!shouldSearchLiveRecords) {
 			return;
 		}
 
 		let cancelled = false;
 		const timeoutId = window.setTimeout(() => {
-			searchAppRecordsAction(query.trim()).then((result) => {
+			searchAppRecordsAction(trimmedQuery).then((result) => {
 				if (cancelled) {
 					return;
 				}
@@ -200,7 +211,7 @@ export function AppSearch({
 			cancelled = true;
 			window.clearTimeout(timeoutId);
 		};
-	}, [open, query]);
+	}, [shouldSearchLiveRecords, trimmedQuery]);
 
 	const actionResults = staticCommands.filter((result) => result.type === "action");
 	const pageResults = staticResults.filter((result) => result.type === "page");
@@ -211,7 +222,15 @@ export function AppSearch({
 	function handleSelect(result: AppSearchResult) {
 		setOpen(false);
 		setQuery("");
-		router.push(result.href);
+		push(result.href);
+	}
+
+	function handleQueryChange(nextQuery: string) {
+		setQuery(nextQuery);
+		if (nextQuery.trim().length < 2) {
+			setLiveResults(EMPTY_LIVE_RESULTS);
+			setLiveError(null);
+		}
 	}
 
 	return (
@@ -253,7 +272,7 @@ export function AppSearch({
 						"appSearch.commandDescription",
 						"Search pages, people, teams, settings, or actions",
 					)}
-					onValueChange={setQuery}
+					onValueChange={handleQueryChange}
 					placeholder={t(
 						"appSearch.commandPlaceholder",
 						"Search pages, people, teams, settings, or actions…",
@@ -270,12 +289,12 @@ export function AppSearch({
 					<ResultGroup
 						label={getGroupLabel("employee", t)}
 						onSelect={handleSelect}
-						results={liveResults.employees}
+						results={visibleLiveResults.employees}
 					/>
 					<ResultGroup
 						label={getGroupLabel("team", t)}
 						onSelect={handleSelect}
-						results={liveResults.teams}
+						results={visibleLiveResults.teams}
 					/>
 					<ResultGroup
 						label={getGroupLabel("page", t)}
@@ -287,9 +306,9 @@ export function AppSearch({
 						onSelect={handleSelect}
 						results={settingResults}
 					/>
-					{liveError ? (
+					{visibleLiveError ? (
 						<p aria-live="polite" className="px-3 py-2 text-destructive text-sm">
-							{liveError}
+							{visibleLiveError}
 						</p>
 					) : null}
 				</CommandList>

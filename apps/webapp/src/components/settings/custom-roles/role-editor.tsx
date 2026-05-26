@@ -171,12 +171,14 @@ export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
 		}
 
 		// Set permissions (only non-inherited ones)
-		const permsToSave = Array.from(selectedPermissions)
-			.filter((key) => !inherited.has(key))
-			.map((key) => {
-				const [action, subject] = key.split(":");
-				return { action: action!, subject: subject! };
-			});
+		const permsToSave = Array.from(selectedPermissions).flatMap((key) => {
+			if (inherited.has(key)) {
+				return [];
+			}
+
+			const [action, subject] = key.split(":");
+			return [{ action: action!, subject: subject! }];
+		});
 
 		const permResult = await setRolePermissions(roleId!, permsToSave).catch(() => null);
 		if (!permResult?.success) {

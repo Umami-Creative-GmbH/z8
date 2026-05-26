@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, workPeriod } from "@/db/schema";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/absences/actions";
@@ -141,6 +141,7 @@ export async function getPendingApprovals(): Promise<{
 		where: and(
 			eq(approvalRequest.organizationId, currentEmployee.organizationId),
 			eq(approvalRequest.approverId, currentEmployee.id),
+			ne(approvalRequest.requestedBy, currentEmployee.id),
 			eq(approvalRequest.status, "pending"),
 		),
 		with: {
@@ -207,6 +208,7 @@ export async function getPendingApprovalCounts() {
 			and(
 				eq(approvalRequest.organizationId, currentEmployee.organizationId),
 				eq(approvalRequest.approverId, currentEmployee.id),
+				ne(approvalRequest.requestedBy, currentEmployee.id),
 				eq(approvalRequest.status, "pending"),
 			),
 		)

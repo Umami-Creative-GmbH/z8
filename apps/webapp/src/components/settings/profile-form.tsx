@@ -13,7 +13,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
@@ -37,12 +37,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { format } from "@/lib/datetime/luxon-utils";
@@ -67,6 +67,22 @@ interface ProfileFormProps {
 	};
 }
 
+const BIRTHDAY_START_MONTH = new Date(1940, 0);
+const BIRTHDAY_DEFAULT_MONTH = new Date(2000, 0);
+const TODAY_SNAPSHOT = new Date();
+
+function subscribeTodaySnapshot() {
+	return () => undefined;
+}
+
+function getTodaySnapshot() {
+	return TODAY_SNAPSHOT;
+}
+
+function getServerTodaySnapshot() {
+	return null;
+}
+
 type ProfileFormValues = {
 	image: string;
 	firstName: string;
@@ -79,10 +95,11 @@ type ProfileFormValues = {
 
 export function ProfileForm({ user }: ProfileFormProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
+	const today = useSyncExternalStore(subscribeTodaySnapshot, getTodaySnapshot, getServerTodaySnapshot);
 	const presence = useEmployeeClockStatuses(currentEmployeeId ? [currentEmployeeId] : [], {
 		polling: false,
 	});
@@ -124,7 +141,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 						queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() }),
 						queryClient.invalidateQueries({ queryKey: queryKeys.employees.all }),
 					]);
-					router.refresh();
+					refresh();
 					return;
 				}
 
@@ -173,7 +190,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.profile.avatarUploaded", "Avatar uploaded successfully"));
-				// Cache invalidation is handled by useImageProcessMutation
+				void Promise.all([
+					queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() }),
+					queryClient.invalidateQueries({ queryKey: queryKeys.employees.all }),
+				]);
 			} else {
 				toast.error(
 					result.error || t("settings.profile.avatarSaveFailed", "Failed to save avatar"),
@@ -265,7 +285,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			if (result.success) {
 				toast.success(t("settings.profile.avatarRemoved", "Avatar removed successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() });
-				router.refresh(); // Refresh to update server components (sidebar)
+				refresh(); // Refresh to update server components (sidebar)
 			} else {
 				toast.error(
 					result.error || t("settings.profile.avatarRemoveFailed", "Failed to remove avatar"),
@@ -688,17 +708,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											</Button>
 										</PopoverTrigger>
 										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={selectedBirthday || undefined}
-												onSelect={(date) => form.setFieldValue("birthday", date || null)}
-												disabled={(date) => date > new Date()}
-												autoFocus
-												captionLayout="dropdown"
-												startMonth={new Date(1940, 0)}
-												endMonth={new Date()}
-												defaultMonth={selectedBirthday || new Date(2000, 0)}
-											/>
+										<Calendar
+											mode="single"
+											selected={selectedBirthday || undefined}
+											onSelect={(date) => form.setFieldValue("birthday", date || null)}
+											disabled={(date) => (today ? date > today : false)}
+											autoFocus
+											captionLayout="dropdown"
+											startMonth={BIRTHDAY_START_MONTH}
+											endMonth={today ?? undefined}
+											defaultMonth={selectedBirthday || BIRTHDAY_DEFAULT_MONTH}
+										/>
 										</PopoverContent>
 									</Popover>
 									<p className="text-muted-foreground text-sm">

@@ -6,6 +6,7 @@
 
 import { WebClient } from "@slack/web-api";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("SlackAPI");
 
@@ -101,8 +102,8 @@ export async function exchangeOAuthCode(
 	try {
 		const client = new WebClient();
 		const result = await client.oauth.v2.access({
-			client_id: process.env.SLACK_CLIENT_ID!,
-			client_secret: process.env.SLACK_CLIENT_SECRET!,
+			client_id: env.SLACK_CLIENT_ID!,
+			client_secret: env.SLACK_CLIENT_SECRET!,
 			code,
 			redirect_uri: redirectUri,
 		});

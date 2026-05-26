@@ -4,7 +4,8 @@ import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icon
 import * as React from "react";
 import { type DayButton, DayPicker, getDefaultClassNames } from "@daypicker/react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { weekStartDayToDayPickerValue } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +30,8 @@ function Calendar({
 			weekStartsOn={props.weekStartsOn ?? weekStartDayToDayPickerValue(weekStartDay)}
 			className={cn(
 				"bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
-				String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
-				String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
+				"rtl:**:[.rdp-button\\_next>svg]:rotate-180",
+				"rtl:**:[.rdp-button\\_previous>svg]:rotate-180",
 				className,
 			)}
 			captionLayout={captionLayout}

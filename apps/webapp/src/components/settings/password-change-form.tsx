@@ -8,9 +8,11 @@ import { changePassword } from "@/app/[locale]/(app)/settings/profile/actions";
 import {
 	PasswordStrengthIndicator,
 	PasswordVisibilityInput,
+} from "@/components/auth/password-fields";
+import {
 	validatePasswordConfirmation,
 	validateStrongPassword,
-} from "@/components/auth/password-fields";
+} from "@/components/auth/password-validation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";

@@ -100,11 +100,15 @@
       "title": "Mitglied einladen"
     },
     "joinOrCreate": "Beitreten oder erstellen",
-    "logo-uploaded": "Logo erfolgreich hochgeladen",
-    "logo-upload-failed": "Hochladen des Logos fehlgeschlagen",
     "logo": {
+      "changeLabel": "Organisationslogo ändern",
+      "removeLabel": "Organisationslogo entfernen",
       "uploadLabel": "Organisationslogo hochladen"
     },
+    "logo-removed": "Organisationslogo entfernt",
+    "logo-remove-failed": "Logo konnte nicht entfernt werden",
+    "logo-uploaded": "Logo erfolgreich hochgeladen",
+    "logo-upload-failed": "Hochladen des Logos fehlgeschlagen",
     "members": {
       "activate": "Aktivieren",
       "active": "Aktiv",

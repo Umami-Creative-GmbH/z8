@@ -32,6 +32,7 @@ describe("runWorkBalanceRefresh", () => {
 			{
 				id: "employee-1",
 				organizationId: "org-1",
+				balanceId: "balance-1",
 				isDirty: true,
 				dirtyFromDate: "2026-02-10",
 				refreshRequestedAt: new Date("2026-05-22T11:59:00.000Z"),
@@ -39,6 +40,7 @@ describe("runWorkBalanceRefresh", () => {
 			{
 				id: "employee-2",
 				organizationId: "org-1",
+				balanceId: "balance-2",
 				isDirty: false,
 				dirtyFromDate: null,
 				refreshRequestedAt: null,
@@ -98,9 +100,41 @@ describe("runWorkBalanceRefresh", () => {
 			{
 				id: "employee-1",
 				organizationId: "org-1",
+				balanceId: "balance-1",
 				isDirty: true,
 				dirtyFromDate: null,
 				refreshRequestedAt,
+			},
+		]);
+		mockState.refreshEmployeeWorkBalanceFromPeriods.mockResolvedValueOnce({ updated: true });
+
+		try {
+			await runWorkBalanceRefresh();
+
+			expect(mockState.refreshEmployeeWorkBalanceFromPeriods).toHaveBeenCalledWith({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				dirtyFromDate: null,
+				forceFullRebuild: true,
+				now,
+			});
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("marks a missing balance row as a force full rebuild", async () => {
+		const now = new Date("2026-05-22T12:00:00.000Z");
+		vi.useFakeTimers();
+		vi.setSystemTime(now);
+		mockState.listEmployeesForWorkBalanceBatch.mockResolvedValueOnce([
+			{
+				id: "employee-1",
+				organizationId: "org-1",
+				balanceId: null,
+				isDirty: null,
+				dirtyFromDate: null,
+				refreshRequestedAt: null,
 			},
 		]);
 		mockState.refreshEmployeeWorkBalanceFromPeriods.mockResolvedValueOnce({ updated: true });

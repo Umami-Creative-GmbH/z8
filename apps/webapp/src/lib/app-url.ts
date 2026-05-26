@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getDomainConfigByOrganization } from "@/lib/domain/domain-service";
-import { getCanonicalPlatformDomain } from "@/lib/domain/platform-domain";
+import { getCanonicalPlatformDomain, getPlatformRootDomain } from "@/lib/domain/platform-domain";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("AppUrl");
 
@@ -16,7 +17,9 @@ function normalizeBaseUrl(url: string): string {
 
 export function getDefaultAppBaseUrl(): string {
 	const configuredUrl =
-		process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || LOCAL_DEV_URL;
+		env.BETTER_AUTH_URL ||
+		env.NEXT_PUBLIC_APP_URL ||
+		(env.PLATFORM_DOMAIN || env.MAIN_DOMAIN ? `https://${getPlatformRootDomain()}` : LOCAL_DEV_URL);
 
 	return normalizeBaseUrl(configuredUrl);
 }

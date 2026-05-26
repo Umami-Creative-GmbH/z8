@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { subscription } from "@/db/schema";
 import { member } from "@/db/auth-schema";
+import { env } from "@/env";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
 
 const {
@@ -85,7 +86,7 @@ describe("SubscriptionService", () => {
 		select.mockReturnValue({ from: selectFrom });
 		selectFrom.mockReturnValue({ where: selectWhere });
 		selectWhere.mockResolvedValue([{ count: 3 }]);
-		process.env.BILLING_ENABLED = "false";
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "false";
 	});
 
 	it("updates an existing placeholder subscription row when creating from checkout", async () => {
@@ -297,7 +298,7 @@ describe("SubscriptionService", () => {
 	it("returns false for an expired trialing row when checking mutation access", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-06-04T10:00:00.000Z"));
-		process.env.BILLING_ENABLED = "true";
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 		findFirst.mockResolvedValueOnce({
 			...existingSubscriptionRow,
 			status: "trialing",
@@ -322,7 +323,7 @@ describe("SubscriptionService", () => {
 	it("returns false for a trialing row that ends exactly now when checking mutation access", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-06-03T10:00:00.000Z"));
-		process.env.BILLING_ENABLED = "true";
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 		findFirst.mockResolvedValueOnce({
 			...existingSubscriptionRow,
 			status: "trialing",
@@ -347,7 +348,7 @@ describe("SubscriptionService", () => {
 	it("returns true for an unexpired trialing row when checking mutation access", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-06-03T09:59:59.999Z"));
-		process.env.BILLING_ENABLED = "true";
+		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 		findFirst.mockResolvedValueOnce({
 			...existingSubscriptionRow,
 			status: "trialing",
@@ -372,7 +373,7 @@ describe("SubscriptionService", () => {
 	it.each(["incomplete", "paused", "unknown_status"])(
 		"returns false for %s status when checking mutation access",
 		async (status) => {
-			process.env.BILLING_ENABLED = "true";
+			(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 			findFirst.mockResolvedValueOnce({
 				...existingSubscriptionRow,
 				status,

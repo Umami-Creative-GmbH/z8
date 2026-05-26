@@ -3,7 +3,7 @@
 import { IconFingerprint, IconKey, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { memo, Suspense, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,12 +266,14 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 	);
 });
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const callbackUrl = sanitizeCallbackUrl(
-		searchParams.get("callbackUrl"),
+		getSearchParam("callbackUrl"),
 		"/init",
 		typeof window === "undefined" ? undefined : window.location.href,
 	);
@@ -491,7 +493,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 							});
 							// Optionally redirect to verification pending page
 							setTimeout(() => {
-								router.push(
+								push(
 									withCallbackUrl(
 										`/verify-email-pending?email=${encodeURIComponent(email)}`,
 										callbackUrl,
@@ -537,7 +539,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
-							router.push(getOnboardingStepPath(onboardingStep));
+							push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -547,7 +549,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				}
 
 				// Onboarding complete, continue where the user intended to go
-				router.push(postSignInRedirectUrl);
+				push(postSignInRedirectUrl);
 			}
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -566,38 +568,37 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 		}
 	};
 
-	const handleSocialLogin = useCallback(
-		async (provider: "google" | "github" | "linkedin" | "apple") => {
-			dispatch({ type: "SET_LOADING", loading: true });
-			dispatch({ type: "SET_ERROR", error: null });
+	const handleSocialLogin = async (provider: "google" | "github" | "linkedin" | "apple") => {
+		dispatch({ type: "SET_LOADING", loading: true });
+		dispatch({ type: "SET_ERROR", error: null });
 
-			try {
-				// Check if org has custom OAuth credentials for this provider
-				if (socialOAuthConfigured?.[provider]) {
-					// Use custom OAuth flow for org-specific credentials
-					window.location.href = `/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`;
-				} else {
-					// Use global Better Auth flow
-					await authClient.signIn.social({
-						provider,
-						callbackURL: postSignInRedirectUrl,
-					});
-				}
-			} catch (err) {
-				dispatch({ type: "SET_LOADING", loading: false });
-				dispatch({
-					type: "SET_ERROR",
-					error:
-						err instanceof Error
-							? err.message
-							: t("auth.social-login-error", "An error occurred during social sign-in"),
+		try {
+			// Check if org has custom OAuth credentials for this provider
+			if (socialOAuthConfigured?.[provider]) {
+				// Use custom OAuth flow for org-specific credentials
+				window.location.assign(
+					`/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`,
+				);
+			} else {
+				// Use global Better Auth flow
+				await authClient.signIn.social({
+					provider,
+					callbackURL: postSignInRedirectUrl,
 				});
 			}
-		},
-		[postSignInRedirectUrl, t, socialOAuthConfigured],
-	);
+		} catch (err) {
+			dispatch({ type: "SET_LOADING", loading: false });
+			dispatch({
+				type: "SET_ERROR",
+				error:
+					err instanceof Error
+						? err.message
+						: t("auth.social-login-error", "An error occurred during social sign-in"),
+			});
+		}
+	};
 
-	const handlePasskeyLogin = useCallback(async () => {
+	const handlePasskeyLogin = async () => {
 		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			const result = await authClient.signIn.passkey({
@@ -621,7 +622,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						const { onboardingComplete, onboardingStep } = await userResponse.json();
 
 						if (!onboardingComplete) {
-							router.push(getOnboardingStepPath(onboardingStep));
+							push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -629,7 +630,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 					console.error("Error checking onboarding status:", fetchError);
 				}
 
-				router.push(postSignInRedirectUrl);
+				push(postSignInRedirectUrl);
 			}
 		} catch (_error) {
 			dispatch({
@@ -638,9 +639,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [postSignInRedirectUrl, t, router]);
+	};
 
-	const handleSSOLogin = useCallback(async () => {
+	const handleSSOLogin = async () => {
 		if (!ssoProviderId) {
 			dispatch({
 				type: "SET_ERROR",
@@ -667,9 +668,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 						: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
 			});
 		}
-	}, [postSignInRedirectUrl, ssoProviderId, t]);
+	};
 
-	const handleVerify2FA = useCallback(async () => {
+	const handleVerify2FA = async () => {
 		if (otpValue.length !== 6) {
 			dispatch({
 				type: "SET_ERROR",
@@ -703,7 +704,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
-							router.push(getOnboardingStepPath(onboardingStep));
+							push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -713,7 +714,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				}
 
 				// Onboarding complete, continue where the user intended to go
-				router.push(postSignInRedirectUrl);
+				push(postSignInRedirectUrl);
 			}
 		} catch (err) {
 			dispatch({
@@ -725,7 +726,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [postSignInRedirectUrl, otpValue, trustDevice, t, router]);
+	};
 
 	return (
 		<AuthFormWrapper
@@ -882,5 +883,13 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				</div>
 			)}
 		</AuthFormWrapper>
+	);
+}
+
+export function LoginForm(props: React.ComponentProps<"div">) {
+	return (
+		<Suspense fallback={null}>
+			<LoginFormContent {...props} />
+		</Suspense>
 	);
 }

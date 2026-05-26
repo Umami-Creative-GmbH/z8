@@ -26,7 +26,7 @@ const REJECT_REASON = "Rejected from manager daily briefing.";
 
 export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [actingApprovalId, setActingApprovalId] = useState<string | null>(null);
 	const [isRefreshPending, startRefreshTransition] = useTransition();
 	const isBusy = actingApprovalId !== null || isRefreshPending;
@@ -52,7 +52,7 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 				);
 				startTransition(() => {
 					startRefreshTransition(() => {
-						router.refresh();
+						refresh();
 					});
 				});
 			})

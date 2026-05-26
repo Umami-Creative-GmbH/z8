@@ -27,17 +27,43 @@ interface YearCalendarViewProps {
 }
 
 const MONTH_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const monthFormatters = new Map<string, Intl.DateTimeFormat>();
+const weekdayFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getMonthFormatter(locale: string) {
+	const cachedFormatter = monthFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, { month: "long" });
+	monthFormatters.set(locale, formatter);
+	return formatter;
+}
+
+function getShortWeekdayFormatter(locale: string) {
+	const cachedFormatter = weekdayFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+	weekdayFormatters.set(locale, formatter);
+	return formatter;
+}
 
 function getMonthNames(locale: string): string[] {
+	const formatter = getMonthFormatter(locale);
 	return MONTH_INDICES.map((month) =>
-		new Intl.DateTimeFormat(locale, { month: "long" }).format(new Date(2000, month, 1)),
+		formatter.format(new Date(2000, month, 1)),
 	);
 }
 
 function getWeekdayNames(locale: string): string[] {
+	const formatter = getShortWeekdayFormatter(locale);
 	// Sunday=0 based reference week: Jan 2–8 2000 (Sun–Sat)
 	return Array.from({ length: 7 }, (_, i) =>
-		new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2000, 0, 2 + i)),
+		formatter.format(new Date(2000, 0, 2 + i)),
 	);
 }
 
@@ -202,6 +228,9 @@ export function YearCalendarView({
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
+	function handleCurrentYearClick() {
+		onYearChange(new Date().getFullYear());
+	}
 	const monthNames = useMemo(() => getMonthNames(locale), [locale]);
 	const weekdays = useMemo(() => {
 		const names = getWeekdayNames(locale);
@@ -245,7 +274,7 @@ export function YearCalendarView({
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => onYearChange(new Date().getFullYear())}
+						onClick={handleCurrentYearClick}
 					>
 						{t("calendar.view.today", "Today")}
 					</Button>

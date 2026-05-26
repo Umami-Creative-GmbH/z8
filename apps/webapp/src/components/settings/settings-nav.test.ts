@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { isSettingsNavItemActive } from "@/components/settings/settings-nav";
+import { isSettingsNavItemActive } from "@/components/settings/settings-nav-utils";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),

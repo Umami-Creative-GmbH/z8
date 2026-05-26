@@ -109,10 +109,10 @@ export default function VacationTrendsPage() {
 
 				console.error("Failed to load vacation trends data:", error);
 				toast.error(t("analytics.vacationTrends.errors.loadData", "Failed to load vacation trends data"));
-			} finally {
-				if (isCurrent) {
-					setLoading(false);
-				}
+			}
+
+			if (isCurrent) {
+				setLoading(false);
 			}
 		}
 
@@ -160,7 +160,7 @@ export default function VacationTrendsPage() {
 							{ key: "remaining", label: t("analytics.vacationTrends.remaining", "Remaining") },
 							{ key: "utilizationRate", label: t("analytics.vacationTrends.utilizationPercent", "Utilization %") },
 						],
-						filename: `vacation-trends-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
+						filename: "vacation-trends-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
 					}}
 					disabled={!vacationData || !dateRange}
 				/>

@@ -21,6 +21,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { buildCoverageCard } from "../cards/coverage-card";
 import { compose, withPermission, withRateLimit } from "./middleware";
+import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:Coverage");
 
@@ -103,7 +104,7 @@ async function coverageHandler(
 		}
 
 		// Build Adaptive Card
-		const appUrl = process.env.APP_URL || "https://z8-time.app";
+		const appUrl = env.APP_URL || "https://z8-time.app";
 		const card = buildCoverageCard({
 			summary,
 			appUrl,

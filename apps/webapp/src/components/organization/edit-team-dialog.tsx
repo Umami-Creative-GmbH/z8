@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { team } from "@/db/schema";
+import { queryKeys } from "@/lib/query";
 import type { TeamManagerOption } from "./create-team-dialog";
 
 const NO_MANAGER_VALUE = "none";
@@ -46,6 +47,7 @@ export function EditTeamDialog({
 	onSuccess,
 }: EditTeamDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const updateMutation = useMutation({
 		mutationFn: (data: {
 			teamId: string;
@@ -63,6 +65,10 @@ export function EditTeamDialog({
 				toast.error(result.error || t("organization.teams.edit.updateError", "Failed to update team"));
 				return;
 			}
+			void Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(result.data.organizationId) }),
+				queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(result.data.id) }),
+			]);
 			toast.success(t("organization.teams.edit.updateSuccess", "Team updated successfully"));
 			onOpenChange(false);
 			onSuccess?.(result.data);

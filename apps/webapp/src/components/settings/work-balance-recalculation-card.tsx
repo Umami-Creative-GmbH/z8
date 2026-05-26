@@ -38,9 +38,9 @@ export function WorkBalanceRecalculationCard({
 			await onRecalculate();
 		} catch {
 			// Parent handlers own user-facing error toasts; this prevents unhandled event rejections.
-		} finally {
-			setIsConfirming(false);
 		}
+
+		setIsConfirming(false);
 	};
 
 	return (
