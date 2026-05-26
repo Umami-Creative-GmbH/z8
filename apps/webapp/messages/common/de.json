@@ -29,6 +29,7 @@
     },
     "trialBanner": {
       "description": "{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
+      "dismiss": "Testversionsbanner ausblenden",
       "title": "14-tägige Testversion aktiv",
       "upgrade": "Upgrade"
     }

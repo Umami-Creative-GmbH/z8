@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
 import { headers } from "next/headers";
@@ -154,9 +154,6 @@ export async function POST(request: NextRequest) {
 				},
 			}),
 		);
-
-		// Delete temp file from S3
-		await s3Client.send(new DeleteObjectCommand({ Bucket: S3_PUBLIC_BUCKET, Key: safeTusFileKey }));
 
 		const publicUrl = getPublicUrl(finalKey);
 

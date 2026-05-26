@@ -2,7 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { TrialBanner } from "./trial-banner";
@@ -56,6 +56,20 @@ describe("TrialBanner", () => {
 		expect(screen.queryByRole("link", { name: "Upgrade" })).toBeNull();
 	});
 
+	it("can be dismissed for the current page session", () => {
+		render(
+			<TrialBanner
+				daysRemaining={9}
+				billingHref="/en/settings/billing"
+				showUpgradeButton={true}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Dismiss trial banner" }));
+
+		expect(screen.queryByText("14-day trial active")).toBeNull();
+	});
+
 	it("uses the localized app navigation link", () => {
 		const bannerSource = readFileSync(join(process.cwd(), "src/components/billing/trial-banner.tsx"), "utf8");
 
@@ -71,36 +85,42 @@ describe("TrialBanner", () => {
 				description:
 					"{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
 				upgrade: "Upgrade",
+				dismiss: "Dismiss trial banner",
 			},
 			de: {
 				title: "14-tägige Testversion aktiv",
 				description:
 					"{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
 				upgrade: "Upgrade",
+				dismiss: "Testversionsbanner ausblenden",
 			},
 			es: {
 				title: "Prueba de 14 días activa",
 				description:
 					"{days} días restantes. Agregue los detalles de pago ahora; su suscripción de pago comienza después de la prueba.",
 				upgrade: "Actualizar",
+				dismiss: "Descartar banner de prueba",
 			},
 			fr: {
 				title: "Essai de 14 jours actif",
 				description:
 					"{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
 				upgrade: "Mettre à niveau",
+				dismiss: "Masquer la bannière d'essai",
 			},
 			it: {
 				title: "Prova di 14 giorni attiva",
 				description:
 					"{days} giorni rimanenti. Aggiungi ora i dettagli di pagamento; l'abbonamento a pagamento inizierà dopo la prova.",
 				upgrade: "Aggiorna",
+				dismiss: "Nascondi banner della prova",
 			},
 			pt: {
 				title: "Teste de 14 dias ativo",
 				description:
 					"{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
 				upgrade: "Atualizar",
+				dismiss: "Dispensar banner de teste",
 			},
 		};
 

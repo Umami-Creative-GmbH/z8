@@ -29,6 +29,7 @@
     },
     "trialBanner": {
       "description": "{days} días restantes. Agregue los detalles de pago ahora; su suscripción de pago comienza después de la prueba.",
+      "dismiss": "Descartar banner de prueba",
       "title": "Prueba de 14 días activa",
       "upgrade": "Actualizar"
     }

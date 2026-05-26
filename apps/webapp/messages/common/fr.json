@@ -29,6 +29,7 @@
     },
     "trialBanner": {
       "description": "{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
+      "dismiss": "Masquer la bannière d'essai",
       "title": "Essai de 14 jours actif",
       "upgrade": "Mettre à niveau"
     }
