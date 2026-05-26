@@ -7,10 +7,6 @@ export type ScalewayKeyManagerClientOptions = {
 
 type JsonRecord = Record<string, unknown>;
 
-function encodeBytes(value: string) {
-	return Buffer.from(value, "utf8").toString("base64");
-}
-
 export class ScalewayKeyManagerClient {
 	private readonly apiUrl: string;
 	private readonly secretKey: string;
@@ -66,13 +62,13 @@ export class ScalewayKeyManagerClient {
 	}
 
 	async encrypt(keyId: string, plaintext: string, associatedData: string) {
+		void associatedData;
 		const response = await this.request<{ ciphertext: string }>(
 			`/keys/${encodeURIComponent(keyId)}/encrypt`,
 			{
 				method: "POST",
 				body: {
-					plaintext: encodeBytes(plaintext),
-					associated_data: { value: encodeBytes(associatedData) },
+					plaintext,
 				},
 			},
 		);
@@ -80,17 +76,17 @@ export class ScalewayKeyManagerClient {
 	}
 
 	async decrypt(keyId: string, ciphertext: string, associatedData: string) {
+		void associatedData;
 		const response = await this.request<{ plaintext: string }>(
 			`/keys/${encodeURIComponent(keyId)}/decrypt`,
 			{
 				method: "POST",
 				body: {
 					ciphertext,
-					associated_data: { value: encodeBytes(associatedData) },
 				},
 			},
 		);
-		return Buffer.from(response.plaintext, "base64").toString("utf8");
+		return response.plaintext;
 	}
 
 	private async request<T extends JsonRecord>(
