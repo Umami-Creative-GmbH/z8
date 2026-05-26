@@ -4,12 +4,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlatformDiagnosticsSnapshot } from "@/lib/platform-diagnostics";
 
-const { refreshPlatformDiagnosticsActionMock } = vi.hoisted(() => ({
+const { refreshPlatformDiagnosticsActionMock, testPlatformKeyManagerEncryptionActionMock } = vi.hoisted(() => ({
 	refreshPlatformDiagnosticsActionMock: vi.fn(),
+	testPlatformKeyManagerEncryptionActionMock: vi.fn(),
 }));
 
 vi.mock("./actions", () => ({
 	refreshPlatformDiagnosticsAction: refreshPlatformDiagnosticsActionMock,
+	testPlatformKeyManagerEncryptionAction: testPlatformKeyManagerEncryptionActionMock,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -120,9 +122,12 @@ describe("DiagnosticsClient", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Refresh diagnostics" }));
 
 		await waitFor(() => expect(screen.getAllByText("Warning").length).toBeGreaterThan(0));
-		expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
-		expect(screen.getByRole("status").textContent).toContain("Warning");
-		expect(screen.getByRole("status").textContent).toContain("2026-05-10T12:05:00.000Z");
+		const diagnosticsStatus = screen
+			.getAllByRole("status")
+			.find((element) => element.textContent?.includes("Diagnostics status"));
+		expect(diagnosticsStatus?.getAttribute("aria-live")).toBe("polite");
+		expect(diagnosticsStatus?.textContent).toContain("Warning");
+		expect(diagnosticsStatus?.textContent).toContain("2026-05-10T12:05:00.000Z");
 		expect(screen.getByText("Queue / Redis")).toBeTruthy();
 		expect(screen.getByText("Unavailable")).toBeTruthy();
 		expect(screen.getByText("Check Redis connectivity and worker queue configuration.")).toBeTruthy();
@@ -140,5 +145,49 @@ describe("DiagnosticsClient", () => {
 		await waitFor(() => expect(screen.getByText("Platform admin access required")).toBeTruthy());
 		expect(screen.getByText("Database")).toBeTruthy();
 		expect(screen.getByText("Connected")).toBeTruthy();
+	});
+
+	it("renders the Scaleway Key Manager encryption test card", () => {
+		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+
+		expect(screen.getByText("Scaleway Key Manager Encryption")).toBeTruthy();
+		expect(screen.getByText("Run an end-to-end platform key encrypt/decrypt test.")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Test encryption" })).toBeTruthy();
+	});
+
+	it("runs the platform key manager encryption test and renders the successful result", async () => {
+		testPlatformKeyManagerEncryptionActionMock.mockResolvedValue({
+			success: true,
+			data: {
+				input: "Ada Lovelace",
+				output: "Ada Lovelace",
+				matches: true,
+				ciphertextPreview: "ciphertext-value",
+				platformKeyId: "key-created",
+				keyStatus: "created",
+			},
+		});
+
+		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		fireEvent.click(screen.getByRole("button", { name: "Test encryption" }));
+
+		await waitFor(() => expect(screen.getByText("Input and output match")).toBeTruthy());
+		expect(screen.getAllByText("Ada Lovelace")).toHaveLength(2);
+		expect(screen.getByText("key-created")).toBeTruthy();
+		expect(screen.getByText("Created new platform key")).toBeTruthy();
+		expect(screen.getByText("ciphertext-value")).toBeTruthy();
+	});
+
+	it("shows an inline error when the encryption test fails", async () => {
+		testPlatformKeyManagerEncryptionActionMock.mockResolvedValue({
+			success: false,
+			error: "Scaleway Key Manager request failed",
+		});
+
+		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
+		fireEvent.click(screen.getByRole("button", { name: "Test encryption" }));
+
+		await waitFor(() => expect(screen.getByText("Scaleway Key Manager request failed")).toBeTruthy());
+		expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("polite");
 	});
 });

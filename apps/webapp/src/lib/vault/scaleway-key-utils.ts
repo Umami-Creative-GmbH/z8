@@ -33,3 +33,15 @@ export function isCompatibleScalewayKey(
 		scalewayKey.tags.includes(`z8-org:${organizationId}`)
 	);
 }
+
+export function isCompatibleScalewayPlatformKey(
+	key: unknown,
+): key is ScalewayKey & { id: string } {
+	const scalewayKey = key as ScalewayKey;
+	return (
+		isEnabledScalewayKey(key) &&
+		scalewayKey.usage?.symmetric_encryption === "aes_256_gcm" &&
+		Array.isArray(scalewayKey.tags) &&
+		scalewayKey.tags.includes("z8-platform-secrets")
+	);
+}

@@ -80,6 +80,31 @@ describe("ScalewayKeyManagerClient", () => {
 		});
 	});
 
+	test("creates a protected AES-256-GCM platform key with expected name and tag", async () => {
+		const fetchMock = vi.fn(async () =>
+			new Response(JSON.stringify({ id: "key-platform" }), {
+				status: 201,
+				headers: { "Content-Type": "application/json" },
+			}),
+		);
+		globalThis.fetch = fetchMock as typeof fetch;
+
+		const key = await createClient().createPlatformKey("z8-platform-abc123def4");
+
+		expect(key).toEqual({ id: "key-platform" });
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const [url, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+		expect(url).toBe("https://key-manager.test/key-manager/v1alpha1/regions/fr-par/keys");
+		expect(request.method).toBe("POST");
+		expect(await getJsonBody(request)).toEqual({
+			project_id: "project-123",
+			name: "z8-platform-abc123def4",
+			usage: { symmetric_encryption: "aes_256_gcm" },
+			tags: ["z8-platform-secrets"],
+			unprotected: false,
+		});
+	});
+
 	test("gets a key from the direct key response object", async () => {
 		const fetchMock = vi.fn(async () =>
 			new Response(JSON.stringify({ id: "key-1", name: "z8-org-org-1-customer-secrets" }), {
