@@ -50,6 +50,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { authClient } from "@/lib/auth-client";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { usePathname, useRouter } from "@/navigation";
+import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
 export function NavUser({
@@ -105,7 +106,9 @@ export function NavUser({
 	};
 
 	const handleLanguageChange = (newLocale: string) => {
-		startTransition(() => {
+		startTransition(async () => {
+			await setLanguage(newLocale);
+			await persistLocaleToDb(newLocale).catch(() => {});
 			replace(pathname, { locale: newLocale });
 		});
 	};

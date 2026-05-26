@@ -26,7 +26,6 @@ import { createLogger } from "@/lib/logger";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { DOMAIN_HEADERS } from "@/proxy";
-import { setLanguage } from "@/tolgee/language";
 
 const logger = createLogger("app-layout");
 const billingDisabledAccess: BillingAccessResult = { canAccess: true, state: "disabled" };
@@ -65,7 +64,6 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
-		await setLanguage(dbLocale);
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 		const newPath = pathname.replace(`/${locale}`, `/${dbLocale}`);
 		redirect(newPath);
