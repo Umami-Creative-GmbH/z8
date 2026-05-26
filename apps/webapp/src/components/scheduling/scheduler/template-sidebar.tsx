@@ -56,8 +56,7 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 	const backgroundColor = template.color || "#3b82f6";
 
 	return (
-		<div
-			role="listitem"
+		<li
 			draggable
 			onDragStart={(e) => onDragStart(e, template)}
 			className="group cursor-grab active:cursor-grabbing rounded-lg border bg-card p-3 shadow-sm transition-[box-shadow,transform] hover:shadow-md hover:scale-[1.02]"
@@ -79,7 +78,7 @@ function TemplateCard({ template, onDragStart }: TemplateCardProps) {
 					</div>
 				</div>
 			</div>
-		</div>
+		</li>
 	);
 }
 
@@ -133,11 +132,11 @@ export function TemplateSidebar({
 			</CardHeader>
 			<CardContent className="p-0">
 				<ScrollArea className="h-[calc(100vh-320px)]">
-					<div className="flex flex-col gap-2 px-4 pb-4">
+					<ul className="flex flex-col gap-2 px-4 pb-4">
 						{activeTemplates.map((template) => (
 							<TemplateCard key={template.id} template={template} onDragStart={handleDragStart} />
 						))}
-					</div>
+					</ul>
 				</ScrollArea>
 			</CardContent>
 		</Card>

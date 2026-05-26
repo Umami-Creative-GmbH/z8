@@ -116,8 +116,7 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 						</p>
 					</div>
 					<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
-						<div
-							role="group"
+						<fieldset
 							aria-labelledby="email-template-body-label"
 							aria-describedby="email-template-body-description"
 							className="rounded-xl border bg-background p-2"
@@ -142,7 +141,7 @@ export const EmailTemplateEditor = forwardRef<EmailTemplateEditorHandle, EmailTe
 									onEditorDocumentChange(json as Record<string, unknown>);
 								}}
 							/>
-						</div>
+						</fieldset>
 						<VariablePalette variables={variables} onInsert={onInsertVariable} />
 					</div>
 				</div>

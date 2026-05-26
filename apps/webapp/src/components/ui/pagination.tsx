@@ -37,6 +37,7 @@ type PaginationLinkProps = {
 
 function PaginationLink({
 	className,
+	children,
 	isActive,
 	size = "icon",
 	href,
@@ -56,7 +57,9 @@ function PaginationLink({
 				className,
 			)}
 			{...props}
-		/>
+		>
+			{children}
+		</a>
 	);
 }
 

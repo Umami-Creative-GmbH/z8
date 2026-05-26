@@ -120,9 +120,8 @@ export function UserAvatar({
 				</AvatarFallback>
 			</Avatar>
 			{clockStatusBadge ? (
-				<span
+				<output
 					aria-label={clockStatusBadge.label}
-					role="img"
 					className={cn(
 						"absolute right-0 bottom-0 rounded-full border-2 border-background",
 						badgeClass,

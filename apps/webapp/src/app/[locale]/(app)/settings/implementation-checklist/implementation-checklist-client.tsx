@@ -208,13 +208,12 @@ function StatusMarker({ status }: { status: ChecklistStatus }) {
 	const Icon = complete ? IconCheck : IconCircle;
 
 	return (
-		<span
+		<output
 			aria-label={
 				complete
 					? t("settings.implementationChecklist.status.complete", "Complete")
 					: t("settings.implementationChecklist.status.notStarted", "Not started")
 			}
-			role="img"
 			className={cn(
 				"mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full border",
 				complete
@@ -223,7 +222,7 @@ function StatusMarker({ status }: { status: ChecklistStatus }) {
 			)}
 		>
 			<Icon aria-hidden="true" className="size-4" />
-		</span>
+		</output>
 	);
 }
 

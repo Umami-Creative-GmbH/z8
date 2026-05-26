@@ -209,14 +209,13 @@ function InitPageContent() {
 					</div>
 
 					{isActivating && (
-						<div
+						<output
 							className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
-							role="status"
 							aria-live="polite"
 						>
 							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 							{t("setup:init.activating", "Setting up your workspace...")}
-						</div>
+						</output>
 					)}
 				</div>
 			</div>
@@ -226,14 +225,14 @@ function InitPageContent() {
 	// Show loading state
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background">
-			<div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
+			<output className="flex flex-col items-center gap-4" aria-live="polite">
 				<IconLoader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
 				<p className="text-sm text-muted-foreground">
 					{status === "checking" && t("setup:init.checking", "Checking session...")}
 					{status === "activating" && t("setup:init.activating", "Setting up your workspace...")}
 					{status === "redirecting" && t("setup:init.redirecting", "Redirecting...")}
 				</p>
-			</div>
+			</output>
 		</div>
 	);
 }

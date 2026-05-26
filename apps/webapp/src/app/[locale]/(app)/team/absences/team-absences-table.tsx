@@ -310,8 +310,7 @@ function TeamAbsencesTableContent({ data, categories, search }: TeamAbsencesTabl
 					</div>
 				</div>
 			) : (
-				<div
-					role="status"
+				<output
 					aria-label={t("team.absences.empty.label", "No employees found")}
 					className="rounded-lg border bg-card p-6 text-center"
 				>
@@ -322,7 +321,7 @@ function TeamAbsencesTableContent({ data, categories, search }: TeamAbsencesTabl
 							"Try adjusting filters or search to find team members.",
 						)}
 					</p>
-				</div>
+				</output>
 			)}
 
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
