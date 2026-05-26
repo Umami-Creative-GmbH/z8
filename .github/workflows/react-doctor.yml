@@ -1,0 +1,42 @@
+name: React Doctor
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/webapp/**"
+      - "packages/**"
+      - ".github/workflows/react-doctor.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: react-doctor-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  react-doctor:
+    name: React Doctor
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Run React Doctor
+        uses: millionco/react-doctor@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          diff: ${{ github.base_ref }}
+          fail-on: none
+          annotations: true
