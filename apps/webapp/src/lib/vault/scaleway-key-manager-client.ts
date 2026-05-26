@@ -48,6 +48,19 @@ export class ScalewayKeyManagerClient {
 		});
 	}
 
+	async createPlatformKey(name: string) {
+		return this.request("/keys", {
+			method: "POST",
+			body: {
+				project_id: this.projectId,
+				name,
+				usage: { symmetric_encryption: "aes_256_gcm" },
+				tags: ["z8-platform-secrets"],
+				unprotected: false,
+			},
+		});
+	}
+
 	async encrypt(keyId: string, plaintext: string, associatedData: string) {
 		const response = await this.request<{ ciphertext: string }>(
 			`/keys/${encodeURIComponent(keyId)}/encrypt`,
