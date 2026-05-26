@@ -3,15 +3,13 @@ import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
-import type {
-	ReadableSpan,
-	SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
-import {
-	BatchSpanProcessor,
-	ConsoleSpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { BatchSpanProcessor, ConsoleSpanExporter } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+
+type RequestErrorRequest = {
+	headers?: Headers | { cookie?: string | string[] };
+};
 
 // Custom span processor that only logs exception spans to console
 class ExceptionOnlySpanProcessor implements SpanProcessor {
@@ -28,9 +26,7 @@ class ExceptionOnlySpanProcessor implements SpanProcessor {
 	onEnd(span: ReadableSpan): void {
 		// Only export spans with errors or exception events
 		const hasError = span.status.code === SpanStatusCode.ERROR;
-		const hasExceptionEvent = span.events.some(
-			(event) => event.name === "exception",
-		);
+		const hasExceptionEvent = span.events.some((event) => event.name === "exception");
 
 		if (hasError || hasExceptionEvent) {
 			this.exporter.export([span], () => {});
@@ -88,10 +84,7 @@ export async function register() {
 		const storageResult = await initializeStorage();
 
 		if (!storageResult.success) {
-			console.error(
-				"[FATAL] S3 storage initialization failed:",
-				storageResult.error?.message,
-			);
+			console.error("[FATAL] S3 storage initialization failed:", storageResult.error?.message);
 			if (storageResult.error?.remedy) {
 				console.error("[HINT]", storageResult.error.remedy);
 			}
@@ -106,9 +99,7 @@ export async function register() {
 			const healthy = await runStartupChecks();
 
 			if (!healthy) {
-				console.error(
-					"[FATAL] Critical startup checks failed - database or storage unavailable",
-				);
+				console.error("[FATAL] Critical startup checks failed - database or storage unavailable");
 				if (process.env.NODE_ENV === "production") {
 					process.exit(1);
 				}
@@ -120,3 +111,23 @@ export async function register() {
 		});
 	}
 }
+
+export const onRequestError = async (err: unknown, request: RequestErrorRequest) => {
+	if (process.env.NEXT_RUNTIME !== "nodejs") {
+		return;
+	}
+
+	const { getPostHogDistinctIdFromCookie, getPostHogServer } = await import("@/lib/posthog-server");
+	const posthog = getPostHogServer();
+
+	if (!posthog) {
+		return;
+	}
+
+	const cookieHeader =
+		request.headers instanceof Headers ? request.headers.get("cookie") : request.headers?.cookie;
+	const distinctId = getPostHogDistinctIdFromCookie(cookieHeader ?? undefined);
+	const error = err instanceof Error ? err : new Error(String(err));
+
+	await posthog.captureException(error, distinctId ?? undefined);
+};

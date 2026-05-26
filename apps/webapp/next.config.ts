@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { withPostHogConfig } from "@posthog/nextjs-config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -33,6 +34,10 @@ function getBuildHash() {
 const buildHash = getBuildHash();
 
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
+const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID;
+const hasPostHogSourcemapConfig =
+	!!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && !!POSTHOG_API_KEY && !!POSTHOG_PROJECT_ID;
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
@@ -62,11 +67,7 @@ const nextConfig: NextConfig = {
 		unoptimized: false,
 	},
 	experimental: {
-		optimizePackageImports: [
-			"@tabler/icons-react",
-			"recharts",
-			"@radix-ui/react-icons",
-		],
+		optimizePackageImports: ["@tabler/icons-react", "recharts", "@radix-ui/react-icons"],
 	},
 	turbopack: {
 		root: workspaceRoot,
@@ -104,4 +105,18 @@ const nextConfig: NextConfig = {
 	],
 };
 
-export default withNextIntl(nextConfig);
+const nextIntlConfig = withNextIntl(nextConfig);
+
+export default hasPostHogSourcemapConfig
+	? withPostHogConfig(nextIntlConfig, {
+			personalApiKey: POSTHOG_API_KEY,
+			projectId: POSTHOG_PROJECT_ID,
+			host: POSTHOG_HOST,
+			sourcemaps: {
+				enabled: true,
+				releaseName: "z8-webapp",
+				releaseVersion: buildHash,
+				deleteAfterUpload: true,
+			},
+		})
+	: nextIntlConfig;
