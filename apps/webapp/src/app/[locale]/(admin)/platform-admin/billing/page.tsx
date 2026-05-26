@@ -125,17 +125,19 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 
 async function BillingStats() {
 	await connection();
-	const t = await getTranslate();
 
 	// Get all subscriptions
-	const allSubscriptions = await db
-		.select({
-			status: subscription.status,
-			currentSeats: subscription.currentSeats,
-			billingInterval: subscription.billingInterval,
-			trialEnd: subscription.trialEnd,
-		})
-		.from(subscription);
+	const [t, allSubscriptions] = await Promise.all([
+		getTranslate(),
+		db
+			.select({
+				status: subscription.status,
+				currentSeats: subscription.currentSeats,
+				billingInterval: subscription.billingInterval,
+				trialEnd: subscription.trialEnd,
+			})
+			.from(subscription),
+	]);
 
 	// Calculate metrics
 	const activeSubscriptions = allSubscriptions.filter(
@@ -239,13 +241,13 @@ function BillingStatsLoading() {
 
 async function SubscriptionsTable() {
 	await connection();
-	const t = await getTranslate();
 
 	// Fetch subscriptions and organizations in parallel (async-parallel)
 	// Note: We fetch all orgs since we don't know IDs upfront, but this is
 	// still better than sequential fetches. For large datasets, consider
 	// using a JOIN or subquery instead.
-	const [subscriptions, allOrgs] = await Promise.all([
+	const [t, subscriptions, allOrgs] = await Promise.all([
+		getTranslate(),
 		db
 			.select({
 				id: subscription.id,

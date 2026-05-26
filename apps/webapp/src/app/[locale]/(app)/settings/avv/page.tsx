@@ -15,8 +15,10 @@ export default async function AvvPage() {
 		redirect("/settings");
 	}
 
-	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
-	const t = await getTranslate();
+	const [{ authContext, organizationId }, t] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
+		getTranslate(),
+	]);
 
 	const [_memberRecord, organization] = await Promise.all([
 		db.query.member.findFirst({

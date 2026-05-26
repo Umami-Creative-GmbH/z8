@@ -8,10 +8,8 @@ interface SetupPageProps {
 }
 
 export default async function SetupPage({ params }: SetupPageProps) {
-	const { locale } = await params;
-
 	// Signal dynamic rendering before any database calls (OpenTelemetry uses Math.random for trace IDs)
-	await connection();
+	const [{ locale }] = await Promise.all([params, connection()]);
 
 	// Double-check if already configured (middleware should catch this, but be safe)
 	const configured = await isPlatformConfigured();
