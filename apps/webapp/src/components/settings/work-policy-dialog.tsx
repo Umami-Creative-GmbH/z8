@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo } from "react";
@@ -43,6 +43,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { queryKeys } from "@/lib/query";
 import { BreakRuleEditor } from "./break-rule-editor";
 
 interface WorkPolicyDialogProps {
@@ -126,6 +127,7 @@ export function WorkPolicyDialog({
 	onSuccess,
 }: WorkPolicyDialogProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const isEditing = !!editingPolicy;
 
 	const form = useForm({
@@ -264,6 +266,7 @@ export function WorkPolicyDialog({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.created", "Policy created"));
+				void queryClient.invalidateQueries({ queryKey: queryKeys.workPolicies.list(organizationId) });
 				onSuccess();
 			} else {
 				toast.error(result.error || t("settings.workPolicies.createFailed", "Failed to create"));
@@ -281,6 +284,12 @@ export function WorkPolicyDialog({
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.workPolicies.updated", "Policy updated"));
+				void Promise.all([
+					queryClient.invalidateQueries({ queryKey: queryKeys.workPolicies.list(organizationId) }),
+					editingPolicy
+						? queryClient.invalidateQueries({ queryKey: queryKeys.workPolicies.detail(editingPolicy.id) })
+						: Promise.resolve(),
+				]);
 				onSuccess();
 			} else {
 				toast.error(result.error || t("settings.workPolicies.updateFailed", "Failed to update"));

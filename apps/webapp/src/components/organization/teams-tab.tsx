@@ -146,6 +146,7 @@ export function TeamsTab({
 		onSuccess: (result, _teamId, context) => {
 			if (result.success) {
 				toast.success(t("organization.teams.deleteSuccess", "Team deleted successfully"));
+				void queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 				refreshTeams();
 				return;
 			}

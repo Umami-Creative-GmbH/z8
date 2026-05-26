@@ -190,7 +190,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("settings.profile.avatarUploaded", "Avatar uploaded successfully"));
-				// Cache invalidation is handled by useImageProcessMutation
+				void Promise.all([
+					queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() }),
+					queryClient.invalidateQueries({ queryKey: queryKeys.employees.all }),
+				]);
 			} else {
 				toast.error(
 					result.error || t("settings.profile.avatarSaveFailed", "Failed to save avatar"),
