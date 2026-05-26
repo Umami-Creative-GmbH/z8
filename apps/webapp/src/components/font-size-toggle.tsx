@@ -15,8 +15,8 @@ import {
 import {
 	FONT_SIZE_OPTIONS,
 	isFontSizePreference,
-	useFontSizePreference,
-} from "./font-size-preference";
+} from "./font-size-preference-utils";
+import { useFontSizePreference } from "./font-size-preference";
 
 export function FontSizeToggle() {
 	const { t } = useTranslate();

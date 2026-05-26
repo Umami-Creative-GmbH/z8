@@ -32,16 +32,16 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	type AbsenceDurationInput,
-	normalizeAbsenceDurationInput,
-	validateAbsenceDurationInput,
-} from "@/lib/absences/duration";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
-import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
+import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { recordAbsenceForEmployee } from "./actions";
-import type { RecordAbsenceForEmployeeInput } from "./manager-absence-types";
+import {
+	buildRecordAbsenceForEmployeeInput,
+	getDefaultRecordAbsenceFormValues,
+	type RecordAbsenceFormValues,
+	validateRecordAbsenceFormDateRange,
+} from "./record-absence-form-utils";
 
 type AbsenceCategoryOption = {
 	id: string;
@@ -58,61 +58,6 @@ type RecordAbsenceDialogProps = {
 	employee: { id: string; name: string } | null;
 	categories: AbsenceCategoryOption[];
 };
-
-type RecordAbsenceFormValues = {
-	categoryId: string;
-	startDate: string;
-	startPeriod: DayPeriod;
-	endDate: string;
-	endPeriod: DayPeriod;
-	durationKind: AbsenceDurationKind;
-	startTime: string;
-	endTime: string;
-	notes: string;
-	sickDetail: SickDetail | "";
-};
-
-const defaultValues: RecordAbsenceFormValues = {
-	categoryId: "",
-	startDate: "",
-	startPeriod: "full_day",
-	endDate: "",
-	endPeriod: "full_day",
-	durationKind: "full_day",
-	startTime: "",
-	endTime: "",
-	notes: "",
-	sickDetail: "",
-};
-
-export function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string | null {
-	return validateAbsenceDurationInput(input);
-}
-
-export function getDefaultRecordAbsenceFormValues(): RecordAbsenceFormValues {
-	return { ...defaultValues };
-}
-
-export function buildRecordAbsenceForEmployeeInput(
-	employeeId: string,
-	value: RecordAbsenceFormValues,
-): RecordAbsenceForEmployeeInput {
-	const normalized = normalizeAbsenceDurationInput(value);
-
-	return {
-		employeeId,
-		categoryId: normalized.categoryId,
-		startDate: normalized.startDate,
-		startPeriod: normalized.startPeriod,
-		endDate: normalized.endDate,
-		endPeriod: normalized.endPeriod,
-		durationKind: normalized.durationKind,
-		startTime: normalized.startTime,
-		endTime: normalized.endTime,
-		notes: normalized.notes?.trim() || undefined,
-		sickDetail: value.sickDetail || undefined,
-	};
-}
 
 export function RecordAbsenceDialog({
 	open,
@@ -136,9 +81,10 @@ export function RecordAbsenceDialog({
 		{ value: "full_day", label: t("absences.form.duration.fullDay", "Full day") },
 		{ value: "partial_day", label: t("absences.form.duration.partialDay", "Partial day") },
 	];
+	const formDefaultValues = getDefaultRecordAbsenceFormValues();
 
 	const form = useForm({
-		defaultValues,
+		defaultValues: formDefaultValues,
 		onSubmit: async ({ value }) => {
 			const rangeError = validateRecordAbsenceFormDateRange(value);
 			if (rangeError) {
@@ -165,7 +111,7 @@ export function RecordAbsenceDialog({
 
 			if (result.success) {
 				toast.success(t("team.absences.recordDialog.success", "Absence recorded"));
-				form.reset(defaultValues);
+				form.reset(formDefaultValues);
 				setDateRangeError(null);
 				onOpenChange(false);
 				router.refresh();
@@ -180,7 +126,7 @@ export function RecordAbsenceDialog({
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen) {
-			form.reset(defaultValues);
+			form.reset(formDefaultValues);
 			setDateRangeError(null);
 		}
 		onOpenChange(nextOpen);

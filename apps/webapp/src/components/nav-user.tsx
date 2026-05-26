@@ -19,11 +19,11 @@ import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useFontSizePreference } from "@/components/font-size-preference";
 import {
 	FONT_SIZE_OPTIONS,
 	isFontSizePreference,
-	useFontSizePreference,
-} from "@/components/font-size-preference";
+} from "@/components/font-size-preference-utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
