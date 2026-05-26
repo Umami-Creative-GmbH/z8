@@ -188,7 +188,7 @@ export function AppSidebar({
 		},
 		{
 			title: t("nav.feedback", "Feedback"),
-			url: "https://feedback.z8-time.app/",
+			url: "https://github.com/Umami-Creative-GmbH/z8/issues",
 			icon: IconMessageCircle,
 			external: true,
 		},
