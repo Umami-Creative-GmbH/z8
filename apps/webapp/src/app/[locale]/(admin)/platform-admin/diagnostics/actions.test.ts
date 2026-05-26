@@ -24,17 +24,19 @@ describe("platform diagnostics refresh action", () => {
 
 	it("requires platform-admin authorization before testing platform key manager encryption", () => {
 		const source = stripComments(readFileSync(ACTIONS_PATH, "utf8"));
+		const actionStart = source.indexOf("export async function testPlatformKeyManagerEncryptionAction");
+		expect(actionStart).toBeGreaterThanOrEqual(0);
+		const actionSource = source.slice(actionStart);
 		const authCheck = "adminService.requirePlatformAdmin()";
 		const encryptionCall = "testPlatformKeyManagerEncryption(testValue)";
 		const fakerCall = "faker.person.fullName()";
 
-		expect(source).toContain("testPlatformKeyManagerEncryptionAction");
-		expect(source).toContain("PlatformAdminService");
-		expect(source).toContain(authCheck);
-		expect(source).toContain(fakerCall);
-		expect(source).toContain(encryptionCall);
-		expect(source.indexOf(authCheck)).toBeLessThan(source.indexOf(fakerCall));
-		expect(source.indexOf(fakerCall)).toBeLessThan(source.indexOf(encryptionCall));
-		expect(source).toContain("runServerActionSafe");
+		expect(actionSource).toContain("PlatformAdminService");
+		expect(actionSource).toContain(authCheck);
+		expect(actionSource).toContain(fakerCall);
+		expect(actionSource).toContain(encryptionCall);
+		expect(actionSource.indexOf(authCheck)).toBeLessThan(actionSource.indexOf(fakerCall));
+		expect(actionSource.indexOf(fakerCall)).toBeLessThan(actionSource.indexOf(encryptionCall));
+		expect(actionSource).toContain("runServerActionSafe");
 	});
 });
