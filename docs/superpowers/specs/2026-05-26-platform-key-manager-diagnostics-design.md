@@ -73,7 +73,7 @@ Add a new card to `/platform-admin/diagnostics` titled "Scaleway Key Manager Enc
 The card should include:
 
 - a short description that this runs an end-to-end platform key encrypt/decrypt test
-- a button such as “Test encryption”
+- a button such as "Test encryption"
 - loading state while the server action runs
 - success state showing input, decrypted output, match status, key ID, key creation/reuse status, and ciphertext preview
 - error state showing the safe server-action error message
