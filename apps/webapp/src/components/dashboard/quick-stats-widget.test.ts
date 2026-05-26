@@ -21,7 +21,8 @@ vi.mock("./dashboard-widget", () => ({
 vi.mock("./use-widget-data", () => ({ useWidgetData: vi.fn() }));
 vi.mock("./widget-card", () => ({ WidgetCard: ({ children }: { children: unknown }) => children }));
 
-import { getQuickStatsStatus, QuickStatsWidget } from "./quick-stats-widget";
+import { getQuickStatsStatus } from "./quick-stats-status";
+import { QuickStatsWidget } from "./quick-stats-widget";
 import { useWidgetData } from "./use-widget-data";
 
 describe("getQuickStatsStatus", () => {

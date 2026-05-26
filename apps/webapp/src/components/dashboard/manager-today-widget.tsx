@@ -10,11 +10,6 @@ import { getManagerTodaySummary } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
 import { mapManagerTodaySummary, type ManagerTodayMetricCounts } from "./manager-today-summary";
 import { WidgetCard } from "./widget-card";
-export {
-	mapManagerTodaySummary,
-	type ManagerTodayBriefingSummary,
-	type ManagerTodayMetricCounts,
-} from "./manager-today-summary";
 
 type EmployeeRole = "admin" | "manager" | "employee";
 type MetricItem = {

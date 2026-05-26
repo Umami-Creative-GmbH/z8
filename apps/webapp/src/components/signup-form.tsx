@@ -14,9 +14,11 @@ import {
 import {
 	PasswordStrengthIndicator,
 	PasswordVisibilityInput,
+} from "@/components/auth/password-fields";
+import {
 	validatePasswordConfirmation,
 	validateStrongPassword,
-} from "@/components/auth/password-fields";
+} from "@/components/auth/password-validation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

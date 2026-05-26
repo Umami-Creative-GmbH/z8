@@ -11,6 +11,7 @@ import { useTranslate } from "@tolgee/react";
 import { cn } from "@/lib/utils";
 import { getQuickStats } from "./actions";
 import { DashboardWidget } from "./dashboard-widget";
+import { getQuickStatsStatus } from "./quick-stats-status";
 import { useWidgetData } from "./use-widget-data";
 import { WidgetCard } from "./widget-card";
 
@@ -35,23 +36,6 @@ type QuickStats = {
 		expectedToDate: number;
 	};
 };
-
-export type QuickStatsStatus = "on-track" | "good-pace" | "behind";
-
-export function getQuickStatsStatus({
-	actual,
-	expectedToDate,
-}: {
-	actual: number;
-	expectedToDate: number;
-}): QuickStatsStatus {
-	if (expectedToDate <= 0) return "good-pace";
-
-	const percentage = (actual / expectedToDate) * 100;
-	if (percentage >= 90) return "on-track";
-	if (percentage < 75) return "behind";
-	return "good-pace";
-}
 
 function CircularProgress({
 	progress,
