@@ -2,7 +2,7 @@
 
 import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
@@ -45,6 +45,18 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 };
 
 const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-skeleton-${index}`);
+
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
+
+function useHasHydrated() {
+	return useSyncExternalStore(
+		subscribeToHydration,
+		getHydratedSnapshot,
+		getServerHydrationSnapshot,
+	);
+}
 
 function WidgetSkeleton() {
 	return (
@@ -145,8 +157,9 @@ function DashboardWidgetLayout({
 
 export function SectionCards() {
 	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder();
+	const hasHydrated = useHasHydrated();
 
-	if (isLoading) {
+	if (!hasHydrated || isLoading) {
 		return <SectionCardsSkeleton />;
 	}
 
