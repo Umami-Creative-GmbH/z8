@@ -4,7 +4,6 @@ import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/s
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getTranslate } from "@/tolgee/server";
 import {
 	getScheduledExportsAction,
 	getFilterOptionsAction,
@@ -17,10 +16,8 @@ export const metadata = {
 };
 
 async function ScheduledExportsContent() {
-	await connection(); // Mark as fully dynamic
-
 	const [, { organizationId }] = await Promise.all([
-		getTranslate(),
+		connection(), // Mark as fully dynamic
 		requireOrgAdminSettingsAccess(),
 	]);
 
