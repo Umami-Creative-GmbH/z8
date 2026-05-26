@@ -29,7 +29,7 @@
     },
     "trialBanner": {
       "description": "{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
-      "dismiss": "Testbanner ausblenden",
+      "dismiss": "Testversionsbanner ausblenden",
       "title": "14-tägige Testversion aktiv",
       "upgrade": "Upgrade"
     }
@@ -429,5 +429,60 @@
     "invalid-password": "Ungültiges Passwort",
     "last-name-required": "Nachname ist erforderlich",
     "password-required": "Passwort ist erforderlich"
+  },
+  "appSearch": {
+    "commandDescription": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen",
+    "commandPlaceholder": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Stunden für eine vergangene Schicht oder Korrektur erfassen",
+        "title": "Manuelle Zeiterfassung hinzufügen"
+      },
+      "createProject": {
+        "subtitle": "Projekteinstellungen öffnen, um ein neues Projekt zu definieren",
+        "title": "Projekt erstellen"
+      },
+      "inviteTeammate": {
+        "subtitle": "Organisationsverwaltung öffnen, um einen Kollegen hinzuzufügen",
+        "title": "Teammitglied einladen"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Ausstehende Mitarbeiteranfragen prüfen",
+        "title": "Genehmigungsposteingang öffnen"
+      },
+      "openMyRequests": {
+        "subtitle": "Eingereichte Abwesenheiten und Ausgaben überprüfen",
+        "title": "Meine Anfragen öffnen"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
+        "title": "Lohnabrechnungsstatus öffnen"
+      },
+      "openSettings": {
+        "subtitle": "Profil-, Sicherheits- und Organisationseinstellungen verwalten",
+        "title": "Einstellungen öffnen"
+      },
+      "requestAbsence": {
+        "subtitle": "Urlaubs-, Krankheits- oder Freistellungsantrag starten",
+        "title": "Abwesenheit beantragen"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Erstattungsantrag für Reisekosten erstellen",
+        "title": "Reisekosten einreichen"
+      }
+    },
+    "empty": "Keine Ergebnisse gefunden.",
+    "groups": {
+      "actions": "Aktionen",
+      "pages": "Seiten",
+      "people": "Personen",
+      "settings": "Einstellungen",
+      "teams": "Teams"
+    },
+    "search": "Suchen",
+    "searchOrRunCommand": "Suchen oder Befehl ausführen",
+    "teamAbsences": {
+      "description": "Mitarbeiterabwesenheitskennzahlen überprüfen und Abwesenheiten erfassen"
+    }
   }
 }

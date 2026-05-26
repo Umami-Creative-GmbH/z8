@@ -429,5 +429,60 @@
     "invalid-password": "Invalid password",
     "last-name-required": "Last Name is required",
     "password-required": "Password is required"
+  },
+  "appSearch": {
+    "commandDescription": "Search pages, people, teams, settings, or actions",
+    "commandPlaceholder": "Search pages, people, teams, settings, or actions…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Record hours for a past shift or correction",
+        "title": "Add manual time entry"
+      },
+      "createProject": {
+        "subtitle": "Open project settings to define a new project",
+        "title": "Create project"
+      },
+      "inviteTeammate": {
+        "subtitle": "Open organization management to add a colleague",
+        "title": "Invite teammate"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Review pending employee requests",
+        "title": "Open approvals inbox"
+      },
+      "openMyRequests": {
+        "subtitle": "Review your submitted absences and expenses",
+        "title": "Open my requests"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Check whether time data is ready for payroll",
+        "title": "Open payroll readiness"
+      },
+      "openSettings": {
+        "subtitle": "Manage your profile, security, and organization settings",
+        "title": "Open settings"
+      },
+      "requestAbsence": {
+        "subtitle": "Start a vacation, sick leave, or time off request",
+        "title": "Request absence"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Create a reimbursement request for travel costs",
+        "title": "Submit travel expense"
+      }
+    },
+    "empty": "No results found.",
+    "groups": {
+      "actions": "Actions",
+      "pages": "Pages",
+      "people": "People",
+      "settings": "Settings",
+      "teams": "Teams"
+    },
+    "search": "Search",
+    "searchOrRunCommand": "Search or run command",
+    "teamAbsences": {
+      "description": "Review employee absence metrics and record absences"
+    }
   }
 }

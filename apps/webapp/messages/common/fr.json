@@ -29,7 +29,7 @@
     },
     "trialBanner": {
       "description": "{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
-      "dismiss": "Ignorer la bannière d'essai",
+      "dismiss": "Masquer la bannière d'essai",
       "title": "Essai de 14 jours actif",
       "upgrade": "Mettre à niveau"
     }
@@ -429,5 +429,60 @@
     "invalid-password": "Mot de passe invalide",
     "last-name-required": "Le nom de famille est requis",
     "password-required": "Le mot de passe est requis"
+  },
+  "appSearch": {
+    "commandDescription": "Rechercher des pages, des personnes, des équipes, des paramètres ou des actions",
+    "commandPlaceholder": "Rechercher des pages, des personnes, des équipes, des paramètres ou des actions…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Enregistrer les heures d'un poste passé ou d'une correction",
+        "title": "Ajouter une saisie de temps manuelle"
+      },
+      "createProject": {
+        "subtitle": "Ouvrir les paramètres du projet pour définir un nouveau projet",
+        "title": "Créer un projet"
+      },
+      "inviteTeammate": {
+        "subtitle": "Ouvrir la gestion de l'organisation pour ajouter un collègue",
+        "title": "Inviter un coéquipier"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Examiner les demandes en attente des employés",
+        "title": "Ouvrir la boîte de réception des approbations"
+      },
+      "openMyRequests": {
+        "subtitle": "Examiner vos absences et dépenses soumises",
+        "title": "Ouvrir mes demandes"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Vérifier si les données de temps sont prêtes pour la paie",
+        "title": "Ouvrir la préparation de la paie"
+      },
+      "openSettings": {
+        "subtitle": "Gérer votre profil, la sécurité et les paramètres de l'organisation",
+        "title": "Ouvrir les paramètres"
+      },
+      "requestAbsence": {
+        "subtitle": "Démarrer une demande de vacances, de congé maladie ou de temps libre",
+        "title": "Demander une absence"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Créer une demande de remboursement pour des frais de déplacement",
+        "title": "Soumettre une note de frais de déplacement"
+      }
+    },
+    "empty": "Aucun résultat trouvé.",
+    "groups": {
+      "actions": "Actions",
+      "pages": "Pages",
+      "people": "Personnes",
+      "settings": "Paramètres",
+      "teams": "Équipes"
+    },
+    "search": "Rechercher",
+    "searchOrRunCommand": "Rechercher ou exécuter une commande",
+    "teamAbsences": {
+      "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
+    }
   }
 }
