@@ -46,6 +46,7 @@ const mocks = vi.hoisted(() => ({
 		encrypt: vi.fn(),
 		decrypt: vi.fn(),
 	},
+	invalidateSecretStoreStatusCache: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
 	onConflictDoUpdate: vi.fn(),
@@ -62,6 +63,10 @@ vi.mock("@/db/schema", () => mocks.tables);
 
 vi.mock("./scaleway-key-manager-client", () => ({
 	ScalewayKeyManagerClient: mocks.clientConstructor,
+}));
+
+vi.mock("./status", () => ({
+	invalidateSecretStoreStatusCache: mocks.invalidateSecretStoreStatusCache,
 }));
 
 const localKey = {
@@ -105,6 +110,7 @@ describe("scalewaySecretProvider", () => {
 		mocks.client.createOrganizationKey.mockResolvedValue(remoteKey("key-created"));
 		mocks.client.encrypt.mockResolvedValue("ciphertext-created");
 		mocks.client.decrypt.mockResolvedValue("secret-value");
+		mocks.invalidateSecretStoreStatusCache.mockResolvedValue(undefined);
 
 		mocks.db.query.organizationSecretKey.findFirst.mockResolvedValue(undefined);
 		mocks.db.query.organizationSecret.findFirst.mockResolvedValue(undefined);
@@ -162,6 +168,20 @@ describe("scalewaySecretProvider", () => {
 		expect(mocks.client.encrypt).not.toHaveBeenCalled();
 		expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
 	});
+
+	test.each([null, { state: "enabled" }])(
+		"rejects created key responses without an id and does not throw a property access error",
+		async (createdKey) => {
+			mocks.client.createOrganizationKey.mockResolvedValue(createdKey);
+			const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+			await expect(
+				scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value"),
+			).rejects.toThrow("Created Scaleway organization key response did not include an id");
+			expect(mocks.client.encrypt).not.toHaveBeenCalled();
+			expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
+		},
+	);
 
 	test("shares same-process organization key provisioning for simultaneous first writes", async () => {
 		let resolveCreatedKey: (value: { id: string; state: string }) => void = () => undefined;
@@ -373,6 +393,34 @@ describe("scalewaySecretProvider", () => {
 		expect(mocks.db.delete).toHaveBeenCalledWith(mocks.tables.organizationSecret);
 		expect(mocks.client.getKey).not.toHaveBeenCalled();
 		expect(mocks.client.createOrganizationKey).not.toHaveBeenCalled();
+	});
+
+	test("store invalidates Scaleway status cache after a successful encrypted row upsert", async () => {
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value");
+
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenCalledWith("org-1");
+	});
+
+	test("delete operations invalidate Scaleway status cache after successful deletes", async () => {
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await scalewaySecretProvider.deleteOrgSecret("org-1", "email/api_key");
+		await scalewaySecretProvider.deleteAllOrgSecrets("org-1");
+
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenCalledTimes(2);
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenNthCalledWith(1, "org-1");
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenNthCalledWith(2, "org-1");
+	});
+
+	test("cache invalidation failure does not fail a successful store", async () => {
+		mocks.invalidateSecretStoreStatusCache.mockRejectedValueOnce(new Error("redis unavailable"));
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await expect(
+			scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value"),
+		).resolves.toBeUndefined();
 	});
 
 	test("store upserts encrypted rows and does not log secret values", async () => {

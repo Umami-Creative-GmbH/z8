@@ -3,16 +3,13 @@ import { organizationSecret, organizationSecretKey } from "@/db/schema";
 import { env } from "@/env";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ScalewayKeyManagerClient } from "./scaleway-key-manager-client";
+import {
+	isCompatibleScalewayKey,
+	isEnabledScalewayKey,
+	type ScalewayKey,
+} from "./scaleway-key-utils";
+import { invalidateSecretStoreStatusCache } from "./status";
 import type { OrganizationSecretProvider } from "./types";
-
-type ScalewayKey = {
-	id?: string;
-	state?: string;
-	usage?: {
-		symmetric_encryption?: string;
-	};
-	tags?: string[];
-};
 
 type SecretStoreDb = Pick<typeof db, "insert" | "query">;
 
@@ -30,23 +27,11 @@ function associatedData(organizationId: string, key: string) {
 	return `organizationId=${organizationId};key=${key};version=1`;
 }
 
-function isEnabledKey(key: unknown): key is ScalewayKey & { id: string } {
-	const scalewayKey = key as ScalewayKey;
-	return typeof scalewayKey.id === "string" && scalewayKey.id.length > 0 && scalewayKey.state === "enabled";
-}
-
-function isCompatibleKey(key: unknown, organizationId: string): key is ScalewayKey & { id: string } {
-	const scalewayKey = key as ScalewayKey;
-	return (
-		isEnabledKey(key) &&
-		scalewayKey.usage?.symmetric_encryption === "aes_256_gcm" &&
-		Array.isArray(scalewayKey.tags) &&
-		scalewayKey.tags.includes("z8-customer-secrets") &&
-		scalewayKey.tags.includes(`z8-org:${organizationId}`)
-	);
-}
-
 function isKeyWithId(key: unknown): key is ScalewayKey & { id: string } {
+	if (typeof key !== "object" || key === null) {
+		return false;
+	}
+
 	const scalewayKey = key as ScalewayKey;
 	return typeof scalewayKey.id === "string" && scalewayKey.id.length > 0;
 }
@@ -98,11 +83,11 @@ async function verifyLocalKey(organizationId: string, scalewayKeyId: string) {
 		});
 	}
 
-	if (!isEnabledKey(remoteKey)) {
+	if (!isEnabledScalewayKey(remoteKey)) {
 		throw new Error(`Scaleway organization key ${scalewayKeyId} is not enabled`);
 	}
 
-	if (!isCompatibleKey(remoteKey, organizationId)) {
+	if (!isCompatibleScalewayKey(remoteKey, organizationId)) {
 		throw new Error(`Scaleway organization key ${scalewayKeyId} is not compatible`);
 	}
 
@@ -125,13 +110,13 @@ async function provisionOrganizationKey(organizationId: string) {
 		}
 
 		const remoteKeys = await client.listOrganizationKeys(organizationId);
-		const discoveredKey = remoteKeys.find((key) => isCompatibleKey(key, organizationId));
+		const discoveredKey = remoteKeys.find((key) => isCompatibleScalewayKey(key, organizationId));
 		if (discoveredKey) {
 			return persistOrganizationKey(organizationId, discoveredKey.id, tx as SecretStoreDb);
 		}
 
 		const createdKey = await client.createOrganizationKey(organizationId);
-		if (!isEnabledKey(createdKey)) {
+		if (!isEnabledScalewayKey(createdKey)) {
 			if (isKeyWithId(createdKey)) {
 				throw new Error(`Created Scaleway organization key ${createdKey.id} is not enabled`);
 			}
@@ -139,7 +124,7 @@ async function provisionOrganizationKey(organizationId: string) {
 		}
 		const createdKeyId = createdKey.id;
 
-		if (!isCompatibleKey(createdKey, organizationId)) {
+		if (!isCompatibleScalewayKey(createdKey, organizationId)) {
 			throw new Error(`Created Scaleway organization key ${createdKeyId} is not compatible`);
 		}
 
@@ -158,6 +143,15 @@ async function ensureOrganizationKey(organizationId: string) {
 	});
 	provisioningByOrganization.set(organizationId, provisioningPromise);
 	return provisioningPromise;
+}
+
+async function invalidateStatusCache(organizationId: string) {
+	try {
+		await invalidateSecretStoreStatusCache(organizationId);
+	} catch (error) {
+		// Cache invalidation should never fail the secret mutation that already succeeded.
+		console.warn("Failed to invalidate Scaleway secret store status cache", { error, organizationId });
+	}
 }
 
 export const scalewaySecretProvider: OrganizationSecretProvider = {
@@ -182,6 +176,7 @@ export const scalewaySecretProvider: OrganizationSecretProvider = {
 					ciphertext,
 				},
 			});
+		await invalidateStatusCache(organizationId);
 	},
 	async getOrgSecret(organizationId, key) {
 		const row = await db.query.organizationSecret.findFirst({
@@ -208,6 +203,7 @@ export const scalewaySecretProvider: OrganizationSecretProvider = {
 					eq(organizationSecret.provider, PROVIDER),
 				),
 			);
+		await invalidateStatusCache(organizationId);
 	},
 	async deleteAllOrgSecrets(organizationId) {
 		await db
@@ -218,5 +214,6 @@ export const scalewaySecretProvider: OrganizationSecretProvider = {
 					eq(organizationSecret.provider, PROVIDER),
 				),
 			);
+		await invalidateStatusCache(organizationId);
 	},
 };

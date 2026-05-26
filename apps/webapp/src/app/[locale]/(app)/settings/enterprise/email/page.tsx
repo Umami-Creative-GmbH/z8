@@ -4,7 +4,7 @@ import { EmailConfigForm } from "@/components/settings/enterprise/email-config-f
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getEmailConfig, getVaultConnectionStatus } from "./actions";
+import { getEmailConfig, getSecretStoreConnectionStatus } from "./actions";
 
 async function EmailConfigContent() {
 	await connection();
@@ -13,12 +13,14 @@ async function EmailConfigContent() {
 	const emailConfigPromise = authContextPromise.then(({ organizationId }) =>
 		getEmailConfig(organizationId),
 	);
-	const vaultStatusPromise = authContextPromise.then(() => getVaultConnectionStatus());
-	const [{ organizationId }, t, emailConfig, vaultStatus] = await Promise.all([
+	const secretStoreStatusPromise = authContextPromise.then(({ organizationId }) =>
+		getSecretStoreConnectionStatus(organizationId),
+	);
+	const [{ organizationId }, t, emailConfig, secretStoreStatus] = await Promise.all([
 		authContextPromise,
 		getTranslate(),
 		emailConfigPromise,
-		vaultStatusPromise,
+		secretStoreStatusPromise,
 	]);
 
 	return (
@@ -38,7 +40,7 @@ async function EmailConfigContent() {
 				<EmailConfigForm
 					organizationId={organizationId}
 					initialConfig={emailConfig}
-					vaultStatus={vaultStatus}
+					secretStoreStatus={secretStoreStatus}
 				/>
 			</div>
 		</div>

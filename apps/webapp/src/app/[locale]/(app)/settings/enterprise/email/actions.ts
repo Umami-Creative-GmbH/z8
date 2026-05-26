@@ -4,11 +4,26 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { organizationEmailConfig, type EmailTransportType } from "@/db/schema";
+import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { sendTestEmail } from "@/lib/email/email-service";
 import { createLogger } from "@/lib/logger";
-import { deleteOrgSecret, getVaultStatus, hasOrgSecret, storeOrgSecret } from "@/lib/vault";
+import {
+	deleteOrgSecret,
+	getSecretStoreStatus,
+	hasOrgSecret,
+	storeOrgSecret,
+	type SecretStoreStatus,
+} from "@/lib/vault";
 
 const logger = createLogger("EmailConfigActions");
+
+async function requireMatchingOrganizationAccess(organizationId: string): Promise<string> {
+	const access = await requireOrgAdminSettingsAccess();
+	if (access.organizationId !== organizationId) {
+		throw new Error("Organization access mismatch");
+	}
+	return access.organizationId;
+}
 
 /**
  * Email configuration input for saving
@@ -61,9 +76,10 @@ export interface EmailConfigOutput {
  * Get email configuration for an organization (without secrets)
  */
 export async function getEmailConfig(organizationId: string): Promise<EmailConfigOutput | null> {
+	const authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
 	try {
 		const config = await db.query.organizationEmailConfig.findFirst({
-			where: eq(organizationEmailConfig.organizationId, organizationId),
+			where: eq(organizationEmailConfig.organizationId, authorizedOrganizationId),
 		});
 
 		if (!config) {
@@ -71,8 +87,8 @@ export async function getEmailConfig(organizationId: string): Promise<EmailConfi
 		}
 
 		// Check if secrets exist in Vault (without retrieving them)
-		const hasResendApiKey = await hasOrgSecret(organizationId, "email/resend_api_key");
-		const hasSmtpPassword = await hasOrgSecret(organizationId, "email/smtp_password");
+		const hasResendApiKey = await hasOrgSecret(authorizedOrganizationId, "email/resend_api_key");
+		const hasSmtpPassword = await hasOrgSecret(authorizedOrganizationId, "email/smtp_password");
 
 		return {
 			id: config.id,
@@ -95,7 +111,7 @@ export async function getEmailConfig(organizationId: string): Promise<EmailConfi
 			updatedAt: config.updatedAt,
 		};
 	} catch (error) {
-		logger.error({ error, organizationId }, "Failed to get email config");
+		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to get email config");
 		throw new Error("Failed to get email configuration");
 	}
 }
@@ -108,7 +124,10 @@ export async function saveEmailConfig(
 	organizationId: string,
 	config: EmailConfigInput,
 ): Promise<{ success: boolean; error?: string }> {
+	let authorizedOrganizationId: string | undefined;
 	try {
+		authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+
 		// Validate required fields based on transport type
 		if (config.transportType === "smtp") {
 			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
@@ -118,12 +137,12 @@ export async function saveEmailConfig(
 
 		// Check for existing config
 		const existing = await db.query.organizationEmailConfig.findFirst({
-			where: eq(organizationEmailConfig.organizationId, organizationId),
+			where: eq(organizationEmailConfig.organizationId, authorizedOrganizationId),
 		});
 
 		// Prepare DB values (no secrets)
 		const dbValues = {
-			organizationId,
+			organizationId: authorizedOrganizationId,
 			transportType: config.transportType,
 			fromEmail: config.fromEmail,
 			fromName: config.fromName ?? null,
@@ -140,27 +159,30 @@ export async function saveEmailConfig(
 			await db
 				.update(organizationEmailConfig)
 				.set(dbValues)
-				.where(eq(organizationEmailConfig.organizationId, organizationId));
+				.where(eq(organizationEmailConfig.organizationId, authorizedOrganizationId));
 		} else {
 			await db.insert(organizationEmailConfig).values(dbValues);
 		}
 
 		// Store secrets in Vault
 		if (config.transportType === "resend" && config.resendApiKey) {
-			await storeOrgSecret(organizationId, "email/resend_api_key", config.resendApiKey);
+			await storeOrgSecret(authorizedOrganizationId, "email/resend_api_key", config.resendApiKey);
 			// Clean up SMTP password if switching from SMTP
-			await deleteOrgSecret(organizationId, "email/smtp_password");
+			await deleteOrgSecret(authorizedOrganizationId, "email/smtp_password");
 		} else if (config.transportType === "smtp" && config.smtpPassword) {
-			await storeOrgSecret(organizationId, "email/smtp_password", config.smtpPassword);
+			await storeOrgSecret(authorizedOrganizationId, "email/smtp_password", config.smtpPassword);
 			// Clean up Resend API key if switching from Resend
-			await deleteOrgSecret(organizationId, "email/resend_api_key");
+			await deleteOrgSecret(authorizedOrganizationId, "email/resend_api_key");
 		}
 
-		logger.info({ organizationId, transportType: config.transportType }, "Email config saved");
+		logger.info(
+			{ organizationId: authorizedOrganizationId, transportType: config.transportType },
+			"Email config saved",
+		);
 		revalidatePath("/settings/enterprise");
 		return { success: true };
 	} catch (error) {
-		logger.error({ error, organizationId }, "Failed to save email config");
+		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to save email config");
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Failed to save email configuration",
@@ -175,9 +197,12 @@ export async function testEmailConfig(
 	organizationId: string,
 	testEmail: string,
 ): Promise<{ success: boolean; error?: string }> {
+	let authorizedOrganizationId: string | undefined;
 	try {
+		authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+
 		// Send test email using org-specific transport
-		const result = await sendTestEmail(testEmail, organizationId);
+		const result = await sendTestEmail(testEmail, authorizedOrganizationId);
 
 		// Update test status in DB
 		await db
@@ -187,17 +212,20 @@ export async function testEmailConfig(
 				lastTestSuccess: result.success,
 				lastTestError: result.error ?? null,
 			})
-			.where(eq(organizationEmailConfig.organizationId, organizationId));
+			.where(eq(organizationEmailConfig.organizationId, authorizedOrganizationId));
 
 		if (result.success) {
-			logger.info({ organizationId, testEmail: `${testEmail.slice(0, 3)}***` }, "Test email sent");
+			logger.info(
+				{ organizationId: authorizedOrganizationId, testEmail: `${testEmail.slice(0, 3)}***` },
+				"Test email sent",
+			);
 			return { success: true };
 		}
 
-		logger.warn({ organizationId, error: result.error }, "Test email failed");
+		logger.warn({ organizationId: authorizedOrganizationId, error: result.error }, "Test email failed");
 		return { success: false, error: result.error };
 	} catch (error) {
-		logger.error({ error, organizationId }, "Failed to send test email");
+		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to send test email");
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Failed to send test email",
@@ -211,21 +239,24 @@ export async function testEmailConfig(
 export async function deleteEmailConfig(
 	organizationId: string,
 ): Promise<{ success: boolean; error?: string }> {
+	let authorizedOrganizationId: string | undefined;
 	try {
+		authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+
 		// Delete from database
 		await db
 			.delete(organizationEmailConfig)
-			.where(eq(organizationEmailConfig.organizationId, organizationId));
+			.where(eq(organizationEmailConfig.organizationId, authorizedOrganizationId));
 
 		// Delete secrets from Vault
-		await deleteOrgSecret(organizationId, "email/resend_api_key");
-		await deleteOrgSecret(organizationId, "email/smtp_password");
+		await deleteOrgSecret(authorizedOrganizationId, "email/resend_api_key");
+		await deleteOrgSecret(authorizedOrganizationId, "email/smtp_password");
 
-		logger.info({ organizationId }, "Email config deleted");
+		logger.info({ organizationId: authorizedOrganizationId }, "Email config deleted");
 		revalidatePath("/settings/enterprise");
 		return { success: true };
 	} catch (error) {
-		logger.error({ error, organizationId }, "Failed to delete email config");
+		logger.error({ error, organizationId: authorizedOrganizationId }, "Failed to delete email config");
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Failed to delete email configuration",
@@ -234,13 +265,11 @@ export async function deleteEmailConfig(
 }
 
 /**
- * Get Vault connection status (for UI display)
+ * Get configured secret store status for UI display.
  */
-export async function getVaultConnectionStatus(): Promise<{
-	available: boolean;
-	initialized: boolean;
-	sealed: boolean;
-	address: string;
-}> {
-	return getVaultStatus();
+export async function getSecretStoreConnectionStatus(
+	organizationId: string,
+): Promise<SecretStoreStatus> {
+	const authorizedOrganizationId = await requireMatchingOrganizationAccess(organizationId);
+	return getSecretStoreStatus(authorizedOrganizationId);
 }
