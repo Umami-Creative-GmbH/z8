@@ -12,9 +12,9 @@
     "test:coverage": "vitest run --coverage",
     "auth:generate": "NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@latest generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
     "auth:migrate": "pnpm run auth:generate && pnpm drizzle-kit push",
-    "generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
-    "db:seed": "tsx src/db/seed/do-seed.ts"
-  },
+		"generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
+		"db:seed": "tsx src/db/seed/do-seed.ts"
+	},
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
     "@aws-sdk/s3-request-presigner": "^3.1053.0",
