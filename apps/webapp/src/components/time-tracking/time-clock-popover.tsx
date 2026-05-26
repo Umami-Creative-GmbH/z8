@@ -2,7 +2,7 @@
 
 import { IconCheck, IconClock, IconClockPause, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,9 +20,78 @@ import { QuickBreakPopover } from "./quick-break-popover";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 import { WorkCategorySelector } from "./work-category-selector";
 
+interface TimeClockPopoverState {
+	showNotesInput: boolean;
+	lastClockOutEntryId: string | null;
+	notesText: string;
+	selectedProjectId: string | undefined;
+	selectedWorkCategoryId: string | undefined;
+	workLocationType: WorkLocationType;
+}
+
+type TimeClockPopoverAction =
+	| { type: "setNotesText"; value: string }
+	| { type: "setSelectedProjectId"; value: string | undefined }
+	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
+	| { type: "setWorkLocationType"; value: WorkLocationType }
+	| { type: "openNotesInput"; entryId: string }
+	| { type: "closeNotesInput" }
+	| { type: "resetClockOutSelections" };
+
+function getInitialWorkLocationType(): WorkLocationType {
+	if (typeof window === "undefined") {
+		return "office";
+	}
+
+	return normalizeWorkLocationType(localStorage.getItem("z8-work-location-type"));
+}
+
+function createInitialState(): TimeClockPopoverState {
+	return {
+		showNotesInput: false,
+		lastClockOutEntryId: null,
+		notesText: "",
+		selectedProjectId: undefined,
+		selectedWorkCategoryId: undefined,
+		workLocationType: getInitialWorkLocationType(),
+	};
+}
+
+function timeClockPopoverReducer(
+	state: TimeClockPopoverState,
+	action: TimeClockPopoverAction,
+): TimeClockPopoverState {
+	switch (action.type) {
+		case "setNotesText":
+			return { ...state, notesText: action.value };
+		case "setSelectedProjectId":
+			return { ...state, selectedProjectId: action.value };
+		case "setSelectedWorkCategoryId":
+			return { ...state, selectedWorkCategoryId: action.value };
+		case "setWorkLocationType":
+			return { ...state, workLocationType: action.value };
+		case "openNotesInput":
+			return {
+				...state,
+				showNotesInput: true,
+				lastClockOutEntryId: action.entryId,
+				notesText: "",
+			};
+		case "closeNotesInput":
+			return { ...state, showNotesInput: false, lastClockOutEntryId: null, notesText: "" };
+		case "resetClockOutSelections":
+			return { ...state, selectedProjectId: undefined, selectedWorkCategoryId: undefined };
+	}
+}
+
 export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
+	const [uiState, dispatch] = useReducer(
+		timeClockPopoverReducer,
+		undefined,
+		createInitialState,
+	);
 	const timeFormatter = useMemo(
 		() => new Intl.DateTimeFormat(undefined, getTimeFormatDateTimeOptions(timeFormat)),
 		[timeFormat],
@@ -48,30 +117,12 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 	// Separate timer hook to isolate per-second re-renders to this component only
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
-	// State for showing notes input after clock-out
-	const [showNotesInput, setShowNotesInput] = useState(false);
-	const lastClockOutEntryId = useRef<string | null>(null);
-	const [notesText, setNotesText] = useState("");
-	// State for project selection
-	const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
-	// State for work category selection
-	const [selectedWorkCategoryId, setSelectedWorkCategoryId] = useState<string | undefined>(
-		undefined,
-	);
-	const [workLocationType, setWorkLocationType] = useState<WorkLocationType>(() => {
-		if (typeof window === "undefined") {
-			return "office";
-		}
-
-		return normalizeWorkLocationType(localStorage.getItem("z8-work-location-type"));
-	});
-
 	const handleClockIn = async () => {
-		const result = await clockIn({ workLocationType });
+		const result = await clockIn({ workLocationType: uiState.workLocationType });
 
 		if (result.success) {
 			if (typeof window !== "undefined") {
-				localStorage.setItem("z8-work-location-type", workLocationType);
+				localStorage.setItem("z8-work-location-type", uiState.workLocationType);
 			}
 
 			// Check if this was an offline queued request
@@ -102,29 +153,25 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 
 	const handleClockOut = async () => {
 		const result = await clockOut({
-			projectId: selectedProjectId,
-			workCategoryId: selectedWorkCategoryId,
+			projectId: uiState.selectedProjectId,
+			workCategoryId: uiState.selectedWorkCategoryId,
 		});
 
 		if (result.success) {
 			// Check if this was an offline queued request
 			if ("queued" in result && result.queued) {
 				toast.info(t("timeTracking.clockOutQueued", "Clock-out queued for sync"));
-				setSelectedProjectId(undefined);
-				setSelectedWorkCategoryId(undefined);
+				dispatch({ type: "resetClockOutSelections" });
 				setOpen(false);
 				return;
 			}
 
 			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
 			// Reset selections after successful clock out
-			setSelectedProjectId(undefined);
-			setSelectedWorkCategoryId(undefined);
+			dispatch({ type: "resetClockOutSelections" });
 			// Show notes input and store the entry ID for patching (only for non-queued)
 			if ("data" in result && result.data?.id) {
-				lastClockOutEntryId.current = result.data.id;
-				setShowNotesInput(true);
-				setNotesText("");
+				dispatch({ type: "openNotesInput", entryId: result.data.id });
 			} else {
 				setOpen(false);
 			}
@@ -148,13 +195,16 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 	};
 
 	const handleSaveNotes = async () => {
-		if (!lastClockOutEntryId.current || !notesText.trim()) {
-			setShowNotesInput(false);
+		if (!uiState.lastClockOutEntryId || !uiState.notesText.trim()) {
+			dispatch({ type: "closeNotesInput" });
 			setOpen(false);
 			return;
 		}
 
-		const result = await updateNotes({ entryId: lastClockOutEntryId.current, notes: notesText.trim() });
+		const result = await updateNotes({
+			entryId: uiState.lastClockOutEntryId,
+			notes: uiState.notesText.trim(),
+		});
 
 		if (result.success) {
 			toast.success(t("timeTracking.notesSaved", "Notes saved"));
@@ -162,16 +212,12 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 			toast.error(result.error || t("timeTracking.errors.notesSaveFailed", "Failed to save notes"));
 		}
 
-		setShowNotesInput(false);
-		lastClockOutEntryId.current = null;
-		setNotesText("");
+		dispatch({ type: "closeNotesInput" });
 		setOpen(false);
 	};
 
 	const handleDismissNotes = () => {
-		setShowNotesInput(false);
-		lastClockOutEntryId.current = null;
-		setNotesText("");
+		dispatch({ type: "closeNotesInput" });
 		setOpen(false);
 	};
 
@@ -194,7 +240,11 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		<div className="flex items-center gap-2">
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
-					<Button size="sm" variant={isClockedIn ? "destructive" : "default"}>
+					<Button
+						size="sm"
+						variant={isClockedIn ? "destructive" : "default"}
+						className={isClockedIn ? "rounded-r-none" : undefined}
+					>
 						{isClockedIn ? <IconClockPause className="size-4" /> : <IconClock className="size-4" />}
 						<span className="hidden sm:inline">
 							{isClockedIn ? t("header.clock-out", "Clock Out") : t("header.clock-in", "Clock In")}
@@ -209,7 +259,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 				<PopoverContent className="w-72" align="end">
 					<div className="flex flex-col gap-3">
 						{/* Notes input after clock-out */}
-						{showNotesInput ? (
+						{uiState.showNotesInput ? (
 							<div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
 								<div className="font-medium">
 									{t("timeTracking.clockedOutSuccess", "You've clocked out!")}
@@ -221,8 +271,10 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 									name="notes"
 									autoComplete="off"
 									placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
-									value={notesText}
-									onChange={(e) => setNotesText(e.target.value)}
+									value={uiState.notesText}
+									onChange={(e) =>
+										dispatch({ type: "setNotesText", value: e.target.value })
+									}
 									rows={3}
 									className="resize-none"
 								/>
@@ -274,8 +326,10 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 								{/* Project selector - only shown when clocked in */}
 								{isClockedIn && (
 									<ProjectSelector
-										value={selectedProjectId}
-										onValueChange={setSelectedProjectId}
+										value={uiState.selectedProjectId}
+										onValueChange={(value) =>
+											dispatch({ type: "setSelectedProjectId", value })
+										}
 										disabled={isMutating}
 									/>
 								)}
@@ -284,16 +338,18 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 								{isClockedIn && employeeId && (
 									<WorkCategorySelector
 										employeeId={employeeId}
-										value={selectedWorkCategoryId}
-										onValueChange={setSelectedWorkCategoryId}
+										value={uiState.selectedWorkCategoryId}
+										onValueChange={(value) =>
+											dispatch({ type: "setSelectedWorkCategoryId", value })
+										}
 										disabled={isMutating}
 									/>
 								)}
 
 								{!isClockedIn && (
 									<WorkLocationSelector
-										value={workLocationType}
-										onChange={setWorkLocationType}
+										value={uiState.workLocationType}
+										onChange={(value) => dispatch({ type: "setWorkLocationType", value })}
 										t={t}
 									/>
 								)}
@@ -337,7 +393,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 					isAddingBreak={isAddingBreak}
 					isDisabled={isMutating}
 					t={t}
-					buttonClassName="h-8 px-2.5"
+					buttonClassName="-ml-2 h-8 rounded-l-none border-l-0 px-2.5"
 					iconOnly
 				/>
 			) : null}

@@ -110,7 +110,12 @@ describe("TimeClockPopover", () => {
 		render(<TimeClockPopover />);
 
 		expect(screen.getByRole("button", { name: /Clock Out/ })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Add break" }).textContent).toBe("");
+		const addBreakButton = screen.getByRole("button", { name: "Add break" });
+
+		expect(addBreakButton.textContent).toBe("");
+		expect(addBreakButton.className).toContain("bg-background");
+		expect(addBreakButton.className).toContain("rounded-l-none");
+		expect(addBreakButton.className).toContain("border-l-0");
 	});
 
 	it("adds a break from the header quick break trigger while clocked in", async () => {
