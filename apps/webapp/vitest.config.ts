@@ -14,6 +14,7 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "./src"),
 			"@/db": path.resolve(__dirname, "./src/db"),
 			"@/lib": path.resolve(__dirname, "./src/lib"),
+			"server-only": path.resolve(__dirname, "./src/test/server-only.ts"),
 		},
 	},
 });

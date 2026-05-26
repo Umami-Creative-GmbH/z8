@@ -147,6 +147,7 @@
     "recharts": "3.8.1",
     "resend": "^6.12.3",
     "sanitize-html": "^2.17.4",
+    "server-only": "^0.0.1",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "streamdown": "^2.5.0",
