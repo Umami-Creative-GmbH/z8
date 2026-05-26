@@ -34,12 +34,12 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useJobStatus } from "@/lib/queue/use-job-status";
 
 interface AuditPackGeneratorCardProps {

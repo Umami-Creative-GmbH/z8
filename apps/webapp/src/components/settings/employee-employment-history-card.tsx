@@ -24,13 +24,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";

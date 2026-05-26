@@ -45,7 +45,8 @@ import {
 	getAbsenceCategoryDisplayName,
 } from "@/lib/absences/category-display";
 import { queryKeys } from "@/lib/query/keys";
-import { AbsenceCategoryForm, type AbsenceCategoryForSettings } from "./absence-category-form";
+import { AbsenceCategoryForm } from "./absence-category-form";
+import type { AbsenceCategoryForSettings } from "./absence-category-form-utils";
 
 interface AbsenceCategoriesTableProps {
 	organizationId: string;

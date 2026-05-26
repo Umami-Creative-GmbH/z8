@@ -28,13 +28,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { CreateRateHistory } from "@/lib/validations/employee";

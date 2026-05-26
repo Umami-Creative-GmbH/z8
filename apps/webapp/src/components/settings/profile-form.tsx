@@ -37,12 +37,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { UserAvatar } from "@/components/user-avatar";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { format } from "@/lib/datetime/luxon-utils";

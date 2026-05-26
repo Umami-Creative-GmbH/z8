@@ -5,7 +5,7 @@ import {
 	createYearlyHolidayRecurrenceRule,
 	formatHolidayDatePickerValue,
 	parseHolidayDatePickerValue,
-} from "./holiday-dialog";
+} from "./holiday-dialog-utils";
 
 vi.mock("@/app/[locale]/(app)/settings/holidays/actions", () => ({
 	getHolidayCategories: vi.fn(),

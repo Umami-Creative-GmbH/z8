@@ -183,13 +183,6 @@ function TFormMessage({
 	);
 }
 
-/**
- * Helper to check if a field has errors
- */
-function fieldHasError(field: FieldApiLike): boolean {
-	return field.state.meta.errors.length > 0;
-}
-
 export {
 	TFormItem,
 	TFormLabel,
@@ -197,5 +190,4 @@ export {
 	TFormDescription,
 	TFormMessage,
 	useTFormItem,
-	fieldHasError,
 };

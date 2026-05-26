@@ -12,10 +12,12 @@
  */
 
 import dynamic from "next/dynamic";
+import type { ComponentType } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { VirtualizedTableProps } from "./virtualized-table";
 
 // Loading skeleton that matches table structure
-function TableSkeleton({ rowCount = 5 }: { rowCount?: number }) {
+export function TableSkeleton({ rowCount = 5 }: { rowCount?: number }) {
 	return (
 		<div className="rounded-md border">
 			{/* Header skeleton */}
@@ -47,13 +49,18 @@ function TableSkeleton({ rowCount = 5 }: { rowCount?: number }) {
  * Dynamically loaded VirtualizedTable
  * Only loads the @tanstack/react-virtual bundle when this component mounts
  */
-export const DynamicVirtualizedTable = dynamic(
+const VirtualizedTable = dynamic(
 	() => import("./virtualized-table").then((mod) => mod.VirtualizedTable),
 	{
 		loading: () => <TableSkeleton />,
 		ssr: false, // Virtualization requires client-side measurement
 	},
 );
+
+export function DynamicVirtualizedTable<TData>(props: VirtualizedTableProps<TData>) {
+	const TypedVirtualizedTable = VirtualizedTable as ComponentType<VirtualizedTableProps<TData>>;
+	return <TypedVirtualizedTable {...props} />;
+}
 
 /**
  * Type exports for consumers
@@ -62,7 +69,3 @@ export type {
 	VirtualizedTableColumn,
 	VirtualizedTableProps,
 } from "./virtualized-table";
-/**
- * Hook exports need to be re-exported directly (can't be dynamically imported)
- */
-export { useRowMemoization } from "./virtualized-table";

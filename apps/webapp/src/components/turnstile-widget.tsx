@@ -102,12 +102,3 @@ export const TurnstileWidget = forwardRef<TurnstileRef, TurnstileWidgetProps>(
 		);
 	},
 );
-
-/**
- * @deprecated Use ref methods instead: `turnstileRef.current?.reset()`
- */
-export function resetTurnstile(_widgetId: string): void {
-	console.warn(
-		"resetTurnstile is deprecated. Use ref methods instead: turnstileRef.current?.reset()",
-	);
-}

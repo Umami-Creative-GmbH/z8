@@ -14,7 +14,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 
-export const employeeGroupQueryKey = (organizationId: string) =>
+const employeeGroupQueryKey = (organizationId: string) =>
 	["approval-policy-employee-groups", organizationId] as const;
 
 type EmployeeGroupData = Awaited<ReturnType<typeof getEmployeeGroups>>[number];

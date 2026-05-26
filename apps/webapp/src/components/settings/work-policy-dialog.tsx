@@ -15,9 +15,9 @@ import {
 	type ScheduleDayInput,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import {
-	generateDaysFromPreset,
 	WorkSchedulePreview,
 } from "@/components/settings/work-policy-preview";
+import { generateDaysFromPreset } from "@/components/settings/work-policy-preview-utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

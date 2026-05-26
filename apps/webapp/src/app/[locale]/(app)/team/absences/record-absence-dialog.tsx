@@ -25,12 +25,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";

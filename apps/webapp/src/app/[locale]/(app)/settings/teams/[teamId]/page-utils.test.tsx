@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { extractTeamMemberIds } from "./page-utils";
+import { extractTeamMemberIds } from "./page-state";
 
 vi.mock("./page-sections", () => ({
 	AddMemberDialog: () => null,

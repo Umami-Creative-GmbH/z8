@@ -14,13 +14,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import {
-	fieldHasError,
 	TFormControl,
 	TFormDescription,
 	TFormItem,
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 
 // Local type definitions (previously from time-regulations/validation)
 export interface BreakOptionFormValues {

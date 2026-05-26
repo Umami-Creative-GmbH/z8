@@ -27,7 +27,7 @@ interface TravelExpensePolicyManagementProps {
 	organizationId: string;
 }
 
-export const travelExpensePolicyQueryKey = (organizationId: string) =>
+const travelExpensePolicyQueryKey = (organizationId: string) =>
 	["travel-expense-policies", organizationId] as const;
 
 function toDateTime(value: Date | string | null): DateTime | null {

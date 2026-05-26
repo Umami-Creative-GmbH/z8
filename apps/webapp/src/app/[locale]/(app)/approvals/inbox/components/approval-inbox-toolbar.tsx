@@ -33,7 +33,7 @@ const APPROVAL_TYPES: { value: ApprovalType; label: string }[] = [
 	{ value: "travel_expense_claim", label: "Travel Expenses" },
 ];
 
-export function getApprovalTypeLabel(type: ApprovalType): string {
+function getApprovalTypeLabel(type: ApprovalType): string {
 	return APPROVAL_TYPES.find((approvalType) => approvalType.value === type)?.label ?? type;
 }
 
