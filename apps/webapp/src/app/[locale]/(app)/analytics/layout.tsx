@@ -17,27 +17,23 @@ import { auth } from "@/lib/auth";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
-async function getCurrentEmployee() {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return null;
-	}
-
+async function getCurrentEmployee(userId: string) {
 	return await db.query.employee.findFirst({
-		where: eq(employee.userId, session.user.id),
+		where: eq(employee.userId, userId),
 	});
 }
 
 export default async function AnalyticsLayout({ children }: { children: React.ReactNode }) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
-	const t = await getTranslate();
-
-	const session = await auth.api.getSession({ headers: await headers() });
+	const [t, session] = await Promise.all([
+		getTranslate(),
+		headers().then((requestHeaders) => auth.api.getSession({ headers: requestHeaders })),
+	]);
 	if (!session?.user) {
 		redirect("/sign-in");
 	}
 
-	const currentEmployee = await getCurrentEmployee();
+	const currentEmployee = await getCurrentEmployee(session.user.id);
 
 	if (!currentEmployee) {
 		return (

@@ -11,11 +11,11 @@ import { getTranslate } from "@/tolgee/server";
 export default async function WorksCouncilSettingsPage() {
 	await connection();
 
-	const { organizationId } = await requireOrgAdminSettingsAccess();
-	const [settings, t] = await Promise.all([
+	const authContextPromise = requireOrgAdminSettingsAccess();
+	const settingsPromise = authContextPromise.then(({ organizationId }) =>
 		loadWorksCouncilSettings(organizationId),
-		getTranslate(),
-	]);
+	);
+	const [settings, t] = await Promise.all([settingsPromise, getTranslate()]);
 
 	async function updateWorksCouncilSettings(values: WorksCouncilSettingsFormValues) {
 		"use server";

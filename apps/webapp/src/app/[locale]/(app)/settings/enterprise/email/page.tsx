@@ -9,15 +9,16 @@ import { getEmailConfig, getVaultConnectionStatus } from "./actions";
 async function EmailConfigContent() {
 	await connection();
 
-	const [{ organizationId }, t] = await Promise.all([
-		requireOrgAdminSettingsAccess(),
-		getTranslate(),
-	]);
-
-	// Fetch email config and vault status in parallel
-	const [emailConfig, vaultStatus] = await Promise.all([
+	const authContextPromise = requireOrgAdminSettingsAccess();
+	const emailConfigPromise = authContextPromise.then(({ organizationId }) =>
 		getEmailConfig(organizationId),
-		getVaultConnectionStatus(),
+	);
+	const vaultStatusPromise = authContextPromise.then(() => getVaultConnectionStatus());
+	const [{ organizationId }, t, emailConfig, vaultStatus] = await Promise.all([
+		authContextPromise,
+		getTranslate(),
+		emailConfigPromise,
+		vaultStatusPromise,
 	]);
 
 	return (
