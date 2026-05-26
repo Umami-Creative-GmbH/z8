@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import type {
 	ApprovalDecisionAction,
@@ -25,6 +26,14 @@ vi.mock("@/env", () => ({
 
 
 describe("buildPendingApprovalResult", () => {
+	it("prevents self-submitted approvals from being shown as pending for the requester", () => {
+		// Keep this as a source-level regression because the query is executed through Drizzle's
+		// relation API and this test suite intentionally avoids a database dependency.
+		const source = readFileSync("src/lib/approvals/server/queries.ts", "utf8");
+
+		expect(source).toContain("ne(approvalRequest.requestedBy, currentEmployee.id)");
+	});
+
 	it("returns absences and time corrections in request order", () => {
 		const result = buildPendingApprovalResult({
 			pendingRequests: [],
