@@ -122,9 +122,12 @@ describe("DiagnosticsClient", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Refresh diagnostics" }));
 
 		await waitFor(() => expect(screen.getAllByText("Warning").length).toBeGreaterThan(0));
-		expect(screen.getByRole("status").getAttribute("aria-live")).toBe("polite");
-		expect(screen.getByRole("status").textContent).toContain("Warning");
-		expect(screen.getByRole("status").textContent).toContain("2026-05-10T12:05:00.000Z");
+		const diagnosticsStatus = screen
+			.getAllByRole("status")
+			.find((element) => element.textContent?.includes("Diagnostics status"));
+		expect(diagnosticsStatus?.getAttribute("aria-live")).toBe("polite");
+		expect(diagnosticsStatus?.textContent).toContain("Warning");
+		expect(diagnosticsStatus?.textContent).toContain("2026-05-10T12:05:00.000Z");
 		expect(screen.getByText("Queue / Redis")).toBeTruthy();
 		expect(screen.getByText("Unavailable")).toBeTruthy();
 		expect(screen.getByText("Check Redis connectivity and worker queue configuration.")).toBeTruthy();
@@ -169,7 +172,7 @@ describe("DiagnosticsClient", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Test encryption" }));
 
 		await waitFor(() => expect(screen.getByText("Input and output match")).toBeTruthy());
-		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+		expect(screen.getAllByText("Ada Lovelace")).toHaveLength(2);
 		expect(screen.getByText("key-created")).toBeTruthy();
 		expect(screen.getByText("Created new platform key")).toBeTruthy();
 		expect(screen.getByText("ciphertext-value")).toBeTruthy();

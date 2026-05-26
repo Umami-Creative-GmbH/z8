@@ -222,7 +222,7 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 								"Run an end-to-end platform key encrypt/decrypt test.",
 							)}
 						</CardDescription>
-						<p className="sr-only" aria-live="polite">
+						<p className="sr-only" role="status" aria-live="polite">
 							{encryptionLiveStatus}
 						</p>
 					</div>
@@ -269,11 +269,7 @@ export function DiagnosticsClient({ initialSnapshot }: { initialSnapshot: Platfo
 							</div>
 							<div className="space-y-1 rounded-lg border p-3">
 								<dt className="text-muted-foreground">{t("admin:admin.diagnostics.keyManager.output", "Output")}</dt>
-								<dd className="break-words font-mono">
-									{t("admin:admin.diagnostics.keyManager.outputValue", "Output: {value}", {
-										value: encryptionResult.output,
-									})}
-								</dd>
+								<dd className="break-words font-mono">{encryptionResult.output}</dd>
 							</div>
 							<div className="space-y-1 rounded-lg border p-3">
 								<dt className="text-muted-foreground">
