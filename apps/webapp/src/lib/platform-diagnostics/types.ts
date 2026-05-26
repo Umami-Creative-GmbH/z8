@@ -12,6 +12,7 @@ export interface DiagnosticsItem {
 export interface PlatformDiagnosticsSnapshot {
 	fetchedAt: string;
 	overallStatus: Exclude<DiagnosticsStatus, "disabled">;
+	secretStoreProvider: "vault" | "scaleway";
 	configuration: DiagnosticsItem[];
 	health: DiagnosticsItem[];
 	recommendedActions: string[];

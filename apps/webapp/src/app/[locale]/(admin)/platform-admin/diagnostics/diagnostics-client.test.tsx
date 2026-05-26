@@ -4,10 +4,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlatformDiagnosticsSnapshot } from "@/lib/platform-diagnostics";
 
-const { refreshPlatformDiagnosticsActionMock, testPlatformKeyManagerEncryptionActionMock } = vi.hoisted(() => ({
-	refreshPlatformDiagnosticsActionMock: vi.fn(),
-	testPlatformKeyManagerEncryptionActionMock: vi.fn(),
-}));
+const { refreshPlatformDiagnosticsActionMock, testPlatformKeyManagerEncryptionActionMock } =
+	vi.hoisted(() => ({
+		refreshPlatformDiagnosticsActionMock: vi.fn(),
+		testPlatformKeyManagerEncryptionActionMock: vi.fn(),
+	}));
 
 vi.mock("./actions", () => ({
 	refreshPlatformDiagnosticsAction: refreshPlatformDiagnosticsActionMock,
@@ -27,7 +28,9 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/ui/badge", () => ({
-	Badge: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement>) => <span {...props}>{children}</span>,
+	Badge: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
+		<span {...props}>{children}</span>
+	),
 }));
 
 vi.mock("@/components/ui/button", () => ({
@@ -37,21 +40,36 @@ vi.mock("@/components/ui/button", () => ({
 }));
 
 vi.mock("@/components/ui/card", () => ({
-	Card: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <section {...props}>{children}</section>,
-	CardContent: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
-	CardDescription: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => <p {...props}>{children}</p>,
-	CardHeader: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => <header {...props}>{children}</header>,
-	CardTitle: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => <h2 {...props}>{children}</h2>,
+	Card: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
+		<section {...props}>{children}</section>
+	),
+	CardContent: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+		<div {...props}>{children}</div>
+	),
+	CardDescription: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
+		<p {...props}>{children}</p>
+	),
+	CardHeader: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
+		<header {...props}>{children}</header>
+	),
+	CardTitle: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
+		<h2 {...props}>{children}</h2>
+	),
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
-function snapshot(overrides: Partial<PlatformDiagnosticsSnapshot> = {}): PlatformDiagnosticsSnapshot {
+function snapshot(
+	overrides: Partial<PlatformDiagnosticsSnapshot> = {},
+): PlatformDiagnosticsSnapshot {
 	return {
 		fetchedAt: "2026-05-10T12:00:00.000Z",
 		overallStatus: "healthy",
+		secretStoreProvider: "scaleway",
 		configuration: [
 			{
 				title: "Billing",
@@ -94,7 +112,9 @@ describe("DiagnosticsClient", () => {
 	it("keeps item status labels accessible when the visual label is hidden", () => {
 		const { container } = render(<DiagnosticsClient initialSnapshot={snapshot()} />);
 
-		const hiddenStatusLabels = Array.from(container.querySelectorAll(".sr-only")).map((element) => element.textContent);
+		const hiddenStatusLabels = Array.from(container.querySelectorAll(".sr-only")).map(
+			(element) => element.textContent,
+		);
 
 		expect(hiddenStatusLabels).toContain("Disabled");
 		expect(hiddenStatusLabels).toContain("Healthy");
@@ -130,7 +150,9 @@ describe("DiagnosticsClient", () => {
 		expect(diagnosticsStatus?.textContent).toContain("2026-05-10T12:05:00.000Z");
 		expect(screen.getByText("Queue / Redis")).toBeTruthy();
 		expect(screen.getByText("Unavailable")).toBeTruthy();
-		expect(screen.getByText("Check Redis connectivity and worker queue configuration.")).toBeTruthy();
+		expect(
+			screen.getByText("Check Redis connectivity and worker queue configuration."),
+		).toBeTruthy();
 	});
 
 	it("keeps the previous snapshot visible when refresh fails", async () => {
@@ -153,6 +175,13 @@ describe("DiagnosticsClient", () => {
 		expect(screen.getByText("Scaleway Key Manager Encryption")).toBeTruthy();
 		expect(screen.getByText("Run an end-to-end platform key encrypt/decrypt test.")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Test encryption" })).toBeTruthy();
+	});
+
+	it("hides the Scaleway Key Manager encryption test card for Vault secret store deployments", () => {
+		render(<DiagnosticsClient initialSnapshot={snapshot({ secretStoreProvider: "vault" })} />);
+
+		expect(screen.queryByText("Scaleway Key Manager Encryption")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Test encryption" })).toBeNull();
 	});
 
 	it("runs the platform key manager encryption test and renders the successful result", async () => {
@@ -187,7 +216,9 @@ describe("DiagnosticsClient", () => {
 		render(<DiagnosticsClient initialSnapshot={snapshot()} />);
 		fireEvent.click(screen.getByRole("button", { name: "Test encryption" }));
 
-		await waitFor(() => expect(screen.getByText("Scaleway Key Manager request failed")).toBeTruthy());
+		await waitFor(() =>
+			expect(screen.getByText("Scaleway Key Manager request failed")).toBeTruthy(),
+		);
 		expect(screen.getByRole("alert").getAttribute("aria-live")).toBe("polite");
 	});
 });

@@ -40,15 +40,31 @@ describe("collectPlatformDiagnostics", () => {
 		const serialized = JSON.stringify(snapshot);
 
 		expect(snapshot.overallStatus).toBe("healthy");
+		expect(snapshot.secretStoreProvider).toBe("vault");
 		expect(snapshot.fetchedAt).toBe("2026-05-10T12:00:00.000Z");
 		expect(snapshot.configuration).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Billing", status: "disabled", value: "Disabled" }),
-				expect.objectContaining({ title: "Turnstile site key", status: "healthy", value: "Configured" }),
-				expect.objectContaining({ title: "Turnstile secret key", status: "healthy", value: "Configured" }),
-				expect.objectContaining({ title: "Cookie consent script", status: "healthy", value: "Configured" }),
-				expect.objectContaining({ title: "Deployment ID", status: "healthy", value: "deployment-123" }),
-				expect.objectContaining({ title: "Runtime", status: "healthy", value: "production / nodejs" }),
+				expect.objectContaining({
+					title: "Turnstile",
+					status: "healthy",
+					value: "Configured",
+				}),
+				expect.objectContaining({
+					title: "Cookie consent script",
+					status: "healthy",
+					value: "Configured",
+				}),
+				expect.objectContaining({
+					title: "Deployment ID",
+					status: "healthy",
+					value: "deployment-123",
+				}),
+				expect.objectContaining({
+					title: "Runtime",
+					status: "healthy",
+					value: "production / nodejs",
+				}),
 				expect.objectContaining({ title: "Build hash", status: "healthy", value: "build-123" }),
 			]),
 		);
@@ -56,14 +72,85 @@ describe("collectPlatformDiagnostics", () => {
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Database", status: "healthy", value: "Connected" }),
 				expect.objectContaining({ title: "Queue / Redis", status: "healthy", value: "Connected" }),
-				expect.objectContaining({ title: "Worker queue", status: "healthy", value: "1 waiting, 2 active, 0 failed, 3 delayed" }),
-				expect.objectContaining({ title: "Billing readiness", status: "disabled", value: "Billing disabled" }),
+				expect.objectContaining({
+					title: "Worker queue",
+					status: "healthy",
+					value: "1 waiting, 2 active, 0 failed, 3 delayed",
+				}),
+				expect.objectContaining({
+					title: "Billing readiness",
+					status: "disabled",
+					value: "Billing disabled",
+				}),
 			]),
 		);
 		expect(serialized).not.toContain("site-secret-value-that-must-not-leak");
 		expect(serialized).not.toContain("turnstile-secret-that-must-not-leak");
 		expect(serialized).not.toContain("stripe-secret-that-must-not-leak");
 		expect(serialized).not.toContain("stripe-webhook-secret-that-must-not-leak");
+	});
+
+	it("marks optional Turnstile as disabled when either key is missing", async () => {
+		const snapshot = await collectPlatformDiagnostics(
+			buildDeps({
+				env: {
+					TURNSTILE_SITE_KEY: "site-key-present",
+					TURNSTILE_SECRET_KEY: undefined,
+				},
+			}),
+		);
+
+		expect(snapshot.overallStatus).toBe("healthy");
+		expect(snapshot.configuration).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Turnstile",
+					status: "disabled",
+					value: "Disabled",
+					description: "Cloudflare Turnstile checks are disabled unless both keys are configured.",
+				}),
+			]),
+		);
+		expect(snapshot.configuration).not.toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Turnstile site key" }),
+				expect.objectContaining({ title: "Turnstile secret key" }),
+			]),
+		);
+		expect(snapshot.recommendedActions).not.toContain(
+			"Configure both Turnstile variables to enable bot protection on authentication forms.",
+		);
+	});
+
+	it("marks missing optional cookie consent script as disabled", async () => {
+		const snapshot = await collectPlatformDiagnostics(
+			buildDeps({
+				getCookieConsentConfigured: async () => false,
+			}),
+		);
+
+		expect(snapshot.overallStatus).toBe("healthy");
+		expect(snapshot.configuration).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Cookie consent script",
+					status: "disabled",
+					value: "Not configured",
+				}),
+			]),
+		);
+	});
+
+	it("returns the configured Scaleway secret store provider", async () => {
+		const snapshot = await collectPlatformDiagnostics(
+			buildDeps({
+				env: {
+					SECRET_STORE_PROVIDER: "scaleway",
+				},
+			}),
+		);
+
+		expect(snapshot.secretStoreProvider).toBe("scaleway");
 	});
 
 	it("marks billing readiness as warning when billing is enabled and Stripe config is incomplete", async () => {
@@ -110,7 +197,11 @@ describe("collectPlatformDiagnostics", () => {
 
 		expect(snapshot.configuration).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ title: "Build hash", status: "healthy", value: "injected-build-hash" }),
+				expect.objectContaining({
+					title: "Build hash",
+					status: "healthy",
+					value: "injected-build-hash",
+				}),
 			]),
 		);
 	});
@@ -132,7 +223,11 @@ describe("collectPlatformDiagnostics", () => {
 		expect(snapshot.configuration).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Deployment ID", status: "error", value: "Unavailable" }),
-				expect.objectContaining({ title: "Cookie consent script", status: "error", value: "Unavailable" }),
+				expect.objectContaining({
+					title: "Cookie consent script",
+					status: "error",
+					value: "Unavailable",
+				}),
 			]),
 		);
 		expect(snapshot.health).toEqual(
@@ -140,7 +235,9 @@ describe("collectPlatformDiagnostics", () => {
 				expect.objectContaining({ title: "Database", status: "error", value: "Unavailable" }),
 			]),
 		);
-		expect(snapshot.recommendedActions).toContain("Restore database connectivity before trusting other diagnostics.");
+		expect(snapshot.recommendedActions).toContain(
+			"Restore database connectivity before trusting other diagnostics.",
+		);
 	});
 
 	it("treats queue failures as warnings and leaves the database healthy", async () => {
@@ -157,11 +254,17 @@ describe("collectPlatformDiagnostics", () => {
 		expect(snapshot.health).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Database", status: "healthy", value: "Connected" }),
-				expect.objectContaining({ title: "Queue / Redis", status: "warning", value: "Unavailable" }),
+				expect.objectContaining({
+					title: "Queue / Redis",
+					status: "warning",
+					value: "Unavailable",
+				}),
 				expect.objectContaining({ title: "Worker queue", status: "warning", value: "Unavailable" }),
 			]),
 		);
-		expect(snapshot.recommendedActions).toContain("Check Redis connectivity and worker queue configuration.");
+		expect(snapshot.recommendedActions).toContain(
+			"Check Redis connectivity and worker queue configuration.",
+		);
 	});
 
 	it("recommends checking queue configuration when worker queue has failed jobs", async () => {
@@ -180,10 +283,16 @@ describe("collectPlatformDiagnostics", () => {
 		expect(snapshot.health).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Queue / Redis", status: "healthy", value: "Connected" }),
-				expect.objectContaining({ title: "Worker queue", status: "warning", value: "0 waiting, 0 active, 1 failed, 0 delayed" }),
+				expect.objectContaining({
+					title: "Worker queue",
+					status: "warning",
+					value: "0 waiting, 0 active, 1 failed, 0 delayed",
+				}),
 			]),
 		);
-		expect(snapshot.recommendedActions).toContain("Check Redis connectivity and worker queue configuration.");
+		expect(snapshot.recommendedActions).toContain(
+			"Check Redis connectivity and worker queue configuration.",
+		);
 	});
 
 	it("queries cookie consent configuration directly in default dependencies", () => {
