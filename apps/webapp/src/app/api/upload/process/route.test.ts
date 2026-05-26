@@ -161,4 +161,18 @@ describe("image upload processing", () => {
 			},
 		});
 	});
+
+	it("keeps the completed TUS object available for duplicate processing callbacks", async () => {
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: ".tmp/tus/dXNlcl8x-upload",
+					uploadType: "org-logo",
+					organizationId: "org_1",
+				}),
+		} as never);
+
+		expect(response.status).toBe(200);
+		expect(mockState.deleteCommand).not.toHaveBeenCalled();
+	});
 });
