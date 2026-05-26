@@ -159,9 +159,8 @@ export function VacationPolicyForm({
 				}
 			} catch (_error) {
 				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
-			} finally {
-				setLoading(false);
 			}
+			setLoading(false);
 		},
 	});
 

@@ -568,38 +568,37 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 		}
 	};
 
-	const handleSocialLogin = useCallback(
-		async (provider: "google" | "github" | "linkedin" | "apple") => {
-			dispatch({ type: "SET_LOADING", loading: true });
-			dispatch({ type: "SET_ERROR", error: null });
+	const handleSocialLogin = async (provider: "google" | "github" | "linkedin" | "apple") => {
+		dispatch({ type: "SET_LOADING", loading: true });
+		dispatch({ type: "SET_ERROR", error: null });
 
-			try {
-				// Check if org has custom OAuth credentials for this provider
-				if (socialOAuthConfigured?.[provider]) {
-					// Use custom OAuth flow for org-specific credentials
-					window.location.href = `/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`;
-				} else {
-					// Use global Better Auth flow
-					await authClient.signIn.social({
-						provider,
-						callbackURL: postSignInRedirectUrl,
-					});
-				}
-			} catch (err) {
-				dispatch({ type: "SET_LOADING", loading: false });
-				dispatch({
-					type: "SET_ERROR",
-					error:
-						err instanceof Error
-							? err.message
-							: t("auth.social-login-error", "An error occurred during social sign-in"),
+		try {
+			// Check if org has custom OAuth credentials for this provider
+			if (socialOAuthConfigured?.[provider]) {
+				// Use custom OAuth flow for org-specific credentials
+				window.location.assign(
+					`/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`,
+				);
+			} else {
+				// Use global Better Auth flow
+				await authClient.signIn.social({
+					provider,
+					callbackURL: postSignInRedirectUrl,
 				});
 			}
-		},
-		[postSignInRedirectUrl, t, socialOAuthConfigured],
-	);
+		} catch (err) {
+			dispatch({ type: "SET_LOADING", loading: false });
+			dispatch({
+				type: "SET_ERROR",
+				error:
+					err instanceof Error
+						? err.message
+						: t("auth.social-login-error", "An error occurred during social sign-in"),
+			});
+		}
+	};
 
-	const handlePasskeyLogin = useCallback(async () => {
+	const handlePasskeyLogin = async () => {
 		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			const result = await authClient.signIn.passkey({
@@ -640,9 +639,9 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [postSignInRedirectUrl, push, t]);
+	};
 
-	const handleSSOLogin = useCallback(async () => {
+	const handleSSOLogin = async () => {
 		if (!ssoProviderId) {
 			dispatch({
 				type: "SET_ERROR",
@@ -669,9 +668,9 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 						: t("auth.sso-login-error", "An error occurred during SSO sign-in"),
 			});
 		}
-	}, [postSignInRedirectUrl, ssoProviderId, t]);
+	};
 
-	const handleVerify2FA = useCallback(async () => {
+	const handleVerify2FA = async () => {
 		if (otpValue.length !== 6) {
 			dispatch({
 				type: "SET_ERROR",
@@ -727,7 +726,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [postSignInRedirectUrl, otpValue, push, trustDevice, t]);
+	};
 
 	return (
 		<AuthFormWrapper

@@ -151,7 +151,7 @@ function InitPageContent() {
 	);
 
 	useEffect(() => {
-		void initializeSession();
+		void Promise.resolve().then(initializeSession);
 	}, [initializeSession]);
 
 	// Show organization selection UI

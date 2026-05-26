@@ -96,10 +96,8 @@ export function ScheduleXCalendarWrapper({
 	const [currentDate, setCurrentDate] = useState<DateTime>(() => DateTime.now());
 
 	// Create calendar plugins (must be stable references)
-	const calendarControlsRef = useRef(createCalendarControlsPlugin());
-	const calendarControls = calendarControlsRef.current;
-	const currentTimePluginRef = useRef(createCurrentTimePlugin());
-	const currentTimePlugin = currentTimePluginRef.current;
+	const [calendarControls] = useState(() => createCalendarControlsPlugin());
+	const [currentTimePlugin] = useState(() => createCurrentTimePlugin());
 	const calendarContainerRef = useRef<HTMLDivElement>(null);
 
 	// Convert events to Schedule-X format

@@ -69,7 +69,8 @@ export function SurchargeManagement({ organizationId, canManage }: SurchargeMana
 	}, [organizationId]);
 
 	useEffect(() => {
-		loadData();
+		const timeout = setTimeout(() => loadData(), 0);
+		return () => clearTimeout(timeout);
 	}, [loadData]);
 
 	// Delete model mutation

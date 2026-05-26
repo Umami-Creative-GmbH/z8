@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
+import { useSyncExternalStore } from "react";
 
 interface ExportOperationsDateTimeProps {
 	value: Date | string | null;
@@ -13,11 +13,7 @@ export function ExportOperationsDateTime({
 	emptyLabel = "",
 }: ExportOperationsDateTimeProps) {
 	const locale = useLocale();
-	const [isMounted, setIsMounted] = useState(false);
-
-	useEffect(() => {
-		setIsMounted(true);
-	}, []);
+	const isMounted = useSyncExternalStore(subscribeToMount, getClientSnapshot, getServerSnapshot);
 
 	if (!value) {
 		return <>{emptyLabel}</>;
@@ -49,4 +45,17 @@ function formatServerDateTime(date: Date, locale: string) {
 		timeStyle: "short",
 		timeZone: "UTC",
 	}).format(date);
+}
+
+function subscribeToMount(callback: () => void) {
+	const timeout = setTimeout(callback, 0);
+	return () => clearTimeout(timeout);
+}
+
+function getClientSnapshot() {
+	return true;
+}
+
+function getServerSnapshot() {
+	return false;
 }

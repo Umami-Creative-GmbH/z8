@@ -14,7 +14,6 @@ import {
 	type PaginationState,
 	type RowSelectionState,
 	type SortingState,
-	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
@@ -28,6 +27,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
@@ -151,7 +151,7 @@ export function DataTable<TData, TValue>({
 	const currentPagination = pagination ?? internalPagination;
 	const rowSelection = externalRowSelection ?? internalRowSelection;
 
-	const table = useReactTable({
+	const table = useCompilerSafeReactTable({
 		data,
 		columns,
 		pageCount: manualPagination ? pageCount : undefined,
@@ -202,9 +202,7 @@ export function DataTable<TData, TValue>({
 					{table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => {
 							const rowClassNameValue =
-								typeof rowClassName === "function"
-									? rowClassName(row.original)
-									: rowClassName;
+								typeof rowClassName === "function" ? rowClassName(row.original) : rowClassName;
 
 							return (
 								<TableRow

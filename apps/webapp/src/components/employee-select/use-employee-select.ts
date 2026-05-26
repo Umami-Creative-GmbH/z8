@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
 	type EmployeeSelectParams,
@@ -90,7 +90,7 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 	// Reset page when filters change
 	// biome-ignore lint/correctness/useExhaustiveDependencies: we intentionally want to trigger on filter changes
 	useEffect(() => {
-		setPage(0);
+		startTransition(() => setPage(0));
 	}, [roleFilter, statusFilter, teamFilter]);
 
 	// Get current employee for org context

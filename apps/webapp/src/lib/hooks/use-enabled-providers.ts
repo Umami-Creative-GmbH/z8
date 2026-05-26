@@ -51,6 +51,7 @@ export function useEnabledProviders(): UseEnabledProvidersReturn {
 
 	useEffect(() => {
 		const fetchEnabledProviders = async () => {
+			let shouldFinish = true;
 			try {
 				// Check sessionStorage cache first
 				const cached = sessionStorage.getItem("enabled-providers");
@@ -59,6 +60,7 @@ export function useEnabledProviders(): UseEnabledProvidersReturn {
 						const ids = JSON.parse(cached) as SocialProviderId[];
 						setEnabledProviders(SOCIAL_PROVIDERS.filter((p) => ids.includes(p.id)));
 						setIsLoading(false);
+						shouldFinish = false;
 						return;
 					} catch (_e) {
 						// Invalid cache, continue to fetch
@@ -70,7 +72,9 @@ export function useEnabledProviders(): UseEnabledProvidersReturn {
 				const response = await fetch("/api/auth/providers");
 
 				if (!response.ok) {
-					throw new Error(`Failed to fetch providers: ${response.statusText}`);
+					setError(new Error(`Failed to fetch providers: ${response.statusText}`));
+					setEnabledProviders([]);
+					return;
 				}
 
 				const data = await response.json();
@@ -86,7 +90,8 @@ export function useEnabledProviders(): UseEnabledProvidersReturn {
 				setError(err instanceof Error ? err : new Error("Unknown error"));
 				// Fallback to empty array on error
 				setEnabledProviders([]);
-			} finally {
+			}
+			if (shouldFinish) {
 				setIsLoading(false);
 			}
 		};

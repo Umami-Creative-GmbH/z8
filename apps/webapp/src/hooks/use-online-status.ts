@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { startTransition, useEffect, useState, useSyncExternalStore } from "react";
 
 /**
  * Subscribe to online/offline status changes
@@ -51,7 +51,7 @@ export function useNetworkStatus() {
 	// Track if we recovered from offline state
 	useEffect(() => {
 		if (!isOnline) {
-			setWasOffline(true);
+			startTransition(() => setWasOffline(true));
 		}
 	}, [isOnline]);
 

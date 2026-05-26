@@ -93,32 +93,33 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 		},
 	});
 
-	const handleConnect = async (providerId: SocialProviderId) => {
+	const handleConnect = (providerId: SocialProviderId) => {
 		setConnectingProvider(providerId);
 
-		try {
-			const result = await authClient.linkSocial({
+		void authClient
+			.linkSocial({
 				provider: providerId,
 				callbackURL: "/settings/security",
+			})
+			.then((result) => {
+				if (result.error) {
+					throw new Error(
+						getAuthErrorMessage(
+							result.error,
+							t("settings.socialAccounts.connectFailed", "Failed to connect account"),
+						),
+					);
+				}
+			})
+			.catch((error: unknown) => {
+				setConnectingProvider(null);
+				toast.error(t("settings.socialAccounts.connectFailed", "Failed to connect account"), {
+					description:
+						error instanceof Error
+							? error.message
+							: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
+				});
 			});
-
-			if (result.error) {
-				throw new Error(
-					getAuthErrorMessage(
-						result.error,
-						t("settings.socialAccounts.connectFailed", "Failed to connect account"),
-					),
-				);
-			}
-		} catch (error) {
-			setConnectingProvider(null);
-			toast.error(t("settings.socialAccounts.connectFailed", "Failed to connect account"), {
-				description:
-					error instanceof Error
-						? error.message
-						: t("settings.socialAccounts.unexpectedError", "An unexpected error occurred"),
-			});
-		}
 	};
 
 	const handleUnlink = () => {

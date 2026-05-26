@@ -45,25 +45,39 @@ export function WebhookDeliveryLogsDialog({
 	const [isLoading, setIsLoading] = useState(false);
 	const [offset, setOffset] = useState(0);
 	const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+	const [loadedRequestKey, setLoadedRequestKey] = useState<string | null>(null);
 
 	const limit = 20;
+	const requestKey = `${webhookId}:${offset}`;
+	const shouldShowInitialLoading =
+		open && deliveries.length === 0 && loadedRequestKey !== requestKey;
 
-	const loadDeliveries = useCallback(async () => {
-		setIsLoading(true);
-		try {
-			const result = await getWebhookDeliveryLogs(webhookId, { limit, offset });
-			if (result.success && result.data) {
-				setDeliveries(result.data.deliveries);
-				setTotal(result.data.total);
+	const loadDeliveries = useCallback(
+		async (showLoading = true) => {
+			if (showLoading) {
+				setIsLoading(true);
 			}
-		} finally {
+			try {
+				const result = await getWebhookDeliveryLogs(webhookId, { limit, offset });
+				if (result.success && result.data) {
+					setDeliveries(result.data.deliveries);
+					setTotal(result.data.total);
+				}
+			} catch (error) {
+				setLoadedRequestKey(requestKey);
+				setIsLoading(false);
+				throw error;
+			}
+
+			setLoadedRequestKey(requestKey);
 			setIsLoading(false);
-		}
-	}, [webhookId, offset]);
+		},
+		[webhookId, offset, requestKey],
+	);
 
 	useEffect(() => {
 		if (open) {
-			loadDeliveries();
+			void Promise.resolve().then(() => loadDeliveries());
 		}
 	}, [open, loadDeliveries]);
 
@@ -128,7 +142,7 @@ export function WebhookDeliveryLogsDialog({
 				</ActionPanelHeader>
 
 				<ActionPanelBody>
-					{isLoading && deliveries.length === 0 ? (
+					{(isLoading || shouldShowInitialLoading) && deliveries.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<IconLoader2
 								className="size-8 animate-spin text-muted-foreground"
@@ -198,7 +212,7 @@ export function WebhookDeliveryLogsDialog({
 														)}
 													</TableCell>
 													<TableCell>
-														{delivery.durationMs ? `${delivery.durationMs}ms` : "-"}
+														{delivery.durationMs ? delivery.durationMs + "ms" : "-"}
 													</TableCell>
 													<TableCell>
 														{delivery.attemptNumber}/{delivery.maxAttempts}

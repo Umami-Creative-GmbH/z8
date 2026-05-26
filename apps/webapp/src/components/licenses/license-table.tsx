@@ -1,5 +1,6 @@
 "use client";
 
+import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
@@ -8,9 +9,7 @@ import {
 	getFilteredRowModel,
 	getSortedRowModel,
 	type SortingState,
-	useReactTable,
 } from "@tanstack/react-table";
-import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import type { LicenseInfo, LicenseReport } from "@/types/license";
 
 type LicenseTableProps = {
@@ -83,7 +83,11 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 				),
 				cell: ({ row }) => {
 					const license = row.getValue("license") as string;
-					return <Badge variant={getLicenseBadgeVariant(license)}>{license || t("settings.licenses.unknown", "Unknown")}</Badge>;
+					return (
+						<Badge variant={getLicenseBadgeVariant(license)}>
+							{license || t("settings.licenses.unknown", "Unknown")}
+						</Badge>
+					);
 				},
 			},
 			{
@@ -128,7 +132,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
 
-	const table = useReactTable({
+	const table = useCompilerSafeReactTable({
 		data: licenses,
 		columns,
 		state: {
@@ -161,7 +165,10 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 			<div className="shrink-0">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="relative max-w-sm flex-1">
-						<IconSearch aria-hidden="true" className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+						<IconSearch
+							aria-hidden="true"
+							className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground"
+						/>
 						<Input
 							className="pl-9"
 							onChange={(e) => setGlobalFilter(e.target.value)}
@@ -170,8 +177,14 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						/>
 					</div>
 					<div className="flex gap-4 text-muted-foreground text-sm">
-						<span>{t("settings.licenses.packagesCount", "{count} packages", { count: stats.total })}</span>
-						<span>{t("settings.licenses.licenseTypesCount", "{count} license types", { count: stats.uniqueLicenses })}</span>
+						<span>
+							{t("settings.licenses.packagesCount", "{count} packages", { count: stats.total })}
+						</span>
+						<span>
+							{t("settings.licenses.licenseTypesCount", "{count} license types", {
+								count: stats.uniqueLicenses,
+							})}
+						</span>
 					</div>
 				</div>
 			</div>
@@ -182,7 +195,10 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
-									<TableHead key={header.id} className="sticky top-0 z-10 bg-muted/95 py-2 backdrop-blur-sm">
+									<TableHead
+										key={header.id}
+										className="sticky top-0 z-10 bg-muted/95 py-2 backdrop-blur-sm"
+									>
 										{header.isPlaceholder
 											? null
 											: flexRender(header.column.columnDef.header, header.getContext())}

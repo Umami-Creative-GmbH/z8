@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import type {
 	NotificationsListResponse,
 	NotificationWithMeta,
@@ -30,6 +30,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 	const eventSourceRef = useRef<EventSource | null>(null);
 	const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const reconnectAttempts = useRef(0);
+	const connectRef = useRef<() => void>(() => {});
 	const [isConnected, setIsConnected] = useState(false);
 
 	// Store callbacks in refs to avoid dependency churn and prevent unnecessary reconnects
@@ -40,7 +41,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 	useEffect(() => {
 		onCountUpdateRef.current = onCountUpdate;
 		onNewNotificationRef.current = onNewNotification;
-	});
+	}, [onCountUpdate, onNewNotification]);
 
 	const connect = useCallback(() => {
 		// Only run in browser
@@ -145,9 +146,9 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 				reconnectAttempts.current += 1;
 				const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 30000);
 
-				reconnectTimeoutRef.current = setTimeout(() => {
+			reconnectTimeoutRef.current = setTimeout(() => {
 					if (enabled) {
-						connect();
+						connectRef.current();
 					}
 				}, delay);
 			};
@@ -161,6 +162,10 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 			setIsConnected(false);
 		}
 	}, [enabled, organizationId, queryClient]);
+
+	useEffect(() => {
+		connectRef.current = connect;
+	}, [connect]);
 
 	const disconnect = useCallback(() => {
 		if (reconnectTimeoutRef.current) {
@@ -176,7 +181,7 @@ export function useNotificationStream(options: UseNotificationStreamOptions = {}
 
 	useEffect(() => {
 		if (enabled) {
-			connect();
+			startTransition(connect);
 		}
 
 		return () => {

@@ -13,7 +13,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteAbsenceCategory,
@@ -148,7 +148,7 @@ export function AbsenceCategoriesTable({
 		? getAbsenceCategoryDisplayName(categoryToDelete, locale, t)
 		: undefined;
 
-	const filteredCategories = useMemo(() => {
+	const filteredCategories = (() => {
 		if (!categories) return [];
 		if (!search) return categories;
 
@@ -163,10 +163,9 @@ export function AbsenceCategoriesTable({
 
 			return searchableValues.some((value) => value?.toLowerCase().includes(searchLower));
 		});
-	}, [categories, locale, search, t]);
+	})();
 
-	const columns = useMemo<ColumnDef<AbsenceCategoryForSettings>[]>(
-		() => [
+	const columns: ColumnDef<AbsenceCategoryForSettings>[] = [
 			{
 				accessorKey: "name",
 				header: t("settings.absenceCategories.header.name", "Name"),
@@ -294,9 +293,7 @@ export function AbsenceCategoriesTable({
 						},
 					]
 				: []),
-		],
-		[t, locale, canManageCategories, toggleActive, toggleActivePending],
-	);
+	];
 
 	const handleFormClose = (open: boolean) => {
 		if (!open) {

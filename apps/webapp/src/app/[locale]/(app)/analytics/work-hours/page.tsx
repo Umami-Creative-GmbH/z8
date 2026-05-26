@@ -110,10 +110,10 @@ export default function WorkHoursPage() {
 
 				console.error("Failed to load work hours analytics data:", error);
 				toast.error(t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"));
-			} finally {
-				if (isCurrent) {
-					setLoading(false);
-				}
+			}
+
+			if (isCurrent) {
+				setLoading(false);
 			}
 		}
 
@@ -158,7 +158,7 @@ export default function WorkHoursPage() {
 							{ key: "undertimeHours", label: t("analytics.common.undertimeHours", "Undertime Hours") },
 							{ key: "avgHoursPerWeek", label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week") },
 						],
-						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
+						filename: "work-hours-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
 					}}
 					disabled={!workHoursData || !dateRange}
 				/>

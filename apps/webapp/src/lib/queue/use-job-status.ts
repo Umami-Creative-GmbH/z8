@@ -9,6 +9,7 @@
  * Rule: client-swr-dedup
  */
 
+import { useEffect, useRef } from "react";
 import useSWR from "swr";
 
 export interface JobStatus {
@@ -89,11 +90,13 @@ export function useJobStatus(
 } {
 	const { refreshInterval = 2000, enabled = true, onSuccess, onError } = options;
 
-	// Store callbacks in refs to avoid triggering effect reruns
-	const onSuccessRef = { current: onSuccess };
-	const onErrorRef = { current: onError };
-	onSuccessRef.current = onSuccess;
-	onErrorRef.current = onError;
+	const onSuccessRef = useRef(onSuccess);
+	const onErrorRef = useRef(onError);
+
+	useEffect(() => {
+		onSuccessRef.current = onSuccess;
+		onErrorRef.current = onError;
+	}, [onSuccess, onError]);
 
 	const shouldFetch = enabled && !!jobId;
 
@@ -180,21 +183,32 @@ export function useJobStatuses(
 		},
 	);
 
-	const statuses = new Map<string, JobStatus>();
-	let completedCount = 0;
-	let failedCount = 0;
-	let pendingCount = jobIds.length;
-
-	results.forEach(([jobId, status]) => {
-		statuses.set(jobId, status);
-		if (status.state === "completed") {
-			completedCount++;
-			pendingCount--;
-		} else if (status.state === "failed") {
-			failedCount++;
-			pendingCount--;
-		}
-	});
+	const { statuses, completedCount, failedCount, pendingCount } = results.reduce(
+		(accumulator, [jobId, status]) => {
+			accumulator.statuses.set(jobId, status);
+			if (status.state === "completed") {
+				return {
+					...accumulator,
+					completedCount: accumulator.completedCount + 1,
+					pendingCount: accumulator.pendingCount - 1,
+				};
+			}
+			if (status.state === "failed") {
+				return {
+					...accumulator,
+					failedCount: accumulator.failedCount + 1,
+					pendingCount: accumulator.pendingCount - 1,
+				};
+			}
+			return accumulator;
+		},
+		{
+			statuses: new Map<string, JobStatus>(),
+			completedCount: 0,
+			failedCount: 0,
+			pendingCount: jobIds.length,
+		},
+	);
 
 	return {
 		statuses,

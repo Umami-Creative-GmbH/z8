@@ -9,7 +9,7 @@ import {
 	IconAlertTriangle,
 	IconTrendingUp,
 } from "@tabler/icons-react";
-import { sql } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -260,7 +260,7 @@ async function SubscriptionsTable() {
 				createdAt: subscription.createdAt,
 			})
 			.from(subscription)
-			.orderBy(sql`${subscription.createdAt} DESC`)
+			.orderBy(desc(subscription.createdAt))
 			.limit(50),
 		db.select({ id: organization.id, name: organization.name }).from(organization),
 	]);

@@ -37,8 +37,8 @@ export function useElapsedTimer(startTime: Date | null): number {
 
 	useEffect(() => {
 		if (!startTime) {
-			setElapsedSeconds(0);
-			return;
+			const timeout = setTimeout(() => setElapsedSeconds(0), 0);
+			return () => clearTimeout(timeout);
 		}
 
 		const calculateElapsed = () => {
@@ -46,13 +46,16 @@ export function useElapsedTimer(startTime: Date | null): number {
 			return Math.floor((Date.now() - start.getTime()) / 1000);
 		};
 
-		setElapsedSeconds(calculateElapsed());
+		const timeout = setTimeout(() => setElapsedSeconds(calculateElapsed()), 0);
 
 		const interval = setInterval(() => {
 			setElapsedSeconds(calculateElapsed());
 		}, 1000);
 
-		return () => clearInterval(interval);
+		return () => {
+			clearTimeout(timeout);
+			clearInterval(interval);
+		};
 	}, [startTime]);
 
 	return elapsedSeconds;

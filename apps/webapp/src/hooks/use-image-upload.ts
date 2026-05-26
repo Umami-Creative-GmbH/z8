@@ -9,6 +9,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useImageProcessMutation } from "@/lib/query/use-image-process";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
+const DEFAULT_MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+
 interface UseImageUploadOptions {
 	uploadType: "avatar" | "org-logo" | "branding-logo" | "branding-background";
 	organizationId?: string;
@@ -29,7 +31,7 @@ interface UseImageUploadReturn {
 export function useImageUpload({
 	uploadType,
 	organizationId,
-	maxFileSize = 5 * 1024 * 1024,
+	maxFileSize = DEFAULT_MAX_IMAGE_FILE_SIZE,
 	onSuccess,
 	onError,
 }: UseImageUploadOptions): UseImageUploadReturn {

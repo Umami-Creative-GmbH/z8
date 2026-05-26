@@ -139,6 +139,7 @@ export default function OvertimeBurnDownPage() {
 
 				if (result.success && result.data) {
 					setData(result.data);
+					setLoading(false);
 					return;
 				}
 
@@ -150,10 +151,10 @@ export default function OvertimeBurnDownPage() {
 					setData(null);
 					toast.error(t("analytics.overtimeBurnDown.errors.loadData", "Failed to load overtime burn-down data"));
 				}
-			} finally {
-				if (isMounted) {
-					setLoading(false);
-				}
+			}
+
+			if (isMounted) {
+				setLoading(false);
 			}
 		}
 
@@ -212,7 +213,11 @@ export default function OvertimeBurnDownPage() {
 				{ key: "weekOverWeek" as const, label: t("analytics.overtimeBurnDown.weekOverWeek", "Week-over-Week") },
 				{ key: "trendDirection" as const, label: t("analytics.overtimeBurnDown.trendDirection", "Trend Direction") },
 			],
-			filename: `overtime-burndown-${breakdownDimension}-${dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"}`,
+			filename:
+				"overtime-burndown-" +
+				breakdownDimension +
+				"-" +
+				(dateRange ? DateTime.fromJSDate(dateRange.start).toFormat("yyyy-MM-dd") : "pending"),
 		};
 	}, [selectedBreakdownRows, breakdownLabel, breakdownDimension, dateRange, t]);
 

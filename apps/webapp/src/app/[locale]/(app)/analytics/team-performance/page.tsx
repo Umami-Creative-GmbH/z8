@@ -107,10 +107,10 @@ export default function TeamPerformancePage() {
 
 				console.error("Failed to load team performance data:", error);
 				toast.error(t("analytics.teamPerformance.errors.loadData", "Failed to load team performance data"));
-			} finally {
-				if (isCurrent) {
-					setLoading(false);
-				}
+			}
+
+			if (isCurrent) {
+				setLoading(false);
 			}
 		}
 
@@ -161,7 +161,7 @@ export default function TeamPerformancePage() {
 							{ key: "avgHoursPerEmployee", label: t("analytics.teamPerformance.avgPerEmployee", "Avg per Employee") },
 							{ key: "employeeCount", label: t("analytics.teamPerformance.employeeCount", "Employee Count") },
 						],
-						filename: `team-performance-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,
+						filename: "team-performance-" + (dateRange?.start.toISOString().split("T")[0] ?? "pending"),
 					}}
 					disabled={!teamData || !dateRange}
 				/>

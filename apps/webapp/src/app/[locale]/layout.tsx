@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
@@ -133,7 +134,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="yes" name="mobile-web-app-capable" />
 				<meta content="yes" name="apple-mobile-web-app-capable" />
 				<meta content="default" name="apple-mobile-web-app-status-bar-style" />
-				<script dangerouslySetInnerHTML={{ __html: FONT_SIZE_INIT_SCRIPT }} />
+				<Script id="font-size-init" strategy="beforeInteractive">
+					{FONT_SIZE_INIT_SCRIPT}
+				</Script>
 				<TranslatedMeta />
 			</head>
 			<body>

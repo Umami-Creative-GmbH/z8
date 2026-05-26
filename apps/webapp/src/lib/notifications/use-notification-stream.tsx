@@ -32,9 +32,11 @@ export function useNotificationStream(
 		error: null,
 	});
 
-	// Store callback in ref to avoid reconnection on callback change
 	const onNewNotificationRef = React.useRef(onNewNotification);
-	onNewNotificationRef.current = onNewNotification;
+
+	React.useEffect(() => {
+		onNewNotificationRef.current = onNewNotification;
+	}, [onNewNotification]);
 
 	React.useEffect(() => {
 		if (!enabled) return;
@@ -43,7 +45,7 @@ export function useNotificationStream(
 		let reconnectAttempts = 0;
 		let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-		const connect = () => {
+		function connect() {
 			eventSource = new EventSource("/api/notifications/stream");
 
 			eventSource.onopen = () => {
@@ -60,7 +62,7 @@ export function useNotificationStream(
 
 				// Exponential backoff for reconnection
 				const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
-				reconnectAttempts++;
+				reconnectAttempts += 1;
 
 				reconnectTimeout = setTimeout(() => {
 					if (eventSource) {
@@ -84,7 +86,7 @@ export function useNotificationStream(
 			eventSource.addEventListener("new_notification", (event) => {
 				try {
 					const data = JSON.parse(event.data);
-					onNewNotificationRef.current?.(data);
+				onNewNotificationRef.current?.(data);
 					// Also increment count optimistically
 					setState((prev) => ({
 						...prev,
@@ -99,7 +101,7 @@ export function useNotificationStream(
 			eventSource.addEventListener("heartbeat", () => {
 				// Connection is alive
 			});
-		};
+		}
 
 		connect();
 
