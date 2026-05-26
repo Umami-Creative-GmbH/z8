@@ -66,6 +66,7 @@ describe("TrialBanner", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Dismiss trial banner" }));
+		fireEvent.transitionEnd(screen.getByRole("complementary"));
 
 		expect(screen.queryByText("14-day trial active")).toBeNull();
 	});

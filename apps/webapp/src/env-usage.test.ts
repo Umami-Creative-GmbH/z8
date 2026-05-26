@@ -31,8 +31,9 @@ describe("environment variable usage", () => {
 	it("reads env vars from @/env outside env and instrumentation setup", () => {
 		const offenders = collectRuntimeFiles(SRC_ROOT).flatMap((filePath) => {
 			const source = readFileSync(filePath, "utf8");
+			const sourceWithoutNodeEnv = source.replaceAll("process.env.NODE_ENV", "");
 
-			if (!source.includes("process.env")) {
+			if (!sourceWithoutNodeEnv.includes("process.env")) {
 				return [];
 			}
 
@@ -40,5 +41,11 @@ describe("environment variable usage", () => {
 		});
 
 		expect(offenders).toEqual([]);
+	});
+
+	it("does not import the server env wrapper from Tolgee shared runtime code", () => {
+		const source = readFileSync(join(SRC_ROOT, "tolgee/shared.ts"), "utf8");
+
+		expect(source).not.toContain('from "@/env"');
 	});
 });
