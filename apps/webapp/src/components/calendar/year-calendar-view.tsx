@@ -202,6 +202,9 @@ export function YearCalendarView({
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
+	function handleCurrentYearClick() {
+		onYearChange(new Date().getFullYear());
+	}
 	const monthNames = useMemo(() => getMonthNames(locale), [locale]);
 	const weekdays = useMemo(() => {
 		const names = getWeekdayNames(locale);
@@ -245,7 +248,7 @@ export function YearCalendarView({
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => onYearChange(new Date().getFullYear())}
+						onClick={handleCurrentYearClick}
 					>
 						{t("calendar.view.today", "Today")}
 					</Button>

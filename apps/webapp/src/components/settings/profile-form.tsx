@@ -13,7 +13,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import {
@@ -67,6 +67,22 @@ interface ProfileFormProps {
 	};
 }
 
+const BIRTHDAY_START_MONTH = new Date(1940, 0);
+const BIRTHDAY_DEFAULT_MONTH = new Date(2000, 0);
+const TODAY_SNAPSHOT = new Date();
+
+function subscribeTodaySnapshot() {
+	return () => undefined;
+}
+
+function getTodaySnapshot() {
+	return TODAY_SNAPSHOT;
+}
+
+function getServerTodaySnapshot() {
+	return null;
+}
+
 type ProfileFormValues = {
 	image: string;
 	firstName: string;
@@ -83,6 +99,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 	const queryClient = useQueryClient();
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
+	const today = useSyncExternalStore(subscribeTodaySnapshot, getTodaySnapshot, getServerTodaySnapshot);
 	const presence = useEmployeeClockStatuses(currentEmployeeId ? [currentEmployeeId] : [], {
 		polling: false,
 	});
@@ -688,17 +705,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
 											</Button>
 										</PopoverTrigger>
 										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={selectedBirthday || undefined}
-												onSelect={(date) => form.setFieldValue("birthday", date || null)}
-												disabled={(date) => date > new Date()}
-												autoFocus
-												captionLayout="dropdown"
-												startMonth={new Date(1940, 0)}
-												endMonth={new Date()}
-												defaultMonth={selectedBirthday || new Date(2000, 0)}
-											/>
+										<Calendar
+											mode="single"
+											selected={selectedBirthday || undefined}
+											onSelect={(date) => form.setFieldValue("birthday", date || null)}
+											disabled={(date) => (today ? date > today : false)}
+											autoFocus
+											captionLayout="dropdown"
+											startMonth={BIRTHDAY_START_MONTH}
+											endMonth={today ?? undefined}
+											defaultMonth={selectedBirthday || BIRTHDAY_DEFAULT_MONTH}
+										/>
 										</PopoverContent>
 									</Popover>
 									<p className="text-muted-foreground text-sm">

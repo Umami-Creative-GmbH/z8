@@ -10,7 +10,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +49,7 @@ const MONTHLY_PRICE = 4;
 const YEARLY_PRICE_PER_MONTH = 3;
 const YEARLY_PRICE_TOTAL = 36;
 
-export function BillingPageClient({ subscription, accessResult, isOwner }: BillingPageClientProps) {
+function BillingPageClientContent({ subscription, accessResult, isOwner }: BillingPageClientProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -487,5 +487,13 @@ export function BillingPageClient({ subscription, accessResult, isOwner }: Billi
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+export function BillingPageClient(props: BillingPageClientProps) {
+	return (
+		<Suspense fallback={null}>
+			<BillingPageClientContent {...props} />
+		</Suspense>
 	);
 }

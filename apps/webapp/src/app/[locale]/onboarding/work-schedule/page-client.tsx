@@ -1,0 +1,242 @@
+"use client";
+
+import { IconClock, IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useTranslate } from "@tolgee/react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
+import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { useRouter } from "@/navigation";
+import { checkIsAdmin, setWorkScheduleOnboarding, skipWorkScheduleSetup } from "./actions";
+
+const defaultValues = {
+	hoursPerWeek: 40,
+	workClassification: "weekly" as "daily" | "weekly" | "monthly",
+	effectiveFrom: new Date(),
+};
+
+export default function WorkSchedulePage() {
+	const { t } = useTranslate();
+	const router = useRouter();
+	const [loading, setLoading] = useState(false);
+	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+	const form = useForm({
+		defaultValues,
+		onSubmit: async ({ value }) => {
+			setLoading(true);
+
+			const result = await setWorkScheduleOnboarding(value);
+
+			if (!result.success) {
+				setLoading(false);
+				toast.error(
+					result.error || t("onboarding.workSchedule.error", "Failed to set work schedule"),
+				);
+				return;
+			}
+			toast.success(t("onboarding.workSchedule.success", "Work schedule set successfully!"));
+			router.push(result.data.nextStep);
+		},
+	});
+
+	useEffect(() => {
+		async function loadAccess() {
+			const accessResult = await checkIsAdmin();
+
+			if (!accessResult.success) {
+				router.replace("/onboarding/wellness");
+				return;
+			}
+
+			if (!accessResult.data) {
+				const skipResult = await skipWorkScheduleSetup();
+
+				if (skipResult.success) {
+					router.replace(skipResult.data.nextStep);
+					return;
+				}
+
+				router.replace("/onboarding/wellness");
+				return;
+			}
+
+			setIsAdmin(true);
+		}
+
+		void loadAccess();
+	}, [router]);
+
+	async function handleSkip() {
+		setLoading(true);
+
+		const result = await skipWorkScheduleSetup();
+
+		if (!result.success) {
+			setLoading(false);
+			toast.error(result.error || t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup"));
+			return;
+		}
+		router.push(result.data.nextStep);
+	}
+
+	if (isAdmin === null) {
+		return (
+			<div className="flex min-h-[50vh] items-center justify-center">
+				<div className="text-center">
+					<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+					<p className="mt-4 text-muted-foreground">{t("common.loading", "Loading...")}</p>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<>
+			<ProgressIndicator currentStep="work_schedule" isAdmin={isAdmin} />
+
+			<div className="mx-auto max-w-2xl">
+				<div className="mb-8 text-center">
+					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10">
+						<IconClock className="size-8 text-primary" />
+					</div>
+					<h1 className="mb-4 text-3xl font-bold tracking-tight">
+						{t("onboarding.workSchedule.title", "Set your work schedule")}
+					</h1>
+					<p className="text-muted-foreground">
+						{t(
+							"onboarding.workSchedule.subtitle",
+							"Define your working hours to help track time and manage absences accurately.",
+						)}
+					</p>
+				</div>
+
+				<Card>
+					<CardHeader>
+						<CardTitle>{t("onboarding.workSchedule.scheduleTitle", "Work Schedule")}</CardTitle>
+						<CardDescription>
+							{t(
+								"onboarding.workSchedule.scheduleDesc",
+								"Set your default working hours. You can adjust this later in settings.",
+							)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
+							{/* Hours Per Week */}
+							<form.Field
+								name="hoursPerWeek"
+								validators={{
+									onChange: z.number().min(0).max(168),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2">
+										<Label>{t("onboarding.workSchedule.hoursPerWeek", "Hours per Week")}</Label>
+										<Input
+											type="number"
+											min={0}
+											max={168}
+											placeholder={t("onboarding.workSchedule.hoursPerWeekPlaceholder", "40")}
+											disabled={loading}
+											value={field.state.value}
+											onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"onboarding.workSchedule.hoursPerWeekDesc",
+												"Typical full-time is 40 hours per week.",
+											)}
+										</p>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm font-medium text-destructive">
+												{typeof field.state.meta.errors[0] === "string"
+													? field.state.meta.errors[0]
+													: (field.state.meta.errors[0] as any)?.message}
+											</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+
+							{/* Work Classification */}
+							<form.Field name="workClassification">
+								{(field) => (
+									<div className="space-y-2">
+										<Label>
+											{t("onboarding.workSchedule.classification", "Work Classification")}
+										</Label>
+										<Select
+											onValueChange={(value) =>
+												field.handleChange(value as "daily" | "weekly" | "monthly")
+											}
+											value={field.state.value}
+											disabled={loading}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder={t("onboarding.workSchedule.selectClassification", "Select classification")} />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="daily">
+													{t("onboarding.workSchedule.daily", "Daily")}
+												</SelectItem>
+												<SelectItem value="weekly">
+													{t("onboarding.workSchedule.weekly", "Weekly")}
+												</SelectItem>
+												<SelectItem value="monthly">
+													{t("onboarding.workSchedule.monthly", "Monthly")}
+												</SelectItem>
+											</SelectContent>
+										</Select>
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"onboarding.workSchedule.classificationDesc",
+												"How you want to track your working hours.",
+											)}
+										</p>
+									</div>
+								)}
+							</form.Field>
+
+							{/* Action Buttons */}
+							<div className="flex gap-3 pt-4">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleSkip}
+									disabled={loading}
+									className="flex-1"
+								>
+									{t("onboarding.workSchedule.skip", "Skip for now")}
+								</Button>
+								<Button type="submit" disabled={loading} className="flex-1">
+									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{t("onboarding.workSchedule.continue", "Continue")}
+								</Button>
+							</div>
+						</form>
+					</CardContent>
+				</Card>
+			</div>
+		</>
+	);
+}

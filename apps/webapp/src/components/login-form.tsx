@@ -3,7 +3,7 @@
 import { IconFingerprint, IconKey, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { memo, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { memo, Suspense, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,7 +266,7 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 	);
 });
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -882,5 +882,13 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 				</div>
 			)}
 		</AuthFormWrapper>
+	);
+}
+
+export function LoginForm(props: React.ComponentProps<"div">) {
+	return (
+		<Suspense fallback={null}>
+			<LoginFormContent {...props} />
+		</Suspense>
 	);
 }

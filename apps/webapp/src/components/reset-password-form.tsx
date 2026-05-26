@@ -3,7 +3,7 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { z } from "zod";
 import {
 	PasswordStrengthIndicator,
@@ -27,7 +27,7 @@ const resetPasswordSchema = z
 		path: ["confirmPassword"],
 	});
 
-export function ResetPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
 
@@ -294,5 +294,13 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 				</Link>
 			</div>
 		</AuthFormWrapper>
+	);
+}
+
+export function ResetPasswordForm(props: React.ComponentProps<"div">) {
+	return (
+		<Suspense fallback={null}>
+			<ResetPasswordFormContent {...props} />
+		</Suspense>
 	);
 }

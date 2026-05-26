@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import type { FormEvent } from "react";
+import { Suspense, type FormEvent } from "react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,7 @@ type TeamAbsencesTableProps = {
 	search: string;
 };
 
-export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTableProps) {
+function TeamAbsencesTableContent({ data, categories, search }: TeamAbsencesTableProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -376,5 +376,13 @@ export function TeamAbsencesTable({ data, categories, search }: TeamAbsencesTabl
 				categories={categories}
 			/>
 		</div>
+	);
+}
+
+export function TeamAbsencesTable(props: TeamAbsencesTableProps) {
+	return (
+		<Suspense fallback={null}>
+			<TeamAbsencesTableContent {...props} />
+		</Suspense>
 	);
 }

@@ -337,6 +337,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<label className="flex items-center gap-3 text-sm">
 							<input
 								type="checkbox"
+								aria-label={t("settings.clockinImport.selection.workdays", "Workdays / Work periods")}
 								checked={selections.workdays}
 								onChange={(event) =>
 									setSelections((current) => ({ ...current, workdays: event.target.checked }))
@@ -347,6 +348,7 @@ export function ClockinImportWizard({ organizationId }: ClockinImportWizardProps
 						<label className="flex items-center gap-3 text-sm">
 							<input
 								type="checkbox"
+								aria-label={t("settings.clockinImport.selection.absences", "Absences")}
 								checked={selections.absences}
 								onChange={(event) =>
 									setSelections((current) => ({ ...current, absences: event.target.checked }))
