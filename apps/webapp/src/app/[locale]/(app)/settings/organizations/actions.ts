@@ -854,22 +854,11 @@ export async function removeOrganizationLogo(
 				}
 
 				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await auth.api.updateOrganization({
-								body: {
-									organizationId,
-									data: { logo: null },
-								},
-								headers: await headers(),
-							});
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message: error instanceof Error ? error.message : "Failed to remove organization logo",
-								field: "logo",
-							});
-						},
+					dbService.query("removeOrganizationLogo", async () => {
+						await db
+							.update(authSchema.organization)
+							.set({ logo: null })
+							.where(eq(authSchema.organization.id, organizationId));
 					}),
 				);
 
