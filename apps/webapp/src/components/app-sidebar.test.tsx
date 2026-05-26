@@ -459,7 +459,7 @@ describe("app sidebar compliance navigation", () => {
 			"https://docs.z8-time.app/docs",
 		);
 		expect(screen.getByRole("link", { name: "Feedback" }).getAttribute("href")).toBe(
-			"https://feedback.z8-time.app/",
+			"https://github.com/Umami-Creative-GmbH/z8/issues",
 		);
 		expect(navSecondarySpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
@@ -471,7 +471,7 @@ describe("app sidebar compliance navigation", () => {
 				}),
 				expect.objectContaining({
 					title: "Feedback",
-					url: "https://feedback.z8-time.app/",
+					url: "https://github.com/Umami-Creative-GmbH/z8/issues",
 					icon: IconMessageCircle,
 					external: true,
 				}),
