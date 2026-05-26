@@ -38,6 +38,7 @@
     "react-email": "^6.3.3",
     "resend": "^6.12.3",
     "sanitize-html": "^2.17.4",
+    "server-only": "^0.0.1",
     "stripe": "^22.1.1",
     "web-push": "^3.6.7",
     "zod": "^4.4.3"
