@@ -39,7 +39,6 @@ vi.mock("@/components/ui/button", () => ({
 	Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
 		<button {...props}>{children}</button>
 	),
-	buttonVariants: () => "",
 }));
 
 vi.mock("@/components/ui/badge", () => ({

@@ -4,7 +4,8 @@ import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icon
 import * as React from "react";
 import { type DayButton, DayPicker, getDefaultClassNames } from "@daypicker/react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { weekStartDayToDayPickerValue } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 

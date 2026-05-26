@@ -79,12 +79,14 @@ export function WorksCouncilDashboard({ model }: { model: WorksCouncilPortalMode
 					<p className="font-medium text-sm">{formatDateRange(model.dateRange)}</p>
 				</div>
 				{model.exportEnabled && (
-					<a
-						href={buildExportHref(model.dateRange)}
-						className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-xs hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					>
-						Export review pack
-					</a>
+					<form method="post" action={buildExportHref(model.dateRange)}>
+						<button
+							type="submit"
+							className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-xs hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						>
+							Export review pack
+						</button>
+					</form>
 				)}
 			</div>
 
@@ -98,6 +100,7 @@ export function WorksCouncilDashboard({ model }: { model: WorksCouncilPortalMode
 							id="works-council-from"
 							name="from"
 							type="date"
+							aria-label="From"
 							autoComplete="off"
 							defaultValue={fromValue}
 							className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
@@ -111,6 +114,7 @@ export function WorksCouncilDashboard({ model }: { model: WorksCouncilPortalMode
 							id="works-council-to"
 							name="to"
 							type="date"
+							aria-label="To"
 							autoComplete="off"
 							defaultValue={toValue}
 							className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"

@@ -74,9 +74,13 @@ describe("WorksCouncilDashboard", () => {
 		expect(screen.getByText("May 1, 2026 - May 31, 2026")).toBeTruthy();
 		expect((screen.getByLabelText("From") as HTMLInputElement).value).toBe("2026-05-01");
 		expect((screen.getByLabelText("To") as HTMLInputElement).value).toBe("2026-05-31");
-		expect(screen.getByRole("link", { name: "Export review pack" }).getAttribute("href")).toBe(
+		const exportButton = screen.getByRole("button", { name: "Export review pack" });
+		const exportForm = exportButton.closest("form");
+		expect(exportForm?.getAttribute("method")).toBe("post");
+		expect(exportForm?.getAttribute("action")).toBe(
 			"/works-council/export?from=2026-05-01&to=2026-05-31",
 		);
+		expect(screen.queryByRole("link", { name: "Export review pack" })).toBeNull();
 		expect(screen.getByText("work_policy update")).toBeTruthy();
 		expect(screen.getByText("Schedule review")).toBeTruthy();
 		expect(screen.getByText("Operations")).toBeTruthy();
