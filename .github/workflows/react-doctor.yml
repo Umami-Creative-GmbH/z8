@@ -39,4 +39,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           diff: ${{ github.base_ref }}
           fail-on: error
-          annotations: true
+          annotations: false
