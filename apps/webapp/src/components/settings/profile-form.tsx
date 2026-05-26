@@ -95,7 +95,7 @@ type ProfileFormValues = {
 
 export function ProfileForm({ user }: ProfileFormProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
@@ -141,7 +141,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 						queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() }),
 						queryClient.invalidateQueries({ queryKey: queryKeys.employees.all }),
 					]);
-					router.refresh();
+					refresh();
 					return;
 				}
 
@@ -282,7 +282,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			if (result.success) {
 				toast.success(t("settings.profile.avatarRemoved", "Avatar removed successfully"));
 				queryClient.invalidateQueries({ queryKey: queryKeys.profile.current() });
-				router.refresh(); // Refresh to update server components (sidebar)
+				refresh(); // Refresh to update server components (sidebar)
 			} else {
 				toast.error(
 					result.error || t("settings.profile.avatarRemoveFailed", "Failed to remove avatar"),

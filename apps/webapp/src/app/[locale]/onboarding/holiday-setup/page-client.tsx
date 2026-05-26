@@ -33,7 +33,7 @@ interface CountryOption {
 
 export default function HolidaySetupPage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 	const [countryOpen, setCountryOpen] = useState(false);
@@ -66,7 +66,7 @@ export default function HolidaySetupPage() {
 
 			if (result.success) {
 				toast.success(t("onboarding.holidaySetup.success", "Holiday preset created!"));
-				router.push("/onboarding/work-templates");
+				push("/onboarding/work-templates");
 			} else {
 				setLoading(false);
 				toast.error(
@@ -85,14 +85,14 @@ export default function HolidaySetupPage() {
 			if (result.success) {
 				setIsAdmin(result.data);
 				if (!result.data) {
-					router.push("/onboarding/notifications");
+					push("/onboarding/notifications");
 				}
 			} else {
-				router.push("/onboarding/notifications");
+				push("/onboarding/notifications");
 			}
 		}
 		checkAdmin();
-	}, [router]);
+	}, [push]);
 
 	async function handleSkip() {
 		setLoading(true);
@@ -100,7 +100,7 @@ export default function HolidaySetupPage() {
 		const result = await skipHolidaySetup();
 
 		if (result.success) {
-			router.push("/onboarding/work-templates");
+			push("/onboarding/work-templates");
 		} else {
 			setLoading(false);
 			toast.error(result.error || t("onboarding.holidaySetup.skipError", "Failed to skip holiday setup"));

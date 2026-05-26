@@ -31,7 +31,7 @@ type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "s
 
 export default function WorkTemplatesPage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
@@ -49,7 +49,7 @@ export default function WorkTemplatesPage() {
 
 			if (result.success) {
 				toast.success(t("onboarding.workTemplates.success", "Work schedule template created!"));
-				router.push("/onboarding/notifications");
+				push("/onboarding/notifications");
 			} else {
 				setLoading(false);
 				toast.error(
@@ -71,14 +71,14 @@ export default function WorkTemplatesPage() {
 			if (result.success) {
 				setIsAdmin(result.data);
 				if (!result.data) {
-					router.push("/onboarding/notifications");
+					push("/onboarding/notifications");
 				}
 			} else {
-				router.push("/onboarding/notifications");
+				push("/onboarding/notifications");
 			}
 		}
 		checkAdmin();
-	}, [router]);
+	}, [push]);
 
 	async function handleSkip() {
 		setLoading(true);
@@ -86,7 +86,7 @@ export default function WorkTemplatesPage() {
 		const result = await skipWorkTemplateSetup();
 
 		if (result.success) {
-			router.push("/onboarding/notifications");
+			push("/onboarding/notifications");
 		} else {
 			setLoading(false);
 			toast.error(result.error || t("onboarding.workTemplates.skipError", "Failed to skip work schedule template setup"));

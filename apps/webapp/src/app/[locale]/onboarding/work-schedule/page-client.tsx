@@ -29,7 +29,7 @@ const defaultValues = {
 
 export default function WorkSchedulePage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push, replace } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
@@ -48,7 +48,7 @@ export default function WorkSchedulePage() {
 				return;
 			}
 			toast.success(t("onboarding.workSchedule.success", "Work schedule set successfully!"));
-			router.push(result.data.nextStep);
+			push(result.data.nextStep);
 		},
 	});
 
@@ -57,7 +57,7 @@ export default function WorkSchedulePage() {
 			const accessResult = await checkIsAdmin();
 
 			if (!accessResult.success) {
-				router.replace("/onboarding/wellness");
+				replace("/onboarding/wellness");
 				return;
 			}
 
@@ -65,11 +65,11 @@ export default function WorkSchedulePage() {
 				const skipResult = await skipWorkScheduleSetup();
 
 				if (skipResult.success) {
-					router.replace(skipResult.data.nextStep);
+					replace(skipResult.data.nextStep);
 					return;
 				}
 
-				router.replace("/onboarding/wellness");
+				replace("/onboarding/wellness");
 				return;
 			}
 
@@ -77,7 +77,7 @@ export default function WorkSchedulePage() {
 		}
 
 		void loadAccess();
-	}, [router]);
+	}, [replace]);
 
 	async function handleSkip() {
 		setLoading(true);
@@ -89,7 +89,7 @@ export default function WorkSchedulePage() {
 			toast.error(result.error || t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup"));
 			return;
 		}
-		router.push(result.data.nextStep);
+		push(result.data.nextStep);
 	}
 
 	if (isAdmin === null) {

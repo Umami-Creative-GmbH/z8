@@ -126,7 +126,7 @@ export function SignupForm({
 	...props
 }: SignupFormProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const sanitizedCallbackUrl = sanitizeCallbackUrl(callbackUrl, "");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -232,7 +232,7 @@ export function SignupForm({
 						}
 					}
 
-					router.push(
+					push(
 						withCallbackUrl(
 							`/verify-email-pending?email=${encodeURIComponent(value.email)}`,
 							sanitizedCallbackUrl,

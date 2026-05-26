@@ -55,7 +55,7 @@ function validateEmail(value: string): string | undefined {
 
 export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [wizardStep, setWizardStep] = useState<WizardStep>("form");
 	const [error, setError] = useState<string | null>(null);
@@ -116,7 +116,7 @@ export function SetupWizardForm({ locale }: SetupWizardFormProps) {
 	});
 
 	const handleContinueToSignIn = () => {
-		router.push(`/${locale}/sign-in`);
+		push(`/${locale}/sign-in`);
 	};
 
 	if (wizardStep === "creating" || isPending) {

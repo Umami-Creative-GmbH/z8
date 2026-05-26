@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { getPendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
@@ -20,6 +20,8 @@ function VerifyEmailContent() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = useCallback((key: string) => get.call(searchParams, key), [get, searchParams]);
 	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [joinResult, setJoinResult] = useState<JoinResult>(null);
@@ -30,7 +32,7 @@ function VerifyEmailContent() {
 		let redirectTimeout: ReturnType<typeof setTimeout> | undefined;
 
 		const verifyEmail = async () => {
-			const token = searchParams.get("token");
+			const token = getSearchParam("token");
 
 			if (!token) {
 				setStatus("error");
@@ -100,7 +102,7 @@ function VerifyEmailContent() {
 				clearTimeout(redirectTimeout);
 			}
 		};
-	}, [searchParams, push, t]);
+	}, [getSearchParam, push, t]);
 
 	const getTitle = () => {
 		if (status === "loading") return t("auth.verifying-email", "Verifying your email...");

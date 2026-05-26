@@ -11,17 +11,17 @@ import { RiskSummaryHeader } from "./risk-summary-header";
 
 export function ComplianceCommandCenterPage({ data }: { data: ComplianceCommandCenterData }) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 
 	useEffect(() => {
 		const intervalId = window.setInterval(() => {
 			startTransition(() => {
-				router.refresh();
+				refresh();
 			});
 		}, 120_000);
 
 		return () => window.clearInterval(intervalId);
-	}, [router]);
+	}, [refresh]);
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">

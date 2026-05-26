@@ -59,7 +59,7 @@ export function TeamsTab({
 }: TeamsTabProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [isRefreshing, startRefreshTransition] = useTransition();
 	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() => emptyTeamPatches(initialTeams));
 
@@ -121,7 +121,7 @@ export function TeamsTab({
 	const refreshTeams = () => {
 		startRefreshTransition(() => {
 			void queryClient.invalidateQueries({ queryKey: queryKeys.teams.list(organizationId) });
-			router.refresh();
+			refresh();
 		});
 	};
 

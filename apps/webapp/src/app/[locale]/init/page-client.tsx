@@ -23,8 +23,10 @@ type Status = "checking" | "selecting" | "activating" | "redirecting";
 function InitPageContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const redirectUrl = sanitizeCallbackUrl(
-		searchParams.get("callbackUrl"),
+		getSearchParam("callbackUrl"),
 		"/",
 		typeof window === "undefined" ? undefined : window.location.href,
 	);

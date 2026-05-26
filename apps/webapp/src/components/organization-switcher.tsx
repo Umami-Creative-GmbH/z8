@@ -44,7 +44,7 @@ export function OrganizationSwitcher({
 	canCreateOrganizations = false,
 }: OrganizationSwitcherProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const { isMobile } = useSidebar();
 	const [switching, setSwitching] = useState(false);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -210,7 +210,7 @@ export function OrganizationSwitcher({
 					<CreateOrganizationDialog
 						open={createDialogOpen}
 						onOpenChange={setCreateDialogOpen}
-						onSuccess={() => router.refresh()}
+						onSuccess={() => refresh()}
 					/>
 				</SidebarMenuItem>
 			</SidebarMenu>

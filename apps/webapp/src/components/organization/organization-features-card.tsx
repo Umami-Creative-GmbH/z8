@@ -38,7 +38,7 @@ export function OrganizationFeaturesCard({
 	currentMemberRole,
 }: OrganizationFeaturesCardProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isShiftsEnabled, setIsShiftsEnabled] = useState(shiftsEnabled);
 	const [isProjectsEnabled, setIsProjectsEnabled] = useState(projectsEnabled);
@@ -65,7 +65,7 @@ export function OrganizationFeaturesCard({
 					: t("organization.features.shifts-disabled", "Work Shifts disabled"),
 			);
 			startTransition(() => {
-				router.refresh();
+				refresh();
 			});
 		} else {
 			// Revert optimistic update
@@ -93,7 +93,7 @@ export function OrganizationFeaturesCard({
 					: t("organization.features.projects-disabled", "Projects disabled"),
 			);
 			startTransition(() => {
-				router.refresh();
+				refresh();
 			});
 		} else {
 			// Revert optimistic update
@@ -121,7 +121,7 @@ export function OrganizationFeaturesCard({
 					: t("organization.features.surcharges-disabled", "Surcharges disabled"),
 			);
 			startTransition(() => {
-				router.refresh();
+				refresh();
 			});
 		} else {
 			// Revert optimistic update
@@ -148,7 +148,7 @@ export function OrganizationFeaturesCard({
 					: t("organization.features.works-council-disabled", "Works Council disabled"),
 			);
 			startTransition(() => {
-				router.refresh();
+				refresh();
 			});
 		} else {
 			setIsWorksCouncilEnabled(!enabled);
@@ -174,7 +174,7 @@ export function OrganizationFeaturesCard({
 					: t("organization.features.demo-data-disabled", "Demo Data disabled"),
 			);
 			startTransition(() => {
-				router.refresh();
+				refresh();
 			});
 		} else {
 			setIsDemoDataEnabled(!enabled);

@@ -29,7 +29,7 @@ import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
 export default function WellnessPage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 
 	const form = useForm({
@@ -48,7 +48,7 @@ export default function WellnessPage() {
 				if (value.enableWaterReminder) {
 					toast.success(t("onboarding.wellness.success", "Water reminder enabled!"));
 				}
-				router.push("/onboarding/notifications");
+				push("/onboarding/notifications");
 			} else {
 				setLoading(false);
 				toast.error(
@@ -64,7 +64,7 @@ export default function WellnessPage() {
 		const result = await skipWellnessSetup();
 
 		if (result.success) {
-			router.push("/onboarding/notifications");
+			push("/onboarding/notifications");
 		} else {
 			setLoading(false);
 			toast.error(

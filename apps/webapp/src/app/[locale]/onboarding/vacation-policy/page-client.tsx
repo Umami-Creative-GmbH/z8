@@ -25,7 +25,7 @@ import { checkIsAdmin, createVacationPolicyOnboarding, skipVacationPolicySetup }
 
 export default function VacationPolicyPage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
@@ -44,7 +44,7 @@ export default function VacationPolicyPage() {
 
 			if (result.success) {
 				toast.success(t("onboarding.vacationPolicy.success", "Vacation policy created!"));
-				router.push("/onboarding/holiday-setup");
+				push("/onboarding/holiday-setup");
 			} else {
 				setLoading(false);
 				toast.error(
@@ -62,15 +62,15 @@ export default function VacationPolicyPage() {
 				setIsAdmin(result.data);
 				if (!result.data) {
 					// Not an admin, skip to notifications
-					router.push("/onboarding/notifications");
+					push("/onboarding/notifications");
 				}
 			} else {
 				// Error checking admin status, redirect to notifications
-				router.push("/onboarding/notifications");
+				push("/onboarding/notifications");
 			}
 		}
 		checkAdmin();
-	}, [router]);
+	}, [push]);
 
 	const allowCarryover = useStore(form.store, (state) => state.values.allowCarryover);
 
@@ -80,7 +80,7 @@ export default function VacationPolicyPage() {
 		const result = await skipVacationPolicySetup();
 
 		if (result.success) {
-			router.push("/onboarding/holiday-setup");
+			push("/onboarding/holiday-setup");
 		} else {
 			setLoading(false);
 			toast.error(result.error || t("onboarding.vacationPolicy.skipError", "Failed to skip vacation policy setup"));

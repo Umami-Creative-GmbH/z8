@@ -12,11 +12,13 @@ import { Link } from "@/navigation";
 function VerifyEmailPendingContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const { data: session } = useSession();
 	const [isResending, setIsResending] = useState(false);
 	const [resendMessage, setResendMessage] = useState<string>("");
-	const callbackUrl = sanitizeCallbackUrl(searchParams.get("callbackUrl"), "");
-	const email = (searchParams.get("email") || session?.user?.email || "").trim();
+	const callbackUrl = sanitizeCallbackUrl(getSearchParam("callbackUrl"), "");
+	const email = (getSearchParam("email") || session?.user?.email || "").trim();
 
 	const handleResendEmail = async () => {
 		setIsResending(true);

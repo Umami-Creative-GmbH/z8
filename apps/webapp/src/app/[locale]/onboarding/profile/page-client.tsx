@@ -63,7 +63,7 @@ function getServerTodaySnapshot() {
 
 export default function ProfilePage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const today = useSyncExternalStore(subscribeTodaySnapshot, getTodaySnapshot, getServerTodaySnapshot);
 
@@ -76,7 +76,7 @@ export default function ProfilePage() {
 
 			if (result.success) {
 				toast.success(t("onboarding.profile.success", "Profile updated successfully!"));
-				router.push(result.data.nextStep);
+				push(result.data.nextStep);
 			} else {
 				setLoading(false);
 				toast.error(result.error || t("onboarding.profile.error", "Failed to update profile"));
@@ -90,7 +90,7 @@ export default function ProfilePage() {
 		const result = await skipProfileSetup();
 
 		if (result.success) {
-			router.push(result.data.nextStep);
+			push(result.data.nextStep);
 		} else {
 			setLoading(false);
 			toast.error(

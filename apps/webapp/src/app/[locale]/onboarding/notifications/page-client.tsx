@@ -16,7 +16,7 @@ import { configureNotificationsOnboarding, skipNotificationsSetup } from "./acti
 
 export default function NotificationsPage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const {
 		requestPermission,
@@ -40,7 +40,7 @@ export default function NotificationsPage() {
 
 			if (result.success) {
 				toast.success(t("onboarding.notifications.success", "Notification preferences saved!"));
-				router.push("/onboarding/complete");
+				push("/onboarding/complete");
 			} else {
 				setLoading(false);
 				toast.error(
@@ -77,7 +77,7 @@ export default function NotificationsPage() {
 		const result = await skipNotificationsSetup();
 
 		if (result.success) {
-			router.push("/onboarding/complete");
+			push("/onboarding/complete");
 		} else {
 			setLoading(false);
 			toast.error(result.error || t("onboarding.notifications.skipError", "Failed to skip notification setup"));

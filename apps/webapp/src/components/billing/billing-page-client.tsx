@@ -16,7 +16,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRouter } from "@/navigation";
 
 interface SubscriptionInfo {
 	id: string;
@@ -51,14 +50,15 @@ const YEARLY_PRICE_TOTAL = 36;
 
 function BillingPageClientContent({ subscription, accessResult, isOwner }: BillingPageClientProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isPortalLoading, setIsPortalLoading] = useState(false);
 
 	// Handle success/cancel redirects from Stripe
-	const success = searchParams.get("success");
-	const canceled = searchParams.get("canceled");
+	const success = getSearchParam("success");
+	const canceled = getSearchParam("canceled");
 
 	const handleSubscribe = async (interval: "month" | "year") => {
 		setIsLoading(true);

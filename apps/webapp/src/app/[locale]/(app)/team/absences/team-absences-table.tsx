@@ -54,7 +54,7 @@ type TeamAbsencesTableProps = {
 
 function TeamAbsencesTableContent({ data, categories, search }: TeamAbsencesTableProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const searchParams = useSearchParams();
 	const [selectedEmployee, setSelectedEmployee] = useState<ManagerAbsenceEmployeeRow | null>(null);
 	const [isPending, startTransition] = useTransition();
@@ -86,7 +86,7 @@ function TeamAbsencesTableContent({ data, categories, search }: TeamAbsencesTabl
 
 		const query = params.toString();
 		startTransition(() => {
-			router.push(query ? `/team/absences?${query}` : "/team/absences");
+			push(query ? `/team/absences?${query}` : "/team/absences");
 		});
 	}
 

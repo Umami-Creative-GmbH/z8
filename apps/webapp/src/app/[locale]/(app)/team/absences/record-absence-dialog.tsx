@@ -66,7 +66,7 @@ export function RecordAbsenceDialog({
 	categories,
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 	function requiredMessage(label: string) {
 		return t("team.absences.recordDialog.required", "{label} is required", { label });
@@ -114,7 +114,7 @@ export function RecordAbsenceDialog({
 				form.reset(formDefaultValues);
 				setDateRangeError(null);
 				onOpenChange(false);
-				router.refresh();
+				refresh();
 				return;
 			}
 

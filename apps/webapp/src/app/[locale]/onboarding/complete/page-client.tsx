@@ -12,7 +12,7 @@ import { completeOnboarding, getOnboardingSummary } from "./actions";
 
 export default function CompletePage() {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [loading, setLoading] = useState(true);
 	const [summary, setSummary] = useState<{
 		hasOrganization: boolean;
@@ -45,7 +45,7 @@ export default function CompletePage() {
 	}, [t]);
 
 	const handleGoToDashboard = () => {
-		router.push("/init");
+		push("/init");
 	};
 
 	if (loading) {

@@ -268,10 +268,12 @@ const LoginAlternativeAuth = memo(function LoginAlternativeAuth({
 
 function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 	const callbackUrl = sanitizeCallbackUrl(
-		searchParams.get("callbackUrl"),
+		getSearchParam("callbackUrl"),
 		"/init",
 		typeof window === "undefined" ? undefined : window.location.href,
 	);
@@ -491,7 +493,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 							});
 							// Optionally redirect to verification pending page
 							setTimeout(() => {
-								router.push(
+								push(
 									withCallbackUrl(
 										`/verify-email-pending?email=${encodeURIComponent(email)}`,
 										callbackUrl,
@@ -537,7 +539,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
-							router.push(getOnboardingStepPath(onboardingStep));
+							push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -547,7 +549,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 				}
 
 				// Onboarding complete, continue where the user intended to go
-				router.push(postSignInRedirectUrl);
+				push(postSignInRedirectUrl);
 			}
 		} catch (err) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -621,7 +623,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 						const { onboardingComplete, onboardingStep } = await userResponse.json();
 
 						if (!onboardingComplete) {
-							router.push(getOnboardingStepPath(onboardingStep));
+							push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -629,7 +631,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 					console.error("Error checking onboarding status:", fetchError);
 				}
 
-				router.push(postSignInRedirectUrl);
+				push(postSignInRedirectUrl);
 			}
 		} catch (_error) {
 			dispatch({
@@ -638,7 +640,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [postSignInRedirectUrl, t, router]);
+	}, [postSignInRedirectUrl, push, t]);
 
 	const handleSSOLogin = useCallback(async () => {
 		if (!ssoProviderId) {
@@ -703,7 +705,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 
 						if (!onboardingComplete) {
 							// Resume onboarding from last step
-							router.push(getOnboardingStepPath(onboardingStep));
+							push(getOnboardingStepPath(onboardingStep));
 							return;
 						}
 					}
@@ -713,7 +715,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 				}
 
 				// Onboarding complete, continue where the user intended to go
-				router.push(postSignInRedirectUrl);
+				push(postSignInRedirectUrl);
 			}
 		} catch (err) {
 			dispatch({
@@ -725,7 +727,7 @@ function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) 
 			});
 			dispatch({ type: "SET_LOADING", loading: false });
 		}
-	}, [postSignInRedirectUrl, otpValue, trustDevice, t, router]);
+	}, [postSignInRedirectUrl, otpValue, push, trustDevice, t]);
 
 	return (
 		<AuthFormWrapper

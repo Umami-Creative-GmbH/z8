@@ -56,7 +56,7 @@ interface WebhookEndpointCardProps {
 
 export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpointCardProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [isPending, startTransition] = useTransition();
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -107,7 +107,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 					? t("webhooks:webhooks.enabled", "Webhook enabled")
 					: t("webhooks:webhooks.disabled", "Webhook disabled"),
 			);
-			startTransition(() => router.refresh());
+			startTransition(() => refresh());
 		} else {
 			toast.error(result.error ?? t("webhooks:webhooks.update-failed", "Failed to update webhook"));
 		}
@@ -119,7 +119,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 			onDeleted(webhook.id);
 			toast.success(t("webhooks:webhooks.deleted", "Webhook deleted"));
 			setIsDeleteDialogOpen(false);
-			startTransition(() => router.refresh());
+			startTransition(() => refresh());
 		} else {
 			toast.error(result.error ?? t("webhooks:webhooks.delete-failed", "Failed to delete webhook"));
 		}

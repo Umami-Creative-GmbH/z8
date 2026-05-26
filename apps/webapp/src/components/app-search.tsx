@@ -159,7 +159,7 @@ export function AppSearch({
 	staticResults: AppSearchResult[];
 }) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [liveResults, setLiveResults] = useState<LiveAppSearchResults>(EMPTY_LIVE_RESULTS);
@@ -211,7 +211,7 @@ export function AppSearch({
 	function handleSelect(result: AppSearchResult) {
 		setOpen(false);
 		setQuery("");
-		router.push(result.href);
+		push(result.href);
 	}
 
 	return (

@@ -30,9 +30,11 @@ const resetPasswordSchema = z
 function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
+	const { get } = searchParams;
+	const getSearchParam = (key: string) => get.call(searchParams, key);
 
-	const token = searchParams.get("token");
-	const errorParam = searchParams.get("error");
+	const token = getSearchParam("token");
+	const errorParam = getSearchParam("error");
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);

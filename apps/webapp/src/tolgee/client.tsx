@@ -44,17 +44,17 @@ function getOrCreateTolgee(language: string, staticData: TolgeeStaticData) {
 }
 
 export const TolgeeNextProvider = ({ language, staticData, children }: Props) => {
-	const router = useRouter();
+	const { refresh } = useRouter();
 
 	const tolgee = useMemo(() => getOrCreateTolgee(language, staticData), [language, staticData]);
 
 	useEffect(() => {
 		// this ensures server components refresh, after translation change
 		const { unsubscribe } = tolgee.on("permanentChange", () => {
-			router.refresh();
+			refresh();
 		});
 		return () => unsubscribe();
-	}, [router, tolgee]);
+	}, [refresh, tolgee]);
 
 	return (
 		<TolgeeProvider ssr={{ language, staticData }} tolgee={tolgee}>

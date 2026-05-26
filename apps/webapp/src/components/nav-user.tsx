@@ -66,7 +66,7 @@ export function NavUser({
 }) {
 	const { isMobile } = useSidebar();
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push, replace } = useRouter();
 	const locale = useLocale();
 	const pathname = usePathname();
 	const { theme, setTheme } = useTheme();
@@ -89,7 +89,7 @@ export function NavUser({
 					onSuccess: () => {
 						// Keep the overlay visible during navigation
 						setTimeout(() => {
-							router.push("/sign-in");
+						push("/sign-in");
 						}, 100);
 					},
 					onError: (error) => {
@@ -106,7 +106,7 @@ export function NavUser({
 
 	const handleLanguageChange = (newLocale: string) => {
 		startTransition(() => {
-			router.replace(pathname, { locale: newLocale });
+			replace(pathname, { locale: newLocale });
 		});
 	};
 
@@ -186,7 +186,7 @@ export function NavUser({
 							</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 							<DropdownMenuGroup>
-								<DropdownMenuItem onClick={() => router.push("/settings/profile")}>
+								<DropdownMenuItem onClick={() => push("/settings/profile")}>
 									<IconUserCircle />
 									{t("user.profile", "Profile")}
 								</DropdownMenuItem>

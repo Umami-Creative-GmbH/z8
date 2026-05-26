@@ -33,7 +33,7 @@ export function EditOrganizationDialog({
 	onOpenChange,
 }: EditOrganizationDialogProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [isPending, startTransition] = useTransition();
 
 	// Parse existing metadata
@@ -65,7 +65,7 @@ export function EditOrganizationDialog({
 			if (result.success) {
 				toast.success(t("organization.edit.updateSuccess", "Organization updated successfully"));
 				onOpenChange(false);
-				router.refresh();
+				refresh();
 			} else {
 				toast.error(result.error || t("organization.edit.updateError", "Failed to update organization"));
 			}

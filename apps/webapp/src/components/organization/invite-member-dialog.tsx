@@ -45,7 +45,7 @@ export function InviteMemberDialog({
 	onOpenChange,
 }: InviteMemberDialogProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
 
 	const [formData, setFormData] = useState({
@@ -71,7 +71,7 @@ export function InviteMemberDialog({
 				});
 				onOpenChange(false);
 				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
-				router.refresh();
+				refresh();
 			} else {
 				toast.error(result.error || t("organization.invite.error", "Failed to send invitation"));
 			}

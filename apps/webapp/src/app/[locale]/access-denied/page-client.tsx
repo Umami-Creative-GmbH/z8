@@ -21,13 +21,13 @@ function AccessDeniedContent({
 }) {
 	const params = use(searchParams);
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push } = useRouter();
 	const appType = params.app || "application";
 	const appLabel = appTypeLabels[appType] || appType;
 
 	async function handleSignOut() {
 		await authClient.signOut();
-		router.push("/sign-in");
+	push("/sign-in");
 	}
 
 	return (

@@ -102,7 +102,7 @@ export function WebhookFormDialog({
 	onSuccess,
 }: WebhookFormDialogProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { refresh } = useRouter();
 	const [isPending, startTransition] = useTransition();
 
 	const isEditing = !!webhook;
@@ -194,7 +194,7 @@ export function WebhookFormDialog({
 				onSuccess(result.data.endpoint);
 				toast.success(t("webhooks:webhooks.updated", "Webhook updated"));
 				onOpenChange(false);
-				startTransition(() => router.refresh());
+				startTransition(() => refresh());
 			} else {
 				toast.error(
 					result.error ?? t("webhooks:webhooks.update-failed", "Failed to update webhook"),
@@ -214,7 +214,7 @@ export function WebhookFormDialog({
 				setNewSecret(result.data.secret);
 				setIsSecretDialogOpen(true);
 				onOpenChange(false);
-				startTransition(() => router.refresh());
+				startTransition(() => refresh());
 				// Reset form
 				setName("");
 				setUrl("");

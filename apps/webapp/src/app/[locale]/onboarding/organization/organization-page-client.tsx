@@ -28,7 +28,7 @@ type OrganizationPageClientProps = {
 
 export default function OrganizationPageClient({ canCreateOrganizations }: OrganizationPageClientProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
+	const { push, replace } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [checkingSlug, setCheckingSlug] = useState(false);
 	const [slugError, setSlugError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 
 			if (result.success) {
 				toast.success(t("organization.createSuccess", "Organization created successfully!"));
-				router.push("/onboarding/profile");
+				push("/onboarding/profile");
 			} else {
 				setLoading(false);
 				toast.error(result.error || t("organization.createError", "Failed to create organization"));
@@ -66,7 +66,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 
 			if (summary.success && summary.data?.hasOrganization) {
 				await skipOrganizationSetup();
-				router.replace("/onboarding/profile");
+				replace("/onboarding/profile");
 				return;
 			}
 
@@ -74,7 +74,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 		};
 
 		void checkMembership();
-	}, [router]);
+	}, [replace]);
 
 	useEffect(() => {
 		if (name && !slugManuallyEdited.current) {
@@ -119,7 +119,7 @@ export default function OrganizationPageClient({ canCreateOrganizations }: Organ
 		const result = await skipOrganizationSetup();
 
 		if (result.success) {
-			router.push("/onboarding/profile");
+			push("/onboarding/profile");
 		} else {
 			setLoading(false);
 			toast.error(result.error || t("onboarding.organization.skipError", "Failed to skip organization setup"));
