@@ -30,7 +30,7 @@ describe("calendarEventToScheduleX", () => {
 		);
 	});
 
-	it("uses an exclusive next-day end for single-day holidays", () => {
+	it("keeps single-day holidays on one Schedule-X full-day date", () => {
 		const holiday: HolidayEvent = {
 			id: "holiday-1",
 			type: "holiday",
@@ -49,7 +49,7 @@ describe("calendarEventToScheduleX", () => {
 		const scheduleXEvent = calendarEventToScheduleX(holiday);
 
 		expect(scheduleXEvent?.start.toString()).toBe("2026-05-01");
-		expect(scheduleXEvent?.end.toString()).toBe("2026-05-02");
+		expect(scheduleXEvent?.end.toString()).toBe("2026-05-01");
 	});
 
 	it("keeps multi-day absences on their stored inclusive date range", () => {
