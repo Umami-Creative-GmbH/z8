@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { auditLog } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { TimeRecordApprovalDecision } from "@/lib/time-record/approval";
+import { env } from "@/env";
 
 const logger = createLogger("AuditLog");
 
@@ -205,11 +206,11 @@ export interface ExternalAuditConfig {
  * Get external audit service configuration from environment
  */
 function getExternalAuditConfig(): ExternalAuditConfig {
-	const service = (process.env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
+	const service = (env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
 	return {
 		service,
-		endpoint: process.env.AUDIT_ENDPOINT,
-		apiKey: process.env.AUDIT_API_KEY,
+		endpoint: env.AUDIT_ENDPOINT,
+		apiKey: env.AUDIT_API_KEY,
 	};
 }
 

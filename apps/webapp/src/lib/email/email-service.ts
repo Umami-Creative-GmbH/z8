@@ -23,6 +23,7 @@ import {
 	type EmailTransport,
 	type EmailTransportResult,
 } from "./transports";
+import { env } from "@/env";
 
 const logger = createLogger("EmailService");
 
@@ -44,13 +45,13 @@ let systemTransport: EmailTransport | null = null;
  */
 function getSystemTransport(): EmailTransport {
 	if (!systemTransport) {
-		if (process.env.EMAIL_PROVIDER === "resend") {
+		if (env.EMAIL_PROVIDER === "resend") {
 			systemTransport = createSystemResendTransport() ?? new ConsoleTransport();
 			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
 			return systemTransport;
 		}
 
-		if (process.env.EMAIL_PROVIDER === "smtp") {
+		if (env.EMAIL_PROVIDER === "smtp") {
 			systemTransport = createSystemSmtpTransport() ?? new ConsoleTransport();
 			logger.info({ transport: systemTransport.getName() }, "System email transport initialized");
 			return systemTransport;

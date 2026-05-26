@@ -6,6 +6,7 @@ import {
 } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
+import { env } from "@/env";
 import { AppSidebar } from "./app-sidebar";
 
 export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSidebar>) {
@@ -49,7 +50,7 @@ export async function ServerAppSidebar(props: React.ComponentProps<typeof AppSid
 			showComplianceNav={settingsAccessTier === "orgAdmin"}
 			showPlatformAdminNav={authContext?.user.role === "admin"}
 			settingsAccessTier={settingsAccessTier ?? "member"}
-			billingEnabled={process.env.BILLING_ENABLED === "true"}
+			billingEnabled={env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
 			canCreateOrganizations={canCreateOrganizations}
 			showWorksCouncilNav={showWorksCouncilNav}

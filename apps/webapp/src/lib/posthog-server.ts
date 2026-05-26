@@ -1,9 +1,10 @@
 import { PostHog } from "posthog-node";
+import { env } from "@/env";
 
 let posthogInstance: PostHog | null = null;
 
 export function getPostHogServer(): PostHog | null {
-	const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
+	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
 
 	if (!projectToken) {
 		return null;
@@ -11,7 +12,7 @@ export function getPostHogServer(): PostHog | null {
 
 	if (!posthogInstance) {
 		posthogInstance = new PostHog(projectToken, {
-			host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com",
+			host: env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com",
 			flushAt: 1,
 			flushInterval: 0,
 		});

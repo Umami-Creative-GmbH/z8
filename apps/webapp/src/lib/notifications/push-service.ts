@@ -11,13 +11,14 @@ import { db } from "@/db";
 import { pushSubscription } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
+import { env } from "@/env";
 
 const logger = createLogger("PushService");
 
 // Configure web-push with VAPID keys
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || "mailto:support@example.com";
+const vapidPublicKey = env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = env.VAPID_PRIVATE_KEY;
+const vapidSubject = env.VAPID_SUBJECT || "mailto:support@example.com";
 
 let isConfigured = false;
 

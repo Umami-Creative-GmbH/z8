@@ -41,6 +41,7 @@ import {
 } from "../errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
+import { env } from "@/env";
 
 export interface OnboardingSummary {
 	hasOrganization: boolean;
@@ -225,7 +226,7 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 					if (
 						isOrganizationCreationDisabled(
-							normalizeOrganizationCreationFlag(process.env.DISABLE_ORGANIZATION_CREATION),
+							normalizeOrganizationCreationFlag(env.DISABLE_ORGANIZATION_CREATION),
 						)
 					) {
 						return yield* Effect.fail(

@@ -13,6 +13,7 @@ import type {
 	EmailTransportResult,
 	ResendTransportConfig,
 } from "./base";
+import { env } from "@/env";
 
 const logger = createLogger("ResendTransport");
 
@@ -105,8 +106,8 @@ export class ResendTransport implements EmailTransport {
  * Create a Resend transport with the system API key (from env vars)
  */
 export function createSystemResendTransport(): ResendTransport | null {
-	const apiKey = process.env.RESEND_API_KEY;
-	const fromEmail = process.env.EMAIL_FROM || "noreply@yourdomain.com";
+	const apiKey = env.RESEND_API_KEY;
+	const fromEmail = env.EMAIL_FROM || "noreply@yourdomain.com";
 
 	if (!apiKey) {
 		return null;

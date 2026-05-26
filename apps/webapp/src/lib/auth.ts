@@ -27,7 +27,7 @@ import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
 
-const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
+const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
 function getAuthSecrets() {
 	const resolved = resolveAuthSecrets({
@@ -170,7 +170,7 @@ export const auth = betterAuth({
 		fallback: env.APP_URL || "https://ui.z8-time.app",
 		protocol: "auto",
 	},
-	//baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+		//baseURL: env.BETTER_AUTH_URL || "http://localhost:3000",
 
 	// Dynamic trusted origins for custom domains
 	// This allows auth requests from verified custom domains that proxy to the app
@@ -358,24 +358,24 @@ export const auth = betterAuth({
 	},
 	socialProviders: {
 		google: {
-			clientId: process.env.GOOGLE_CLIENT_ID || "",
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-			enabled: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET,
+			clientId: env.GOOGLE_CLIENT_ID || "",
+			clientSecret: env.GOOGLE_CLIENT_SECRET || "",
+			enabled: !!env.GOOGLE_CLIENT_ID && !!env.GOOGLE_CLIENT_SECRET,
 		},
 		github: {
-			clientId: process.env.GITHUB_CLIENT_ID || "",
-			clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-			enabled: !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET,
+			clientId: env.GITHUB_CLIENT_ID || "",
+			clientSecret: env.GITHUB_CLIENT_SECRET || "",
+			enabled: !!env.GITHUB_CLIENT_ID && !!env.GITHUB_CLIENT_SECRET,
 		},
 		linkedin: {
-			clientId: process.env.LINKEDIN_CLIENT_ID || "",
-			clientSecret: process.env.LINKEDIN_CLIENT_SECRET || "",
-			enabled: !!process.env.LINKEDIN_CLIENT_ID && !!process.env.LINKEDIN_CLIENT_SECRET,
+			clientId: env.LINKEDIN_CLIENT_ID || "",
+			clientSecret: env.LINKEDIN_CLIENT_SECRET || "",
+			enabled: !!env.LINKEDIN_CLIENT_ID && !!env.LINKEDIN_CLIENT_SECRET,
 		},
 		apple: {
-			clientId: process.env.APPLE_CLIENT_ID || "",
-			clientSecret: process.env.APPLE_CLIENT_SECRET || "",
-			enabled: !!process.env.APPLE_CLIENT_ID && !!process.env.APPLE_CLIENT_SECRET,
+			clientId: env.APPLE_CLIENT_ID || "",
+			clientSecret: env.APPLE_CLIENT_SECRET || "",
+			enabled: !!env.APPLE_CLIENT_ID && !!env.APPLE_CLIENT_SECRET,
 		},
 	},
 	database: drizzleAdapter(db, {
@@ -588,7 +588,7 @@ export const auth = betterAuth({
 			// rpID must be a static string - passkeys are domain-bound by WebAuthn spec.
 			// Users accessing via custom domains will need to register separate passkeys.
 			// For multi-tenant with custom domains, consider using the origin option instead.
-			rpID: process.env.PASSKEY_RP_ID || "localhost",
+			rpID: env.PASSKEY_RP_ID || "localhost",
 		}),
 		sso({
 			// Enable domain verification for SSO providers

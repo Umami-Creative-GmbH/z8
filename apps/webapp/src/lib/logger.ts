@@ -1,8 +1,9 @@
 import { trace } from "@opentelemetry/api";
 import pino from "pino";
+import { env } from "@/env";
 
-const isDev = process.env.NODE_ENV === "development";
-const hasRemoteOtel = Boolean(process.env.OTEL_EXPORTER_OTLP_ENDPOINT);
+const isDev = env.NODE_ENV === "development";
+const hasRemoteOtel = Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT);
 
 const transport = isDev
 	? {
@@ -20,7 +21,7 @@ const transport = isDev
 		: undefined;
 
 export const logger = pino({
-	level: process.env.LOG_LEVEL || (isDev ? "debug" : "info"),
+	level: env.LOG_LEVEL || (isDev ? "debug" : "info"),
 	transport,
 	mixin() {
 		const span = trace.getActiveSpan();

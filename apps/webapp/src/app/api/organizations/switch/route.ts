@@ -9,9 +9,10 @@ import { auth } from "@/lib/auth";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("OrganizationSwitchRoute");
-const shouldLogAuthDiagnostics = process.env.NODE_ENV === "production";
+const shouldLogAuthDiagnostics = env.NODE_ENV === "production";
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
 	const appUrl = getDefaultAppBaseUrl();

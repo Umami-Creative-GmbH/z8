@@ -15,6 +15,7 @@ import type {
 	PlatformAnalyticsData,
 	PlatformAnalyticsSearchParams,
 } from "./types";
+import { env } from "@/env";
 
 const BILLING_SUBSCRIPTION_STATUSES = ["active", "trialing", "past_due"] as const;
 
@@ -25,7 +26,7 @@ type PlatformAnalyticsDataOptions = {
 
 export async function getPlatformAnalyticsData(
 	params: PlatformAnalyticsSearchParams,
-	billingEnabled = process.env.BILLING_ENABLED === "true",
+	billingEnabled = env.BILLING_ENABLED === "true",
 	options: PlatformAnalyticsDataOptions = {},
 ): Promise<PlatformAnalyticsData> {
 	const includeBilling = options.includeBilling ?? true;

@@ -17,6 +17,7 @@ import {
 	STATE_COOKIE_MAX_AGE,
 	STATE_COOKIE_NAME,
 } from "@/lib/social-oauth";
+import { env } from "@/env";
 
 const logger = createLogger("SocialOAuth:Initiate");
 
@@ -124,7 +125,7 @@ async function handleSocialOrgOAuthInitiation(
 	const response = NextResponse.redirect(authUrl);
 	response.cookies.set(STATE_COOKIE_NAME, JSON.stringify(state), {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
+		secure: env.NODE_ENV === "production",
 		sameSite: "lax",
 		maxAge: STATE_COOKIE_MAX_AGE,
 		path: "/",

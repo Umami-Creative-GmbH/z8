@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { SettingsBreadcrumbs } from "@/components/settings/settings-breadcrumbs";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { Skeleton } from "@/components/ui/skeleton";
+import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 async function SettingsLayoutContent({
@@ -16,7 +17,7 @@ async function SettingsLayoutContent({
 
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 	const accessTier = settingsRouteContext?.accessTier ?? "member";
-	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const billingEnabled = env.BILLING_ENABLED === "true";
 
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">

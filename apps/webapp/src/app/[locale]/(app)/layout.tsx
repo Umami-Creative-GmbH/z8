@@ -14,6 +14,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
 import {
@@ -70,7 +71,7 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 		redirect(newPath);
 	}
 
-	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const billingEnabled = env.BILLING_ENABLED === "true";
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	const billingAccess =
 		activeOrganizationId && billingEnabled

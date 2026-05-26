@@ -10,12 +10,13 @@ import { SubscriptionService } from "./subscription.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { DatabaseError, StripeError } from "../../errors";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("BillingEventsService");
 const DEFAULT_APP_URL = "https://app.z8-time.app";
 
 const getBillingUrl = () => {
-	const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || DEFAULT_APP_URL;
+	const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || DEFAULT_APP_URL;
 	return `${appUrl}/settings/billing`;
 };
 

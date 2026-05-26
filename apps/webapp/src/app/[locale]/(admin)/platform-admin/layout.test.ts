@@ -12,7 +12,7 @@ function stripComments(source: string): string {
 describe("platform admin layout", () => {
 	it("only links to the billing page when billing is enabled", () => {
 		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "../layout.tsx"), "utf8"));
-		const billingEnabledCheck = 'process.env.BILLING_ENABLED === "true"';
+		const billingEnabledCheck = 'env.BILLING_ENABLED === "true"';
 		const billingLink = 'href: "/platform-admin/billing"';
 
 		expect(source).toContain(billingEnabledCheck);
@@ -29,7 +29,7 @@ describe("platform admin layout", () => {
 	it("checks the billing flag at request time on the billing page", () => {
 		const source = stripComments(readFileSync(join(PLATFORM_ADMIN_ROOT, "billing/page.tsx"), "utf8"));
 		const dynamicBoundary = "await connection()";
-		const billingEnabledCheck = 'if (process.env.BILLING_ENABLED !== "true")';
+		const billingEnabledCheck = 'if (env.BILLING_ENABLED !== "true")';
 
 		expect(source).toContain(dynamicBoundary);
 		expect(source.indexOf(dynamicBoundary)).toBeLessThan(source.indexOf(billingEnabledCheck));

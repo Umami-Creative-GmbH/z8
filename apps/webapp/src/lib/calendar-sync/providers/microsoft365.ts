@@ -30,6 +30,7 @@ import {
 	type ICalendarProvider,
 	isTokenExpired,
 } from "./base";
+import { env } from "@/env";
 
 // ============================================
 // CONSTANTS
@@ -92,7 +93,7 @@ interface MSUserInfo {
 // ============================================
 
 function getClientId(): string {
-	const clientId = process.env.CALENDAR_MICROSOFT_CLIENT_ID;
+	const clientId = env.CALENDAR_MICROSOFT_CLIENT_ID;
 	if (!clientId) {
 		throw new Error("CALENDAR_MICROSOFT_CLIENT_ID environment variable is not set");
 	}
@@ -100,7 +101,7 @@ function getClientId(): string {
 }
 
 function getClientSecret(): string {
-	const clientSecret = process.env.CALENDAR_MICROSOFT_CLIENT_SECRET;
+	const clientSecret = env.CALENDAR_MICROSOFT_CLIENT_SECRET;
 	if (!clientSecret) {
 		throw new Error("CALENDAR_MICROSOFT_CLIENT_SECRET environment variable is not set");
 	}

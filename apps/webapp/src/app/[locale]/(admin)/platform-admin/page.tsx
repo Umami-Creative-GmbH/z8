@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { organizationSuspension, subscription } from "@/db/schema";
+import { env } from "@/env";
 import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
 import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
 import { cn } from "@/lib/utils";
@@ -89,7 +90,7 @@ async function DashboardStats() {
 	await connection();
 
 	const t = await getTranslate();
-	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const billingEnabled = env.BILLING_ENABLED === "true";
 
 	// Run all queries in parallel to avoid waterfalls (async-parallel)
 	const [[{ totalUsers }], [{ bannedUsers }], [{ totalOrgs }], [{ suspendedOrgs }], subscriptions] =
@@ -203,7 +204,7 @@ async function DashboardStats() {
 }
 
 function DashboardStatsLoading() {
-	const billingEnabled = process.env.BILLING_ENABLED === "true";
+	const billingEnabled = env.BILLING_ENABLED === "true";
 	const cardCount = billingEnabled ? 6 : 4;
 	const skeletonCardKeys = Array.from(
 		{ length: cardCount },
@@ -385,7 +386,7 @@ async function AdminDashboardContent() {
 						href="/platform-admin/system-email-templates"
 						icon={<IconMailCog className="size-5" aria-hidden="true" />}
 					/>
-					{process.env.BILLING_ENABLED === "true" && (
+					{env.BILLING_ENABLED === "true" && (
 						<QuickActionCard
 							title={t(
 								"admin:admin.overview.quickActions.billing.title",

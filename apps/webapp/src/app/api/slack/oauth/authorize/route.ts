@@ -17,10 +17,11 @@ import { member } from "@/db/auth-schema";
 import { slackOAuthState } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("SlackOAuthAuthorize");
 
-const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
+const SLACK_CLIENT_ID = env.SLACK_CLIENT_ID;
 const STATE_TTL_MINUTES = 15;
 
 // Scopes needed for the bot
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
 		});
 
 		// Build Slack authorization URL
-		const appUrl = process.env.APP_URL || "https://z8-time.app";
+		const appUrl = env.APP_URL || "https://z8-time.app";
 		const redirectUri = `${appUrl}/api/slack/oauth/callback`;
 
 		const authUrl = new URL("https://slack.com/oauth/v2/authorize");

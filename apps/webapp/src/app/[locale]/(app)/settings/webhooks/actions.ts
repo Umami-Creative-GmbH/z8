@@ -31,6 +31,7 @@ import type {
 	WebhookEndpoint,
 	WebhookPayloadData,
 } from "@/lib/webhooks/types";
+import { env } from "@/env";
 
 const logger = createLogger("WebhookActions");
 
@@ -68,7 +69,7 @@ function validateWebhookUrl(url: string): { valid: boolean; reason?: string } {
 		const parsed = new URL(url);
 
 		// Check protocol
-		if (process.env.NODE_ENV === "production") {
+		if (env.NODE_ENV === "production") {
 			if (parsed.protocol !== "https:") {
 				return { valid: false, reason: "HTTPS is required in production" };
 			}

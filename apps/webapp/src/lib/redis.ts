@@ -7,9 +7,9 @@ const logger = createLogger("Redis");
 const hasRedisConfig = Boolean(env.REDIS_HOST);
 const shouldDisableRedisDuringBuild =
 	(!hasRedisConfig && env.NODE_ENV === "production") ||
-	process.env.NEXT_PHASE === "phase-production-build" ||
-	process.env.npm_lifecycle_event === "build" ||
-	(process.env.CI === "true" && !hasRedisConfig);
+	env.NEXT_PHASE === "phase-production-build" ||
+	env.npm_lifecycle_event === "build" ||
+	(env.CI === "true" && !hasRedisConfig);
 
 const noopRedisClient = {
 	status: "end",

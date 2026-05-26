@@ -20,6 +20,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
 import { compose, withPermission, withRateLimit } from "./middleware";
+import { env } from "@/env";
 
 const logger = createLogger("TeamsCommand:Compliance");
 
@@ -89,7 +90,7 @@ async function complianceHandler(
 		}
 
 		// Build Adaptive Card
-		const appUrl = process.env.APP_URL || "https://z8-time.app";
+		const appUrl = env.APP_URL || "https://z8-time.app";
 		const card = buildComplianceCard({
 			summary,
 			daysBack,

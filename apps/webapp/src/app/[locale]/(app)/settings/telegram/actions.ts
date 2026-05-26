@@ -8,6 +8,7 @@ import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { env } from "@/env";
 
 const logger = createLogger("TelegramSettings");
 
@@ -179,7 +180,7 @@ export async function setupTelegramBot(
 		}
 
 		// Register webhook with Telegram
-		const appUrl = process.env.APP_URL || "https://z8-time.app";
+		const appUrl = env.APP_URL || "https://z8-time.app";
 		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
 
 		const webhookRegistered = await setWebhook(

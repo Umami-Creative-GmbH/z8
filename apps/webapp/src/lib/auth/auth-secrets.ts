@@ -1,3 +1,5 @@
+import { env as appEnv } from "@/env";
+
 export const BUILD_TIME_AUTH_SECRET = "build-time-auth-secret-for-prerender-only-2026";
 
 type ResolvedAuthSecrets = {
@@ -12,7 +14,7 @@ type ResolveAuthSecretsOptions = {
 	isBuildTime?: boolean;
 };
 
-export function isBuildTimeAuthFallbackAllowed(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isBuildTimeAuthFallbackAllowed(env = appEnv): boolean {
 	return env.NEXT_PHASE === "phase-production-build" || env.npm_lifecycle_event === "build";
 }
 

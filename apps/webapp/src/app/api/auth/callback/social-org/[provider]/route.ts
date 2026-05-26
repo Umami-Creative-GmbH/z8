@@ -15,6 +15,7 @@ import {
 	STATE_COOKIE_NAME,
 	verifyOAuthState,
 } from "@/lib/social-oauth";
+import { env } from "@/env";
 
 const logger = createLogger("SocialOAuth:Callback");
 
@@ -348,7 +349,7 @@ async function handleCallback(
 		// Set session cookie
 		cookieStore.set(SESSION_COOKIE_NAME, session.token, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
+			secure: env.NODE_ENV === "production",
 			sameSite: "lax",
 			expires: session.expiresAt,
 			path: "/",

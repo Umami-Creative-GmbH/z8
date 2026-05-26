@@ -360,7 +360,7 @@ async function main(): Promise<void> {
 }
 
 // Start the worker when this file is executed as the worker entrypoint.
-if (!process.env.VITEST) {
+if (!env.VITEST) {
 	main().catch((error) => {
 		logger.error({ error }, "Worker failed to start");
 		process.exit(1);

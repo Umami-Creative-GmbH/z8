@@ -4,6 +4,7 @@ import {
 	type S3ServiceException,
 } from "@aws-sdk/client-s3";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("StorageInit");
 
@@ -89,7 +90,7 @@ function parseS3Error(error: unknown): StorageInitError {
 					code: "CONNECTION_FAILED",
 					message: "Cannot connect to S3 endpoint",
 					details: error.message,
-					remedy: `Verify S3_PUBLIC_ENDPOINT is correct and the service is reachable. Current endpoint: ${process.env.S3_PUBLIC_ENDPOINT}`,
+					remedy: `Verify S3_PUBLIC_ENDPOINT is correct and the service is reachable. Current endpoint: ${env.S3_PUBLIC_ENDPOINT}`,
 				};
 
 			default:
@@ -119,7 +120,7 @@ function validateConfig(): StorageInitError | null {
 		"S3_PUBLIC_ENDPOINT",
 	];
 
-	const missing = required.filter((key) => !process.env[key]);
+	const missing = required.filter((key) => !env[key as keyof typeof env]);
 
 	if (missing.length > 0) {
 		return {
@@ -194,22 +195,22 @@ export async function initializeStorage(): Promise<StorageInitResult> {
 		return { success: false, error: configError };
 	}
 
-	const bucket = process.env.S3_PUBLIC_BUCKET!;
-	const privateBucket = process.env.S3_PRIVATE_BUCKET;
-	const region = process.env.S3_PUBLIC_REGION || "us-east-1";
+	const bucket = env.S3_PUBLIC_BUCKET!;
+	const privateBucket = env.S3_PRIVATE_BUCKET;
+	const region = env.S3_PUBLIC_REGION || "us-east-1";
 
 	// Step 2: Create S3 client
 	// Import dynamically to avoid issues if env vars aren't set during module load
 	const { S3Client } = await import("@aws-sdk/client-s3");
 
 	const client = new S3Client({
-		endpoint: process.env.S3_PUBLIC_ENDPOINT,
+		endpoint: env.S3_PUBLIC_ENDPOINT,
 		region,
 		credentials: {
-			accessKeyId: process.env.S3_PUBLIC_ACCESS_KEY_ID!,
-			secretAccessKey: process.env.S3_PUBLIC_SECRET_ACCESS_KEY!,
+			accessKeyId: env.S3_PUBLIC_ACCESS_KEY_ID!,
+			secretAccessKey: env.S3_PUBLIC_SECRET_ACCESS_KEY!,
 		},
-		forcePathStyle: process.env.S3_PUBLIC_FORCE_PATH_STYLE === "true",
+		forcePathStyle: env.S3_PUBLIC_FORCE_PATH_STYLE === "true",
 	});
 
 	// Step 3: Check if bucket exists

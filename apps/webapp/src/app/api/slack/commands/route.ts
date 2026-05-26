@@ -13,10 +13,11 @@ import { getBotConfigByTeamId } from "@/lib/slack/bot-config";
 import { handleSlashCommand } from "@/lib/slack/bot-handler";
 import { verifySlackSignature } from "@/lib/slack/signature";
 import type { SlackSlashCommandPayload } from "@/lib/slack/types";
+import { env } from "@/env";
 
 const logger = createLogger("SlackCommands");
 
-const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET;
+const SLACK_SIGNING_SECRET = env.SLACK_SIGNING_SECRET;
 
 export async function POST(request: NextRequest) {
 	await connection();

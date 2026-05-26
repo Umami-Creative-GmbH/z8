@@ -14,6 +14,7 @@ import { slackOAuthState, slackWorkspaceConfig } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { exchangeOAuthCode } from "@/lib/slack/api";
 import { storeOrgSecret } from "@/lib/vault";
+import { env } from "@/env";
 
 const logger = createLogger("SlackOAuthCallback");
 
@@ -25,7 +26,7 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 	const state = searchParams.get("state");
 	const error = searchParams.get("error");
 
-	const appUrl = process.env.APP_URL || "https://z8-time.app";
+	const appUrl = env.APP_URL || "https://z8-time.app";
 	const settingsUrl = `${appUrl}/settings/integrations`;
 
 	// Handle user cancellation

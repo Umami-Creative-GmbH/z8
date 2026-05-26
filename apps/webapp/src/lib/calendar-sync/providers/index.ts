@@ -9,6 +9,7 @@ import type { CalendarProvider } from "../types";
 import type { ICalendarProvider } from "./base";
 import { googleCalendarProvider } from "./google";
 import { microsoft365CalendarProvider } from "./microsoft365";
+import { env } from "@/env";
 
 // ============================================
 // PROVIDER REGISTRY
@@ -37,11 +38,11 @@ export function isProviderSupported(provider: CalendarProvider): boolean {
 	switch (provider) {
 		case "google":
 			// Check for calendar-specific env vars, fallback to social login vars
-			return !!(process.env.CALENDAR_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID) &&
-				!!(process.env.CALENDAR_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET);
+			return !!(env.CALENDAR_GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID) &&
+				!!(env.CALENDAR_GOOGLE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET);
 		case "microsoft365":
 			// Microsoft uses calendar-specific env vars only
-			return !!process.env.CALENDAR_MICROSOFT_CLIENT_ID && !!process.env.CALENDAR_MICROSOFT_CLIENT_SECRET;
+			return !!env.CALENDAR_MICROSOFT_CLIENT_ID && !!env.CALENDAR_MICROSOFT_CLIENT_SECRET;
 		case "icloud":
 		case "caldav":
 			return false; // Not yet implemented

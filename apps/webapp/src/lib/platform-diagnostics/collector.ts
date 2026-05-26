@@ -148,9 +148,9 @@ function getRecommendedActions(items: DiagnosticsItem[]): string[] {
 
 export const defaultPlatformDiagnosticsDependencies: PlatformDiagnosticsDependencies = {
 	now: () => DateTime.utc().toISO() ?? DateTime.utc().toString(),
-	env: process.env,
+	env,
 	getDeploymentId: async () => getOrCreateDeploymentId(),
-	getBuildHash: () => process.env.NEXT_PUBLIC_BUILD_HASH,
+	getBuildHash: () => env.NEXT_PUBLIC_BUILD_HASH,
 	getCookieConsentConfigured: async () => {
 		const [row] = await db
 			.select({ value: systemConfig.value })

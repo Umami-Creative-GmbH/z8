@@ -9,6 +9,7 @@ import {
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
 } from "@/lib/effect/services/billing";
+import { env } from "@/env";
 
 /**
  * Get current subscription status for the organization
@@ -20,7 +21,7 @@ export async function GET() {
 	await connection();
 
 	// Check if billing is enabled
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		return NextResponse.json({
 			enabled: false,
 			subscription: null,

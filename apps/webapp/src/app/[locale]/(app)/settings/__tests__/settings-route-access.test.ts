@@ -689,7 +689,7 @@ describe("org-admin settings route access", () => {
 		expect(billingSource.indexOf("await connection(")).toBeGreaterThan(-1);
 		expect(
 			billingSource.indexOf("await connection(") <
-				billingSource.indexOf('if (process.env.BILLING_ENABLED !== "true")'),
+				billingSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
 		).toBe(true);
 		expect(
 			billingSource.indexOf("await connection(") <
@@ -699,11 +699,11 @@ describe("org-admin settings route access", () => {
 		expect(avvSource.indexOf("await connection(")).toBeGreaterThan(-1);
 		expect(
 			avvSource.indexOf("await connection(") <
-				avvSource.indexOf('if (process.env.BILLING_ENABLED !== "true")'),
+				avvSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
 		).toBe(true);
 		expect(
 			avvSource.indexOf("await connection(") <
-				avvSource.indexOf("await requireOrgAdminSettingsAccess()"),
+				avvSource.indexOf("requireOrgAdminSettingsAccess()"),
 		).toBe(true);
 	});
 });

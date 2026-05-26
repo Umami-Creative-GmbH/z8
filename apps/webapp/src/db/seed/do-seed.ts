@@ -20,6 +20,7 @@
 import "dotenv/config";
 
 import { seeders } from "./index";
+import { env } from "@/env";
 
 const COLORS = {
 	reset: "\x1b[0m",
@@ -99,7 +100,7 @@ async function main() {
 
 	// Check for required database environment variables
 	const requiredEnvVars = ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"];
-	const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+	const missingVars = requiredEnvVars.filter((v) => !env[v as keyof typeof env]);
 
 	if (missingVars.length > 0) {
 		log("\n❌ Error: Missing required environment variables:", "red");
@@ -134,7 +135,7 @@ async function main() {
 	log("\n🌱 Database Seeding", "bright");
 	log("─".repeat(50), "dim");
 	log(
-		`Database: ${process.env.POSTGRES_DB}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT || 5432}`,
+		`Database: ${env.POSTGRES_DB}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT || 5432}`,
 		"dim",
 	);
 	log(`Seeders to run: ${seedersToRun.length}`, "dim");

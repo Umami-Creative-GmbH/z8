@@ -18,6 +18,7 @@ import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { getCalendarProvider, isProviderSupported } from "@/lib/calendar-sync/providers";
 import type { CalendarProvider } from "@/lib/calendar-sync/types";
+import { env } from "@/env";
 
 // ============================================
 // ROUTE HANDLER
@@ -83,7 +84,7 @@ async function handleCalendarOAuthInitiation(
 		const payloadStr = JSON.stringify(payload);
 
 		// Sign the payload with HMAC-SHA256 using BETTER_AUTH_SECRET
-		const secret = process.env.BETTER_AUTH_SECRET;
+		const secret = env.BETTER_AUTH_SECRET;
 		if (!secret) {
 			throw new Error("BETTER_AUTH_SECRET is required for OAuth state signing");
 		}

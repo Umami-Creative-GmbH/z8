@@ -4,9 +4,10 @@ import { auth } from "@/lib/auth";
 import { getUserOrganizations, validateAppAccess } from "@/lib/auth-helpers";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("SessionOrganizationStatusRoute");
-const shouldLogAuthDiagnostics = process.env.NODE_ENV === "production";
+const shouldLogAuthDiagnostics = env.NODE_ENV === "production";
 
 /**
  * Returns the current session's organization status.

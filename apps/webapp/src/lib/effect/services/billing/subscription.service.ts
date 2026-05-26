@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { DatabaseError, NotFoundError } from "../../errors";
+import { env } from "@/env";
 
 export interface SubscriptionInfo {
 	id: string;
@@ -388,7 +389,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 		canMutateData: (organizationId) =>
 			Effect.gen(function* () {
 				// If billing is not enabled, allow all mutations
-				if (process.env.BILLING_ENABLED !== "true") {
+				if (env.BILLING_ENABLED !== "true") {
 					return true;
 				}
 

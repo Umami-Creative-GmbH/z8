@@ -16,6 +16,7 @@ import { sendMessage } from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationConversations } from "../conversation-manager";
 import { buildDailyDigestEmbed } from "../formatters";
+import { env } from "@/env";
 
 const logger = createLogger("DiscordDailyDigest");
 
@@ -97,7 +98,7 @@ async function processBotDigest(bot: {
 	const conversations = await getOrganizationConversations(bot.organizationId);
 	if (conversations.length === 0) return 0;
 
-	const appUrl = process.env.APP_URL || "https://z8-time.app";
+	const appUrl = env.APP_URL || "https://z8-time.app";
 	const { buildDigestDataForManager } = await import(
 		"@/lib/teams/jobs/daily-digest"
 	);

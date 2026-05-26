@@ -27,12 +27,13 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
+import { env } from "@/env";
 
 export default async function AdminBillingPage() {
 	await connection();
 
 	// Check if billing is enabled
-	if (process.env.BILLING_ENABLED !== "true") {
+	if (env.BILLING_ENABLED !== "true") {
 		redirect("/platform-admin");
 	}
 

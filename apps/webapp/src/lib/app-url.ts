@@ -5,6 +5,7 @@ import { organization } from "@/db/auth-schema";
 import { getDomainConfigByOrganization } from "@/lib/domain/domain-service";
 import { getCanonicalPlatformDomain } from "@/lib/domain/platform-domain";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/env";
 
 const logger = createLogger("AppUrl");
 
@@ -16,7 +17,7 @@ function normalizeBaseUrl(url: string): string {
 
 export function getDefaultAppBaseUrl(): string {
 	const configuredUrl =
-		process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || LOCAL_DEV_URL;
+		env.BETTER_AUTH_URL || env.NEXT_PUBLIC_APP_URL || LOCAL_DEV_URL;
 
 	return normalizeBaseUrl(configuredUrl);
 }
