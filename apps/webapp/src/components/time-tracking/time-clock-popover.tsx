@@ -16,6 +16,8 @@ import {
 import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelector } from "./project-selector";
+import { QuickBreakPopover } from "./quick-break-popover";
+import { useQuickBreakHandler } from "./use-quick-break-handler";
 import { WorkCategorySelector } from "./work-category-selector";
 
 export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
@@ -34,11 +36,14 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		isLoading,
 		clockIn,
 		clockOut,
+		addBreak,
 		updateNotes,
 		isClockingOut,
+		isAddingBreak,
 		isUpdatingNotes,
 		isMutating,
 	} = useTimeClock();
+	const handleAddBreak = useQuickBreakHandler(addBreak, t);
 
 	// Separate timer hook to isolate per-second re-renders to this component only
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
@@ -326,6 +331,16 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 					</div>
 				</PopoverContent>
 			</Popover>
+			{isClockedIn ? (
+				<QuickBreakPopover
+					onAddBreak={handleAddBreak}
+					isAddingBreak={isAddingBreak}
+					isDisabled={isMutating}
+					t={t}
+					buttonClassName="h-8 px-2.5"
+					iconOnly
+				/>
+			) : null}
 		</div>
 	);
 }
