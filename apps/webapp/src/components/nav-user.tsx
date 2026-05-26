@@ -2,7 +2,6 @@
 
 import {
 	IconChevronDown,
-	IconClock,
 	IconDeviceDesktop,
 	IconDotsVertical,
 	IconLanguage,
@@ -10,20 +9,18 @@ import {
 	IconLogout,
 	IconMoon,
 	IconPalette,
+	IconShield,
 	IconSun,
 	IconTextSize,
 	IconUserCircle,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useFontSizePreference } from "@/components/font-size-preference";
-import {
-	FONT_SIZE_OPTIONS,
-	isFontSizePreference,
-} from "@/components/font-size-preference-utils";
+import { FONT_SIZE_OPTIONS, isFontSizePreference } from "@/components/font-size-preference-utils";
+import { useTheme } from "@/components/theme-provider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
@@ -90,7 +87,7 @@ export function NavUser({
 					onSuccess: () => {
 						// Keep the overlay visible during navigation
 						setTimeout(() => {
-						push("/sign-in");
+							push("/sign-in");
 						}, 100);
 					},
 					onError: (error) => {
@@ -193,9 +190,9 @@ export function NavUser({
 									<IconUserCircle />
 									{t("user.profile", "Profile")}
 								</DropdownMenuItem>
-								<DropdownMenuItem>
-									<IconClock />
-									{t("user.time-settings", "Time Settings")}
+								<DropdownMenuItem onClick={() => push("/settings/security")}>
+									<IconShield />
+									{t("user.security", "Security")}
 								</DropdownMenuItem>
 							</DropdownMenuGroup>
 							<DropdownMenuSeparator />
