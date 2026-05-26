@@ -129,6 +129,27 @@
       },
       "clientDescription": "Configuración segura de la plataforma y estado del servicio a nivel de aplicación. Última actualización: {date}.",
       "description": "Configuración segura de la plataforma y comprobaciones de estado de implementación solo para aplicaciones.",
+      "keyManager": {
+        "actions": {
+          "test": "Probar cifrado"
+        },
+        "ciphertextPreview": "Vista previa del texto cifrado",
+        "description": "Ejecutar una prueba de cifrado/descifrado de clave de plataforma de extremo a extremo.",
+        "input": "Entrada",
+        "keyStatus": "Estado de la clave",
+        "keyStatus.created": "Nueva clave de plataforma creada",
+        "keyStatus.reused": "Clave de plataforma existente reutilizada",
+        "output": "Salida",
+        "platformKeyId": "ID de clave de plataforma",
+        "result": {
+          "match": "La entrada y la salida coinciden",
+          "mismatch": "La entrada y la salida difieren"
+        },
+        "status": {
+          "pending": "La prueba de cifrado se está ejecutando."
+        },
+        "title": "Cifrado de Scaleway Key Manager"
+      },
       "recommendedActions": {
         "description": "Resuelva estos elementos para que los diagnósticos vuelvan a un estado saludable.",
         "title": "Acciones recomendadas"

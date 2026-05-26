@@ -100,11 +100,15 @@
       "title": "Invite Member"
     },
     "joinOrCreate": "Join or create one",
-    "logo-uploaded": "Logo uploaded successfully",
-    "logo-upload-failed": "Failed to upload logo",
     "logo": {
+      "changeLabel": "Change organization logo",
+      "removeLabel": "Remove organization logo",
       "uploadLabel": "Upload organization logo"
     },
+    "logo-removed": "Organization logo removed",
+    "logo-remove-failed": "Failed to remove logo",
+    "logo-uploaded": "Logo uploaded successfully",
+    "logo-upload-failed": "Failed to upload logo",
     "members": {
       "activate": "Activate",
       "active": "Active",

@@ -17,15 +17,6 @@
     "continue_to_sign_in": "Continue to Sign In",
     "creating_account": "Creating your admin account...",
     "description": "Set up the first administrator account for your platform. This account will have full system access and is separate from organization accounts.",
-    "error": {
-      "password_lowercase": "Password must contain at least one lowercase letter",
-      "password_max_length": "Password must be at most 128 characters",
-      "password_min_length": "Password must be at least 12 characters",
-      "password_number": "Password must contain at least one number",
-      "password_required": "Password is required",
-      "passwords_mismatch": "Passwords do not match",
-      "password_uppercase": "Password must contain at least one uppercase letter"
-    },
     "field": {
       "confirm_password": "Confirm Password",
       "confirm_password_placeholder": "Confirm your password",

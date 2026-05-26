@@ -100,11 +100,15 @@
       "title": "Convidar membro"
     },
     "joinOrCreate": "Juntar-se ou criar",
-    "logo-uploaded": "Logótipo carregado com sucesso",
-    "logo-upload-failed": "Falha ao carregar o logótipo",
     "logo": {
+      "changeLabel": "Alterar logotipo da organização",
+      "removeLabel": "Remover logotipo da organização",
       "uploadLabel": "Carregar logotipo da organização"
     },
+    "logo-removed": "Logotipo da organização removido",
+    "logo-remove-failed": "Falha ao remover logotipo",
+    "logo-uploaded": "Logótipo carregado com sucesso",
+    "logo-upload-failed": "Falha ao carregar o logótipo",
     "members": {
       "activate": "Ativar",
       "active": "Ativo",

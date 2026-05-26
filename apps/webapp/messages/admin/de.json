@@ -129,6 +129,27 @@
       },
       "clientDescription": "Sichere Plattformkonfiguration und Dienststatus auf App-Ebene. Zuletzt aktualisiert am {date}.",
       "description": "Sichere Plattformkonfiguration und Integritätsprüfungen für App-only-Bereitstellungen.",
+      "keyManager": {
+        "actions": {
+          "test": "Verschlüsselung testen"
+        },
+        "ciphertextPreview": "Vorschau des Geheimtexts",
+        "description": "Führen Sie einen End-to-End-Test zur Ver- und Entschlüsselung mit dem Plattformschlüssel durch.",
+        "input": "Eingabe",
+        "keyStatus": "Schlüsselstatus",
+        "keyStatus.created": "Neuer Plattformschlüssel erstellt",
+        "keyStatus.reused": "Vorhandener Plattformschlüssel wiederverwendet",
+        "output": "Ausgabe",
+        "platformKeyId": "Plattformschlüssel-ID",
+        "result": {
+          "match": "Eingabe und Ausgabe stimmen überein",
+          "mismatch": "Eingabe und Ausgabe unterscheiden sich"
+        },
+        "status": {
+          "pending": "Verschlüsselungstest läuft."
+        },
+        "title": "Scaleway Key Manager-Verschlüsselung"
+      },
       "recommendedActions": {
         "description": "Beheben Sie diese Punkte, um den Diagnose-Status wieder auf „fehlerfrei“ zu setzen.",
         "title": "Empfohlene Aktionen"

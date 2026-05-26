@@ -17,15 +17,6 @@
     "continue_to_sign_in": "Continuer vers la connexion",
     "creating_account": "Création de votre compte administrateur...",
     "description": "Configurez le premier compte administrateur pour votre plateforme. Ce compte aura un accès complet au système et est distinct des comptes d'organisation.",
-    "error": {
-      "password_lowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
-      "password_max_length": "Le mot de passe doit comporter au maximum 128 caractères",
-      "password_min_length": "Le mot de passe doit comporter au moins 12 caractères",
-      "password_number": "Le mot de passe doit contenir au moins un chiffre",
-      "password_required": "Le mot de passe est requis",
-      "passwords_mismatch": "Les mots de passe ne correspondent pas",
-      "password_uppercase": "Le mot de passe doit contenir au moins une lettre majuscule"
-    },
     "field": {
       "confirm_password": "Confirmer le mot de passe",
       "confirm_password_placeholder": "Confirmez votre mot de passe",

@@ -100,11 +100,15 @@
       "title": "Invitar a un miembro"
     },
     "joinOrCreate": "Unirse o crear una",
-    "logo-uploaded": "Logo subido con éxito",
-    "logo-upload-failed": "Error al subir el logo",
     "logo": {
+      "changeLabel": "Cambiar logotipo de la organización",
+      "removeLabel": "Eliminar logotipo de la organización",
       "uploadLabel": "Subir logotipo de la organización"
     },
+    "logo-removed": "Logotipo de la organización eliminado",
+    "logo-remove-failed": "Error al eliminar el logotipo",
+    "logo-uploaded": "Logo subido con éxito",
+    "logo-upload-failed": "Error al subir el logo",
     "members": {
       "activate": "Activar",
       "active": "Activo",
