@@ -40,6 +40,19 @@ import { cn } from "@/lib/utils";
 import type { CreateRateHistory } from "@/lib/validations/employee";
 import { HourlyRateInput } from "./hourly-rate-input";
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
+function getCurrencyFormatter(currency: string) {
+	const cachedFormatter = currencyFormatters.get(currency);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.NumberFormat(undefined, { style: "currency", currency });
+	currencyFormatters.set(currency, formatter);
+	return formatter;
+}
+
 interface RateHistoryCardProps {
 	rateHistory: RateHistoryEntry[];
 	isLoading?: boolean;
@@ -102,10 +115,7 @@ export function RateHistoryCard({
 	};
 
 	const formatCurrency = (amount: string, currency: string) => {
-		return new Intl.NumberFormat(undefined, {
-			style: "currency",
-			currency: currency,
-		}).format(parseFloat(amount));
+		return getCurrencyFormatter(currency).format(parseFloat(amount));
 	};
 
 	const currentRate = rateHistory.find((r) => !r.effectiveTo);

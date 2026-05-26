@@ -152,13 +152,13 @@ export function ShiftDialogSections({
 									<SelectItem value="none">
 										{t("scheduling:scheduling.shiftDialog.noTemplate", "No template")}
 									</SelectItem>
-									{templates
-										.filter((template) => template.isActive)
-										.map((template) => (
+									{templates.flatMap((template) =>
+										template.isActive ? [
 											<SelectItem key={template.id} value={template.id}>
 												{template.name} ({template.startTime} - {template.endTime})
 											</SelectItem>
-										))}
+										] : [],
+									)}
 								</SelectContent>
 							</Select>
 							<p className="text-sm text-muted-foreground">
@@ -233,13 +233,13 @@ export function ShiftDialogSections({
 								</SelectTrigger>
 								<SelectContent>
 									{locations.flatMap((location) =>
-										location.subareas
-											.filter((subarea) => subarea.isActive)
-											.map((subarea) => (
+										location.subareas.flatMap((subarea) =>
+											subarea.isActive ? [
 												<SelectItem key={subarea.id} value={subarea.id}>
 													{location.name} – {subarea.name}
 												</SelectItem>
-											)),
+											] : [],
+										),
 									)}
 								</SelectContent>
 							</Select>

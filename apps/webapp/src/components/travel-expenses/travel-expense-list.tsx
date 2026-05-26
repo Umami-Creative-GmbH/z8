@@ -29,6 +29,19 @@ interface TravelExpenseListProps {
 	isLoading?: boolean;
 }
 
+const mediumDateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getMediumDateFormatter(locale: string) {
+	const cachedFormatter = mediumDateFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+	mediumDateFormatters.set(locale, formatter);
+	return formatter;
+}
+
 function formatDateRange(start: string | Date, end: string | Date, locale: string): string {
 	const startDateTime =
 		typeof start === "string" ? DateTime.fromISO(start) : DateTime.fromJSDate(start);
@@ -38,7 +51,7 @@ function formatDateRange(start: string | Date, end: string | Date, locale: strin
 		return "-";
 	}
 
-	const formatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+	const formatter = getMediumDateFormatter(locale);
 	return `${formatter.format(startDateTime.toJSDate())} - ${formatter.format(endDateTime.toJSDate())}`;
 }
 

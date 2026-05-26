@@ -28,6 +28,8 @@ import type {
 	OrgChartTeamNode,
 } from "./org-chart-types";
 
+const NUMBER_FORMAT = new Intl.NumberFormat();
+
 type OrgChartClientProps = {
 	initialGraph: OrgChartGraph;
 };
@@ -208,7 +210,7 @@ function OrgChartClientInner({ initialGraph }: OrgChartClientProps) {
 					</p>
 					<p className="text-sm text-muted-foreground">
 						{t("organization.orgChart.employeeCount", "{count} active employees", {
-							count: new Intl.NumberFormat().format(graph.employeeCount),
+							count: NUMBER_FORMAT.format(graph.employeeCount),
 						})}
 					</p>
 				</div>

@@ -37,6 +37,18 @@ interface MonthWorkSummaryViewProps {
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 const WEEKDAY_REFERENCE_DATES = [2, 3, 4, 5, 6, 7, 8];
+const weekdayFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getShortWeekdayFormatter(locale: string) {
+	const cachedFormatter = weekdayFormatters.get(locale);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+	weekdayFormatters.set(locale, formatter);
+	return formatter;
+}
 
 function formatHoursWithoutSuffix(minutes: number): string {
 	return formatTimeHours(minutes).replace(/h$/, "");
@@ -47,8 +59,9 @@ function formatSignedMinutesWithoutSuffix(minutes: number): string {
 }
 
 function getWeekdayNames(locale: string, weekStartDay: WeekStartDay): string[] {
+	const formatter = getShortWeekdayFormatter(locale);
 	const names = WEEKDAY_REFERENCE_DATES.map((day) =>
-		new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2000, 0, day)),
+		formatter.format(new Date(2000, 0, day)),
 	);
 
 	return weekStartDay === "monday" ? [...names.slice(1), names[0]!] : names;

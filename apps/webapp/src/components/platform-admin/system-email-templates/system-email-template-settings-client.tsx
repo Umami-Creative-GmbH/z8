@@ -97,9 +97,12 @@ export function SystemEmailTemplateSettingsClient({
 	const [overrideKeys, setOverrideKeys] = useState<Set<PlatformSystemEmailTemplateKey>>(
 		() =>
 			new Set(
-				templates
-					.filter((template) => template.override)
-					.map((template) => template.definition.key),
+				templates.reduce<PlatformSystemEmailTemplateKey[]>((keys, template) => {
+					if (template.override) {
+						keys.push(template.definition.key);
+					}
+					return keys;
+				}, []),
 			),
 	);
 
