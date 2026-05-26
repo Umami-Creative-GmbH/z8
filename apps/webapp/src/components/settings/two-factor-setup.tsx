@@ -313,6 +313,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								id="enable-2fa-password"
 								name="password"
 								type="password"
+								aria-label={t("settings.security.twoFactor.passwordLabel", "Password")}
 								autoComplete="current-password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
@@ -365,6 +366,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								id="regenerate-2fa-password"
 								name="password"
 								type="password"
+								aria-label={t("settings.security.twoFactor.passwordLabel", "Password")}
 								autoComplete="current-password"
 								value={regeneratePassword}
 								onChange={(e) => setRegeneratePassword(e.target.value)}
@@ -520,6 +522,7 @@ export function TwoFactorSetup({ isEnabled: initialIsEnabled }: TwoFactorSetupPr
 								id="disable-2fa-password"
 								name="password"
 								type="password"
+								aria-label={t("settings.security.twoFactor.passwordLabel", "Password")}
 								autoComplete="current-password"
 								value={disablePassword}
 								onChange={(e) => setDisablePassword(e.target.value)}

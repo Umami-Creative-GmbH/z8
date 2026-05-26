@@ -285,6 +285,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 
 	return (
 		<button
+			type="button"
 			aria-label="Toggle Sidebar"
 			className={cn(
 				"-translate-x-1/2 group-data-[side=left]:-right-4 absolute inset-y-0 z-20 hidden w-4 transition-[background-color] ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=right]:left-0 sm:flex",

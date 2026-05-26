@@ -233,9 +233,10 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 									<div className="grid gap-2 sm:grid-cols-3">
 										{approvalTypeOptions.map((option) => (
 											<label key={option.value} className="flex items-center gap-2 text-sm">
-												<input
-													type="checkbox"
-													checked={field.state.value.includes(option.value)}
+										<input
+											type="checkbox"
+											aria-label={approvalTypeLabel(option.value)}
+											checked={field.state.value.includes(option.value)}
 													onChange={(event) => {
 														field.handleChange(
 															event.target.checked
