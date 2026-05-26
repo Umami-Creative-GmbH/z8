@@ -7,6 +7,10 @@ export type ScalewayKeyManagerClientOptions = {
 
 type JsonRecord = Record<string, unknown>;
 
+function encodeBytes(value: string) {
+	return Buffer.from(value, "utf8").toString("base64");
+}
+
 export class ScalewayKeyManagerClient {
 	private readonly apiUrl: string;
 	private readonly secretKey: string;
@@ -67,8 +71,8 @@ export class ScalewayKeyManagerClient {
 			{
 				method: "POST",
 				body: {
-					plaintext: Buffer.from(plaintext, "utf8").toString("base64"),
-					associated_data: { value: associatedData },
+					plaintext: encodeBytes(plaintext),
+					associated_data: { value: encodeBytes(associatedData) },
 				},
 			},
 		);
@@ -82,7 +86,7 @@ export class ScalewayKeyManagerClient {
 				method: "POST",
 				body: {
 					ciphertext,
-					associated_data: { value: associatedData },
+					associated_data: { value: encodeBytes(associatedData) },
 				},
 			},
 		);
