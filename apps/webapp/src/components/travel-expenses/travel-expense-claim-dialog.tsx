@@ -35,10 +35,8 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	TRAVEL_EXPENSE_VALIDATION_MESSAGES,
-	type TravelExpenseClaimType,
-} from "@/lib/travel-expenses/types";
+import type { TravelExpenseClaimType } from "@/lib/travel-expenses/types";
+import { getClaimValidationError } from "./travel-expense-claim-utils";
 
 interface TravelExpenseClaimDialogProps {
 	open: boolean;
@@ -68,17 +66,6 @@ function createDefaultValues(): ClaimFormValues {
 		currency: "EUR",
 		notes: "",
 	};
-}
-
-export function getClaimValidationError(
-	type: TravelExpenseClaimType,
-	attachmentCount: number,
-): string | null {
-	if (type === "receipt" && attachmentCount < 1) {
-		return TRAVEL_EXPENSE_VALIDATION_MESSAGES.RECEIPT_ATTACHMENT_REQUIRED;
-	}
-
-	return null;
 }
 
 export function TravelExpenseClaimDialog({
