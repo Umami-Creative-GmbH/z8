@@ -21,10 +21,10 @@ import "./schedule-x-calendar.css";
 import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useTheme } from "next-themes";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {

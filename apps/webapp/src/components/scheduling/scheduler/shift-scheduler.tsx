@@ -9,13 +9,13 @@ import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { useTranslate } from "@tolgee/react";
-import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import type {
 	DateRange,
 	ShiftTemplate,
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
+import { useTheme } from "@/components/theme-provider";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import {
 	CoverageHeatmapOverlay,

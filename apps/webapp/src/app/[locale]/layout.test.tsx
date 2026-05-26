@@ -130,7 +130,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 describe("LocaleLayout", () => {
-	it("inlines font size preference initialization before paint", async () => {
+	it("does not render font size initialization as a script during locale navigation", async () => {
 		const layout = await LocaleLayout({
 			children: <div>Auth content</div>,
 			params: Promise.resolve({ locale: "en" }),
@@ -138,14 +138,7 @@ describe("LocaleLayout", () => {
 
 		const script = findFontSizeInitScript(layout);
 
-		expect(script).not.toBeNull();
-		expect(script?.id).toBe("font-size-init");
-		expect(script?.strategy).toBe("beforeInteractive");
-		expect(script?.children).toContain("localStorage.getItem(\"z8-font-size\")");
-		expect(script?.children).toContain("document.documentElement.dataset.fontSize");
-		expect(script?.children).toContain("comfortable");
-		expect(script?.children).toContain("large");
-		expect(script?.children).toContain("catch");
+		expect(script).toBeNull();
 	});
 
 	it("does not block the shell on the PostHog consent session lookup", async () => {
