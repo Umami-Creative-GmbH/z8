@@ -158,7 +158,7 @@ describe("ScalewayKeyManagerClient", () => {
 		);
 		expect(await getJsonBody(encryptRequest)).toEqual({
 			plaintext: Buffer.from("secret value", "utf8").toString("base64"),
-			associated_data: { value: "org-1:email/api_key" },
+			associated_data: { value: Buffer.from("org-1:email/api_key", "utf8").toString("base64") },
 		});
 
 		const [decryptUrl, decryptRequest] = fetchMock.mock.calls[1] as [string, RequestInit];
@@ -167,7 +167,7 @@ describe("ScalewayKeyManagerClient", () => {
 		);
 		expect(await getJsonBody(decryptRequest)).toEqual({
 			ciphertext: "scw-km-v1:opaque-ciphertext",
-			associated_data: { value: "org-1:email/api_key" },
+			associated_data: { value: Buffer.from("org-1:email/api_key", "utf8").toString("base64") },
 		});
 	});
 
