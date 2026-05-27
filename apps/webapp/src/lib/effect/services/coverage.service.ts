@@ -461,10 +461,14 @@ export const CoverageServiceLive = Layer.effect(
 						if (subareaShifts.length === 0) continue;
 
 						// Find time range for this subarea
-						const allStartTimes = subareaShifts.map((s) => s.startTime);
-						const allEndTimes = subareaShifts.map((s) => s.endTime);
-						const earliestStart = allStartTimes.sort()[0];
-						const latestEnd = allEndTimes.sort().reverse()[0];
+						const earliestStart = subareaShifts.reduce(
+							(earliest, shift) => (shift.startTime < earliest ? shift.startTime : earliest),
+							subareaShifts[0].startTime,
+						);
+						const latestEnd = subareaShifts.reduce(
+							(latest, shift) => (shift.endTime > latest ? shift.endTime : latest),
+							subareaShifts[0].endTime,
+						);
 
 						// Generate time slots
 						const timeSlots = generateTimeSlots(earliestStart, latestEnd, 60);
@@ -506,12 +510,14 @@ export const CoverageServiceLive = Layer.effect(
 
 							// Build employee list
 							const employees: CoverageSnapshot["employees"] = [];
+							const employeeIds = new Set<string>();
 
 							// Add scheduled employees
 							for (const s of scheduledInSlot) {
 								const isClockedIn = clockedInSlot.some(
 									(wp) => wp.employeeId === s.employeeId,
 								);
+								employeeIds.add(s.employeeId!);
 								employees.push({
 									id: s.employeeId!,
 									name: s.employee?.user?.name || "Unknown",
@@ -521,7 +527,8 @@ export const CoverageServiceLive = Layer.effect(
 
 							// Add clocked-in employees not scheduled
 							for (const wp of clockedInSlot) {
-								if (!employees.find((e) => e.id === wp.employeeId)) {
+								if (!employeeIds.has(wp.employeeId)) {
+									employeeIds.add(wp.employeeId);
 									employees.push({
 										id: wp.employeeId,
 										name: wp.employee?.user?.name || "Unknown",

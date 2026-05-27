@@ -141,6 +141,18 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 		// Track all errors for result
 		const errors: ApiExportResult["errors"] = [];
 		let apiCallCount = 0;
+		const workPeriodsById = new Map<string, (typeof workPeriods)[number]>();
+		for (const period of workPeriods) {
+			if (!workPeriodsById.has(period.id)) {
+				workPeriodsById.set(period.id, period);
+			}
+		}
+		const absencesById = new Map<string, (typeof absences)[number]>();
+		for (const absence of absences) {
+			if (!absencesById.has(absence.id)) {
+				absencesById.set(absence.id, absence);
+			}
+		}
 
 		// Export time records in batches
 		const timeRecordRequests = timeRecords.map((t) => t.request);
@@ -160,7 +172,7 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 					syncedTimeRecords++;
 				} else {
 					const sourceId = batchSourceIds[index];
-					const originalPeriod = workPeriods.find((p) => p.id === sourceId);
+					const originalPeriod = workPeriodsById.get(sourceId);
 					errors.push({
 						recordId: sourceId,
 						recordType: "attendance",
@@ -193,7 +205,7 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 					syncedAbsences++;
 				} else {
 					const sourceId = batchSourceIds[index];
-					const originalAbsence = absences.find((a) => a.id === sourceId);
+					const originalAbsence = absencesById.get(sourceId);
 					errors.push({
 						recordId: sourceId,
 						recordType: "absence",

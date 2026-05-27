@@ -1639,12 +1639,14 @@ async function sendOrganizationDeletionNotifications(
 
 	// Send email to each admin/owner
 	for (const member of adminsAndOwners) {
-		if (!member.user?.email) continue;
+		const user = member.user;
+		const userEmail = user?.email;
+		if (!userEmail) continue;
 
 		try {
 			const html = await render(
 				OrganizationDeletion({
-					userName: member.user.name || member.user.email,
+					userName: user.name || userEmail,
 					organizationName,
 					deletedByName,
 					deletionDate: deletionDate.toLocaleString(),
@@ -1655,7 +1657,7 @@ async function sendOrganizationDeletionNotifications(
 			);
 
 			await sendEmail({
-				to: member.user.email,
+				to: userEmail,
 				subject: `Organization "${organizationName}" scheduled for deletion`,
 				html,
 				actionUrl: recoveryUrl,
@@ -1663,7 +1665,7 @@ async function sendOrganizationDeletionNotifications(
 			});
 		} catch (error) {
 			logger.warn(
-				{ error, email: member.user.email, organizationId },
+				{ error, email: userEmail, organizationId },
 				"Failed to send deletion notification to user",
 			);
 		}
