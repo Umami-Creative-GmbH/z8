@@ -9,7 +9,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { Fragment, useEffect, useEffectEvent, useRef, useState } from "react";
+import { Fragment, useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
 import { getSurchargeCalculationsForPeriod } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +109,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const [isShowingPreviousResults, setIsShowingPreviousResults] = useState(false);
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [loadedRowsOrganizationId, setLoadedRowsOrganizationId] = useState<string | null>(null);
+	const [loadRequestVersion, requestLoad] = useReducer((version: number) => version + 1, 0);
 	const appliedFilters = useRef(defaultFilters);
 	const loadedRowsOrganizationIdRef = useRef<string | null>(null);
 	const latestRequestId = useRef(0);
@@ -185,13 +186,13 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 		defaultValues: defaultFilters,
 		onSubmit: async ({ value }) => {
 			appliedFilters.current = value;
-			await loadCalculations(value);
+			requestLoad();
 		},
 	});
 
 	useEffect(() => {
 		loadCalculations(appliedFilters.current);
-	}, [organizationId]);
+	}, [organizationId, loadRequestVersion]);
 
 	const displayRows = loadedRowsOrganizationId === organizationId ? rows : [];
 	const totals = displayRows.reduce(
