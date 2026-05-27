@@ -17,9 +17,11 @@ export default async function DesignS6({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-6",
+	return translateVariantTree(locale, "s-6", renderDesignS6(homeHref));
+}
+
+function renderDesignS6(homeHref: string) {
+	return (
 		<div
 			className="min-h-screen"
 			style={{
@@ -122,8 +124,8 @@ export default async function DesignS6({ params }: PageProps) {
 						className="animate-fade-up mt-10 max-w-md text-[20px] leading-[1.7]"
 						style={{ color: "#7a7668", animationDelay: "0.4s" }}
 					>
-						Kein fancy Dashboard nötig. Kein Schnickschnack. Z8 ist wie ein Block und ein Stift —
-						nur digital.
+						Kein fancy Dashboard nötig. Kein Schnickschnack. Z8 ist wie ein Block und ein Stift, nur
+						digital.
 					</p>
 
 					<div
@@ -144,7 +146,7 @@ export default async function DesignS6({ params }: PageProps) {
 					</div>
 				</div>
 
-				{/* Hero image — chalkboard-treated photo */}
+				{/* Hero image: chalkboard-treated photo */}
 				<div
 					className="animate-fade-in absolute right-[6%] top-[15%] hidden overflow-hidden lg:block"
 					style={{
@@ -159,6 +161,7 @@ export default async function DesignS6({ params }: PageProps) {
 						src="https://images.unsplash.com/photo-1517842645767-c639042777db?w=600&q=80&auto=format&fit=crop"
 						alt=""
 						fill
+						sizes="300px"
 						className="object-cover"
 						style={{ filter: "saturate(0) brightness(0.35) contrast(1.4)" }}
 					/>
@@ -177,7 +180,7 @@ export default async function DesignS6({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Features — notebook style */}
+			{/* Features: notebook style */}
 			<section id="features" className="relative z-10 px-8 py-32 lg:px-16">
 				<div className="mx-auto max-w-4xl">
 					<h2 className="text-[clamp(2rem,4vw,3.5rem)]" style={{ color: "#e8e4d4" }}>
@@ -248,6 +251,7 @@ export default async function DesignS6({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 50vw"
 								className="object-cover"
 								style={{ filter: "saturate(0) brightness(0.5) contrast(1.3)" }}
 							/>
@@ -272,7 +276,7 @@ export default async function DesignS6({ params }: PageProps) {
 						&ldquo;Manchmal ist ein Stift alles, was man braucht.&rdquo;
 					</p>
 					<p className="mt-4 text-[16px]" style={{ color: "#5a5848" }}>
-						— Das Z8 Team
+						Das Z8 Team
 					</p>
 				</div>
 			</section>
@@ -316,6 +320,6 @@ export default async function DesignS6({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

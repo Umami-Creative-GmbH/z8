@@ -47,18 +47,12 @@ export function PricingSection({ copy }: PricingSectionProps) {
 						</p>
 
 						<div className="grid gap-4 sm:grid-cols-2">
-							<div
-								className="rounded-2xl p-6"
-								style={{ border: `1px solid ${v("borderMedium")}` }}
-							>
+							<div className="rounded-2xl p-6" style={{ border: `1px solid ${v("borderMedium")}` }}>
 								<div className="text-[clamp(2rem,4vw,3rem)] font-extrabold tracking-[-0.03em]">
 									{copy.offer.monthly}
 								</div>
 							</div>
-							<div
-								className="rounded-2xl p-6"
-								style={{ border: `1px solid ${v("borderMedium")}` }}
-							>
+							<div className="rounded-2xl p-6" style={{ border: `1px solid ${v("borderMedium")}` }}>
 								<div className="text-[clamp(2rem,4vw,3rem)] font-extrabold tracking-[-0.03em]">
 									{copy.offer.yearly}
 								</div>

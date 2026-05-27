@@ -11,7 +11,7 @@ type HeaderProps = {
 };
 
 export function Header({ copy }: HeaderProps) {
-	const { t, mounted } = useThemeTokens();
+	const { t } = useThemeTokens();
 
 	return (
 		<header
@@ -19,9 +19,7 @@ export function Header({ copy }: HeaderProps) {
 			style={{ transition: "background-color 0.4s ease" }}
 		>
 			<div className="flex items-center gap-8">
-				<span className="text-[22px] font-black tracking-[-0.02em]">
-					{mounted ? copy.brand : copy.brand}
-				</span>
+				<span className="text-[22px] font-black tracking-[-0.02em]">{copy.brand}</span>
 				<nav
 					className="hidden items-center gap-6 text-[14px] md:flex"
 					style={{ color: t.textSecondary }}

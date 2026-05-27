@@ -18,9 +18,11 @@ export default async function DesignS8({ params }: PageProps) {
 	if (!isLocale(locale)) notFound();
 	const en = locale === "en";
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-8",
+	return translateVariantTree(locale, "s-8", renderDesignS8(homeHref, en));
+}
+
+function renderDesignS8(homeHref: string, en: boolean) {
+	return (
 		<div
 			className="min-h-screen"
 			style={{
@@ -36,7 +38,7 @@ export default async function DesignS8({ params }: PageProps) {
 					className="flex items-center justify-between pb-3 text-[10px] tracking-[0.1em] uppercase"
 					style={{ color: "#8a8470", borderBottom: "1px solid #d0c8b8" }}
 				>
-					<span>Ausgabe Nr. 1 — 2025</span>
+					<span>Ausgabe Nr. 1, 2025</span>
 					<span>Frankfurt am Main</span>
 					<span>Donnerstag, 6. Februar</span>
 				</div>
@@ -76,7 +78,7 @@ export default async function DesignS8({ params }: PageProps) {
 				</nav>
 			</header>
 
-			{/* Lead story — hero */}
+			{/* Lead story: hero */}
 			<section id="lead" className="relative z-10 px-8 py-16 lg:px-16">
 				<div className="mx-auto max-w-5xl">
 					<div className="grid gap-12 lg:grid-cols-[2fr_1fr]">
@@ -125,9 +127,8 @@ export default async function DesignS8({ params }: PageProps) {
 									)}
 								</p>
 								<p className="mb-4">
-									Mit nur einem Klick erfassen Mitarbeiter ihre Arbeitszeit — präzise, digital und
-									in Echtzeit. Das Dashboard zeigt sofort alle relevanten Kennzahlen auf einen
-									Blick.
+									Mit nur einem Klick erfassen Mitarbeiter ihre Arbeitszeit, präzise, digital und in
+									Echtzeit. Das Dashboard zeigt sofort alle relevanten Kennzahlen auf einen Blick.
 								</p>
 								<p>
 									Besonders für kleine und mittlere Unternehmen ist Z8 eine Offenbarung: Einfach
@@ -193,7 +194,7 @@ export default async function DesignS8({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Photo section — newspaper style */}
+			{/* Photo section: newspaper style */}
 			<section className="relative z-10 mx-8 mb-8 lg:mx-16">
 				<div className="mx-auto max-w-5xl grid gap-6 md:grid-cols-[2fr_1fr]">
 					<div className="relative h-72 overflow-hidden">
@@ -201,6 +202,7 @@ export default async function DesignS8({ params }: PageProps) {
 							src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=900&q=80&auto=format&fit=crop"
 							alt=""
 							fill
+							sizes="(max-width: 768px) 100vw, 67vw"
 							className="object-cover"
 							style={{ filter: "saturate(0.2) contrast(1.1)" }}
 						/>
@@ -218,6 +220,7 @@ export default async function DesignS8({ params }: PageProps) {
 							src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&q=80&auto=format&fit=crop"
 							alt=""
 							fill
+							sizes="(max-width: 768px) 100vw, 33vw"
 							className="object-cover"
 							style={{ filter: "saturate(0.2) contrast(1.1)" }}
 						/>
@@ -233,7 +236,7 @@ export default async function DesignS8({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Feature columns — broadsheet style */}
+			{/* Feature columns: broadsheet style */}
 			<section
 				id="features"
 				className="relative z-10 px-8 py-16 lg:px-16"
@@ -253,7 +256,7 @@ export default async function DesignS8({ params }: PageProps) {
 						{[
 							{
 								title: "Stempeluhr",
-								desc: "Die digitale Stechuhr für das 21. Jahrhundert. Start, Pause, Ende — alles mit einem Fingertipp. Funktioniert auf Smartphone, Tablet und Desktop gleichermassen.",
+								desc: "Die digitale Stechuhr für das 21. Jahrhundert. Start, Pause, Ende: alles mit einem Fingertipp. Funktioniert auf Smartphone, Tablet und Desktop gleichermassen.",
 							},
 							{
 								title: "Berichte & Export",
@@ -275,7 +278,7 @@ export default async function DesignS8({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* CTA — classified ad style */}
+			{/* CTA: classified ad style */}
 			<section
 				id="contact"
 				className="relative z-10 px-8 py-16 lg:px-16"
@@ -286,7 +289,7 @@ export default async function DesignS8({ params }: PageProps) {
 						Kleinanzeige
 					</p>
 					<h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.8rem)] font-bold tracking-[-0.02em]">
-						Z8 — Jetzt abonnieren.
+						Z8: Jetzt abonnieren.
 					</h2>
 					<p className="mt-3 text-[14px] leading-[1.6]" style={{ color: "#5a5a50" }}>
 						Kostenlos starten. Keine Kreditkarte erforderlich. Jederzeit kündbar.
@@ -301,11 +304,11 @@ export default async function DesignS8({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Footer — colophon */}
+			{/* Footer: colophon */}
 			<footer className="px-8 py-6 lg:px-16" style={{ borderTop: "1px solid #d0c8b8" }}>
 				<div className="flex items-center justify-between">
 					<span className="text-[10px] tracking-[0.1em] uppercase" style={{ color: "#8a8470" }}>
-						© 2025 Z8 Anzeiger — Alle Rechte vorbehalten
+						© 2025 Z8 Anzeiger, Alle Rechte vorbehalten
 					</span>
 					<Link
 						href={homeHref}
@@ -316,6 +319,6 @@ export default async function DesignS8({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

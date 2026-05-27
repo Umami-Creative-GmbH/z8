@@ -10,7 +10,7 @@ export function ThemeToggle() {
 			type="button"
 			onClick={toggle}
 			aria-label={dark ? "Zum hellen Modus wechseln" : "Zum dunklen Modus wechseln"}
-			className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg transition-all"
+			className="relative flex size-9 cursor-pointer items-center justify-center rounded-lg transition-colors"
 			style={{
 				backgroundColor: dark ? "#1e1e1e" : "#f0f0f0",
 				border: `1px solid ${dark ? "#252525" : "#e8e8e8"}`,
@@ -26,7 +26,8 @@ export function ThemeToggle() {
 					position: "absolute",
 					opacity: dark ? 1 : 0,
 					transform: dark ? "rotate(0deg) scale(1)" : "rotate(-90deg) scale(0.5)",
-					transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+					transition:
+						"opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
 				}}
 			>
 				<circle cx="8" cy="8" r="3" fill={dark ? "#e8e8e8" : "#1a1a1a"} />
@@ -54,7 +55,8 @@ export function ThemeToggle() {
 					position: "absolute",
 					opacity: dark ? 0 : 1,
 					transform: dark ? "rotate(90deg) scale(0.5)" : "rotate(0deg) scale(1)",
-					transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+					transition:
+						"opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
 				}}
 			>
 				<path

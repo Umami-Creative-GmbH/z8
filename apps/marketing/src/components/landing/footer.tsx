@@ -32,7 +32,7 @@ export function Footer({ copy }: FooterProps) {
 								<a
 									key={social}
 									href="#contact"
-									className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-bold transition-all"
+									className="flex size-9 items-center justify-center rounded-lg text-[11px] font-bold transition-colors"
 									style={{ border: `1px solid ${t.socialBorder}`, color: t.textTertiary }}
 									onMouseOver={(e) => {
 										e.currentTarget.style.backgroundColor = t.surface;
@@ -118,7 +118,7 @@ export function Footer({ copy }: FooterProps) {
 						className="flex items-center gap-1.5 text-[12px]"
 						style={{ color: t.textQuaternary }}
 					>
-						<span className="inline-block h-2 w-2 rounded-full bg-[#27ca40]" />
+						<span className="inline-block size-2 rounded-full bg-[#27ca40]" />
 						{copy.status}
 					</span>
 				</div>

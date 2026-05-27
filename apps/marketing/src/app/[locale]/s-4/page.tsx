@@ -17,9 +17,11 @@ export default async function DesignS4({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-4",
+	return translateVariantTree(locale, "s-4", renderDesignS4(homeHref));
+}
+
+function renderDesignS4(homeHref: string) {
+	return (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -70,10 +72,10 @@ export default async function DesignS4({ params }: PageProps) {
 				</a>
 			</header>
 
-			{/* Hero — editorial split */}
+			{/* Hero: editorial split */}
 			<section className="relative z-10 min-h-[90vh] px-8 lg:px-16">
 				<div className="flex min-h-[90vh] flex-col justify-center lg:flex-row lg:items-center lg:gap-20">
-					{/* Left — text */}
+					{/* Left: text */}
 					<div className="max-w-xl flex-1">
 						<div
 							className="animate-fade-up mb-6 h-1 w-16"
@@ -105,7 +107,7 @@ export default async function DesignS4({ params }: PageProps) {
 								fontFamily: "'DM Sans', 'General Sans', sans-serif",
 							}}
 						>
-							Wie ein guter Ton, geformt von Hand — Z8 gibt Ihrer Arbeitszeit Form und Struktur.
+							Wie ein guter Ton, geformt von Hand: Z8 gibt Ihrer Arbeitszeit Form und Struktur.
 							Warm, ehrlich und beständig.
 						</p>
 						<div
@@ -129,7 +131,7 @@ export default async function DesignS4({ params }: PageProps) {
 						</div>
 					</div>
 
-					{/* Right — terracotta arch with image */}
+					{/* Right: terracotta arch with image */}
 					<div
 						className="animate-scale-in mt-16 hidden flex-1 items-center justify-center lg:mt-0 lg:flex"
 						style={{ animationDelay: "0.5s" }}
@@ -149,6 +151,7 @@ export default async function DesignS4({ params }: PageProps) {
 									src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80&auto=format&fit=crop"
 									alt=""
 									fill
+									sizes="300px"
 									className="object-cover"
 									style={{ filter: "saturate(0.5) sepia(0.25) contrast(1.05)" }}
 								/>
@@ -177,7 +180,7 @@ export default async function DesignS4({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Features — tiles */}
+			{/* Features: tiles */}
 			<section
 				id="features"
 				className="relative z-10 px-8 py-32 lg:px-16"
@@ -246,6 +249,7 @@ export default async function DesignS4({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 33vw"
 								className="object-cover"
 								style={{ filter: "saturate(0.4) sepia(0.3) contrast(1.05)" }}
 							/>
@@ -263,8 +267,8 @@ export default async function DesignS4({ params }: PageProps) {
 					className="max-w-2xl text-[clamp(1.5rem,3vw,2.2rem)] italic leading-[1.4] tracking-[-0.01em]"
 					style={{ color: "#5a3a28" }}
 				>
-					&ldquo;Die beste Technologie ist die, die man nicht bemerkt — die einfach funktioniert,
-					wie ein warmer Raum.&rdquo;
+					&ldquo;Die beste Technologie ist die, die man nicht bemerkt: die einfach funktioniert, wie
+					ein warmer Raum.&rdquo;
 				</blockquote>
 				<div className="mt-8 h-1 w-12" style={{ backgroundColor: "#b85c30" }} />
 			</section>
@@ -310,6 +314,6 @@ export default async function DesignS4({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

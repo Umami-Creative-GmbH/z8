@@ -17,9 +17,11 @@ export default async function DesignS3({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-3",
+	return translateVariantTree(locale, "s-3", renderDesignS3(homeHref));
+}
+
+function renderDesignS3(homeHref: string) {
+	return (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -155,7 +157,7 @@ export default async function DesignS3({ params }: PageProps) {
 					</div>
 				</div>
 
-				{/* Hero image — neon-treated */}
+				{/* Hero image: neon-treated */}
 				<div
 					className="animate-fade-in absolute right-[5%] top-[15%] hidden overflow-hidden lg:block"
 					style={{
@@ -169,6 +171,7 @@ export default async function DesignS3({ params }: PageProps) {
 						src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=700&q=80&auto=format&fit=crop"
 						alt=""
 						fill
+						sizes="360px"
 						className="object-cover"
 						style={{ filter: "saturate(0.15) brightness(0.3) contrast(1.4) hue-rotate(140deg)" }}
 					/>
@@ -191,7 +194,7 @@ export default async function DesignS3({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Features — terminal cards */}
+			{/* Features: terminal cards */}
 			<section id="features" className="relative z-10 px-8 py-32 lg:px-16">
 				<div className="mx-auto max-w-5xl">
 					<div className="text-[11px] uppercase tracking-[0.2em]" style={{ color: "#1a5a50" }}>
@@ -209,7 +212,7 @@ export default async function DesignS3({ params }: PageProps) {
 							{
 								cmd: "track",
 								title: "Echtzeit-Tracking",
-								desc: "Starten, stoppen, pausieren — alles in Echtzeit synchronisiert.",
+								desc: "Starten, stoppen, pausieren: alles in Echtzeit synchronisiert.",
 							},
 							{
 								cmd: "report",
@@ -267,6 +270,7 @@ export default async function DesignS3({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 33vw"
 								className="object-cover"
 								style={{ filter: "saturate(0.1) brightness(0.4) contrast(1.3) hue-rotate(140deg)" }}
 							/>
@@ -357,6 +361,6 @@ export default async function DesignS3({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

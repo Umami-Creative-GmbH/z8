@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { themes } from "@/components/theme/tokens";
 import { isLocale, locales } from "@/i18n/locales";
 import "../globals.css";
@@ -35,7 +36,9 @@ export default async function LocaleLayout({
 	return (
 		<html lang={locale} suppressHydrationWarning>
 			<head>
-				<script dangerouslySetInnerHTML={{ __html: themeScript }} />
+				<Script id="theme-init" strategy="beforeInteractive">
+					{themeScript}
+				</Script>
 			</head>
 			<body className="antialiased">{children}</body>
 		</html>

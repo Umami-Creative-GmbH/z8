@@ -239,21 +239,15 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.44.0
         version: 3.44.0(react@19.2.6)
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       next:
         specifier: 16.2.6
-        version: 16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        version: 16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react:
         specifier: 19.2.6
         version: 19.2.6
       react-dom:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
-      tailwind-merge:
-        specifier: ^3.6.0
-        version: 3.6.0
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -279,9 +273,6 @@ importers:
       tailwindcss:
         specifier: ^4.3.0
         version: 4.3.0
-      ultracite:
-        specifier: ^7.8.0
-        version: 7.8.0
 
   apps/mobile:
     dependencies:
@@ -22046,6 +22037,30 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
+  next@16.2.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    dependencies:
+      '@next/env': 16.2.6
+      '@swc/helpers': 0.5.15
+      baseline-browser-mapping: 2.10.28
+      caniuse-lite: 1.0.30001792
+      postcss: 8.5.15
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+      styled-jsx: 5.1.6(react@19.2.6)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.2.6
+      '@next/swc-darwin-x64': 16.2.6
+      '@next/swc-linux-arm64-gnu': 16.2.6
+      '@next/swc-linux-arm64-musl': 16.2.6
+      '@next/swc-linux-x64-gnu': 16.2.6
+      '@next/swc-linux-x64-musl': 16.2.6
+      '@next/swc-win32-arm64-msvc': 16.2.6
+      '@next/swc-win32-x64-msvc': 16.2.6
+      sharp: 0.34.5
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-plugin-macros
+
   node-abort-controller@3.1.1: {}
 
   node-addon-api@7.1.1: {}
@@ -23843,6 +23858,11 @@ snapshots:
       react: 19.2.6
     optionalDependencies:
       '@babel/core': 7.29.0
+
+  styled-jsx@5.1.6(react@19.2.6):
+    dependencies:
+      client-only: 0.0.1
+      react: 19.2.6
 
   styleq@0.1.3: {}
 

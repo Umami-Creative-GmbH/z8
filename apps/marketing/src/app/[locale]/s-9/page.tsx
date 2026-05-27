@@ -17,9 +17,11 @@ export default async function DesignS9({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-9",
+	return translateVariantTree(locale, "s-9", renderDesignS9(homeHref));
+}
+
+function renderDesignS9(homeHref: string) {
+	return (
 		<div
 			className="min-h-screen"
 			style={{
@@ -50,14 +52,7 @@ export default async function DesignS9({ params }: PageProps) {
 			{/* Header */}
 			<header className="relative z-20 flex items-center justify-between px-8 py-7 lg:px-16">
 				<div className="flex items-center gap-3">
-					<span
-						className="text-[22px] font-bold tracking-[-0.03em]"
-						style={{
-							background: "linear-gradient(135deg, #e87040, #d04820)",
-							WebkitBackgroundClip: "text",
-							WebkitTextFillColor: "transparent",
-						}}
-					>
+					<span className="text-[22px] font-bold tracking-[-0.03em]" style={{ color: "#d04820" }}>
 						Z8
 					</span>
 				</div>
@@ -116,15 +111,7 @@ export default async function DesignS9({ params }: PageProps) {
 				>
 					Jeder Morgen.
 					<br />
-					<span
-						style={{
-							background: "linear-gradient(135deg, #e87040, #d04820)",
-							WebkitBackgroundClip: "text",
-							WebkitTextFillColor: "transparent",
-						}}
-					>
-						Jede Minute.
-					</span>
+					<span style={{ color: "#d04820" }}>Jede Minute.</span>
 					<br />
 					Zählt.
 				</h1>
@@ -133,7 +120,7 @@ export default async function DesignS9({ params }: PageProps) {
 					className="animate-fade-up mx-auto mt-8 max-w-lg text-[16px] leading-[1.75]"
 					style={{ color: "#8a6858", animationDelay: "0.45s" }}
 				>
-					Wie der erste Lichtstrahl am Horizont — Z8 bringt Wärme und Klarheit in Ihre tägliche
+					Wie der erste Lichtstrahl am Horizont: Z8 bringt Wärme und Klarheit in Ihre tägliche
 					Zeiterfassung.
 				</p>
 
@@ -179,7 +166,7 @@ export default async function DesignS9({ params }: PageProps) {
 							{
 								gradient: "linear-gradient(135deg, #fce8d8, #f8d0b0)",
 								title: "Zeitstempel",
-								desc: "Start und Stopp — so schnell wie ein Sonnenaufgang.",
+								desc: "Start und Stopp: so schnell wie ein Sonnenaufgang.",
 							},
 							{
 								gradient: "linear-gradient(135deg, #f8d0b0, #f0b088)",
@@ -222,6 +209,7 @@ export default async function DesignS9({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 33vw"
 								className="object-cover"
 								style={{ filter: "saturate(0.7) brightness(1.05) sepia(0.1)" }}
 							/>
@@ -230,7 +218,7 @@ export default async function DesignS9({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Warmth section — testimonial */}
+			{/* Warmth section: testimonial */}
 			<section id="warmth" className="relative z-10 px-8 py-24 lg:px-16">
 				<div className="mx-auto max-w-3xl text-center">
 					<div
@@ -244,11 +232,11 @@ export default async function DesignS9({ params }: PageProps) {
 							className="text-[clamp(1.3rem,2.5vw,1.8rem)] font-medium leading-[1.5]"
 							style={{ color: "#5a3828" }}
 						>
-							&ldquo;Z8 hat unseren Morgen verändert. Kein Stress mehr, keine Zettel — nur Klarheit
+							&ldquo;Z8 hat unseren Morgen verändert. Kein Stress mehr, keine Zettel, nur Klarheit
 							ab dem ersten Kaffee.&rdquo;
 						</blockquote>
 						<p className="mt-6 text-[13px] font-semibold" style={{ color: "#c87850" }}>
-							— Sarah K., Teamleiterin
+							Sarah K., Teamleiterin
 						</p>
 					</div>
 				</div>
@@ -266,11 +254,7 @@ export default async function DesignS9({ params }: PageProps) {
 						<div key={s.label} className="text-center">
 							<div
 								className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold"
-								style={{
-									background: "linear-gradient(135deg, #e87040, #d04820)",
-									WebkitBackgroundClip: "text",
-									WebkitTextFillColor: "transparent",
-								}}
+								style={{ color: "#d04820" }}
 							>
 								{s.val}
 							</div>
@@ -326,6 +310,6 @@ export default async function DesignS9({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

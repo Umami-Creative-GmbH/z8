@@ -17,9 +17,11 @@ export default async function DesignS10({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-10",
+	return translateVariantTree(locale, "s-10", renderDesignS10(homeHref));
+}
+
+function renderDesignS10(homeHref: string) {
+	return (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -76,7 +78,7 @@ export default async function DesignS10({ params }: PageProps) {
 				</div>
 			</header>
 
-			{/* Hero — asymmetric geometric */}
+			{/* Hero: asymmetric geometric */}
 			<section className="relative z-10 flex min-h-[88vh] flex-col justify-center px-8 lg:px-16">
 				<div className="grid items-center gap-16 lg:grid-cols-[1fr_1fr]">
 					{/* Left text */}
@@ -89,7 +91,7 @@ export default async function DesignS10({ params }: PageProps) {
 								animationDelay: "0s",
 							}}
 						>
-							<div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#4a80d0" }} />
+							<div className="size-1.5 rounded-full" style={{ backgroundColor: "#4a80d0" }} />
 							<span className="text-[11px] font-semibold" style={{ color: "#6a8ac0" }}>
 								Neu: Team-Kalender
 							</span>
@@ -110,8 +112,8 @@ export default async function DesignS10({ params }: PageProps) {
 							className="animate-fade-up mt-8 max-w-md text-[15px] leading-[1.75]"
 							style={{ color: "#5a6480", animationDelay: "0.3s" }}
 						>
-							Wie Schweizer Uhrmacherei — Z8 verbindet Präzision mit Einfachheit. Keine
-							überflüssigen Teile, jedes Zahnrad hat seinen Platz.
+							Wie Schweizer Uhrmacherei: Z8 verbindet Präzision mit Einfachheit. Keine überflüssigen
+							Teile, jedes Zahnrad hat seinen Platz.
 						</p>
 
 						<div
@@ -135,7 +137,7 @@ export default async function DesignS10({ params }: PageProps) {
 						</div>
 					</div>
 
-					{/* Right — geometric slate dashboard */}
+					{/* Right: geometric slate dashboard */}
 					<div className="animate-scale-in hidden lg:block" style={{ animationDelay: "0.5s" }}>
 						<div
 							className="rounded-2xl p-8"
@@ -149,7 +151,7 @@ export default async function DesignS10({ params }: PageProps) {
 							<div className="flex items-center justify-between mb-6">
 								<div className="flex items-center gap-2">
 									<div
-										className="h-2.5 w-2.5 rounded-full"
+										className="size-2.5 rounded-full"
 										style={{ backgroundColor: "rgba(74,128,208,0.3)" }}
 									/>
 									<div
@@ -214,7 +216,7 @@ export default async function DesignS10({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Features — clean grid */}
+			{/* Features: clean grid */}
 			<section id="features" className="relative z-10 px-8 py-32 lg:px-16">
 				<div className="mx-auto max-w-5xl">
 					<h2
@@ -274,6 +276,7 @@ export default async function DesignS10({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 33vw"
 								className="object-cover"
 								style={{ filter: "saturate(0.2) brightness(0.5) contrast(1.2)" }}
 							/>
@@ -357,6 +360,6 @@ export default async function DesignS10({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

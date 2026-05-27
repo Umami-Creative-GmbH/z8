@@ -17,9 +17,11 @@ export default async function DesignS7({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-7",
+	return translateVariantTree(locale, "s-7", renderDesignS7(homeHref));
+}
+
+function renderDesignS7(homeHref: string) {
+	return (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -49,14 +51,7 @@ export default async function DesignS7({ params }: PageProps) {
 			{/* Header */}
 			<header className="relative z-20 flex items-center justify-between px-8 py-7 lg:px-16">
 				<div className="flex items-center gap-5">
-					<span
-						className="text-[22px] font-bold tracking-[-0.02em]"
-						style={{
-							background: "linear-gradient(135deg, #b87840, #4a9a6a)",
-							WebkitBackgroundClip: "text",
-							WebkitTextFillColor: "transparent",
-						}}
-					>
+					<span className="text-[22px] font-bold tracking-[-0.02em]" style={{ color: "#b87840" }}>
 						Z8
 					</span>
 					<div className="h-4 w-px" style={{ backgroundColor: "rgba(180,120,60,0.2)" }} />
@@ -102,7 +97,7 @@ export default async function DesignS7({ params }: PageProps) {
 							animationDelay: "0s",
 						}}
 					>
-						<div className="h-2 w-2 rounded-full" style={{ backgroundColor: "#4a9a6a" }} />
+						<div className="size-2 rounded-full" style={{ backgroundColor: "#4a9a6a" }} />
 						<span
 							className="text-[11px] font-medium tracking-[0.15em] uppercase"
 							style={{ color: "#4a9a6a" }}
@@ -117,23 +112,14 @@ export default async function DesignS7({ params }: PageProps) {
 					>
 						Beständig wie
 						<br />
-						<span
-							style={{
-								background: "linear-gradient(135deg, #b87840, #4a9a6a)",
-								WebkitBackgroundClip: "text",
-								WebkitTextFillColor: "transparent",
-							}}
-						>
-							Kupfer
-						</span>
-						.
+						<span style={{ color: "#b87840" }}>Kupfer</span>.
 					</h1>
 
 					<p
 						className="animate-fade-up mt-8 max-w-md text-[15px] leading-[1.8]"
 						style={{ color: "#5a7a68", animationDelay: "0.3s" }}
 					>
-						Kupfer wird mit der Zeit nicht schwächer — es entwickelt Charakter. Z8 ist die
+						Kupfer wird mit der Zeit nicht schwächer: es entwickelt Charakter. Z8 ist die
 						Zeiterfassung, die mit Ihrem Unternehmen reift.
 					</p>
 
@@ -170,6 +156,7 @@ export default async function DesignS7({ params }: PageProps) {
 								src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&q=80&auto=format&fit=crop"
 								alt=""
 								fill
+								sizes="(max-width: 1024px) 50vw, 360px"
 								className="object-cover"
 								style={{ filter: "saturate(0.25) sepia(0.2) brightness(0.55) contrast(1.2)" }}
 							/>
@@ -185,6 +172,7 @@ export default async function DesignS7({ params }: PageProps) {
 								src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80&auto=format&fit=crop"
 								alt=""
 								fill
+								sizes="(max-width: 1024px) 50vw, 360px"
 								className="object-cover"
 								style={{ filter: "saturate(0.25) sepia(0.2) brightness(0.55) contrast(1.2)" }}
 							/>
@@ -263,6 +251,7 @@ export default async function DesignS7({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 33vw"
 								className="object-cover"
 								style={{ filter: "saturate(0.3) sepia(0.2) brightness(0.6) contrast(1.15)" }}
 							/>
@@ -283,15 +272,12 @@ export default async function DesignS7({ params }: PageProps) {
 				<div className="mx-auto max-w-3xl">
 					<div className="flex flex-col items-center text-center">
 						{/* Copper/patina gradient bar */}
-						<div
-							className="mb-8 h-1 w-24"
-							style={{ background: "linear-gradient(90deg, #b87840, #4a9a6a)" }}
-						/>
+						<div className="mb-8 h-1 w-24" style={{ backgroundColor: "#b87840" }} />
 						<h2
 							className="text-[clamp(1.5rem,3vw,2.5rem)] font-light leading-[1.3] tracking-[-0.01em]"
 							style={{ color: "#8aa898" }}
 						>
-							&ldquo;Software, die Patina ansetzt, statt zu veralten — das ist unser
+							&ldquo;Software, die Patina ansetzt, statt zu veralten: das ist unser
 							Versprechen.&rdquo;
 						</h2>
 					</div>
@@ -313,11 +299,7 @@ export default async function DesignS7({ params }: PageProps) {
 						<div key={s.label} className="text-center">
 							<div
 								className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold"
-								style={{
-									background: "linear-gradient(135deg, #b87840, #4a9a6a)",
-									WebkitBackgroundClip: "text",
-									WebkitTextFillColor: "transparent",
-								}}
+								style={{ color: "#b87840" }}
 							>
 								{s.val}
 							</div>
@@ -343,16 +325,7 @@ export default async function DesignS7({ params }: PageProps) {
 				>
 					Bereit für
 					<br />
-					<span
-						style={{
-							background: "linear-gradient(135deg, #b87840, #4a9a6a)",
-							WebkitBackgroundClip: "text",
-							WebkitTextFillColor: "transparent",
-						}}
-					>
-						Beständigkeit
-					</span>
-					?
+					<span style={{ color: "#b87840" }}>Beständigkeit</span>?
 				</h2>
 				<a
 					href="#contact"
@@ -381,6 +354,6 @@ export default async function DesignS7({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

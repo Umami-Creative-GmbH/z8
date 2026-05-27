@@ -32,7 +32,7 @@ export default async function DesignS2({ params }: PageProps) {
 			<header className="flex items-center justify-between px-8 py-7 lg:px-16">
 				<div className="flex items-center gap-3">
 					<div
-						className="flex h-10 w-10 items-center justify-center rounded-full text-[14px] font-extrabold"
+						className="flex size-10 items-center justify-center rounded-full text-[14px] font-extrabold"
 						style={{ backgroundColor: "#d4c5b5", color: "#5a4f44" }}
 					>
 						Z8
@@ -69,7 +69,7 @@ export default async function DesignS2({ params }: PageProps) {
 
 			{/* Hero */}
 			<section className="flex min-h-[85vh] flex-col items-center justify-center px-8 text-center lg:px-16">
-				{/* Hero image — organic pebble shape */}
+				{/* Hero image: organic pebble shape */}
 				<div className="animate-scale-in relative mb-12" style={{ animationDelay: "0s" }}>
 					<div className="flex items-end gap-4">
 						<div
@@ -80,6 +80,7 @@ export default async function DesignS2({ params }: PageProps) {
 								src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80&auto=format&fit=crop"
 								alt=""
 								fill
+								sizes="200px"
 								className="object-cover"
 								style={{ filter: "saturate(0.5) sepia(0.2)" }}
 							/>
@@ -92,6 +93,7 @@ export default async function DesignS2({ params }: PageProps) {
 								src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&q=80&auto=format&fit=crop"
 								alt=""
 								fill
+								sizes="120px"
 								className="object-cover"
 								style={{ filter: "saturate(0.5) sepia(0.2)" }}
 							/>
@@ -121,7 +123,7 @@ export default async function DesignS2({ params }: PageProps) {
 					className="animate-fade-up mt-8 max-w-lg text-[16px] leading-[1.75]"
 					style={{ color: "#7a7068", animationDelay: "0.4s" }}
 				>
-					Rund geschliffen, glatt und verlässlich — Z8 ist das Werkzeug, das in der Hand liegt, als
+					Rund geschliffen, glatt und verlässlich: Z8 ist das Werkzeug, das in der Hand liegt, als
 					wäre es schon immer da gewesen.
 				</p>
 
@@ -146,7 +148,7 @@ export default async function DesignS2({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Features — rounded cards */}
+			{/* Features: rounded cards */}
 			<section id="features" className="px-8 py-24 lg:px-16">
 				<div className="mx-auto max-w-5xl">
 					<h2
@@ -174,7 +176,7 @@ export default async function DesignS2({ params }: PageProps) {
 							{
 								icon: "◈",
 								title: "Team-Übersicht",
-								desc: "Wer arbeitet, wer pausiert — auf einen Blick für Ihr ganzes Team.",
+								desc: "Wer arbeitet, wer pausiert: auf einen Blick für Ihr ganzes Team.",
 							},
 						].map((f) => (
 							<div
@@ -183,7 +185,7 @@ export default async function DesignS2({ params }: PageProps) {
 								style={{ backgroundColor: "#ede5db" }}
 							>
 								<div
-									className="flex h-14 w-14 items-center justify-center rounded-full text-[24px]"
+									className="flex size-14 items-center justify-center rounded-full text-[24px]"
 									style={{ backgroundColor: "#d4c5b5", color: "#5a4f44" }}
 								>
 									{f.icon}
@@ -200,7 +202,7 @@ export default async function DesignS2({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* How it works — steps */}
+			{/* How it works: steps */}
 			<section id="how" className="px-8 py-24 lg:px-16" style={{ backgroundColor: "#ede5db" }}>
 				<div className="mx-auto max-w-4xl">
 					<h2
@@ -229,7 +231,7 @@ export default async function DesignS2({ params }: PageProps) {
 						].map((s) => (
 							<div key={s.step} className="flex items-start gap-8">
 								<div
-									className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold"
+									className="flex size-16 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold"
 									style={{ backgroundColor: "#d4c5b5", color: "#5a4f44" }}
 								>
 									{s.step}
@@ -256,6 +258,7 @@ export default async function DesignS2({ params }: PageProps) {
 							src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=800&q=80&auto=format&fit=crop"
 							alt=""
 							fill
+							sizes="(max-width: 768px) 100vw, 50vw"
 							className="object-cover"
 							style={{ filter: "saturate(0.6) sepia(0.15)" }}
 						/>
@@ -265,6 +268,7 @@ export default async function DesignS2({ params }: PageProps) {
 							src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80&auto=format&fit=crop"
 							alt=""
 							fill
+							sizes="(max-width: 768px) 100vw, 50vw"
 							className="object-cover"
 							style={{ filter: "saturate(0.6) sepia(0.15)" }}
 						/>
