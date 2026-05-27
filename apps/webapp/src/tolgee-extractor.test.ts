@@ -89,7 +89,7 @@ describe("tolgee extractor", () => {
 		]);
 	});
 
-	it("keeps shared app search and validation keys in the common namespace", () => {
+	it("keeps shared app search, validation, and work balance keys in the common namespace", () => {
 		const result = extractor(
 			`
 			import { useTranslate } from "@tolgee/react";
@@ -99,6 +99,7 @@ describe("tolgee extractor", () => {
 				return [
 					t("appSearch.searchOrRunCommand", "Search or run command"),
 					t("validation.invalid-email", "Invalid email address"),
+					t("workBalance.label", "All-time balance"),
 				];
 			}
 		`,
@@ -114,6 +115,40 @@ describe("tolgee extractor", () => {
 				expect.objectContaining({
 					keyName: "validation.invalid-email",
 					namespace: "common",
+				}),
+				expect.objectContaining({
+					keyName: "workBalance.label",
+					namespace: "common",
+				}),
+			]),
+		);
+	});
+
+	it("routes analytics and today route keys to dedicated namespaces", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function RouteStrings() {
+				const { t } = useTranslate();
+				return [
+					t("analytics.layout.title", "Analytics"),
+					t("today.briefing.title", "Manager Daily Briefing"),
+				];
+			}
+		`,
+			"route-strings.tsx",
+		);
+
+		expect(result.keys).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					keyName: "analytics.layout.title",
+					namespace: "analytics",
+				}),
+				expect.objectContaining({
+					keyName: "today.briefing.title",
+					namespace: "today",
 				}),
 			]),
 		);
@@ -173,6 +208,47 @@ describe("tolgee extractor", () => {
 				namespace: "settings/holidays",
 			}),
 			expect.objectContaining({ keyName: "settings.title", namespace: "settings/generic" }),
+		]);
+	});
+
+	it("extracts surcharge report keys into the settings rules namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function SurchargeReports() {
+				const { t } = useTranslate();
+				return t("settings.surcharges.reports.title", "Surcharge reports");
+			}
+		`,
+			"surcharge-reports.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Surcharge reports",
+				keyName: "settings.surcharges.reports.title",
+				namespace: "settings/rules",
+			}),
+		]);
+	});
+
+	it("extracts Teams bot keys from injected translator functions", () => {
+		const result = extractor(
+			`
+			export function buildApprovalCard(t = (_key: string, fallback: string) => fallback) {
+				return t("teamsBot:approval.absenceRequest", "Absence Request");
+			}
+		`,
+			"approval-card.ts",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: "Absence Request",
+				keyName: "approval.absenceRequest",
+				namespace: "teamsBot",
+			}),
 		]);
 	});
 

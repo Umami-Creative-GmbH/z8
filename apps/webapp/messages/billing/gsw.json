@@ -1,0 +1,87 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Dis Abo isch gchündigt worde. Abonniier neu, zum wieder Zuegang z'becho.",
+      "paymentFailed": "Diini letschti Zahlig isch gschiteret. Bitte aktualisier diini Zahligsmethode.",
+      "required": "Es Abo isch erforderlich, zum die App z'nutze.",
+      "trialExpired": "Diini Testphase isch abglaufe. Abonniier, zum d'App wiiter z'nutze."
+    },
+    "activeSeats": "Aktivi Plätz",
+    "alerts": {
+      "canceledDescription": "De Checkout isch abbroche worde. Du chasch es jederzeit nomal versueche.",
+      "subscriptionRequired": "Abo erforderlich",
+      "successDescription": "Dis Abo isch aktiviert worde. Danke fürs Abonniere!",
+      "successTitle": "Erfolg!"
+    },
+    "bestValue": "Bescht Priis-Leistig",
+    "billedMonthly": "monatlich abgrächnet",
+    "cancelsOn": "Gchündigt am {date}",
+    "checkoutCreateFailed": "Checkout-Sitzig hät nöd chönne erstellt werde",
+    "checkoutStartFailed": "Checkout hät nöd chönne gstartet werde",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout sammlet jetzt Zahligsdate. Dis zahlpflichtige Abo fangt ersch nach Ablauf vo de Testphase aa.",
+      "trialContinuesTitle": "Diini Testphase lauf nach em Upgrade wiiter"
+    },
+    "choosePlan": "Wähl diin Plan",
+    "choosePlanDescription": "Starte mit ere 14-tägige Testphase. Kei Kreditcharte zum Starte erforderlich.",
+    "currentPlan": "Aktuelle Plan",
+    "days": "{count} Täg",
+    "description": "Abo und Rechnigsdetails verwalte",
+    "faq": {
+      "afterTrial": {
+        "answer": "Nach Ablauf vo dim 14-tägige Testabo wird dir de gwählti Abo-Plan in Rächnig gstellt. Du chasch s Abo jederziit vor Ablauf vom Testabo chündige, zum Chöschte z vermiide.",
+        "question": "Was passiert nach em Testabo?"
+      },
+      "perSeat": {
+        "answer": "D Abrechnig basiert uf de Aazahl vo de aktive Mitglieder in dinere Organisation. Wenn du Mitglieder hizuefüegsch oder entfernsch, wird dis Abo automatisch aagpasst.",
+        "question": "Wie funktioniert d Abrechnig pro Nutzer?"
+      },
+      "switch": {
+        "answer": "Ja! Du chasch jederziit über s Abrechnigsportal zwüsche de Plän wächsle. D Änderige wärded mit em nächste Abrechnigszyklus wirksam.",
+        "question": "Chan ich zwüsche monatlicher und jährlicher Abrechnig wächsle?"
+      },
+      "title": "Häufig gstellti Frage"
+    },
+    "features": {
+      "allFeatures": "Alli Funktione inbegriffe",
+      "cancelAnytime": "Jederziit chündbar",
+      "trial": "14 Täg choschtelos teste",
+      "yearlyDiscount": "25% Rabatt im Vergliich zur monatliche Zahlig"
+    },
+    "interval": {
+      "monthlyBilling": "Monatlichi Abrechnig",
+      "yearlyBilling": "Jährlichi Abrechnig"
+    },
+    "manageBilling": "Abrechnig verwalte",
+    "monthlyCost": "Monatlichi Chöschte",
+    "nextBilling": "Nächsti Abrechnig",
+    "opening": "Wird göffnet...",
+    "perSeatMonth": "/Nutzer/Monat",
+    "plans": {
+      "monthly": {
+        "description": "Flexibli monatlichi Abrechnig",
+        "title": "Monatlich"
+      },
+      "yearly": {
+        "description": "25% spare mit jährlicher Abrechnig",
+        "title": "Jährlich"
+      }
+    },
+    "portalOpenFailed": "S Abrechnigsportal hät nöd chönne göffnet wärde",
+    "priceSeatMonth": "€{price}/Nutzer/Monat",
+    "priceSeatMonthYearly": "€{price}/Nutzer/Monat (jährlich abgrächnet)",
+    "seatBilledAnnually": "€{price}/Nutzer jährlich abgrächnet",
+    "starting": "Startet...",
+    "startTrial": "Choschtelos teste",
+    "status": {
+      "canceled": "Chündigt",
+      "noSubscription": "Keis Abo",
+      "pastDue": "Überfällig",
+      "trial": "Testabo"
+    },
+    "title": "Abrechnig & Abo",
+    "trialEnds": "Testabo endet",
+    "vatNotice": "D Priise sind Nettopriise exklusive MwSt. D MwSt. wird da, wo aagwändet, dezuegrächnet.",
+    "yearTotal": "€{amount}/Jahr total"
+  }
+}

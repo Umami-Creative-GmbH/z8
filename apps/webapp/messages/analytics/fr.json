@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "voir les analyses",
+      "restrictedDescription": "Les analyses ne sont accessibles qu'aux administrateurs et aux gestionnaires.",
+      "restrictedTitle": "Accès restreint"
+    },
+    "common": {
+      "days": "Jours",
+      "employee": "Employé",
+      "employees": "Employés",
+      "hours": "Heures",
+      "loadingOrganizationSettings": "Chargement des paramètres de l'organisation avant d'activer les préréglages.",
+      "noDataAvailable": "Aucune donnée disponible",
+      "noDataForPeriod": "Aucune donnée disponible pour la période sélectionnée",
+      "overtime": "Heures supplémentaires",
+      "overtimeHours": "Heures supplémentaires",
+      "team": "Équipe",
+      "totalHours": "Heures totales",
+      "unavailable": "Indisponible",
+      "undertime": "Sous-temps",
+      "undertimeHours": "Heures de sous-temps"
+    },
+    "layout": {
+      "description": "Aperçu complet de la performance de l'équipe, des heures de travail et des modèles d'absence",
+      "tabs": {
+        "overtimeBurnDown": "Réduction des heures supplémentaires",
+        "overview": "Vue d'ensemble",
+        "teamPerformance": "Performance de l'équipe",
+        "vacationTrends": "Tendances des vacances",
+        "workHours": "Heures de travail"
+      },
+      "title": "Analyses"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Répartition",
+      "breakdownDescription": "Détails de la réduction des heures supplémentaires au niveau {label}",
+      "breakdownEmpty": "Aucune donnée de répartition disponible pour le moment",
+      "byCostCenter": "Par centre de coûts",
+      "byManager": "Par gestionnaire",
+      "byTeam": "Par équipe",
+      "costCenter": "Centre de coûts",
+      "currentOvertime": "Heures supplémentaires actuelles",
+      "description": "Suivez la réduction hebdomadaire des heures supplémentaires au sein des équipes.",
+      "errors": {
+        "loadData": "Échec du chargement des données de réduction des heures supplémentaires"
+      },
+      "filters": {
+        "allCostCenters": "Tous les centres de coûts",
+        "allManagers": "Tous les gestionnaires",
+        "allTeams": "Toutes les équipes",
+        "breakdownLabel": "Dimension de répartition",
+        "costCenterLabel": "Filtre par centre de coûts",
+        "managerLabel": "Filtre par gestionnaire",
+        "teamLabel": "Filtre par équipe"
+      },
+      "improvingGroups": "Groupes en amélioration",
+      "improvingGroupsDescription": "Groupes avec une diminution des heures supplémentaires",
+      "manager": "Gestionnaire",
+      "previousOvertime": "Heures supplémentaires précédentes",
+      "previousPeriodDescription": "Comparé à la période précédente",
+      "selectedRangeDescription": "Pour la plage de dates et les filtres sélectionnés",
+      "title": "Réduction des heures supplémentaires",
+      "trendDirection": "Direction de la tendance",
+      "trendDirectionDescription": "Trajectoire globale des heures supplémentaires",
+      "trend": {
+        "down": "En baisse",
+        "flat": "Stable",
+        "up": "En hausse"
+      },
+      "weeklyTrend": {
+        "description": "Tendance hebdomadaire de réduction des heures supplémentaires",
+        "empty": "Aucune donnée de tendance disponible pour le moment",
+        "title": "Tendance hebdomadaire de réduction de la charge"
+      },
+      "weekOverWeek": "Semaine après semaine"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Répartition des absences par catégorie",
+        "title": "Modèles d'absence"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% approuvé",
+        "avgDecision": "{hours}h de décision moyenne",
+        "byManager": "Par manager",
+        "byTeam": "Par équipe",
+        "byType": "Par type",
+        "description": "Équipes et types de demandes avec travail en attente ou avertissements SLA",
+        "empty": "Aucun goulot d'étranglement d'approbation trouvé",
+        "pendingSummary": "{pendingCount} en attente - {slaWarnings} avertissements SLA",
+        "title": "Goulots d'étranglement d'approbation",
+        "unavailable": "Les goulots d'étranglement d'approbation n'ont pas pu être chargés"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Parmi les demandes traitées, approuvées",
+          "title": "Taux d'approbation",
+          "unavailableDescription": "Les analyses d'approbation n'ont pas pu être chargées"
+        },
+        "avgWorkHours": {
+          "description": "Par employé sur la période sélectionnée",
+          "title": "Heures de travail moyennes"
+        },
+        "totalAbsenceDays": {
+          "description": "Nombre total de jours sur la période sélectionnée",
+          "title": "Total des jours d'absence"
+        },
+        "totalEmployees": {
+          "description": "Employés actifs dans l'organisation",
+          "title": "Total des employés"
+        }
+      },
+      "loadingLabel": "Chargement des données d'analyse",
+      "workHoursByTeam": {
+        "description": "Total des heures de travail enregistrées par équipe",
+        "title": "Heures de travail par équipe"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Moyenne par employé",
+      "comparison": {
+        "description": "Total des heures de travail par équipe pour la période sélectionnée",
+        "title": "Comparaison des équipes"
+      },
+      "details": {
+        "description": "Répartition des heures de travail par équipe et par employé",
+        "title": "Détails de la performance de l'équipe"
+      },
+      "employeeCount": "Nombre d'employés",
+      "errors": {
+        "loadData": "Échec du chargement des données de performance de l'équipe"
+      },
+      "onTrack": "Sur la bonne voie",
+      "variance": {
+        "description": "Écart d'heures par rapport aux heures de travail attendues",
+        "empty": "Aucune donnée d'écart disponible",
+        "title": "Heures supplémentaires et sous-travail"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Alloué",
+      "balance": {
+        "description": "Jours alloués, pris et restants par employé",
+        "title": "Solde de congés"
+      },
+      "daysRemaining": "{count} jours restants",
+      "daysTaken": "{count} jours pris",
+      "errors": {
+        "loadData": "Échec du chargement des données de tendances des congés"
+      },
+      "monthlyUsage": {
+        "description": "Jours de congés pris par mois",
+        "empty": "Aucune donnée d'utilisation mensuelle disponible",
+        "title": "Utilisation mensuelle des congés"
+      },
+      "peakMonths": {
+        "description": "Mois avec la plus forte activité de congés",
+        "empty": "Aucune donnée de mois de pointe disponible",
+        "title": "Mois de pointe des congés"
+      },
+      "remaining": "Restant",
+      "taken": "Pris",
+      "utilization": {
+        "description": "Utilisation globale des jours de congés dans l'organisation",
+        "overall": "Utilisation globale",
+        "title": "Utilisation des congés"
+      },
+      "utilizationLabel": "Utilisation",
+      "utilizationPercent": "% d'utilisation",
+      "vacationDays": "Jours de congés"
+    },
+    "workHours": {
+      "actualHours": "Heures réelles",
+      "avgHoursPerWeek": "Moyenne d'heures/semaine",
+      "daily": {
+        "description": "Heures de travail réelles vs attendues par jour",
+        "empty": "Aucune donnée d'heures quotidiennes disponible",
+        "title": "Heures de travail quotidiennes"
+      },
+      "distribution": {
+        "description": "Comparaison des heures de travail des employés (barre horizontale)",
+        "empty": "Aucune donnée de distribution disponible",
+        "title": "Distribution des heures de travail"
+      },
+      "employeeComparison": {
+        "description": "Total des heures et écart par rapport aux attentes par employé",
+        "title": "Heures de travail des employés"
+      },
+      "errors": {
+        "loadData": "Échec du chargement des données analytiques des heures de travail"
+      },
+      "expectedHours": "Heures attendues",
+      "variance": "Écart",
+      "varianceTrend": {
+        "description": "Écart des heures par rapport aux heures de travail attendues au fil du temps",
+        "empty": "Aucune donnée de tendance disponible",
+        "title": "Tendance des heures supplémentaires et sous-heures"
+      }
+    }
+  }
+}

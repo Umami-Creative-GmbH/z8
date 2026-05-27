@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Approve",
+      "approveLabel": "Approve {title}",
+      "description": "Requests waiting for a manager decision.",
+      "empty": "No approvals are waiting.",
+      "openInbox": "Open inbox",
+      "pendingAriaLabel": "Pending approvals",
+      "reject": "Reject",
+      "rejectLabel": "Reject {title}",
+      "title": "Approvals",
+      "toast": {
+        "approved": "Request approved",
+        "approveError": "Unable to approve request",
+        "rejected": "Request rejected",
+        "rejectError": "Unable to reject request"
+      }
+    },
+    "briefing": {
+      "badge": "Today",
+      "description": "Review the items that need action today, then move directly into the right workflow.",
+      "needsAction": {
+        "description": "Start here for the most urgent operational follow-up.",
+        "empty": "All clear. No manager action is needed right now.",
+        "title": "Needs Action"
+      },
+      "sections": {
+        "empty": "No issues detected."
+      },
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "info": "Info",
+        "warning": "Warning"
+      },
+      "summaryAriaLabel": "Today summary",
+      "supportingSectionsAriaLabel": "Supporting sections",
+      "title": "Manager Daily Briefing",
+      "updatedAt": "{date} - Updated {time}"
+    }
+  }
+}

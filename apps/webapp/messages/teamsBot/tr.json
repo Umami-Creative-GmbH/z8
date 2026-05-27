@@ -1,0 +1,107 @@
+{
+  "approval": {
+    "absenceRequest": "İzin Talebi",
+    "actions": {
+      "approve": "Onayla",
+      "approving": "Onaylanıyor...",
+      "reject": "Reddet",
+      "rejecting": "Reddediliyor...",
+      "viewInZ8": "Z8'de Görüntüle"
+    },
+    "durationDays": "{count, plural, other {# gün} }",
+    "facts": {
+      "approvedBy": "Onaylayan:",
+      "corrected": "Düzeltildi",
+      "dates": "Tarihler",
+      "duration": "Süre",
+      "email": "E-posta",
+      "from": "Başlangıç",
+      "original": "Orijinal",
+      "reason": "Neden",
+      "rejectedBy": "Reddeden:",
+      "resolved": "Çözümlendi",
+      "status": "Durum",
+      "submitted": "Gönderildi",
+      "type": "Tür"
+    },
+    "status": {
+      "approved": "ONAYLANDI",
+      "rejected": "REDDEDİLDİ"
+    },
+    "timeCorrectionRequest": "Zaman Düzeltme Talebi"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Kritik",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (istisna kullanıldı)",
+      "lastDays": "Son {days} gün",
+      "legend": "\uD83D\uDD34 İhlal  \uD83D\uDFE0 Kritik  \uD83D\uDFE1 Uyarı  \uD83D\uDCDD Bekleyen Talep",
+      "moreRequestsMarkdown": "_+{count} talep daha_",
+      "moreViolationsMarkdown": "_+{count} ihlal daha_",
+      "pending": "Beklemede",
+      "pendingExceptions": "Bekleyen İstisna Talepleri",
+      "recentViolations": "Son İhlaller",
+      "reviewExceptions": "İstisnaları İncele",
+      "textCriticalAlerts": "**Kritik Uyarılar:** {count}",
+      "textMore": "  +{count} daha",
+      "textPendingExceptions": "**Bekleyen İstisnalar:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Bekleyen Talepler:**",
+      "textRecentViolations": "**Son İhlaller:**",
+      "textTitle": "**⚠️ Uyumluluk Özeti - Son {days} gün**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**İhlaller:** {count}",
+      "titleWithIcon": "⚠️ Uyumluluk Özeti",
+      "viewDashboard": "Uyumluluk Panosunu Görüntüle",
+      "violations": "İhlaller"
+    },
+    "coverage": {
+      "clockedIn": "Giriş Yapıldı",
+      "moreLocationsMarkdown": "_+{count} konum daha..._",
+      "scheduled": "Planlanmış",
+      "titleWithIcon": "\uD83D\uDCCA Kapsam Raporu",
+      "variance": "Varyans",
+      "viewFullSchedule": "Tüm Programı Görüntüle"
+    },
+    "help": {
+      "availableCommands": "Yardım"
+    }
+  },
+  "common": {
+    "more": "+{count} daha",
+    "moreBullet": "• +{count} daha"
+  },
+  "digest": {
+    "currentlyClockedIn": "Şu Anda Giriş Yapmış Olanlar",
+    "everyoneAvailable": "Bugün herkes müsait",
+    "noOneClockedIn": "Henüz giriş yapan kimse yok",
+    "noPendingApprovals": "Bekleyen onay yok",
+    "openDashboard": "Z8 Panosunu Aç",
+    "openShifts": "Açık Vardiyalar",
+    "pendingApprovals": "Bekleyen Onaylar",
+    "pendingExceptionRequests": "{count, plural, other {# inceleme bekleyen istisna talebi} }",
+    "returns": "{date} tarihinde dönüyor",
+    "since": "{time} saatinden beri",
+    "textClockedInEmployee": "• {name} - {clockedInAt} saatinden beri ({duration})",
+    "textCompliance": "**⚠️ Uyumluluk:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Kapsam Boşlukları:**",
+    "textCurrentlyClockedIn": "**Şu Anda Giriş Yapmış Olanlar:**",
+    "textEmployeeOut": "• {name} - {category} ({returnDate} tarihinde dönüyor)",
+    "textOpenShifts": "**\uD83D\uDCCB Açık Vardiyalar:**",
+    "textPendingApprovalsCount": "**Bekleyen Onaylar:** {count}",
+    "textPendingApprovalsNone": "**Bekleyen Onaylar:** Yok",
+    "textTitle": "**Günlük Özet - {date}**",
+    "textWhosOut": "**İzinliler:**",
+    "title": "Günlük Özet",
+    "todayTomorrow": "Bugün: {today} | Yarın: {tomorrow}",
+    "viewApprovals": "Onayları Görüntüle",
+    "whosOutToday": "Bugün İzinli Olanlar"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Günlük Fazla Mesai",
+    "overtime_monthly": "Aylık Fazla Mesai",
+    "overtime_weekly": "Haftalık Fazla Mesai",
+    "rest_period": "Dinlenme Süresi"
+  }
+}

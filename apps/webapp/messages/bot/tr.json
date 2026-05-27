@@ -1,0 +1,94 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "Bu onay zaten işleme alınmış."
+    },
+    "cmd": {
+      "billingRequired": "Zaman takibini kullanmaya devam etmek için faturalandırma gereklidir. Faturalandırmayı güncellemesi için bir kuruluş yöneticisinden talepte bulunun.",
+      "clockedin": {
+        "header": "Şu anda mesaide olan {total} ekip üyesinden {active} tanesi:",
+        "noneActive": "{total} ekip üyenizden hiçbiri şu anda mesaide değil.",
+        "noTeam": "Size atanmış herhangi bir ekip üyesi bulunmuyor."
+      },
+      "clockin": {
+        "alreadyIn": "{time} saatinden beri mesaiye devam ediyorsunuz ({hours}s {minutes}dk).",
+        "cannotNow": "Şu anda mesaiye başlanamıyor.",
+        "noProfile": "Çalışan profili bulunamadı.",
+        "success": "{time} saatinde mesaiye başlandı."
+      },
+      "clockout": {
+        "cannotNow": "Şu anda mesai bitirilemiyor.",
+        "noProfile": "Çalışan profili bulunamadı.",
+        "notClockedIn": "Şu anda mesaide değilsiniz.",
+        "policyCheckFailed": "Zaman onay politikası doğrulanamadı. Lütfen tekrar deneyin.",
+        "success": "{time} saatinde mesai bitirildi. Süre: {hours}s {minutes}dk.",
+        "unsupportedApproval": "Onay gerektiren zaman değişiklikleri bu eylem için henüz desteklenmiyor"
+      },
+      "compliance": {
+        "error": "Uyumluluk verileri alınamadı. Lütfen daha sonra tekrar deneyin.",
+        "noIssues": "Son {days} gün içinde herhangi bir uyumluluk sorunu bulunmadı. Ekibinizin durumu gayet iyi!"
+      },
+      "coverage": {
+        "error": "Kapsam verileri alınamadı. Lütfen daha sonra tekrar deneyin.",
+        "noData": "{date} tarihi için planlanmış kapsam verisi bulunamadı."
+      },
+      "help": {
+        "footer": "Onay taleplerini ve günlük özetleri doğrudan {platform} üzerinden de alabilirsiniz.",
+        "title": "Z8 Bot Komutları"
+      },
+      "openshifts": {
+        "error": "Açık vardiyalar alınamadı. Lütfen daha sonra tekrar deneyin.",
+        "noShifts": "{period} dönemi için açık vardiya bulunamadı. Tüm vardiyalar şu anda atanmış durumda."
+      },
+      "pending": {
+        "footer": "Z8 üzerinden görüntüleyip onaylayın veya bireysel onay kartlarını bekleyin.",
+        "header": "{count, plural, other {Bekleyen {count} onayınız var:} }",
+        "none": "Bekleyen onay talebiniz yok. Takipte kaldığınız için tebrikler!"
+      },
+      "status": {
+        "clockedIn": "{time} saatinden beri mesaiye devam ediyorsunuz ({hours}s {minutes}dk).",
+        "noProfile": "Çalışan profili bulunamadı.",
+        "notClockedIn": "Şu anda mesaide değilsiniz."
+      },
+      "whosout": {
+        "header": "Bugün izinli olan {total} ekip üyesinden {outCount} tanesi:",
+        "noneOut": "{total} ekip üyenizin tamamı bugün müsait.",
+        "noTeam": "Size atanmış herhangi bir ekip üyesi bulunmuyor."
+      }
+    },
+    "language": {
+      "changed": "Dil {language} olarak değiştirildi.",
+      "prompt": "Dilinizi seçin:"
+    },
+    "static": {
+      "errorApprovalNotFound": "Bu onay talebi artık mevcut değil veya zaten işleme alınmış.",
+      "errorApprovalResolved": "Bu onay zaten onaylanmış veya reddedilmiş.",
+      "errorDefault": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+      "errorEmployeeNotFound": "Z8'de çalışan kaydınız bulunmuyor. Lütfen yöneticinizle iletişime geçin.",
+      "errorNotAuthorized": "Bu işlemi gerçekleştirmek için yetkiniz yok.",
+      "errorTenantNotConfigured": "Kuruluşunuz henüz Z8 kurulumunu tamamlamadı. Lütfen bir yöneticiden entegrasyonu yapılandırmasını isteyin.",
+      "errorUserNotLinked": "Teams hesabınız Z8'e bağlı değil. Teams e-postanızın Z8 hesabınızla eşleştiğinden emin olun.",
+      "genericError": "Üzgünüz, bir şeyler yanlış gitti. Lütfen tekrar deneyin veya destek ekibiyle iletişime geçin.",
+      "linkAlreadyLinked": "Bu Telegram hesabı, bu organizasyondaki bir Z8 hesabına zaten bağlı.",
+      "linkExpired": "Bu bağlantı kodunun süresi doldu. Lütfen Z8 ayarlarınızdan yeni bir kod oluşturun.",
+      "linkInvalid": "Geçersiz bağlantı kodu. Lütfen kodunuzu kontrol edin ve tekrar deneyin.",
+      "linkSuccess": "Telegram hesabınız Z8'e başarıyla bağlandı! Kullanılabilir komutları görmek için /help yazın.",
+      "linkUsage": "Lütfen bağlantı kodunuzu girin: /link KODUNUZ",
+      "mentionHelp": "Merhaba! Ben Z8 botuyum. Kullanılabilir komutları görmek için \"help\" yazın.",
+      "noEmployee": "Hesabınız mevcut ancak Z8'de bir çalışan kaydınız bulunmuyor.",
+      "noOrg": "Organizasyonunuz tanımlanamadı. Lütfen destek ekibiyle iletişime geçin.",
+      "notLinked": "Telegram hesabınız Z8'e bağlı değil. Bir bağlantı kodu oluşturmak için Z8 panonuzda Ayarlar > Entegrasyonlar > Telegram bölümüne gidin ve ardından şunu gönderin: /link KODUNUZ",
+      "notLinkedTeams": "Z8 hesabınızı bulamadım. Teams e-postanızın Z8 hesap e-postanızla eşleştiğinden emin olun.",
+      "noUser": "Kullanıcı hesabınız tanımlanamadı.",
+      "setupBody": "Organizasyonunuzun Z8'e bağlanması gerekiyor. Kurulum sürecini başlatmak için aşağıya tıklayın.",
+      "setupButton": "Kurulumu Tamamla",
+      "setupNote": "Bu kurulumu yalnızca organizasyon yöneticileri tamamlayabilir.",
+      "setupRequired": "Z8'e hoş geldiniz! Bu Microsoft 365 organizasyonunu Z8 hesabınıza bağlamak için bir yöneticinin kurulumu tamamlaması gerekir.",
+      "setupTitle": "Z8 Kurulumu Gerekli",
+      "typeHelp": "Kullanılabilir komutları görmek için /help yazın.",
+      "unconfigured": "Organizasyonunuzun Z8 entegrasyonu kuruluyor. Lütfen yöneticinizin yapılandırmayı tamamlamasını bekleyin.",
+      "welcome": "Z8'e hoş geldiniz! Hesabınızı bağlamak için Z8 panonuzda Ayarlar > Entegrasyonlar > Telegram bölümüne gidin ve bir bağlantı kodu oluşturun. Ardından şunu gönderin: /link KODUNUZ",
+      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın."
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Panoya kopyalanamadı",
+    "create": "Webhook Ekle",
+    "create-failed": "Webhook oluşturulamadı",
+    "delete-confirm": {
+      "description": "Bu işlem, webhook uç noktasını ve tüm gönderim geçmişini kalıcı olarak silecektir. Bu işlem geri alınamaz.",
+      "title": "Webhook silinsin mi?"
+    },
+    "deleted": "Webhook silindi",
+    "delete-failed": "Webhook silinemedi",
+    "deliveries": "Gönderimler",
+    "description": "Kuruluşunuzda olaylar gerçekleştiğinde gerçek zamanlı bildirimler almak için webhook uç noktalarını yapılandırın.",
+    "disabled": "Webhook devre dışı bırakıldı",
+    "empty": {
+      "description": "Olay bildirimlerini almaya başlamak için ilk webhook'unuzu oluşturun.",
+      "title": "Yapılandırılmış webhook yok"
+    },
+    "enabled": "Webhook etkinleştirildi",
+    "events": "Olaylar",
+    "form": {
+      "create": "Webhook Oluştur",
+      "create-description": "Olay bildirimlerini almak için yeni bir webhook uç noktası yapılandırın.",
+      "create-title": "Webhook Oluştur",
+      "description": "Açıklama",
+      "description-placeholder": "Bu webhook ne için kullanılıyor?",
+      "deselect-all": "Tümünün Seçimini Kaldır",
+      "edit-description": "Webhook uç noktası yapılandırmasını güncelleyin.",
+      "edit-title": "Webhook'u Düzenle",
+      "events": "Alınacak olaylar",
+      "events-hint": "Seçilen olaylar: {{count}}",
+      "events-required": "En az bir olay seçilmelidir",
+      "name": "Ad",
+      "name-placeholder": "Webhook'um",
+      "name-required": "Ad gereklidir",
+      "select-all": "Tümünü Seç",
+      "url": "Uç Nokta URL'si",
+      "url-hint": "Üretim ortamında HTTPS gereklidir. Olaylar POST istekleri olarak gönderilecektir.",
+      "url-required": "URL gereklidir"
+    },
+    "last-delivery": "Son",
+    "logs": {
+      "attempt": "Deneme",
+      "description": "Son webhook gönderim denemeleri ve sonuçları.",
+      "duration": "Süre",
+      "empty": "Henüz gönderim günlüğü yok",
+      "error": "Hata",
+      "event": "Olay",
+      "failed": "Başarısız",
+      "http": "HTTP",
+      "payload": "Yük (Payload)",
+      "pending": "Beklemede",
+      "response": "Yanıt",
+      "retrying": "Yeniden deneniyor",
+      "showing": "{{total}} öğeden {{start}}-{{end}} arası gösteriliyor",
+      "status": "Durum",
+      "success": "Başarılı",
+      "time": "Zaman",
+      "title": "Teslimat Günlükleri"
+    },
+    "regenerate-failed": "Gizli anahtar yeniden oluşturulamadı",
+    "regenerate-secret": "Gizli Anahtarı Yeniden Oluştur",
+    "secret-copied": "Gizli anahtar panoya kopyalandı",
+    "secret-dialog": {
+      "copy-secret": "Gizli anahtarı panoya kopyala",
+      "description": "Bu gizli anahtar, webhook imzalarını doğrulamak için kullanılır. Güvenli bir şekilde saklayın.",
+      "done": "Gizli anahtarı kaydettim",
+      "secret": "İmzalama Gizli Anahtarı",
+      "title": "Webhook Gizli Anahtarı",
+      "verification": "İmza Doğrulama",
+      "verification-hint": "Webhook imzalarını HMAC-SHA256 kullanarak doğrulayın. İmza, X-Z8-Signature başlığında gönderilir.",
+      "warning": "Bu gizli anahtar yalnızca bir kez gösterilecektir. Şimdi kaydettiğinizden emin olun.",
+      "warning-title": "Önemli"
+    },
+    "secret-regenerated": "Gizli anahtar yeniden oluşturuldu",
+    "status": {
+      "degraded": "Düşük Performanslı",
+      "failing": "Hatalı",
+      "healthy": "Sağlıklı",
+      "inactive": "Etkin Değil"
+    },
+    "success-rate": "Başarılı",
+    "test": "Test Gönder",
+    "test-failed": "Test webhook'u gönderilemedi",
+    "test-sent": "Test webhook'u gönderildi",
+    "title": "Webhook'lar",
+    "toggle-active": "Webhook etkinliğini değiştir",
+    "updated": "Webhook güncellendi",
+    "update-failed": "Webhook güncellenemedi",
+    "view-logs": "Günlükleri Görüntüle"
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "reports": {
+    "container": {
+      "error": "Fehler",
+      "generating": "Bericht wird generiert...",
+      "noReportYet": "Es isch no kei Bericht generiert worde",
+      "pleaseWait": "Bitte warte, während wir deine Daten zusammenstellen",
+      "selectPeriod": "Wähle einen Zeitraum aus und klicke auf \"Bericht erstellen\", um zu beginnen"
+    },
+    "description": "Generier umfassendi Arbetziit- und Absenzbricht mit stüürrelevante Home-Office-Date",
+    "employeeSelector": {
+      "error": "Teammitglieder chönd nöd glade werde",
+      "label": "Aagstellte",
+      "placeholder": "Aagstellte uswähle..."
+    },
+    "export": {
+      "csv": "CSV exportieren",
+      "description": "Lade diesen Bericht in deinem bevorzugten Format herunter",
+      "downloaded": "{filename} heruntergeladen",
+      "errorDescription": "Beim Exportieren des Berichts ist ein Fehler aufgetreten",
+      "excel": "Excel exportieren",
+      "failed": "Export fehlgeschlagen",
+      "generating": "Wird erstellt...",
+      "pdf": "PDF exportieren",
+      "success": "Export erfolgreich",
+      "title": "Bericht exportieren"
+    },
+    "feature": "Bricht generiere",
+    "filter": {
+      "loadingSettings": "Lade Organisationseinstellungen, bevor Voreinstellungen aktiviert werden.",
+      "period": "Zeitraum",
+      "selectPeriod": "Zeitraum auswählen"
+    },
+    "generate": "Bericht erstellen",
+    "generating": "Bericht wird erstellt…",
+    "period": {
+      "currentMonth": "Aktueller Monat",
+      "currentYear": "Aktuelles Jahr",
+      "customRange": "Benutzerdefinierter Bereich",
+      "lastMonth": "Letzter Monat",
+      "lastYear": "Letztes Jahr",
+      "pickDateRange": "Wähle einen Datumsbereich",
+      "yearToDate": "Jahr bis heute"
+    },
+    "preview": {
+      "absencesByCategory": "Abwesenheiten nach Kategorie",
+      "attendancePercentage": "Anwesenheit in Prozent",
+      "category": "Kategorie",
+      "complianceMetrics": "Compliance-Kennzahlen",
+      "date": "Datum",
+      "dateBreakdown": "Detaillierte Aufschlüsselung nach Datum",
+      "days": "Tage",
+      "homeOfficeDescription": "Wichtig für steuerliche Zwecke in Deutschland - zeigt Home-Office-Tage und geleistete Arbeitsstunden",
+      "homeOfficeSummary": "Home-Office-Zusammenfassung (steuerrelevant)",
+      "hours": "Stunden",
+      "hoursWorked": "Geleistete Arbeitsstunden",
+      "month": "Monat",
+      "noHomeOfficeDays": "In diesem Zeitraum wurden keine Home-Office-Tage erfasst.",
+      "overtime": "Überstunden",
+      "total": "Gesamt",
+      "totalHomeOfficeDays": "Home-Office-Tage insgesamt",
+      "totalHomeOfficeHours": "Gesamte Arbeitsstunden im Home-Office",
+      "undertime": "Minusstunden",
+      "workHoursByMonth": "Arbeitsstunden pro Monat"
+    },
+    "projects": {
+      "budget": {
+        "exceededBy": "Budget um {hours} Stunde überschritte",
+        "hoursBudget": "{hours}h Budget",
+        "hoursLogged": "Erfassti Stunde",
+        "hoursRemaining": "{hours} Stunde Budget no übrig",
+        "hoursUsed": "{hours}h bruucht",
+        "nearLimit": "Nahe Budgetgränze",
+        "onlyRemaining": "Nur no {hours} Stunde übrig",
+        "onTrack": "Im Plan",
+        "over": "Über",
+        "overBudget": "Budget überschritte",
+        "remaining": "Übrig",
+        "title": "Budget-Fortschritt",
+        "used": "Bruucht"
+      },
+      "cards": {
+        "acrossAllProjects": "Über alli Projekt",
+        "activeContributors": "Aktivi Mitwirkendi",
+        "activeCount": "{count} aktiv",
+        "activeProjects": "Aktivi Projekt",
+        "budgetUsed": "Budget bruucht",
+        "currentlyInProgress": "Momentan im Gang",
+        "dailyAverage": "Täglicher Durchschnitt",
+        "exceededBudget": "Budget überschritte",
+        "hoursOfBudget": "{used}h vo {total}h",
+        "hoursPerDay": "Stunde pro Taag",
+        "na": "N/A",
+        "noBudgetSet": "Kei Budget gsetzt",
+        "overBudget": "Budget überschritte",
+        "overdue": "Überfällig",
+        "pastDeadline": "Frist abglaufe",
+        "teamMembers": "Teammitglieder",
+        "totalHours": "Total Stunde",
+        "totalProjects": "Total Projekt",
+        "workPeriods": "{count} Arbetsepisode"
+      },
+      "chart": {
+        "cumulativeDescription": "Total Stunde, wo über d'Ziit aagwachse sind",
+        "cumulativeHours": "Kumulierte Stunde",
+        "cumulativeLabel": "Kumuliert",
+        "dailyDescription": "Gleisteti Stunde pro Taag im gwählte Ziitruum",
+        "dailyHours": "Täglichi Stunde",
+        "hoursLabel": "Stunde",
+        "hoursOverTime": "Stunde über Ziit",
+        "noDataAvailable": "Keini Ziiterfassigs-Date für die Periode verfüegbar",
+        "noWorkPeriods": "Keini Arbeitsziite im gwählte Datumsberiich ufgzeichnet"
+      },
+      "container": {
+        "error": "Fehler",
+        "generating": "Bericht wird erstellt...",
+        "noReportYet": "Es isch no kei Bericht erstellt worde",
+        "pleaseWait": "Bitte warte, während mir d Projektdate zämestellet",
+        "portfolioOverview": "Portfolio-Übersicht",
+        "projectDetails": "Projektdetails",
+        "selectPeriod": "Wähl en Ziitruum und klick uf \"Bericht erstelle\", zum aafange"
+      },
+      "filter": {
+        "activeOnly": "Nur aktiv",
+        "activePlanned": "Aktiv & geplant",
+        "allStatuses": "Alli Status",
+        "archived": "Archiviert",
+        "completed": "Abgschlosse",
+        "period": "Periode",
+        "selectStatus": "Status-Filter wähle",
+        "status": "Status"
+      },
+      "generate": "Bericht erstelle",
+      "generating": "Bericht wird erstellt...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% vom Budget bruucht",
+        "critical": "Kritisch",
+        "daysLeft": "{days} Täg übrig",
+        "daysOverdue": "{days} Täg überfällig",
+        "description": "Budget- und Terminrisike, wo in däm Berichtsziitruum beachtet wärde müend.",
+        "dueToday": "Fällig hüt",
+        "empty": "Kei Budget- oder Terminrisike in däm Berichtsziitruum.",
+        "reason": {
+          "budget70": "S'Projekt hät mindestens 70% vom Budget bruucht.",
+          "budget90": "S Projekt hät mindestens 90% vom Budget bruucht.",
+          "deadline": "D Frist vom Projekt rückt nöcher.",
+          "default": "S Projekt bruucht Ufmerksamkeit.",
+          "dueToday": "S Projekt isch hüt fällig.",
+          "overBudget": "S Projekt isch über em Budget.",
+          "overdue": "D Frist vom Projekt isch abgloffe."
+        },
+        "title": "Projekt-Gsundheitswarnige",
+        "viewDetails": "Details aaluege",
+        "viewDetailsForProject": "Details für {projectName} aaluege",
+        "warning": "Warnig"
+      },
+      "healthSummary": {
+        "atOrAbove70": "Bi oder über 70%",
+        "atOrAbove70Description": "Budget-Uuslastig erhöht",
+        "atOrAbove90": "Bi oder über 90%",
+        "atOrAbove90Description": "Nöch am Budget-Limit",
+        "forecastAtRisk": "Prognose isch gföhrdet",
+        "forecastAtRiskDescription": "Sollte Plan überschritte wärde",
+        "overBudget": "Über em Budget",
+        "overBudgetDescription": "Budget überschritte"
+      },
+      "page": {
+        "accessDenied": "Zuegriff verweigeret",
+        "description": "Analysier Projektstunde, Budgetnutzig und Team-Biiträg",
+        "feature": "Projektbericht aaluege",
+        "noPermission": "Du häsch kei Berechtigung, Projektbericht aazluege.",
+        "title": "Projektbericht"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Archiviert",
+        "completed": "Abgschlosse",
+        "paused": "Pausiert",
+        "planned": "Geplant"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days} Täg übrig",
+        "daysOverdue": "{days} Täg überfällig",
+        "deadline": "Frist",
+        "dueToday": "Hüt fällig",
+        "forecastRisk": "Prognose-Risiko",
+        "hours": "Stunde",
+        "noProjectsFound": "Kei Projekt gfunde",
+        "noProjectsMatch": "Kei Projekt stimmed mit de gwählte Filter überi",
+        "portfolioDescription": "Übersicht über alli Projekt mit Budget- und Ziiterfassigs-Kennzahle",
+        "portfolioTitle": "Projektportfolio",
+        "project": "Projekt",
+        "searchPlaceholder": "Suech nach Name, Beschriibig oder Status...",
+        "status": "Status",
+        "team": "Team",
+        "viewProject": "Projektdetails aaluege"
+      },
+      "team": {
+        "byEmployee": "Nach Mitarbeiter",
+        "byTeam": "Nach Team",
+        "description": "Stundeverteilig über Teammitglieder und Teams",
+        "employee": "Mitarbeiter",
+        "hours": "Stunde",
+        "hoursLabel": "Stunde",
+        "noMembers": "Kei Teammitglieder händ Ziit für das Projekt erfasst",
+        "sessions": "Sitzige",
+        "title": "Team-Uufschlüsslig"
+      },
+      "toast": {
+        "failedGenerate": "Bricht het nöd chönne erstellt wärde",
+        "failedPortfolio": "Portfolio-Bricht het nöd chönne erstellt wärde",
+        "failedProject": "Projekt-Bricht het nöd chönne erstellt wärde",
+        "failedProjectReport": "Projekt-Bricht het nöd chönne erstellt wärde",
+        "portfolioGenerated": "Portfolio-Bricht isch erstellt worde",
+        "projectGenerated": "Bricht für {name} isch erstellt worde",
+        "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
+      }
+    },
+    "summary": {
+      "averagePerDay": "Durchschnitt: {hours}h/Tag",
+      "homeOfficeDays": "Home-Office-Tage",
+      "hourlyAverage": "{hours}h à Ø {rate}/h",
+      "otherDays": "Andere: {count} Tage",
+      "pending": "{count} ausstehend",
+      "ratePeriods": "{count} Abrechnungszeiträume",
+      "sickDays": "Krank: {count} Tage",
+      "taxRelevant": "Stüürrelevant",
+      "totalAbsences": "Absänz total",
+      "totalEarnings": "Verdienscht total",
+      "totalWorkHours": "Arbetsstunde total",
+      "vacationDays": "Ferietäg",
+      "workDays": "{count} Arbetsdäg",
+      "workedFromHome": "{hours}h im Homeoffice gschaffet"
+    },
+    "title": "Mitarbeiter-Bricht",
+    "toast": {
+      "failedGenerate": "Bericht hät nöd chöne erstellt werde",
+      "generatedFor": "Bericht für {name} erstellt",
+      "reportGenerated": "Bericht erfolgrich erstellt",
+      "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
+      "unknownError": "Es isch en unbekannte Fehler ufträtte"
+    }
+  }
+}

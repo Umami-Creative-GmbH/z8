@@ -74,10 +74,8 @@ describe("suspended billing recovery route", () => {
 
 		for (const locale of ["de", "en", "es", "fr", "it", "pt"]) {
 			const messages = JSON.parse(readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"));
-			const rootMessages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
-
 			expect(messages.billing.suspended).toBeDefined();
-			expect(rootMessages.billing?.suspended).toBeUndefined();
+			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
 		}
 
 		const englishMessages = JSON.parse(readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"));

@@ -1,0 +1,152 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Çalışmanız hakkında bir not ekleyin (isteğe bağlı)",
+    "autoAdjusted": {
+      "toast": {
+        "description": "Zaman yönetmeliklerine uymak için {breakMinutes} dakikalık bir mola eklendi.",
+        "title": "Uyumluluk için otomatik mola eklendi"
+      }
+    },
+    "budget": "Bütçe",
+    "clockedOutSuccess": "Mesainizi bitirdiniz!",
+    "clockIn": "İşe Giriş",
+    "clockingIn": "İşe giriş yapılıyor…",
+    "clockingOut": "İşten çıkış yapılıyor…",
+    "clockInQueued": "Giriş saati senkronizasyon için kuyruğa alındı",
+    "clockInSuccess": "İşe giriş başarıyla yapıldı",
+    "clockOut": "İşten Çıkış",
+    "clockOutQueued": "Çıkış saati senkronizasyon için kuyruğa alındı",
+    "clockOutSuccess": "İşten çıkış başarıyla yapıldı",
+    "compliance": {
+      "violation": "Uyumluluk İhlali",
+      "warning": "Uyumluluk Bildirimi"
+    },
+    "correction": {
+      "clockIn": "İşe Giriş",
+      "clockOut": "İşten Çıkış",
+      "editDescription": "Bugünkü zaman kaydınızda değişiklik yapın.",
+      "editEntry": "Zaman kaydını düzenle",
+      "editTitle": "Zaman Kaydını Düzenle",
+      "errors": {
+        "invalidTimeRange": "İşten çıkış saati, işe giriş saatinden sonra olmalıdır",
+        "submitFailed": "Düzeltme gönderilemedi",
+        "updateFailed": "Zaman kaydı güncellenemedi"
+      },
+      "noteLabel": "Not (isteğe bağlı)",
+      "notePlaceholder": "Bu değişiklik hakkında bir not ekleyin…",
+      "reasonLabel": "Düzeltme Nedeni",
+      "reasonPlaceholder": "Bu düzeltmenin neden gerekli olduğunu açıklayın…",
+      "requestCorrection": "Zaman düzeltme talebinde bulun",
+      "requestDescription": "Bu zaman kaydı için bir düzeltme talebi gönderin. Yöneticinizin onaylaması gerekecektir.",
+      "requestTitle": "Zaman Düzeltme Talebinde Bulun",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "saving": "Kaydediliyor…",
+      "submitRequest": "Talebi Gönder",
+      "submitting": "Gönderiliyor…",
+      "success": {
+        "submitted": "Düzeltme talebi yönetici onayı için gönderildi",
+        "updated": "Zaman kaydı başarıyla güncellendi"
+      },
+      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})"
+    },
+    "currentlyClockedIn": "Şu anda işe giriş yapmış durumdasınız",
+    "deadline": "Son teslim tarihi",
+    "errors": {
+      "clockInFailed": "İşe giriş yapılamadı",
+      "clockOutFailed": "İşten çıkış yapılamadı",
+      "holidayBlocked": "{holidayName} tarihinde işten çıkış yapılamaz",
+      "holidayBlockedDesc": "Bu gün tatil olarak işaretlenmiştir ve zaman kaydı girilmesine izin verilmemektedir",
+      "notesSaveFailed": "Notlar kaydedilemedi",
+      "restPeriodBlocked": "Dinlenme süresi tamamlanmadı",
+      "restPeriodBlockedDesc": "Giriş yapmadan önce gerekli dinlenme süresini tamamlamalısınız. Gerekirse bir istisna talebinde bulunun."
+    },
+    "manualEntry": {
+      "addButton": "Manuel Giriş Ekle",
+      "clockInLabel": "Giriş Yap",
+      "clockOutLabel": "Çıkış Yap",
+      "dateLabel": "Tarih",
+      "description": "Geçmiş bir tarih için zaman girişi oluşturun. Kuruluşunuzun değişiklik politikasına bağlı olarak onay gerekebilir.",
+      "errors": {
+        "createFailed": "Zaman girişi oluşturulamadı",
+        "futureDate": "Gelecek tarihler için giriş oluşturulamaz",
+        "invalidTimeRange": "Çıkış saati, giriş saatinden sonra olmalıdır",
+        "tooLong": "Çalışma süresi 24 saati aşamaz"
+      },
+      "reasonLabel": "Neden",
+      "reasonPlaceholder": "Ne üzerinde çalıştığınızı açıklayın…",
+      "submit": "Giriş Oluştur",
+      "submitting": "Oluşturuluyor…",
+      "success": {
+        "adjusted": "Çakışmayı önlemek için zamanlar {clockIn} - {clockOut} olarak ayarlandı",
+        "created": "Zaman girişi başarıyla oluşturuldu",
+        "pendingApproval": "Zaman girişi yönetici onayı için gönderildi"
+      },
+      "title": "Manuel Zaman Girişi Ekle"
+    },
+    "noCategory": "Kategori yok (%100)",
+    "noProject": "Proje yok",
+    "notesPlaceholder": "Neler üzerinde çalıştın?",
+    "notesSaved": "Notlar kaydedildi",
+    "project": "Proje",
+    "readyToClockIn": "Çalışmaya başlamaya hazır mısın?",
+    "selectCategory": "Bir kategori seçin",
+    "selectProject": "Bir proje seç",
+    "sessionReminders": {
+      "breakOpen": "{remaining} dk mola kaldı",
+      "breakRequired": "Şimdi mola gerekli",
+      "breakRequiredMessage": "Oturumunuza devam etmeden önce bir mola verin.",
+      "breakSoon": "Yakında mola",
+      "dismissBreak": "Mola hatırlatıcısını kapat",
+      "dismissHydration": "Su içme hatırlatıcısını kapat",
+      "hydration": "Hidrasyon",
+      "hydrationProgress": "Bugün {intake}/{goal} bardak",
+      "logOneGlass": "+1 bardak",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "Molaya {minutes} dk kaldı",
+      "snoozeToday": "Bugünlük ertele",
+      "subtitle": "Bu vardiya sırasında",
+      "title": "Oturum hatırlatıcıları"
+    },
+    "startedAt": "Başlangıç saati",
+    "summary": {
+      "baseWorked": "Temel çalışma",
+      "surcharge": "Ek ücret",
+      "thisMonth": "Bu Ay",
+      "thisWeek": "Bu Hafta",
+      "today": "Bugün"
+    },
+    "table": {
+      "approved": "Zaman girişi onaylandı",
+      "approveEntry": "Girişi onayla",
+      "approveFailed": "Giriş onaylanamadı",
+      "approving": "Onaylanıyor...",
+      "emptyState": "Bu hafta için zaman kaydı bulunamadı.",
+      "rowActions": "Zaman girişi eylemleri",
+      "title": "Zaman Kayıtları",
+      "viewCalendar": "Takvimi Görüntüle"
+    },
+    "timeline": {
+      "dayPicker": "Zaman çizelgesi gün seçici",
+      "emptyDescription": "Seçili gün için henüz hiçbir vardiya, devamsızlık veya zaman kaydı bulunmuyor.",
+      "emptyTitle": "Bu gün için kaydedilmiş bir etkinlik yok.",
+      "nextDay": "Sonraki gün",
+      "previousDay": "Önceki gün",
+      "title": "İş günü zaman çizelgesi",
+      "today": "Bugün",
+      "unavailableDescription": "Zaman takibi hala çalışıyor. Bu görünümü daha sonra yenilemeyi deneyin.",
+      "unavailableTitle": "Zaman çizelgesi kullanılamıyor"
+    },
+    "unknownCategory": "Bilinmeyen kategori",
+    "unknownProject": "Bilinmeyen proje",
+    "workCategory": "Çalışma Kategorisi"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Günlük hedefe ulaşıldı! Harika çalışmaya devam et!",
+      "logError": "Su alımı kaydedilemedi",
+      "logged": "Su kaydedildi! Günlük hedefin %{progress}'i",
+      "snoozed": "Su hatırlatıcıları bugün için ertelendi",
+      "snoozeError": "Hatırlatıcılar ertelenemedi"
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "approval": {
+    "absenceRequest": "Abwesenheitsantrag",
+    "actions": {
+      "approve": "Genehmige",
+      "approving": "Am genehmige...",
+      "reject": "Ablehne",
+      "rejecting": "Am ablehne...",
+      "viewInZ8": "In Z8 aaluege"
+    },
+    "durationDays": "{count, plural, one {# Tag} other {# Täg}}",
+    "facts": {
+      "approvedBy": "Genehmigt vo",
+      "corrected": "Korrigiert",
+      "dates": "Datum",
+      "duration": "Dauer",
+      "email": "E-Mail",
+      "from": "Vo",
+      "original": "Original",
+      "reason": "Grund",
+      "rejectedBy": "Abglehnt vo",
+      "resolved": "Glöst",
+      "status": "Status",
+      "submitted": "Iigreicht",
+      "type": "Typ"
+    },
+    "status": {
+      "approved": "GENEHMIGT",
+      "rejected": "ABGLEHNT"
+    },
+    "timeCorrectionRequest": "Zitkorrektur-Aatrag"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Kritisch",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (Usnahm brucht)",
+      "lastDays": "Letschti {days} Täg",
+      "legend": "\uD83D\uDD34 Verstoss  \uD83D\uDFE0 Kritisch  \uD83D\uDFE1 Warnig  \uD83D\uDCDD Hängige Aatrag",
+      "moreRequestsMarkdown": "_+{count} witeri Aaträg_",
+      "moreViolationsMarkdown": "_+{count} witeri Verstöss_",
+      "pending": "Hängig",
+      "pendingExceptions": "Hängigi Usnahme-Aaträg",
+      "recentViolations": "Aktuelli Verstöss",
+      "reviewExceptions": "Usnahme prüefe",
+      "textCriticalAlerts": "**Kritischi Alarm:** {count}",
+      "textMore": "  +{count} witeri",
+      "textPendingExceptions": "**Hängigi Usnahme:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Hängigi Aaträg:**",
+      "textRecentViolations": "**Aktuelli Verstöss:**",
+      "textTitle": "**⚠️ Compliance-Zämmefassig - Letschti {days} Täg**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Verstöss:** {count}",
+      "titleWithIcon": "⚠️ Compliance-Zämmefassig",
+      "viewDashboard": "Compliance-Dashboard aaluege",
+      "violations": "Verstöss"
+    },
+    "coverage": {
+      "clockedIn": "Iigstämplet",
+      "moreLocationsMarkdown": "_+{count} witeri Ort..._",
+      "scheduled": "Gplant",
+      "titleWithIcon": "\uD83D\uDCCA Abdeckigs-Bricht",
+      "variance": "Abwiichig",
+      "viewFullSchedule": "Gsamte Dienschtplan aaluege"
+    },
+    "help": {
+      "availableCommands": "Hilf"
+    }
+  },
+  "common": {
+    "more": "+{count} meh",
+    "moreBullet": "• +{count} meh"
+  },
+  "digest": {
+    "currentlyClockedIn": "Aktuell iigstempelt",
+    "everyoneAvailable": "All sind hüt verfüegbar",
+    "noOneClockedIn": "Es isch no niemert iigstempelt",
+    "noPendingApprovals": "Kei offeni Gnehmigunge",
+    "openDashboard": "Z8-Dashboard ufmache",
+    "openShifts": "Offeni Schichte",
+    "pendingApprovals": "Offeni Gnehmigunge",
+    "pendingExceptionRequests": "{count, plural, one {# offeni Uusnahmeaafraag wartet uf Prüefig} other {# offeni Uusnahmeaafraage wartet uf Prüefig}}",
+    "returns": "Chunt am {date} zrugg",
+    "since": "Sit {time}",
+    "textClockedInEmployee": "• {name} - sit {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Compliance:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Deckigslücke:**",
+    "textCurrentlyClockedIn": "**Aktuell iigstempelt:**",
+    "textEmployeeOut": "• {name} - {category} (chunt am {returnDate} zrugg)",
+    "textOpenShifts": "**\uD83D\uDCCB Offeni Schichte:**",
+    "textPendingApprovalsCount": "**Offeni Gnehmigunge:** {count}",
+    "textPendingApprovalsNone": "**Offeni Gnehmigunge:** Keini",
+    "textTitle": "**Tageszämefassig - {date}**",
+    "textWhosOut": "**Wer isch abwäsend:**",
+    "title": "Tageszämefassig",
+    "todayTomorrow": "Hüt: {today} | Morn: {tomorrow}",
+    "viewApprovals": "Gnehmigunge aaluege",
+    "whosOutToday": "Wer isch hüt abwäsend"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Tägliche Überziit",
+    "overtime_monthly": "Monatliche Überziit",
+    "overtime_weekly": "Wöchentliche Überziit",
+    "rest_period": "Ruehziit"
+  }
+}

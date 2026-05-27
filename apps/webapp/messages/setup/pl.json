@@ -1,0 +1,46 @@
+{
+  "init": {
+    "activating": "Konfigurowanie obszaru roboczego...",
+    "checking": "Sprawdzanie sesji...",
+    "clickToSelect": "Kliknij, aby wybrać",
+    "redirecting": "Przekierowywanie...",
+    "selectOrganization": "Wybierz organizację",
+    "selectOrganizationDescription": "Wybierz organizację, z którą chcesz pracować"
+  },
+  "setup": {
+    "button": {
+      "create": "Utwórz konto administratora",
+      "creating": "Tworzenie konta..."
+    },
+    "complete_message": "Twoje konto administratora platformy zostało utworzone.",
+    "complete_title": "Konfiguracja zakończona!",
+    "continue_to_sign_in": "Przejdź do logowania",
+    "creating_account": "Tworzenie konta administratora...",
+    "description": "Skonfiguruj pierwsze konto administratora dla swojej platformy. To konto będzie miało pełny dostęp do systemu i jest oddzielone od kont organizacji.",
+    "field": {
+      "confirm_password": "Potwierdź hasło",
+      "confirm_password_placeholder": "Potwierdź swoje hasło",
+      "email": "Adres e-mail",
+      "email_placeholder": "admin@twojafirma.pl",
+      "name": "Imię i nazwisko",
+      "name_placeholder": "Wpisz swoje imię i nazwisko",
+      "password": "Hasło",
+      "password_placeholder": "Utwórz silne hasło"
+    },
+    "hide_password": "Ukryj hasło",
+    "layout": {
+      "subtitle": "Skonfiguruj platformę, aby rozpocząć",
+      "title": "Konfiguracja początkowa"
+    },
+    "password": {
+      "lowercase": "Mała litera",
+      "min_length": "12+ znaków",
+      "number": "Cyfra",
+      "uppercase": "Wielka litera"
+    },
+    "please_wait": "Prosimy czekać, trwa konfigurowanie",
+    "show_password": "Pokaż hasło",
+    "sign_in_with": "Możesz teraz zalogować się za pomocą",
+    "title": "Utwórz administratora platformy"
+  }
+}

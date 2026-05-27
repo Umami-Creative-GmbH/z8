@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "analitiği görüntüle",
+      "restrictedDescription": "Analitik yalnızca yöneticiler ve müdürler tarafından kullanılabilir.",
+      "restrictedTitle": "Erişim Kısıtlandı"
+    },
+    "common": {
+      "days": "Günler",
+      "employee": "Çalışan",
+      "employees": "Çalışanlar",
+      "hours": "Saatler",
+      "loadingOrganizationSettings": "Hazır ayarları etkinleştirmeden önce organizasyon ayarları yükleniyor.",
+      "noDataAvailable": "Veri bulunmuyor",
+      "noDataForPeriod": "Seçilen dönem için veri bulunmuyor",
+      "overtime": "Fazla mesai",
+      "overtimeHours": "Fazla Mesai Saatleri",
+      "team": "Ekip",
+      "totalHours": "Toplam Saat",
+      "unavailable": "Müsait değil",
+      "undertime": "Eksik mesai",
+      "undertimeHours": "Eksik Mesai Saatleri"
+    },
+    "layout": {
+      "description": "Ekip performansı, çalışma saatleri ve devamsızlık modellerine dair kapsamlı içgörüler",
+      "tabs": {
+        "overtimeBurnDown": "Fazla Mesai Eritme",
+        "overview": "Genel Bakış",
+        "teamPerformance": "Ekip Performansı",
+        "vacationTrends": "İzin Eğilimleri",
+        "workHours": "Çalışma Saatleri"
+      },
+      "title": "Analitik"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Döküm",
+      "breakdownDescription": "{label} seviyesi fazla mesai eritme detayları",
+      "breakdownEmpty": "Henüz döküm verisi bulunmuyor",
+      "byCostCenter": "Maliyet Merkezine Göre",
+      "byManager": "Yöneticiye Göre",
+      "byTeam": "Ekibe Göre",
+      "costCenter": "Maliyet Merkezi",
+      "currentOvertime": "Mevcut Fazla Mesai",
+      "description": "Ekipler genelinde haftalık fazla mesai azalmasını takip edin.",
+      "errors": {
+        "loadData": "Fazla mesai eritme verileri yüklenemedi"
+      },
+      "filters": {
+        "allCostCenters": "Tüm maliyet merkezleri",
+        "allManagers": "Tüm yöneticiler",
+        "allTeams": "Tüm ekipler",
+        "breakdownLabel": "Döküm boyutu",
+        "costCenterLabel": "Maliyet merkezi filtresi",
+        "managerLabel": "Yönetici filtresi",
+        "teamLabel": "Ekip filtresi"
+      },
+      "improvingGroups": "İyileşen Gruplar",
+      "improvingGroupsDescription": "Fazla mesaisi azalan gruplar",
+      "manager": "Yönetici",
+      "previousOvertime": "Önceki Fazla Mesai",
+      "previousPeriodDescription": "Önceki dönemle karşılaştırıldığında",
+      "selectedRangeDescription": "Seçilen tarih aralığı ve filtreler için",
+      "title": "Fazla Mesai Eritme",
+      "trendDirection": "Eğilim Yönü",
+      "trendDirectionDescription": "Genel fazla mesai seyri",
+      "trend": {
+        "down": "Düşüş",
+        "flat": "Sabit",
+        "up": "Artış"
+      },
+      "weeklyTrend": {
+        "description": "Haftalık fazla mesai azalma eğilimi",
+        "empty": "Henüz eğilim verisi bulunmuyor",
+        "title": "Haftalık Eritme Eğilimi"
+      },
+      "weekOverWeek": "Haftadan Haftaya"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Kategoriye göre devamsızlık dağılımı",
+        "title": "Devamsızlık Modelleri"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "%{rate} onaylandı",
+        "avgDecision": "{hours} saat ortalama karar süresi",
+        "byManager": "Yöneticiye Göre",
+        "byTeam": "Ekibe Göre",
+        "byType": "Türe Göre",
+        "description": "Bekleyen işleri veya SLA uyarıları olan ekipler ve talep türleri",
+        "empty": "Onay darboğazı bulunamadı",
+        "pendingSummary": "{pendingCount} bekleyen - {slaWarnings} SLA uyarısı",
+        "title": "Onay Darboğazları",
+        "unavailable": "Onay darboğazları yüklenemedi"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Karar verilen taleplerin onaylanan kısmı",
+          "title": "Onay Oranı",
+          "unavailableDescription": "Onay analitiği yüklenemedi"
+        },
+        "avgWorkHours": {
+          "description": "Seçilen dönemde çalışan başına",
+          "title": "Ortalama Çalışma Saati"
+        },
+        "totalAbsenceDays": {
+          "description": "Seçilen dönemdeki toplam gün sayısı",
+          "title": "Toplam Devamsızlık Günü"
+        },
+        "totalEmployees": {
+          "description": "Organizasyondaki aktif çalışanlar",
+          "title": "Toplam Çalışan Sayısı"
+        }
+      },
+      "loadingLabel": "Analitik verileri yükleniyor",
+      "workHoursByTeam": {
+        "description": "Ekip başına kaydedilen toplam çalışma saati",
+        "title": "Ekibe Göre Çalışma Saatleri"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Çalışan başına ortalama",
+      "comparison": {
+        "description": "Seçilen dönem için ekibe göre toplam çalışma saati",
+        "title": "Ekip Karşılaştırması"
+      },
+      "details": {
+        "description": "Çalışma saatlerinin ekip ve çalışan bazında dökümü",
+        "title": "Ekip Performans Detayları"
+      },
+      "employeeCount": "Çalışan Sayısı",
+      "errors": {
+        "loadData": "Ekip performans verileri yüklenemedi"
+      },
+      "onTrack": "Beklendiği Gibi",
+      "variance": {
+        "description": "Beklenen çalışma saatlerinden sapma",
+        "empty": "Sapma verisi mevcut değil",
+        "title": "Fazla ve Eksik Mesai"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Tahsis Edilen",
+      "balance": {
+        "description": "Çalışan bazında tahsis edilen, kullanılan ve kalan günler",
+        "title": "İzin Bakiyesi"
+      },
+      "daysRemaining": "{count} gün kaldı",
+      "daysTaken": "{count} gün kullanıldı",
+      "errors": {
+        "loadData": "İzin eğilim verileri yüklenemedi"
+      },
+      "monthlyUsage": {
+        "description": "Aylık kullanılan izin günleri",
+        "empty": "Aylık kullanım verisi mevcut değil",
+        "title": "Aylık İzin Kullanımı"
+      },
+      "peakMonths": {
+        "description": "İzin hareketliliğinin en yüksek olduğu aylar",
+        "empty": "Yoğun dönem verisi mevcut değil",
+        "title": "En Yoğun İzin Ayları"
+      },
+      "remaining": "Kalan",
+      "taken": "Kullanılan",
+      "utilization": {
+        "description": "Organizasyon genelindeki toplam izin günü kullanımı",
+        "overall": "Genel Kullanım Oranı",
+        "title": "İzin Kullanımı"
+      },
+      "utilizationLabel": "Kullanım",
+      "utilizationPercent": "Kullanım %",
+      "vacationDays": "İzin Günleri"
+    },
+    "workHours": {
+      "actualHours": "Gerçekleşen Saatler",
+      "avgHoursPerWeek": "Ort. Haftalık Saat",
+      "daily": {
+        "description": "Günlük gerçekleşen ve beklenen çalışma saatleri",
+        "empty": "Günlük saat verisi bulunamadı",
+        "title": "Günlük Çalışma Saatleri"
+      },
+      "distribution": {
+        "description": "Çalışan çalışma saatleri karşılaştırması (yatay çubuk)",
+        "empty": "Dağılım verisi bulunamadı",
+        "title": "Çalışma Saatleri Dağılımı"
+      },
+      "employeeComparison": {
+        "description": "Çalışan bazında toplam saatler ve beklenen değerden sapma",
+        "title": "Çalışan Çalışma Saatleri"
+      },
+      "errors": {
+        "loadData": "Çalışma saatleri analitik verileri yüklenemedi"
+      },
+      "expectedHours": "Beklenen Saatler",
+      "variance": "Sapma",
+      "varianceTrend": {
+        "description": "Zaman içinde beklenen çalışma saatlerinden sapma",
+        "empty": "Trend verisi bulunamadı",
+        "title": "Fazla Mesai ve Eksik Mesai Eğilimi"
+      }
+    }
+  }
+}

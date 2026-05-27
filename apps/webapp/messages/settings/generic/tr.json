@@ -1,0 +1,961 @@
+{
+  "settings": {
+    "avv": {
+      "contractDetails": {
+        "controller": "Müşteri (Denetleyici)",
+        "descriptionPrefix": "Bu sözleşme, kuruluşunuz adına kişisel verilerin işlenmesini düzenler ve ",
+        "processor": "Yüklenici (İşleyen)",
+        "title": "Sözleşme detayları"
+      },
+      "description": "GDPR Madde 28 uyarınca veri işleme sözleşmenizi indirin.",
+      "hosting": {
+        "descriptionPrefix": "Tüm veriler ",
+        "descriptionSuffix": " sunucularında barındırılmaktadır. Başka hiçbir alt işleyen kullanılmamaktadır.",
+        "title": "Barındırma ve Alt İşleyenler"
+      },
+      "title": "Veri İşleme Sözleşmesi (DPA)"
+    },
+    "billing": {
+      "description": "Aboneliğinizi, ödeme yöntemlerinizi ve faturalarınızı yönetin",
+      "title": "Faturalandırma ve Abonelik"
+    },
+    "compliance": {
+      "description": "Ekip üyelerinden gelen uyumluluk istisnası taleplerini inceleyin ve yönetin",
+      "title": "ArbZG Uyumluluğu"
+    },
+    "customDomains": {
+      "description": "Kuruluşunuz için özel alan adı, markalama ve SSO yapılandırın",
+      "title": "Alan Adı ve Markalama"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "İlgili Kişi",
+        "email": "E-posta",
+        "name": "Şirket Adı",
+        "phone": "Telefon"
+      },
+      "create": "Müşteri Ekle",
+      "created": "Müşteri oluşturuldu",
+      "createFailed": "Müşteri oluşturulamadı",
+      "deleted": "Müşteri silindi",
+      "delete": {
+        "description": "\"{name}\" öğesini silmek istediğinizden emin misiniz? Bu müşteriye atanan projeler çalışmaya devam edecek ancak müşteri referansı kaldırılacaktır.",
+        "title": "Müşteriyi Sil"
+      },
+      "deleteFailed": "Müşteri silinemedi",
+      "description": "Proje atamaları için müşteri kişilerini yönetin",
+      "dialog": {
+        "create": "Müşteri Ekle",
+        "createDescription": "Proje atamaları için yeni bir müşteri ekleyin",
+        "createTitle": "Müşteri Ekle",
+        "editDescription": "Müşteri bilgilerini güncelle",
+        "editTitle": "Müşteriyi Düzenle",
+        "save": "Değişiklikleri Kaydet"
+      },
+      "empty": {
+        "description": "Projelere atamak için ilk müşterinizi ekleyin.",
+        "title": "Henüz müşteri yok"
+      },
+      "field": {
+        "address": "Adres",
+        "addressPlaceholder": "Sokak, Şehir, Posta Kodu",
+        "contactPerson": "İlgili Kişi",
+        "contactPersonPlaceholder": "ör. Ahmet Yılmaz",
+        "email": "E-posta",
+        "name": "Şirket Adı",
+        "namePlaceholder": "Şirket adını girin",
+        "phone": "Telefon",
+        "project": "Proje",
+        "projectPlaceholder": "Bir proje seçin",
+        "vatId": "KDV Numarası",
+        "website": "Web sitesi"
+      },
+      "list": {
+        "description": "Toplam {count} müşteri",
+        "title": "Tüm Müşteriler"
+      },
+      "managerNoProjects": "Yönetilen proje bulunmuyor. Müşteri eklemeden önce bir proje oluşturun veya yönetin.",
+      "projectRequired": "Önce bir proje seçin",
+      "title": "Müşteriler",
+      "updated": "Müşteri güncellendi",
+      "updateFailed": "Müşteri güncellenemedi"
+    },
+    "dataExport": {
+      "description": "Kuruluşunuzun verilerini dışa aktarın",
+      "form": {
+        "aboutAsync": "Dışa aktarma işlemleri eşzamansız olarak gerçekleştirilir",
+        "aboutEmail": "Hazır olduğunda bir e-posta alacaksınız",
+        "aboutLinkValidity": "İndirme bağlantıları 24 saat boyunca geçerlidir",
+        "aboutOrgDataOnly": "Yalnızca kuruluşunuzun verileri dahil edilir",
+        "aboutStorageDuration": "Dışa aktarma dosyaları 7 gün boyunca saklanır",
+        "aboutTitle": "Veri Dışa Aktarma Hakkında",
+        "description": "Dışa aktarmak istediğiniz veri kategorilerini seçin",
+        "selectAll": "Tümünü Seç",
+        "selectAtLeastOne": "Lütfen en az bir kategori seçin",
+        "startExport": "Dışa Aktarmayı Başlat (${selectedCategories.size})",
+        "startingExport": "Dışa Aktarma Başlatılıyor...",
+        "submitError": "Dışa aktarma başlatılamadı",
+        "submitSuccess": "Dışa aktarma başarıyla başlatıldı",
+        "title": "Verileri Dışa Aktar",
+        "unexpectedError": "Beklenmedik bir hata oluştu"
+      },
+      "history": {
+        "columnActions": "Eylemler",
+        "columnCategories": "Kategoriler",
+        "columnDate": "Tarih",
+        "columnSize": "Boyut",
+        "columnStatus": "Durum",
+        "deleteDialogDescription": "Bu dışa aktarmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+        "deleteDialogTitle": "Dışa Aktarmayı Sil",
+        "deleteError": "Dışa aktarma silinemedi",
+        "deleteSuccess": "Dışa aktarma silindi",
+        "description": "Önceki veri dışa aktarmalarınız",
+        "download": "İndir",
+        "downloadError": "İndirilemedi",
+        "downloadSuccess": "İndirme başlatıldı",
+        "emptyDescription": "Henüz dışa aktarma yok",
+        "emptyHint": "Yukarıdaki formu kullanarak ilk dışa aktarmanızı oluşturun",
+        "moreCategories": "+${exp.categories.length - 3} daha",
+        "statusCompleted": "Tamamlandı",
+        "statusFailed": "Başarısız",
+        "statusPending": "Beklemede",
+        "statusProcessing": "İşleniyor",
+        "title": "Dışa Aktarma Geçmişi",
+        "unexpectedError": "Beklenmedik bir hata oluştu"
+      },
+      "storage": {
+        "accessKeyDescription": "AWS erişim anahtarı kimliğiniz",
+        "accessKeyId": "Erişim Anahtarı Kimliği",
+        "bucketDescription": "S3 paketinizin (bucket) adı",
+        "bucketName": "Paket (Bucket) Adı",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Bağlantı Başarısız",
+        "connectionSuccess": "Bağlantı Başarılı",
+        "deleteDialogDescription": "Bu depolama yapılandırmasını silmek istediğinizden emin misiniz?",
+        "deleteDialogTitle": "Yapılandırmayı Sil",
+        "deleteError": "Yapılandırma silinemedi",
+        "deleteSuccess": "Yapılandırma silindi",
+        "description": "Dışa aktarımlar için kendi S3 uyumlu depolama alanınızı yapılandırın",
+        "endpoint": "Özel Uç Nokta (İsteğe Bağlı)",
+        "endpointDescription": "MinIO gibi S3 uyumlu hizmetler için",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Mevcut kimlik bilgilerini korumak için boş bırakın",
+        "lastVerified": "Son doğrulama: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "region": "Bölge",
+        "regionDescription": "Bucket'ınızın bulunduğu AWS bölgesi",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Yapılandırmayı Kaydet",
+        "saveError": "Yapılandırma kaydedilemedi",
+        "saveSuccess": "Yapılandırma kaydedildi",
+        "saveSuccessDescription": "S3 depolama ayarlarınız kaydedildi",
+        "saving": "Kaydediliyor...",
+        "secretAccessKey": "Gizli Erişim Anahtarı",
+        "secretKeyDescription": "AWS gizli erişim anahtarınız",
+        "testConnection": "Bağlantıyı Test Et",
+        "testFailed": "Bağlantı testi başarısız oldu",
+        "testing": "Test ediliyor...",
+        "title": "S3 Depolama Yapılandırması",
+        "unexpectedError": "Beklenmedik bir hata oluştu",
+        "verified": "Doğrulandı"
+      },
+      "storageNotConfigured": {
+        "description": "Dışa aktarımları oluşturmadan önce S3 depolama alanını yapılandırın",
+        "title": "Depolama Yapılandırılmadı"
+      },
+      "tabs": {
+        "exportHistory": "Dışa Aktarma Geçmişi",
+        "newExport": "Yeni Dışa Aktarma",
+        "storageSettings": "Depolama Ayarları"
+      },
+      "title": "Veri Dışa Aktarma"
+    },
+    "emailConfig": {
+      "description": "Kuruluş e-postaları için özel bir e-posta sağlayıcısı yapılandırın",
+      "title": "E-posta Yapılandırması"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Sistem şablonuna sıfırla",
+        "save": "Kaydet",
+        "sendTest": "Test gönder"
+      },
+      "defaultFallback": "Varsayılan yedek",
+      "defaultFallbackDescription": "Bu şablon sistem varsayılanını kullanıyorsa, Z8 sistem kopyasını ve konusunu gönderir:",
+      "description": "Kuruluşunuzun gönderdiği e-postaları özelleştirin",
+      "editBodyBeforeSaving": "İlk özel şablonu kaydetmeden önce e-posta gövdesini düzenleyin.",
+      "empty": "Bu kuruluş için kullanılabilir e-posta şablonu yok.",
+      "eyebrow": "Operasyonel iletişimler",
+      "reset": "E-posta şablonu sistem şablonuna sıfırlandı",
+      "resetFailed": "E-posta şablonu sıfırlanamadı",
+      "saved": "E-posta şablonu kaydedildi",
+      "saveFailed": "E-posta şablonu kaydedilemedi",
+      "status": {
+        "customized": "Özelleştirilmiş",
+        "default": "Varsayılan"
+      },
+      "systemTemplates": "Sistem şablonları",
+      "testFailed": "Test e-postası gönderilemedi",
+      "testSent": "Test e-postası hesabınıza gönderildi",
+      "title": "E-posta Şablonları"
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Ayarlara Geri Dön",
+        "tryAgain": "Tekrar Dene"
+      },
+      "description": "Ayarlar sayfası yüklenirken bir hata oluştu. Bu geçici bir sorun olabilir.",
+      "errorId": "Hata Kimliği: {{digest}}",
+      "title": "Bir şeyler ters gitti"
+    },
+    "export": {
+      "description": "Yedekleme veya taşıma için kuruluş verilerini dışa aktarın",
+      "title": "Veri Dışa Aktarma"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Denetim dışa aktarma isteği kaydedildi.",
+          "title": "Denetim dışa aktarma"
+        },
+        "payroll": {
+          "description": "Bordro dışa aktarma işi kaydedildi.",
+          "title": "Bordro dışa aktarma"
+        },
+        "scheduled": {
+          "description": "Zamanlanmış dışa aktarma işlemi kaydedildi.",
+          "title": "Zamanlanmış dışa aktarma"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "En son denetim dışa aktarma isteği tamamlanamadı.",
+          "title": "Denetim dışa aktarma başarısız oldu"
+        },
+        "blockedSchedule": {
+          "description": "{name}, çalışabilmesi için bir bordro dışa aktarma yapılandırmasına ihtiyaç duyuyor.",
+          "title": "Zamanlanmış bordro dışa aktarma engellendi"
+        },
+        "payrollFailed": {
+          "description": "En son bordro dışa aktarma işlemi tamamlanamadı.",
+          "title": "Bordro dışa aktarma başarısız oldu"
+        },
+        "scheduledFailed": {
+          "description": "{name} başarıyla tamamlanamadı.",
+          "title": "Zamanlanmış dışa aktarma başarısız oldu"
+        }
+      },
+      "description": "Kuruluşunuz için bordro, denetim ve zamanlanmış dışa aktarma etkinliklerini izleyin.",
+      "errors": {
+        "alerts": "Dışa aktarma verileri mevcut olmadığında bazı uyarılar eksik olabilir.",
+        "recentActivity": "Bazı etkinlik verileri geçici olarak kullanılamıyor.",
+        "summary": "Sayılar, yüklenebilen dışa aktarma verilerine dayanmaktadır.",
+        "upcomingRuns": "Zamanlanmış dışa aktarma verileri geçici olarak kullanılamıyor."
+      },
+      "title": "Dışa Aktarma İşlemleri"
+    },
+    "group": {
+      "account": "Hesap",
+      "administration": "Yönetim",
+      "data": "Veri",
+      "enterprise": "Kurumsal",
+      "notifications": "Bildirimler",
+      "organization": "Kuruluş"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Tamamlandı olarak işaretle",
+        "markIncomplete": "Tamamlanmadı olarak işaretle"
+      },
+      "description": "Zaman takibi, onaylar ve bordro iş akışlarının günlük kullanıma hazır olması için tüm ekibinizi davet etmeden önce kurulum adımlarını tamamlayın.",
+      "errors": {
+        "updateItem": "Kontrol listesi öğesi güncellenemedi."
+      },
+      "eyebrow": "Müşteri uygulaması",
+      "progress": {
+        "ariaLabel": "Uygulama kontrol listesi ilerlemesi",
+        "completedCount": "{{total}} üzerinden {{completed}} tamamlandı",
+        "label": "Kurulum ilerlemesi",
+        "percentComplete": "%{{percent}} tamamlandı"
+      },
+      "status": {
+        "complete": "Tamamla",
+        "manuallyComplete": "Manuel olarak tamamla",
+        "needsReview": "İnceleme gerekiyor",
+        "notStarted": "Başlatılmadı"
+      },
+      "title": "Uygulama kontrol listesi"
+    },
+    "import": {
+      "description": "Clockodo ve Clockin gibi desteklenen sağlayıcılardan veri içe aktarın.",
+      "review": {
+        "commitAccepted": "Kabul edilen satırları kaydet",
+        "commitFailed": "İçe aktarma kaydı başlatılamadı",
+        "commitQueued": "{count} kabul edilen satır kayıt için sıraya alındı",
+        "committing": "Kaydediliyor...",
+        "description": "Hazırlanan içe aktarma satırlarını inceleyin, engelleyici sorunları çözün ve toplu işlem hazır olduğunda kabul edilen kayıtları kaydedin.",
+        "issueGroups": {
+          "currentMarkers": "Mevcut satırlar {blockingRows} engelleyici ve {warningRows} uyarı işareti içeriyor.",
+          "description": "Gruplandırılmış inceleme alanları, kabul edilen satırlar kaydedilmeden önce kalite kontrollerinin görünür kalmasına yardımcı olur.",
+          "title": "Sorun grupları"
+        },
+        "rows": {
+          "empty": "Bu içe aktarma grubu için hazırlanan satır bulunmuyor.",
+          "entity": "Varlık",
+          "rowId": "Satır Kimliği",
+          "sourceId": "Kaynak Kimliği",
+          "status": "Durum",
+          "title": "Satırlar"
+        },
+        "title": "İçe Aktarma İncelemesi"
+      },
+      "title": "Veri İçe Aktar"
+    },
+    "licenses": {
+      "footer": "Bu uygulama açık kaynaklı yazılım kullanmaktadır. Bu paketlerin tüm sürdürücülerine ve katkıda bulunanlarına teşekkür ederiz.",
+      "homepage": "Ana Sayfa",
+      "license": "Lisans",
+      "licenseTypesCount": "{count} lisans türü",
+      "links": "Bağlantılar",
+      "noPackages": "Paket bulunamadı.",
+      "package": "Paket",
+      "packagesCount": "{count} paket",
+      "repository": "Depo",
+      "searchPlaceholder": "Paketleri veya lisansları ara...",
+      "unknown": "Bilinmiyor"
+    },
+    "locations": {
+      "address": "Adres",
+      "assignEmployee": "Çalışan Ata",
+      "assignEmployeeDescription": "Bu konum için bir yönetici olarak çalışan atayın",
+      "assignEmployeeToSubarea": "Alt Alana Çalışan Ata",
+      "assignEmployeeToSubareaDescription": "{subareaName} için yönetici olarak bir çalışan atayın",
+      "backToList": "Konumlara Geri Dön",
+      "create": "Konum Oluştur",
+      "created": "Konum oluşturuldu",
+      "createFailed": "Konum oluşturulamadı",
+      "deleted": "Konum silindi",
+      "deleteDescription": "Bu konumu silmek istediğinizden emin misiniz? Bu işlem tüm alt alanları ve çalışan atamalarını da silecektir.",
+      "deleteFailed": "Konum silinemedi",
+      "deleteSubareaDescription": "Bu alt alanı silmek istediğinizden emin misiniz? Bu işlem tüm çalışan atamalarını da kaldıracaktır.",
+      "deleteSubareaTitle": "Alt Alanı Sil",
+      "deleteTitle": "Konumu Sil",
+      "description": "Kuruluş konumlarını ve alt alanlarını yönetin",
+      "details": "Konum Detayları",
+      "dialog": {
+        "create": "Konum Oluştur",
+        "createDescription": "Kuruluşunuz için yeni bir konum oluşturun",
+        "createTitle": "Konum Oluştur",
+        "editDescription": "Konum detaylarını güncelle",
+        "editTitle": "Konumu Düzenle",
+        "save": "Değişiklikleri Kaydet"
+      },
+      "employee": "Çalışan",
+      "employeeAssigned": "Çalışan atandı",
+      "employeeAssignFailed": "Çalışan atanamadı",
+      "employeeRemoved": "Çalışan kaldırıldı",
+      "employeeRemoveFailed": "Çalışan kaldırılamadı",
+      "field": {
+        "active": "Aktif",
+        "activeHelp": "İnaktif konumlar seçim listelerinde görünmeyecektir",
+        "city": "Şehir",
+        "cityPlaceholder": "ör. İstanbul",
+        "cityPostal": "Şehir / Posta Kodu",
+        "country": "Ülke Kodu",
+        "countryHelp": "ISO 3166-1 alpha-2 kodu",
+        "countryPlaceholder": "ör. TR, US, DE",
+        "name": "İsim",
+        "namePlaceholder": "ör. Merkez Ofis",
+        "postalCode": "Posta Kodu",
+        "postalCodePlaceholder": "ör. 34000",
+        "street": "Sokak/Cadde",
+        "streetPlaceholder": "ör. Ana Cadde No: 123",
+        "subareaActiveHelp": "İnaktif alt alanlar seçim listelerinde görünmeyecektir",
+        "subareaName": "İsim",
+        "subareaNamePlaceholder": "ör. Kasa, Depo, Bistro"
+      },
+      "name": "İsim",
+      "noAvailableEmployees": "Tüm çalışanlar zaten bu konuma atanmış",
+      "noAvailableEmployeesSubarea": "Tüm çalışanlar zaten bu alt alana atanmış",
+      "noLocations": "Henüz konum yok",
+      "noLocationsDescription": "Çalışma alanınızı düzenlemek için ilk konumunuzu oluşturun.",
+      "noSubareas": "Henüz alt alan yok",
+      "noSupervisors": "Atanmış süpervizör yok",
+      "notFound": "Konum bulunamadı",
+      "primary": "Birincil",
+      "primarySupervisor": "Birincil Süpervizör",
+      "primarySupervisorHelp": "Bu konum için ana süpervizör olarak işaretle",
+      "primarySupervisorSubareaHelp": "Bu alt alan için ana süpervizör olarak işaretle",
+      "selectEmployee": "Lütfen bir çalışan seçin",
+      "selectEmployeePlaceholder": "Bir çalışan seçin",
+      "subareaCreated": "Alt alan oluşturuldu",
+      "subareaCreateFailed": "Alt alan oluşturulamadı",
+      "subareaDeleted": "Alt alan silindi",
+      "subareaDeleteFailed": "Alt alan silinemedi",
+      "subareaDialog": {
+        "create": "Alt Alan Ekle",
+        "createDescription": "Bu konuma yeni bir alt alan ekleyin",
+        "createTitle": "Alt Alan Ekle",
+        "editDescription": "Alt alan detaylarını güncelle",
+        "editTitle": "Alt Alanı Düzenle",
+        "save": "Değişiklikleri Kaydet"
+      },
+      "subareas": "Alt alanlar",
+      "subareasDescription": "Bu konumdaki alanlar",
+      "subareaUpdated": "Alt alan güncellendi",
+      "subareaUpdateFailed": "Alt alan güncellenemedi",
+      "supervisors": "Denetçiler",
+      "supervisorsDescription": "Bu konuma atanan çalışanlar",
+      "title": "Konumlar",
+      "updated": "Konum güncellendi",
+      "updateFailed": "Konum güncellenemedi"
+    },
+    "notifications": {
+      "approvals": "Onay bildirimleri",
+      "approvalsDescription": "Onay isteklerini ve onay durumu güncellemelerini gönder.",
+      "commands": "Komutlar",
+      "commandsDescription": "Bu kanaldan desteklenen iş yeri komutlarına izin ver.",
+      "connectBeforeChanging": "Bildirim ayarlarını değiştirmeden önce bu entegrasyonu bağlayın veya yapılandırın.",
+      "dailyDigest": "Günlük özet",
+      "dailyDigestDescription": "Devamsızlıkların, programların ve bekleyen işlerin günlük özetini gönder.",
+      "description": "Nasıl ve ne zaman bildirim almak istediğinizi seçin",
+      "digestTime": "Özet zamanı",
+      "discord": {
+        "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın."
+      },
+      "escalations": "Yükseltmeler",
+      "escalationsDescription": "Yanıtlanmayan onay isteklerini yapılandırılan zaman aşımından sonra yükselt.",
+      "featureSettings": "Özellik Ayarları",
+      "featureSettingsDescription": "Bu kanal aracılığıyla hangi kuruluş bildirimlerinin ve komutlarının kullanılabilir olduğunu seçin.",
+      "hours": "saat",
+      "manageEnabledFeatures": "Bu entegrasyon için hangi bildirim özelliklerinin etkinleştirileceğini yönetin.",
+      "notConnected": "{channelName} bağlı değil",
+      "saved": "{channelName} bildirim ayarları kaydedildi",
+      "saveFailed": "{channelName} bildirim ayarları kaydedilemedi",
+      "saveSettings": "Ayarları Kaydet",
+      "slack": {
+        "description": "Kuruluşunuz için Slack bildirimlerini yapılandırın."
+      },
+      "status": {
+        "active": "Etkin",
+        "configured": "Yapılandırıldı",
+        "disabled": "Devre dışı",
+        "disconnected": "Bağlantı kesildi",
+        "error": "Hata",
+        "notConfigured": "Yapılandırılmadı",
+        "pending": "Bekliyor",
+        "unknown": "Bilinmeyen durum"
+      },
+      "teams": {
+        "description": "Kuruluşunuz için Microsoft Teams bildirimlerini yapılandırın."
+      },
+      "timeout": "Zaman aşımı",
+      "timezone": "Zaman dilimi",
+      "timezonePlaceholder": "Europe/Berlin…",
+      "title": "Bildirim Ayarları"
+    },
+    "organizations": {
+      "description": "Organizasyon üyelerini, davetleri ve ayrıntıları yönetin",
+      "notFound": {
+        "description": "Organizasyon bulunamadı veya erişiminiz yok.",
+        "title": "Organizasyon Bulunamadı"
+      },
+      "title": "Organizasyon"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Ekip başarıyla oluşturuldu",
+          "description": "Çalışanlarınızı düzenlemek için yeni bir ekip oluşturun",
+          "descriptionLabel": "Açıklama (İsteğe bağlı)",
+          "descriptionPlaceholder": "Bu ekibin kısa bir açıklaması",
+          "fallbackManagerHelp": "Bir ekip üyesinin doğrudan yöneticisi olmadığında onaylar için kullanılır.",
+          "fallbackManagerLabel": "Yedek Yönetici",
+          "fallbackManagerPlaceholder": "Bir yedek yönetici seçin",
+          "nameLabel": "Takım Adı",
+          "namePlaceholder": "Mühendislik, Satış, Pazarlama...",
+          "noFallbackManager": "Yedek yönetici yok",
+          "submit": "Takım Oluştur",
+          "title": "Takım Oluştur"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Parola Anahtarı Ekle",
+      "addedOn": "{date} tarihinde eklendi",
+      "addError": "Parola anahtarı eklenemedi",
+      "addSuccess": "Parola anahtarı başarıyla eklendi",
+      "defaultName": "Parola anahtarı {date}",
+      "deleteDialogDescription": "Bu parola anahtarı artık hesabınıza erişemeyecek. Bu işlem geri alınamaz.",
+      "deleteDialogTitle": "Parola Anahtarını Sil?",
+      "deleteError": "Parola anahtarı silinemedi",
+      "deleteSuccess": "Parola anahtarı başarıyla silindi",
+      "description": "Parolasız kimlik doğrulama için parola anahtarlarını yönetin",
+      "empty": "Yapılandırılmış parola anahtarı yok",
+      "emptyDescription": "Parolasız kimlik doğrulamayı etkinleştirmek için bir parola anahtarı ekleyin",
+      "loadError": "Parola anahtarları yüklenemedi",
+      "title": "Parola Anahtarları",
+      "unnamed": "İsimsiz Parola Anahtarı"
+    },
+    "profile": {
+      "avatarRemoved": "Avatar başarıyla kaldırıldı",
+      "avatarRemoveFailed": "Avatar kaldırılamadı",
+      "avatarSaveFailed": "Avatar kaydedilemedi",
+      "avatarUploaded": "Avatar başarıyla yüklendi",
+      "avatarUploadFailed": "Avatar yüklenemedi",
+      "birthday": {
+        "hint": "Doğum gününüz, sizinle birlikte kutlamamıza yardımcı olur",
+        "label": "Doğum Günü",
+        "placeholder": "Doğum gününüzü seçin"
+      },
+      "changePicture": "Resmi Değiştir",
+      "description": "Kişisel bilgilerinizi ve tercihlerinizi yönetin",
+      "email": "E-posta",
+      "emailReadonly": "E-posta değiştirilemez",
+      "firstName": "Ad",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Kadın",
+        "label": "Cinsiyet",
+        "male": "Erkek",
+        "other": "Diğer"
+      },
+      "helpImproveProduct": "Bu uygulamayı geliştirmemize yardımcı olun",
+      "helpImproveProductDescription": "Z8'i daha güvenilir ve kullanışlı hale getirebilmemiz için kullanım istatistiklerini paylaşın.",
+      "information": "Profil Bilgileri",
+      "informationDescription": "Kişisel bilgilerinizi ve profil resminizi güncelleyin",
+      "lastName": "Soyad",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Kişisel Bilgiler",
+      "pronouns": "Zamirler",
+      "pronouns.custom": "Özel zamirler",
+      "pronouns.customPlaceholder": "ör. xe/xem…",
+      "pronouns.placeholder": "Zamirleri seç",
+      "removePicture": "Resmi Kaldır",
+      "saving": "Kaydediliyor…",
+      "title": "Profil Ayarları",
+      "updateFailed": "Profil güncellenemedi",
+      "updateProfile": "Profili Güncelle",
+      "updateSuccess": "Profil başarıyla güncellendi",
+      "uploading": "Yükleniyor",
+      "uploadProfilePicture": "Profil resmi yükle"
+    },
+    "projects": {
+      "column": {
+        "budget": "Bütçe",
+        "customer": "Müşteri",
+        "deadline": "Teslim Tarihi",
+        "name": "İsim",
+        "status": "Durum",
+        "team": "Ekip"
+      },
+      "create": "Proje Oluştur",
+      "created": "Proje oluşturuldu",
+      "createFailed": "Proje oluşturulamadı",
+      "description": "Projeleri, bütçeleri, teslim tarihlerini ve zaman atamalarını yönetin",
+      "dialog": {
+        "create": "Proje Oluştur",
+        "createDescription": "Zaman takibi için yeni bir proje oluşturun",
+        "createTitle": "Proje Oluştur",
+        "editDescription": "Proje detaylarını güncelle",
+        "editTitle": "Projeyi Düzenle",
+        "save": "Değişiklikleri Kaydet"
+      },
+      "empty": {
+        "description": "Zaman takibine başlamak için ilk projenizi oluşturun.",
+        "title": "Henüz proje yok"
+      },
+      "field": {
+        "budget": "Bütçe (saat)",
+        "budgetHelp": "Sınırsız bütçe için boş bırakın",
+        "budgetPlaceholder": "ör. 100",
+        "clearColor": "Rengi temizle",
+        "color": "Renk",
+        "colorOption": "{color} rengini seç",
+        "customer": "Müşteri",
+        "customerPlaceholder": "Bir müşteri seçin",
+        "deadline": "Teslim Tarihi",
+        "description": "Açıklama",
+        "descriptionPlaceholder": "İsteğe bağlı proje açıklaması",
+        "name": "İsim",
+        "namePlaceholder": "Proje adını girin",
+        "noCustomer": "Müşteri yok",
+        "status": "Durum"
+      },
+      "list": {
+        "description": "Toplam {count} proje",
+        "title": "Tüm Projeler"
+      },
+      "title": "Projeler",
+      "updated": "Proje güncellendi",
+      "updateFailed": "Proje güncellenemedi"
+    },
+    "security": {
+      "description": "Parolanızı, iki faktörlü kimlik doğrulamayı, geçiş anahtarlarını ve aktif oturumları yönetin",
+      "title": "Güvenlik Ayarları",
+      "twoFactor": {
+        "backupCodesCopied": "Yedek kodlar panoya kopyalandı",
+        "backupCodesRegenerated": "Yedek kodlar yeniden oluşturuldu",
+        "cancel": "İptal",
+        "confirmPasswordToEnable": "İki faktörlü kimlik doğrulamayı etkinleştirmek için lütfen parolanızı onaylayın",
+        "confirmPasswordToRegenerate": "Yedek kodları yeniden oluşturmak için lütfen parolanızı onaylayın",
+        "continue": "Devam et",
+        "copyCodes": "Kodları Kopyala",
+        "description": "Hesabınıza ekstra bir güvenlik katmanı ekleyin",
+        "disable": "Devre dışı bırak",
+        "disable2fa": "2FA'yı Devre Dışı Bırak",
+        "disableDescription": "Bu işlem, hesabınızdaki ekstra güvenlik katmanını kaldıracaktır. Onaylamak için lütfen parolanızı girin.",
+        "disabledToast": "İki faktörlü kimlik doğrulama devre dışı bırakıldı",
+        "disableFailed": "2FA devre dışı bırakılamadı",
+        "disableTitle": "İki Faktörlü Kimlik Doğrulamayı Devre Dışı Bırak?",
+        "enable": "İki Faktörlü Kimlik Doğrulamayı Etkinleştir",
+        "enabledToast": "İki faktörlü kimlik doğrulama etkinleştirildi",
+        "enablePasswordRequiredDescription": "2FA'yı etkinleştirmek için lütfen parolanızı girin",
+        "enterAuthenticatorCode": "Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin",
+        "enterPasswordTitle": "Parolanızı Girin",
+        "enterSixDigitCode": "Lütfen 6 haneli bir kod girin",
+        "invalidCode": "Geçersiz kod",
+        "passwordLabel": "Parola",
+        "passwordPlaceholder": "Parolanızı girin…",
+        "passwordRequired": "Parola gerekli",
+        "regenerateBackupCodes": "Yedek Kodları Yeniden Oluştur",
+        "regenerateCodes": "Kodları Yeniden Oluştur",
+        "regenerateFailed": "Yedek kodlar yeniden oluşturulamadı",
+        "saveBackupCodesDescription": "Bu kodları güvenli bir yerde saklayın. Kimlik doğrulama uygulamanıza erişiminizi kaybederseniz hesabınıza girmek için bunları kullanabilirsiniz. Her kod yalnızca bir kez kullanılabilir.",
+        "saveBackupCodesTitle": "Yedek Kodlarınızı Kaydedin",
+        "savedCodes": "Bu Kodları Kaydettim",
+        "scanQrCode": "QR kodunu kimlik doğrulama uygulamanızla tarayın",
+        "setupFailed": "2FA kurulumu başarısız oldu",
+        "setupTitle": "İki Faktörlü Kimlik Doğrulamayı Kur",
+        "status": {
+          "disabled": "Devre dışı",
+          "enabled": "Etkin"
+        },
+        "title": "İki Faktörlü Kimlik Doğrulama",
+        "unexpectedError": "Beklenmedik bir hata oluştu",
+        "verificationFailed": "Doğrulama başarısız",
+        "verifyAndEnable": "Doğrula ve Etkinleştir"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{os} üzerinde {browser}",
+      "current": "Mevcut Oturum",
+      "description": "Farklı cihazlardaki aktif oturumlarınızı yönetin",
+      "devices": {
+        "desktop": "Masaüstü",
+        "mobile": "Mobil",
+        "tablet": "Tablet"
+      },
+      "none": "Aktif oturum yok",
+      "othersRevoked": "Diğer tüm oturumlar başarıyla sonlandırıldı",
+      "revoke": "Sonlandır",
+      "revokeAllFailed": "Diğer oturumlar sonlandırılamadı",
+      "revokeAllOthers": "Diğer Tüm Oturumları Sonlandır",
+      "revoked": "Oturum başarıyla sonlandırıldı",
+      "revokeFailed": "Oturum sonlandırılamadı",
+      "revoking": "Sonlandırılıyor…",
+      "securityTip": "Tanımadığınız bir oturum görürseniz, hemen iptal edin ve şifrenizi değiştirin.",
+      "signedIn": "Oturum açıldı",
+      "title": "Aktif Oturumlar",
+      "unknownBrowser": "Bilinmeyen Tarayıcı",
+      "unknownOs": "Bilinmeyen İşletim Sistemi"
+    },
+    "socialAccounts": {
+      "connect": "Bağlan",
+      "connected": "Bağlandı",
+      "connectedAs": "{accountId} olarak bağlandı",
+      "connectFailed": "Hesap bağlanamadı",
+      "connecting": "Bağlanıyor…",
+      "connectProvider": "{provider} hesabınızı bağlayın",
+      "description": "Daha kolay oturum açmak için sosyal medya hesaplarınızı bağlayın",
+      "disconnect": "Bağlantıyı kes",
+      "disconnectDescription": "Bu işlem sosyal medya hesabınızla olan bağlantıyı kaldıracaktır. İstediğiniz zaman tekrar bağlayabilirsiniz.",
+      "disconnectFailed": "Hesap bağlantısı kesilemedi",
+      "disconnectSuccess": "Hesap bağlantısı başarıyla kesildi",
+      "disconnectTitle": "Hesap Bağlantısı Kesilsin mi?",
+      "loadFailed": "Bağlı hesaplar yüklenemedi",
+      "title": "Sosyal Medya Hesapları",
+      "unexpectedError": "Beklenmedik bir hata oluştu"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Aktif Oturumlar",
+        "activeSessionsDescription": "Mevcut veritabanı oturumları",
+        "approvalRequests": "Onay İstekleri",
+        "approvedAbsences": "Onaylanmış İzinler",
+        "employees": "Çalışanlar",
+        "employeesDescription": "{active} aktif, {inactive} pasif",
+        "pendingAbsences": "Bekleyen İzinler",
+        "pendingCount": "{count} bekleyen",
+        "rejectedAbsences": "Reddedilen İzinler",
+        "teams": "Ekipler",
+        "thisMonth": "Bu Ay",
+        "timeEntries": "Zaman kayıtları",
+        "totalAbsences": "Toplam İzinler",
+        "totalTimeEntries": "Toplam Zaman Kaydı",
+        "vsLastMonth": "geçen aya göre"
+      },
+      "description": "Örneğinizle ilgili istatistikleri ve metrikleri görüntüleyin",
+      "lastUpdated": "Son güncelleme",
+      "loadError": "İstatistikler yüklenemedi",
+      "managerDescription": "Yönettiğiniz ekipler için salt okunur analizleri inceleyin.",
+      "sections": {
+        "absenceBreakdown": "İzin Dağılımı",
+        "activityMetrics": "Aktivite Metrikleri",
+        "coreCounts": "Temel Sayımlar",
+        "managedScope": "Yönetilen Ekip Kapsamı",
+        "systemHealth": "Sistem Sağlığı"
+      },
+      "title": "İstatistikler"
+    },
+    "timeFormat": {
+      "description": "Uygulama genelinde saatlerin nasıl gösterileceğini seçin.",
+      "label": "Zaman biçimi",
+      "options": {
+        "12h": "12 saatlik (08:00 ÖÖ)",
+        "24h": "24 saatlik (08:00)"
+      },
+      "save": "Zaman Biçimini Kaydet",
+      "title": "Zaman Biçimi",
+      "updateError": "Zaman biçimi güncellenirken bir hata oluştu",
+      "updateFailed": "Zaman biçimi güncellenemedi",
+      "updateSuccess": "Zaman biçimi başarıyla güncellendi"
+    },
+    "timezone": {
+      "currentTimePrefix": "{timezone} bölgesinde geçerli saat:",
+      "description": "Uygulama genelinde doğru tarih ve saat gösterimi için saat diliminizi ayarlayın",
+      "picker": {
+        "empty": "Saat dilimi bulunamadı.",
+        "groups": {
+          "africa": "Afrika",
+          "americas": "Amerika",
+          "asia": "Asya",
+          "australiaPacific": "Avustralya ve Pasifik",
+          "europe": "Avrupa",
+          "utcOther": "UTC/Diğer"
+        },
+        "labels": {
+          "africaCairo": "Doğu Avrupa Zaman Dilimi (Kahire)",
+          "africaJohannesburg": "Güney Afrika Zaman Dilimi (Johannesburg)",
+          "africaLagos": "Batı Afrika Zaman Dilimi (Lagos)",
+          "africaNairobi": "Doğu Afrika Zaman Dilimi (Nairobi)",
+          "americaAnchorage": "Alaska Zaman Dilimi (Anchorage)",
+          "americaBuenosAires": "Arjantin Zaman Dilimi (Buenos Aires)",
+          "americaChicago": "Merkezi Zaman Dilimi (Chicago)",
+          "americaDenver": "Dağ Zaman Dilimi (Denver)",
+          "americaLosAngeles": "Pasifik Zaman Dilimi (Los Angeles)",
+          "americaMexicoCity": "Merkezi Zaman Dilimi (Meksiko)",
+          "americaNewYork": "Doğu Zaman Dilimi (New York)",
+          "americaSaoPaulo": "Brasilia Zaman Dilimi (São Paulo)",
+          "americaToronto": "Doğu Zaman Dilimi (Toronto)",
+          "americaVancouver": "Pasifik Zaman Dilimi (Vancouver)",
+          "asiaBangkok": "Çinhindi Zaman Dilimi (Bangkok)",
+          "asiaDubai": "Körfez Standart Zaman Dilimi (Dubai)",
+          "asiaHongKong": "Hong Kong Zaman Dilimi (Hong Kong)",
+          "asiaKolkata": "Hindistan Standart Zaman Dilimi (Kalküta)",
+          "asiaSeoul": "Kore Standart Zaman Dilimi (Seul)",
+          "asiaShanghai": "Çin Standart Zaman Dilimi (Şanghay)",
+          "asiaSingapore": "Singapur Zaman Dilimi (Singapur)",
+          "asiaTokyo": "Japonya Standart Zaman Dilimi (Tokyo)",
+          "australiaBrisbane": "Avustralya Doğu Zaman Dilimi (Brisbane)",
+          "australiaMelbourne": "Avustralya Doğu Zaman Dilimi (Melbourne)",
+          "australiaPerth": "Avustralya Batı Zaman Dilimi (Perth)",
+          "australiaSydney": "Avustralya Doğu Zaman Dilimi (Sidney)",
+          "europeAmsterdam": "Orta Avrupa Zaman Dilimi (Amsterdam)",
+          "europeAthens": "Doğu Avrupa Zaman Dilimi (Atina)",
+          "europeBerlin": "Orta Avrupa Zaman Dilimi (Berlin)",
+          "europeBrussels": "Orta Avrupa Zaman Dilimi (Brüksel)",
+          "europeHelsinki": "Doğu Avrupa Zaman Dilimi (Helsinki)",
+          "europeIstanbul": "Türkiye Zaman Dilimi (İstanbul)",
+          "europeLondon": "GMT/BST (Londra)",
+          "europeMadrid": "Orta Avrupa Zaman Dilimi (Madrid)",
+          "europeMoscow": "Moskova Zaman Dilimi (Moskova)",
+          "europeParis": "Orta Avrupa Zaman Dilimi (Paris)",
+          "europeRome": "Orta Avrupa Zaman Dilimi (Roma)",
+          "europeStockholm": "Orta Avrupa Zaman Dilimi (Stokholm)",
+          "europeVienna": "Orta Avrupa Zaman Dilimi (Viyana)",
+          "europeWarsaw": "Orta Avrupa Zaman Dilimi (Varşova)",
+          "pacificAuckland": "Yeni Zelanda Zaman Dilimi (Auckland)",
+          "pacificHonolulu": "Hawaii Zaman Dilimi (Honolulu)",
+          "utc": "Eşgüdümlü Evrensel Zaman (UTC)"
+        },
+        "search": "Zaman dilimi ara…"
+      },
+      "save": "Zaman Dilimini Kaydet",
+      "title": "Zaman Dilimi",
+      "updateError": "Zaman dilimi güncellenirken bir hata oluştu",
+      "updateFailed": "Zaman dilimi güncellenemedi",
+      "updateSuccess": "Zaman dilimi başarıyla güncellendi"
+    },
+    "title": "Ayarlar",
+    "travelExpenses": {
+      "activeDescription": "Etkinleştirildiğinde, bu politika yeni talepler için varsayılan olarak geçerli olur.",
+      "activeLabel": "Etkin Politika",
+      "addPolicy": "Politika Ekle",
+      "created": "Seyahat gider politikası oluşturuldu",
+      "createPolicy": "Seyahat Gider Politikası Oluştur",
+      "currency": "Para Birimi",
+      "description": "Kilometre ve harcırah talepleri için geri ödeme oranlarını ve geçerlilik sürelerini yapılandırın.",
+      "dialogDescription": "Kilometre ve harcırah talepleri için geçerlilik tarihlerini ve varsayılan geri ödeme oranlarını ayarlayın.",
+      "editPolicy": "Seyahat Gider Politikasını Düzenle",
+      "effectiveFrom": "Başlangıç Tarihi",
+      "effectiveFromRequired": "Başlangıç tarihi zorunludur",
+      "effectiveTo": "Bitiş Tarihi",
+      "empty": "Henüz yapılandırılmış politika yok. İlk seyahat gider politikanızı oluşturun.",
+      "loading": "Politikalar yükleniyor…",
+      "mileageRate": "Kilometre / km",
+      "perDiemRate": "Harcırah / gün",
+      "policies": "Politikalar",
+      "policiesDescription": "Aynı anda yalnızca bir politika etkin olmalıdır. Etkin politika yeni talepler için kullanılır.",
+      "saveFailed": "Seyahat gider politikası kaydedilemedi",
+      "title": "Seyahat Gider Politikaları",
+      "updated": "Seyahat gider politikası güncellendi"
+    },
+    "webhooks": {
+      "description": "Gerçek zamanlı etkinlik bildirimleri almak için webhook uç noktalarını yapılandırın",
+      "title": "Webhook'lar"
+    },
+    "weekStart": {
+      "description": "Takvimlerin ve haftalık özetlerin Pazar mı yoksa Pazartesi günü mü başlayacağını seçin.",
+      "label": "Haftanın ilk günü",
+      "save": "Hafta Başlangıcını Kaydet",
+      "title": "Haftanın Başlangıcı",
+      "updateError": "Hafta başlangıç günü güncellenirken bir hata oluştu",
+      "updateFailed": "Hafta başlangıç günü güncellenemedi",
+      "updateSuccess": "Hafta başlangıç günü başarıyla güncellendi"
+    },
+    "wellness": {
+      "cardDescShort": "Çalışırken su içmeyi ihmal etmeyin",
+      "cardTitle": "Su Hatırlatıcıları",
+      "dailyGoal": "Günlük Hedef",
+      "description": "Çalışma oturumlarınız sırasında su hatırlatıcılarını ve hidrasyon takibini yapılandırın",
+      "glasses": "bardak",
+      "reminderFrequency": "Hatırlatıcı Sıklığı",
+      "saved": "Sağlık ayarları kaydedildi",
+      "saveError": "Sağlık ayarları kaydedilemedi",
+      "title": "Sağlık Ayarları"
+    },
+    "workBalanceRecalculation": {
+      "requestError": "İş dengesi yeniden hesaplama kuyruğa alınamadı",
+      "requestSuccess": "İş dengesi yeniden hesaplama kuyruğa alındı"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktif",
+        "activeDescription": "Şu anda işleniyor",
+        "completed": "Tamamlandı",
+        "completedDescription": "Yakın zamanda tamamlandı",
+        "delayed": "Gecikmeli",
+        "delayedDescription": "Daha sonrası için zamanlandı",
+        "failed": "Başarısız",
+        "failedDescription": "Yakın zamanda başarısız oldu",
+        "paused": "Duraklatıldı",
+        "pausedDescription": "Duraklatılmış işler",
+        "waiting": "Bekliyor",
+        "waitingDescription": "İşlenmeyi bekleyen işler"
+      },
+      "common": {
+        "unknown": "Bilinmiyor"
+      },
+      "connected": "Bağlandı",
+      "description": "Arka plan işi işlemeyi ve cron işi yürütmelerini izleyin",
+      "disconnected": "Bağlantı kesildi",
+      "lastUpdated": "Son güncelleme",
+      "loadError": "Kuyruk durumu yüklenemedi",
+      "noExecutions": "Yakın zamanda gerçekleştirilen bir işlem bulunamadı",
+      "noScheduledJobs": "Zamanlanmış iş bulunamadı",
+      "recentExecutions": {
+        "allJobs": "Tüm işler",
+        "error": "Yürütmeler yüklenemedi",
+        "filterLabel": "İşe göre filtrele",
+        "loading": "Yürütmeler yükleniyor…"
+      },
+      "recentExecutionsDescription": "Veritabanında izlenen son 50 iş yürütmesi.",
+      "reliability": {
+        "averageDuration": "Ortalama süre",
+        "avgDuration": "Ort. Süre",
+        "avgDurationDescription": "Süre verisi olan yürütmeler",
+        "completed": "Tamamlandı",
+        "durationTrend": "Süre Eğilimi",
+        "durationTrendDescription": "Süre verisi bildiren yürütmeler için ortalama çalışma süresi.",
+        "failed": "Başarısız",
+        "failedRuns": "Başarısız Çalıştırmalar",
+        "failedRunsDescription": "Son 30 gün",
+        "failing": "Başarısız oluyor",
+        "healthy": "Sağlıklı",
+        "jobHealth": "İş Sağlığı",
+        "jobHealthDescription": "Yakın zamandaki yürütmelere ve tekrarlanabilir zamanlamalara dayalı iş bazlı güvenilirlik.",
+        "noDurationData": "Bu dönem için süre verisi mevcut değil.",
+        "noExecutionHistory": "Bu dönem için cron yürütme geçmişi mevcut değil.",
+        "noJobs": "Güvenilirlik verisi bulunamadı",
+        "runOutcomes": "Çalıştırma Sonuçları",
+        "runOutcomesDescription": "Son {days} gün içindeki tamamlanan ve başarısız olan cron yürütmeleri.",
+        "stale": "Eski",
+        "staleJobs": "Eski İşler",
+        "staleJobsDescription": "Beklenen zamanlamayı geçmiş",
+        "successRate": "Başarı oranı",
+        "successRateDescription": "Terminal cron yürütmeleri",
+        "title": "Güvenilirlik",
+        "unknown": "Bilinmiyor",
+        "warning": "Uyarı"
+      },
+      "scheduledJobsDescription": "Worker'da yapılandırılmış tekrarlanabilir işler. Bunlar zamanlamaya göre otomatik olarak çalışır.",
+      "sections": {
+        "jobMetrics": "İş Metrikleri (Son 30 Gün)",
+        "queueCounts": "Kuyruk Durumu",
+        "recentExecutions": "Son Çalıştırmalar",
+        "scheduledJobs": "Zamanlanmış Cron İşleri"
+      },
+      "status": {
+        "completed": "Tamamlandı",
+        "failed": "Başarısız",
+        "pending": "Beklemede",
+        "running": "Çalışıyor"
+      },
+      "table": {
+        "avgDuration": "Ortalama Süre",
+        "duration": "Süre",
+        "error": "Hata",
+        "failed": "Başarısız",
+        "health": "Sağlık",
+        "jobName": "İş Adı",
+        "lastRun": "Son Çalıştırma",
+        "nextRun": "Sonraki Çalıştırma",
+        "schedule": "Zamanlama",
+        "startedAt": "Başlangıç Zamanı",
+        "status": "Durum",
+        "successful": "Başarılı",
+        "successRate": "Başarı Oranı",
+        "totalRuns": "Toplam Çalıştırma"
+      },
+      "title": "Çalışan Kuyruğu"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Kategori isimleri",
+        "grouped": "Gruplandırılmış",
+        "hidden": "Gizli"
+      },
+      "absenceVisibility": "Devamsızlık görünürlüğü",
+      "description": "Gizlilik odaklı iş konseyi erişimini ve inceleme dışa aktarımlarını yapılandırın",
+      "exportEnabled": "İnceleme dışa aktarımlarını etkinleştir",
+      "exportEnabledDescription": "Yetkili iş konseyi kullanıcılarının gizlilik filtresi uygulanmış inceleme paketleri oluşturmasına izin verin.",
+      "formDescription": "Bu kuruluş için gizlilik odaklı iş konseyi erişimini ve inceleme dışa aktarımlarını yapılandırın.",
+      "identity": {
+        "aggregated": "Toplanmış",
+        "named": "İsimlendirilmiş",
+        "pseudonymized": "Takma adlandırılmış"
+      },
+      "identityVisibility": "Kimlik görünürlüğü",
+      "minimumThreshold": "Minimum toplama eşiği",
+      "minimumThresholdDescription": "Yeniden tanımlama riskini azaltmak için bu boyutun altındaki gruplar gizlenir.",
+      "save": "Ayarları kaydet",
+      "saved": "İş Konseyi ayarları kaydedildi",
+      "saveError": "İş Konseyi ayarları kaydedilemedi",
+      "title": "İş Konseyi Modu",
+      "visibleLocationIds": "Görünür konum kimlikleri",
+      "visibleLocationIdsDescription": "İsteğe bağlı virgülle ayrılmış konum kimlikleri. Tüm konumları dahil etmek için boş bırakın.",
+      "visibleTeamIds": "Görünür ekip kimlikleri",
+      "visibleTeamIdsDescription": "İsteğe bağlı virgülle ayrılmış ekip kimlikleri. Tüm ekipleri dahil etmek için boş bırakın."
+    }
+  }
+}

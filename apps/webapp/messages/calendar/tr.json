@@ -1,0 +1,264 @@
+{
+  "absences": {
+    "addAbsence": "Devamsızlık ekle",
+    "balance": {
+      "carryoverDays": "{count} gün devreden izniniz var",
+      "carryoverExpiry": "son kullanma tarihi",
+      "carryoverFrom": "{year} yılından devreden",
+      "daysRemaining": "Kalan Günler",
+      "description": "Mevcut yıl için tatil günleriniz",
+      "outOfTotalDays": "toplam {totalDays} gün içinden",
+      "pending": "Beklemede",
+      "title": "Tatil Bakiyesi {year}",
+      "used": "Kullanılan"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Onaylandı",
+        "halfDayAm": "Yarım gün (ÖÖ)",
+        "halfDayPm": "Yarım gün (ÖS)",
+        "holiday": "Tatil",
+        "pending": "Beklemede",
+        "rejected": "Reddedildi"
+      },
+      "nextYear": "Gelecek yıl",
+      "previousYear": "Geçen yıl"
+    },
+    "dialog": {
+      "cancelDescription": "Bu izin talebini iptal etmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "cancelTitle": "İzin Talebini İptal Et",
+      "confirmCancel": "Evet, talebi iptal et"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Tatil İzni Yapılandırılmamış",
+      "allowanceNotConfiguredMessage": "Kuruluşunuz henüz {currentYear} yılı için tatil izinlerini yapılandırmadı.",
+      "contactAdmin": "Tatil politikalarını yapılandırmak için lütfen yöneticinizle iletişime geçin."
+    },
+    "featureName": "izinleri yönet",
+    "form": {
+      "absenceType": "İzin Türü *",
+      "autoApproved": "(Otomatik onaylı)",
+      "balanceAfterRequest": "Talep sonrası bakiye:",
+      "businessDays": "İş günü:",
+      "daysRemaining": "Kalan gün:",
+      "description": "İzin talebinde bulunun. Yöneticiniz onay için bilgilendirilecektir.",
+      "duration": "İzin süresi",
+      "duration.fullDay": "Tam gün",
+      "duration.partialDay": "Yarım gün",
+      "endDate": "Bitiş Tarihi *",
+      "endDateHelper": "Aynı günlü bir izin için boş bırakın.",
+      "endTime": "Bitiş saati",
+      "errors": {
+        "fillRequiredFields": "Lütfen tüm zorunlu alanları doldurun",
+        "insufficientBalance": "Yetersiz tatil bakiyesi",
+        "insufficientBalanceForRequest": "Bu talep için yetersiz tatil bakiyesi",
+        "invalidSelection": "Lütfen seçiminizi kontrol edin ve tekrar deneyin"
+      },
+      "notesOptional": "Notlar (İsteğe bağlı)",
+      "notesPlaceholder": "Ek bilgi ekleyin...",
+      "selectAbsenceType": "İzin türünü seçin",
+      "sickDetail": "Hastalık detayı *",
+      "sickDetailPlaceholder": "Hastalık detayı seçin",
+      "startDate": "Başlangıç Tarihi *",
+      "startTime": "Başlangıç saati",
+      "submitRequest": "Talep Gönder",
+      "title": "İzin İste"
+    },
+    "period": {
+      "am": "ÖÖ",
+      "pm": "ÖS"
+    },
+    "planPreview": {
+      "affectedShift": "etkilenen vardiya",
+      "approval": "Onay",
+      "balance": "Bakiye",
+      "balanceUnavailable": "Bakiye kullanılamıyor",
+      "countsAgainstVacationBalance": "İzin bakiyesinden düşer",
+      "coverage": "Kapsam",
+      "coverageStaffAfterRequest": "Talep sonrası {after}/{minimum} personel",
+      "description": "Göndermeden önce bakiye, tatiller, kapsam ve onay sinyallerinin engelleyici olmayan bir kontrolü.",
+      "doesNotReduceVacationBalance": "İzin bakiyesini azaltmaz",
+      "holidays": "Tatiller",
+      "loading": "Bakiye, tatiller ve kapsam kontrol ediliyor…",
+      "noApprovalWarnings": "Onay uyarısı yok",
+      "noCoverageRisk": "Yayınlanmış kapsam riski yok",
+      "noCoverageRulesConfigured": "Etkilenen vardiyalar için yapılandırılmış kapsam kuralı yok",
+      "noHolidays": "Aralıkta atanmış tatil yok",
+      "remainingAfter": "Talep sonrası kalan",
+      "requested": "Talep edildi",
+      "title": "Akıllı planlayıcı",
+      "unavailable": "Planlama önizlemesi kullanılamıyor. Talebinizi yine de gönderebilirsiniz."
+    },
+    "requestAbsence": "İzin İste",
+    "status": {
+      "approved": "Onaylandı",
+      "pending": "Beklemede",
+      "rejected": "Reddedildi"
+    },
+    "subtitle": "İzin ve tatil günlerinizi yönetin",
+    "table": {
+      "cancelAbsence": "İzni iptal et",
+      "cancelAbsenceTooltip": "İzni iptal et",
+      "end": "Bitiş",
+      "headers": {
+        "actions": "İşlemler",
+        "dateRange": "Tarih Aralığı",
+        "days": "Günler",
+        "notes": "Notlar",
+        "status": "Durum",
+        "type": "Tür"
+      },
+      "noRequests": "İzin talebi bulunamadı.",
+      "noSearchResults": "Aramanızla eşleşen devamsızlık bulunamadı.",
+      "searchPlaceholder": "Türe, duruma veya notlara göre ara...",
+      "start": "Başlangıç",
+      "subtitle": "Son ve yaklaşan izin talepleri",
+      "title": "İzin Talepleriniz"
+    },
+    "title": "İzinler",
+    "toast": {
+      "cancelFailed": "İzin talebi iptal edilemedi",
+      "requestCancelled": "İzin talebi iptal edildi",
+      "requestFailed": "İzin talebi gönderilemedi",
+      "requestSubmitted": "İzin talebi başarıyla gönderildi"
+    },
+    "view": {
+      "calendar": "Takvim",
+      "table": "Tablo"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Zaman kayıtları engellendi",
+      "category": "Kategori",
+      "duration": "Süre",
+      "employee": "Çalışan",
+      "noEvents": "Bu gün için etkinlik yok",
+      "recurring": "Yinelenen tatil",
+      "selectDate": "Detayları görmek için bir tarih seçin",
+      "status": "Durum",
+      "title": "Gün Detayları"
+    },
+    "delete": {
+      "auditNote": "Zaman kayıtları denetim amacıyla silinmiş olarak işaretlenecektir.",
+      "confirm": "Molaya Dönüştür",
+      "description": "Bu işlem çalışma dönemini kalıcı olarak silecektir. Boşluk takvimde mola olarak görünecektir.",
+      "failed": "Çalışma dönemi silinemedi",
+      "success": "Çalışma dönemi molaya dönüştürüldü",
+      "title": "Molaya Dönüştürülsün mü?"
+    },
+    "details": {
+      "baseWorked": "Temel çalışma",
+      "blocksTimeEntry": "Zaman takibini engeller",
+      "category": "Kategori",
+      "credited": "Kredilendirildi",
+      "dateRange": "Tarih Aralığı",
+      "duration": "Süre",
+      "employee": "Çalışan",
+      "notes": "Notlar",
+      "periods": "Çalışma Dönemleri",
+      "project": "Proje",
+      "recurring": "Yıllık yinelenen",
+      "status": "Durum",
+      "surcharge": "Ek Ücret",
+      "surchargeBreakdown": "Ek Ücret Dökümü",
+      "time": "Zaman",
+      "type": "Tür"
+    },
+    "edit": {
+      "convertToBreak": "Molaya Dönüştür",
+      "notesSaved": "Notlar kaydedildi",
+      "notesSaveFailed": "Notlar kaydedilemedi",
+      "projectSaved": "Proje güncellendi",
+      "projectSaveFailed": "Proje güncellenemedi",
+      "split": "Böl"
+    },
+    "employeeSelector": {
+      "error": "Ekip üyeleri yüklenemedi",
+      "label": "Takvimi Görüntüle",
+      "myCalendar": "Takvimim",
+      "placeholder": "Ekip üyesi seç..."
+    },
+    "entryType": {
+      "clockIn": "Giriş Yap",
+      "clockOut": "Çıkış Yap",
+      "correction": "Düzeltme"
+    },
+    "eventType": {
+      "absence": "Devamsızlık",
+      "holiday": "Tatil",
+      "timeEntry": "Zaman Kaydı",
+      "workPeriod": "Çalışma Dönemi"
+    },
+    "filter": {
+      "absences": "Devamsızlıklar",
+      "holidays": "Tatiller",
+      "timeEntries": "Zaman Kayıtları",
+      "workPeriods": "Çalışma Dönemleri"
+    },
+    "filters": {
+      "title": "Filtreler"
+    },
+    "legend": {
+      "absence": "Devamsızlık",
+      "holiday": "Tatil",
+      "missingRequiredWork": "Gerekli çalışma eksik",
+      "requirementMetOrOver": "Gereksinim karşılandı/aşıldı",
+      "timeEntry": "Zaman Kaydı",
+      "title": "Gösterge",
+      "underRequirement": "Gereksinimin altında",
+      "workPeriod": "Çalışma Dönemi",
+      "workPeriodPending": "Onay Bekliyor"
+    },
+    "monthSummary": {
+      "calendarWeek": "Takvim Haftası",
+      "description": "Günlük, haftalık ve aylık politika saatleri",
+      "emptyMonth": "Bu ayda politika saati yok",
+      "monthTotal": "Ay toplamı",
+      "nextMonth": "Gelecek ay",
+      "previousMonth": "Önceki ay",
+      "totalDescription": "Politika saatleri ile karşılaştırılan kaydedilmiş zaman",
+      "weekSum": "Toplam"
+    },
+    "split": {
+      "confirm": "Çalışma Dönemini Böl",
+      "currentPeriod": "Mevcut Çalışma Dönemi",
+      "description": "Bu çalışma dönemini iki ayrı oturuma bölün.",
+      "failed": "Çalışma dönemi bölünemedi",
+      "firstNotes": "İlk dönem için notlar (isteğe bağlı)",
+      "firstPeriod": "İlk Dönem",
+      "invalidTime": "Bölünme zamanı, başlangıç ve bitiş zamanları arasında olmalıdır",
+      "preview": "Önizleme",
+      "secondNotes": "İkinci dönem için notlar (isteğe bağlı)",
+      "secondPeriod": "İkinci Dönem",
+      "splitAt": "Bölünme zamanı",
+      "success": "Çalışma dönemi başarıyla bölündü",
+      "title": "Çalışma Dönemini Böl"
+    },
+    "status": {
+      "approved": "Onaylandı",
+      "pending": "Beklemede",
+      "rejected": "Reddedildi"
+    },
+    "view": {
+      "day": "Gün",
+      "loading": "Takvim yükleniyor…",
+      "month": "Ay",
+      "next": "Sonraki",
+      "previous": "Önceki",
+      "refresh": "Yenile",
+      "today": "Bugün",
+      "week": "Hafta",
+      "year": "Yıl"
+    },
+    "workStatus": {
+      "overRequirement": "gereksinimin üzerinde",
+      "requiredHoursMissing": "gerekli saatler eksik",
+      "requirementMet": "gereksinim karşılandı",
+      "underRequirement": "gereksinimin altında"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

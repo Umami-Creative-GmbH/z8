@@ -1,0 +1,80 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nowy wniosek"
+    },
+    "approvals": {
+      "description": "Otwórz ujednoliconą skrzynkę odbiorczą zatwierdzeń przefiltrowaną pod kątem wydatków podróży.",
+      "openInbox": "Otwórz skrzynkę odbiorczą",
+      "title": "Przejrzyj oczekujące zatwierdzenia wydatków podróży"
+    },
+    "claimTypes": {
+      "mileage": "Przebieg",
+      "per_diem": "Dieta",
+      "receipt": "Rachunek"
+    },
+    "decision": {
+      "approve": "Zatwierdź",
+      "approved": "Wniosek został pomyślnie zatwierdzony",
+      "approveDescription": "Dodaj opcjonalną notatkę dla wnioskodawcy przed zatwierdzeniem.",
+      "approveTitle": "Zatwierdź wniosek",
+      "errors": {
+        "approve": "Nie udało się zatwierdzić wniosku",
+        "missingClaim": "Brakuje wniosku o zwrot kosztów podróży",
+        "reject": "Nie udało się odrzucić wniosku",
+        "rejectionReason": "Proszę podać powód odrzucenia"
+      },
+      "noteOptional": "Notatka (opcjonalnie)",
+      "notePlaceholder": "Wygląda dobrze. Dziękuję za szczegóły.",
+      "reasonPlaceholder": "Brak szczegółów rachunku dla przesłanej kwoty",
+      "reasonRequired": "Powód (wymagane)",
+      "reject": "Odrzuć",
+      "rejectDescription": "Podaj jasny powód, aby pomóc wnioskodawcy zaktualizować i ponownie przesłać wniosek.",
+      "rejected": "Wniosek został pomyślnie odrzucony",
+      "rejectTitle": "Odrzuć wniosek"
+    },
+    "description": "Twórz i śledź swoje wnioski o zwrot kosztów podróży",
+    "errors": {
+      "loadClaims": "Nie udało się załadować wniosków o zwrot kosztów podróży"
+    },
+    "feature": "zarządzaj wydatkami podróży",
+    "form": {
+      "amount": "Kwota",
+      "claimType": "Typ wniosku",
+      "created": "Utworzono szkic wydatków podróży",
+      "createDraft": "Utwórz szkic",
+      "currency": "Waluta",
+      "currencyDescription": "Kod ISO 4217, np. EUR lub USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Utwórz nowy szkic wniosku dla swoich ostatnich wydatków podróży.",
+      "destinationCity": "Miasto docelowe",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Kraj docelowy",
+      "destinationCountryPlaceholder": "Niemcy",
+      "errors": {
+        "createDraft": "Nie udało się utworzyć szkicu wydatków podróży",
+        "positiveAmount": "Kwota musi być liczbą dodatnią",
+        "tripEndBeforeStart": "Data zakończenia podróży nie może być wcześniejsza niż data rozpoczęcia",
+        "validTripDates": "Proszę podać prawidłową datę rozpoczęcia i zakończenia podróży",
+        "validTripEnd": "Proszę podać prawidłową datę zakończenia podróży",
+        "validTripStart": "Proszę podać prawidłową datę rozpoczęcia podróży"
+      },
+      "notes": "Notatki",
+      "notesPlaceholder": "Dodaj opcjonalny kontekst dla osoby zatwierdzającej",
+      "receiptAttachmentHint": "Wnioski oparte na rachunkach wymagają co najmniej jednego załącznika. Przesyłanie załączników będzie możliwe po utworzeniu szkicu.",
+      "selectClaimType": "Wybierz typ wniosku",
+      "title": "Utwórz wniosek o zwrot kosztów podróży",
+      "tripEnd": "Koniec podróży",
+      "tripStart": "Początek podróży"
+    },
+    "list": {
+      "amount": "Kwota",
+      "dateRange": "Zakres dat",
+      "emptyDescription": "Utwórz swoje pierwsze roszczenie, aby rozpocząć proces zatwierdzania.",
+      "emptyTitle": "Brak jeszcze roszczeń dotyczących wydatków podróży",
+      "status": "Status",
+      "type": "Typ"
+    },
+    "title": "Wydatki podróży"
+  }
+}

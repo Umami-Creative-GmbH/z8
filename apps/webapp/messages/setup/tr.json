@@ -1,0 +1,46 @@
+{
+  "init": {
+    "activating": "Çalışma alanınız kuruluyor...",
+    "checking": "Oturum kontrol ediliyor...",
+    "clickToSelect": "Seçmek için tıklayın",
+    "redirecting": "Yönlendiriliyor...",
+    "selectOrganization": "Kuruluş Seçin",
+    "selectOrganizationDescription": "Hangi kuruluşla çalışmak istediğinizi seçin"
+  },
+  "setup": {
+    "button": {
+      "create": "Yönetici Hesabı Oluştur",
+      "creating": "Hesap oluşturuluyor..."
+    },
+    "complete_message": "Platform yönetici hesabınız oluşturuldu.",
+    "complete_title": "Kurulum Tamamlandı!",
+    "continue_to_sign_in": "Oturum Açmaya Devam Et",
+    "creating_account": "Yönetici hesabınız oluşturuluyor...",
+    "description": "Platformunuz için ilk yönetici hesabını kurun. Bu hesap tam sistem erişimine sahip olacak ve kuruluş hesaplarından ayrı olacaktır.",
+    "field": {
+      "confirm_password": "Şifreyi Onayla",
+      "confirm_password_placeholder": "Şifrenizi onaylayın",
+      "email": "E-posta Adresi",
+      "email_placeholder": "admin@sirketiniz.com",
+      "name": "Ad Soyad",
+      "name_placeholder": "Adınızı ve soyadınızı girin",
+      "password": "Şifre",
+      "password_placeholder": "Güçlü bir şifre oluşturun"
+    },
+    "hide_password": "Şifreyi gizle",
+    "layout": {
+      "subtitle": "Başlamak için platformunuzu yapılandırın",
+      "title": "İlk Kurulum"
+    },
+    "password": {
+      "lowercase": "Küçük harf",
+      "min_length": "12+ karakter",
+      "number": "Rakam",
+      "uppercase": "Büyük harf"
+    },
+    "please_wait": "Ayarlar yapılırken lütfen bekleyin",
+    "show_password": "Parolayı göster",
+    "sign_in_with": "Artık şununla giriş yapabilirsiniz:",
+    "title": "Platform Yöneticisi Oluştur"
+  }
+}

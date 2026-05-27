@@ -1,109 +1,107 @@
 {
+  "approval": {
+    "absenceRequest": "Abwesenheitsantrag",
+    "actions": {
+      "approve": "Genehmigen",
+      "approving": "Genehmigung läuft...",
+      "reject": "Ablehnen",
+      "rejecting": "Ablehnung läuft...",
+      "viewInZ8": "In Z8 anzeigen"
+    },
+    "durationDays": "{count, plural, one {# Tag} other {# Tage}}",
+    "facts": {
+      "approvedBy": "Genehmigt von",
+      "corrected": "Korrigiert",
+      "dates": "Datum",
+      "duration": "Dauer",
+      "email": "E-Mail",
+      "from": "Von",
+      "original": "Original",
+      "reason": "Grund",
+      "rejectedBy": "Abgelehnt von",
+      "resolved": "Gelöst",
+      "status": "Status",
+      "submitted": "Eingereicht",
+      "type": "Typ"
+    },
+    "status": {
+      "approved": "GENEHMIGT",
+      "rejected": "ABGELEHNT"
+    },
+    "timeCorrectionRequest": "Zeitkorrekturantrag"
+  },
   "commands": {
-    "coverage": {
-      "title": "Abdeckungsbericht",
-      "noData": "Keine geplanten Abdeckungsdaten für {date} gefunden.",
-      "summary": "{count} Standorte geprüft",
-      "understaffed": "Unterbesetzt um {count}",
-      "overstaffed": "Überbesetzt um {count}",
-      "adequate": "Vollständig besetzt",
-      "scheduled": "Geplant",
-      "clockedIn": "Eingestempelt",
-      "variance": "Abweichung",
-      "viewFullSchedule": "Vollständigen Dienstplan anzeigen"
-    },
-    "openShifts": {
-      "title": "Offene Schichten",
-      "noShifts": "Keine offenen Schichten für {period} gefunden. Alle Schichten sind derzeit besetzt.",
-      "available": "{count} Schicht verfügbar",
-      "availablePlural": "{count} Schichten verfügbar",
-      "requestButton": "Anfragen",
-      "moreShifts": "+{count} weitere Schichten",
-      "requestPending": "Anfrage ausstehend",
-      "managerApprovalRequired": "Anfragen erfordern Genehmigung des Vorgesetzten",
-      "viewAllShifts": "Alle Schichten anzeigen"
-    },
     "compliance": {
-      "title": "Compliance-Übersicht",
-      "noIssues": "Keine Compliance-Probleme in den letzten {days} Tagen gefunden. Ihr Team ist in gutem Zustand!",
-      "itemsRequireAttention": "{count} Element erfordert Aufmerksamkeit",
-      "itemsRequireAttentionPlural": "{count} Elemente erfordern Aufmerksamkeit",
-      "violations": "Verstöße",
       "critical": "Kritisch",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (Ausnahme verwendet)",
+      "lastDays": "Letzte {days} Tage",
+      "legend": "\uD83D\uDD34 Verstoß  \uD83D\uDFE0 Kritisch  \uD83D\uDFE1 Warnung  \uD83D\uDCDD Ausstehende Anfrage",
+      "moreRequestsMarkdown": "_+{count} weitere Anfragen_",
+      "moreViolationsMarkdown": "_+{count} weitere Verstöße_",
       "pending": "Ausstehend",
-      "recentViolations": "Aktuelle Verstöße",
       "pendingExceptions": "Ausstehende Ausnahmeanträge",
-      "exceptionUsed": "(Ausnahme verwendet)",
-      "moreViolations": "+{count} weitere Verstöße",
-      "moreRequests": "+{count} weitere Anträge",
+      "recentViolations": "Kürzliche Verstöße",
+      "reviewExceptions": "Ausnahmen überprüfen",
+      "textCriticalAlerts": "**Kritische Warnungen:** {count}",
+      "textMore": "  +{count} weitere",
+      "textPendingExceptions": "**Ausstehende Ausnahmen:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Ausstehende Anfragen:**",
+      "textRecentViolations": "**Kürzliche Verstöße:**",
+      "textTitle": "**⚠️ Compliance-Zusammenfassung - Letzte {days} Tage**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Verstöße:** {count}",
+      "titleWithIcon": "⚠️ Compliance-Zusammenfassung",
       "viewDashboard": "Compliance-Dashboard anzeigen",
-      "reviewExceptions": "Ausnahmen prüfen"
+      "violations": "Verstöße"
+    },
+    "coverage": {
+      "clockedIn": "Eingestempelt",
+      "moreLocationsMarkdown": "_+{count} weitere Standorte..._",
+      "scheduled": "Geplant",
+      "titleWithIcon": "\uD83D\uDCCA Abdeckungsbericht",
+      "variance": "Abweichung",
+      "viewFullSchedule": "Vollständigen Zeitplan anzeigen"
     },
     "help": {
-      "availableCommands": "Verfügbare Befehle",
-      "coverageDesc": "Personalabdeckung nach Standort und Zeitfenster anzeigen",
-      "openShiftsDesc": "Offene Schichten anzeigen und anfordern",
-      "complianceDesc": "Compliance-Verstöße und ausstehende Ausnahmen anzeigen"
+      "availableCommands": "Hilfe"
     }
-  },
-  "errors": {
-    "rateLimitExceeded": "Ratenlimit überschritten. Bitte warten Sie {seconds} Sekunden, bevor Sie diesen Befehl erneut verwenden.",
-    "permissionDenied": "Dieser Befehl ist nur für Vorgesetzte und Administratoren verfügbar.",
-    "permissionDeniedAdmin": "Dieser Befehl ist nur für Organisationsadministratoren verfügbar.",
-    "notFound": "Ressource nicht gefunden",
-    "generalError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut.",
-    "employeeNotFound": "Ihr Mitarbeiterdatensatz konnte nicht gefunden werden."
-  },
-  "shiftPickup": {
-    "success": "Schichtübernahme-Anfrage eingereicht!",
-    "successDetail": "Ihr Vorgesetzter wird Ihre Anfrage prüfen und genehmigen. Sie werden benachrichtigt, sobald eine Entscheidung getroffen wurde.",
-    "unavailable": "Schicht nicht mehr verfügbar",
-    "unavailableDetail": "Diese Schicht wurde bereits zugewiesen oder ist nicht mehr offen. Bitte prüfen Sie andere verfügbare Schichten.",
-    "alreadyPending": "Anfrage bereits ausstehend",
-    "alreadyPendingDetail": "Sie haben bereits eine ausstehende Übernahmeanfrage für diese Schicht. Bitte warten Sie, bis Ihr Vorgesetzter sie geprüft hat.",
-    "failed": "Anfrage fehlgeschlagen",
-    "failedDetail": "Bei der Verarbeitung Ihrer Anfrage ist etwas schiefgelaufen. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support."
-  },
-  "digest": {
-    "title": "Tägliche Zusammenfassung",
-    "pendingApprovals": "Ausstehende Genehmigungen",
-    "noPendingApprovals": "Keine ausstehenden Genehmigungen",
-    "pendingApprovalsCount": "Sie haben {count} ausstehende Genehmigung",
-    "pendingApprovalsCountPlural": "Sie haben {count} ausstehende Genehmigungen",
-    "whosOutToday": "Wer ist heute abwesend",
-    "everyoneAvailable": "Alle sind heute verfügbar",
-    "returns": "Rückkehr {date}",
-    "currentlyClockedIn": "Derzeit eingestempelt",
-    "noOneClockedIn": "Noch niemand eingestempelt",
-    "since": "Seit {time}",
-    "coverageGaps": "Abdeckungslücken",
-    "openShifts": "Offene Schichten",
-    "todayTomorrow": "Heute: {today} | Morgen: {tomorrow}",
-    "complianceAlerts": "Compliance-Warnungen",
-    "pendingExceptionRequests": "{count} ausstehender Ausnahmeantrag zur Prüfung",
-    "pendingExceptionRequestsPlural": "{count} ausstehende Ausnahmeanträge zur Prüfung",
-    "openDashboard": "Z8 Dashboard öffnen",
-    "viewApprovals": "Genehmigungen anzeigen"
   },
   "common": {
     "more": "+{count} weitere",
-    "today": "Heute",
-    "tomorrow": "Morgen",
-    "unknown": "Unbekannt"
+    "moreBullet": "• +{count} weitere"
+  },
+  "digest": {
+    "currentlyClockedIn": "Aktuell eingestempelt",
+    "everyoneAvailable": "Alle sind heute verfügbar",
+    "noOneClockedIn": "Niemand ist bisher eingestempelt",
+    "noPendingApprovals": "Keine ausstehenden Genehmigungen",
+    "openDashboard": "Z8-Dashboard öffnen",
+    "openShifts": "Offene Schichten",
+    "pendingApprovals": "Ausstehende Genehmigungen",
+    "pendingExceptionRequests": "{count, plural, one {# ausstehende Ausnahme-Anfrage wartet auf Überprüfung} other {# ausstehende Ausnahme-Anfragen warten auf Überprüfung}}",
+    "returns": "Rückkehr am {date}",
+    "since": "Seit {time}",
+    "textClockedInEmployee": "• {name} - seit {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Compliance:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Deckungslücken:**",
+    "textCurrentlyClockedIn": "**Aktuell eingestempelt:**",
+    "textEmployeeOut": "• {name} - {category} (Rückkehr am {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Offene Schichten:**",
+    "textPendingApprovalsCount": "**Ausstehende Genehmigungen:** {count}",
+    "textPendingApprovalsNone": "**Ausstehende Genehmigungen:** Keine",
+    "textTitle": "**Tagesübersicht - {date}**",
+    "textWhosOut": "**Wer ist abwesend:**",
+    "title": "Tagesübersicht",
+    "todayTomorrow": "Heute: {today} | Morgen: {tomorrow}",
+    "viewApprovals": "Genehmigungen anzeigen",
+    "whosOutToday": "Wer ist heute abwesend"
   },
   "exceptionTypes": {
-    "rest_period": "Ruhezeit",
     "overtime_daily": "Tägliche Überstunden",
+    "overtime_monthly": "Monatliche Überstunden",
     "overtime_weekly": "Wöchentliche Überstunden",
-    "overtime_monthly": "Monatliche Überstunden"
-  },
-  "legend": {
-    "adequate": "Ausreichend",
-    "understaffed": "Unterbesetzt",
-    "overstaffed": "Überbesetzt",
-    "violation": "Verstoß",
-    "critical": "Kritisch",
-    "warning": "Warnung",
-    "pendingRequest": "Ausstehende Anfrage"
+    "rest_period": "Ruhezeit"
   }
 }

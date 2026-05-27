@@ -1,0 +1,245 @@
+{
+  "reports": {
+    "container": {
+      "error": "Hata",
+      "generating": "Rapor Oluşturuluyor...",
+      "noReportYet": "Henüz rapor oluşturulmadı",
+      "pleaseWait": "Lütfen verileriniz derlenirken bekleyin",
+      "selectPeriod": "Başlamak için bir dönem seçin ve \"Rapor Oluştur\"a tıklayın"
+    },
+    "description": "Vergiyle ilgili evden çalışma verileriyle kapsamlı çalışma saati ve devamsızlık raporları oluşturun",
+    "employeeSelector": {
+      "error": "Ekip üyeleri yüklenemedi",
+      "label": "Çalışan",
+      "placeholder": "Çalışan seçin..."
+    },
+    "export": {
+      "csv": "CSV Olarak Dışa Aktar",
+      "description": "Bu raporu tercih ettiğiniz formatta indirin",
+      "downloaded": "{filename} indirildi",
+      "errorDescription": "Rapor dışa aktarılırken bir hata oluştu",
+      "excel": "Excel Olarak Dışa Aktar",
+      "failed": "Dışa aktarma başarısız",
+      "generating": "Oluşturuluyor...",
+      "pdf": "PDF Olarak Dışa Aktar",
+      "success": "Dışa aktarma başarılı",
+      "title": "Raporu Dışa Aktar"
+    },
+    "feature": "rapor oluştur",
+    "filter": {
+      "loadingSettings": "Hazır ayarları etkinleştirmeden önce organizasyon ayarları yükleniyor.",
+      "period": "Dönem",
+      "selectPeriod": "Dönem seçin"
+    },
+    "generate": "Rapor Oluştur",
+    "generating": "Rapor Oluşturuluyor…",
+    "period": {
+      "currentMonth": "Bu Ay",
+      "currentYear": "Bu Yıl",
+      "customRange": "Özel Aralık",
+      "lastMonth": "Geçen Ay",
+      "lastYear": "Geçen Yıl",
+      "pickDateRange": "Bir tarih aralığı seçin",
+      "yearToDate": "Yılbaşından Bugüne"
+    },
+    "preview": {
+      "absencesByCategory": "Kategoriye Göre Devamsızlıklar",
+      "attendancePercentage": "Katılım Yüzdesi",
+      "category": "Kategori",
+      "complianceMetrics": "Uyumluluk Metrikleri",
+      "date": "Tarih",
+      "dateBreakdown": "Tarih Bazlı Döküm",
+      "days": "Gün",
+      "homeOfficeDescription": "Alman vergi mevzuatı için önemlidir - evden çalışma günlerini ve çalışılan saatleri gösterir",
+      "homeOfficeSummary": "Evden Çalışma Özeti (Vergi İçin Önemli)",
+      "hours": "Saat",
+      "hoursWorked": "Çalışılan Saat",
+      "month": "Ay",
+      "noHomeOfficeDays": "Bu dönemde kayıtlı evden çalışma günü bulunmamaktadır.",
+      "overtime": "Fazla Mesai",
+      "total": "Toplam",
+      "totalHomeOfficeDays": "Toplam Evden Çalışma Günü",
+      "totalHomeOfficeHours": "Evden Toplam Çalışılan Saat",
+      "undertime": "Eksik Mesai",
+      "workHoursByMonth": "Aylık Çalışma Saatleri"
+    },
+    "projects": {
+      "budget": {
+        "exceededBy": "Bütçe {hours} saat aşıldı",
+        "hoursBudget": "{hours} saat bütçe",
+        "hoursLogged": "Kaydedilen Saatler",
+        "hoursRemaining": "Bütçede kalan {hours} saat",
+        "hoursUsed": "{hours} saat kullanıldı",
+        "nearLimit": "Bütçe Sınırına Yakın",
+        "onlyRemaining": "Sadece {hours} saat kaldı",
+        "onTrack": "Yolunda",
+        "over": "Aşıldı",
+        "overBudget": "Bütçe Aşıldı",
+        "remaining": "Kalan",
+        "title": "Bütçe İlerlemesi",
+        "used": "Kullanılan"
+      },
+      "cards": {
+        "acrossAllProjects": "Tüm projeler genelinde",
+        "activeContributors": "Aktif katkıda bulunanlar",
+        "activeCount": "{count} aktif",
+        "activeProjects": "Aktif Projeler",
+        "budgetUsed": "Kullanılan Bütçe",
+        "currentlyInProgress": "Şu anda devam ediyor",
+        "dailyAverage": "Günlük Ortalama",
+        "exceededBudget": "Bütçe aşıldı",
+        "hoursOfBudget": "{total} saat üzerinden {used} saat",
+        "hoursPerDay": "Günlük saat",
+        "na": "N/A",
+        "noBudgetSet": "Bütçe belirlenmedi",
+        "overBudget": "Bütçe Aşıldı",
+        "overdue": "Gecikmiş",
+        "pastDeadline": "Son tarih geçti",
+        "teamMembers": "Ekip Üyeleri",
+        "totalHours": "Toplam Saat",
+        "totalProjects": "Toplam Proje",
+        "workPeriods": "{count} çalışma dönemi"
+      },
+      "chart": {
+        "cumulativeDescription": "Zaman içinde biriken toplam saat",
+        "cumulativeHours": "Kümülatif Saatler",
+        "cumulativeLabel": "Kümülatif",
+        "dailyDescription": "Seçilen dönem boyunca günlük çalışılan saatler",
+        "dailyHours": "Günlük Saatler",
+        "hoursLabel": "Saat",
+        "hoursOverTime": "Zaman İçindeki Saatler",
+        "noDataAvailable": "Bu dönem için zaman takibi verisi bulunmuyor",
+        "noWorkPeriods": "Seçilen tarih aralığında kayıtlı çalışma dönemi bulunmuyor"
+      },
+      "container": {
+        "error": "Hata",
+        "generating": "Rapor Oluşturuluyor...",
+        "noReportYet": "Henüz bir rapor oluşturulmadı",
+        "pleaseWait": "Proje verileri derlenirken lütfen bekleyin",
+        "portfolioOverview": "Portföy Genel Bakışı",
+        "projectDetails": "Proje Detayları",
+        "selectPeriod": "Başlamak için bir dönem seçin ve \"Rapor Oluştur\"a tıklayın"
+      },
+      "filter": {
+        "activeOnly": "Sadece Aktif",
+        "activePlanned": "Aktif ve Planlanan",
+        "allStatuses": "Tüm Durumlar",
+        "archived": "Arşivlenmiş",
+        "completed": "Tamamlanmış",
+        "period": "Dönem",
+        "selectStatus": "Durum filtresi seçin",
+        "status": "Durum"
+      },
+      "generate": "Rapor Oluştur",
+      "generating": "Rapor Oluşturuluyor...",
+      "healthAlerts": {
+        "budgetUsed": "Bütçenin %{percent}'i kullanıldı",
+        "critical": "Kritik",
+        "daysLeft": "{days} gün kaldı",
+        "daysOverdue": "{days} gün gecikti",
+        "description": "Bu rapor döneminde dikkat gerektiren bütçe ve son tarih riskleri.",
+        "dueToday": "Bugün bitiyor",
+        "empty": "Bu rapor döneminde bütçe veya son tarih riski yok.",
+        "reason": {
+          "budget70": "Proje, bütçesinin en az %70'ini kullandı.",
+          "budget90": "Proje bütçesinin en az %90'ını kullandı.",
+          "deadline": "Proje teslim tarihi yaklaşıyor.",
+          "default": "Proje dikkat gerektiriyor.",
+          "dueToday": "Projenin teslim tarihi bugün.",
+          "overBudget": "Proje bütçeyi aştı.",
+          "overdue": "Proje teslim tarihi geçti."
+        },
+        "title": "Proje Sağlık Uyarıları",
+        "viewDetails": "Ayrıntıları görüntüle",
+        "viewDetailsForProject": "{projectName} için ayrıntıları görüntüle",
+        "warning": "Uyarı"
+      },
+      "healthSummary": {
+        "atOrAbove70": "%70 veya üzeri",
+        "atOrAbove70Description": "Bütçe kullanımı yükseldi",
+        "atOrAbove90": "%90 veya üzeri",
+        "atOrAbove90Description": "Bütçe sınırına yakın",
+        "forecastAtRisk": "Tahmin risk altında",
+        "forecastAtRiskDescription": "Planın aşılması öngörülüyor",
+        "overBudget": "Bütçe aşımı",
+        "overBudgetDescription": "Bütçe aşıldı"
+      },
+      "page": {
+        "accessDenied": "Erişim Engellendi",
+        "description": "Proje saatlerini, bütçe kullanımını ve ekip katkılarını analiz edin",
+        "feature": "proje raporlarını görüntüle",
+        "noPermission": "Proje raporlarını görüntüleme izniniz yok.",
+        "title": "Proje Raporları"
+      },
+      "status": {
+        "active": "Aktif",
+        "archived": "Arşivlenmiş",
+        "completed": "Tamamlanmış",
+        "paused": "Duraklatılmış",
+        "planned": "Planlanan"
+      },
+      "table": {
+        "budget": "Bütçe",
+        "daysLeft": "{days} gün kaldı",
+        "daysOverdue": "{days} gün gecikti",
+        "deadline": "Teslim Tarihi",
+        "dueToday": "Bugün bitiyor",
+        "forecastRisk": "Tahmin riski",
+        "hours": "Saat",
+        "noProjectsFound": "Proje bulunamadı",
+        "noProjectsMatch": "Seçilen filtrelerle eşleşen proje bulunamadı",
+        "portfolioDescription": "Bütçe ve zaman takibi metrikleriyle tüm projelerin genel bakışı",
+        "portfolioTitle": "Proje Portföyü",
+        "project": "Proje",
+        "searchPlaceholder": "İsim, açıklama veya duruma göre ara...",
+        "status": "Durum",
+        "team": "Ekip",
+        "viewProject": "Proje detaylarını görüntüle"
+      },
+      "team": {
+        "byEmployee": "Çalışana Göre",
+        "byTeam": "Ekibe Göre",
+        "description": "Ekip üyeleri ve ekipler genelinde saat dağılımı",
+        "employee": "Çalışan",
+        "hours": "Saat",
+        "hoursLabel": "Saat",
+        "noMembers": "Hiçbir ekip üyesi bu projeye zaman kaydetmedi",
+        "sessions": "Oturumlar",
+        "title": "Ekip Dağılımı"
+      },
+      "toast": {
+        "failedGenerate": "Rapor oluşturulamadı",
+        "failedPortfolio": "Portföy raporu oluşturulamadı",
+        "failedProject": "Proje raporu oluşturulamadı",
+        "failedProjectReport": "Proje raporu oluşturulamadı",
+        "portfolioGenerated": "Portföy raporu oluşturuldu",
+        "projectGenerated": "{name} için rapor oluşturuldu",
+        "unexpectedError": "Beklenmedik bir hata oluştu"
+      }
+    },
+    "summary": {
+      "averagePerDay": "Ort: {hours}s/gün",
+      "homeOfficeDays": "Evden Çalışma Günleri",
+      "hourlyAverage": "{hours}s @ ort {rate}/s",
+      "otherDays": "Diğer: {count} gün",
+      "pending": "{count} beklemede",
+      "ratePeriods": "{count} ücret dönemi",
+      "sickDays": "Hastalık: {count} gün",
+      "taxRelevant": "Vergi ile ilgili",
+      "totalAbsences": "Toplam Devamsızlık",
+      "totalEarnings": "Toplam Kazanç",
+      "totalWorkHours": "Toplam Çalışma Saati",
+      "vacationDays": "İzin Günleri",
+      "workDays": "{count} iş günü",
+      "workedFromHome": "{hours}s evden çalışıldı"
+    },
+    "title": "Çalışan Raporları",
+    "toast": {
+      "failedGenerate": "Rapor oluşturulamadı",
+      "generatedFor": "{name} için rapor oluşturuldu",
+      "reportGenerated": "Rapor başarıyla oluşturuldu",
+      "unexpectedError": "Beklenmedik bir hata oluştu",
+      "unknownError": "Bilinmeyen bir hata oluştu"
+    }
+  }
+}

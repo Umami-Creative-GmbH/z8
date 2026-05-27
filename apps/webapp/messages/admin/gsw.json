@@ -1,0 +1,397 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Historischi Lizänze und MRR sind gschätzt. E gnaui Rekonstruktion bruucht zuekünftigi Snapshots oder es Verrechnigs-Journal."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Lizänz- und Umsatzsignale für d'Abrechnigsgsundheit.",
+          "summary": "Kommerzielli Zämefassig: {seats} Lizänze und {mrr} gschätzte MRR.",
+          "title": "Kommerziell"
+        },
+        "engagement": {
+          "description": "Plattformnutzig dur aktivi Benutzer und Sitzige.",
+          "summary": "Engagement-Zämefassig: {activeUsers} aktivi Benutzer und {sessions} Sitzige.",
+          "title": "Engagement"
+        },
+        "growth": {
+          "description": "Neui Benutzer und Organisatione uf de Plattform.",
+          "summary": "Wachstums-Zämefassig: {signups} Registrierige und {organizations} Organisatione.",
+          "title": "Wachstum"
+        },
+        "operations": {
+          "description": "Zit-Erfassigsvolume dur d'Aktivität vom Mandant.",
+          "summary": "Betriebs-Zämefassig: {timeRecords} Zit-Iiträg.",
+          "title": "Betrieb"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Analytik-Bucket",
+          "label": "Bucket"
+        },
+        "range": {
+          "ariaLabel": "Analytik-Ziitruum",
+          "label": "Ziitruum"
+        }
+      },
+      "description": "Überwach s'Plattform-Wachstum, d'Nutzeraktivität, d'Betriebsabläuf und d'Abrechnigstrends.",
+      "emptyState": {
+        "noData": "Keini Date für dä Ziitruum"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Benutzer, wo im gwählte Ziitruum aktiv sind",
+          "title": "Aktivi Benutzer"
+        },
+        "mrr": {
+          "description": "Gschätzte monatlichi wiederkehrendi Umsatz",
+          "title": "Gschätzte MRR"
+        },
+        "organizations": {
+          "description": "Aktivi Arbeitsbereich uf de Plattform",
+          "title": "Organisatione"
+        },
+        "seats": {
+          "description": "Aktuelli zahlti oder Test-Lizänze",
+          "title": "Lizenzierte Plätz"
+        },
+        "sessions": {
+          "description": "Authentifizierti Sitzige",
+          "title": "Sitzige"
+        },
+        "signups": {
+          "description": "Neui Plattform-Kontene",
+          "title": "Registrierige"
+        },
+        "timeRecords": {
+          "description": "Übermittleti Betriebsiiträg",
+          "title": "Zit-Iiträg"
+        }
+      },
+      "preview": {
+        "description": "Plattformwachstum und Engagement im gwählte Ziitruum.",
+        "title": "Analytik-Trends",
+        "viewFull": "Vollständigi Analytik aaluege"
+      },
+      "sectionDescription": "Aktualisiert mit aktuelle Plattformdate für de gwählti Ziitruum und Bereich.",
+      "sectionTitle": "Analytik-Trends",
+      "title": "Plattform-Analytik",
+      "values": {
+        "notAvailable": "Nöd verfügbar"
+      }
+    },
+    "billing": {
+      "description": "Abonnements, Umsatz und Zahligsstatus überwache",
+      "intervals": {
+        "month": "Monatlich",
+        "year": "Jährlich"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktivi Abonnements",
+        "activeSubscriptionsDescription": "{trialingCount} im Test, {activeCount} zahlt",
+        "conversionRate": "Konversionsrate",
+        "conversionRateDescription": "Vo Test zu zahlt",
+        "licensedSeats": "Lizenzierte Plätz",
+        "licensedSeatsDescription": "Über alli Abonnements",
+        "mrr": "MRR",
+        "mrrDescription": "Monatlich wiederkehrendi Umsatz",
+        "pastDue": "Überfällig",
+        "pastDueDescription": "Zahligsproblem",
+        "trialing": "Im Test",
+        "trialingDescription": "In der Testphase"
+      },
+      "sections": {
+        "recentSubscriptions": "Neueste Abonnemente",
+        "revenueMetrics": "Umsatzkennzahlen"
+      },
+      "status": {
+        "active": "Aktiv",
+        "canceled": "Abgseit",
+        "pastDue": "Überfällig",
+        "trialing": "Test"
+      },
+      "table": {
+        "billing": "Abrechnig",
+        "created": "Erstellt",
+        "noSubscriptions": "Noch kei Abonnemente",
+        "organization": "Organisation",
+        "periodEnd": "Periode-Ändi",
+        "seats": "Plätz",
+        "status": "Status"
+      },
+      "title": "Abrechnigs-Dashboard"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Diagnose aktualisiere"
+      },
+      "clientDescription": "Sicheri Plattformkonfiguration und Service-Status auf App-Ebeni. Zuletzt aktualisiert am {date}.",
+      "description": "Sicheri Plattform-Konfiguration und App-Deployment-Checks.",
+      "keyManager": {
+        "actions": {
+          "test": "Verschlüsselig teste"
+        },
+        "ciphertextPreview": "Vorschau vom Geheimtext",
+        "description": "Füehre Sie en End-to-End-Plattformschlüssel-Verschlüsseligs-/Entschlüsseligstest dure.",
+        "input": "Iigab",
+        "keyStatus": "Schlüsselstatus",
+        "keyStatus.created": "Neue Plattformschlüssel erstellt",
+        "keyStatus.reused": "Existierende Plattformschlüssel wiederverwendet",
+        "output": "Usgab",
+        "platformKeyId": "Plattformschlüssel-ID",
+        "result": {
+          "match": "Iigab und Usgab stimmed überi",
+          "mismatch": "Iigab und Usgab stimmed nöd überi"
+        },
+        "status": {
+          "pending": "Verschlüsseligstest lauft."
+        },
+        "title": "Scaleway Key Manager Verschlüsselig"
+      },
+      "recommendedActions": {
+        "description": "Behebe die Punkt, zum d Diagnose wieder in en guete Zuestand z bringe.",
+        "title": "Empfohlini Massnahme"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Sicheri Deployment-Konfigurationszuständ. Gheimi Wärt wärded nie aazeigt.",
+          "title": "Plattformkonfiguration"
+        },
+        "health": {
+          "description": "App-spezifischi Prüfige für Infrastruktur-Abhängigkeite, wo d Webapp bruucht.",
+          "title": "Service-Status"
+        }
+      },
+      "statusAnnouncement": "Diagnosestatus {status}. Zuletzt aktualisiert am {date}.",
+      "status": {
+        "disabled": "Deaktiviert",
+        "error": "Fehler",
+        "healthy": "Gsund",
+        "warning": "Warnig"
+      },
+      "title": "Deployment-Diagnose"
+    },
+    "layout": {
+      "exitAdmin": "Admin verlah",
+      "nav": {
+        "analytics": "Analytik",
+        "billing": "Abrechnig",
+        "diagnostics": "Deployment-Diagnose",
+        "organizations": "Organisatione",
+        "overview": "Übersicht",
+        "settings": "Iistellige",
+        "systemEmailTemplates": "System-E-Mail-Vorlage",
+        "users": "Benutzer",
+        "workerQueue": "Arbeiter-Warteschlange"
+      },
+      "subtitle": "Plattform-Verwaltig",
+      "title": "Admin-Konsole"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Organisation lösche",
+        "reactivate": "Organisation reaktiviere",
+        "suspend": "Organisation suspendiere"
+      },
+      "badges": {
+        "deleted": "Glöscht",
+        "suspended": "Suspendiert"
+      },
+      "deleteDialog": {
+        "confirmButton": "Organisation lösche",
+        "confirmLabel": "Gib \"{name}\" ii zum bestätige",
+        "confirmPlaceholder": "Organisationsname",
+        "description": "Die Aktion löscht \"{name}\" und alli zueghörige Date. Das chan nöd rückgängig gmacht werde.",
+        "immediateDelete": "Sofort lösche (5-Täg-Frist überspringe)",
+        "skipNotification": "Lösch-Benachrichtigung a Mitglieder überspringe",
+        "title": "Organisation lösche"
+      },
+      "description": "Alli Organisatione uf de Plattform aaluege und verwalte",
+      "filters": {
+        "all": "Alli",
+        "deleted": "Glöscht",
+        "suspended": "Suspendiert"
+      },
+      "pagination": {
+        "showing": "Zeige {from} bis {to} vo {total} Organisatione"
+      },
+      "searchPlaceholder": "Suech nach Name oder Slug…",
+      "suspendDialog": {
+        "confirmButton": "Organisation suspendiere",
+        "description": "Suspendier \"{name}\" und setz sie in de Nur-Lese-Modus. Mitglieder chönd Date aaluege, aber nüt erstelle oder bearbeite.",
+        "reason": "Grund",
+        "reasonPlaceholder": "Gib de Grund für d'Suspendierig vo dere Organisation ii…",
+        "title": "Organisation suspendiere"
+      },
+      "table": {
+        "created": "Erstellt",
+        "employees": "Aagstellti",
+        "loadErrorTitle": "Organisatione chönd nöd glade wärde",
+        "members": "Mitglieder",
+        "noOrganizationsFound": "Kei Organisatione gfunde",
+        "organization": "Organisation"
+      },
+      "title": "Organisations-Verwaltig",
+      "toasts": {
+        "deletedGracePeriod": "Organisation \"{name}\" isch für d'Löschig in 5 Täg vorgmerkt",
+        "deletedImmediate": "Organisation \"{name}\" isch für sofortigi Löschig vorgmerkt",
+        "suspended": "Organisation \"{name}\" isch suspendiert worde",
+        "unsuspended": "Organisation \"{name}\" isch wieder freigäh worde"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Analytik-Trends"
+      },
+      "description": "Plattform-Metrike und Schnell-Aktione",
+      "metrics": {
+        "bannedUsers": "Gsperrti Benutzer",
+        "bannedUsersDescription": "Zuegang verweigeret",
+        "licensedSeats": "Lizenzierte Plätz",
+        "licensedSeatsDescription": "Über alli Abonnemänt",
+        "mrr": "MRR",
+        "mrrDescription": "Monatlich wiederkehrende Iinahme (€)",
+        "organizations": "Organisatione",
+        "organizationsDescription": "Aktivi Arbeitsbereich",
+        "suspended": "Suspendiert",
+        "suspendedDescription": "Schreibgschützte Organisatione",
+        "title": "Plattform-Metrike",
+        "totalUsers": "Total Benutzer",
+        "totalUsersDescription": "Registrierti Plattform-Kontene"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Umsatzmetrike und Abostatus",
+          "title": "Rechnig & Abonnemänt"
+        },
+        "diagnostics": {
+          "description": "Sicheri Konfiguration und App-Health-Checks prüefe",
+          "title": "Deployment-Diagnose"
+        },
+        "organizations": {
+          "description": "Organisatione suspendiere, lösche oder überprüefe",
+          "title": "Organisationsverwaltig"
+        },
+        "systemEmailTemplates": {
+          "description": "Rechnigs- und System-E-Mail-Texte vo de Plattform bearbeite",
+          "title": "System-E-Mail-Vorlagen"
+        },
+        "title": "Schnellaktionä",
+        "users": {
+          "description": "Benutzer sperre/entsperre, Sitzige verwalte, Aktivitäte aaluege",
+          "title": "Benutzerverwaltig"
+        }
+      },
+      "title": "Übersicht"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Änderige spychere"
+      },
+      "cookieConsent": {
+        "description": "Wird uf Authentifizierigssite für d DSGVO-Konformität igfüegt",
+        "helperPrefix": "Leer lah zum deaktiviere. Glade mit",
+        "helperSuffix": "Strategie.",
+        "scriptContent": "Skript-Inhalt",
+        "scriptPlaceholder": "<!-- Bispil: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Oder es eiges Skript -->\n<script>\n  // Eui Cookie-Zuestimmigs-Logik da\n</script>",
+        "title": "Cookie-Zuestimmigs-Skript"
+      },
+      "description": "Globali Plattformkonfiguration für alli Organisatione",
+      "title": "Plattformeistellige",
+      "toasts": {
+        "cookieConsentSaved": "Cookie-Zuestimmigs-Skript erfolgriich gspycheret",
+        "saveFailed": "Spychere fehlgschlage"
+      },
+      "turnstile": {
+        "deploymentNote": "Konfiguriert über Umgebigsvariable bim Deployment. Enterprise-Organisatione chönd das i de Domain-Eistellige überschriibe.",
+        "description": "Bot-Schutz für Authentifizierigsformular",
+        "secretKey": "Gheime Schlüssel",
+        "siteKey": "Site-Schlüssel",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Auf Systemvorlage zurücksetzen",
+        "save": "Spichere",
+        "sendTest": "Test sende"
+      },
+      "defaultFallback": "Standard-Fallback",
+      "defaultFallbackDescription": "Wenn diese Vorlage den Systemstandard verwendet, sendet Z8 den Plattformtext und -betreff:",
+      "description": "Verwalte plattformweite Abrechnungs- und System-E-Mails. Diese Vorlagen werden nur über den System-E-Mail-Transport versendet und sind nicht an eine Organisation gebunden.",
+      "editBodyBeforeSaving": "Bearbeite den E-Mail-Text, bevor du eine erste benutzerdefinierte Vorlage speicherst.",
+      "empty": "Es sind keine Plattform-System-E-Mail-Vorlagen verfügbar.",
+      "eyebrow": "System-Transport",
+      "reset": "System-E-Mail-Vorlage auf Standard zurückgesetzt",
+      "resetDialog": {
+        "confirm": "Plattform-Systemvorlage zurücksetzen",
+        "description": "Dies löscht die globale Plattform-Überschreibung für diese System-E-Mail-Vorlage und stellt den eingebauten Betreff und Text wieder her. Live-Abrechnungs- und System-E-Mails verwenden nach dem Zurücksetzen den Standard-Plattformtext.",
+        "title": "Plattform-Systemvorlage zurücksetzen?"
+      },
+      "resetFailed": "Zurücksetzen der System-E-Mail-Vorlage fehlgeschlagen",
+      "saved": "System-E-Mail-Vorlage gespeichert",
+      "saveFailed": "Speichern der System-E-Mail-Vorlage fehlgeschlagen",
+      "status": {
+        "customized": "Benutzerdefiniert",
+        "default": "Standard"
+      },
+      "systemTemplates": "Systemvorlagen",
+      "testFailed": "Test-E-Mail konnte nicht gesendet werden",
+      "testSent": "Test-E-Mail an dein Konto gesendet",
+      "title": "System-E-Mail-Vorlagen",
+      "transportNotice": "Verwende diesen Bereich für globale Abrechnungs- und System-E-Mail-Texte. Die E-Mail-Transporteinstellungen der Organisation werden für diese Nachrichten ignoriert; Tests und Live-Sendungen verwenden den Plattform-Systemtransport."
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Bis {date}",
+        "banned": "Gesperrt",
+        "user": "Benutzer"
+      },
+      "banDialog": {
+        "confirmButton": "Benutzer sperre",
+        "description": "Benutzer {email} für d'Plattform sperre.",
+        "expiry": "Ablaufdatum (optional)",
+        "permanentBanHint": "Leer lah für e permanenti Sperri",
+        "reason": "Grund",
+        "reasonPlaceholder": "Grund für d'Sperri vo däm Benutzer iigäh…",
+        "title": "Benutzer sperre"
+      },
+      "description": "Alli Benutzer uf de Plattform aaluege und verwalte",
+      "filters": {
+        "allUsers": "Alli Benutzer",
+        "banned": "Gesperrt"
+      },
+      "pagination": {
+        "showing": "Zeige {from} bis {to} vo {total} Benutzer"
+      },
+      "searchLabel": "Nutzer per E-Mail sueche",
+      "searchPlaceholder": "Suche nach Name oder E-Mail…",
+      "sessionsDialog": {
+        "description": "Aktivi Sitzige für {email}",
+        "noSessions": "Keini aktive Sitzige",
+        "revokeAll": "Alli Sitzige beände",
+        "title": "Benutzersitzige",
+        "unknownDevice": "Unbekannts Gerät",
+        "unknownIp": "Unbekannti IP"
+      },
+      "table": {
+        "created": "Erstellt",
+        "noOrganizations": "Kei Organisatione",
+        "noUsersFound": "Keini Benutzer gfunde",
+        "organizations": "Organisatione",
+        "role": "Roll",
+        "user": "Benutzer"
+      },
+      "title": "Benutzerverwaltig",
+      "toasts": {
+        "banned": "Benutzer {email} isch gsperrt worde",
+        "sessionRevoked": "Sitzig beändet",
+        "sessionsRevoked": "{count} Sitzige beändet",
+        "unbanned": "Benutzer {email} isch entsperrt worde"
+      }
+    }
+  }
+}

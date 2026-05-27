@@ -4,9 +4,10 @@
  *
  * Namespace mapping:
  * - common: common, generic, nav, header, user, table, validation, errors, info, meta,
- *   accessDenied, colors, employeeSelect, offline, roles, status, time
+ *   accessDenied, appSearch, colors, employeeSelect, offline, roles, status, time, workBalance
  * - auth: auth, profile, sessions
  * - admin: admin
+ * - analytics: analytics
  * - approvals: approvals
  * - compliance: compliance
  * - dashboard: dashboard
@@ -18,6 +19,7 @@
  * - setup: init, setup
  * - settings: settings, organization, vacation, team
  * - onboarding: onboarding
+ * - today: today
  */
 
 import fs from "node:fs";
@@ -28,12 +30,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const MESSAGES_DIR = path.join(__dirname, "..", "messages");
-const LANGUAGES = ["en", "de", "fr", "es", "it", "pt"];
+const LANGUAGES = ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"];
 
 // Namespace mapping: namespace -> array of top-level key prefixes
 const NAMESPACE_MAP = {
 	common: [
 		"accessDenied",
+		"appSearch",
 		"colors",
 		"common",
 		"employeeSelect",
@@ -51,8 +54,10 @@ const NAMESPACE_MAP = {
 		"errors",
 		"info",
 		"meta",
+		"workBalance",
 	],
 	admin: ["admin"],
+	analytics: ["analytics"],
 	approvals: ["approvals"],
 	auth: ["auth", "profile", "sessions"],
 	compliance: ["compliance"],
@@ -65,6 +70,7 @@ const NAMESPACE_MAP = {
 	setup: ["init", "setup"],
 	settings: ["settings", "organization", "vacation", "team", "webhooks"],
 	onboarding: ["onboarding"],
+	today: ["today"],
 };
 
 // All namespaces

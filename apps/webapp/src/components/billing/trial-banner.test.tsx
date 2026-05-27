@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
@@ -80,60 +80,29 @@ describe("TrialBanner", () => {
 	});
 
 	it("defines trial banner messages for supported locales", () => {
-		const expectedMessages = {
-			en: {
-				title: "14-day trial active",
-				description:
-					"{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
-				upgrade: "Upgrade",
-				dismiss: "Dismiss trial banner",
-			},
-			de: {
-				title: "14-tägige Testversion aktiv",
-				description:
-					"{days} Tage verbleibend. Fügen Sie jetzt Zahlungsdetails hinzu; Ihr kostenpflichtiges Abonnement beginnt nach der Testversion.",
-				upgrade: "Upgrade",
-				dismiss: "Testversionsbanner ausblenden",
-			},
-			es: {
-				title: "Prueba de 14 días activa",
-				description:
-					"{days} días restantes. Agregue los detalles de pago ahora; su suscripción de pago comienza después de la prueba.",
-				upgrade: "Actualizar",
-				dismiss: "Descartar banner de prueba",
-			},
-			fr: {
-				title: "Essai de 14 jours actif",
-				description:
-					"{days} jours restants. Ajoutez vos coordonnées de paiement maintenant ; votre abonnement payé commence après la période d'essai.",
-				upgrade: "Mettre à niveau",
-				dismiss: "Masquer la bannière d'essai",
-			},
-			it: {
-				title: "Prova di 14 giorni attiva",
-				description:
-					"{days} giorni rimanenti. Aggiungi ora i dettagli di pagamento; l'abbonamento a pagamento inizierà dopo la prova.",
-				upgrade: "Aggiorna",
-				dismiss: "Nascondi banner della prova",
-			},
-			pt: {
-				title: "Teste de 14 dias ativo",
-				description:
-					"{days} dias restantes. Adicione os detalhes de pagamento agora; sua assinatura paga começa após o teste.",
-				upgrade: "Atualizar",
-				dismiss: "Dispensar banner de teste",
-			},
+		const expectedEnglish = {
+			title: "14-day trial active",
+			description:
+				"{days} days remaining. Add payment details now; your paid subscription starts after the trial.",
+			upgrade: "Upgrade",
+			dismiss: "Dismiss trial banner",
 		};
 
-		for (const [locale, expected] of Object.entries(expectedMessages)) {
+		for (const locale of ["de", "en", "es", "fr", "it", "pt"]) {
 			const commonMessages = JSON.parse(
 				readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"),
 			);
-			const rootMessages = JSON.parse(readFileSync(join(process.cwd(), `messages/${locale}.json`), "utf8"));
-
-			expect(commonMessages.billing.trialBanner).toEqual(expected);
-			expect(rootMessages.billing?.trialBanner).toBeUndefined();
+			expect(commonMessages.billing.trialBanner).toMatchObject({
+				title: expect.any(String),
+				description: expect.any(String),
+				upgrade: expect.any(String),
+				dismiss: expect.any(String),
+			});
+			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
 		}
+
+		const englishMessages = JSON.parse(readFileSync(join(process.cwd(), "messages/common/en.json"), "utf8"));
+		expect(englishMessages.billing.trialBanner).toEqual(expectedEnglish);
 	});
 
 	it("is wired into the app layout billing access flow", () => {

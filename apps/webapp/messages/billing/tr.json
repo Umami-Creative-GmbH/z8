@@ -1,0 +1,87 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Aboneliğiniz iptal edildi. Erişimi yeniden kazanmak için tekrar abone olun.",
+      "paymentFailed": "Son ödemeniz başarısız oldu. Lütfen ödeme yönteminizi güncelleyin.",
+      "required": "Bu uygulamayı kullanmak için bir abonelik gereklidir.",
+      "trialExpired": "Deneme süreniz doldu. Uygulamayı kullanmaya devam etmek için abone olun."
+    },
+    "activeSeats": "Aktif Koltuklar",
+    "alerts": {
+      "canceledDescription": "Ödeme işlemi iptal edildi. Hazır olduğunuzda tekrar deneyebilirsiniz.",
+      "subscriptionRequired": "Abonelik Gerekli",
+      "successDescription": "Aboneliğiniz etkinleştirildi. Abone olduğunuz için teşekkürler!",
+      "successTitle": "Başarılı!"
+    },
+    "bestValue": "En İyi Fiyat",
+    "billedMonthly": "aylık faturalandırılır",
+    "cancelsOn": "{date} tarihinde iptal edilir",
+    "checkoutCreateFailed": "Ödeme oturumu oluşturulamadı",
+    "checkoutStartFailed": "Ödeme başlatılamadı",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout ödeme bilgilerini şimdi toplar. Ücretli aboneliğiniz yalnızca deneme süresi sona erdikten sonra başlar.",
+      "trialContinuesTitle": "Deneme süreniz yükseltmeden sonra da devam eder"
+    },
+    "choosePlan": "Planınızı Seçin",
+    "choosePlanDescription": "14 günlük ücretsiz deneme ile başlayın. Başlamak için kredi kartı gerekmez.",
+    "currentPlan": "Mevcut Plan",
+    "days": "{count} gün",
+    "description": "Aboneliğinizi ve faturalandırma bilgilerinizi yönetin",
+    "faq": {
+      "afterTrial": {
+        "answer": "14 günlük deneme süreniz sona erdikten sonra, seçtiğiniz abonelik planı için ücretlendirilirsiniz. Ücret ödememek için deneme süresi bitmeden önce istediğiniz zaman iptal edebilirsiniz.",
+        "question": "Deneme süresinden sonra ne olur?"
+      },
+      "perSeat": {
+        "answer": "Kuruluşunuzdaki aktif üye sayısına göre faturalandırılırsınız. Üye eklediğinizde veya çıkardığınızda aboneliğiniz otomatik olarak ayarlanır.",
+        "question": "Kullanıcı başına faturalandırma nasıl çalışır?"
+      },
+      "switch": {
+        "answer": "Evet! Faturalandırma portalı üzerinden istediğiniz zaman plan değiştirebilirsiniz. Değişiklikler bir sonraki fatura döneminizde geçerli olur.",
+        "question": "Aylık ve yıllık ödeme arasında geçiş yapabilir miyim?"
+      },
+      "title": "Sıkça Sorulan Sorular"
+    },
+    "features": {
+      "allFeatures": "Tüm özellikler dahil",
+      "cancelAnytime": "İstediğiniz zaman iptal edin",
+      "trial": "14 gün ücretsiz deneme",
+      "yearlyDiscount": "Aylık ödemeye göre %25 indirim"
+    },
+    "interval": {
+      "monthlyBilling": "Aylık faturalandırma",
+      "yearlyBilling": "Yıllık faturalandırma"
+    },
+    "manageBilling": "Faturalandırmayı Yönet",
+    "monthlyCost": "Aylık Maliyet",
+    "nextBilling": "Sonraki Fatura",
+    "opening": "Açılıyor...",
+    "perSeatMonth": "/kullanıcı/ay",
+    "plans": {
+      "monthly": {
+        "description": "Esnek aylık faturalandırma",
+        "title": "Aylık"
+      },
+      "yearly": {
+        "description": "Yıllık faturalandırma ile %25 tasarruf edin",
+        "title": "Yıllık"
+      }
+    },
+    "portalOpenFailed": "Faturalandırma portalı açılamadı",
+    "priceSeatMonth": "€{price}/kullanıcı/ay",
+    "priceSeatMonthYearly": "€{price}/kullanıcı/ay (yıllık faturalandırılır)",
+    "seatBilledAnnually": "Yıllık faturalandırılan €{price}/kullanıcı",
+    "starting": "Başlatılıyor...",
+    "startTrial": "Ücretsiz Denemeyi Başlat",
+    "status": {
+      "canceled": "İptal edildi",
+      "noSubscription": "Abonelik Yok",
+      "pastDue": "Vadesi Geçmiş",
+      "trial": "Deneme"
+    },
+    "title": "Faturalandırma ve Abonelik",
+    "trialEnds": "Deneme Bitişi",
+    "vatNotice": "Gösterilen fiyatlar KDV hariç net fiyatlardır. Uygulanabilir durumlarda KDV eklenecektir.",
+    "yearTotal": "Toplam €{amount}/yıl"
+  }
+}

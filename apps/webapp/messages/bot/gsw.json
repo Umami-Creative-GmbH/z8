@@ -1,0 +1,94 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "Die Freigab isch bereits bearbeitet worde."
+    },
+    "cmd": {
+      "billingRequired": "D'Abrechnig isch erforderlich, zum d'Ziiterfassig wiiter z'nutze. Bitt en Organisations-Admin, d'Abrechnig z'aktualisiere.",
+      "clockedin": {
+        "header": "{active} vo {total} Teammitglieder sind aktuell am Schaffe:",
+        "noneActive": "Keis vo dine {total} Teammitglieder isch aktuell am Schaffe.",
+        "noTeam": "Es sind dir keini Teammitglieder zuegordnet."
+      },
+      "clockin": {
+        "alreadyIn": "Du bisch sit {time} am Schaffe ({hours}h {minutes}m).",
+        "cannotNow": "Cha momentan nöd iistemple.",
+        "noProfile": "Mitarbeiterprofil nöd gfunde.",
+        "success": "Iigestemplet am {time}."
+      },
+      "clockout": {
+        "cannotNow": "Cha momentan nöd uusstemple.",
+        "noProfile": "Mitarbeiterprofil nöd gfunde.",
+        "notClockedIn": "Du bisch aktuell nöd iigestemplet.",
+        "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht überprüft werden. Bitte versuche es erneut.",
+        "success": "Uusgestemplet am {time}. Duur: {hours}h {minutes}m.",
+        "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
+      },
+      "compliance": {
+        "error": "Compliance-Date chönd nöd abgruefe werde. Bitte versuechs spöter no einisch.",
+        "noIssues": "Kei Compliance-Problem i de letschte {days} Täg gfunde. Dis Team isch uf em ne guete Stand!"
+      },
+      "coverage": {
+        "error": "Abdeckigsdate chönd nöd abgruefe werde. Bitte versuechs spöter no einisch.",
+        "noData": "Kei Planigsdate für {date} gfunde."
+      },
+      "help": {
+        "footer": "Du chasch Freigabe-Aafroge und tägliche Zuesammenfassige au direkt in {platform} erhalte.",
+        "title": "Z8 Bot Befehl"
+      },
+      "openshifts": {
+        "error": "Offeni Schichte chönd nöd abgruefe werde. Bitte versuechs spöter no einisch.",
+        "noShifts": "Kei offeni Schichte für {period} gfunde. Alli Schichte sind aktuell zuegordnet."
+      },
+      "pending": {
+        "footer": "I Z8 aaluege und freigäh oder uf einzelni Freigabecharte warte.",
+        "header": "{count, plural, one {Du häsch {count} offeni Freigab:} other {Du häsch {count} offeni Freigabe:}}",
+        "none": "Du häsch keini offene Freigabe-Aafroge. Gueti Arbet!"
+      },
+      "status": {
+        "clockedIn": "Du bisch sit {time} am Schaffe ({hours}h {minutes}m).",
+        "noProfile": "Mitarbeiterprofil nöd gfunde.",
+        "notClockedIn": "Du bisch aktuell nöd iigestemplet."
+      },
+      "whosout": {
+        "header": "{outCount} vo {total} Teammitglieder sind hüt abwesend:",
+        "noneOut": "Alli {total} Teammitglieder sind hüt verfügbar.",
+        "noTeam": "Es sind dir keini Teammitglieder zuegordnet."
+      }
+    },
+    "language": {
+      "changed": "Sprach uf {language} gänderet.",
+      "prompt": "Wähl dini Sprach uus:"
+    },
+    "static": {
+      "errorApprovalNotFound": "Die Freigab-Aafrog existiert nöd meh oder isch bereits bearbeitet worde.",
+      "errorApprovalResolved": "Die Freigab isch bereits genehmigt oder abglehnt worde.",
+      "errorDefault": "Es isch en Fehler ufträtte. Bitte versuechs no einisch.",
+      "errorEmployeeNotFound": "Du häsch kei Mitarbeiter-Datensatz in Z8. Bitte kontaktier din Administrator.",
+      "errorNotAuthorized": "Du bisch nöd berechtigt, die Aktion uszfüehre.",
+      "errorTenantNotConfigured": "Dini Organisation hät d'Z8-Iirichtig no nöd abgschlosse. Bitte frag en Admin, d'Integration z'konfiguriere.",
+      "errorUserNotLinked": "Dis Teams-Konto isch nöd mit Z8 verchnüpft. Stell sicher, dass dini Teams-E-Mail mit dim Z8-Konto überiistimmt.",
+      "genericError": "Sorry, es isch öpis schief gange. Bitte probier es nomal oder kontaktier de Support.",
+      "linkAlreadyLinked": "Das Telegram-Konto isch bereits mit eme Z8-Konto in dere Organisation verknüpft.",
+      "linkExpired": "De Link-Code isch abglaufe. Bitte generier en neue in dine Z8-Iistellige.",
+      "linkInvalid": "Ungültige Link-Code. Bitte prüef de Code und probier es nomal.",
+      "linkSuccess": "Dis Telegram-Konto isch mit Z8 verknüpft! Gib /help ii, zum d'Befehl z'gseh.",
+      "linkUsage": "Bitte gib dine Link-Code ii: /link DEIN_CODE",
+      "mentionHelp": "Hoi! Ich bi de Z8-Bot. Gib \"help\" ii, zum d'Befehl z'gseh.",
+      "noEmployee": "Dis Konto existiert, aber du häsch kei Mitarbeiter-Iitrag in Z8.",
+      "noOrg": "Organisation chönne mir nöd identifiziere. Bitte kontaktier de Support.",
+      "notLinked": "Dis Telegram-Konto isch nöd mit Z8 verknüpft. Gang in dim Z8-Dashboard uf Iistellige > Integratione > Telegram, zum en Link-Code z'generiere, und schick dänn: /link DEIN_CODE",
+      "notLinkedTeams": "Ich ha dis Z8-Konto nöd gfunde. Stell sicher, dass dini Teams-E-Mail mit dinere Z8-E-Mail übereistimmt.",
+      "noUser": "Benutzerkonto chönne mir nöd identifiziere.",
+      "setupBody": "Dini Organisation muess mit Z8 verbunde werde. Klick unte, zum de Iirichtigsprozess z'starte.",
+      "setupButton": "Iirichtig abschliesse",
+      "setupNote": "Nur Organisations-Admins chönd die Iirichtig abschliesse.",
+      "setupRequired": "Willkomme bi Z8! Zum die Microsoft 365-Organisation mit dim Z8-Konto z'verbinde, muess en Admin d'Iirichtig abschliesse.",
+      "setupTitle": "Z8-Iirichtig erforderlich",
+      "typeHelp": "Gib /help ii, zum d'Befehl z'gseh.",
+      "unconfigured": "D'Z8-Integration vo dinere Organisation wird grad iigrichtet. Bitte wart, bis din Admin d'Konfiguration abschliesst.",
+      "welcome": "Willkomme bi Z8! Zum dis Konto z'verbinde, gang in dim Z8-Dashboard uf Iistellige > Integratione > Telegram und generier en Link-Code. Schick dänn: /link DEIN_CODE",
+      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh."
+    }
+  }
+}

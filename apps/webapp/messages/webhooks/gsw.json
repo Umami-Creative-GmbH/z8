@@ -1,0 +1,92 @@
+{
+  "webhooks": {
+    "copy-failed": "Kopieren in die Zwischenablage fehlgeschlagen",
+    "create": "Webhook hinzufügen",
+    "create-failed": "Erstellen des Webhooks fehlgeschlagen",
+    "delete-confirm": {
+      "description": "Dies löscht den Webhook-Endpunkt und den gesamten Zustellungsverlauf unwiderruflich. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "title": "Webhook löschen?"
+    },
+    "deleted": "Webhook gelöscht",
+    "delete-failed": "Löschen des Webhooks fehlgeschlagen",
+    "deliveries": "Zustellungen",
+    "description": "Konfiguriere Webhook-Endpunkte, um Echtzeit-Benachrichtigungen zu erhalten, wenn Ereignisse in deiner Organisation auftreten.",
+    "disabled": "Webhook deaktiviert",
+    "empty": {
+      "description": "Erstelle deinen ersten Webhook, um Ereignisbenachrichtigungen zu erhalten.",
+      "title": "Keine Webhooks konfiguriert"
+    },
+    "enabled": "Webhook aktiviert",
+    "events": "Ereignisse",
+    "form": {
+      "create": "Webhook erstellen",
+      "create-description": "Konfiguriere einen neuen Webhook-Endpunkt, um Ereignisbenachrichtigungen zu empfangen.",
+      "create-title": "Webhook erstellen",
+      "description": "Beschreibung",
+      "description-placeholder": "Wofür wird dieser Webhook verwendet?",
+      "deselect-all": "Alle abwählen",
+      "edit-description": "Aktualisiere die Konfiguration des Webhook-Endpunkts.",
+      "edit-title": "Webhook bearbeiten",
+      "events": "Zu empfangende Ereignisse",
+      "events-hint": "Ausgewählte Ereignisse: {{count}}",
+      "events-required": "Mindestens ein Ereignis muss ausgewählt sein",
+      "name": "Name",
+      "name-placeholder": "Mein Webhook",
+      "name-required": "Name ist erforderlich",
+      "select-all": "Alle auswählen",
+      "url": "Endpunkt-URL",
+      "url-hint": "HTTPS ist in der Produktion erforderlich. Ereignisse werden als POST-Anfragen gesendet.",
+      "url-required": "URL ist erforderlich"
+    },
+    "last-delivery": "Zuletzt",
+    "logs": {
+      "attempt": "Versuch",
+      "description": "Kürzliche Webhook-Zustellungsversuche und deren Ergebnisse.",
+      "duration": "Dauer",
+      "empty": "Noch keine Zustellungsprotokolle vorhanden",
+      "error": "Fehler",
+      "event": "Ereignis",
+      "failed": "Fehlgeschlagen",
+      "http": "HTTP",
+      "payload": "Payload",
+      "pending": "Ausstehend",
+      "response": "Antwort",
+      "retrying": "Wird wiederholt",
+      "showing": "Zeige {{start}}-{{end}} vo {{total}}",
+      "status": "Status",
+      "success": "Erfolgrich",
+      "time": "Ziit",
+      "title": "Übermittligs-Protokoll"
+    },
+    "regenerate-failed": "Sicherheits-Schlüssel konnte nid neu generiert wärde",
+    "regenerate-secret": "Schlüssel neu generiere",
+    "secret-copied": "Schlüssel isch i d'Zwüscheablage kopiert worde",
+    "secret-dialog": {
+      "copy-secret": "Schlüssel i d'Zwüscheablage kopiere",
+      "description": "Dä Schlüssel wird zum Prüefe vo Webhook-Signature brucht. Bitte sicher ufbewahre.",
+      "done": "Ich ha de Schlüssel gspeicheret",
+      "secret": "Signatur-Schlüssel",
+      "title": "Webhook-Schlüssel",
+      "verification": "Signatur-Überprüefig",
+      "verification-hint": "Prüef d'Webhook-Signature mit HMAC-SHA256. D'Signatur wird im X-Z8-Signature Header mitgschickt.",
+      "warning": "Dä Schlüssel wird nur eis Mal aazeigt. Bitte speicher en jetzt.",
+      "warning-title": "Wichtig"
+    },
+    "secret-regenerated": "Schlüssel isch neu generiert worde",
+    "status": {
+      "degraded": "Igschränkt",
+      "failing": "Fehlerhaft",
+      "healthy": "Iwandfrei",
+      "inactive": "Inaktiv"
+    },
+    "success-rate": "Erfolgrich",
+    "test": "Test sende",
+    "test-failed": "Test-Webhook konnte nid versendet wärde",
+    "test-sent": "Test-Webhook isch versendet worde",
+    "title": "Webhooks",
+    "toggle-active": "Webhook aktivierä/deaktivierä",
+    "updated": "Webhook aktualisiert",
+    "update-failed": "Webhook konnte nid aktualisiert wärde",
+    "view-logs": "Protokoll aaluege"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "dashboard": {
+    "birthday": {
+      "birthday": "urodziny",
+      "birthdays": "urodziny",
+      "celebration": "uroczystość",
+      "celebrations": "uroczystości",
+      "count-today": "{count} {birthday} dzisiaj!",
+      "description": "Uroczystości w ciągu najbliższych 30 dni",
+      "description-count": "{count} {celebration} w ciągu najbliższych 30 dni",
+      "error": "Nie udało się załadować nadchodzących urodzin",
+      "in-days": "Za {days} dni",
+      "more-celebrations": "+{count} więcej uroczystości",
+      "title": "Nadchodzące urodziny",
+      "today": "Dzisiaj!",
+      "tomorrow": "Jutro"
+    },
+    "customize": {
+      "empty-description": "Użyj ikony dostosowywania pulpitu, aby ponownie włączyć poszczególne widżety lub zresetuj układ, aby ponownie wyświetlić wszystkie widżety.",
+      "empty-title": "Wszystkie widżety pulpitu są ukryte",
+      "move-down": "Przesuń {widget} w dół",
+      "move-up": "Przesuń {widget} w górę",
+      "reset": "Resetuj układ",
+      "title": "Widżety pulpitu",
+      "trigger": "Dostosuj pulpit"
+    },
+    "hydration": {
+      "add-glass": "Dodaj {count} szklankę",
+      "add-glasses": "Dodaj {count} szklanek",
+      "description": "Śledź swoje dzienne spożycie wody",
+      "error": "Nie udało się załadować statystyk nawodnienia",
+      "log-error": "Nie udało się zapisać spożycia wody",
+      "of-goal": "z {goal}",
+      "title": "Nawodnienie"
+    },
+    "layout": {
+      "saved": "Układ pulpitu zapisany",
+      "saveFailed": "Nie udało się zapisać układu pulpitu",
+      "saveFailedDescription": "Twoje zmiany nie mogły zostać zapisane. Spróbuj ponownie."
+    },
+    "managed-employees": {
+      "direct-reports": "{count} bezpośrednich podwładnych",
+      "error": "Nie udało się załadować zarządzanych pracowników",
+      "no-reports": "Brak bezpośrednich podwładnych",
+      "no-reports-description": "Tutaj zobaczysz członków swojego zespołu, gdy zostaną przypisani",
+      "people-you-manage": "Osoby, którymi zarządzasz",
+      "title": "Twój zespół",
+      "view-all": "Zobacz wszystko",
+      "view-all-members": "Zobacz wszystkich {count} członków zespołu"
+    },
+    "manager-today": {
+      "all-clear": "Obecnie brak działań menedżera wymagających uwagi.",
+      "description": "Sprawdź dzisiejszy dzień, zanim drobne problemy wpłyną na listę płac lub obsadę.",
+      "error": "Nie udało się załadować liczby odpraw menedżerskich.",
+      "metric-approvals": "Zatwierdzenia",
+      "metric-clock-ins": "Rejestracje czasu pracy",
+      "metric-critical": "Krytyczne",
+      "metric-risks": "Ryzyka",
+      "open": "Otwórz podsumowanie",
+      "title": "Dzisiaj dla menedżera"
+    },
+    "pending-approvals": {
+      "absence-requests": "Wnioski o nieobecność",
+      "awaiting-approval": "Oczekujące na Twoją akceptację",
+      "correction": "Korekta",
+      "description": "Wnioski oczekujące na Twoją decyzję",
+      "error": "Nie udało się załadować oczekujących wniosków",
+      "more-requests": "+{count} więcej wniosków",
+      "pending-requests": "{count} oczekujący {request, plural, one {wniosek} few {wnioski} other {wniosków}}",
+      "request": "wniosek",
+      "requests": "wnioski",
+      "requires-attention": "Wymaga natychmiastowej uwagi",
+      "review-all": "Przejrzyj wszystkie wnioski",
+      "time-corrections": "Korekty czasu",
+      "title": "Oczekujące wnioski"
+    },
+    "presence": {
+      "fixedOfficeDays": "Stałe dni w biurze: {days}",
+      "flexibleOfficePolicy": "Elastyczna polityka pracy biurowej na ten okres",
+      "homeOfficeLeft": "Pozostałe dni pracy zdalnej",
+      "officeDaysWarning": "Wymagana liczba dni w biurze przekracza pozostałe dni pracy",
+      "officeStillRequired": "Nadal wymagana obecność w biurze",
+      "periodDescription": "Ten okres",
+      "unavailable": "Polityka obecności jest niedostępna.",
+      "workLocation": "Miejsce pracy"
+    },
+    "quick-stats": {
+      "behind": "Zaległości",
+      "description": "Twój tygodniowy i miesięczny postęp",
+      "error": "Nie udało się załadować szybkich statystyk",
+      "good-pace": "Dobre tempo",
+      "hours": "godziny",
+      "on-track": "Zgodnie z planem",
+      "progress": "{actual}h z {expected}h ({percent}%)",
+      "this-month": "W tym miesiącu",
+      "this-week": "W tym tygodniu",
+      "title": "Rejestracja czasu pracy"
+    },
+    "recently-approved": {
+      "absence": "Nieobecność",
+      "all-caught-up": "Wszystko załatwione!",
+      "approved-recently": "{count} {request, plural, one {wniosek} few {wnioski} other {wniosków}} zatwierdzono ostatnio",
+      "by": "przez {name}",
+      "description": "Ostatnio zatwierdzone wnioski",
+      "description-count": "Ostatnie {count} zatwierdzone {request, plural, one {wnioski} other {wnioski}}",
+      "error": "Nie udało się załadować ostatnio zatwierdzonych wniosków",
+      "more-approved": "+{count} więcej zatwierdzonych",
+      "request": "wniosek",
+      "requests": "wnioski",
+      "time": "Czas",
+      "title": "Ostatnio zatwierdzone",
+      "view-all": "Zobacz wszystkie wnioski"
+    },
+    "team-overview": {
+      "active-count": "{active} z {total} pracowników ({percent}%)",
+      "active-employees": "Aktywni pracownicy",
+      "avg-hours": "Śr. liczba godzin",
+      "description": "Statystyki zespołu w skrócie",
+      "employees-button": "Pracownicy",
+      "error": "Nie udało się załadować statystyk zespołu",
+      "per-week": "/tydzień",
+      "teams": "Zespoły",
+      "teams-button": "Zespoły",
+      "title": "Organizacja"
+    },
+    "upcoming-time-off": {
+      "absence": "nieobecność",
+      "absences": "nieobecności",
+      "day": "dzień",
+      "days": "dni",
+      "description": "Zaplanowane nieobecności zespołu",
+      "description-count": "Kolejne {count} zaplanowane {absence, plural, one {nieobecności} other {nieobecności}}",
+      "error": "Nie udało się załadować nadchodzących urlopów",
+      "title": "Nadchodzące urlopy",
+      "today": "Dzisiaj",
+      "tomorrow": "Jutro",
+      "view-calendar": "Zobacz pełny kalendarz"
+    },
+    "vacation": {
+      "available": "{days} dostępne",
+      "carryover": "Przeniesienie",
+      "carryover-days": "{days} dni",
+      "days-remaining": "pozostało dni",
+      "description": "{year} dni urlopu",
+      "error": "Nie udało się załadować bilansu urlopowego",
+      "expires-in": "Wygasa za {days} dni",
+      "label-available": "Dostępne",
+      "label-pending": "Oczekujące",
+      "label-used": "Wykorzystane",
+      "no-policy": "Brak skonfigurowanej polityki urlopowej na ten rok",
+      "pending": "{days} oczekujących",
+      "percent-used": "{percent}% wykorzystane",
+      "title": "Bilans urlopowy",
+      "total": "{days} łącznie",
+      "used": "{days} wykorzystane"
+    },
+    "whos-out": {
+      "error": "Nie udało się załadować dzisiejszych nieobecności",
+      "everyone-in": "Wszyscy są dzisiaj w biurze",
+      "everyones-in": "Wszyscy są na miejscu!",
+      "full-team": "Cały zespół jest dostępny!",
+      "member": "członek",
+      "members": "członkowie",
+      "members-out": "{count} {member, select, one {członek zespołu} other {członków zespołu}} nieobecnych",
+      "more-members": "+{count} kolejnych członków zespołu",
+      "more-returning": "+{count} więcej",
+      "out-count": "{count} nieobecnych",
+      "out-today": "Nieobecni dzisiaj",
+      "returning-tomorrow": "Powrót jutro",
+      "returns-tomorrow": "Wraca jutro",
+      "team-availability": "Dostępność zespołu",
+      "title": "Kto jest dzisiaj nieobecny",
+      "until-date": "Do {date}",
+      "view-calendar": "Zobacz pełny kalendarz"
+    },
+    "widgets": {
+      "dragToReorder": "Przeciągnij, aby zmienić kolejność widżetu",
+      "moving": "Przenoszenie widżetu…",
+      "refresh": "Odśwież"
+    }
+  }
+}

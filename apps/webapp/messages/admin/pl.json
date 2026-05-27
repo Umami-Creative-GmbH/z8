@@ -1,0 +1,397 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Historyczne liczby stanowisk i MRR są szacunkowe. Dokładna rekonstrukcja wymaga przyszłych migawek lub rejestru rozliczeń."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Sygnały dotyczące stanowisk i powtarzalnych przychodów dla kondycji rozliczeń.",
+          "summary": "Podsumowanie handlowe: {seats} stanowisk i {mrr} szacunkowego MRR.",
+          "title": "Handlowe"
+        },
+        "engagement": {
+          "description": "Wykorzystanie platformy przez aktywnych użytkowników i sesje.",
+          "summary": "Podsumowanie zaangażowania: {activeUsers} aktywnych użytkowników i {sessions} sesji.",
+          "title": "Zaangażowanie"
+        },
+        "growth": {
+          "description": "Nowi użytkownicy i organizacje wchodzące na platformę.",
+          "summary": "Podsumowanie wzrostu: {signups} rejestracji i {organizations} organizacji.",
+          "title": "Wzrost"
+        },
+        "operations": {
+          "description": "Wolumen śledzenia czasu wygenerowany przez aktywność najemcy.",
+          "summary": "Podsumowanie operacyjne: {timeRecords} rekordów czasu.",
+          "title": "Operacje"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Wiadro analityczne",
+          "label": "Wiadro"
+        },
+        "range": {
+          "ariaLabel": "Zakres analityczny",
+          "label": "Zakres"
+        }
+      },
+      "description": "Monitoruj rozwój platformy, zaangażowanie, aktywność operacyjną i trendy rozliczeniowe.",
+      "emptyState": {
+        "noData": "Brak danych dla tego zakresu"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Użytkownicy aktywni w wybranym zakresie",
+          "title": "Aktywni użytkownicy"
+        },
+        "mrr": {
+          "description": "Szacunkowy miesięczny powtarzalny przychód",
+          "title": "Szacunkowe MRR"
+        },
+        "organizations": {
+          "description": "Aktywne obszary robocze na platformie",
+          "title": "Organizacje"
+        },
+        "seats": {
+          "description": "Obecne płatne lub próbne stanowiska",
+          "title": "Licencjonowane stanowiska"
+        },
+        "sessions": {
+          "description": "Uwierzytelnione sesje",
+          "title": "Sesje"
+        },
+        "signups": {
+          "description": "Nowe konta na platformie",
+          "title": "Rejestracje"
+        },
+        "timeRecords": {
+          "description": "Przesłane rekordy operacyjne",
+          "title": "Rekordy czasu"
+        }
+      },
+      "preview": {
+        "description": "Wzrost i zaangażowanie na platformie w wybranym zakresie.",
+        "title": "Trendy analityczne",
+        "viewFull": "Zobacz pełną analitykę"
+      },
+      "sectionDescription": "Zaktualizowano na podstawie bieżących danych platformy dla wybranego zakresu i przedziału.",
+      "sectionTitle": "Trendy analityczne",
+      "title": "Analityka platformy",
+      "values": {
+        "notAvailable": "Niedostępne"
+      }
+    },
+    "billing": {
+      "description": "Monitoruj subskrypcje, przychody i status płatności",
+      "intervals": {
+        "month": "Miesięcznie",
+        "year": "Rocznie"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktywne subskrypcje",
+        "activeSubscriptionsDescription": "{trialingCount} w okresie próbnym, {activeCount} płatnych",
+        "conversionRate": "Współczynnik konwersji",
+        "conversionRateDescription": "Z wersji próbnej na płatną",
+        "licensedSeats": "Licencjonowane stanowiska",
+        "licensedSeatsDescription": "We wszystkich subskrypcjach",
+        "mrr": "MRR",
+        "mrrDescription": "Miesięczny powtarzalny przychód",
+        "pastDue": "Zaległe",
+        "pastDueDescription": "Problemy z płatnością",
+        "trialing": "W okresie próbnym",
+        "trialingDescription": "W okresie próbnym"
+      },
+      "sections": {
+        "recentSubscriptions": "Ostatnie subskrypcje",
+        "revenueMetrics": "Metryki przychodów"
+      },
+      "status": {
+        "active": "Aktywna",
+        "canceled": "Anulowana",
+        "pastDue": "Zaległa",
+        "trialing": "Okres próbny"
+      },
+      "table": {
+        "billing": "Rozliczenia",
+        "created": "Utworzono",
+        "noSubscriptions": "Brak subskrypcji",
+        "organization": "Organizacja",
+        "periodEnd": "Koniec okresu",
+        "seats": "Miejsca",
+        "status": "Status"
+      },
+      "title": "Panel rozliczeń"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Odśwież diagnostykę"
+      },
+      "clientDescription": "Bezpieczna konfiguracja platformy i stan usług na poziomie aplikacji. Ostatnia aktualizacja: {date}.",
+      "description": "Bezpieczna konfiguracja platformy i kontrola stanu wdrożenia aplikacji.",
+      "keyManager": {
+        "actions": {
+          "test": "Testuj szyfrowanie"
+        },
+        "ciphertextPreview": "Podgląd tekstu zaszyfrowanego",
+        "description": "Uruchom test szyfrowania/deszyfrowania klucza platformy typu end-to-end.",
+        "input": "Dane wejściowe",
+        "keyStatus": "Status klucza",
+        "keyStatus.created": "Utworzono nowy klucz platformy",
+        "keyStatus.reused": "Użyto ponownie istniejącego klucza platformy",
+        "output": "Dane wyjściowe",
+        "platformKeyId": "ID klucza platformy",
+        "result": {
+          "match": "Dane wejściowe i wyjściowe są zgodne",
+          "mismatch": "Dane wejściowe i wyjściowe różnią się"
+        },
+        "status": {
+          "pending": "Test szyfrowania jest uruchomiony."
+        },
+        "title": "Szyfrowanie Scaleway Key Manager"
+      },
+      "recommendedActions": {
+        "description": "Rozwiąż te problemy, aby przywrócić prawidłowy stan diagnostyki.",
+        "title": "Zalecane działania"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Bezpieczne stany konfiguracji wdrożenia. Wartości sekretów nigdy nie są wyświetlane.",
+          "title": "Konfiguracja platformy"
+        },
+        "health": {
+          "description": "Kontrole tylko dla aplikacji dotyczące zależności infrastrukturalnych używanych przez aplikację internetową.",
+          "title": "Stan usług"
+        }
+      },
+      "statusAnnouncement": "Status diagnostyki: {status}. Ostatnia aktualizacja: {date}.",
+      "status": {
+        "disabled": "Wyłączone",
+        "error": "Błąd",
+        "healthy": "Prawidłowy",
+        "warning": "Ostrzeżenie"
+      },
+      "title": "Diagnostyka wdrożenia"
+    },
+    "layout": {
+      "exitAdmin": "Wyjdź z panelu administratora",
+      "nav": {
+        "analytics": "Analityka",
+        "billing": "Rozliczenia",
+        "diagnostics": "Diagnostyka wdrożenia",
+        "organizations": "Organizacje",
+        "overview": "Przegląd",
+        "settings": "Ustawienia",
+        "systemEmailTemplates": "Szablony wiadomości e-mail systemu",
+        "users": "Użytkownicy",
+        "workerQueue": "Kolejka pracowników"
+      },
+      "subtitle": "Zarządzanie platformą",
+      "title": "Konsola administratora"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Usuń organizację",
+        "reactivate": "Reaktywuj organizację",
+        "suspend": "Zawieś organizację"
+      },
+      "badges": {
+        "deleted": "Usunięte",
+        "suspended": "Zawieszone"
+      },
+      "deleteDialog": {
+        "confirmButton": "Usuń organizację",
+        "confirmLabel": "Wpisz „{name}”, aby potwierdzić",
+        "confirmPlaceholder": "Nazwa organizacji",
+        "description": "Ta akcja usunie „{name}” oraz wszystkie powiązane dane. Tego działania nie można cofnąć.",
+        "immediateDelete": "Usuń natychmiast (pomiń 5-dniowy okres karencji)",
+        "skipNotification": "Nie wysyłaj powiadomienia o usunięciu do członków organizacji",
+        "title": "Usuń organizację"
+      },
+      "description": "Wyświetl i zarządzaj wszystkimi organizacjami na platformie",
+      "filters": {
+        "all": "Wszystkie",
+        "deleted": "Usunięte",
+        "suspended": "Zawieszone"
+      },
+      "pagination": {
+        "showing": "Wyświetlanie od {from} do {to} z {total} organizacji"
+      },
+      "searchPlaceholder": "Szukaj według nazwy lub sluga…",
+      "suspendDialog": {
+        "confirmButton": "Zawieś organizację",
+        "description": "Zawieś „{name}” i przełącz ją w tryb tylko do odczytu. Członkowie będą mogli przeglądać dane, ale nie będą mogli niczego tworzyć ani edytować.",
+        "reason": "Powód",
+        "reasonPlaceholder": "Wpisz powód zawieszenia tej organizacji…",
+        "title": "Zawieś organizację"
+      },
+      "table": {
+        "created": "Utworzono",
+        "employees": "Pracownicy",
+        "loadErrorTitle": "Nie można załadować organizacji",
+        "members": "Członkowie",
+        "noOrganizationsFound": "Nie znaleziono organizacji",
+        "organization": "Organizacja"
+      },
+      "title": "Zarządzanie organizacją",
+      "toasts": {
+        "deletedGracePeriod": "Organizacja „{name}” została zaplanowana do usunięcia za 5 dni",
+        "deletedImmediate": "Organizacja „{name}” została zaplanowana do natychmiastowego usunięcia",
+        "suspended": "Organizacja „{name}” została zawieszona",
+        "unsuspended": "Organizacja „{name}” została odwieszona"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Trendy analityczne"
+      },
+      "description": "Metryki platformy i szybkie akcje",
+      "metrics": {
+        "bannedUsers": "Zbanowani użytkownicy",
+        "bannedUsersDescription": "Ograniczony dostęp",
+        "licensedSeats": "Licencjonowane miejsca",
+        "licensedSeatsDescription": "We wszystkich subskrypcjach",
+        "mrr": "MRR",
+        "mrrDescription": "Miesięczny powtarzalny przychód (€)",
+        "organizations": "Organizacje",
+        "organizationsDescription": "Aktywne obszary robocze",
+        "suspended": "Zawieszone",
+        "suspendedDescription": "Organizacje tylko do odczytu",
+        "title": "Metryki platformy",
+        "totalUsers": "Łączna liczba użytkowników",
+        "totalUsersDescription": "Zarejestrowane konta na platformie"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Metryki przychodów i status subskrypcji",
+          "title": "Płatności i subskrypcje"
+        },
+        "diagnostics": {
+          "description": "Przejrzyj bezpieczną konfigurację i kontrole stanu aplikacji",
+          "title": "Diagnostyka wdrożenia"
+        },
+        "organizations": {
+          "description": "Zawieszaj, usuwaj lub przeglądaj organizacje",
+          "title": "Zarządzanie organizacjami"
+        },
+        "systemEmailTemplates": {
+          "description": "Edytuj treść wiadomości e-mail dotyczących rozliczeń i systemu",
+          "title": "Szablony wiadomości e-mail systemu"
+        },
+        "title": "Szybkie akcje",
+        "users": {
+          "description": "Blokuj/odblokowuj użytkowników, zarządzaj sesjami, przeglądaj aktywność",
+          "title": "Zarządzanie użytkownikami"
+        }
+      },
+      "title": "Przegląd"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Zapisz zmiany"
+      },
+      "cookieConsent": {
+        "description": "Wstrzykiwany na stronach uwierzytelniania w celu zapewnienia zgodności z RODO",
+        "helperPrefix": "Pozostaw puste, aby wyłączyć. Ładowany za pomocą",
+        "helperSuffix": "strategii.",
+        "scriptContent": "Treść skryptu",
+        "scriptPlaceholder": "<!-- Przykład: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Lub własny skrypt -->\n<script>\n  // Twoja logika zgody na pliki cookie\n</script>",
+        "title": "Skrypt zgody na pliki cookie"
+      },
+      "description": "Globalna konfiguracja platformy dla wszystkich organizacji",
+      "title": "Ustawienia platformy",
+      "toasts": {
+        "cookieConsentSaved": "Skrypt zgody na pliki cookie został pomyślnie zapisany",
+        "saveFailed": "Nie udało się zapisać"
+      },
+      "turnstile": {
+        "deploymentNote": "Skonfigurowano za pomocą zmiennych środowiskowych podczas wdrażania. Organizacje Enterprise mogą nadpisać to w Ustawieniach domeny.",
+        "description": "Ochrona przed botami dla formularzy uwierzytelniania",
+        "secretKey": "Klucz tajny",
+        "siteKey": "Klucz witryny",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Przywróć szablon systemowy",
+        "save": "Zapisz",
+        "sendTest": "Wyślij test"
+      },
+      "defaultFallback": "Domyślny szablon zastępczy",
+      "defaultFallbackDescription": "Jeśli ten szablon korzysta z ustawień domyślnych systemu, Z8 wyśle kopię i temat platformy:",
+      "description": "Zarządzaj wiadomościami e-mail dotyczącymi rozliczeń i systemu należącymi do platformy. Te szablony są wysyłane wyłącznie za pomocą systemowego transportu poczty elektronicznej i nie są przypisane do organizacji.",
+      "editBodyBeforeSaving": "Edytuj treść wiadomości e-mail przed zapisaniem pierwszego niestandardowego szablonu.",
+      "empty": "Brak dostępnych systemowych szablonów wiadomości e-mail platformy.",
+      "eyebrow": "Transport systemowy",
+      "reset": "Systemowy szablon wiadomości e-mail przywrócony do wartości domyślnych",
+      "resetDialog": {
+        "confirm": "Przywróć systemowy szablon platformy",
+        "description": "Spowoduje to usunięcie globalnego nadpisania platformy dla tego systemowego szablonu wiadomości e-mail i przywrócenie wbudowanego tematu oraz treści. Bieżące wiadomości dotyczące rozliczeń i systemu będą używać domyślnej kopii platformy po zresetowaniu.",
+        "title": "Przywrócić systemowy szablon platformy?"
+      },
+      "resetFailed": "Nie udało się przywrócić systemowego szablonu wiadomości e-mail",
+      "saved": "Systemowy szablon wiadomości e-mail został zapisany",
+      "saveFailed": "Nie udało się zapisać systemowego szablonu wiadomości e-mail",
+      "status": {
+        "customized": "Dostosowany",
+        "default": "Domyślny"
+      },
+      "systemTemplates": "Szablony systemowe",
+      "testFailed": "Nie udało się wysłać testowej wiadomości e-mail",
+      "testSent": "Testowa wiadomość e-mail została wysłana na Twoje konto",
+      "title": "Szablony wiadomości e-mail systemu",
+      "transportNotice": "Użyj tego obszaru dla globalnych wiadomości e-mail dotyczących rozliczeń i systemu. Ustawienia transportu poczty organizacji są ignorowane dla tych wiadomości; testy i wysyłki na żywo korzystają z systemowego transportu platformy."
+    },
+    "users": {
+      "badges": {
+        "admin": "Administrator",
+        "banExpiresUntil": "Do {date}",
+        "banned": "Zablokowany",
+        "user": "Użytkownik"
+      },
+      "banDialog": {
+        "confirmButton": "Zablokuj użytkownika",
+        "description": "Zablokuj użytkownikowi {email} dostęp do platformy.",
+        "expiry": "Data wygaśnięcia (opcjonalnie)",
+        "permanentBanHint": "Pozostaw puste, aby nałożyć stałą blokadę",
+        "reason": "Powód",
+        "reasonPlaceholder": "Podaj powód zablokowania tego użytkownika…",
+        "title": "Zablokuj użytkownika"
+      },
+      "description": "Przeglądaj i zarządzaj wszystkimi użytkownikami na platformie",
+      "filters": {
+        "allUsers": "Wszyscy użytkownicy",
+        "banned": "Zablokowani"
+      },
+      "pagination": {
+        "showing": "Wyświetlanie od {from} do {to} z {total} użytkowników"
+      },
+      "searchLabel": "Szukaj użytkowników według adresu e-mail",
+      "searchPlaceholder": "Szukaj według nazwy lub adresu e-mail…",
+      "sessionsDialog": {
+        "description": "Aktywne sesje dla {email}",
+        "noSessions": "Brak aktywnych sesji",
+        "revokeAll": "Unieważnij wszystkie sesje",
+        "title": "Sesje użytkownika",
+        "unknownDevice": "Nieznane urządzenie",
+        "unknownIp": "Nieznany adres IP"
+      },
+      "table": {
+        "created": "Utworzono",
+        "noOrganizations": "Brak organizacji",
+        "noUsersFound": "Nie znaleziono użytkowników",
+        "organizations": "Organizacje",
+        "role": "Rola",
+        "user": "Użytkownik"
+      },
+      "title": "Zarządzanie użytkownikami",
+      "toasts": {
+        "banned": "Użytkownik {email} został zablokowany",
+        "sessionRevoked": "Sesja unieważniona",
+        "sessionsRevoked": "Unieważniono {count} sesji",
+        "unbanned": "Użytkownik {email} został odblokowany"
+      }
+    }
+  }
+}

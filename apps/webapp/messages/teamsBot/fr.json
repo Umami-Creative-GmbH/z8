@@ -1,109 +1,107 @@
 {
+  "approval": {
+    "absenceRequest": "Demande d'absence",
+    "actions": {
+      "approve": "Approuver",
+      "approving": "Approbation en cours...",
+      "reject": "Rejeter",
+      "rejecting": "Rejet en cours...",
+      "viewInZ8": "Voir dans Z8"
+    },
+    "durationDays": "{count, plural, one {# jour} other {# jours}}",
+    "facts": {
+      "approvedBy": "Approuvé par",
+      "corrected": "Corrigé",
+      "dates": "Dates",
+      "duration": "Durée",
+      "email": "E-mail",
+      "from": "De",
+      "original": "Original",
+      "reason": "Motif",
+      "rejectedBy": "Rejeté par",
+      "resolved": "Résolu",
+      "status": "Statut",
+      "submitted": "Soumis",
+      "type": "Type"
+    },
+    "status": {
+      "approved": "APPROUVÉ",
+      "rejected": "REJETÉ"
+    },
+    "timeCorrectionRequest": "Demande de correction de temps"
+  },
   "commands": {
-    "coverage": {
-      "title": "Coverage Report",
-      "noData": "No scheduled coverage data found for {date}.",
-      "summary": "{count} locations checked",
-      "understaffed": "Understaffed by {count}",
-      "overstaffed": "Overstaffed by {count}",
-      "adequate": "Fully staffed",
-      "scheduled": "Scheduled",
-      "clockedIn": "Clocked In",
-      "variance": "Variance",
-      "viewFullSchedule": "View Full Schedule"
-    },
-    "openShifts": {
-      "title": "Open Shifts",
-      "noShifts": "No open shifts found for {period}. All shifts are currently assigned.",
-      "available": "{count} shift available",
-      "availablePlural": "{count} shifts available",
-      "requestButton": "Request",
-      "moreShifts": "+{count} more shifts",
-      "requestPending": "Request pending",
-      "managerApprovalRequired": "Requests require manager approval",
-      "viewAllShifts": "View All Shifts"
-    },
     "compliance": {
-      "title": "Compliance Summary",
-      "noIssues": "No compliance issues found in the last {days} days. Your team is in good standing!",
-      "itemsRequireAttention": "{count} item requires attention",
-      "itemsRequireAttentionPlural": "{count} items require attention",
-      "violations": "Violations",
-      "critical": "Critical",
-      "pending": "Pending",
-      "recentViolations": "Recent Violations",
-      "pendingExceptions": "Pending Exception Requests",
-      "exceptionUsed": "(exception used)",
-      "moreViolations": "+{count} more violations",
-      "moreRequests": "+{count} more requests",
-      "viewDashboard": "View Compliance Dashboard",
-      "reviewExceptions": "Review Exceptions"
+      "critical": "Critique",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (exception utilisée)",
+      "lastDays": "{days} derniers jours",
+      "legend": "\uD83D\uDD34 Violation  \uD83D\uDFE0 Critique  \uD83D\uDFE1 Avertissement  \uD83D\uDCDD Demande en attente",
+      "moreRequestsMarkdown": "_+{count} demandes supplémentaires_",
+      "moreViolationsMarkdown": "_+{count} violations supplémentaires_",
+      "pending": "En attente",
+      "pendingExceptions": "Demandes d'exception en attente",
+      "recentViolations": "Violations récentes",
+      "reviewExceptions": "Examiner les exceptions",
+      "textCriticalAlerts": "**Alertes critiques :** {count}",
+      "textMore": "  +{count} de plus",
+      "textPendingExceptions": "**Exceptions en attente :** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Demandes en attente :**",
+      "textRecentViolations": "**Violations récentes :**",
+      "textTitle": "**⚠️ Résumé de conformité - {days} derniers jours**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Violations :** {count}",
+      "titleWithIcon": "⚠️ Résumé de conformité",
+      "viewDashboard": "Voir le tableau de bord de conformité",
+      "violations": "Violations"
+    },
+    "coverage": {
+      "clockedIn": "Pointé",
+      "moreLocationsMarkdown": "_+{count} emplacements supplémentaires..._",
+      "scheduled": "Planifié",
+      "titleWithIcon": "\uD83D\uDCCA Rapport de couverture",
+      "variance": "Écart",
+      "viewFullSchedule": "Voir le planning complet"
     },
     "help": {
-      "availableCommands": "Available Commands",
-      "coverageDesc": "View staffing coverage by location and time slot",
-      "openShiftsDesc": "View and request open shifts",
-      "complianceDesc": "View compliance violations and pending exceptions"
+      "availableCommands": "Aide"
     }
   },
-  "errors": {
-    "rateLimitExceeded": "Rate limit exceeded. Please wait {seconds} seconds before using this command again.",
-    "permissionDenied": "This command is only available to managers and admins.",
-    "permissionDeniedAdmin": "This command is only available to organization admins.",
-    "notFound": "Resource not found",
-    "generalError": "Something went wrong. Please try again later.",
-    "employeeNotFound": "Your employee record could not be found."
-  },
-  "shiftPickup": {
-    "success": "Shift pickup request submitted!",
-    "successDetail": "Your manager will review and approve your request. You'll be notified once a decision is made.",
-    "unavailable": "Shift no longer available",
-    "unavailableDetail": "This shift has already been assigned or is no longer open. Please check for other available shifts.",
-    "alreadyPending": "Request already pending",
-    "alreadyPendingDetail": "You already have a pending pickup request for this shift. Please wait for your manager to review it.",
-    "failed": "Request failed",
-    "failedDetail": "Something went wrong while processing your request. Please try again or contact support."
+  "common": {
+    "more": "+{count} de plus",
+    "moreBullet": "• +{count} de plus"
   },
   "digest": {
-    "title": "Daily Digest",
-    "pendingApprovals": "Pending Approvals",
-    "noPendingApprovals": "No pending approvals",
-    "pendingApprovalsCount": "You have {count} pending approval",
-    "pendingApprovalsCountPlural": "You have {count} pending approvals",
-    "whosOutToday": "Who's Out Today",
-    "everyoneAvailable": "Everyone is available today",
-    "returns": "Returns {date}",
-    "currentlyClockedIn": "Currently Clocked In",
-    "noOneClockedIn": "No one is clocked in yet",
-    "since": "Since {time}",
-    "coverageGaps": "Coverage Gaps",
-    "openShifts": "Open Shifts",
-    "todayTomorrow": "Today: {today} | Tomorrow: {tomorrow}",
-    "complianceAlerts": "Compliance Alerts",
-    "pendingExceptionRequests": "{count} pending exception request awaiting review",
-    "pendingExceptionRequestsPlural": "{count} pending exception requests awaiting review",
-    "openDashboard": "Open Z8 Dashboard",
-    "viewApprovals": "View Approvals"
-  },
-  "common": {
-    "more": "+{count} more",
-    "today": "Today",
-    "tomorrow": "Tomorrow",
-    "unknown": "Unknown"
+    "currentlyClockedIn": "Actuellement pointé(e)",
+    "everyoneAvailable": "Tout le monde est disponible aujourd'hui",
+    "noOneClockedIn": "Personne n'est encore pointé",
+    "noPendingApprovals": "Aucune approbation en attente",
+    "openDashboard": "Ouvrir le tableau de bord Z8",
+    "openShifts": "Quarts ouverts",
+    "pendingApprovals": "Approbations en attente",
+    "pendingExceptionRequests": "{count, plural, one {# demande d'exception en attente d'examen} other {# demandes d'exception en attente d'examen}}",
+    "returns": "Retour le {date}",
+    "since": "Depuis {time}",
+    "textClockedInEmployee": "• {name} - depuis {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Conformité :**",
+    "textCoverageGaps": "**\uD83D\uDD34 Lacunes de couverture :**",
+    "textCurrentlyClockedIn": "**Actuellement pointé(e) :**",
+    "textEmployeeOut": "• {name} - {category} (retour le {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Quarts ouverts :**",
+    "textPendingApprovalsCount": "**Approbations en attente :** {count}",
+    "textPendingApprovalsNone": "**Approbations en attente :** Aucune",
+    "textTitle": "**Résumé quotidien - {date}**",
+    "textWhosOut": "**Absences :**",
+    "title": "Résumé quotidien",
+    "todayTomorrow": "Aujourd'hui : {today} | Demain : {tomorrow}",
+    "viewApprovals": "Voir les approbations",
+    "whosOutToday": "Absences aujourd'hui"
   },
   "exceptionTypes": {
-    "rest_period": "Rest Period",
-    "overtime_daily": "Daily Overtime",
-    "overtime_weekly": "Weekly Overtime",
-    "overtime_monthly": "Monthly Overtime"
-  },
-  "legend": {
-    "adequate": "Adequate",
-    "understaffed": "Understaffed",
-    "overstaffed": "Overstaffed",
-    "violation": "Violation",
-    "critical": "Critical",
-    "warning": "Warning",
-    "pendingRequest": "Pending Request"
+    "overtime_daily": "Heures supplémentaires quotidiennes",
+    "overtime_monthly": "Heures supplémentaires mensuelles",
+    "overtime_weekly": "Heures supplémentaires hebdomadaires",
+    "rest_period": "Période de repos"
   }
 }

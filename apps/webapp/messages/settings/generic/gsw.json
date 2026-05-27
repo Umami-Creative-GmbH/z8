@@ -1,0 +1,961 @@
+{
+  "settings": {
+    "avv": {
+      "contractDetails": {
+        "controller": "Auftraggeber (Controller)",
+        "descriptionPrefix": "Diese Vereinbarung regelt die Verarbeitung personenbezogener Daten im Auftrag Ihrer Organisation und ",
+        "processor": "Auftragnehmer (Processor)",
+        "title": "Vertragsdetails"
+      },
+      "description": "Laden Sie Ihren Auftragsverarbeitungsvertrag gemäss Art. 28 DSGVO herunter.",
+      "hosting": {
+        "descriptionPrefix": "Alle Daten werden auf Servern von ",
+        "descriptionSuffix": ". Es werden keine weiteren Unterauftragsverarbeiter eingesetzt.",
+        "title": "Hosting & Unterauftragsverarbeiter"
+      },
+      "title": "Auftragsverarbeitungsvertrag (AVV)"
+    },
+    "billing": {
+      "description": "Verwalten Sie Ihr Abonnement, Zahlungsmethoden und Rechnungen",
+      "title": "Abrechnung & Abonnement"
+    },
+    "compliance": {
+      "description": "Überprüfen und verwalten Sie Compliance-Ausnahmeanträge von Teammitgliedern",
+      "title": "ArbZG-Compliance"
+    },
+    "customDomains": {
+      "description": "Konfigurieren Sie eine benutzerdefinierte Domain, Branding und SSO für Ihre Organisation",
+      "title": "Domain & Branding"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Kontaktperson",
+        "email": "E-Mail",
+        "name": "Firmenname",
+        "phone": "Telefon"
+      },
+      "create": "Kunde hinzufügen",
+      "created": "Kunde erstellt",
+      "createFailed": "Kunde konnte nicht erstellt werden",
+      "deleted": "Kunde gelöscht",
+      "delete": {
+        "description": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Projekte, die diesem Kunden zugewiesen sind, funktionieren weiterhin, aber der Kundenbezug wird entfernt.",
+        "title": "Kunde löschen"
+      },
+      "deleteFailed": "Kunde konnte nicht gelöscht werden",
+      "description": "Verwalten Sie Kundenkontakte für Projektzuweisungen",
+      "dialog": {
+        "create": "Kunde hinzufügen",
+        "createDescription": "Fügen Sie einen neuen Kunden für Projektzuweisungen hinzu",
+        "createTitle": "Kunde hinzufügen",
+        "editDescription": "Kundendetails aktualisieren",
+        "editTitle": "Kunde bearbeiten",
+        "save": "Änderungen speichern"
+      },
+      "empty": {
+        "description": "Fügen Sie Ihren ersten Kunden hinzu, um ihn Projekten zuzuweisen.",
+        "title": "Noch keine Kunden vorhanden"
+      },
+      "field": {
+        "address": "Adresse",
+        "addressPlaceholder": "Strasse, Stadt, PLZ",
+        "contactPerson": "Kontaktperson",
+        "contactPersonPlaceholder": "z. B. Max Muster",
+        "email": "E-Mail",
+        "name": "Firmenname",
+        "namePlaceholder": "Firmennamen eingeben",
+        "phone": "Telefon",
+        "project": "Projekt",
+        "projectPlaceholder": "Projekt auswählen",
+        "vatId": "MwSt.-Nummer",
+        "website": "Websiite"
+      },
+      "list": {
+        "description": "{count} Chunde insgesamt",
+        "title": "Alli Chunde"
+      },
+      "managerNoProjects": "Kei verwalteti Projekt verfüegbar. Erstell oder verwalt es Projekt, bevor du Chunde hinzufüegsch.",
+      "projectRequired": "Wähl zerscht es Projekt us",
+      "title": "Chunde",
+      "updated": "Chunde aktualisiert",
+      "updateFailed": "Chunde-Aktualisierig isch fählgschlage"
+    },
+    "dataExport": {
+      "description": "Exportier d Date vo dinere Organisation",
+      "form": {
+        "aboutAsync": "Export wärded asynchron verarbeitet",
+        "aboutEmail": "Du bechunsch es E-Mail, sobald es fertig isch",
+        "aboutLinkValidity": "Download-Links sind 24 Stunde lang gültig",
+        "aboutOrgDataOnly": "Es sind nur d Date vo dinere Organisation enthalte",
+        "aboutStorageDuration": "Export-Dateie wärded für 7 Täg gspeicheret",
+        "aboutTitle": "Über de Date-Export",
+        "description": "Wähl d Datekategorie us, wo du exportiere wotsch",
+        "selectAll": "Alli uswähle",
+        "selectAtLeastOne": "Bitte wähl mindischtens eini Kategorie us",
+        "startExport": "Export starte (${selectedCategories.size})",
+        "startingExport": "Export wird gstartet...",
+        "submitError": "Export-Start isch fählgschlage",
+        "submitSuccess": "Export erfolgriich gstartet",
+        "title": "Date exportiere",
+        "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
+      },
+      "history": {
+        "columnActions": "Aktion",
+        "columnCategories": "Kategorie",
+        "columnDate": "Datum",
+        "columnSize": "Grössi",
+        "columnStatus": "Status",
+        "deleteDialogDescription": "Bischt du sicher, dass du dä Export lösche wotsch? Die Aktion chan nöd rückgängig gmacht wärde.",
+        "deleteDialogTitle": "Export lösche",
+        "deleteError": "Export-Löschig isch fählgschlage",
+        "deleteSuccess": "Export glöscht",
+        "description": "Dini früehnere Date-Export",
+        "download": "Download",
+        "downloadError": "Download isch fählgschlage",
+        "downloadSuccess": "Download gstartet",
+        "emptyDescription": "No kei Export vorhande",
+        "emptyHint": "Erstell dine erschte Export mit em Formular obe",
+        "moreCategories": "+${exp.categories.length - 3} meh",
+        "statusCompleted": "Abgschlosse",
+        "statusFailed": "Fählgschlage",
+        "statusPending": "Usstehend",
+        "statusProcessing": "Wird verarbeitet",
+        "title": "Export-Verlauf",
+        "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
+      },
+      "storage": {
+        "accessKeyDescription": "Dini AWS Access Key ID",
+        "accessKeyId": "Access Key ID",
+        "bucketDescription": "De Name vo dim S3-Bucket",
+        "bucketName": "Bucket-Name",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Verbindig fehlgschlage",
+        "connectionSuccess": "Verbindig erfolgriich",
+        "deleteDialogDescription": "Sind Sie sicher, dass Sie die Speicher-Konfiguration lösche wänd?",
+        "deleteDialogTitle": "Konfiguration lösche",
+        "deleteError": "Konfiguration hät nöd chöne glöscht werde",
+        "deleteSuccess": "Konfiguration glöscht",
+        "description": "Konfiguriere Sie Ihre eigene S3-kompatible Speicher für Exporte",
+        "endpoint": "Benutzerdefinierte Endpoint (Optional)",
+        "endpointDescription": "Für S3-kompatibli Dienscht wie MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Leer lah, zum die bestehende Zugangsdate z'bhalte",
+        "lastVerified": "Zuletscht prüeft: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "region": "Region",
+        "regionDescription": "AWS-Region, wo Ihr Bucket sich befindet",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Konfiguration spychere",
+        "saveError": "Konfiguration hät nöd chöne gspycheret werde",
+        "saveSuccess": "Konfiguration gspycheret",
+        "saveSuccessDescription": "Ihre S3-Speichereistellige sind gspycheret worde",
+        "saving": "Am spychere...",
+        "secretAccessKey": "Secret Access Key",
+        "secretKeyDescription": "Ihr AWS Secret Access Key",
+        "testConnection": "Verbindig teste",
+        "testFailed": "Verbindigstest isch fehlgschlage",
+        "testing": "Am teste...",
+        "title": "S3-Speicherkonfiguration",
+        "unexpectedError": "Es isch en unerwartete Fehler uftrete",
+        "verified": "Verifiziert"
+      },
+      "storageNotConfigured": {
+        "description": "Konfiguriere Sie de S3-Speicher, bevor Sie Exporte erstellid",
+        "title": "Speicher nöd konfiguriert"
+      },
+      "tabs": {
+        "exportHistory": "Export-Verlauf",
+        "newExport": "Neue Export",
+        "storageSettings": "Speichereistellige"
+      },
+      "title": "Date-Export"
+    },
+    "emailConfig": {
+      "description": "Konfiguriere Sie en benutzerdefinierte E-Mail-Provider für Organisations-E-Mails",
+      "title": "E-Mail-Konfiguration"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Uf System-Vorlage zruggsetze",
+        "save": "Spychere",
+        "sendTest": "Test sende"
+      },
+      "defaultFallback": "Standard-Fallback",
+      "defaultFallbackDescription": "Wenn die Vorlage de System-Standard verwendet, verschickt Z8 die System-Kopie und de Betreff:",
+      "description": "Passid Sie d'E-Mails aa, wo Ihre Organisation verschickt",
+      "editBodyBeforeSaving": "Bearbeite Sie de E-Mail-Inhalt, bevor Sie die erschti benutzerdefinierte Vorlage spychered.",
+      "empty": "Es sind kei E-Mail-Vorlage für die Organisation verfüegbar.",
+      "eyebrow": "Operativi Kommunikation",
+      "reset": "E-Mail-Vorlage uf System-Vorlage zruggsetzt",
+      "resetFailed": "E-Mail-Vorlage hät nöd chöne zruggsetzt werde",
+      "saved": "E-Mail-Vorlage gspycheret",
+      "saveFailed": "E-Mail-Vorlage hät nöd chöne gspycheret werde",
+      "status": {
+        "customized": "Aapasst",
+        "default": "Standard"
+      },
+      "systemTemplates": "System-Vorlage",
+      "testFailed": "Test-E-Mail konnte nöd versändet wärde",
+      "testSent": "Test-E-Mail isch a dis Konto versändet worde",
+      "title": "E-Mail-Vorlage"
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Zrugg zu de Iistellige",
+        "tryAgain": "Nochli probiere"
+      },
+      "description": "Es isch en Fehler bim Lade vo de Iistellige ufträtte. Das chönnt es vorübergehends Problem sii.",
+      "errorId": "Fehler-ID: {{digest}}",
+      "title": "Es isch öppis schiefgange"
+    },
+    "export": {
+      "description": "Organisationsdate für Backup oder Migration exportiere",
+      "title": "Date-Export"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Audit-Export-Aafrog isch gspeicheret.",
+          "title": "Audit-Export"
+        },
+        "payroll": {
+          "description": "Lohnabrechnigs-Export-Uftrag isch gspeicheret.",
+          "title": "Lohnabrechnigs-Export"
+        },
+        "scheduled": {
+          "description": "Geplante Export isch gspeicheret.",
+          "title": "Geplante Export"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Die letscht Audit-Export-Aafrog isch nöd fertig worde.",
+          "title": "Audit-Export gschiteret"
+        },
+        "blockedSchedule": {
+          "description": "{name} brucht e Konfiguration für de Lohnabrechnigs-Export, bevor er cha starte.",
+          "title": "Geplante Lohnabrechnigs-Export isch blockiert"
+        },
+        "payrollFailed": {
+          "description": "De letscht Lohnabrechnigs-Export isch nöd fertig worde.",
+          "title": "Lohnabrechnigs-Export gschiteret"
+        },
+        "scheduledFailed": {
+          "description": "{name} isch nöd erfolgriich fertig worde.",
+          "title": "Geplante Export gschiteret"
+        }
+      },
+      "description": "Überwach d'Aktivitäte vo de Lohnabrechnig, Audit und geplante Export für dini Organisation.",
+      "errors": {
+        "alerts": "Einigi Alarm chönnt unvollständig sii, solang d'Exportdate nöd verfügbar sind.",
+        "recentActivity": "Einigi Aktivitätsdate sind vorübergehend nöd verfügbar.",
+        "summary": "D'Aazaale basiered uf de Exportdate, wo hätted chönne glade wärde.",
+        "upcomingRuns": "Date vom geplante Export sind vorübergehend nöd verfügbar."
+      },
+      "title": "Export-Vorgäng"
+    },
+    "group": {
+      "account": "Konto",
+      "administration": "Administration",
+      "data": "Date",
+      "enterprise": "Enterprise",
+      "notifications": "Benachrichtigunge",
+      "organization": "Organisation"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Als erledigt markiere",
+        "markIncomplete": "Als unerledigt markiere"
+      },
+      "description": "Schliess d'Iirichtigsschritt ab, bevor du dis Team iiladesch, damit Ziiterfassig, Freigabe und Lohnabrechnigsprozäss für de tägliche Gebruuch bereit sind.",
+      "errors": {
+        "updateItem": "Checklisten-Punkt hät nöd chönne aktualisiert wärde."
+      },
+      "eyebrow": "Kunde-Implementierig",
+      "progress": {
+        "ariaLabel": "Fortschritt vo de Implementierigs-Checkliste",
+        "completedCount": "{{completed}} vo {{total}} erledigt",
+        "label": "Iirichtigs-Fortschritt",
+        "percentComplete": "{{percent}}% erledigt"
+      },
+      "status": {
+        "complete": "Erledigt",
+        "manuallyComplete": "Manuell als erledigt markiere",
+        "needsReview": "Muss überprüft werden",
+        "notStarted": "Noch nicht gestartet"
+      },
+      "title": "Implementierungs-Checkliste"
+    },
+    "import": {
+      "description": "Daten von unterstützten Anbietern wie Clockodo und Clockin importieren.",
+      "review": {
+        "commitAccepted": "Akzeptierte Zeilen übernehmen",
+        "commitFailed": "Import-Übernahme konnte nicht gestartet werden",
+        "commitQueued": "{count} akzeptierte Zeilen für die Übernahme in die Warteschlange gestellt",
+        "committing": "Wird übernommen...",
+        "description": "Überprüfen Sie die importierten Zeilen, lösen Sie blockierende Probleme und übernehmen Sie die akzeptierten Datensätze, sobald der Stapel bereit ist.",
+        "issueGroups": {
+          "currentMarkers": "Die aktuellen Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
+          "description": "Gruppierte Überprüfungsbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übernommen werden.",
+          "title": "Problemgruppen"
+        },
+        "rows": {
+          "empty": "Für diesen Import-Stapel sind keine Zeilen vorhanden.",
+          "entity": "Entität",
+          "rowId": "Zeilen-ID",
+          "sourceId": "Quell-ID",
+          "status": "Status",
+          "title": "Zeilen"
+        },
+        "title": "Import-Überprüfung"
+      },
+      "title": "Daten importieren"
+    },
+    "licenses": {
+      "footer": "Diese Anwendung verwendet Open-Source-Software. Vielen Dank an alle Betreuer und Mitwirkenden dieser Pakete.",
+      "homepage": "Homepage",
+      "license": "Lizenz",
+      "licenseTypesCount": "{count} Lizenztypen",
+      "links": "Links",
+      "noPackages": "Keine Pakete gefunden.",
+      "package": "Paket",
+      "packagesCount": "{count} Pakete",
+      "repository": "Repository",
+      "searchPlaceholder": "Pakete oder Lizenzen durchsuchen...",
+      "unknown": "Unbekannt"
+    },
+    "locations": {
+      "address": "Adresse",
+      "assignEmployee": "Mitarbeiter zuweisen",
+      "assignEmployeeDescription": "Weisen Sie einen Mitarbeiter als Vorgesetzten für diesen Standort zu",
+      "assignEmployeeToSubarea": "Mitarbeiter zum Unterbereich zuweisen",
+      "assignEmployeeToSubareaDescription": "Weisen Sie einen Mitarbeiter als Vorgesetzten für {subareaName} zu",
+      "backToList": "Zurück zu den Standorten",
+      "create": "Standort erstellen",
+      "created": "Standort erstellt",
+      "createFailed": "Standort konnte nicht erstellt werden",
+      "deleted": "Standort gelöscht",
+      "deleteDescription": "Sind Sie sicher, dass Sie diesen Standort löschen möchten? Dadurch werden auch alle Unterbereiche und Mitarbeiterzuweisungen gelöscht.",
+      "deleteFailed": "Standort konnte nicht gelöscht werden",
+      "deleteSubareaDescription": "Sind Sie sicher, dass Sie diesen Unterbereich löschen möchten? Dadurch werden auch alle Mitarbeiterzuweisungen entfernt.",
+      "deleteSubareaTitle": "Unterbereich löschen",
+      "deleteTitle": "Standort löschen",
+      "description": "Organisationsstandorte und Unterbereiche verwalten",
+      "details": "Standortdetails",
+      "dialog": {
+        "create": "Standort erstellen",
+        "createDescription": "Einen neuen Standort für Ihre Organisation erstellen",
+        "createTitle": "Standort erstellen",
+        "editDescription": "Standortdetails aktualisieren",
+        "editTitle": "Standort bearbeiten",
+        "save": "Änderungen speichern"
+      },
+      "employee": "Mitarbeiter",
+      "employeeAssigned": "Mitarbeiter zugewiesen",
+      "employeeAssignFailed": "Mitarbeiter konnte nicht zugewiesen werden",
+      "employeeRemoved": "Mitarbeiter entfernt",
+      "employeeRemoveFailed": "Mitarbeiter konnte nicht entfernt werden",
+      "field": {
+        "active": "Aktiv",
+        "activeHelp": "Inaktive Standorte erscheinen nicht in den Auswahllisten",
+        "city": "Stadt",
+        "cityPlaceholder": "z. B. Züri",
+        "cityPostal": "Stadt / Postleitzahl",
+        "country": "Ländercode",
+        "countryHelp": "ISO 3166-1 alpha-2 Code",
+        "countryPlaceholder": "z. B. CH, DE",
+        "name": "Name",
+        "namePlaceholder": "z. B. Hauptsitz",
+        "postalCode": "Postleitzahl",
+        "postalCodePlaceholder": "z. B. 8000",
+        "street": "Strasse",
+        "streetPlaceholder": "z. B. Bahnhofstrasse 1",
+        "subareaActiveHelp": "Inaktive Unterbereiche erscheinen nicht in den Auswahllisten",
+        "subareaName": "Name",
+        "subareaNamePlaceholder": "z. B. Kasse, Lager, Bistro"
+      },
+      "name": "Name",
+      "noAvailableEmployees": "Alle Mitarbeiter sind bereits diesem Standort zugewiesen",
+      "noAvailableEmployeesSubarea": "Alle Mitarbeiter sind bereits diesem Unterbereich zugewiesen",
+      "noLocations": "Noch keine Standorte vorhanden",
+      "noLocationsDescription": "Erstellen Sie Ihren ersten Standort, um Ihren Arbeitsbereich zu organisieren.",
+      "noSubareas": "Noch keine Unterbereiche vorhanden",
+      "noSupervisors": "Keine Vorgesetzten zugewiesen",
+      "notFound": "Standort nicht gefunden",
+      "primary": "Primär",
+      "primarySupervisor": "Hauptvorgesetzter",
+      "primarySupervisorHelp": "Als Hauptvorgesetzten für diesen Standort markieren",
+      "primarySupervisorSubareaHelp": "Als Hauptvorgesetzten für diesen Unterbereich markieren",
+      "selectEmployee": "Bitte wählen Sie einen Mitarbeiter aus",
+      "selectEmployeePlaceholder": "Mitarbeiter auswählen",
+      "subareaCreated": "Unterbereich erstellt",
+      "subareaCreateFailed": "Unterbereich konnte nicht erstellt werden",
+      "subareaDeleted": "Unterbereich gelöscht",
+      "subareaDeleteFailed": "Unterbereich konnte nicht gelöscht werden",
+      "subareaDialog": {
+        "create": "Unterbereich hinzufügen",
+        "createDescription": "Einen neuen Unterbereich zu diesem Standort hinzufügen",
+        "createTitle": "Unterbereich hinzufügen",
+        "editDescription": "Unterbereichsdetails aktualisieren",
+        "editTitle": "Unterbereich bearbeiten",
+        "save": "Änderungen speichern"
+      },
+      "subareas": "Unterbereiche",
+      "subareasDescription": "Bereiche a däm Standort",
+      "subareaUpdated": "Unterbereich aktualisiert",
+      "subareaUpdateFailed": "Unterbereich konnte nöd aktualisiert wärde",
+      "supervisors": "Vorgesetzti",
+      "supervisorsDescription": "Mitarbeitendi, wo däm Standort zuegwise sind",
+      "title": "Standört",
+      "updated": "Standort aktualisiert",
+      "updateFailed": "Standort konnte nöd aktualisiert wärde"
+    },
+    "notifications": {
+      "approvals": "Gnehmigungs-Benachrichtigunge",
+      "approvalsDescription": "Sende Gnehmigungs-Aafroge und Status-Updates.",
+      "commands": "Befähl",
+      "commandsDescription": "Erlaube unterstützti Arbeitsplatz-Befähl über dä Kanal.",
+      "connectBeforeChanging": "Verbinde oder konfiguriere die Integration, bevor du d'Benachrichtigungseistellige aapasch.",
+      "dailyDigest": "Tägliche Zämefassig",
+      "dailyDigestDescription": "Sende en tägliche Überblick über Absänze, Dienschtplän und offeni Ufgabe.",
+      "description": "Wähl us, wie und wenn du benachrichtigt wärde wotsch",
+      "digestTime": "Zytpunkt für Zämefassig",
+      "discord": {
+        "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation."
+      },
+      "escalations": "Eskalatione",
+      "escalationsDescription": "Eskaliere unbeantworteti Gnehmigungs-Aafroge nach em konfigurierte Timeout.",
+      "featureSettings": "Funktionseistellige",
+      "featureSettingsDescription": "Wähl us, weli Organisations-Benachrichtigunge und Befähl über dä Kanal verfügbar sind.",
+      "hours": "Stunde",
+      "manageEnabledFeatures": "Verwalte, weli Benachrichtigungs-Funktione für die Integration aktiviert sind.",
+      "notConnected": "{channelName} isch nöd verbunde",
+      "saved": "Benachrichtigungseistellige für {channelName} gspicheret",
+      "saveFailed": "Benachrichtigungseistellige für {channelName} konnte nöd gspicheret wärde",
+      "saveSettings": "Eistellige spichere",
+      "slack": {
+        "description": "Konfiguriere Slack-Benachrichtigunge für dini Organisation."
+      },
+      "status": {
+        "active": "Aktiv",
+        "configured": "Konfiguriert",
+        "disabled": "Deaktiviert",
+        "disconnected": "Nöd verbunde",
+        "error": "Fähler",
+        "notConfigured": "Nöd konfiguriert",
+        "pending": "Usschtändig",
+        "unknown": "Unbekannte Status"
+      },
+      "teams": {
+        "description": "Konfiguriere Microsoft Teams-Benachrichtigunge für dini Organisation."
+      },
+      "timeout": "Timeout",
+      "timezone": "Zytzone",
+      "timezonePlaceholder": "Europa/Berlin…",
+      "title": "Benachrichtigungseistellige"
+    },
+    "organizations": {
+      "description": "Organisationsmitglieder, Iiladige und Details verwalte",
+      "notFound": {
+        "description": "D'Organisation isch nöd gfunde worde oder du häsch kei Zuegriff druf.",
+        "title": "Organisation nöd gfunde"
+      },
+      "title": "Organisation"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Team erfolgrych erstellt",
+          "description": "Erstell es neus Team, zum dini Mitarbeitende z'organisiere",
+          "descriptionLabel": "Beschrybig (Optional)",
+          "descriptionPlaceholder": "E churzi Beschrybig vo däm Team",
+          "fallbackManagerHelp": "Wird für Gnehmigunge brucht, wenn es Teammitglid kei diräkte Vorgesetzte hät.",
+          "fallbackManagerLabel": "Ersatz-Vorgesetzte",
+          "fallbackManagerPlaceholder": "Wähl en Ersatz-Vorgesetzte us",
+          "nameLabel": "Teamname",
+          "namePlaceholder": "Engineering, Verchauf, Marketing...",
+          "noFallbackManager": "Kein Ersatz-Manager",
+          "submit": "Team erstellen",
+          "title": "Team erstellen"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Passkey hiezuetue",
+      "addedOn": "Hiezuetue am {date}",
+      "addError": "Passkey hiezuetue isch fählgschlage",
+      "addSuccess": "Passkey erfolgriich hiezuetue",
+      "defaultName": "Passkey {date}",
+      "deleteDialogDescription": "Mit däm Passkey chasch nüm uf dis Konto zuegriffe. Die Aktion chan nöd rückgängig gmacht werde.",
+      "deleteDialogTitle": "Passkey lösche?",
+      "deleteError": "Passkey lösche isch fählgschlage",
+      "deleteSuccess": "Passkey erfolgriich glöscht",
+      "description": "Passkeys für passwortlosi Authentifizierig verwalte",
+      "empty": "Kei Passkeys konfiguriert",
+      "emptyDescription": "Füeg en Passkey hii, zum passwortlosi Authentifizierig z'aktiviere",
+      "loadError": "Lade vo de Passkeys isch fählgschlage",
+      "title": "Passkeys",
+      "unnamed": "Unbenannte Passkey"
+    },
+    "profile": {
+      "avatarRemoved": "Avatar erfolgriich entfernt",
+      "avatarRemoveFailed": "Avatar entferne isch fählgschlage",
+      "avatarSaveFailed": "Avatar spychere isch fählgschlage",
+      "avatarUploaded": "Avatar erfolgriich ufelade",
+      "avatarUploadFailed": "Avatar ufelade isch fählgschlage",
+      "birthday": {
+        "hint": "Dis Geburtsdatum hilft eus, mit dir z'fiire",
+        "label": "Geburtsdatum",
+        "placeholder": "Wähl dis Geburtsdatum us"
+      },
+      "changePicture": "Bild ändere",
+      "description": "Verwalte dini persönleche Informatione und Iistellige",
+      "email": "E-Mail",
+      "emailReadonly": "E-Mail chan nöd gänderet werde",
+      "firstName": "Vorname",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Wiiblich",
+        "label": "Gschlächt",
+        "male": "Männlich",
+        "other": "Anders"
+      },
+      "helpImproveProduct": "Helfe Sie eus, die App z'verbessere",
+      "helpImproveProductDescription": "Teile Sie Nutzigsdate, demit mir Z8 zueverlässiger und nützlicher mache chönd.",
+      "information": "Profilinformatione",
+      "informationDescription": "Aktualisier dini persönleche Informatione und dis Profilbild",
+      "lastName": "Nachname",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Persönlechi Informatione",
+      "pronouns": "Pronome",
+      "pronouns.custom": "Eigeni Pronome",
+      "pronouns.customPlaceholder": "z.B. xe/xem…",
+      "pronouns.placeholder": "Pronome wähle",
+      "removePicture": "Bild entferne",
+      "saving": "Am spychere…",
+      "title": "Profil-Iistellige",
+      "updateFailed": "Profil-Aktualisierig isch fählgschlage",
+      "updateProfile": "Profil aktualisiere",
+      "updateSuccess": "Profil erfolgriich aktualisiert",
+      "uploading": "Am ufelade",
+      "uploadProfilePicture": "Profilbild ufelade"
+    },
+    "projects": {
+      "column": {
+        "budget": "Budget",
+        "customer": "Chunde",
+        "deadline": "Frist",
+        "name": "Name",
+        "status": "Status",
+        "team": "Team"
+      },
+      "create": "Projekt erstelle",
+      "created": "Projekt erstellt",
+      "createFailed": "Projekt-Erstellig isch fählgschlage",
+      "description": "Projekte, Budget, Friste und Ziiterfassige verwalte",
+      "dialog": {
+        "create": "Projekt erstelle",
+        "createDescription": "Es neus Projekt für d'Ziiterfassig erstelle",
+        "createTitle": "Projekt erstelle",
+        "editDescription": "Projektdetails aktualisiere",
+        "editTitle": "Projekt bearbeite",
+        "save": "Änderige spychere"
+      },
+      "empty": {
+        "description": "Erstell dis erschte Projekt, zum mit em Ziiterfasse aafange.",
+        "title": "No kei Projekt vorhande"
+      },
+      "field": {
+        "budget": "Budget (Stunde)",
+        "budgetHelp": "Leer laa für unbegränzts Budget",
+        "budgetPlaceholder": "z. B. 100",
+        "clearColor": "Farbe löschen",
+        "color": "Farb",
+        "colorOption": "Farbe {color} auswählen",
+        "customer": "Chunde",
+        "customerPlaceholder": "Chunde uswähle",
+        "deadline": "Frist",
+        "description": "Beschriibig",
+        "descriptionPlaceholder": "Optionali Projektbeschriibig",
+        "name": "Name",
+        "namePlaceholder": "Projektname iigä",
+        "noCustomer": "Kei Chunde",
+        "status": "Status"
+      },
+      "list": {
+        "description": "{count} Projekt insgesamt",
+        "title": "Alli Projekt"
+      },
+      "title": "Projekt",
+      "updated": "Projekt aktualisiert",
+      "updateFailed": "Projekt-Aktualisierig isch fählgschlage"
+    },
+    "security": {
+      "description": "Passwort, Zwei-Faktor-Authentifizierig, Passkeys und aktivi Sitzige verwalte",
+      "title": "Sicherheits-Iistellige",
+      "twoFactor": {
+        "backupCodesCopied": "Backup-Code in d'Zwüscheablage kopiert",
+        "backupCodesRegenerated": "Backup-Code neu generiert",
+        "cancel": "Abbräche",
+        "confirmPasswordToEnable": "Bitte bestätige dises Passwort, zum d'Zwei-Faktor-Authentifizierig z'aktiviere",
+        "confirmPasswordToRegenerate": "Bitte bestätige dises Passwort, zum d'Backup-Code neu z'generiere",
+        "continue": "Witer",
+        "copyCodes": "Code kopiere",
+        "description": "Füeg dim Konto en zuesätzliche Sicherheitsebene dezue",
+        "disable": "Deaktiviere",
+        "disable2fa": "2FA deaktiviere",
+        "disableDescription": "Das entfernt d'zuesätzlich Sicherheitsebene vo dim Konto. Bitte gib dis Passwort ii, zum das z'bestätige.",
+        "disabledToast": "Zwei-Faktor-Authentifizierig deaktiviert",
+        "disableFailed": "2FA hät nöd chönne deaktiviert werde",
+        "disableTitle": "Zwei-Faktor-Authentifizierig deaktiviere?",
+        "enable": "Zwei-Faktor-Authentifizierig aktiviere",
+        "enabledToast": "Zwei-Faktor-Authentifizierig aktiviert",
+        "enablePasswordRequiredDescription": "Bitte gib dis Passwort ii, zum 2FA z'aktiviere",
+        "enterAuthenticatorCode": "Gib de 6-stellig Code us dinere Authenticator-App ii",
+        "enterPasswordTitle": "Gib dis Passwort ii",
+        "enterSixDigitCode": "Bitte gib en 6-stellige Code ii",
+        "invalidCode": "Ungültige Code",
+        "passwordLabel": "Passwort",
+        "passwordPlaceholder": "Gib dis Passwort ii…",
+        "passwordRequired": "Passwort erforderlich",
+        "regenerateBackupCodes": "Backup-Code neu generiere",
+        "regenerateCodes": "Code neu generiere",
+        "regenerateFailed": "Backup-Code händ nöd chönne neu generiert werde",
+        "saveBackupCodesDescription": "Bewahr die Code an eme sichere Ort uuf. Du chasch sie benutze, zum uf dis Konto zuezgriffe, falls du de Zuegriff uf dini Authenticator-App verlüürsch. Jeder Code chan nur einisch brucht werde.",
+        "saveBackupCodesTitle": "Speicher dini Backup-Code",
+        "savedCodes": "Ich ha die Code gspeicheret",
+        "scanQrCode": "Scan de QR-Code mit dinere Authenticator-App",
+        "setupFailed": "2FA hät nöd chönne iigrichtet werde",
+        "setupTitle": "Zwei-Faktor-Authentifizierig iirichte",
+        "status": {
+          "disabled": "Deaktiviert",
+          "enabled": "Aktiviert"
+        },
+        "title": "Zwei-Faktor-Authentifizierig",
+        "unexpectedError": "Es isch en unerwartete Fehler uftrete",
+        "verificationFailed": "Überprüefig fehlgschlage",
+        "verifyAndEnable": "Überprüefe und aktiviere"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} uf {os}",
+      "current": "Aktuelli Sitzig",
+      "description": "Verwalte dini aktive Sitzige uf verschidene Grät",
+      "devices": {
+        "desktop": "Desktop",
+        "mobile": "Mobil",
+        "tablet": "Tablet"
+      },
+      "none": "Kei aktive Sitzige",
+      "othersRevoked": "Alli andere Sitzige erfolgriich beändet",
+      "revoke": "Beände",
+      "revokeAllFailed": "Andere Sitzige händ nöd chönne beändet werde",
+      "revokeAllOthers": "Alli andere Sitzige beände",
+      "revoked": "Sitzig erfolgriich beändet",
+      "revokeFailed": "Sitzig hät nöd chönne beändet werde",
+      "revoking": "Am beände…",
+      "securityTip": "Wenn du e Sitzig gsehsch, wo du nöd kennsch, heb sie sofort uf und ändere dis Passwort.",
+      "signedIn": "Agmäldet",
+      "title": "Aktivi Sitzige",
+      "unknownBrowser": "Unbekannte Browser",
+      "unknownOs": "Unbekannts Betriebssystem"
+    },
+    "socialAccounts": {
+      "connect": "Verbinde",
+      "connected": "Verbunde",
+      "connectedAs": "Verbunde als {accountId}",
+      "connectFailed": "Konto-Verbindig fehlgschlage",
+      "connecting": "Verbinde…",
+      "connectProvider": "Verbind dis {provider}-Konto",
+      "description": "Verknüpfe dini soziale Konti für en eifachere Login",
+      "disconnect": "Trenne",
+      "disconnectDescription": "Das wird d'Verknüpfig zu dim soziale Konto ufhäbe. Du chasch sie jederziit wieder verbinde.",
+      "disconnectFailed": "Konto konnte nöd trennt werde",
+      "disconnectSuccess": "Konto erfolgriich trennt",
+      "disconnectTitle": "Konto trenne?",
+      "loadFailed": "Konnte die verbundene Konti nöd lade",
+      "title": "Soziali Konti",
+      "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Aktivi Sitzige",
+        "activeSessionsDescription": "Aktivi Datebanksitzige",
+        "approvalRequests": "Gnehmigungsafroge",
+        "approvedAbsences": "Gnehmigti Absänz",
+        "employees": "Mitarbeitende",
+        "employeesDescription": "{active} aktiv, {inactive} inaktiv",
+        "pendingAbsences": "Pändendi Absänz",
+        "pendingCount": "{count} pändend",
+        "rejectedAbsences": "Abglehnti Absänz",
+        "teams": "Teams",
+        "thisMonth": "Dä Monet",
+        "timeEntries": "Ziiterfassige",
+        "totalAbsences": "Absänz total",
+        "totalTimeEntries": "Ziiterfassige total",
+        "vsLastMonth": "im Vergliich zum Vormonet"
+      },
+      "description": "Statistike und Metrike zu dinere Instanz aaluege",
+      "lastUpdated": "Zuletzt aktualisiert",
+      "loadError": "Statistike konnted nöd glade werde",
+      "managerDescription": "Lueg dir d'Analytik für d'Teams aa, wo du verwaltsch.",
+      "sections": {
+        "absenceBreakdown": "Absänz-Übersicht",
+        "activityMetrics": "Aktivitätsmetrike",
+        "coreCounts": "Kernzahle",
+        "managedScope": "Verwaltete Team-Umfang",
+        "systemHealth": "Systemstatus"
+      },
+      "title": "Statistike"
+    },
+    "timeFormat": {
+      "description": "Wähl us, wie d'Ziite i de App aazeigt werde sölled.",
+      "label": "Ziitformat",
+      "options": {
+        "12h": "12-Stunde (8:00 AM)",
+        "24h": "24-Stunde (08:00)"
+      },
+      "save": "Ziitformat spychere",
+      "title": "Ziitformat",
+      "updateError": "Es isch en Fehler ufträtte bim Aktualisiere vom Ziitformat",
+      "updateFailed": "S'Aktualisiere vom Ziitformat isch fählgschlage",
+      "updateSuccess": "Ziitformat erfolgriich aktualisiert"
+    },
+    "timezone": {
+      "currentTimePrefix": "Aktuelli Ziit z {timezone}:",
+      "description": "Stell dini Ziitzone ii, damit Datum und Ziit in de ganze App korrekt aazeigt wärded",
+      "picker": {
+        "empty": "Kei Ziitzone gfunde.",
+        "groups": {
+          "africa": "Afrika",
+          "americas": "Amerika",
+          "asia": "Asie",
+          "australiaPacific": "Australie & Pazifik",
+          "europe": "Europa",
+          "utcOther": "UTC/Anderi"
+        },
+        "labels": {
+          "africaCairo": "Osteuropäischi Ziit (Kairo)",
+          "africaJohannesburg": "Südafrika-Ziit (Johannesburg)",
+          "africaLagos": "Westafrika-Ziit (Lagos)",
+          "africaNairobi": "Ostafrika-Ziit (Nairobi)",
+          "americaAnchorage": "Alaska-Ziit (Anchorage)",
+          "americaBuenosAires": "Argentinie-Ziit (Buenos Aires)",
+          "americaChicago": "Central Time (Chicago)",
+          "americaDenver": "Mountain Time (Denver)",
+          "americaLosAngeles": "Pacific Time (Los Angeles)",
+          "americaMexicoCity": "Central Time (Mexiko-Stadt)",
+          "americaNewYork": "Eastern Time (New York)",
+          "americaSaoPaulo": "Brasilia-Ziit (São Paulo)",
+          "americaToronto": "Eastern Time (Toronto)",
+          "americaVancouver": "Pacific Time (Vancouver)",
+          "asiaBangkok": "Indochina-Ziit (Bangkok)",
+          "asiaDubai": "Gulf Standard Time (Dubai)",
+          "asiaHongKong": "Hongkong-Ziit (Hongkong)",
+          "asiaKolkata": "India Standard Time (Kolkata)",
+          "asiaSeoul": "Korea Standard Time (Seoul)",
+          "asiaShanghai": "China Standard Time (Shanghai)",
+          "asiaSingapore": "Singapur-Ziit (Singapur)",
+          "asiaTokyo": "Japan Standard Time (Tokio)",
+          "australiaBrisbane": "Australian Eastern Time (Brisbane)",
+          "australiaMelbourne": "Australian Eastern Time (Melbourne)",
+          "australiaPerth": "Australian Western Time (Perth)",
+          "australiaSydney": "Australian Eastern Time (Sydney)",
+          "europeAmsterdam": "Mitteleuropäischi Ziit (Amsterdam)",
+          "europeAthens": "Osteuropäischi Ziit (Athen)",
+          "europeBerlin": "Mitteleuropäischi Ziit (Berlin)",
+          "europeBrussels": "Mitteleuropäischi Ziit (Brüssel)",
+          "europeHelsinki": "Osteuropäischi Ziit (Helsinki)",
+          "europeIstanbul": "Türkei-Ziit (Istanbul)",
+          "europeLondon": "GMT/BST (London)",
+          "europeMadrid": "Mitteleuropäischi Ziit (Madrid)",
+          "europeMoscow": "Moskau-Ziit (Moskau)",
+          "europeParis": "Mitteleuropäischi Ziit (Paris)",
+          "europeRome": "Mitteleuropäischi Ziit (Rom)",
+          "europeStockholm": "Mitteleuropäischi Ziit (Stockholm)",
+          "europeVienna": "Mitteleuropäische Zeit (Wien)",
+          "europeWarsaw": "Mitteleuropäische Zeit (Warschau)",
+          "pacificAuckland": "Neuseeland-Zeit (Auckland)",
+          "pacificHonolulu": "Hawaii-Zeit (Honolulu)",
+          "utc": "Koordinierte Weltzeit (UTC)"
+        },
+        "search": "Zitzone sueche…"
+      },
+      "save": "Zitzone spychere",
+      "title": "Zitzone",
+      "updateError": "Es isch en Fehler bim Aktualisiere vo de Zitzone ufträtte",
+      "updateFailed": "Zitzone het nöd chönne aktualisiert werde",
+      "updateSuccess": "Zitzone erfolgriich aktualisiert"
+    },
+    "title": "Iistellige",
+    "travelExpenses": {
+      "activeDescription": "Wenn aktiviert, wird die Richtlinie zum aktive Standard für neui Aasprüch.",
+      "activeLabel": "Aktivi Richtlinie",
+      "addPolicy": "Richtlinie dezuefüege",
+      "created": "Spese-Richtlinie für Reise erstellt",
+      "createPolicy": "Spese-Richtlinie für Reise erstelle",
+      "currency": "Währig",
+      "description": "Rückerstattigssätz und Gültigkeitsziite für Kilometer- und Tagespauschale konfiguriere.",
+      "dialogDescription": "Gültigkeitsdatum und Standard-Rückerstattigssätz für Kilometer- und Tagespauschale festlegge.",
+      "editPolicy": "Spese-Richtlinie für Reise bearbeite",
+      "effectiveFrom": "Gültig ab",
+      "effectiveFromRequired": "Es Gültigkeitsdatum isch erforderlich",
+      "effectiveTo": "Gültig bis",
+      "empty": "Es sind no kei Richtlinie konfiguriert. Erstell dini erschti Spese-Richtlinie.",
+      "loading": "Richtlinie lade…",
+      "mileageRate": "Kilometer / km",
+      "perDiemRate": "Tagespauschale / Tag",
+      "policies": "Richtlinie",
+      "policiesDescription": "Es sött immer nur eini Richtlinie aktiv sii. Die aktivi Richtlinie wird für neui Aasprüch brucht.",
+      "saveFailed": "Spese-Richtlinie het nöd chönne gspycheret werde",
+      "title": "Spese-Richtlinie für Reise",
+      "updated": "Spese-Richtlinie für Reise aktualisiert"
+    },
+    "webhooks": {
+      "description": "Webhook-Endpünkt konfiguriere, zum Echtziit-Benachrichtigunge z'erhalte",
+      "title": "Webhooks"
+    },
+    "weekStart": {
+      "description": "Wähl us, öb Kalender und wöchentlichi Zämefassige am Sunntig oder Mäntig afanged.",
+      "label": "Erschte Tag vo de Wuche",
+      "save": "Wuchestart spychere",
+      "title": "Wuche afange am",
+      "updateError": "Es isch en Fehler bim Aktualisiere vom Wuchestart ufträtte",
+      "updateFailed": "Wuchestart het nöd chönne aktualisiert werde",
+      "updateSuccess": "Wuchestart erfolgriich aktualisiert"
+    },
+    "wellness": {
+      "cardDescShort": "Trink gnue während em Schaffe",
+      "cardTitle": "Wasser-Erinnerige",
+      "dailyGoal": "Tagesziil",
+      "description": "Wasser-Erinnerige und Flüssigkeitszufuhr während de Arbeitsziit konfiguriere",
+      "glasses": "Gläser",
+      "reminderFrequency": "Erinnerigs-Hüfigkeit",
+      "saved": "Wellness-Iistellige gspycheret",
+      "saveError": "Wellness-Iistellige händ nöd chönne gspycheret werde",
+      "title": "Wellness-Iistellige"
+    },
+    "workBalanceRecalculation": {
+      "requestError": "Neuberechnig vom Arbetsguthabe isch fehlgschlage",
+      "requestSuccess": "Neuberechnig vom Arbetsguthabe isch in d'Warteschlange iigreiht worde"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktiv",
+        "activeDescription": "Wird aktuell verarbeitet",
+        "completed": "Abgschlosse",
+        "completedDescription": "Chürzlich abgschlosse",
+        "delayed": "Verzögeret",
+        "delayedDescription": "Für spöter plant",
+        "failed": "Fehlgschlage",
+        "failedDescription": "Chürzlich fehlgschlage",
+        "paused": "Pausiert",
+        "pausedDescription": "Pausierti Jobs",
+        "waiting": "Wartet",
+        "waitingDescription": "Jobs, wo uf d'Verarbeitig warted"
+      },
+      "common": {
+        "unknown": "Unbekannt"
+      },
+      "connected": "Verbunde",
+      "description": "Hintergrund-Jobverarbeitig und Cron-Job-Uusfüehrige überwache",
+      "disconnected": "Trennt",
+      "lastUpdated": "Zuletzt aktualisiert",
+      "loadError": "Warteschlange-Status hät nöd chönne glade werde",
+      "noExecutions": "Kei chürzlichi Uusfüehrige gfunde",
+      "noScheduledJobs": "Kei planti Jobs gfunde",
+      "recentExecutions": {
+        "allJobs": "Alle Jobs",
+        "error": "Laden der Ausführungen fehlgeschlagen",
+        "filterLabel": "Nach Job filtern",
+        "loading": "Lade Ausführungen…"
+      },
+      "recentExecutionsDescription": "Die letzte 50 Job-Uusfüehrige, wo i de Datenbank protokolliert sind.",
+      "reliability": {
+        "averageDuration": "Durschnittlichi Duur",
+        "avgDuration": "Durschnittlichi Duur",
+        "avgDurationDescription": "Uusfüehrige mit Duur-Date",
+        "completed": "Abgschlosse",
+        "durationTrend": "Duur-Trend",
+        "durationTrendDescription": "Durschnittlichi Laufziit für Uusfüehrige, wo Duur-Date gmäldet händ.",
+        "failed": "Fehlgschlage",
+        "failedRuns": "Fehlgschlagni Läuf",
+        "failedRunsDescription": "Letzte 30 Täg",
+        "failing": "Fehlerhaft",
+        "healthy": "Gsund",
+        "jobHealth": "Job-Gsundheit",
+        "jobHealthDescription": "Zuverlässigkeit pro Job basierend uf chürzliche Uusfüehrige und wiederholbare Plän.",
+        "noDurationData": "Für die Periode sind kei Duur-Date verfüegbar.",
+        "noExecutionHistory": "Für die Periode isch kei Cron-Uusfüehrigsverlauf verfüegbar.",
+        "noJobs": "Kei Zuverlässigkeitsdate gfunde",
+        "runOutcomes": "Uusfüehrigsergebnis",
+        "runOutcomesDescription": "Abgschlossni und fehlgschlagni Cron-Uusfüehrige über die letzte {days} Täg.",
+        "stale": "Veraltet",
+        "staleJobs": "Veralteti Jobs",
+        "staleJobsDescription": "Über de erwarteti Ziitplan use",
+        "successRate": "Erfolgsquote",
+        "successRateDescription": "Terminali Cron-Uusfüehrige",
+        "title": "Zuverlässigkeit",
+        "unknown": "Unbekannt",
+        "warning": "Warnig"
+      },
+      "scheduledJobsDescription": "Wiederholbari Jobs, wo im Worker konfiguriert sind. Die laufed automatisch nach Ziitplan.",
+      "sections": {
+        "jobMetrics": "Job-Metrike (letzte 30 Täg)",
+        "queueCounts": "Warteschlange-Status",
+        "recentExecutions": "Letschti Uusfüehrige",
+        "scheduledJobs": "Geplanti Cron-Jobs"
+      },
+      "status": {
+        "completed": "Abgschlosse",
+        "failed": "Fehlgschlage",
+        "pending": "Uusstehend",
+        "running": "Am Laufe"
+      },
+      "table": {
+        "avgDuration": "Durschnittlichi Duur",
+        "duration": "Duur",
+        "error": "Fehler",
+        "failed": "Fehlgschlage",
+        "health": "Status",
+        "jobName": "Job-Name",
+        "lastRun": "Letschte Lauf",
+        "nextRun": "Nächschte Lauf",
+        "schedule": "Ziitplan",
+        "startedAt": "Gstartet am",
+        "status": "Status",
+        "successful": "Erfolgriich",
+        "successRate": "Erfolgsquote",
+        "totalRuns": "Total Läuf"
+      },
+      "title": "Worker-Warteschlange"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Kategorienamen",
+        "grouped": "Gruppiert",
+        "hidden": "Versteckt"
+      },
+      "absenceVisibility": "Sichtbarkeit vo Absänz",
+      "description": "Konfiguriere dateschutzkonforme Zuegriff für de Betriibsrat und Überprüfig vo Export",
+      "exportEnabled": "Überprüfigsexport aktiviere",
+      "exportEnabledDescription": "Erlaube autorisierte Betriibsrat-Nutzer, datenschutzgfiltereti Überprüfigspakete z'erstelle.",
+      "formDescription": "Konfiguriere dateschutzkonforme Zuegriff für de Betriibsrat und Überprüfigsexport für die Organisation.",
+      "identity": {
+        "aggregated": "Aggregiert",
+        "named": "Namentlich",
+        "pseudonymized": "Pseudonymisiert"
+      },
+      "identityVisibility": "Sichtbarkeit vo Identitäte",
+      "minimumThreshold": "Mindest-Aggregationsschwellwert",
+      "minimumThresholdDescription": "Gruppe unter dere Grössi wärded unterdrückt, zum s Risiko vo Re-Identifizierig z'verringere.",
+      "save": "Iistellige spychere",
+      "saved": "Betriibsrat-Iistellige gspycheret",
+      "saveError": "Fehler bim Spychere vo de Betriibsrat-Iistellige",
+      "title": "Betriibsrat-Modus",
+      "visibleLocationIds": "Sichtbari Standort-IDs",
+      "visibleLocationIdsDescription": "Optionali, mit Komma trennti Standort-IDs. Leer lah, zum alli Standort z'inkludiere.",
+      "visibleTeamIds": "Sichtbari Team-IDs",
+      "visibleTeamIdsDescription": "Optionali, mit Komma trennti Team-IDs. Leer lah, zum alli Teams z'inkludiere."
+    }
+  }
+}

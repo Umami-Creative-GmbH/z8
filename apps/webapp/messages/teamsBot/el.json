@@ -1,0 +1,107 @@
+{
+  "approval": {
+    "absenceRequest": "Αίτημα Απουσίας",
+    "actions": {
+      "approve": "Έγκριση",
+      "approving": "Έγκριση σε εξέλιξη...",
+      "reject": "Απόρριψη",
+      "rejecting": "Απόρριψη σε εξέλιξη...",
+      "viewInZ8": "Προβολή στο Z8"
+    },
+    "durationDays": "{count, plural, one {# ημέρα} other {# ημέρες}}",
+    "facts": {
+      "approvedBy": "Εγκρίθηκε από",
+      "corrected": "Διορθώθηκε",
+      "dates": "Ημερομηνίες",
+      "duration": "Διάρκεια",
+      "email": "Email",
+      "from": "Από",
+      "original": "Πρωτότυπο",
+      "reason": "Αιτιολογία",
+      "rejectedBy": "Απορρίφθηκε από",
+      "resolved": "Επιλύθηκε",
+      "status": "Κατάσταση",
+      "submitted": "Υποβλήθηκε",
+      "type": "Τύπος"
+    },
+    "status": {
+      "approved": "ΕΓΚΡΙΘΗΚΕ",
+      "rejected": "ΑΠΟΡΡΙΦΘΗΚΕ"
+    },
+    "timeCorrectionRequest": "Αίτημα Διόρθωσης Χρόνου"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Κρίσιμο",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (χρησιμοποιήθηκε εξαίρεση)",
+      "lastDays": "Τελευταίες {days} ημέρες",
+      "legend": "\uD83D\uDD34 Παραβίαση  \uD83D\uDFE0 Κρίσιμο  \uD83D\uDFE1 Προειδοποίηση  \uD83D\uDCDD Εκκρεμές Αίτημα",
+      "moreRequestsMarkdown": "_+{count} ακόμα αιτήματα_",
+      "moreViolationsMarkdown": "_+{count} ακόμα παραβιάσεις_",
+      "pending": "Σε εκκρεμότητα",
+      "pendingExceptions": "Εκκρεμή Αιτήματα Εξαιρέσεων",
+      "recentViolations": "Πρόσφατες Παραβιάσεις",
+      "reviewExceptions": "Έλεγχος Εξαιρέσεων",
+      "textCriticalAlerts": "**Κρίσιμες Ειδοποιήσεις:** {count}",
+      "textMore": "  +{count} ακόμα",
+      "textPendingExceptions": "**Εκκρεμείς Εξαιρέσεις:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Εκκρεμή Αιτήματα:**",
+      "textRecentViolations": "**Πρόσφατες Παραβιάσεις:**",
+      "textTitle": "**⚠️ Σύνοψη Συμμόρφωσης - Τελευταίες {days} ημέρες**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Παραβιάσεις:** {count}",
+      "titleWithIcon": "⚠️ Σύνοψη Συμμόρφωσης",
+      "viewDashboard": "Προβολή Πίνακα Συμμόρφωσης",
+      "violations": "Παραβιάσεις"
+    },
+    "coverage": {
+      "clockedIn": "Προσέλευση",
+      "moreLocationsMarkdown": "_+{count} ακόμα τοποθεσίες..._",
+      "scheduled": "Προγραμματισμένο",
+      "titleWithIcon": "\uD83D\uDCCA Αναφορά Κάλυψης",
+      "variance": "Απόκλιση",
+      "viewFullSchedule": "Προβολή πλήρους προγράμματος"
+    },
+    "help": {
+      "availableCommands": "Βοήθεια"
+    }
+  },
+  "common": {
+    "more": "+{count} ακόμα",
+    "moreBullet": "• +{count} ακόμα"
+  },
+  "digest": {
+    "currentlyClockedIn": "Ενεργή παρουσία",
+    "everyoneAvailable": "Όλοι είναι διαθέσιμοι σήμερα",
+    "noOneClockedIn": "Κανείς δεν έχει καταγράψει παρουσία ακόμα",
+    "noPendingApprovals": "Δεν υπάρχουν εκκρεμείς εγκρίσεις",
+    "openDashboard": "Άνοιγμα πίνακα ελέγχου Z8",
+    "openShifts": "Ανοιχτές βάρδιες",
+    "pendingApprovals": "Εκκρεμείς εγκρίσεις",
+    "pendingExceptionRequests": "{count, plural, one {# εκκρεμές αίτημα εξαίρεσης προς εξέταση} other {# εκκρεμή αιτήματα εξαίρεσης προς εξέταση}}",
+    "returns": "Επιστρέφει {date}",
+    "since": "Από {time}",
+    "textClockedInEmployee": "• {name} - από {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Συμμόρφωση:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Κενά κάλυψης:**",
+    "textCurrentlyClockedIn": "**Ενεργή παρουσία:**",
+    "textEmployeeOut": "• {name} - {category} (επιστρέφει {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Ανοιχτές βάρδιες:**",
+    "textPendingApprovalsCount": "**Εκκρεμείς εγκρίσεις:** {count}",
+    "textPendingApprovalsNone": "**Εκκρεμείς εγκρίσεις:** Καμία",
+    "textTitle": "**Καθημερινή αναφορά - {date}**",
+    "textWhosOut": "**Ποιοι λείπουν:**",
+    "title": "Καθημερινή αναφορά",
+    "todayTomorrow": "Σήμερα: {today} | Αύριο: {tomorrow}",
+    "viewApprovals": "Προβολή εγκρίσεων",
+    "whosOutToday": "Ποιοι λείπουν σήμερα"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Ημερήσιες υπερωρίες",
+    "overtime_monthly": "Μηνιαίες υπερωρίες",
+    "overtime_weekly": "Εβδομαδιαίες υπερωρίες",
+    "rest_period": "Περίοδος ανάπαυσης"
+  }
+}

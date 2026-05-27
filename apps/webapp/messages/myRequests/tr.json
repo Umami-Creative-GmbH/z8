@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "İptal",
+      "cancelConfirmation": "Bu izin talebini iptal et?",
+      "cancelError": "İzin talebi iptal edilemedi.",
+      "cancelling": "İptal ediliyor...",
+      "fix": "Düzelt",
+      "notAvailable": "Mevcut değil",
+      "view": "Görüntüle"
+    },
+    "all": {
+      "description": "İzinler, zaman düzeltmeleri ve masraflar genelindeki talepleri inceleyin.",
+      "title": "Tüm talepler"
+    },
+    "card": {
+      "decision": "Karar",
+      "submitted": "Gönderildi"
+    },
+    "empty": {
+      "filtered": {
+        "description": "İstekler gönderildiğinde veya yüklendiğinde burada görünecektir.",
+        "title": "Filtrelerinizle eşleşen istek bulunamadı"
+      },
+      "none": {
+        "description": "İstekler gönderildiğinde veya yüklendiğinde burada görünecektir.",
+        "title": "Henüz istek yok"
+      }
+    },
+    "featureName": "isteklerinizi görüntüleyin",
+    "filters": {
+      "allStatuses": "Tüm durumlar",
+      "allTypes": "Tüm türler",
+      "approvedRequests": "Onaylanmış istekler",
+      "cancelledRequests": "İptal edilmiş istekler",
+      "description": "Her istek bölümünü metin, durum veya istek türüne göre filtreleyin.",
+      "pendingRequests": "Bekleyen istekler",
+      "rejectedRequests": "Reddedilmiş istekler",
+      "search": "Ara",
+      "searchPlaceholder": "Başlığa göre ara…",
+      "status": "Durum",
+      "title": "İstekleri bul",
+      "type": "Tür"
+    },
+    "inReview": {
+      "description": "Onay veya işlem bekleyen istekler.",
+      "title": "İnceleniyor"
+    },
+    "needsAttention": {
+      "description": "Yeniden gönderilmeden önce düzeltme gerektirebilecek reddedilmiş istekler.",
+      "title": "Dikkat gerektiriyor"
+    },
+    "reasonLabel": "Neden",
+    "recentlyDecided": {
+      "description": "Son 30 güne ait onaylanmış ve reddedilmiş kararlar.",
+      "title": "Yakın zamanda karara bağlananlar"
+    },
+    "requests": {
+      "absence": {
+        "title": "İzin isteği"
+      },
+      "timeCorrection": {
+        "subtitle": "Zaman girişi için düzeltme",
+        "title": "Zaman düzeltme isteği"
+      },
+      "travelExpense": {
+        "title": "Seyahat masrafı talebi"
+      }
+    },
+    "sourceError": {
+      "absence": "İzin istekleri yüklenemedi.",
+      "timeCorrection": "Zaman düzeltme istekleri yüklenemedi.",
+      "title": "Bazı istekler yüklenemedi.",
+      "travelExpense": "Seyahat masrafı istekleri yüklenemedi."
+    },
+    "sourceTypes": {
+      "absence": "İzin",
+      "timeCorrection": "Zaman",
+      "travelExpense": "Masraf"
+    },
+    "status": {
+      "approved": "Onaylandı",
+      "cancelled": "İptal edildi",
+      "inReview": "İnceleniyor",
+      "pending": "Beklemede",
+      "rejected": "Reddedildi"
+    },
+    "subtitle": "Bekleyen istekleri, gerekli düzeltmeleri ve yakın zamandaki kararları tek bir yerden takip edin.",
+    "summary": {
+      "ariaLabel": "İstek özeti",
+      "pending": "Beklemede",
+      "recentDecisions": "Yakın zamandaki kararlar",
+      "requiredFixes": "Gerekli düzeltmeler",
+      "totalLoaded": "Toplam yüklenen"
+    },
+    "title": "İsteklerim",
+    "unavailableTitle": "İstekler kullanılamıyor"
+  }
+}

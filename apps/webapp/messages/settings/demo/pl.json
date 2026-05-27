@@ -1,0 +1,226 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Nieobecności (urlopy, zwolnienia lekarskie)",
+        "changePolicies": "Zmień zasady",
+        "description": "Typy danych demonstracyjnych, które możesz wygenerować",
+        "locations": "Lokalizacje i podobszary",
+        "shifts": "Szablony zmian i zmiany",
+        "supported": "Obecnie obsługiwane:",
+        "teamsProjects": "Zespoły i projekty",
+        "timeEntries": "Wpisy czasu i okresy pracy",
+        "title": "Dostępne typy danych",
+        "workCategories": "Zestawy kategorii pracy"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "Usunięto {count, plural, one {# nieobecność} few {# nieobecności} other {# nieobecności}}",
+          "button": "Wyczyść wszystkie dane",
+          "changePoliciesDeleted": "Usunięto {count, plural, one {# politykę zmian} few {# polityki zmian} other {# polityk zmian}}",
+          "dialog": {
+            "confirm": "Wyczyść wszystkie dane",
+            "description": "Tej czynności nie można cofnąć. Wszystkie wpisy czasu, nieobecności, zespoły, projekty i powiązane dane zostaną trwale usunięte.",
+            "title": "Wyczyścić wszystkie dane czasu?"
+          },
+          "items": {
+            "absences": "Wszystkie wpisy nieobecności",
+            "changePolicies": "Wszystkie polityki zmian",
+            "locations": "Wszystkie lokalizacje i podobszary",
+            "shifts": "Wszystkie szablony zmian i zmiany",
+            "teamsProjects": "Wszystkie zespoły i projekty",
+            "timeEntries": "Wszystkie wpisy czasu i okresy pracy",
+            "vacationAllowances": "Wszystkie limity urlopowe",
+            "workCategories": "Wszystkie kategorie pracy"
+          },
+          "locationsDeleted": "Usunięto {count, plural, one {# lokalizację} few {# lokalizacje} other {# lokalizacji}}",
+          "managerAssignmentsDeleted": "Usunięto {count, plural, one {# przypisanie menedżera} few {# przypisania menedżera} other {# przypisań menedżera}}",
+          "projectsDeleted": "Usunięto {count, plural, one {# projekt} few {# projekty} other {# projektów}}",
+          "shiftRequestsDeleted": "Usunięto {count, plural, one {# prośbę o zmianę} few {# prośby o zmianę} other {# próśb o zmianę}}",
+          "shiftsDeleted": "Usunięto {count, plural, one {# zmianę} few {# zmiany} other {# zmian}}",
+          "shiftTemplatesDeleted": "Usunięto {count, plural, one {# szablon zmiany} few {# szablony zmian} other {# szablonów zmian}}",
+          "subareasDeleted": "Usunięto {count, plural, one {# podobszar} few {# podobszary} other {# podobszarów}}",
+          "successTitle": "Dane zostały pomyślnie wyczyszczone!",
+          "teamsDeleted": "Usunięto {count, plural, one {# zespół} few {# zespoły} other {# zespołów}}",
+          "timeEntriesDeleted": "Usunięto {count, plural, one {# wpis czasu} few {# wpisy czasu} other {# wpisów czasu}}",
+          "title": "Wyczyść dane czasu",
+          "vacationAllowancesReset": "Zresetowano {count, plural, one {# limit urlopowy} few {# limity urlopowe} other {# limitów urlopowych}}",
+          "willDelete": "To spowoduje trwałe usunięcie:",
+          "workCategoriesDeleted": "Usunięto {count, plural, one {# kategorię pracy} few {# kategorie pracy} other {# kategorii pracy}}",
+          "workCategorySetsDeleted": "Usunięto {count, plural, one {# zestaw kategorii pracy} few {# zestawy kategorii pracy} other {# zestawów kategorii pracy}}",
+          "workPeriodsDeleted": "Usunięto {count, plural, one {# okres pracy} few {# okresy pracy} other {# okresów pracy}}"
+        },
+        "clearing": "Czyszczenie...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "Usunięto {count, plural, one {# nieobecność} few {# nieobecności} other {# nieobecności}}",
+          "adminPreserved": "Konta administratorów zostaną zachowane",
+          "button": "Usuń pracowników niebędących administratorami",
+          "dialog": {
+            "confirm": "Usuń pracowników niebędących administratorami",
+            "description": "Tej czynności nie można cofnąć. Wszyscy pracownicy niebędący administratorami oraz powiązane z nimi dane zostaną trwale usunięte.",
+            "title": "Usunąć pracowników niebędących administratorami?"
+          },
+          "employeesDeleted": "Usunięto {count, plural, one {# pracownika} few {# pracowników} other {# pracowników}}",
+          "items": {
+            "demoUsers": "Wszystkie konta użytkowników demo",
+            "employees": "Wszyscy pracownicy niebędący administratorami",
+            "managerAssignments": "Wszystkie przypisania menedżerów",
+            "timeEntries": "Ich wpisy czasu i okresy pracy"
+          },
+          "membersDeleted": "Usunięto {count, plural, one {# członka} few {# członków} other {# członków}}",
+          "successTitle": "Pracownicy niebędący administratorami zostali pomyślnie usunięci!",
+          "timeEntriesDeleted": "Usunięto {count, plural, one {# wpis czasu} few {# wpisy czasu} other {# wpisów czasu}}",
+          "title": "Usuń pracowników niebędących administratorami",
+          "usersDeleted": "Usunięto {count, plural, one {# użytkownika} few {# użytkowników} other {# użytkowników}}",
+          "willDelete": "To spowoduje trwałe usunięcie:"
+        },
+        "deleting": "Usuwanie...",
+        "description": "Destrukcyjne działania, których nie można cofnąć",
+        "title": "Strefa zagrożenia",
+        "typeDelete": "Wpisz DELETE, aby potwierdzić",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Wygeneruj przykładowe dane do testów lub wyczyść istniejące dane związane z czasem",
+      "errors": {
+        "generationFailed": "Generowanie nie powiodło się. Spróbuj ponownie.",
+        "noOrganization": "Nie wybrano organizacji"
+      },
+      "form": {
+        "dataTypes": {
+          "absences": {
+            "description": "Urlopy, zwolnienia lekarskie i inne nieobecności",
+            "title": "Nieobecności"
+          },
+          "changePolicies": {
+            "description": "Zasady zmiany wpisów czasu",
+            "title": "Zasady zmian"
+          },
+          "label": "Typy danych",
+          "locations": {
+            "countLabel": "Liczba lokalizacji:",
+            "description": "Lokalizacje pracy i podobszary",
+            "title": "Lokalizacje"
+          },
+          "projects": {
+            "countLabel": "Liczba projektów:",
+            "description": "Przykładowe projekty do śledzenia czasu",
+            "title": "Projekty"
+          },
+          "shiftScheduling": {
+            "description": "Szablony zmian i zaplanowane zmiany",
+            "requiresLocations": "Wymaga włączonych lokalizacji",
+            "title": "Planowanie zmian"
+          },
+          "teams": {
+            "countLabel": "Liczba zespołów:",
+            "description": "Twórz zespoły i przypisuj pracowników",
+            "title": "Zespoły"
+          },
+          "timeEntries": {
+            "description": "Rejestry rozpoczęcia/zakończenia pracy i okresy pracy",
+            "title": "Wpisy czasu"
+          },
+          "workCategories": {
+            "assignLabel": "Przypisz również do okresów pracy",
+            "description": "Zestawy kategorii dla okresów pracy",
+            "title": "Kategorie pracy"
+          }
+        },
+        "dateRange": {
+          "hint": "Zakres czasu dla wygenerowanych danych",
+          "label": "Zakres dat",
+          "last30": "Ostatnie 30 dni",
+          "last60": "Ostatnie 60 dni",
+          "last90": "Ostatnie 90 dni",
+          "thisYear": "W tym roku"
+        },
+        "employees": {
+          "all": "Wszyscy pracownicy ({count})",
+          "label": "Pracownicy",
+          "selectSpecific": "Wybierz konkretnych pracowników"
+        }
+      },
+      "generateData": {
+        "button": "Generuj dane",
+        "description": "Stwórz realistyczne przykładowe dane dla swojej organizacji",
+        "title": "Generuj dane demonstracyjne"
+      },
+      "generateEmployees": {
+        "button": "Wygeneruj {count} pracowników",
+        "countHint": "Maksymalnie 50 pracowników jednocześnie",
+        "countLabel": "Liczba pracowników",
+        "description": "Utwórz konta pracowników demonstracyjnych do testów",
+        "employeesCreated": "Utworzono {count} pracowników",
+        "generating": "Generowanie...",
+        "includeManagers": "Uwzględnij przypisania menedżerów",
+        "managersCreated": "{count} przypisań menedżerów",
+        "managersHint": "Losowo przypisuj menedżerów do nowych pracowników",
+        "options": "Opcje",
+        "successTitle": "Pracownicy zostali pomyślnie wygenerowani!",
+        "title": "Generuj pracowników",
+        "usersCreated": "Utworzono {count} użytkowników"
+      },
+      "results": {
+        "success": "Dane demonstracyjne zostały pomyślnie wygenerowane!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Tworzenie wpisów nieobecności",
+          "label": "Nieobecności"
+        },
+        "assignCategories": {
+          "description": "Przypisywanie kategorii pracy do okresów",
+          "label": "Przypisz kategorie"
+        },
+        "changePolicies": {
+          "description": "Tworzenie zasad zmian",
+          "label": "Zasady zmian"
+        },
+        "locations": {
+          "description": "Tworzenie lokalizacji i podobszarów",
+          "label": "Lokalizacje"
+        },
+        "managers": {
+          "description": "Przypisywanie menedżerów do pracowników",
+          "label": "Przypisania menedżerów"
+        },
+        "projects": {
+          "description": "Tworzenie przykładowych projektów",
+          "label": "Projekty"
+        },
+        "shifts": {
+          "description": "Tworzenie zmian i wniosków",
+          "label": "Zmiany"
+        },
+        "shiftTemplates": {
+          "description": "Tworzenie szablonów zmian",
+          "label": "Szablony zmian"
+        },
+        "teams": {
+          "description": "Tworzenie zespołów i przypisywanie pracowników",
+          "label": "Zespoły"
+        },
+        "timeEntries": {
+          "description": "Tworzenie wpisów czasu pracy i okresów pracy",
+          "label": "Wpisy czasu pracy"
+        },
+        "workCategories": {
+          "description": "Tworzenie zestawów kategorii pracy i kategorii",
+          "label": "Kategorie pracy"
+        }
+      },
+      "title": "Dane demonstracyjne",
+      "wizard": {
+        "backToConfig": "Powrót do konfiguracji",
+        "complete": "Zakończono",
+        "configure": "Konfiguruj",
+        "generate": "Generuj",
+        "generateMore": "Generuj więcej danych"
+      }
+    },
+    "demoData": {
+      "description": "Generuj przykładowe dane do testów lub wyczyść wszystkie dane związane z czasem",
+      "title": "Dane demonstracyjne"
+    }
+  }
+}

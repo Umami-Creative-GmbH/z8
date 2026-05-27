@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Zatwierdź",
+      "approveLabel": "Zatwierdź {title}",
+      "description": "Wnioski oczekujące na decyzję menedżera.",
+      "empty": "Brak oczekujących zatwierdzeń.",
+      "openInbox": "Otwórz skrzynkę odbiorczą",
+      "pendingAriaLabel": "Oczekujące zatwierdzenia",
+      "reject": "Odrzuć",
+      "rejectLabel": "Odrzuć {title}",
+      "title": "Zatwierdzenia",
+      "toast": {
+        "approved": "Wniosek zatwierdzony",
+        "approveError": "Nie można zatwierdzić wniosku",
+        "rejected": "Wniosek odrzucony",
+        "rejectError": "Nie można odrzucić wniosku"
+      }
+    },
+    "briefing": {
+      "badge": "Dzisiaj",
+      "description": "Przejrzyj elementy wymagające dzisiaj działania, a następnie przejdź bezpośrednio do odpowiedniego przepływu pracy.",
+      "needsAction": {
+        "description": "Zacznij tutaj, aby uzyskać najpilniejsze działania operacyjne.",
+        "empty": "Wszystko w porządku. W tej chwili nie jest wymagane żadne działanie menedżera.",
+        "title": "Wymaga działania"
+      },
+      "sections": {
+        "empty": "Nie wykryto żadnych problemów."
+      },
+      "severity": {
+        "critical": "Krytyczne",
+        "high": "Wysoki",
+        "info": "Informacje",
+        "warning": "Ostrzeżenie"
+      },
+      "summaryAriaLabel": "Podsumowanie dnia",
+      "supportingSectionsAriaLabel": "Sekcje pomocnicze",
+      "title": "Codzienny briefing menedżera",
+      "updatedAt": "{date} - Zaktualizowano {time}"
+    }
+  }
+}

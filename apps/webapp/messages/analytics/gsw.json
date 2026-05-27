@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "Analysen anzeigen",
+      "restrictedDescription": "Analysen sind nur für Administratoren und Manager verfügbar.",
+      "restrictedTitle": "Zugriff eingeschränkt"
+    },
+    "common": {
+      "days": "Tage",
+      "employee": "Mitarbeiter",
+      "employees": "Mitarbeiter",
+      "hours": "Stunden",
+      "loadingOrganizationSettings": "Lade Organisationseinstellungen vor dem Aktivieren der Voreinstellungen.",
+      "noDataAvailable": "Keini Date verfüegbar",
+      "noDataForPeriod": "Für de gwählti Zytruum sind keini Date verfüegbar",
+      "overtime": "Überziit",
+      "overtimeHours": "Überziitstunde",
+      "team": "Team",
+      "totalHours": "Gsamti Stunde",
+      "unavailable": "Nit verfüegbar",
+      "undertime": "Underziit",
+      "undertimeHours": "Underziitstunde"
+    },
+    "layout": {
+      "description": "Umfassendi Iisichte in Teamleistig, Arbeitsstunde und Absenzmuster",
+      "tabs": {
+        "overtimeBurnDown": "Überziit-Abbau",
+        "overview": "Übersicht",
+        "teamPerformance": "Teamleistig",
+        "vacationTrends": "Ferietrends",
+        "workHours": "Arbeitsstunde"
+      },
+      "title": "Analytik"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Ufschlüsselig",
+      "breakdownDescription": "Details zum Überziit-Abbau uf {label}-Ebeni",
+      "breakdownEmpty": "Es sind no keini Ufschlüsselig-Date verfüegbar",
+      "byCostCenter": "Nach Chostestelle",
+      "byManager": "Nach Manager",
+      "byTeam": "Nach Team",
+      "costCenter": "Chostestelle",
+      "currentOvertime": "Aktuelli Überziit",
+      "description": "Wöchentliche Überziit-Abbau über d'Teams hinwäg verfolge.",
+      "errors": {
+        "loadData": "Überziit-Abbau-Date händ nöd chönne glade werde"
+      },
+      "filters": {
+        "allCostCenters": "Alli Chostestelle",
+        "allManagers": "Alli Manager",
+        "allTeams": "Alli Teams",
+        "breakdownLabel": "Ufschlüsselig-Dimension",
+        "costCenterLabel": "Chostestelle-Filter",
+        "managerLabel": "Manager-Filter",
+        "teamLabel": "Team-Filter"
+      },
+      "improvingGroups": "Verbesserendi Gruppe",
+      "improvingGroupsDescription": "Gruppe mit abnehmender Überziit",
+      "manager": "Manager",
+      "previousOvertime": "Vorherigi Überziit",
+      "previousPeriodDescription": "Im Vergliich zum vorherige Zytruum",
+      "selectedRangeDescription": "Für de gwählti Datumsbereich und Filter",
+      "title": "Überziit-Abbau",
+      "trendDirection": "Trend-Richtig",
+      "trendDirectionDescription": "Gsamti Überziit-Entwicklig",
+      "trend": {
+        "down": "Abwärts",
+        "flat": "Glichbliibend",
+        "up": "Ufwärts"
+      },
+      "weeklyTrend": {
+        "description": "Wöchentliche Trend zum Überziit-Abbau",
+        "empty": "Es sind no keini Trend-Date verfüegbar",
+        "title": "Wöchentliche Abbau-Trend"
+      },
+      "weekOverWeek": "Wuche-zu-Wuche"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Absenzverteilig nach Kategorie",
+        "title": "Absenzmuster"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% genehmigt",
+        "avgDecision": "{hours}h durchschnittliche Entscheidungszeit",
+        "byManager": "Nach Vorgesetztem",
+        "byTeam": "Nach Team",
+        "byType": "Nach Typ",
+        "description": "Teams und Anfragetypen mit ausstehenden Aufgaben oder SLA-Warnungen",
+        "empty": "Keine Genehmigungsengpässe gefunden",
+        "pendingSummary": "{pendingCount} ausstehend - {slaWarnings} SLA-Warnungen",
+        "title": "Genehmigungsengpässe",
+        "unavailable": "Genehmigungsengpässe konnten nicht geladen werden"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Von den entschiedenen Anfragen genehmigt",
+          "title": "Genehmigungsquote",
+          "unavailableDescription": "Genehmigungsanalysen konnten nicht geladen werden"
+        },
+        "avgWorkHours": {
+          "description": "Pro Mitarbeiter im gewählten Zeitraum",
+          "title": "Durchschnittliche Arbeitsstunden"
+        },
+        "totalAbsenceDays": {
+          "description": "Gesamttage im gewählten Zeitraum",
+          "title": "Gesamte Absenztage"
+        },
+        "totalEmployees": {
+          "description": "Aktive Mitarbeiter in der Organisation",
+          "title": "Gesamtzahl Mitarbeiter"
+        }
+      },
+      "loadingLabel": "Analysedaten werden geladen",
+      "workHoursByTeam": {
+        "description": "Gesamte erfasste Arbeitsstunden pro Team",
+        "title": "Arbeitsstunden nach Team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Durchschnitt pro Mitarbeiter",
+      "comparison": {
+        "description": "Gesamte Arbeitsstunden nach Team für den gewählten Zeitraum",
+        "title": "Teamvergleich"
+      },
+      "details": {
+        "description": "Aufschlüsselung der Arbeitsstunden nach Team und Mitarbeiter",
+        "title": "Details zur Teamleistung"
+      },
+      "employeeCount": "Mitarbeiteranzahl",
+      "errors": {
+        "loadData": "Teamleistungsdaten konnten nicht geladen werden"
+      },
+      "onTrack": "Im Plan",
+      "variance": {
+        "description": "Abweichung der Stunden von den erwarteten Arbeitsstunden",
+        "empty": "Keine Abweichungsdaten verfügbar",
+        "title": "Überstunden & Unterstunden"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Zugewiesen",
+      "balance": {
+        "description": "Zugewiesene, bezogene und verbleibende Tage pro Mitarbeiter",
+        "title": "Feriensaldo"
+      },
+      "daysRemaining": "{count} Tage verbleibend",
+      "daysTaken": "{count} Tage bezogen",
+      "errors": {
+        "loadData": "Ferientrenddaten konnten nicht geladen werden"
+      },
+      "monthlyUsage": {
+        "description": "Bezogene Ferientage pro Monat",
+        "empty": "Keine monatlichen Nutzungsdaten verfügbar",
+        "title": "Monatliche Feriennutzung"
+      },
+      "peakMonths": {
+        "description": "Monate mit der höchsten Ferienaktivität",
+        "empty": "Keine Daten zu Spitzenmonaten verfügbar",
+        "title": "Ferien-Spitzenmonate"
+      },
+      "remaining": "Verbleibend",
+      "taken": "Bezogen",
+      "utilization": {
+        "description": "Gesamte Feriennutzung in der Organisation",
+        "overall": "Gesamtauslastung",
+        "title": "Feriennutzig"
+      },
+      "utilizationLabel": "Nutzig",
+      "utilizationPercent": "Nutzig %",
+      "vacationDays": "Ferietäg"
+    },
+    "workHours": {
+      "actualHours": "Tatsächlechi Stunde",
+      "avgHoursPerWeek": "Durchschnittlechi Stunde/Wuche",
+      "daily": {
+        "description": "Tatsächlechi gäge erwarteti Arbeitsstunde pro Tag",
+        "empty": "Keini Date für täglechi Stunde verfüegbar",
+        "title": "Täglechi Arbeitsstunde"
+      },
+      "distribution": {
+        "description": "Verglich vo de Arbeitsstunde vo de Aagstellte (horizontale Balke)",
+        "empty": "Keini Date zur Verteilig verfüegbar",
+        "title": "Verteilig vo de Arbeitsstunde"
+      },
+      "employeeComparison": {
+        "description": "Gsamtstunde und Abwiichig vom Soll-Wert pro Aagstellte",
+        "title": "Arbeitsstunde vo de Aagstellte"
+      },
+      "errors": {
+        "loadData": "D'Analysedate für d'Arbeitsstunde händ nöd chönne glade werde"
+      },
+      "expectedHours": "Erwarteti Stunde",
+      "variance": "Abwiichig",
+      "varianceTrend": {
+        "description": "Stundeabwiichig vo de erwartete Arbeitsstunde über Ziit",
+        "empty": "Keini Trenddate verfüegbar",
+        "title": "Trend für Über- und Minderziit"
+      }
+    }
+  }
+}

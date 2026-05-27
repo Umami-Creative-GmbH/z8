@@ -1,0 +1,264 @@
+{
+  "absences": {
+    "addAbsence": "Abweseheit erfasse",
+    "balance": {
+      "carryoverDays": "Du häsch {count} Täg zum Übertrage",
+      "carryoverExpiry": "wo ablaufed am",
+      "carryoverFrom": "Übertrag us em {year}",
+      "daysRemaining": "Verblibendi Täg",
+      "description": "Dini Ferietäg fürs laufende Jahr",
+      "outOfTotalDays": "vo {totalDays} Gsamttäg",
+      "pending": "Hängig",
+      "title": "Ferieguthabe {year}",
+      "used": "Brucht"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Gnämigt",
+        "halfDayAm": "Halbe Tag (am Morge)",
+        "halfDayPm": "Halbe Tag (am Namittag)",
+        "holiday": "Fiirtig",
+        "pending": "Hängig",
+        "rejected": "Abglähnt"
+      },
+      "nextYear": "Nächsts Jahr",
+      "previousYear": "Vorherigs Jahr"
+    },
+    "dialog": {
+      "cancelDescription": "Bischt du sicher, dass du dä Abweseheitsatrag storniere wotsch? Die Aktion chan nöd rückgängig gmacht wärde.",
+      "cancelTitle": "Abweseheitsatrag storniere",
+      "confirmCancel": "Ja, Antrag storniere"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Ferieaspruch nöd konfiguriert",
+      "allowanceNotConfiguredMessage": "Dini Organisation hät no kei Ferieaspruch für {currentYear} igrichtet.",
+      "contactAdmin": "Bitte kontaktier din Administrator, zum d Ferierichtlinie z konfiguriere."
+    },
+    "featureName": "Abweseheite verwalte",
+    "form": {
+      "absenceType": "Abweseheitsart *",
+      "autoApproved": "(Automatisch gnämigt)",
+      "balanceAfterRequest": "Guthabe nach em Antrag:",
+      "businessDays": "Arbeitstäg:",
+      "daysRemaining": "Verblibendi Täg:",
+      "description": "Reich en Antrag für Ziit ab. Din Vorgesetzte wird zur Gnähmigung benachrichtigt.",
+      "duration": "Absenzduur",
+      "duration.fullDay": "Ganztägig",
+      "duration.partialDay": "Teiltägig",
+      "endDate": "Enddatum *",
+      "endDateHelper": "Leer lah für e Absenz am gliche Tag.",
+      "endTime": "Endziit",
+      "errors": {
+        "fillRequiredFields": "Bitte füll alli Pflichtfälder us",
+        "insufficientBalance": "Zwenig Ferieguthabe",
+        "insufficientBalanceForRequest": "Zwenig Ferieguthabe für dä Antrag",
+        "invalidSelection": "Bitte überprüef dini Uswahl und versuechs nomal"
+      },
+      "notesOptional": "Notize (Optional)",
+      "notesPlaceholder": "Zuesätzlichi Informatione dezuefüege...",
+      "selectAbsenceType": "Abweseheitsart wähle",
+      "sickDetail": "Chrankheits-Details *",
+      "sickDetailPlaceholder": "Chrankheits-Details uswähle",
+      "startDate": "Startdatum *",
+      "startTime": "Startziit",
+      "submitRequest": "Antrag iireiche",
+      "title": "Abweseheit beantrage"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "betroffeni Schicht",
+      "approval": "Freigab",
+      "balance": "Guthabe",
+      "balanceUnavailable": "Guthabe nöd verfüegbar",
+      "countsAgainstVacationBalance": "Wird vom Ferieguthabe abzooge",
+      "coverage": "Besetzig",
+      "coverageStaffAfterRequest": "{after}/{minimum} Personal nach Aafrog",
+      "description": "En nöd-blockierende Check vo Guthabe, Fiirtig, Besetzig und Freigabesignal, bevor ihr d'Aafrog absched.",
+      "doesNotReduceVacationBalance": "Reduziert s'Ferieguthabe nöd",
+      "holidays": "Fiirtig",
+      "loading": "Guthabe, Fiirtig und Besetzig wärded prüeft…",
+      "noApprovalWarnings": "Kei Warnige zur Freigab",
+      "noCoverageRisk": "Kei Risiko bi de Besetzig",
+      "noCoverageRulesConfigured": "Kei Besetzigsregle für die betroffene Schichte konfiguriert",
+      "noHolidays": "Kei Fiirtig im Zytruum zuegwiise",
+      "remainingAfter": "Verblibend nach Aafrog",
+      "requested": "Aagfröget",
+      "title": "Smart Planner",
+      "unavailable": "Planigsvorschau nöd verfüegbar. Ihr chönd d'Aafrog trotzdem absche."
+    },
+    "requestAbsence": "Abweseheit aafordere",
+    "status": {
+      "approved": "Gnehmigt",
+      "pending": "Hängig",
+      "rejected": "Abglehnt"
+    },
+    "subtitle": "Verwalte dini Abweseheite und Ferietäg",
+    "table": {
+      "cancelAbsence": "Abwesenheit storniere",
+      "cancelAbsenceTooltip": "Abwesenheit storniere",
+      "end": "Endi",
+      "headers": {
+        "actions": "Aktionä",
+        "dateRange": "Datumsberiich",
+        "days": "Täg",
+        "notes": "Notize",
+        "status": "Status",
+        "type": "Typ"
+      },
+      "noRequests": "Kei Abweseheitsafragä gfunde.",
+      "noSearchResults": "Kei Absänze gfunde, wo uf dini Suech passet.",
+      "searchPlaceholder": "Suech nach Typ, Status oder Notize...",
+      "start": "Start",
+      "subtitle": "Aktuelli und chünftigi Abweseheitsafragä",
+      "title": "Dini Abweseheitsafragä"
+    },
+    "title": "Abweseheite",
+    "toast": {
+      "cancelFailed": "Abweseheitsafrag chönnt nöd storniert wärde",
+      "requestCancelled": "Abweseheitsafrag storniert",
+      "requestFailed": "Abweseheitsafrag chönnt nöd übermittlet wärde",
+      "requestSubmitted": "Abweseheitsafrag erfolgriich übermittlet"
+    },
+    "view": {
+      "calendar": "Kaländer",
+      "table": "Tabälle"
+    }
+  },
+  "calendar": {
+    "dayDetails": {
+      "blocksTimeEntry": "Ziiterfassig blockiert",
+      "category": "Kategori",
+      "duration": "Duur",
+      "employee": "Aagstellte",
+      "noEvents": "Kei Termin für dä Tag",
+      "recurring": "Widerchärende Fiirtig",
+      "selectDate": "Wähl es Datum zum d Details aazluege",
+      "status": "Status",
+      "title": "Tagesdetails"
+    },
+    "delete": {
+      "auditNote": "Ziititräg wärded für Audit-Zwäck als glöscht markiert.",
+      "confirm": "In Pause umwandle",
+      "description": "Das löscht die Arbeitsziit permanent. D Lücke wird im Kaländer als Pause aazeigt.",
+      "failed": "Arbeitsziit chönnt nöd glöscht wärde",
+      "success": "Arbeitsziit in Pause umgwandlet",
+      "title": "In Pause umwandle?"
+    },
+    "details": {
+      "baseWorked": "Basis gschaffet",
+      "blocksTimeEntry": "Blockiert d Ziiterfassig",
+      "category": "Kategori",
+      "credited": "Gueretschiert",
+      "dateRange": "Datumsberiich",
+      "duration": "Duur",
+      "employee": "Aagstellte",
+      "notes": "Notize",
+      "periods": "Arbeitsziite",
+      "project": "Projekt",
+      "recurring": "Jöhrlich widerchärend",
+      "status": "Status",
+      "surcharge": "Zueschlag",
+      "surchargeBreakdown": "Zueschlagsufschlüsslig",
+      "time": "Ziit",
+      "type": "Typ"
+    },
+    "edit": {
+      "convertToBreak": "In Pause umwandle",
+      "notesSaved": "Notize gspicheret",
+      "notesSaveFailed": "Notize chönd nöd gspicheret werde",
+      "projectSaved": "Projekt aktualisiert",
+      "projectSaveFailed": "Projekt cha nöd aktualisiert werde",
+      "split": "Teile"
+    },
+    "employeeSelector": {
+      "error": "Teammitglieder chönd nöd glade werde",
+      "label": "Kaländer aaluege",
+      "myCalendar": "Mi Kaländer",
+      "placeholder": "Teammitglied uswähle..."
+    },
+    "entryType": {
+      "clockIn": "Iistemple",
+      "clockOut": "Uusstemple",
+      "correction": "Korrektur"
+    },
+    "eventType": {
+      "absence": "Absänz",
+      "holiday": "Fiirtig",
+      "timeEntry": "Ziitibuechig",
+      "workPeriod": "Arbetsperiode"
+    },
+    "filter": {
+      "absences": "Absänze",
+      "holidays": "Fiirtig",
+      "timeEntries": "Ziitibuechige",
+      "workPeriods": "Arbetsperiode"
+    },
+    "filters": {
+      "title": "Filter"
+    },
+    "legend": {
+      "absence": "Absänz",
+      "holiday": "Fiirtig",
+      "missingRequiredWork": "Erforderliche Arbeit fehlt",
+      "requirementMetOrOver": "Anforderung erfüllt/überschritten",
+      "timeEntry": "Ziitibuechig",
+      "title": "Legände",
+      "underRequirement": "Unter Anforderung",
+      "workPeriod": "Arbetsperiode",
+      "workPeriodPending": "Wartet uf Bestätigung"
+    },
+    "monthSummary": {
+      "calendarWeek": "KW",
+      "description": "Tägliche, wöchentliche und monatliche Richtlinienstunden",
+      "emptyMonth": "Keine Richtlinienstunden in diesem Monat",
+      "monthTotal": "Monatssumme",
+      "nextMonth": "Nächster Monat",
+      "previousMonth": "Vorheriger Monat",
+      "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
+      "weekSum": "Summe"
+    },
+    "split": {
+      "confirm": "Arbetsperiode teile",
+      "currentPeriod": "Aktuelli Arbetsperiode",
+      "description": "Die Arbetsperiode in zwei einzelni Sitzige ufteile.",
+      "failed": "Arbetsperiode cha nöd teilt werde",
+      "firstNotes": "Notize für die erschti Periode (optional)",
+      "firstPeriod": "Erschti Periode",
+      "invalidTime": "D'Ziit zum Teile muess zwüschem Start und em Ändi ligge",
+      "preview": "Vorschau",
+      "secondNotes": "Notize für die zweiti Periode (optional)",
+      "secondPeriod": "Zweiti Periode",
+      "splitAt": "Teile um",
+      "success": "Arbetsperiode erfolgriich teilt",
+      "title": "Arbetsperiode teile"
+    },
+    "status": {
+      "approved": "Gnehmigt",
+      "pending": "Hängig",
+      "rejected": "Abglehnt"
+    },
+    "view": {
+      "day": "Tag",
+      "loading": "Kalender wird glade…",
+      "month": "Monat",
+      "next": "Witer",
+      "previous": "Zrugg",
+      "refresh": "Aktualisiere",
+      "today": "Hüt",
+      "week": "Wuche",
+      "year": "Jahr"
+    },
+    "workStatus": {
+      "overRequirement": "über Anforderung",
+      "requiredHoursMissing": "erforderliche Stunden fehlen",
+      "requirementMet": "Anforderung erfüllt",
+      "underRequirement": "unter Anforderung"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}
