@@ -3,6 +3,8 @@ ARG ALPINE_VERSION=3.21
 ARG NODE_VERSION=22
 ARG PNPM_VERSION=11.4.0
 ARG TURBO_VERSION=2.9.14
+ARG NEXT_DEPLOYMENT_ID
+ARG BUILD_HASH
 ARG NEXT_PUBLIC_BUILD_HASH
 
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
@@ -55,8 +57,12 @@ COPY --from=pruner /app/out/full/ ./
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
 FROM workspace AS webapp-builder
+ARG NEXT_DEPLOYMENT_ID
+ARG BUILD_HASH
 ARG NEXT_PUBLIC_BUILD_HASH
-ENV NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
+ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
+    BUILD_HASH=${BUILD_HASH} \
+    NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
 RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
 RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
     pnpm --filter webapp exec next build
