@@ -4,8 +4,10 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const workflowPath = path.resolve(scriptDir, "../../.github/workflows/publish-images.yml");
+const webappDockerfilePath = path.resolve(scriptDir, "../../docker/Dockerfile.webapp");
 
 const workflow = await readFile(workflowPath, "utf8");
+const webappDockerfile = await readFile(webappDockerfilePath, "utf8");
 const errors = [];
 
 function expect(condition, message) {
@@ -127,12 +129,47 @@ function expectPushPathFilters(expectedPaths) {
 	}
 }
 
+function getDockerStageBlock(dockerfile, stageName) {
+	const lines = dockerfile.split(/\r?\n/);
+	const startIndex = lines.findIndex((line) => line.endsWith(` AS ${stageName}`));
+	if (startIndex === -1) {
+		return null;
+	}
+
+	let endIndex = lines.length;
+	for (let index = startIndex + 1; index < lines.length; index += 1) {
+		if (lines[index].startsWith("FROM ")) {
+			endIndex = index;
+			break;
+		}
+	}
+
+	return lines.slice(startIndex, endIndex).join("\n");
+}
+
 const publishTargetsJob = getJobBlock("publish-targets");
 const publishManifestsJob = getJobBlock("publish-manifests");
 const cleanupPackageVersionsJob = getJobBlock("cleanup-package-versions");
+const webappRuntimeStage = getDockerStageBlock(webappDockerfile, "webapp");
 
 expect(publishTargetsJob, "Missing publish-targets job");
 expect(publishManifestsJob, "Missing publish-manifests job");
+expect(webappRuntimeStage, "Dockerfile.webapp missing final webapp stage");
+
+if (webappRuntimeStage) {
+	includesAll(
+		webappRuntimeStage,
+		[
+			"ARG NEXT_DEPLOYMENT_ID",
+			"ARG BUILD_HASH",
+			"ARG NEXT_PUBLIC_BUILD_HASH",
+			"ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID}",
+			"BUILD_HASH=${BUILD_HASH}",
+			"NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}",
+		],
+		"Dockerfile.webapp runtime build hash env",
+	);
+}
 
 expectPushPathFilters([
 	"apps/webapp/**",
