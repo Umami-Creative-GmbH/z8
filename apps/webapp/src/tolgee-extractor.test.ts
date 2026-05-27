@@ -89,6 +89,36 @@ describe("tolgee extractor", () => {
 		]);
 	});
 
+	it("keeps shared app search and validation keys in the common namespace", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+
+			export function SharedStrings() {
+				const { t } = useTranslate();
+				return [
+					t("appSearch.searchOrRunCommand", "Search or run command"),
+					t("validation.invalid-email", "Invalid email address"),
+				];
+			}
+		`,
+			"shared-strings.tsx",
+		);
+
+		expect(result.keys).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					keyName: "appSearch.searchOrRunCommand",
+					namespace: "common",
+				}),
+				expect.objectContaining({
+					keyName: "validation.invalid-email",
+					namespace: "common",
+				}),
+			]),
+		);
+	});
+
 	it("extracts billing page keys into the billing namespace", () => {
 		const result = extractor(
 			`

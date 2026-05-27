@@ -15,6 +15,7 @@
 const NAMESPACE_PREFIXES = {
 	// common namespace
 	accessDenied: "common",
+	appSearch: "common",
 	colors: "common",
 	common: "common",
 	employeeSelect: "common",
