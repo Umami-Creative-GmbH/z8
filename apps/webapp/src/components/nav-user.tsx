@@ -2,6 +2,7 @@
 
 import {
 	IconChevronDown,
+	IconClock,
 	IconDeviceDesktop,
 	IconDotsVertical,
 	IconLanguage,
@@ -15,9 +16,11 @@ import {
 	IconUserCircle,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { useFontSizePreference } from "@/components/font-size-preference";
 import { FONT_SIZE_OPTIONS, isFontSizePreference } from "@/components/font-size-preference-utils";
 import { useTheme } from "@/components/theme-provider";
@@ -67,7 +70,16 @@ export function NavUser({
 	const { push, replace } = useRouter();
 	const locale = useLocale();
 	const pathname = usePathname();
-	const { theme, setTheme } = useTheme();
+	const { clearThemeError, setTheme, theme, themeError, timeThemeInfo } = useTheme();
+	useEffect(() => {
+		if (themeError === "location-required") {
+			toast.error(t("user.theme-location-required", "Location permission is required for time-based theme."), {
+				description: t("user.theme-system", "System theme will be used instead."),
+				duration: 6000,
+				id: "theme-location-required",
+			});
+		}
+	}, [themeError, t]);
 	const { fontSize, setFontSize } = useFontSizePreference();
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [isPending, startTransition] = useTransition();
@@ -81,6 +93,11 @@ export function NavUser({
 	const handleLogout = async () => {
 		setDropdownOpen(false);
 		setIsLoggingOut(true);
+		const showLogoutError = () => {
+			toast.error(t("user.log-out-failed", "Could not log out. Please try again."), {
+				id: "logout-failed",
+			});
+		};
 		try {
 			await authClient.signOut({
 				fetchOptions: {
@@ -91,14 +108,16 @@ export function NavUser({
 						}, 100);
 					},
 					onError: (error) => {
-						console.error("Logout error:", error);
+						void error;
 						setIsLoggingOut(false);
+						showLogoutError();
 					},
 				},
 			});
 		} catch (error) {
-			console.error("Logout failed:", error);
+			void error;
 			setIsLoggingOut(false);
+			showLogoutError();
 		}
 	};
 
@@ -115,6 +134,28 @@ export function NavUser({
 			setFontSize(value);
 		}
 	};
+
+	const handleThemeChange = (value: string) => {
+		clearThemeError();
+		setTheme(value);
+	};
+	const timeThemeDescription = timeThemeInfo
+		? t(
+				"user.theme-time-info",
+				"Time based is using {currentMode} mode. Switches to {nextMode} at {time}.",
+				{
+					currentMode:
+						timeThemeInfo.currentTheme === "dark"
+							? t("user.theme-dark", "Dark")
+							: t("user.theme-light", "Light"),
+					nextMode:
+						timeThemeInfo.nextTheme === "dark"
+							? t("user.theme-dark", "Dark")
+							: t("user.theme-light", "Light"),
+					time: DateTime.fromJSDate(timeThemeInfo.nextSwitchAt).setLocale(locale).toLocaleString(DateTime.TIME_SIMPLE),
+				},
+			)
+		: undefined;
 
 	const setMobileSectionOpen = (section: "language" | "fontSize" | "theme", open: boolean) => {
 		setMobileOpenSection(open ? section : null);
@@ -281,7 +322,7 @@ export function NavUser({
 											</DropdownMenuItem>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="overflow-hidden pl-2 motion-safe:data-[state=closed]:animate-accordion-up motion-safe:data-[state=open]:animate-accordion-down">
-											<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+											<DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
 												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="light">
 													<IconSun className="mr-2 size-4" />
 													{t("user.theme-light", "Light")}
@@ -290,11 +331,26 @@ export function NavUser({
 													<IconMoon className="mr-2 size-4" />
 													{t("user.theme-dark", "Dark")}
 												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="time">
+													<IconClock aria-hidden="true" className="mr-2 size-4" />
+													{t("user.theme-time", "Time based")}
+												</DropdownMenuRadioItem>
 												<DropdownMenuRadioItem className={mobileRadioItemClassName} value="system">
 													<IconDeviceDesktop className="mr-2 size-4" />
 													{t("user.theme-system", "System")}
 												</DropdownMenuRadioItem>
 											</DropdownMenuRadioGroup>
+											{themeError === "location-required" && (
+												<p className="px-2 py-1 text-muted-foreground text-xs" role="alert">
+													{t(
+														"user.theme-location-required",
+														"Location permission is required for time-based theme.",
+													)}
+												</p>
+											)}
+											{theme === "time" && timeThemeDescription && (
+												<p className="px-2 py-1 text-muted-foreground text-xs">{timeThemeDescription}</p>
+											)}
 										</CollapsibleContent>
 									</Collapsible>
 								</>
@@ -344,7 +400,7 @@ export function NavUser({
 											{t("user.theme", "Theme")}
 										</DropdownMenuSubTrigger>
 										<DropdownMenuSubContent>
-											<DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+											<DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
 												<DropdownMenuRadioItem value="light">
 													<IconSun className="mr-2 size-4" />
 													{t("user.theme-light", "Light")}
@@ -353,11 +409,28 @@ export function NavUser({
 													<IconMoon className="mr-2 size-4" />
 													{t("user.theme-dark", "Dark")}
 												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="time">
+													<IconClock aria-hidden="true" className="mr-2 size-4" />
+													{t("user.theme-time", "Time based")}
+												</DropdownMenuRadioItem>
 												<DropdownMenuRadioItem value="system">
 													<IconDeviceDesktop className="mr-2 size-4" />
 													{t("user.theme-system", "System")}
 												</DropdownMenuRadioItem>
 											</DropdownMenuRadioGroup>
+											{themeError === "location-required" && (
+												<p className="max-w-52 px-2 py-1 text-muted-foreground text-xs" role="alert">
+													{t(
+														"user.theme-location-required",
+														"Location permission is required for time-based theme.",
+													)}
+												</p>
+											)}
+											{theme === "time" && timeThemeDescription && (
+												<p className="max-w-52 px-2 py-1 text-muted-foreground text-xs">
+													{timeThemeDescription}
+												</p>
+											)}
 										</DropdownMenuSubContent>
 									</DropdownMenuSub>
 								</>

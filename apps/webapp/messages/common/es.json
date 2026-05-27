@@ -415,13 +415,17 @@
     "language": "Idioma",
     "logging-out": "Cerrando sesión...",
     "log-out": "Cerrar Sesión",
+    "log-out-failed": "No se pudo cerrar la sesión. Por favor, inténtalo de nuevo.",
     "profile": "Perfil",
+    "security": "Seguridad",
     "theme": "Tema",
     "theme-dark": "Oscuro",
     "theme-light": "Claro",
+    "theme-location-required": "Se requiere permiso de ubicación para el tema basado en el tiempo.",
     "theme-system": "Sistema",
-    "theme-toggle": "Cambiar tema",
-    "time-settings": "Ajustes de tiempo"
+    "theme-time": "Basado en el tiempo",
+    "theme-time-info": "El modo basado en el tiempo está usando el modo {currentMode}. Cambiará a {nextMode} a las {time}.",
+    "theme-toggle": "Cambiar tema"
   },
   "validation": {
     "first-name-required": "El nombre es obligatorio",
@@ -429,60 +433,5 @@
     "invalid-password": "Contraseña inválida",
     "last-name-required": "El apellido es obligatorio",
     "password-required": "La contraseña es obligatoria"
-  },
-  "appSearch": {
-    "commandDescription": "Buscar páginas, personas, equipos, ajustes o acciones",
-    "commandPlaceholder": "Buscar páginas, personas, equipos, ajustes o acciones…",
-    "commands": {
-      "addManualTimeEntry": {
-        "subtitle": "Registrar horas de un turno pasado o corrección",
-        "title": "Añadir entrada de tiempo manual"
-      },
-      "createProject": {
-        "subtitle": "Abrir ajustes de proyecto para definir un nuevo proyecto",
-        "title": "Crear proyecto"
-      },
-      "inviteTeammate": {
-        "subtitle": "Abrir gestión de organización para añadir un compañero",
-        "title": "Invitar a compañero de equipo"
-      },
-      "openApprovalsInbox": {
-        "subtitle": "Revisar solicitudes pendientes de empleados",
-        "title": "Abrir bandeja de entrada de aprobaciones"
-      },
-      "openMyRequests": {
-        "subtitle": "Revisar sus ausencias y gastos enviados",
-        "title": "Abrir mis solicitudes"
-      },
-      "openPayrollReadiness": {
-        "subtitle": "Comprobar si los datos de tiempo están listos para la nómina",
-        "title": "Abrir preparación de nómina"
-      },
-      "openSettings": {
-        "subtitle": "Gestionar su perfil, seguridad y ajustes de organización",
-        "title": "Abrir ajustes"
-      },
-      "requestAbsence": {
-        "subtitle": "Iniciar una solicitud de vacaciones, baja por enfermedad o tiempo libre",
-        "title": "Solicitar ausencia"
-      },
-      "submitTravelExpense": {
-        "subtitle": "Crear una solicitud de reembolso para gastos de viaje",
-        "title": "Enviar gasto de viaje"
-      }
-    },
-    "empty": "No se encontraron resultados.",
-    "groups": {
-      "actions": "Acciones",
-      "pages": "Páginas",
-      "people": "Personas",
-      "settings": "Ajustes",
-      "teams": "Equipos"
-    },
-    "search": "Buscar",
-    "searchOrRunCommand": "Buscar o ejecutar comando",
-    "teamAbsences": {
-      "description": "Revisar las métricas de ausencia de los empleados y registrar las ausencias"
-    }
   }
 }

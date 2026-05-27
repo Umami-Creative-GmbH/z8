@@ -1,6 +1,6 @@
 "use client";
 
-import { IconMoon, IconSun } from "@tabler/icons-react";
+import { IconClock, IconMoon, IconSun } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSyncExternalStore } from "react";
 import { useTheme } from "@/components/theme-provider";
@@ -45,6 +45,10 @@ export function ThemeToggle() {
 				<DropdownMenuItem onClick={() => setTheme("dark")}>
 					<IconMoon className="mr-2 size-4" />
 					{t("common:user.theme-dark", "Dark")}
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={() => setTheme("time")}>
+					<IconClock aria-hidden="true" className="mr-2 size-4" />
+					{t("common:user.theme-time", "Time based")}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
