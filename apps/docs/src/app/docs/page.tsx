@@ -1,4 +1,4 @@
-import { docsScopes } from '@/lib/docs-shell';
+import { docsScopes } from '@/lib/docs-data';
 import { IconArrowRight, IconChevronRight } from '@tabler/icons-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';

@@ -24,14 +24,14 @@ export default async function Page({ params }: PageProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = page.data as any;
-  const MDX = data.body as React.ComponentType<{ components?: Record<string, React.ComponentType> }>;
+  const MdxContent = data.body as React.ComponentType<{ components?: Record<string, React.ComponentType> }>;
 
   return (
     <DocsPage toc={data.toc} full={data.full}>
       <DocsTitle>{data.title}</DocsTitle>
       <DocsDescription>{data.description}</DocsDescription>
       <DocsBody>
-        <MDX components={mdxComponents as any} />
+        <MdxContent components={mdxComponents as any} />
       </DocsBody>
     </DocsPage>
   );
