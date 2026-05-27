@@ -1,4 +1,7 @@
 {
+  "ignore": {
+    "rules": ["react-doctor/nextjs-no-img-element"]
+  },
   "rules": {
     "react-doctor/server-auth-actions": "warn"
   },
