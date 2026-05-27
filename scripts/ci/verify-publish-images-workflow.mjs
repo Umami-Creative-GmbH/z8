@@ -203,6 +203,16 @@ if (publishTargetsJob) {
 		"publish-targets build step must use file: ./${{ matrix.dockerfile }}",
 	);
 
+	includesAll(
+		publishTargetsJob,
+		[
+			"NEXT_DEPLOYMENT_ID=${{ github.sha }}",
+			"BUILD_HASH=${{ github.sha }}",
+			"NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}",
+		],
+		"publish-targets build args",
+	);
+
 	expect(
 		expectedMatrixEntries.size === 0,
 		`publish-targets missing matrix entries: ${[...expectedMatrixEntries].join(", ")}`,
