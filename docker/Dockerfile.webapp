@@ -69,6 +69,13 @@ RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
 
 FROM base AS webapp
 
+ARG NEXT_DEPLOYMENT_ID
+ARG BUILD_HASH
+ARG NEXT_PUBLIC_BUILD_HASH
+ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
+    BUILD_HASH=${BUILD_HASH} \
+    NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
+
 RUN pnpm add -g tsx
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
