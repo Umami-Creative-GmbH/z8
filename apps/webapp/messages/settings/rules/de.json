@@ -396,6 +396,56 @@
       "percentageDescription": "Zusätzliches Zeitguthaben",
       "rangeEnd": "Bereichsende",
       "rangeStart": "Bereichsbeginn",
+      "reports": {
+        "details": {
+          "appliedRules": "Angewendete Regeln",
+          "calculatedAt": "Berechnet am",
+          "noAppliedRules": "Keine angewendeten Regeln aufgezeichnet.",
+          "overlapPolicy": "Überschneidungsrichtlinie",
+          "percentage": "Prozentsatz",
+          "qualifying": "Qualifizierend",
+          "surcharge": "Zuschlag",
+          "workPeriod": "Arbeitszeitraum"
+        },
+        "empty": {
+          "description": "Keine Zuschlagsberechnungen entsprachen den ausgewählten Filtern.",
+          "title": "Keine Zuschlagsberechnungen gefunden"
+        },
+        "errors": {
+          "invalidDateRange": "Das Startdatum muss vor oder am Enddatum liegen.",
+          "loadFailed": "Laden der Zuschlagsberechnungen fehlgeschlagen.",
+          "loadTitle": "Berechnungen konnten nicht geladen werden"
+        },
+        "filters": {
+          "apply": "Filter anwenden",
+          "employeeId": "Mitarbeiter-ID",
+          "endDate": "Enddatum",
+          "startDate": "Startdatum"
+        },
+        "loading": "Berechnungen werden geladen…",
+        "previousResults": {
+          "description": "Die letzte Anfrage ist fehlgeschlagen, daher bleiben die vorherigen erfolgreichen Ergebnisse sichtbar.",
+          "title": "Vorherige Ergebnisse werden angezeigt."
+        },
+        "rowLimitNotice": "Die ersten 500 übereinstimmenden Berechnungen werden angezeigt. Schränken Sie die Datums- oder Mitarbeiterfilter ein, um die Summen zu verfeinern.",
+        "summary": {
+          "baseHours": "Basisstunden",
+          "calculations": "Berechnungen",
+          "creditedHours": "Angerechnete Zuschlagsstunden",
+          "qualifyingHours": "Qualifizierende Zuschlagsstunden"
+        },
+        "table": {
+          "base": "Basis",
+          "created": "Erstellt",
+          "credit": "Gutschrift",
+          "date": "Datum",
+          "details": "Details",
+          "employee": "Mitarbeiter",
+          "percentage": "Prozentsatz",
+          "qualifying": "Qualifizierend"
+        },
+        "title": "Zuschlagsberichte"
+      },
       "rule": "Regel",
       "ruleCountLabel": "{count, plural, one {# Regel} other {# Regeln}}",
       "ruleName": "Regelname",

@@ -396,6 +396,56 @@
       "percentageDescription": "Crédito de tempo adicional",
       "rangeEnd": "Fim do intervalo",
       "rangeStart": "Início do intervalo",
+      "reports": {
+        "details": {
+          "appliedRules": "Regras aplicadas",
+          "calculatedAt": "Calculado em",
+          "noAppliedRules": "Nenhuma regra aplicada registrada.",
+          "overlapPolicy": "Política de sobreposição",
+          "percentage": "Porcentagem",
+          "qualifying": "Qualificação",
+          "surcharge": "Sobretaxa",
+          "workPeriod": "Período de trabalho"
+        },
+        "empty": {
+          "description": "Nenhum cálculo de sobretaxa correspondeu aos filtros selecionados.",
+          "title": "Nenhum cálculo de sobretaxa encontrado"
+        },
+        "errors": {
+          "invalidDateRange": "A data de início deve ser igual ou anterior à data de término.",
+          "loadFailed": "Falha ao carregar cálculos de sobretaxa.",
+          "loadTitle": "Não foi possível carregar os cálculos"
+        },
+        "filters": {
+          "apply": "Aplicar filtros",
+          "employeeId": "ID do funcionário",
+          "endDate": "Data de término",
+          "startDate": "Data de início"
+        },
+        "loading": "Carregando cálculos...",
+        "previousResults": {
+          "description": "A última solicitação falhou, portanto, os resultados bem-sucedidos anteriores permanecem visíveis.",
+          "title": "Exibindo resultados anteriores."
+        },
+        "rowLimitNotice": "Exibindo os primeiros 500 cálculos correspondentes. Restrinja os filtros de data ou funcionário para refinar os totais.",
+        "summary": {
+          "baseHours": "Horas base",
+          "calculations": "Cálculos",
+          "creditedHours": "Horas de sobretaxa creditadas",
+          "qualifyingHours": "Horas de sobretaxa qualificáveis"
+        },
+        "table": {
+          "base": "Base",
+          "created": "Criado",
+          "credit": "Crédito",
+          "date": "Data",
+          "details": "Detalhes",
+          "employee": "Funcionário",
+          "percentage": "Porcentagem",
+          "qualifying": "Qualificável"
+        },
+        "title": "Relatórios de sobretaxa"
+      },
       "rule": "Regra",
       "ruleCountLabel": "{count, plural, one {# regra} other {# regras}}",
       "ruleName": "Nome da Regra",
