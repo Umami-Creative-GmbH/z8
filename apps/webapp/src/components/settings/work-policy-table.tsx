@@ -171,7 +171,7 @@ export function WorkPolicyTable({
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<WorkPolicyWithDetails>[] = [
 		{
 			accessorKey: "name",
 			header: t("settings.workPolicies.name", "Name"),

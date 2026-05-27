@@ -53,7 +53,7 @@ function normalizeRepoUrl(
 
 export function LicenseTable({ licenses }: LicenseTableProps) {
 	const { t } = useTranslate();
-	const columns = [
+	const columns: ColumnDef<LicenseInfo>[] = [
 		{
 			accessorKey: "name",
 			header: ({ column }) => (

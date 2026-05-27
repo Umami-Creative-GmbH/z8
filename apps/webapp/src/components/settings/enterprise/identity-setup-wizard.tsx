@@ -1034,7 +1034,7 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 									)}
 								</p>
 								<div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
-									<code className="min-w-0 flex-1 truncate rounded bg-background px-2 py-2 text-sm">
+									<code className="min-w-0 flex-1 truncate rounded bg-background p-2 text-sm">
 										{scimToken}
 									</code>
 									<Button

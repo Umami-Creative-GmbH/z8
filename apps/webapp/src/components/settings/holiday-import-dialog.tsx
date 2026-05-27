@@ -123,7 +123,7 @@ export function HolidayImportDialog({
 	const [selectedCountry, setSelectedCountry] = useState<string>("");
 	const [selectedState, setSelectedState] = useState<string>("");
 	const [selectedRegion, setSelectedRegion] = useState<string>("");
-	const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+	const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
 	const [selectedTypes, setSelectedTypes] = useState<HolidayType[]>(["public"]);
 
 	// Preview state

@@ -105,7 +105,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<AbsenceWithCategory>[] = [
 		{
 			accessorKey: "dateRange",
 			header: t("absences.table.headers.dateRange", "Date Range"),

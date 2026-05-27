@@ -129,7 +129,7 @@ function SidebarProvider({
 	// This makes it easier to style the sidebar with Tailwind classes.
 	const state = open ? "expanded" : "collapsed";
 
-	const contextValue = {
+	const contextValue: SidebarContextProps = {
 		state,
 		open,
 		setOpen,

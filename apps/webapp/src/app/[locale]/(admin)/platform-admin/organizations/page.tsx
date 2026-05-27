@@ -366,13 +366,13 @@ export default function OrganizationsPage() {
 													<div className="flex items-center gap-3">
 														<div className="size-8 rounded bg-muted flex items-center justify-center">
 															{org.logo ? (
-																<img
-																	src={org.logo}
-																	alt={org.name}
-																	width={32}
-																	height={32}
-																	className="size-8 rounded"
-																/>
+															<img
+																src={org.logo}
+																alt={org.name}
+																width={32}
+																height={32}
+																className="size-8 rounded"
+															/>
 															) : (
 																<IconBuilding className="size-4" aria-hidden="true" />
 															)}

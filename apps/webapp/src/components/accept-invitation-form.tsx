@@ -263,7 +263,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 								</p>
 							</div>
 							<dl className="grid gap-3 sm:grid-cols-2">
-								<div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-3">
+								<div className="rounded-lg border border-border/70 bg-muted/20 p-3">
 									<dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
 										{t("auth.workspace", "Workspace")}
 									</dt>
@@ -271,7 +271,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 										{invitation.organizationName ?? t("common.not-available", "Not available")}
 									</dd>
 								</div>
-								<div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-3">
+								<div className="rounded-lg border border-border/70 bg-muted/20 p-3">
 									<dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
 										{t("auth.invited-email", "Invited email")}
 									</dt>
@@ -281,7 +281,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 									</dd>
 								</div>
 								{invitation.role ? (
-									<div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-3">
+									<div className="rounded-lg border border-border/70 bg-muted/20 p-3">
 										<dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
 											{t("auth.role", "Role")}
 										</dt>
@@ -289,7 +289,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 									</div>
 								) : null}
 								{invitation.inviterName ? (
-									<div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-3">
+									<div className="rounded-lg border border-border/70 bg-muted/20 p-3">
 										<dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
 											{t("auth.invited-by-label", "Invited by")}
 										</dt>
@@ -321,7 +321,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 								</p>
 							</div>
 							<div className="mt-4 grid gap-3">
-								<div className="rounded-lg border border-primary/10 bg-background/80 px-3 py-3">
+								<div className="rounded-lg border border-primary/10 bg-background/80 p-3">
 									<p className="font-medium text-sm">
 										{t("auth.step-one", "1. Use the invited email")}
 									</p>
@@ -332,7 +332,7 @@ export function AcceptInvitationForm({ invitation, invitationId }: AcceptInvitat
 										)}
 									</p>
 								</div>
-								<div className="rounded-lg border border-primary/10 bg-background/80 px-3 py-3">
+								<div className="rounded-lg border border-primary/10 bg-background/80 p-3">
 									<p className="font-medium text-sm">
 										{t("auth.step-two", "2. Return here and join")}
 									</p>

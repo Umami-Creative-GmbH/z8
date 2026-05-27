@@ -149,7 +149,7 @@ export function NotificationItem({
 	const { icon, bgColor, iconColor } = getNotificationStyle(notification.type);
 	const localized = getLocalizedNotificationContent(notification, t, locale);
 
-	const handleClick = () => {
+	const activateNotification = () => {
 		// Mark as read if not already
 		if (!notification.isRead) {
 			onMarkAsRead?.(notification.id);
@@ -176,11 +176,11 @@ export function NotificationItem({
 		<div
 			role="button"
 			tabIndex={0}
-			onClick={handleClick}
+			onClick={activateNotification}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") {
 					e.preventDefault();
-					handleClick();
+					activateNotification();
 				}
 			}}
 			className={cn(

@@ -129,7 +129,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<HolidayCategory>[] = [
 		{
 			accessorKey: "name",
 			header: t("settings.holidays.categories.name", "Name"),

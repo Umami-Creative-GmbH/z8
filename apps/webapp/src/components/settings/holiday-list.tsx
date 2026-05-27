@@ -197,7 +197,7 @@ export function HolidayList({
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<HolidayWithCategory>[] = [
 		...(canManage ? [createSelectionColumn<HolidayWithCategory>()] : []),
 		{
 			accessorKey: "name",

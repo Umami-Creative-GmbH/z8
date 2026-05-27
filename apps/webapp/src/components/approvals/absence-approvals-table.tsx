@@ -155,7 +155,7 @@ export function AbsenceApprovalsTable() {
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<ApprovalWithAbsence>[] = [
 		{
 			accessorKey: "requester",
 			header: t("approvals:approvals.employee", "Employee"),

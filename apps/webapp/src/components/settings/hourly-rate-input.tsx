@@ -23,7 +23,7 @@ export function HourlyRateInput({
 	currency = "EUR",
 	placeholder = "0.00",
 }: HourlyRateInputProps) {
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const updateHourlyRateFromInput = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const inputValue = e.target.value;
 		// Allow empty string, numbers, and decimal point
 		if (inputValue === "" || /^\d*\.?\d*$/.test(inputValue)) {
@@ -45,7 +45,7 @@ export function HourlyRateInput({
 				type="text"
 				inputMode="decimal"
 				value={value || ""}
-				onChange={handleChange}
+				onChange={updateHourlyRateFromInput}
 				onBlur={onBlur}
 				disabled={disabled}
 				placeholder={placeholder}
