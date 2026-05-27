@@ -6,7 +6,7 @@ allowBuilds:
   '@parcel/watcher': true
   '@posthog/cli': true
   '@swc/core': true
-  core-js: true
+  core-js: false
   esbuild: true
   msgpackr-extract: true
   msw: true
