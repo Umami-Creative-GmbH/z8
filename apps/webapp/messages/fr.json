@@ -271,6 +271,8 @@
         "title": "Aucun calcul de supplément trouvé"
       },
       "errors": {
+        "invalidDateRange": "La date de début doit être antérieure ou égale à la date de fin.",
+        "loadFailed": "Échec du chargement des calculs de supplément.",
         "loadTitle": "Impossible de charger les calculs"
       },
       "filters": {

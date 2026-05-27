@@ -271,6 +271,8 @@
         "title": "Nenhum cálculo de sobretaxa encontrado"
       },
       "errors": {
+        "invalidDateRange": "A data de início deve ser igual ou anterior à data de término.",
+        "loadFailed": "Falha ao carregar os cálculos de sobretaxa.",
         "loadTitle": "Não foi possível carregar os cálculos"
       },
       "filters": {

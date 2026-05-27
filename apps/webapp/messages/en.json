@@ -271,6 +271,8 @@
         "title": "No surcharge calculations found"
       },
       "errors": {
+        "invalidDateRange": "Start date must be on or before end date.",
+        "loadFailed": "Failed to load surcharge calculations.",
         "loadTitle": "Unable to load calculations"
       },
       "filters": {

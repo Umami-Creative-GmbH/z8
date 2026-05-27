@@ -271,6 +271,8 @@
         "title": "Nessun calcolo del supplemento trovato"
       },
       "errors": {
+        "invalidDateRange": "La data di inizio deve essere uguale o precedente alla data di fine.",
+        "loadFailed": "Impossibile caricare i calcoli dei supplementi.",
         "loadTitle": "Impossibile caricare i calcoli"
       },
       "filters": {
