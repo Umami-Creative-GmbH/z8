@@ -98,7 +98,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<ProjectSummary>[] = [
 		{
 			accessorKey: "name",
 			header: t("reports.projects.table.project", "Project"),

@@ -1,5 +1,4 @@
 import type { CalendarEvent, CalendarEventType } from "./types";
-import { env } from "@/env";
 
 /**
  * Schedule-X event format for v3
@@ -202,7 +201,7 @@ export function calendarEventToScheduleX(
 ): ScheduleXEvent | null {
 	try {
 		// Debug: Log raw date values to identify parsing issues
-		if (env.NODE_ENV === "development") {
+		if (process.env.NODE_ENV === "development") {
 			const dateValue = event.date;
 			const dateType = Object.prototype.toString.call(dateValue);
 			if (!(dateValue instanceof Date) || Number.isNaN(dateValue.getTime())) {

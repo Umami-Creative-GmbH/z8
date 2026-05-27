@@ -37,7 +37,7 @@ export function CalendarView({ organizationId, currentEmployeeId }: CalendarView
 
 	// Current date range for data fetching
 	const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-	const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+	const [currentYear, setCurrentYear] = useState<number>(() => new Date().getFullYear());
 
 	// Selected event for details panel
 	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);

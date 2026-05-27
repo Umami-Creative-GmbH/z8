@@ -11,9 +11,10 @@ const workspaceRoot = path.resolve(configDir, "../..");
 
 function getBuildHash() {
 	const providedHash =
-		process.env.NEXT_PUBLIC_BUILD_HASH ??
-		process.env.VERCEL_GIT_COMMIT_SHA ??
-		process.env.GITHUB_SHA ??
+		process.env.NEXT_DEPLOYMENT_ID ||
+		process.env.BUILD_HASH ||
+		process.env.VERCEL_GIT_COMMIT_SHA ||
+		process.env.GITHUB_SHA ||
 		process.env.CI_COMMIT_SHA;
 
 	if (providedHash) {
@@ -22,11 +23,17 @@ function getBuildHash() {
 
 	try {
 		return execFileSync("git", ["rev-parse", "--short", "HEAD"], {
-			cwd: workspaceRoot,
-			encoding: "utf8",
-			stdio: ["ignore", "pipe", "ignore"],
+		cwd: workspaceRoot,
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "ignore"],
 		}).trim();
 	} catch {
+		if (process.env.NODE_ENV === "production") {
+		throw new Error(
+			"Missing deployment/build hash. Set NEXT_DEPLOYMENT_ID or BUILD_HASH during next build."
+		);
+		}
+
 		return "dev";
 	}
 }

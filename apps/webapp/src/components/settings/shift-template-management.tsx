@@ -558,18 +558,24 @@ function ShiftTemplateDialog({
 		);
 	};
 
-	// Helper to get subarea display name
-	const getSubareaDisplay = (subareaId: string) => {
-		for (const location of locations) {
-			const subarea = location.subareas.find((s) => s.id === subareaId);
-			if (subarea) {
-				return t("settings.shiftTemplates.form.subareaFormat", "{location} – {subarea}", {
-					location: location.name,
-					subarea: subarea.name,
-				});
+	const subareaDisplayById = new Map<string, string>();
+	for (const location of locations) {
+		for (const subarea of location.subareas) {
+			if (!subareaDisplayById.has(subarea.id)) {
+				subareaDisplayById.set(
+					subarea.id,
+					t("settings.shiftTemplates.form.subareaFormat", "{location} – {subarea}", {
+						location: location.name,
+						subarea: subarea.name,
+					}),
+				);
 			}
 		}
-		return "";
+	}
+
+	// Helper to get subarea display name
+	const getSubareaDisplay = (subareaId: string) => {
+		return subareaDisplayById.get(subareaId) ?? "";
 	};
 
 	return (

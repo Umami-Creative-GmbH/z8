@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useOrganization } from "@/hooks/use-organization";
 
@@ -31,7 +31,7 @@ export function useWidgetData<T>(
 	const prevOrgIdRef = useRef<string | null>(null);
 	const mountedRef = useRef(false);
 
-	const loadData = async (isRefresh = false) => {
+	const loadData = useEffectEvent(async (isRefresh = false) => {
 		if (isRefresh) {
 			setRefreshing(true);
 		}
@@ -58,7 +58,7 @@ export function useWidgetData<T>(
 			setLoading(false);
 			setRefreshing(false);
 		}
-	};
+	});
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -72,7 +72,7 @@ export function useWidgetData<T>(
 	useEffect(() => {
 		const timeout = setTimeout(() => loadData(false), 0);
 		return () => clearTimeout(timeout);
-	}, [loadData]);
+	}, []);
 
 	// Re-fetch when organization changes
 	useEffect(() => {
@@ -82,7 +82,7 @@ export function useWidgetData<T>(
 			loadData(false);
 		}
 		prevOrgIdRef.current = organizationId;
-	}, [organizationId, loadData]);
+	}, [organizationId]);
 
 	const refetch = () => {
 		loadData(true);

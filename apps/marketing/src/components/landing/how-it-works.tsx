@@ -28,7 +28,7 @@ export function HowItWorks({ copy }: HowItWorksProps) {
 								/>
 							)}
 							<div
-								className="relative z-10 mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl text-[20px] font-extrabold"
+								className="relative z-10 mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl text-[20px] font-extrabold"
 								style={{ backgroundColor: v("surface"), color: v("surfaceText") }}
 							>
 								{s.step}

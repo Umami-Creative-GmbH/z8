@@ -132,7 +132,28 @@ export function DesignS1Client({
 	const homeHref = `/${locale}`;
 	const t = themes[mode];
 
-	const page = (
+	const page = renderDesignS1Page({
+		t,
+		mode,
+		homeHref,
+		toggleMode: () => setMode(mode === "dark" ? "light" : "dark"),
+	});
+
+	return locale === "de" ? page : translateTree(page, translationCopy);
+}
+
+function renderDesignS1Page({
+	t,
+	mode,
+	homeHref,
+	toggleMode,
+}: {
+	t: (typeof themes)[keyof typeof themes];
+	mode: "dark" | "light";
+	homeHref: string;
+	toggleMode: () => void;
+}) {
+	return (
 		<div
 			className="noise min-h-screen"
 			style={{
@@ -194,8 +215,8 @@ export function DesignS1Client({
 					{/* Mode toggle */}
 					<button
 						type="button"
-						onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-						className="flex h-8 w-8 items-center justify-center text-[16px] transition-all"
+						onClick={toggleMode}
+						className="flex size-8 items-center justify-center text-[16px] transition-colors"
 						style={{ color: t.secondary, opacity: 0.7 }}
 						aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
 					>
@@ -248,8 +269,8 @@ export function DesignS1Client({
 						className="animate-fade-up mt-8 max-w-md text-[16px] leading-[1.8]"
 						style={{ color: t.bodyAlt, animationDelay: "0.4s", transition: "color 0.6s ease" }}
 					>
-						Wie Tusche auf Papier — jede Sekunde hinterlässt eine Spur. Z8 verwandelt flüchtige
-						Momente in bleibende Klarheit. Stempeluhr, Berichte, Schichtplanung und Lohnexport — in
+						Wie Tusche auf Papier: jede Sekunde hinterlässt eine Spur. Z8 verwandelt flüchtige
+						Momente in bleibende Klarheit. Stempeluhr, Berichte, Schichtplanung und Lohnexport, in
 						einem Werkzeug.
 					</p>
 
@@ -278,7 +299,7 @@ export function DesignS1Client({
 					</div>
 				</div>
 
-				{/* Hero image — ink wash treatment */}
+				{/* Hero image: ink wash treatment */}
 				<div
 					className="animate-fade-in absolute right-[5%] top-[12%] hidden overflow-hidden lg:block"
 					style={{ animationDelay: "0.6s", width: 340, height: 460 }}
@@ -287,6 +308,7 @@ export function DesignS1Client({
 						src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=700&q=80&auto=format&fit=crop"
 						alt=""
 						fill
+						sizes="340px"
 						className="object-cover"
 						style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }}
 					/>
@@ -297,7 +319,7 @@ export function DesignS1Client({
 				</div>
 			</section>
 
-			{/* Logo bar — trusted by */}
+			{/* Logo bar: trusted by */}
 			<section
 				className="relative z-10 px-8 py-16 lg:px-20"
 				style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
@@ -323,7 +345,7 @@ export function DesignS1Client({
 				</div>
 			</section>
 
-			{/* Core features — ink card grid */}
+			{/* Core features: ink card grid */}
 			<section id="features" className="relative z-10 px-8 py-32 lg:px-20">
 				<div className="mx-auto max-w-5xl">
 					<p
@@ -347,7 +369,7 @@ export function DesignS1Client({
 							{
 								num: "一",
 								title: "Stempeluhr",
-								desc: "Ein Klick genügt. Start, Stopp, Pause — auf Web, Desktop und Mobilgerät. Echtzeit-Synchronisation über alle Geräte.",
+								desc: "Ein Klick genügt. Start, Stopp, Pause: auf Web, Desktop und Mobilgerät. Echtzeit-Synchronisation über alle Geräte.",
 							},
 							{
 								num: "二",
@@ -401,7 +423,7 @@ export function DesignS1Client({
 							{
 								num: "五",
 								title: "Urlaubsverwaltung",
-								desc: "Urlaubsanträge, Genehmigungen und Resttagekontingente — alles digital, alles transparent.",
+								desc: "Urlaubsanträge, Genehmigungen und Resttagekontingente: alles digital, alles transparent.",
 							},
 							{
 								num: "六",
@@ -438,7 +460,7 @@ export function DesignS1Client({
 				</div>
 			</section>
 
-			{/* Workflow — how it works */}
+			{/* Workflow: how it works */}
 			<section
 				id="workflow"
 				className="relative z-10 px-8 py-32 lg:px-20"
@@ -470,7 +492,7 @@ export function DesignS1Client({
 								step: "02",
 								kanji: "記",
 								title: "Erfassen",
-								desc: "Mitarbeiter stempeln per Klick — am PC, Tablet oder Smartphone. GPS-Stempel für Außendienst optional.",
+								desc: "Mitarbeiter stempeln per Klick: am PC, Tablet oder Smartphone. GPS-Stempel für Außendienst optional.",
 							},
 							{
 								step: "03",
@@ -510,13 +532,14 @@ export function DesignS1Client({
 				</div>
 			</section>
 
-			{/* Hero image — full width with ink treatment */}
+			{/* Hero image: full width with ink treatment */}
 			<section className="relative z-10 mx-8 lg:mx-20">
 				<div className="relative h-[50vh] min-h-[320px] overflow-hidden">
 					<Image
 						src="https://images.unsplash.com/photo-1497215842964-222b430dc094?w=1400&q=80&auto=format&fit=crop"
 						alt=""
 						fill
+						sizes="(max-width: 1024px) 100vw, 90vw"
 						className="object-cover"
 						style={{ filter: t.imgFilterAlt, transition: "filter 0.6s ease" }}
 					/>
@@ -536,7 +559,7 @@ export function DesignS1Client({
 								className="mt-4 text-[clamp(1.5rem,3vw,2.5rem)] font-light leading-[1.2] tracking-[-0.02em]"
 								style={{ color: t.heading, transition: "color 0.6s ease" }}
 							>
-								Alles auf einen Blick — wer arbeitet,
+								Alles auf einen Blick: wer arbeitet,
 								<br />
 								wer pausiert, wer im Urlaub ist.
 							</h2>
@@ -568,7 +591,7 @@ export function DesignS1Client({
 								className="mt-6 text-[15px] leading-[1.8]"
 								style={{ color: t.body, transition: "color 0.6s ease" }}
 							>
-								Von 2 bis 20.000 Mitarbeiter — Z8 wächst mit Ihnen. Mandantenfähig, mit isolierten
+								Von 2 bis 20.000 Mitarbeiter: Z8 wächst mit Ihnen. Mandantenfähig, mit isolierten
 								Organisationen und rollenbasierter Zugriffskontrolle.
 							</p>
 
@@ -584,12 +607,12 @@ export function DesignS1Client({
 									},
 									{
 										title: "Rollenbasierte Rechte",
-										desc: "Admin, Manager, Mitarbeiter — granular steuerbar.",
+										desc: "Admin, Manager, Mitarbeiter: granular steuerbar.",
 									},
 								].map((item) => (
 									<div key={item.title} className="flex items-start gap-4">
 										<div
-											className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+											className="mt-1.5 size-1.5 shrink-0 rounded-full"
 											style={{
 												backgroundColor: t.accent,
 												transition: "background-color 0.6s ease",
@@ -614,12 +637,13 @@ export function DesignS1Client({
 							</div>
 						</div>
 
-						{/* Right — image */}
+						{/* Right: image */}
 						<div className="relative h-[400px] overflow-hidden hidden lg:block">
 							<Image
 								src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=700&q=80&auto=format&fit=crop"
 								alt=""
 								fill
+								sizes="(max-width: 1024px) 100vw, 50vw"
 								className="object-cover"
 								style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }}
 							/>
@@ -640,12 +664,13 @@ export function DesignS1Client({
 			>
 				<div className="mx-auto max-w-5xl">
 					<div className="grid items-center gap-16 lg:grid-cols-2">
-						{/* Left — image */}
+						{/* Left: image */}
 						<div className="relative h-[380px] overflow-hidden hidden lg:block">
 							<Image
 								src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&q=80&auto=format&fit=crop"
 								alt=""
 								fill
+								sizes="(max-width: 1024px) 100vw, 50vw"
 								className="object-cover"
 								style={{ filter: t.imgFilterSide, transition: "filter 0.6s ease" }}
 							/>
@@ -738,7 +763,7 @@ export function DesignS1Client({
 						className="mt-4 max-w-lg text-[15px] leading-[1.7]"
 						style={{ color: t.body, transition: "color 0.6s ease" }}
 					>
-						Z8 fügt sich in Ihren bestehenden Workflow ein — nicht umgekehrt. Automatische
+						Z8 fügt sich in Ihren bestehenden Workflow ein, nicht umgekehrt. Automatische
 						Datenübernahme, kein manuelles Abtippen.
 					</p>
 
@@ -818,6 +843,7 @@ export function DesignS1Client({
 									src={src}
 									alt=""
 									fill
+									sizes="(max-width: 768px) 100vw, 33vw"
 									className="object-cover"
 									style={{ filter: t.imgFilter, transition: "filter 0.6s ease" }}
 								/>
@@ -1040,7 +1066,7 @@ export function DesignS1Client({
 											style={{ color: t.feature, transition: "color 0.6s ease" }}
 										>
 											<div
-												className="h-1 w-1 shrink-0 rounded-full"
+												className="size-1 shrink-0 rounded-full"
 												style={{
 													backgroundColor: t.accent,
 													transition: "background-color 0.6s ease",
@@ -1092,7 +1118,7 @@ export function DesignS1Client({
 						{[
 							{
 								q: "Ist Z8 wirklich kostenlos?",
-								a: "Ja. Der Starter-Plan für bis zu 5 Mitarbeiter ist dauerhaft kostenlos — ohne Kreditkarte, ohne Ablaufdatum.",
+								a: "Ja. Der Starter-Plan für bis zu 5 Mitarbeiter ist dauerhaft kostenlos, ohne Kreditkarte, ohne Ablaufdatum.",
 							},
 							{
 								q: "Wie funktioniert der DATEV-Export?",
@@ -1256,7 +1282,7 @@ export function DesignS1Client({
 						style={{ borderTop: `1px solid ${t.border}`, transition: "border-color 0.6s ease" }}
 					>
 						<span className="text-[11px]" style={{ color: t.muted, transition: "color 0.6s ease" }}>
-							© 2025 Z8 — Made in Frankfurt am Main
+							© 2025 Z8, Made in Frankfurt am Main
 						</span>
 						<Link
 							href={homeHref}
@@ -1270,6 +1296,4 @@ export function DesignS1Client({
 			</footer>
 		</div>
 	);
-
-	return locale === "de" ? page : translateTree(page, translationCopy);
 }

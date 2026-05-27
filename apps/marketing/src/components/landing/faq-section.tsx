@@ -36,7 +36,7 @@ export function FaqSection({ copy }: FaqSectionProps) {
 							<summary className="flex cursor-pointer items-center justify-between px-7 py-5 text-[15px] font-semibold marker:content-[''] [&::-webkit-details-marker]:hidden">
 								{faq.q}
 								<span
-									className="ml-4 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[14px] transition-transform group-open:rotate-45"
+									className="ml-4 flex size-7 flex-shrink-0 items-center justify-center rounded-full text-[14px] transition-transform group-open:rotate-45"
 									style={{ backgroundColor: v("badgeBg") }}
 								>
 									+

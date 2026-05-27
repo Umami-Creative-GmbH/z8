@@ -100,7 +100,7 @@ export function ApprovalInboxTable({
 		{ polling: false },
 	);
 
-	const columns = [
+	const columns: ColumnDef<UnifiedApprovalItem>[] = [
 		// Selection column - uses refs to avoid recreation
 		{
 			id: "select",

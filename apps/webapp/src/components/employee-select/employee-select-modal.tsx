@@ -205,8 +205,15 @@ export function EmployeeSelectModal({
 		}
 
 		const newMap = new Map(selectedEmployeesMap);
+		const employeesById = new Map<string, (typeof employees)[number]>();
+		for (const employee of employees) {
+			if (!employeesById.has(employee.id)) {
+				employeesById.set(employee.id, employee);
+			}
+		}
+
 		for (const id of idsToAdd) {
-			const employee = employees.find((e) => e.id === id);
+			const employee = employeesById.get(id);
 			if (employee) {
 				newMap.set(id, employee);
 			}

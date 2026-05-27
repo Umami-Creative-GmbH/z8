@@ -40,7 +40,7 @@ export function Integrations({ copy }: IntegrationsProps) {
 							}}
 						>
 							<div
-								className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl text-[14px] font-black"
+								className="mb-3 flex size-12 items-center justify-center rounded-xl text-[14px] font-black"
 								style={{ backgroundColor: v("iconBg"), color: v("text") }}
 							>
 								{integration.name.slice(0, 2).toUpperCase()}

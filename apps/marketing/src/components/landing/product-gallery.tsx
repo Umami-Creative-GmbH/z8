@@ -15,6 +15,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
 							src={src}
 							alt=""
 							fill
+							sizes="(max-width: 768px) 100vw, 33vw"
 							className="object-cover transition-transform duration-700 hover:scale-105"
 						/>
 					</div>

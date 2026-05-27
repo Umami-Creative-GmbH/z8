@@ -39,6 +39,7 @@ export function NewsletterCta({ copy }: NewsletterCtaProps) {
 							<div className="relative flex-1">
 								<input
 									type="email"
+									aria-label={copy.emailPlaceholder}
 									placeholder={copy.emailPlaceholder}
 									className="w-full rounded-xl border-0 px-5 py-4 text-[14px] outline-none"
 									style={{
@@ -50,7 +51,7 @@ export function NewsletterCta({ copy }: NewsletterCtaProps) {
 							</div>
 							<button
 								type="button"
-								className="flex-shrink-0 rounded-xl px-6 py-4 text-[14px] font-bold transition-all"
+								className="flex-shrink-0 rounded-xl px-6 py-4 text-[14px] font-bold transition-colors"
 								style={{
 									backgroundColor: dark ? "#0a0a0a" : "#fff",
 									color: dark ? "#e8e8e8" : "#1a1a1a",

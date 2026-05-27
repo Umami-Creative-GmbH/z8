@@ -1,5 +1,6 @@
 import { source } from '@/lib/source';
-import { DocsNavTitle, docsTabs } from '@/lib/docs-shell';
+import { docsTabs } from '@/lib/docs-data';
+import { DocsNavTitle } from '@/lib/docs-shell';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import type { ReactNode } from 'react';
 

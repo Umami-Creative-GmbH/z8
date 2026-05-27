@@ -3,7 +3,13 @@
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { startTransition as startReactTransition, useEffect, useState, useTransition } from "react";
+import {
+	startTransition as startReactTransition,
+	useEffect,
+	useEffectEvent,
+	useState,
+	useTransition,
+} from "react";
 import { toast } from "sonner";
 import {
 	type DatevConfigResult,
@@ -133,20 +139,19 @@ export function ExportForm({
 		fileName?: string;
 	} | null>(null);
 
-	// Memoize loader to avoid dependency warning
-	const loadFilterOptions = async () => {
+	const loadFilterOptions = useEffectEvent(async () => {
 		startTransition(async () => {
 			const result = await getFilterOptionsAction(organizationId);
 			if (result.success) {
 				setFilterOptions(result.data);
 			}
 		});
-	};
+	});
 
 	// Load filter options on mount
 	useEffect(() => {
 		loadFilterOptions();
-	}, [loadFilterOptions]);
+	}, [organizationId]);
 
 	useEffect(() => {
 		if (exportAvailability[selectedFormatId]?.configured) {

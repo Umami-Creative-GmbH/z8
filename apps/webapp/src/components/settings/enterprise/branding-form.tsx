@@ -107,6 +107,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 									src={logoUpload.previewUrl || branding.logoUrl || ""}
 									alt={t("settings.branding.logo.preview", "Logo preview")}
 									fill
+									sizes="80px"
 									className="object-contain"
 								/>
 							) : (
@@ -167,6 +168,7 @@ export function BrandingForm({ initialBranding, organizationId }: BrandingFormPr
 									src={backgroundUpload.previewUrl || branding.backgroundImageUrl || ""}
 									alt={t("settings.branding.background.preview", "Background preview")}
 									fill
+									sizes="192px"
 									className="object-cover"
 								/>
 							) : (

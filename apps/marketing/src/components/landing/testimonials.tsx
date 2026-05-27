@@ -40,7 +40,7 @@ export function Testimonials({ copy }: TestimonialsProps) {
 							</p>
 							<div className="flex items-center gap-3">
 								<div
-									className="flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-bold"
+									className="flex size-10 items-center justify-center rounded-full text-[12px] font-bold"
 									style={{ backgroundColor: v("surface"), color: v("surfaceText") }}
 								>
 									{testimonial.avatar}

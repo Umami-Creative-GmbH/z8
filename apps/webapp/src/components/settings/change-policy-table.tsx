@@ -134,7 +134,7 @@ export function ChangePolicyTable({
 	};
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<ChangePolicyRecord>[] = [
 		{
 			accessorKey: "name",
 			header: t("settings.changePolicies.name", "Name"),

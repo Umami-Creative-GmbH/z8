@@ -64,7 +64,7 @@ export function EmployeeSelectList({
 		mode === "multiple" && maxSelections !== undefined && selectedIds.length >= maxSelections;
 
 	return (
-		<div role="listbox" aria-multiselectable={mode === "multiple"}>
+		<div role="listbox">
 			{employees.map((employee) => {
 				const isSelected = selectedIds.includes(employee.id);
 				const isDisabled = !isSelected && isAtMaxSelections;

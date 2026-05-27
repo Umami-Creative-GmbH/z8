@@ -65,7 +65,7 @@ export default function EmployeeAllowanceEditPage({
 	const [policies, setPolicies] = useState<any[]>([]);
 	const [currentAssignment, setCurrentAssignment] = useState<any>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
-	const [currentYear] = useState(new Date().getFullYear());
+	const [currentYear] = useState(() => new Date().getFullYear());
 	const [adjustmentTotal, setAdjustmentTotal] = useState(0);
 
 	const form = useForm({

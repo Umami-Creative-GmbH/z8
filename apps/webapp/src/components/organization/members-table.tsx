@@ -345,7 +345,7 @@ export function MembersTable({
 	})();
 
 	// Invitation columns
-	const invitationColumns = [
+	const invitationColumns: ColumnDef<InvitationWithInviter>[] = [
 		{
 			accessorKey: "email",
 			header: t("organization.members.email", "Email"),
@@ -432,7 +432,7 @@ export function MembersTable({
 	];
 
 	// Member columns
-	const memberColumns = [
+	const memberColumns: ColumnDef<MemberWithUserAndEmployee>[] = [
 		{
 			accessorKey: "user",
 			header: t("organization.members.member", "Member"),

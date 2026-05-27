@@ -204,18 +204,15 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 			return "";
 		};
 
-		const dayCell = (
-			<div
-				key={day}
-				className={cn(
-					"aspect-square rounded-md p-2 text-sm relative",
-					isToday && "ring-2 ring-primary",
-					status?.type === "holiday" && "bg-muted",
-					getTextClass(),
-				)}
-				style={status?.type === "absence" ? getBackgroundStyle() : {}}
-				tabIndex={hasHolidayTooltip ? 0 : undefined}
-			>
+		const dayCellClassName = cn(
+			"aspect-square rounded-md p-2 text-sm relative",
+			isToday && "ring-2 ring-primary",
+			status?.type === "holiday" && "bg-muted",
+			getTextClass(),
+		);
+		const dayCellStyle = status?.type === "absence" ? getBackgroundStyle() : {};
+		const dayCellContent = (
+			<>
 				<div className="flex flex-col h-full">
 					<div className="font-medium">{day}</div>
 					{status && (
@@ -231,13 +228,23 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 						</div>
 					)}
 				</div>
-			</div>
+			</>
 		);
 
 		if (!hasHolidayTooltip) {
-			days.push(dayCell);
+			days.push(
+				<div key={day} className={dayCellClassName} style={dayCellStyle}>
+					{dayCellContent}
+				</div>,
+			);
 			continue;
 		}
+
+		const dayCell = (
+			<button type="button" className={dayCellClassName} style={dayCellStyle}>
+				{dayCellContent}
+			</button>
+		);
 
 		days.push(
 			<Tooltip key={day}>

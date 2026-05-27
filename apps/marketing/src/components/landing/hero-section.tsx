@@ -68,7 +68,8 @@ export function HeroSection({ copy }: HeroSectionProps) {
 										borderColor: i === 0 ? t.surface : t.borderStrong,
 										backgroundColor: i === 0 ? t.chipActiveBg : t.chipBg,
 										color: i === 0 ? t.chipActiveText : t.textSecondary,
-										transition: "all 0.4s ease",
+										transition:
+											"background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease",
 									}}
 								>
 									{f}
@@ -78,7 +79,7 @@ export function HeroSection({ copy }: HeroSectionProps) {
 					</div>
 				</div>
 
-				{/* Right — floating app mockup */}
+				{/* Right: floating app mockup */}
 				<div className="animate-scale-in relative" style={{ animationDelay: "0.3s" }}>
 					<div
 						className="relative overflow-hidden rounded-2xl"
@@ -98,9 +99,9 @@ export function HeroSection({ copy }: HeroSectionProps) {
 						>
 							<div className="flex items-center gap-3">
 								<div className="flex gap-1.5">
-									<div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
-									<div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-									<div className="h-2.5 w-2.5 rounded-full bg-[#27ca40]" />
+									<div className="size-2.5 rounded-full bg-[#ff5f56]" />
+									<div className="size-2.5 rounded-full bg-[#ffbd2e]" />
+									<div className="size-2.5 rounded-full bg-[#27ca40]" />
 								</div>
 								<span className="text-[11px] font-semibold" style={{ color: t.textTertiary }}>
 									{copy.mockup.windowTitle}
@@ -108,7 +109,7 @@ export function HeroSection({ copy }: HeroSectionProps) {
 							</div>
 							<div className="flex items-center gap-2">
 								<div className="h-5 w-16 rounded" style={{ backgroundColor: t.mockupBar }} />
-								<div className="h-5 w-5 rounded" style={{ backgroundColor: t.mockupBar }} />
+								<div className="size-5 rounded" style={{ backgroundColor: t.mockupBar }} />
 							</div>
 						</div>
 						<div
@@ -125,7 +126,7 @@ export function HeroSection({ copy }: HeroSectionProps) {
 							>
 								<div className="mb-4 flex items-center gap-2">
 									<div
-										className="h-7 w-7 rounded-lg text-center text-[9px] font-bold leading-7"
+										className="size-7 rounded-lg text-center text-[9px] font-bold leading-7"
 										style={{ backgroundColor: t.surface, color: t.surfaceText }}
 									>
 										Z8
@@ -193,7 +194,7 @@ export function HeroSection({ copy }: HeroSectionProps) {
 										>
 											<div className="flex items-center gap-3">
 												<div
-													className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold"
+													className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold"
 													style={{ backgroundColor: t.avatarBg, color: t.avatarText }}
 												>
 													{name

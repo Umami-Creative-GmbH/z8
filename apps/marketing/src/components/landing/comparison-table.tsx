@@ -49,7 +49,7 @@ export function ComparisonTable({ copy }: ComparisonTableProps) {
 							<span className="text-center">
 								{c.z8 ? (
 									<span
-										className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
+										className="inline-flex size-5 items-center justify-center rounded-full text-[10px]"
 										style={{ backgroundColor: v("surface"), color: v("surfaceText") }}
 									>
 										&#10003;
@@ -61,7 +61,7 @@ export function ComparisonTable({ copy }: ComparisonTableProps) {
 							<span className="text-center">
 								{c.others ? (
 									<span
-										className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
+										className="inline-flex size-5 items-center justify-center rounded-full text-[10px]"
 										style={{ backgroundColor: v("checkOtherBg"), color: v("checkOtherText") }}
 									>
 										&#10003;

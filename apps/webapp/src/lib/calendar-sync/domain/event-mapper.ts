@@ -41,7 +41,7 @@ function applyTemplate(
 ): string {
 	let result = template;
 	for (const [key, value] of Object.entries(variables)) {
-		result = result.replace(new RegExp(`\\{${key}\\}`, "g"), value);
+		result = result.split(`{${key}}`).join(value);
 	}
 	return result;
 }

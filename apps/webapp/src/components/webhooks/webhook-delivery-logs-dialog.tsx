@@ -274,7 +274,7 @@ export function WebhookDeliveryLogsDialog({
 							<Button
 								variant="outline"
 								size="sm"
-								onClick={() => setOffset(Math.max(0, offset - limit))}
+								onClick={() => setOffset((currentOffset) => Math.max(0, currentOffset - limit))}
 								disabled={offset === 0 || isLoading}
 							>
 								{t("common.previous", "Previous")}
@@ -282,7 +282,7 @@ export function WebhookDeliveryLogsDialog({
 							<Button
 								variant="outline"
 								size="sm"
-								onClick={() => setOffset(offset + limit)}
+								onClick={() => setOffset((currentOffset) => currentOffset + limit)}
 								disabled={offset + limit >= total || isLoading}
 							>
 								{t("common.next", "Next")}

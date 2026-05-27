@@ -17,9 +17,11 @@ export default async function DesignS5({ params }: PageProps) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 	const homeHref = `/${locale}`;
-	return translateVariantTree(
-		locale,
-		"s-5",
+	return translateVariantTree(locale, "s-5", renderDesignS5(homeHref));
+}
+
+function renderDesignS5(homeHref: string) {
+	return (
 		<div
 			className="min-h-screen"
 			style={{
@@ -63,7 +65,7 @@ export default async function DesignS5({ params }: PageProps) {
 					className="rounded-2xl px-6 py-2.5 text-[13px] font-semibold transition-all hover:shadow-lg"
 					style={{
 						backgroundColor: "rgba(255,255,255,0.7)",
-						backdropFilter: "blur(12px)",
+						backdropFilter: "blur(8px)",
 						border: "1px solid rgba(255,255,255,0.8)",
 						color: "#4a5a8a",
 					}}
@@ -76,16 +78,13 @@ export default async function DesignS5({ params }: PageProps) {
 			<section className="relative z-10 flex min-h-[88vh] flex-col items-center justify-center px-8 text-center lg:px-16">
 				{/* Frosted glass card */}
 				<div
-					className="animate-scale-in"
+					className="animate-scale-in max-w-[720px] rounded-[32px] px-12 py-16"
 					style={{
 						animationDelay: "0s",
-						padding: "64px 48px",
-						borderRadius: 32,
 						backgroundColor: "rgba(255,255,255,0.45)",
-						backdropFilter: "blur(40px)",
+						backdropFilter: "blur(8px)",
 						border: "1px solid rgba(255,255,255,0.6)",
 						boxShadow: "0 8px 60px rgba(100,120,180,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
-						maxWidth: 720,
 					}}
 				>
 					<p
@@ -108,7 +107,7 @@ export default async function DesignS5({ params }: PageProps) {
 						className="animate-fade-up mx-auto mt-8 max-w-md text-[15px] leading-[1.75]"
 						style={{ color: "#5a6080", animationDelay: "0.45s" }}
 					>
-						Wie gefrostetes Glas — Z8 zeigt genau das, was Sie brauchen, und blendet alles andere
+						Wie gefrostetes Glas: Z8 zeigt genau das, was Sie brauchen, und blendet alles andere
 						aus. Reine Klarheit.
 					</p>
 
@@ -137,7 +136,7 @@ export default async function DesignS5({ params }: PageProps) {
 					</div>
 				</div>
 
-				{/* Hero image — frosted row below glass card */}
+				{/* Hero image: frosted row below glass card */}
 				<div
 					className="animate-fade-up mt-16 flex items-center justify-center gap-4"
 					style={{ animationDelay: "0.75s" }}
@@ -159,6 +158,7 @@ export default async function DesignS5({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="256px"
 								className="object-cover"
 								style={{ filter: "saturate(0.4) brightness(1.05)" }}
 							/>
@@ -167,7 +167,7 @@ export default async function DesignS5({ params }: PageProps) {
 				</div>
 			</section>
 
-			{/* Features — glass cards */}
+			{/* Features: glass cards */}
 			<section id="features" className="relative z-10 px-8 py-24 lg:px-16">
 				<div className="mx-auto max-w-5xl">
 					<h2
@@ -201,7 +201,7 @@ export default async function DesignS5({ params }: PageProps) {
 								style={{
 									borderRadius: 24,
 									backgroundColor: "rgba(255,255,255,0.5)",
-									backdropFilter: "blur(20px)",
+									backdropFilter: "blur(8px)",
 									border: "1px solid rgba(255,255,255,0.6)",
 								}}
 							>
@@ -228,7 +228,7 @@ export default async function DesignS5({ params }: PageProps) {
 						style={{
 							borderRadius: 32,
 							backgroundColor: "rgba(255,255,255,0.4)",
-							backdropFilter: "blur(30px)",
+							backdropFilter: "blur(8px)",
 							border: "1px solid rgba(255,255,255,0.5)",
 							boxShadow: "0 8px 60px rgba(100,120,180,0.06)",
 						}}
@@ -236,9 +236,9 @@ export default async function DesignS5({ params }: PageProps) {
 						{/* Mock toolbar */}
 						<div className="flex items-center justify-between mb-8">
 							<div className="flex items-center gap-3">
-								<div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#e0c8c8" }} />
-								<div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#e0dcc8" }} />
-								<div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#c8e0cc" }} />
+								<div className="size-3 rounded-full" style={{ backgroundColor: "#e0c8c8" }} />
+								<div className="size-3 rounded-full" style={{ backgroundColor: "#e0dcc8" }} />
+								<div className="size-3 rounded-full" style={{ backgroundColor: "#c8e0cc" }} />
 							</div>
 							<div
 								className="h-6 w-48 rounded-lg"
@@ -259,7 +259,7 @@ export default async function DesignS5({ params }: PageProps) {
 									style={{ backgroundColor: "rgba(255,255,255,0.5)" }}
 								>
 									<div
-										className="h-8 w-8 rounded-full"
+										className="size-8 rounded-full"
 										style={{ backgroundColor: "rgba(74,90,138,0.12)" }}
 									/>
 									<div className="flex-1">
@@ -304,6 +304,7 @@ export default async function DesignS5({ params }: PageProps) {
 								src={src}
 								alt=""
 								fill
+								sizes="(max-width: 768px) 100vw, 33vw"
 								className="object-cover"
 								style={{ filter: "saturate(0.5) brightness(1.05) contrast(0.95)" }}
 							/>
@@ -324,7 +325,7 @@ export default async function DesignS5({ params }: PageProps) {
 					Sehen Sie klar.
 				</h2>
 				<p className="mt-4 text-[15px]" style={{ color: "#7a84a0" }}>
-					Starten Sie heute — kostenlos und unverbindlich.
+					Starten Sie heute, kostenlos und unverbindlich.
 				</p>
 				<a
 					href="#contact"
@@ -353,6 +354,6 @@ export default async function DesignS5({ params }: PageProps) {
 					</Link>
 				</div>
 			</footer>
-		</div>,
+		</div>
 	);
 }

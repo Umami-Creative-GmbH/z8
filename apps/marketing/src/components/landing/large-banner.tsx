@@ -11,7 +11,13 @@ export function LargeBanner({ copy }: LargeBannerProps) {
 			className="relative z-10 mx-8 overflow-hidden rounded-3xl lg:mx-16"
 			style={{ height: "420px" }}
 		>
-			<Image src={copy.image} alt={copy.imageAlt} fill className="object-cover" />
+			<Image
+				src={copy.image}
+				alt={copy.imageAlt}
+				fill
+				sizes="(max-width: 1024px) 100vw, 90vw"
+				className="object-cover"
+			/>
 			<div
 				className="absolute inset-0 flex flex-col items-center justify-center text-center"
 				style={{

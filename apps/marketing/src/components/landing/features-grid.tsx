@@ -40,7 +40,7 @@ export function FeaturesGrid({ copy }: FeaturesGridProps) {
 							}}
 						>
 							<div
-								className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl text-[12px] font-bold"
+								className="mb-4 flex size-10 items-center justify-center rounded-xl text-[12px] font-bold"
 								style={{ backgroundColor: v("surface"), color: v("surfaceText") }}
 							>
 								{String(i + 1).padStart(2, "0")}

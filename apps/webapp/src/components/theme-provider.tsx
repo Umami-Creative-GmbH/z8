@@ -356,7 +356,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 
 	const clearThemeError = () => setThemeError(undefined);
 
-	const setTheme = (nextTheme) => {
+	const setTheme: ThemeContextValue["setTheme"] = (nextTheme) => {
 		const currentTheme = themeRef.current;
 		const value = typeof nextTheme === "function" ? nextTheme(currentTheme) : nextTheme;
 

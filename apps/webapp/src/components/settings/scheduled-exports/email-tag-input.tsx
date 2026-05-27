@@ -65,7 +65,7 @@ export function EmailTagInput({
 		}
 	};
 
-	const handleBlur = () => {
+	const addPendingEmailOnBlur = () => {
 		if (inputValue.trim()) {
 			addEmail(inputValue);
 		}
@@ -110,7 +110,7 @@ export function EmailTagInput({
 						setError(null);
 					}}
 					onKeyDown={handleKeyDown}
-					onBlur={handleBlur}
+					onBlur={addPendingEmailOnBlur}
 					placeholder={value.length === 0 ? placeholder || defaultPlaceholder : ""}
 					disabled={disabled}
 					className="flex-1 min-w-[200px] border-0 shadow-none focus-visible:ring-0 h-7 px-1"

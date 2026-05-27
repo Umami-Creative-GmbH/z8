@@ -177,7 +177,7 @@ export function VacationPoliciesTable({
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<VacationPolicy>[] = [
 		{
 			accessorKey: "name",
 			header: t("vacation.policies.header.name", "Name"),

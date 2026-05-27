@@ -4,7 +4,7 @@ import {
 	type CSSProperties,
 	createContext,
 	type ReactNode,
-	useContext,
+	use,
 	useEffect,
 	useRef,
 	useState,
@@ -15,7 +15,6 @@ interface ThemeContextValue {
 	t: ThemeTokens;
 	dark: boolean;
 	toggle: () => void;
-	mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -29,13 +28,8 @@ function getInitialDark(): boolean {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
 	const [dark, setDark] = useState(getInitialDark);
-	const [mounted, setMounted] = useState(false);
 	const wrapperRef = useRef<HTMLDivElement>(null);
 	const t = dark ? themes.dark : themes.light;
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
 
 	// Sync CSS custom properties on <html> and the wrapper div when theme changes
 	useEffect(() => {
@@ -62,7 +56,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 	}
 
 	return (
-		<ThemeContext value={{ t, dark, toggle, mounted }}>
+		<ThemeContext value={{ t, dark, toggle }}>
 			<div
 				ref={wrapperRef}
 				className="min-h-screen"
@@ -83,7 +77,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useThemeTokens(): ThemeContextValue {
-	const ctx = useContext(ThemeContext);
+	const ctx = use(ThemeContext);
 	if (!ctx) throw new Error("useThemeTokens must be used within ThemeProvider");
 	return ctx;
 }

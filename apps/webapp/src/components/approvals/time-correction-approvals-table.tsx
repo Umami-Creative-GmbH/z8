@@ -163,7 +163,7 @@ export function TimeCorrectionApprovalsTable() {
 	})();
 
 	// Column definitions
-	const columns = [
+	const columns: ColumnDef<ApprovalWithTimeCorrection>[] = [
 		{
 			accessorKey: "requester",
 			header: t("approvals:approvals.employee", "Employee"),
